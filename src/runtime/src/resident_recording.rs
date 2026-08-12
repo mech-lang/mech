@@ -447,10 +447,16 @@ fn rejected_artifact_record(
             "resident captured input was invalid",
         ),
         ArtifactResidentExecutionError::Kernel { .. }
-        | ArtifactResidentExecutionError::InvalidWrite { .. } => (
+        | ArtifactResidentExecutionError::InvalidWrite { .. }
+        | ArtifactResidentExecutionError::EffectIntentCapacity => (
             TurnFailurePhase::Execution,
             "ResidentKernel",
             "resident kernel execution failed",
+        ),
+        ArtifactResidentExecutionError::ExternalSummaryRequired => (
+            TurnFailurePhase::Execution,
+            "ResidentExternalSummaryRequired",
+            "resident external turns require prepared-turn coordination",
         ),
         ArtifactResidentExecutionError::Integrity { .. } => (
             TurnFailurePhase::Integrity,
@@ -494,7 +500,8 @@ impl PreparedResidentPublication<'_> {
         match self {
             Self::Ekf(turn) => turn.publish(),
             Self::Artifact(turn) => {
-                turn.publish();
+                turn.publish()
+                    .expect("recorded artifact resident turns exclude external steps");
             }
             Self::FullWrite(turn) => turn.publish(),
         }

@@ -120,14 +120,17 @@ pub mod __resident {
     };
     pub use crate::efficacy::ekf::operation::{EkfKernel, EkfPredicate};
     pub use crate::resident::general::{
-        ActivatedConstraint, ActivatedInput, ActivatedNode, ActivatedNodeIndex, ActivatedOutput,
-        ActivatedPlan, ActivationFacts, CapturedSignalInput, DependencyTopology,
+        ActivatedConstraint, ActivatedExternalNode, ActivatedInput, ActivatedInputSource,
+        ActivatedKernelNode, ActivatedNodeIndex, ActivatedOutput, ActivatedPlan, ActivatedTurnStep,
+        ActivationFacts, CapturedSignalInput, CapturedValueInput, DependencyTopology,
         PreparedResidentTurn, ReactiveInstance, ResidentActivationError, ResidentActivationOptions,
-        ResidentArenaSizes, ResidentExecutionError, ResidentIntegrityMode, ResidentReadLocation,
-        ResidentRegion, ResidentStorageClass, ResidentStructuralProbe, ResidentTurnSummary,
-        ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena,
+        ResidentArenaSizes, ResidentEffectIntent, ResidentEffectIntentIter,
+        ResidentEffectIntentView, ResidentExecutionError, ResidentExternalActivation,
+        ResidentExternalAdmission, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
+        ResidentReadLocation, ResidentRegion, ResidentStorageClass, ResidentStructuralProbe,
+        ResidentTurnSummary, ResidentValueBorrow, ResidentWriteLocation, ResolvedSlot, StateArena,
         StateMigrationMapping, StateMigrationPolicy, TurnWorkspace, TypedResidentArena, activate,
-        activate_with_options,
+        activate_external_with_authority, activate_with_options,
     };
 }
 #[cfg(all(feature = "source", feature = "state_machines"))]

@@ -3,9 +3,9 @@ use mech_core::{
 };
 use mech_engine::__gate_b_resident::ResidentEkfBatch;
 use mech_engine::__resident::{
-    ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
-    ResidentStorageClass, ResidentValueBorrow, activate, compile_frozen_ekf_source,
-    frozen_ekf_compiler_catalog,
+    ActivatedTurnStep, ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices,
+    ReactiveInstance, ResidentStorageClass, ResidentValueBorrow, activate,
+    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -125,24 +125,29 @@ fn main() -> MResult<()> {
         0.05, 25.0, -10.0, 0.04, 0.0, 0.0, 0.0025, 0.25, 0.0, 0.0, 0.0009,
     ];
     let plan = &source.plan;
-    let numeric_kernels = plan
-        .nodes
+    let kernel_nodes = plan
+        .steps
+        .iter()
+        .map(|step| match step {
+            ActivatedTurnStep::Kernel(node) => node,
+            ActivatedTurnStep::External(_) => panic!("D1 contains only resident kernels"),
+        })
+        .collect::<Vec<_>>();
+    let numeric_kernels = kernel_nodes
         .iter()
         .filter(|node| {
             node.write.storage == ResidentStorageClass::Scratch
                 && node.write.region.kind == ResidentValueKind::F64
         })
         .count();
-    let predicate_kernels = plan
-        .nodes
+    let predicate_kernels = kernel_nodes
         .iter()
         .filter(|node| {
             node.write.storage == ResidentStorageClass::Scratch
                 && node.write.region.kind == ResidentValueKind::Bool
         })
         .count();
-    let state_copies = plan
-        .nodes
+    let state_copies = kernel_nodes
         .iter()
         .filter(|node| node.write.storage == ResidentStorageClass::State)
         .count();
@@ -197,7 +202,7 @@ fn main() -> MResult<()> {
         "unclassified_nodes": artifact.nodes().len() - classified_nodes,
     });
     let activation_projection = json!({
-        "activated_node_count": plan.nodes.len(),
+        "activated_node_count": kernel_nodes.len(),
         "activation_executes_turn": false,
         "constants": {
             "dt": constant_values[0],
@@ -237,11 +242,16 @@ fn main() -> MResult<()> {
     let mut control = ResidentEkfBatch::new(1);
     let mut trajectory = Vec::with_capacity(TURNS);
     for frame in frames() {
-        let source_receipt = source.prepare_turn(&[captured(&source, &frame)]).unwrap().publish();
+        let source_receipt = source
+            .prepare_turn(&[captured(&source, &frame)])
+            .unwrap()
+            .publish()
+            .unwrap();
         let decoded_receipt = decoded
             .prepare_turn(&[captured(&decoded, &frame)])
             .unwrap()
-            .publish();
+            .publish()
+            .unwrap();
         control.turn(frame).unwrap();
         assert_eq!(source_receipt.before_epoch, decoded_receipt.before_epoch);
         assert_eq!(source_receipt.after_epoch, decoded_receipt.after_epoch);

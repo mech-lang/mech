@@ -2,7 +2,8 @@
 
 use mech_core::snapshot::{F64Bits, SequenceView, SnapshotValidationContext};
 use mech_core::{
-    ResidentShape, ResidentValueMut, SchemaBody, Value, ValueData, ValueDataDraft, ValueDraft,
+    GenericError, MResult, MechError, ResidentShape, ResidentValueMut, ResidentValueRef,
+    SchemaBody, SchemaId, ShapeInstance, Value, ValueData, ValueDataDraft, ValueDraft,
 };
 
 use crate::resident::general::{
@@ -68,6 +69,62 @@ impl ReactiveInstance {
         .finalize(&SnapshotValidationContext::new(&self.plan.schemas))
         .map_err(|_| ResidentActivationError::InvalidSnapshotRepresentation)
     }
+}
+
+pub(crate) fn materialize_resident_value(
+    schemas: &mech_core::SchemaTable,
+    schema: SchemaId,
+    shape: &ShapeInstance,
+    region: ResidentRegion,
+    borrowed: ResidentValueRef<'_>,
+) -> MResult<Value> {
+    let scalar = !matches!(
+        schemas
+            .entry(schema)
+            .expect("activated schema remains present")
+            .schema()
+            .body(),
+        SchemaBody::Matrix { .. }
+    );
+    let data = match borrowed {
+        ResidentValueRef::Bool(values) if scalar => ValueDataDraft::Bool(values[0] != 0),
+        ResidentValueRef::Index(values) if scalar => ValueDataDraft::Index(values[0]),
+        ResidentValueRef::F64(values) if scalar => {
+            ValueDataDraft::F64(F64Bits::from_f64(values[0]))
+        }
+        ResidentValueRef::Bool(values) => ValueDataDraft::Matrix(
+            canonical_matrix_indices(region.shape)
+                .map(|index| ValueDataDraft::Bool(values[index] != 0))
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+        ResidentValueRef::Index(values) => ValueDataDraft::Matrix(
+            canonical_matrix_indices(region.shape)
+                .map(|index| ValueDataDraft::Index(values[index]))
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+        ResidentValueRef::F64(values) => ValueDataDraft::Matrix(
+            canonical_matrix_indices(region.shape)
+                .map(|index| ValueDataDraft::F64(F64Bits::from_f64(values[index])))
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+    };
+    ValueDraft {
+        schema,
+        shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+        data,
+    }
+    .finalize(&SnapshotValidationContext::new(schemas))
+    .map_err(|error| {
+        MechError::new(
+            GenericError {
+                msg: format!("resident value materialization failed: {error:?}"),
+            },
+            None,
+        )
+    })
 }
 
 pub(crate) fn write_value(

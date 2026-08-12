@@ -42,7 +42,7 @@ fn public_ekf_artifact_activates_into_generic_storage_without_a_turn() -> MResul
         instance.plan.program_revision,
         compilation.source_artifact.revision()
     );
-    assert_eq!(instance.plan.nodes.len(), 20);
+    assert_eq!(instance.plan.steps.len(), 20);
     assert!(instance.plan.activation_nodes.is_empty());
     assert_eq!(instance.plan.inputs.len(), 1);
     assert_eq!(instance.plan.outputs.len(), 1);

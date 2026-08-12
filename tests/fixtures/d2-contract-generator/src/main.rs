@@ -13,8 +13,9 @@ use mech_core::{
     ValueDataDraft, ValueDraft,
 };
 use mech_engine::__resident::{
-    ActivationFacts, ResidentActivationError, ResidentStorageClass, ResidentValueBorrow,
-    StateMigrationMapping, StateMigrationPolicy, activate,
+    ActivatedKernelNode, ActivatedTurnStep, ActivationFacts, ResidentActivationError,
+    ResidentStorageClass, ResidentValueBorrow, StateMigrationMapping, StateMigrationPolicy,
+    activate,
 };
 use mech_engine::{
     ApplicationRequirementTable, ArtifactSource, BindingDeclaration, InitializerReference,
@@ -47,6 +48,13 @@ unsafe impl GlobalAlloc for CountingAllocator {
 
 #[global_allocator]
 static ALLOCATOR: CountingAllocator = CountingAllocator;
+
+fn kernel_step(step: &ActivatedTurnStep) -> &ActivatedKernelNode {
+    let ActivatedTurnStep::Kernel(node) = step else {
+        panic!("D2 contains only resident kernel turn steps")
+    };
+    node
+}
 
 const SOURCE: &str =
     include_str!("../../../../tests/architecture/resident-activation/n-body-source-v1.mec");
@@ -222,7 +230,7 @@ fn main() {
     );
     assert_eq!(
         source_instance.plan.topology.word_len(),
-        source_instance.plan.nodes.len().div_ceil(64),
+        source_instance.plan.steps.len().div_ceil(64),
     );
     assert!(source_instance.plan.activation_nodes.len() > 32);
     assert_reordered_artifact_execution(&artifact, &catalog);
@@ -321,7 +329,7 @@ fn main() {
         hex(artifact.revision().as_bytes()),
         artifact.nodes().len(),
         activation_nodes.len(),
-        source_instance.plan.nodes.len(),
+        source_instance.plan.steps.len(),
         artifact.slots().len(),
         velocity_writers.len(),
         position_writers.len(),
@@ -440,9 +448,9 @@ fn assert_reordered_artifact_execution(
         .collect::<BTreeSet<_>>();
     let turn = canonical
         .plan
-        .nodes
+        .steps
         .iter()
-        .map(|node| node.artifact_node)
+        .map(ActivatedTurnStep::artifact_node)
         .collect::<BTreeSet<_>>();
     let adjacent_edge = |nodes: &BTreeSet<NodeId>| {
         artifact.nodes().iter().find_map(|child| {
@@ -522,8 +530,8 @@ fn assert_reordered_artifact_execution(
             .linear_node_order
             .windows(2)
             .any(|nodes| {
-                let left = source.plan.nodes[nodes[0].get() as usize].artifact_node;
-                let right = source.plan.nodes[nodes[1].get() as usize].artifact_node;
+                let left = kernel_step(&source.plan.steps[nodes[0].get() as usize]).artifact_node;
+                let right = kernel_step(&source.plan.steps[nodes[1].get() as usize]).artifact_node;
                 left.get() > right.get()
             }),
         "turn execution order differs from physical node order"
@@ -910,7 +918,10 @@ fn assert_activation_fact_reconfiguration(
     )
     .expect("activate a constant-driven FullWrite state root");
     assert_eq!(instance.plan.topology.turn_root_nodes.len(), 1);
-    assert_eq!(instance.plan.nodes[0].write.storage, ResidentStorageClass::State);
+    assert_eq!(
+        kernel_step(&instance.plan.steps[0]).write.storage,
+        ResidentStorageClass::State
+    );
     instance
         .reactivate(
             &artifact,
@@ -2040,7 +2051,8 @@ fn semantic_legacy_turn_steps(
         .linear_node_order
         .iter()
         .map(|index| {
-            let artifact_node = resident.plan.nodes[index.get() as usize].artifact_node;
+            let artifact_node =
+                kernel_step(&resident.plan.steps[index.get() as usize]).artifact_node;
             artifact.nodes()[artifact_node.get() as usize]
                 .operation
                 .operation_name

@@ -5,17 +5,18 @@ mod execution;
 pub use execution::*;
 
 use core::ops::Range;
+use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicU64, Ordering};
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, AliasPolicy, BoundResidentKernel, CellSlotId, ChangeDetectionPolicy, ConstantId,
-    DeliveryMode, DimensionExpr, DimensionLifetime, ExternalInteraction, FunctionCatalog,
-    InstanceEpoch, IntegrityConstraintId, LayoutGeneration, NodeId, ObservationReplayPolicy,
-    OutputConstruction, PlanGeneration, ProgramRevision, ReactiveInstanceId,
-    ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelInputs, ResidentPortLayout,
-    ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef, SchemaBody, SchemaId,
-    SchemaKey, ShapeInstance, SlotIndex, Value,
+    AccessMode, AliasPolicy, ApplicationRequirementId, BoundResidentKernel, CellSlotId,
+    ChangeDetectionPolicy, ConstantId, DeliveryMode, DimensionExpr, DimensionLifetime,
+    ExternalInteraction, FunctionCatalog, InputId, InstanceEpoch, IntegrityConstraintId,
+    LayoutGeneration, NodeId, ObservationReplayPolicy, OutputConstruction, PlanGeneration,
+    ProgramRevision, ReactiveInstanceId, ResidentKernelBindError, ResidentKernelBindRequest,
+    ResidentKernelInputs, ResidentPortLayout, ResidentShape, ResidentValueKind, ResidentValueMut,
+    ResidentValueRef, SchemaBody, SchemaId, SchemaKey, ShapeInstance, SlotIndex, Value,
 };
 use sha2::{Digest, Sha256};
 
@@ -62,6 +63,15 @@ pub enum ResidentReadLocation {
     Scratch(ResidentRegion),
 }
 
+impl ResidentReadLocation {
+    pub const fn region(self) -> ResidentRegion {
+        match self {
+            Self::Constant(region) | Self::Input(region) | Self::Scratch(region) => region,
+            Self::State { region, .. } => region,
+        }
+    }
+}
+
 const F64_ACTIVATION_ARENA: u32 = 0;
 const F64_INPUT_ARENA: u32 = 1;
 const F64_SCRATCH_ARENA: u32 = 2;
@@ -83,7 +93,7 @@ pub struct ResidentWriteLocation {
 }
 
 #[derive(Clone, Debug)]
-pub struct ActivatedNode {
+pub struct ActivatedKernelNode {
     pub artifact_node: NodeId,
     pub reads: Range<u32>,
     pub write: ResidentWriteLocation,
@@ -92,6 +102,40 @@ pub struct ActivatedNode {
     pub(crate) reads_state: bool,
     pub(crate) scratch_prefix_reads: bool,
     pub kernel: BoundResidentKernel,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ActivatedExternalNode {
+    pub artifact_node: NodeId,
+    pub requirement: ApplicationRequirementId,
+    pub interaction: ExternalInteraction,
+    pub payload: ResidentReadLocation,
+    pub captured_payload: ResidentRegion,
+    pub effect_ordinal: u32,
+    pub payload_schema: SchemaId,
+    pub payload_shape: ShapeInstance,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ResidentEffectIntent {
+    pub artifact_node: NodeId,
+    pub requirement: ApplicationRequirementId,
+    pub ordinal: u32,
+}
+
+#[derive(Clone, Debug)]
+pub enum ActivatedTurnStep {
+    Kernel(ActivatedKernelNode),
+    External(ActivatedExternalNode),
+}
+
+impl ActivatedTurnStep {
+    pub const fn artifact_node(&self) -> NodeId {
+        match self {
+            Self::Kernel(node) => node.artifact_node,
+            Self::External(node) => node.artifact_node,
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -138,9 +182,24 @@ impl DependencyTopology {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ActivatedInput {
+    pub artifact_slot: CellSlotId,
     pub slot: SlotIndex,
     pub schema: SchemaId,
+    pub schema_key: SchemaKey,
+    pub shape: ShapeInstance,
     pub region: ResidentRegion,
+    pub source: ActivatedInputSource,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ActivatedInputSource {
+    DeclaredInput {
+        input: InputId,
+    },
+    Observation {
+        node: NodeId,
+        requirement: ApplicationRequirementId,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -166,8 +225,18 @@ pub enum ResidentIntegrityMode {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ResidentExternalAdmission {
+    #[default]
+    Deny,
+    /// Admit external nodes into the structural plan only. The engine owns no
+    /// provider authority, and ordinary resident publication remains closed.
+    StructuralOnly,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct ResidentActivationOptions {
     pub integrity: ResidentIntegrityMode,
+    pub external: ResidentExternalAdmission,
 }
 
 #[derive(Clone, Debug)]
@@ -177,12 +246,15 @@ pub struct ActivatedPlan {
     pub plan_generation: PlanGeneration,
     pub layout_generation: LayoutGeneration,
     pub slots: Box<[ResolvedSlot]>,
-    pub nodes: Box<[ActivatedNode]>,
+    pub steps: Box<[ActivatedTurnStep]>,
+    external_step_count: usize,
+    pure_kernel_steps: Option<Box<[ActivatedKernelNode]>>,
     pub reads: Box<[ResidentReadLocation]>,
     f64_read_tape: Option<Box<[F64ReadTapeEntry]>>,
     execution_node_order: Box<[ActivatedNodeIndex]>,
     execution_node_mask: Box<[u64]>,
     pub integrity_mode: ResidentIntegrityMode,
+    pub external_admission: ResidentExternalAdmission,
     pub topology: DependencyTopology,
     pub inputs: Box<[ActivatedInput]>,
     pub outputs: Box<[ActivatedOutput]>,
@@ -195,11 +267,16 @@ pub struct ActivatedPlan {
     pub(crate) rmw_state_slots: Box<[CellSlotId]>,
     pub(crate) state_hash_seed: u64,
     pub(crate) activation_sizes: ResidentArenaSizes,
+    pub(crate) effect_payload_sizes: ResidentArenaSizes,
 }
 
 impl ActivatedPlan {
     pub fn execution_node_count(&self) -> usize {
         self.execution_node_order.len()
+    }
+
+    pub fn has_external_steps(&self) -> bool {
+        self.external_step_count != 0
     }
 }
 
@@ -427,6 +504,8 @@ pub struct TurnWorkspace {
     pub(crate) all_outputs_initialized: bool,
     pub(crate) touched_slots: Vec<SlotIndex>,
     pub(crate) changed_slots: Vec<SlotIndex>,
+    pub(crate) effect_intents: Vec<ResidentEffectIntent>,
+    pub(crate) effect_payloads: TypedResidentArena,
     state_f64_arena_by_slot: Box<[u8]>,
 }
 
@@ -446,6 +525,13 @@ impl TurnWorkspace {
             all_outputs_initialized: false,
             touched_slots: Vec::with_capacity(plan.state_slots.len()),
             changed_slots: Vec::with_capacity(plan.state_slots.len()),
+            effect_intents: Vec::with_capacity(
+                plan.steps
+                    .iter()
+                    .filter(|step| matches!(step, ActivatedTurnStep::External(_)))
+                    .count(),
+            ),
+            effect_payloads: TypedResidentArena::allocate(plan.effect_payload_sizes),
             state_f64_arena_by_slot: vec![0; plan.slots.len()].into_boxed_slice(),
         }
     }
@@ -508,7 +594,55 @@ pub struct ReactiveInstance {
     published_epoch: AtomicU64,
     next_epoch: Option<InstanceEpoch>,
     candidate_active: bool,
+    candidate_epoch: Option<InstanceEpoch>,
+    external_publication_authority: Option<u64>,
 }
+
+/// Opaque authority issued only with the coordinator-specific activation path.
+///
+/// The private token binds publication to one exact activated instance. A
+/// consumer that merely obtains a prepared external turn cannot manufacture
+/// this capability or publish it through the ordinary API.
+#[derive(Debug)]
+pub struct ResidentExternalPublicationAuthority {
+    instance: ReactiveInstanceId,
+    program_revision: ProgramRevision,
+    token: u64,
+}
+
+/// Coordinator-only activation bundle. Holding a `ReactiveInstance` alone is
+/// insufficient to publish an external turn; the opaque publication authority
+/// remains sealed inside this bundle until a coordinator consumes it.
+#[derive(Debug)]
+pub struct ResidentExternalActivation {
+    instance: ReactiveInstance,
+    authority: ResidentExternalPublicationAuthority,
+}
+
+impl ResidentExternalActivation {
+    #[doc(hidden)]
+    pub fn into_coordinator_parts(
+        self,
+    ) -> (ReactiveInstance, ResidentExternalPublicationAuthority) {
+        (self.instance, self.authority)
+    }
+}
+
+impl Deref for ResidentExternalActivation {
+    type Target = ReactiveInstance;
+
+    fn deref(&self) -> &Self::Target {
+        &self.instance
+    }
+}
+
+impl DerefMut for ResidentExternalActivation {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.instance
+    }
+}
+
+static NEXT_EXTERNAL_PUBLICATION_AUTHORITY: AtomicU64 = AtomicU64::new(1);
 
 impl ReactiveInstance {
     pub fn published_epoch(&self) -> InstanceEpoch {
@@ -601,6 +735,7 @@ impl ReactiveInstance {
             facts,
             ResidentActivationOptions {
                 integrity: self.plan.integrity_mode,
+                external: self.plan.external_admission,
             },
         )?;
         let same_layout = physical_layout_eq(&self.plan, &replacement.plan);
@@ -721,6 +856,9 @@ pub enum ResidentActivationError {
     InvalidNodeOutput {
         node: NodeId,
     },
+    InvalidExternalNode {
+        node: NodeId,
+    },
     InvalidConstraint {
         constraint: IntegrityConstraintId,
     },
@@ -750,6 +888,7 @@ pub enum ResidentActivationError {
     InvalidStateMigration,
     PlanGenerationExhausted,
     LayoutGenerationExhausted,
+    PublicationAuthorityExhausted,
 }
 
 pub fn activate(
@@ -774,8 +913,51 @@ pub fn activate_with_options(
     facts: &ActivationFacts,
     options: ResidentActivationOptions,
 ) -> Result<ReactiveInstance, ResidentActivationError> {
+    activate_internal(id, artifact, catalog, facts, options, false).map(|(instance, _)| instance)
+}
+
+/// Activates an external resident instance and returns the unforgeable
+/// publication capability that must remain owned by its runtime coordinator.
+pub fn activate_external_with_authority(
+    id: ReactiveInstanceId,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    facts: &ActivationFacts,
+    integrity: ResidentIntegrityMode,
+) -> Result<ResidentExternalActivation, ResidentActivationError> {
+    let (instance, authority) = activate_internal(
+        id,
+        artifact,
+        catalog,
+        facts,
+        ResidentActivationOptions {
+            integrity,
+            external: ResidentExternalAdmission::StructuralOnly,
+        },
+        true,
+    )?;
+    Ok(ResidentExternalActivation {
+        instance,
+        authority: authority.expect("coordinator activation issues publication authority"),
+    })
+}
+
+fn activate_internal(
+    id: ReactiveInstanceId,
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    facts: &ActivationFacts,
+    options: ResidentActivationOptions,
+    issue_external_publication_authority: bool,
+) -> Result<
+    (
+        ReactiveInstance,
+        Option<ResidentExternalPublicationAuthority>,
+    ),
+    ResidentActivationError,
+> {
     preflight_state_initializers(artifact)?;
-    let classification = classify_nodes(artifact)?;
+    let classification = classify_nodes(artifact, options.external)?;
     let layout = build_layout(artifact, facts, &classification)?;
     let facts_fingerprint = activation_facts_fingerprint(facts);
     let (plan, input_sizes, state_sizes, scratch_sizes, activation_sizes) = build_plan(
@@ -820,16 +1002,37 @@ pub fn activate_with_options(
         state.initialize(slot.artifact_id, value)?;
     }
     let workspace = TurnWorkspace::new(input_sizes, scratch_sizes, &plan);
-    Ok(ReactiveInstance {
-        id,
-        plan,
-        activation,
-        state,
-        workspace,
-        published_epoch: AtomicU64::new(InstanceEpoch::ZERO.get()),
-        next_epoch: Some(InstanceEpoch::new(1)),
-        candidate_active: false,
-    })
+    let external_publication_authority = if issue_external_publication_authority {
+        let token = NEXT_EXTERNAL_PUBLICATION_AUTHORITY
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
+                next.checked_add(1)
+            })
+            .map_err(|_| ResidentActivationError::PublicationAuthorityExhausted)?;
+        Some(ResidentExternalPublicationAuthority {
+            instance: id,
+            program_revision: plan.program_revision,
+            token,
+        })
+    } else {
+        None
+    };
+    Ok((
+        ReactiveInstance {
+            id,
+            plan,
+            activation,
+            state,
+            workspace,
+            published_epoch: AtomicU64::new(InstanceEpoch::ZERO.get()),
+            next_epoch: Some(InstanceEpoch::new(1)),
+            candidate_active: false,
+            candidate_epoch: None,
+            external_publication_authority: external_publication_authority
+                .as_ref()
+                .map(|authority| authority.token),
+        },
+        external_publication_authority,
+    ))
 }
 
 fn preflight_state_initializers(artifact: &ProgramArtifact) -> Result<(), ResidentActivationError> {
@@ -863,9 +1066,13 @@ enum NodeClass {
     Observation,
     Activation,
     Turn,
+    External,
 }
 
-fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, ResidentActivationError> {
+fn classify_nodes(
+    artifact: &ProgramArtifact,
+    external_admission: ResidentExternalAdmission,
+) -> Result<Box<[NodeClass]>, ResidentActivationError> {
     let mut classes = vec![NodeClass::Turn; artifact.nodes().len()];
     let mut activation = BTreeSet::<NodeId>::new();
     for node in artifact.nodes() {
@@ -886,20 +1093,28 @@ fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, Reside
         {
             return Err(ResidentActivationError::UnsupportedDelivery { node: node.node });
         }
-        if matches!(
-            contract.interaction,
+        match contract.interaction {
+            ExternalInteraction::Pure => {}
             ExternalInteraction::Observation(observation)
-                if observation.replay == ObservationReplayPolicy::CaptureAsInputFact
-        ) {
-            classes[node.node.get() as usize] = NodeClass::Observation;
-        } else if contract.interaction != ExternalInteraction::Pure {
-            return Err(ResidentActivationError::UnsupportedInteraction { node: node.node });
+                if observation.replay == ObservationReplayPolicy::CaptureAsInputFact =>
+            {
+                classes[node.node.get() as usize] = NodeClass::Observation;
+            }
+            ExternalInteraction::Effect(_) | ExternalInteraction::TransactionalExternal(_)
+                if external_admission == ResidentExternalAdmission::StructuralOnly =>
+            {
+                classes[node.node.get() as usize] = NodeClass::External;
+            }
+            _ => return Err(ResidentActivationError::UnsupportedInteraction { node: node.node }),
         }
     }
     loop {
         let before = activation.len();
         for node in artifact.nodes() {
-            if classes[node.node.get() as usize] == NodeClass::Observation {
+            if matches!(
+                classes[node.node.get() as usize],
+                NodeClass::Observation | NodeClass::External
+            ) {
                 continue;
             }
             let output = node_output_slot(artifact, node.node)?;
@@ -937,19 +1152,28 @@ fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, Reside
         else {
             unreachable!()
         };
-        if contract.outputs.len() != 1 {
-            return Err(ResidentActivationError::InvalidNodeOutput { node: node.node });
-        }
-        let output = &contract.outputs[0];
-        let output_slot = node_output_slot(artifact, node.node)?;
-        let output_role = artifact.slots()[output_slot.get() as usize].role;
         match classes[node.node.get() as usize] {
             NodeClass::Observation => {
+                let [output] = contract.outputs.as_ref() else {
+                    return Err(ResidentActivationError::InvalidNodeOutput { node: node.node });
+                };
+                let output_slot = node_output_slot(artifact, node.node)?;
+                let output_role = artifact.slots()[output_slot.get() as usize].role;
                 if output_role != SlotRole::Derived {
                     return Err(ResidentActivationError::InvalidNodeOutput { node: node.node });
                 }
+                if !matches!(output.construction, OutputConstruction::FullWrite { .. }) {
+                    return Err(ResidentActivationError::UnsupportedConstruction {
+                        node: node.node,
+                    });
+                }
             }
             NodeClass::Activation => {
+                let [output] = contract.outputs.as_ref() else {
+                    return Err(ResidentActivationError::InvalidNodeOutput { node: node.node });
+                };
+                let output_slot = node_output_slot(artifact, node.node)?;
+                let output_role = artifact.slots()[output_slot.get() as usize].role;
                 if output_role != SlotRole::Derived
                     || !matches!(
                         output.construction,
@@ -962,34 +1186,50 @@ fn classify_nodes(artifact: &ProgramArtifact) -> Result<Box<[NodeClass]>, Reside
                     });
                 }
             }
-            NodeClass::Turn => match output.construction {
-                OutputConstruction::FullWrite { .. } => {
-                    if matches!(output_role, SlotRole::Input)
-                        || output.access != AccessMode::Write
-                        || output.alias != AliasPolicy::NoAlias
-                    {
-                        return Err(ResidentActivationError::InvalidAlias { node: node.node });
+            NodeClass::Turn => {
+                let [output] = contract.outputs.as_ref() else {
+                    return Err(ResidentActivationError::InvalidNodeOutput { node: node.node });
+                };
+                let output_slot = node_output_slot(artifact, node.node)?;
+                let output_role = artifact.slots()[output_slot.get() as usize].role;
+                match output.construction {
+                    OutputConstruction::FullWrite { .. } => {
+                        if matches!(output_role, SlotRole::Input)
+                            || output.access != AccessMode::Write
+                            || output.alias != AliasPolicy::NoAlias
+                        {
+                            return Err(ResidentActivationError::InvalidAlias { node: node.node });
+                        }
+                    }
+                    OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                        if output_role != SlotRole::State
+                            || output.access != AccessMode::ReadWrite
+                            || output.alias != (AliasPolicy::MayAlias { input: base_input })
+                            || !matches!(
+                                node_inputs(artifact, node.node)?.get(base_input as usize),
+                                Some(ArtifactSource::Slot(base))
+                                    if node_output_slot(artifact, node.node)? == *base
+                            )
+                        {
+                            return Err(ResidentActivationError::InvalidAlias { node: node.node });
+                        }
+                    }
+                    _ => {
+                        return Err(ResidentActivationError::UnsupportedConstruction {
+                            node: node.node,
+                        });
                     }
                 }
-                OutputConstruction::ReadModifyWrite { base_input, .. } => {
-                    if output_role != SlotRole::State
-                        || output.access != AccessMode::ReadWrite
-                        || output.alias != (AliasPolicy::MayAlias { input: base_input })
-                        || !matches!(
-                            node_inputs(artifact, node.node)?.get(base_input as usize),
-                            Some(ArtifactSource::Slot(base))
-                                if node_output_slot(artifact, node.node)? == *base
-                        )
-                    {
-                        return Err(ResidentActivationError::InvalidAlias { node: node.node });
-                    }
+            }
+            NodeClass::External => {
+                if contract.inputs.len() != 1
+                    || !contract.outputs.is_empty()
+                    || !node.output_bindings.is_empty()
+                    || node.requirement.is_none()
+                {
+                    return Err(ResidentActivationError::InvalidExternalNode { node: node.node });
                 }
-                _ => {
-                    return Err(ResidentActivationError::UnsupportedConstruction {
-                        node: node.node,
-                    });
-                }
-            },
+            }
         }
     }
     Ok(classes.into_boxed_slice())
@@ -1226,22 +1466,65 @@ fn build_plan(
     ResidentActivationError,
 > {
     let mut reads = Vec::new();
-    let mut nodes = Vec::new();
+    let mut steps = Vec::new();
     let mut activation_steps = Vec::new();
     let mut artifact_to_activated = vec![None; artifact.nodes().len()];
+    let mut effect_ordinal = 0_u32;
+    let mut effect_payload_sizes = ResidentArenaSizes::default();
     for node in artifact.nodes() {
         let class = classes[node.node.get() as usize];
         if class == NodeClass::Observation {
             continue;
         }
         let input_sources = node_inputs(artifact, node.node)?;
-        let output_slot = node_output_slot(artifact, node.node)?;
-        let output = &layout.slots[output_slot.get() as usize];
         let mech_core::ResolvedOperationContract::Declared(contract) =
             artifact.contracts().get(node.contract).unwrap()
         else {
             unreachable!()
         };
+        if class == NodeClass::External {
+            let [source] = input_sources.as_slice() else {
+                return Err(ResidentActivationError::InvalidExternalNode { node: node.node });
+            };
+            let requirement = node
+                .requirement
+                .ok_or(ResidentActivationError::InvalidExternalNode { node: node.node })?;
+            let payload = resolve_read(artifact, &layout, *source)?;
+            let payload_layout = source_port_layout(artifact, &layout, *source)?;
+            let payload_shape = match source {
+                ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].shape.clone(),
+                ArtifactSource::Constant(constant) => {
+                    artifact.constants().get(*constant).unwrap().shape().clone()
+                }
+            };
+            let payload_region = payload.region();
+            let captured_payload = ResidentRegion {
+                kind: payload_region.kind,
+                offset: effect_payload_sizes
+                    .allocate(payload_region.kind, payload_region.len)
+                    .ok_or(ResidentActivationError::RegionSizeOverflow)?,
+                len: payload_region.len,
+                shape: payload_region.shape,
+            };
+            let activated = ActivatedNodeIndex(steps.len() as u32);
+            artifact_to_activated[node.node.get() as usize] = Some(activated);
+            steps.push(ActivatedTurnStep::External(ActivatedExternalNode {
+                artifact_node: node.node,
+                requirement,
+                interaction: contract.interaction.clone(),
+                payload,
+                captured_payload,
+                effect_ordinal,
+                payload_schema: payload_layout.schema_id,
+                payload_shape,
+            }));
+            effect_ordinal = effect_ordinal
+                .checked_add(1)
+                .ok_or(ResidentActivationError::RegionSizeOverflow)?;
+            continue;
+        }
+        let output_slot = node_output_slot(artifact, node.node)?;
+        let output = &layout.slots[output_slot.get() as usize];
         let output_contract = &contract.outputs[0];
         if output_contract.change_detection == ChangeDetectionPolicy::SemanticHash
             || (output_contract.change_detection == ChangeDetectionPolicy::ExactScalar
@@ -1280,7 +1563,7 @@ fn build_plan(
             });
             continue;
         }
-        let activated = ActivatedNodeIndex(nodes.len() as u32);
+        let activated = ActivatedNodeIndex(steps.len() as u32);
         artifact_to_activated[node.node.get() as usize] = Some(activated);
         let read_start = reads.len() as u32;
         let mut reads_state = false;
@@ -1298,7 +1581,7 @@ fn build_plan(
                 }
                 _ => true,
             });
-        nodes.push(ActivatedNode {
+        steps.push(ActivatedTurnStep::Kernel(ActivatedKernelNode {
             artifact_node: node.node,
             reads: read_start..reads.len() as u32,
             write: ResidentWriteLocation {
@@ -1311,13 +1594,13 @@ fn build_plan(
             reads_state,
             scratch_prefix_reads,
             kernel,
-        });
+        }));
     }
     let activation_steps = order_activation_steps(artifact, &classes, activation_steps)?;
-    let mut topology = build_topology(artifact, &classes, &nodes, &artifact_to_activated)?;
+    let mut topology = build_topology(artifact, &classes, &steps, &artifact_to_activated)?;
     let execution_node_order = build_execution_node_order(
         artifact,
-        &nodes,
+        &steps,
         &artifact_to_activated,
         &topology,
         options.integrity,
@@ -1336,9 +1619,13 @@ fn build_plan(
         .iter()
         .filter(|slot| slot.storage == ResidentStorageClass::Input)
         .map(|slot| ActivatedInput {
+            artifact_slot: slot.artifact_id,
             slot: slot.physical_index,
             schema: slot.schema,
+            schema_key: slot.schema_key,
+            shape: slot.shape.clone(),
             region: slot.region,
+            source: activated_input_source(artifact, slot.artifact_id),
         })
         .collect::<Vec<_>>()
         .into_boxed_slice();
@@ -1396,16 +1683,20 @@ fn build_plan(
         .collect::<Vec<_>>()
         .into_boxed_slice();
     let state_hash_seed = state_hash_seed(artifact.revision(), &layout.slots, &state_slots);
-    let rmw_state_slots = nodes
+    let rmw_state_slots = steps
         .iter()
-        .filter(|node| {
-            node.write.storage == ResidentStorageClass::State
-                && matches!(
-                    node.construction,
-                    OutputConstruction::ReadModifyWrite { .. }
-                )
+        .filter_map(|step| match step {
+            ActivatedTurnStep::Kernel(node)
+                if node.write.storage == ResidentStorageClass::State
+                    && matches!(
+                        node.construction,
+                        OutputConstruction::ReadModifyWrite { .. }
+                    ) =>
+            {
+                Some(node.write.slot)
+            }
+            _ => None,
         })
-        .map(|node| node.write.slot)
         .collect::<BTreeSet<_>>()
         .into_iter()
         .collect::<Vec<_>>()
@@ -1420,18 +1711,37 @@ fn build_plan(
     let scratch_sizes = layout.sizes[3];
     let activation_sizes = layout.sizes[0];
     let f64_read_tape = build_f64_read_tape(&reads);
+    let external_step_count = steps
+        .iter()
+        .filter(|step| matches!(step, ActivatedTurnStep::External(_)))
+        .count();
+    let pure_kernel_steps = (external_step_count == 0).then(|| {
+        steps
+            .iter()
+            .map(|step| match step {
+                ActivatedTurnStep::Kernel(node) => node.clone(),
+                ActivatedTurnStep::External(_) => {
+                    unreachable!("pure resident plan contains an external step")
+                }
+            })
+            .collect::<Vec<_>>()
+            .into_boxed_slice()
+    });
     let plan = ActivatedPlan {
         program_revision: artifact.revision(),
         activation_facts_fingerprint,
         plan_generation: PlanGeneration::ZERO,
         layout_generation: LayoutGeneration::ZERO,
         slots: layout.slots,
-        nodes: nodes.into_boxed_slice(),
+        steps: steps.into_boxed_slice(),
+        external_step_count,
+        pure_kernel_steps,
         reads: reads.into_boxed_slice(),
         f64_read_tape,
         execution_node_order,
         execution_node_mask,
         integrity_mode: options.integrity,
+        external_admission: options.external,
         topology,
         inputs,
         outputs,
@@ -1444,6 +1754,7 @@ fn build_plan(
         rmw_state_slots,
         state_hash_seed,
         activation_sizes,
+        effect_payload_sizes,
     };
     Ok((
         plan,
@@ -1456,7 +1767,7 @@ fn build_plan(
 
 fn build_execution_node_order(
     artifact: &ProgramArtifact,
-    nodes: &[ActivatedNode],
+    steps: &[ActivatedTurnStep],
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
     topology: &DependencyTopology,
     integrity: ResidentIntegrityMode,
@@ -1464,7 +1775,7 @@ fn build_execution_node_order(
     if integrity == ResidentIntegrityMode::Checked {
         return topology.linear_node_order.clone();
     }
-    let mut omitted = vec![false; nodes.len()];
+    let mut omitted = vec![false; steps.len()];
     for constraint in artifact.constraints() {
         let Some(ArtifactSource::Slot(slot)) = constraint.inputs.first().copied() else {
             continue;
@@ -1477,11 +1788,12 @@ fn build_execution_node_order(
         let Some(activated) = artifact_to_activated[node.get() as usize] else {
             continue;
         };
-        let candidate = &nodes[activated.get() as usize];
-        if candidate.write.storage == ResidentStorageClass::Scratch
-            && topology.same_turn_downstream(activated).is_empty()
-        {
-            omitted[activated.get() as usize] = true;
+        if let ActivatedTurnStep::Kernel(candidate) = &steps[activated.get() as usize] {
+            if candidate.write.storage == ResidentStorageClass::Scratch
+                && topology.same_turn_downstream(activated).is_empty()
+            {
+                omitted[activated.get() as usize] = true;
+            }
         }
     }
     topology
@@ -1718,13 +2030,16 @@ fn owned_activation_input(
 fn build_topology(
     artifact: &ProgramArtifact,
     classes: &[NodeClass],
-    nodes: &[ActivatedNode],
+    steps: &[ActivatedTurnStep],
     artifact_to_activated: &[Option<ActivatedNodeIndex>],
 ) -> Result<DependencyTopology, ResidentActivationError> {
-    let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); nodes.len()];
+    let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); steps.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
     for node in artifact.nodes() {
-        if classes[node.node.get() as usize] != NodeClass::Turn {
+        if !matches!(
+            classes[node.node.get() as usize],
+            NodeClass::Turn | NodeClass::External
+        ) {
             continue;
         }
         let current = artifact_to_activated[node.node.get() as usize].unwrap();
@@ -1749,12 +2064,14 @@ fn build_topology(
                 }
             }
         }
-        let output = node_output_slot(artifact, node.node)?;
-        if artifact.slots()[output.get() as usize].role == SlotRole::State {
-            latest_state_writer.insert(output, current);
+        if classes[node.node.get() as usize] == NodeClass::Turn {
+            let output = node_output_slot(artifact, node.node)?;
+            if artifact.slots()[output.get() as usize].role == SlotRole::State {
+                latest_state_writer.insert(output, current);
+            }
         }
     }
-    let mut indegree = vec![0_usize; nodes.len()];
+    let mut indegree = vec![0_usize; steps.len()];
     for children in &downstream {
         for child in children {
             indegree[child.get() as usize] += 1;
@@ -1775,21 +2092,21 @@ fn build_topology(
                 .collect::<Vec<_>>()
         })
         .collect::<Vec<_>>();
-    let keys = nodes
+    let keys = steps
         .iter()
-        .map(|node| node.artifact_node.get())
+        .map(|step| step.artifact_node().get())
         .collect::<Vec<_>>();
     let linear_node_order = stable_topological_order(&order_source, &keys)
         .ok_or_else(|| ResidentActivationError::InvalidDependency {
-            node: nodes
+            node: steps
                 .first()
-                .map_or(NodeId::new(0), |node| node.artifact_node),
+                .map_or(NodeId::new(0), ActivatedTurnStep::artifact_node),
         })?
         .into_iter()
         .map(|index| ActivatedNodeIndex(index as u32))
         .collect::<Vec<_>>();
-    let words = nodes.len().div_ceil(64);
-    let mut masks = Vec::with_capacity(nodes.len());
+    let words = steps.len().div_ceil(64);
+    let mut masks = Vec::with_capacity(steps.len());
     for children in &downstream {
         let mut mask = vec![0_u64; words].into_boxed_slice();
         for child in children {
@@ -1815,7 +2132,7 @@ fn build_topology(
             set_bit(&mut mandatory, activated.get() as usize);
         }
     }
-    let mut offsets = Vec::with_capacity(nodes.len() + 1);
+    let mut offsets = Vec::with_capacity(steps.len() + 1);
     let mut values = Vec::new();
     offsets.push(0_u32);
     for children in downstream {
@@ -1931,6 +2248,18 @@ fn node_inputs(
             }
         })
         .collect()
+}
+
+fn activated_input_source(artifact: &ProgramArtifact, slot: CellSlotId) -> ActivatedInputSource {
+    match artifact.slots()[slot.get() as usize].producer {
+        ProducerReference::Input(input) => ActivatedInputSource::DeclaredInput { input },
+        ProducerReference::NodeOutput { node, .. } => {
+            let requirement = artifact.nodes()[node.get() as usize]
+                .requirement
+                .expect("validated observation has an application requirement");
+            ActivatedInputSource::Observation { node, requirement }
+        }
+    }
 }
 
 fn node_output_slot(

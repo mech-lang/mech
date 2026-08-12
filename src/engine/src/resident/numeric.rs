@@ -30,6 +30,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_add_indexed_rows,
     )?;
     register(builder, &runtime, "AddAssignVV<[f64]:0,0>", bind_add_assign)?;
+    register(builder, &runtime, "AddAssignSS<f64>", bind_add_assign)?;
     register(
         builder,
         &runtime,

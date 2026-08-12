@@ -4,15 +4,17 @@ use core::ops::Range;
 use core::sync::atomic::Ordering;
 
 use mech_core::{
-    CellSlotId, ChangeDetectionPolicy, InstanceEpoch, IntegrityConstraintId, NodeId,
+    ApplicationRequirementId, CellSlotId, ChangeDetectionPolicy, ExternalInteraction,
+    InstanceEpoch, IntegrityConstraintId, MResult, MechError, MechErrorKind, NodeId,
     OutputConstruction, ProgramRevision, ReactiveInstanceId, ResidentKernelError,
-    ResidentKernelInputs, ResidentValueKind, ResidentValueMut, ResidentValueRef, SlotIndex,
+    ResidentKernelInputs, ResidentValueKind, ResidentValueMut, ResidentValueRef, SlotIndex, Value,
 };
 
 use super::{
-    ActivatedNodeIndex, F64_STATE_ARENA_BASE, F64_STATE_SLOT_BIT, F64ReadTapeEntry,
-    ReactiveInstance, ResidentIntegrityMode, ResidentReadLocation, ResidentRegion,
-    ResidentStorageClass, StateArena, StateVersion, TypedResidentArena,
+    ActivatedExternalNode, ActivatedNodeIndex, ActivatedTurnStep, F64_STATE_ARENA_BASE,
+    F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentEffectIntent,
+    ResidentExternalPublicationAuthority, ResidentIntegrityMode, ResidentReadLocation,
+    ResidentRegion, ResidentStorageClass, StateArena, StateVersion, TypedResidentArena,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -20,6 +22,59 @@ pub struct CapturedSignalInput<'a> {
     pub slot: SlotIndex,
     pub value: ResidentValueRef<'a>,
 }
+
+#[derive(Clone, Copy, Debug)]
+pub struct CapturedValueInput<'a> {
+    pub slot: SlotIndex,
+    pub value: &'a Value,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct ResidentEffectIntentView<'a> {
+    pub artifact_node: NodeId,
+    pub requirement: ApplicationRequirementId,
+    pub ordinal: u32,
+    pub interaction: &'a ExternalInteraction,
+    pub payload: ResidentValueRef<'a>,
+}
+
+pub struct ResidentEffectIntentIter<'a> {
+    instance: &'a ReactiveInstance,
+    index: usize,
+}
+
+impl<'a> Iterator for ResidentEffectIntentIter<'a> {
+    type Item = ResidentEffectIntentView<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let intent = *self.instance.workspace.effect_intents.get(self.index)?;
+        self.index += 1;
+        let external = self.instance.external_node(intent.ordinal)?;
+        Some(ResidentEffectIntentView {
+            artifact_node: intent.artifact_node,
+            requirement: intent.requirement,
+            ordinal: intent.ordinal,
+            interaction: &external.interaction,
+            payload: self
+                .instance
+                .workspace
+                .effect_payloads
+                .read(external.captured_payload),
+        })
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let remaining = self
+            .instance
+            .workspace
+            .effect_intents
+            .len()
+            .saturating_sub(self.index);
+        (remaining, Some(remaining))
+    }
+}
+
+impl ExactSizeIterator for ResidentEffectIntentIter<'_> {}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ResidentTurnSummary {
@@ -72,7 +127,28 @@ pub enum ResidentExecutionError {
     InvalidWrite {
         node: NodeId,
     },
+    ExternalSummaryRequired,
+    ExternalPublicationUnauthorized,
+    EffectIntentCapacity,
     CounterOverflow,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResidentEffectPayloadError {
+    pub ordinal: u32,
+}
+
+impl MechErrorKind for ResidentEffectPayloadError {
+    fn name(&self) -> &str {
+        "ResidentEffectPayload"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "resident effect payload {} is unavailable outside a prepared candidate",
+            self.ordinal
+        )
+    }
 }
 
 #[must_use = "prepared resident turns must be published or aborted"]
@@ -92,13 +168,72 @@ impl PreparedResidentTurn<'_> {
         self.probe
     }
 
+    pub fn effect_intents(&self) -> ResidentEffectIntentIter<'_> {
+        ResidentEffectIntentIter {
+            instance: self
+                .instance
+                .as_deref()
+                .expect("live prepared resident turn"),
+            index: 0,
+        }
+    }
+
+    pub fn materialize_effect_payload(&self, ordinal: u32) -> MResult<Value> {
+        self.instance
+            .as_deref()
+            .expect("live prepared resident turn")
+            .materialize_effect_payload(ordinal)
+    }
+
+    /// Publishes an ordinary pure resident turn.
+    ///
+    /// External plans fail closed: their state may be published only through
+    /// [`Self::publish_external`] after the runtime coordinator has completed
+    /// provider preparation and receipt/outbox preparation.
     #[inline]
-    pub fn publish(mut self) -> ResidentTurnSummary {
+    pub fn publish(mut self) -> Result<ResidentTurnSummary, ResidentExecutionError> {
+        if self
+            .instance
+            .as_deref()
+            .expect("live prepared resident turn")
+            .plan
+            .has_external_steps()
+        {
+            return Err(ResidentExecutionError::ExternalSummaryRequired);
+        }
+        Ok(self.publish_inner())
+    }
+
+    /// Publishes an externally coordinated resident turn after all
+    /// prepublication obligations have succeeded. The opaque authority is
+    /// issued only by coordinator-specific activation and is bound to this
+    /// exact activated instance.
+    #[inline]
+    pub fn publish_external(
+        mut self,
+        authority: &ResidentExternalPublicationAuthority,
+    ) -> Result<ResidentTurnSummary, ResidentExecutionError> {
+        let instance = self
+            .instance
+            .as_deref()
+            .expect("live prepared resident turn");
+        if !instance.plan.has_external_steps()
+            || instance.id != authority.instance
+            || instance.plan.program_revision != authority.program_revision
+            || instance.external_publication_authority != Some(authority.token)
+        {
+            return Err(ResidentExecutionError::ExternalPublicationUnauthorized);
+        }
+        Ok(self.publish_inner())
+    }
+
+    fn publish_inner(&mut self) -> ResidentTurnSummary {
         let instance = self.instance.take().expect("live prepared resident turn");
         instance
             .published_epoch
             .store(self.working_epoch.get(), Ordering::Release);
         instance.candidate_active = false;
+        instance.candidate_epoch = None;
         self.summary
     }
 
@@ -117,6 +252,44 @@ impl Drop for PreparedResidentTurn<'_> {
 }
 
 impl ReactiveInstance {
+    /// Hash the currently published resident state without beginning a candidate.
+    pub fn published_state_hash(&self) -> u64 {
+        state_hash(self, self.published_epoch())
+    }
+
+    fn external_node(&self, ordinal: u32) -> Option<&ActivatedExternalNode> {
+        self.plan.steps.iter().find_map(|step| match step {
+            ActivatedTurnStep::External(node) if node.effect_ordinal == ordinal => Some(node),
+            _ => None,
+        })
+    }
+
+    pub fn materialize_effect_payload(&self, ordinal: u32) -> MResult<Value> {
+        let _working_epoch = self
+            .candidate_epoch
+            .ok_or_else(|| MechError::new(ResidentEffectPayloadError { ordinal }, None))?;
+        let external = self
+            .external_node(ordinal)
+            .ok_or_else(|| MechError::new(ResidentEffectPayloadError { ordinal }, None))?;
+        let intent = self
+            .workspace
+            .effect_intents
+            .iter()
+            .find(|intent| intent.ordinal == ordinal)
+            .ok_or_else(|| MechError::new(ResidentEffectPayloadError { ordinal }, None))?;
+        let payload = self
+            .workspace
+            .effect_payloads
+            .read(external.captured_payload);
+        crate::resident_value_adapter::materialize_resident_value(
+            &self.plan.schemas,
+            external.payload_schema,
+            &external.payload_shape,
+            external.payload.region(),
+            payload,
+        )
+    }
+
     pub fn prepare_turn(
         &mut self,
         inputs: &[CapturedSignalInput<'_>],
@@ -133,6 +306,33 @@ impl ReactiveInstance {
             self.next_epoch = Some(working_epoch);
             return Err(error);
         }
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    pub fn prepare_turn_values(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        let working_epoch = self
+            .next_epoch
+            .ok_or(ResidentExecutionError::EpochExhausted)?;
+        self.next_epoch = working_epoch.checked_next().ok();
+        let before_epoch = self.published_epoch();
+        if let Err(error) = self.begin_value_workspace(inputs) {
+            self.next_epoch = Some(working_epoch);
+            return Err(error);
+        }
+        self.prepare_installed_turn(before_epoch, working_epoch)
+    }
+
+    fn prepare_installed_turn(
+        &mut self,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+    ) -> Result<PreparedResidentTurn<'_>, ResidentExecutionError> {
         let mut probe = ResidentStructuralProbe {
             publication_store_count: 1,
             record_preparation_count: 1,
@@ -172,6 +372,7 @@ impl ReactiveInstance {
             dirty_nodes,
         };
         self.candidate_active = true;
+        self.candidate_epoch = Some(working_epoch);
         Ok(PreparedResidentTurn {
             instance: Some(self),
             working_epoch,
@@ -185,7 +386,7 @@ impl ReactiveInstance {
         &mut self,
         inputs: &[CapturedSignalInput<'_>],
     ) -> Result<ResidentTurnSummary, ResidentExecutionError> {
-        Ok(self.prepare_turn(inputs)?.publish())
+        self.prepare_turn(inputs)?.publish()
     }
 
     /// Execute and publish one already-admitted resident candidate without
@@ -197,6 +398,9 @@ impl ReactiveInstance {
         &mut self,
         inputs: &[CapturedSignalInput<'_>],
     ) -> Result<(), ResidentExecutionError> {
+        if self.plan.has_external_steps() {
+            return Err(ResidentExecutionError::ExternalSummaryRequired);
+        }
         if self.candidate_active {
             return Err(ResidentExecutionError::ActiveCandidate);
         }
@@ -238,9 +442,13 @@ impl ReactiveInstance {
             .sum();
         let candidate_seed_bytes = self
             .plan
-            .nodes
+            .steps
             .iter()
             .enumerate()
+            .filter_map(|(index, step)| match step {
+                ActivatedTurnStep::Kernel(node) => Some((index, node)),
+                ActivatedTurnStep::External(_) => None,
+            })
             .filter(|(_, node)| {
                 node.write.storage == ResidentStorageClass::State
                     && matches!(
@@ -249,13 +457,17 @@ impl ReactiveInstance {
                     )
             })
             .filter(|(index, node)| {
-                !self.plan.nodes[..*index].iter().any(|earlier| {
-                    earlier.write.storage == ResidentStorageClass::State
-                        && matches!(
-                            earlier.construction,
-                            OutputConstruction::ReadModifyWrite { .. }
-                        )
-                        && earlier.write.slot == node.write.slot
+                !self.plan.steps[..*index].iter().any(|earlier| {
+                    matches!(
+                        earlier,
+                        ActivatedTurnStep::Kernel(earlier)
+                            if earlier.write.storage == ResidentStorageClass::State
+                                && matches!(
+                                    earlier.construction,
+                                    OutputConstruction::ReadModifyWrite { .. }
+                                )
+                                && earlier.write.slot == node.write.slot
+                    )
                 })
             })
             .map(|(_, node)| region_bytes(node.write.region))
@@ -276,8 +488,10 @@ impl ReactiveInstance {
         self.state.abort(working_epoch);
         self.workspace.initialized_output_bits.fill(0);
         self.workspace.all_outputs_initialized = false;
+        self.workspace.effect_intents.clear();
         self.next_epoch = Some(working_epoch);
         self.candidate_active = false;
+        self.candidate_epoch = None;
     }
 
     #[doc(hidden)]
@@ -296,12 +510,23 @@ impl ReactiveInstance {
         Ok(())
     }
 
+    fn begin_value_workspace(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<(), ResidentExecutionError> {
+        self.install_value_inputs(inputs)?;
+        self.refresh_f64_state_arenas(self.published_epoch());
+        self.begin_scheduler_workspace();
+        Ok(())
+    }
+
     fn begin_workspace_without_summary(
         &mut self,
         inputs: &[CapturedSignalInput<'_>],
     ) -> Result<(), ResidentExecutionError> {
         self.install_inputs(inputs)?;
         self.refresh_f64_state_arenas(self.published_epoch());
+        self.workspace.effect_intents.clear();
         self.seed_dirty_bits();
         Ok(())
     }
@@ -362,10 +587,49 @@ impl ReactiveInstance {
         Ok(())
     }
 
+    fn install_value_inputs(
+        &mut self,
+        inputs: &[CapturedValueInput<'_>],
+    ) -> Result<(), ResidentExecutionError> {
+        if inputs.len() != self.plan.inputs.len() {
+            return Err(ResidentExecutionError::InputCount {
+                expected: self.plan.inputs.len(),
+                actual: inputs.len(),
+            });
+        }
+        for (ordinal, input) in inputs.iter().enumerate() {
+            let Some(declared) = self
+                .plan
+                .inputs
+                .iter()
+                .find(|declared| declared.slot == input.slot)
+            else {
+                return Err(ResidentExecutionError::UnknownInput { slot: input.slot });
+            };
+            if inputs[..ordinal].iter().any(|seen| seen.slot == input.slot) {
+                return Err(ResidentExecutionError::DuplicateInput { slot: input.slot });
+            }
+            if input.value.schema() != declared.schema
+                || input.value.schema_key() != declared.schema_key
+                || input.value.shape() != &declared.shape
+            {
+                return Err(ResidentExecutionError::InputLayout { slot: input.slot });
+            }
+            crate::resident_value_adapter::write_value(
+                &mut self.workspace.input,
+                declared.region,
+                input.value,
+            )
+            .map_err(|_| ResidentExecutionError::InputLayout { slot: input.slot })?;
+        }
+        Ok(())
+    }
+
     fn begin_scheduler_workspace(&mut self) {
         self.workspace.executed_bits.fill(0);
         self.workspace.touched_slots.clear();
         self.workspace.changed_slots.clear();
+        self.workspace.effect_intents.clear();
         self.seed_dirty_bits();
     }
 
@@ -402,7 +666,11 @@ impl ReactiveInstance {
             if dirty & entry.node_bit == 0 {
                 continue;
             }
-            let changed = self.execute_node_without_summary(
+            // `turn_without_summary` rejects external plans before candidate
+            // execution. Keep the established pure resident hot lane direct:
+            // effectful plans continue through `execute_step`, while this
+            // benchmark/recorder-free lane pays no external dispatcher tax.
+            let changed = self.execute_kernel_without_summary(
                 entry.node,
                 before_epoch,
                 working_epoch,
@@ -428,6 +696,9 @@ impl ReactiveInstance {
         working_epoch: InstanceEpoch,
         probe: &mut ResidentStructuralProbe,
     ) -> Result<(), ResidentExecutionError> {
+        if !self.plan.has_external_steps() {
+            return self.execute_pure_candidate(before_epoch, working_epoch, probe);
+        }
         if self.plan.topology.word_len() == 1 {
             let mut dirty = self.workspace.dirty_bits[0];
             let mut executed = 0_u64;
@@ -436,7 +707,7 @@ impl ReactiveInstance {
                 if dirty & entry.node_bit == 0 {
                     continue;
                 }
-                let changed = self.execute_node(entry.node, before_epoch, working_epoch, probe)?;
+                let changed = self.execute_step(entry.node, before_epoch, working_epoch, probe)?;
                 executed |= entry.node_bit;
                 if changed {
                     dirty |= entry.downstream;
@@ -456,7 +727,64 @@ impl ReactiveInstance {
                 if !bit_is_set(&self.workspace.dirty_bits, index) {
                     continue;
                 }
-                let changed = self.execute_node(node_index, before_epoch, working_epoch, probe)?;
+                let changed = self.execute_step(node_index, before_epoch, working_epoch, probe)?;
+                set_bit(&mut self.workspace.executed_bits, index);
+                if changed {
+                    or_bits(
+                        &mut self.workspace.dirty_bits,
+                        &self.plan.topology.same_turn_downstream_masks[index],
+                    );
+                }
+            }
+            if !self.workspace.all_outputs_initialized
+                && count_bits(&self.workspace.executed_bits) == self.plan.execution_node_order.len()
+            {
+                self.workspace.all_outputs_initialized = true;
+            }
+        }
+        self.validate_constraints(working_epoch)
+    }
+
+    /// Preserve the D2 recorded-turn lane for plans whose activation proves
+    /// that every topological step is a resident kernel. Effectful plans use
+    /// `execute_candidate` and its unified kernel/external dispatcher.
+    fn execute_pure_candidate(
+        &mut self,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+    ) -> Result<(), ResidentExecutionError> {
+        if self.plan.topology.word_len() == 1 {
+            let mut dirty = self.workspace.dirty_bits[0];
+            let mut executed = 0_u64;
+            for order in 0..self.plan.topology.single_word_schedule.len() {
+                let entry = self.plan.topology.single_word_schedule[order];
+                if dirty & entry.node_bit == 0 {
+                    continue;
+                }
+                let changed =
+                    self.execute_kernel(entry.node, before_epoch, working_epoch, probe)?;
+                executed |= entry.node_bit;
+                if changed {
+                    dirty |= entry.downstream;
+                }
+            }
+            self.workspace.dirty_bits[0] = dirty;
+            self.workspace.executed_bits[0] = executed;
+            if !self.workspace.all_outputs_initialized
+                && executed.count_ones() as usize == self.plan.execution_node_order.len()
+            {
+                self.workspace.all_outputs_initialized = true;
+            }
+        } else {
+            for order in 0..self.plan.execution_node_order.len() {
+                let node_index = self.plan.execution_node_order[order];
+                let index = node_index.get() as usize;
+                if !bit_is_set(&self.workspace.dirty_bits, index) {
+                    continue;
+                }
+                let changed =
+                    self.execute_kernel(node_index, before_epoch, working_epoch, probe)?;
                 set_bit(&mut self.workspace.executed_bits, index);
                 if changed {
                     or_bits(
@@ -499,7 +827,7 @@ impl ReactiveInstance {
     }
 
     #[inline(always)]
-    fn execute_node_without_summary(
+    fn execute_kernel_without_summary(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
@@ -507,10 +835,22 @@ impl ReactiveInstance {
         change_is_observed: bool,
     ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
-        let node = &self.plan.nodes[index];
+        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            &nodes[index]
+        } else {
+            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
+                unreachable!("external steps are staged by the dispatcher")
+            };
+            node
+        };
         if node.write.storage == ResidentStorageClass::Scratch {
             let mut ignored_probe = ResidentStructuralProbe::default();
-            return self.execute_node(node_index, before_epoch, working_epoch, &mut ignored_probe);
+            return self.execute_kernel(
+                node_index,
+                before_epoch,
+                working_epoch,
+                &mut ignored_probe,
+            );
         }
         if node.write.storage != ResidentStorageClass::State {
             return Err(ResidentExecutionError::InvalidWrite {
@@ -590,7 +930,86 @@ impl ReactiveInstance {
     }
 
     #[inline(always)]
-    fn execute_node(
+    fn execute_step(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        probe: &mut ResidentStructuralProbe,
+    ) -> Result<bool, ResidentExecutionError> {
+        if matches!(
+            self.plan.steps[node_index.get() as usize],
+            ActivatedTurnStep::External(_)
+        ) {
+            self.stage_external(node_index, working_epoch)?;
+            return Ok(false);
+        }
+        self.execute_kernel(node_index, before_epoch, working_epoch, probe)
+    }
+
+    fn stage_external(
+        &mut self,
+        node_index: ActivatedNodeIndex,
+        working_epoch: InstanceEpoch,
+    ) -> Result<(), ResidentExecutionError> {
+        let ActivatedTurnStep::External(node) = &self.plan.steps[node_index.get() as usize] else {
+            unreachable!("kernel steps are executed by the kernel dispatcher")
+        };
+        let artifact_node = node.artifact_node;
+        let requirement = node.requirement;
+        let ordinal = node.effect_ordinal;
+        let source = node.payload;
+        let captured = node.captured_payload;
+        if self.workspace.effect_intents.len() == self.workspace.effect_intents.capacity() {
+            return Err(ResidentExecutionError::EffectIntentCapacity);
+        }
+        self.capture_effect_payload(source, captured, working_epoch)
+            .map_err(|_| ResidentExecutionError::InvalidWrite {
+                node: artifact_node,
+            })?;
+        self.workspace.effect_intents.push(ResidentEffectIntent {
+            artifact_node,
+            requirement,
+            ordinal,
+        });
+        Ok(())
+    }
+
+    fn capture_effect_payload(
+        &mut self,
+        source: ResidentReadLocation,
+        captured: ResidentRegion,
+        working_epoch: InstanceEpoch,
+    ) -> Result<(), ()> {
+        match source {
+            ResidentReadLocation::Constant(region) => copy_input(
+                &mut self.workspace.effect_payloads,
+                captured,
+                self.activation.read(region),
+            ),
+            ResidentReadLocation::Input(region) => copy_input(
+                &mut self.workspace.effect_payloads,
+                captured,
+                self.workspace.input.read(region),
+            ),
+            ResidentReadLocation::State { slot, region } => {
+                let buffer = self.state.select_buffer(slot, working_epoch);
+                copy_input(
+                    &mut self.workspace.effect_payloads,
+                    captured,
+                    self.state.buffers[buffer].read(region),
+                )
+            }
+            ResidentReadLocation::Scratch(region) => copy_input(
+                &mut self.workspace.effect_payloads,
+                captured,
+                self.workspace.scratch.read(region),
+            ),
+        }
+    }
+
+    #[inline(always)]
+    fn execute_kernel(
         &mut self,
         node_index: ActivatedNodeIndex,
         before_epoch: InstanceEpoch,
@@ -598,7 +1017,14 @@ impl ReactiveInstance {
         probe: &mut ResidentStructuralProbe,
     ) -> Result<bool, ResidentExecutionError> {
         let index = node_index.get() as usize;
-        let node = &self.plan.nodes[index];
+        let node = if let Some(nodes) = &self.plan.pure_kernel_steps {
+            &nodes[index]
+        } else {
+            let ActivatedTurnStep::Kernel(node) = &self.plan.steps[index] else {
+                unreachable!("external steps are staged by the dispatcher")
+            };
+            node
+        };
         match node.write.storage {
             ResidentStorageClass::Scratch => {
                 let before_scalar = if node.change_detection == ChangeDetectionPolicy::ExactScalar {
@@ -1142,6 +1568,18 @@ struct StateReadAccess<'a> {
 }
 
 impl<'a> StateReadAccess<'a> {
+    #[cfg(test)]
+    fn whole(state: &'a StateArena) -> Self {
+        Self {
+            buffers: [
+                ArenaReadAccess::whole(&state.buffers[0]),
+                ArenaReadAccess::whole(&state.buffers[1]),
+            ],
+            versions: &state.versions,
+            version_by_slot: &state.version_by_slot,
+        }
+    }
+
     fn split_output(
         buffers: &'a mut [TypedResidentArena; 2],
         versions: &'a [StateVersion],

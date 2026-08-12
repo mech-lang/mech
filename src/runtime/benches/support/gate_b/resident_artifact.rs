@@ -54,7 +54,10 @@ fn activate_route(
         artifact,
         &catalog,
         &ActivationFacts::default(),
-        ResidentActivationOptions { integrity },
+        ResidentActivationOptions {
+            integrity,
+            ..ResidentActivationOptions::default()
+        },
     )
     .expect("activate frozen public ProgramArtifact before timing");
     instance.set_next_epoch_for_test(next_epoch);

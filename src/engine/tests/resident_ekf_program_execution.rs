@@ -1,15 +1,24 @@
 #![cfg(feature = "resident-artifact")]
 
 use mech_core::{
-    BoundResidentKernel, ChangeDetectionPolicy, InstanceEpoch, MResult, ReactiveInstanceId,
-    ResidentKernelError, ResidentKernelInputs, ResidentValueMut, ResidentValueRef,
+    AccessMode, ApplicationRequirement, BindingId, BoundResidentKernel, ChangeDetectionPolicy,
+    DeclaredOperationContract, DeliveryMode, EffectContract, EffectDeliveryPolicy,
+    ExecutionResourceRequest, ExternalInteraction, IdempotencyRequirement, InstanceEpoch, MResult,
+    NodeId, OperationContractTableBuilder, ReactiveInstanceId, ResidentKernelError,
+    ResidentKernelInputs, ResidentValueMut, ResidentValueRef, ResolvedInputPort,
+    ResolvedOperationContract, ResourceDelivery, ResourceIntent,
 };
 use mech_engine::__gate_b_resident::ResidentEkfBatch;
 use mech_engine::__resident::{
-    ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
-    ResidentActivationOptions, ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass,
-    ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
-    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
+    ActivatedKernelNode, ActivatedPlan, ActivatedTurnStep, ActivationFacts, CapturedSignalInput,
+    FrozenEkfCompilationServices, ReactiveInstance, ResidentActivationOptions,
+    ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass, ResidentTurnSummary,
+    ResidentValueBorrow, activate, activate_with_options, compile_frozen_ekf_source,
+    frozen_ekf_compiler_catalog,
+};
+use mech_engine::{
+    ApplicationRequirementTable, ArtifactSource, BindingDeclaration, NodeDeclaration,
+    OperationReference, ProgramArtifact, ProgramArtifactDraft,
 };
 use sha2::{Digest, Sha256};
 
@@ -86,9 +95,193 @@ fn instance_with_integrity(id: u32, integrity: ResidentIntegrityMode) -> MResult
         &compilation.source_artifact,
         &catalog,
         &ActivationFacts::default(),
-        ResidentActivationOptions { integrity },
+        ResidentActivationOptions {
+            integrity,
+            ..ResidentActivationOptions::default()
+        },
     )
     .unwrap())
+}
+
+fn first_kernel(plan: &mut ActivatedPlan) -> &mut ActivatedKernelNode {
+    let ActivatedTurnStep::Kernel(node) = &mut plan.steps[0] else {
+        panic!("EKF plan begins with a resident kernel")
+    };
+    node
+}
+
+fn with_resident_effect(artifact: &ProgramArtifact) -> ProgramArtifact {
+    let effect_requirement = mech_core::ApplicationRequirementId::new(
+        u32::try_from(artifact.requirements().len()).unwrap(),
+    );
+    let mut builder = OperationContractTableBuilder::new();
+    let handles = artifact
+        .contracts()
+        .iter()
+        .cloned()
+        .map(|contract| builder.insert(contract).unwrap())
+        .collect::<Vec<_>>();
+    let source = artifact.outputs()[0].source;
+    let schema = artifact.slots()[source.get() as usize].schema;
+    let effect = builder
+        .insert(ResolvedOperationContract::Declared(
+            DeclaredOperationContract {
+                inputs: vec![ResolvedInputPort {
+                    schema,
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                }]
+                .into_boxed_slice(),
+                outputs: Box::new([]),
+                interaction: ExternalInteraction::Effect(EffectContract {
+                    delivery: EffectDeliveryPolicy::IdempotentRetry,
+                    idempotency: IdempotencyRequirement::Required,
+                }),
+            },
+        ))
+        .unwrap();
+    let contracts = builder.finish().unwrap();
+    let mut nodes = artifact.nodes().to_vec();
+    for node in &mut nodes {
+        node.contract = contracts
+            .resolve(handles[node.contract.get() as usize])
+            .unwrap();
+    }
+    let mut constraints = artifact.constraints().to_vec();
+    for constraint in &mut constraints {
+        constraint.contract = contracts
+            .resolve(handles[constraint.contract.get() as usize])
+            .unwrap();
+    }
+    let node = NodeId::new(nodes.len() as u32);
+    let mut bindings = artifact.bindings().to_vec();
+    let input_start = bindings.len() as u32;
+    bindings.push(BindingDeclaration::Input {
+        id: BindingId::new(input_start),
+        node,
+        port_ordinal: 0,
+        source: ArtifactSource::Slot(source),
+    });
+    nodes.push(NodeDeclaration {
+        node,
+        operation: OperationReference {
+            module_path: vec!["resource".to_owned(), "send".to_owned()].into_boxed_slice(),
+            operation_name: "write".to_owned(),
+        },
+        contract: contracts.resolve(effect).unwrap(),
+        requirement: Some(effect_requirement),
+        input_bindings: input_start..input_start + 1,
+        output_bindings: input_start + 1..input_start + 1,
+    });
+    ProgramArtifactDraft {
+        schemas: artifact.schemas().clone(),
+        constants: artifact.constants().clone(),
+        contracts: contracts.table,
+        requirements: ApplicationRequirementTable::from_canonical_entries(
+            artifact
+                .requirements()
+                .iter()
+                .map(|(_, requirement)| requirement.clone())
+                .chain([ApplicationRequirement::Resource(ExecutionResourceRequest {
+                    base_uri: "gate-d3://scene/output".to_owned(),
+                    path: "frame".to_owned(),
+                    context_name: "output".to_owned(),
+                    operation: "write".to_owned(),
+                    intent: ResourceIntent::Send,
+                    delivery: ResourceDelivery::Snapshot,
+                })])
+                .collect(),
+        )
+        .unwrap(),
+        inputs: artifact.inputs().to_vec().into_boxed_slice(),
+        slots: artifact.slots().to_vec().into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        bindings: bindings.into_boxed_slice(),
+        outputs: artifact.outputs().to_vec().into_boxed_slice(),
+        constraints: constraints.into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap()
+}
+
+#[test]
+fn authorized_external_steps_stage_preallocated_canonical_effect_intents() -> MResult<()> {
+    let mut services = FrozenEkfCompilationServices::default();
+    let compilation = compile_frozen_ekf_source(SOURCE, &mut services)?;
+    let artifact = with_resident_effect(&compilation.source_artifact);
+    let catalog = frozen_ekf_compiler_catalog()?;
+    assert!(matches!(
+        activate(
+            ReactiveInstanceId::new(90, 0),
+            &artifact,
+            &catalog,
+            &ActivationFacts::default(),
+        ),
+        Err(mech_engine::__resident::ResidentActivationError::UnsupportedInteraction { .. })
+    ));
+    let mut instance = activate_with_options(
+        ReactiveInstanceId::new(90, 0),
+        &artifact,
+        &catalog,
+        &ActivationFacts::default(),
+        ResidentActivationOptions {
+            external: mech_engine::__resident::ResidentExternalAdmission::StructuralOnly,
+            ..ResidentActivationOptions::default()
+        },
+    )
+    .unwrap();
+    assert!(matches!(
+        instance.plan.inputs[0].source,
+        mech_engine::__resident::ActivatedInputSource::Observation { .. }
+    ));
+    let frame = frames().next().unwrap();
+    let input = CapturedSignalInput {
+        slot: instance.plan.inputs[0].slot,
+        value: ResidentValueRef::F64(&frame),
+    };
+    assert_eq!(
+        instance.turn_without_summary(&[input]),
+        Err(ResidentExecutionError::ExternalSummaryRequired)
+    );
+    assert_eq!(
+        instance.turn(&[input]),
+        Err(ResidentExecutionError::ExternalSummaryRequired)
+    );
+    let prepared = instance.prepare_turn(&[input]).unwrap();
+    let intents = prepared.effect_intents().collect::<Vec<_>>();
+    assert_eq!(intents.len(), 1);
+    assert_eq!(intents[0].ordinal, 0);
+    assert_eq!(
+        intents[0].artifact_node,
+        artifact.nodes().last().unwrap().node
+    );
+    let effect_ordinal = intents[0].ordinal;
+    let effect_node = intents[0].artifact_node;
+    let payload = prepared.materialize_effect_payload(0)?;
+    assert_eq!(payload.schema(), artifact.outputs()[0].schema);
+    let payload_bytes = payload.canonical_payload_bytes(artifact.schemas()).unwrap();
+    drop(intents);
+    prepared.abort();
+    assert_eq!(instance.published_epoch(), InstanceEpoch::ZERO);
+
+    let retried = instance.prepare_turn(&[input]).unwrap();
+    let retried_intents = retried.effect_intents().collect::<Vec<_>>();
+    assert_eq!(retried_intents.len(), 1);
+    assert_eq!(retried_intents[0].ordinal, effect_ordinal);
+    assert_eq!(retried_intents[0].artifact_node, effect_node);
+    assert_eq!(
+        retried
+            .materialize_effect_payload(0)?
+            .canonical_payload_bytes(artifact.schemas())
+            .unwrap(),
+        payload_bytes
+    );
+    assert_eq!(
+        retried.publish(),
+        Err(ResidentExecutionError::ExternalSummaryRequired)
+    );
+    assert_eq!(instance.published_epoch(), InstanceEpoch::ZERO);
+    Ok(())
 }
 
 #[test]
@@ -264,8 +457,9 @@ fn partial_kernel_failure_and_retry_match_a_fresh_instance() -> MResult<()> {
     let frame = frames().next().unwrap();
     let mut retried = instance(8)?;
     let mut fresh = instance(8)?;
-    let original = retried.plan.nodes[0].kernel.clone();
-    retried.plan.nodes[0].kernel = BoundResidentKernel::new(partial_write_then_fail, Box::new([]));
+    let original = first_kernel(&mut retried.plan).kernel.clone();
+    first_kernel(&mut retried.plan).kernel =
+        BoundResidentKernel::new(partial_write_then_fail, Box::new([]));
 
     assert!(matches!(
         execute_turn(&mut retried, &frame),
@@ -274,7 +468,7 @@ fn partial_kernel_failure_and_retry_match_a_fresh_instance() -> MResult<()> {
             ..
         })
     ));
-    retried.plan.nodes[0].kernel = original;
+    first_kernel(&mut retried.plan).kernel = original;
     let actual = execute_turn(&mut retried, &frame).unwrap();
     let expected = execute_turn(&mut fresh, &frame).unwrap();
 
@@ -337,10 +531,11 @@ fn always_changed_policy_propagates_when_the_kernel_reports_unchanged() -> MResu
     execute_turn(&mut always, &frame).unwrap();
     execute_turn(&mut reported, &frame).unwrap();
     for instance in [&mut always, &mut reported] {
-        instance.plan.nodes[0].kernel = BoundResidentKernel::new(report_unchanged, Box::new([]));
+        first_kernel(&mut instance.plan).kernel =
+            BoundResidentKernel::new(report_unchanged, Box::new([]));
     }
-    always.plan.nodes[0].change_detection = ChangeDetectionPolicy::AlwaysChanged;
-    reported.plan.nodes[0].change_detection = ChangeDetectionPolicy::KernelReported;
+    first_kernel(&mut always.plan).change_detection = ChangeDetectionPolicy::AlwaysChanged;
+    first_kernel(&mut reported.plan).change_detection = ChangeDetectionPolicy::KernelReported;
 
     let always_summary = execute_turn(&mut always, &frame).unwrap();
     let reported_summary = execute_turn(&mut reported, &frame).unwrap();
