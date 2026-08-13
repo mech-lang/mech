@@ -215,10 +215,17 @@ impl<'a> ProgramCompilerView<'a> {
     }
 
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
-        let mut program = self.new_program();
         let tree = mech_syntax::parser::parse(source.trim())?;
-        let document_output_ids = root_document_output_ids(&tree);
-        let index = SourceIndex::from_program(&tree);
+        self.compile_tree(&tree)
+    }
+
+    pub(crate) fn compile_tree(
+        &self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        let mut program = self.new_program();
+        let document_output_ids = root_document_output_ids(tree);
+        let index = SourceIndex::from_program(tree);
         index.validate_address_targets()?;
         let imports = index.all_imports();
         let mut contexts = index.all_contexts();
