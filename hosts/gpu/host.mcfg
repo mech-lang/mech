@@ -1,0 +1,12 @@
+config := {
+  host: {
+    provider: "gpu"
+    contexts: [
+      {
+        name: "kernel"
+        base-uri: "gpu://{instance}/kernel"
+        operations: ["read", "write"]
+      }
+    ]
+  }
+}

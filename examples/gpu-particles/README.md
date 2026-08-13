@@ -1,69 +1,55 @@
-# GPU particles
+# Mixed CPU/GPU particle application
 
-This is a complete Mech application. [`particles.mec`](particles.mec) defines
-the two-million-particle initial state, simulation constants, and recurring
-integration equations in one named `particle-field @ compute` section.
-[`mech.mcfg`](mech.mcfg) selects the GPU executor. Changing the provider to
-`cpu` does not change the `.mec` program.
+This spike runs one real Mech document through the ordinary runtime and a
+native GPU host. [`particles.mec`](particles.mec) contains both sides:
 
-The initial state is a four-arm spiral field. Each turn advances a conservative
-nonlinear oscillator with symplectic Euler integration. There is no damping, so
-the field stays bounded and keeps its energy while amplitude-dependent motion
-causes the arms to precess instead of collapsing into the origin.
+- unannotated application code reads the timer host, stages GPU work, reads GPU
+  telemetry, and writes the console host;
+- `particle-field @ gpu` is compiled from the same syntax tree into one resident
+  `wgpu` kernel;
+- the runtime delivers the GPU dispatch only after the CPU transaction commits.
 
-The browser boundary matches the analog clock and n-body examples:
+There is no Rust particle function, JavaScript simulation, second `.mec` file,
+or configured direct-executor turn loop. The Rust GPU host implements the
+general execution boundary: it receives a compiler-produced region and rejects
+regions the current lowering cannot execute.
 
-- `particles.mec` is the application.
-- `mech.mcfg` selects the executor and served files.
-- `index.html` provides a canvas target for the generic `points2d` renderer.
-- `/_mech/project.js` is the shared browser and WebGPU shim.
+## Run
 
-There is no particle-specific JavaScript and no Rust harness supplying particle
-matrices or physics constants. The GPU compiler evaluates the source-defined
-initialization, compiles the typed recurring graph, and rejects unsupported
-programs with admission diagnostics.
-
-## Browser
-
-Build the browser GPU profile and server, then serve the example:
+Build native GPU support and run a bounded number of live timer turns:
 
 ```text
-./scripts/build-mech-gpu-browser.sh
 cargo build --release --features gpu_executor_native
-./target/release/mech serve examples/gpu-particles
+./target/release/mech run examples/gpu-particles --max-live-turns 120 --runtime-info
 ```
 
 On Windows PowerShell:
 
 ```text
-.\scripts\build-mech-gpu-browser.ps1
 cargo build --release --features gpu_executor_native
-.\target\release\mech.exe serve examples\gpu-particles
+.\target\release\mech.exe run examples\gpu-particles --max-live-turns 120 --runtime-info
 ```
 
-Open `http://127.0.0.1:8081`.
+`wgpu` selects Metal on macOS and an available native backend on Windows. Each
+console row is `(timer tick, completed GPU turns, previous dispatch ms, adapter)`.
+The telemetry is intentionally one transaction behind: the application reads
+the last committed state before staging the next after-commit dispatch.
 
-The simulation advances every configured particle. To keep canvas rendering
-from dominating the frame, the generic point renderer samples at most 250,000
-particles for display. The page reports both counts and continues to calculate
-throughput from the complete simulation state.
+The spike explicitly uses the transactional legacy route for the CPU graph.
+D4's resident finalizer still sees operations inside the GPU section when it
+tries to build the whole CPU artifact; partition-aware resident finalization is
+one of the design results this prototype makes concrete.
 
-The compile readout separates source parsing, eager source initialization, and
-artifact compilation. The current compiler still materializes the
-source-defined initial matrices on the CPU before it lowers the recurring graph
-to WebGPU. Successful plan registration does not render function debug output,
-so large matrices are not formatted merely to prepare diagnostics. At this
-scale, semantic artifact snapshotting and hashing are now the dominant startup
-cost. GPU-side initializer lowering remains future executor work and would
-avoid both the CPU materialization and the large initializer constants.
+The particle count is the `particle-count` value in `particles.mec`; the checked
+in end-to-end demonstration runs 100,000 particles. Larger source-defined fields
+currently push the eagerly materialized source artifact toward D4's 64 MiB
+bytecode read limit. GPU-side initializer lowering should remove that startup
+artifact growth instead of teaching the demo to bypass the limit.
 
-## Native executor
+## Spike limits
 
-The same source can run through the native resident executor:
-
-```text
-./target/release/mech run examples/gpu-particles
-```
-
-Change only `run.executor.provider` from `"gpu"` to `"cpu"` to run the
-generated resident CPU executor instead. The source program is unchanged.
+The extraction and host boundary are real, but deliberately narrow. The native
+path currently supports one selected GPU region, autonomous resident state, and
+dispatch/telemetry I/O. Mutable CPU-to-GPU region parameters, GPU output
+readback into the CPU graph, multiple GPU regions, and the browser host remain
+future scheduling work and fail rather than silently changing placement.

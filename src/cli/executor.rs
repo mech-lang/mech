@@ -2,10 +2,15 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, hash_str};
+use mech_core::{
+    Body, MResult, MechCode, MechError, MechErrorKind, MechSourceCode, Program, Section,
+    SectionElement, hash_str,
+};
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_gpu::{GpuBindingRole, GpuHost, GpuProgram};
-use mech_runtime::{FS_READ, MECH_TOOL_SUBJECT, RunExecutorConfig, check_fs_capability};
+use mech_gpu::{GpuBindingRole, GpuHost, GpuProgram, GpuRegionHostFactory, GpuRegionProgram};
+use mech_runtime::{
+    FS_READ, MECH_TOOL_SUBJECT, RunExecutorConfig, RuntimeHostFactory, check_fs_capability,
+};
 
 use crate::cli::outcome::CliOutcome;
 use crate::cli::runtime_plan::RunExecutionPlan;
@@ -45,6 +50,110 @@ pub(crate) fn configured_executor(plan: &RunExecutionPlan) -> Option<&RunExecuto
         .as_ref()?
         .executor
         .as_ref()
+}
+
+pub(crate) fn configured_gpu_host_factory(
+    plan: &RunExecutionPlan,
+) -> MResult<Option<Box<dyn RuntimeHostFactory>>> {
+    if !plan
+        .configured_hosts
+        .iter()
+        .any(|host| host.provider == "gpu")
+    {
+        return Ok(None);
+    }
+
+    let source_path = one_mech_source(plan)?;
+    let source = read_source(plan, &source_path)?;
+    let tree = mech_syntax::parse(source.trim())?;
+    let imports = import_prelude(&tree);
+    let mut programs = BTreeMap::new();
+
+    for section in tree.body.sections.iter().filter(|section| {
+        matches!(
+            section.compute,
+            Some(mech_core::ComputePlacement::Compute | mech_core::ComputePlacement::Gpu)
+        )
+    }) {
+        let name = section
+            .subtitle
+            .as_ref()
+            .map(|subtitle| subtitle.to_string().trim().to_owned())
+            .filter(|name| !name.is_empty())
+            .ok_or_else(|| {
+                executor_error(
+                    "compile_gpu_host_regions",
+                    "a GPU compute region is missing its section name",
+                )
+            })?;
+        if programs.contains_key(&name) {
+            return Err(executor_error(
+                "compile_gpu_host_regions",
+                format!("duplicate GPU compute region `{name}`"),
+            ));
+        }
+
+        let region_tree = isolated_region_tree(&imports, section);
+        let mut source_program = MechProgram::with_function_catalog(
+            MechProgramConfig::default(),
+            mech_stdlib::source_native_plan_catalog(),
+        );
+        source_program.run_tree(&region_tree)?;
+        let product = source_program.compile_program_product()?;
+        if product.compute_regions().len() != 1 || product.compute_regions()[0].name != name {
+            return Err(executor_error(
+                "compile_gpu_host_regions",
+                format!("isolated section `{name}` did not produce exactly that compute region"),
+            ));
+        }
+        let program = GpuHost
+            .compile_with_regions(product.artifact(), product.compute_regions())
+            .map_err(|error| {
+                executor_error(
+                    "compile_gpu_host_regions",
+                    format!("GPU host rejected region `{name}`:\n{error}"),
+                )
+            })?;
+        let inputs = source_input_values(&source_program, &program)?;
+        programs.insert(name, GpuRegionProgram::new(program, inputs));
+    }
+
+    Ok(Some(Box::new(GpuRegionHostFactory::new(programs)?)))
+}
+
+fn import_prelude(tree: &Program) -> Vec<SectionElement> {
+    tree.body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .filter_map(|element| {
+            let SectionElement::MechCode(code) = element else {
+                return None;
+            };
+            let imports = code
+                .iter()
+                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
+                .cloned()
+                .collect::<Vec<_>>();
+            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
+        })
+        .collect()
+}
+
+fn isolated_region_tree(imports: &[SectionElement], section: &Section) -> Program {
+    let mut sections = Vec::with_capacity(2);
+    if !imports.is_empty() {
+        sections.push(Section {
+            subtitle: None,
+            compute: None,
+            elements: imports.to_vec(),
+        });
+    }
+    sections.push(section.clone());
+    Program {
+        title: None,
+        body: Body { sections },
+    }
 }
 
 pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {

@@ -21,6 +21,10 @@ use mech_engine::{
 mod native;
 #[cfg(feature = "native")]
 pub use native::*;
+#[cfg(feature = "native")]
+mod provider;
+#[cfg(feature = "native")]
+pub use provider::*;
 mod placement;
 pub use placement::*;
 

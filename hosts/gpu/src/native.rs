@@ -499,6 +499,10 @@ impl GpuProgram {
 }
 
 impl ResidentGpuSession {
+    pub fn adapter(&self) -> &str {
+        &self.adapter
+    }
+
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<Duration, GpuExecutionError> {
         if turns == 0 {
             return Err(GpuExecutionError::InvalidFeedback(
