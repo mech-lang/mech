@@ -25,6 +25,13 @@ With the `native` feature, `GpuProgram::run_gpu` dispatches that WGSL through
 on Linux and Windows. `run_cpu` and `run_gpu` therefore select execution hosts
 without changing the Mech source.
 
+The native runtime host accepts a region name from `.mcfg`, compiles that named
+region from the same `.mec` document as the ordinary application graph, and
+prepares one resident session. A send to `gpu://<instance>/kernel/turn` is an
+after-commit effect; successful dispatch telemetry returns through normal
+runtime ingress. The checked-in `gpu-particles` application uses this narrow
+mixed path with real timer and console hosts.
+
 The one-shot native call is a correctness path that creates and reads back a
 GPU dispatch for one turn. `GpuProgram::prepare_cpu` and
 `GpuProgram::prepare_resident` create persistent CPU and GPU sessions. The GPU

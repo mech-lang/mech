@@ -1,23 +1,60 @@
 config := {
   runtime: {
-    name: "gpu-particles"
+    execution: {
+      resident-routing: "legacy-only"
+    }
+
     limits: {
       max-turn-duration-ms: 10000
     }
   }
 
+  hosts: [
+    {
+      name: "clock"
+      provider: "timer"
+      settings: {
+        frequency-hz: 60
+        max-catch-up-steps: 1
+      }
+    }
+
+    {
+      name: "particles"
+      provider: "gpu"
+      settings: {
+        region: "particle-field"
+      }
+    }
+
+    {
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
+  ]
+
   run: {
     paths: ["particles.mec"]
-    executor: {
-      provider: "gpu"
-      turns: 120
-    }
-  }
 
-  serve: {
-    address: "127.0.0.1"
-    port: 8081
-    paths: ["particles.mec"]
-    shim: "index.html"
+    grants: [
+      {
+        target: "clock/tick"
+        operations: ["read"]
+        paths: ["tick"]
+      }
+
+      {
+        target: "particles/kernel"
+        operations: ["read", "write"]
+        paths: ["adapter", "turns", "dispatch-ms", "turn"]
+      }
+
+      {
+        target: "console/output"
+        operations: ["write"]
+        paths: ["line"]
+      }
+    ]
   }
 }

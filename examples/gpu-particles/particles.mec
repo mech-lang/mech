@@ -1,12 +1,27 @@
 +> math
 
-particle-field @ compute
+-- Unannotated Mech code runs on the ordinary CPU runtime. The timer is a real
+-- host input, the GPU dispatch is staged by the transaction, and console output
+-- is delivered only after that transaction commits.
+@clock := timer://clock/tick{:read(tick)}
+@particles := gpu://particles/kernel{:read(adapter), :read(turns), :read(dispatch-ms), :write(turn)}
+@out := console://console/output{:write(line)}
+
+tick := @clock/tick
+adapter := @particles/adapter
+gpu-turns := @particles/turns
+dispatch-ms := @particles/dispatch-ms
+
+@particles/turn <- tick
+@out/line <- (tick, gpu-turns, dispatch-ms, adapter)
+
+particle-field @ gpu
 -------------------------------------------------------------------------------
 
-// The complete particle application is one Mech document: size, initial state,
-// constants, and the recurring simulation step. The named compute region is
-// backend-neutral; the configured executor decides whether it runs on CPU or GPU.
-particle-count := 2000000f32
+-- This is the GPU compilation boundary. The values, initialization, and
+-- recurrence are Mech source; the host receives the compiled region, not a
+-- handwritten particle kernel.
+particle-count := 100000f32
 particle-index := 1f32..=particle-count
 radius-seed := math/sin(particle-index * 12.9898<f32>) * 0.5<f32> + 0.5<f32>
 arm := math/mod(particle-index, 4f32)
