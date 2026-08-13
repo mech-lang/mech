@@ -1,19 +1,18 @@
 +> math
 
--- Unannotated Mech code runs on the ordinary CPU runtime. The timer is a real
+-- Unannotated Mech code runs on the resident CPU runtime. The timer is a real
 -- host input, the GPU dispatch is staged by the transaction, and console output
 -- is delivered only after that transaction commits.
 @clock := timer://clock/tick{:read(tick)}
-@particles := gpu://particles/kernel{:read(adapter), :read(turns), :read(dispatch-ms), :write(turn)}
+@particles := gpu://particles/kernel{:read(turns), :read(dispatch-ms), :write(turn)}
 @out := console://console/output{:write(line)}
 
 tick := @clock/tick
-adapter := @particles/adapter
 gpu-turns := @particles/turns
 dispatch-ms := @particles/dispatch-ms
 
 @particles/turn <- tick
-@out/line <- (tick, gpu-turns, dispatch-ms, adapter)
+@out/line <- dispatch-ms
 
 particle-field @ gpu
 -------------------------------------------------------------------------------

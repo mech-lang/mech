@@ -28,9 +28,10 @@ without changing the Mech source.
 The native runtime host accepts a region name from `.mcfg`, compiles that named
 region from the same `.mec` document as the ordinary application graph, and
 prepares one resident session. A send to `gpu://<instance>/kernel/turn` is an
-after-commit effect; successful dispatch telemetry returns through normal
-runtime ingress. The checked-in `gpu-particles` application uses this narrow
-mixed path with real timer and console hosts.
+at-most-once after-commit effect; successful dispatch telemetry returns through
+normal runtime ingress. The checked-in `gpu-particles` application runs the
+unannotated projection through D4's resident external route and uses this GPU
+path with real timer and console hosts.
 
 The one-shot native call is a correctness path that creates and reads back a
 GPU dispatch for one turn. `GpuProgram::prepare_cpu` and
@@ -66,8 +67,9 @@ This crate now proves the lower half of automatic acceleration:
 
 Two contracts are still needed before arbitrary mixed applications can run:
 
-- The runtime needs a generic activated-plan/execution-provider interface that
-  can schedule CPU and GPU regions on the same reactive turn.
+- Section projection must become a compiler-produced dependency partition, and
+  the runtime needs a multi-region scheduler for cross-region values and more
+  than one GPU region.
 - `InitializerReference` needs an activation-time input or initialization-graph
   form. Its current constant-only form cannot represent a large state matrix
   produced by a resource host without snapshotting that matrix into the
