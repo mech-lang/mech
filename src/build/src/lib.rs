@@ -50,6 +50,9 @@ impl NativeApplicationBuilder {
         if let Some(target) = request.target.as_deref() {
             plan::validate_target(target)?;
         }
+        if let Some(config) = request.runtime_config.as_ref() {
+            config.runtime.validate_production_program_routing()?;
+        }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
         plan::validate_target_index_constants(&program, request.target.as_deref())?;

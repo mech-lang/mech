@@ -8,8 +8,10 @@
 
 ```sh
 mech run main.mec
-mech run src/main.mec src/support.mec
 ```
+
+Production execution accepts exactly one resident program root. Use imports
+from that root instead of passing multiple source roots.
 
 2. Project directory
 -------------------------------------------------------------------------------

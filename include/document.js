@@ -561,6 +561,10 @@ function appendConsoleError(error) {
   appendError(error);
 }
 
+function supportsInteractiveEvaluation() {
+  return typeof state.document?.evaluate === "function";
+}
+
 function appendHelp() {
   const target = transcript();
   if (!target) {
@@ -642,6 +646,11 @@ async function runConsoleCommand(source) {
     return;
   }
   if (!input.startsWith(":")) {
+    if (!supportsInteractiveEvaluation()) {
+      throw new Error(
+        "interactive source evaluation is unavailable in standard resident documents; use :help for document commands",
+      );
+    }
     const rendered = state.document.evaluate(source);
     appendRenderedResult(rendered);
     renderValues();
@@ -709,12 +718,20 @@ function attachConsole() {
   transcriptElement.setAttribute("aria-live", "polite");
   const inputRow = document.createElement("div");
   inputRow.className = "mech-repl-input-row";
+  const interactiveEvaluation = supportsInteractiveEvaluation();
   const prompt = document.createElement("span");
   prompt.className = "repl-prompt";
-  prompt.textContent = ">:";
+  prompt.textContent = interactiveEvaluation ? ">:" : ":";
   const input = document.createElement("textarea");
   input.className = "repl-input";
-  input.setAttribute("aria-label", "Mech REPL input");
+  input.dataset.mechInteractiveEvaluation = interactiveEvaluation ? "available" : "unavailable";
+  input.setAttribute(
+    "aria-label",
+    interactiveEvaluation ? "Mech developer REPL input" : "Mech document command input",
+  );
+  if (!interactiveEvaluation) {
+    input.placeholder = "Document commands only (:help)";
+  }
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();

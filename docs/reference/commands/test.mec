@@ -3,6 +3,14 @@
 
 `mech test` runs source files and validates invariants.
 
+This command is developer tooling and is available only in the full
+distribution, not the standard production binary. Install a full release, or
+build it from source with:
+
+```sh
+cargo build --bin mech --no-default-features --features distribution-full
+```
+
 An invariant is a top-level binding whose name ends in `!` and whose expression evaluates to `bool`.
 
 ```mech

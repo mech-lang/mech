@@ -12,18 +12,13 @@ use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 use crate::cli::capabilities;
 use crate::cli::config;
 use crate::cli::outcome::CliOutcome;
-use crate::cli::run::{
-    RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver,
-    run_cli_root_module_with_events, run_cli_source_code_with_events, run_cli_source_with_events,
-};
+use crate::cli::run::{RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver};
 use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
     DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
     collect_sources_with_events,
 };
-use mech_runtime::{
-    RuntimeEvent, RuntimeEventKind, RuntimeValueSnapshot, SourceKind, SourceRequest,
-};
+use mech_runtime::{RuntimeValueSnapshot, SourceKind, SourceRequest};
 
 #[derive(Debug, Clone)]
 struct CliRunError {
@@ -67,16 +62,6 @@ pub(crate) fn command() -> Command {
       .long("trace")
       .help("Print trace output for state-machine arms and function calls")
       .action(ArgAction::SetTrue))
-    .arg(Arg::new("resident")
-      .long("resident")
-      .help("Require production resident execution")
-      .conflicts_with("legacy")
-      .action(ArgAction::SetTrue))
-    .arg(Arg::new("legacy")
-      .long("legacy")
-      .help("Use the legacy executor without resident planning")
-      .conflicts_with("resident")
-      .action(ArgAction::SetTrue))
     .arg(Arg::new("runtime-info")
       .long("runtime-info")
       .help("Print final production routing diagnostics as JSON")
@@ -92,7 +77,7 @@ pub(crate) fn command() -> Command {
         Arg::new("repl")
             .short('r')
             .long("repl")
-            .help("Enter a runtime-backed REPL after running the selected inputs")
+            .help("Developer-only REPL flag; production inputs cannot be combined with a REPL")
             .action(ArgAction::SetTrue),
     );
     command
@@ -234,18 +219,13 @@ fn render_config_event(event: &config::ConfigLoadEvent) {
     }
 }
 
-fn enforce_required_resident_target_shape(
-    routing: mech_runtime::ResidentRoutingPolicy,
-    targets: &[PathBuf],
-) -> MResult<()> {
-    if routing != mech_runtime::ResidentRoutingPolicy::RequireResident {
-        return Ok(());
-    }
+fn enforce_production_resident_target_shape(targets: &[PathBuf]) -> MResult<()> {
     if targets.len() > 1 {
         return Err(MechError::new(
             mech_runtime::ResidentRouteFailure {
                 class: mech_runtime::ResidentRouteFailureClass::MultipleRootsUnsupported,
-                reason: "multiple independent roots cannot be resident-routed in D4".to_string(),
+                reason: "production execution accepts exactly one resident program root"
+                    .to_string(),
             },
             None,
         ));
@@ -254,8 +234,7 @@ fn enforce_required_resident_target_shape(
         return Err(MechError::new(
             mech_runtime::ResidentRouteFailure {
                 class: mech_runtime::ResidentRouteFailureClass::SemanticUnsupported,
-                reason: "required resident execution needs exactly one .mec or .mecb root"
-                    .to_string(),
+                reason: "production execution requires exactly one .mec or .mecb root".to_string(),
             },
             None,
         ));
@@ -271,15 +250,17 @@ fn print_value(value: &RuntimeValueSnapshot) {
     println!("{:#?}", value);
 }
 
-fn print_run_runtime_events(events: &[RuntimeEvent]) {
-    for event in events {
-        if let RuntimeEventKind::ProgramProfiled { duration_ns, .. } = &event.kind {
-            println!("Cycle Time: {:.3}ms", *duration_ns as f64 / 1_000_000.0);
-        }
-    }
-}
-
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
+    if plan.repl_requested && !plan.missing_run_options {
+        return Err(MechError::new(
+            mech_runtime::ResidentRouteFailure {
+                class: mech_runtime::ResidentRouteFailureClass::ReplUnsupported,
+                reason: "interactive REPL mutation cannot be combined with a resident production target; start the full developer REPL without a target instead".to_string(),
+            },
+            None,
+        ));
+    }
+
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
     let mut runtime = new_cli_runtime_with_source_resolver(
@@ -291,33 +272,27 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
             .with_capabilities(plan.filesystem_access.kernel.clone(), MECH_TOOL_SUBJECT),
     )?;
 
-    let load_options = mech_runtime::RuntimeProgramLoadOptions {
-        routing: plan.resident_routing,
-        durability: plan.resident_durability,
-    };
-
-    if (plan.repl_requested || plan.missing_run_options)
-        && plan.resident_routing == mech_runtime::ResidentRoutingPolicy::RequireResident
-    {
+    if plan.missing_run_options {
+        #[cfg(feature = "repl")]
+        return Ok(CliOutcome::EnterRepl(
+            crate::cli::commands::repl::ReplStartup {
+                runtime: Some(runtime),
+            },
+        ));
+        #[cfg(not(feature = "repl"))]
         return Err(MechError::new(
             mech_runtime::ResidentRouteFailure {
                 class: mech_runtime::ResidentRouteFailureClass::ReplUnsupported,
-                reason: "resident REPL mutation is not supported in D4".to_string(),
+                reason: "the production run command requires a resident program; interactive mutation is available only in the full developer distribution".to_string(),
             },
             None,
         ));
     }
 
     let result: MResult<RuntimeValueSnapshot> = match &plan.input_mode {
-        RunInputMode::InlineSource(source) if !plan.repl_requested => runtime
-            .load_source_program(source.trim(), load_options)
+        RunInputMode::InlineSource(source) => runtime
+            .load_production_source_program(source.trim(), plan.resident_durability)
             .map(|outcome| outcome.initial_value),
-        RunInputMode::InlineSource(source) => {
-            run_cli_source_with_events(&mut runtime, source.trim()).map(|(value, events)| {
-                print_run_runtime_events(&events);
-                value
-            })
-        }
         _ => {
             if plan.run_paths.is_empty() {
                 Ok(RuntimeValueSnapshot::empty())
@@ -330,87 +305,28 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                         &fs_kernel,
                     )?);
                 }
-                enforce_required_resident_target_shape(plan.resident_routing, &targets)?;
-                if targets.len() == 1
-                    && SourceKind::from_path(&targets[0]).is_executable_mech()
-                    && !plan.repl_requested
-                {
-                    let canonical_target = targets[0].canonicalize().map_err(|error| {
-                        MechError::new(
-                            CliRunError {
-                                operation: "canonicalize_run_target".to_string(),
-                                reason: format!("{}: {}", targets[0].display(), error),
-                            },
-                            None,
-                        )
-                    })?;
-                    runtime
-                        .load_root_program(
-                            SourceRequest::from_filesystem_path(&canonical_target)?,
-                            cli_module_options(),
-                            load_options,
-                        )
-                        .map(|outcome| outcome.initial_value)
-                } else {
-                    let legacy_turns = targets.len() as u64;
-                    let mut last = RuntimeValueSnapshot::empty();
-                    for target in targets {
-                        let (value, events) = if SourceKind::from_path(&target) == SourceKind::Mech
-                        {
-                            let canonical_target = target.canonicalize().map_err(|error| {
-                                MechError::new(
-                                    CliRunError {
-                                        operation: "canonicalize_run_target".to_string(),
-                                        reason: format!("{}: {}", target.display(), error),
-                                    },
-                                    None,
-                                )
-                            })?;
-                            run_cli_root_module_with_events(
-                                &mut runtime,
-                                SourceRequest::from_filesystem_path(&canonical_target)?,
-                                cli_module_options(),
-                            )?
-                        } else {
-                            let src = mech_runtime::read_runtime_source_file_with_capabilities(
-                                &target,
-                                Some(&fs_kernel),
-                                Some(MECH_TOOL_SUBJECT),
-                            )?;
-                            run_cli_source_code_with_events(&mut runtime, &src)?
-                        };
-                        print_run_runtime_events(&events);
-                        last = value;
-                    }
-                    runtime
-                        .record_legacy_program_route(plan.resident_routing, legacy_turns.max(1))?;
-                    Ok(last)
-                }
+                enforce_production_resident_target_shape(&targets)?;
+                let canonical_target = targets[0].canonicalize().map_err(|error| {
+                    MechError::new(
+                        CliRunError {
+                            operation: "canonicalize_run_target".to_string(),
+                            reason: format!("{}: {}", targets[0].display(), error),
+                        },
+                        None,
+                    )
+                })?;
+                runtime
+                    .load_production_root_program(
+                        SourceRequest::from_filesystem_path(&canonical_target)?,
+                        cli_module_options(),
+                        plan.resident_durability,
+                    )
+                    .map(|outcome| outcome.initial_value)
             }
         }
     };
 
-    let repl_flag = plan.repl_requested || plan.missing_run_options;
     match result {
-        Ok(value) if repl_flag => {
-            if runtime.program_route() == mech_runtime::RuntimeProgramRoute::None {
-                runtime.record_legacy_program_route(plan.resident_routing, 1)?;
-            }
-            #[cfg(all(feature = "run", feature = "repl"))]
-            {
-                let _ = value;
-                return Ok(CliOutcome::EnterRepl(
-                    crate::cli::commands::repl::ReplStartup {
-                        runtime: Some(runtime),
-                    },
-                ));
-            }
-            #[cfg(not(feature = "repl"))]
-            {
-                print_value(&value);
-                return Ok(CliOutcome::exit(0));
-            }
-        }
         Ok(value) => {
             if should_run_live(&runtime)? {
                 run_live_runtime(&mut runtime, plan.max_live_turns)?;
@@ -467,7 +383,6 @@ fn run_live_loop(
     stop: &AtomicBool,
     max_live_turns: Option<usize>,
 ) -> MResult<()> {
-    const MAX_DRAIN_PER_TURN: usize = 64;
     const IDLE_SLEEP: Duration = Duration::from_millis(10);
 
     let mut completed_live_turns = 0usize;
@@ -479,11 +394,20 @@ fn run_live_loop(
             std::thread::sleep(IDLE_SLEEP);
             continue;
         }
-        let outcomes = runtime.drain_host_inputs(MAX_DRAIN_PER_TURN)?;
+        let drain_limit = live_drain_limit(max_live_turns, completed_live_turns);
+        let outcomes = runtime.drain_host_inputs(drain_limit)?;
         completed_live_turns =
             completed_live_turns.saturating_add(successful_live_turn_count(&outcomes));
     }
     Ok(())
+}
+
+fn live_drain_limit(max_live_turns: Option<usize>, completed_live_turns: usize) -> usize {
+    const MAX_DRAIN_PER_TURN: usize = 64;
+    max_live_turns
+        .map(|limit| limit.saturating_sub(completed_live_turns))
+        .unwrap_or(MAX_DRAIN_PER_TURN)
+        .min(MAX_DRAIN_PER_TURN)
 }
 
 fn successful_live_turn_count(outcomes: &[mech_runtime::RuntimeHostInputOutcome]) -> usize {
@@ -497,14 +421,9 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> serde_json::Value {
     let info = runtime.program_execution_info();
     let route = match info.route {
         mech_runtime::RuntimeProgramRoute::None => "none",
-        mech_runtime::RuntimeProgramRoute::Legacy => "legacy",
         mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
         mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
-    };
-    let routing_policy = match info.policy {
-        mech_runtime::ResidentRoutingPolicy::PreferResident => "prefer-resident",
-        mech_runtime::ResidentRoutingPolicy::RequireResident => "require-resident",
-        mech_runtime::ResidentRoutingPolicy::LegacyOnly => "legacy-only",
+        _ => "invalid-production-route",
     };
     let revision = info.program_revision.map(|revision| {
         revision
@@ -515,18 +434,18 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> serde_json::Value {
     });
     serde_json::json!({
         "route": route,
-        "routing_policy": routing_policy,
+        "routing_policy": "require-resident",
         "program_revision": revision,
         "plan_generation": info.plan_generation.map(|generation| generation.get().saturating_add(1)),
         "layout_generation": info.layout_generation.map(|generation| generation.get().saturating_add(1)),
         "requirements": info.requirement_count,
         "observations": info.observation_count,
         "effects": info.effect_count,
+        "legacy_turns": info.legacy_turns,
         "resident_accepted_turns": info.resident_accepted_turns,
         "resident_rejected_turns": info.resident_rejected_turns,
         "coalesced_host_packets": info.coalesced_host_packets,
         "ignored_host_packets": info.ignored_host_packets,
-        "legacy_turns": info.legacy_turns,
     })
 }
 
@@ -541,13 +460,22 @@ mod command_outcome_tests {
     }
 
     #[test]
+    fn production_run_command_exposes_no_executor_selection_flags() {
+        for flag in ["--resident", "--legacy"] {
+            let error = command()
+                .try_get_matches_from(["run", flag, "program.mec"])
+                .expect_err("shipping run command must not expose executor selection");
+            assert_eq!(error.kind(), clap::error::ErrorKind::UnknownArgument);
+        }
+    }
+
+    #[test]
     fn require_resident_rejects_empty_and_legacy_only_target_shapes() {
-        let routing = mech_runtime::ResidentRoutingPolicy::RequireResident;
-        let empty = enforce_required_resident_target_shape(routing, &[]).unwrap_err();
+        let empty = enforce_production_resident_target_shape(&[]).unwrap_err();
         assert_eq!(empty.kind_name(), "ResidentRouteFailure");
 
         let document = [PathBuf::from("program.mdoc")];
-        let legacy_only = enforce_required_resident_target_shape(routing, &document).unwrap_err();
+        let legacy_only = enforce_production_resident_target_shape(&document).unwrap_err();
         let failure = legacy_only
             .kind_as::<mech_runtime::ResidentRouteFailure>()
             .unwrap();
@@ -559,19 +487,12 @@ mod command_outcome_tests {
 
     #[test]
     fn require_resident_accepts_one_source_or_bytecode_root_only() {
-        let routing = mech_runtime::ResidentRoutingPolicy::RequireResident;
-        assert!(
-            enforce_required_resident_target_shape(routing, &[PathBuf::from("program.mec")])
-                .is_ok()
-        );
-        assert!(
-            enforce_required_resident_target_shape(routing, &[PathBuf::from("program.mecb")])
-                .is_ok()
-        );
-        let multiple = enforce_required_resident_target_shape(
-            routing,
-            &[PathBuf::from("a.mec"), PathBuf::from("b.mec")],
-        )
+        assert!(enforce_production_resident_target_shape(&[PathBuf::from("program.mec")]).is_ok());
+        assert!(enforce_production_resident_target_shape(&[PathBuf::from("program.mecb")]).is_ok());
+        let multiple = enforce_production_resident_target_shape(&[
+            PathBuf::from("a.mec"),
+            PathBuf::from("b.mec"),
+        ])
         .unwrap_err();
         assert_eq!(
             multiple
@@ -601,6 +522,15 @@ mod command_outcome_tests {
             },
         ];
         assert_eq!(successful_live_turn_count(&outcomes), 1);
+    }
+
+    #[test]
+    fn live_drain_limit_never_exceeds_the_remaining_turn_budget() {
+        assert_eq!(live_drain_limit(Some(2), 0), 2);
+        assert_eq!(live_drain_limit(Some(2), 1), 1);
+        assert_eq!(live_drain_limit(Some(2), 2), 0);
+        assert_eq!(live_drain_limit(Some(100), 0), 64);
+        assert_eq!(live_drain_limit(None, 9), 64);
     }
 
     #[cfg(target_os = "linux")]
@@ -660,7 +590,6 @@ mod command_outcome_tests {
             time: false,
             repl: false,
             rounds_per_step: None,
-            resident_routing_override: None,
             runtime_info: false,
             max_live_turns: None,
             loaded_config: None,

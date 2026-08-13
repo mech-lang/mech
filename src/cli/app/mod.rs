@@ -77,7 +77,7 @@ pub(crate) fn build_cli() -> Command {
         Arg::new("repl")
             .short('r')
             .long("repl")
-            .help("Start REPL")
+            .help("Start the targetless full-developer REPL")
             .action(ArgAction::SetTrue),
     );
 

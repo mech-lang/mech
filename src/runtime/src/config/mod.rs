@@ -86,6 +86,23 @@ impl RuntimeConfig {
         Ok(())
     }
 
+    /// Validate the execution policy accepted by shipping products.
+    ///
+    /// Developer-only legacy facades may still carry the other policy values,
+    /// but a production entry point must never select or fall back to them.
+    pub fn validate_production_program_routing(&self) -> MResult<()> {
+        if self.program_routing.resident_routing != ResidentRoutingPolicy::RequireResident {
+            return Err(MechError::new(
+                InvalidRuntimeConfigValue {
+                    field: "runtime.program-routing.resident-routing",
+                    reason: "production products require `require-resident` routing".to_string(),
+                },
+                None,
+            ));
+        }
+        Ok(())
+    }
+
     pub fn apply_patch(mut self, patch: &crate::RuntimeConfigPatch) -> MResult<Self> {
         if let Some(name) = &patch.name {
             self.name = name.clone();
@@ -382,6 +399,22 @@ mod tests {
     fn default_config_is_valid() {
         let config = RuntimeConfig::default();
         assert!(config.validate().is_ok());
+        assert!(config.validate_production_program_routing().is_ok());
+    }
+
+    #[test]
+    fn production_routing_rejects_interpreter_selection() {
+        for routing in [
+            ResidentRoutingPolicy::PreferResident,
+            ResidentRoutingPolicy::LegacyOnly,
+        ] {
+            let mut config = RuntimeConfig::default();
+            config.program_routing.resident_routing = routing;
+            let error = config
+                .validate_production_program_routing()
+                .expect_err("shipping products must reject interpreter routing");
+            assert_eq!(error.kind_name(), "InvalidRuntimeConfigValue");
+        }
     }
 
     #[test]

@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use mech_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
-use mech_core::{FunctionCatalog, FunctionCatalogBuilder, LegacyValue};
+use mech_core::{
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, FunctionCatalog,
+    FunctionCatalogBuilder, IdempotencyRequirement, LegacyValue,
+};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, PreparedRuntimeEffect, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeCapabilityOperation, RuntimeEventKind, RuntimeHealth,
@@ -41,7 +44,7 @@ fn provider_writes_line_to_backend() {
 #[test]
 fn provider_rejects_unknown_path() {
     let backend = RecordingConsoleBackend::new();
-    let mut provider = ConsoleResourceProvider::new("console", backend);
+    let provider = ConsoleResourceProvider::new("console", backend);
     let err = provider
         .prepare_write(RuntimeResourceWriteRequest {
             base_uri: "console://console/output".to_string(),
@@ -67,6 +70,28 @@ fn factory_advertises_console_provider() {
         .unwrap();
     assert_eq!(installation.interface.provider, "console");
     assert_eq!(installation.resource_providers.len(), 1);
+}
+
+#[test]
+fn console_send_contract_is_at_most_once_without_idempotency() {
+    let provider = ConsoleResourceProvider::new("console", RecordingConsoleBackend::new());
+    let contract = provider
+        .semantic_write_contract(RuntimeResourceWriteIntent::Send)
+        .unwrap();
+
+    assert!(matches!(
+        &contract.interaction,
+        ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        })
+    ));
+    assert!(
+        provider
+            .semantic_write_contract(RuntimeResourceWriteIntent::Assign)
+            .is_none()
+    );
+    assert!(!provider.supports_resident_idempotency(RuntimeResourceWriteIntent::Send));
 }
 
 #[test]

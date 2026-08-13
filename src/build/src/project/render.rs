@@ -199,6 +199,9 @@ fn validate_runtime_config_implications(
             run_grants: Vec::new(),
             actor_bootstrap: None,
         });
+    normalized_config
+        .runtime
+        .validate_production_program_routing()?;
     if normalized_config.runtime != plan.runtime_config {
         return project_invalid("request runtime settings do not match the normalized build plan");
     }
@@ -496,21 +499,17 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
     let info = runtime.program_execution_info();
     let route = match info.route {
         mech_runtime::RuntimeProgramRoute::None => "none",
-        mech_runtime::RuntimeProgramRoute::Legacy => "legacy",
         mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
         mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
+        _ => "invalid-production-route",
     };
-    let policy = match info.policy {
-        mech_runtime::ResidentRoutingPolicy::PreferResident => "prefer-resident",
-        mech_runtime::ResidentRoutingPolicy::RequireResident => "require-resident",
-        mech_runtime::ResidentRoutingPolicy::LegacyOnly => "legacy-only",
-    };
+    let policy = "require-resident";
     let revision = info.program_revision.map(|revision| {
         format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
     }).unwrap_or_else(|| "null".to_string());
     let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
     let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
-    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{},\"legacy_turns\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets, info.legacy_turns)
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"legacy_turns\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.legacy_turns, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
 }
 
 fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
@@ -525,13 +524,10 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
     let runtime_constructed = true;
     let mut drivers_started = false;
     let primary = (|| -> MResult<()> {
-        let execution = runtime.config().program_routing.clone();
-        let outcome = runtime.load_bytecode_program(
+        let durability = runtime.config().program_routing.resident_durability;
+        let outcome = runtime.load_production_bytecode_program(
             PROGRAM,
-            mech_runtime::RuntimeProgramLoadOptions {
-                routing: execution.resident_routing,
-                durability: execution.resident_durability,
-            },
+            durability,
         )?;
         let value = outcome.initial_value;
 
@@ -560,7 +556,11 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
             if arguments.max_live_turns.is_some_and(|limit| completed_live_turns >= limit) {
                 break;
             }
-            let outcomes = runtime.drain_host_inputs(64)?;
+            let drain_limit = arguments.max_live_turns
+                .map(|limit| limit.saturating_sub(completed_live_turns))
+                .unwrap_or(64)
+                .min(64);
+            let outcomes = runtime.drain_host_inputs(drain_limit)?;
             completed_live_turns = completed_live_turns.saturating_add(
                 outcomes.iter().filter(|outcome| {
                     outcome.turn.is_some() || outcome.resident_turn.is_some()
@@ -660,21 +660,17 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
     let info = runtime.program_execution_info();
     let route = match info.route {
         mech_runtime::RuntimeProgramRoute::None => "none",
-        mech_runtime::RuntimeProgramRoute::Legacy => "legacy",
         mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
         mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
+        _ => "invalid-production-route",
     };
-    let policy = match info.policy {
-        mech_runtime::ResidentRoutingPolicy::PreferResident => "prefer-resident",
-        mech_runtime::ResidentRoutingPolicy::RequireResident => "require-resident",
-        mech_runtime::ResidentRoutingPolicy::LegacyOnly => "legacy-only",
-    };
+    let policy = "require-resident";
     let revision = info.program_revision.map(|revision| {
         format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
     }).unwrap_or_else(|| "null".to_string());
     let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
     let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
-    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{},\"legacy_turns\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets, info.legacy_turns)
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"legacy_turns\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.legacy_turns, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
 }
 
 fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
@@ -688,13 +684,10 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
     };
     let runtime_constructed = true;
     let primary = (|| -> MResult<()> {
-        let execution = runtime.config().program_routing.clone();
-        let outcome = runtime.load_bytecode_program(
+        let durability = runtime.config().program_routing.resident_durability;
+        let outcome = runtime.load_production_bytecode_program(
             PROGRAM,
-            mech_runtime::RuntimeProgramLoadOptions {
-                routing: execution.resident_routing,
-                durability: execution.resident_durability,
-            },
+            durability,
         )?;
         let value = outcome.initial_value;
 
@@ -766,7 +759,7 @@ fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
         "actor-turn plans must carry an actor bootstrap"
     );
 
-    let resident_install = "        let execution = runtime.config().program_routing.clone();\n        let outcome = runtime.load_bytecode_program(\n            PROGRAM,\n            mech_runtime::RuntimeProgramLoadOptions {\n                routing: execution.resident_routing,\n                durability: execution.resident_durability,\n            },\n        )?;\n        let value = outcome.initial_value;";
+    let resident_install = "        let durability = runtime.config().program_routing.resident_durability;\n        let outcome = runtime.load_production_bytecode_program(\n            PROGRAM,\n            durability,\n        )?;\n        let value = outcome.initial_value;";
     let ordinary_install = if source.contains(resident_install) {
         resident_install
     } else {
@@ -1070,14 +1063,13 @@ pub fn render_generated_native_project(
 }
 
 fn render_runtime_config(config: &RuntimeConfig) -> String {
+    config
+        .validate_production_program_routing()
+        .expect("native production plan must require resident execution");
     format!(
         "RuntimeConfig {{\n        name: {}.to_string(),\n        program_routing: ProgramRoutingConfig {{\n            resident_routing: ResidentRoutingPolicy::{},\n            resident_durability: ResidentDurabilityPolicy::{},\n        }},\n        limits: RuntimeLimits {{\n            max_steps_per_turn: {},\n            max_turn_duration_ms: {},\n            max_memory_bytes: {},\n            max_tasks: {},\n            max_actors: {},\n            max_actor_mailbox_len: {},\n            max_source_bytes: {},\n            max_in_memory_events: {},\n        }},\n        diagnostics: DiagnosticsConfig {{\n            trace_enabled: {},\n            profile_enabled: {},\n            debug_enabled: {},\n            log_level: LogLevel::{},\n        }},\n    }}",
         rust_string_literal(&config.name),
-        match config.program_routing.resident_routing {
-            mech_runtime::ResidentRoutingPolicy::PreferResident => "PreferResident",
-            mech_runtime::ResidentRoutingPolicy::RequireResident => "RequireResident",
-            mech_runtime::ResidentRoutingPolicy::LegacyOnly => "LegacyOnly",
-        },
+        "RequireResident",
         match config.program_routing.resident_durability {
             mech_runtime::ResidentDurabilityPolicy::Volatile => "Volatile",
             mech_runtime::ResidentDurabilityPolicy::Retained => "Retained",
@@ -1498,6 +1490,7 @@ mod tests {
                 )
             );
             assert!(source.contains("std::process::exit(2)"));
+            assert!(source.contains("\\\"legacy_turns\\\":{}"));
         }
     }
 
@@ -1519,7 +1512,8 @@ mod tests {
         let live_source = render_hosted_main_source(true);
         assert!(live_source.contains("AtomicBool"));
         assert!(live_source.contains("Ordering::SeqCst"));
-        assert!(live_source.contains("runtime.drain_host_inputs(64)?"));
+        assert!(live_source.contains("limit.saturating_sub(completed_live_turns)"));
+        assert!(live_source.contains("runtime.drain_host_inputs(drain_limit)?"));
         assert!(live_source.contains("Duration::from_millis(10)"));
         assert!(live_source.contains("runtime.stop_input_drivers()"));
         assert!(live_source.contains("runtime.shutdown()"));

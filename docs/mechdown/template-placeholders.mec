@@ -45,7 +45,11 @@ These placeholders support browser-side Mech runtime integration.
 <div class="console-scroll mech-repl hidden" id="mech-output" data-mech-repl-mount aria-live="polite"></div>
 ```
 
-The shipped document controller attaches the browser REPL to `#mech-output`.
+The shipped standard document controller attaches a command-only console to
+`#mech-output`. It supports document commands such as `:help`, `:whos`,
+`:clear`, and `:step`; it does not expose ad-hoc source evaluation. A browser
+artifact explicitly built with the developer interpreter may additionally
+provide REPL evaluation.
 It is selected by the shim, so a standalone document does not need `mech.mcfg`
 or `project.js`.
 
@@ -56,7 +60,7 @@ browser controller with these slots:
 
 - `{{DOCUMENT_SCRIPT}}` — The embedded document-controller module. It creates a
   safe `WasmDocument`, starts document inputs, renders outputs, and attaches the
-  REPL when the shell includes the corresponding mount.
+  command console when the shell includes the corresponding mount.
 - `{{SOURCE_URL_KEY}}` — A server-supplied, percent-encoded source transport key.
   A formatted file leaves this value empty and the controller falls back to the
   embedded `{{CODE}}` payload.

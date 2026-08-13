@@ -4,16 +4,13 @@ use std::path::{Path, PathBuf};
 
 use clap::{Arg, ArgAction, ArgMatches, Command};
 use mech_build::{
-    NativeActorBootstrap, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile,
-    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeRuntimeConfig,
+    NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
+    NativeDependencySource, NativeEmit, NativeRuntimeConfig,
 };
 use mech_core::*;
 use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, SourceRequest};
 
-use crate::cli::module_execution::{
-    execute_planning_source_module_roots, module_runtime_config,
-    prepare_planning_source_module_runtime,
-};
+use crate::cli::module_execution::{module_runtime_config, prepare_planning_source_module_runtime};
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::source_discovery::{DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources};
 
@@ -59,7 +56,7 @@ pub(crate) fn command() -> Command {
         .about("Build a Mech program as a native application, bytecode, plan, or Cargo project.")
         .arg(
             Arg::new("mech_build_file_paths")
-                .help("One or more source roots, or exactly one .mecb bytecode file")
+                .help("Exactly one resident source root or one .mecb bytecode file")
                 .required(false)
                 .action(ArgAction::Append),
         )
@@ -233,10 +230,27 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         let bytecode = fs::read(&path)?;
         ParsedProgram::from_bytes(&bytecode)?;
         let config = load_build_config(&options, Some(&path))?;
+        validate_production_build_config(config.as_ref(), &binary_name)?;
         (bytecode, config)
     } else {
         let loaded_config = load_build_config(&options, None)?;
+        validate_production_build_config(loaded_config.as_ref(), &binary_name)?;
         let source_roots = discover_source_roots(&options.paths)?;
+        if source_roots.len() != 1 {
+            let class = if source_roots.len() > 1 {
+                mech_runtime::ResidentRouteFailureClass::MultipleRootsUnsupported
+            } else {
+                mech_runtime::ResidentRouteFailureClass::SemanticUnsupported
+            };
+            return Err(MechError::new(
+                mech_runtime::ResidentRouteFailure {
+                    class,
+                    reason: "production builds require exactly one resident source root"
+                        .to_string(),
+                },
+                None,
+            ));
+        }
         let configured_hosts = configured_hosts(loaded_config.as_ref());
         let run_grants = configured_run_grants(loaded_config.as_ref());
         let mut planner_config = module_runtime_config(
@@ -250,49 +264,16 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             planner_config =
                 crate::apply_runtime_config_patch(planner_config, &config.document.runtime)?;
         }
-        let actor = loaded_config
-            .as_ref()
-            .and_then(|config| config.document.build.as_ref())
-            .and_then(|build| build.actor.as_ref());
-        let routing = planner_config.program_routing.resident_routing;
-        let bytecode = if routing != mech_runtime::ResidentRoutingPolicy::LegacyOnly
-            && source_roots.len() == 1
-        {
-            let (mut runtime, roots) = prepare_planning_source_module_runtime(
-                planner_config.clone(),
-                &configured_hosts,
-                &run_grants,
-                actor,
-                &source_roots,
-            )?;
-            let request = SourceRequest::from_filesystem_path(&roots[0])?;
-            match runtime.compile_root_program_bytecode(request) {
-                Ok(bytecode) => bytecode,
-                Err(error)
-                    if routing == mech_runtime::ResidentRoutingPolicy::PreferResident
-                        && mech_runtime::resident_fallback_eligible(&error) =>
-                {
-                    let mut runtime = execute_planning_source_module_roots(
-                        planner_config,
-                        &configured_hosts,
-                        &run_grants,
-                        actor,
-                        &source_roots,
-                    )?;
-                    runtime.compile_program_bytecode()?
-                }
-                Err(error) => return Err(error),
-            }
-        } else {
-            let mut runtime = execute_planning_source_module_roots(
-                planner_config,
-                &configured_hosts,
-                &run_grants,
-                actor,
-                &source_roots,
-            )?;
-            runtime.compile_program_bytecode()?
-        };
+        planner_config.validate_production_program_routing()?;
+        let (mut runtime, roots) = prepare_planning_source_module_runtime(
+            planner_config,
+            &configured_hosts,
+            &run_grants,
+            None,
+            &source_roots,
+        )?;
+        let request = SourceRequest::from_filesystem_path(&roots[0])?;
+        let bytecode = runtime.compile_root_program_bytecode(request)?;
         (bytecode, loaded_config)
     };
 
@@ -566,6 +547,35 @@ fn configured_run_grants(config: Option<&crate::LoadedMechConfig>) -> Vec<RunRes
         .unwrap_or_default()
 }
 
+fn validate_production_build_config(
+    config: Option<&crate::LoadedMechConfig>,
+    binary_name: &str,
+) -> MResult<()> {
+    let runtime = match config {
+        Some(config) => crate::apply_runtime_config_patch(
+            RuntimeConfig::new(binary_name),
+            &config.document.runtime,
+        )?,
+        None => RuntimeConfig::new(binary_name),
+    };
+    runtime.validate_production_program_routing()?;
+    if config
+        .and_then(|config| config.document.build.as_ref())
+        .and_then(|build| build.actor.as_ref())
+        .is_some()
+    {
+        return Err(MechError::new(
+            mech_runtime::ResidentRouteFailure {
+                class: mech_runtime::ResidentRouteFailureClass::SemanticUnsupported,
+                reason: "actor bootstrap is not part of the production resident program contract"
+                    .to_string(),
+            },
+            None,
+        ));
+    }
+    Ok(())
+}
+
 fn native_runtime_config(
     config: Option<&crate::LoadedMechConfig>,
     binary_name: &str,
@@ -590,6 +600,7 @@ fn native_runtime_config(
         RuntimeConfig::new(binary_name),
         &config.document.runtime,
     )?;
+    runtime.validate_production_program_routing()?;
     let (hosts, run_grants) = if needs_resource_config {
         (
             configured_hosts(Some(config)),
@@ -602,17 +613,7 @@ fn native_runtime_config(
         runtime,
         hosts,
         run_grants,
-        actor_bootstrap: config
-            .document
-            .build
-            .as_ref()
-            .and_then(|build| build.actor.as_ref())
-            .map(|actor| NativeActorBootstrap {
-                subject: actor.subject.clone(),
-                message_kind: actor.message_kind.clone(),
-                message_payload: actor.message_payload.clone(),
-                initial_state: actor.initial_state.clone(),
-            }),
+        actor_bootstrap: None,
     }))
 }
 
