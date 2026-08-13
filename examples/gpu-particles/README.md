@@ -48,6 +48,20 @@ Open the printed local URL in Edge or Chrome. WebGPU availability, adapter
 limits, WGSL compilation, and every CPU-to-GPU binding are checked before the
 simulation starts; failures are shown in the page instead of falling back.
 
+## Full-size acceptance
+
+These tests compile the unchanged one-million-particle source. They do not
+replace the particle count with a smaller fixture:
+
+```text
+cargo test -p mech-wasm --features browser_project,browser_gpu_compiler served_million_particle_source_compiles_without_bytecode_serialization -- --ignored --nocapture
+cargo test -p mech-gpu --release --features native --test particle_source served_particle_shader_matches_cpu_with_pointer_force -- --nocapture
+```
+
+The first test covers the compiler path used by the browser. The second runs
+the generated shader on the system GPU, when an adapter is available, and
+compares its complete output with the CPU backend.
+
 ## What is measured
 
 `Particles` is the number updated by the generated GPU program each committed
