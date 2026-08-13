@@ -13,7 +13,7 @@ use crate::cli::capabilities;
 use crate::cli::config;
 use crate::cli::outcome::CliOutcome;
 use crate::cli::run::{
-    RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver,
+    RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver_and_host_factories,
     run_cli_root_module_with_events, run_cli_source_code_with_events, run_cli_source_with_events,
 };
 use crate::cli::runtime_plan::RunExecutionPlan;
@@ -272,11 +272,34 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         )
         .with_compiler_loc());
     }
-    let mut runtime = new_cli_runtime_with_source_resolver(
+    #[cfg(feature = "gpu_executor_native")]
+    let host_factories = crate::cli::executor::configured_gpu_host_factory(&plan)?
+        .into_iter()
+        .collect();
+    #[cfg(not(feature = "gpu_executor_native"))]
+    let host_factories = {
+        if plan
+            .configured_hosts
+            .iter()
+            .any(|host| host.provider == "gpu")
+        {
+            return Err(MechError::new(
+                CliRunError {
+                    operation: "initialize_gpu_host".to_owned(),
+                    reason: "this project configures a GPU host; rebuild Mech with `--features gpu_executor_native`".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Vec::new()
+    };
+    let mut runtime = new_cli_runtime_with_source_resolver_and_host_factories(
         plan.runtime_config,
         &plan.cli_grants,
         &plan.configured_hosts,
         &plan.configured_run_grants,
+        host_factories,
         mech_runtime::FileSourceResolver::new(&std::env::current_dir()?)
             .with_capabilities(plan.filesystem_access.kernel.clone(), MECH_TOOL_SUBJECT),
     )?;
@@ -471,18 +494,30 @@ fn run_live_loop(
 ) -> MResult<()> {
     const MAX_DRAIN_PER_TURN: usize = 64;
     const IDLE_SLEEP: Duration = Duration::from_millis(10);
+    let mut legacy_accepted_live_turns = 0usize;
 
     while !stop.load(Ordering::SeqCst) {
-        if max_live_turns.is_some_and(|limit| {
-            runtime.program_execution_info().resident_accepted_turns >= limit as u64
-        }) {
+        let execution = runtime.program_execution_info();
+        let accepted_live_turns = match execution.route {
+            mech_runtime::RuntimeProgramRoute::Legacy => legacy_accepted_live_turns as u64,
+            _ => execution.resident_accepted_turns,
+        };
+        if max_live_turns.is_some_and(|limit| accepted_live_turns >= limit as u64) {
             break;
         }
         if runtime.pending_host_input_count()? == 0 {
             std::thread::sleep(IDLE_SLEEP);
             continue;
         }
-        runtime.drain_host_inputs(MAX_DRAIN_PER_TURN)?;
+        let outcomes = runtime.drain_host_inputs(MAX_DRAIN_PER_TURN)?;
+        if execution.route == mech_runtime::RuntimeProgramRoute::Legacy {
+            let accepted = outcomes
+                .iter()
+                .filter(|outcome| outcome.turn.is_some())
+                .count();
+            legacy_accepted_live_turns = legacy_accepted_live_turns.saturating_add(accepted);
+            runtime.record_legacy_live_turns(accepted as u64)?;
+        }
     }
     Ok(())
 }

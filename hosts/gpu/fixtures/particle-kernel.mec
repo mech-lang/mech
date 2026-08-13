@@ -1,0 +1,15 @@
+-- Benchmark-only fixture. The benchmark host supplies large typed matrices so
+-- it can measure steady-state execution separately from source initialization.
+~positions := host-positions
+~velocities := host-velocities
+origin := host-origin
+attraction := host-attraction
+drag := host-drag
+dt := host-dt
+
+acceleration := (origin - positions) * attraction
+next-velocities := (velocities + acceleration * dt) * drag
+next-positions := positions + next-velocities * dt
+velocities = next-velocities
+positions = next-positions
+(positions, velocities)

@@ -2517,7 +2517,9 @@ dependencies = [
  "bytemuck",
  "mech-core",
  "mech-engine",
+ "mech-runtime",
  "mech-stdlib",
+ "mech-syntax",
  "pollster",
  "wgpu",
 ]

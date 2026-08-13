@@ -414,6 +414,8 @@ fn legacy_only_bypasses_resident_planning() {
         .unwrap();
     assert_eq!(outcome.route, RuntimeProgramRoute::Legacy);
     assert_eq!(runtime.next_resident_instance, 1);
+    runtime.record_legacy_live_turns(3).unwrap();
+    assert_eq!(runtime.program_execution_info().legacy_turns, 4);
 }
 
 #[test]

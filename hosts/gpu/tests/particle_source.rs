@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use mech_core::{
-    ComputePlacement, LegacyValue, ParsedProgram, Ref, ResolvedOperationContract, hash_str,
-    matrix::Matrix,
+    Body, ComputePlacement, LegacyValue, MechCode, ParsedProgram, Program, Ref,
+    ResolvedOperationContract, Section, SectionElement, hash_str, matrix::Matrix,
 };
 use mech_engine::{
     MechProgram, MechProgramConfig, SlotRole, decode_program_artifact_product_sections,
@@ -41,8 +41,6 @@ positions = next-positions
 (positions, velocities)
 "#;
 
-const PROJECT_BOOTSTRAP: &str = include_str!("../../../include/project.js");
-const PARTICLE_HTML: &str = include_str!("../../../examples/gpu-particles/index.html");
 const SERVED_PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
 
 fn compile_source(
@@ -69,6 +67,60 @@ fn compile_source(
         .expect("source must compile")
 }
 
+fn isolated_gpu_tree(source: &str) -> Program {
+    let tree = mech_syntax::parse(source).expect("complete mixed source must parse");
+    let imports = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .filter_map(|element| {
+            let SectionElement::MechCode(code) = element else {
+                return None;
+            };
+            let imports = code
+                .iter()
+                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
+                .cloned()
+                .collect::<Vec<_>>();
+            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
+        })
+        .collect::<Vec<_>>();
+    let region = tree
+        .body
+        .sections
+        .iter()
+        .find(|section| section.compute.is_some())
+        .expect("mixed source must contain a compute region")
+        .clone();
+    Program {
+        title: None,
+        body: Body {
+            sections: vec![
+                Section {
+                    subtitle: None,
+                    compute: None,
+                    elements: imports,
+                },
+                region,
+            ],
+        },
+    }
+}
+
+fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::source_native_plan_catalog(),
+    );
+    program
+        .run_tree(&isolated_gpu_tree(source))
+        .expect("isolated GPU source must run");
+    program
+        .compile_program_artifact()
+        .expect("isolated GPU source must compile")
+}
+
 fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
     vec![
         (
@@ -92,12 +144,22 @@ fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
 
 #[test]
 fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
-    let source = SERVED_PARTICLE_SOURCE.replacen("2000000f32", "64f32", 1);
+    let source = SERVED_PARTICLE_SOURCE.replacen("100000f32", "64f32", 1);
+    let complete = mech_syntax::parse(&source).expect("complete source must parse");
+    assert!(
+        complete
+            .body
+            .sections
+            .iter()
+            .any(|section| section.compute.is_none())
+    );
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
         mech_stdlib::source_native_plan_catalog(),
     );
-    program.run_string(&source).expect("source must run");
+    program
+        .run_tree(&isolated_gpu_tree(&source))
+        .expect("source must run");
     let product = program
         .compile_program_product()
         .expect("named source must compile");
@@ -105,7 +167,7 @@ fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
     assert_eq!(product.compute_regions().len(), 1);
     let region = &product.compute_regions()[0];
     assert_eq!(region.name, "particle-field");
-    assert_eq!(region.placement, ComputePlacement::Compute);
+    assert_eq!(region.placement, ComputePlacement::Gpu);
     assert!(!region.nodes.is_empty());
     let bytecode = ParsedProgram::from_bytes(product.bytecode()).unwrap();
     let (_, bytecode_regions) =
@@ -121,7 +183,7 @@ fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
     );
     assert_eq!(
         placement.gpu_regions[0].requested,
-        Some(ComputePlacement::Compute),
+        Some(ComputePlacement::Gpu),
     );
     GpuHost
         .compile_with_regions(product.artifact(), product.compute_regions())
@@ -131,13 +193,15 @@ fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
 #[test]
 fn hard_cpu_region_is_not_silently_sent_to_gpu() {
     let source = SERVED_PARTICLE_SOURCE
-        .replacen("2000000f32", "16f32", 1)
-        .replacen("@ compute", "@ cpu", 1);
+        .replacen("100000f32", "16f32", 1)
+        .replacen("@ gpu", "@ cpu", 1);
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
         mech_stdlib::source_native_plan_catalog(),
     );
-    program.run_string(&source).expect("source must run");
+    program
+        .run_tree(&isolated_gpu_tree(&source))
+        .expect("source must run");
     let product = program.compile_program_product().unwrap();
     let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
 
@@ -305,24 +369,31 @@ fn standalone_particle_program_needs_no_host_inputs() {
 }
 
 #[test]
-fn particle_example_uses_the_shared_project_and_gpu_shim() {
-    assert!(PARTICLE_HTML.contains("src=\"/_mech/project.js\""));
-    assert!(!PARTICLE_HTML.contains("particle-gpu.js"));
-    assert!(PROJECT_BOOTSTRAP.contains("mech.compileGpuProgram(source)"));
-    assert!(PROJECT_BOOTSTRAP.contains("data-mech-gpu-renderer"));
-    assert!(PROJECT_BOOTSTRAP.contains("this.output.dimensions[1] === 2"));
-    assert!(PROJECT_BOOTSTRAP.contains("maxRenderedPoints = 250_000"));
-    assert!(PROJECT_BOOTSTRAP.contains("timings.artifactCompilation / 1000"));
-    assert!(!PROJECT_BOOTSTRAP.contains("seedParticles"));
-    assert!(!PROJECT_BOOTSTRAP.contains("host-positions"));
-    assert!(SERVED_PARTICLE_SOURCE.contains("particle-count := 2000000f32"));
-    assert!(!SERVED_PARTICLE_SOURCE.contains("host-"));
+fn particle_example_is_one_mixed_mech_document() {
+    let tree = mech_syntax::parse(SERVED_PARTICLE_SOURCE).expect("complete source must parse");
+    let regions = tree
+        .body
+        .sections
+        .iter()
+        .filter(|section| section.compute.is_some())
+        .collect::<Vec<_>>();
+    assert_eq!(regions.len(), 1);
+    assert_eq!(regions[0].compute, Some(ComputePlacement::Gpu));
+    assert_eq!(
+        regions[0].subtitle.as_ref().unwrap().to_string().trim(),
+        "particle-field"
+    );
+    assert!(SERVED_PARTICLE_SOURCE.contains("timer://clock/tick"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("gpu://particles/kernel"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("console://console/output"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("@particles/turn <- tick"));
+    assert!(!SERVED_PARTICLE_SOURCE.contains("host-positions"));
 }
 
 #[test]
 fn served_particle_field_stays_bounded_without_damping() {
-    let source = SERVED_PARTICLE_SOURCE.replacen("2000000f32", "512f32", 1);
-    let artifact = compile_source(&source, []);
+    let source = SERVED_PARTICLE_SOURCE.replacen("100000f32", "512f32", 1);
+    let artifact = compile_isolated_gpu_source(&source);
     let program = GpuHost
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("served particle source must be admitted: {error}"));

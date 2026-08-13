@@ -196,6 +196,19 @@ impl MechRuntime {
         Ok(())
     }
 
+    pub fn record_legacy_live_turns(&mut self, turns: u64) -> MResult<()> {
+        if !matches!(self.active_program, ActiveProgramExecution::Legacy) {
+            return Err(invalid_active_program(
+                "legacy live turns require an active legacy program",
+            ));
+        }
+        self.program_execution_info.legacy_turns = self
+            .program_execution_info
+            .legacy_turns
+            .saturating_add(turns);
+        Ok(())
+    }
+
     pub(crate) fn program_route_for_debug(&self) -> RuntimeProgramRoute {
         self.program_route()
     }
