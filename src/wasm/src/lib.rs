@@ -9,8 +9,14 @@ mod project;
 #[cfg(feature = "browser_gpu_compiler")]
 mod gpu;
 
+#[cfg(all(feature = "browser_gpu_compiler", feature = "browser_project_runner"))]
+mod mixed_gpu;
+
 #[cfg(feature = "browser_project_runner")]
 pub use project::*;
 
 #[cfg(feature = "browser_gpu_compiler")]
 pub use gpu::*;
+
+#[cfg(all(feature = "browser_gpu_compiler", feature = "browser_project_runner"))]
+pub use mixed_gpu::*;

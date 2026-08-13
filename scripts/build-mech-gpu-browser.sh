@@ -10,7 +10,7 @@ wasm-pack build src/wasm \
   --target web \
   --out-dir pkg \
   --no-default-features \
-  --features browser_gpu_compiler
+  --features browser_project,browser_gpu_compiler
 
 test -f src/wasm/pkg/mech_wasm.js
 test -f src/wasm/pkg/mech_wasm_bg.wasm

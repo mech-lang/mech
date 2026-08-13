@@ -1,57 +1,72 @@
-# Mixed CPU/GPU particle application
+# Interactive mixed CPU/GPU particle field
 
-This spike runs one real Mech document through the resident runtime and a
-native GPU host. [`particles.mec`](particles.mec) contains both sides:
+This example is one Mech application. `particles.mec` contains both the normal
+transactional CPU graph and the named `particle-field @ gpu` numeric region.
 
-- unannotated application code reads the timer host, stages GPU work, reads GPU
-  telemetry, and writes the console host;
-- `particle-field @ gpu` is compiled from the same syntax tree into one resident
-  `wgpu` kernel;
-- the remaining unannotated sections are compiled into a D4 resident CPU
-  artifact; and
-- the runtime delivers the GPU dispatch only after the CPU transaction commits.
+The browser is a host, not the application:
 
-There is no Rust particle function, JavaScript simulation, second `.mec` file,
-or configured direct-executor turn loop. The Rust GPU host implements the
-general execution boundary: it receives a compiler-produced region and rejects
-regions the current lowering cannot execute.
+- pointer events enter Mech through `pointer://pointer/frame`;
+- the unannotated CPU graph computes the inputs for the accelerated region;
+- committed writes to `gpu://particles/kernel` trigger the GPU dispatch;
+- positions and velocities remain resident in WebGPU buffers; and
+- the browser renders the resident position buffer without reading it back.
 
-## Run
+There is no JavaScript particle simulation or handwritten particle kernel.
+The GPU program is lowered from the ordinary matrix expressions in
+`particles.mec`. Unsupported regions fail with compiler diagnostics instead of
+silently moving to the CPU.
 
-Build native GPU support and run a bounded number of live timer turns:
+## macOS
 
-```text
-cargo build --release --features gpu_executor_native
-./target/release/mech run examples/gpu-particles --max-live-turns 120 --runtime-info
-```
-
-On Windows PowerShell:
+Install `wasm-pack` once if it is not already available, then build the browser
+runtime before building the server so the executable embeds the new WASM files:
 
 ```text
-cargo build --release --features gpu_executor_native
-.\target\release\mech.exe run examples\gpu-particles --max-live-turns 120 --runtime-info
+cargo install wasm-pack --locked
+./scripts/build-mech-gpu-browser.sh
+cargo build --release
+./target/release/mech serve examples/gpu-particles
 ```
 
-`wgpu` selects Metal on macOS and an available native backend on Windows. Each
-console row is the previous GPU dispatch duration in milliseconds. The
-telemetry is intentionally one transaction behind: the application reads the
-last committed state before staging the next after-commit dispatch.
+Open the printed URL in a WebGPU-capable browser. Press and drag in the field;
+the pointer coordinates pass through a committed Mech runtime turn before the
+GPU force inputs change.
 
-The config requires resident routing. `--runtime-info` must report
-`route: "resident-external"` and `legacy_turns: 0`; failure to admit the CPU
-projection stops the program instead of falling back to the interpreter.
+## Windows PowerShell
 
-The particle count is the `particle-count` value in `particles.mec`; the checked
-in end-to-end demonstration runs 100,000 particles. Larger source-defined fields
-currently push the eagerly materialized source artifact toward D4's 64 MiB
-bytecode read limit. GPU-side initializer lowering should remove that startup
-artifact growth instead of teaching the demo to bypass the limit.
+Use a current Edge or Chrome build with WebGPU enabled. The application and
+Mech source are unchanged:
 
-## Spike limits
+```text
+cargo install wasm-pack --locked
+powershell -ExecutionPolicy Bypass -File scripts\build-mech-gpu-browser.ps1
+cargo build --release
+.\target\release\mech.exe serve examples\gpu-particles
+```
 
-The extraction and host boundary are real, but deliberately narrow. The native
-path currently supports one resident CPU projection, one selected GPU region,
-autonomous GPU state, and dispatch/telemetry I/O. Mutable CPU-to-GPU region
-parameters, GPU output readback into the CPU graph, multiple GPU regions, and
-the browser host remain future scheduling work and fail rather than silently
-changing placement.
+Open the printed local URL in Edge or Chrome. WebGPU availability, adapter
+limits, WGSL compilation, and every CPU-to-GPU binding are checked before the
+simulation starts; failures are shown in the page instead of falling back.
+
+## What is measured
+
+`Particles` is the number updated by the generated GPU program each committed
+turn. `Displayed` is the renderer's visual sample, capped at 250,000 points to
+keep rendering from obscuring compute throughput. The full one million particle
+position and velocity matrices are always updated on the GPU.
+
+The particle count is the `particle-count` value in `particles.mec`. Startup is
+reported as parsing, source initialization, artifact compilation, and GPU
+lowering. The current eager source initializer materializes the million-element
+matrices while constructing the artifact; GPU-side initializer lowering is the
+intended fix for that startup cost.
+
+## Current spike boundary
+
+This proves one ordinary CPU graph, one named GPU region, explicit host I/O,
+transaction-ordered dispatch, persistent GPU state, and direct rendering
+through the cross-platform WebGPU browser API. The generated shader is validated
+on macOS Metal; the Windows build and run path is provided but still needs a
+physical Windows browser acceptance pass. Multiple GPU regions, GPU-to-CPU
+readback, automatic placement, and GPU-side initialization remain separate
+compiler and scheduler work.

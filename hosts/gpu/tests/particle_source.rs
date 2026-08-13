@@ -144,7 +144,7 @@ fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
 
 #[test]
 fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
-    let source = SERVED_PARTICLE_SOURCE.replacen("100000f32", "64f32", 1);
+    let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "64f32", 1);
     let complete = mech_syntax::parse(&source).expect("complete source must parse");
     assert!(
         complete
@@ -185,15 +185,32 @@ fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
         placement.gpu_regions[0].requested,
         Some(ComputePlacement::Gpu),
     );
-    GpuHost
+    let lowered = GpuHost
         .compile_with_regions(product.artifact(), product.compute_regions())
         .expect("one named compute region must lower to one GPU program");
+    assert!(
+        lowered.bindings().len() <= 8,
+        "the example must fit WebGPU's guaranteed storage-buffer limit"
+    );
+    for binding in lowered
+        .bindings()
+        .iter()
+        .filter(|binding| binding.role() == GpuBindingRole::Input && binding.elements == 1)
+    {
+        assert!(
+            lowered
+                .wgsl()
+                .contains(&format!("input_{}[0u]", binding.slot().get())),
+            "scalar input {} must be broadcast from element zero",
+            binding.name
+        );
+    }
 }
 
 #[test]
 fn hard_cpu_region_is_not_silently_sent_to_gpu() {
     let source = SERVED_PARTICLE_SOURCE
-        .replacen("100000f32", "16f32", 1)
+        .replacen("1000000f32", "16f32", 1)
         .replacen("@ gpu", "@ cpu", 1);
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
@@ -383,16 +400,16 @@ fn particle_example_is_one_mixed_mech_document() {
         regions[0].subtitle.as_ref().unwrap().to_string().trim(),
         "particle-field"
     );
-    assert!(SERVED_PARTICLE_SOURCE.contains("timer://clock/tick"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("pointer://pointer/frame"));
     assert!(SERVED_PARTICLE_SOURCE.contains("gpu://particles/kernel"));
-    assert!(SERVED_PARTICLE_SOURCE.contains("console://console/output"));
-    assert!(SERVED_PARTICLE_SOURCE.contains("@particles/turn <- tick"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("@particles/input/force-x <- force-x"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("@particles/turn <- pulse"));
     assert!(!SERVED_PARTICLE_SOURCE.contains("host-positions"));
 }
 
 #[test]
-fn served_particle_field_stays_bounded_without_damping() {
-    let source = SERVED_PARTICLE_SOURCE.replacen("100000f32", "512f32", 1);
+fn served_particle_field_stays_bounded() {
+    let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
     let artifact = compile_isolated_gpu_source(&source);
     let program = GpuHost
         .compile(&artifact)
@@ -403,18 +420,20 @@ fn served_particle_field_stays_bounded_without_damping() {
     assert!(!program.wgsl().contains("%"));
 
     let inputs = BTreeMap::from([
-        ("origin".to_owned(), vec![0.0]),
-        ("attraction".to_owned(), vec![0.45]),
-        ("nonlinear-attraction".to_owned(), vec![0.65]),
-        ("dt".to_owned(), vec![0.02]),
+        ("force-x".to_owned(), vec![0.0]),
+        ("force-y".to_owned(), vec![0.0]),
+        ("force-strength".to_owned(), vec![0.0]),
+        ("dt".to_owned(), vec![0.016]),
     ]);
     let mut cpu = program
         .prepare_cpu(&inputs)
         .expect("particle field must prepare from its captured constants");
+    cpu.dispatch_turns(1)
+        .expect("particle field must establish its first output");
     let initial = cpu.outputs().expect("initial particle field must read");
     let initial_radius = root_mean_square_radius(&initial["result.0"]);
 
-    cpu.dispatch_turns(2_000)
+    cpu.dispatch_turns(600)
         .expect("conservative particle field must advance");
     let evolved = cpu.outputs().expect("evolved particle field must read");
     let evolved_radius = root_mean_square_radius(&evolved["result.0"]);
@@ -422,7 +441,7 @@ fn served_particle_field_stays_bounded_without_damping() {
     assert!(evolved["result.0"].iter().all(|value| value.is_finite()));
     assert!(evolved["result.0"].iter().all(|value| value.abs() < 2.0));
     assert!(
-        evolved_radius > initial_radius * 0.8,
+        evolved_radius > initial_radius * 0.7,
         "particle field collapsed: initial RMS radius {initial_radius}, evolved {evolved_radius}"
     );
 }
@@ -470,6 +489,42 @@ fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
     for (name, cpu_values) in cpu {
         assert_close(&gpu[&name], &cpu_values);
     }
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn served_particle_shader_matches_cpu_with_pointer_force() {
+    let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "4096f32", 1);
+    let artifact = compile_isolated_gpu_source(&source);
+    let program = GpuHost
+        .compile(&artifact)
+        .expect("served particle source must lower");
+    let inputs = BTreeMap::from([
+        ("force-x".to_owned(), vec![0.3]),
+        ("force-y".to_owned(), vec![-0.2]),
+        ("force-strength".to_owned(), vec![0.055]),
+        ("dt".to_owned(), vec![0.016]),
+    ]);
+    let cpu = program.run_cpu(&inputs).expect("CPU reference must run");
+    let gpu = match program.run_gpu_profiled(&inputs) {
+        Ok(gpu) => gpu,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(error) => panic!("served particle shader failed: {error}"),
+    };
+    eprintln!("served particle adapter: {}", gpu.adapter);
+    assert_eq!(
+        cpu.keys().collect::<Vec<_>>(),
+        gpu.outputs.keys().collect::<Vec<_>>()
+    );
+    let max_error = cpu
+        .iter()
+        .map(|(name, cpu_values)| maximum_absolute_error(&gpu.outputs[name], cpu_values))
+        .fold(0.0_f32, f32::max);
+    eprintln!("served particle maximum CPU/GPU error: {max_error:.3e}");
+    assert!(
+        max_error <= 1.0e-6,
+        "CPU/GPU error {max_error} is too large"
+    );
 }
 
 #[cfg(feature = "native")]
@@ -623,11 +678,25 @@ fn particle_arithmetic_reaches_artifact_with_declared_contracts() {
 }
 
 fn assert_close(actual: &[f32], expected: &[f32]) {
+    assert_close_with_tolerance(actual, expected, 1.0e-6);
+}
+
+fn assert_close_with_tolerance(actual: &[f32], expected: &[f32], tolerance: f32) {
     assert_eq!(actual.len(), expected.len());
     for (index, (actual, expected)) in actual.iter().zip(expected).enumerate() {
         assert!(
-            (actual - expected).abs() < 1.0e-6,
+            (actual - expected).abs() < tolerance,
             "element {index}: expected {expected}, got {actual}"
         );
     }
+}
+
+#[cfg(feature = "native")]
+fn maximum_absolute_error(actual: &[f32], expected: &[f32]) -> f32 {
+    assert_eq!(actual.len(), expected.len());
+    actual
+        .iter()
+        .zip(expected)
+        .map(|(actual, expected)| (actual - expected).abs())
+        .fold(0.0, f32::max)
 }

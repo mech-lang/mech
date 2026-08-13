@@ -202,31 +202,42 @@ enum ElementwiseOperation {
     Binary(BinaryOperation),
     Unary(UnaryOperation),
     Atan2,
+    Identity,
+    Pack2,
 }
 
 impl ElementwiseOperation {
     const fn arity(self) -> usize {
         match self {
-            Self::Unary(_) => 1,
-            Self::Binary(_) | Self::Atan2 => 2,
+            Self::Unary(_) | Self::Identity => 1,
+            Self::Binary(_) | Self::Atan2 | Self::Pack2 => 2,
         }
     }
 
-    fn apply(self, inputs: &[f32]) -> f32 {
+    fn apply(self, inputs: &[f32], index: usize, output_elements: usize) -> f32 {
         match self {
             Self::Binary(operation) => operation.apply(inputs[0], inputs[1]),
             Self::Unary(operation) => operation.apply(inputs[0]),
             Self::Atan2 => inputs[0].atan2(inputs[1]),
+            Self::Identity => inputs[0],
+            Self::Pack2 => inputs[usize::from(index >= output_elements.div_ceil(2))],
         }
     }
 
-    fn wgsl_expression(self, inputs: &[String]) -> String {
+    fn wgsl_expression(self, inputs: &[String], dispatch_elements: u64) -> String {
         match self {
             Self::Binary(operation) => {
                 format!("{} {} {}", inputs[0], operation.wgsl(), inputs[1])
             }
             Self::Unary(operation) => format!("{}({})", operation.wgsl(), inputs[0]),
             Self::Atan2 => format!("atan2({}, {})", inputs[0], inputs[1]),
+            Self::Identity => inputs[0].clone(),
+            Self::Pack2 => format!(
+                "select({}, {}, index >= {}u)",
+                inputs[0],
+                inputs[1],
+                dispatch_elements.div_ceil(2)
+            ),
         }
     }
 }
@@ -358,9 +369,21 @@ impl GpuProgram {
                 let inputs = operation
                     .inputs
                     .iter()
-                    .map(|source| cpu_source_value(*source, index, slots, &self.constants))
+                    .map(|source| {
+                        cpu_source_value(
+                            *source,
+                            index,
+                            operation.elements as usize,
+                            slots,
+                            &self.constants,
+                        )
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
-                output.push(operation.operation.apply(&inputs));
+                output.push(
+                    operation
+                        .operation
+                        .apply(&inputs, index, operation.elements as usize),
+                );
             }
             slots.insert(operation.output, output);
         }
@@ -369,7 +392,15 @@ impl GpuProgram {
             .iter()
             .map(|state| {
                 let values = (0..state.elements as usize)
-                    .map(|index| cpu_source_value(state.source, index, slots, &self.constants))
+                    .map(|index| {
+                        cpu_source_value(
+                            state.source,
+                            index,
+                            state.elements as usize,
+                            slots,
+                            &self.constants,
+                        )
+                    })
                     .collect::<Result<Vec<_>, _>>()?;
                 Ok((state.slot, values))
             })
@@ -768,9 +799,6 @@ impl<'a> Compiler<'a> {
                 self.lower_state_commit(node, &operation_name, &state_targets);
                 continue;
             }
-            if !self.admit_contract(node.node, &operation_name, node.contract) {
-                continue;
-            }
             let Some(operation) = elementwise_operation(&node.operation) else {
                 self.reject(
                     GpuDiagnosticCode::OperationUnsupported,
@@ -780,6 +808,15 @@ impl<'a> Compiler<'a> {
                 );
                 continue;
             };
+            let host_proven_concatenation = matches!(
+                operation,
+                ElementwiseOperation::Identity | ElementwiseOperation::Pack2
+            );
+            if !host_proven_concatenation
+                && !self.admit_contract(node.node, &operation_name, node.contract)
+            {
+                continue;
+            }
             let inputs = node
                 .input_bindings
                 .clone()
@@ -824,10 +861,25 @@ impl<'a> Compiler<'a> {
             if !sources_valid {
                 continue;
             }
-            if input_elements
-                .iter()
-                .any(|elements| *elements != 1 && *elements != output_elements)
-            {
+            let output_dimensions = self.slot_dimensions(outputs[0]);
+            let shapes_compatible = match operation {
+                ElementwiseOperation::Pack2 => {
+                    input_elements.len() == 2
+                        && input_elements[0] == input_elements[1]
+                        && input_elements[0].checked_mul(2) == Some(output_elements)
+                }
+                _ => inputs
+                    .iter()
+                    .zip(&input_elements)
+                    .all(|(source, elements)| {
+                        *elements == 1
+                            || *elements == output_elements
+                            || self.source_dimensions(*source).is_some_and(|dimensions| {
+                                block_broadcast_dimensions(&dimensions, &output_dimensions)
+                            })
+                    }),
+            };
+            if !shapes_compatible {
                 self.reject(
                     GpuDiagnosticCode::ShapeMismatch,
                     Some(node.node),
@@ -1219,6 +1271,13 @@ impl<'a> Compiler<'a> {
         }
     }
 
+    fn source_dimensions(&self, source: ArtifactSource) -> Option<Vec<u64>> {
+        match source {
+            ArtifactSource::Slot(slot) => Some(self.slot_dimensions(slot)),
+            ArtifactSource::Constant(_) => Some(Vec::new()),
+        }
+    }
+
     fn source_elements(
         &mut self,
         source: ArtifactSource,
@@ -1312,7 +1371,9 @@ impl<'a> Compiler<'a> {
             shader.push_str(&format!(
                 "  let slot_{} = {};\n",
                 operation.output.get(),
-                operation.operation.wgsl_expression(&inputs)
+                operation
+                    .operation
+                    .wgsl_expression(&inputs, dispatch_elements)
             ));
         }
         for state in &self.state_slots {
@@ -1362,18 +1423,10 @@ impl<'a> Compiler<'a> {
     fn wgsl_slot(&self, slot: CellSlotId, consumer_elements: u64) -> String {
         let elements = self.slot_elements[&slot];
         if let Some((_, _, _)) = self.input_slots.get(&slot) {
-            let index = if elements == 1 && consumer_elements != 1 {
-                "0u"
-            } else {
-                "index"
-            };
+            let index = wgsl_broadcast_index(elements, consumer_elements);
             format!("input_{}[{index}]", slot.get())
         } else if self.state_slots.contains_key(&slot) {
-            let index = if elements == 1 && consumer_elements != 1 {
-                "0u"
-            } else {
-                "index"
-            };
+            let index = wgsl_broadcast_index(elements, consumer_elements);
             format!("state_read_{}[{index}]", slot.get())
         } else {
             format!("slot_{}", slot.get())
@@ -1458,6 +1511,37 @@ fn producer_node(producer: mech_engine::ProducerReference) -> Option<NodeId> {
     }
 }
 
+fn wgsl_broadcast_index(elements: u64, consumer_elements: u64) -> String {
+    if elements == 1 {
+        "0u".to_owned()
+    } else if elements == consumer_elements {
+        "index".to_owned()
+    } else if consumer_elements % elements == 0 {
+        format!("index / {}u", consumer_elements / elements)
+    } else {
+        "index".to_owned()
+    }
+}
+
+fn block_broadcast_dimensions(input: &[u64], output: &[u64]) -> bool {
+    if input.len() != output.len() {
+        return false;
+    }
+    let mut expanded = false;
+    for (input, output) in input.iter().zip(output) {
+        if input == output {
+            if expanded && *input != 1 {
+                return false;
+            }
+        } else if *input == 1 {
+            expanded = true;
+        } else {
+            return false;
+        }
+    }
+    expanded
+}
+
 fn display_operation(operation: &OperationReference) -> String {
     operation
         .module_path
@@ -1482,6 +1566,20 @@ fn elementwise_operation(operation: &OperationReference) -> Option<ElementwiseOp
         "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
         "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
         "math/atan2" => Some(ElementwiseOperation::Atan2),
+        _ if operation.module_path.as_ref() == ["runtime"]
+            && operation
+                .operation_name
+                .starts_with("HorizontalConcatenateS1D") =>
+        {
+            Some(ElementwiseOperation::Identity)
+        }
+        _ if operation.module_path.as_ref() == ["runtime"]
+            && operation
+                .operation_name
+                .starts_with("VerticalConcatenateVD2") =>
+        {
+            Some(ElementwiseOperation::Pack2)
+        }
         _ if operation.module_path.as_ref() == ["runtime"]
             && operation.operation_name.starts_with("Add") =>
         {
@@ -1527,6 +1625,7 @@ fn format_wgsl_f32(value: f32) -> String {
 fn cpu_source_value(
     source: ArtifactSource,
     index: usize,
+    consumer_elements: usize,
     slots: &BTreeMap<CellSlotId, Vec<f32>>,
     constants: &BTreeMap<mech_core::ConstantId, f32>,
 ) -> Result<f32, CpuExecutionError> {
@@ -1539,8 +1638,17 @@ fn cpu_source_value(
             let values = slots
                 .get(&slot)
                 .ok_or(CpuExecutionError::MissingSlot { slot })?;
+            let source_index = if values.len() == 1 {
+                0
+            } else if values.len() == consumer_elements {
+                index
+            } else if consumer_elements % values.len() == 0 {
+                index / (consumer_elements / values.len())
+            } else {
+                index
+            };
             values
-                .get(if values.len() == 1 { 0 } else { index })
+                .get(source_index)
                 .copied()
                 .ok_or(CpuExecutionError::IndexOutOfBounds { slot, index })
         }
