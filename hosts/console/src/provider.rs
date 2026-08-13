@@ -91,7 +91,7 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static OperationContractDeclaration> {
         (intent == RuntimeResourceWriteIntent::Send)
-            .then(mech_runtime::provider_defined_effect_contract)
+            .then(mech_runtime::at_most_once_effect_contract)
     }
 
     fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {

@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use mech_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
-use mech_core::{FunctionCatalog, FunctionCatalogBuilder, LegacyValue};
+use mech_core::{
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, FunctionCatalog,
+    FunctionCatalogBuilder, IdempotencyRequirement, LegacyValue,
+};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, PreparedRuntimeEffect, RunResourceGrantConfig,
     RuntimeBuilder, RuntimeCapabilityOperation, RuntimeEventKind, RuntimeHealth,
@@ -36,6 +39,22 @@ fn provider_writes_line_to_backend() {
         },
     );
     assert_eq!(observed.lines(), vec!["hello".to_string()]);
+}
+
+#[test]
+fn console_send_declares_at_most_once_delivery() {
+    let provider = ConsoleResourceProvider::new("console", RecordingConsoleBackend::new());
+    let contract = provider
+        .semantic_write_contract(RuntimeResourceWriteIntent::Send)
+        .unwrap();
+
+    assert!(matches!(
+        contract.interaction,
+        ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        })
+    ));
 }
 
 #[test]

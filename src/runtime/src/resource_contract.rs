@@ -38,6 +38,13 @@ static PROVIDER_DEFINED_EFFECT: LazyLock<OperationContractDeclaration> = LazyLoc
     }))
 });
 
+static AT_MOST_ONCE_EFFECT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    resource_write_contract(ExternalInteraction::Effect(EffectContract {
+        delivery: EffectDeliveryPolicy::AtMostOnce,
+        idempotency: IdempotencyRequirement::NotRequired,
+    }))
+});
+
 static PREPARE_COMMIT_COMPENSATE: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
     resource_write_contract(ExternalInteraction::TransactionalExternal(
         TransactionalExternalContract {
@@ -68,6 +75,11 @@ pub fn provider_defined_effect_contract() -> &'static OperationContractDeclarati
     &PROVIDER_DEFINED_EFFECT
 }
 
+/// Declares an effect that is attempted once after publication and is not retried.
+pub fn at_most_once_effect_contract() -> &'static OperationContractDeclaration {
+    &AT_MOST_ONCE_EFFECT
+}
+
 pub fn prepare_commit_compensate_contract() -> &'static OperationContractDeclaration {
     &PREPARE_COMMIT_COMPENSATE
 }
@@ -96,6 +108,15 @@ mod tests {
             ExternalInteraction::Effect(EffectContract {
                 delivery: EffectDeliveryPolicy::ProviderDefined,
                 idempotency: IdempotencyRequirement::Optional,
+            })
+        ));
+
+        let at_most_once = at_most_once_effect_contract();
+        assert!(matches!(
+            at_most_once.interaction,
+            ExternalInteraction::Effect(EffectContract {
+                delivery: EffectDeliveryPolicy::AtMostOnce,
+                idempotency: IdempotencyRequirement::NotRequired,
             })
         ));
 

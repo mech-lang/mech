@@ -63,6 +63,35 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-production-source")]
+    /// Plans and loads an already parsed Mech program through the same resident
+    /// routing policy as textual source.
+    pub fn load_tree_program(
+        &mut self,
+        tree: &mech_core::Program,
+        options: RuntimeProgramLoadOptions,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.ensure_program_slot_available()?;
+        super::ensure_supported_durability(options.durability)?;
+        if options.routing == ResidentRoutingPolicy::LegacyOnly {
+            let value = self.run_tree(tree)?;
+            return self.install_legacy_outcome(value, options.routing);
+        }
+
+        let artifact = Arc::new(self.plan_tree_product(tree)?.into_parts().0);
+        match self.install_resident_artifact(artifact, options) {
+            Ok(outcome) => Ok(outcome),
+            Err(error)
+                if options.routing == ResidentRoutingPolicy::PreferResident
+                    && fallback_eligible(&error) =>
+            {
+                let value = self.run_tree(tree)?;
+                self.install_legacy_outcome(value, options.routing)
+            }
+            Err(error) => Err(error),
+        }
+    }
+
+    #[cfg(feature = "resident-production-source")]
     pub fn load_root_program(
         &mut self,
         request: SourceRequest,
@@ -170,6 +199,37 @@ impl MechRuntime {
         };
         program
             .run_string_with_services(source, &mut services)
+            .map_err(classify_source_planning)?;
+        let resolver = ResidentExternalContractResolver::new(&self.resources);
+        program
+            .compile_program_product_with_external_contracts(&resolver)
+            .map_err(|error| {
+                route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    format!("resident ProgramArtifact finalization failed: {error:?}"),
+                )
+            })
+    }
+
+    #[cfg(feature = "resident-production-source")]
+    fn plan_tree_product(
+        &mut self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        let mut program = self.new_program(MechProgramConfig {
+            name: self.config.name.clone(),
+            environment: MechProgramEnvironment {
+                trace_enabled: self.config.diagnostics.trace_enabled,
+                debug_enabled: self.config.diagnostics.debug_enabled,
+                profile_enabled: self.config.diagnostics.profile_enabled,
+                rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
+            },
+        });
+        let mut services = ResidentSourcePlanningServices {
+            providers: &self.resources,
+        };
+        program
+            .run_tree_with_services(tree, &mut services)
             .map_err(classify_source_planning)?;
         let resolver = ResidentExternalContractResolver::new(&self.resources);
         program

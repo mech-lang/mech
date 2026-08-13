@@ -291,9 +291,7 @@ impl RuntimeResourceProvider for ProductTimerProvider {
     }
 }
 
-fn external_runtime(
-    durability: crate::ResidentDurabilityPolicy,
-) -> (
+fn configured_external_runtime() -> (
     crate::MechRuntime,
     Arc<AtomicUsize>,
     Arc<AtomicUsize>,
@@ -319,6 +317,18 @@ fn external_runtime(
             ["read"],
         )))
         .unwrap();
+    (runtime, plans, reads, value_bits)
+}
+
+fn external_runtime(
+    durability: crate::ResidentDurabilityPolicy,
+) -> (
+    crate::MechRuntime,
+    Arc<AtomicUsize>,
+    Arc<AtomicUsize>,
+    Arc<AtomicU64>,
+) {
+    let (mut runtime, plans, reads, value_bits) = configured_external_runtime();
     runtime
         .load_source_program(
             external_source(),
@@ -374,6 +384,21 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
         source.info.layout_generation,
         bytecode.info.layout_generation
     );
+}
+
+#[test]
+fn parsed_tree_can_be_loaded_as_a_resident_program() {
+    let options = RuntimeProgramLoadOptions {
+        routing: crate::ResidentRoutingPolicy::RequireResident,
+        ..RuntimeProgramLoadOptions::default()
+    };
+    let tree = mech_syntax::parser::parse(external_source().trim()).unwrap();
+    let (mut runtime, _, _, _) = configured_external_runtime();
+    let outcome = runtime.load_tree_program(&tree, options).unwrap();
+
+    assert_eq!(outcome.route, RuntimeProgramRoute::ResidentExternal);
+    assert!(!outcome.initial_value.is_empty());
+    assert!(outcome.info.program_revision.is_some());
 }
 
 #[test]
