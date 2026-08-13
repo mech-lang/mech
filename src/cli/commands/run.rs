@@ -273,11 +273,12 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         .with_compiler_loc());
     }
     #[cfg(feature = "gpu_executor_native")]
-    let host_factories = crate::cli::executor::configured_gpu_host_factory(&plan)?
-        .into_iter()
-        .collect();
+    let (host_factories, gpu_cpu_tree) = match crate::cli::executor::configured_gpu_host(&plan)? {
+        Some(configured) => (vec![configured.factory], Some(configured.cpu_tree)),
+        None => (Vec::new(), None),
+    };
     #[cfg(not(feature = "gpu_executor_native"))]
-    let host_factories = {
+    let (host_factories, gpu_cpu_tree) = {
         if plan
             .configured_hosts
             .iter()
@@ -292,7 +293,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
             )
             .with_compiler_loc());
         }
-        Vec::new()
+        (Vec::new(), None::<mech_core::Program>)
     };
     let mut runtime = new_cli_runtime_with_source_resolver_and_host_factories(
         plan.runtime_config,
@@ -347,22 +348,28 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                     && SourceKind::from_path(&targets[0]).is_executable_mech()
                     && !plan.repl_requested
                 {
-                    let canonical_target = targets[0].canonicalize().map_err(|error| {
-                        MechError::new(
-                            CliRunError {
-                                operation: "canonicalize_run_target".to_string(),
-                                reason: format!("{}: {}", targets[0].display(), error),
-                            },
-                            None,
-                        )
-                    })?;
-                    runtime
-                        .load_root_program(
-                            SourceRequest::from_filesystem_path(&canonical_target)?,
-                            cli_module_options(),
-                            load_options,
-                        )
-                        .map(|outcome| outcome.initial_value)
+                    if let Some(cpu_tree) = gpu_cpu_tree.as_ref() {
+                        runtime
+                            .load_tree_program(cpu_tree, load_options)
+                            .map(|outcome| outcome.initial_value)
+                    } else {
+                        let canonical_target = targets[0].canonicalize().map_err(|error| {
+                            MechError::new(
+                                CliRunError {
+                                    operation: "canonicalize_run_target".to_string(),
+                                    reason: format!("{}: {}", targets[0].display(), error),
+                                },
+                                None,
+                            )
+                        })?;
+                        runtime
+                            .load_root_program(
+                                SourceRequest::from_filesystem_path(&canonical_target)?,
+                                cli_module_options(),
+                                load_options,
+                            )
+                            .map(|outcome| outcome.initial_value)
+                    }
                 } else {
                     if targets.len() > 1
                         && plan.resident_routing
