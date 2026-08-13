@@ -154,20 +154,22 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
 `;
 
 class BrowserGpuProject {
-  static async fromSources(sourceEntries, sources) {
-    if (typeof mech.compileGpuProgram !== 'function') {
-      throw new Error('WASM build-profile mismatch: the configured GPU executor is unavailable');
+  static async fromSources(config, sourceEntries, sources) {
+    if (typeof mech.WasmMixedGpuProject?.fromSource !== 'function') {
+      throw new Error('WASM build-profile mismatch: the mixed CPU/GPU project runner is unavailable');
     }
     if (sourceEntries.length !== 1) {
       throw new Error(`the browser GPU executor currently requires one Mech source, found ${sourceEntries.length}`);
     }
     const source = sources[sourceEntries[0].specifier];
     const compileStarted = performance.now();
-    const manifest = mech.compileGpuProgram(source);
-    return new BrowserGpuProject(manifest, performance.now() - compileStarted);
+    const controller = mech.WasmMixedGpuProject.fromSource(config, source);
+    const manifest = controller.gpuManifest();
+    return new BrowserGpuProject(controller, manifest, performance.now() - compileStarted);
   }
 
-  constructor(manifest, compileMilliseconds) {
+  constructor(controller, manifest, compileMilliseconds) {
+    this.controller = controller;
     this.manifest = manifest;
     this.compileMilliseconds = compileMilliseconds;
     this.canvas = document.querySelector('canvas[data-mech-gpu-renderer="points2d"]');
@@ -177,6 +179,8 @@ class BrowserGpuProject {
     this.stopped = false;
     this.statsStarted = 0;
     this.statsFrames = 0;
+    this.pointer = { x: 0, y: 0, pressed: false };
+    this.lastFrameTime = 0;
   }
 
   async start() {
@@ -240,9 +244,11 @@ class BrowserGpuProject {
     await this.createPipelines();
     this.createBuffers();
     this.resize();
+    this.installPointerInput();
+    this.controller.start();
     await this.device.queue.onSubmittedWorkDone();
     this.message.textContent = '';
-    this.setStatus(`Mech compiled in ${(this.compileMilliseconds / 1000).toFixed(1)} s`, 'ready');
+    this.setStatus(`Mech CPU + GPU ready in ${(this.compileMilliseconds / 1000).toFixed(1)} s`, 'ready');
     this.setText('[data-mech-gpu-item-count]', this.itemCount.toLocaleString());
     this.setText('[data-mech-gpu-render-count]', this.renderItemCount.toLocaleString());
     const timings = this.manifest.compileTimings;
@@ -267,6 +273,29 @@ class BrowserGpuProject {
       .reduce((total, buffers) => total + buffers[0].size + buffers[1].size, 0);
     this.setText('[data-mech-gpu-state-size]', `${(residentBytes / 1_048_576).toFixed(1)} MB resident`);
     this.statsStarted = performance.now();
+  }
+
+  installPointerInput() {
+    const update = (event) => {
+      const rect = this.canvas.getBoundingClientRect();
+      this.pointer.x = Math.max(-1, Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1));
+      this.pointer.y = Math.max(-1, Math.min(1, 1 - ((event.clientY - rect.top) / rect.height) * 2));
+    };
+    this.canvas.addEventListener('pointermove', update);
+    this.canvas.addEventListener('pointerdown', (event) => {
+      update(event);
+      this.pointer.pressed = true;
+      this.canvas.setPointerCapture(event.pointerId);
+    });
+    const release = (event) => {
+      update(event);
+      this.pointer.pressed = false;
+      if (this.canvas.hasPointerCapture(event.pointerId)) {
+        this.canvas.releasePointerCapture(event.pointerId);
+      }
+    };
+    this.canvas.addEventListener('pointerup', release);
+    this.canvas.addEventListener('pointercancel', release);
   }
 
   async createPipelines() {
@@ -312,6 +341,7 @@ class BrowserGpuProject {
     }
 
     this.fixedBuffers = new Map();
+    this.inputBindings = new Map();
     for (const binding of this.manifest.bindings) {
       if (binding.role === 'state-read' || binding.role === 'state-write') {
         continue;
@@ -325,6 +355,9 @@ class BrowserGpuProject {
         binding.initialValues = null;
       }
       this.fixedBuffers.set(binding.binding, buffer);
+      if (binding.role === 'input') {
+        this.inputBindings.set(binding.name, { binding, buffer });
+      }
     }
 
     this.computeBindGroups = [0, 1].map((sourceIndex) => this.device.createBindGroup({
@@ -400,20 +433,55 @@ class BrowserGpuProject {
     );
   }
 
-  frame() {
+  applyGpuCommand(command) {
+    if (!command?.dispatch) {
+      return false;
+    }
+    for (const input of command.inputs) {
+      const target = this.inputBindings.get(input.name);
+      if (!target) {
+        throw new Error(`Mech CPU graph wrote undeclared GPU input ${input.name}`);
+      }
+      if (input.values.length !== target.binding.elements) {
+        throw new Error(
+          `Mech CPU graph wrote ${input.values.length} values to ${input.name}; ` +
+          `the GPU region requires ${target.binding.elements}`,
+        );
+      }
+      this.device.queue.writeBuffer(target.buffer, 0, input.values);
+    }
+    return true;
+  }
+
+  frame(timestamp = performance.now()) {
     if (this.stopped) {
       return;
     }
+    const deltaSeconds = this.lastFrameTime === 0
+      ? 1 / 60
+      : Math.max(0.001, Math.min(0.05, (timestamp - this.lastFrameTime) / 1000));
+    this.lastFrameTime = timestamp;
+    const command = this.controller.frame(
+      this.pointer.x,
+      this.pointer.y,
+      this.pointer.pressed,
+      deltaSeconds,
+      maxInputsPerFrame,
+    );
+    const dispatch = this.applyGpuCommand(command);
     this.resize();
     const encoder = this.device.createCommandEncoder();
-    const compute = encoder.beginComputePass();
-    compute.setPipeline(this.computePipeline);
-    compute.setBindGroup(0, this.computeBindGroups[this.activeBuffer]);
-    compute.dispatchWorkgroups(
-      Math.ceil(this.manifest.dispatchElements / this.manifest.workgroupSize),
-    );
-    compute.end();
-    const renderedBuffer = 1 - this.activeBuffer;
+    let renderedBuffer = this.activeBuffer;
+    if (dispatch) {
+      const compute = encoder.beginComputePass();
+      compute.setPipeline(this.computePipeline);
+      compute.setBindGroup(0, this.computeBindGroups[this.activeBuffer]);
+      compute.dispatchWorkgroups(
+        Math.ceil(this.manifest.dispatchElements / this.manifest.workgroupSize),
+      );
+      compute.end();
+      renderedBuffer = 1 - this.activeBuffer;
+    }
     const render = encoder.beginRenderPass({
       colorAttachments: [{
         view: this.context.getCurrentTexture().createView(),
@@ -427,9 +495,11 @@ class BrowserGpuProject {
     render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
-    this.activeBuffer = renderedBuffer;
+    if (dispatch) {
+      this.activeBuffer = renderedBuffer;
+    }
 
-    this.statsFrames += 1;
+    this.statsFrames += dispatch ? 1 : 0;
     const now = performance.now();
     if (now - this.statsStarted >= 500) {
       const rate = (this.statsFrames * 1000) / (now - this.statsStarted);
@@ -441,10 +511,19 @@ class BrowserGpuProject {
       this.statsStarted = now;
       this.statsFrames = 0;
     }
+    globalThis.__MECH_GPU_RUNTIME__ = {
+      pointer: { ...this.pointer },
+      dispatched: dispatch,
+      activeBuffer: this.activeBuffer,
+      itemCount: this.itemCount,
+      displayedCount: this.renderItemCount,
+    };
+    return globalThis.__MECH_GPU_RUNTIME__;
   }
 
   stop() {
     this.stopped = true;
+    this.controller.stop();
   }
 
   setText(selector, value) {
@@ -486,11 +565,9 @@ async function main() {
     sources[source.specifier] =
       await fetchText(source.url);
   }
-  const executor = typeof mech.configuredExecutor === 'function'
-    ? mech.configuredExecutor(config)
-    : null;
-  if (executor?.provider === 'gpu') {
-    project = await BrowserGpuProject.fromSources(sourceEntries, sources);
+  const gpuCanvas = document.querySelector('canvas[data-mech-gpu-renderer="points2d"]');
+  if (gpuCanvas) {
+    project = await BrowserGpuProject.fromSources(config, sourceEntries, sources);
     await project.start();
     running = true;
     requestAnimationFrame(frame);
@@ -536,12 +613,14 @@ async function main() {
   requestAnimationFrame(frame);
 }
 
-function frame() {
+function frame(timestamp) {
   if (!running || !project) {
     return;
   }
   try {
-    globalThis.__MECH_LAST_FRAME__ = project.frame(maxInputsPerFrame);
+    globalThis.__MECH_LAST_FRAME__ = project instanceof BrowserGpuProject
+      ? project.frame(timestamp)
+      : project.frame(maxInputsPerFrame);
   } catch (error) {
     running = false;
     try {

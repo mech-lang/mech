@@ -78,7 +78,7 @@ impl ScalarComputation {
                 for (index, input) in inputs.iter().enumerate() {
                     values[index] = input.evaluate(registers);
                 }
-                operation.apply(&values[..inputs.len()])
+                operation.apply(&values[..inputs.len()], 0, 1)
             }
             Self::SumProducts(terms) => terms.iter().fold(0.0, |sum, (left, right)| {
                 left.evaluate(registers)
@@ -93,7 +93,7 @@ impl ScalarComputation {
             Self::Negate(input) => format!("-({})", input.wgsl()),
             Self::Elementwise { operation, inputs } => {
                 let inputs = inputs.iter().map(|input| input.wgsl()).collect::<Vec<_>>();
-                operation.wgsl_expression(&inputs)
+                operation.wgsl_expression(&inputs, 1)
             }
             Self::SumProducts(terms) => terms
                 .iter()

@@ -439,13 +439,18 @@ fn classify_node(
             "state update is not an admitted whole-value Assign".to_owned(),
         );
     }
-    if elementwise_operation(&node.operation).is_none() {
+    let lowered_operation = elementwise_operation(&node.operation);
+    if lowered_operation.is_none() {
         return (
             ExecutionTarget::Cpu,
             format!("{operation} has no GPU lowering"),
         );
     }
-    if !contract_supported(artifact, node, false) {
+    let host_proven_concatenation = matches!(
+        lowered_operation,
+        Some(super::ElementwiseOperation::Identity | super::ElementwiseOperation::Pack2)
+    );
+    if !host_proven_concatenation && !contract_supported(artifact, node, false) {
         return (
             ExecutionTarget::Cpu,
             "operation contract does not prove pure full-write execution".to_owned(),

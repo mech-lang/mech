@@ -1,7 +1,7 @@
 config := {
   runtime: {
     execution: {
-      resident-routing: "require-resident"
+      resident-routing: "prefer-resident"
     }
 
     limits: {
@@ -11,12 +11,9 @@ config := {
 
   hosts: [
     {
-      name: "clock"
-      provider: "timer"
-      settings: {
-        frequency-hz: 60
-        max-catch-up-steps: 1
-      }
+      name: "pointer"
+      provider: "pointer"
+      settings: {}
     }
 
     {
@@ -26,12 +23,6 @@ config := {
         region: "particle-field"
       }
     }
-
-    {
-      name: "console"
-      provider: "console"
-      settings: {}
-    }
   ]
 
   run: {
@@ -39,22 +30,21 @@ config := {
 
     grants: [
       {
-        target: "clock/tick"
+        target: "pointer/frame"
         operations: ["read"]
-        paths: ["tick"]
+        paths: ["pulse", "x", "y", "pressed", "delta-seconds"]
       }
 
       {
         target: "particles/kernel"
-        operations: ["read", "write"]
-        paths: ["turns", "dispatch-ms", "turn"]
-      }
-
-      {
-        target: "console/output"
         operations: ["write"]
-        paths: ["line"]
+        paths: ["input/force-x", "input/force-y", "input/force-strength", "input/dt", "turn"]
       }
     ]
+  }
+
+  serve: {
+    paths: ["index.html", "particles.css", "particles.mec"]
+    shim: "index.html"
   }
 }
