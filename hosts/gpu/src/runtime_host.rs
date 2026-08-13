@@ -231,6 +231,13 @@ impl RuntimeKernelSession {
             }
         }
     }
+
+    fn synchronize(&self) -> Duration {
+        match self {
+            Self::Wgpu(session) => session.synchronize(),
+            Self::Cpu(_) => Duration::ZERO,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -239,6 +246,7 @@ struct RuntimeGpuState {
     settings: GpuRuntimeHostSettings,
     session: Option<RuntimeKernelSession>,
     adapter: String,
+    dispatch_elements: Option<u64>,
     dispatched_turns: u64,
     dispatch_ms: f64,
     ingress: Option<RuntimeIngress>,
@@ -301,6 +309,7 @@ impl RuntimeGpuState {
                     None,
                 )
             })?;
+            self.dispatch_elements = Some(program.dispatch_elements());
             let inputs = self
                 .settings
                 .inputs
@@ -373,7 +382,7 @@ impl RuntimeGpuState {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct GpuRuntimeResourceProvider {
     instance: String,
     state: Arc<Mutex<RuntimeGpuState>>,
@@ -389,12 +398,78 @@ impl GpuRuntimeResourceProvider {
                 settings,
                 session: None,
                 adapter: "not-initialized".to_owned(),
+                dispatch_elements: None,
                 dispatched_turns: 0,
                 dispatch_ms: 0.0,
                 ingress: None,
                 live: false,
             })),
         }
+    }
+
+    /// Waits for all work submitted by this provider. This is primarily useful
+    /// for completed-throughput measurement; normal runtime dispatch remains
+    /// nonblocking.
+    pub fn synchronize(&self) -> MResult<Duration> {
+        let state = self.state.lock().map_err(|_| {
+            MechError::new(
+                GpuRuntimeHostError {
+                    operation: "synchronize-kernel",
+                    reason: "GPU state lock is poisoned".to_owned(),
+                },
+                None,
+            )
+        })?;
+        Ok(state
+            .session
+            .as_ref()
+            .map(RuntimeKernelSession::synchronize)
+            .unwrap_or(Duration::ZERO))
+    }
+
+    pub fn adapter_name(&self) -> MResult<String> {
+        self.state
+            .lock()
+            .map(|state| state.adapter.clone())
+            .map_err(|_| {
+                MechError::new(
+                    GpuRuntimeHostError {
+                        operation: "inspect-kernel",
+                        reason: "GPU state lock is poisoned".to_owned(),
+                    },
+                    None,
+                )
+            })
+    }
+
+    pub fn dispatch_elements(&self) -> MResult<Option<u64>> {
+        self.state
+            .lock()
+            .map(|state| state.dispatch_elements)
+            .map_err(|_| {
+                MechError::new(
+                    GpuRuntimeHostError {
+                        operation: "inspect-kernel",
+                        reason: "GPU state lock is poisoned".to_owned(),
+                    },
+                    None,
+                )
+            })
+    }
+
+    pub fn dispatched_turns(&self) -> MResult<u64> {
+        self.state
+            .lock()
+            .map(|state| state.dispatched_turns)
+            .map_err(|_| {
+                MechError::new(
+                    GpuRuntimeHostError {
+                        operation: "inspect-kernel",
+                        reason: "GPU state lock is poisoned".to_owned(),
+                    },
+                    None,
+                )
+            })
     }
 
     fn from_shared(instance: impl Into<String>, state: Arc<Mutex<RuntimeGpuState>>) -> Self {
@@ -642,6 +717,7 @@ mod tests {
             },
             session: None,
             adapter: "not-initialized".to_owned(),
+            dispatch_elements: None,
             dispatched_turns: 0,
             dispatch_ms: 0.0,
             ingress: None,
@@ -723,6 +799,7 @@ mod tests {
                 },
                 session: None,
                 adapter: "not-initialized".to_owned(),
+                dispatch_elements: None,
                 dispatched_turns: 0,
                 dispatch_ms: 0.0,
                 ingress: None,
@@ -857,6 +934,7 @@ impl RuntimeHostFactory for NativeGpuHostFactory {
             settings,
             session: None,
             adapter: "not-initialized".to_owned(),
+            dispatch_elements: None,
             dispatched_turns: 0,
             dispatch_ms: 0.0,
             ingress: None,

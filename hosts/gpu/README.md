@@ -61,6 +61,19 @@ That host lets a regular transactional CPU graph dispatch a GPU-resident Mech
 kernel after commit and receive adapter/timing telemetry through normal live
 resource reads. See `examples/mixed-cpu-gpu-particles`.
 
+Measure that full managed path, rather than the direct executor harness, with:
+
+```text
+cargo run -p mech-gpu --release --features runtime-host \
+  --example mixed_runtime_benchmark -- all 4096 10 200
+```
+
+This executes the example's real CPU graph and configured kernel boundary.
+Installation includes the graph's initial dispatch. Steady GPU timing ends
+with queue synchronization, excludes readback, and fails if any expected
+dispatch did not complete. Use this benchmark for CPU-versus-GPU runtime-host
+claims; use `particle_benchmark` only to isolate direct executor costs.
+
 The host can prepare the admitted kernel through either its `wgpu` or fused CPU
 executor. Projects declare the permitted executors with `backends` and select a
 default with `backend`; `mech run --backend cpu|wgpu` overrides that selection

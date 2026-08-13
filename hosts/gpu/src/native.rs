@@ -558,6 +558,13 @@ impl ResidentGpuSession {
         Ok(started.elapsed())
     }
 
+    /// Waits for all previously submitted writes and dispatches to complete.
+    pub fn synchronize(&self) -> Duration {
+        let started = Instant::now();
+        self.device.poll(wgpu::Maintain::Wait);
+        started.elapsed()
+    }
+
     pub fn read_outputs(
         &self,
     ) -> Result<(Duration, BTreeMap<String, Vec<f32>>), GpuExecutionError> {

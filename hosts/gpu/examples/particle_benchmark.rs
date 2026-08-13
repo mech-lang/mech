@@ -1,10 +1,10 @@
 use std::{collections::BTreeMap, env, time::Instant};
 
-use mech_core::{LegacyValue, Ref, hash_str, matrix::Matrix};
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_gpu::GpuHost;
+use mech_gpu::{GpuHost, GpuProgram};
 
 const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
+const PARTICLE_COUNT_DECLARATION: &str = "particle-count := 2000000f32";
 
 fn main() {
     let particles = env::args()
@@ -45,28 +45,15 @@ fn main() {
     let elements = particles
         .checked_mul(2)
         .expect("particle count is too large");
-    let positions = (0..elements)
-        .map(|index| (index as f32 % 1024.0) / 1024.0 - 0.5)
-        .collect::<Vec<_>>();
-    let canonical_positions = (0..particles)
-        .flat_map(|row| [positions[row], positions[particles + row]])
-        .collect::<Vec<_>>();
-    let zeros = vec![0.0; elements];
-
     let compile_started = Instant::now();
-    let artifact = compile_particle_artifact(particles, &positions, &zeros);
+    let artifact = compile_particle_artifact(particles);
     let program = GpuHost
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("particle source must be admitted: {error}"));
     let compile_time = compile_started.elapsed();
-    let inputs = BTreeMap::from([
-        ("positions".to_owned(), positions),
-        ("velocities".to_owned(), zeros),
-        ("origin".to_owned(), vec![0.0]),
-        ("attraction".to_owned(), vec![0.5]),
-        ("drag".to_owned(), vec![0.999]),
-        ("dt".to_owned(), vec![1.0 / 120.0]),
-    ]);
+    assert_eq!(program.dispatch_elements(), elements as u64);
+    let inputs = BTreeMap::new();
+    let (initial_positions, initial_velocities) = initial_particle_state(&program);
 
     let reference = program.run_cpu(&inputs).expect("CPU warmup must run");
     let mut resident_cpu = program
@@ -80,9 +67,21 @@ fn main() {
     let cpu_elapsed = cpu_started.elapsed();
     let cpu_per_turn = cpu_elapsed / cpu_turns as u32;
 
-    let first_gpu = program
-        .run_gpu_profiled(&inputs)
-        .expect("GPU benchmark dispatch must run");
+    println!("particles: {particles}");
+    println!("elements per state matrix: {elements}");
+    println!("artifact + WGSL compile: {:.3} ms", millis(compile_time));
+    println!(
+        "CPU fused reference: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(cpu_per_turn)
+    );
+
+    let first_gpu = match program.run_gpu_profiled(&inputs) {
+        Ok(profile) => profile,
+        Err(error) => {
+            println!("GPU unavailable: {error}");
+            return;
+        }
+    };
     let max_error = maximum_error(&reference, &first_gpu.outputs);
     assert!(
         max_error <= 1.0e-6,
@@ -115,20 +114,17 @@ fn main() {
     let resident = resident
         .run_turns(resident_turns)
         .expect("resident GPU turns must run");
-    let resident_error =
-        resident_sample_error(&canonical_positions, &resident.outputs, resident_turns);
+    let resident_error = resident_sample_error(
+        &initial_positions,
+        &initial_velocities,
+        &resident.outputs,
+        resident_turns,
+    );
     assert!(
         resident_error <= 1.0e-4,
         "resident GPU result differs from sampled recurrence by {resident_error}"
     );
-    println!("particles: {particles}");
-    println!("elements per matrix: {elements}");
     println!("adapter: {adapter}");
-    println!("artifact + WGSL compile: {:.3} ms", millis(compile_time));
-    println!(
-        "CPU fused reference: {:.3} ms/turn ({cpu_turns} turns)",
-        millis(cpu_per_turn)
-    );
     println!("GPU cold one-shot total: {:.3} ms", millis(cold_total));
     println!(
         "GPU warm one-shot median: {:.3} ms ({gpu_samples} samples)",
@@ -158,47 +154,37 @@ fn main() {
     println!("maximum resident sampled absolute error: {resident_error:.3e}");
 }
 
-fn compile_particle_artifact(
-    particles: usize,
-    positions: &[f32],
-    zeros: &[f32],
-) -> mech_engine::ProgramArtifact {
+fn compile_particle_artifact(particles: usize) -> mech_engine::ProgramArtifact {
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
         mech_stdlib::source_catalog(),
     );
-    let values = [
-        (
-            "host-positions",
-            LegacyValue::MatrixF32(Matrix::from_vec(positions.to_vec(), particles, 2)),
-        ),
-        (
-            "host-velocities",
-            LegacyValue::MatrixF32(Matrix::from_vec(zeros.to_vec(), particles, 2)),
-        ),
-        ("host-origin", LegacyValue::F32(Ref::new(0.0))),
-        ("host-attraction", LegacyValue::F32(Ref::new(0.5))),
-        ("host-drag", LegacyValue::F32(Ref::new(0.999))),
-        ("host-dt", LegacyValue::F32(Ref::new(1.0 / 120.0))),
-    ];
-    let symbols = program.interpreter().symbols();
-    for (name, value) in values {
-        let id = hash_str(name);
-        symbols.borrow_mut().insert(id, value, false);
-        symbols
-            .borrow()
-            .dictionary
-            .borrow_mut()
-            .insert(id, name.to_owned());
-    }
-    program
-        .run_string(PARTICLE_SOURCE)
-        .expect("source must run");
+    assert!(
+        PARTICLE_SOURCE.contains(PARTICLE_COUNT_DECLARATION),
+        "particle count declaration changed"
+    );
+    let replacement = format!("particle-count := {particles}f32");
+    let source = PARTICLE_SOURCE.replacen(PARTICLE_COUNT_DECLARATION, &replacement, 1);
+    program.run_string(&source).expect("source must run");
     program
         .compile_program_product()
         .expect("source must compile")
         .into_parts()
         .0
+}
+
+fn initial_particle_state(program: &GpuProgram) -> (Vec<f32>, Vec<f32>) {
+    let initializers = program
+        .state_initializers()
+        .map(|(slot, _, values)| (slot, values))
+        .collect::<BTreeMap<_, _>>();
+    let outputs = program
+        .outputs()
+        .map(|(name, slot, _)| (name, slot))
+        .collect::<BTreeMap<_, _>>();
+    let positions = initializers[&outputs["result.0"]].to_vec();
+    let velocities = initializers[&outputs["result.1"]].to_vec();
+    (positions, velocities)
 }
 
 fn millis(duration: std::time::Duration) -> f64 {
@@ -224,6 +210,7 @@ fn maximum_error(
 
 fn resident_sample_error(
     initial_positions: &[f32],
+    initial_velocities: &[f32],
     outputs: &BTreeMap<String, Vec<f32>>,
     turns: u32,
 ) -> f32 {
@@ -235,11 +222,11 @@ fn resident_sample_error(
         .take(1024)
         .map(|index| {
             let mut position = initial_positions[index];
-            let mut velocity = 0.0_f32;
+            let mut velocity = initial_velocities[index];
             for _ in 0..turns {
-                let acceleration = (0.0 - position) * 0.5;
-                velocity = (velocity + acceleration * (1.0 / 120.0)) * 0.999;
-                position += velocity * (1.0 / 120.0);
+                let acceleration = -position * (0.45 + position * position * 0.65);
+                velocity += acceleration * 0.02;
+                position += velocity * 0.02;
             }
             (positions[index] - position)
                 .abs()

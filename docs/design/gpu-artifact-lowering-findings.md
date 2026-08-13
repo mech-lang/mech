@@ -136,6 +136,64 @@ pause and avoid transient copies without changing Mech source semantics.
 
 ## Executor and physical-plan findings
 
+### Large state initialization must be parametric and deferred
+
+The managed CPU/GPU example now defines its particle state entirely in Mech,
+rather than receiving precomputed position and velocity matrices from the
+benchmark host. That exposed the remaining representation problem directly:
+source compilation eagerly evaluates the particle range and initialization
+expressions before constructing the artifact. At 250,000 particles the
+artifact exceeds a section read limit; at two million particles bytecode
+finalization exceeds the file read limit. Neither configured executor has run
+at that point.
+
+Raising those limits is not the intended fix. The artifact needs a shape
+parameter and a deferred initializer region:
+
+- `particle-count` determines state schemas and launch extents;
+- an initializer graph computes initial state once during activation;
+- the chosen executor allocates and initializes resident buffers;
+- the recurring region consumes those buffers on each pulse;
+- externally supplied matrices use bindings and uploads, not serialized
+  payload constants.
+
+Build-time shape specialization is enough for the first implementation. Shape
+polymorphism and a specialization cache can follow. `InitializerReference`
+therefore needs a computed-plan form with dependencies and shape parameters;
+its constant-only form cannot represent this program at useful scale. This is
+tracked in [issue #753](https://github.com/mech-lang/mech/issues/753).
+
+### Managed mixed-runtime benchmark
+
+`mixed_runtime_benchmark` executes the exact regular CPU graph in
+`examples/mixed-cpu-gpu-particles/app.mec` and the exact configured kernel in
+`kernel.mec`. It specializes only the `particle-count` declaration. Each pulse
+enters through a runtime input driver, advances and commits the CPU graph, and
+delivers the configured kernel effect. GPU results synchronize once after the
+measured batch and perform no particle readback. The benchmark rejects a lane
+unless its compiled element count and completed dispatch count match the
+request.
+
+On an Apple M1 using Metal, three 100,000-particle runs with five warmup and
+100 measured turns produced these completed steady-state rates:
+
+| Executor | ms/turn | Million particle-turns/s |
+| --- | ---: | ---: |
+| Fused CPU, median | 29.236 | 3.420 |
+| Metal, median | 0.111 | 902.778 |
+
+The median completed-throughput speedup is 264x. This is a batched throughput
+measurement, not per-turn GPU latency: the CPU executor completes every turn
+synchronously, while Metal queues the measured turns and the final
+synchronization accounts for their completion. The first synchronized pulse
+was approximately 2 ms in two of the three runs. At 4,096 particles, the full
+managed path measured 1.246 ms/turn on CPU and 0.112 ms/turn on Metal, an 11.1x
+throughput speedup.
+
+The direct executor correctness benchmark remains separate. At 4,096 particles
+and 100 resident turns, CPU/GPU one-turn maximum absolute error was 5.96e-8 and
+the sampled resident recurrence error was 1.788e-7.
+
 ### Logical composites need physical decomposition
 
 The semantic result is one tuple of two matrices. WGSL exposes two storage

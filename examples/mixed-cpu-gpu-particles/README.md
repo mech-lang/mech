@@ -49,6 +49,22 @@ The CPU selection keeps the graph-to-host boundary intact and runs the exact
 same admitted artifact in the fused CPU executor. It is a backend comparison,
 not a different CPU-only version of the application.
 
+Run the managed-runtime benchmark against both configured executors:
+
+```text
+cargo run -p mech-gpu --release --features runtime-host \
+  --example mixed_runtime_benchmark -- all 4096 10 200
+```
+
+The arguments are backend (`all`, `wgpu`, or `cpu`), particle count, warmup
+turns, and measured turns. The benchmark loads this exact `app.mec` and
+specializes only the `particle-count` declaration in this exact `kernel.mec`.
+Every measured pulse enters through the timer input driver, advances the
+transactional CPU graph, commits its resource writes, and dispatches the
+configured kernel host. GPU timing performs one final queue synchronization
+after the measured batch and no particle readback. The run is rejected unless
+the compiled element count and completed dispatch count match the request.
+
 Stop with Ctrl-C. The first committed turn creates the adapter, compiles WGSL,
 and uploads initial state. Later turns reuse the same device, pipeline, and
 buffers. GPU telemetry returns through ordinary live resource reads, so the
