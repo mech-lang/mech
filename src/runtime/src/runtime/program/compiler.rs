@@ -198,16 +198,23 @@ impl<'a> ProgramCompilerView<'a> {
     }
 
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
-        let mut program = self.new_program();
         let tree = mech_syntax::parser::parse(source.trim())?;
+        self.compile_tree(&tree)
+    }
+
+    pub(crate) fn compile_tree(
+        &self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        let mut program = self.new_program();
         let operations =
-            compiled_resource_send_operations(&SourceIndex::from_program(&tree).all_contexts());
+            compiled_resource_send_operations(&SourceIndex::from_program(tree).all_contexts());
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
         };
         program
-            .run_tree_with_services(&tree, &mut services)
+            .run_tree_with_services(tree, &mut services)
             .map_err(classify_source_planning)?;
         self.finalize(program, &operations)
     }

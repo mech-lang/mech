@@ -105,6 +105,18 @@ impl MechRuntime {
         self.load_production_with(durability, |runtime| runtime.decode_artifact(bytecode))
     }
 
+    #[cfg(feature = "resident-routing-source")]
+    /// Plans and loads an already parsed Mech program through the production
+    /// resident route. This entry point never falls back to legacy execution.
+    pub fn load_production_tree_program(
+        &mut self,
+        tree: &mech_core::Program,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with(durability, |runtime| {
+            Ok(Arc::new(runtime.plan_tree_product(tree)?.into_parts().0))
+        })
+    }
     fn load_production_with<Resident>(
         &mut self,
         durability: crate::ResidentDurabilityPolicy,
@@ -158,6 +170,14 @@ impl MechRuntime {
             &self.module_manifests,
             program_config,
         ))
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_tree_product(
+        &mut self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_tree(tree)
     }
 
     #[cfg(feature = "resident-routing")]

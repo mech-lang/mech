@@ -484,9 +484,7 @@ impl RuntimeResourceProvider for ProductTimerProvider {
     }
 }
 
-fn external_runtime(
-    durability: crate::ResidentDurabilityPolicy,
-) -> (
+fn configured_external_runtime() -> (
     crate::MechRuntime,
     Arc<AtomicUsize>,
     Arc<AtomicUsize>,
@@ -512,6 +510,18 @@ fn external_runtime(
             ["read"],
         )))
         .unwrap();
+    (runtime, plans, reads, value_bits)
+}
+
+fn external_runtime(
+    durability: crate::ResidentDurabilityPolicy,
+) -> (
+    crate::MechRuntime,
+    Arc<AtomicUsize>,
+    Arc<AtomicUsize>,
+    Arc<AtomicU64>,
+) {
+    let (mut runtime, plans, reads, value_bits) = configured_external_runtime();
     runtime
         .load_source_program(external_source(), durability)
         .unwrap();
@@ -1124,6 +1134,20 @@ fn invalidated_admitted_grant_blocks_outbox_retry_before_preparation_or_delivery
     assert_eq!(scene.preparations, 1);
     assert_eq!(scene.delivery_attempts, 1);
     assert_eq!(scene.deliveries, 0);
+}
+
+#[test]
+fn parsed_tree_can_be_loaded_as_a_production_resident_program() {
+    let tree = mech_syntax::parser::parse(external_source().trim()).unwrap();
+    let (mut runtime, _, _, _) = configured_external_runtime();
+    let outcome = runtime
+        .load_production_tree_program(&tree, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+
+    assert_eq!(outcome.route, RuntimeProgramRoute::ResidentExternal);
+    assert!(!outcome.initial_value.is_empty());
+    assert!(outcome.info.program_revision.is_some());
+    assert_eq!(outcome.info.legacy_turns, 0);
 }
 
 #[test]
