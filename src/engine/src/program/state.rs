@@ -1,4 +1,45 @@
 use crate::*;
+use core::ops::Range;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProgramComputeRegion {
+    pub name: String,
+    pub placement: ComputePlacement,
+    pub plan_nodes: Range<usize>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ComputeRegionNameConflictError {
+    pub name: String,
+}
+
+impl MechErrorKind for ComputeRegionNameConflictError {
+    fn name(&self) -> &str {
+        "ComputeRegionNameConflict"
+    }
+
+    fn message(&self) -> String {
+        format!("Compute region `{}` is defined more than once.", self.name)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct EmptyComputeRegionError {
+    pub name: String,
+}
+
+impl MechErrorKind for EmptyComputeRegionError {
+    fn name(&self) -> &str {
+        "EmptyComputeRegion"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "Compute region `{}` did not produce any executable plan nodes.",
+            self.name,
+        )
+    }
+}
 
 pub struct ProgramState {
     #[cfg(feature = "symbol_table")]
@@ -13,6 +54,8 @@ pub struct ProgramState {
     pub user_functions: UserFunctionTable,
     #[cfg(feature = "functions")]
     pub plan: Plan,
+    #[cfg(feature = "functions")]
+    pub compute_regions: Vec<ProgramComputeRegion>,
     pub kinds: KindTable,
     #[cfg(feature = "enum")]
     pub enums: EnumTable,
@@ -36,6 +79,8 @@ impl Clone for ProgramState {
             user_functions: self.user_functions.clone(),
             #[cfg(feature = "functions")]
             plan: self.plan.clone(),
+            #[cfg(feature = "functions")]
+            compute_regions: self.compute_regions.clone(),
             kinds: self.kinds.clone(),
             #[cfg(feature = "enum")]
             enums: self.enums.clone(),
@@ -61,6 +106,8 @@ impl ProgramState {
             user_functions: UserFunctionTable::default(),
             #[cfg(feature = "functions")]
             plan: Plan::new(),
+            #[cfg(feature = "functions")]
+            compute_regions: Vec::new(),
             kinds: KindTable::default(),
             #[cfg(feature = "enum")]
             enums: EnumTable::new(),

@@ -1,13 +1,13 @@
-use core::cmp::Ordering;
+use core::{cmp::Ordering, ops::Range};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::LazyLock;
 
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
-    DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout, InputPortPolicy,
-    LegacyValue, MResult, MechError, OperationContractDeclaration, OutputConstruction,
-    OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueKind,
+    ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout,
+    InputPortPolicy, LegacyValue, MResult, MechError, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueKind,
     compare_application_requirements, compile_value_register, hash_str,
     value_kind_from_runtime_type, write_bytecode,
 };
@@ -67,6 +67,14 @@ pub struct CompiledIntegrityConstraint {
     pub result_register: Register,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompiledComputeRegion {
+    pub name: String,
+    pub placement: ComputePlacement,
+    /// Dense source-plan node identities covered by this named section.
+    pub source_nodes: Range<u32>,
+}
+
 #[derive(Clone, Debug)]
 pub struct CompiledBytecode {
     pub program: BytecodeProgram,
@@ -91,6 +99,7 @@ pub struct CompiledBytecode {
     pub symbol_definitions: Vec<CompiledSymbolDefinition>,
     pub return_register: Register,
     pub integrity_constraints: Vec<CompiledIntegrityConstraint>,
+    pub compute_regions: Vec<CompiledComputeRegion>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -132,6 +141,7 @@ pub struct CompileCtx {
     current_source_node: Option<u32>,
     next_source_node: u32,
     integrity_constraints: Vec<CompiledIntegrityConstraint>,
+    compute_regions: Vec<CompiledComputeRegion>,
     next_register: Register,
 }
 
@@ -160,6 +170,7 @@ impl Default for CompileCtx {
             current_source_node: None,
             next_source_node: 0,
             integrity_constraints: Vec::new(),
+            compute_regions: Vec::new(),
             next_register: 0,
         }
     }
@@ -296,6 +307,48 @@ impl CompileCtx {
         }
         self.integrity_constraints
             .push(CompiledIntegrityConstraint { result_register });
+        Ok(())
+    }
+
+    pub fn record_compute_region(
+        &mut self,
+        name: String,
+        placement: ComputePlacement,
+        source_nodes: Range<u32>,
+    ) -> MResult<()> {
+        if name.is_empty() {
+            return invalid("compute region name cannot be empty");
+        }
+        if source_nodes.is_empty() {
+            return invalid(format!("compute region `{name}` cannot be empty"));
+        }
+        if source_nodes.end > self.next_source_node {
+            return invalid(format!(
+                "compute region `{name}` ends at source node {}, but only {} source nodes exist",
+                source_nodes.end, self.next_source_node,
+            ));
+        }
+        if self
+            .compute_regions
+            .iter()
+            .any(|region| region.name == name)
+        {
+            return invalid(format!("compute region `{name}` is defined more than once"));
+        }
+        if let Some(region) = self.compute_regions.iter().find(|region| {
+            source_nodes.start < region.source_nodes.end
+                && region.source_nodes.start < source_nodes.end
+        }) {
+            return invalid(format!(
+                "compute region `{name}` overlaps compute region `{}`",
+                region.name,
+            ));
+        }
+        self.compute_regions.push(CompiledComputeRegion {
+            name,
+            placement,
+            source_nodes,
+        });
         Ok(())
     }
 
@@ -450,6 +503,7 @@ impl CompileCtx {
             symbol_definitions: self.symbol_definitions.clone(),
             return_register,
             integrity_constraints: self.integrity_constraints.clone(),
+            compute_regions: self.compute_regions.clone(),
         })
     }
 

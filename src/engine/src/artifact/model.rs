@@ -1,14 +1,21 @@
 use core::ops::Range;
 
 use mech_core::{
-    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ConstantId, ConstantStore,
-    DeclaredOperationContract, DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId,
-    LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId,
+    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ConstantId,
+    ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction, InputId,
+    IntegrityConstraintId, LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId,
     OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
     ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
     SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
 };
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ArtifactComputeRegion {
+    pub name: String,
+    pub placement: ComputePlacement,
+    pub nodes: Box<[NodeId]>,
+}
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct OperationReference {

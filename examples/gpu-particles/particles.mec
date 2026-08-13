@@ -1,8 +1,11 @@
 +> math
 
-// The complete particle application is Mech: size, initial state, constants,
-// and the recurring simulation step. The configured executor decides whether
-// the typed recurring graph runs on the CPU or GPU.
+particle-field @ compute
+-------------------------------------------------------------------------------
+
+// The complete particle application is one Mech document: size, initial state,
+// constants, and the recurring simulation step. The named compute region is
+// backend-neutral; the configured executor decides whether it runs on CPU or GPU.
 particle-count := 2000000f32
 particle-index := 1f32..=particle-count
 radius-seed := math/sin(particle-index * 12.9898<f32>) * 0.5<f32> + 0.5<f32>

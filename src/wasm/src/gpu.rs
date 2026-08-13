@@ -193,14 +193,14 @@ fn compile_program(
     let source_execution = milliseconds(source_started);
 
     let artifact_started = Instant::now();
-    let artifact = source_program
-        .compile_program_artifact()
+    let product = source_program
+        .compile_program_product()
         .map_err(|failure| format!("Mech artifact compilation failed: {failure:?}"))?;
     let artifact_compilation = milliseconds(artifact_started);
 
     let gpu_started = Instant::now();
     let program = GpuHost
-        .compile(&artifact)
+        .compile_with_regions(product.artifact(), product.compute_regions())
         .map_err(|failure| format!("GPU host rejected the Mech program: {failure}"))?;
     let gpu_lowering = milliseconds(gpu_started);
 

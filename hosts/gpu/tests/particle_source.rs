@@ -1,7 +1,12 @@
 use std::collections::BTreeMap;
 
-use mech_core::{LegacyValue, Ref, ResolvedOperationContract, hash_str, matrix::Matrix};
-use mech_engine::{MechProgram, MechProgramConfig, SlotRole};
+use mech_core::{
+    ComputePlacement, LegacyValue, ParsedProgram, Ref, ResolvedOperationContract, hash_str,
+    matrix::Matrix,
+};
+use mech_engine::{
+    MechProgram, MechProgramConfig, SlotRole, decode_program_artifact_product_sections,
+};
 use mech_gpu::{
     ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection,
 };
@@ -83,6 +88,73 @@ fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
         ("host-drag", LegacyValue::F32(Ref::new(0.9))),
         ("host-dt", LegacyValue::F32(Ref::new(0.1))),
     ]
+}
+
+#[test]
+fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
+    let source = SERVED_PARTICLE_SOURCE.replacen("2000000f32", "64f32", 1);
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::source_native_plan_catalog(),
+    );
+    program.run_string(&source).expect("source must run");
+    let product = program
+        .compile_program_product()
+        .expect("named source must compile");
+
+    assert_eq!(product.compute_regions().len(), 1);
+    let region = &product.compute_regions()[0];
+    assert_eq!(region.name, "particle-field");
+    assert_eq!(region.placement, ComputePlacement::Compute);
+    assert!(!region.nodes.is_empty());
+    let bytecode = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    let (_, bytecode_regions) =
+        decode_program_artifact_product_sections(&bytecode.artifact).unwrap();
+    assert_eq!(bytecode_regions.as_ref(), product.compute_regions());
+
+    let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
+    assert!(placement.violations.is_empty());
+    assert_eq!(placement.gpu_regions.len(), 1);
+    assert_eq!(
+        placement.gpu_regions[0].name.as_deref(),
+        Some("particle-field"),
+    );
+    assert_eq!(
+        placement.gpu_regions[0].requested,
+        Some(ComputePlacement::Compute),
+    );
+    GpuHost
+        .compile_with_regions(product.artifact(), product.compute_regions())
+        .expect("one named compute region must lower to one GPU program");
+}
+
+#[test]
+fn hard_cpu_region_is_not_silently_sent_to_gpu() {
+    let source = SERVED_PARTICLE_SOURCE
+        .replacen("2000000f32", "16f32", 1)
+        .replacen("@ compute", "@ cpu", 1);
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::source_native_plan_catalog(),
+    );
+    program.run_string(&source).expect("source must run");
+    let product = program.compile_program_product().unwrap();
+    let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
+
+    assert!(
+        placement
+            .nodes
+            .iter()
+            .filter(|node| product.compute_regions()[0].nodes.contains(&node.node))
+            .all(|node| node.target != ExecutionTarget::Gpu)
+    );
+    GpuHost
+        .compile_cpu_with_regions(product.artifact(), product.compute_regions())
+        .expect("hard CPU region must run under the CPU executor");
+    let error = GpuHost
+        .compile_with_regions(product.artifact(), product.compute_regions())
+        .unwrap_err();
+    assert!(error.to_string().contains("requires CPU execution"));
 }
 
 #[test]

@@ -2,7 +2,9 @@
 
 This is a complete Mech application. [`particles.mec`](particles.mec) defines
 the two-million-particle initial state, simulation constants, and recurring
-integration equations. [`mech.mcfg`](mech.mcfg) selects the GPU executor.
+integration equations in one named `particle-field @ compute` section.
+[`mech.mcfg`](mech.mcfg) selects the GPU executor. Changing the provider to
+`cpu` does not change the `.mec` program.
 
 The initial state is a four-arm spiral field. Each turn advances a conservative
 nonlinear oscillator with symplectic Euler integration. There is no damping, so

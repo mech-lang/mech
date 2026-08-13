@@ -1,11 +1,12 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, CellSlotId, DeliveryMode, DimensionExpr, ExternalInteraction, FloatWidth, NodeId,
-    OutputConstruction, ResolvedOperationContract, SchemaBody,
+    AccessMode, CellSlotId, ComputePlacement, DeliveryMode, DimensionExpr, ExternalInteraction,
+    FloatWidth, NodeId, OutputConstruction, ResolvedOperationContract, SchemaBody,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole,
+    ArtifactComputeRegion, ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
+    SlotRole,
 };
 
 use super::{GpuHost, binary_operation, display_operation, turn_required_nodes};
@@ -58,7 +59,16 @@ pub struct TransferBoundary {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct GpuRegion {
     pub region: u32,
+    pub name: Option<String>,
+    pub requested: Option<ComputePlacement>,
     pub nodes: Vec<NodeId>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PlacementViolation {
+    pub region: String,
+    pub node: Option<NodeId>,
+    pub reason: String,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -67,6 +77,7 @@ pub struct HybridPlacementPlan {
     pub slots: Vec<SlotPlacement>,
     pub transfers: Vec<TransferBoundary>,
     pub gpu_regions: Vec<GpuRegion>,
+    pub violations: Vec<PlacementViolation>,
     pub fully_accelerated: bool,
 }
 
@@ -75,11 +86,22 @@ impl GpuHost {
     /// CPU/GPU boundaries are reported even though mixed-region execution is not
     /// yet enabled by this provider.
     pub fn plan(&self, artifact: &ProgramArtifact) -> HybridPlacementPlan {
-        plan_artifact(artifact)
+        plan_artifact(artifact, &[])
+    }
+
+    pub fn plan_with_regions(
+        &self,
+        artifact: &ProgramArtifact,
+        regions: &[ArtifactComputeRegion],
+    ) -> HybridPlacementPlan {
+        plan_artifact(artifact, regions)
     }
 }
 
-fn plan_artifact(artifact: &ProgramArtifact) -> HybridPlacementPlan {
+fn plan_artifact(
+    artifact: &ProgramArtifact,
+    explicit_regions: &[ArtifactComputeRegion],
+) -> HybridPlacementPlan {
     let turn_nodes = turn_required_nodes(artifact);
     let mut nodes = artifact
         .nodes()
@@ -104,9 +126,77 @@ fn plan_artifact(artifact: &ProgramArtifact) -> HybridPlacementPlan {
         })
         .collect::<Vec<_>>();
 
+    let mut explicit_by_node = BTreeMap::<NodeId, usize>::new();
+    let mut violations = Vec::new();
+    for (region_index, region) in explicit_regions.iter().enumerate() {
+        if region.nodes.is_empty() {
+            violations.push(PlacementViolation {
+                region: region.name.clone(),
+                node: None,
+                reason: "the named section produced no semantic artifact nodes".to_owned(),
+            });
+        }
+        for node in region.nodes.iter().copied() {
+            let Some(placement) = nodes.get_mut(node.get() as usize) else {
+                violations.push(PlacementViolation {
+                    region: region.name.clone(),
+                    node: Some(node),
+                    reason: "the region references a node outside the artifact".to_owned(),
+                });
+                continue;
+            };
+            if let Some(previous) = explicit_by_node.insert(node, region_index) {
+                violations.push(PlacementViolation {
+                    region: region.name.clone(),
+                    node: Some(node),
+                    reason: format!(
+                        "the node is already assigned to region `{}`",
+                        explicit_regions[previous].name,
+                    ),
+                });
+                continue;
+            }
+            match region.placement {
+                ComputePlacement::Compute => {
+                    placement.reason = format!(
+                        "named compute region `{}`; {}",
+                        region.name, placement.reason,
+                    );
+                }
+                ComputePlacement::Cpu => {
+                    if placement.target != ExecutionTarget::Structural {
+                        placement.target = ExecutionTarget::Cpu;
+                    }
+                    placement.reason = format!("region `{}` requires CPU execution", region.name);
+                }
+                ComputePlacement::Gpu => {
+                    if placement.target == ExecutionTarget::Cpu {
+                        violations.push(PlacementViolation {
+                            region: region.name.clone(),
+                            node: Some(node),
+                            reason: placement.reason.clone(),
+                        });
+                        placement.reason = format!(
+                            "region `{}` requires GPU execution, but {}",
+                            region.name, placement.reason,
+                        );
+                    } else {
+                        placement.reason = format!(
+                            "region `{}` requires GPU execution; {}",
+                            region.name, placement.reason,
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     let mut parent = (0..nodes.len()).collect::<Vec<_>>();
     for node in artifact.nodes() {
         if nodes[node.node.get() as usize].target != ExecutionTarget::Gpu {
+            continue;
+        }
+        if explicit_by_node.contains_key(&node.node) {
             continue;
         }
         for index in node.input_bindings.clone() {
@@ -122,7 +212,9 @@ fn plan_artifact(artifact: &ProgramArtifact) -> HybridPlacementPlan {
             else {
                 continue;
             };
-            if nodes[producer.get() as usize].target == ExecutionTarget::Gpu {
+            if nodes[producer.get() as usize].target == ExecutionTarget::Gpu
+                && !explicit_by_node.contains_key(&producer)
+            {
                 union(
                     &mut parent,
                     node.node.get() as usize,
@@ -132,10 +224,41 @@ fn plan_artifact(artifact: &ProgramArtifact) -> HybridPlacementPlan {
         }
     }
 
-    let mut roots = BTreeMap::<usize, u32>::new();
     let mut gpu_regions = Vec::<GpuRegion>::new();
+    for (region_index, explicit) in explicit_regions.iter().enumerate() {
+        let region_nodes = explicit
+            .nodes
+            .iter()
+            .copied()
+            .filter(|node| {
+                nodes
+                    .get(node.get() as usize)
+                    .is_some_and(|placement| placement.target == ExecutionTarget::Gpu)
+            })
+            .collect::<Vec<_>>();
+        if region_nodes.is_empty() {
+            continue;
+        }
+        let region = gpu_regions.len() as u32;
+        for node in &region_nodes {
+            nodes[node.get() as usize].region = Some(region);
+        }
+        debug_assert!(
+            region_nodes
+                .iter()
+                .all(|node| explicit_by_node.get(node) == Some(&region_index))
+        );
+        gpu_regions.push(GpuRegion {
+            region,
+            name: Some(explicit.name.clone()),
+            requested: Some(explicit.placement),
+            nodes: region_nodes,
+        });
+    }
+
+    let mut roots = BTreeMap::<usize, u32>::new();
     for placement in &mut nodes {
-        if placement.target != ExecutionTarget::Gpu {
+        if placement.target != ExecutionTarget::Gpu || placement.region.is_some() {
             continue;
         }
         let root = find(&mut parent, placement.node.get() as usize);
@@ -143,6 +266,8 @@ fn plan_artifact(artifact: &ProgramArtifact) -> HybridPlacementPlan {
             let region = gpu_regions.len() as u32;
             gpu_regions.push(GpuRegion {
                 region,
+                name: None,
+                requested: None,
                 nodes: Vec::new(),
             });
             region
@@ -258,13 +383,15 @@ fn plan_artifact(artifact: &ProgramArtifact) -> HybridPlacementPlan {
         })
         .collect::<Vec<_>>();
 
-    let fully_accelerated = artifact.constraints().is_empty()
+    let fully_accelerated = violations.is_empty()
+        && artifact.constraints().is_empty()
         && nodes.iter().all(|node| node.target != ExecutionTarget::Cpu);
     HybridPlacementPlan {
         nodes,
         slots,
         transfers: transfers.into_iter().collect(),
         gpu_regions,
+        violations,
         fully_accelerated,
     }
 }
