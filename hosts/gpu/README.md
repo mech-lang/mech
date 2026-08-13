@@ -54,6 +54,21 @@ checks sampled resident output against the repeated recurrence, and reports
 compilation, one-shot execution, resident dispatch, and final readback
 separately.
 
+To compare the selectable backends using the exact `particle-field @ compute`
+region from the served example, run:
+
+```text
+cargo run -p mech-gpu --release --features native \
+  --example compute_backend_benchmark -- 1000000 5 60
+```
+
+This reports resident CPU compute, CPU compute plus a full position snapshot,
+synchronized per-turn GPU latency, and batched resident GPU throughput. It
+does not include the transactional pointer graph or WebGPU rendering, which
+are common to both served modes. The native CPU snapshot is only a lower bound
+for browser CPU presentation: browser mode also copies the snapshot across the
+WASM/JavaScript boundary and uploads it to the WebGPU render buffer.
+
 ## Generic parallel EKF proof
 
 [`fixtures/ekf-kernel.mec`](fixtures/ekf-kernel.mec) is a complete extended
