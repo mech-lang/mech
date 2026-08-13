@@ -366,6 +366,10 @@ impl MechRuntime {
             if self.program_transaction_owner == Some(transaction_id) {
                 self.program_transaction_owner = None;
             }
+            #[cfg(feature = "resident-routing")]
+            if envelope.claims_legacy_program_owner {
+                self.publish_legacy_program_owner();
+            }
             self.push_persisted_event_to_context(context, commit_event)?;
             return Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
                 transaction_id: id,
@@ -560,6 +564,10 @@ impl MechRuntime {
         context.transaction = None;
         if self.program_transaction_owner == Some(transaction_id) {
             self.program_transaction_owner = None;
+        }
+        #[cfg(feature = "resident-routing")]
+        if envelope.claims_legacy_program_owner {
+            self.publish_legacy_program_owner();
         }
         self.push_persisted_event_to_context(context, commit_event)?;
 

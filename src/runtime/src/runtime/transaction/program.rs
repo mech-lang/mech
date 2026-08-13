@@ -326,7 +326,10 @@ impl MechRuntime {
         operation: &'static str,
     ) -> MResult<()> {
         self.ensure_runtime_healthy(operation)?;
-        self.reject_effect_reentrancy(operation)
+        self.reject_effect_reentrancy(operation)?;
+        #[cfg(feature = "resident-routing")]
+        self.ensure_resident_environment_mutable(operation)?;
+        Ok(())
     }
 
     pub(in crate::runtime) fn poison_program_operation(
@@ -484,6 +487,16 @@ impl MechRuntime {
         }
 
         self.restore_live_state(savepoint.live.clone());
+        #[cfg(feature = "resident-routing")]
+        match self.active_execution_transaction_mut(transaction_id) {
+            Ok(transaction) => {
+                transaction.claims_legacy_program_owner = savepoint.claims_legacy_program_owner;
+            }
+            Err(error) => failures.push(format!(
+                "legacy program ownership claim restore failed: {:?}",
+                error,
+            )),
+        }
         failures.extend(self.rollback_runtime_operation(
             context,
             transaction_id,
@@ -688,6 +701,10 @@ impl MechRuntime {
             program: program_checkpoint,
             live: live_checkpoint,
             replacement_depth,
+            #[cfg(feature = "resident-routing")]
+            claims_legacy_program_owner: self
+                .active_execution_transaction(transaction_id)?
+                .claims_legacy_program_owner,
             runtime: self.capture_runtime_operation_savepoint(context, transaction_id)?,
         };
 
@@ -779,6 +796,6 @@ impl MechRuntime {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 #[path = "tests/program/mod.rs"]
 mod tests;

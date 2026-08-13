@@ -36,7 +36,7 @@ fn pure_unary_full_write(
     }
 }
 
-fn unary_full_write_contract(
+pub(crate) fn unary_full_write_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {
     match output {

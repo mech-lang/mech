@@ -2241,6 +2241,55 @@ fn composite_pack_schema_accepts_compiler_unwrapped_reference_children() {
 }
 
 #[test]
+fn composite_pack_schema_accepts_nested_compiler_unwrapped_reference_children() {
+    let mut actual_record = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut actual_record, &7_f64.to_bits().to_le_bytes());
+    let actual = EncodedConstant {
+        runtime_type: RuntimeType::Record(vec![("rotation".into(), RuntimeType::F64)]),
+        alignment: 8,
+        bytes: actual_record,
+    };
+
+    let mut reference = Vec::new();
+    append_child_payload(&mut reference, &7_f64.to_bits().to_le_bytes());
+    let mut template_record = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut template_record, &reference);
+    let mut template_tuple = 1_u32.to_le_bytes().to_vec();
+    append_child_payload(&mut template_tuple, &template_record);
+    let template = EncodedConstant {
+        runtime_type: RuntimeType::Tuple(vec![RuntimeType::Record(vec![(
+            "rotation".into(),
+            RuntimeType::Reference(Box::new(RuntimeType::F64)),
+        )])]),
+        alignment: 8,
+        bytes: template_tuple,
+    };
+
+    let input = BytecodeProgram {
+        register_count: 2,
+        constants: vec![actual, template],
+        symbols: BTreeMap::new(),
+        mutable_symbols: BTreeSet::new(),
+        instructions: vec![
+            BytecodeInstruction::ConstLoad {
+                dst: 0,
+                constant: 0,
+            },
+            BytecodeInstruction::CompositePack {
+                dst: 1,
+                template: 1,
+                children: vec![0],
+            },
+            BytecodeInstruction::Return { src: 1 },
+        ],
+        dictionary: BTreeMap::new(),
+        requirements: Vec::new(),
+    };
+
+    ParsedProgram::from_bytes(&write_bytecode(&input).unwrap()).unwrap();
+}
+
+#[test]
 fn rejects_duplicate_canonical_constants_even_when_each_id_is_reachable() {
     let bytes =
         write_bytecode_without_reader_validation(&program(vec![u8_constant(7), u8_constant(7)]))

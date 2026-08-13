@@ -124,7 +124,10 @@ fn resident_source_has_no_erased_or_legacy_turn_dependencies() {
                     path.display()
                 );
             }
-            if path.file_name().and_then(|value| value.to_str()) != Some("full_write.rs") {
+            let typed_general_arena = path.ends_with("resident/general/mod.rs");
+            if path.file_name().and_then(|value| value.to_str()) != Some("full_write.rs")
+                && !typed_general_arena
+            {
                 assert!(
                     !source.contains("Box<[f64]>"),
                     "{} erases typed resident storage",

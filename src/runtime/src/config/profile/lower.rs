@@ -40,8 +40,15 @@ pub struct BuildHostConfig {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct RuntimeConfigPatch {
     pub name: Option<String>,
+    pub program_routing: ProgramRoutingConfigPatch,
     pub limits: RuntimeLimitsPatch,
     pub diagnostics: DiagnosticsConfigPatch,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProgramRoutingConfigPatch {
+    pub resident_routing: Option<crate::ResidentRoutingPolicy>,
+    pub resident_durability: Option<crate::ResidentDurabilityPolicy>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -391,9 +398,49 @@ impl ConfigLowerer {
         for (key, value) in map {
             match key.as_str() {
                 "name" => out.name = Some(expect_string("runtime.name", value)?),
+                "program-routing" => out.program_routing = self.lower_program_routing(value)?,
                 "limits" => out.limits = self.lower_limits(value)?,
                 "diagnostics" => out.diagnostics = self.lower_diagnostics(value)?,
                 other => return invalid(format!("unknown runtime field `{other}`")),
+            }
+        }
+        Ok(out)
+    }
+
+    fn lower_program_routing(&self, value: &ConfigValue) -> MResult<ProgramRoutingConfigPatch> {
+        let map = expect_map("runtime.program-routing", value)?;
+        let mut out = ProgramRoutingConfigPatch::default();
+        for (key, value) in map {
+            match key.as_str() {
+                "resident-routing" => {
+                    let value = expect_string("runtime.program-routing.resident-routing", value)?;
+                    out.resident_routing = Some(match value.as_str() {
+                        "prefer-resident" => crate::ResidentRoutingPolicy::PreferResident,
+                        "require-resident" => crate::ResidentRoutingPolicy::RequireResident,
+                        "legacy-only" => crate::ResidentRoutingPolicy::LegacyOnly,
+                        other => {
+                            return invalid(format!(
+                                "runtime.program-routing.resident-routing must be one of prefer-resident, require-resident, legacy-only; got `{other}`"
+                            ));
+                        }
+                    });
+                }
+                "resident-durability" => {
+                    let value =
+                        expect_string("runtime.program-routing.resident-durability", value)?;
+                    out.resident_durability = Some(match value.as_str() {
+                        "volatile" => crate::ResidentDurabilityPolicy::Volatile,
+                        "retained" => crate::ResidentDurabilityPolicy::Retained,
+                        other => {
+                            return invalid(format!(
+                                "runtime.program-routing.resident-durability must be one of volatile, retained; got `{other}`"
+                            ));
+                        }
+                    });
+                }
+                other => {
+                    return invalid(format!("unknown runtime.program-routing field `{other}`"));
+                }
             }
         }
         Ok(out)
@@ -690,7 +737,7 @@ fn type_name(value: &ConfigValue) -> &'static str {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
     use crate::{ConfigProfileOptions, parse_config_document};

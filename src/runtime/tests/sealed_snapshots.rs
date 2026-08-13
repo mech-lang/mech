@@ -1,3 +1,5 @@
+#![cfg(feature = "source")]
+
 #[cfg(feature = "compiler")]
 use std::cell::RefCell;
 use std::sync::Arc;

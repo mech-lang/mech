@@ -7,7 +7,7 @@ mod receipt;
 #[cfg(any(test, feature = "runtime_bench_gate_d3"))]
 #[doc(hidden)]
 pub mod test_provider;
-#[cfg(test)]
+#[cfg(all(test, feature = "compiler"))]
 mod tests;
 mod value_adapter;
 

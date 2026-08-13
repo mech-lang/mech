@@ -28,6 +28,7 @@ use crate::{
     RuntimeEffectMetadata, RuntimeEffectSource, RuntimeResidentResourceWriteRequest,
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry,
     RuntimeResourceWriteIntent, RuntimeTransactionalEffect, TransactionId,
+    config::ResidentDurabilityPolicy,
 };
 
 use super::*;
@@ -765,9 +766,9 @@ fn retained_turn_captures_publishes_receipts_delivers_and_replays() -> MResult<(
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    let mut coordinator = ResidentExternalCoordinator::new(
+    let mut coordinator = ResidentExternalCoordinator::new_live(
         instance,
-        &artifact,
+        Arc::new(artifact.clone()),
         &providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
@@ -799,7 +800,7 @@ fn retained_turn_captures_publishes_receipts_delivers_and_replays() -> MResult<(
     drop(replay_providers);
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &replay_artifact,
+        Arc::new(replay_artifact),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -827,9 +828,9 @@ fn default_authority_denies_before_any_provider_read() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
     let (artifact, instance, providers) = fixture(trace.clone(), ProviderProtocol::AfterCommit)?;
     assert!(
-        ResidentExternalCoordinator::new(
+        ResidentExternalCoordinator::new_live(
             instance,
-            &artifact,
+            Arc::new(artifact),
             &providers,
             &DenyAllResidentExternalAuthority,
             ResidentDurabilityPolicy::Retained,
@@ -858,12 +859,12 @@ fn idempotent_retry_requires_provider_deduplication_support() -> MResult<()> {
     Ok(())
 }
 
-fn coordinator<'a>(
+fn coordinator(
     instance: ReactiveInstance,
-    artifact: &'a ProgramArtifact,
-    providers: &'a RuntimeResourceRegistry,
+    artifact: &ProgramArtifact,
+    providers: &RuntimeResourceRegistry,
     limits: ResidentExternalLimits,
-) -> MResult<ResidentExternalCoordinator<'a>> {
+) -> MResult<ResidentExternalCoordinator> {
     coordinator_with_durability(
         instance,
         artifact,
@@ -873,21 +874,26 @@ fn coordinator<'a>(
     )
 }
 
-fn coordinator_with_durability<'a>(
+fn coordinator_with_durability(
     instance: ReactiveInstance,
-    artifact: &'a ProgramArtifact,
-    providers: &'a RuntimeResourceRegistry,
+    artifact: &ProgramArtifact,
+    providers: &RuntimeResourceRegistry,
     durability: ResidentDurabilityPolicy,
     limits: ResidentExternalLimits,
-) -> MResult<ResidentExternalCoordinator<'a>> {
+) -> MResult<ResidentExternalCoordinator> {
     let authority = ExactRequirementAuthority::new(
         artifact
             .requirements()
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    ResidentExternalCoordinator::new(
-        instance, artifact, providers, &authority, durability, limits,
+    ResidentExternalCoordinator::new_live(
+        instance,
+        Arc::new(artifact.clone()),
+        providers,
+        &authority,
+        durability,
+        limits,
     )
 }
 
@@ -1599,9 +1605,9 @@ fn coordinator_rejects_an_artifact_other_than_the_instance_artifact() -> MResult
             .map(|(_, requirement)| requirement.clone()),
     )?;
     assert!(
-        ResidentExternalCoordinator::new(
+        ResidentExternalCoordinator::new_live(
             instance,
-            &other,
+            Arc::new(other),
             &providers,
             &authority,
             ResidentDurabilityPolicy::Retained,
@@ -1673,7 +1679,7 @@ fn replay_reconstructs_and_rejects_forged_batch_identity() -> MResult<()> {
     drop(replay_providers);
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &replay_artifact,
+        Arc::new(replay_artifact),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1716,7 +1722,7 @@ fn accepted_replay_receipt_mismatch_does_not_consume_replay_identity() -> MResul
     drop(replay_providers);
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &replay_artifact,
+        Arc::new(replay_artifact),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1795,7 +1801,7 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
     .unwrap();
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &artifact,
+        Arc::new(artifact.clone()),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1919,7 +1925,7 @@ fn shared_observations_record_a_successful_prefix_before_a_later_read_failure() 
     .unwrap();
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &artifact,
+        Arc::new(artifact.clone()),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -2309,9 +2315,9 @@ output := state
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    let mut coordinator = ResidentExternalCoordinator::new(
+    let mut coordinator = ResidentExternalCoordinator::new_live(
         instance,
-        &artifact,
+        Arc::new(artifact),
         &providers,
         &authority,
         ResidentDurabilityPolicy::Retained,

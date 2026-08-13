@@ -41,13 +41,15 @@ mod operation_context;
 #[cfg(feature = "resident-external")]
 #[path = "../resident_external/mod.rs"]
 pub mod resident_external;
+#[cfg(feature = "resident-routing")]
+mod resident_program;
 mod resources;
 mod schedule;
 mod state;
 mod task;
 mod transaction;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod input_tests;
 
 #[cfg(test)]
@@ -62,6 +64,8 @@ pub use self::external::{
 #[cfg(feature = "runtime_bench_probes")]
 #[doc(hidden)]
 pub use self::gate_a_probe::{GateACostSnapshot, gate_a_cost_snapshot, reset_gate_a_costs};
+#[cfg(feature = "resident-routing")]
+pub use self::resident_program::*;
 pub use self::resources::{RuntimeResourceBinding, RuntimeResourceBindingError};
 pub use self::state::{MechRuntime, RuntimeExecutionMode};
 pub use self::transaction::{RuntimeHealth, RuntimePoisonRecord};

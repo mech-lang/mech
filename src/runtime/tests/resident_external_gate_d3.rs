@@ -324,9 +324,9 @@ fn external_structural_probe(
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    let mut accepted = ResidentExternalCoordinator::new(
+    let mut accepted = ResidentExternalCoordinator::new_live(
         accepted_instance,
-        artifact,
+        Arc::new(artifact.clone()),
         &accepted_providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
@@ -353,9 +353,9 @@ fn external_structural_probe(
         ResidentIntegrityMode::Checked,
     )
     .map_err(|error| benchmark_error(&format!("activate D3 rejected probe: {error:?}")))?;
-    let mut rejected = ResidentExternalCoordinator::new(
+    let mut rejected = ResidentExternalCoordinator::new_live(
         rejected_instance,
-        artifact,
+        Arc::new(artifact.clone()),
         &rejected_providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
@@ -437,9 +437,9 @@ fn run_lane(
             .map(|(_, requirement)| requirement.clone()),
     )?;
     let total = history.saturating_add(TURNS).saturating_add(32);
-    let mut coordinator = ResidentExternalCoordinator::new(
+    let mut coordinator = ResidentExternalCoordinator::new_live(
         instance,
-        artifact,
+        Arc::new(artifact.clone()),
         &providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
@@ -553,7 +553,7 @@ fn run_replay(
     .map_err(|error| benchmark_error(&format!("activate D3 replay artifact: {error:?}")))?;
     let mut coordinator = ResidentExternalCoordinator::new_replay(
         instance,
-        artifact,
+        Arc::new(artifact.clone()),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits {
             input_batches: TURNS + 32,

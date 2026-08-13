@@ -277,6 +277,25 @@ impl ActivatedPlan {
     pub fn has_external_steps(&self) -> bool {
         self.external_step_count != 0
     }
+
+    pub(crate) fn has_observation_inputs(&self) -> bool {
+        self.inputs
+            .iter()
+            .any(|input| matches!(input.source, ActivatedInputSource::Observation { .. }))
+    }
+
+    pub fn external_effect_count(&self) -> usize {
+        self.steps
+            .iter()
+            .filter(|step| {
+                matches!(
+                    step,
+                    ActivatedTurnStep::External(external)
+                        if matches!(external.interaction, ExternalInteraction::Effect(_))
+                )
+            })
+            .count()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -615,6 +634,10 @@ impl ReactiveInstance {
         InstanceEpoch::new(self.published_epoch.load(Ordering::Acquire))
     }
 
+    pub fn has_active_candidate(&self) -> bool {
+        self.candidate_active
+    }
+
     pub fn next_epoch(&self) -> Option<InstanceEpoch> {
         self.next_epoch
     }
@@ -881,6 +904,36 @@ pub fn activate_with_options(
     activate_internal(id, artifact, catalog, facts, options)
 }
 
+#[derive(Clone, Debug)]
+#[doc(hidden)]
+pub struct ResidentActivationPreflight {
+    pub plan: ActivatedPlan,
+}
+
+/// Validates and plans resident activation without allocating an instance
+/// identity or creating mutable resident state.
+#[doc(hidden)]
+pub fn preflight_activation(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    facts: &ActivationFacts,
+    options: ResidentActivationOptions,
+) -> Result<ResidentActivationPreflight, ResidentActivationError> {
+    preflight_state_initializers(artifact)?;
+    let classification = classify_nodes(artifact, options.external)?;
+    let layout = build_layout(artifact, facts, &classification)?;
+    let facts_fingerprint = activation_facts_fingerprint(facts);
+    let (plan, _, _, _, _) = build_plan(
+        artifact,
+        catalog,
+        classification,
+        layout,
+        facts_fingerprint,
+        options,
+    )?;
+    Ok(ResidentActivationPreflight { plan })
+}
+
 /// Activates an external resident instance structurally. Safe engine consumers
 /// can prepare and abort its candidates, but only the runtime coordinator owns
 /// the audited authority required to publish them.
@@ -1129,6 +1182,14 @@ fn classify_nodes(
                 match output.construction {
                     OutputConstruction::FullWrite { .. } => {
                         if matches!(output_role, SlotRole::Input)
+                            || output.access != AccessMode::Write
+                            || output.alias != AliasPolicy::NoAlias
+                        {
+                            return Err(ResidentActivationError::InvalidAlias { node: node.node });
+                        }
+                    }
+                    OutputConstruction::Build { .. } => {
+                        if output_role != SlotRole::Derived
                             || output.access != AccessMode::Write
                             || output.alias != AliasPolicy::NoAlias
                         {

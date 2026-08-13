@@ -3288,7 +3288,7 @@ impl DirectContextEffectPlacement {
     }
 }
 
-pub(super) enum RuntimeProgramTarget<'a> {
+pub(in crate::runtime) enum RuntimeProgramTarget<'a> {
     Retained,
     Isolated(&'a mut MechProgram),
 }

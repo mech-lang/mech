@@ -1,6 +1,9 @@
 use mech_core::InstanceEpoch;
 
-use super::{Candidate, NODES_PER_EKF, ResidentExecutionError, efficacy::ekf};
+use super::{
+    Candidate, NODES_PER_EKF, ResidentCandidateExecutionError as ResidentExecutionError,
+    efficacy::ekf,
+};
 use crate::efficacy::ekf::math;
 
 #[inline]

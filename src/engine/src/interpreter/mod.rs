@@ -3123,3 +3123,19 @@ impl Deref for InterpreterExecution<'_> {
         self.interpreter
     }
 }
+
+impl Interpreter {
+    /// Whether executable source or bytecode state is retained. This is a
+    /// defensive ownership signal; catalogs and empty environments do not
+    /// count as installed programs.
+    pub fn has_retained_execution_state(&self) -> bool {
+        if !self.code.is_empty() || self.ip != 0 || !self.constants.is_empty() {
+            return true;
+        }
+        #[cfg(feature = "functions")]
+        if self.plan_len() != 0 {
+            return true;
+        }
+        false
+    }
+}

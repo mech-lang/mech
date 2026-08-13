@@ -2,7 +2,10 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use mech_core::InstanceEpoch;
 
-use super::{ResidentExecutionError, bench::ResidentTurnSummary, publish_epoch};
+use super::{
+    ResidentCandidateExecutionError as ResidentExecutionError, bench::ResidentTurnSummary,
+    publish_epoch,
+};
 
 pub const FULL_WRITE_ELEMENTS: usize = 64 * 64;
 

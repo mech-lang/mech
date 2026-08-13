@@ -20,6 +20,8 @@ impl MechRuntime {
                 ignored_update_count: prepared.ignored_update_count,
                 binding_count: 0,
                 turn: None,
+                #[cfg(feature = "resident-routing")]
+                resident_turn: None,
             });
         }
 
@@ -46,6 +48,8 @@ impl MechRuntime {
                 ignored_update_count: prepared.ignored_update_count,
                 binding_count: 0,
                 turn: None,
+                #[cfg(feature = "resident-routing")]
+                resident_turn: None,
             });
         }
 
@@ -75,6 +79,8 @@ impl MechRuntime {
             ignored_update_count: prepared.ignored_update_count,
             binding_count: prepared.binding_count,
             turn: Some(turn),
+            #[cfg(feature = "resident-routing")]
+            resident_turn: None,
         })
     }
 }

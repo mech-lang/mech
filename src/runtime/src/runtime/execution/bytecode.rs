@@ -218,6 +218,8 @@ impl MechRuntime {
                         },
                     )?;
                 }
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
                 Ok(snapshot)
             },
         );

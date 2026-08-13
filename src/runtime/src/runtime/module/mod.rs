@@ -746,11 +746,14 @@ impl MechRuntime {
                     runtime.validate_live_context_candidate(context)?;
                     runtime.commit_live_context_candidate(context);
                 }
-                Ok(RootModuleExecution {
+                let execution = RootModuleExecution {
                     result: crate::RuntimeValueSnapshot::try_capture(&result)?,
                     #[cfg(feature = "invariant_define")]
                     integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
-                })
+                };
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(execution)
             },
         );
 

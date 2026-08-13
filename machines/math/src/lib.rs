@@ -210,35 +210,35 @@ macro_rules! impl_urnop_match_arms2 {
 macro_rules! impl_math_unop {
   ($fxn_name:ident, $type:ident, $op_fxn:ident) => {
     paste!{
-      impl_unop!([<$fxn_name $type:camel S>], $type, $type, [<$op_fxn _op>]);
+      impl_unop!([<$fxn_name $type:camel S>], $type, $type, [<$op_fxn _op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix1")]
-      impl_unop!([<$fxn_name $type:camel M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel M1>], Matrix1<$type>, Matrix1<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix2")]
-      impl_unop!([<$fxn_name $type:camel M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel M2>], Matrix2<$type>, Matrix2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix3")]
-      impl_unop!([<$fxn_name $type:camel M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel M3>], Matrix3<$type>, Matrix3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix4")]
-      impl_unop!([<$fxn_name $type:camel M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel M4>], Matrix4<$type>, Matrix4<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix2x3")]
-      impl_unop!([<$fxn_name $type:camel M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel M2x3>], Matrix2x3<$type>, Matrix2x3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrix3x2")]
-      impl_unop!([<$fxn_name $type:camel M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel M3x2>], Matrix3x2<$type>, Matrix3x2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "matrixd")]
-      impl_unop!([<$fxn_name $type:camel MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel MD>], DMatrix<$type>, DMatrix<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vector2")]
-      impl_unop!([<$fxn_name $type:camel R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel R2>], RowVector2<$type>, RowVector2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vector3")]
-      impl_unop!([<$fxn_name $type:camel R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel R3>], RowVector3<$type>, RowVector3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vector4")]
-      impl_unop!([<$fxn_name $type:camel R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel R4>], RowVector4<$type>, RowVector4<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "row_vectord")]
-      impl_unop!([<$fxn_name $type:camel RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel RD>], RowDVector<$type>, RowDVector<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vector2")]
-      impl_unop!([<$fxn_name $type:camel V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel V2>], Vector2<$type>, Vector2<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vector3")]
-      impl_unop!([<$fxn_name $type:camel V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel V3>], Vector3<$type>, Vector3<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vector4")]
-      impl_unop!([<$fxn_name $type:camel V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel V4>], Vector4<$type>, Vector4<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
       #[cfg(feature = "vectord")]
-      impl_unop!([<$fxn_name $type:camel VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>]);
+      impl_unop!([<$fxn_name $type:camel VD>], DVector<$type>, DVector<$type>, [<$op_fxn _vec_op>], crate::ops::unary_full_write_contract);
     }}}

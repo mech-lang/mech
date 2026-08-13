@@ -233,6 +233,11 @@ pub struct RuntimeHostInputOutcome {
     pub ignored_update_count: usize,
     pub binding_count: usize,
     pub turn: Option<ProgramInputTurnOutcome>,
+    /// Resident turn produced by this drain batch. When several packets are
+    /// coalesced, the single resident decision is attached to the final
+    /// packet outcome; all earlier packet outcomes contain `None`.
+    #[cfg(feature = "resident-routing")]
+    pub resident_turn: Option<crate::ResidentExternalTurnOutcome>,
 }
 
 #[derive(Debug)]
@@ -286,6 +291,42 @@ impl RuntimeIngress {
         Ok(())
     }
 
+    /// Submits the newest packet for a stable source set. If a pending packet
+    /// already contains exactly the same sources, it is replaced in place so
+    /// unrelated packet ordering is preserved. Otherwise this behaves like an
+    /// ordered submission and respects queue capacity.
+    pub fn submit_latest(&self, input: RuntimeHostInput) -> MResult<()> {
+        input.validate()?;
+        let mut guard = self.queue.lock().map_err(|_| {
+            input_error(
+                "RuntimeIngressUnavailable",
+                "host input queue lock is poisoned",
+            )
+        })?;
+        if guard.closed {
+            return Err(input_error(
+                "RuntimeIngressClosed",
+                "host input queue is closed",
+            ));
+        }
+        if let Some(existing) = guard
+            .queue
+            .iter_mut()
+            .find(|pending| same_input_sources(pending, &input))
+        {
+            *existing = input;
+            return Ok(());
+        }
+        if guard.queue.len() >= guard.capacity {
+            return Err(input_error(
+                "RuntimeIngressFull",
+                "host input queue is full",
+            ));
+        }
+        guard.queue.push_back(input);
+        Ok(())
+    }
+
     pub fn is_closed(&self) -> MResult<bool> {
         Ok(self
             .queue
@@ -298,6 +339,16 @@ impl RuntimeIngress {
             })?
             .closed)
     }
+}
+
+fn same_input_sources(left: &RuntimeHostInput, right: &RuntimeHostInput) -> bool {
+    left.updates.len() == right.updates.len()
+        && left.updates.iter().all(|left| {
+            right
+                .updates
+                .iter()
+                .any(|right| right.source == left.source)
+        })
 }
 
 /// Platform-neutral active host input driver.
@@ -394,6 +445,25 @@ mod tests {
             guard.queue.pop_front().unwrap().updates[0].source.path(),
             "b"
         );
+    }
+
+    #[test]
+    fn latest_submission_replaces_same_sources_without_reordering_unrelated_packets() {
+        let queue = Arc::new(Mutex::new(RuntimeHostInputQueueState::new(2)));
+        let ingress = RuntimeIngress::new(queue.clone());
+        ingress.submit(packet("a", 1.0)).unwrap();
+        ingress.submit(packet("b", 2.0)).unwrap();
+        ingress.submit_latest(packet("a", 3.0)).unwrap();
+
+        let mut guard = queue.lock().unwrap();
+        let first = guard.queue.pop_front().unwrap();
+        let second = guard.queue.pop_front().unwrap();
+        assert_eq!(first.updates[0].source.path(), "a");
+        assert!(matches!(
+            first.updates[0].value,
+            RuntimeHostInputValue::F64(3.0)
+        ));
+        assert_eq!(second.updates[0].source.path(), "b");
     }
 
     #[test]

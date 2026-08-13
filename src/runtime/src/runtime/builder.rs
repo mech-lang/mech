@@ -334,6 +334,14 @@ impl RuntimeBuilder {
             execution_mode: self.execution_mode,
             function_catalog,
             program,
+            #[cfg(feature = "resident-routing")]
+            active_program: Default::default(),
+            #[cfg(feature = "resident-routing")]
+            program_execution_info: Default::default(),
+            #[cfg(feature = "resident-routing")]
+            next_resident_instance: 1,
+            #[cfg(feature = "resident-routing")]
+            resident_production_probe: Default::default(),
             id_generator: self.id_generator,
             store: self.store,
             capability_kernel: self.capability_kernel,

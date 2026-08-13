@@ -1,7 +1,7 @@
 use crate::efficacy::ekf::math::{self, EkfMathError};
 use crate::efficacy::ekf::operation::{EkfConstants, EkfKernel, EkfScratch};
 
-use super::super::ResidentExecutionError;
+use super::super::ResidentCandidateExecutionError as ResidentExecutionError;
 
 #[inline(always)]
 pub(crate) fn execute(

@@ -403,6 +403,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateTwoArgs\n{:#?}", self.out)
     }
@@ -729,6 +732,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateNArgs\n{:#?}", self.out)

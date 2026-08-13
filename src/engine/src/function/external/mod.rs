@@ -46,7 +46,7 @@ fn compile_external_value_with_fallback(
     compile_value_register(value, fallback, context)
 }
 
-#[cfg(all(test, feature = "f64"))]
+#[cfg(all(test, feature = "compiler", feature = "f64"))]
 mod tests {
     use super::*;
     use mech_bytecode::{CompileCtx, CompiledBytecode};

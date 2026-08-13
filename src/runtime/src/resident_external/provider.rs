@@ -4,11 +4,13 @@ use mech_core::{
     MechErrorKind, NodeId, OperationContractDeclaration, ResolvedOperationContract, ResourceIntent,
 };
 use mech_engine::{
-    __resident::{ActivatedInput, ActivatedInputSource, ActivatedPlan, ActivatedTurnStep},
     ProgramArtifact,
+    resident::{ActivatedInput, ActivatedInputSource, ActivatedPlan, ActivatedTurnStep},
 };
 
-use crate::{RuntimeResourceRegistry, RuntimeResourceWriteIntent};
+use crate::{
+    RuntimeResourceRegistry, RuntimeResourceWriteIntent, resource::RuntimeResidentProviderBinding,
+};
 
 use super::ResidentExternalAuthority;
 
@@ -38,13 +40,9 @@ impl mech_engine::ExternalRequirementContractResolver for ResidentExternalContra
             .providers
             .resident_provider_binding(&request.base_uri)?;
         match request.intent {
-            ResourceIntent::Read => self.providers.resident_semantic_read_contract(binding),
-            ResourceIntent::Assign | ResourceIntent::Send => {
-                self.providers.resident_semantic_write_contract(
-                    binding,
-                    write_intent(request).expect("write intent was matched"),
-                )
-            }
+            ResourceIntent::Read => binding.semantic_read_contract(),
+            ResourceIntent::Assign | ResourceIntent::Send => binding
+                .semantic_write_contract(write_intent(request).expect("write intent was matched")),
         }
     }
 }
@@ -55,7 +53,7 @@ pub struct BoundResidentObservation {
     pub node: NodeId,
     pub requirement: ApplicationRequirementId,
     pub request: mech_core::ExecutionResourceRequest,
-    pub(crate) provider_binding: Option<usize>,
+    pub(crate) provider_binding: Option<RuntimeResidentProviderBinding>,
 }
 
 #[derive(Clone, Debug)]
@@ -65,7 +63,7 @@ pub struct BoundResidentEffect {
     pub request: mech_core::ExecutionResourceRequest,
     pub interaction: ExternalInteraction,
     pub ordinal: u32,
-    pub(crate) provider_binding: Option<usize>,
+    pub(crate) provider_binding: Option<RuntimeResidentProviderBinding>,
 }
 
 #[derive(Clone, Debug)]
@@ -107,11 +105,9 @@ pub fn bind_external_requirements(
         )?;
         let request = &observation.request;
         let provider_binding = providers.resident_provider_binding(&request.base_uri)?;
-        let provider_contract = providers
-            .resident_semantic_read_contract(provider_binding)?
-            .ok_or_else(|| {
-                contract_mismatch(observation.node, "provider has no semantic read contract")
-            })?;
+        let provider_contract = provider_binding.semantic_read_contract()?.ok_or_else(|| {
+            contract_mismatch(observation.node, "provider has no semantic read contract")
+        })?;
         compare_contract(artifact, observation.node, provider_contract)?;
         observation.provider_binding = Some(provider_binding);
     }
@@ -121,14 +117,14 @@ pub fn bind_external_requirements(
         let intent =
             write_intent(request).expect("replay binding validated the resident write intent");
         let provider_binding = providers.resident_provider_binding(&request.base_uri)?;
-        let provider_contract = providers
-            .resident_semantic_write_contract(provider_binding, intent)?
+        let provider_contract = provider_binding
+            .semantic_write_contract(intent)?
             .ok_or_else(|| {
                 contract_mismatch(effect.node, "provider has no semantic write contract")
             })?;
         compare_contract(artifact, effect.node, provider_contract)?;
         if requires_provider_idempotency(&effect.interaction)
-            && !providers.resident_supports_idempotency(provider_binding, intent)?
+            && !provider_binding.supports_idempotency(intent)?
         {
             return invalid_binding(
                 effect.node,

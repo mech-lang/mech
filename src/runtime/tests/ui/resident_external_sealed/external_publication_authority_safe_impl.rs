@@ -1,4 +1,4 @@
-use mech_engine::__resident::ResidentExternalPublicationAuthority;
+use mech_engine::resident::ResidentExternalPublicationAuthority;
 
 struct ForgedSafeAuthority;
 

@@ -19,6 +19,11 @@ use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 use std::sync::Arc;
 
+#[cfg(feature = "resident-routing")]
+use crate::runtime::resident_program::ResidentProductionProbe;
+#[cfg(feature = "resident-routing")]
+use crate::runtime::resident_program::{ActiveProgramExecution, RuntimeProgramExecutionInfo};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RuntimeExecutionMode {
     Execute,
@@ -51,6 +56,14 @@ pub struct MechRuntime {
     pub(super) execution_mode: RuntimeExecutionMode,
     pub(super) function_catalog: Arc<FunctionCatalog>,
     pub(super) program: MechProgram,
+    #[cfg(feature = "resident-routing")]
+    pub(super) active_program: ActiveProgramExecution,
+    #[cfg(feature = "resident-routing")]
+    pub(super) program_execution_info: RuntimeProgramExecutionInfo,
+    #[cfg(feature = "resident-routing")]
+    pub(super) next_resident_instance: u32,
+    #[cfg(feature = "resident-routing")]
+    pub(super) resident_production_probe: ResidentProductionProbe,
     pub(super) id_generator: Box<dyn IdGenerator>,
     pub(super) store: Box<dyn MechStore>,
     pub(super) capability_kernel: Box<dyn CapabilityKernel>,
@@ -90,6 +103,7 @@ impl std::fmt::Debug for MechRuntime {
             .field("execution_mode", &self.execution_mode)
             .field("function_catalog", &"<FunctionCatalog>")
             .field("program", &"<MechProgram>")
+            .field("active_program", &self.program_route_for_debug())
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
             .field("capability_kernel", &"<dyn CapabilityKernel>")
@@ -164,5 +178,12 @@ impl MechRuntime {
 
     pub fn is_poisoned(&self) -> bool {
         matches!(self.health, RuntimeHealth::Poisoned(_))
+    }
+}
+
+#[cfg(not(feature = "resident-routing"))]
+impl MechRuntime {
+    fn program_route_for_debug(&self) -> &'static str {
+        "unavailable"
     }
 }

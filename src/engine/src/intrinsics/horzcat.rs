@@ -500,6 +500,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out)
     }
@@ -604,6 +607,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out)
@@ -721,6 +727,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateFourArgs\n{:#?}", self.out)

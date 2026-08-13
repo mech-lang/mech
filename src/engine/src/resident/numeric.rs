@@ -31,6 +31,27 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register(builder, &runtime, "AddAssignVV<[f64]:0,0>", bind_add_assign)?;
     register(builder, &runtime, "AddAssignSS<f64>", bind_add_assign)?;
+    register(builder, &runtime, "AddSS<f64>", bind_add)?;
+    register(builder, &runtime, "AddSVD<f64>", bind_add)?;
+    register(builder, &runtime, "AddVDS<f64>", bind_add)?;
+    register(
+        builder,
+        &runtime,
+        "HorizontalConcatenateTwoArgs<f64>",
+        bind_horizontal,
+    )?;
+    register(
+        builder,
+        &runtime,
+        "HorizontalConcatenateThreeArgs<f64>",
+        bind_horizontal,
+    )?;
+    register(
+        builder,
+        &runtime,
+        "HorizontalConcatenateFourArgs<f64>",
+        bind_horizontal,
+    )?;
     register(
         builder,
         &runtime,
@@ -53,6 +74,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "MulMDVD<f64>", bind_mul_rows)?;
     register(builder, &runtime, "MulSS<f64>", bind_mul)?;
     register(builder, &runtime, "MulSVD<f64>", bind_mul)?;
+    register(builder, &runtime, "MulVDVD<f64>", bind_mul)?;
+    register(builder, &runtime, "MulVDS<f64>", bind_mul)?;
+    register(builder, &runtime, "MathCosF64S", bind_cos)?;
+    register(builder, &runtime, "MathCosF64VD", bind_cos)?;
+    register(builder, &runtime, "MathSinF64S", bind_sin)?;
+    register(builder, &runtime, "MathSinF64VD", bind_sin)?;
     register(builder, &runtime, "NChooseKMatrix<f64>", bind_n_choose_k)?;
     register(builder, &runtime, "NegateS<f64>", bind_negate)?;
     register(builder, &runtime, "PowMDS<f64>", bind_pow)?;
@@ -72,8 +99,15 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_sub_indexed_rows,
     )?;
     register(builder, &runtime, "SubMDMD<f64>", bind_sub)?;
+    register(builder, &runtime, "SubSVD<f64>", bind_sub)?;
     register(builder, &runtime, "TransposeMD<f64>", bind_transpose)?;
     register(builder, &runtime, "TransposeRD<f64>", bind_transpose)?;
+    register(
+        builder,
+        &runtime,
+        "VerticalConcatenateNArgs<f64>",
+        bind_vertical,
+    )?;
     register(
         builder,
         &runtime,
@@ -618,10 +652,45 @@ fn bind_negate(
     bound(negate, Vec::<u64>::new().into_boxed_slice())
 }
 
+fn bind_unary_f64(
+    request: &ResidentKernelBindRequest<'_>,
+    executor: mech_core::ResidentKernelExecutor,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let change = if request.output.shape == ResidentShape::SCALAR {
+        ChangeDetectionPolicy::ExactScalar
+    } else {
+        ChangeDetectionPolicy::KernelReported
+    };
+    validate_full_write(request, 1, ShapeRule::SameAsInput { input: 0 }, change)?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
+    if request.inputs[0].shape != request.output.shape {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(executor, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_cos(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, cosine)
+}
+
+fn bind_sin(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_unary_f64(request, sine)
+}
+
 fn bind_sub(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, subtract)
+}
+
+fn bind_add(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, add)
 }
 
 fn bind_mul(
@@ -1444,6 +1513,38 @@ fn negate(
     Ok(replace_f64(output, |index| -input[index]))
 }
 
+fn unary_f64(
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+    operation: impl Fn(f64) -> f64,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let input = f64_input(inputs, 0)?;
+    let output = f64_output(output)?;
+    if input.len() != output.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64(output, |index| operation(input[index])))
+}
+
+fn cosine(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::cos)
+}
+
+fn sine(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    unary_f64(inputs, output, f64::sin)
+}
+
 fn binary_f64(
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
@@ -1475,6 +1576,14 @@ fn subtract(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     binary_f64(inputs, output, |left, right| left - right)
+}
+
+fn add(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(inputs, output, |left, right| left + right)
 }
 
 fn multiply(

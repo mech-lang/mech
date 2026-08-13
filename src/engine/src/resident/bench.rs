@@ -1,5 +1,6 @@
 use super::{
-    Candidate, GateBInstance, NODES_PER_EKF, ResidentExecutionError, execute_ekf_candidate,
+    Candidate, GateBInstance, NODES_PER_EKF,
+    ResidentCandidateExecutionError as ResidentExecutionError, execute_ekf_candidate,
     execute_scheduled_ekf_candidate,
 };
 

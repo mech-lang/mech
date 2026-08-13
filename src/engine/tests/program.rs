@@ -1,3 +1,5 @@
+#![cfg(feature = "source")]
+
 use mech_core::{GenericError, MechError, NoMechExecutionServices, nodes::*};
 use mech_engine::{MechProgram, MechProgramConfig, ProgramTurnFinalization};
 

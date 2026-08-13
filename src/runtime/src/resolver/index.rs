@@ -906,7 +906,7 @@ fn declaration_range(mut tokens: Vec<Token>) -> Option<SourceRange> {
     Token::merge_tokens(&mut tokens).map(|token| token.src_range)
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
 

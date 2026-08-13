@@ -3,17 +3,19 @@ use mech_core::{
     ReactiveInstanceId, ResidentValueKind, TransactionalEffectProtocol, Value, ValueHash,
 };
 use mech_engine::{
-    __resident::{
+    ProgramArtifact,
+    resident::{
         CapturedValueInput, PreparedResidentTurn, ReactiveInstance, ResidentExecutionError,
         ResidentExternalPublicationAuthority, ResidentTurnSummary,
     },
-    ProgramArtifact,
 };
+use std::sync::Arc;
 
 use crate::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectFailure, RuntimeEffectId,
-    RuntimeEffectProtocol, RuntimeResidentResourceWriteRequest, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteIntent, TransactionId,
+    PreparedRuntimeEffect, ResidentDurabilityPolicy, RuntimeCapabilityOperation,
+    RuntimeEffectFailure, RuntimeEffectId, RuntimeEffectProtocol,
+    RuntimeResidentResourceWriteRequest, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteIntent, TransactionId,
     ledger::{LedgerPermit, PreparedLedgerAppend, RecordEstimate, RetainedTurnLedger, TurnLedger},
     outbox::{
         OutboxDeliveryPolicy, OutboxEffectId, OutboxPermit, OwnedEffectIntent, PreparedOutboxBatch,
@@ -39,15 +41,6 @@ use crate::runtime::effect_journal::{
 
 const MAX_FAILURE_MESSAGE_BYTES: usize = 256;
 const MAX_FAILURE_KIND_BYTES: usize = 64;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ResidentDurabilityPolicy {
-    Volatile,
-    Retained,
-    AsynchronousDurable,
-    SynchronousDurable,
-    ReplicatedDurable,
-}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ResidentExternalLimits {
@@ -117,6 +110,8 @@ pub struct ResidentExternalStructuralProbe {
     pub runtime_execution_transaction_construction_count: usize,
     pub effects_delivered_before_publication: usize,
     pub effects_delivered_for_rejected_turns: usize,
+    pub scene_effects_prepared: usize,
+    pub scene_effects_delivered: usize,
 }
 
 enum RetainedDeliveryFailure {
@@ -145,15 +140,15 @@ struct RuntimeResidentPublicationAuthority {
 #[allow(unsafe_code)]
 unsafe impl ResidentExternalPublicationAuthority for RuntimeResidentPublicationAuthority {}
 
-pub struct ResidentExternalCoordinator<'a> {
+pub struct ResidentExternalCoordinator {
     instance: Option<ReactiveInstance>,
     publication_authority: RuntimeResidentPublicationAuthority,
     instance_id: ReactiveInstanceId,
     program_revision: ProgramRevision,
     plan_generation: mech_core::PlanGeneration,
     layout_generation: mech_core::LayoutGeneration,
-    artifact: &'a ProgramArtifact,
-    providers: Option<&'a RuntimeResourceRegistry>,
+    artifact: Arc<ProgramArtifact>,
+    live: bool,
     bound: BoundResidentExternalPlan,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
@@ -168,24 +163,29 @@ pub struct ResidentExternalCoordinator<'a> {
     last_rejected_turn: Option<TurnId>,
 }
 
-impl<'a> ResidentExternalCoordinator<'a> {
-    pub fn new(
+/// Capacity and identity reserved before a host packet leaves runtime ingress.
+/// Once constructed, ordinary retained-capacity admission cannot fail midway
+/// through consumption of that packet.
+pub(crate) struct ResidentExternalTurnAdmission {
+    input_permit: Option<LedgerPermit>,
+    receipt_permit: LedgerPermit,
+    outbox_permit: Option<OutboxPermit>,
+    turn: TurnId,
+    transaction: TransactionId,
+    before_epoch: InstanceEpoch,
+}
+
+impl ResidentExternalCoordinator {
+    pub fn new_live(
         instance: ReactiveInstance,
-        artifact: &'a ProgramArtifact,
-        providers: &'a RuntimeResourceRegistry,
+        artifact: Arc<ProgramArtifact>,
+        providers: &RuntimeResourceRegistry,
         authority: &dyn ResidentExternalAuthority,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
-        let bound = bind_external_requirements(&instance.plan, artifact, providers, authority)?;
-        Self::from_bound(
-            instance,
-            artifact,
-            Some(providers),
-            bound,
-            durability,
-            limits,
-        )
+        let bound = bind_external_requirements(&instance.plan, &artifact, providers, authority)?;
+        Self::from_bound(instance, artifact, true, bound, durability, limits)
     }
 
     /// Constructs an offline replay coordinator without live providers or
@@ -196,18 +196,18 @@ impl<'a> ResidentExternalCoordinator<'a> {
     /// deliveries. Live turns and outbox retries are rejected on this mode.
     pub fn new_replay(
         instance: ReactiveInstance,
-        artifact: &'a ProgramArtifact,
+        artifact: Arc<ProgramArtifact>,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
-        let bound = bind_replay_requirements(&instance.plan, artifact)?;
-        Self::from_bound(instance, artifact, None, bound, durability, limits)
+        let bound = bind_replay_requirements(&instance.plan, &artifact)?;
+        Self::from_bound(instance, artifact, false, bound, durability, limits)
     }
 
     fn from_bound(
         instance: ReactiveInstance,
-        artifact: &'a ProgramArtifact,
-        providers: Option<&'a RuntimeResourceRegistry>,
+        artifact: Arc<ProgramArtifact>,
+        live: bool,
         bound: BoundResidentExternalPlan,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
@@ -253,7 +253,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
             plan_generation,
             layout_generation,
             artifact,
-            providers,
+            live,
             bound,
             durability,
             health: ResidentExternalHealth::Healthy,
@@ -304,6 +304,29 @@ impl<'a> ResidentExternalCoordinator<'a> {
         self.outbox.iter()
     }
 
+    pub fn pending_outbox_count(&self) -> usize {
+        self.outbox.iter().count()
+    }
+
+    pub fn has_active_candidate(&self) -> bool {
+        self.instance().has_active_candidate()
+    }
+
+    pub fn trigger_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
+        let sources = self
+            .bound
+            .observations()
+            .iter()
+            .map(|observation| {
+                crate::RuntimeHostInputSource::new(
+                    observation.request.base_uri.clone(),
+                    observation.request.path.clone(),
+                )
+            })
+            .collect::<MResult<std::collections::BTreeSet<_>>>()?;
+        Ok(sources.into_iter().collect::<Vec<_>>().into_boxed_slice())
+    }
+
     pub const fn structural_probe(&self) -> ResidentExternalStructuralProbe {
         self.structural_probe
     }
@@ -322,7 +345,88 @@ impl<'a> ResidentExternalCoordinator<'a> {
 
     pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
-        self.execute_live_turn()
+        let admission = self.reserve_live_turn()?;
+        self.execute_live_turn(None, admission, || Ok(()))
+    }
+
+    /// Executes one live turn while using owned ingress values for matching
+    /// observations. Values absent from the update set are captured from their
+    /// bound providers. This keeps host packets as the authority for the event
+    /// they triggered instead of racing a separately updated provider snapshot.
+    pub fn execute_turn_with_host_updates(
+        &mut self,
+        updates: &[crate::RuntimeHostInputUpdate],
+    ) -> MResult<ResidentExternalTurnOutcome> {
+        let admission = self.admit_host_turn(updates)?;
+        self.execute_live_turn(Some(updates), admission, || Ok(()))
+    }
+
+    pub(crate) fn admit_host_turn(
+        &mut self,
+        updates: &[crate::RuntimeHostInputUpdate],
+    ) -> MResult<ResidentExternalTurnAdmission> {
+        self.ensure_live_bindings()?;
+        self.validate_host_updates(updates)?;
+        self.reserve_live_turn()
+    }
+
+    pub(crate) fn execute_admitted_host_turn<F>(
+        &mut self,
+        updates: &[crate::RuntimeHostInputUpdate],
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce() -> MResult<()>,
+    {
+        self.execute_live_turn(Some(updates), admission, prepublication)
+    }
+
+    pub(crate) fn execute_admitted_turn<F>(
+        &mut self,
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce() -> MResult<()>,
+    {
+        self.execute_live_turn(None, admission, prepublication)
+    }
+
+    pub(crate) fn admit_turn(&mut self) -> MResult<ResidentExternalTurnAdmission> {
+        self.ensure_live_bindings()?;
+        self.reserve_live_turn()
+    }
+
+    fn validate_host_updates(&self, updates: &[crate::RuntimeHostInputUpdate]) -> MResult<()> {
+        let mut sources = std::collections::BTreeSet::new();
+        for update in updates {
+            if !sources.insert(update.source.clone()) {
+                return invalid_coordinator("host input repeats an activated source value");
+            }
+            let matching = self
+                .bound
+                .observations()
+                .iter()
+                .filter(|observation| {
+                    update.source.base_uri() == observation.request.base_uri
+                        && update.source.path() == observation.request.path
+                })
+                .collect::<Vec<_>>();
+            if matching.is_empty() {
+                return invalid_coordinator("host input does not match an activated observation");
+            }
+            let legacy = update.value.clone().into_mech_value()?;
+            for observation in matching {
+                captured_value_from_legacy(
+                    &legacy,
+                    observation.input.schema,
+                    &observation.input.shape,
+                    self.artifact.schemas(),
+                )?;
+            }
+        }
+        Ok(())
     }
 
     /// Replays one canonical recorded turn attempt.
@@ -340,69 +444,118 @@ impl<'a> ResidentExternalCoordinator<'a> {
         self.execute_replay_attempt(batch.cloned(), record.clone())
     }
 
-    fn execute_live_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
+    fn reserve_live_turn(&mut self) -> MResult<ResidentExternalTurnAdmission> {
         self.ensure_healthy()?;
         let before_epoch = self.instance().published_epoch();
-
-        let input_permit = self.input_ledger.reserve(self.input_estimate())?;
+        let input_permit = if self.bound.observations().is_empty() {
+            None
+        } else {
+            Some(self.input_ledger.reserve(self.input_estimate())?)
+        };
         let receipt_permit = self.receipt_ledger.reserve(self.receipt_estimate())?;
         let outbox_permit = self.reserve_outbox()?;
         let turn = self.allocate_turn()?;
         let transaction = resident_transaction_id(self.instance_id, turn);
+        Ok(ResidentExternalTurnAdmission {
+            input_permit,
+            receipt_permit,
+            outbox_permit,
+            turn,
+            transaction,
+            before_epoch,
+        })
+    }
 
-        let batch = self.capture_with_providers();
-        let batch = match batch {
-            Ok(batch) => batch,
-            Err(failure) => {
-                let evidence = if let Some(prefix) = failure.captured_prefix {
-                    if let Err(error) = self.append_input_batch(input_permit, prefix.clone()) {
-                        drop(outbox_permit);
-                        return self.append_rejected(
-                            receipt_permit,
-                            turn,
-                            transaction,
-                            RejectedTurnEvidence::default(),
-                            before_epoch,
-                            TurnFailurePhase::Recording,
-                            error,
-                        );
-                    }
-                    self.advance_input_identity(&prefix)?;
-                    RejectedTurnEvidence::from_input(&prefix)
-                } else {
-                    drop(input_permit);
-                    RejectedTurnEvidence::default()
-                };
+    fn execute_live_turn<F>(
+        &mut self,
+        host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
+        admission: ResidentExternalTurnAdmission,
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce() -> MResult<()>,
+    {
+        let ResidentExternalTurnAdmission {
+            input_permit,
+            receipt_permit,
+            outbox_permit,
+            turn,
+            transaction,
+            before_epoch,
+        } = admission;
+
+        let batch = if let Some(input_permit) = input_permit {
+            let batch = match self.capture_with_providers(host_updates) {
+                Ok(batch) => batch,
+                Err(failure) => {
+                    let evidence = if let Some(prefix) = failure.captured_prefix {
+                        if let Err(error) = self.append_input_batch(input_permit, prefix.clone()) {
+                            drop(outbox_permit);
+                            return self.append_rejected(
+                                receipt_permit,
+                                turn,
+                                transaction,
+                                RejectedTurnEvidence::default(),
+                                before_epoch,
+                                TurnFailurePhase::Recording,
+                                error,
+                            );
+                        }
+                        self.advance_input_identity(&prefix)?;
+                        RejectedTurnEvidence::from_input(&prefix)
+                    } else {
+                        drop(input_permit);
+                        RejectedTurnEvidence::default()
+                    };
+                    drop(outbox_permit);
+                    return self.append_rejected(
+                        receipt_permit,
+                        turn,
+                        transaction,
+                        evidence,
+                        before_epoch,
+                        TurnFailurePhase::InputInstallation,
+                        failure.error,
+                    );
+                }
+            };
+            if let Err(error) = self.append_input_batch(input_permit, batch.clone()) {
                 drop(outbox_permit);
                 return self.append_rejected(
                     receipt_permit,
                     turn,
                     transaction,
-                    evidence,
+                    RejectedTurnEvidence::default(),
                     before_epoch,
-                    TurnFailurePhase::InputInstallation,
-                    failure.error,
+                    TurnFailurePhase::Recording,
+                    error,
                 );
             }
+            self.advance_input_identity(&batch)?;
+            Some(batch)
+        } else {
+            if host_updates.is_some_and(|updates| !updates.is_empty()) {
+                drop(outbox_permit);
+                return self.append_rejected(
+                    receipt_permit,
+                    turn,
+                    transaction,
+                    RejectedTurnEvidence::default(),
+                    before_epoch,
+                    TurnFailurePhase::InputInstallation,
+                    invalid_value("input-free resident turn received host updates".to_owned()),
+                );
+            }
+            None
         };
-        if let Err(error) = self.append_input_batch(input_permit, batch.clone()) {
-            drop(outbox_permit);
-            return self.append_rejected(
-                receipt_permit,
-                turn,
-                transaction,
-                RejectedTurnEvidence::default(),
-                before_epoch,
-                TurnFailurePhase::Recording,
-                error,
-            );
-        }
-        self.advance_input_identity(&batch)?;
-        let input_evidence = RejectedTurnEvidence::from_input(&batch);
+        let input_evidence = batch
+            .as_ref()
+            .map(RejectedTurnEvidence::from_input)
+            .unwrap_or_default();
 
         let inputs = batch
-            .facts
             .iter()
+            .flat_map(|batch| batch.facts.iter())
             .map(|fact| CapturedValueInput {
                 slot: self
                     .bound
@@ -448,6 +601,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
                 input_evidence,
                 receipt_permit,
                 outbox_permit,
+                prepublication,
             )
         })();
         self.instance = Some(instance);
@@ -460,7 +614,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
         record: ResidentTurnRecord,
     ) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_healthy()?;
-        if self.providers.is_some() {
+        if self.live {
             return invalid_coordinator("recorded replay requires an offline coordinator");
         }
         let batch = batch
@@ -521,19 +675,16 @@ impl<'a> ResidentExternalCoordinator<'a> {
                     phase,
                 })
             }
-            TurnRecordStatus::Accepted => {
-                let batch = batch.as_ref().expect("validated accepted replay batch");
-                self.execute_replay_accepted(
-                    batch,
-                    record,
-                    prepared_input,
-                    prepared_receipt,
-                    next_input.expect("accepted replay has captured input"),
-                    next_turn,
-                    turn,
-                    transaction,
-                )
-            }
+            TurnRecordStatus::Accepted => self.execute_replay_accepted(
+                batch.as_ref(),
+                record,
+                prepared_input,
+                prepared_receipt,
+                next_input,
+                next_turn,
+                turn,
+                transaction,
+            ),
             TurnRecordStatus::Staged => {
                 invalid_coordinator("staged resident turns are not replay decisions")
             }
@@ -542,18 +693,18 @@ impl<'a> ResidentExternalCoordinator<'a> {
 
     fn execute_replay_accepted(
         &mut self,
-        batch: &CapturedInputBatch,
+        batch: Option<&CapturedInputBatch>,
         expected: ResidentTurnRecord,
         prepared_input: Option<PreparedLedgerAppend<CapturedInputBatch>>,
         prepared_receipt: PreparedLedgerAppend<ResidentTurnRecord>,
-        next_input: u64,
+        next_input: Option<u64>,
         next_turn: u64,
         turn: TurnId,
         transaction: TransactionId,
     ) -> MResult<ResidentExternalTurnOutcome> {
         let inputs = batch
-            .facts
             .iter()
+            .flat_map(|batch| batch.facts.iter())
             .map(|fact| CapturedValueInput {
                 slot: self
                     .bound
@@ -576,7 +727,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
                 .map_err(resident_execution_error)?;
             let materialized = match materialize_effects(
                 &prepared_turn,
-                self.artifact,
+                &self.artifact,
                 self.bound.effects(),
                 self.instance_id,
                 turn,
@@ -588,11 +739,13 @@ impl<'a> ResidentExternalCoordinator<'a> {
                 }
             };
             let summary = prepared_turn.summary();
+            let input_range = batch.map(|batch| batch.range);
+            let input_hash = batch.map_or([0; 32], |batch| batch.batch_hash);
             let reproduced = self.accepted_record(
                 turn,
                 transaction,
-                Some(batch.range),
-                batch.batch_hash,
+                input_range,
+                input_hash,
                 effect_batch_hash(&materialized),
                 summary,
                 &materialized,
@@ -608,7 +761,9 @@ impl<'a> ResidentExternalCoordinator<'a> {
             if let Some(prepared) = prepared_input {
                 self.append_prepared_input(prepared);
             }
-            self.next_input = next_input;
+            if let Some(next_input) = next_input {
+                self.next_input = next_input;
+            }
             self.next_turn = next_turn;
             let receipt_sequence = self.append_receipt(prepared_receipt);
             Ok(ResidentExternalTurnOutcome::Accepted {
@@ -656,11 +811,14 @@ impl<'a> ResidentExternalCoordinator<'a> {
         }
         match record.header.status {
             TurnRecordStatus::Accepted => {
-                if batch.is_none_or(|batch| batch.facts.len() != self.bound.observations().len())
-                    || record.body.after_epoch.is_none()
-                {
+                let complete_inputs = if self.bound.observations().is_empty() {
+                    batch.is_none()
+                } else {
+                    batch.is_some_and(|batch| batch.facts.len() == self.bound.observations().len())
+                };
+                if !complete_inputs || record.body.after_epoch.is_none() {
                     return invalid_coordinator(
-                        "accepted replay requires one complete captured input batch",
+                        "accepted replay requires the activated complete input boundary",
                     );
                 }
             }
@@ -681,7 +839,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn prepare_and_publish(
+    fn prepare_and_publish<F>(
         &mut self,
         prepared_turn: PreparedResidentTurn<'_>,
         turn: TurnId,
@@ -689,11 +847,15 @@ impl<'a> ResidentExternalCoordinator<'a> {
         input_evidence: RejectedTurnEvidence,
         receipt_permit: LedgerPermit,
         outbox_permit: Option<OutboxPermit>,
-    ) -> MResult<ResidentExternalTurnOutcome> {
+        prepublication: F,
+    ) -> MResult<ResidentExternalTurnOutcome>
+    where
+        F: FnOnce() -> MResult<()>,
+    {
         let before_epoch = prepared_turn.summary().before_epoch;
         let materialized = match materialize_effects(
             &prepared_turn,
-            self.artifact,
+            &self.artifact,
             self.bound.effects(),
             self.instance_id,
             turn,
@@ -792,6 +954,23 @@ impl<'a> ResidentExternalCoordinator<'a> {
             );
         }
 
+        if let Err(error) = prepublication() {
+            let mut cleanup = journal.compensate_applied_reverse();
+            cleanup.extend(journal.abort_all());
+            prepared_turn.abort();
+            drop(prepared_outbox);
+            return self.reject_with_cleanup(
+                receipt_permit,
+                turn,
+                transaction,
+                rejected_evidence,
+                before_epoch,
+                TurnFailurePhase::Execution,
+                error,
+                cleanup,
+            );
+        }
+
         let prepared_receipt = match self.receipt_ledger.prepare_append(receipt_permit, receipt) {
             Ok(prepared) => prepared,
             Err(error) => {
@@ -851,12 +1030,10 @@ impl<'a> ResidentExternalCoordinator<'a> {
         })
     }
 
-    fn capture_with_providers(&self) -> Result<CapturedInputBatch, CaptureFailure> {
-        let providers = self.providers.ok_or_else(|| {
-            CaptureFailure::without_prefix(invalid_value(
-                "offline replay coordinator has no live providers".to_owned(),
-            ))
-        })?;
+    fn capture_with_providers(
+        &self,
+        host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
+    ) -> Result<CapturedInputBatch, CaptureFailure> {
         let mut facts = Vec::with_capacity(self.bound.observations().len());
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
             let fact = (|| -> MResult<CapturedInputFact> {
@@ -865,17 +1042,25 @@ impl<'a> ResidentExternalCoordinator<'a> {
                     .checked_add(ordinal as u64)
                     .ok_or_else(sequence_exhausted)?;
                 let sequence = InputSequence::new(sequence_value).ok_or_else(sequence_exhausted)?;
-                let provider_binding = observation.provider_binding.ok_or_else(|| {
-                    invalid_value("live observation has no provider binding".to_owned())
-                })?;
-                let legacy = providers.resident_read(
-                    provider_binding,
-                    RuntimeResourceReadRequest {
+                let packet_value = host_updates.and_then(|updates| {
+                    updates.iter().rev().find(|update| {
+                        update.source.base_uri() == observation.request.base_uri
+                            && update.source.path() == observation.request.path
+                    })
+                });
+                let legacy = if let Some(update) = packet_value {
+                    update.value.clone().into_mech_value()?
+                } else {
+                    let provider_binding =
+                        observation.provider_binding.as_ref().ok_or_else(|| {
+                            invalid_value("live observation has no provider binding".to_owned())
+                        })?;
+                    provider_binding.read(RuntimeResourceReadRequest {
                         base_uri: observation.request.base_uri.clone(),
                         path: observation.request.path.clone(),
                         context_name: observation.request.context_name.clone(),
-                    },
-                )?;
+                    })?
+                };
                 let value = captured_value_from_legacy(
                     &legacy,
                     observation.input.schema,
@@ -948,36 +1133,34 @@ impl<'a> ResidentExternalCoordinator<'a> {
     }
 
     fn prepare_provider_effects(
-        &self,
+        &mut self,
         effects: &[MaterializedEffect],
         journal: &mut RuntimeEffectJournal,
     ) -> Result<(), ProviderPreparationFailure> {
-        let providers = self.providers.ok_or_else(|| ProviderPreparationFailure {
-            error: invalid_value("offline replay coordinator has no live providers".to_owned()),
-            cleanup: journal.abort_all(),
-        })?;
         for effect in effects {
+            let is_scene = effect
+                .bound
+                .provider_binding
+                .as_ref()
+                .is_some_and(|binding| binding.scheme() == "scene");
             let result = (|| -> MResult<PreparedRuntimeEffect> {
                 let intent = request_write_intent(&effect.bound)?;
                 let value = provider_value_from_canonical(&effect.value, self.artifact.schemas())?;
-                let provider_binding = effect.bound.provider_binding.ok_or_else(|| {
+                let provider_binding = effect.bound.provider_binding.as_ref().ok_or_else(|| {
                     invalid_value("live effect has no provider binding".to_owned())
                 })?;
-                providers.resident_prepare_write(
-                    provider_binding,
-                    RuntimeResidentResourceWriteRequest {
-                        base_uri: effect.bound.request.base_uri.clone(),
-                        path: effect.bound.request.path.clone(),
-                        context_name: effect.bound.request.context_name.clone(),
-                        operation: RuntimeCapabilityOperation::from_name(
-                            effect.bound.request.operation.clone(),
-                        )?,
-                        value,
-                        intent,
-                        effect_id: effect.id,
-                        idempotency_key: effect.idempotency_key.clone(),
-                    },
-                )
+                provider_binding.prepare_write(RuntimeResidentResourceWriteRequest {
+                    base_uri: effect.bound.request.base_uri.clone(),
+                    path: effect.bound.request.path.clone(),
+                    context_name: effect.bound.request.context_name.clone(),
+                    operation: RuntimeCapabilityOperation::from_name(
+                        effect.bound.request.operation.clone(),
+                    )?,
+                    value,
+                    intent,
+                    effect_id: effect.id,
+                    idempotency_key: effect.idempotency_key.clone(),
+                })
             })();
             let result = match result {
                 Ok(result) => result,
@@ -1003,6 +1186,12 @@ impl<'a> ResidentExternalCoordinator<'a> {
                     ),
                     journal,
                 ));
+            }
+            if is_scene {
+                self.structural_probe.scene_effects_prepared = self
+                    .structural_probe
+                    .scene_effects_prepared
+                    .saturating_add(1);
             }
         }
         Ok(())
@@ -1061,7 +1250,15 @@ impl<'a> ResidentExternalCoordinator<'a> {
                 break;
             };
             let front_turn = front.id.turn_id;
+            let effect_ordinal = front.id.ordinal;
             let delivery = front.delivery;
+            let is_scene = self.bound.effects().iter().any(|effect| {
+                effect.ordinal == effect_ordinal
+                    && effect
+                        .provider_binding
+                        .as_ref()
+                        .is_some_and(|binding| binding.scheme() == "scene")
+            });
             if front_turn.get() > self.published_through_turn {
                 self.structural_probe.effects_delivered_before_publication = self
                     .structural_probe
@@ -1091,6 +1288,12 @@ impl<'a> ResidentExternalCoordinator<'a> {
             };
             match result {
                 Ok(()) => {
+                    if is_scene {
+                        self.structural_probe.scene_effects_delivered = self
+                            .structural_probe
+                            .scene_effects_delivered
+                            .saturating_add(1);
+                    }
                     self.outbox.acknowledge_front();
                 }
                 Err(RetainedDeliveryFailure::Preparation { failure, cleanup }) => {
@@ -1132,19 +1335,9 @@ impl<'a> ResidentExternalCoordinator<'a> {
     }
 
     fn prepare_retained_delivery(
-        &self,
+        &mut self,
         id: RuntimeEffectId,
     ) -> Result<(), RetainedDeliveryFailure> {
-        let providers = self
-            .providers
-            .ok_or_else(|| RetainedDeliveryFailure::Preparation {
-                failure: RuntimeEffectFailure {
-                    effect_id: id,
-                    phase: crate::RuntimeEffectFailurePhase::Prepare,
-                    message: "offline replay coordinator has no live providers".to_owned(),
-                },
-                cleanup: Vec::new(),
-            })?;
         let front = self.outbox.front().expect("retained outbox front");
         let bound = self
             .bound
@@ -1154,27 +1347,22 @@ impl<'a> ResidentExternalCoordinator<'a> {
             .expect("bound resident outbox effect");
         let prepared = (|| -> MResult<PreparedRuntimeEffect> {
             let intent = request_write_intent(bound)?;
-            let provider_binding = bound.provider_binding.ok_or_else(|| {
+            let provider_binding = bound.provider_binding.as_ref().ok_or_else(|| {
                 invalid_value("live retained effect has no provider binding".to_owned())
             })?;
-            providers.resident_prepare_write(
-                provider_binding,
-                RuntimeResidentResourceWriteRequest {
-                    base_uri: bound.request.base_uri.clone(),
-                    path: bound.request.path.clone(),
-                    context_name: bound.request.context_name.clone(),
-                    operation: RuntimeCapabilityOperation::from_name(
-                        bound.request.operation.clone(),
-                    )?,
-                    value: provider_value_from_canonical(
-                        &front.payload.value,
-                        self.artifact.schemas(),
-                    )?,
-                    intent,
-                    effect_id: id,
-                    idempotency_key: front.idempotency_key.clone(),
-                },
-            )
+            provider_binding.prepare_write(RuntimeResidentResourceWriteRequest {
+                base_uri: bound.request.base_uri.clone(),
+                path: bound.request.path.clone(),
+                context_name: bound.request.context_name.clone(),
+                operation: RuntimeCapabilityOperation::from_name(bound.request.operation.clone())?,
+                value: provider_value_from_canonical(
+                    &front.payload.value,
+                    self.artifact.schemas(),
+                )?,
+                intent,
+                effect_id: id,
+                idempotency_key: front.idempotency_key.clone(),
+            })
         })();
         let mut prepared = prepared.map_err(|error| RetainedDeliveryFailure::Preparation {
             failure: RuntimeEffectFailure {
@@ -1184,6 +1372,16 @@ impl<'a> ResidentExternalCoordinator<'a> {
             },
             cleanup: Vec::new(),
         })?;
+        if bound
+            .provider_binding
+            .as_ref()
+            .is_some_and(|binding| binding.scheme() == "scene")
+        {
+            self.structural_probe.scene_effects_prepared = self
+                .structural_probe
+                .scene_effects_prepared
+                .saturating_add(1);
+        }
         validate_prepared_after_commit(id, &mut prepared).map_err(|failure| {
             RetainedDeliveryFailure::Preparation {
                 failure: failure.failure,
@@ -1249,7 +1447,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
                     .steps
                     .iter()
                     .find_map(|step| match step {
-                        mech_engine::__resident::ActivatedTurnStep::External(external)
+                        mech_engine::resident::ActivatedTurnStep::External(external)
                             if external.effect_ordinal == effect.ordinal =>
                         {
                             Some(external)
@@ -1471,7 +1669,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
         sequence
     }
 
-    fn observe_prepared_turn(&mut self, probe: mech_engine::__resident::ResidentStructuralProbe) {
+    fn observe_prepared_turn(&mut self, probe: mech_engine::resident::ResidentStructuralProbe) {
         self.structural_probe.commit_runtime_call_count = self
             .structural_probe
             .commit_runtime_call_count
@@ -1501,7 +1699,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
     }
 
     fn ensure_live_bindings(&self) -> MResult<()> {
-        if self.providers.is_some()
+        if self.live
             && self
                 .bound
                 .observations()

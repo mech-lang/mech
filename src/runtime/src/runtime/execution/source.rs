@@ -12,7 +12,7 @@ use std::time::Instant;
 use web_time::Instant;
 
 impl MechRuntime {
-    pub(super) fn run_tree_on_program(
+    pub(in crate::runtime) fn run_tree_on_program(
         &mut self,
         context: &mut RuntimeContext,
         target: &mut RuntimeProgramTarget<'_>,
@@ -154,7 +154,10 @@ impl MechRuntime {
                 })?;
                 runtime.enforce_source_byte_count(context, source_bytes)?;
                 let value = runtime.run_string_operation(context, source, turn_started)?;
-                finish(value)
+                let finished = finish(value)?;
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(finished)
             },
         );
         if let Err(error) = &result {
@@ -269,7 +272,10 @@ impl MechRuntime {
             |runtime, context| {
                 runtime.enforce_source_limits(context, source)?;
                 let value = runtime.run_source_operation(context, source, turn_started)?;
-                finish(value)
+                let finished = finish(value)?;
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(finished)
             },
         );
         if let Err(error) = &result {
@@ -345,7 +351,10 @@ impl MechRuntime {
             "run_tree_with_context",
             |runtime, context| {
                 let value = runtime.run_tree_operation(context, tree, turn_started)?;
-                finish(value)
+                let finished = finish(value)?;
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(finished)
             },
         );
         if let Err(error) = &result {

@@ -38,7 +38,7 @@ impl MechRuntime {
         Ok(())
     }
 
-    pub(super) fn with_live_registration_mode<T>(
+    pub(in crate::runtime) fn with_live_registration_mode<T>(
         &mut self,
         mode: LiveRegistrationMode,
         f: impl FnOnce(&mut Self) -> MResult<T>,
