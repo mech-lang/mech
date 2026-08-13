@@ -9,7 +9,7 @@ use std::time::Instant;
 use web_time::Instant;
 
 impl MechRuntime {
-    pub fn evaluate_bytecode_once_with_context(
+    pub(crate) fn evaluate_bytecode_once_with_context(
         &mut self,
         context: &mut RuntimeContext,
         bytecode: &[u8],
@@ -151,7 +151,7 @@ impl MechRuntime {
     ///     .install_bytecode_with_context(&mut context, b"not-bytecode")
     ///     .is_err());
     /// ```
-    pub fn install_bytecode_with_context(
+    pub(crate) fn install_bytecode_with_context(
         &mut self,
         context: &mut RuntimeContext,
         bytecode: &[u8],

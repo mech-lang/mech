@@ -760,17 +760,12 @@ fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
     );
 
     let resident_install = "        let durability = runtime.config().program_routing.resident_durability;\n        let outcome = runtime.load_production_bytecode_program(\n            PROGRAM,\n            durability,\n        )?;\n        let value = outcome.initial_value;";
-    let ordinary_install = if source.contains(resident_install) {
-        resident_install
-    } else {
-        "        let mut context = runtime.runtime_context()?;\n        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;"
-    };
     assert!(
-        source.contains(ordinary_install),
+        source.contains(resident_install),
         "hosted main template must retain the program-install seam"
     );
     source = source.replace(
-        ordinary_install,
+        resident_install,
         "        let value = install_actor_bytecode(&mut runtime)?;",
     );
     let seam = "fn parse_arguments() -> Result<GeneratedArguments, ()> {";
@@ -861,7 +856,9 @@ fn install_actor_bytecode(
         runtime
             .next_actor_turn_with_context(&mut context, actor)?
             .ok_or_else(|| actor_error("generated actor turn was not available"))?;
-        runtime.install_bytecode_with_context(&mut context, PROGRAM)
+        runtime
+            .legacy_interpreter()
+            .install_bytecode_with_context(&mut context, PROGRAM)
     }})();
 
     match evaluation {{

@@ -304,3 +304,4 @@ fn host_configuration(
         _ => panic!("unsupported generated host provider {provider}"),
     }
 }
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

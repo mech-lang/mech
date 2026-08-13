@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
+
 use mech_core::{GenericError, LegacyValue, MResult, MechError, Ref};
 use mech_runtime::{
     ActorId, ActorRecord, BasicCapability, BasicOperation, BasicResource, BasicSubject,

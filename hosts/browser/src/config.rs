@@ -893,6 +893,7 @@ mod tests {
     use super::*;
     use crate::BrowserResourceKind;
     use mech_core::LegacyValue;
+    use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
     use mech_runtime::{
         ConfigProfileOptions, RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
         RuntimeResourceReadRequest, RuntimeResourceWriteIntent,

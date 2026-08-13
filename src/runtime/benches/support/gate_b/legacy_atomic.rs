@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 use std::sync::Arc;
 
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
+
 use mech_core::structures::Matrix as MechMatrix;
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};

@@ -231,3 +231,4 @@ fn run_resource_grant_does_not_cross_console_instances() {
     assert!(observed.lines().is_empty());
     assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
 }
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

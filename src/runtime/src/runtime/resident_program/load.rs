@@ -109,7 +109,10 @@ impl MechRuntime {
         self.load_production_with(durability, |runtime| runtime.decode_artifact(bytecode))
     }
 
-    #[cfg(feature = "resident-routing-source")]
+    #[cfg(all(
+        feature = "resident-routing-source",
+        any(test, feature = "legacy-interpreter")
+    ))]
     pub fn load_source_program(
         &mut self,
         source: &str,
@@ -127,7 +130,10 @@ impl MechRuntime {
         )
     }
 
-    #[cfg(feature = "resident-routing-source")]
+    #[cfg(all(
+        feature = "resident-routing-source",
+        any(test, feature = "legacy-interpreter")
+    ))]
     pub fn load_root_program(
         &mut self,
         request: SourceRequest,
@@ -174,7 +180,10 @@ impl MechRuntime {
         )
     }
 
-    #[cfg(feature = "resident-routing")]
+    #[cfg(all(
+        feature = "resident-routing",
+        any(test, feature = "legacy-interpreter")
+    ))]
     pub fn load_bytecode_program(
         &mut self,
         bytecode: &[u8],
@@ -211,6 +220,7 @@ impl MechRuntime {
         result
     }
 
+    #[cfg(any(test, feature = "legacy-interpreter"))]
     fn load_with_selection<Resident, Legacy>(
         &mut self,
         options: RuntimeProgramLoadOptions,
@@ -535,6 +545,7 @@ impl MechRuntime {
         Ok(())
     }
 
+    #[cfg(any(test, feature = "legacy-interpreter"))]
     fn install_legacy_outcome(
         &mut self,
         value: RuntimeValueSnapshot,

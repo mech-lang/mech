@@ -23,7 +23,7 @@ crate-type = ["cdylib", "rlib"]
 [features]
 
 default = []
-full = ["base",
+full = ["base", "legacy-interpreter",
       "u8", "u16", "u32", "u64", "u128",
       "i8", "i16", "i32", "i64", "i128",
       "f32", "f64", "c64", "r64",
@@ -60,6 +60,7 @@ source = ["runtime", "mech-engine/source", "mech-runtime/source", "mech-stdlib/s
 compiler = ["source", "mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime/compiler", "mech-stdlib/compiler"]
 resident-routing = ["mech-runtime/resident-routing"]
 resident-routing-source = ["resident-routing", "compiler", "mech-runtime/resident-routing-source"]
+legacy-interpreter = ["source", "mech-runtime/legacy-interpreter"]
 program = ["mech-core/program", "mech-engine/program", "mech-syntax/program", "mech-runtime/program"]
 pretty_print = ["mech-core/pretty_print", "mech-syntax/pretty_print", "mech-runtime/pretty_print"]
 formatter = ["mech-syntax/formatter"]
@@ -328,6 +329,7 @@ gloo-net = {version = "0.6.0", features = ["http"]}
 wasm-bindgen-futures = "0.4.50"
 
 [dev-dependencies]
+mech-runtime = { path = "../runtime", default-features = false, features = ["legacy-interpreter"] }
 serde_json = "1"
 wasm-bindgen-test = "0.3.50"
 

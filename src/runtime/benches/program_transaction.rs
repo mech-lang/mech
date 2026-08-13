@@ -1,5 +1,6 @@
 use criterion::{BatchSize, Criterion, criterion_group, criterion_main};
 use mech_core::{LegacyValue, MResult, MechSourceCode, MechTuple, Ref};
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
 use mech_runtime::{
     BasicCapability, BasicOperation, BasicResource, BasicSubject, CapabilityId, CapabilityRequest,
     HostCall, InMemoryDocsProvider, InMemorySourceResolver, MechRuntime, ModuleBuildOptions,

@@ -106,12 +106,12 @@ impl MechRuntime {
         Ok(result)
     }
 
-    pub fn run_string(&mut self, source: &str) -> MResult<RuntimeValueSnapshot> {
+    pub(crate) fn run_string(&mut self, source: &str) -> MResult<RuntimeValueSnapshot> {
         let mut context = self.runtime_context()?;
         self.run_string_with_context(&mut context, source)
     }
 
-    pub fn run_string_with_context(
+    pub(crate) fn run_string_with_context(
         &mut self,
         context: &mut RuntimeContext,
         source: &str,
@@ -231,7 +231,7 @@ impl MechRuntime {
         result
     }
 
-    pub fn run_source_with_context(
+    pub(crate) fn run_source_with_context(
         &mut self,
         context: &mut RuntimeContext,
         source: &MechSourceCode,
@@ -241,7 +241,7 @@ impl MechRuntime {
         })
     }
 
-    pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<RuntimeValueSnapshot> {
+    pub(crate) fn run_source(&mut self, source: &MechSourceCode) -> MResult<RuntimeValueSnapshot> {
         let mut context = self.runtime_context()?;
         self.run_source_with_context(&mut context, source)
     }
@@ -315,12 +315,12 @@ impl MechRuntime {
         }
     }
 
-    pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<RuntimeValueSnapshot> {
+    pub(crate) fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<RuntimeValueSnapshot> {
         let mut context = self.runtime_context()?;
         self.run_tree_with_context(&mut context, tree)
     }
 
-    pub fn run_tree_with_context(
+    pub(crate) fn run_tree_with_context(
         &mut self,
         context: &mut RuntimeContext,
         tree: &mech_core::Program,

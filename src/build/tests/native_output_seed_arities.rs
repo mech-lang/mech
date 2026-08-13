@@ -111,3 +111,4 @@ fn poisoned_output_seeds_are_recomputed_for_every_runtime_arity() {
         assert_eq!(result.stdout.unwrap().trim(), expected, "{name}");
     }
 }
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

@@ -9,6 +9,8 @@ use std::{
     },
 };
 
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
+
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, FunctionArgs, FunctionCatalog,
     FunctionCatalogBuilder, FunctionRuntimeType, LegacyValue, MResult, MechError, MechErrorKind,

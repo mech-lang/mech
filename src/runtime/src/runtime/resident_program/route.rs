@@ -184,6 +184,7 @@ pub(crate) fn unsupported_route(reason: impl Into<String>) -> mech_core::MechErr
 /// Returns whether a resident-routing failure may safely select the legacy
 /// executor under [`ResidentRoutingPolicy::PreferResident`]. Authority,
 /// provider, bytecode, activation, and internal failures are never eligible.
+#[cfg(any(test, feature = "legacy-interpreter"))]
 pub fn resident_fallback_eligible(error: &MechError) -> bool {
     error
         .kind_as::<ResidentRouteFailure>()
@@ -252,6 +253,7 @@ impl MechRuntime {
         self.program_execution_info.clone()
     }
 
+    #[cfg(any(test, feature = "legacy-interpreter"))]
     pub fn record_legacy_program_route(
         &mut self,
         policy: crate::ResidentRoutingPolicy,

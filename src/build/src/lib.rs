@@ -109,6 +109,9 @@ impl NativeApplicationBuilder {
             runtime_features.insert("runtime".to_owned());
             runtime_features.insert("string".to_owned());
             runtime_features.insert("resident-routing".to_owned());
+            if requirements.actor_bootstrap.is_some() {
+                runtime_features.insert("legacy-interpreter".to_owned());
+            }
             // Hosted execution owns the transaction boundary, so it must
             // enable the validation hook whenever the bytecode carries an
             // integrity-constraint marker. Engine-only applications enforce

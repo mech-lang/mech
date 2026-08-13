@@ -117,6 +117,7 @@ fn run_resource_grant_authorizes_cli_stdout_legacy_alias() {
     runtime.begin_transaction(&mut context).unwrap();
 
     runtime
+        .legacy_interpreter()
         .run_string_with_context(
             &mut context,
             "@out := cli://stdout{:write(line)}\n@out/line <- \"legacy alias\"\n",
@@ -138,6 +139,7 @@ fn run_resource_grant_authorizes_cli_stdout_legacy_alias() {
     );
 
     let error = runtime
+        .legacy_interpreter()
         .run_string("@out-text := cli://stdout{:write(text)}\n@out-text/text <- \"denied\"\n")
         .unwrap_err();
     let error_kind = error.kind_name();
@@ -168,6 +170,7 @@ fn run_resource_grant_authorizes_cli_env_legacy_alias() {
     );
 
     let result = runtime
+        .legacy_interpreter()
         .run_string("@env := cli://env{:read(HOME)}\nhome := @env/HOME\nhome\n")
         .unwrap();
 
@@ -287,6 +290,7 @@ fn run_resource_grant_authorizes_browser_dom_legacy_alias() {
         .unwrap();
 
     runtime
+        .legacy_interpreter()
         .run_string(
             "@dom := browser://dom{:write(body/header/title)}\n\
              @dom/body/header/title = \"legacy browser\"\n",
@@ -313,6 +317,7 @@ fn run_resource_grant_does_not_cross_cli_instances() {
     );
 
     let error = runtime
+        .legacy_interpreter()
         .run_string("@out := cli://stdout{:write(line)}\n@out/line <- \"must fail\"\n")
         .unwrap_err();
     let error_kind = error.kind_name();

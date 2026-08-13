@@ -63,6 +63,7 @@ full_runtime = [
       "mech-engine/runtime",
       "mech-stdlib/full_runtime",
       "mech-runtime?/resident-routing",
+      "legacy-interpreter",
       ]
 full_source = [
       "full_runtime",
@@ -103,8 +104,8 @@ full-language = [
       "whos", "async", "trace",
       "mech-core/full", "mech-syntax/full",
       ]
-standard-cli = ["cli"]
-full-cli = ["cli"]
+standard-cli = ["cli-product"]
+full-cli = ["cli-product", "test", "repl", "legacy-interpreter"]
 standard-hosts = [
       "cli_host",
       "time_host_native", "timer_host_native", "console_host_native", "scene_host_native",
@@ -124,7 +125,9 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "mech-core/base", "mech-engine/base", "mech-syntax/base",
       ]
 cli_core = []
-cli = ["cli_core", "build", "formatter", "serve", "bundle_web", "run", "test", "repl"]
+cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
+cli = ["cli-product", "test", "repl", "legacy-interpreter"]
+legacy-interpreter = ["mech-runtime?/legacy-interpreter"]
 formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
 build = [
       "cli_core", "compiler",
@@ -132,9 +135,9 @@ build = [
       "mech-stdlib/native-plan",
       "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
       ]
-repl = ["cli_core", "program"]
+repl = ["cli_core", "program", "legacy-interpreter"]
 run = ["cli_core", "project"]
-test = ["cli_core", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/invariant_define"]
+test = ["cli_core", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/invariant_define", "legacy-interpreter"]
 project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]

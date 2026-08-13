@@ -3,6 +3,7 @@
 use std::sync::{Arc, Mutex};
 
 use mech_core::{FunctionCatalogBuilder, LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
 use mech_runtime::*;
 
 fn runtime_builder_with_intrinsics() -> RuntimeBuilder {

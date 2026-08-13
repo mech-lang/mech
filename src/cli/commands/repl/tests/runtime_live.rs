@@ -217,6 +217,7 @@ fn runtime_with_driver_and_resolver(
 
 fn bind_live_input(runtime: &mut MechRuntime) {
     runtime
+        .legacy_interpreter()
         .run_string(
             "@pulse := replinput://clock/ticks{:read(value)}\n\
              output := @pulse/value\n",
