@@ -1,10 +1,12 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use js_sys::{Array, Float32Array, Object, Reflect};
 use mech_core::{
-    Body, LegacyValue, MResult, MechCode, MechError, MechErrorKind, Program, Ref, Section,
-    SectionElement,
+    AccessMode, Body, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechCode,
+    MechError, MechErrorKind, NoMechExecutionServices, OperationContractDeclaration, Program, Ref,
+    Section, SectionElement,
 };
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingRole, GpuHost};
@@ -23,6 +25,22 @@ use web_time::Instant;
 use crate::gpu::{CompileTimings, gpu_program_manifest};
 
 const POINTER_PATHS: [&str; 5] = ["pulse", "x", "y", "pressed", "delta-seconds"];
+
+static GPU_COMMAND_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
 
 #[wasm_bindgen]
 pub struct WasmMixedGpuProject {
@@ -82,8 +100,9 @@ impl WasmMixedGpuProject {
             }
         }
         let mut runtime = builder.build().map_err(js_error)?;
+        let durability = runtime.config().program_routing.resident_durability;
         runtime
-            .run_tree(&cpu_projection_tree(&tree))
+            .load_production_tree_program(&cpu_projection_tree(&tree), durability)
             .map_err(js_error)?;
 
         Ok(Self {
@@ -197,7 +216,7 @@ fn compile_named_gpu_region(
     );
     let catalog_setup = milliseconds(catalog_started);
     let source_started = Instant::now();
-    source_program.run_tree(&isolated)?;
+    source_program.run_tree_with_services(&isolated, &mut NoMechExecutionServices)?;
     let source_execution = milliseconds(source_started);
     let artifact_started = Instant::now();
     let (artifact, compute_regions) = source_program.compile_program_artifact_with_regions()?;
@@ -720,8 +739,7 @@ impl RuntimeResourceProvider for GpuCommandResourceProvider {
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static mech_core::OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send)
-            .then(mech_runtime::at_most_once_effect_contract)
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&GPU_COMMAND_EFFECT_CONTRACT)
     }
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(mixed_error(format!(
@@ -875,7 +893,12 @@ mod tests {
 
     const CONFIG: &str = r#"
 config := {
-  runtime: { execution: { resident-routing: "prefer-resident" } }
+  runtime: {
+    program-routing: {
+      resident-routing: "require-resident"
+      resident-durability: "volatile"
+    }
+  }
   hosts: [
     { name: "cursor" provider: "pointer" settings: {} }
     { name: "particles" provider: "gpu" settings: { region: "particle-field" } }
@@ -989,6 +1012,11 @@ positions = next-positions
         );
         let mut builder = RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_catalog())
+            .config(
+                mech_runtime::RuntimeConfig::default()
+                    .apply_patch(&document.runtime)
+                    .unwrap(),
+            )
             .host_factory(Box::new(PointerHostFactory::new(pointer.clone())))
             .unwrap()
             .host_factory(Box::new(GpuCommandHostFactory::new(gpu.clone())))
@@ -1000,7 +1028,10 @@ positions = next-positions
             builder = builder.run_resource_grant(grant.clone());
         }
         let mut runtime = builder.build().unwrap();
-        runtime.run_tree(&cpu_projection_tree(&tree)).unwrap();
+        let durability = runtime.config().program_routing.resident_durability;
+        runtime
+            .load_production_tree_program(&cpu_projection_tree(&tree), durability)
+            .unwrap();
         runtime.start_input_drivers().unwrap();
         pointer.submit(0.25, -0.5, true, 1.0 / 60.0).unwrap();
         runtime.drain_host_inputs(1).unwrap();

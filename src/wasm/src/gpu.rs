@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use js_sys::{Array, Float32Array, Object, Reflect};
-use mech_core::hash_str;
+use mech_core::{NoMechExecutionServices, hash_str};
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingAccess, GpuBindingRole, GpuHost, GpuProgram, WORKGROUP_SIZE};
 use mech_runtime::{ConfigProfileOptions, parse_config_document};
@@ -196,7 +196,7 @@ pub(crate) fn compile_program(
 
     let source_started = Instant::now();
     source_program
-        .run_tree(&tree)
+        .run_tree_with_services(&tree, &mut NoMechExecutionServices)
         .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
     let source_execution = milliseconds(source_started);
 
