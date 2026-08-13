@@ -9,7 +9,7 @@
 pulse := @pointer/pulse
 force-x := @pointer/x
 force-y := @pointer/y
-force-strength := @pointer/pressed * 0.055
+force-strength := @pointer/pressed * 1.25
 dt := @pointer/delta-seconds
 
 @particles/input/force-x <- force-x

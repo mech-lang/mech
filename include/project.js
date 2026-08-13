@@ -605,7 +605,7 @@ function installGpuSmokeTest(target) {
       const strength = state.lastInputs?.['force-strength']?.[0];
       const forceX = state.lastInputs?.['force-x']?.[0];
       const forceY = state.lastInputs?.['force-y']?.[0];
-      if (Math.abs(strength - 0.055) > 1e-6 || forceX < 0.45 || forceY < 0.45) {
+      if (Math.abs(strength - 1.25) > 1e-6 || forceX < 0.45 || forceY < 0.45) {
         fail(`pointer transaction did not reach GPU inputs: ${JSON.stringify(state.lastInputs)}`);
         return;
       }

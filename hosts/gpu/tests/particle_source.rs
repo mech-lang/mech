@@ -446,6 +446,46 @@ fn served_particle_field_stays_bounded() {
     );
 }
 
+#[test]
+fn served_pointer_press_materially_changes_the_particle_trajectory() {
+    let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
+    let artifact = compile_isolated_gpu_source(&source);
+    let program = GpuHost
+        .compile(&artifact)
+        .expect("served particle source must be admitted");
+    let inputs = |strength| {
+        BTreeMap::from([
+            ("force-x".to_owned(), vec![0.7]),
+            ("force-y".to_owned(), vec![0.6]),
+            ("force-strength".to_owned(), vec![strength]),
+            ("dt".to_owned(), vec![0.016]),
+        ])
+    };
+    let mut released = program
+        .prepare_cpu(&inputs(0.0))
+        .expect("released particle field must prepare");
+    let mut pressed = program
+        .prepare_cpu(&inputs(1.25))
+        .expect("pressed particle field must prepare");
+
+    released
+        .dispatch_turns(60)
+        .expect("released field must run");
+    pressed.dispatch_turns(60).expect("pressed field must run");
+    let released = released.outputs().expect("released positions must read");
+    let pressed = pressed.outputs().expect("pressed positions must read");
+    let displacement = pressed["result.0"]
+        .iter()
+        .zip(&released["result.0"])
+        .map(|(pressed, released)| (pressed - released).abs())
+        .fold(0.0_f32, f32::max);
+
+    assert!(
+        displacement > 0.1,
+        "one second of pointer input was not visible: maximum displacement {displacement}"
+    );
+}
+
 fn root_mean_square_radius(positions: &[f32]) -> f32 {
     let particles = positions.len() / 2;
     let squared_radius = (0..particles)
@@ -501,7 +541,7 @@ fn served_particle_shader_matches_cpu_with_pointer_force() {
     let inputs = BTreeMap::from([
         ("force-x".to_owned(), vec![0.3]),
         ("force-y".to_owned(), vec![-0.2]),
-        ("force-strength".to_owned(), vec![0.055]),
+        ("force-strength".to_owned(), vec![1.25]),
         ("dt".to_owned(), vec![0.016]),
     ]);
     let cpu = program.run_cpu(&inputs).expect("CPU reference must run");
