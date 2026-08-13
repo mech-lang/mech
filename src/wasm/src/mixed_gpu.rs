@@ -920,7 +920,7 @@ config := {
 pulse := @pointer/pulse
 force-x := @pointer/x
 force-y := @pointer/y
-force-strength := @pointer/pressed * 0.055
+force-strength := @pointer/pressed * 1.25
 dt := @pointer/delta-seconds
 @particles/input/force-x <- force-x
 @particles/input/force-y <- force-y
@@ -1039,6 +1039,6 @@ positions = next-positions
         assert!(state.dispatch);
         assert_eq!(state.changed_inputs["force-x"], vec![0.25]);
         assert_eq!(state.changed_inputs["force-y"], vec![-0.5]);
-        assert_eq!(state.changed_inputs["force-strength"], vec![0.055]);
+        assert_eq!(state.changed_inputs["force-strength"], vec![1.25]);
     }
 }
