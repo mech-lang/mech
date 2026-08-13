@@ -522,6 +522,24 @@ impl RuntimeResourceRegistry {
         )
     }
 
+    pub(crate) fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+        let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
+            return Err(MechError::new(
+                RuntimeResourceProviderNotFound {
+                    scheme,
+                    uri: request.base_uri,
+                },
+                None,
+            ));
+        };
+        invoke_extension(
+            format!("resource provider `{scheme}`"),
+            "plan_write",
+            || entry.provider.plan_write(request),
+        )
+    }
+
     pub(crate) fn prepare_write(
         &self,
         request: RuntimeResourceWriteRequest,

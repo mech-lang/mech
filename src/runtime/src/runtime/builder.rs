@@ -334,6 +334,14 @@ impl RuntimeBuilder {
             execution_mode: self.execution_mode,
             function_catalog,
             program,
+            #[cfg(feature = "resident-production")]
+            active_program: Default::default(),
+            #[cfg(feature = "resident-production")]
+            program_execution_info: Default::default(),
+            #[cfg(feature = "resident-production")]
+            next_resident_instance: 1,
+            #[cfg(feature = "resident-production")]
+            resident_production_probe: Default::default(),
             id_generator: self.id_generator,
             store: self.store,
             capability_kernel: self.capability_kernel,

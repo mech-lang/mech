@@ -205,7 +205,7 @@ pub fn exports_from_fenced_code(code: &FencedMechCode) -> Vec<SourceExportDeclar
         .collect()
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
     use mech_syntax::parser;

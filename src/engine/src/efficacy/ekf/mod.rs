@@ -1,7 +1,7 @@
 pub(crate) mod math;
 pub(crate) mod operation;
 
-#[cfg(feature = "resident-artifact")]
+#[cfg(all(feature = "resident-artifact", feature = "compiler"))]
 pub(crate) mod catalog;
-#[cfg(feature = "resident-artifact")]
+#[cfg(all(feature = "resident-artifact", feature = "compiler"))]
 pub(crate) mod closure;

@@ -2,6 +2,7 @@ use mech_core::{
     LegacyMaterializationContext, LegacySnapshotError, LegacyValue, MResult, MechError,
     MechErrorKind, NominalKey, NominalKind, SchemaBody, SchemaId, SchemaTable, ShapeInstance,
     Value, legacy_from_snapshot,
+    matrix::ToMatrix,
     snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
 
@@ -28,11 +29,38 @@ pub fn captured_value_from_legacy(
 
 pub fn provider_value_from_canonical(value: &Value, schemas: &SchemaTable) -> MResult<LegacyValue> {
     let mut context = ResidentLegacyMaterializationContext;
-    legacy_from_snapshot(value, schemas, &mut context).map_err(|error| {
+    let legacy = legacy_from_snapshot(value, schemas, &mut context).map_err(|error| {
         unsupported(&format!(
             "resident provider value cannot be materialized: {error:?}"
         ))
-    })
+    })?;
+    let Some(schema) = schemas.entry(value.schema()) else {
+        return Err(unsupported("resident provider schema is absent"));
+    };
+    if matches!(
+        schema.schema().body(),
+        SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
+    ) {
+        let LegacyValue::MatrixValue(matrix) = legacy else {
+            return Ok(legacy);
+        };
+        let shape = matrix.shape();
+        let [rows, columns] = shape.as_slice() else {
+            return Err(unsupported(
+                "resident provider f64 matrix must have exactly two dimensions",
+            ));
+        };
+        let values = matrix
+            .as_vec()
+            .into_iter()
+            .map(|value| value.expect_f64().map(|value| *value.borrow()))
+            .collect::<MResult<Vec<_>>>()?;
+        return Ok(LegacyValue::MatrixF64(ToMatrix::to_matrixd(
+            values, *rows, *columns,
+        )));
+    }
+    Ok(legacy)
 }
 
 fn legacy_data(

@@ -21,6 +21,8 @@ runtime = ["mech-engine/runtime"]
 runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 runtime_bench_gate_b = ["compiler", "mech-engine/resident-artifact"]
 resident-external = ["runtime", "mech-engine/resident-artifact"]
+resident-production = ["resident-external"]
+resident-production-source = ["resident-production", "compiler"]
 runtime_bench_gate_d = ["runtime_bench_gate_b", "runtime_default"]
 runtime_bench_gate_d3 = ["resident-external", "runtime_bench_gate_d"]
 native-link = ["runtime", "string"]
@@ -325,6 +327,11 @@ required-features = ["source_default"]
 name = "recording_bench_facade"
 path = "tests/recording_bench_facade.rs"
 required-features = ["runtime_default", "runtime_bench_probes"]
+
+[[test]]
+name = "sealed_api"
+path = "tests/sealed_api.rs"
+required-features = ["source_default"]
 
 [[bench]]
 name = "program_transaction"

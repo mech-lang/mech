@@ -653,6 +653,6 @@ impl MechRuntime {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 #[path = "tests/reactive/mod.rs"]
 mod tests;

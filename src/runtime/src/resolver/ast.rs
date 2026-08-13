@@ -26,7 +26,7 @@ pub fn contexts_from_program(tree: &Program) -> Vec<SourceContextDeclaration> {
     SourceIndex::from_program(tree).all_contexts()
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
     use crate::resolver::{

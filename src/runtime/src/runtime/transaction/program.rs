@@ -779,6 +779,6 @@ impl MechRuntime {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 #[path = "tests/program/mod.rs"]
 mod tests;

@@ -317,6 +317,8 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         capability: Arc<dyn Capability>,
     ) -> MResult<CapabilityId> {
+        #[cfg(feature = "resident-production")]
+        self.ensure_resident_environment_mutable("grant_capability_with_context")?;
         self.ensure_runtime_mutation_allowed("grant_capability_with_context")?;
         self.validate_context_for_runtime(context)?;
         context.charge_step()?;
@@ -399,12 +401,16 @@ impl MechRuntime {
     }
 
     pub fn grant_capability(&mut self, capability: Arc<dyn Capability>) -> MResult<CapabilityId> {
+        #[cfg(feature = "resident-production")]
+        self.ensure_resident_environment_mutable("grant_capability")?;
         self.ensure_runtime_mutation_allowed("grant_capability")?;
         let mut context = self.runtime_context()?;
         self.grant_capability_with_context(&mut context, capability)
     }
 
     pub fn revoke_capability(&mut self, capability: CapabilityId) -> MResult<()> {
+        #[cfg(feature = "resident-production")]
+        self.ensure_resident_environment_mutable("revoke_capability")?;
         self.ensure_runtime_mutation_allowed("revoke_capability")?;
         let mut context = self.runtime_context()?;
         self.revoke_capability_with_context(&mut context, capability)
@@ -415,6 +421,8 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         capability: CapabilityId,
     ) -> MResult<()> {
+        #[cfg(feature = "resident-production")]
+        self.ensure_resident_environment_mutable("revoke_capability_with_context")?;
         self.ensure_runtime_mutation_allowed("revoke_capability_with_context")?;
         self.validate_context_for_runtime(context)?;
         context.charge_step()?;

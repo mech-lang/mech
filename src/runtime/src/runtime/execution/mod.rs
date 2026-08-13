@@ -22,11 +22,13 @@ mod source;
 #[cfg(feature = "source")]
 mod source_reconstruction;
 
+#[cfg(feature = "source")]
+use context_preflight::AddressedReadPreflight;
 #[allow(unused_imports)]
 #[cfg(feature = "source")]
 pub use context_preflight::RuntimeAddressedAssignmentUnsupported;
 #[cfg(feature = "source")]
-use context_preflight::{AddressedReadPreflight, RuntimeProgramTarget};
+pub(in crate::runtime) use context_preflight::RuntimeProgramTarget;
 #[cfg(feature = "source")]
 pub(super) use module::IntegrityEvaluationCollector;
 #[cfg(feature = "source")]

@@ -1,3 +1,5 @@
+#![cfg(feature = "source")]
+
 use std::sync::{Arc, Mutex};
 
 use mech_core::{FunctionCatalogBuilder, LegacyValue, MResult, MechError, MechErrorKind, Ref};

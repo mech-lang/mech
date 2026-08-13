@@ -28,6 +28,7 @@ use crate::{
     RuntimeEffectMetadata, RuntimeEffectSource, RuntimeResidentResourceWriteRequest,
     RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry,
     RuntimeResourceWriteIntent, RuntimeTransactionalEffect, TransactionId,
+    config::ResidentDurabilityPolicy,
 };
 
 use super::*;
@@ -765,15 +766,15 @@ fn retained_turn_captures_publishes_receipts_delivers_and_replays() -> MResult<(
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    let mut coordinator = ResidentExternalCoordinator::new(
+    let mut coordinator = ResidentExternalCoordinator::new_live(
         instance,
-        &artifact,
+        Arc::new(artifact.clone()),
         &providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
-    let outcome = coordinator.execute_turn()?;
+    let outcome = coordinator.execute_turn(&providers)?;
     assert!(
         matches!(outcome, ResidentExternalTurnOutcome::Accepted { .. }),
         "unexpected resident outcome: {outcome:?}; receipt: {:?}",
@@ -799,7 +800,7 @@ fn retained_turn_captures_publishes_receipts_delivers_and_replays() -> MResult<(
     drop(replay_providers);
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &replay_artifact,
+        Arc::new(replay_artifact),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -818,7 +819,11 @@ fn retained_turn_captures_publishes_receipts_delivers_and_replays() -> MResult<(
     );
     assert!(replay_trace.lock().unwrap().prepared.is_empty());
     assert_eq!(replay_trace.lock().unwrap().delivered, 0);
-    assert!(replay.execute_turn().is_err());
+    assert!(
+        replay
+            .execute_turn(&RuntimeResourceRegistry::new())
+            .is_err()
+    );
     Ok(())
 }
 
@@ -827,9 +832,9 @@ fn default_authority_denies_before_any_provider_read() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
     let (artifact, instance, providers) = fixture(trace.clone(), ProviderProtocol::AfterCommit)?;
     assert!(
-        ResidentExternalCoordinator::new(
+        ResidentExternalCoordinator::new_live(
             instance,
-            &artifact,
+            Arc::new(artifact),
             &providers,
             &DenyAllResidentExternalAuthority,
             ResidentDurabilityPolicy::Retained,
@@ -858,12 +863,12 @@ fn idempotent_retry_requires_provider_deduplication_support() -> MResult<()> {
     Ok(())
 }
 
-fn coordinator<'a>(
+fn coordinator(
     instance: ReactiveInstance,
-    artifact: &'a ProgramArtifact,
-    providers: &'a RuntimeResourceRegistry,
+    artifact: &ProgramArtifact,
+    providers: &RuntimeResourceRegistry,
     limits: ResidentExternalLimits,
-) -> MResult<ResidentExternalCoordinator<'a>> {
+) -> MResult<ResidentExternalCoordinator> {
     coordinator_with_durability(
         instance,
         artifact,
@@ -873,21 +878,26 @@ fn coordinator<'a>(
     )
 }
 
-fn coordinator_with_durability<'a>(
+fn coordinator_with_durability(
     instance: ReactiveInstance,
-    artifact: &'a ProgramArtifact,
-    providers: &'a RuntimeResourceRegistry,
+    artifact: &ProgramArtifact,
+    providers: &RuntimeResourceRegistry,
     durability: ResidentDurabilityPolicy,
     limits: ResidentExternalLimits,
-) -> MResult<ResidentExternalCoordinator<'a>> {
+) -> MResult<ResidentExternalCoordinator> {
     let authority = ExactRequirementAuthority::new(
         artifact
             .requirements()
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    ResidentExternalCoordinator::new(
-        instance, artifact, providers, &authority, durability, limits,
+    ResidentExternalCoordinator::new_live(
+        instance,
+        Arc::new(artifact.clone()),
+        providers,
+        &authority,
+        durability,
+        limits,
     )
 }
 
@@ -904,7 +914,7 @@ fn observation_failure_is_rejected_without_publication_or_delivery() -> MResult<
         &providers,
         ResidentExternalLimits::default(),
     )?;
-    let outcome = coordinator.execute_turn()?;
+    let outcome = coordinator.execute_turn(&providers)?;
     assert!(matches!(
         outcome,
         ResidentExternalTurnOutcome::Rejected {
@@ -944,7 +954,7 @@ fn provider_prepare_failure_and_wrong_protocol_reject_before_publication() -> MR
             ResidentExternalLimits::default(),
         )?;
         assert!(matches!(
-            coordinator.execute_turn()?,
+            coordinator.execute_turn(&providers)?,
             ResidentExternalTurnOutcome::Rejected {
                 phase: TurnFailurePhase::ExternalPrepare,
                 ..
@@ -1005,7 +1015,7 @@ fn later_provider_preparation_failure_aborts_every_earlier_effect() -> MResult<(
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: TurnFailurePhase::ExternalPrepare,
             ..
@@ -1031,7 +1041,7 @@ fn idempotent_delivery_failure_retains_identity_and_key_for_retry() -> MResult<(
     )?;
     let ResidentExternalTurnOutcome::Accepted {
         delivery_failures, ..
-    } = coordinator.execute_turn()?
+    } = coordinator.execute_turn(&providers)?
     else {
         panic!("delivery failure occurs after accepted resident publication")
     };
@@ -1039,7 +1049,7 @@ fn idempotent_delivery_failure_retains_identity_and_key_for_retry() -> MResult<(
     assert_eq!(coordinator.instance().published_epoch().get(), 1);
     assert_eq!(coordinator.outbox().count(), 1);
     let original = trace.lock().unwrap().prepared[0].clone();
-    assert!(coordinator.retry_outbox()?.is_empty());
+    assert!(coordinator.retry_outbox(&providers)?.is_empty());
     assert_eq!(coordinator.outbox().count(), 0);
     let retried = trace.lock().unwrap().prepared[1].clone();
     assert_eq!(retried, original);
@@ -1066,7 +1076,7 @@ fn ordinary_delivery_policies_have_executable_failure_lifecycles() -> MResult<()
         )?;
         let ResidentExternalTurnOutcome::Accepted {
             delivery_failures, ..
-        } = coordinator.execute_turn()?
+        } = coordinator.execute_turn(&providers)?
         else {
             panic!("ordinary delivery failure occurs after resident publication")
         };
@@ -1075,7 +1085,7 @@ fn ordinary_delivery_policies_have_executable_failure_lifecycles() -> MResult<()
             coordinator.outbox().count(),
             usize::from(retained_after_failure)
         );
-        assert!(coordinator.retry_outbox()?.is_empty());
+        assert!(coordinator.retry_outbox(&providers)?.is_empty());
         assert_eq!(coordinator.outbox().count(), 0);
         assert_eq!(
             trace.lock().unwrap().delivered,
@@ -1105,7 +1115,7 @@ fn volatile_retryable_effects_survive_failed_delivery() -> MResult<()> {
         )?;
         let ResidentExternalTurnOutcome::Accepted {
             delivery_failures, ..
-        } = coordinator.execute_turn()?
+        } = coordinator.execute_turn(&providers)?
         else {
             panic!("retryable delivery failure occurs after publication")
         };
@@ -1115,7 +1125,7 @@ fn volatile_retryable_effects_survive_failed_delivery() -> MResult<()> {
         assert_eq!(coordinator.outbox().count(), 1);
         let original = trace.lock().unwrap().prepared[0].clone();
 
-        assert!(coordinator.retry_outbox()?.is_empty());
+        assert!(coordinator.retry_outbox(&providers)?.is_empty());
         assert_eq!(coordinator.outbox().count(), 0);
         assert_eq!(trace.lock().unwrap().prepared[1], original);
         assert_eq!(trace.lock().unwrap().delivered, 2);
@@ -1167,14 +1177,14 @@ fn at_most_once_preparation_failure_remains_pending_until_delivery_can_begin() -
     )?;
     let ResidentExternalTurnOutcome::Accepted {
         delivery_failures, ..
-    } = coordinator.execute_turn()?
+    } = coordinator.execute_turn(&providers)?
     else {
         panic!("first AtMostOnce delivery attempt must be post-publication")
     };
     assert_eq!(delivery_failures.len(), 1);
     assert_eq!(coordinator.outbox().count(), 2);
 
-    let preparation_failures = coordinator.retry_outbox()?;
+    let preparation_failures = coordinator.retry_outbox(&providers)?;
     assert_eq!(preparation_failures.len(), 1);
     assert_eq!(
         preparation_failures[0].phase,
@@ -1183,7 +1193,7 @@ fn at_most_once_preparation_failure_remains_pending_until_delivery_can_begin() -
     assert_eq!(coordinator.outbox().count(), 1);
     trace.lock().unwrap().fail_prepare_at = None;
 
-    assert!(coordinator.retry_outbox()?.is_empty());
+    assert!(coordinator.retry_outbox(&providers)?.is_empty());
     assert_eq!(coordinator.outbox().count(), 0);
     assert_eq!(trace.lock().unwrap().delivered, 3);
     Ok(())
@@ -1241,14 +1251,14 @@ fn at_most_once_protocol_mismatch_is_preparation_and_aborts_the_handle() -> MRes
     )?;
     let ResidentExternalTurnOutcome::Accepted {
         delivery_failures, ..
-    } = coordinator.execute_turn()?
+    } = coordinator.execute_turn(&providers)?
     else {
         panic!("front retryable failure occurs after publication")
     };
     assert_eq!(delivery_failures.len(), 1);
     assert_eq!(coordinator.outbox().count(), 2);
 
-    let failures = coordinator.retry_outbox()?;
+    let failures = coordinator.retry_outbox(&providers)?;
     assert_eq!(failures.len(), 1);
     assert_eq!(failures[0].phase, crate::RuntimeEffectFailurePhase::Prepare);
     assert_eq!(coordinator.outbox().count(), 1);
@@ -1263,7 +1273,7 @@ fn at_most_once_protocol_mismatch_is_preparation_and_aborts_the_handle() -> MRes
             .count(),
         1
     );
-    assert!(coordinator.retry_outbox()?.is_empty());
+    assert!(coordinator.retry_outbox(&providers)?.is_empty());
     assert_eq!(coordinator.outbox().count(), 0);
     assert_eq!(trace.lock().unwrap().delivered, 3);
     Ok(())
@@ -1284,12 +1294,12 @@ fn retained_protocol_mismatch_cleanup_failure_poisons_the_coordinator() -> MResu
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     trace.lock().unwrap().transactional_abort_fail = true;
 
-    assert!(coordinator.retry_outbox().is_err());
+    assert!(coordinator.retry_outbox(&providers).is_err());
     assert_eq!(coordinator.outbox().count(), 1);
     assert_eq!(trace.lock().unwrap().delivered, 2);
     assert_eq!(
@@ -1306,7 +1316,7 @@ fn retained_protocol_mismatch_cleanup_failure_poisons_the_coordinator() -> MResu
         coordinator.health(),
         ResidentExternalHealth::PoisonedRetainedEffectCleanup { .. }
     ));
-    assert!(coordinator.retry_outbox().is_err());
+    assert!(coordinator.retry_outbox(&providers).is_err());
     Ok(())
 }
 
@@ -1326,7 +1336,7 @@ fn transactional_prepare_failure_rejects_and_commit_failure_is_published_indeter
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        rejected.execute_turn()?,
+        rejected.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: TurnFailurePhase::ExternalPrepare,
             ..
@@ -1354,7 +1364,7 @@ fn transactional_prepare_failure_rejects_and_commit_failure_is_published_indeter
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        indeterminate.execute_turn()?,
+        indeterminate.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::PublishedIndeterminate { .. }
     ));
     assert_eq!(indeterminate.instance().published_epoch().get(), 1);
@@ -1366,7 +1376,7 @@ fn transactional_prepare_failure_rejects_and_commit_failure_is_published_indeter
         commit_trace.lock().unwrap().lifecycle,
         ["prepare", "commit"]
     );
-    assert!(indeterminate.execute_turn().is_err());
+    assert!(indeterminate.execute_turn(&providers).is_err());
     Ok(())
 }
 
@@ -1411,7 +1421,7 @@ fn volatile_commit_indeterminate_retains_undelivered_ordinary_effects() -> MResu
     )?;
 
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::PublishedIndeterminate { .. }
     ));
     assert_eq!(coordinator.instance().published_epoch().get(), 1);
@@ -1440,7 +1450,7 @@ fn compensatable_apply_failure_rejects_without_publication() -> MResult<()> {
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: TurnFailurePhase::ExternalApply,
             ..
@@ -1473,7 +1483,7 @@ fn failed_compensation_is_never_invoked_twice_by_cleanup() -> MResult<()> {
         ResidentExternalLimits::default(),
     )?;
 
-    assert!(coordinator.execute_turn().is_err());
+    assert!(coordinator.execute_turn(&providers).is_err());
     assert!(matches!(
         coordinator.health(),
         ResidentExternalHealth::PoisonedPrepublicationCleanup { .. }
@@ -1538,7 +1548,7 @@ fn mixed_effect_cleanup_compensates_before_transactional_abort() -> MResult<()> 
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: TurnFailurePhase::ExternalApply,
             ..
@@ -1572,7 +1582,7 @@ fn capacity_is_reserved_before_observation_capture() -> MResult<()> {
             ..ResidentExternalLimits::default()
         },
     )?;
-    assert!(coordinator.execute_turn().is_err());
+    assert!(coordinator.execute_turn(&providers).is_err());
     assert_eq!(trace.lock().unwrap().reads, 0);
     assert_eq!(
         coordinator.instance().published_epoch(),
@@ -1599,9 +1609,9 @@ fn coordinator_rejects_an_artifact_other_than_the_instance_artifact() -> MResult
             .map(|(_, requirement)| requirement.clone()),
     )?;
     assert!(
-        ResidentExternalCoordinator::new(
+        ResidentExternalCoordinator::new_live(
             instance,
-            &other,
+            Arc::new(other),
             &providers,
             &authority,
             ResidentDurabilityPolicy::Retained,
@@ -1660,7 +1670,7 @@ fn replay_reconstructs_and_rejects_forged_batch_identity() -> MResult<()> {
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        source.execute_turn()?,
+        source.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let mut forged = source.input_facts().next().unwrap().1.clone();
@@ -1673,7 +1683,7 @@ fn replay_reconstructs_and_rejects_forged_batch_identity() -> MResult<()> {
     drop(replay_providers);
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &replay_artifact,
+        Arc::new(replay_artifact),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1692,11 +1702,11 @@ fn accepted_replay_receipt_mismatch_does_not_consume_replay_identity() -> MResul
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        source.execute_turn()?,
+        source.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     assert!(matches!(
-        source.execute_turn()?,
+        source.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let batches = source
@@ -1716,7 +1726,7 @@ fn accepted_replay_receipt_mismatch_does_not_consume_replay_identity() -> MResul
     drop(replay_providers);
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &replay_artifact,
+        Arc::new(replay_artifact),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1760,7 +1770,7 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        live.execute_turn()?,
+        live.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: TurnFailurePhase::ExternalPrepare,
             ..
@@ -1768,7 +1778,7 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
     ));
     trace.lock().unwrap().fail_prepare = false;
     assert!(matches!(
-        live.execute_turn()?,
+        live.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let batches = live
@@ -1795,7 +1805,7 @@ fn replay_preserves_a_recorded_full_input_rejection_before_later_acceptance() ->
     .unwrap();
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &artifact,
+        Arc::new(artifact.clone()),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1830,7 +1840,7 @@ fn retained_turn_batches_allow_distinct_nodes_to_share_a_requirement() -> MResul
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let batch = coordinator
@@ -1878,7 +1888,7 @@ fn shared_observations_record_a_successful_prefix_before_a_later_read_failure() 
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: TurnFailurePhase::InputInstallation,
             ..
@@ -1892,7 +1902,7 @@ fn shared_observations_record_a_successful_prefix_before_a_later_read_failure() 
     assert_eq!(receipt.body.input_batch_hash, prefix.batch_hash);
     trace.lock().unwrap().fail_read_at = None;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let batches = coordinator
@@ -1919,7 +1929,7 @@ fn shared_observations_record_a_successful_prefix_before_a_later_read_failure() 
     .unwrap();
     let mut replay = ResidentExternalCoordinator::new_replay(
         replay_instance,
-        &artifact,
+        Arc::new(artifact.clone()),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
@@ -1953,7 +1963,7 @@ fn idempotency_keys_are_namespaced_by_reactive_instance() -> MResult<()> {
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let batch = coordinator
@@ -2005,7 +2015,7 @@ fn one_receipt_slot_accepts_one_mutually_exclusive_outcome() -> MResult<()> {
         },
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     assert_eq!(coordinator.receipts().count(), 1);
@@ -2060,7 +2070,7 @@ fn volatile_turns_release_all_retained_history() -> MResult<()> {
     )?;
     for _ in 0..3 {
         assert!(matches!(
-            coordinator.execute_turn()?,
+            coordinator.execute_turn(&providers)?,
             ResidentExternalTurnOutcome::Accepted { .. }
         ));
         assert_eq!(coordinator.input_facts().count(), 0);
@@ -2087,7 +2097,7 @@ fn retained_records_can_be_released_in_fifo_order_and_capacity_reused() -> MResu
         },
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let (first_input_sequence, first_batch) = coordinator
@@ -2099,7 +2109,7 @@ fn retained_records_can_be_released_in_fifo_order_and_capacity_reused() -> MResu
     assert_eq!(first_receipt.header.input_range, Some(first_batch.range));
 
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     let (second_input_sequence, _) = coordinator
@@ -2131,7 +2141,7 @@ fn failed_preflight_does_not_consume_turn_identity() -> MResult<()> {
         },
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted {
             turn,
             ref delivery_failures,
@@ -2139,12 +2149,12 @@ fn failed_preflight_does_not_consume_turn_identity() -> MResult<()> {
         } if turn == TurnId::new(1).unwrap() && delivery_failures.len() == 1
     ));
     assert_eq!(coordinator.outbox().count(), 1);
-    assert!(coordinator.execute_turn().is_err());
+    assert!(coordinator.execute_turn(&providers).is_err());
     assert_eq!(trace.lock().unwrap().reads, 1);
 
-    assert!(coordinator.retry_outbox()?.is_empty());
+    assert!(coordinator.retry_outbox(&providers)?.is_empty());
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { turn, .. }
             if turn == TurnId::new(2).unwrap()
     ));
@@ -2177,7 +2187,7 @@ fn rejected_receipt_bounds_provider_failure_text() -> MResult<()> {
         },
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected { .. }
     ));
     let message = &coordinator
@@ -2237,7 +2247,7 @@ fn provider_matrix_shape_and_row_major_order_are_preserved() -> MResult<()> {
         ResidentExternalLimits::default(),
     )?;
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: TurnFailurePhase::InputInstallation,
             ..
@@ -2309,9 +2319,9 @@ output := state
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    let mut coordinator = ResidentExternalCoordinator::new(
+    let mut coordinator = ResidentExternalCoordinator::new_live(
         instance,
-        &artifact,
+        Arc::new(artifact),
         &providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
@@ -2319,7 +2329,7 @@ output := state
     )?;
 
     assert!(matches!(
-        coordinator.execute_turn()?,
+        coordinator.execute_turn(&providers)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     assert_eq!(trace.lock().unwrap().prepared_f64, [0.25]);

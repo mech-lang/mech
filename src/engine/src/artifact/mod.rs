@@ -8,7 +8,7 @@ mod requirements;
 mod snapshot;
 mod validation;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "artifact-codec")]
 mod bytecode;
 
 pub use self::compiler::*;
@@ -16,5 +16,5 @@ pub use self::ir::*;
 pub use self::model::*;
 pub use self::requirements::*;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "artifact-codec")]
 pub use self::bytecode::*;

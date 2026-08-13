@@ -4,8 +4,8 @@ use mech_core::{
     MechErrorKind, NodeId, OperationContractDeclaration, ResolvedOperationContract, ResourceIntent,
 };
 use mech_engine::{
-    __resident::{ActivatedInput, ActivatedInputSource, ActivatedPlan, ActivatedTurnStep},
     ProgramArtifact,
+    resident::{ActivatedInput, ActivatedInputSource, ActivatedPlan, ActivatedTurnStep},
 };
 
 use crate::{RuntimeResourceRegistry, RuntimeResourceWriteIntent};

@@ -324,16 +324,16 @@ fn external_structural_probe(
             .iter()
             .map(|(_, requirement)| requirement.clone()),
     )?;
-    let mut accepted = ResidentExternalCoordinator::new(
+    let mut accepted = ResidentExternalCoordinator::new_live(
         accepted_instance,
-        artifact,
+        Arc::new(artifact.clone()),
         &accepted_providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
     let accepted_before = accepted.instance().published_epoch().get();
-    require_accepted(accepted.execute_turn()?)?;
+    require_accepted(accepted.execute_turn(&accepted_providers)?)?;
     let accepted_after = accepted.instance().published_epoch().get();
     let accepted_probe = accepted.structural_probe();
 
@@ -353,9 +353,9 @@ fn external_structural_probe(
         ResidentIntegrityMode::Checked,
     )
     .map_err(|error| benchmark_error(&format!("activate D3 rejected probe: {error:?}")))?;
-    let mut rejected = ResidentExternalCoordinator::new(
+    let mut rejected = ResidentExternalCoordinator::new_live(
         rejected_instance,
-        artifact,
+        Arc::new(artifact.clone()),
         &rejected_providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
@@ -365,7 +365,7 @@ fn external_structural_probe(
     let rejected_receipts_before = rejected.receipts().count();
     let rejected_probe_before = rejected.structural_probe();
     assert!(matches!(
-        rejected.execute_turn()?,
+        rejected.execute_turn(&rejected_providers)?,
         ResidentExternalTurnOutcome::Rejected {
             phase: mech_runtime::TurnFailurePhase::ExternalPrepare,
             ..
@@ -437,9 +437,9 @@ fn run_lane(
             .map(|(_, requirement)| requirement.clone()),
     )?;
     let total = history.saturating_add(TURNS).saturating_add(32);
-    let mut coordinator = ResidentExternalCoordinator::new(
+    let mut coordinator = ResidentExternalCoordinator::new_live(
         instance,
-        artifact,
+        Arc::new(artifact.clone()),
         &providers,
         &authority,
         ResidentDurabilityPolicy::Retained,
@@ -456,7 +456,7 @@ fn run_lane(
         coordinator.set_next_epoch_for_benchmark(next_epoch);
     }
     for _ in 0..history {
-        require_accepted(coordinator.execute_turn()?)?;
+        require_accepted(coordinator.execute_turn(&providers)?)?;
     }
     {
         let mut trace = trace.lock().expect("D3 provider trace");
@@ -470,7 +470,7 @@ fn run_lane(
     let structural_start = coordinator.structural_probe();
     let started = Instant::now();
     for _ in 0..TURNS {
-        require_accepted(coordinator.execute_turn()?)?;
+        require_accepted(coordinator.execute_turn(&providers)?)?;
     }
     let elapsed_ns = started.elapsed().as_nanos();
     let trace_snapshot = trace.lock().expect("D3 provider trace").clone();
@@ -553,7 +553,7 @@ fn run_replay(
     .map_err(|error| benchmark_error(&format!("activate D3 replay artifact: {error:?}")))?;
     let mut coordinator = ResidentExternalCoordinator::new_replay(
         instance,
-        artifact,
+        Arc::new(artifact.clone()),
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits {
             input_batches: TURNS + 32,

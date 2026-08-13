@@ -1,4 +1,4 @@
-#![cfg(feature = "resident-artifact")]
+#![cfg(all(feature = "resident-artifact", feature = "compiler"))]
 
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeInstruction, ChangeDetectionPolicy,

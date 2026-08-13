@@ -12,7 +12,7 @@ use std::time::Instant;
 use web_time::Instant;
 
 impl MechRuntime {
-    pub(super) fn run_tree_on_program(
+    pub(in crate::runtime) fn run_tree_on_program(
         &mut self,
         context: &mut RuntimeContext,
         target: &mut RuntimeProgramTarget<'_>,

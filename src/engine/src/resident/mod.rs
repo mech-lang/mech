@@ -17,11 +17,26 @@ mod efficacy {
 pub(crate) use activation::*;
 pub(crate) use arena::*;
 pub(crate) use artifact::*;
-pub use candidate::ResidentExecutionError;
+pub use candidate::ResidentExecutionError as ResidentCandidateExecutionError;
 pub(crate) use candidate::{Candidate, GateBInstance, publish_epoch};
 pub use full_write::{FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentFullWrite};
 pub(crate) use kernel::*;
 pub(crate) use workspace::*;
+
+#[cfg(feature = "resident-artifact")]
+pub use general::{
+    ActivationFacts, CapturedSignalInput, CapturedValueInput, PreparedResidentTurn,
+    ReactiveInstance, ResidentActivationError, ResidentActivationOptions, ResidentExecutionError,
+    ResidentExternalAdmission, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
+    ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
+};
+
+#[cfg(feature = "resident-artifact")]
+#[doc(hidden)]
+pub use general::{
+    ActivatedInput, ActivatedInputSource, ActivatedPlan, ActivatedTurnStep,
+    ResidentActivationPreflight, ResidentStructuralProbe, preflight_activation,
+};
 
 #[cfg(test)]
 mod tests;

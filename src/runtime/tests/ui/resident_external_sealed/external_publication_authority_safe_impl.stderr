@@ -1,10 +1,10 @@
-error[E0200]: the trait `mech_engine::__resident::ResidentExternalPublicationAuthority` requires an `unsafe impl` declaration
+error[E0200]: the trait `mech_engine::resident::ResidentExternalPublicationAuthority` requires an `unsafe impl` declaration
  --> tests/ui/resident_external_sealed/external_publication_authority_safe_impl.rs:5:1
   |
 5 | impl ResidentExternalPublicationAuthority for ForgedSafeAuthority {}
   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   |
-  = note: the trait `mech_engine::__resident::ResidentExternalPublicationAuthority` enforces invariants that the compiler can't check. Review the trait documentation and make sure this implementation upholds those invariants before adding the `unsafe` keyword
+  = note: the trait `mech_engine::resident::ResidentExternalPublicationAuthority` enforces invariants that the compiler can't check. Review the trait documentation and make sure this implementation upholds those invariants before adding the `unsafe` keyword
 help: add `unsafe` to this trait implementation
   |
 5 | unsafe impl ResidentExternalPublicationAuthority for ForgedSafeAuthority {}

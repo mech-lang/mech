@@ -36,6 +36,10 @@ pub struct RuntimeConfig {
     /// Human-readable runtime name.
     pub name: String,
 
+    /// Product-level execution routing and durability choices.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub execution: ExecutionConfig,
+
     /// Execution and resource limits.
     pub limits: RuntimeLimits,
 
@@ -47,6 +51,7 @@ impl Default for RuntimeConfig {
     fn default() -> Self {
         Self {
             name: "runtime".to_string(),
+            execution: ExecutionConfig::default(),
             limits: RuntimeLimits::default(),
             diagnostics: DiagnosticsConfig::default(),
         }
@@ -66,6 +71,11 @@ impl RuntimeConfig {
         self
     }
 
+    pub fn with_execution(mut self, execution: ExecutionConfig) -> Self {
+        self.execution = execution;
+        self
+    }
+
     pub fn with_diagnostics(mut self, diagnostics: DiagnosticsConfig) -> Self {
         self.diagnostics = diagnostics;
         self
@@ -79,6 +89,13 @@ impl RuntimeConfig {
     pub fn apply_patch(mut self, patch: &crate::RuntimeConfigPatch) -> MResult<Self> {
         if let Some(name) = &patch.name {
             self.name = name.clone();
+        }
+
+        if let Some(value) = patch.execution.resident_routing {
+            self.execution.resident_routing = value;
+        }
+        if let Some(value) = patch.execution.resident_durability {
+            self.execution.resident_durability = value;
         }
 
         if let Some(value) = patch.limits.max_steps_per_turn {
@@ -137,6 +154,35 @@ impl RuntimeConfig {
         self.validate()?;
         Ok(self)
     }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ResidentRoutingPolicy {
+    #[default]
+    PreferResident,
+    RequireResident,
+    LegacyOnly,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ResidentDurabilityPolicy {
+    #[default]
+    Volatile,
+    Retained,
+    AsynchronousDurable,
+    SynchronousDurable,
+    ReplicatedDurable,
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ExecutionConfig {
+    pub resident_routing: ResidentRoutingPolicy,
+    pub resident_durability: ResidentDurabilityPolicy,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

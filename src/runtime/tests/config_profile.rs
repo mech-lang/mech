@@ -432,6 +432,40 @@ fn config_profile_valid_log_levels_accepted() {
 }
 
 #[test]
+fn config_profile_accepts_resident_execution_policy() {
+    let doc = parse(
+        r#"config := {runtime: {execution: {
+  resident-routing: "require-resident"
+  resident-durability: "retained"
+}}}
+"#,
+    )
+    .unwrap();
+    assert_eq!(
+        doc.runtime.execution.resident_routing,
+        Some(ResidentRoutingPolicy::RequireResident),
+    );
+    assert_eq!(
+        doc.runtime.execution.resident_durability,
+        Some(ResidentDurabilityPolicy::Retained),
+    );
+}
+
+#[test]
+fn config_profile_rejects_unknown_resident_execution_values() {
+    for (field, value) in [
+        ("resident-routing", "sometimes-resident"),
+        ("resident-durability", "eventually-durable"),
+    ] {
+        let message = err_text(&format!(
+            "config := {{runtime: {{execution: {{{field}: \"{value}\"}}}}}}\n",
+        ));
+        assert!(message.contains("InvalidConfigField"));
+        assert!(message.contains(field));
+    }
+}
+
+#[test]
 fn config_profile_single_patterned_helper_rejected() {
     let msg = err_text(
         r#"label(x<u64>) => <string>

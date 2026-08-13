@@ -92,26 +92,29 @@ pub mod mechdown;
 #[cfg(feature = "source")]
 pub mod patterns;
 pub mod program;
-#[cfg(feature = "resident-ekf")]
+#[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
 mod resident;
+#[cfg(feature = "resident-artifact")]
+pub mod resident;
 #[cfg(feature = "resident-artifact")]
 mod resident_value_adapter;
 #[cfg(feature = "resident-ekf")]
 #[doc(hidden)]
 pub mod __gate_b_resident {
+    pub use crate::resident::ResidentCandidateExecutionError as ResidentExecutionError;
     #[cfg(feature = "runtime_bench_probes")]
     pub use crate::resident::bench::ResidentTurnProbe;
     pub use crate::resident::bench::{
         PreparedResidentTurn, ResidentEkfBatch, ResidentEkfState, ResidentTurnSummary,
     };
-    pub use crate::resident::{
-        FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentExecutionError, ResidentFullWrite,
-    };
+    pub use crate::resident::{FULL_WRITE_ELEMENTS, PreparedResidentFullWrite, ResidentFullWrite};
 }
 #[cfg(feature = "resident-artifact")]
 #[doc(hidden)]
 pub mod __resident {
+    #[cfg(feature = "compiler")]
     pub use crate::efficacy::ekf::catalog::frozen_ekf_compiler_catalog;
+    #[cfg(feature = "compiler")]
     pub use crate::efficacy::ekf::closure::{
         FrozenEkfArtifactClosure, FrozenEkfArtifactClosureError, FrozenEkfCompilation,
         FrozenEkfCompilationServices, FrozenEkfConstantClosure, FrozenEkfConstraint,

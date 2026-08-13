@@ -1,3 +1,5 @@
+#![cfg(feature = "source")]
+
 use mech_engine::*;
 use mech_syntax::parser;
 

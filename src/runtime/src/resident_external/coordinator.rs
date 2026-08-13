@@ -3,17 +3,19 @@ use mech_core::{
     ReactiveInstanceId, ResidentValueKind, TransactionalEffectProtocol, Value, ValueHash,
 };
 use mech_engine::{
-    __resident::{
+    ProgramArtifact,
+    resident::{
         CapturedValueInput, PreparedResidentTurn, ReactiveInstance, ResidentExecutionError,
         ResidentExternalPublicationAuthority, ResidentTurnSummary,
     },
-    ProgramArtifact,
 };
+use std::sync::Arc;
 
 use crate::{
-    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeEffectFailure, RuntimeEffectId,
-    RuntimeEffectProtocol, RuntimeResidentResourceWriteRequest, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteIntent, TransactionId,
+    PreparedRuntimeEffect, ResidentDurabilityPolicy, RuntimeCapabilityOperation,
+    RuntimeEffectFailure, RuntimeEffectId, RuntimeEffectProtocol,
+    RuntimeResidentResourceWriteRequest, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteIntent, TransactionId,
     ledger::{LedgerPermit, PreparedLedgerAppend, RecordEstimate, RetainedTurnLedger, TurnLedger},
     outbox::{
         OutboxDeliveryPolicy, OutboxEffectId, OutboxPermit, OwnedEffectIntent, PreparedOutboxBatch,
@@ -39,15 +41,6 @@ use crate::runtime::effect_journal::{
 
 const MAX_FAILURE_MESSAGE_BYTES: usize = 256;
 const MAX_FAILURE_KIND_BYTES: usize = 64;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ResidentDurabilityPolicy {
-    Volatile,
-    Retained,
-    AsynchronousDurable,
-    SynchronousDurable,
-    ReplicatedDurable,
-}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ResidentExternalLimits {
@@ -145,15 +138,15 @@ struct RuntimeResidentPublicationAuthority {
 #[allow(unsafe_code)]
 unsafe impl ResidentExternalPublicationAuthority for RuntimeResidentPublicationAuthority {}
 
-pub struct ResidentExternalCoordinator<'a> {
+pub struct ResidentExternalCoordinator {
     instance: Option<ReactiveInstance>,
     publication_authority: RuntimeResidentPublicationAuthority,
     instance_id: ReactiveInstanceId,
     program_revision: ProgramRevision,
     plan_generation: mech_core::PlanGeneration,
     layout_generation: mech_core::LayoutGeneration,
-    artifact: &'a ProgramArtifact,
-    providers: Option<&'a RuntimeResourceRegistry>,
+    artifact: Arc<ProgramArtifact>,
+    live: bool,
     bound: BoundResidentExternalPlan,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
@@ -168,24 +161,17 @@ pub struct ResidentExternalCoordinator<'a> {
     last_rejected_turn: Option<TurnId>,
 }
 
-impl<'a> ResidentExternalCoordinator<'a> {
-    pub fn new(
+impl ResidentExternalCoordinator {
+    pub fn new_live(
         instance: ReactiveInstance,
-        artifact: &'a ProgramArtifact,
-        providers: &'a RuntimeResourceRegistry,
+        artifact: Arc<ProgramArtifact>,
+        providers: &RuntimeResourceRegistry,
         authority: &dyn ResidentExternalAuthority,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
-        let bound = bind_external_requirements(&instance.plan, artifact, providers, authority)?;
-        Self::from_bound(
-            instance,
-            artifact,
-            Some(providers),
-            bound,
-            durability,
-            limits,
-        )
+        let bound = bind_external_requirements(&instance.plan, &artifact, providers, authority)?;
+        Self::from_bound(instance, artifact, true, bound, durability, limits)
     }
 
     /// Constructs an offline replay coordinator without live providers or
@@ -196,18 +182,18 @@ impl<'a> ResidentExternalCoordinator<'a> {
     /// deliveries. Live turns and outbox retries are rejected on this mode.
     pub fn new_replay(
         instance: ReactiveInstance,
-        artifact: &'a ProgramArtifact,
+        artifact: Arc<ProgramArtifact>,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
     ) -> MResult<Self> {
-        let bound = bind_replay_requirements(&instance.plan, artifact)?;
-        Self::from_bound(instance, artifact, None, bound, durability, limits)
+        let bound = bind_replay_requirements(&instance.plan, &artifact)?;
+        Self::from_bound(instance, artifact, false, bound, durability, limits)
     }
 
     fn from_bound(
         instance: ReactiveInstance,
-        artifact: &'a ProgramArtifact,
-        providers: Option<&'a RuntimeResourceRegistry>,
+        artifact: Arc<ProgramArtifact>,
+        live: bool,
         bound: BoundResidentExternalPlan,
         durability: ResidentDurabilityPolicy,
         limits: ResidentExternalLimits,
@@ -253,7 +239,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
             plan_generation,
             layout_generation,
             artifact,
-            providers,
+            live,
             bound,
             durability,
             health: ResidentExternalHealth::Healthy,
@@ -304,6 +290,28 @@ impl<'a> ResidentExternalCoordinator<'a> {
         self.outbox.iter()
     }
 
+    pub fn pending_outbox_count(&self) -> usize {
+        self.outbox.iter().count()
+    }
+
+    pub fn has_active_candidate(&self) -> bool {
+        self.instance().has_active_candidate()
+    }
+
+    pub fn trigger_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
+        self.bound
+            .observations()
+            .iter()
+            .map(|observation| {
+                crate::RuntimeHostInputSource::new(
+                    observation.request.base_uri.clone(),
+                    observation.request.path.clone(),
+                )
+            })
+            .collect::<MResult<Vec<_>>>()
+            .map(Vec::into_boxed_slice)
+    }
+
     pub const fn structural_probe(&self) -> ResidentExternalStructuralProbe {
         self.structural_probe
     }
@@ -320,9 +328,12 @@ impl<'a> ResidentExternalCoordinator<'a> {
         self.receipt_ledger.pop_front()
     }
 
-    pub fn execute_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
+    pub fn execute_turn(
+        &mut self,
+        providers: &RuntimeResourceRegistry,
+    ) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_live_bindings()?;
-        self.execute_live_turn()
+        self.execute_live_turn(providers)
     }
 
     /// Replays one canonical recorded turn attempt.
@@ -340,7 +351,10 @@ impl<'a> ResidentExternalCoordinator<'a> {
         self.execute_replay_attempt(batch.cloned(), record.clone())
     }
 
-    fn execute_live_turn(&mut self) -> MResult<ResidentExternalTurnOutcome> {
+    fn execute_live_turn(
+        &mut self,
+        providers: &RuntimeResourceRegistry,
+    ) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_healthy()?;
         let before_epoch = self.instance().published_epoch();
 
@@ -350,7 +364,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
         let turn = self.allocate_turn()?;
         let transaction = resident_transaction_id(self.instance_id, turn);
 
-        let batch = self.capture_with_providers();
+        let batch = self.capture_with_providers(providers);
         let batch = match batch {
             Ok(batch) => batch,
             Err(failure) => {
@@ -442,6 +456,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
             };
 
             self.prepare_and_publish(
+                providers,
                 prepared_turn,
                 turn,
                 transaction,
@@ -460,7 +475,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
         record: ResidentTurnRecord,
     ) -> MResult<ResidentExternalTurnOutcome> {
         self.ensure_healthy()?;
-        if self.providers.is_some() {
+        if self.live {
             return invalid_coordinator("recorded replay requires an offline coordinator");
         }
         let batch = batch
@@ -576,7 +591,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
                 .map_err(resident_execution_error)?;
             let materialized = match materialize_effects(
                 &prepared_turn,
-                self.artifact,
+                &self.artifact,
                 self.bound.effects(),
                 self.instance_id,
                 turn,
@@ -683,6 +698,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
     #[allow(clippy::too_many_arguments)]
     fn prepare_and_publish(
         &mut self,
+        providers: &RuntimeResourceRegistry,
         prepared_turn: PreparedResidentTurn<'_>,
         turn: TurnId,
         transaction: TransactionId,
@@ -693,7 +709,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
         let before_epoch = prepared_turn.summary().before_epoch;
         let materialized = match materialize_effects(
             &prepared_turn,
-            self.artifact,
+            &self.artifact,
             self.bound.effects(),
             self.instance_id,
             turn,
@@ -727,7 +743,8 @@ impl<'a> ResidentExternalCoordinator<'a> {
             &materialized,
         )?;
         let mut journal = RuntimeEffectJournal::new();
-        if let Err(failure) = self.prepare_provider_effects(&materialized, &mut journal) {
+        if let Err(failure) = self.prepare_provider_effects(providers, &materialized, &mut journal)
+        {
             prepared_turn.abort();
             drop(outbox_permit);
             return self.reject_with_cleanup(
@@ -843,7 +860,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
             });
         }
 
-        let delivery_failures = self.deliver_fifo(Some((transaction, &mut journal)))?;
+        let delivery_failures = self.deliver_fifo(providers, Some((transaction, &mut journal)))?;
         Ok(ResidentExternalTurnOutcome::Accepted {
             turn,
             receipt_sequence,
@@ -851,12 +868,10 @@ impl<'a> ResidentExternalCoordinator<'a> {
         })
     }
 
-    fn capture_with_providers(&self) -> Result<CapturedInputBatch, CaptureFailure> {
-        let providers = self.providers.ok_or_else(|| {
-            CaptureFailure::without_prefix(invalid_value(
-                "offline replay coordinator has no live providers".to_owned(),
-            ))
-        })?;
+    fn capture_with_providers(
+        &self,
+        providers: &RuntimeResourceRegistry,
+    ) -> Result<CapturedInputBatch, CaptureFailure> {
         let mut facts = Vec::with_capacity(self.bound.observations().len());
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
             let fact = (|| -> MResult<CapturedInputFact> {
@@ -949,13 +964,10 @@ impl<'a> ResidentExternalCoordinator<'a> {
 
     fn prepare_provider_effects(
         &self,
+        providers: &RuntimeResourceRegistry,
         effects: &[MaterializedEffect],
         journal: &mut RuntimeEffectJournal,
     ) -> Result<(), ProviderPreparationFailure> {
-        let providers = self.providers.ok_or_else(|| ProviderPreparationFailure {
-            error: invalid_value("offline replay coordinator has no live providers".to_owned()),
-            cleanup: journal.abort_all(),
-        })?;
         for effect in effects {
             let result = (|| -> MResult<PreparedRuntimeEffect> {
                 let intent = request_write_intent(&effect.bound)?;
@@ -1053,6 +1065,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
 
     fn deliver_fifo(
         &mut self,
+        providers: &RuntimeResourceRegistry,
         mut current: Option<(TransactionId, &mut RuntimeEffectJournal)>,
     ) -> MResult<Vec<RuntimeEffectFailure>> {
         let mut failures = Vec::new();
@@ -1087,7 +1100,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
                             .deliver_after_commit_exact(id)
                             .map_err(RetainedDeliveryFailure::Delivery)
                     }),
-                _ => self.prepare_retained_delivery(id),
+                _ => self.prepare_retained_delivery(providers, id),
             };
             match result {
                 Ok(()) => {
@@ -1133,18 +1146,9 @@ impl<'a> ResidentExternalCoordinator<'a> {
 
     fn prepare_retained_delivery(
         &self,
+        providers: &RuntimeResourceRegistry,
         id: RuntimeEffectId,
     ) -> Result<(), RetainedDeliveryFailure> {
-        let providers = self
-            .providers
-            .ok_or_else(|| RetainedDeliveryFailure::Preparation {
-                failure: RuntimeEffectFailure {
-                    effect_id: id,
-                    phase: crate::RuntimeEffectFailurePhase::Prepare,
-                    message: "offline replay coordinator has no live providers".to_owned(),
-                },
-                cleanup: Vec::new(),
-            })?;
         let front = self.outbox.front().expect("retained outbox front");
         let bound = self
             .bound
@@ -1193,10 +1197,13 @@ impl<'a> ResidentExternalCoordinator<'a> {
         deliver_prepared_after_commit(id, &mut prepared).map_err(RetainedDeliveryFailure::Delivery)
     }
 
-    pub fn retry_outbox(&mut self) -> MResult<Box<[RuntimeEffectFailure]>> {
+    pub fn retry_outbox(
+        &mut self,
+        providers: &RuntimeResourceRegistry,
+    ) -> MResult<Box<[RuntimeEffectFailure]>> {
         self.ensure_healthy()?;
         self.ensure_live_bindings()?;
-        Ok(self.deliver_fifo(None)?.into_boxed_slice())
+        Ok(self.deliver_fifo(providers, None)?.into_boxed_slice())
     }
 
     fn reserve_outbox(&self) -> MResult<Option<OutboxPermit>> {
@@ -1249,7 +1256,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
                     .steps
                     .iter()
                     .find_map(|step| match step {
-                        mech_engine::__resident::ActivatedTurnStep::External(external)
+                        mech_engine::resident::ActivatedTurnStep::External(external)
                             if external.effect_ordinal == effect.ordinal =>
                         {
                             Some(external)
@@ -1471,7 +1478,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
         sequence
     }
 
-    fn observe_prepared_turn(&mut self, probe: mech_engine::__resident::ResidentStructuralProbe) {
+    fn observe_prepared_turn(&mut self, probe: mech_engine::resident::ResidentStructuralProbe) {
         self.structural_probe.commit_runtime_call_count = self
             .structural_probe
             .commit_runtime_call_count
@@ -1501,7 +1508,7 @@ impl<'a> ResidentExternalCoordinator<'a> {
     }
 
     fn ensure_live_bindings(&self) -> MResult<()> {
-        if self.providers.is_some()
+        if self.live
             && self
                 .bound
                 .observations()

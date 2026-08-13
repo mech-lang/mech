@@ -222,7 +222,7 @@ impl PreparedResidentTurn<'_> {
             .instance
             .as_deref()
             .expect("live prepared resident turn");
-        if !instance.plan.has_external_steps() {
+        if !instance.plan.has_external_steps() && !instance.plan.has_observation_inputs() {
             return Err(ResidentExecutionError::ExternalPublicationUnauthorized);
         }
         Ok(self.publish_inner())

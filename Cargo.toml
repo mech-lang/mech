@@ -42,6 +42,9 @@ no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-stdlib/no_std", "mech-
 standard_runtime = [
       "mech-engine/runtime",
       "mech-stdlib/standard_runtime",
+      "combinatorics_default",
+      "math_add_assign", "math_sub_assign",
+      "mech-runtime?/resident-production",
       ]
 standard_source = [
       "standard_runtime",
@@ -54,11 +57,13 @@ standard_compiler = [
       "mech-engine/compiler",
       "mech-stdlib/standard_compiler",
       "mech-runtime?/compiler",
+      "mech-runtime?/resident-production-source",
       ]
 
 full_runtime = [
       "mech-engine/runtime",
       "mech-stdlib/full_runtime",
+      "mech-runtime?/resident-production",
       ]
 full_source = [
       "full_runtime",
@@ -71,6 +76,7 @@ full_compiler = [
       "mech-engine/compiler",
       "mech-stdlib/full_compiler",
       "mech-runtime?/compiler",
+      "mech-runtime?/resident-production-source",
       ]
 
 default = ["distribution-standard"]

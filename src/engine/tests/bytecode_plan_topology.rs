@@ -1,3 +1,5 @@
+#![cfg(feature = "compiler")]
+
 use mech_bytecode::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,

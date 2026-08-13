@@ -2800,6 +2800,7 @@ mod live_input_tests {
         assert_eq!(*shared.borrow(), 1.0);
     }
 
+    #[cfg(feature = "source")]
     #[test]
     fn existing_input_cell_is_mutated_without_replacing_valref() {
         let mut program = test_mech_program(MechProgramConfig::default());
@@ -2914,6 +2915,7 @@ mod live_input_tests {
         assert_eq!(f64_value(&after.borrow()), 9.0);
     }
 
+    #[cfg(feature = "source")]
     #[test]
     fn incompatible_input_type_is_rejected_without_mutation() {
         let mut program = test_mech_program(MechProgramConfig::default());
@@ -3044,7 +3046,7 @@ mod live_input_tests {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 mod root_symbol_snapshot_tests {
     use super::*;
     use mech_core::Ref;

@@ -1,5 +1,6 @@
 use mech_core::InstanceEpoch;
 
+use super::ResidentCandidateExecutionError as ResidentExecutionError;
 use super::*;
 
 #[test]
