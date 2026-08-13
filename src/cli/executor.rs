@@ -52,9 +52,12 @@ pub(crate) fn configured_executor(plan: &RunExecutionPlan) -> Option<&RunExecuto
         .as_ref()
 }
 
-pub(crate) fn configured_gpu_host_factory(
-    plan: &RunExecutionPlan,
-) -> MResult<Option<Box<dyn RuntimeHostFactory>>> {
+pub(crate) struct ConfiguredGpuHost {
+    pub(crate) factory: Box<dyn RuntimeHostFactory>,
+    pub(crate) cpu_tree: Program,
+}
+
+pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<ConfiguredGpuHost>> {
     if !plan
         .configured_hosts
         .iter()
@@ -69,12 +72,12 @@ pub(crate) fn configured_gpu_host_factory(
     let imports = import_prelude(&tree);
     let mut programs = BTreeMap::new();
 
-    for section in tree.body.sections.iter().filter(|section| {
-        matches!(
-            section.compute,
-            Some(mech_core::ComputePlacement::Compute | mech_core::ComputePlacement::Gpu)
-        )
-    }) {
+    for section in tree
+        .body
+        .sections
+        .iter()
+        .filter(|section| is_gpu_owned(section))
+    {
         let name = section
             .subtitle
             .as_ref()
@@ -118,7 +121,57 @@ pub(crate) fn configured_gpu_host_factory(
         programs.insert(name, GpuRegionProgram::new(program, inputs));
     }
 
-    Ok(Some(Box::new(GpuRegionHostFactory::new(programs)?)))
+    Ok(Some(ConfiguredGpuHost {
+        factory: Box::new(GpuRegionHostFactory::new(programs)?),
+        cpu_tree: cpu_projection_tree(&tree),
+    }))
+}
+
+fn is_gpu_owned(section: &Section) -> bool {
+    matches!(
+        section.compute,
+        Some(mech_core::ComputePlacement::Compute | mech_core::ComputePlacement::Gpu)
+    )
+}
+
+fn cpu_projection_tree(tree: &Program) -> Program {
+    let excluded_imports = tree
+        .body
+        .sections
+        .iter()
+        .filter(|section| is_gpu_owned(section))
+        .flat_map(|section| &section.elements)
+        .filter_map(|element| {
+            let SectionElement::MechCode(code) = element else {
+                return None;
+            };
+            let imports = code
+                .iter()
+                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
+                .cloned()
+                .collect::<Vec<_>>();
+            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
+        })
+        .collect::<Vec<_>>();
+    let mut sections = Vec::with_capacity(tree.body.sections.len() + 1);
+    if !excluded_imports.is_empty() {
+        sections.push(Section {
+            subtitle: None,
+            compute: None,
+            elements: excluded_imports,
+        });
+    }
+    sections.extend(
+        tree.body
+            .sections
+            .iter()
+            .filter(|section| !is_gpu_owned(section))
+            .cloned(),
+    );
+    Program {
+        title: tree.title.clone(),
+        body: Body { sections },
+    }
 }
 
 fn import_prelude(tree: &Program) -> Vec<SectionElement> {
@@ -394,4 +447,28 @@ fn print_outputs(outputs: &BTreeMap<String, Vec<f32>>) {
 
 fn milliseconds(duration: std::time::Duration) -> f64 {
     duration.as_secs_f64() * 1_000.0
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const MIXED_PARTICLE_SOURCE: &str = include_str!("../../examples/gpu-particles/particles.mec");
+
+    #[test]
+    fn cpu_projection_excludes_gpu_owned_sections() {
+        let tree = mech_syntax::parse(MIXED_PARTICLE_SOURCE).unwrap();
+        let cpu = cpu_projection_tree(&tree);
+
+        assert!(tree.body.sections.iter().any(is_gpu_owned));
+        assert!(!cpu.body.sections.iter().any(is_gpu_owned));
+        assert_eq!(
+            cpu.body.sections.len(),
+            tree.body
+                .sections
+                .iter()
+                .filter(|section| !is_gpu_owned(section))
+                .count()
+        );
+    }
 }

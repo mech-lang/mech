@@ -74,14 +74,21 @@ instead of fusing across explicit boundaries.
 `examples/gpu-particles/particles.mec` exercises a narrow end-to-end boundary:
 
 1. the ordinary unannotated graph reads a real timer host;
-2. the CLI extracts `particle-field @ gpu` from the same parsed document;
-3. the GPU provider compiles that region and keeps its state resident through
+2. the mixed executor projects unannotated/`@ cpu` sections into a parsed CPU
+   program and `@ gpu`/selected `@ compute` sections into GPU programs;
+3. D4 activates the CPU projection as a resident external program;
+4. the GPU provider compiles the selected region and keeps its state resident through
    `wgpu`;
-4. `@particles/turn <- tick` stages an after-commit GPU dispatch;
-5. GPU completion telemetry returns as runtime host-input packets; and
-6. the ordinary graph writes those values through the console host.
+5. `@particles/turn <- tick` stages an at-most-once, after-commit GPU dispatch;
+6. GPU completion telemetry returns as runtime host-input packets; and
+7. the CPU graph writes those values through the console host.
 
-The spike uses the transactional legacy route for the CPU graph because D4's
-resident finalizer does not yet exclude GPU-owned nodes when finalizing the CPU
-artifact. It proves a real source, transaction, host, compiler, GPU, and ingress
-path without claiming the general mixed-region scheduler is complete.
+The config uses `require-resident`, so the spike fails rather than falling back
+to legacy execution. D4 gains a generic parsed-program loading entry point; it
+does not contain GPU policy. Source projection and GPU lowering remain owned by
+the mixed executor. The parsed-program loader is the small reusable change to
+upstream into D4.
+
+This is section-level source projection, not yet general dependency-graph
+partitioning. Cross-region values, several GPU regions, and automatic placement
+still require a compiler partition plan and a multi-region scheduler.

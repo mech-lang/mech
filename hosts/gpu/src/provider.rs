@@ -179,7 +179,7 @@ impl RuntimeResourceProvider for GpuRegionResourceProvider {
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static mech_core::OperationContractDeclaration> {
         (intent == RuntimeResourceWriteIntent::Send)
-            .then(mech_runtime::provider_defined_effect_contract)
+            .then(mech_runtime::at_most_once_effect_contract)
     }
 
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
