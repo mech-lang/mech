@@ -1,0 +1,57 @@
+Resident solar-system orbit viewer
+===============================================================================
++> math
+===============================================================================
+
+@clock := timer://clock/tick{:read(tick)}
+@scene := scene://orbit/frame{:write(points)}
+
+  simulation-years := @clock/tick * 0.01
+  mercury-angle := -2.774 + simulation-years * 26.087902832713034
+  venus-angle := 3.083 + simulation-years * 10.213289900925373
+  earth-angle := 1.752 + simulation-years * 6.2831853071795862
+  mars-angle := -0.010 + simulation-years * 3.3406982705123278
+  jupiter-angle := -0.235 + simulation-years * 0.52969021304835495
+  saturn-angle := 0.459 + simulation-years * 0.21330024466780684
+  uranus-angle := -0.864 + simulation-years * 0.074784690088667616
+  neptune-angle := -1.035 + simulation-years * 0.038128438055583386
+  pluto-angle := -1.911 + simulation-years * 0.025341555647251698
+
+  mercury-radius := 0.3871 ^ 0.5 * 44.0
+  venus-radius := 0.7233 ^ 0.5 * 44.0
+  earth-radius := 1.0000 ^ 0.5 * 44.0
+  mars-radius := 1.5237 ^ 0.5 * 44.0
+  jupiter-radius := 5.2029 ^ 0.5 * 44.0
+  saturn-radius := 9.5370 ^ 0.5 * 44.0
+  uranus-radius := 19.1910 ^ 0.5 * 44.0
+  neptune-radius := 30.0690 ^ 0.5 * 44.0
+  pluto-radius := 39.4820 ^ 0.5 * 44.0
+
+  ~positions := [
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+    300.0 300.0
+  ]
+
+  next-positions := [
+    300.0 300.0
+    300.0 + mercury-radius * math/cos(mercury-angle) 300.0 + mercury-radius * math/sin(mercury-angle)
+    300.0 + venus-radius * math/cos(venus-angle) 300.0 + venus-radius * math/sin(venus-angle)
+    300.0 + earth-radius * math/cos(earth-angle) 300.0 + earth-radius * math/sin(earth-angle)
+    300.0 + mars-radius * math/cos(mars-angle) 300.0 + mars-radius * math/sin(mars-angle)
+    300.0 + jupiter-radius * math/cos(jupiter-angle) 300.0 + jupiter-radius * math/sin(jupiter-angle)
+    300.0 + saturn-radius * math/cos(saturn-angle) 300.0 + saturn-radius * math/sin(saturn-angle)
+    300.0 + uranus-radius * math/cos(uranus-angle) 300.0 + uranus-radius * math/sin(uranus-angle)
+    300.0 + neptune-radius * math/cos(neptune-angle) 300.0 + neptune-radius * math/sin(neptune-angle)
+    300.0 + pluto-radius * math/cos(pluto-angle) 300.0 + pluto-radius * math/sin(pluto-angle)
+  ]
+
+  positions += next-positions - positions
+  @scene/points <- positions

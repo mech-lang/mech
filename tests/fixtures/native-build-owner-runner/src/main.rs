@@ -61,7 +61,7 @@ fn main() -> AppResult<()> {
     let request = request(&workspace, case, binary_name, bytecode);
     let builder = NativeApplicationBuilder::new(NativeBuildEnvironment {
         function_catalog: owner_catalog()?,
-        host_catalog: mech_build::standard_native_host_catalog()
+        host_catalog: selected_host_catalog()
             .map_err(|error| mech_error("native host catalog", error))?,
         dependency_source: NativeDependencySource::Workspace {
             root: workspace.clone(),
@@ -120,6 +120,16 @@ fn main() -> AppResult<()> {
     }
     serde_json::to_writer(std::io::stdout(), &result)?;
     Ok(())
+}
+
+#[cfg(feature = "full")]
+fn selected_host_catalog() -> mech_core::MResult<Arc<mech_build::NativeHostCatalog>> {
+    mech_build::full_native_host_catalog()
+}
+
+#[cfg(not(feature = "full"))]
+fn selected_host_catalog() -> mech_core::MResult<Arc<mech_build::NativeHostCatalog>> {
+    mech_build::standard_native_host_catalog()
 }
 
 fn workspace_root() -> AppResult<PathBuf> {

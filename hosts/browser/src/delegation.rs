@@ -79,6 +79,7 @@ pub fn verify_browser_host_delegation(
 
 pub fn encode_browser_host_config(out: &mut Vec<u8>, config: &BrowserHostConfig) {
     encode_string(out, &config.runtime.name);
+    encode_program_routing(out, config.runtime.program_routing);
     encode_option_u64(out, config.runtime.limits.max_steps_per_turn);
     encode_option_u64(out, config.runtime.limits.max_turn_duration_ms);
     encode_option_u64(out, config.runtime.limits.max_memory_bytes);
@@ -128,6 +129,7 @@ pub fn encode_browser_runtime_injection_config(
     config: &BrowserRuntimeInjectionConfig,
 ) {
     encode_string(out, &config.runtime.name);
+    encode_program_routing(out, config.runtime.program_routing);
     encode_option_u64(out, config.runtime.limits.max_steps_per_turn);
     encode_option_u64(out, config.runtime.limits.max_turn_duration_ms);
     encode_option_u64(out, config.runtime.limits.max_memory_bytes);
@@ -174,6 +176,23 @@ pub fn encode_browser_runtime_injection_config(
             encode_string(out, &path);
         }
     }
+}
+
+fn encode_program_routing(out: &mut Vec<u8>, config: mech_runtime::ProgramRoutingConfig) {
+    let routing = match config.resident_routing {
+        mech_runtime::ResidentRoutingPolicy::PreferResident => 0,
+        mech_runtime::ResidentRoutingPolicy::RequireResident => 1,
+        mech_runtime::ResidentRoutingPolicy::LegacyOnly => 2,
+    };
+    let durability = match config.resident_durability {
+        mech_runtime::ResidentDurabilityPolicy::Volatile => 0,
+        mech_runtime::ResidentDurabilityPolicy::Retained => 1,
+        mech_runtime::ResidentDurabilityPolicy::AsynchronousDurable => 2,
+        mech_runtime::ResidentDurabilityPolicy::SynchronousDurable => 3,
+        mech_runtime::ResidentDurabilityPolicy::ReplicatedDurable => 4,
+    };
+    encode_u64(out, routing);
+    encode_u64(out, durability);
 }
 
 fn encode_config_value(out: &mut Vec<u8>, value: &ConfigValue) {
@@ -302,6 +321,7 @@ mod tests {
         BrowserHostConfig {
             runtime: BrowserHostRuntimeConfig {
                 name: "demo".to_string(),
+                program_routing: mech_runtime::ProgramRoutingConfig::default(),
                 limits: BrowserHostRuntimeLimits {
                     max_steps_per_turn: Some(100),
                     max_turn_duration_ms: None,
@@ -464,6 +484,20 @@ mod tests {
         );
     }
 
+    #[test]
+    fn browser_host_payload_covers_resident_routing_and_durability() {
+        let config = host_config();
+        let baseline = encode_browser_host_config_for_test(config.clone());
+        let mut changed = config.clone();
+        changed.runtime.program_routing.resident_routing =
+            mech_runtime::ResidentRoutingPolicy::LegacyOnly;
+        assert_ne!(baseline, encode_browser_host_config_for_test(changed));
+        let mut changed = config;
+        changed.runtime.program_routing.resident_durability =
+            mech_runtime::ResidentDurabilityPolicy::Retained;
+        assert_ne!(baseline, encode_browser_host_config_for_test(changed));
+    }
+
     fn encode_browser_host_config_for_test(config: BrowserHostConfig) -> Vec<u8> {
         let mut out = Vec::new();
         encode_browser_host_config(&mut out, &config);
@@ -560,6 +594,31 @@ mod tests {
         envelope.payload.runtime_injection.run_grants[0]
             .paths
             .push("other/_value".to_string());
+        assert!(verify_browser_host_delegation(&envelope, request(&key)).is_err());
+    }
+
+    #[cfg(feature = "delegation_signing")]
+    #[test]
+    fn modified_resident_routing_fails_signature_verification() {
+        let key = signing_key();
+        let mut envelope =
+            sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
+        envelope
+            .payload
+            .runtime_injection
+            .runtime
+            .program_routing
+            .resident_routing = mech_runtime::ResidentRoutingPolicy::LegacyOnly;
+        assert!(verify_browser_host_delegation(&envelope, request(&key)).is_err());
+
+        let mut envelope =
+            sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
+        envelope
+            .payload
+            .runtime_injection
+            .runtime
+            .program_routing
+            .resident_durability = mech_runtime::ResidentDurabilityPolicy::Retained;
         assert!(verify_browser_host_delegation(&envelope, request(&key)).is_err());
     }
 

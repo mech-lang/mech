@@ -1,0 +1,65 @@
+config := {
+  runtime: {
+    name: "n-body"
+
+    program-routing: {
+      resident-routing: "require-resident"
+      resident-durability: "volatile"
+    }
+
+    limits: {
+      max-turn-duration-ms: 2000
+    }
+  }
+
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["."]
+    shim: "index.html"
+  }
+
+  hosts: [
+    {
+      name: "clock"
+      provider: "timer"
+      settings: {
+        frequency-hz: 60
+        max-catch-up-steps: 1
+        queue-policy: "latest"
+      }
+    }
+
+    {
+      name: "orbit"
+      provider: "scene"
+      settings: {
+        selector: "#solar-system"
+        renderer: "svg"
+        width: 600
+        height: 600
+        point-radius: 4
+        first-point-radius: 8
+        background: "#080b12"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["n-body.mec"]
+
+    grants: [
+      {
+        target: "clock/tick"
+        operations: ["read"]
+        paths: ["tick"]
+      }
+
+      {
+        target: "orbit/frame"
+        operations: ["write"]
+        paths: ["points"]
+      }
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use mech_build::standard_planning_host_factory;
+use mech_build::selected_planning_host_factory;
 use mech_core::{LegacyValue, Ref};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
@@ -183,7 +183,7 @@ fn hosted(
     let mut runtime = RuntimeBuilder::new()
         .planning()
         .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(standard_planning_host_factory(provider).unwrap())
+        .host_factory(selected_planning_host_factory(provider).unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
             name: instance.to_owned(),
@@ -199,7 +199,11 @@ fn hosted(
         .unwrap();
     runtime.run_string(source).unwrap();
     GeneratedCase {
-        profile: OwnerProfile::Standard,
+        profile: if provider == "robot-arm" {
+            OwnerProfile::Full
+        } else {
+            OwnerProfile::Standard
+        },
         case,
         binary_name,
         bytecode: runtime.compile_program_bytecode().unwrap(),

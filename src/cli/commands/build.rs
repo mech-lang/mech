@@ -8,9 +8,12 @@ use mech_build::{
     NativeBuildRequest, NativeDependencySource, NativeEmit, NativeRuntimeConfig,
 };
 use mech_core::*;
-use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
+use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, SourceRequest};
 
-use crate::cli::module_execution::{execute_planning_source_module_roots, module_runtime_config};
+use crate::cli::module_execution::{
+    execute_planning_source_module_roots, module_runtime_config,
+    prepare_planning_source_module_runtime,
+};
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::source_discovery::{DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources};
 
@@ -236,24 +239,61 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         let source_roots = discover_source_roots(&options.paths)?;
         let configured_hosts = configured_hosts(loaded_config.as_ref());
         let run_grants = configured_run_grants(loaded_config.as_ref());
-        let planner_config = module_runtime_config(
+        let mut planner_config = module_runtime_config(
             format!("{binary_name}-planner"),
             options.debug,
             options.trace,
             options.time,
             options.rounds_per_step,
         )?;
-        let mut runtime = execute_planning_source_module_roots(
-            planner_config,
-            &configured_hosts,
-            &run_grants,
-            loaded_config
-                .as_ref()
-                .and_then(|config| config.document.build.as_ref())
-                .and_then(|build| build.actor.as_ref()),
-            &source_roots,
-        )?;
-        (runtime.compile_program_bytecode()?, loaded_config)
+        if let Some(config) = loaded_config.as_ref() {
+            planner_config =
+                crate::apply_runtime_config_patch(planner_config, &config.document.runtime)?;
+        }
+        let actor = loaded_config
+            .as_ref()
+            .and_then(|config| config.document.build.as_ref())
+            .and_then(|build| build.actor.as_ref());
+        let routing = planner_config.program_routing.resident_routing;
+        let bytecode = if routing != mech_runtime::ResidentRoutingPolicy::LegacyOnly
+            && source_roots.len() == 1
+        {
+            let (mut runtime, roots) = prepare_planning_source_module_runtime(
+                planner_config.clone(),
+                &configured_hosts,
+                &run_grants,
+                actor,
+                &source_roots,
+            )?;
+            let request = SourceRequest::from_filesystem_path(&roots[0])?;
+            match runtime.compile_root_program_bytecode(request) {
+                Ok(bytecode) => bytecode,
+                Err(error)
+                    if routing == mech_runtime::ResidentRoutingPolicy::PreferResident
+                        && mech_runtime::resident_fallback_eligible(&error) =>
+                {
+                    let mut runtime = execute_planning_source_module_roots(
+                        planner_config,
+                        &configured_hosts,
+                        &run_grants,
+                        actor,
+                        &source_roots,
+                    )?;
+                    runtime.compile_program_bytecode()?
+                }
+                Err(error) => return Err(error),
+            }
+        } else {
+            let mut runtime = execute_planning_source_module_roots(
+                planner_config,
+                &configured_hosts,
+                &run_grants,
+                actor,
+                &source_roots,
+            )?;
+            runtime.compile_program_bytecode()?
+        };
+        (bytecode, loaded_config)
     };
 
     let requested_output = options

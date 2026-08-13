@@ -18,8 +18,10 @@ use mech_console::BrowserConsoleHostFactory;
 use mech_core::{MechError, MechErrorKind, MechSourceCode};
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
-    ModuleBuildOptions, ResolvedSource, RuntimeBuilder, SourceKind, SourceRequest,
-    SourceResolutionEntry, parse_config_document, validate_source_resolution_entries,
+    ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
+    RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOptions, RuntimeProgramRoute,
+    SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
+    validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
 use mech_runtime::{
@@ -280,7 +282,46 @@ impl WasmProject {
             &JsValue::from_str("rendered"),
             &JsValue::from_f64(rendered as f64),
         )?;
+        let info = self.runtime.program_execution_info();
+        Reflect::set(
+            &out,
+            &JsValue::from_str("route"),
+            &JsValue::from_str(runtime_route_name(info.route)),
+        )?;
+        Reflect::set(
+            &out,
+            &JsValue::from_str("residentTurns"),
+            &JsValue::from_f64(
+                info.resident_accepted_turns
+                    .saturating_add(info.resident_rejected_turns) as f64,
+            ),
+        )?;
+        Reflect::set(
+            &out,
+            &JsValue::from_str("accepted"),
+            &JsValue::from_f64(info.resident_accepted_turns as f64),
+        )?;
+        Reflect::set(
+            &out,
+            &JsValue::from_str("rejected"),
+            &JsValue::from_f64(info.resident_rejected_turns as f64),
+        )?;
+        Reflect::set(
+            &out,
+            &JsValue::from_str("coalesced"),
+            &JsValue::from_f64(info.coalesced_host_packets as f64),
+        )?;
+        Reflect::set(
+            &out,
+            &JsValue::from_str("legacyTurns"),
+            &JsValue::from_f64(info.legacy_turns as f64),
+        )?;
         Ok(out.into())
+    }
+
+    #[wasm_bindgen(js_name = runtimeInfo)]
+    pub fn runtime_info(&self) -> Result<JsValue, JsValue> {
+        runtime_info_value(&self.runtime.program_execution_info())
     }
 
     #[wasm_bindgen(js_name = pendingInputs)]
@@ -583,7 +624,10 @@ impl WasmDocument {
         #[cfg(feature = "functions")]
         {
             for _ in 0..count {
-                self.project.runtime.step(0).map_err(to_js_error)?;
+                self.project
+                    .runtime
+                    .step_active_program()
+                    .map_err(to_js_error)?;
             }
             Ok(())
         }
@@ -806,6 +850,11 @@ fn build_runtime(
         #[cfg(feature = "browser_host_scene")]
         scenes,
     )?
+    .config(
+        mech_runtime::RuntimeConfig::default()
+            .apply_patch(&document.runtime)
+            .map_err(to_js_error)?,
+    )
     .source_resolver(source_resolver);
     for host in &document.hosts {
         builder = builder.host_instance(host.clone());
@@ -828,6 +877,8 @@ fn build_runtime_from_authority(
         #[cfg(feature = "browser_host_scene")]
         scenes,
     )?
+    // The served authority already contains the project patch that the server
+    // verified and signed. Keep that runtime environment authoritative here.
     .config(authority.into_runtime_config().map_err(to_js_error)?)
     .source_resolver(source_resolver);
     for required in &document.hosts {
@@ -1272,13 +1323,114 @@ fn run_source_roots<'a>(
     runtime: &mut MechRuntime,
     roots: impl IntoIterator<Item = &'a str>,
 ) -> mech_core::MResult<()> {
-    for key in roots {
+    let roots = roots
+        .into_iter()
+        .map(str::to_owned)
+        .collect::<Vec<String>>();
+    let options = RuntimeProgramLoadOptions {
+        routing: runtime.config().program_routing.resident_routing,
+        durability: runtime.config().program_routing.resident_durability,
+    };
+    if roots.len() == 1 {
+        runtime.load_root_program(
+            SourceRequest::new(roots[0].clone()),
+            browser_module_options(),
+            options,
+        )?;
+        return Ok(());
+    }
+    if options.routing == mech_runtime::ResidentRoutingPolicy::RequireResident {
+        return Err(MechError::new(
+            ResidentRouteFailure {
+                class: ResidentRouteFailureClass::MultipleRootsUnsupported,
+                reason: "multiple independent browser roots cannot be resident-routed in D4"
+                    .to_string(),
+            },
+            None,
+        ));
+    }
+    for key in &roots {
         runtime.resolve_and_run_root_module(
-            SourceRequest::new(key.to_string()),
+            SourceRequest::new(key.clone()),
             browser_module_options(),
         )?;
     }
+    runtime.record_legacy_program_route(options.routing, roots.len() as u64)?;
     Ok(())
+}
+
+fn runtime_route_name(route: RuntimeProgramRoute) -> &'static str {
+    match route {
+        RuntimeProgramRoute::None => "none",
+        RuntimeProgramRoute::Legacy => "legacy",
+        RuntimeProgramRoute::ResidentPure => "resident-pure",
+        RuntimeProgramRoute::ResidentExternal => "resident-external",
+    }
+}
+
+fn runtime_info_value(info: &RuntimeProgramExecutionInfo) -> Result<JsValue, JsValue> {
+    let out = Object::new();
+    let revision = info.program_revision.map(|revision| {
+        revision
+            .as_bytes()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>()
+    });
+    let routing_policy = match info.policy {
+        mech_runtime::ResidentRoutingPolicy::PreferResident => "prefer-resident",
+        mech_runtime::ResidentRoutingPolicy::RequireResident => "require-resident",
+        mech_runtime::ResidentRoutingPolicy::LegacyOnly => "legacy-only",
+    };
+    for (key, value) in [
+        ("route", JsValue::from_str(runtime_route_name(info.route))),
+        ("routing_policy", JsValue::from_str(routing_policy)),
+        (
+            "program_revision",
+            revision.map_or(JsValue::NULL, |value| JsValue::from_str(&value)),
+        ),
+        (
+            "plan_generation",
+            info.plan_generation.map_or(JsValue::NULL, |value| {
+                JsValue::from_f64(value.get().saturating_add(1) as f64)
+            }),
+        ),
+        (
+            "layout_generation",
+            info.layout_generation.map_or(JsValue::NULL, |value| {
+                JsValue::from_f64(value.get().saturating_add(1) as f64)
+            }),
+        ),
+        (
+            "requirements",
+            JsValue::from_f64(info.requirement_count as f64),
+        ),
+        (
+            "observations",
+            JsValue::from_f64(info.observation_count as f64),
+        ),
+        ("effects", JsValue::from_f64(info.effect_count as f64)),
+        (
+            "resident_accepted_turns",
+            JsValue::from_f64(info.resident_accepted_turns as f64),
+        ),
+        (
+            "resident_rejected_turns",
+            JsValue::from_f64(info.resident_rejected_turns as f64),
+        ),
+        (
+            "coalesced_host_packets",
+            JsValue::from_f64(info.coalesced_host_packets as f64),
+        ),
+        (
+            "ignored_host_packets",
+            JsValue::from_f64(info.ignored_host_packets as f64),
+        ),
+        ("legacy_turns", JsValue::from_f64(info.legacy_turns as f64)),
+    ] {
+        Reflect::set(&out, &JsValue::from_str(key), &value)?;
+    }
+    Ok(out.into())
 }
 
 fn rendered_value(snapshot: mech_runtime::RuntimeValueSnapshot) -> Result<JsValue, JsValue> {
