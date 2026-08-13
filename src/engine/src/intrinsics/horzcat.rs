@@ -7237,7 +7237,11 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 #[cfg(feature = "source")]
 pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
-    register_horizontal_concatenate_n_args_f64(builder)?;
+    if !builder.contains_runtime_factory(mech_core::RuntimeFunctionId::from_name(
+        "HorizontalConcatenateNArgs<f64>",
+    )) {
+        register_horizontal_concatenate_n_args_f64(builder)?;
+    }
     Ok(())
 }
 

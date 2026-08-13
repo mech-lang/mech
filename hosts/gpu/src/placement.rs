@@ -508,7 +508,10 @@ fn contract_supported(
         output.access == AccessMode::Write
             && output.delivery == DeliveryMode::Signal
             && if state {
-                matches!(output.construction, OutputConstruction::Replace { .. })
+                matches!(
+                    output.construction,
+                    OutputConstruction::Replace { .. } | OutputConstruction::FullWrite { .. }
+                )
             } else {
                 matches!(output.construction, OutputConstruction::FullWrite { .. })
             }
