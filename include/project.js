@@ -1,4 +1,4 @@
-import init, * as mech from '/_mech/pkg/mech_wasm.js';
+import init, * as mech from '/_mech/pkg/mech_wasm.js?profile=mixed-gpu-v1';
 
 const { WasmProject } = mech;
 
@@ -188,6 +188,8 @@ class BrowserGpuProject {
     this.statsFrames = 0;
     this.pointer = { x: 0, y: 0, pressed: false };
     this.lastFrameTime = 0;
+    this.lastInputs = {};
+    this.totalDispatches = 0;
   }
 
   async start() {
@@ -292,7 +294,13 @@ class BrowserGpuProject {
     this.canvas.addEventListener('pointerdown', (event) => {
       update(event);
       this.pointer.pressed = true;
-      this.canvas.setPointerCapture(event.pointerId);
+      try {
+        this.canvas.setPointerCapture(event.pointerId);
+      } catch (error) {
+        if (event.isTrusted) {
+          throw error;
+        }
+      }
     });
     const release = (event) => {
       update(event);
@@ -457,6 +465,9 @@ class BrowserGpuProject {
       }
       this.device.queue.writeBuffer(target.buffer, 0, input.values);
     }
+    this.lastInputs = Object.fromEntries(
+      command.inputs.map((input) => [input.name, Array.from(input.values)]),
+    );
     return true;
   }
 
@@ -504,6 +515,7 @@ class BrowserGpuProject {
     this.device.queue.submit([encoder.finish()]);
     if (dispatch) {
       this.activeBuffer = renderedBuffer;
+      this.totalDispatches += 1;
     }
 
     this.statsFrames += dispatch ? 1 : 0;
@@ -524,6 +536,8 @@ class BrowserGpuProject {
       activeBuffer: this.activeBuffer,
       itemCount: this.itemCount,
       displayedCount: this.renderItemCount,
+      totalDispatches: this.totalDispatches,
+      lastInputs: this.lastInputs,
     };
     return globalThis.__MECH_GPU_RUNTIME__;
   }
@@ -548,6 +562,69 @@ class BrowserGpuProject {
     this.status.innerHTML = '<span aria-hidden="true"></span>';
     this.status.append(document.createTextNode(message));
   }
+}
+
+function installGpuSmokeTest(target) {
+  if (!new URLSearchParams(window.location.search).has('mech-gpu-smoke')) {
+    return;
+  }
+  const root = document.documentElement;
+  root.dataset.mechGpuSmoke = 'running';
+  const deadline = performance.now() + 120_000;
+  let pressedAt = 0;
+  const fail = (message) => {
+    root.dataset.mechGpuSmoke = 'failed';
+    root.dataset.mechGpuSmokeError = message;
+    clearInterval(timer);
+  };
+  const timer = setInterval(async () => {
+    try {
+      const state = globalThis.__MECH_GPU_RUNTIME__;
+      if (performance.now() > deadline) {
+        fail('timed out waiting for GPU frames and pointer transaction');
+        return;
+      }
+      if (!state || state.itemCount !== 1_000_000 || !state.dispatched) {
+        return;
+      }
+      if (pressedAt === 0 && state.totalDispatches >= 3) {
+        const rect = target.canvas.getBoundingClientRect();
+        target.canvas.dispatchEvent(new PointerEvent('pointerdown', {
+          bubbles: true,
+          pointerId: 1,
+          isPrimary: true,
+          clientX: rect.left + rect.width * 0.75,
+          clientY: rect.top + rect.height * 0.25,
+        }));
+        pressedAt = state.totalDispatches;
+        return;
+      }
+      if (pressedAt === 0 || state.totalDispatches < pressedAt + 3) {
+        return;
+      }
+      const strength = state.lastInputs?.['force-strength']?.[0];
+      const forceX = state.lastInputs?.['force-x']?.[0];
+      const forceY = state.lastInputs?.['force-y']?.[0];
+      if (Math.abs(strength - 0.055) > 1e-6 || forceX < 0.45 || forceY < 0.45) {
+        fail(`pointer transaction did not reach GPU inputs: ${JSON.stringify(state.lastInputs)}`);
+        return;
+      }
+      await target.device.queue.onSubmittedWorkDone();
+      target.canvas.dispatchEvent(new PointerEvent('pointerup', {
+        bubbles: true,
+        pointerId: 1,
+        isPrimary: true,
+        clientX: 0,
+        clientY: 0,
+      }));
+      root.dataset.mechGpuSmoke = 'passed';
+      root.dataset.mechGpuSmokeDispatches = String(state.totalDispatches);
+      root.dataset.mechGpuSmokeInputs = JSON.stringify(state.lastInputs);
+      clearInterval(timer);
+    } catch (error) {
+      fail(error instanceof Error ? error.message : String(error));
+    }
+  }, 50);
 }
 
 async function main() {
@@ -578,6 +655,7 @@ async function main() {
     await project.start();
     running = true;
     requestAnimationFrame(frame);
+    installGpuSmokeTest(project);
     return;
   }
   const hasServedAuthority = Object.prototype.hasOwnProperty.call(window, '__MECH_HOST_CONFIG');
