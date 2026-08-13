@@ -156,7 +156,14 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
 class BrowserGpuProject {
   static async fromSources(config, sourceEntries, sources) {
     if (typeof mech.WasmMixedGpuProject?.fromSource !== 'function') {
-      throw new Error('WASM build-profile mismatch: the mixed CPU/GPU project runner is unavailable');
+      const relatedExports = Object.keys(mech)
+        .filter((name) => name.includes('Gpu') || name.includes('Project'))
+        .join(', ') || '(none)';
+      throw new Error(
+        'WASM build-profile mismatch at /_mech/pkg/mech_wasm.js: ' +
+        'WasmMixedGpuProject.fromSource is unavailable. ' +
+        `Related exports: ${relatedExports}`,
+      );
     }
     if (sourceEntries.length !== 1) {
       throw new Error(`the browser GPU executor currently requires one Mech source, found ${sourceEntries.length}`);
