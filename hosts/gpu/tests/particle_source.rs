@@ -494,8 +494,7 @@ fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
 #[cfg(feature = "native")]
 #[test]
 fn served_particle_shader_matches_cpu_with_pointer_force() {
-    let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "4096f32", 1);
-    let artifact = compile_isolated_gpu_source(&source);
+    let artifact = compile_isolated_gpu_source(SERVED_PARTICLE_SOURCE);
     let program = GpuHost
         .compile(&artifact)
         .expect("served particle source must lower");

@@ -623,6 +623,10 @@ function frame(timestamp) {
       : project.frame(maxInputsPerFrame);
   } catch (error) {
     running = false;
+    project.setStatus('Runtime failed', 'error');
+    if (project.message) {
+      project.message.textContent = error instanceof Error ? error.message : String(error);
+    }
     try {
       project.stop();
     } catch (stopError) {
@@ -652,7 +656,7 @@ main().catch((error) => {
   if (status) {
     status.className = 'status error';
     status.innerHTML = '<span aria-hidden="true"></span>';
-    status.append(document.createTextNode('GPU unavailable'));
+    status.append(document.createTextNode('Startup failed'));
   }
   const message = document.querySelector('[data-mech-gpu-message]');
   if (message) {
