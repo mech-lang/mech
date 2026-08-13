@@ -36,9 +36,20 @@ pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
 }
 
 pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    #[cfg(feature = "functions")]
+    let plan_start = p.plan_len();
     let mut result = Ok(LegacyValue::Empty);
     for el in &section.elements {
         result = Ok(section_element(&el, p)?);
+    }
+    #[cfg(feature = "functions")]
+    if let Some(placement) = section.compute {
+        let name = section
+            .subtitle
+            .as_ref()
+            .map(Subtitle::to_string)
+            .unwrap_or_default();
+        p.record_compute_region(name, placement, plan_start..p.plan_len())?;
     }
     result
 }

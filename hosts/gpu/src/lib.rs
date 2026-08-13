@@ -13,8 +13,8 @@ use mech_core::{
     SchemaBody, SchemaId, ValueData,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, OperationReference, ProducerReference, ProgramArtifact,
-    SlotRole,
+    ArtifactComputeRegion, ArtifactSource, BindingDeclaration, OperationReference,
+    ProducerReference, ProgramArtifact, SlotRole,
 };
 
 #[cfg(feature = "native")]
@@ -40,6 +40,7 @@ pub enum GpuDiagnosticCode {
     ShapeMismatch,
     ConstantUnsupported,
     ArtifactMalformed,
+    PlacementConstraintUnsatisfied,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -382,6 +383,77 @@ pub struct GpuHost;
 
 impl GpuHost {
     pub fn compile(&self, artifact: &ProgramArtifact) -> Result<GpuProgram, GpuAdmissionError> {
+        Compiler::new(artifact).compile()
+    }
+
+    pub fn compile_with_regions(
+        &self,
+        artifact: &ProgramArtifact,
+        regions: &[ArtifactComputeRegion],
+    ) -> Result<GpuProgram, GpuAdmissionError> {
+        let plan = self.plan_with_regions(artifact, regions);
+        let mut diagnostics = plan
+            .violations
+            .iter()
+            .map(|violation| GpuDiagnostic {
+                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
+                node: violation.node,
+                operation: None,
+                detail: format!("region `{}`: {}", violation.region, violation.reason),
+            })
+            .collect::<Vec<_>>();
+        for region in regions
+            .iter()
+            .filter(|region| region.placement == mech_core::ComputePlacement::Cpu)
+        {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
+                node: region.nodes.first().copied(),
+                operation: None,
+                detail: format!(
+                    "region `{}` requires CPU execution and cannot be lowered by the GPU-only executor",
+                    region.name,
+                ),
+            });
+        }
+        if plan.gpu_regions.len() > 1 {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
+                node: None,
+                operation: None,
+                detail: format!(
+                    "{} GPU regions require a mixed multi-kernel executor; the current executor accepts one region",
+                    plan.gpu_regions.len(),
+                ),
+            });
+        }
+        if !diagnostics.is_empty() {
+            return Err(GpuAdmissionError { diagnostics });
+        }
+        Compiler::new(artifact).compile()
+    }
+
+    pub fn compile_cpu_with_regions(
+        &self,
+        artifact: &ProgramArtifact,
+        regions: &[ArtifactComputeRegion],
+    ) -> Result<GpuProgram, GpuAdmissionError> {
+        let diagnostics = regions
+            .iter()
+            .filter(|region| region.placement == mech_core::ComputePlacement::Gpu)
+            .map(|region| GpuDiagnostic {
+                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
+                node: region.nodes.first().copied(),
+                operation: None,
+                detail: format!(
+                    "region `{}` requires GPU execution and cannot run under the CPU executor",
+                    region.name,
+                ),
+            })
+            .collect::<Vec<_>>();
+        if !diagnostics.is_empty() {
+            return Err(GpuAdmissionError { diagnostics });
+        }
         Compiler::new(artifact).compile()
     }
 }

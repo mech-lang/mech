@@ -30,9 +30,9 @@ use mech_core::{
 };
 
 use super::{
-    ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
-    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration, NodeDeclaration,
-    OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
+    ApplicationRequirementTable, ArtifactBuildError, ArtifactComputeRegion, ArtifactSource,
+    BindingDeclaration, InitializerReference, InputDeclaration, IntegrityConstraintDeclaration,
+    NodeDeclaration, OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
     ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
@@ -468,6 +468,14 @@ pub fn compile_executable_program_artifact(
     compiled: &CompiledBytecode,
     catalog: &FunctionCatalog,
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_executable_program_artifact_product(compiled, catalog).map(|(artifact, _)| artifact)
+}
+
+#[cfg(feature = "compiler")]
+pub fn compile_executable_program_artifact_product(
+    compiled: &CompiledBytecode,
+    catalog: &FunctionCatalog,
+) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBuildError> {
     validate_compiled_metadata_length(
         "instruction_roles",
         compiled.program.instructions.len(),
@@ -884,6 +892,7 @@ pub fn compile_executable_program_artifact(
 
     let mut registers = vec![None::<RegisterSemantic>; compiled.program.register_count as usize];
     let mut nodes = Vec::<SourceNode>::new();
+    let mut source_node_origins = Vec::<Option<u32>>::new();
     let mut node_contracts = Vec::<Option<&'static OperationContractDeclaration>>::new();
     let mut lowered_declared_source_nodes = std::collections::BTreeSet::new();
 
@@ -1126,6 +1135,7 @@ pub fn compile_executable_program_artifact(
                     }
                     .into_boxed_slice(),
                 });
+                source_node_origins.push(compiled.instruction_source_nodes[instruction_index]);
                 node_contracts.push(declaration);
                 if schema.is_none() {
                     set_register(&mut registers, dst, None)?;
@@ -1179,6 +1189,7 @@ pub fn compile_executable_program_artifact(
                         }]
                         .into_boxed_slice(),
                     });
+                    source_node_origins.push(None);
                     node_contracts.push(None);
                     SourceSlot::NodeOutput {
                         node,
@@ -1263,20 +1274,41 @@ pub fn compile_executable_program_artifact(
         &mut constraints,
     )?;
 
-    compile_source_program_with_contracts(
-        &SourceProgram {
-            requirements: ApplicationRequirementTable::from_canonical_entries(
-                compiled.program.requirements.clone(),
-            )?,
-            inputs: inputs.into_boxed_slice(),
-            states: states.into_boxed_slice(),
-            nodes: nodes.into_boxed_slice(),
-            outputs: outputs.into_boxed_slice(),
-            constraints: constraints.into_boxed_slice(),
-        },
+    let source = SourceProgram {
+        requirements: ApplicationRequirementTable::from_canonical_entries(
+            compiled.program.requirements.clone(),
+        )?,
+        inputs: inputs.into_boxed_slice(),
+        states: states.into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        outputs: outputs.into_boxed_slice(),
+        constraints: constraints.into_boxed_slice(),
+    };
+    let artifact = compile_source_program_with_contracts(
+        &source,
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
         &node_contracts,
-    )
+    )?;
+    let compute_regions = compiled
+        .compute_regions
+        .iter()
+        .map(|region| ArtifactComputeRegion {
+            name: region.name.clone(),
+            placement: region.placement,
+            nodes: source_node_origins
+                .iter()
+                .enumerate()
+                .filter_map(|(node, source_node)| {
+                    source_node
+                        .filter(|source_node| region.source_nodes.contains(source_node))
+                        .map(|_| artifact.nodes()[node].node)
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    Ok((artifact, compute_regions))
 }
 
 #[cfg(feature = "compiler")]

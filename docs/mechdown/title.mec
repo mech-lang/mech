@@ -93,3 +93,21 @@ They are controller slots rather than document metadata. See [Template
 Placeholders](/mechdown/template-placeholders.html) for the browser behavior.
 
 See [Template Placeholders](/mechdown/template-placeholders.html) for the complete placeholder reference, including interactive placeholders such as `{{CODE}}` and `{{REPL}}`.
+
+4. Named compute sections
+-------------------------------------------------------------------------------
+
+An underlined, unnumbered section can define an explicit compilation boundary
+by adding a placement after `@`:
+
+```
+particle-update @ compute
+-------------------------------------------------------------------------------
+
+velocity' := velocity + acceleration * dt
+position' := position + velocity' * dt
+```
+
+`compute` leaves backend selection to the configured executor. `cpu` and `gpu`
+are hard placement requirements. The region name and placement are preserved in
+compiled bytecode; prose in the section is not executable.

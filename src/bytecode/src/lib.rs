@@ -3,6 +3,6 @@
 mod context;
 
 pub use context::{
-    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
-    CompiledNodeKind, CompiledSymbolDefinition,
+    CompileCtx, CompiledBytecode, CompiledComputeRegion, CompiledInstructionRole,
+    CompiledIntegrityConstraint, CompiledNodeKind, CompiledSymbolDefinition,
 };

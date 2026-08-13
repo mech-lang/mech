@@ -7842,6 +7842,7 @@ fn module_function_unknown_address_target_is_preflighted_before_send() {
         body: mech_core::Body {
             sections: vec![mech_core::Section {
                 subtitle: None,
+                compute: None,
                 elements: vec![mech_core::SectionElement::MechCode(vec![
                     (
                         mech_core::MechCode::Statement(mech_core::Statement::ContextDeclaration(

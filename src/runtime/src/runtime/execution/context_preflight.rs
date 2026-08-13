@@ -870,6 +870,7 @@ impl MechRuntime {
             body: mech_core::Body {
                 sections: vec![mech_core::Section {
                     subtitle: None,
+                    compute: None,
                     elements: std::mem::take(pending),
                 }],
             },
@@ -3463,6 +3464,7 @@ pub(super) fn single_code_program(
         body: mech_core::Body {
             sections: vec![mech_core::Section {
                 subtitle: None,
+                compute: None,
                 elements: vec![mech_core::SectionElement::MechCode(vec![(code, comment)])],
             }],
         },

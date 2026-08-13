@@ -913,6 +913,7 @@ fn compiled_fixture(
         symbol_definitions: Vec::new(),
         return_register,
         integrity_constraints: Vec::new(),
+        compute_regions: Vec::new(),
     }
 }
 

@@ -1196,8 +1196,8 @@ fn header_and_section_directory_have_the_exact_v1_bytes() {
     expected.extend_from_slice(&[0; 12]);
     assert_eq!(&bytes[..64], expected);
 
-    let expected_counts = [1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-    let expected_lengths = [8, 24, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let expected_counts = [1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let expected_lengths = [8, 24, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     let mut previous_end = BYTECODE_CONTENT_OFFSET as usize;
     for (index, expected_kind) in BytecodeSectionKind::ALL.into_iter().enumerate() {
         let entry = section_entry_offset(index);

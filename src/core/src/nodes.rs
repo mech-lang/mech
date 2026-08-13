@@ -459,9 +459,32 @@ impl Subtitle {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum ComputePlacement {
+    /// Compile the region as a numeric unit and let the executor select a backend.
+    Compute,
+    /// Require execution on the CPU.
+    Cpu,
+    /// Require execution on a GPU provider.
+    Gpu,
+}
+
+impl ComputePlacement {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Compute => "compute",
+            Self::Cpu => "cpu",
+            Self::Gpu => "gpu",
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Section {
     pub subtitle: Option<Subtitle>,
+    /// An explicit compilation boundary attached to this Mechdown section.
+    pub compute: Option<ComputePlacement>,
     pub elements: Vec<SectionElement>,
 }
 
@@ -475,6 +498,7 @@ impl Section {
             .collect();
         Section {
             subtitle: self.subtitle.clone(),
+            compute: self.compute,
             elements,
         }
     }

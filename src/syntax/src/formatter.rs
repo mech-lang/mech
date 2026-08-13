@@ -730,9 +730,20 @@ impl Formatter {
     }
 
     pub fn section(&mut self, node: &Section) -> String {
-        let mut src = match &node.subtitle {
-            Some(title) => self.subtitle(title),
-            None => "".to_string(),
+        let mut src = match (&node.subtitle, node.compute) {
+            (Some(title), Some(placement)) if !self.html => format!(
+                "{} @ {}\n-------------------------------------------------------------------------------\n",
+                title.to_string(),
+                placement.as_str(),
+            ),
+            (Some(title), Some(placement)) => format!(
+                "<div class=\"mech-compute-region-heading\" data-mech-compute=\"{}\">{}</div>",
+                placement.as_str(),
+                self.subtitle(title),
+            ),
+            (Some(title), None) => self.subtitle(title),
+            (None, None) => "".to_string(),
+            (None, Some(_)) => "".to_string(),
         };
         for el in node.elements.iter() {
             let el_str = self.section_element(el);
