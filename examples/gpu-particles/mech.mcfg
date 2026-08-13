@@ -46,5 +46,6 @@ config := {
   serve: {
     paths: ["index.html", "particles.css", "particles.mec"]
     shim: "index.html"
+    wasm: "../../src/wasm/pkg"
   }
 }
