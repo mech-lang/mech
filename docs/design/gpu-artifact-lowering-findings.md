@@ -188,3 +188,46 @@ It rejects state, dynamic shapes, effects, integrity constraints, opaque
 compute contracts, matrix constants, and unknown operations with structured,
 node-specific diagnostics. Those rejections are capability limits, not evidence
 that the semantic model must change.
+
+## Generic fixed-shape batch follow-up
+
+The parallel EKF proof extends the experiment without introducing an EKF
+operation. Its source compiles into 108 ordinary typed artifact nodes. A
+backend scalarization pass expands fixed-size matrix multiply, transpose, dot,
+matrix construction, scalar broadcasting, arithmetic, and trigonometry into a
+single invocation-local register program. One invocation executes one complete
+filter, and the physical executor maps that program over an independent outer
+batch.
+
+An independent test evaluates the high-level source through the ordinary Mech
+interpreter, executes one turn through the scalarized CPU IR, and compares the
+state vector and covariance matrix. The native benchmark then compares that
+same scalar IR with generated WGSL over four turns. No operation name in the
+artifact or WGSL contains `ekf`.
+
+This follow-up exposed four additional design requirements:
+
+1. **Fixed-shape scalarization belongs after semantic compilation.** Matrix
+   source should remain matrix source. Expanding a 3x3 product is a backend
+   choice informed by shapes and target cost, not a language rewrite or a
+   special EKF intrinsic.
+2. **The outer parallel axis needs an activation contract.** The prototype
+   receives the number of independent filters as `compile_batched` input.
+   Eventually a source broadcast and its inferred batch extent should become
+   an artifact/activation mapping. A magic source variable or EKF-specific
+   convention would be the wrong interface.
+3. **Canonical operation identity and contracts remain blockers.** Several
+   typed concatenate, dot, and trigonometric nodes still carry legacy opaque
+   contracts. The prototype admits an audited set of exact runtime operation
+   families and validates their schemas and arity. Production admission should
+   use declared semantic contracts, not runtime factory-name compatibility.
+4. **Submission policy is part of the physical plan.** On the measured Apple
+   M1, 100,000 filters reached 62.529 million EKF-turns/s with one command
+   submission per turn and 377.438 million when 120 dependent turns were
+   recorded in one submission. The scheduler needs an explicit way to batch or
+   retain device work while preserving observation and effect boundaries.
+
+The generic CPU number reported by this proof is a scalar IR evaluator. It is
+not evidence about retained Mech, AOT code generation, SIMD, or raw Rust. A
+future CPU backend can consume the same scalarized region and choose native
+code generation or fixed-size vectorization independently from GPU placement.

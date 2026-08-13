@@ -9,7 +9,7 @@ use mech_engine::{
     SlotRole,
 };
 
-use super::{GpuHost, binary_operation, display_operation, turn_required_nodes};
+use super::{GpuHost, display_operation, elementwise_operation, turn_required_nodes};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ExecutionTarget {
@@ -439,7 +439,7 @@ fn classify_node(
             "state update is not an admitted whole-value Assign".to_owned(),
         );
     }
-    if binary_operation(&node.operation).is_none() {
+    if elementwise_operation(&node.operation).is_none() {
         return (
             ExecutionTarget::Cpu,
             format!("{operation} has no GPU lowering"),

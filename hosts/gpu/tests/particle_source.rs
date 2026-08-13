@@ -564,7 +564,10 @@ fn unsupported_program_reports_why_instead_of_falling_back() {
     let placement = GpuHost.plan(&artifact);
     assert!(!placement.fully_accelerated);
     assert!(placement.nodes.iter().any(|node| {
-        node.target == ExecutionTarget::Cpu && node.reason.contains("no GPU lowering")
+        node.target == ExecutionTarget::Cpu
+            && node
+                .reason
+                .contains("contract does not prove pure full-write execution")
     }));
 }
 
