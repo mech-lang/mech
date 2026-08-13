@@ -27,6 +27,11 @@ name = "particle_benchmark"
 path = "examples/particle_benchmark.rs"
 required-features = ["native"]
 
+[[example]]
+name = "parallel_ekf_benchmark"
+path = "examples/parallel_ekf_benchmark.rs"
+required-features = ["native"]
+
 [dev-dependencies]
 mech-core = { version = "0.3.5", default-features = false, features = ["f32", "matrixd"] }
 mech-engine = { version = "0.3.5", default-features = false, features = ["full_compiler"] }

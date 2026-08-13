@@ -17,6 +17,8 @@ use mech_engine::{
     ProducerReference, ProgramArtifact, SlotRole,
 };
 
+mod batched;
+pub use batched::*;
 #[cfg(feature = "native")]
 mod native;
 #[cfg(feature = "native")]
@@ -150,6 +152,7 @@ enum BinaryOperation {
     Add,
     Subtract,
     Multiply,
+    Divide,
 }
 
 impl BinaryOperation {
@@ -158,6 +161,7 @@ impl BinaryOperation {
             Self::Add => "+",
             Self::Subtract => "-",
             Self::Multiply => "*",
+            Self::Divide => "/",
         }
     }
 
@@ -166,14 +170,71 @@ impl BinaryOperation {
             Self::Add => left + right,
             Self::Subtract => left - right,
             Self::Multiply => left * right,
+            Self::Divide => left / right,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum UnaryOperation {
+    Sin,
+    Cos,
+}
+
+impl UnaryOperation {
+    const fn wgsl(self) -> &'static str {
+        match self {
+            Self::Sin => "sin",
+            Self::Cos => "cos",
+        }
+    }
+
+    fn apply(self, input: f32) -> f32 {
+        match self {
+            Self::Sin => input.sin(),
+            Self::Cos => input.cos(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ElementwiseOperation {
+    Binary(BinaryOperation),
+    Unary(UnaryOperation),
+    Atan2,
+}
+
+impl ElementwiseOperation {
+    const fn arity(self) -> usize {
+        match self {
+            Self::Unary(_) => 1,
+            Self::Binary(_) | Self::Atan2 => 2,
+        }
+    }
+
+    fn apply(self, inputs: &[f32]) -> f32 {
+        match self {
+            Self::Binary(operation) => operation.apply(inputs[0], inputs[1]),
+            Self::Unary(operation) => operation.apply(inputs[0]),
+            Self::Atan2 => inputs[0].atan2(inputs[1]),
+        }
+    }
+
+    fn wgsl_expression(self, inputs: &[String]) -> String {
+        match self {
+            Self::Binary(operation) => {
+                format!("{} {} {}", inputs[0], operation.wgsl(), inputs[1])
+            }
+            Self::Unary(operation) => format!("{}({})", operation.wgsl(), inputs[0]),
+            Self::Atan2 => format!("atan2({}, {})", inputs[0], inputs[1]),
         }
     }
 }
 
 #[derive(Clone, Debug)]
 struct KernelOperation {
-    operation: BinaryOperation,
-    inputs: [ArtifactSource; 2],
+    operation: ElementwiseOperation,
+    inputs: Vec<ArtifactSource>,
     output: CellSlotId,
     elements: u64,
 }
@@ -294,9 +355,12 @@ impl GpuProgram {
         for operation in &self.operations {
             let mut output = Vec::with_capacity(operation.elements as usize);
             for index in 0..operation.elements as usize {
-                let left = cpu_source_value(operation.inputs[0], index, slots, &self.constants)?;
-                let right = cpu_source_value(operation.inputs[1], index, slots, &self.constants)?;
-                output.push(operation.operation.apply(left, right));
+                let inputs = operation
+                    .inputs
+                    .iter()
+                    .map(|source| cpu_source_value(*source, index, slots, &self.constants))
+                    .collect::<Result<Vec<_>, _>>()?;
+                output.push(operation.operation.apply(&inputs));
             }
             slots.insert(operation.output, output);
         }
@@ -707,12 +771,12 @@ impl<'a> Compiler<'a> {
             if !self.admit_contract(node.node, &operation_name, node.contract) {
                 continue;
             }
-            let Some(operation) = binary_operation(&node.operation) else {
+            let Some(operation) = elementwise_operation(&node.operation) else {
                 self.reject(
                     GpuDiagnosticCode::OperationUnsupported,
                     Some(node.node),
                     Some(operation_name),
-                    "the GPU host supports only element-wise math/add, math/sub, and math/mul",
+                    "the GPU host supports only admitted element-wise arithmetic and trigonometry",
                 );
                 continue;
             };
@@ -732,13 +796,14 @@ impl<'a> Compiler<'a> {
                     Some(_) | None => None,
                 })
                 .collect::<Vec<_>>();
-            if inputs.len() != 2 || outputs.len() != 1 {
+            if inputs.len() != operation.arity() || outputs.len() != 1 {
                 self.reject(
                     GpuDiagnosticCode::ArityUnsupported,
                     Some(node.node),
                     Some(operation_name),
                     format!(
-                        "expected two inputs and one output, found {} inputs and {} outputs",
+                        "expected {} inputs and one output, found {} inputs and {} outputs",
+                        operation.arity(),
                         inputs.len(),
                         outputs.len()
                     ),
@@ -775,7 +840,7 @@ impl<'a> Compiler<'a> {
             }
             self.operations.push(KernelOperation {
                 operation,
-                inputs: [inputs[0], inputs[1]],
+                inputs,
                 output: outputs[0],
                 elements: output_elements,
             });
@@ -1239,12 +1304,15 @@ impl<'a> Compiler<'a> {
             "\n@compute @workgroup_size({WORKGROUP_SIZE})\nfn main(@builtin(global_invocation_id) gid: vec3<u32>) {{\n  let index = gid.x;\n  if (index >= {dispatch_elements}u) {{ return; }}\n"
         ));
         for operation in &self.operations {
-            let left = self.wgsl_source(operation.inputs[0], operation.elements);
-            let right = self.wgsl_source(operation.inputs[1], operation.elements);
+            let inputs = operation
+                .inputs
+                .iter()
+                .map(|source| self.wgsl_source(*source, operation.elements))
+                .collect::<Vec<_>>();
             shader.push_str(&format!(
-                "  let slot_{} = {left} {} {right};\n",
+                "  let slot_{} = {};\n",
                 operation.output.get(),
-                operation.operation.wgsl()
+                operation.operation.wgsl_expression(&inputs)
             ));
         }
         for state in &self.state_slots {
@@ -1400,26 +1468,39 @@ fn display_operation(operation: &OperationReference) -> String {
         .join("/")
 }
 
-fn binary_operation(operation: &OperationReference) -> Option<BinaryOperation> {
+fn elementwise_operation(operation: &OperationReference) -> Option<ElementwiseOperation> {
     let canonical = display_operation(operation);
     match canonical.as_str() {
-        "math/add" => Some(BinaryOperation::Add),
-        "math/sub" | "math/subtract" => Some(BinaryOperation::Subtract),
-        "math/mul" | "math/multiply" => Some(BinaryOperation::Multiply),
+        "math/add" => Some(ElementwiseOperation::Binary(BinaryOperation::Add)),
+        "math/sub" | "math/subtract" => {
+            Some(ElementwiseOperation::Binary(BinaryOperation::Subtract))
+        }
+        "math/mul" | "math/multiply" => {
+            Some(ElementwiseOperation::Binary(BinaryOperation::Multiply))
+        }
+        "math/div" | "math/divide" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
+        "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
+        "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
+        "math/atan2" => Some(ElementwiseOperation::Atan2),
         _ if operation.module_path.as_ref() == ["runtime"]
             && operation.operation_name.starts_with("Add") =>
         {
-            Some(BinaryOperation::Add)
+            Some(ElementwiseOperation::Binary(BinaryOperation::Add))
         }
         _ if operation.module_path.as_ref() == ["runtime"]
             && operation.operation_name.starts_with("Sub") =>
         {
-            Some(BinaryOperation::Subtract)
+            Some(ElementwiseOperation::Binary(BinaryOperation::Subtract))
         }
         _ if operation.module_path.as_ref() == ["runtime"]
             && operation.operation_name.starts_with("Mul") =>
         {
-            Some(BinaryOperation::Multiply)
+            Some(ElementwiseOperation::Binary(BinaryOperation::Multiply))
+        }
+        _ if operation.module_path.as_ref() == ["runtime"]
+            && operation.operation_name.starts_with("Div") =>
+        {
+            Some(ElementwiseOperation::Binary(BinaryOperation::Divide))
         }
         _ => None,
     }
