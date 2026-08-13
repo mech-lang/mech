@@ -153,31 +153,51 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
 }
 `;
 
-class BrowserGpuProject {
+class BrowserComputeProject {
   static async fromSources(config, sourceEntries, sources) {
-    if (typeof mech.WasmMixedGpuProject?.fromSource !== 'function') {
+    if (typeof mech.WasmMixedComputeProject?.fromSource !== 'function') {
       const relatedExports = Object.keys(mech)
         .filter((name) => name.includes('Gpu') || name.includes('Project'))
         .join(', ') || '(none)';
       throw new Error(
         'WASM build-profile mismatch at /_mech/pkg/mech_wasm.js: ' +
-        'WasmMixedGpuProject.fromSource is unavailable. ' +
+        'WasmMixedComputeProject.fromSource is unavailable. ' +
         `Related exports: ${relatedExports}`,
       );
     }
     if (sourceEntries.length !== 1) {
-      throw new Error(`the browser GPU executor currently requires one Mech source, found ${sourceEntries.length}`);
+      throw new Error(`the browser compute executor currently requires one Mech source, found ${sourceEntries.length}`);
     }
     const source = sources[sourceEntries[0].specifier];
+    const adapter = navigator.gpu
+      ? await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' })
+      : null;
+    if (!adapter) {
+      throw new Error('the particle renderer requires a compatible WebGPU adapter');
+    }
     const compileStarted = performance.now();
-    const controller = mech.WasmMixedGpuProject.fromSource(config, source);
-    const manifest = controller.gpuManifest();
-    return new BrowserGpuProject(controller, manifest, performance.now() - compileStarted);
+    const requestedBackend = globalThis.__MECH_COMPUTE_BACKEND_OVERRIDE || '';
+    const controller = mech.WasmMixedComputeProject.fromSource(
+      config,
+      source,
+      requestedBackend,
+      Boolean(adapter),
+    );
+    const manifest = controller.computeManifest();
+    return new BrowserComputeProject(
+      controller,
+      manifest,
+      controller.backend(),
+      adapter,
+      performance.now() - compileStarted,
+    );
   }
 
-  constructor(controller, manifest, compileMilliseconds) {
+  constructor(controller, manifest, backend, adapter, compileMilliseconds) {
     this.controller = controller;
     this.manifest = manifest;
+    this.backend = backend;
+    this.adapter = adapter;
     this.compileMilliseconds = compileMilliseconds;
     this.canvas = document.querySelector('canvas[data-mech-gpu-renderer="points2d"]');
     this.status = document.querySelector('[data-mech-gpu-status]');
@@ -194,7 +214,7 @@ class BrowserGpuProject {
 
   async start() {
     if (!(this.canvas instanceof HTMLCanvasElement)) {
-      throw new Error('the GPU executor needs a points2d canvas target');
+      throw new Error('the compute example needs a points2d canvas target');
     }
     if (!navigator.gpu) {
       throw new Error('WebGPU is unavailable in this browser');
@@ -202,7 +222,7 @@ class BrowserGpuProject {
     const outputName = this.canvas.dataset.mechGpuOutput;
     this.output = this.manifest.outputs.find((candidate) => candidate.name === outputName);
     if (!this.output) {
-      throw new Error(`Mech GPU output ${outputName} does not exist`);
+      throw new Error(`Mech compute output ${outputName} does not exist`);
     }
     if (
       this.output.dimensions.length !== 2 ||
@@ -218,29 +238,27 @@ class BrowserGpuProject {
     const maxRenderedPoints = 250_000;
     this.sampleStride = Math.max(1, Math.ceil(this.itemCount / maxRenderedPoints));
     this.renderItemCount = Math.ceil(this.itemCount / this.sampleStride);
-    this.setStatus('Requesting GPU', '');
+    this.setStatus(`Preparing ${this.backend.toUpperCase()} compute`, '');
 
-    this.adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
-    if (!this.adapter) {
-      throw new Error('no compatible WebGPU adapter was found');
-    }
     const storageBindings = this.manifest.bindings.length;
-    if (storageBindings > this.adapter.limits.maxStorageBuffersPerShaderStage) {
-      throw new Error(
-        `Mech generated ${storageBindings} storage bindings, but this adapter supports ` +
-        `${this.adapter.limits.maxStorageBuffersPerShaderStage}`,
-      );
+    if (this.backend === 'gpu') {
+      if (storageBindings > this.adapter.limits.maxStorageBuffersPerShaderStage) {
+        throw new Error(
+          `Mech generated ${storageBindings} storage bindings, but this adapter supports ` +
+          `${this.adapter.limits.maxStorageBuffersPerShaderStage}`,
+        );
+      }
+      const workgroups = Math.ceil(this.manifest.dispatchElements / this.manifest.workgroupSize);
+      if (workgroups > this.adapter.limits.maxComputeWorkgroupsPerDimension) {
+        throw new Error(
+          `Mech needs ${workgroups} workgroups, but this adapter supports ` +
+          `${this.adapter.limits.maxComputeWorkgroupsPerDimension}`,
+        );
+      }
     }
-    const workgroups = Math.ceil(this.manifest.dispatchElements / this.manifest.workgroupSize);
-    if (workgroups > this.adapter.limits.maxComputeWorkgroupsPerDimension) {
-      throw new Error(
-        `Mech needs ${workgroups} workgroups, but this adapter supports ` +
-        `${this.adapter.limits.maxComputeWorkgroupsPerDimension}`,
-      );
-    }
-    this.device = await this.adapter.requestDevice({
-      requiredLimits: { maxStorageBuffersPerShaderStage: storageBindings },
-    });
+    this.device = await this.adapter.requestDevice(this.backend === 'gpu'
+      ? { requiredLimits: { maxStorageBuffersPerShaderStage: storageBindings } }
+      : {});
     this.device.lost.then((info) => {
       this.stopped = true;
       this.setStatus(`GPU device lost: ${info.message}`, 'error');
@@ -257,7 +275,11 @@ class BrowserGpuProject {
     this.controller.start();
     await this.device.queue.onSubmittedWorkDone();
     this.message.textContent = '';
-    this.setStatus(`Mech CPU + GPU ready in ${(this.compileMilliseconds / 1000).toFixed(1)} s`, 'ready');
+    this.setStatus(
+      `Mech ${this.backend.toUpperCase()} compute ready in ${(this.compileMilliseconds / 1000).toFixed(1)} s`,
+      'ready',
+    );
+    this.setText('[data-mech-compute-backend]', this.backend.toUpperCase());
     this.setText('[data-mech-gpu-item-count]', this.itemCount.toLocaleString());
     this.setText('[data-mech-gpu-render-count]', this.renderItemCount.toLocaleString());
     const timings = this.manifest.compileTimings;
@@ -273,14 +295,23 @@ class BrowserGpuProject {
         'source parsing': timings.parsing,
         'source execution + initialization': timings.sourceExecution,
         'artifact compilation': timings.artifactCompilation,
-        'GPU lowering': timings.gpuLowering,
+        'compute lowering': timings.gpuLowering,
         'input capture': timings.inputCapture,
         'manifest encoding': timings.manifestEncoding,
       });
     }
     const residentBytes = [...this.stateBuffers.values()]
       .reduce((total, buffers) => total + buffers[0].size + buffers[1].size, 0);
-    this.setText('[data-mech-gpu-state-size]', `${(residentBytes / 1_048_576).toFixed(1)} MB resident`);
+    const stateBytes = this.backend === 'gpu'
+      ? residentBytes
+      : this.manifest.states.reduce(
+          (total, state) => total + state.elements * Float32Array.BYTES_PER_ELEMENT,
+          0,
+        );
+    this.setText(
+      '[data-mech-gpu-state-size]',
+      `${(stateBytes / 1_048_576).toFixed(1)} MB ${this.backend.toUpperCase()} resident`,
+    );
     this.statsStarted = performance.now();
   }
 
@@ -314,16 +345,18 @@ class BrowserGpuProject {
   }
 
   async createPipelines() {
-    const computeModule = this.device.createShaderModule({ code: this.manifest.wgsl });
-    const compilation = await computeModule.getCompilationInfo();
-    const errors = compilation.messages.filter((message) => message.type === 'error');
-    if (errors.length > 0) {
-      throw new Error(errors.map((message) => message.message).join('\n'));
+    if (this.backend === 'gpu') {
+      const computeModule = this.device.createShaderModule({ code: this.manifest.wgsl });
+      const compilation = await computeModule.getCompilationInfo();
+      const errors = compilation.messages.filter((message) => message.type === 'error');
+      if (errors.length > 0) {
+        throw new Error(errors.map((message) => message.message).join('\n'));
+      }
+      this.computePipeline = this.device.createComputePipeline({
+        layout: 'auto',
+        compute: { module: computeModule, entryPoint: 'main' },
+      });
     }
-    this.computePipeline = this.device.createComputePipeline({
-      layout: 'auto',
-      compute: { module: computeModule, entryPoint: 'main' },
-    });
     const renderModule = this.device.createShaderModule({ code: pointRendererShader });
     this.renderPipeline = this.device.createRenderPipeline({
       layout: 'auto',
@@ -351,7 +384,9 @@ class BrowserGpuProject {
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       }));
       this.device.queue.writeBuffer(buffers[0], 0, state.initialValues);
-      state.initialValues = null;
+      if (this.backend === 'gpu') {
+        state.initialValues = null;
+      }
       this.stateBuffers.set(state.slot, buffers);
     }
 
@@ -365,7 +400,7 @@ class BrowserGpuProject {
         size: Math.max(4, binding.elements * Float32Array.BYTES_PER_ELEMENT),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       });
-      if (binding.initialValues) {
+      if (binding.initialValues && this.backend === 'gpu') {
         this.device.queue.writeBuffer(buffer, 0, binding.initialValues);
         binding.initialValues = null;
       }
@@ -375,13 +410,15 @@ class BrowserGpuProject {
       }
     }
 
-    this.computeBindGroups = [0, 1].map((sourceIndex) => this.device.createBindGroup({
-      layout: this.computePipeline.getBindGroupLayout(0),
-      entries: this.manifest.bindings.map((binding) => ({
-        binding: binding.binding,
-        resource: { buffer: this.bufferForBinding(binding, sourceIndex) },
-      })),
-    }));
+    this.computeBindGroups = this.backend === 'gpu'
+      ? [0, 1].map((sourceIndex) => this.device.createBindGroup({
+        layout: this.computePipeline.getBindGroupLayout(0),
+        entries: this.manifest.bindings.map((binding) => ({
+          binding: binding.binding,
+          resource: { buffer: this.bufferForBinding(binding, sourceIndex) },
+        })),
+      }))
+      : [];
     this.renderUniform = this.device.createBuffer({
       size: 32,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
@@ -413,7 +450,7 @@ class BrowserGpuProject {
       (candidate) => candidate.role === 'output' && candidate.slot === this.output.slot,
     );
     if (!binding) {
-      throw new Error(`GPU output ${this.output.name} has no physical buffer`);
+      throw new Error(`compute output ${this.output.name} has no physical buffer`);
     }
     return this.fixedBuffers.get(binding.binding);
   }
@@ -471,6 +508,11 @@ class BrowserGpuProject {
     return true;
   }
 
+  uploadCpuOutput() {
+    const positions = this.controller.cpuOutput(this.output.name);
+    this.device.queue.writeBuffer(this.outputBuffer(0), 0, positions);
+  }
+
   frame(timestamp = performance.now()) {
     if (this.stopped) {
       return;
@@ -486,11 +528,20 @@ class BrowserGpuProject {
       deltaSeconds,
       maxInputsPerFrame,
     );
-    const dispatch = this.applyGpuCommand(command);
+    const dispatch = command?.dispatch === true;
+    if (dispatch && this.backend === 'gpu') {
+      this.applyGpuCommand(command);
+    }
+    if (dispatch && this.backend === 'cpu') {
+      this.lastInputs = Object.fromEntries(
+        command.inputs.map((input) => [input.name, Array.from(input.values)]),
+      );
+      this.uploadCpuOutput();
+    }
     this.resize();
     const encoder = this.device.createCommandEncoder();
     let renderedBuffer = this.activeBuffer;
-    if (dispatch) {
+    if (dispatch && this.backend === 'gpu') {
       const compute = encoder.beginComputePass();
       compute.setPipeline(this.computePipeline);
       compute.setBindGroup(0, this.computeBindGroups[this.activeBuffer]);
@@ -513,8 +564,10 @@ class BrowserGpuProject {
     render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
-    if (dispatch) {
+    if (dispatch && this.backend === 'gpu') {
       this.activeBuffer = renderedBuffer;
+    }
+    if (dispatch) {
       this.totalDispatches += 1;
     }
 
@@ -538,6 +591,7 @@ class BrowserGpuProject {
       displayedCount: this.renderItemCount,
       totalDispatches: this.totalDispatches,
       lastInputs: this.lastInputs,
+      backend: this.backend,
     };
     return globalThis.__MECH_GPU_RUNTIME__;
   }
@@ -564,7 +618,7 @@ class BrowserGpuProject {
   }
 }
 
-function installGpuSmokeTest(target) {
+function installComputeSmokeTest(target) {
   if (!new URLSearchParams(window.location.search).has('mech-gpu-smoke')) {
     return;
   }
@@ -581,7 +635,7 @@ function installGpuSmokeTest(target) {
     try {
       const state = globalThis.__MECH_GPU_RUNTIME__;
       if (performance.now() > deadline) {
-        fail('timed out waiting for GPU frames and pointer transaction');
+        fail('timed out waiting for compute frames and pointer transaction');
         return;
       }
       if (!state || state.itemCount !== 1_000_000 || !state.dispatched) {
@@ -606,7 +660,7 @@ function installGpuSmokeTest(target) {
       const forceX = state.lastInputs?.['force-x']?.[0];
       const forceY = state.lastInputs?.['force-y']?.[0];
       if (Math.abs(strength - 1.25) > 1e-6 || forceX < 0.45 || forceY < 0.45) {
-        fail(`pointer transaction did not reach GPU inputs: ${JSON.stringify(state.lastInputs)}`);
+        fail(`pointer transaction did not reach compute inputs: ${JSON.stringify(state.lastInputs)}`);
         return;
       }
       await target.device.queue.onSubmittedWorkDone();
@@ -620,6 +674,7 @@ function installGpuSmokeTest(target) {
       root.dataset.mechGpuSmoke = 'passed';
       root.dataset.mechGpuSmokeDispatches = String(state.totalDispatches);
       root.dataset.mechGpuSmokeInputs = JSON.stringify(state.lastInputs);
+      root.dataset.mechComputeBackend = state.backend;
       clearInterval(timer);
     } catch (error) {
       fail(error instanceof Error ? error.message : String(error));
@@ -651,11 +706,11 @@ async function main() {
   }
   const gpuCanvas = document.querySelector('canvas[data-mech-gpu-renderer="points2d"]');
   if (gpuCanvas) {
-    project = await BrowserGpuProject.fromSources(config, sourceEntries, sources);
+    project = await BrowserComputeProject.fromSources(config, sourceEntries, sources);
     await project.start();
     running = true;
     requestAnimationFrame(frame);
-    installGpuSmokeTest(project);
+    installComputeSmokeTest(project);
     return;
   }
   const hasServedAuthority = Object.prototype.hasOwnProperty.call(window, '__MECH_HOST_CONFIG');
@@ -703,7 +758,7 @@ function frame(timestamp) {
     return;
   }
   try {
-    globalThis.__MECH_LAST_FRAME__ = project instanceof BrowserGpuProject
+    globalThis.__MECH_LAST_FRAME__ = project instanceof BrowserComputeProject
       ? project.frame(timestamp)
       : project.frame(maxInputsPerFrame);
   } catch (error) {

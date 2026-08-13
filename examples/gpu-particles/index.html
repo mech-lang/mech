@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mech GPU Particle Field</title>
+  <title>Mech Compute Particle Field</title>
   <link rel="stylesheet" href="particles.css" />
 </head>
 <body>
   <main>
     <header>
       <div>
-        <p class="eyebrow">Mech mixed CPU/GPU runtime</p>
+        <p class="eyebrow">Mech selectable compute runtime</p>
         <h1>Particle Field</h1>
       </div>
       <p class="status" data-mech-gpu-status><span aria-hidden="true"></span>Loading Mech</p>
@@ -26,6 +26,7 @@
 
     <dl class="telemetry">
       <div><dt>Particles</dt><dd data-mech-gpu-item-count>--</dd></div>
+      <div><dt>Backend</dt><dd data-mech-compute-backend>--</dd></div>
       <div><dt>Displayed</dt><dd data-mech-gpu-render-count>--</dd></div>
       <div><dt>Frame rate</dt><dd data-mech-gpu-frame-rate>-- Hz</dd></div>
       <div><dt>Throughput</dt><dd data-mech-gpu-throughput>-- M updates/s</dd></div>

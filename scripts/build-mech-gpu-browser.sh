@@ -14,5 +14,5 @@ wasm-pack build src/wasm \
 
 test -f src/wasm/pkg/mech_wasm.js
 test -f src/wasm/pkg/mech_wasm_bg.wasm
-grep -F 'export class WasmMixedGpuProject' src/wasm/pkg/mech_wasm.js >/dev/null
+grep -F 'export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js >/dev/null
 grep -F 'static fromSource(' src/wasm/pkg/mech_wasm.js >/dev/null

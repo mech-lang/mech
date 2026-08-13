@@ -4,7 +4,7 @@
 -- pointer data enters through a host resource. The graph decides which values
 -- cross the compute boundary, and dispatch occurs only after the turn commits.
 @pointer := pointer://pointer/frame{:read(pulse), :read(x), :read(y), :read(pressed), :read(delta-seconds)}
-@particles := gpu://particles/kernel{:write(input/force-x), :write(input/force-y), :write(input/force-strength), :write(input/dt), :write(turn)}
+@particles := compute://particles/kernel{:write(input/force-x), :write(input/force-y), :write(input/force-strength), :write(input/dt), :write(turn)}
 
 pulse := @pointer/pulse
 force-x := @pointer/x
@@ -18,10 +18,10 @@ dt := @pointer/delta-seconds
 @particles/input/dt <- dt
 @particles/turn <- pulse
 
-particle-field @ gpu
+particle-field @ compute
 -------------------------------------------------------------------------------
 
--- This is the GPU compilation boundary. The values, initialization, and
+-- This is the portable compute boundary. The values, initialization, and
 -- recurrence are Mech source; the host receives the compiled region, not a
 -- handwritten particle kernel.
 particle-count := 1000000f32
@@ -35,8 +35,8 @@ particle-y := math/sin(angle) * radius
 ~positions := [particle-x; particle-y]
 ~velocities := [(0f32 - particle-y); particle-x] * 0.66<f32>
 
--- These defaults establish the GPU input types. The CPU graph replaces them
--- every frame through the explicit gpu:// resource paths above.
+-- These defaults establish the compute input types. The CPU graph replaces them
+-- every frame through the explicit compute:// resource paths above.
 force-x := 0f32
 force-y := 0f32
 force-strength := 0f32

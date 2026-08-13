@@ -15,6 +15,7 @@ pub(crate) struct ServeCliArgs {
     pub stylesheet_paths: Vec<String>,
     pub shim: Option<String>,
     pub wasm: Option<String>,
+    pub backend: Option<String>,
 }
 
 impl ServeCliArgs {
@@ -36,6 +37,7 @@ impl ServeCliArgs {
                 .collect(),
             shim: matches.get_one::<String>("shim").cloned(),
             wasm: matches.get_one::<String>("wasm").cloned(),
+            backend: matches.get_one::<String>("backend").cloned(),
         }
     }
 }
@@ -48,6 +50,7 @@ pub(crate) struct EffectiveServeOptions {
     pub stylesheet_paths: Vec<String>,
     pub shim_path: String,
     pub wasm_pkg: String,
+    pub compute_backend: Option<String>,
     pub project_root: Option<PathBuf>,
     pub uses_configured_paths: bool,
 }
@@ -206,6 +209,7 @@ pub(crate) fn effective_serve_options(
         stylesheet_paths,
         shim_path,
         wasm_pkg,
+        compute_backend: args.backend.clone(),
         project_root,
         uses_configured_paths,
     })
