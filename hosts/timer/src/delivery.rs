@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use mech_core::MResult;
 use mech_runtime::{RuntimeHostInput, RuntimeIngress};
 
-use crate::{SharedTimerSnapshot, TimerSnapshot};
+use crate::{SharedTimerSnapshot, TimerQueuePolicy, TimerSnapshot};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum TimerSubmitState {
@@ -17,11 +17,29 @@ pub(crate) fn submit_pending_timer_snapshots(
     ingress: Option<&RuntimeIngress>,
     snapshot: &SharedTimerSnapshot,
     pending: &mut VecDeque<TimerSnapshot>,
+    queue_policy: TimerQueuePolicy,
 ) -> MResult<(usize, TimerSubmitState)> {
     submit_pending_with(instance, snapshot, pending, |packet| match ingress {
+        Some(ingress) if queue_policy == TimerQueuePolicy::Latest => ingress.submit_latest(packet),
         Some(ingress) => ingress.submit(packet),
         None => Ok(()),
     })
+}
+
+pub(crate) fn extend_pending_timer_snapshots(
+    pending: &mut VecDeque<TimerSnapshot>,
+    snapshots: impl IntoIterator<Item = TimerSnapshot>,
+    queue_policy: TimerQueuePolicy,
+) {
+    match queue_policy {
+        TimerQueuePolicy::Ordered => pending.extend(snapshots),
+        TimerQueuePolicy::Latest => {
+            if let Some(latest) = snapshots.into_iter().last() {
+                pending.clear();
+                pending.push_back(latest);
+            }
+        }
+    }
 }
 
 pub(crate) fn submit_pending_with<F>(

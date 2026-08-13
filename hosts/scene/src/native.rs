@@ -109,13 +109,14 @@ impl RuntimeHostFactory for NativeSceneHostFactory {
         instance_name: &str,
         settings: &ConfigValue,
     ) -> MResult<RuntimeHostInstallation> {
-        let _settings: SceneHostSettings = scene_settings_from_config(settings)?;
+        let settings: SceneHostSettings = scene_settings_from_config(settings)?;
         self.registry.register(instance_name)?;
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(SceneResourceProvider::new(
+            resource_providers: vec![Box::new(SceneResourceProvider::new_with_settings(
                 instance_name,
                 NativeSceneBackend::new(instance_name, self.registry.clone()),
+                settings,
             ))],
             input_drivers: Vec::new(),
         })

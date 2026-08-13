@@ -21,6 +21,17 @@ fn settings(freq: i64, catch: i64) -> ConfigValue {
     ConfigValue::Map(map)
 }
 
+fn settings_with_policy(freq: i64, catch: i64, policy: &str) -> ConfigValue {
+    let ConfigValue::Map(mut map) = settings(freq, catch) else {
+        unreachable!()
+    };
+    map.insert(
+        "queue-policy".to_string(),
+        ConfigValue::String(policy.to_string()),
+    );
+    ConfigValue::Map(map)
+}
+
 #[test]
 fn timer_config_rejects_interval_ms() {
     let mut map = BTreeMap::new();
@@ -33,6 +44,18 @@ fn timer_config_accepts_frequency_and_catchup() {
     let parsed = timer_settings_from_config(&settings(120, 8)).unwrap();
     assert_eq!(parsed.frequency_hz, 120);
     assert_eq!(parsed.max_catch_up_steps, 8);
+    assert_eq!(parsed.queue_policy, TimerQueuePolicy::Ordered);
+}
+
+#[test]
+fn timer_config_accepts_latest_queue_policy() {
+    let parsed = timer_settings_from_config(&settings_with_policy(60, 1, "latest")).unwrap();
+    assert_eq!(parsed.queue_policy, TimerQueuePolicy::Latest);
+}
+
+#[test]
+fn timer_config_rejects_unknown_queue_policy() {
+    assert!(timer_settings_from_config(&settings_with_policy(60, 1, "newest")).is_err());
 }
 
 #[test]
@@ -175,6 +198,28 @@ fn manual_publish_steps_preserves_order_under_backpressure() {
     assert_eq!(snapshot_tick(&snapshot), 1);
 }
 
+#[test]
+fn latest_policy_replaces_pending_timer_packet_without_growing_ingress() {
+    let runtime = RuntimeBuilder::new()
+        .host_input_capacity(1)
+        .build()
+        .unwrap();
+    let mut driver = ManualTimerInputDriver::with_backend_and_policy(
+        "physics",
+        ManualMonotonicTimerBackend::new(),
+        100,
+        8,
+        TimerQueuePolicy::Latest,
+    );
+    driver.attach(runtime.ingress()).unwrap();
+    driver.start().unwrap();
+    assert_eq!(driver.publish_steps(1).unwrap(), 1);
+    assert_eq!(driver.publish_steps(5).unwrap(), 1);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    assert_eq!(snapshot_tick(&driver.snapshot()), 6);
+    assert_eq!(driver.pending_emission_count(), 0);
+}
+
 #[cfg(feature = "native")]
 #[test]
 fn native_wait_uses_next_scheduler_boundary() {
@@ -281,13 +326,13 @@ fn restart_does_not_count_paused_time() {
 }
 
 #[test]
-fn restart_flushes_retained_packets_before_new_steps() {
+fn restart_discards_private_packets_from_the_previous_owner() {
     let (_runtime, mut driver, snapshot) = runtime_with_manual_timer(1);
     assert_eq!(driver.publish_steps(3).unwrap(), 1);
     driver.stop().unwrap();
     driver.start().unwrap();
     assert_eq!(snapshot_tick(&snapshot), 1);
-    assert_eq!(driver.pending_emission_count(), 2);
+    assert_eq!(driver.pending_emission_count(), 0);
 }
 
 #[test]

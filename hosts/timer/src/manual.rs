@@ -4,10 +4,12 @@ use std::sync::{Arc, Mutex};
 use mech_core::MResult;
 use mech_runtime::{RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress};
 
-use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
+use crate::delivery::{
+    TimerSubmitState, extend_pending_timer_snapshots, submit_pending_timer_snapshots,
+};
 use crate::{
-    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerSnapshot,
-    new_shared_snapshot, timer_error, timer_source_matches,
+    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerQueuePolicy,
+    TimerSnapshot, new_shared_snapshot, timer_error, timer_source_matches,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -58,6 +60,7 @@ pub struct ManualTimerInputDriver {
     snapshot: SharedTimerSnapshot,
     ingress: Option<RuntimeIngress>,
     pending: VecDeque<TimerSnapshot>,
+    queue_policy: TimerQueuePolicy,
     live: bool,
 }
 
@@ -76,6 +79,21 @@ impl ManualTimerInputDriver {
         frequency_hz: u64,
         max_catch_up_steps: u64,
     ) -> Self {
+        Self::with_backend_and_policy(
+            instance,
+            backend,
+            frequency_hz,
+            max_catch_up_steps,
+            TimerQueuePolicy::Ordered,
+        )
+    }
+    pub fn with_backend_and_policy(
+        instance: impl Into<String>,
+        backend: ManualMonotonicTimerBackend,
+        frequency_hz: u64,
+        max_catch_up_steps: u64,
+        queue_policy: TimerQueuePolicy,
+    ) -> Self {
         Self {
             instance: instance.into(),
             backend,
@@ -83,6 +101,7 @@ impl ManualTimerInputDriver {
             snapshot: new_shared_snapshot(TimerSnapshot::new(0, frequency_hz, 0)),
             ingress: None,
             pending: VecDeque::new(),
+            queue_policy,
             live: false,
         }
     }
@@ -97,29 +116,33 @@ impl ManualTimerInputDriver {
     }
     pub fn publish_due_steps(&mut self) -> MResult<usize> {
         let mut submitted = self.flush_pending()?;
-        if !self.pending.is_empty() {
+        if !self.pending.is_empty() && self.queue_policy == TimerQueuePolicy::Ordered {
             return Ok(submitted);
         }
         let now = self.backend.now_ms()?;
-        self.pending.extend(
+        extend_pending_timer_snapshots(
+            &mut self.pending,
             self.scheduler
                 .due_steps(now)
                 .into_iter()
                 .map(|e| e.snapshot),
+            self.queue_policy,
         );
         submitted += self.flush_pending()?;
         Ok(submitted)
     }
     pub fn publish_steps(&mut self, count: usize) -> MResult<usize> {
         let mut submitted = self.flush_pending()?;
-        if !self.pending.is_empty() {
+        if !self.pending.is_empty() && self.queue_policy == TimerQueuePolicy::Ordered {
             return Ok(submitted);
         }
-        self.pending.extend(
+        extend_pending_timer_snapshots(
+            &mut self.pending,
             self.scheduler
                 .emit_exact_steps(count)
                 .into_iter()
                 .map(|e| e.snapshot),
+            self.queue_policy,
         );
         submitted += self.flush_pending()?;
         Ok(submitted)
@@ -133,6 +156,7 @@ impl ManualTimerInputDriver {
             self.ingress.as_ref(),
             &self.snapshot,
             &mut self.pending,
+            self.queue_policy,
         )?;
         if state == TimerSubmitState::Closed {
             self.live = false;
@@ -170,10 +194,28 @@ impl RuntimeHostInputDriver for ManualTimerInputDriver {
     }
     fn stop(&mut self) -> MResult<()> {
         self.scheduler.pause();
+        self.pending.clear();
         self.live = false;
         Ok(())
     }
     fn is_live(&self) -> bool {
         self.live
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stop_discards_private_ordered_backlog_before_restart() {
+        let mut driver = ManualTimerInputDriver::new("physics", 60, 8);
+        driver.pending.push_back(TimerSnapshot::new(7, 60, 0));
+        driver.live = true;
+
+        driver.stop().unwrap();
+
+        assert!(!driver.is_live());
+        assert_eq!(driver.pending_emission_count(), 0);
     }
 }

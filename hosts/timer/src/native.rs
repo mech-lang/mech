@@ -11,10 +11,12 @@ use mech_runtime::{
     RuntimeHostInputSource, RuntimeHostInstallation, RuntimeIngress, materialize_host_manifest,
 };
 
-use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
+use crate::delivery::{
+    TimerSubmitState, extend_pending_timer_snapshots, submit_pending_timer_snapshots,
+};
 use crate::{
-    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerResourceProvider,
-    TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
+    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerQueuePolicy,
+    TimerResourceProvider, TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
     timer_settings_from_config, timer_source_matches,
 };
 
@@ -49,6 +51,7 @@ pub struct NativeTimerInputDriver<B: MonotonicTimerBackend + Send + Sync> {
     scheduler: Arc<Mutex<FixedStepScheduler>>,
     snapshot: SharedTimerSnapshot,
     pending: Arc<Mutex<VecDeque<TimerSnapshot>>>,
+    queue_policy: TimerQueuePolicy,
     ingress: Arc<Mutex<Option<RuntimeIngress>>>,
     live: Arc<AtomicBool>,
     worker: Arc<Mutex<Option<JoinHandle<()>>>>,
@@ -69,12 +72,29 @@ impl<B: MonotonicTimerBackend + Send + Sync> NativeTimerInputDriver<B> {
         scheduler: FixedStepScheduler,
         snapshot: SharedTimerSnapshot,
     ) -> Self {
+        Self::new_with_queue_policy(
+            instance,
+            backend,
+            scheduler,
+            snapshot,
+            TimerQueuePolicy::Ordered,
+        )
+    }
+
+    pub fn new_with_queue_policy(
+        instance: impl Into<String>,
+        backend: B,
+        scheduler: FixedStepScheduler,
+        snapshot: SharedTimerSnapshot,
+        queue_policy: TimerQueuePolicy,
+    ) -> Self {
         Self {
             instance: instance.into(),
             backend,
             scheduler: Arc::new(Mutex::new(scheduler)),
             snapshot,
             pending: Arc::new(Mutex::new(VecDeque::new())),
+            queue_policy,
             ingress: Arc::new(Mutex::new(None)),
             live: Arc::new(AtomicBool::new(false)),
             worker: Arc::new(Mutex::new(None)),
@@ -185,6 +205,7 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         let scheduler = self.scheduler.clone();
         let snapshot = self.snapshot.clone();
         let pending = self.pending.clone();
+        let queue_policy = self.queue_policy;
         let instance = self.instance.clone();
         let worker = thread::spawn(move || {
             let _live_reset = WorkerLiveReset(live.clone());
@@ -195,6 +216,7 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                         Some(&ingress),
                         &snapshot,
                         &mut pending,
+                        queue_policy,
                     )
                     .map(|(_, state)| state)
                     .map_err(|_| ())
@@ -240,7 +262,11 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                     .map(|mut s| s.due_steps(now))
                     .unwrap_or_default();
                 if let Ok(mut pending) = pending.lock() {
-                    pending.extend(emissions.into_iter().map(|e| e.snapshot));
+                    extend_pending_timer_snapshots(
+                        &mut pending,
+                        emissions.into_iter().map(|e| e.snapshot),
+                        queue_policy,
+                    );
                 } else {
                     live.store(false, Ordering::SeqCst);
                     break;
@@ -251,6 +277,7 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
                         Some(&ingress),
                         &snapshot,
                         &mut pending,
+                        queue_policy,
                     )
                     .map(|(_, state)| state)
                     .map_err(|_| ())
@@ -303,6 +330,10 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
         if let Ok(mut scheduler) = self.scheduler.lock() {
             scheduler.pause();
         }
+        self.pending
+            .lock()
+            .map_err(|_| timer_error("TimerDriverStop", "timer pending queue lock is poisoned"))?
+            .clear();
         Ok(())
     }
     fn is_live(&self) -> bool {
@@ -571,6 +602,28 @@ mod tests {
         assert_eq!(first_thread, second_thread);
         driver.stop().unwrap();
     }
+
+    #[test]
+    fn stop_discards_private_ordered_backlog_before_restart() {
+        let backend = WorkingBackend {
+            calls: Arc::new(AtomicUsize::new(0)),
+        };
+        let mut driver = NativeTimerInputDriver::new(
+            "physics",
+            backend,
+            FixedStepScheduler::new(60, 8),
+            snapshot(),
+        );
+        driver
+            .pending
+            .lock()
+            .unwrap()
+            .push_back(TimerSnapshot::new(7, 60, 0));
+
+        driver.stop().unwrap();
+
+        assert!(driver.pending.lock().unwrap().is_empty());
+    }
 }
 
 #[derive(Debug)]
@@ -611,15 +664,17 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostFactory for NativeTimerH
         let snapshot = new_shared_snapshot(initial);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(TimerResourceProvider::new(
+            resource_providers: vec![Box::new(TimerResourceProvider::new_with_planning_snapshot(
                 instance_name,
                 snapshot.clone(),
+                initial,
             ))],
-            input_drivers: vec![Box::new(NativeTimerInputDriver::new(
+            input_drivers: vec![Box::new(NativeTimerInputDriver::new_with_queue_policy(
                 instance_name,
                 self.backend.clone(),
                 FixedStepScheduler::new(settings.frequency_hz, settings.max_catch_up_steps),
                 snapshot,
+                settings.queue_policy,
             ))],
         })
     }
