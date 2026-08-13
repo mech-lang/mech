@@ -160,8 +160,8 @@ impl RuntimeConfig {
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ResidentRoutingPolicy {
-    #[default]
     PreferResident,
+    #[default]
     RequireResident,
     LegacyOnly,
 }

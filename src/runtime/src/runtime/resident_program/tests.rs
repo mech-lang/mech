@@ -566,11 +566,11 @@ fn unactivated_external_runtime(driver_count: usize) -> crate::MechRuntime {
 }
 
 #[test]
-fn load_options_default_to_prefer_resident_and_volatile() {
+fn load_options_default_to_required_resident_and_volatile() {
     let options = RuntimeProgramLoadOptions::default();
     assert_eq!(
         options.routing,
-        crate::ResidentRoutingPolicy::PreferResident
+        crate::ResidentRoutingPolicy::RequireResident
     );
     assert_eq!(
         options.durability,
@@ -837,7 +837,13 @@ fn unsupported_source_falls_back_only_when_policy_allows_it() {
     let unsupported = r#"message := "resident strings are deliberately unsupported""#;
     let mut preferred = runtime();
     let outcome = preferred
-        .load_source_program(unsupported, RuntimeProgramLoadOptions::default())
+        .load_source_program(
+            unsupported,
+            RuntimeProgramLoadOptions {
+                routing: crate::ResidentRoutingPolicy::PreferResident,
+                ..RuntimeProgramLoadOptions::default()
+            },
+        )
         .unwrap();
     assert_eq!(outcome.route, RuntimeProgramRoute::Legacy);
     assert_eq!(outcome.info.legacy_turns, 1);
@@ -854,6 +860,53 @@ fn unsupported_source_falls_back_only_when_policy_allows_it() {
         .unwrap_err();
     assert_eq!(error.kind_name(), "ResidentRouteFailure");
     assert!(error.kind_message().starts_with("SemanticUnsupported:"));
+}
+
+#[test]
+fn production_source_and_bytecode_load_residently_without_engine_selection() {
+    let mut source_runtime = runtime();
+    let source = source_runtime
+        .load_production_source_program(PURE_SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(source.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(
+        source.info.policy,
+        crate::ResidentRoutingPolicy::RequireResident
+    );
+    assert_eq!(source.info.legacy_turns, 0);
+
+    let ActiveProgramExecution::ResidentPure(execution) = &source_runtime.active_program else {
+        unreachable!()
+    };
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+    let mut bytecode_runtime = runtime();
+    let decoded = bytecode_runtime
+        .load_production_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(decoded.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(
+        decoded.info.policy,
+        crate::ResidentRoutingPolicy::RequireResident
+    );
+    assert_eq!(decoded.info.legacy_turns, 0);
+}
+
+#[test]
+fn production_unsupported_semantics_fail_without_installing_legacy() {
+    let mut runtime = runtime();
+    let error = runtime
+        .load_production_source_program(
+            r#"message := "resident strings are deliberately unsupported""#,
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap_err();
+    let failure = error.kind_as::<ResidentRouteFailure>().unwrap();
+    assert_eq!(
+        failure.class,
+        ResidentRouteFailureClass::SemanticUnsupported
+    );
+    assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
+    assert_eq!(runtime.program_execution_info().legacy_turns, 0);
 }
 
 #[test]

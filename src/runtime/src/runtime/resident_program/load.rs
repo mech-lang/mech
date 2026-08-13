@@ -40,6 +40,76 @@ use super::{
 
 impl MechRuntime {
     #[cfg(feature = "resident-routing-source")]
+    pub fn load_production_source_program(
+        &mut self,
+        source: &str,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        self.load_production_with(durability, |runtime| {
+            Ok(Arc::new(
+                runtime.plan_source_product(source)?.into_parts().0,
+            ))
+        })
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_production_root_program(
+        &mut self,
+        request: SourceRequest,
+        module_options: ModuleBuildOptions<'_>,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with(durability, |runtime| {
+            let resolved = runtime.resolve_source(request.clone())?.ok_or_else(|| {
+                route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    format!("root source `{}` was not found", request.specifier),
+                )
+            })?;
+            match &resolved.source {
+                MechSourceCode::String(source) => {
+                    runtime.enforce_source_byte_limit(
+                        u64::try_from(source.len()).unwrap_or(u64::MAX),
+                    )?;
+                    Ok(Arc::new(
+                        runtime
+                            .plan_root_source_product(request.clone(), module_options)?
+                            .into_parts()
+                            .0,
+                    ))
+                }
+                MechSourceCode::Tree(_) => Ok(Arc::new(
+                    runtime
+                        .plan_root_source_product(request.clone(), module_options)?
+                        .into_parts()
+                        .0,
+                )),
+                MechSourceCode::ByteCode(bytecode) => {
+                    runtime.enforce_source_byte_limit(
+                        u64::try_from(bytecode.len()).unwrap_or(u64::MAX),
+                    )?;
+                    runtime.decode_artifact(bytecode)
+                }
+                _ => Err(route_failure(
+                    ResidentRouteFailureClass::SemanticUnsupported,
+                    "root source kind is not resident-routable",
+                )),
+            }
+        })
+    }
+
+    #[cfg(feature = "resident-routing")]
+    pub fn load_production_bytecode_program(
+        &mut self,
+        bytecode: &[u8],
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::try_from(bytecode.len()).unwrap_or(u64::MAX))?;
+        self.load_production_with(durability, |runtime| runtime.decode_artifact(bytecode))
+    }
+
+    #[cfg(feature = "resident-routing-source")]
     pub fn load_source_program(
         &mut self,
         source: &str,
@@ -119,6 +189,26 @@ impl MechRuntime {
                 runtime.evaluate_bytecode_once_with_context(&mut context, bytecode)
             },
         )
+    }
+
+    fn load_production_with<Resident>(
+        &mut self,
+        durability: crate::ResidentDurabilityPolicy,
+        resident: Resident,
+    ) -> MResult<RuntimeProgramLoadOutcome>
+    where
+        Resident: FnOnce(&mut Self) -> MResult<Arc<ProgramArtifact>>,
+    {
+        self.ensure_program_slot_available()?;
+        super::ensure_supported_durability(durability)?;
+        let options = RuntimeProgramLoadOptions::production(durability);
+        let result =
+            resident(self).and_then(|artifact| self.install_resident_artifact(artifact, options));
+        if result.is_err() {
+            debug_assert!(matches!(self.active_program, ActiveProgramExecution::None));
+            self.program_execution_info = RuntimeProgramExecutionInfo::default();
+        }
+        result
     }
 
     fn load_with_selection<Resident, Legacy>(

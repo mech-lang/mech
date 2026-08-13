@@ -41,7 +41,7 @@ impl Default for RuntimeProgramExecutionInfo {
     fn default() -> Self {
         Self {
             route: RuntimeProgramRoute::None,
-            policy: ResidentRoutingPolicy::PreferResident,
+            policy: ResidentRoutingPolicy::RequireResident,
             program_revision: None,
             plan_generation: None,
             layout_generation: None,
@@ -65,9 +65,20 @@ pub struct RuntimeProgramLoadOptions {
 
 impl Default for RuntimeProgramLoadOptions {
     fn default() -> Self {
+        Self::production(ResidentDurabilityPolicy::Volatile)
+    }
+}
+
+impl RuntimeProgramLoadOptions {
+    /// The one shipping program-loading policy.
+    ///
+    /// Production callers choose durability only. Execution-engine selection
+    /// remains available solely to the temporary legacy-interpreter facade
+    /// and migration tests until E1 removes it.
+    pub const fn production(durability: ResidentDurabilityPolicy) -> Self {
         Self {
-            routing: ResidentRoutingPolicy::PreferResident,
-            durability: ResidentDurabilityPolicy::Volatile,
+            routing: ResidentRoutingPolicy::RequireResident,
+            durability,
         }
     }
 }

@@ -2,9 +2,9 @@ use super::{RuntimeProgramLoadOptions, RuntimeProgramRoute};
 use crate::{ResidentDurabilityPolicy, ResidentRoutingPolicy, RuntimeBuilder};
 
 #[test]
-fn artifact_load_options_default_to_prefer_resident_and_volatile() {
+fn artifact_load_options_default_to_required_resident_and_volatile() {
     let options = RuntimeProgramLoadOptions::default();
-    assert_eq!(options.routing, ResidentRoutingPolicy::PreferResident);
+    assert_eq!(options.routing, ResidentRoutingPolicy::RequireResident);
     assert_eq!(options.durability, ResidentDurabilityPolicy::Volatile);
 }
 
