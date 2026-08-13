@@ -53,6 +53,26 @@ Open the printed local URL in Edge or Chrome. WebGPU availability, adapter
 limits, WGSL compilation, and every CPU-to-GPU binding are checked before the
 simulation starts; failures are shown in the page instead of falling back.
 
+## Browser acceptance
+
+Run the full end-to-end gate from the repository root. It builds the selected
+browser profile and native server, starts the real project, launches Chrome or
+Edge with WebGPU, waits for the one-million-particle runtime, advances GPU
+frames, sends pointer input, and verifies that input passes through a committed
+Mech CPU turn into the GPU bindings:
+
+```text
+# macOS/Linux
+python3 scripts/smoke-gpu-particles-browser.py --build
+
+# Windows PowerShell
+py scripts\smoke-gpu-particles-browser.py --build
+```
+
+The command exits unsuccessfully on a profile mismatch, startup exception,
+missing WebGPU adapter, wrong particle count, stalled frames, or broken pointer
+transaction. Failure artifacts are retained in the printed temporary folder.
+
 ## Full-size acceptance
 
 These tests compile the unchanged one-million-particle source. They do not

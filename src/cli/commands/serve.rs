@@ -405,6 +405,41 @@ async fn load_browser_assets(
     })
 }
 
+fn validate_configured_browser_profile(
+    document: Option<&mech_runtime::MechConfigDocument>,
+    wasm_pkg: &str,
+    javascript: &[u8],
+) -> MResult<()> {
+    let requires_mixed_gpu =
+        document.is_some_and(|document| document.hosts.iter().any(|host| host.provider == "gpu"));
+    if !requires_mixed_gpu {
+        return Ok(());
+    }
+    let javascript = std::str::from_utf8(javascript).map_err(|error| {
+        MechError::new(
+            Utf8ConversionError {
+                source_error: error.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    if javascript.contains("export class WasmMixedGpuProject")
+        && javascript.contains("static fromSource(")
+    {
+        return Ok(());
+    }
+    Err(MechError::new(
+        GenericError {
+            msg: format!(
+                "configured GPU host requires a mixed CPU/GPU browser package, but `{wasm_pkg}` does not export WasmMixedGpuProject.fromSource; run scripts/build-mech-gpu-browser.sh on macOS/Linux or scripts\\build-mech-gpu-browser.ps1 on Windows before serving this project"
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc())
+}
+
 pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     let badge = "[Mech Server]".truecolor(34, 204, 187);
     let resources = &options.resources;
@@ -472,6 +507,14 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         wasm,
         js,
     } = load_browser_assets(&options.authority, &options.wasm_pkg, resources).await?;
+    validate_configured_browser_profile(
+        options
+            .loaded_config
+            .as_ref()
+            .map(|loaded| &loaded.document),
+        &options.wasm_pkg,
+        &js.bytes,
+    )?;
     render_resource_events(&badge.to_string(), "WASM", &wasm.events);
     let wasm_backing_paths = match &wasm.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
@@ -603,8 +646,8 @@ fn serve_host_delegation_injection(
 mod tests {
     use super::*;
     use mech_runtime::{
-        DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT,
-        SharedCapabilityKernel,
+        ConfigProfileOptions, DefaultIdGenerator, FS_READ, HostFilesystemAuthority,
+        MECH_TOOL_SUBJECT, SharedCapabilityKernel, parse_config_document,
     };
 
     fn authority_for(path: &std::path::Path) -> HostFilesystemAuthority {
@@ -712,5 +755,42 @@ mod tests {
                 .unwrap_err()
         );
         assert!(error.contains("raw WebAssembly"), "{error}");
+    }
+
+    #[test]
+    fn configured_gpu_host_rejects_generic_browser_profile_before_serving() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {hosts: [{name: "particles" provider: "gpu" settings: {}}]}"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let error = format!(
+            "{:?}",
+            validate_configured_browser_profile(
+                Some(&document),
+                "src/wasm/pkg",
+                b"export class WasmProject {}",
+            )
+            .unwrap_err()
+        );
+        assert!(error.contains("WasmMixedGpuProject.fromSource"), "{error}");
+        assert!(error.contains("build-mech-gpu-browser"), "{error}");
+    }
+
+    #[test]
+    fn configured_gpu_host_accepts_mixed_browser_profile() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {hosts: [{name: "particles" provider: "gpu" settings: {}}]}"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        validate_configured_browser_profile(
+            Some(&document),
+            "src/wasm/pkg",
+            b"export class WasmMixedGpuProject { static fromSource() {} }",
+        )
+        .unwrap();
     }
 }
