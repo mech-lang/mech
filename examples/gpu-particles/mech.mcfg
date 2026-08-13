@@ -1,7 +1,8 @@
 config := {
   runtime: {
-    execution: {
-      resident-routing: "prefer-resident"
+    program-routing: {
+      resident-routing: "require-resident"
+      resident-durability: "volatile"
     }
 
     limits: {

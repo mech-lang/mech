@@ -3,8 +3,8 @@ use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use mech_core::{
-    Body, MResult, MechCode, MechError, MechErrorKind, MechSourceCode, Program, Section,
-    SectionElement, hash_str,
+    Body, MResult, MechCode, MechError, MechErrorKind, MechSourceCode, NoMechExecutionServices,
+    Program, Section, SectionElement, hash_str,
 };
 use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingRole, GpuHost, GpuProgram, GpuRegionHostFactory, GpuRegionProgram};
@@ -101,7 +101,7 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
             MechProgramConfig::default(),
             mech_stdlib::source_native_plan_catalog(),
         );
-        source_program.run_tree(&region_tree)?;
+        source_program.run_tree_with_services(&region_tree, &mut NoMechExecutionServices)?;
         let product = source_program.compile_program_product()?;
         if product.compute_regions().len() != 1 || product.compute_regions()[0].name != name {
             return Err(executor_error(
@@ -237,7 +237,7 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
     let parse_elapsed = parse_started.elapsed();
 
     let source_started = Instant::now();
-    source_program.run_tree(&tree)?;
+    source_program.run_tree_with_services(&tree, &mut NoMechExecutionServices)?;
     let source_elapsed = source_started.elapsed();
 
     let artifact_started = Instant::now();

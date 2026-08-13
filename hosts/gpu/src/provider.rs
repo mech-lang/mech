@@ -1,10 +1,14 @@
 use std::collections::BTreeMap;
 use std::sync::{
-    Arc, Mutex,
+    Arc, LazyLock, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
+    MechErrorKind, OperationContractDeclaration, Ref,
+};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -15,6 +19,22 @@ use mech_runtime::{
 };
 
 use crate::{GpuProgram, ResidentGpuSession};
+
+static GPU_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
 
 #[derive(Clone, Debug)]
 pub struct GpuRegionProgram {
@@ -178,8 +198,7 @@ impl RuntimeResourceProvider for GpuRegionResourceProvider {
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static mech_core::OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send)
-            .then(mech_runtime::at_most_once_effect_contract)
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&GPU_EFFECT_CONTRACT)
     }
 
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
