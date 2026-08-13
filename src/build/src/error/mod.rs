@@ -94,6 +94,7 @@ pub enum NativeBuildErrorKind {
     },
     NativeActorBootstrapMissing,
     NativeActorBootstrapUnused,
+    NativeActorBootstrapUnsupported,
     NativeActorLiveApplicationUnsupported,
     NativeResourceOwnerAmbiguous {
         target: String,
@@ -204,6 +205,7 @@ impl MechErrorKind for NativeBuildErrorKind {
             }
             Self::NativeActorBootstrapMissing => "NativeActorBootstrapMissing",
             Self::NativeActorBootstrapUnused => "NativeActorBootstrapUnused",
+            Self::NativeActorBootstrapUnsupported => "NativeActorBootstrapUnsupported",
             Self::NativeActorLiveApplicationUnsupported => "NativeActorLiveApplicationUnsupported",
             Self::NativeResourceOwnerAmbiguous { .. } => "NativeResourceOwnerAmbiguous",
             Self::NativeTargetUnsupported { .. } => "NativeTargetUnsupported",
@@ -278,6 +280,10 @@ impl MechErrorKind for NativeBuildErrorKind {
             }
             Self::NativeActorBootstrapUnused => {
                 "an actor bootstrap was configured for an application with no actor-turn requirements"
+                    .to_owned()
+            }
+            Self::NativeActorBootstrapUnsupported => {
+                "actor bootstrap is not part of the production resident program contract"
                     .to_owned()
             }
             Self::NativeActorLiveApplicationUnsupported => {

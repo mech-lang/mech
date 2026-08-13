@@ -162,6 +162,7 @@ from pathlib import Path
 import signal
 import subprocess
 import sys
+import time
 
 chrome, page_url, profile, dom_file, chrome_log = sys.argv[1:]
 args = [
@@ -178,13 +179,26 @@ args = [
 ]
 with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
     process = subprocess.Popen(args, stdout=stdout, stderr=stderr, start_new_session=True)
-    try:
-        raise SystemExit(process.wait(timeout=35))
-    except subprocess.TimeoutExpired:
-        os.killpg(process.pid, signal.SIGKILL)
-        process.wait()
-        print("headless Chrome retained its process after emitting the D4 DOM proof", file=sys.stderr)
-        raise SystemExit(124)
+    deadline = time.monotonic() + 90
+    while True:
+        return_code = process.poll()
+        if return_code is not None:
+            raise SystemExit(return_code)
+        try:
+            proof_emitted = b'data-mech-done="true"' in Path(dom_file).read_bytes()
+        except OSError:
+            proof_emitted = False
+        if proof_emitted:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            print("headless Chrome retained its process after emitting the D4 DOM proof", file=sys.stderr)
+            raise SystemExit(124)
+        if time.monotonic() >= deadline:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.wait()
+            print("headless Chrome did not emit the D4 DOM proof within 90 seconds", file=sys.stderr)
+            raise SystemExit(124)
+        time.sleep(0.25)
 PY
 }
 

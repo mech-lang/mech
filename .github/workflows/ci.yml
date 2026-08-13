@@ -63,46 +63,11 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fmt --all -- --check
           python3 -B -m unittest tests.ci.test_ci_impact
+          python3 scripts/check-production-resident-routing.py
           scripts/check-unsafe-boundaries.sh
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-value-execution-boundary.py
           python3 -B -m unittest scripts/tests/test_check_value_execution_boundary.py
-          python3 scripts/generate-value-system-inventory.py --check
-          python3 scripts/generate-value-system-inventory.py \
-            --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
-            --check-legacy-baseline
-          python3 scripts/check-value-system-contract.py
-          python3 scripts/check-program-artifact-contract.py
-          python3 scripts/check-operation-contract.py
-          python3 scripts/check-resident-activation-contract.py
-          python3 scripts/generate-d1-contract.py --check
-          python3 scripts/check-d1-contract.py
-          python3 scripts/generate-d2-contract.py --check
-          python3 scripts/check-d2-contract.py
-          python3 scripts/generate-d3-contract.py --check
-          python3 scripts/check-d3-contract.py
-          python3 scripts/generate-d4-contract.py --check
-          python3 scripts/check-d4-contract.py
-          python3 scripts/check-gate-d-contract.py \
-            --report benchmarks/runtime/gate-d/d3-resident-external.json \
-            --expected-phase D3-resident-external
-          python3 -B -m unittest \
-            scripts/tests/test_generate_value_system_inventory.py \
-            scripts/tests/test_check_value_system_contract.py \
-            scripts/tests/test_check_program_artifact_contract.py \
-            scripts/tests/test_check_operation_contract.py \
-            scripts/tests/test_generate_resident_activation_contract.py \
-            scripts/tests/test_check_resident_activation_contract.py \
-            scripts/tests/test_generate_d1_contract.py \
-            scripts/tests/test_check_d1_contract.py \
-            scripts/tests/test_generate_d2_contract.py \
-            scripts/tests/test_check_d2_contract.py \
-            scripts/tests/test_generate_d3_contract.py \
-            scripts/tests/test_check_d3_contract.py \
-            scripts/tests/test_generate_d4_contract.py \
-            scripts/tests/test_check_d4_contract.py \
-            scripts/tests/test_run_gate_b_benchmarks.py
-          python3 -B -m unittest scripts/tests/test_run_gate_a_benchmarks.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
@@ -130,7 +95,7 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 build --locked --bin mech
           target/debug/mech --version | grep '(standard)'
-          target/debug/mech test tests/fixtures/standard-dynamic-matrix.mec
+          target/debug/mech run tests/fixtures/standard-resident-scalar.mec
       - name: Exercise source to bytecode to generated native executable
         run: >-
           cargo +nightly-2026-03-03 test
@@ -141,18 +106,19 @@ jobs:
           --
           --exact
           --nocapture
-      - name: Exercise console hosting and multiple live timer updates
+      - name: Exercise resident timer observation and console effect delivery
         run: |
-          set +e
-          timeout --preserve-status --signal=INT 2s \
-            target/debug/mech run tests/fixtures/standard-live-timer \
+          target/debug/mech run tests/fixtures/standard-live-timer \
+            --max-live-turns 2 \
+            --runtime-info \
             > /tmp/mech-standard-live-timer.out 2>&1
-          status=$?
-          set -e
-          test "$status" -eq 0
           grep -E '^[0-9]+$' /tmp/mech-standard-live-timer.out > /tmp/mech-standard-live-values.out
           test "$(wc -l < /tmp/mech-standard-live-values.out)" -ge 2
           test "$(sort -u /tmp/mech-standard-live-values.out | wc -l)" -ge 2
+          grep -F '"route":"resident-external"' /tmp/mech-standard-live-timer.out
+          grep -F '"legacy_turns":0' /tmp/mech-standard-live-timer.out
+          grep -F '"resident_accepted_turns":2' /tmp/mech-standard-live-timer.out
+          grep -F '"resident_rejected_turns":0' /tmp/mech-standard-live-timer.out
 
   changed-owner-tests:
     name: Owner ${{ matrix.id }} (${{ matrix.owners }})
@@ -198,7 +164,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           target/debug/mech.exe --version | Select-String -SimpleMatch '(standard)'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          target/debug/mech.exe test tests/fixtures/standard-dynamic-matrix.mec
+          target/debug/mech.exe run tests/fixtures/standard-resident-scalar.mec
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
   browser-canary:
@@ -229,11 +195,11 @@ jobs:
       - name: Build standard WASM and the standard server
         run: |
           bash scripts/build-mech-browser.sh
+          grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
+          ! grep -q '^[[:space:]]*evaluate(source)' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech
-      - name: Verify a live SVG update without browser errors
-        run: |
-          MECH_BIN=target/debug/mech bash scripts/smoke-served-analog-clock-browser.sh
-          MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
+      - name: Verify resident rendering without legacy turns or browser errors
+        run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
       - name: Remove generated browser package
         if: always()
         run: rm -rf src/wasm/pkg

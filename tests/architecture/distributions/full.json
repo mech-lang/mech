@@ -177,7 +177,7 @@
     "bundle_web",
     "bundle_web_core",
     "c64",
-    "cli",
+    "cli-product",
     "cli_core",
     "cli_host",
     "compiler",
@@ -207,6 +207,7 @@
     "invariant_define",
     "kind_annotation",
     "kind_define",
+    "legacy-interpreter",
     "logical_indexing",
     "map",
     "matrix",
@@ -262,6 +263,6 @@
     "whos"
   ],
   "source_specializer_count": 119,
-  "surface_digest": "fd5c9dea90ecb148d7cf0aa64b814ede236b283de74cf93403c392cad805046d",
+  "surface_digest": "8c2ccef84a194d129714908fbb7b2ddf2e1b8fbcc3e456f198c0ed95771237b5",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }

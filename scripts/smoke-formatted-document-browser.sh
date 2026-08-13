@@ -29,11 +29,16 @@ work_dir="$(mktemp -d "$target_dir/formatted-document.XXXXXX")"
 server_pid=""
 
 cleanup() {
+  local status="$?"
   if [[ -n "$server_pid" ]]; then
     kill "$server_pid" 2>/dev/null || true
     wait "$server_pid" 2>/dev/null || true
   fi
-  rm -rf "$work_dir"
+  if [[ "$status" -ne 0 ]]; then
+    echo "Formatted document browser artifacts retained at: $work_dir" >&2
+  else
+    rm -rf "$work_dir"
+  fi
 }
 trap cleanup EXIT
 
@@ -58,8 +63,8 @@ cat > "$work_dir/project/main.mec" <<'MEC'
 +> ./vendor/percent.mec
 +> ./rate%.mec
 {included.mec}
-answer := café/value + extdep/value + package/value + support/value + percent/value + included-value + nested-included-value
-answer
+~answer := 0
+answer += café/value + extdep/value + package/value + support/value + percent/value + included-value + nested-included-value
 MEC
 cat > "$work_dir/project/café.mec" <<'MEC'
 value := 2
@@ -328,12 +333,12 @@ try:
         ):
             fail(f"could not submit browser REPL command: {command}")
 
-    exact_answer = "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; return values.at(-1)?.textContent.trim() === '58'; })()"
-    submit("answer")
+    exact_answer = "(() => { const tables = [...document.querySelectorAll('.mech-repl-symbols')]; return tables.at(-1)?.textContent.includes('answer') && tables.at(-1)?.textContent.includes('58'); })()"
+    submit(":whos answer")
     wait_for(exact_answer, "the imported source value")
     submit(":clear")
     wait_for("[...document.querySelectorAll('.mech-repl-info')].some(row => /Document reset/.test(row.textContent))", "the static document reset")
-    submit("answer")
+    submit(":whos answer")
     wait_for(exact_answer, "the imported source value after reset")
 finally:
     if websocket is not None:

@@ -83,10 +83,10 @@ shared controller, or no runtime behavior at all.
 
 ### Reactive variable placeholders
 
-You can embed live interpreter variables directly in a template placeholder:
+You can embed live resident root variables directly in a template placeholder:
 
-- `{{VAR:x}}` — Reads variable `x` from the default interpreter.
-- `{{VAR:x@foo}}` — Reads variable `x` from interpreter `foo`.
+- `{{VAR:x}}` — Reads state-backed variable `x` from the resident document root.
 
 These bindings are reactive. If `x` changes in Mech, the rendered value in the
-document updates automatically.
+document updates automatically. Named legacy-interpreter placeholders are not
+part of the production document surface.

@@ -384,20 +384,12 @@ function outputAddress(element) {
   };
 }
 
-function resolveNamedInterpreter(name) {
-  const identifier = state.document.interpreterIdByName(name);
-  if (identifier === null || identifier === undefined) {
-    throw new Error(`named interpreter \`${name}\` was not found`);
-  }
-  return identifier.toString();
-}
-
 function prepareVarPlaceholders() {
   const root = state.root;
   if (!root) {
     return;
   }
-  const pattern = /\{\{VAR:([^@}\s]+)(?:@([^}\s]+))?\}\}/g;
+  const pattern = /\{\{VAR:([^@}\s]+)\}\}/g;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const candidates = [];
   while (walker.nextNode()) {
@@ -420,15 +412,6 @@ function prepareVarPlaceholders() {
       const placeholder = document.createElement("span");
       placeholder.className = "mech-var-placeholder";
       placeholder.dataset.mechVarName = match[1];
-      try {
-        placeholder.dataset.mechInterpreterId = match[2]
-          ? resolveNamedInterpreter(match[2])
-          : "0";
-      } catch (error) {
-        placeholder.dataset.mechInterpreterError = errorMessage(error);
-        placeholder.textContent = "[unresolved Mech variable]";
-        appendError(error);
-      }
       fragment.append(placeholder);
       cursor = pattern.lastIndex;
     }
@@ -501,12 +484,9 @@ function renderValues() {
     }
   }
   for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
-    if (placeholder.dataset.mechInterpreterError) {
-      continue;
-    }
     try {
       const rendered = state.document.renderedSymbol(
-        BigInt(placeholder.dataset.mechInterpreterId || "0"),
+        0n,
         placeholder.dataset.mechVarName,
       );
       if (rendered !== null) {

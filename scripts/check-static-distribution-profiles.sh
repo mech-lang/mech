@@ -138,6 +138,7 @@ check_full_machine_layers() {
 }
 
 check_static_boundary() {
+  python3 "$repository_root/scripts/check-production-resident-routing.py"
   python3 "$repository_root/scripts/check-rust-module-layout.py"
   python3 "$repository_root/scripts/check-source-catalog-entrypoints.py"
 

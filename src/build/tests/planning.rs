@@ -6,8 +6,8 @@ use std::{
 };
 
 use mech_build::{
-    NativeApplicationBuilder, NativeApplicationKind, NativeBuildEnvironment, NativeBuildProfile,
-    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog,
+    NativeActorBootstrap, NativeApplicationBuilder, NativeApplicationKind, NativeBuildEnvironment,
+    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog,
     NativeHostFunctionContext, NativeHostFunctionLinkage, NativeRuntimeConfig, WorkspacePackage,
     fingerprint_workspace,
 };
@@ -328,6 +328,27 @@ fn host_free_plan_accepts_scalar_runtime_config_as_plan_identity() {
     let plan = builder.plan(&request).unwrap();
     assert_eq!(plan.application_kind, NativeApplicationKind::Hosted);
     assert_eq!(plan.runtime_config, runtime);
+}
+
+#[test]
+fn production_builder_rejects_actor_bootstrap_before_planning() {
+    let builder = NativeApplicationBuilder::new(environment(empty_catalog()));
+    let mut request = request(LITERAL_F64);
+    request.runtime_config = Some(NativeRuntimeConfig {
+        runtime: RuntimeConfig::default(),
+        actor_bootstrap: Some(NativeActorBootstrap {
+            subject: "actor:test".to_owned(),
+            message_kind: "test".to_owned(),
+            message_payload: "payload".to_owned(),
+            initial_state: None,
+        }),
+        hosts: Vec::new(),
+        run_grants: Vec::new(),
+    });
+
+    let error = builder.plan(&request).unwrap_err();
+    assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
+    assert!(error.display_message().contains("actor bootstrap"));
 }
 
 #[test]

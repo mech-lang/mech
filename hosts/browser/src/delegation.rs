@@ -179,11 +179,10 @@ pub fn encode_browser_runtime_injection_config(
 }
 
 fn encode_program_routing(out: &mut Vec<u8>, config: mech_runtime::ProgramRoutingConfig) {
-    let routing = match config.resident_routing {
-        mech_runtime::ResidentRoutingPolicy::PreferResident => 0,
-        mech_runtime::ResidentRoutingPolicy::RequireResident => 1,
-        mech_runtime::ResidentRoutingPolicy::LegacyOnly => 2,
-    };
+    // The pre-launch routing field remains in signed envelopes until E2/E3;
+    // the runtime enum owns its stable discriminants while products expose
+    // only the resident-required policy.
+    let routing = config.resident_routing as u64;
     let durability = match config.resident_durability {
         mech_runtime::ResidentDurabilityPolicy::Volatile => 0,
         mech_runtime::ResidentDurabilityPolicy::Retained => 1,

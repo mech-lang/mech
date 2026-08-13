@@ -199,9 +199,7 @@ fn validate_runtime_config_implications(
             run_grants: Vec::new(),
             actor_bootstrap: None,
         });
-    normalized_config
-        .runtime
-        .validate_production_program_routing()?;
+    crate::validate_production_native_runtime_config(&normalized_config)?;
     if normalized_config.runtime != plan.runtime_config {
         return project_invalid("request runtime settings do not match the normalized build plan");
     }
@@ -1351,7 +1349,7 @@ mod tests {
     }
 
     #[test]
-    fn actor_main_bootstraps_message_state_capabilities_and_transaction() {
+    fn actor_bootstrap_template_is_quarantined_from_production_rendering() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
         plan.application_requirements = [
             "actor/message/kind",
@@ -1396,19 +1394,12 @@ mod tests {
             hosts: Vec::new(),
             run_grants: Vec::new(),
         };
-        let runtime = render_runtime_source(&plan, Some(&config)).unwrap();
-        for expected in [
-            "render-test-actor",
-            "render-test-message",
-            "render-test-payload",
-            "render-test-state",
-        ] {
-            assert!(runtime.contains(expected));
-        }
+        let error = render_runtime_source(&plan, Some(&config)).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
     }
 
     #[test]
-    fn distinct_actor_bootstraps_change_generated_runtime_identity() {
+    fn distinct_actor_bootstraps_remain_unrenderable_production_plans() {
         let mut alpha = base_plan(NativeApplicationKind::Hosted);
         alpha.application_requirements = vec![PlannedApplicationRequirement::HostFunction {
             name: "actor/message/kind".into(),
@@ -1443,11 +1434,10 @@ mod tests {
             hosts: Vec::new(),
             run_grants: Vec::new(),
         };
-        let alpha_source = render_runtime_source(&alpha, Some(&alpha_config)).unwrap();
-        let beta_source = render_runtime_source(&beta, Some(&beta_config)).unwrap();
-        assert_ne!(alpha_source, beta_source);
-        assert!(alpha_source.contains("actor:alpha"));
-        assert!(beta_source.contains("actor:beta"));
+        for (plan, config) in [(&alpha, &alpha_config), (&beta, &beta_config)] {
+            let error = render_runtime_source(plan, Some(config)).unwrap_err();
+            assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
+        }
         assert_ne!(
             compute_plan_sha256(&alpha).unwrap(),
             compute_plan_sha256(&beta).unwrap()

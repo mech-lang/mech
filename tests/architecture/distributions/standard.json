@@ -118,7 +118,7 @@
     "build",
     "bundle_web",
     "bundle_web_core",
-    "cli",
+    "cli-product",
     "cli_core",
     "cli_host",
     "compiler",
@@ -152,7 +152,6 @@
     "program",
     "project",
     "record",
-    "repl",
     "row_vectord",
     "run",
     "scene_host_browser",
@@ -178,7 +177,6 @@
     "swizzle",
     "symbol_table",
     "table",
-    "test",
     "time_host_browser",
     "time_host_native",
     "timer_host_browser",
@@ -193,6 +191,6 @@
     "whos"
   ],
   "source_specializer_count": 69,
-  "surface_digest": "9c87fb07539576ef9925c4a7aa3176bcb90fde0f4c380be35de41a56b8291e98",
+  "surface_digest": "bc4fcc3d364aca2580d2b43ae1ed7c0c83a877bb1b5eb1eb2905e08c4f22dfbf",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }

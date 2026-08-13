@@ -57,15 +57,17 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         RunInputMode::Paths(paths) => paths.clone(),
         RunInputMode::Empty | RunInputMode::InlineSource(_) => Vec::new(),
     };
-    let effective_options = if matches!(input_mode, RunInputMode::InlineSource(_)) {
-        None
-    } else {
-        crate::cli::run_options::effective_run_options(
-            run_paths,
-            loaded_config.as_ref(),
-            explicit_run_command,
-        )?
-    };
+    let targetless_repl = options.repl && matches!(input_mode, RunInputMode::Empty);
+    let effective_options =
+        if matches!(input_mode, RunInputMode::InlineSource(_)) || targetless_repl {
+            None
+        } else {
+            crate::cli::run_options::effective_run_options(
+                run_paths,
+                loaded_config.as_ref(),
+                explicit_run_command,
+            )?
+        };
     let missing_run_options =
         effective_options.is_none() && !matches!(input_mode, RunInputMode::InlineSource(_));
     let run_paths = effective_options
