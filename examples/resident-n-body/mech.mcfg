@@ -1,0 +1,56 @@
+config := {
+  runtime: {
+    execution: {
+      resident-routing: "require-resident"
+      resident-durability: "volatile"
+    }
+
+    limits: {
+      max-turn-duration-ms: 2000
+    }
+  }
+
+  hosts: [
+    {
+      name: "clock"
+      provider: "timer"
+      settings: {
+        frequency-hz: 60
+        max-catch-up-steps: 1
+      }
+    }
+
+    {
+      name: "orbit"
+      provider: "scene"
+      settings: {
+        selector: "#nbody"
+        renderer: "svg"
+        width: 800
+        height: 600
+        pixels-per-unit: 9
+        point-radius: 4
+        first-point-radius: 8
+        background: "#050816"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["n-body.mec"]
+
+    grants: [
+      {
+        target: "clock/tick"
+        operations: ["read"]
+        paths: ["delta-seconds"]
+      }
+
+      {
+        target: "orbit/frame"
+        operations: ["write"]
+        paths: ["points"]
+      }
+    ]
+  }
+}

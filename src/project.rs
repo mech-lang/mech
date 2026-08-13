@@ -244,6 +244,13 @@ pub fn apply_runtime_config_patch(
         base.name = name.clone();
     }
 
+    if let Some(value) = patch.execution.resident_routing {
+        base.execution.resident_routing = value;
+    }
+    if let Some(value) = patch.execution.resident_durability {
+        base.execution.resident_durability = value;
+    }
+
     if let Some(value) = patch.limits.max_steps_per_turn {
         base.limits.max_steps_per_turn = Some(value);
     }
@@ -455,13 +462,21 @@ mod tests {
     fn runtime_config_patch_applies() {
         let document = mech_runtime::parse_config_document(
       "test.mcfg".to_string(),
-      r#"config := {runtime: {name: "configured", limits: {max-steps-per-turn: 42}, diagnostics: {trace-enabled: true, log-level: "debug"}}}"#,
+      r#"config := {runtime: {name: "configured", execution: {resident-routing: "require-resident", resident-durability: "retained"}, limits: {max-steps-per-turn: 42}, diagnostics: {trace-enabled: true, log-level: "debug"}}}"#,
       ConfigProfileOptions::default(),
     )
     .unwrap();
         let runtime =
             apply_runtime_config_patch(RuntimeConfig::default(), &document.runtime).unwrap();
         assert_eq!(runtime.name, "configured");
+        assert_eq!(
+            runtime.execution.resident_routing,
+            mech_runtime::ResidentRoutingPolicy::RequireResident
+        );
+        assert_eq!(
+            runtime.execution.resident_durability,
+            mech_runtime::ResidentDurabilityPolicy::Retained
+        );
         assert_eq!(runtime.limits.max_steps_per_turn, Some(42));
         assert!(runtime.diagnostics.trace_enabled);
         assert_eq!(runtime.diagnostics.log_level, LogLevel::Debug);

@@ -162,6 +162,30 @@ pub(crate) fn execute_planning_source_module_roots(
     actor_bootstrap: Option<&ActorBootstrapConfig>,
     roots: &[PathBuf],
 ) -> MResult<MechRuntime> {
+    let (mut runtime, canonical_roots) = prepare_planning_source_module_runtime(
+        config,
+        configured_hosts,
+        run_grants,
+        actor_bootstrap,
+        roots,
+    )?;
+    for root in canonical_roots {
+        runtime.resolve_and_run_root_module(
+            SourceRequest::from_filesystem_path(&root)?,
+            module_build_options(),
+        )?;
+    }
+    Ok(runtime)
+}
+
+#[cfg(feature = "build")]
+pub(crate) fn prepare_planning_source_module_runtime(
+    config: RuntimeConfig,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    actor_bootstrap: Option<&ActorBootstrapConfig>,
+    roots: &[PathBuf],
+) -> MResult<(MechRuntime, Vec<PathBuf>)> {
     let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
     let mut builder = builder.planning();
     let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
@@ -176,14 +200,7 @@ pub(crate) fn execute_planning_source_module_roots(
     )?;
     builder = install_actor_planning_functions(builder, actor_bootstrap.cloned())?;
 
-    let mut runtime = builder.build()?;
-    for root in canonical_roots {
-        runtime.resolve_and_run_root_module(
-            SourceRequest::from_filesystem_path(&root)?,
-            module_build_options(),
-        )?;
-    }
-    Ok(runtime)
+    Ok((builder.build()?, canonical_roots))
 }
 
 #[cfg(feature = "build")]

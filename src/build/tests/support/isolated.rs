@@ -7,6 +7,7 @@ use serde::Deserialize;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum OwnerProfile {
     Standard,
+    Full,
     Fixed,
 }
 
@@ -14,6 +15,7 @@ impl OwnerProfile {
     fn cargo_feature(self) -> &'static str {
         match self {
             Self::Standard => "standard",
+            Self::Full => "full",
             Self::Fixed => "fixed",
         }
     }

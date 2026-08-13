@@ -181,6 +181,7 @@ impl BrowserRuntimeInjectionConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BrowserHostRuntimeConfig {
     pub name: String,
+    pub execution: mech_runtime::ExecutionConfig,
     pub limits: BrowserHostRuntimeLimits,
     pub diagnostics: BrowserHostDiagnosticsConfig,
 }
@@ -303,6 +304,7 @@ impl BrowserHostConfig {
         };
         let config = RuntimeConfig {
             name: self.runtime.name.clone(),
+            execution: self.runtime.execution,
             limits: RuntimeLimits {
                 max_steps_per_turn: self.runtime.limits.max_steps_per_turn,
                 max_turn_duration_ms: self.runtime.limits.max_turn_duration_ms,
@@ -403,6 +405,7 @@ impl From<&RuntimeConfig> for BrowserHostRuntimeConfig {
     fn from(config: &RuntimeConfig) -> Self {
         Self {
             name: config.name.clone(),
+            execution: config.execution,
             limits: BrowserHostRuntimeLimits {
                 max_steps_per_turn: config.limits.max_steps_per_turn,
                 max_turn_duration_ms: config.limits.max_turn_duration_ms,

@@ -15,6 +15,9 @@ pub(crate) struct RunCliArgs {
     pub time: bool,
     pub repl: bool,
     pub rounds_per_step: Option<usize>,
+    pub resident_routing_override: Option<mech_runtime::ResidentRoutingPolicy>,
+    pub runtime_info: bool,
+    pub max_live_turns: Option<usize>,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
 }
 
@@ -46,6 +49,20 @@ impl RunCliArgs {
             rounds_per_step: run_matches
                 .and_then(|matches| matches.get_one::<usize>("rounds-per-step").copied())
                 .or(root.rounds_per_step),
+            resident_routing_override: run_matches.and_then(|matches| {
+                if matches.get_flag("resident") {
+                    Some(mech_runtime::ResidentRoutingPolicy::RequireResident)
+                } else if matches.get_flag("legacy") {
+                    Some(mech_runtime::ResidentRoutingPolicy::LegacyOnly)
+                } else {
+                    None
+                }
+            }),
+            runtime_info: run_matches
+                .map(|matches| matches.get_flag("runtime-info"))
+                .unwrap_or(false),
+            max_live_turns: run_matches
+                .and_then(|matches| matches.get_one::<usize>("max-live-turns").copied()),
             cli_capability_selection: cli_host_capability_selection(root_matches, run_matches),
         })
     }
@@ -59,6 +76,9 @@ pub(crate) struct PreparedRunOptions {
     pub time: bool,
     pub repl: bool,
     pub rounds_per_step: Option<usize>,
+    pub resident_routing_override: Option<mech_runtime::ResidentRoutingPolicy>,
+    pub runtime_info: bool,
+    pub max_live_turns: Option<usize>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub config_event: config::ConfigLoadEvent,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
@@ -86,6 +106,9 @@ pub(crate) fn prepare_run_options(
         time: args.time,
         repl: args.repl,
         rounds_per_step: args.rounds_per_step,
+        resident_routing_override: args.resident_routing_override,
+        runtime_info: args.runtime_info,
+        max_live_turns: args.max_live_turns,
         loaded_config,
         config_event: loaded.event,
         cli_capability_selection: args.cli_capability_selection,

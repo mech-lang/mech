@@ -138,6 +138,8 @@ async function main() {
       : WasmProject.fromSources(config, sources);
   }
   project.start();
+  globalThis.__MECH_RUNTIME_INFO__ = () => project.runtimeInfo();
+  globalThis.__MECH_LAST_FRAME__ = null;
   running = true;
   requestAnimationFrame(frame);
 }
@@ -147,7 +149,7 @@ function frame() {
     return;
   }
   try {
-    project.frame(maxInputsPerFrame);
+    globalThis.__MECH_LAST_FRAME__ = project.frame(maxInputsPerFrame);
   } catch (error) {
     running = false;
     try {

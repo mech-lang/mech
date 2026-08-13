@@ -12,6 +12,10 @@ pub(crate) struct RunExecutionPlan {
     pub run_paths: Vec<String>,
     pub repl_requested: bool,
     pub missing_run_options: bool,
+    pub resident_routing: mech_runtime::ResidentRoutingPolicy,
+    pub resident_durability: mech_runtime::ResidentDurabilityPolicy,
+    pub runtime_info: bool,
+    pub max_live_turns: Option<usize>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub cli_grants: crate::cli::host_grants::EffectiveCliHostGrants,
     pub configured_hosts: Vec<HostInstanceConfig>,
@@ -24,7 +28,7 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
     let uuid = generate_uuid();
     let input_mode = options.input_mode;
     let loaded_config = options.loaded_config;
-    let runtime_config = effective_run_runtime_config(
+    let mut runtime_config = effective_run_runtime_config(
         loaded_config.as_ref(),
         format!("program-{}", uuid),
         options.debug,
@@ -32,6 +36,11 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         options.time,
         options.rounds_per_step,
     )?;
+    if let Some(routing) = options.resident_routing_override {
+        runtime_config.execution.resident_routing = routing;
+    }
+    let resident_routing = runtime_config.execution.resident_routing;
+    let resident_durability = runtime_config.execution.resident_durability;
 
     let cli_grants = host_grants::effective_cli_host_grants(
         loaded_config.as_ref(),
@@ -78,6 +87,10 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         run_paths,
         repl_requested: options.repl,
         missing_run_options,
+        resident_routing,
+        resident_durability,
+        runtime_info: options.runtime_info,
+        max_live_turns: options.max_live_turns,
         loaded_config,
         cli_grants,
         configured_hosts,
@@ -159,6 +172,9 @@ mod tests {
             time: false,
             repl: false,
             rounds_per_step: None,
+            resident_routing_override: None,
+            runtime_info: false,
+            max_live_turns: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),
@@ -189,6 +205,9 @@ mod tests {
             time: false,
             repl: false,
             rounds_per_step: None,
+            resident_routing_override: None,
+            runtime_info: false,
+            max_live_turns: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),

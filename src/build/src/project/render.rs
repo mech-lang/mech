@@ -356,6 +356,11 @@ pub fn render_catalog_source(plan: &NativeBuildPlan) -> MResult<String> {
         )
         .expect("writing to String cannot fail");
     }
+    if plan.application_kind == NativeApplicationKind::Hosted {
+        source.push_str(
+            "\n    mech_engine::install_intrinsic_resident(\n        &mut builder,\n    )?;\n",
+        );
+    }
     source.push_str("\n    Ok(Arc::new(builder.build()?))\n}\n");
     Ok(source)
 }
@@ -452,20 +457,63 @@ fn generated_error(message: impl Into<String>) -> MechError {
     MechError::new(GenericError { msg: message.into() }, None)
 }
 
-fn parse_once() -> Result<bool, ()> {
+#[derive(Clone, Copy)]
+struct GeneratedArguments {
+    once: bool,
+    runtime_info: bool,
+    max_live_turns: Option<usize>,
+}
+
+fn parse_arguments() -> Result<GeneratedArguments, ()> {
+    let mut parsed = GeneratedArguments {
+        once: false,
+        runtime_info: false,
+        max_live_turns: None,
+    };
     let mut arguments = std::env::args().skip(1);
-    match (arguments.next(), arguments.next()) {
-        (None, None) => Ok(false),
-        (Some(argument), None) if argument == "--once" => Ok(true),
-        _ => Err(()),
+    while let Some(argument) = arguments.next() {
+        match argument.as_str() {
+            "--once" => parsed.once = true,
+            "--runtime-info" => parsed.runtime_info = true,
+            "--max-live-turns" => {
+                let value = arguments.next().ok_or(())?.parse::<usize>().map_err(|_| ())?;
+                if value == 0 {
+                    return Err(());
+                }
+                parsed.max_live_turns = Some(value);
+            }
+            _ => return Err(()),
+        }
     }
+    Ok(parsed)
 }
 
 fn usage() {
-    eprintln!("usage: generated-app [--once]");
+    eprintln!("usage: generated-app [--once] [--runtime-info] [--max-live-turns N]");
 }
 
-fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
+fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
+    let info = runtime.program_execution_info();
+    let route = match info.route {
+        mech_runtime::RuntimeProgramRoute::None => "none",
+        mech_runtime::RuntimeProgramRoute::Legacy => "legacy",
+        mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
+        mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
+    };
+    let policy = match info.policy {
+        mech_runtime::ResidentRoutingPolicy::PreferResident => "prefer-resident",
+        mech_runtime::ResidentRoutingPolicy::RequireResident => "require-resident",
+        mech_runtime::ResidentRoutingPolicy::LegacyOnly => "legacy-only",
+    };
+    let revision = info.program_revision.map(|revision| {
+        format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
+    }).unwrap_or_else(|| "null".to_string());
+    let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{},\"legacy_turns\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets, info.legacy_turns)
+}
+
+fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
     let catalog = match catalog::function_catalog() {
         Ok(catalog) => catalog,
         Err(error) => return (Err(error), Vec::new()),
@@ -477,14 +525,24 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
     let runtime_constructed = true;
     let mut drivers_started = false;
     let primary = (|| -> MResult<()> {
-        let mut context = runtime.runtime_context()?;
-        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;
+        let execution = runtime.config().execution.clone();
+        let outcome = runtime.load_bytecode_program(
+            PROGRAM,
+            mech_runtime::RuntimeProgramLoadOptions {
+                routing: execution.resident_routing,
+                durability: execution.resident_durability,
+            },
+        )?;
+        let value = outcome.initial_value;
 
         if !value.is_empty() {
             println!("{}", value.into_value());
         }
 
-        if once {
+        if arguments.once {
+            if arguments.runtime_info {
+                println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
+            }
             return Ok(());
         }
 
@@ -498,9 +556,17 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
         drivers_started = true;
         runtime.start_input_drivers()?;
         while !interrupted.load(Ordering::SeqCst) {
+            if arguments.max_live_turns.is_some_and(|limit| {
+                runtime.program_execution_info().resident_accepted_turns >= limit as u64
+            }) {
+                break;
+            }
             if runtime.drain_host_inputs(64)?.is_empty() {
                 std::thread::sleep(Duration::from_millis(10));
             }
+        }
+        if arguments.runtime_info {
+            println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
         }
         Ok(())
     })();
@@ -520,14 +586,14 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
 }
 
 fn main() {
-    let once = match parse_once() {
-        Ok(once) => once,
+    let arguments = match parse_arguments() {
+        Ok(arguments) => arguments,
         Err(()) => {
             usage();
             std::process::exit(2);
         }
     };
-    let (primary, cleanup) = run(once);
+    let (primary, cleanup) = run(arguments);
     let mut failed = false;
     if let Err(error) = primary {
         eprintln!("{}", error.display_message());
@@ -557,20 +623,56 @@ static PROGRAM: &[u8] =
         "/program.mecb"
     ));
 
-fn parse_once() -> Result<bool, ()> {
+#[derive(Clone, Copy)]
+struct GeneratedArguments {
+    runtime_info: bool,
+}
+
+fn parse_arguments() -> Result<GeneratedArguments, ()> {
+    let mut parsed = GeneratedArguments { runtime_info: false };
     let mut arguments = std::env::args().skip(1);
-    match (arguments.next(), arguments.next()) {
-        (None, None) => Ok(false),
-        (Some(argument), None) if argument == "--once" => Ok(true),
-        _ => Err(()),
+    while let Some(argument) = arguments.next() {
+        match argument.as_str() {
+            "--once" => {}
+            "--runtime-info" => parsed.runtime_info = true,
+            "--max-live-turns" => {
+                let value = arguments.next().ok_or(())?.parse::<usize>().map_err(|_| ())?;
+                if value == 0 {
+                    return Err(());
+                }
+            }
+            _ => return Err(()),
+        }
     }
+    Ok(parsed)
 }
 
 fn usage() {
-    eprintln!("usage: generated-app [--once]");
+    eprintln!("usage: generated-app [--once] [--runtime-info] [--max-live-turns N]");
 }
 
-fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
+fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
+    let info = runtime.program_execution_info();
+    let route = match info.route {
+        mech_runtime::RuntimeProgramRoute::None => "none",
+        mech_runtime::RuntimeProgramRoute::Legacy => "legacy",
+        mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
+        mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
+    };
+    let policy = match info.policy {
+        mech_runtime::ResidentRoutingPolicy::PreferResident => "prefer-resident",
+        mech_runtime::ResidentRoutingPolicy::RequireResident => "require-resident",
+        mech_runtime::ResidentRoutingPolicy::LegacyOnly => "legacy-only",
+    };
+    let revision = info.program_revision.map(|revision| {
+        format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
+    }).unwrap_or_else(|| "null".to_string());
+    let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{},\"legacy_turns\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets, info.legacy_turns)
+}
+
+fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
     let catalog = match catalog::function_catalog() {
         Ok(catalog) => catalog,
         Err(error) => return (Err(error), Vec::new()),
@@ -581,12 +683,21 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
     };
     let runtime_constructed = true;
     let primary = (|| -> MResult<()> {
-        let _ = once;
-        let mut context = runtime.runtime_context()?;
-        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;
+        let execution = runtime.config().execution.clone();
+        let outcome = runtime.load_bytecode_program(
+            PROGRAM,
+            mech_runtime::RuntimeProgramLoadOptions {
+                routing: execution.resident_routing,
+                durability: execution.resident_durability,
+            },
+        )?;
+        let value = outcome.initial_value;
 
         if !value.is_empty() {
             println!("{}", value.into_value());
+        }
+        if arguments.runtime_info {
+            println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
         }
         Ok(())
     })();
@@ -600,14 +711,14 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
 }
 
 fn main() {
-    let once = match parse_once() {
-        Ok(once) => once,
+    let arguments = match parse_arguments() {
+        Ok(arguments) => arguments,
         Err(()) => {
             usage();
             std::process::exit(2);
         }
     };
-    let (primary, cleanup) = run(once);
+    let (primary, cleanup) = run(arguments);
     let mut failed = false;
     if let Err(error) = primary {
         eprintln!("{}", error.display_message());
@@ -650,7 +761,12 @@ fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
         "actor-turn plans must carry an actor bootstrap"
     );
 
-    let ordinary_install = "        let mut context = runtime.runtime_context()?;\n        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;";
+    let resident_install = "        let execution = runtime.config().execution.clone();\n        let outcome = runtime.load_bytecode_program(\n            PROGRAM,\n            mech_runtime::RuntimeProgramLoadOptions {\n                routing: execution.resident_routing,\n                durability: execution.resident_durability,\n            },\n        )?;\n        let value = outcome.initial_value;";
+    let ordinary_install = if source.contains(resident_install) {
+        resident_install
+    } else {
+        "        let mut context = runtime.runtime_context()?;\n        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;"
+    };
     assert!(
         source.contains(ordinary_install),
         "hosted main template must retain the program-install seam"
@@ -659,7 +775,7 @@ fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
         ordinary_install,
         "        let value = install_actor_bytecode(&mut runtime)?;",
     );
-    let seam = "fn parse_once() -> Result<bool, ()> {";
+    let seam = "fn parse_arguments() -> Result<GeneratedArguments, ()> {";
     assert!(
         source.contains(seam),
         "hosted main template lost parse seam"
@@ -814,7 +930,7 @@ pub fn render_runtime_source(
     }
 
     let mut source = String::from(
-        "use std::{collections::BTreeMap, sync::Arc};\n\nuse mech_core::{FunctionCatalog, MResult};\nuse mech_runtime::{\n    ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,\n    RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig, RuntimeLimits,\n};\n",
+        "use std::{collections::BTreeMap, sync::Arc};\n\nuse mech_core::{FunctionCatalog, MResult};\nuse mech_runtime::{\n    ConfigValue, DiagnosticsConfig, ExecutionConfig, HostInstanceConfig, LogLevel,\n    ResidentDurabilityPolicy, ResidentRoutingPolicy, RunResourceGrantConfig,\n    RuntimeBuilder, RuntimeConfig, RuntimeLimits,\n};\n",
     );
     if let Some(actor) = &plan.actor_bootstrap {
         write!(
@@ -950,8 +1066,20 @@ pub fn render_generated_native_project(
 
 fn render_runtime_config(config: &RuntimeConfig) -> String {
     format!(
-        "RuntimeConfig {{\n        name: {}.to_string(),\n        limits: RuntimeLimits {{\n            max_steps_per_turn: {},\n            max_turn_duration_ms: {},\n            max_memory_bytes: {},\n            max_tasks: {},\n            max_actors: {},\n            max_actor_mailbox_len: {},\n            max_source_bytes: {},\n            max_in_memory_events: {},\n        }},\n        diagnostics: DiagnosticsConfig {{\n            trace_enabled: {},\n            profile_enabled: {},\n            debug_enabled: {},\n            log_level: LogLevel::{},\n        }},\n    }}",
+        "RuntimeConfig {{\n        name: {}.to_string(),\n        execution: ExecutionConfig {{\n            resident_routing: ResidentRoutingPolicy::{},\n            resident_durability: ResidentDurabilityPolicy::{},\n        }},\n        limits: RuntimeLimits {{\n            max_steps_per_turn: {},\n            max_turn_duration_ms: {},\n            max_memory_bytes: {},\n            max_tasks: {},\n            max_actors: {},\n            max_actor_mailbox_len: {},\n            max_source_bytes: {},\n            max_in_memory_events: {},\n        }},\n        diagnostics: DiagnosticsConfig {{\n            trace_enabled: {},\n            profile_enabled: {},\n            debug_enabled: {},\n            log_level: LogLevel::{},\n        }},\n    }}",
         rust_string_literal(&config.name),
+        match config.execution.resident_routing {
+            mech_runtime::ResidentRoutingPolicy::PreferResident => "PreferResident",
+            mech_runtime::ResidentRoutingPolicy::RequireResident => "RequireResident",
+            mech_runtime::ResidentRoutingPolicy::LegacyOnly => "LegacyOnly",
+        },
+        match config.execution.resident_durability {
+            mech_runtime::ResidentDurabilityPolicy::Volatile => "Volatile",
+            mech_runtime::ResidentDurabilityPolicy::Retained => "Retained",
+            mech_runtime::ResidentDurabilityPolicy::AsynchronousDurable => "AsynchronousDurable",
+            mech_runtime::ResidentDurabilityPolicy::SynchronousDurable => "SynchronousDurable",
+            mech_runtime::ResidentDurabilityPolicy::ReplicatedDurable => "ReplicatedDurable",
+        },
         render_option_u64(config.limits.max_steps_per_turn),
         render_option_u64(config.limits.max_turn_duration_ms),
         render_option_u64(config.limits.max_memory_bytes),
@@ -1201,6 +1329,14 @@ mod tests {
     }
 
     #[test]
+    fn hosted_catalog_installs_the_production_resident_factory_surface() {
+        let plan = base_plan(NativeApplicationKind::Hosted);
+        let source = render_catalog_source(&plan).unwrap();
+
+        assert!(source.contains("mech_engine::install_intrinsic_resident"));
+    }
+
+    #[test]
     fn host_function_installers_are_applied_to_runtime_builder_only() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
         plan.application_requirements = vec![PlannedApplicationRequirement::HostFunction {
@@ -1339,14 +1475,23 @@ mod tests {
     }
 
     #[test]
-    fn every_generated_main_accepts_only_the_once_switch() {
+    fn generated_main_argument_surfaces_match_their_execution_models() {
+        let engine = render_engine_main_source();
+        assert!(engine.contains("Some(argument), None) if argument == \"--once\""));
+        assert!(engine.contains("usage: generated-app [--once]"));
+        assert!(!engine.contains("--runtime-info"));
+
         for source in [
-            render_engine_main_source(),
             render_hosted_main_source(false),
             render_hosted_main_source(true),
         ] {
-            assert!(source.contains("Some(argument), None) if argument == \"--once\""));
-            assert!(source.contains("usage: generated-app [--once]"));
+            assert!(source.contains("\"--runtime-info\" => parsed.runtime_info = true"));
+            assert!(source.contains("\"--max-live-turns\""));
+            assert!(
+                source.contains(
+                    "usage: generated-app [--once] [--runtime-info] [--max-live-turns N]"
+                )
+            );
             assert!(source.contains("std::process::exit(2)"));
         }
     }

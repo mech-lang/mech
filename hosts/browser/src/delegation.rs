@@ -302,6 +302,7 @@ mod tests {
         BrowserHostConfig {
             runtime: BrowserHostRuntimeConfig {
                 name: "demo".to_string(),
+                execution: mech_runtime::ExecutionConfig::default(),
                 limits: BrowserHostRuntimeLimits {
                     max_steps_per_turn: Some(100),
                     max_turn_duration_ms: None,

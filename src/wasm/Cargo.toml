@@ -58,6 +58,8 @@ baselib = ["bool", "string",
 runtime = ["mech-engine/runtime", "mech-runtime/runtime", "mech-stdlib/runtime"]
 source = ["runtime", "mech-engine/source", "mech-runtime/source", "mech-stdlib/source"]
 compiler = ["source", "mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime/compiler", "mech-stdlib/compiler"]
+resident-production = ["mech-runtime/resident-production"]
+resident-production-source = ["resident-production", "compiler", "mech-runtime/resident-production-source"]
 program = ["mech-core/program", "mech-engine/program", "mech-syntax/program", "mech-runtime/program"]
 pretty_print = ["mech-core/pretty_print", "mech-syntax/pretty_print", "mech-runtime/pretty_print"]
 formatter = ["mech-syntax/formatter"]
@@ -70,7 +72,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # Served `/code/...` documents are encoded by a native formatter with Mika
 # nodes enabled. Keep that feature-gated Program schema identical in the
 # prebuilt browser package so serialized enum indices remain compatible.
-browser_project = ["source", "browser_project_runner", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "mika", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
+browser_project = ["source", "browser_project_runner", "resident-production-source", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "mika", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "stats_default", "combinatorics_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
 browser_project_runner = ["source", "program", "pretty_print", "serde"]
 served_project_authority = ["host_delegation_signing"]
 browser_host_dom = ["dep:mech-browser", "mech-browser/provider", "mech-browser/serde"]
