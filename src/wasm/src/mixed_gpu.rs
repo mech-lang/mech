@@ -200,16 +200,16 @@ fn compile_named_gpu_region(
     source_program.run_tree(&isolated)?;
     let source_execution = milliseconds(source_started);
     let artifact_started = Instant::now();
-    let product = source_program.compile_program_product()?;
+    let (artifact, compute_regions) = source_program.compile_program_artifact_with_regions()?;
     let artifact_compilation = milliseconds(artifact_started);
-    if product.compute_regions().len() != 1 || product.compute_regions()[0].name != region {
+    if compute_regions.len() != 1 || compute_regions[0].name != region {
         return Err(mixed_error(format!(
             "isolated section `{region}` did not produce exactly that compute region"
         )));
     }
     let gpu_started = Instant::now();
     let program = GpuHost
-        .compile_with_regions(product.artifact(), product.compute_regions())
+        .compile_with_regions(&artifact, &compute_regions)
         .map_err(|failure| {
             mixed_error(format!("GPU host rejected region `{region}`: {failure}"))
         })?;
@@ -927,6 +927,29 @@ velocities = next-velocities
 positions = next-positions
 (positions, velocities)
 "#;
+
+    const SERVED_CONFIG: &str = include_str!("../../../examples/gpu-particles/mech.mcfg");
+    const SERVED_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
+
+    #[test]
+    #[ignore = "million-particle browser compiler acceptance test"]
+    fn served_million_particle_source_compiles_without_bytecode_serialization() {
+        let document = parse_config_document(
+            "examples/gpu-particles/mech.mcfg",
+            SERVED_CONFIG,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let tree = mech_syntax::parse(SERVED_SOURCE).unwrap();
+        let prepared = compile_named_gpu_region(&document, &tree, 0.0).unwrap();
+
+        assert_eq!(prepared.region, "particle-field");
+        assert_eq!(prepared.program.dispatch_elements(), 2_000_000);
+        assert_eq!(prepared.inputs["force-x"], vec![0.0]);
+        assert_eq!(prepared.inputs["force-y"], vec![0.0]);
+        assert_eq!(prepared.inputs["force-strength"], vec![0.0]);
+        assert_eq!(prepared.inputs["dt"], vec![0.016666667]);
+    }
 
     #[test]
     fn one_document_builds_cpu_graph_and_generic_gpu_region() {

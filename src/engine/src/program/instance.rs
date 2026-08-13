@@ -1360,6 +1360,33 @@ impl MechProgram {
             })
     }
 
+    /// Compiles the in-memory executable artifact and its compute-region
+    /// metadata without also serializing a durable bytecode container.
+    ///
+    /// Hosts that immediately lower an artifact for the current process do not
+    /// need the duplicate bytecode representation. This is especially
+    /// important for large initialized device state, which would otherwise be
+    /// copied into both representations before execution begins.
+    #[cfg(feature = "compiler")]
+    pub fn compile_program_artifact_with_regions(
+        &mut self,
+    ) -> MResult<(ProgramArtifact, Box<[ArtifactComputeRegion]>)> {
+        let compiled = compile_bytecode(self)?;
+        compile_executable_program_artifact_product(
+            &compiled,
+            self.interpreter.function_catalog().as_ref(),
+        )
+        .map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
+    }
+
     #[cfg(feature = "compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
