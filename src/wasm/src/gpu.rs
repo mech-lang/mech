@@ -9,13 +9,13 @@ use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
 #[derive(Clone, Copy, Debug, Default)]
-struct CompileTimings {
-    catalog_setup: f64,
-    parsing: f64,
-    source_execution: f64,
-    artifact_compilation: f64,
-    gpu_lowering: f64,
-    input_capture: f64,
+pub(crate) struct CompileTimings {
+    pub(crate) catalog_setup: f64,
+    pub(crate) parsing: f64,
+    pub(crate) source_execution: f64,
+    pub(crate) artifact_compilation: f64,
+    pub(crate) gpu_lowering: f64,
+    pub(crate) input_capture: f64,
 }
 
 #[wasm_bindgen(js_name = requiredGpuPaths)]
@@ -59,6 +59,14 @@ pub fn configured_executor(config_source: &str) -> Result<JsValue, JsValue> {
 #[wasm_bindgen(js_name = compileGpuProgram)]
 pub fn compile_gpu_program(source: &str) -> Result<JsValue, JsValue> {
     let (program, input_values, timings) = compile_program(source).map_err(error)?;
+    gpu_program_manifest(&program, &input_values, timings)
+}
+
+pub(crate) fn gpu_program_manifest(
+    program: &GpuProgram,
+    input_values: &BTreeMap<String, Vec<f32>>,
+    timings: CompileTimings,
+) -> Result<JsValue, JsValue> {
     let manifest_started = Instant::now();
 
     let manifest = Object::new();
@@ -171,7 +179,7 @@ pub fn compile_gpu_program(source: &str) -> Result<JsValue, JsValue> {
     Ok(manifest.into())
 }
 
-fn compile_program(
+pub(crate) fn compile_program(
     source: &str,
 ) -> Result<(GpuProgram, BTreeMap<String, Vec<f32>>, CompileTimings), String> {
     let catalog_started = Instant::now();
