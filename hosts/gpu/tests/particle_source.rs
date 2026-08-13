@@ -143,7 +143,7 @@ fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
 }
 
 #[test]
-fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
+fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "64f32", 1);
     let complete = mech_syntax::parse(&source).expect("complete source must parse");
     assert!(
@@ -167,7 +167,7 @@ fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
     assert_eq!(product.compute_regions().len(), 1);
     let region = &product.compute_regions()[0];
     assert_eq!(region.name, "particle-field");
-    assert_eq!(region.placement, ComputePlacement::Gpu);
+    assert_eq!(region.placement, ComputePlacement::Compute);
     assert!(!region.nodes.is_empty());
     let bytecode = ParsedProgram::from_bytes(product.bytecode()).unwrap();
     let (_, bytecode_regions) =
@@ -183,11 +183,17 @@ fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
     );
     assert_eq!(
         placement.gpu_regions[0].requested,
-        Some(ComputePlacement::Gpu),
+        Some(ComputePlacement::Compute),
     );
     let lowered = GpuHost
         .compile_with_regions(product.artifact(), product.compute_regions())
         .expect("one named compute region must lower to one GPU program");
+    let cpu_lowered = GpuHost
+        .compile_cpu_with_regions(product.artifact(), product.compute_regions())
+        .expect("the same neutral region must lower to the CPU executor");
+    assert_eq!(cpu_lowered.wgsl(), lowered.wgsl());
+    assert_eq!(cpu_lowered.bindings().len(), lowered.bindings().len());
+    assert_eq!(cpu_lowered.dispatch_elements(), lowered.dispatch_elements());
     assert!(
         lowered.bindings().len() <= 8,
         "the example must fit WebGPU's guaranteed storage-buffer limit"
@@ -211,7 +217,7 @@ fn named_mechdown_region_reaches_gpu_placement_and_lowering() {
 fn hard_cpu_region_is_not_silently_sent_to_gpu() {
     let source = SERVED_PARTICLE_SOURCE
         .replacen("1000000f32", "16f32", 1)
-        .replacen("@ gpu", "@ cpu", 1);
+        .replacen("@ compute", "@ cpu", 1);
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
         mech_stdlib::source_native_plan_catalog(),
@@ -236,6 +242,29 @@ fn hard_cpu_region_is_not_silently_sent_to_gpu() {
         .compile_with_regions(product.artifact(), product.compute_regions())
         .unwrap_err();
     assert!(error.to_string().contains("requires CPU execution"));
+}
+
+#[test]
+fn hard_gpu_region_is_not_silently_sent_to_cpu() {
+    let source = SERVED_PARTICLE_SOURCE
+        .replacen("1000000f32", "16f32", 1)
+        .replacen("@ compute", "@ gpu", 1);
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::source_native_plan_catalog(),
+    );
+    program
+        .run_tree(&isolated_gpu_tree(&source))
+        .expect("source must run");
+    let product = program.compile_program_product().unwrap();
+
+    GpuHost
+        .compile_with_regions(product.artifact(), product.compute_regions())
+        .expect("hard GPU region must run under the GPU executor");
+    let error = GpuHost
+        .compile_cpu_with_regions(product.artifact(), product.compute_regions())
+        .unwrap_err();
+    assert!(error.to_string().contains("requires GPU execution"));
 }
 
 #[test]
@@ -395,13 +424,13 @@ fn particle_example_is_one_mixed_mech_document() {
         .filter(|section| section.compute.is_some())
         .collect::<Vec<_>>();
     assert_eq!(regions.len(), 1);
-    assert_eq!(regions[0].compute, Some(ComputePlacement::Gpu));
+    assert_eq!(regions[0].compute, Some(ComputePlacement::Compute));
     assert_eq!(
         regions[0].subtitle.as_ref().unwrap().to_string().trim(),
         "particle-field"
     );
     assert!(SERVED_PARTICLE_SOURCE.contains("pointer://pointer/frame"));
-    assert!(SERVED_PARTICLE_SOURCE.contains("gpu://particles/kernel"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("compute://particles/kernel"));
     assert!(SERVED_PARTICLE_SOURCE.contains("@particles/input/force-x <- force-x"));
     assert!(SERVED_PARTICLE_SOURCE.contains("@particles/turn <- pulse"));
     assert!(!SERVED_PARTICLE_SOURCE.contains("host-positions"));
@@ -484,6 +513,37 @@ fn served_pointer_press_materially_changes_the_particle_trajectory() {
         displacement > 0.1,
         "one second of pointer input was not visible: maximum displacement {displacement}"
     );
+}
+
+#[test]
+fn owned_cpu_session_accepts_new_inputs_without_resetting_state() {
+    let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
+    let artifact = compile_isolated_gpu_source(&source);
+    let program = GpuHost
+        .compile(&artifact)
+        .expect("served particle source must be admitted");
+    let initial = BTreeMap::from([
+        ("force-x".to_owned(), vec![0.0]),
+        ("force-y".to_owned(), vec![0.0]),
+        ("force-strength".to_owned(), vec![0.0]),
+        ("dt".to_owned(), vec![0.016]),
+    ]);
+    let mut session = program
+        .into_cpu(&initial)
+        .expect("CPU session must prepare");
+    session.dispatch_turns(30).expect("unforced turns must run");
+    let before = session.output("result.0").expect("positions must read");
+    session
+        .update_inputs(&BTreeMap::from([
+            ("force-x".to_owned(), vec![0.7]),
+            ("force-y".to_owned(), vec![0.6]),
+            ("force-strength".to_owned(), vec![1.25]),
+        ]))
+        .expect("changed scalar inputs must update");
+    session.dispatch_turns(30).expect("forced turns must run");
+    let after = session.output("result.0").expect("positions must read");
+
+    assert_ne!(before, after);
 }
 
 fn root_mean_square_radius(positions: &[f32]) -> f32 {

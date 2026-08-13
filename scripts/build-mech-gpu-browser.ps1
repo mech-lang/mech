@@ -25,9 +25,9 @@ try {
   }
 
   $wasmGlue = Get-Content "src/wasm/pkg/mech_wasm.js" -Raw
-  if (!$wasmGlue.Contains("export class WasmMixedGpuProject") -or
+  if (!$wasmGlue.Contains("export class WasmMixedComputeProject") -or
       !$wasmGlue.Contains("static fromSource(")) {
-    throw "The Mech GPU browser package does not export WasmMixedGpuProject.fromSource."
+    throw "The Mech compute browser package does not export WasmMixedComputeProject.fromSource."
   }
 } finally {
   Pop-Location

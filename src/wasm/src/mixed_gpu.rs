@@ -9,7 +9,7 @@ use mech_core::{
     Section, SectionElement,
 };
 use mech_engine::{MechProgram, MechProgramConfig};
-use mech_gpu::{GpuBindingRole, GpuHost};
+use mech_gpu::{GpuBindingRole, GpuHost, OwnedResidentCpuSession};
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
     MechRuntime, PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeBuilder,
@@ -26,7 +26,7 @@ use crate::gpu::{CompileTimings, gpu_program_manifest};
 
 const POINTER_PATHS: [&str; 5] = ["pulse", "x", "y", "pressed", "delta-seconds"];
 
-static GPU_COMMAND_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+static COMPUTE_COMMAND_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![InputPortPolicy {
@@ -43,19 +43,26 @@ static GPU_COMMAND_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
     });
 
 #[wasm_bindgen]
-pub struct WasmMixedGpuProject {
+pub struct WasmMixedComputeProject {
     runtime: MechRuntime,
     pointer: PointerInputHandle,
-    gpu: GpuCommandHandle,
+    compute: ComputeCommandHandle,
+    cpu: Option<OwnedResidentCpuSession>,
+    backend: ComputeBackend,
     manifest: JsValue,
     started: bool,
     stopped: bool,
 }
 
 #[wasm_bindgen]
-impl WasmMixedGpuProject {
+impl WasmMixedComputeProject {
     #[wasm_bindgen(js_name = fromSource)]
-    pub fn from_source(config_source: &str, source: &str) -> Result<WasmMixedGpuProject, JsValue> {
+    pub fn from_source(
+        config_source: &str,
+        source: &str,
+        backend_override: &str,
+        gpu_available: bool,
+    ) -> Result<WasmMixedComputeProject, JsValue> {
         let document = parse_config_document(
             "browser-project/mech.mcfg",
             config_source,
@@ -65,13 +72,20 @@ impl WasmMixedGpuProject {
         let parse_started = Instant::now();
         let tree = mech_syntax::parse(source.trim()).map_err(js_error)?;
         let parsing = milliseconds(parse_started);
-        let prepared = compile_named_gpu_region(&document, &tree, parsing).map_err(js_error)?;
+        let prepared = compile_named_compute_region(
+            &document,
+            &tree,
+            parsing,
+            backend_override,
+            gpu_available,
+        )
+        .map_err(js_error)?;
         let manifest = gpu_program_manifest(&prepared.program, &prepared.inputs, prepared.timings)?;
 
         let pointer = PointerInputHandle::new(
             configured_host_instance(&document, "pointer").map_err(js_error)?,
         );
-        let gpu = GpuCommandHandle::new(
+        let compute = ComputeCommandHandle::new(
             prepared.region.clone(),
             prepared
                 .program
@@ -80,6 +94,18 @@ impl WasmMixedGpuProject {
                 .filter(|binding| binding.role() == GpuBindingRole::Input)
                 .map(|binding| (binding.name.clone(), binding.elements as usize)),
         );
+        let cpu = if prepared.backend == ComputeBackend::Cpu {
+            Some(
+                prepared
+                    .program
+                    .into_cpu(&prepared.inputs)
+                    .map_err(|failure| {
+                        error(format!("CPU executor preparation failed: {failure}"))
+                    })?,
+            )
+        } else {
+            None
+        };
         let mut builder = RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_catalog())
             .config(
@@ -89,7 +115,7 @@ impl WasmMixedGpuProject {
             )
             .host_factory(Box::new(PointerHostFactory::new(pointer.clone())))
             .map_err(js_error)?
-            .host_factory(Box::new(GpuCommandHostFactory::new(gpu.clone())))
+            .host_factory(Box::new(ComputeCommandHostFactory::new(compute.clone())))
             .map_err(js_error)?;
         for host in &document.hosts {
             builder = builder.host_instance(host.clone());
@@ -108,16 +134,22 @@ impl WasmMixedGpuProject {
         Ok(Self {
             runtime,
             pointer,
-            gpu,
+            compute,
+            cpu,
+            backend: prepared.backend,
             manifest,
             started: false,
             stopped: false,
         })
     }
 
-    #[wasm_bindgen(js_name = gpuManifest)]
-    pub fn gpu_manifest(&self) -> JsValue {
+    #[wasm_bindgen(js_name = computeManifest)]
+    pub fn compute_manifest(&self) -> JsValue {
         self.manifest.clone()
+    }
+
+    pub fn backend(&self) -> String {
+        self.backend.as_str().to_owned()
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
@@ -125,7 +157,7 @@ impl WasmMixedGpuProject {
             return Ok(());
         }
         if self.stopped {
-            return Err(error("a stopped mixed GPU project cannot be restarted"));
+            return Err(error("a stopped mixed compute project cannot be restarted"));
         }
         self.runtime.start_input_drivers().map_err(js_error)?;
         self.started = true;
@@ -142,7 +174,7 @@ impl WasmMixedGpuProject {
         max_inputs: usize,
     ) -> Result<JsValue, JsValue> {
         if !self.started || self.stopped {
-            return Err(error("mixed GPU project is not running"));
+            return Err(error("mixed compute project is not running"));
         }
         if max_inputs == 0 {
             return Err(error("max_inputs must be greater than zero"));
@@ -156,7 +188,28 @@ impl WasmMixedGpuProject {
                 .drain_host_inputs(pending.min(max_inputs))
                 .map_err(js_error)?;
         }
-        self.gpu.take_command()
+        let Some(command) = self.compute.take_command_data()? else {
+            return Ok(JsValue::NULL);
+        };
+        if let Some(cpu) = self.cpu.as_mut() {
+            cpu.update_inputs(&command.changed_inputs)
+                .map_err(|failure| error(format!("CPU input update failed: {failure}")))?;
+            cpu.dispatch_turns(1)
+                .map_err(|failure| error(format!("CPU dispatch failed: {failure}")))?;
+        }
+        compute_command_value(&self.compute.region, command)
+    }
+
+    #[wasm_bindgen(js_name = cpuOutput)]
+    pub fn cpu_output(&self, name: &str) -> Result<Float32Array, JsValue> {
+        let cpu = self
+            .cpu
+            .as_ref()
+            .ok_or_else(|| error("cpuOutput is available only under the CPU compute backend"))?;
+        let values = cpu
+            .output(name)
+            .map_err(|failure| error(format!("CPU output read failed: {failure}")))?;
+        Ok(Float32Array::from(values.as_slice()))
     }
 
     pub fn stop(&mut self) -> Result<(), JsValue> {
@@ -170,24 +223,74 @@ impl WasmMixedGpuProject {
     }
 }
 
-struct PreparedGpuRegion {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ComputeBackend {
+    Cpu,
+    Gpu,
+}
+
+impl ComputeBackend {
+    const fn as_str(self) -> &'static str {
+        match self {
+            Self::Cpu => "cpu",
+            Self::Gpu => "gpu",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ComputeBackendRequest {
+    Auto,
+    Cpu,
+    Gpu,
+}
+
+impl ComputeBackendRequest {
+    fn parse(value: &str, source: &str) -> MResult<Self> {
+        match value {
+            "auto" | "" => Ok(Self::Auto),
+            "cpu" => Ok(Self::Cpu),
+            "gpu" => Ok(Self::Gpu),
+            _ => Err(mixed_error(format!(
+                "{source} backend must be `auto`, `cpu`, or `gpu`, found `{value}`"
+            ))),
+        }
+    }
+}
+
+struct ConfiguredComputeHost {
     region: String,
+    backend: ComputeBackendRequest,
+}
+
+#[derive(Debug)]
+struct PreparedComputeRegion {
+    region: String,
+    backend: ComputeBackend,
     program: mech_gpu::GpuProgram,
     inputs: BTreeMap<String, Vec<f32>>,
     timings: CompileTimings,
 }
 
-fn compile_named_gpu_region(
+fn compile_named_compute_region(
     document: &MechConfigDocument,
     tree: &Program,
     parsing: f64,
-) -> MResult<PreparedGpuRegion> {
-    let region = configured_gpu_region(document)?;
+    backend_override: &str,
+    gpu_available: bool,
+) -> MResult<PreparedComputeRegion> {
+    let configured = configured_compute_host(document)?;
+    let region = configured.region;
+    let requested = if backend_override.is_empty() {
+        configured.backend
+    } else {
+        ComputeBackendRequest::parse(backend_override, "command-line")?
+    };
     let accelerated_sections = tree
         .body
         .sections
         .iter()
-        .filter(|section| is_gpu_owned(section))
+        .filter(|section| is_compute_owned(section))
         .collect::<Vec<_>>();
     if accelerated_sections.len() != 1 {
         return Err(mixed_error(format!(
@@ -203,9 +306,20 @@ fn compile_named_gpu_region(
         .unwrap_or_default();
     if section_name != region {
         return Err(mixed_error(format!(
-            "GPU host selects region `{region}`, but the accelerated section is `{section_name}`"
+            "compute host selects region `{region}`, but the compiled section is `{section_name}`"
         )));
     }
+    let placement = section.compute.expect("filtered to a compute section");
+    let backend = match requested {
+        ComputeBackendRequest::Cpu => ComputeBackend::Cpu,
+        ComputeBackendRequest::Gpu => ComputeBackend::Gpu,
+        ComputeBackendRequest::Auto => match placement {
+            mech_core::ComputePlacement::Cpu => ComputeBackend::Cpu,
+            mech_core::ComputePlacement::Gpu => ComputeBackend::Gpu,
+            mech_core::ComputePlacement::Compute if gpu_available => ComputeBackend::Gpu,
+            mech_core::ComputePlacement::Compute => ComputeBackend::Cpu,
+        },
+    };
     let imports = import_prelude(tree);
     let isolated = isolated_region_tree(&imports, section);
 
@@ -226,13 +340,18 @@ fn compile_named_gpu_region(
             "isolated section `{region}` did not produce exactly that compute region"
         )));
     }
-    let gpu_started = Instant::now();
-    let program = GpuHost
-        .compile_with_regions(&artifact, &compute_regions)
-        .map_err(|failure| {
-            mixed_error(format!("GPU host rejected region `{region}`: {failure}"))
-        })?;
-    let gpu_lowering = milliseconds(gpu_started);
+    let lowering_started = Instant::now();
+    let program = match backend {
+        ComputeBackend::Cpu => GpuHost.compile_cpu_with_regions(&artifact, &compute_regions),
+        ComputeBackend::Gpu => GpuHost.compile_with_regions(&artifact, &compute_regions),
+    }
+    .map_err(|failure| {
+        mixed_error(format!(
+            "{} compute backend rejected region `{region}`: {failure}",
+            backend.as_str()
+        ))
+    })?;
+    let gpu_lowering = milliseconds(lowering_started);
     let input_started = Instant::now();
     let symbols = source_program.interpreter().symbols();
     let symbols = symbols.borrow();
@@ -245,19 +364,23 @@ fn compile_named_gpu_region(
         let cell = symbols
             .get(mech_core::hash_str(&binding.name))
             .ok_or_else(|| {
-                mixed_error(format!("GPU input `{}` has no source value", binding.name))
+                mixed_error(format!(
+                    "compute input `{}` has no source value",
+                    binding.name
+                ))
             })?;
         let values = cell.borrow().as_vecf32().map_err(|failure| {
             mixed_error(format!(
-                "GPU input `{}` is not f32 data: {failure:?}",
+                "compute input `{}` is not f32 data: {failure:?}",
                 binding.name
             ))
         })?;
         inputs.insert(binding.name.clone(), values);
     }
     let input_capture = milliseconds(input_started);
-    Ok(PreparedGpuRegion {
+    Ok(PreparedComputeRegion {
         region,
+        backend,
         program,
         inputs,
         timings: CompileTimings {
@@ -271,25 +394,41 @@ fn compile_named_gpu_region(
     })
 }
 
-fn configured_gpu_region(document: &MechConfigDocument) -> MResult<String> {
+fn configured_compute_host(document: &MechConfigDocument) -> MResult<ConfiguredComputeHost> {
     let hosts = document
         .hosts
         .iter()
-        .filter(|host| host.provider == "gpu")
+        .filter(|host| host.provider == "compute")
         .collect::<Vec<_>>();
     if hosts.len() != 1 {
         return Err(mixed_error(format!(
-            "mixed browser projects require exactly one GPU host, found {}",
+            "mixed browser projects require exactly one `compute` host, found {}",
             hosts.len()
         )));
     }
     let ConfigValue::Map(settings) = &hosts[0].settings else {
-        return Err(mixed_error("GPU host settings must be a map"));
+        return Err(mixed_error("compute host settings must be a map"));
     };
     let Some(ConfigValue::String(region)) = settings.get("region") else {
-        return Err(mixed_error("GPU host setting `region` must be a string"));
+        return Err(mixed_error(
+            "compute host setting `region` must be a string",
+        ));
     };
-    Ok(region.clone())
+    let backend = match settings.get("backend") {
+        None => ComputeBackendRequest::Auto,
+        Some(ConfigValue::String(backend)) => {
+            ComputeBackendRequest::parse(backend, "compute host")?
+        }
+        Some(_) => {
+            return Err(mixed_error(
+                "compute host setting `backend` must be a string",
+            ));
+        }
+    };
+    Ok(ConfiguredComputeHost {
+        region: region.clone(),
+        backend,
+    })
 }
 
 fn configured_host_instance(document: &MechConfigDocument, provider: &str) -> MResult<String> {
@@ -307,11 +446,8 @@ fn configured_host_instance(document: &MechConfigDocument, provider: &str) -> MR
     Ok(hosts[0].name.clone())
 }
 
-fn is_gpu_owned(section: &Section) -> bool {
-    matches!(
-        section.compute,
-        Some(mech_core::ComputePlacement::Compute | mech_core::ComputePlacement::Gpu)
-    )
+fn is_compute_owned(section: &Section) -> bool {
+    section.compute.is_some()
 }
 
 fn cpu_projection_tree(tree: &Program) -> Program {
@@ -319,7 +455,7 @@ fn cpu_projection_tree(tree: &Program) -> Program {
         .body
         .sections
         .iter()
-        .filter(|section| is_gpu_owned(section))
+        .filter(|section| is_compute_owned(section))
         .flat_map(|section| &section.elements)
         .filter_map(import_element)
         .collect::<Vec<_>>();
@@ -335,7 +471,7 @@ fn cpu_projection_tree(tree: &Program) -> Program {
         tree.body
             .sections
             .iter()
-            .filter(|section| !is_gpu_owned(section))
+            .filter(|section| !is_compute_owned(section))
             .cloned(),
     );
     Program {
@@ -580,68 +716,73 @@ impl RuntimeHostInputDriver for PointerInputDriver {
 }
 
 #[derive(Clone, Debug)]
-struct GpuCommandHandle {
+struct ComputeCommandHandle {
     region: String,
     allowed_inputs: Arc<BTreeMap<String, usize>>,
-    state: Arc<Mutex<GpuCommandState>>,
+    state: Arc<Mutex<ComputeCommandState>>,
 }
 
 #[derive(Debug, Default)]
-struct GpuCommandState {
+struct ComputeCommandState {
     changed_inputs: BTreeMap<String, Vec<f32>>,
     dispatch: bool,
 }
 
-impl GpuCommandHandle {
+impl ComputeCommandHandle {
     fn new(region: String, inputs: impl IntoIterator<Item = (String, usize)>) -> Self {
         Self {
             region,
             allowed_inputs: Arc::new(inputs.into_iter().collect()),
-            state: Arc::new(Mutex::new(GpuCommandState::default())),
+            state: Arc::new(Mutex::new(ComputeCommandState::default())),
         }
     }
 
-    fn take_command(&self) -> Result<JsValue, JsValue> {
+    fn take_command_data(&self) -> Result<Option<ComputeCommandState>, JsValue> {
         let mut state = self
             .state
             .lock()
-            .map_err(|_| error("GPU command state lock is poisoned"))?;
+            .map_err(|_| error("compute command state lock is poisoned"))?;
         if !state.dispatch {
-            return Ok(JsValue::NULL);
+            return Ok(None);
         }
         state.dispatch = false;
-        let changed = std::mem::take(&mut state.changed_inputs);
-        drop(state);
-        let command = Object::new();
-        set(&command, "region", self.region.as_str())?;
-        set(&command, "dispatch", true)?;
-        let inputs = Array::new();
-        for (name, values) in changed {
-            let input = Object::new();
-            set(&input, "name", name)?;
-            set(&input, "values", Float32Array::from(values.as_slice()))?;
-            inputs.push(&input);
-        }
-        set(&command, "inputs", inputs)?;
-        Ok(command.into())
+        Ok(Some(ComputeCommandState {
+            changed_inputs: std::mem::take(&mut state.changed_inputs),
+            dispatch: true,
+        }))
     }
 }
 
+fn compute_command_value(region: &str, command: ComputeCommandState) -> Result<JsValue, JsValue> {
+    let value = Object::new();
+    set(&value, "region", region)?;
+    set(&value, "dispatch", command.dispatch)?;
+    let inputs = Array::new();
+    for (name, values) in command.changed_inputs {
+        let input = Object::new();
+        set(&input, "name", name)?;
+        set(&input, "values", Float32Array::from(values.as_slice()))?;
+        inputs.push(&input);
+    }
+    set(&value, "inputs", inputs)?;
+    Ok(value.into())
+}
+
 #[derive(Debug)]
-struct GpuCommandHostFactory {
-    handle: GpuCommandHandle,
+struct ComputeCommandHostFactory {
+    handle: ComputeCommandHandle,
     manifest: HostManifestConfig,
 }
 
-impl GpuCommandHostFactory {
-    fn new(handle: GpuCommandHandle) -> Self {
+impl ComputeCommandHostFactory {
+    fn new(handle: ComputeCommandHandle) -> Self {
         Self {
             handle,
             manifest: HostManifestConfig {
-                provider: "gpu".to_owned(),
+                provider: "compute".to_owned(),
                 contexts: vec![HostContextManifest {
                     name: "kernel".to_owned(),
-                    base_uri_template: "gpu://{instance}/kernel".to_owned(),
+                    base_uri_template: "compute://{instance}/kernel".to_owned(),
                     operations: vec!["write".to_owned()],
                 }],
             },
@@ -649,27 +790,40 @@ impl GpuCommandHostFactory {
     }
 }
 
-impl RuntimeHostFactory for GpuCommandHostFactory {
+impl RuntimeHostFactory for ComputeCommandHostFactory {
     fn provider_name(&self) -> &str {
-        "gpu"
+        "compute"
     }
     fn manifest(&self) -> &HostManifestConfig {
         &self.manifest
     }
     fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
         let ConfigValue::Map(map) = settings else {
-            return Err(mixed_error("GPU host settings must be a map"));
+            return Err(mixed_error("compute host settings must be a map"));
         };
         let keys = map.keys().cloned().collect::<BTreeSet<_>>();
-        if keys != BTreeSet::from(["region".to_owned()]) {
-            return Err(mixed_error("GPU host settings support only `region`"));
+        if !keys.is_subset(&BTreeSet::from(["backend".to_owned(), "region".to_owned()])) {
+            return Err(mixed_error(
+                "compute host settings support only `backend` and `region`",
+            ));
         }
-        match map.get("region") {
-            Some(ConfigValue::String(region)) if region == &self.handle.region => Ok(()),
-            _ => Err(mixed_error(format!(
-                "GPU host must select region `{}`",
-                self.handle.region
-            ))),
+        if !matches!(map.get("region"), Some(ConfigValue::String(region)) if region == &self.handle.region)
+        {
+            return Err(mixed_error(format!(
+                "compute host must select region `{}`",
+                self.handle.region,
+            )));
+        }
+        match map.get("backend") {
+            None => Ok(()),
+            Some(ConfigValue::String(backend))
+                if backend == "auto" || backend == "cpu" || backend == "gpu" =>
+            {
+                Ok(())
+            }
+            _ => Err(mixed_error(
+                "compute host backend must be `auto`, `cpu`, or `gpu`",
+            )),
         }
     }
     fn instantiate(
@@ -680,7 +834,7 @@ impl RuntimeHostFactory for GpuCommandHostFactory {
         self.validate_settings(instance_name, settings)?;
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(GpuCommandResourceProvider {
+            resource_providers: vec![Box::new(ComputeCommandResourceProvider {
                 instance: instance_name.to_owned(),
                 handle: self.handle.clone(),
             })],
@@ -690,47 +844,47 @@ impl RuntimeHostFactory for GpuCommandHostFactory {
 }
 
 #[derive(Debug)]
-struct GpuCommandResourceProvider {
+struct ComputeCommandResourceProvider {
     instance: String,
-    handle: GpuCommandHandle,
+    handle: ComputeCommandHandle,
 }
 
-impl GpuCommandResourceProvider {
+impl ComputeCommandResourceProvider {
     fn base(&self) -> String {
-        format!("gpu://{}/kernel", self.instance)
+        format!("compute://{}/kernel", self.instance)
     }
 
     fn validate(&self, request: &RuntimeResourceWritePreflightRequest) -> MResult<()> {
         if request.base_uri != self.base() {
             return Err(mixed_error(format!(
-                "unknown GPU resource `{}`",
+                "unknown compute resource `{}`",
                 request.base_uri
             )));
         }
         if request.intent != RuntimeResourceWriteIntent::Send {
-            return Err(mixed_error("GPU commands are effects; use <-"));
+            return Err(mixed_error("compute commands are effects; use <-"));
         }
         if request.path == "turn" {
             return Ok(());
         }
         let Some(name) = request.path.strip_prefix("input/") else {
             return Err(mixed_error(format!(
-                "unknown GPU command `{}`",
+                "unknown compute command `{}`",
                 request.path
             )));
         };
         if !self.handle.allowed_inputs.contains_key(name) {
             return Err(mixed_error(format!(
-                "GPU region has no input named `{name}`"
+                "compute region has no input named `{name}`"
             )));
         }
         Ok(())
     }
 }
 
-impl RuntimeResourceProvider for GpuCommandResourceProvider {
+impl RuntimeResourceProvider for ComputeCommandResourceProvider {
     fn scheme(&self) -> &str {
-        "gpu"
+        "compute"
     }
     fn base_uris(&self) -> Vec<String> {
         vec![self.base()]
@@ -739,11 +893,11 @@ impl RuntimeResourceProvider for GpuCommandResourceProvider {
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static mech_core::OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send).then_some(&GPU_COMMAND_EFFECT_CONTRACT)
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&COMPUTE_COMMAND_EFFECT_CONTRACT)
     }
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(mixed_error(format!(
-            "GPU command resource `{}` is write-only",
+            "compute command resource `{}` is write-only",
             request.base_uri
         )))
     }
@@ -759,7 +913,7 @@ impl RuntimeResourceProvider for GpuCommandResourceProvider {
             intent: request.intent,
         })?;
         if let Some(name) = request.path.strip_prefix("input/") {
-            validate_gpu_input(name, &request.value, &self.handle.allowed_inputs)?;
+            validate_compute_input(name, &request.value, &self.handle.allowed_inputs)?;
         }
         Ok(())
     }
@@ -769,13 +923,13 @@ impl RuntimeResourceProvider for GpuCommandResourceProvider {
     ) -> MResult<PreparedRuntimeEffect> {
         self.plan_write(request.clone())?;
         let update = if request.path == "turn" {
-            GpuCommandUpdate::Dispatch
+            ComputeCommandUpdate::Dispatch
         } else {
             let name = request.path.trim_start_matches("input/").to_owned();
-            GpuCommandUpdate::Input(name.clone(), gpu_input_values(&request.value)?)
+            ComputeCommandUpdate::Input(name.clone(), compute_input_values(&request.value)?)
         };
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
-            GpuCommandEffect {
+            ComputeCommandEffect {
                 resource: request.base_uri,
                 state: self.handle.state.clone(),
                 update,
@@ -784,58 +938,58 @@ impl RuntimeResourceProvider for GpuCommandResourceProvider {
     }
 }
 
-fn validate_gpu_input(
+fn validate_compute_input(
     name: &str,
     value: &LegacyValue,
     allowed: &BTreeMap<String, usize>,
 ) -> MResult<()> {
-    let values = gpu_input_values(value)?;
+    let values = compute_input_values(value)?;
     let expected = allowed[name];
     if values.len() != expected {
         return Err(mixed_error(format!(
-            "GPU input `{name}` received {} values, expected {expected}",
+            "compute input `{name}` received {} values, expected {expected}",
             values.len()
         )));
     }
     Ok(())
 }
 
-fn gpu_input_values(value: &LegacyValue) -> MResult<Vec<f32>> {
+fn compute_input_values(value: &LegacyValue) -> MResult<Vec<f32>> {
     if let Ok(values) = value.as_vecf32() {
         return Ok(values);
     }
     value
         .as_vecf64()
         .map(|values| values.into_iter().map(|value| value as f32).collect())
-        .map_err(|failure| mixed_error(format!("GPU inputs must be f32/f64 data: {failure:?}")))
+        .map_err(|failure| mixed_error(format!("compute inputs must be f32/f64 data: {failure:?}")))
 }
 
 #[derive(Debug)]
-enum GpuCommandUpdate {
+enum ComputeCommandUpdate {
     Input(String, Vec<f32>),
     Dispatch,
 }
 
 #[derive(Debug)]
-struct GpuCommandEffect {
+struct ComputeCommandEffect {
     resource: String,
-    state: Arc<Mutex<GpuCommandState>>,
-    update: GpuCommandUpdate,
+    state: Arc<Mutex<ComputeCommandState>>,
+    update: ComputeCommandUpdate,
 }
 
-impl RuntimeAfterCommitEffect for GpuCommandEffect {
+impl RuntimeAfterCommitEffect for ComputeCommandEffect {
     fn metadata(&self) -> RuntimeEffectMetadata {
         let bytes = match &self.update {
-            GpuCommandUpdate::Input(_, values) => {
+            ComputeCommandUpdate::Input(_, values) => {
                 (values.len() as u64).saturating_mul(std::mem::size_of::<f32>() as u64)
             }
-            GpuCommandUpdate::Dispatch => 0,
+            ComputeCommandUpdate::Dispatch => 0,
         };
         RuntimeEffectMetadata::new(
             RuntimeEffectSource::ResourceProvider {
-                scheme: "gpu".to_owned(),
+                scheme: "compute".to_owned(),
             },
-            "browser-gpu-command",
+            "browser-compute-command",
         )
         .with_resource(self.resource.clone())
         .with_cost(RuntimeEffectCost { bytes, items: 1 })
@@ -844,12 +998,12 @@ impl RuntimeAfterCommitEffect for GpuCommandEffect {
         let mut state = self
             .state
             .lock()
-            .map_err(|_| mixed_error("GPU command state lock is poisoned"))?;
+            .map_err(|_| mixed_error("compute command state lock is poisoned"))?;
         match &self.update {
-            GpuCommandUpdate::Input(name, values) => {
+            ComputeCommandUpdate::Input(name, values) => {
                 state.changed_inputs.insert(name.clone(), values.clone());
             }
-            GpuCommandUpdate::Dispatch => state.dispatch = true,
+            ComputeCommandUpdate::Dispatch => state.dispatch = true,
         }
         Ok(())
     }
@@ -901,7 +1055,7 @@ config := {
   }
   hosts: [
     { name: "cursor" provider: "pointer" settings: {} }
-    { name: "particles" provider: "gpu" settings: { region: "particle-field" } }
+    { name: "particles" provider: "compute" settings: { region: "particle-field" backend: "auto" } }
   ]
   run: {
     paths: ["particles.mec"]
@@ -916,7 +1070,7 @@ config := {
     const SOURCE: &str = r#"
 +> math
 @pointer := pointer://cursor/frame{:read(pulse), :read(x), :read(y), :read(pressed), :read(delta-seconds)}
-@particles := gpu://particles/kernel{:write(input/force-x), :write(input/force-y), :write(input/force-strength), :write(input/dt), :write(turn)}
+@particles := compute://particles/kernel{:write(input/force-x), :write(input/force-y), :write(input/force-strength), :write(input/dt), :write(turn)}
 pulse := @pointer/pulse
 force-x := @pointer/x
 force-y := @pointer/y
@@ -928,7 +1082,7 @@ dt := @pointer/delta-seconds
 @particles/input/dt <- dt
 @particles/turn <- pulse
 
-particle-field @ gpu
+particle-field @ compute
 -------------------------------------------------------------------------------
 particle-index := 1f32..=4f32
 particle-x := math/cos(particle-index)
@@ -971,7 +1125,7 @@ positions = next-positions
             Some(std::path::Path::new("../../src/wasm/pkg")),
         );
         let tree = mech_syntax::parse(SERVED_SOURCE).unwrap();
-        let prepared = compile_named_gpu_region(&document, &tree, 0.0).unwrap();
+        let prepared = compile_named_compute_region(&document, &tree, 0.0, "gpu", true).unwrap();
 
         assert_eq!(prepared.region, "particle-field");
         assert_eq!(prepared.program.dispatch_elements(), 2_000_000);
@@ -986,7 +1140,7 @@ positions = next-positions
         let document =
             parse_config_document("test.mcfg", CONFIG, ConfigProfileOptions::default()).unwrap();
         let tree = mech_syntax::parse(SOURCE).unwrap();
-        let prepared = compile_named_gpu_region(&document, &tree, 0.0).unwrap();
+        let prepared = compile_named_compute_region(&document, &tree, 0.0, "gpu", true).unwrap();
         let input_names = prepared
             .program
             .bindings()
@@ -1001,7 +1155,7 @@ positions = next-positions
 
         let pointer =
             PointerInputHandle::new(configured_host_instance(&document, "pointer").unwrap());
-        let gpu = GpuCommandHandle::new(
+        let compute = ComputeCommandHandle::new(
             prepared.region,
             prepared
                 .program
@@ -1019,7 +1173,7 @@ positions = next-positions
             )
             .host_factory(Box::new(PointerHostFactory::new(pointer.clone())))
             .unwrap()
-            .host_factory(Box::new(GpuCommandHostFactory::new(gpu.clone())))
+            .host_factory(Box::new(ComputeCommandHostFactory::new(compute.clone())))
             .unwrap();
         for host in &document.hosts {
             builder = builder.host_instance(host.clone());
@@ -1035,10 +1189,45 @@ positions = next-positions
         runtime.start_input_drivers().unwrap();
         pointer.submit(0.25, -0.5, true, 1.0 / 60.0).unwrap();
         runtime.drain_host_inputs(1).unwrap();
-        let state = gpu.state.lock().unwrap();
+        let state = compute.state.lock().unwrap();
         assert!(state.dispatch);
         assert_eq!(state.changed_inputs["force-x"], vec![0.25]);
         assert_eq!(state.changed_inputs["force-y"], vec![-0.5]);
         assert_eq!(state.changed_inputs["force-strength"], vec![1.25]);
+    }
+
+    #[test]
+    fn auto_selects_cpu_when_compute_gpu_is_unavailable() {
+        let document =
+            parse_config_document("test.mcfg", CONFIG, ConfigProfileOptions::default()).unwrap();
+        let tree = mech_syntax::parse(SOURCE).unwrap();
+        let prepared = compile_named_compute_region(&document, &tree, 0.0, "auto", false).unwrap();
+
+        assert_eq!(prepared.backend, ComputeBackend::Cpu);
+        let mut cpu = prepared.program.into_cpu(&prepared.inputs).unwrap();
+        cpu.dispatch_turns(2).unwrap();
+        assert_eq!(cpu.output("result.0").unwrap().len(), 8);
+    }
+
+    #[test]
+    fn hard_region_placement_conflicts_are_reported_by_browser_compiler() {
+        let document =
+            parse_config_document("test.mcfg", CONFIG, ConfigProfileOptions::default()).unwrap();
+
+        let hard_gpu = SOURCE.replacen("@ compute", "@ gpu", 1);
+        let tree = mech_syntax::parse(&hard_gpu).unwrap();
+        let error = format!(
+            "{:?}",
+            compile_named_compute_region(&document, &tree, 0.0, "cpu", true).unwrap_err()
+        );
+        assert!(error.contains("requires GPU execution"), "{error}");
+
+        let hard_cpu = SOURCE.replacen("@ compute", "@ cpu", 1);
+        let tree = mech_syntax::parse(&hard_cpu).unwrap();
+        let error = format!(
+            "{:?}",
+            compile_named_compute_region(&document, &tree, 0.0, "gpu", true).unwrap_err()
+        );
+        assert!(error.contains("requires CPU execution"), "{error}");
     }
 }

@@ -19,9 +19,10 @@ config := {
 
     {
       name: "particles"
-      provider: "gpu"
+      provider: "compute"
       settings: {
         region: "particle-field"
+        backend: "auto"
       }
     }
   ]

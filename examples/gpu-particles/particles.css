@@ -106,7 +106,7 @@ canvas {
 
 .telemetry {
   display: grid;
-  grid-template-columns: repeat(6, minmax(105px, 1fr));
+  grid-template-columns: repeat(7, minmax(105px, 1fr));
   gap: 24px;
   margin: 0;
   padding: 18px 2px 0;

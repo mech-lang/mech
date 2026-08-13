@@ -1,20 +1,43 @@
-# Interactive mixed CPU/GPU particle field
+# Interactive selectable CPU/GPU particle field
 
 This example is one Mech application. `particles.mec` contains both the normal
-transactional CPU graph and the named `particle-field @ gpu` numeric region.
+transactional CPU graph and the neutral `particle-field @ compute` numeric
+region. The same Mech source can select a resident CPU or GPU executor.
 
 The browser is a host, not the application:
 
 - pointer events enter Mech through `pointer://pointer/frame`;
 - the unannotated CPU graph computes the inputs for the accelerated region;
-- committed writes to `gpu://particles/kernel` trigger the GPU dispatch;
-- positions and velocities remain resident in WebGPU buffers; and
-- the browser renders the resident position buffer without reading it back.
+- committed writes to `compute://particles/kernel` trigger the selected executor;
+- under `gpu`, positions and velocities remain resident in WebGPU buffers;
+- under `cpu`, the same lowered artifact remains resident in WASM memory and
+  positions are uploaded to WebGPU for rendering; and
+- the page reports the backend that was actually selected.
 
 There is no JavaScript particle simulation or handwritten particle kernel.
-The GPU program is lowered from the ordinary matrix expressions in
-`particles.mec`. Unsupported regions fail with compiler diagnostics instead of
-silently moving to the CPU.
+The compute program is lowered from the ordinary matrix expressions in
+`particles.mec`. Hard `@ cpu` and `@ gpu` constraints conflict with the
+opposite command-line backend instead of silently changing placement.
+
+Select a backend without changing `particles.mec`:
+
+```text
+mech serve examples/gpu-particles --backend cpu
+mech serve examples/gpu-particles --backend gpu
+mech serve examples/gpu-particles --backend auto
+```
+
+`auto` is also the configured default. It selects GPU when a compatible adapter
+is available and CPU otherwise. This particular visual example still requires
+WebGPU for its renderer, so a browser without WebGPU cannot display either
+compute mode; use `--backend cpu` to compare CPU compute on a WebGPU-capable
+browser.
+
+The backend flag changes compute placement only. Rendering uses WebGPU because
+`index.html` explicitly declares a `points2d` WebGPU canvas for `result.0`. The
+CPU backend therefore uploads each computed position matrix for display, while
+the GPU backend renders the resident position buffer directly. A first-class
+Mech `render://` host declaration is outside this spike.
 
 The project configuration explicitly selects `../../src/wasm/pkg`. This keeps
 the GPU-capable JavaScript/WASM pair together and prevents `mech serve` from
@@ -30,12 +53,12 @@ runtime before building and starting the server:
 cargo install wasm-pack --locked
 ./scripts/build-mech-gpu-browser.sh
 cargo build --release
-./target/release/mech serve examples/gpu-particles
+./target/release/mech serve examples/gpu-particles --backend gpu
 ```
 
 Open the printed URL in a WebGPU-capable browser. Press and drag in the field;
 the pointer coordinates pass through a committed Mech runtime turn before the
-GPU force inputs change.
+compute force inputs change.
 
 ## Windows PowerShell
 
@@ -46,27 +69,29 @@ Mech source are unchanged:
 cargo install wasm-pack --locked
 powershell -ExecutionPolicy Bypass -File scripts\build-mech-gpu-browser.ps1
 cargo build --release
-.\target\release\mech.exe serve examples\gpu-particles
+.\target\release\mech.exe serve examples\gpu-particles --backend gpu
 ```
 
 Open the printed local URL in Edge or Chrome. WebGPU availability, adapter
-limits, WGSL compilation, and every CPU-to-GPU binding are checked before the
-simulation starts; failures are shown in the page instead of falling back.
+limits, WGSL compilation, and every CPU-to-compute binding are checked before
+the simulation starts; failures are shown in the page instead of falling back.
 
 ## Browser acceptance
 
 Run the full end-to-end gate from the repository root. It builds the selected
 browser profile and native server, starts the real project, launches Chrome or
-Edge with WebGPU, waits for the one-million-particle runtime, advances GPU
+Edge with WebGPU, waits for the one-million-particle runtime, advances compute
 frames, sends pointer input, and verifies that input passes through a committed
-Mech CPU turn into the GPU bindings:
+Mech CPU turn into the selected executor:
 
 ```text
 # macOS/Linux
-python3 scripts/smoke-gpu-particles-browser.py --build
+python3 scripts/smoke-gpu-particles-browser.py --build --backend gpu
+python3 scripts/smoke-gpu-particles-browser.py --backend cpu
 
 # Windows PowerShell
-py scripts\smoke-gpu-particles-browser.py --build
+py scripts\smoke-gpu-particles-browser.py --build --backend gpu
+py scripts\smoke-gpu-particles-browser.py --backend cpu
 ```
 
 The command exits unsuccessfully on a profile mismatch, startup exception,
@@ -89,23 +114,22 @@ compares its complete output with the CPU backend.
 
 ## What is measured
 
-`Particles` is the number updated by the generated GPU program each committed
+`Particles` is the number updated by the generated compute program each committed
 turn. `Displayed` is the renderer's visual sample, capped at 250,000 points to
 keep rendering from obscuring compute throughput. The full one million particle
-position and velocity matrices are always updated on the GPU.
+position and velocity matrices are always updated by the selected executor.
 
 The particle count is the `particle-count` value in `particles.mec`. Startup is
-reported as parsing, source initialization, artifact compilation, and GPU
+reported as parsing, source initialization, artifact compilation, and compute
 lowering. The current eager source initializer materializes the million-element
 matrices while constructing the artifact; GPU-side initializer lowering is the
 intended fix for that startup cost.
 
 ## Current spike boundary
 
-This proves one ordinary CPU graph, one named GPU region, explicit host I/O,
-transaction-ordered dispatch, persistent GPU state, and direct rendering
-through the cross-platform WebGPU browser API. The generated shader is validated
-on macOS Metal; the Windows build and run path is provided but still needs a
-physical Windows browser acceptance pass. Multiple GPU regions, GPU-to-CPU
-readback, automatic placement, and GPU-side initialization remain separate
+This proves one ordinary CPU graph, one named portable compute region, explicit
+host I/O, transaction-ordered dispatch, selectable persistent CPU/GPU state,
+hard placement conflicts, and rendering through the cross-platform WebGPU
+browser API. Multiple compute regions, general GPU-to-CPU graph edges,
+cost-based automatic placement, and GPU-side initialization remain separate
 compiler and scheduler work.

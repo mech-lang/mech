@@ -163,6 +163,13 @@ pub(crate) fn command() -> Command {
                 .help("Sets the the path to the wasm package"),
         )
         .arg(
+            Arg::new("backend")
+                .long("backend")
+                .value_name("BACKEND")
+                .value_parser(["auto", "cpu", "gpu"])
+                .help("Selects the backend for neutral @ compute regions"),
+        )
+        .arg(
             Arg::new("address")
                 .short('a')
                 .long("address")
@@ -220,6 +227,7 @@ pub(crate) struct ServePlan {
     pub stylesheet_paths: Vec<String>,
     pub shim_path: String,
     pub wasm_pkg: String,
+    pub compute_backend: Option<String>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub runtime_config: mech_runtime::RuntimeConfig,
     pub host_config: Option<mech_browser::BrowserRuntimeInjectionConfig>,
@@ -239,6 +247,23 @@ pub(crate) fn prepare(
     let loaded = config::load_cli_config_report_with_inputs(matches, &args.paths)?;
     let loaded_config = loaded.config;
     let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
+    if effective.compute_backend.is_some()
+        && !loaded_config.as_ref().is_some_and(|loaded| {
+            loaded
+                .document
+                .hosts
+                .iter()
+                .any(|host| host.provider == "compute")
+        })
+    {
+        return Err(MechError::new(
+            GenericError {
+                msg: "--backend requires a configured `compute` host".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
     let project_root = effective.project_root.clone();
     let project_overlay = if effective.uses_configured_paths {
         let loaded = loaded_config.as_ref().ok_or_else(|| {
@@ -338,6 +363,7 @@ pub(crate) fn prepare(
         stylesheet_paths: effective.stylesheet_paths,
         shim_path: effective.shim_path,
         wasm_pkg: effective.wasm_pkg,
+        compute_backend: effective.compute_backend,
         loaded_config,
         runtime_config,
         host_config,
@@ -410,9 +436,9 @@ fn validate_configured_browser_profile(
     wasm_pkg: &str,
     javascript: &[u8],
 ) -> MResult<()> {
-    let requires_mixed_gpu =
-        document.is_some_and(|document| document.hosts.iter().any(|host| host.provider == "gpu"));
-    if !requires_mixed_gpu {
+    let requires_mixed_compute = document
+        .is_some_and(|document| document.hosts.iter().any(|host| host.provider == "compute"));
+    if !requires_mixed_compute {
         return Ok(());
     }
     let javascript = std::str::from_utf8(javascript).map_err(|error| {
@@ -424,7 +450,7 @@ fn validate_configured_browser_profile(
         )
         .with_compiler_loc()
     })?;
-    if javascript.contains("export class WasmMixedGpuProject")
+    if javascript.contains("export class WasmMixedComputeProject")
         && javascript.contains("static fromSource(")
     {
         return Ok(());
@@ -432,12 +458,21 @@ fn validate_configured_browser_profile(
     Err(MechError::new(
         GenericError {
             msg: format!(
-                "configured GPU host requires a mixed CPU/GPU browser package, but `{wasm_pkg}` does not export WasmMixedGpuProject.fromSource; run scripts/build-mech-gpu-browser.sh on macOS/Linux or scripts\\build-mech-gpu-browser.ps1 on Windows before serving this project"
+                "configured compute host requires the mixed compute browser package, but `{wasm_pkg}` does not export WasmMixedComputeProject.fromSource; run scripts/build-mech-gpu-browser.sh on macOS/Linux or scripts\\build-mech-gpu-browser.ps1 on Windows before serving this project"
             ),
         },
         None,
     )
     .with_compiler_loc())
+}
+
+fn project_javascript_with_backend(source: &str, backend: Option<&str>) -> String {
+    match backend {
+        Some(backend) => {
+            format!("globalThis.__MECH_COMPUTE_BACKEND_OVERRIDE = '{backend}';\n{source}")
+        }
+        None => source.to_owned(),
+    }
 }
 
 pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
@@ -533,7 +568,10 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         full_address,
         stylesheet_str,
         shim_str,
-        project_js.unwrap_or_default().to_string(),
+        project_javascript_with_backend(
+            project_js.unwrap_or_default(),
+            options.compute_backend.as_deref(),
+        ),
         wasm.bytes,
         js.bytes,
         options.authority,
@@ -758,10 +796,10 @@ mod tests {
     }
 
     #[test]
-    fn configured_gpu_host_rejects_generic_browser_profile_before_serving() {
+    fn configured_compute_host_rejects_generic_browser_profile_before_serving() {
         let document = parse_config_document(
             "test.mcfg",
-            r#"config := {hosts: [{name: "particles" provider: "gpu" settings: {}}]}"#,
+            r#"config := {hosts: [{name: "particles" provider: "compute" settings: {}}]}"#,
             ConfigProfileOptions::default(),
         )
         .unwrap();
@@ -774,23 +812,33 @@ mod tests {
             )
             .unwrap_err()
         );
-        assert!(error.contains("WasmMixedGpuProject.fromSource"), "{error}");
+        assert!(
+            error.contains("WasmMixedComputeProject.fromSource"),
+            "{error}"
+        );
         assert!(error.contains("build-mech-gpu-browser"), "{error}");
     }
 
     #[test]
-    fn configured_gpu_host_accepts_mixed_browser_profile() {
+    fn configured_compute_host_accepts_mixed_browser_profile() {
         let document = parse_config_document(
             "test.mcfg",
-            r#"config := {hosts: [{name: "particles" provider: "gpu" settings: {}}]}"#,
+            r#"config := {hosts: [{name: "particles" provider: "compute" settings: {}}]}"#,
             ConfigProfileOptions::default(),
         )
         .unwrap();
         validate_configured_browser_profile(
             Some(&document),
             "src/wasm/pkg",
-            b"export class WasmMixedGpuProject { static fromSource() {} }",
+            b"export class WasmMixedComputeProject { static fromSource() {} }",
         )
         .unwrap();
+    }
+
+    #[test]
+    fn selected_compute_backend_is_injected_into_project_javascript() {
+        let javascript = project_javascript_with_backend("export {};", Some("cpu"));
+        assert!(javascript.contains("__MECH_COMPUTE_BACKEND_OVERRIDE = 'cpu'"));
+        assert!(javascript.ends_with("export {};"));
     }
 }

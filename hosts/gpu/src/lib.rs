@@ -285,6 +285,11 @@ pub struct ResidentCpuSession<'a> {
     slots: BTreeMap<CellSlotId, Vec<f32>>,
 }
 
+pub struct OwnedResidentCpuSession {
+    program: GpuProgram,
+    slots: BTreeMap<CellSlotId, Vec<f32>>,
+}
+
 impl GpuProgram {
     pub fn wgsl(&self) -> &str {
         &self.wgsl
@@ -336,6 +341,28 @@ impl GpuProgram {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<ResidentCpuSession<'_>, CpuExecutionError> {
+        let slots = self.initial_cpu_slots(inputs)?;
+        Ok(ResidentCpuSession {
+            program: self,
+            slots,
+        })
+    }
+
+    pub fn into_cpu(
+        self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<OwnedResidentCpuSession, CpuExecutionError> {
+        let slots = self.initial_cpu_slots(inputs)?;
+        Ok(OwnedResidentCpuSession {
+            program: self,
+            slots,
+        })
+    }
+
+    fn initial_cpu_slots(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BTreeMap<CellSlotId, Vec<f32>>, CpuExecutionError> {
         let mut slots = BTreeMap::<CellSlotId, Vec<f32>>::new();
         for (slot, (name, elements, _)) in &self.input_slots {
             let values = inputs
@@ -353,10 +380,32 @@ impl GpuProgram {
         for state in &self.states {
             slots.insert(state.slot, state.initializer.clone());
         }
-        Ok(ResidentCpuSession {
-            program: self,
-            slots,
-        })
+        Ok(slots)
+    }
+
+    fn update_cpu_inputs(
+        &self,
+        slots: &mut BTreeMap<CellSlotId, Vec<f32>>,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), CpuExecutionError> {
+        for (name, values) in inputs {
+            let Some((slot, (_, elements, _))) = self
+                .input_slots
+                .iter()
+                .find(|(_, (input_name, _, _))| input_name == name)
+            else {
+                return Err(CpuExecutionError::UnknownInput { name: name.clone() });
+            };
+            if values.len() != *elements as usize {
+                return Err(CpuExecutionError::InputLength {
+                    name: name.clone(),
+                    expected: *elements,
+                    actual: values.len(),
+                });
+            }
+            slots.insert(*slot, values.clone());
+        }
+        Ok(())
     }
 
     fn execute_cpu_turn(
@@ -428,9 +477,36 @@ impl GpuProgram {
             })
             .collect()
     }
+
+    fn cpu_output(
+        &self,
+        slots: &BTreeMap<CellSlotId, Vec<f32>>,
+        name: &str,
+    ) -> Result<Vec<f32>, CpuExecutionError> {
+        let output = self
+            .outputs
+            .iter()
+            .find(|output| output.name == name)
+            .ok_or_else(|| CpuExecutionError::UnknownOutput {
+                name: name.to_owned(),
+            })?;
+        slots
+            .get(&output.source)
+            .cloned()
+            .ok_or(CpuExecutionError::MissingSlot {
+                slot: output.source,
+            })
+    }
 }
 
 impl ResidentCpuSession<'_> {
+    pub fn update_inputs(
+        &mut self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), CpuExecutionError> {
+        self.program.update_cpu_inputs(&mut self.slots, inputs)
+    }
+
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), CpuExecutionError> {
         if turns == 0 {
             return Err(CpuExecutionError::ZeroTurns);
@@ -444,12 +520,49 @@ impl ResidentCpuSession<'_> {
     pub fn outputs(&self) -> Result<BTreeMap<String, Vec<f32>>, CpuExecutionError> {
         self.program.cpu_outputs(&self.slots)
     }
+
+    pub fn output(&self, name: &str) -> Result<Vec<f32>, CpuExecutionError> {
+        self.program.cpu_output(&self.slots, name)
+    }
+}
+
+impl OwnedResidentCpuSession {
+    pub fn update_inputs(
+        &mut self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), CpuExecutionError> {
+        self.program.update_cpu_inputs(&mut self.slots, inputs)
+    }
+
+    pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), CpuExecutionError> {
+        if turns == 0 {
+            return Err(CpuExecutionError::ZeroTurns);
+        }
+        for _ in 0..turns {
+            self.program.execute_cpu_turn(&mut self.slots)?;
+        }
+        Ok(())
+    }
+
+    pub fn outputs(&self) -> Result<BTreeMap<String, Vec<f32>>, CpuExecutionError> {
+        self.program.cpu_outputs(&self.slots)
+    }
+
+    pub fn output(&self, name: &str) -> Result<Vec<f32>, CpuExecutionError> {
+        self.program.cpu_output(&self.slots, name)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CpuExecutionError {
     ZeroTurns,
     MissingInput {
+        name: String,
+    },
+    UnknownInput {
+        name: String,
+    },
+    UnknownOutput {
         name: String,
     },
     InputLength {
