@@ -1,0 +1,28 @@
+{
+  "$id": "https://mech-lang.org/contracts/d4-browser-v1-schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "const": {
+    "accepted_turns_minimum": 60,
+    "body_count": 10,
+    "diagnostics": [
+      "__MECH_RUNTIME_INFO__",
+      "__MECH_LAST_FRAME__"
+    ],
+    "legacy_turns": 0,
+    "loader": "MechRuntime::load_root_program",
+    "orbit_radius_stable": true,
+    "page_errors": 0,
+    "public_config_sha256": "c3bf707543a8df6a6d5adc3a297c6b50d7b0ae3b205acdd5bc5e5151c8cf57a9",
+    "public_source_sha256": "ba3754436ff48452b535aac6b732eabdbcf9fb184ca20bfba9a9061ac0a071fb",
+    "render_after_input_drain": true,
+    "rendered_updates_minimum": 60,
+    "route": "resident-external",
+    "routing_policy_in_signed_payload": true,
+    "schema_version": 1,
+    "sun_fixed_at": [
+      300.0,
+      300.0
+    ]
+  },
+  "title": "Mech D4 browser contract v1"
+}

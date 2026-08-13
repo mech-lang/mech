@@ -6,7 +6,7 @@ publish = false
 
 [dependencies]
 mech-core = { path = "../../../src/core", default-features = false, features = ["resident-execution", "std"] }
-mech-engine = { path = "../../../src/engine", default-features = false, features = ["resident-artifact"] }
+mech-engine = { path = "../../../src/engine", default-features = false, features = ["resident-artifact", "compiler_default"] }
 serde_json = "1.0.149"
 sha2 = "0.10"
 

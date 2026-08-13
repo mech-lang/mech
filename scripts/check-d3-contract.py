@@ -224,8 +224,9 @@ def source_errors(root: Path) -> list[str]:
             errors.append(f"resident coordinator contains forbidden {token}")
     if coordinator.count(".publish_external(&self.publication_authority)") != 1:
         errors.append("resident coordinator must publish each accepted candidate exactly once")
-    reservation = coordinator.find("let input_permit = self.input_ledger.reserve")
-    turn_allocation = coordinator.find("let turn = self.allocate_turn()?")
+    reservation_scope = coordinator[coordinator.find("fn reserve_live_turn") :]
+    reservation = reservation_scope.find("self.input_ledger.reserve")
+    turn_allocation = reservation_scope.find("let turn = self.allocate_turn()?")
     if reservation < 0 or turn_allocation < reservation:
         errors.append("resident turn identity must be allocated after capacity preflight")
     if "BYTECODE_VERSION: u16 = 1" not in core_bytecode:
