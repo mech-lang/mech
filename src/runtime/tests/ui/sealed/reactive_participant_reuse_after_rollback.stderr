@@ -5,7 +5,7 @@ error[E0382]: borrow of moved value: `participant`
   |      --------------- move occurs because `participant` has type `ReactiveJournalParticipant<'_>`, which does not implement the `Copy` trait
 8 |       participant.apply_restore_before();
   |                   ---------------------- `participant` moved due to this method call
-9 |       participant.capture_value(&Value::Empty)?;
+9 |       participant.capture_value(&LegacyValue::Empty)?;
   |       ^^^^^^^^^^^ value borrowed here after move
   |
 note: `ReactiveJournalParticipant::<'_>::apply_restore_before` takes ownership of the receiver `self`, which moves `participant`

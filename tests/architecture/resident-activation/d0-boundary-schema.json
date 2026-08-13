@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mech-lang.org/schemas/d0-resident-activation-boundary-v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "gate",
+    "base_commit",
+    "pr_base_commit",
+    "artifact_authority",
+    "resident_control",
+    "identity_contract",
+    "d1_admission",
+    "storage_contract",
+    "publication_contract",
+    "observer_contract",
+    "legacy_contract",
+    "protected_paths",
+    "allowed_changes"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "gate": {"const": "D0"},
+    "base_commit": {"const": "33298522331d40960175427052ce363bb5e424df"},
+    "pr_base_commit": {"const": "a9d06ee20ceb03d56c3ba465b726aa4a69427af8"},
+    "artifact_authority": {"$ref": "#/$defs/artifactAuthority"},
+    "resident_control": {"$ref": "#/$defs/residentControl"},
+    "identity_contract": {"$ref": "#/$defs/identityContract"},
+    "d1_admission": {"$ref": "#/$defs/admission"},
+    "storage_contract": {"$ref": "#/$defs/storage"},
+    "publication_contract": {"$ref": "#/$defs/publication"},
+    "observer_contract": {"$ref": "#/$defs/observer"},
+    "legacy_contract": {"$ref": "#/$defs/legacy"},
+    "protected_paths": {"$ref": "#/$defs/stringArray"},
+    "allowed_changes": {"$ref": "#/$defs/stringArray"}
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "artifactAuthority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "contracts", "value", "constants"],
+      "properties": {
+        "type": {"const": "mech_engine::ProgramArtifact"},
+        "contracts": {"const": "mech_core::OperationContractTable"},
+        "value": {"const": "mech_core::Value"},
+        "constants": {"const": "mech_core::ConstantStore"}
+      }
+    },
+    "residentControl": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["semantic_authority", "purpose", "files", "replacement_targets"],
+      "properties": {
+        "semantic_authority": {"const": false},
+        "purpose": {"const": "private-gate-b-efficacy-control"},
+        "files": {"$ref": "#/$defs/stringArray"},
+        "replacement_targets": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "identityContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domains", "plan_generation_initial", "layout_generation_initial", "published_epoch_initial", "first_candidate_epoch", "slot_mapping", "pointer_identity", "epoch_exhaustion"],
+      "properties": {
+        "domains": {"$ref": "#/$defs/stringArray"},
+        "plan_generation_initial": {"const": 0},
+        "layout_generation_initial": {"const": 0},
+        "published_epoch_initial": {"const": 0},
+        "first_candidate_epoch": {"const": 1},
+        "slot_mapping": {"const": "dense-identity-ordered"},
+        "pointer_identity": {"const": false},
+        "epoch_exhaustion": {"const": "u64-max-is-final-and-never-wraps"}
+      }
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_contract", "delivery", "resident_interaction", "input_interaction", "dimension_lifetime", "output_construction", "alias_policy", "change_detection", "observer_policy", "reject_before_allocation", "legacy_fallback"],
+      "properties": {
+        "operation_contract": {"$ref": "#/$defs/stringArray"},
+        "delivery": {"$ref": "#/$defs/stringArray"},
+        "resident_interaction": {"$ref": "#/$defs/stringArray"},
+        "input_interaction": {"$ref": "#/$defs/stringArray"},
+        "dimension_lifetime": {"$ref": "#/$defs/stringArray"},
+        "output_construction": {"$ref": "#/$defs/stringArray"},
+        "alias_policy": {"$ref": "#/$defs/stringArray"},
+        "change_detection": {"$ref": "#/$defs/stringArray"},
+        "observer_policy": {"$ref": "#/$defs/stringArray"},
+        "reject_before_allocation": {"$ref": "#/$defs/stringArray"},
+        "legacy_fallback": {"const": false}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["constant", "input", "state", "derived_non_output", "external_output", "persistent_candidate_bytes_per_ekf_instance", "candidate_seed_bytes", "published_buffer_copy_bytes"],
+      "properties": {
+        "constant": {"const": "constant-store-no-mutable-slot"},
+        "input": {"const": "turn-workspace-candidate-lifetime"},
+        "state": {"const": "state-arena-dual-version"},
+        "derived_non_output": {"const": "reusable-turn-workspace-scratch"},
+        "external_output": {"const": "versioned-state-slot"},
+        "persistent_candidate_bytes_per_ekf_instance": {"const": 96},
+        "candidate_seed_bytes": {"const": 0},
+        "published_buffer_copy_bytes": {"const": 0}
+      }
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["store_count", "writer_ordering", "reader_ordering", "abort_preserves_published_epoch", "ordered_steps", "capacity_reserved_before_execution", "candidate_executes_before_receipt_preparation", "candidate_summary_before_receipt_preparation", "receipt_prepared_before_publish", "append_after_publish"],
+      "properties": {
+        "store_count": {"const": 1},
+        "writer_ordering": {"const": "Release"},
+        "reader_ordering": {"const": "Acquire"},
+        "abort_preserves_published_epoch": {"const": true},
+        "ordered_steps": {
+          "type": "array",
+          "prefixItems": [
+            {"const": "reserve"},
+            {"const": "begin"},
+            {"const": "execute"},
+            {"const": "validate"},
+            {"const": "summary"},
+            {"const": "prepare"},
+            {"const": "publish"},
+            {"const": "append"}
+          ],
+          "minItems": 8,
+          "maxItems": 8,
+          "items": false
+        },
+        "capacity_reserved_before_execution": {"const": true},
+        "candidate_executes_before_receipt_preparation": {"const": true},
+        "candidate_summary_before_receipt_preparation": {"const": true},
+        "receipt_prepared_before_publish": {"const": true},
+        "append_after_publish": {"const": "infallible"}
+      }
+    },
+    "observer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["policy", "borrow_expires_before", "retained_views", "d2_adds_retention"],
+      "properties": {
+        "policy": {"const": "Synchronous"},
+        "borrow_expires_before": {"const": "next-begin_candidate"},
+        "retained_views": {"const": false},
+        "d2_adds_retention": {"const": true}
+      }
+    },
+    "legacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["forbidden_new_resident_dependencies", "gate_b_receipt", "production_turn_receipt_added", "production_routing_added"],
+      "properties": {
+        "forbidden_new_resident_dependencies": {"$ref": "#/$defs/stringArray"},
+        "gate_b_receipt": {"const": "benchmark-only-fixed-owned-receipt"},
+        "production_turn_receipt_added": {"const": false},
+        "production_routing_added": {"const": false}
+      }
+    }
+  }
+}

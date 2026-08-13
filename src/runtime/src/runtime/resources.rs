@@ -63,6 +63,8 @@ impl MechRuntime {
         module: &str,
         item: &str,
     ) -> MResult<()> {
+        #[cfg(feature = "resident-routing")]
+        self.ensure_resident_environment_mutable("bind_context_export")?;
         self.ensure_runtime_mutation_allowed("bind_context_export")?;
         let target = format!("{module}/{item}");
         let base_uri = match self.host_interfaces.resolve_optional(&target)? {
@@ -85,6 +87,8 @@ impl MechRuntime {
         name: impl Into<String>,
         uri: impl AsRef<str>,
     ) -> MResult<()> {
+        #[cfg(feature = "resident-routing")]
+        self.ensure_resident_environment_mutable("bind_resource_root")?;
         self.ensure_runtime_mutation_allowed("bind_resource_root")?;
         let name = name.into();
         if !validate_resource_binding_name(&name) {
@@ -196,6 +200,8 @@ impl MechRuntime {
     }
 
     pub fn install_run_resource_grant(&mut self, grant: &RunResourceGrantConfig) -> MResult<()> {
+        #[cfg(feature = "resident-routing")]
+        self.ensure_resident_environment_mutable("install_run_resource_grant")?;
         self.ensure_runtime_mutation_allowed("install_run_resource_grant")?;
         let interface = self.host_interfaces.resolve(&grant.target)?;
         for operation in &grant.operations {
@@ -241,6 +247,8 @@ impl MechRuntime {
         &mut self,
         provider: Box<dyn RuntimeResourceProvider>,
     ) -> MResult<()> {
+        #[cfg(feature = "resident-routing")]
+        self.ensure_resident_environment_mutable("register_resource_provider")?;
         self.ensure_runtime_mutation_allowed("register_resource_provider")?;
         self.resources.register_provider(provider)
     }

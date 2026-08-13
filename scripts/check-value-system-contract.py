@@ -1154,11 +1154,21 @@ def qualification_failures(root: Path, live: dict[str, Any]) -> list[Failure]:
 
 
 def high_risk_failures(
-    baseline: dict[str, Any], live: dict[str, Any], baseline_path: Path
+    baseline: dict[str, Any],
+    live: dict[str, Any],
+    baseline_path: Path,
+    migration: dict[str, Any] | None = None,
+    migration_path: Path = DEFAULT_MIGRATION,
 ) -> list[Failure]:
     failures: list[Failure] = []
     baseline_uses = baseline["high_risk_api_uses"]
     live_uses = live["high_risk_api_uses"]
+    authorized = Counter(
+        (row["identifier"], row["path"], row["fingerprint"])
+        for row in (migration or {}).get("authorized_high_risk_uses", [])
+        for _ in range(row["count"])
+    )
+    observed_additions: Counter[tuple[str, str, str]] = Counter()
     for identifier, current_rows in live_uses.items():
         approved_sites = Counter(
             (row["path"], site["fingerprint"])
@@ -1180,6 +1190,19 @@ def high_risk_failures(
             for site in row["sites"]
         )
         additions = current_sites - approved_sites
+        observed_additions.update(
+            (identifier, path, fingerprint)
+            for (path, fingerprint), count in additions.items()
+            for _ in range(count)
+        )
+        approved_additions = Counter(
+            {
+                (path, fingerprint): count
+                for (approved_identifier, path, fingerprint), count in authorized.items()
+                if approved_identifier == identifier
+            }
+        )
+        additions -= approved_additions
         for path, fingerprint in sorted(additions):
             remaining = additions[(path, fingerprint)]
             for row in current_rows:
@@ -1203,6 +1226,18 @@ def high_risk_failures(
                     remaining -= 1
                 if remaining == 0:
                     break
+    excess_authorizations = authorized - observed_additions
+    for (identifier, path, fingerprint), count in sorted(excess_authorizations.items()):
+        failures.append(
+            failure(
+                "C0-LEGACY-AUTHORIZATION-STALE",
+                identifier,
+                path,
+                "every post-C0 authorization matches one live addition beyond the immutable baseline",
+                f"{count} unmatched authorization(s) for fingerprint {fingerprint}",
+                f"{migration_path}:authorized_high_risk_uses",
+            )
+        )
     return failures
 
 
@@ -3910,7 +3945,15 @@ def audit(
     failures.extend(workspace_source_coverage_failures(inventory, live, inventory_path))
     failures.extend(source_disposition_failures(inventory, inventory_path))
     failures.extend(qualification_failures(root, live))
-    failures.extend(high_risk_failures(baseline, live, baseline_path))
+    failures.extend(
+        high_risk_failures(
+            baseline,
+            live,
+            baseline_path,
+            migration,
+            migration_path,
+        )
+    )
     failures.extend(legacy_alias_baseline_failures(baseline, live, baseline_path))
     failures.extend(compatibility_alias_failures(baseline, live, baseline_path))
     failures.extend(raw_approved_alias_failures(live))

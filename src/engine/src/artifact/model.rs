@@ -1,8 +1,8 @@
 use core::ops::Range;
 
 use mech_core::{
-    AccessMode, BindingId, CellSlotId, ConstantId, ConstantStore, DeclaredOperationContract,
-    DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId,
+    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ConstantId, ConstantStore,
+    DeclaredOperationContract, DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId,
     LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId,
     OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
@@ -90,6 +90,7 @@ pub struct NodeDeclaration {
     pub node: NodeId,
     pub operation: OperationReference,
     pub contract: OperationContractId,
+    pub requirement: Option<ApplicationRequirementId>,
     pub input_bindings: Range<u32>,
     pub output_bindings: Range<u32>,
 }
@@ -124,6 +125,7 @@ pub struct ProgramArtifact {
     schemas: SchemaTable,
     constants: ConstantStore,
     contracts: OperationContractTable,
+    requirements: super::ApplicationRequirementTable,
     inputs: Box<[InputDeclaration]>,
     slots: Box<[SlotDeclaration]>,
     nodes: Box<[NodeDeclaration]>,
@@ -147,6 +149,10 @@ impl ProgramArtifact {
 
     pub const fn contracts(&self) -> &OperationContractTable {
         &self.contracts
+    }
+
+    pub const fn requirements(&self) -> &super::ApplicationRequirementTable {
+        &self.requirements
     }
 
     pub const fn inputs(&self) -> &[InputDeclaration] {
@@ -179,6 +185,7 @@ pub struct ProgramArtifactDraft {
     pub schemas: SchemaTable,
     pub constants: ConstantStore,
     pub contracts: OperationContractTable,
+    pub requirements: super::ApplicationRequirementTable,
     pub inputs: Box<[InputDeclaration]>,
     pub slots: Box<[SlotDeclaration]>,
     pub nodes: Box<[NodeDeclaration]>,
@@ -196,6 +203,7 @@ impl ProgramArtifactDraft {
             schemas: self.schemas,
             constants: self.constants,
             contracts: self.contracts,
+            requirements: self.requirements,
             inputs: self.inputs,
             slots: self.slots,
             nodes: self.nodes,
@@ -367,6 +375,9 @@ pub enum ArtifactBuildError {
         expected: usize,
         actual: usize,
     },
+    InvalidDeclarationMarker {
+        instruction: u32,
+    },
     MissingInstructionRole {
         instruction: u32,
     },
@@ -392,6 +403,16 @@ pub enum ArtifactBuildError {
     ApplicationRequirementKindMismatch {
         requirement: u32,
         expected: &'static str,
+    },
+    NonCanonicalApplicationRequirementTable,
+    MissingApplicationRequirement {
+        node: NodeId,
+    },
+    UnexpectedApplicationRequirement {
+        node: NodeId,
+    },
+    ApplicationRequirementInteractionMismatch {
+        node: NodeId,
     },
     InvalidCompiledOperationName {
         namespace: &'static str,
@@ -490,6 +511,10 @@ pub enum ArtifactBuildError {
     },
     ProducerBindingMismatch {
         slot: CellSlotId,
+    },
+    InvalidStateWriterChain {
+        slot: CellSlotId,
+        reason: &'static str,
     },
     MissingProducerBinding {
         slot: CellSlotId,

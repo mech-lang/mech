@@ -107,6 +107,12 @@ pub enum TurnFailurePhase {
     InputInstallation,
     Execution,
     Integrity,
+    EffectMaterialization,
+    ExternalPrepare,
+    ExternalApply,
+    Publication,
+    ExternalCommit,
+    EffectDelivery,
     Finalization,
     Recording,
 }
@@ -216,7 +222,7 @@ impl TurnRecordHeader {
     }
 }
 
-mod sealed {
+pub(crate) mod sealed {
     pub trait Sealed {}
 }
 

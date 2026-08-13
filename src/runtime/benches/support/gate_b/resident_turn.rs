@@ -1,5 +1,5 @@
 use mech_engine::__gate_b_resident::{ResidentEkfBatch, ResidentFullWrite};
-use mech_runtime::__gate_b_recording::{GateBFixedReceipt, ResidentTurnRecorder};
+use mech_runtime::__resident_recording::{GateBFixedReceipt, ResidentTurnRecorder};
 
 use super::{
     contract::{

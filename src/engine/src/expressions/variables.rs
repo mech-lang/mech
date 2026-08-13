@@ -82,53 +82,44 @@ pub fn var(
             let _ = value;
         }
     };
-    match env {
-        Some(env) => match env.get(&id) {
-            Some(value) => maybe_cast_variable_to_kind(v, value.clone(), p),
-            None => {
-                let state_brrw = p.state.borrow();
-                let symbols_brrw = state_brrw.symbol_table.borrow();
-                let symbol_value = symbols_brrw.get(id);
-                drop(symbols_brrw);
-                drop(state_brrw);
-                match symbol_value {
-                    Some(value) => {
-                        mark_if_live_symbol(&value);
-                        maybe_cast_variable_to_kind(v, LegacyValue::MutableReference(value), p)
-                    }
-                    None => Err(crate::MechError::new(
-                        UndefinedVariableError {
-                            id,
-                            name: name.clone(),
-                        },
-                        None,
-                    )
-                    .with_compiler_loc()
-                    .with_tokens(v.tokens())),
-                }
-            }
-        },
-        None => {
-            let state_brrw = p.state.borrow();
-            let symbols_brrw = state_brrw.symbol_table.borrow();
-            let symbol_value = symbols_brrw.get(id);
-            drop(symbols_brrw);
-            drop(state_brrw);
-            match symbol_value {
-                Some(value) => {
-                    mark_if_live_symbol(&value);
-                    maybe_cast_variable_to_kind(v, LegacyValue::MutableReference(value), p)
-                }
-                None => Err(crate::MechError::new(
-                    UndefinedVariableError {
-                        id,
-                        name: name.clone(),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-                .with_tokens(v.tokens())),
-            }
-        }
+    if let Some(value) = env.and_then(|env| env.get(&id)) {
+        return maybe_cast_variable_to_kind(v, value.clone(), p);
     }
+
+    let symbol_value = {
+        let state = p.state.borrow();
+        let symbols = state.symbol_table.borrow();
+        symbols.get(id)
+    };
+    if let Some(value) = symbol_value {
+        mark_if_live_symbol(&value);
+        return maybe_cast_variable_to_kind(v, LegacyValue::MutableReference(value), p);
+    }
+    if v.context.is_some() {
+        return lower_missing_addressed_variable(v, p);
+    }
+
+    Err(
+        crate::MechError::new(UndefinedVariableError { id, name }, None)
+            .with_compiler_loc()
+            .with_tokens(v.tokens()),
+    )
+}
+
+fn lower_missing_addressed_variable(
+    variable: &Var,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
+    let id = addressed_identifier_hash(&variable.name, &variable.context);
+    let addressed_name = addressed_identifier_name(&variable.name, &variable.context);
+    let output = crate::context_read(variable, interpreter)?;
+
+    {
+        let symbols = interpreter.symbols();
+        let mut symbols = symbols.borrow_mut();
+        symbols.insert_cell(id, output.clone(), false);
+        symbols.dictionary.borrow_mut().insert(id, addressed_name);
+    }
+
+    maybe_cast_variable_to_kind(variable, LegacyValue::MutableReference(output), interpreter)
 }

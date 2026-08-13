@@ -1,6 +1,10 @@
+#![cfg(feature = "source")]
+
 #[cfg(feature = "compiler")]
 use std::cell::RefCell;
 use std::sync::Arc;
+
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
 
 #[cfg(feature = "compiler")]
 use mech_core::Ref;

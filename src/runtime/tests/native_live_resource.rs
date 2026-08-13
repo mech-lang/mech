@@ -9,6 +9,8 @@ use std::{
     },
 };
 
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
+
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, FunctionArgs, FunctionCatalog,
     FunctionCatalogBuilder, FunctionRuntimeType, LegacyValue, MResult, MechError, MechErrorKind,
@@ -329,7 +331,11 @@ fn synthetic_native_live_input_is_planned_driven_and_rolled_back_atomically() {
             _ => None,
         })
         .collect::<BTreeSet<_>>();
-    assert!(composite_registers.len() >= 2);
+    assert!(
+        composite_registers.len() >= 2,
+        "expected composite packs in {:#?}",
+        parsed.instructions,
+    );
     for source in parsed
         .instructions
         .iter()

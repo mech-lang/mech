@@ -544,7 +544,6 @@ def assert_desktop_contract():
     inlineOutput: [...document.querySelectorAll(".mech-inline-mech-code")]
       .some((element) => /42/.test(element.textContent) && element.getBoundingClientRect().height > 0),
     variableHydrated: Boolean(document.querySelector("#mech-smoke-var .mech-var-placeholder")?.textContent.trim()),
-    namedVariableHydrated: Boolean(document.querySelector("#mech-smoke-var-named .mech-var-placeholder")?.textContent.trim()),
     scrollWidth: document.documentElement.scrollWidth,
     viewportWidth: window.innerWidth,
     label: document.title,
@@ -561,7 +560,7 @@ def assert_desktop_contract():
         "navigationVisible", "titleVisible", "contentVisible", "consoleVisible",
         "consoleTabActive", "promptVisible", "inputVisible", "resizerVisible",
         "consoleToggleVisible", "fullscreenVisible", "citationsVisible", "footnotesVisible", "blockOutput",
-        "inlineOutput", "variableHydrated", "namedVariableHydrated",
+        "inlineOutput", "variableHydrated",
     ):
         if not desktop[name]:
             fail(f"desktop rich-document contract failed for {name}: {desktop!r}")
@@ -690,21 +689,41 @@ def submit(command):
 
 
 def assert_console_contract():
+    command_only = evaluate_json("""
+(() => {
+  const input = document.querySelector('.repl-input');
+  if (!input) return null;
+  return {
+    capability: input.dataset.mechInteractiveEvaluation,
+    label: input.getAttribute('aria-label'),
+    placeholder: input.getAttribute('placeholder'),
+  };
+})()
+""")
+    if command_only != {
+        "capability": "unavailable",
+        "label": "Mech document command input",
+        "placeholder": "Document commands only (:help)",
+    }:
+        fail(f"the standard document console advertised developer evaluation: {command_only!r}")
+
     if label == "configured":
         # This value is deliberately distinct from the mutable `answer`
         # fixture. It proves the configured page resolved its sibling module
         # while the document bootstrap independently proves that its granted
         # live clock host can be validated and installed.
-        submit("configured-answer")
+        submit(":whos configured-answer")
         wait_for(
-            "(() => { const values = [...document.querySelectorAll('.mech-repl-result-value')]; "
-            "return values.at(-1)?.textContent.trim() === '41'; })()",
+            "[...document.querySelectorAll('.mech-repl-symbols')].some((table) => "
+            "/configured-answer/.test(table.textContent) && /41/.test(table.textContent))",
             "the configured document's imported value",
         )
     submit("answer + 1")
     wait_for(
-        "[...document.querySelectorAll('.mech-repl-result')].some((row) => /42/.test(row.textContent))",
-        "the result of `answer + 1` in the document console",
+        "[...document.querySelectorAll('.mech-repl-error')].some((row) => "
+        "/interactive source evaluation is unavailable/.test(row.textContent)) && "
+        "document.querySelectorAll('.mech-repl-result').length === 0",
+        "the standard console rejecting developer source evaluation",
     )
     submit(":whos answer")
     wait_for(
@@ -713,22 +732,11 @@ def assert_console_contract():
     )
     submit(":help")
     wait_for("Boolean(document.querySelector('.mech-repl-help'))", "the browser console help table")
-    submit("answer = 7")
-    wait_for(
-        "/7/.test(document.querySelector('#mech-smoke-var')?.textContent || '')",
-        "the updated browser variable before :clear",
-    )
     submit(":clear")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-info')].some((row) => /Document reset/.test(row.textContent)) && "
         "/41/.test(document.querySelector('#mech-smoke-var')?.textContent || '')",
         "the reset browser document state",
-    )
-    submit("answer :=")
-    wait_for(
-        "document.querySelectorAll('.mech-repl-error').length > 0 && "
-        "document.querySelector('#mech-document-errors')?.textContent.trim().length > 0",
-        "a browser console error for invalid Mech source",
     )
     evaluate("document.querySelector('#output-tab')?.click()")
     wait_for(
@@ -960,7 +968,7 @@ try:
     # Keep real variable placeholders in the DOM before the controller starts.
     # Shipped templates intentionally do not hard-code a document's symbols, so
     # this uses browser automation instead of test-only production behavior to
-    # verify both root and named-interpreter placeholder contracts.
+    # verify the resident root-variable placeholder contract.
     devtools.call(
         "Page.addScriptToEvaluateOnNewDocument",
         {"source": """
@@ -975,12 +983,6 @@ try:
       const marker = document.createElement('span');
       marker.id = 'mech-smoke-var';
       marker.textContent = '{{VAR:answer}}';
-      root.append(marker);
-    }
-    if (!document.getElementById('mech-smoke-var-named')) {
-      const marker = document.createElement('span');
-      marker.id = 'mech-smoke-var-named';
-      marker.textContent = '{{VAR:foo-value@foo}}';
       root.append(marker);
     }
     if (!document.getElementById('mech-smoke-unrelated-controls')) {
@@ -1030,11 +1032,6 @@ try:
     wait_for(
         "Boolean(document.querySelector('#mech-smoke-var .mech-var-placeholder')?.textContent.trim())",
         "hydration of {{VAR:answer}}",
-        timeout=15,
-    )
-    wait_for(
-        "Boolean(document.querySelector('#mech-smoke-var-named .mech-var-placeholder')?.textContent.trim())",
-        "hydration of {{VAR:foo-value@foo}}",
         timeout=15,
     )
     assert_desktop_contract()

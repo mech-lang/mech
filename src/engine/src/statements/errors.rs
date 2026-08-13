@@ -14,6 +14,21 @@ impl MechErrorKind for AddressedAssignmentUnsupported {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UndefinedContextError {
+    pub context: String,
+}
+
+impl MechErrorKind for UndefinedContextError {
+    fn name(&self) -> &str {
+        "UndefinedContext"
+    }
+
+    fn message(&self) -> String {
+        format!("Context `@{}` is not defined", self.context)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UnableToConvertAtomToEnumVariantError {
     pub atom_name: String,

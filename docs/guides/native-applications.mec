@@ -1,8 +1,8 @@
 Native applications
 ===============================================================================
 
-`mech build` is the authoritative build command. It accepts one or more
-source roots, or exactly one official `.mecb` file.
+`mech build` is the authoritative build command. It accepts exactly one
+resident source root or exactly one official `.mecb` file.
 
 ~~~sh
 mech build app.mec --workspace-root . --out target/mech/app

@@ -94,6 +94,7 @@ artifact_id!(InputId);
 artifact_id!(OutputId);
 artifact_id!(IntegrityConstraintId);
 artifact_id!(OperationContractId);
+artifact_id!(ApplicationRequirementId);
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]

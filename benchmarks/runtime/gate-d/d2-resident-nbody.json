@@ -1,0 +1,257 @@
+{
+  "cold_path": {
+    "artifact-admission-and-activation": {
+      "max_ns": 102333,
+      "median_ns": 99666.5,
+      "min_ns": 97834,
+      "p95_ns": 102333,
+      "samples": 10
+    },
+    "bytecode-decoding": {
+      "max_ns": 542833,
+      "median_ns": 503854.0,
+      "min_ns": 500291,
+      "p95_ns": 542833,
+      "samples": 10
+    },
+    "bytecode-encoding": {
+      "max_ns": 146042,
+      "median_ns": 140916.5,
+      "min_ns": 139667,
+      "p95_ns": 146042,
+      "samples": 10
+    },
+    "source-compilation-and-initial-encoding": {
+      "max_ns": 24092375,
+      "median_ns": 23725291.5,
+      "min_ns": 23678375,
+      "p95_ns": 24092375,
+      "samples": 10
+    }
+  },
+  "decision": "Fail",
+  "ekf": {
+    "decision": "Fail",
+    "evidence": {
+      "d1_head": "7ff20887ea2d267b790917608c4bc8826b031762",
+      "d1_report_commit": "2e52406c28ab3a6c3e6c7c7230bdfffd7ced0f27",
+      "d2_report_commit": "cf61038766c3ec6c83fe6aeac5d0c41d579036f1"
+    },
+    "hard_gates": {
+      "candidate_bytes": true,
+      "candidate_seed_bytes": true,
+      "complete_d1_ratio": false,
+      "kernel_d1_ratio": false,
+      "publication_stores": true,
+      "source_bytecode_ratio": true,
+      "trajectory_exact": true,
+      "zero_allocation": true
+    },
+    "lanes": {
+      "d1_complete": 168.46186218261718,
+      "d1_kernel": 112.75489257812501,
+      "d2_bytecode": 322.11383463541665,
+      "d2_kernel_bytecode": 228.9082824707031,
+      "d2_kernel_source": 229.8020039876302,
+      "d2_source": 323.5393347167969,
+      "gate_b_control": 299.1208560440891
+    },
+    "ratios": {
+      "complete_d1": 1.920549437866664,
+      "kernel_d1": 2.0380668078629602,
+      "source_bytecode": 1.004425454383211
+    }
+  },
+  "gate": "D",
+  "generated_at_utc": "2026-08-12T22:03:23.366119+00:00",
+  "machine": {
+    "architecture": "arm64",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "processor": "arm"
+  },
+  "nbody": {
+    "correctness": {
+      "dirty_propagation": true,
+      "energy_drift": 4.327e-05,
+      "energy_drift_quantization": 1e-08,
+      "final_state_quantization": 1e-10,
+      "final_state_sha256": "8f25d0b2dbdebb62e1ea1667e72a37eabbaf8a254f680935bb77275e1a9e640b",
+      "initial_state_sha256": "ba5d7cfe0bb77e374691bce7d2fcb697f3b087bf48ebfc774488a4b9abead9cb",
+      "legacy_trajectory_equal": true,
+      "publication_ordering": "Release",
+      "raw_rust_trajectory_equal": true,
+      "schema_version": 1,
+      "source_bytecode_trajectory_equal": true,
+      "steady_state_allocations": 0,
+      "trajectory_quantization": 1e-10,
+      "trajectory_sha256_by_platform": {
+        "aarch64-macos": "c6b22824484158404a84bdd19de823d605aa31b5f35622b89af2fc61591268ac",
+        "x86_64-linux": "b4d33b7c35c30f890d22e8a7074e415cc54681c1789fac49a80c581204fe86db",
+        "x86_64-macos": "5aa064d6b4fcd14952d9391b21d8e4862e754c29180fb2768e29164baef1a9f2"
+      },
+      "turns": 4096
+    },
+    "decision": "Fail",
+    "hard_gates": {
+      "candidate_bytes": true,
+      "candidate_materialized_bytes": true,
+      "candidate_seed_bytes": true,
+      "epoch_magnitude_independent": true,
+      "history_independent": true,
+      "legacy_gap_closure": false,
+      "no_commit_runtime": true,
+      "no_legacy_journal": true,
+      "post_publication_append_infallible": true,
+      "publication_stores": true,
+      "published_copy_bytes": true,
+      "record_appends": true,
+      "record_preparations": true,
+      "resident_raw_ratio": false,
+      "source_bytecode_ratio": true,
+      "trajectory_exact": true,
+      "zero_allocation": true
+    },
+    "lanes": {
+      "nbody-legacy-mech": {
+        "allocation_counts": [
+          102400
+        ],
+        "max_ns": 3571.329833984375,
+        "median_ns": 3553.9703369140625,
+        "min_ns": 3549.713134765625,
+        "p95_ns": 3571.329833984375,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-raw-rust": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 779.7646484375,
+        "median_ns": 655.7210693359375,
+        "min_ns": 653.401611328125,
+        "p95_ns": 779.7646484375,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-resident-bytecode": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 3036.94677734375,
+        "median_ns": 3027.313232421875,
+        "min_ns": 3021.1181640625,
+        "p95_ns": 3036.94677734375,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-resident-kernel-bytecode": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 2881.63232421875,
+        "median_ns": 2869.939208984375,
+        "min_ns": 2861.724853515625,
+        "p95_ns": 2881.63232421875,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-resident-kernel-source": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 2881.26611328125,
+        "median_ns": 2863.5660400390625,
+        "min_ns": 2860.0361328125,
+        "p95_ns": 2881.26611328125,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-resident-source": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 3038.77783203125,
+        "median_ns": 3019.7447509765625,
+        "min_ns": 3015.07568359375,
+        "p95_ns": 3038.77783203125,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-resident-source-high-epoch": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 3018.412109375,
+        "median_ns": 3014.31787109375,
+        "min_ns": 3007.731201171875,
+        "p95_ns": 3018.412109375,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-resident-source-history-100k": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 3031.870361328125,
+        "median_ns": 3015.7928466796875,
+        "min_ns": 3009.745361328125,
+        "p95_ns": 3031.870361328125,
+        "samples": 10,
+        "turns_per_sample": 4096
+      },
+      "nbody-resident-source-history-1k": {
+        "allocation_counts": [
+          0
+        ],
+        "max_ns": 3018.513916015625,
+        "median_ns": 3015.579345703125,
+        "min_ns": 3012.105224609375,
+        "p95_ns": 3018.513916015625,
+        "samples": 10,
+        "turns_per_sample": 4096
+      }
+    },
+    "ratios": {
+      "complete_turn_tax_ns": 156.1787109375,
+      "high_epoch": 0.9982028680135772,
+      "history_100k": 0.9986913118085239,
+      "history_1k": 0.998620610145248,
+      "kernel_raw": 4.367048999872852,
+      "legacy_gap_closure": 0.18432699765121202,
+      "resident_raw": 4.605227576467417,
+      "source_bytecode": 1.0025063315178757
+    },
+    "structural": {
+      "candidate_bytes": 480,
+      "candidate_materialized_bytes": 480,
+      "candidate_seed_bytes": 480,
+      "commit_runtime_call_count": 0,
+      "legacy_journal_capture_count": 0,
+      "post_publication_append_infallible": true,
+      "publication_store_count": 1,
+      "published_buffer_copy_bytes": 0,
+      "record_append_count": 1,
+      "record_preparation_count": 1,
+      "steady_state_allocations": 0
+    }
+  },
+  "phase": "D2-resident-nbody",
+  "sample_protocol": {
+    "profile": "release",
+    "samples": 10,
+    "turns_per_sample": 4096
+  },
+  "schema_version": 1,
+  "semantic_commit": "234ea24bddd578174112a58391206cf4071af3a3",
+  "thresholds": {
+    "ekf_complete_d1_ratio_max": 1.2,
+    "ekf_kernel_d1_ratio_max": 1.2,
+    "ekf_source_bytecode_ratio_max": 1.03,
+    "nbody_high_epoch_ratio_max": 1.05,
+    "nbody_history_ratio_max": 1.05,
+    "nbody_legacy_gap_closure_min": 0.75,
+    "nbody_resident_raw_ratio_max": 1.5,
+    "nbody_source_bytecode_ratio_max": 1.03
+  }
+}

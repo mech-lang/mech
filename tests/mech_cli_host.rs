@@ -106,7 +106,14 @@ fn mech_run_subcommand_loads_cli_host_provider() {
 #[test]
 fn mech_run_uses_config_run_paths() {
     let root = temp_root("config-run");
-    write_cli_host_source(&root);
+    std::fs::write(
+        root.join("cli_host.mec"),
+        r#"~state := 0.0
+state += 424242.0
+output := state
+"#,
+    )
+    .unwrap();
     std::fs::write(
         root.join("mech.mcfg"),
         r#"config := {
@@ -121,11 +128,10 @@ fn mech_run_uses_config_run_paths() {
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
         .arg("run")
         .current_dir(&root)
-        .env("MECH_CLI_HOST_TEST", "mech-config-run-ok")
         .output()
         .unwrap();
 
-    assert_success_contains(output, "mech-config-run-ok");
+    assert_success_contains(output, "424242");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
@@ -164,6 +170,11 @@ fn bare_mech_with_run_paths_enters_repl_without_running_config_paths() {
     std::fs::write(
         root.join("mech.mcfg"),
         r#"config := {
+  runtime: {
+    program-routing: {
+      resident-routing: "prefer-resident"
+    }
+  }
   run: {
     paths: ["cli_host.mec"]
   }
@@ -177,7 +188,7 @@ fn bare_mech_with_run_paths_enters_repl_without_running_config_paths() {
 
     assert!(
         output.status.success(),
-        "bare mech REPL should exit cleanly:
+        "targetless developer REPL should ignore production routing validation:
 {combined}"
     );
     assert!(
@@ -189,7 +200,36 @@ fn bare_mech_with_run_paths_enters_repl_without_running_config_paths() {
 
 #[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
 #[test]
-fn repl_after_file_execution_preserves_loaded_program_state() {
+fn run_subcommand_without_target_enters_developer_repl() {
+    let root = temp_root("run-subcommand-config-repl");
+    write_cli_host_source(&root);
+    std::fs::write(
+        root.join("mech.mcfg"),
+        r#"config := {
+  run: {
+    paths: ["cli_host.mec"]
+  }
+}
+"#,
+    )
+    .unwrap();
+
+    let output = run_mech_with_stdin(&root, &["run", "--repl"], ":quit\n");
+    let combined = combined_output(&output);
+
+    assert!(
+        output.status.success(),
+        "targetless run-level developer REPL failed:\n{combined}"
+    );
+    assert!(
+        !combined.contains("ResidentRouteFailure") && !combined.contains("no run inputs supplied"),
+        "run-level REPL was treated as a production run:\n{combined}"
+    );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
+#[test]
+fn repl_with_file_target_is_rejected_before_production_loading() {
     let root = temp_root("repl-startup-state");
     std::fs::write(root.join("startup.mec"), "x := 42\n").unwrap();
 
@@ -197,20 +237,20 @@ fn repl_after_file_execution_preserves_loaded_program_state() {
     let combined = combined_output(&output);
 
     assert!(
-        output.status.success(),
-        "REPL command failed:
-{combined}"
+        !output.status.success(),
+        "target-backed REPL unexpectedly succeeded:\n{combined}"
     );
     assert!(
-        combined.contains("42"),
-        "REPL did not see definition loaded from startup file:
+        combined.contains("ReplUnsupported")
+            && combined.contains("cannot be combined with a resident production target"),
+        "target-backed REPL did not fail at the typed resident boundary:
 {combined}"
     );
 }
 
 #[cfg(all(feature = "run", feature = "cli_host", feature = "repl"))]
 #[test]
-fn run_project_repl_retains_runtime_host_behavior() {
+fn run_project_repl_is_rejected_before_runtime_host_effects() {
     let root = temp_root("runtime-backed-repl");
     let project = root.join("project");
     std::fs::create_dir_all(&project).unwrap();
@@ -244,23 +284,19 @@ startup := "pre-repl-runtime-host-ok"
     let combined = combined_output(&output);
 
     assert!(
-        output.status.success(),
-        "runtime-backed project REPL should exit cleanly:
+        !output.status.success(),
+        "runtime-backed project REPL unexpectedly succeeded:\n{combined}"
+    );
+    assert!(
+        combined.contains("ReplUnsupported")
+            && combined.contains("cannot be combined with a resident production target"),
+        "runtime-backed project REPL did not fail at the typed resident boundary:
 {combined}"
     );
     assert!(
-        combined.contains("pre-repl-runtime-host-ok"),
-        "the project host read/write did not run before entering the REPL:
-{combined}"
-    );
-    assert!(
-        combined.matches("pre-repl-runtime-host-ok").count() >= 2,
-        "the startup symbol was not retained in the runtime-backed REPL:
-{combined}"
-    );
-    assert!(
-        combined.contains("repl-runtime-host-ok"),
-        "the retained runtime did not execute a later REPL host write:
+        !combined.contains("pre-repl-runtime-host-ok")
+            && !combined.contains("repl-runtime-host-ok"),
+        "the rejected resident target executed host effects before failing:
 {combined}"
     );
 }

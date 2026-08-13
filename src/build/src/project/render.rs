@@ -199,6 +199,7 @@ fn validate_runtime_config_implications(
             run_grants: Vec::new(),
             actor_bootstrap: None,
         });
+    crate::validate_production_native_runtime_config(&normalized_config)?;
     if normalized_config.runtime != plan.runtime_config {
         return project_invalid("request runtime settings do not match the normalized build plan");
     }
@@ -356,6 +357,11 @@ pub fn render_catalog_source(plan: &NativeBuildPlan) -> MResult<String> {
         )
         .expect("writing to String cannot fail");
     }
+    if plan.application_kind == NativeApplicationKind::Hosted {
+        source.push_str(
+            "\n    mech_engine::install_intrinsic_resident(\n        &mut builder,\n    )?;\n",
+        );
+    }
     source.push_str("\n    Ok(Arc::new(builder.build()?))\n}\n");
     Ok(source)
 }
@@ -452,20 +458,59 @@ fn generated_error(message: impl Into<String>) -> MechError {
     MechError::new(GenericError { msg: message.into() }, None)
 }
 
-fn parse_once() -> Result<bool, ()> {
+#[derive(Clone, Copy)]
+struct GeneratedArguments {
+    once: bool,
+    runtime_info: bool,
+    max_live_turns: Option<usize>,
+}
+
+fn parse_arguments() -> Result<GeneratedArguments, ()> {
+    let mut parsed = GeneratedArguments {
+        once: false,
+        runtime_info: false,
+        max_live_turns: None,
+    };
     let mut arguments = std::env::args().skip(1);
-    match (arguments.next(), arguments.next()) {
-        (None, None) => Ok(false),
-        (Some(argument), None) if argument == "--once" => Ok(true),
-        _ => Err(()),
+    while let Some(argument) = arguments.next() {
+        match argument.as_str() {
+            "--once" => parsed.once = true,
+            "--runtime-info" => parsed.runtime_info = true,
+            "--max-live-turns" => {
+                let value = arguments.next().ok_or(())?.parse::<usize>().map_err(|_| ())?;
+                if value == 0 {
+                    return Err(());
+                }
+                parsed.max_live_turns = Some(value);
+            }
+            _ => return Err(()),
+        }
     }
+    Ok(parsed)
 }
 
 fn usage() {
-    eprintln!("usage: generated-app [--once]");
+    eprintln!("usage: generated-app [--once] [--runtime-info] [--max-live-turns N]");
 }
 
-fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
+fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
+    let info = runtime.program_execution_info();
+    let route = match info.route {
+        mech_runtime::RuntimeProgramRoute::None => "none",
+        mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
+        mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
+        _ => "invalid-production-route",
+    };
+    let policy = "require-resident";
+    let revision = info.program_revision.map(|revision| {
+        format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
+    }).unwrap_or_else(|| "null".to_string());
+    let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"legacy_turns\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.legacy_turns, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
+}
+
+fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
     let catalog = match catalog::function_catalog() {
         Ok(catalog) => catalog,
         Err(error) => return (Err(error), Vec::new()),
@@ -477,14 +522,21 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
     let runtime_constructed = true;
     let mut drivers_started = false;
     let primary = (|| -> MResult<()> {
-        let mut context = runtime.runtime_context()?;
-        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;
+        let durability = runtime.config().program_routing.resident_durability;
+        let outcome = runtime.load_production_bytecode_program(
+            PROGRAM,
+            durability,
+        )?;
+        let value = outcome.initial_value;
 
         if !value.is_empty() {
             println!("{}", value.into_value());
         }
 
-        if once {
+        if arguments.once {
+            if arguments.runtime_info {
+                println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
+            }
             return Ok(());
         }
 
@@ -497,10 +549,27 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
 
         drivers_started = true;
         runtime.start_input_drivers()?;
+        let mut completed_live_turns = 0usize;
         while !interrupted.load(Ordering::SeqCst) {
-            if runtime.drain_host_inputs(64)?.is_empty() {
+            if arguments.max_live_turns.is_some_and(|limit| completed_live_turns >= limit) {
+                break;
+            }
+            let drain_limit = arguments.max_live_turns
+                .map(|limit| limit.saturating_sub(completed_live_turns))
+                .unwrap_or(64)
+                .min(64);
+            let outcomes = runtime.drain_host_inputs(drain_limit)?;
+            completed_live_turns = completed_live_turns.saturating_add(
+                outcomes.iter().filter(|outcome| {
+                    outcome.turn.is_some() || outcome.resident_turn.is_some()
+                }).count(),
+            );
+            if outcomes.is_empty() {
                 std::thread::sleep(Duration::from_millis(10));
             }
+        }
+        if arguments.runtime_info {
+            println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
         }
         Ok(())
     })();
@@ -520,14 +589,14 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
 }
 
 fn main() {
-    let once = match parse_once() {
-        Ok(once) => once,
+    let arguments = match parse_arguments() {
+        Ok(arguments) => arguments,
         Err(()) => {
             usage();
             std::process::exit(2);
         }
     };
-    let (primary, cleanup) = run(once);
+    let (primary, cleanup) = run(arguments);
     let mut failed = false;
     if let Err(error) = primary {
         eprintln!("{}", error.display_message());
@@ -557,20 +626,52 @@ static PROGRAM: &[u8] =
         "/program.mecb"
     ));
 
-fn parse_once() -> Result<bool, ()> {
+#[derive(Clone, Copy)]
+struct GeneratedArguments {
+    runtime_info: bool,
+}
+
+fn parse_arguments() -> Result<GeneratedArguments, ()> {
+    let mut parsed = GeneratedArguments { runtime_info: false };
     let mut arguments = std::env::args().skip(1);
-    match (arguments.next(), arguments.next()) {
-        (None, None) => Ok(false),
-        (Some(argument), None) if argument == "--once" => Ok(true),
-        _ => Err(()),
+    while let Some(argument) = arguments.next() {
+        match argument.as_str() {
+            "--once" => {}
+            "--runtime-info" => parsed.runtime_info = true,
+            "--max-live-turns" => {
+                let value = arguments.next().ok_or(())?.parse::<usize>().map_err(|_| ())?;
+                if value == 0 {
+                    return Err(());
+                }
+            }
+            _ => return Err(()),
+        }
     }
+    Ok(parsed)
 }
 
 fn usage() {
-    eprintln!("usage: generated-app [--once]");
+    eprintln!("usage: generated-app [--once] [--runtime-info] [--max-live-turns N]");
 }
 
-fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
+fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
+    let info = runtime.program_execution_info();
+    let route = match info.route {
+        mech_runtime::RuntimeProgramRoute::None => "none",
+        mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
+        mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
+        _ => "invalid-production-route",
+    };
+    let policy = "require-resident";
+    let revision = info.program_revision.map(|revision| {
+        format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
+    }).unwrap_or_else(|| "null".to_string());
+    let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"legacy_turns\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.legacy_turns, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
+}
+
+fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
     let catalog = match catalog::function_catalog() {
         Ok(catalog) => catalog,
         Err(error) => return (Err(error), Vec::new()),
@@ -581,12 +682,18 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
     };
     let runtime_constructed = true;
     let primary = (|| -> MResult<()> {
-        let _ = once;
-        let mut context = runtime.runtime_context()?;
-        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;
+        let durability = runtime.config().program_routing.resident_durability;
+        let outcome = runtime.load_production_bytecode_program(
+            PROGRAM,
+            durability,
+        )?;
+        let value = outcome.initial_value;
 
         if !value.is_empty() {
             println!("{}", value.into_value());
+        }
+        if arguments.runtime_info {
+            println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
         }
         Ok(())
     })();
@@ -600,14 +707,14 @@ fn run(once: bool) -> (MResult<()>, Vec<MechError>) {
 }
 
 fn main() {
-    let once = match parse_once() {
-        Ok(once) => once,
+    let arguments = match parse_arguments() {
+        Ok(arguments) => arguments,
         Err(()) => {
             usage();
             std::process::exit(2);
         }
     };
-    let (primary, cleanup) = run(once);
+    let (primary, cleanup) = run(arguments);
     let mut failed = false;
     if let Err(error) = primary {
         eprintln!("{}", error.display_message());
@@ -650,16 +757,16 @@ fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
         "actor-turn plans must carry an actor bootstrap"
     );
 
-    let ordinary_install = "        let mut context = runtime.runtime_context()?;\n        let value = runtime.install_bytecode_with_context(&mut context, PROGRAM)?;";
+    let resident_install = "        let durability = runtime.config().program_routing.resident_durability;\n        let outcome = runtime.load_production_bytecode_program(\n            PROGRAM,\n            durability,\n        )?;\n        let value = outcome.initial_value;";
     assert!(
-        source.contains(ordinary_install),
+        source.contains(resident_install),
         "hosted main template must retain the program-install seam"
     );
     source = source.replace(
-        ordinary_install,
+        resident_install,
         "        let value = install_actor_bytecode(&mut runtime)?;",
     );
-    let seam = "fn parse_once() -> Result<bool, ()> {";
+    let seam = "fn parse_arguments() -> Result<GeneratedArguments, ()> {";
     assert!(
         source.contains(seam),
         "hosted main template lost parse seam"
@@ -747,7 +854,9 @@ fn install_actor_bytecode(
         runtime
             .next_actor_turn_with_context(&mut context, actor)?
             .ok_or_else(|| actor_error("generated actor turn was not available"))?;
-        runtime.install_bytecode_with_context(&mut context, PROGRAM)
+        runtime
+            .legacy_interpreter()
+            .install_bytecode_with_context(&mut context, PROGRAM)
     }})();
 
     match evaluation {{
@@ -814,7 +923,7 @@ pub fn render_runtime_source(
     }
 
     let mut source = String::from(
-        "use std::{collections::BTreeMap, sync::Arc};\n\nuse mech_core::{FunctionCatalog, MResult};\nuse mech_runtime::{\n    ConfigValue, DiagnosticsConfig, HostInstanceConfig, LogLevel,\n    RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig, RuntimeLimits,\n};\n",
+        "use std::{collections::BTreeMap, sync::Arc};\n\nuse mech_core::{FunctionCatalog, MResult};\nuse mech_runtime::{\n    ConfigValue, DiagnosticsConfig, ProgramRoutingConfig, HostInstanceConfig, LogLevel,\n    ResidentDurabilityPolicy, ResidentRoutingPolicy, RunResourceGrantConfig,\n    RuntimeBuilder, RuntimeConfig, RuntimeLimits,\n};\n",
     );
     if let Some(actor) = &plan.actor_bootstrap {
         write!(
@@ -949,9 +1058,20 @@ pub fn render_generated_native_project(
 }
 
 fn render_runtime_config(config: &RuntimeConfig) -> String {
+    config
+        .validate_production_program_routing()
+        .expect("native production plan must require resident execution");
     format!(
-        "RuntimeConfig {{\n        name: {}.to_string(),\n        limits: RuntimeLimits {{\n            max_steps_per_turn: {},\n            max_turn_duration_ms: {},\n            max_memory_bytes: {},\n            max_tasks: {},\n            max_actors: {},\n            max_actor_mailbox_len: {},\n            max_source_bytes: {},\n            max_in_memory_events: {},\n        }},\n        diagnostics: DiagnosticsConfig {{\n            trace_enabled: {},\n            profile_enabled: {},\n            debug_enabled: {},\n            log_level: LogLevel::{},\n        }},\n    }}",
+        "RuntimeConfig {{\n        name: {}.to_string(),\n        program_routing: ProgramRoutingConfig {{\n            resident_routing: ResidentRoutingPolicy::{},\n            resident_durability: ResidentDurabilityPolicy::{},\n        }},\n        limits: RuntimeLimits {{\n            max_steps_per_turn: {},\n            max_turn_duration_ms: {},\n            max_memory_bytes: {},\n            max_tasks: {},\n            max_actors: {},\n            max_actor_mailbox_len: {},\n            max_source_bytes: {},\n            max_in_memory_events: {},\n        }},\n        diagnostics: DiagnosticsConfig {{\n            trace_enabled: {},\n            profile_enabled: {},\n            debug_enabled: {},\n            log_level: LogLevel::{},\n        }},\n    }}",
         rust_string_literal(&config.name),
+        "RequireResident",
+        match config.program_routing.resident_durability {
+            mech_runtime::ResidentDurabilityPolicy::Volatile => "Volatile",
+            mech_runtime::ResidentDurabilityPolicy::Retained => "Retained",
+            mech_runtime::ResidentDurabilityPolicy::AsynchronousDurable => "AsynchronousDurable",
+            mech_runtime::ResidentDurabilityPolicy::SynchronousDurable => "SynchronousDurable",
+            mech_runtime::ResidentDurabilityPolicy::ReplicatedDurable => "ReplicatedDurable",
+        },
         render_option_u64(config.limits.max_steps_per_turn),
         render_option_u64(config.limits.max_turn_duration_ms),
         render_option_u64(config.limits.max_memory_bytes),
@@ -1201,6 +1321,14 @@ mod tests {
     }
 
     #[test]
+    fn hosted_catalog_installs_the_production_resident_factory_surface() {
+        let plan = base_plan(NativeApplicationKind::Hosted);
+        let source = render_catalog_source(&plan).unwrap();
+
+        assert!(source.contains("mech_engine::install_intrinsic_resident"));
+    }
+
+    #[test]
     fn host_function_installers_are_applied_to_runtime_builder_only() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
         plan.application_requirements = vec![PlannedApplicationRequirement::HostFunction {
@@ -1221,7 +1349,7 @@ mod tests {
     }
 
     #[test]
-    fn actor_main_bootstraps_message_state_capabilities_and_transaction() {
+    fn actor_bootstrap_template_is_quarantined_from_production_rendering() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
         plan.application_requirements = [
             "actor/message/kind",
@@ -1266,19 +1394,12 @@ mod tests {
             hosts: Vec::new(),
             run_grants: Vec::new(),
         };
-        let runtime = render_runtime_source(&plan, Some(&config)).unwrap();
-        for expected in [
-            "render-test-actor",
-            "render-test-message",
-            "render-test-payload",
-            "render-test-state",
-        ] {
-            assert!(runtime.contains(expected));
-        }
+        let error = render_runtime_source(&plan, Some(&config)).unwrap_err();
+        assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
     }
 
     #[test]
-    fn distinct_actor_bootstraps_change_generated_runtime_identity() {
+    fn distinct_actor_bootstraps_remain_unrenderable_production_plans() {
         let mut alpha = base_plan(NativeApplicationKind::Hosted);
         alpha.application_requirements = vec![PlannedApplicationRequirement::HostFunction {
             name: "actor/message/kind".into(),
@@ -1313,11 +1434,10 @@ mod tests {
             hosts: Vec::new(),
             run_grants: Vec::new(),
         };
-        let alpha_source = render_runtime_source(&alpha, Some(&alpha_config)).unwrap();
-        let beta_source = render_runtime_source(&beta, Some(&beta_config)).unwrap();
-        assert_ne!(alpha_source, beta_source);
-        assert!(alpha_source.contains("actor:alpha"));
-        assert!(beta_source.contains("actor:beta"));
+        for (plan, config) in [(&alpha, &alpha_config), (&beta, &beta_config)] {
+            let error = render_runtime_source(plan, Some(config)).unwrap_err();
+            assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
+        }
         assert_ne!(
             compute_plan_sha256(&alpha).unwrap(),
             compute_plan_sha256(&beta).unwrap()
@@ -1339,15 +1459,25 @@ mod tests {
     }
 
     #[test]
-    fn every_generated_main_accepts_only_the_once_switch() {
+    fn generated_main_argument_surfaces_match_their_execution_models() {
+        let engine = render_engine_main_source();
+        assert!(engine.contains("Some(argument), None) if argument == \"--once\""));
+        assert!(engine.contains("usage: generated-app [--once]"));
+        assert!(!engine.contains("--runtime-info"));
+
         for source in [
-            render_engine_main_source(),
             render_hosted_main_source(false),
             render_hosted_main_source(true),
         ] {
-            assert!(source.contains("Some(argument), None) if argument == \"--once\""));
-            assert!(source.contains("usage: generated-app [--once]"));
+            assert!(source.contains("\"--runtime-info\" => parsed.runtime_info = true"));
+            assert!(source.contains("\"--max-live-turns\""));
+            assert!(
+                source.contains(
+                    "usage: generated-app [--once] [--runtime-info] [--max-live-turns N]"
+                )
+            );
             assert!(source.contains("std::process::exit(2)"));
+            assert!(source.contains("\\\"legacy_turns\\\":{}"));
         }
     }
 
@@ -1369,7 +1499,8 @@ mod tests {
         let live_source = render_hosted_main_source(true);
         assert!(live_source.contains("AtomicBool"));
         assert!(live_source.contains("Ordering::SeqCst"));
-        assert!(live_source.contains("runtime.drain_host_inputs(64)?"));
+        assert!(live_source.contains("limit.saturating_sub(completed_live_turns)"));
+        assert!(live_source.contains("runtime.drain_host_inputs(drain_limit)?"));
         assert!(live_source.contains("Duration::from_millis(10)"));
         assert!(live_source.contains("runtime.stop_input_drivers()"));
         assert!(live_source.contains("runtime.shutdown()"));

@@ -1,0 +1,177 @@
+{
+  "schema_version": 1,
+  "gate": "D0",
+  "base_commit": "33298522331d40960175427052ce363bb5e424df",
+  "pr_base_commit": "a9d06ee20ceb03d56c3ba465b726aa4a69427af8",
+  "artifact_authority": {
+    "type": "mech_engine::ProgramArtifact",
+    "contracts": "mech_core::OperationContractTable",
+    "value": "mech_core::Value",
+    "constants": "mech_core::ConstantStore"
+  },
+  "resident_control": {
+    "semantic_authority": false,
+    "purpose": "private-gate-b-efficacy-control",
+    "files": [
+      "src/core/src/resident_execution.rs",
+      "src/engine/src/resident/mod.rs",
+      "src/engine/src/resident/artifact.rs",
+      "src/engine/src/resident/activation.rs",
+      "src/engine/src/resident/arena.rs",
+      "src/engine/src/resident/candidate.rs",
+      "src/engine/src/resident/kernel.rs",
+      "src/engine/src/resident/workspace.rs",
+      "src/engine/src/resident/full_write.rs",
+      "src/engine/src/resident/efficacy/ekf.rs",
+      "src/runtime/src/turn_record.rs"
+    ],
+    "replacement_targets": [
+      "resident::artifact::ProgramArtifact",
+      "SlotKind",
+      "SlotRole",
+      "SlotDecl",
+      "NodeDecl",
+      "EkfOp",
+      "ActivatedPlan::activate(private ProgramArtifact)",
+      "ReactiveInstance::frozen_ekf_batch",
+      "StateArena::activate(instances)"
+    ]
+  },
+  "identity_contract": {
+    "domains": [
+      "ProgramRevision",
+      "CellSlotId",
+      "PlanGeneration",
+      "LayoutGeneration",
+      "ReactiveInstanceId",
+      "SlotIndex",
+      "CellId",
+      "InstanceEpoch"
+    ],
+    "plan_generation_initial": 0,
+    "layout_generation_initial": 0,
+    "published_epoch_initial": 0,
+    "first_candidate_epoch": 1,
+    "slot_mapping": "dense-identity-ordered",
+    "pointer_identity": false,
+    "epoch_exhaustion": "u64-max-is-final-and-never-wraps"
+  },
+  "d1_admission": {
+    "operation_contract": ["Declared"],
+    "delivery": ["Signal"],
+    "resident_interaction": ["Pure"],
+    "input_interaction": ["Observation(CaptureAsInputFact)"],
+    "dimension_lifetime": ["CompileTime"],
+    "output_construction": ["FullWrite"],
+    "alias_policy": ["NoAlias"],
+    "change_detection": ["KernelReported", "ExactScalar"],
+    "observer_policy": ["Synchronous"],
+    "reject_before_allocation": [
+      "LegacyOpaque",
+      "Stream",
+      "Future",
+      "Effect",
+      "TransactionalExternal",
+      "Activation dimension",
+      "Turn dimension",
+      "ReadModifyWrite",
+      "Replace",
+      "Build",
+      "MayAlias",
+      "InPlaceRequired",
+      "SemanticHash",
+      "AlwaysChanged",
+      "unknown kernel",
+      "unknown operation",
+      "unsupported schema",
+      "derived retained output",
+      "non-output state with no initializer"
+    ],
+    "legacy_fallback": false
+  },
+  "storage_contract": {
+    "constant": "constant-store-no-mutable-slot",
+    "input": "turn-workspace-candidate-lifetime",
+    "state": "state-arena-dual-version",
+    "derived_non_output": "reusable-turn-workspace-scratch",
+    "external_output": "versioned-state-slot",
+    "persistent_candidate_bytes_per_ekf_instance": 96,
+    "candidate_seed_bytes": 0,
+    "published_buffer_copy_bytes": 0
+  },
+  "publication_contract": {
+    "store_count": 1,
+    "writer_ordering": "Release",
+    "reader_ordering": "Acquire",
+    "abort_preserves_published_epoch": true,
+    "ordered_steps": [
+      "reserve",
+      "begin",
+      "execute",
+      "validate",
+      "summary",
+      "prepare",
+      "publish",
+      "append"
+    ],
+    "capacity_reserved_before_execution": true,
+    "candidate_executes_before_receipt_preparation": true,
+    "candidate_summary_before_receipt_preparation": true,
+    "receipt_prepared_before_publish": true,
+    "append_after_publish": "infallible"
+  },
+  "observer_contract": {
+    "policy": "Synchronous",
+    "borrow_expires_before": "next-begin_candidate",
+    "retained_views": false,
+    "d2_adds_retention": true
+  },
+  "legacy_contract": {
+    "forbidden_new_resident_dependencies": [
+      "LegacyValue",
+      "ValRef",
+      "MutableReference",
+      "ReactiveCellId",
+      "ValueStateJournal",
+      "ReactiveTurnJournal",
+      "RuntimeExecutionTransaction",
+      "RuntimeTransaction",
+      "commit_runtime",
+      "transaction_state_values",
+      "RefCell",
+      "Rc",
+      "pointer address identity"
+    ],
+    "gate_b_receipt": "benchmark-only-fixed-owned-receipt",
+    "production_turn_receipt_added": false,
+    "production_routing_added": false
+  },
+  "protected_paths": [
+    "src/core/src/",
+    "src/engine/src/",
+    "src/runtime/src/",
+    "machines/",
+    "hosts/",
+    "src/bytecode/",
+    "Cargo.toml",
+    "Cargo.lock",
+    "docs/spec/bytecode-v1.md",
+    "tests/architecture/bytecode-v1/",
+    "benchmarks/runtime/gate-b/",
+    "tests/architecture/value-system/",
+    "tests/architecture/operation-contract/"
+  ],
+  "allowed_changes": [
+    ".github/workflows/ci.yml",
+    "docs/design/index.mec",
+    "docs/design/program-artifact-resident-activation.md",
+    "scripts/check-resident-activation-contract.py",
+    "scripts/generate-resident-activation-contract.py",
+    "scripts/tests/test_check_resident_activation_contract.py",
+    "scripts/tests/test_generate_resident_activation_contract.py",
+    "scripts/tests/fixtures/resident-activation/",
+    "src/engine/tests/resident_activation_contract.rs",
+    "tests/architecture/value-system/current-inventory.json",
+    "tests/architecture/resident-activation/"
+  ]
+}

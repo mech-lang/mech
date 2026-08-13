@@ -13,7 +13,10 @@ Rules:
 - Invariants are checked at runtime and must stay true.
 - Invariants are not valid on the right-hand side of other expressions.
 
-Use `mech test` to run and validate them:
+Use the full-distribution-only `mech test` command to run and validate them.
+Install a full release or build with `--features distribution-full`; the
+standard production binary intentionally omits the developer interpreter and
+test command.
 
 ```sh
 mech test .

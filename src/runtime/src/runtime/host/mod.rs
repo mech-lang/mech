@@ -265,7 +265,7 @@ impl FunctionSpecializer for RuntimeHostFunctionSpecializer {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 #[path = "tests/transaction/mod.rs"]
 mod transaction_tests;
 

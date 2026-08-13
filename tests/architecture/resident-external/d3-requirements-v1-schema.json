@@ -1,0 +1,17 @@
+{
+  "$id": "https://mech-lang.org/contracts/d3-requirements-v1-schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "const": {
+    "artifact_authority": "ApplicationRequirementTable",
+    "effect_program_revision": "44fb824d14fdd39eb9f484309920fcbc36befab657800390ac5c42547382cead",
+    "effect_source_sha256": "80467ada16cd2a2cb2d3de4c3e6b8457128afcdc04a4410257816cb4688b4971",
+    "hidden_operation_name_is_authority": false,
+    "node_requirement_field": "Option<ApplicationRequirementId>",
+    "requirement_count_per_fixture": 2,
+    "schema_version": 1,
+    "source_bytecode_equal": true,
+    "transactional_program_revision": "9f2cf91a5016a418c827c45e7aa3c98d4ece8b7d0e7ccae3c5f26aa1362fd5be",
+    "transactional_source_sha256": "5849342154555f1ed24b3d20538556bd4c30c2904f239763456f5a057898b0a9"
+  },
+  "title": "Mech D3 requirements contract v1"
+}

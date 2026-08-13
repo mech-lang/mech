@@ -1,5 +1,6 @@
 use super::{
-    Candidate, NODES_PER_EKF, ReactiveInstance, ResidentExecutionError, execute_ekf_candidate,
+    Candidate, GateBInstance, NODES_PER_EKF,
+    ResidentCandidateExecutionError as ResidentExecutionError, execute_ekf_candidate,
     execute_scheduled_ekf_candidate,
 };
 
@@ -19,7 +20,7 @@ pub struct ResidentTurnProbe {
 }
 
 pub struct ResidentEkfBatch {
-    instance: ReactiveInstance,
+    instance: GateBInstance,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -87,17 +88,16 @@ impl PreparedResidentTurn<'_> {
 
 impl Drop for PreparedResidentTurn<'_> {
     fn drop(&mut self) {
-        debug_assert!(
-            self.candidate.is_none(),
-            "prepared resident turn must publish or abort explicitly"
-        );
+        if let Some(candidate) = self.candidate.take() {
+            candidate.abort();
+        }
     }
 }
 
 impl ResidentEkfBatch {
     pub fn new(instances: usize) -> Self {
         Self {
-            instance: ReactiveInstance::frozen_ekf_batch(instances),
+            instance: GateBInstance::new(instances),
         }
     }
 

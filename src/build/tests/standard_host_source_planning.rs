@@ -370,3 +370,4 @@ fn every_trusted_actor_function_plans_source_to_bytecode() {
         );
     }
 }
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

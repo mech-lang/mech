@@ -1,0 +1,26 @@
+{
+  "effect": {
+    "base_uri": "gate-d3://scene/output",
+    "context_name": "output",
+    "delivery": "Snapshot",
+    "idempotency": "Required",
+    "intent": "Send",
+    "operation": "write",
+    "path": "frame",
+    "protocol": "AfterCommit/IdempotentRetry",
+    "semantic_outputs": 0
+  },
+  "legacy_opaque": 0,
+  "observation": {
+    "base_uri": "gate-d3://input/value",
+    "context_name": "value",
+    "delivery": "Live",
+    "intent": "Read",
+    "operation": "read",
+    "path": "sample",
+    "replay": "CaptureAsInputFact"
+  },
+  "program_revision": "44fb824d14fdd39eb9f484309920fcbc36befab657800390ac5c42547382cead",
+  "schema_version": 1,
+  "unclassified_nodes": 0
+}

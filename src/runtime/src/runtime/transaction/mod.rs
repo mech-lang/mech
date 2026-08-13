@@ -6,7 +6,7 @@ mod abort;
 mod capabilities;
 mod commit;
 mod context;
-mod effects;
+pub(super) mod effects;
 mod envelope;
 mod health;
 mod modules;

@@ -1,5 +1,5 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
-#![forbid(unsafe_code)]
+#![deny(unsafe_code)]
 
 pub mod config;
 pub mod effect;
@@ -9,11 +9,13 @@ pub mod id;
 pub mod input;
 #[cfg(feature = "runtime")]
 mod ledger;
+#[cfg(feature = "legacy-interpreter")]
+pub mod legacy_interpreter;
 pub mod operation;
 #[cfg(feature = "runtime")]
 mod outbox;
 #[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
-mod resident_gate_b;
+mod resident_recording;
 mod resource;
 mod resource_contract;
 #[cfg(feature = "runtime")]
@@ -60,6 +62,8 @@ pub use self::input::*;
 pub use self::operation::*;
 pub use self::resource::*;
 pub use self::resource_contract::*;
+#[cfg(feature = "resident-external")]
+pub use self::runtime::resident_external::*;
 #[cfg(feature = "runtime")]
 pub use self::snapshot::*;
 
@@ -205,16 +209,16 @@ pub mod __gate_a_recording {
     }
 }
 
-/// Fixed-receipt wrapper over the Gate A ledger for Gate B controls only.
+/// Fixed-receipt wrapper over the Gate A ledger for resident efficacy controls.
 ///
 /// Normal runtime builds do not expose this provisional benchmark surface.
 #[doc(hidden)]
 #[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
-pub mod __gate_b_recording {
+pub mod __resident_recording {
     use mech_core::MResult;
 
     pub use crate::ledger::{LedgerPermit, RecordEstimate, RetainedTurnLedger};
-    pub use crate::resident_gate_b::{
+    pub use crate::resident_recording::{
         PreparedResidentCommit, ResidentRecordInspection, ResidentTurnRecorder,
     };
     pub use crate::turn_record::{

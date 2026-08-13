@@ -172,6 +172,96 @@ impl MechErrorKind for InterpreterBytecodeInstallRollbackFailed {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BytecodeResourceReadPlanningEvidenceError {
+    pub instruction: u32,
+    pub reason: String,
+}
+
+impl MechErrorKind for BytecodeResourceReadPlanningEvidenceError {
+    fn name(&self) -> &str {
+        "BytecodeResourceReadPlanningEvidence"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "bytecode ResourceRead planning evidence for instruction {} is invalid: {}",
+            self.instruction, self.reason,
+        )
+    }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+#[derive(Clone, Debug)]
+struct PlannedResourceRead {
+    request: ExecutionResourceRequest,
+    representative: LegacyValue,
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+struct ExecutionServicesBytecodeContractResolver<'a> {
+    services: &'a mut dyn MechExecutionServices,
+    structural: StructuralExternalContractResolver,
+    resource_reads: HashMap<u32, PlannedResourceRead>,
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+impl<'a> ExecutionServicesBytecodeContractResolver<'a> {
+    fn new(services: &'a mut dyn MechExecutionServices) -> Self {
+        Self {
+            services,
+            structural: StructuralExternalContractResolver,
+            resource_reads: HashMap::new(),
+        }
+    }
+
+    fn into_resource_reads(self) -> HashMap<u32, PlannedResourceRead> {
+        self.resource_reads
+    }
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+impl BytecodeExternalContractResolver for ExecutionServicesBytecodeContractResolver<'_> {
+    fn validate_host_call(
+        &mut self,
+        contract: BytecodeHostCallContract<'_>,
+    ) -> MResult<LegacyValue> {
+        self.structural.validate_host_call(contract)
+    }
+
+    fn validate_resource_read(
+        &mut self,
+        contract: BytecodeResourceReadContract<'_>,
+    ) -> MResult<LegacyValue> {
+        let representative = self
+            .services
+            .plan_resource_read_output(contract.request)?
+            .try_deep_snapshot()?;
+        let validation_value = representative.try_deep_snapshot()?;
+        let previous = self.resource_reads.insert(
+            contract.instruction,
+            PlannedResourceRead {
+                request: contract.request.clone(),
+                representative,
+            },
+        );
+        if previous.is_some() {
+            return Err(bytecode_resource_read_planning_evidence_error(
+                contract.instruction,
+                "duplicate evidence was supplied for one instruction",
+            ));
+        }
+        Ok(validation_value)
+    }
+
+    fn validate_resource_write(
+        &mut self,
+        contract: BytecodeResourceWriteContract<'_>,
+    ) -> MResult<()> {
+        self.structural.validate_resource_write(contract)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterpreterCheckpointBorrowConflict {
     pub phase: &'static str,
@@ -2013,9 +2103,14 @@ impl Interpreter {
         program: &ParsedProgram,
         services: &mut dyn MechExecutionServices,
     ) -> MResult<LegacyValue> {
-        program.validate_runtime_contracts(&self.function_catalog)?;
+        let resource_read_evidence = {
+            let mut resolver = ExecutionServicesBytecodeContractResolver::new(services);
+            program.validate_runtime_contracts_with(&self.function_catalog, &mut resolver)?;
+            resolver.into_resource_reads()
+        };
+        validate_bytecode_resource_read_evidence(program, &resource_read_evidence)?;
         let checkpoint = self.checkpoint()?;
-        match self.run_validated_program_with_services(program, services) {
+        match self.run_validated_program_with_services(program, services, &resource_read_evidence) {
             Ok(value) => Ok(value),
             Err(original_error) => match self.restore(checkpoint) {
                 Ok(()) => Err(original_error),
@@ -2037,6 +2132,7 @@ impl Interpreter {
         &mut self,
         program: &ParsedProgram,
         services: &mut dyn MechExecutionServices,
+        resource_read_evidence: &HashMap<u32, PlannedResourceRead>,
     ) -> MResult<LegacyValue> {
         // Reset the instruction pointer
         self.ip = 0;
@@ -2264,12 +2360,33 @@ impl Interpreter {
                         )?;
                     }
                     BytecodeInstruction::ResourceRead { requirement, dst } => {
+                        let instruction_index = u32::try_from(self.ip).unwrap_or(u32::MAX);
                         let request = bytecode_resource_request(
                             program,
                             *requirement,
                             "ResourceRead",
                             ResourceIntent::Read,
                         )?;
+                        let planned =
+                            resource_read_evidence
+                                .get(&instruction_index)
+                                .ok_or_else(|| {
+                                    bytecode_resource_read_planning_evidence_error(
+                                        instruction_index,
+                                        "ResourceRead instruction has no planning evidence",
+                                    )
+                                })?;
+                        if planned.request != request {
+                            return Err(bytecode_resource_read_planning_evidence_error(
+                                instruction_index,
+                                format!(
+                                    "evidence request {:?} differs from instruction request {:?}",
+                                    planned.request, request,
+                                ),
+                            ));
+                        }
+                        self.bytecode_registers
+                            .load(*dst, planned.representative.try_deep_snapshot()?)?;
                         let output = self.bytecode_registers.cell(*dst)?;
                         self.out = register_bytecode_node(
                             &state_brrw,
@@ -2621,6 +2738,64 @@ fn bytecode_resource_request(
 }
 
 #[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn bytecode_resource_read_planning_evidence_error(
+    instruction: u32,
+    reason: impl Into<String>,
+) -> MechError {
+    MechError::new(
+        BytecodeResourceReadPlanningEvidenceError {
+            instruction,
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc()
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
+fn validate_bytecode_resource_read_evidence(
+    program: &ParsedProgram,
+    evidence: &HashMap<u32, PlannedResourceRead>,
+) -> MResult<()> {
+    for (instruction, planned) in evidence {
+        let Some(BytecodeInstruction::ResourceRead { requirement, .. }) = program
+            .instructions
+            .get(usize::try_from(*instruction).unwrap_or(usize::MAX))
+        else {
+            return Err(bytecode_resource_read_planning_evidence_error(
+                *instruction,
+                "planning evidence points at a non-ResourceRead instruction",
+            ));
+        };
+        let request =
+            bytecode_resource_request(program, *requirement, "ResourceRead", ResourceIntent::Read)?;
+        if planned.request != request {
+            return Err(bytecode_resource_read_planning_evidence_error(
+                *instruction,
+                format!(
+                    "evidence request {:?} differs from instruction request {:?}",
+                    planned.request, request,
+                ),
+            ));
+        }
+    }
+
+    for (index, instruction) in program.instructions.iter().enumerate() {
+        if matches!(instruction, BytecodeInstruction::ResourceRead { .. }) {
+            let instruction = u32::try_from(index).unwrap_or(u32::MAX);
+            if !evidence.contains_key(&instruction) {
+                return Err(bytecode_resource_read_planning_evidence_error(
+                    instruction,
+                    "ResourceRead instruction has no planning evidence",
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(all(feature = "program", feature = "functions", feature = "symbol_table"))]
 fn bytecode_external_requirement_mismatch(
     instruction: &'static str,
     requirement: u32,
@@ -2946,5 +3121,21 @@ impl Deref for InterpreterExecution<'_> {
 
     fn deref(&self) -> &Self::Target {
         self.interpreter
+    }
+}
+
+impl Interpreter {
+    /// Whether executable source or bytecode state is retained. This is a
+    /// defensive ownership signal; catalogs and empty environments do not
+    /// count as installed programs.
+    pub fn has_retained_execution_state(&self) -> bool {
+        if !self.code.is_empty() || self.ip != 0 || !self.constants.is_empty() {
+            return true;
+        }
+        #[cfg(feature = "functions")]
+        if self.plan_len() != 0 {
+            return true;
+        }
+        false
     }
 }

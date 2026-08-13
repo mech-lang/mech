@@ -1,0 +1,5 @@
+{
+  "path": "src/engine/src/resident/new_transaction.rs",
+  "baseline": "",
+  "current": "fn execute_transaction() { let _transaction: Option<RuntimeExecutionTransaction> = None; }\n"
+}

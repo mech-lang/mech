@@ -256,6 +256,8 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
             lane("rust-epoch", 20.0),
             lane("numpy-persistent", 30.0),
             lane("mech-resident-kernel", 19.0),
+            lane("mech-resident-artifact-source", 21.0),
+            lane("mech-resident-artifact-bytecode", 21.0),
             lane("mech-resident-scheduled", 20.0),
             lane("mech-resident-turn", 21.0),
             lane("mech-resident-turn", 22.1, history=1_000),

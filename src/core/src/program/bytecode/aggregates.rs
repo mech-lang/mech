@@ -76,12 +76,43 @@ fn duplicate_hashed_child(kind: &str) -> MechError {
     .with_compiler_loc()
 }
 
-fn compiled_child_kind(value: &LegacyValue) -> ValueKind {
-    let mut kind = value.kind();
-    while let ValueKind::Reference(inner) = kind {
-        kind = *inner;
+fn compiled_kind(kind: ValueKind) -> ValueKind {
+    match kind {
+        ValueKind::Reference(inner) => compiled_kind(*inner),
+        ValueKind::Matrix(inner, shape) => {
+            ValueKind::Matrix(Box::new(compiled_kind(*inner)), shape)
+        }
+        ValueKind::Record(fields) => ValueKind::Record(
+            fields
+                .into_iter()
+                .map(|(name, kind)| (name, compiled_kind(kind)))
+                .collect(),
+        ),
+        ValueKind::Map(key, value) => ValueKind::Map(
+            Box::new(compiled_kind(*key)),
+            Box::new(compiled_kind(*value)),
+        ),
+        ValueKind::Table(columns, primary_key) => ValueKind::Table(
+            columns
+                .into_iter()
+                .map(|(name, kind)| (name, compiled_kind(kind)))
+                .collect(),
+            primary_key,
+        ),
+        ValueKind::Tuple(elements) => {
+            ValueKind::Tuple(elements.into_iter().map(compiled_kind).collect())
+        }
+        ValueKind::Set(element, max_len) => {
+            ValueKind::Set(Box::new(compiled_kind(*element)), max_len)
+        }
+        ValueKind::Option(inner) => ValueKind::Option(Box::new(compiled_kind(*inner))),
+        ValueKind::Kind(inner) => ValueKind::Kind(Box::new(compiled_kind(*inner))),
+        kind => kind,
     }
-    kind
+}
+
+fn compiled_child_kind(value: &LegacyValue) -> ValueKind {
+    compiled_kind(value.kind())
 }
 
 fn wrong_child_kind(index: usize, expected: &ValueKind, actual: &ValueKind) -> MechError {

@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
 
-use mech_core::{LegacyValue, MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref};
+use mech_core::{
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
+    MechError, MechErrorKind, MechRecord, MechTable, MechTuple, Ref, ToMatrix,
+};
 #[cfg(feature = "native")]
 use mech_runtime::RuntimeHostFactory;
 use mech_runtime::{
@@ -62,6 +65,19 @@ fn empty_scene() -> LegacyValue {
         ("circles", tuple(vec![])),
         ("lines", tuple(vec![])),
     ])
+}
+fn points(rows: usize, columns: usize, values: Vec<f64>) -> LegacyValue {
+    LegacyValue::MatrixF64(ToMatrix::to_matrix(values, rows, columns))
+}
+fn points_write(value: LegacyValue) -> RuntimeResourceWriteRequest {
+    RuntimeResourceWriteRequest {
+        base_uri: "scene://view/frame".to_string(),
+        path: "points".to_string(),
+        context_name: "view".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        intent: RuntimeResourceWriteIntent::Send,
+        value,
+    }
 }
 fn circle(id: &str) -> LegacyValue {
     record(vec![
@@ -433,6 +449,95 @@ fn unknown_send_path_rejected() {
 }
 
 #[test]
+fn scene_send_contract_is_at_most_once_without_idempotency() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    let contract = provider
+        .semantic_write_contract(RuntimeResourceWriteIntent::Send)
+        .unwrap();
+    assert!(matches!(
+        &contract.interaction,
+        ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        })
+    ));
+    assert!(
+        provider
+            .semantic_write_contract(RuntimeResourceWriteIntent::Assign)
+            .is_none()
+    );
+    assert!(!provider.supports_resident_idempotency(RuntimeResourceWriteIntent::Send));
+}
+
+#[test]
+fn points_reject_wrong_kinds_shapes_and_nonfinite_coordinates() {
+    let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
+    assert!(provider.plan_write(points_write(f(1.0))).is_err());
+    assert!(
+        provider
+            .plan_write(points_write(points(2, 1, vec![0.0; 2])))
+            .is_err()
+    );
+    assert!(
+        provider
+            .plan_write(points_write(points(2, 3, vec![0.0; 6])))
+            .is_err()
+    );
+    assert!(
+        provider
+            .plan_write(points_write(points(
+                2,
+                2,
+                vec![1.0, 2.0, 3.0, f64::INFINITY],
+            )))
+            .is_err()
+    );
+}
+
+#[test]
+fn points_use_column_major_screen_coordinates_ids_palette_and_radii() {
+    let mut settings = SceneHostSettings::new("#scene", SceneRendererKind::Svg);
+    settings.width = 100;
+    settings.height = 80;
+    settings.point_radius = 2;
+    settings.first_point_radius = 7;
+    let scene =
+        scene_snapshot_from_points(&points(2, 2, vec![60.0, 30.0, 10.0, 80.0]), &settings).unwrap();
+    assert_eq!(scene.circles.len(), 2);
+    assert_eq!(scene.circles[0].id, "body-0");
+    assert_eq!(scene.circles[0].x, 60.0);
+    assert_eq!(scene.circles[0].y, 10.0);
+    assert_eq!(scene.circles[0].radius, 7.0);
+    assert_eq!(scene.circles[0].fill, "#ffd166");
+    assert_eq!(scene.circles[1].id, "body-1");
+    assert_eq!(scene.circles[1].x, 30.0);
+    assert_eq!(scene.circles[1].y, 80.0);
+    assert_eq!(scene.circles[1].radius, 2.0);
+    assert_eq!(scene.circles[1].fill, "#b8b8b8");
+    assert!(scene.lines.is_empty());
+}
+
+#[test]
+fn recording_scene_backend_receives_an_accepted_points_frame() {
+    let backend = RecordingSceneBackend::new();
+    let mut provider = SceneResourceProvider::new("view", backend.clone());
+    deliver_write(&mut provider, points_write(points(1, 2, vec![1.0, 2.0]))).unwrap();
+    assert_eq!(backend.latest().unwrap().circles[0].id, "body-0");
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_registry_receives_an_accepted_points_frame() {
+    let registry = BrowserSceneRegistry::new();
+    let settings = SceneHostSettings::new("#scene", SceneRendererKind::Svg);
+    registry.register("view", settings.clone()).unwrap();
+    let backend = BrowserSceneBackend::new("view", registry.clone());
+    let mut provider = SceneResourceProvider::new_with_settings("view", backend, settings);
+    deliver_write(&mut provider, points_write(points(1, 2, vec![1.0, 2.0]))).unwrap();
+    assert_eq!(registry.latest("view").unwrap().circles[0].id, "body-0");
+}
+
+#[test]
 fn latest_scene_replaces_older_scene() {
     let backend = RecordingSceneBackend::new();
     let mut provider = SceneResourceProvider::new("view", backend.clone());
@@ -473,7 +578,7 @@ fn latest_scene_replaces_older_scene() {
 #[test]
 fn scene_prepare_write_does_not_render_before_delivery() {
     let backend = RecordingSceneBackend::new();
-    let mut provider = SceneResourceProvider::new("view", backend.clone());
+    let provider = SceneResourceProvider::new("view", backend.clone());
     let effect = provider
         .prepare_write(RuntimeResourceWriteRequest {
             base_uri: "scene://view/frame".to_string(),

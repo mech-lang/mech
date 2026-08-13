@@ -1,0 +1,27 @@
+{
+  "absent_observations_capture_bound_provider_snapshot": true,
+  "admission_failure_preserves_ordered_packets": true,
+  "coalescing": "latest value from each matched packet source becomes one turn",
+  "driver_private_backlog_cleared_on_stop": true,
+  "duplicate_observations_share_source_value": true,
+  "effect_only_activation_turns": 1,
+  "packet_values_authoritative": true,
+  "publication_before_scene_delivery": true,
+  "rejected_turn_scene_deliveries": 0,
+  "resident_failures_surface_to_public_drain": true,
+  "scene": {
+    "delivery": "AtMostOnce",
+    "idempotency": "NotRequired",
+    "legacy_path": "replace",
+    "points_path": "points",
+    "points_shape": "N\u00d72 f64"
+  },
+  "schema_version": 1,
+  "timer": {
+    "frequency_hz": 60,
+    "observation": "tick",
+    "queue_policy": "latest",
+    "replay": "CaptureAsInputFact"
+  },
+  "turn_duration_checked_before_publication": true
+}

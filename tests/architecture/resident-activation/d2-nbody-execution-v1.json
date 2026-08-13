@@ -1,0 +1,21 @@
+{
+  "dirty_propagation": true,
+  "energy_drift": 4.327e-05,
+  "energy_drift_quantization": 1e-08,
+  "final_state_quantization": 1e-10,
+  "final_state_sha256": "8f25d0b2dbdebb62e1ea1667e72a37eabbaf8a254f680935bb77275e1a9e640b",
+  "initial_state_sha256": "ba5d7cfe0bb77e374691bce7d2fcb697f3b087bf48ebfc774488a4b9abead9cb",
+  "legacy_trajectory_equal": true,
+  "publication_ordering": "Release",
+  "raw_rust_trajectory_equal": true,
+  "schema_version": 1,
+  "source_bytecode_trajectory_equal": true,
+  "steady_state_allocations": 0,
+  "trajectory_quantization": 1e-10,
+  "trajectory_sha256_by_platform": {
+    "aarch64-macos": "c6b22824484158404a84bdd19de823d605aa31b5f35622b89af2fc61591268ac",
+    "x86_64-linux": "b4d33b7c35c30f890d22e8a7074e415cc54681c1789fac49a80c581204fe86db",
+    "x86_64-macos": "5aa064d6b4fcd14952d9391b21d8e4862e754c29180fb2768e29164baef1a9f2"
+  },
+  "turns": 4096
+}

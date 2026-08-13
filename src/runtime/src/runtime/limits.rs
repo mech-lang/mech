@@ -105,6 +105,14 @@ impl MechRuntime {
         context: &mut RuntimeContext,
         source_bytes: u64,
     ) -> MResult<()> {
+        self.enforce_source_byte_limit(source_bytes)?;
+        context.charge_bytes(source_bytes)
+    }
+
+    /// Checks the configured per-source ceiling without charging a context.
+    /// Resident planning runs before an execution context exists; the selected
+    /// executor remains responsible for its own resource accounting.
+    pub(in crate::runtime) fn enforce_source_byte_limit(&self, source_bytes: u64) -> MResult<()> {
         if let Some(max) = self.config.limits.max_source_bytes {
             if source_bytes > max {
                 return Err(MechError::new(
@@ -118,8 +126,7 @@ impl MechRuntime {
                 ));
             }
         }
-
-        context.charge_bytes(source_bytes)
+        Ok(())
     }
 
     pub(in crate::runtime) fn apply_context_event_retention(&self, context: &mut RuntimeContext) {
@@ -131,21 +138,28 @@ impl MechRuntime {
     }
 
     pub(in crate::runtime) fn enforce_turn_duration(&self, started: Instant) -> MResult<()> {
-        let Some(max) = self.config.limits.max_turn_duration_ms else {
-            return Ok(());
-        };
-        let requested = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
-        if requested > max {
-            return Err(MechError::new(
-                ResourceBudgetExceededError {
-                    resource: "turn_duration_ms",
-                    used: 0,
-                    requested,
-                    max: Some(max),
-                },
-                None,
-            ));
-        }
-        Ok(())
+        enforce_turn_duration_limit(self.config.limits.max_turn_duration_ms, started)
     }
+}
+
+pub(in crate::runtime) fn enforce_turn_duration_limit(
+    max: Option<u64>,
+    started: Instant,
+) -> MResult<()> {
+    let Some(max) = max else {
+        return Ok(());
+    };
+    let requested = u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX);
+    if requested > max {
+        return Err(MechError::new(
+            ResourceBudgetExceededError {
+                resource: "turn_duration_ms",
+                used: 0,
+                requested,
+                max: Some(max),
+            },
+            None,
+        ));
+    }
+    Ok(())
 }

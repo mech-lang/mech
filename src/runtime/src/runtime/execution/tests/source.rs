@@ -27,7 +27,8 @@ use crate::runtime::test_support::{
     capabilities::{grant_host_call, grant_read, grant_write},
     providers::{
         DeliberateHostCallError, RecordingTestOutput, TestAfterCommitEffect, TestOutputProvider,
-        TestResourceProvider, test_provider_with, test_runtime_builder, test_runtime_with_host,
+        TestResourceAccessCounts, TestResourceProvider, test_provider_with, test_runtime_builder,
+        test_runtime_with_host,
     },
 };
 #[cfg(feature = "compiler")]
@@ -998,12 +999,16 @@ fn runtime_source_external_operations_compile_and_reconstruct_an_equivalent_plan
     let docs = InMemoryDocsProvider::new()
         .with_value("docs://manual", "item", LegacyValue::F64(Ref::new(0.0)))
         .unwrap();
-    let mut runtime = test_runtime_builder()
-        .resource_provider(Box::new(test_provider_with(
+    let resource_counts = Arc::new(TestResourceAccessCounts::default());
+    let provider = TestResourceProvider::new()
+        .with_value(
             "test://clock/ticks",
             "value",
-            3.0,
-        )))
+            LegacyValue::F64(Ref::new(3.0)),
+        )
+        .with_access_counts(Arc::clone(&resource_counts));
+    let mut runtime = test_runtime_builder()
+        .resource_provider(Box::new(provider))
         .resource_provider(Box::new(TestOutputProvider::new(output.clone())))
         .in_memory_docs(docs)
         .host_function(PlannedPureHostFunction::new(
@@ -1059,10 +1064,18 @@ hosted := test/external-equivalence(@clock/value)
     );
 
     let mut context = runtime.runtime_context().unwrap();
+    resource_counts.reset();
     runtime
         .install_bytecode_with_context(&mut context, &bytecode)
         .unwrap();
 
+    assert_eq!(resource_counts.plans(), 1);
+    assert_eq!(resource_counts.reads(), 1);
+    assert_eq!(runtime.live_input_binding_count(), 1);
+    match runtime.program.root_symbol_value("hosted").unwrap() {
+        LegacyValue::F64(value) => assert_eq!(*value.borrow(), 3.0),
+        other => panic!("expected actual resource payload, got {other:?}"),
+    }
     assert_eq!(host_invocations.load(Ordering::SeqCst), 2);
     assert_eq!(output.lines().len(), 2);
     assert_eq!(external_plan_descriptors(&runtime), source_plan);
@@ -1111,8 +1124,16 @@ fn failed_valid_bytecode_install_removes_a_new_live_binding() {
 
     let invocations = Arc::new(AtomicUsize::new(0));
     let invocation_count = Arc::clone(&invocations);
+    let resource_counts = Arc::new(TestResourceAccessCounts::default());
+    let provider = TestResourceProvider::new()
+        .with_value(
+            "test://clock/ticks",
+            "value",
+            LegacyValue::F64(Ref::new(1.0)),
+        )
+        .with_access_counts(Arc::clone(&resource_counts));
     let mut runtime = test_runtime_with_host(
-        test_provider_with("test://clock/ticks", "value", 1.0),
+        provider,
         PlannedPureHostFunction::new(
             "test/fail-after-live-read",
             |_context: &RuntimeCallContext, arguments: &[RuntimeValueSnapshot]| {
@@ -1129,6 +1150,7 @@ fn failed_valid_bytecode_install_removes_a_new_live_binding() {
     runtime.run_string("rollback-anchor := 7.0").unwrap();
     assert_eq!(runtime.live_input_binding_count(), 0);
     let mut context = runtime.runtime_context().unwrap();
+    resource_counts.reset();
 
     let error = runtime
         .install_bytecode_with_context(&mut context, &bytecode)
@@ -1139,6 +1161,8 @@ fn failed_valid_bytecode_install_removes_a_new_live_binding() {
         "unexpected install failure: {error:?}"
     );
     assert_eq!(invocations.load(Ordering::SeqCst), 1);
+    assert_eq!(resource_counts.plans(), 1);
+    assert_eq!(resource_counts.reads(), 1);
     assert_eq!(runtime.live_input_binding_count(), 0);
     assert!(runtime.program.root_symbol_value("failed-result").is_err());
     match runtime

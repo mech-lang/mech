@@ -50,6 +50,10 @@ pub fn bytecode_register_identity(
 }
 
 pub trait BytecodeCompilerContext {
+    fn function_id(&mut self, canonical_name: &str) -> MResult<u64> {
+        Ok(crate::hash_str(canonical_name))
+    }
+
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool);
 
     /// Assign a register to a canonical logical value identity. Contexts that
@@ -103,6 +107,24 @@ pub trait BytecodeCompilerContext {
         Ok(())
     }
 
+    /// Declares that an executable instruction, rather than a planning-time
+    /// snapshot, is authoritative for this register's first value.
+    ///
+    /// A compiler may encounter a downstream declaration before the external
+    /// producer that owns the same logical cell. Bytecode-producing contexts
+    /// use this hook to discard that provisional initializer before emitting
+    /// the producer instruction.
+    fn record_runtime_produced_register(&mut self, _register: Register) -> MResult<()> {
+        Ok(())
+    }
+
+    /// Records the source declaration's value before the first register turn.
+    /// This remains distinct from the register's executable `ConstLoad`, whose
+    /// current value may already reflect elaboration-time execution.
+    fn record_state_initializer(&mut self, _register: Register, _constant: u32) -> MResult<()> {
+        Ok(())
+    }
+
     fn intern_constant(&mut self, constant: EncodedConstant) -> MResult<u32>;
 
     fn define_symbol(
@@ -129,6 +151,16 @@ pub trait BytecodeCompilerContext {
     fn emit_unop(&mut self, function: u64, destination: Register, source: Register);
 
     fn emit_binop(&mut self, function: u64, destination: Register, lhs: Register, rhs: Register);
+
+    fn emit_declaration_binary(
+        &mut self,
+        function: u64,
+        destination: Register,
+        first: Register,
+        second: Register,
+    ) {
+        self.emit_binop(function, destination, first, second);
+    }
 
     fn emit_ternop(
         &mut self,
@@ -195,5 +227,61 @@ pub fn compile_value_register(
         context.record_register_constant_metadata(register, constant)?;
         context.emit_const_load(register, constant);
     }
+    Ok(register)
+}
+
+/// Resolves a value into the register owned by an explicit outer cell.
+///
+/// Generic declaration cells need to retain their own identity even when the
+/// value inside the cell is a reactive composite. The composite's children
+/// are still compiled by their canonical identities so `CompositePack`
+/// retains the live topology instead of freezing the planning-time payload.
+pub fn compile_value_register_for_ptr(
+    value: &LegacyValue,
+    pointer: usize,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    let (register, initialize) = context.register_for_ptr_with_initialization_status(pointer);
+    context.record_register_kind(register, value.kind())?;
+    if !initialize {
+        return Ok(register);
+    }
+
+    if let Some(children) = crate::bytecode_composite_children(value) {
+        let children = children
+            .iter()
+            .map(|child| compile_value_register(child, core::ptr::from_ref(child).addr(), context))
+            .collect::<MResult<Vec<_>>>()?;
+        let template = value.compile_const(context)?;
+        context.record_register_constant_metadata(register, template)?;
+        context.emit_composite_pack(register, template, children);
+    } else {
+        let constant = value.compile_const(context)?;
+        context.record_register_constant_metadata(register, constant)?;
+        context.emit_const_load(register, constant);
+    }
+    Ok(register)
+}
+
+/// Resolves the register for a value whose payload will be produced by an
+/// executable instruction.
+///
+/// Unlike `compile_value_register`, this records the register's semantic kind
+/// but deliberately emits no `ConstLoad` or `CompositePack`. The current value
+/// may be used to establish compile-time schema/type information; its payload
+/// is not part of the compiled program.
+pub fn compile_runtime_produced_register(
+    value: &LegacyValue,
+    fallback: usize,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    if let LegacyValue::MutableReference(reference) = value {
+        context.override_next_register_kind(value.kind())?;
+        return compile_runtime_produced_register(&reference.borrow(), reference.addr(), context);
+    }
+
+    let (register, _) = context.register_for_value_with_initialization_status(value, fallback);
+    context.record_register_kind(register, value.kind())?;
+    context.record_runtime_produced_register(register)?;
     Ok(register)
 }

@@ -99,6 +99,7 @@ impl BrowserRuntimeInjectionConfig {
         runtime_config: &RuntimeConfig,
         profile: &BrowserRuntimeProviderProfile,
     ) -> MResult<Self> {
+        runtime_config.validate_production_program_routing()?;
         for host in &document.hosts {
             if host.name == "browser" && host.provider != "browser" {
                 return Err(invalid_error(
@@ -181,6 +182,7 @@ impl BrowserRuntimeInjectionConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BrowserHostRuntimeConfig {
     pub name: String,
+    pub program_routing: mech_runtime::ProgramRoutingConfig,
     pub limits: BrowserHostRuntimeLimits,
     pub diagnostics: BrowserHostDiagnosticsConfig,
 }
@@ -280,6 +282,7 @@ impl BrowserHostConfig {
         document: &MechConfigDocument,
         runtime_config: &RuntimeConfig,
     ) -> MResult<Self> {
+        runtime_config.validate_production_program_routing()?;
         let browser = browser_config_from_hosts(document)?;
         Ok(Self {
             runtime: BrowserHostRuntimeConfig::from(runtime_config),
@@ -303,6 +306,7 @@ impl BrowserHostConfig {
         };
         let config = RuntimeConfig {
             name: self.runtime.name.clone(),
+            program_routing: self.runtime.program_routing,
             limits: RuntimeLimits {
                 max_steps_per_turn: self.runtime.limits.max_steps_per_turn,
                 max_turn_duration_ms: self.runtime.limits.max_turn_duration_ms,
@@ -321,6 +325,7 @@ impl BrowserHostConfig {
             },
         };
         config.validate()?;
+        config.validate_production_program_routing()?;
         Ok(config)
     }
 
@@ -403,6 +408,7 @@ impl From<&RuntimeConfig> for BrowserHostRuntimeConfig {
     fn from(config: &RuntimeConfig) -> Self {
         Self {
             name: config.name.clone(),
+            program_routing: config.program_routing,
             limits: BrowserHostRuntimeLimits {
                 max_steps_per_turn: config.limits.max_steps_per_turn,
                 max_turn_duration_ms: config.limits.max_turn_duration_ms,
@@ -887,6 +893,7 @@ mod tests {
     use super::*;
     use crate::BrowserResourceKind;
     use mech_core::LegacyValue;
+    use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
     use mech_runtime::{
         ConfigProfileOptions, RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
         RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
@@ -987,6 +994,23 @@ config := {
             BrowserDomProperty::parse_config_name("inner-html", None).unwrap(),
             BrowserDomProperty::InnerHtml
         );
+    }
+
+    #[test]
+    fn browser_product_authority_rejects_interpreter_routing() {
+        let document = config_document();
+        for routing in [
+            mech_runtime::ResidentRoutingPolicy::PreferResident,
+            mech_runtime::ResidentRoutingPolicy::LegacyOnly,
+        ] {
+            let mut runtime = RuntimeConfig::default();
+            runtime.program_routing.resident_routing = routing;
+            assert!(
+                BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &runtime)
+                    .is_err()
+            );
+            assert!(BrowserHostConfig::from_document_and_runtime(&document, &runtime).is_err());
+        }
     }
 
     #[test]

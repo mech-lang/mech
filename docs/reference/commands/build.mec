@@ -3,6 +3,8 @@
 
 `mech build` produces a release native executable by default. Use `--emit` to
 request official bytecode v1, a native build plan, or a generated Cargo project.
+Every build accepts exactly one resident source root or one official `.mecb`
+file.
 
 1. Default native build
 -------------------------------------------------------------------------------

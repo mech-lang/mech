@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant,
     ExecutionHostFunctionRequest, ExecutionResourceRequest, FunctionCatalog, LegacyValue, MResult,
-    ParsedProgram, ResourceDelivery, ResourceIntent, RuntimeType, write_bytecode,
+    ParsedProgram, Ref, ResourceDelivery, ResourceIntent, RuntimeType, write_bytecode,
 };
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, LogLevel,
@@ -99,7 +99,7 @@ fn parsed_external_program(
     instructions.push(BytecodeInstruction::Return { src: 0 });
     ParsedProgram::from_bytes(
         &write_bytecode(&BytecodeProgram {
-            register_count: constants.len() as u32,
+            register_count: constants.len().max(1) as u32,
             constants,
             symbols: BTreeMap::new(),
             mutable_symbols: BTreeSet::new(),
@@ -179,19 +179,8 @@ fn analyze_requirements_with_production_resolver(
                 });
             }
             ApplicationRequirement::Resource(request) if request.intent == ResourceIntent::Read => {
-                let constant = if request.base_uri.starts_with("time://") {
-                    f64_constant(0.0)
-                } else if request.base_uri.starts_with("test://") {
-                    empty_constant()
-                } else {
-                    string_constant("")
-                };
-                let dst = push_constant_load(
-                    &mut constants,
-                    &mut instructions,
-                    &mut next_register,
-                    constant,
-                );
+                let dst = next_register;
+                next_register += 1;
                 instructions.push(BytecodeInstruction::ResourceRead {
                     requirement: requirement_index as u32,
                     dst,
@@ -315,7 +304,7 @@ impl RuntimeResourceProvider for TestResourceProvider {
     }
 
     fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::Empty)
+        Ok(LegacyValue::String(Ref::new("planned".to_owned())))
     }
 
     fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
@@ -1222,7 +1211,7 @@ fn standard_provider_rejects_invalid_bytecode_resource_paths() {
         ResourceIntent::Read,
     );
     let program = parsed_external_program(
-        vec![f64_constant(0.0)],
+        vec![],
         BytecodeInstruction::ResourceRead {
             requirement: 0,
             dst: 0,
@@ -1249,7 +1238,7 @@ fn standard_provider_rejects_invalid_bytecode_resource_paths() {
 
 #[cfg(feature = "full-hosts")]
 #[test]
-fn standard_provider_plans_resource_read_output_seed_types() {
+fn standard_provider_plans_resource_read_output_types() {
     let requirement = request_at(
         "time://clock/clock",
         "clock",
@@ -1258,7 +1247,7 @@ fn standard_provider_plans_resource_read_output_seed_types() {
         ResourceIntent::Read,
     );
     let program = parsed_external_program(
-        vec![string_constant("wrong-seed")],
+        vec![],
         BytecodeInstruction::ResourceRead {
             requirement: 0,
             dst: 0,
@@ -1272,17 +1261,13 @@ fn standard_provider_plans_resource_read_output_seed_types() {
         run_grants: vec![grant("clock/clock", &["read"], &["second"])],
     };
 
-    let error = validate_external_program(
+    validate_external_program(
         &program,
         Some(&config),
         &standard_native_host_catalog().unwrap(),
         Some("x86_64-unknown-linux-gnu"),
     )
-    .unwrap_err();
-
-    assert_eq!(error.kind_name(), "NativeApplicationInstructionInvalid");
-    assert!(error.kind_message().contains("seed kind String"));
-    assert!(error.kind_message().contains("F64"));
+    .unwrap();
 }
 
 #[cfg(feature = "full-hosts")]

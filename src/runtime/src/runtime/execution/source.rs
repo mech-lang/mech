@@ -12,7 +12,7 @@ use std::time::Instant;
 use web_time::Instant;
 
 impl MechRuntime {
-    pub(super) fn run_tree_on_program(
+    pub(in crate::runtime) fn run_tree_on_program(
         &mut self,
         context: &mut RuntimeContext,
         target: &mut RuntimeProgramTarget<'_>,
@@ -106,12 +106,12 @@ impl MechRuntime {
         Ok(result)
     }
 
-    pub fn run_string(&mut self, source: &str) -> MResult<RuntimeValueSnapshot> {
+    pub(crate) fn run_string(&mut self, source: &str) -> MResult<RuntimeValueSnapshot> {
         let mut context = self.runtime_context()?;
         self.run_string_with_context(&mut context, source)
     }
 
-    pub fn run_string_with_context(
+    pub(crate) fn run_string_with_context(
         &mut self,
         context: &mut RuntimeContext,
         source: &str,
@@ -154,7 +154,10 @@ impl MechRuntime {
                 })?;
                 runtime.enforce_source_byte_count(context, source_bytes)?;
                 let value = runtime.run_string_operation(context, source, turn_started)?;
-                finish(value)
+                let finished = finish(value)?;
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(finished)
             },
         );
         if let Err(error) = &result {
@@ -228,7 +231,7 @@ impl MechRuntime {
         result
     }
 
-    pub fn run_source_with_context(
+    pub(crate) fn run_source_with_context(
         &mut self,
         context: &mut RuntimeContext,
         source: &MechSourceCode,
@@ -238,7 +241,7 @@ impl MechRuntime {
         })
     }
 
-    pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<RuntimeValueSnapshot> {
+    pub(crate) fn run_source(&mut self, source: &MechSourceCode) -> MResult<RuntimeValueSnapshot> {
         let mut context = self.runtime_context()?;
         self.run_source_with_context(&mut context, source)
     }
@@ -269,7 +272,10 @@ impl MechRuntime {
             |runtime, context| {
                 runtime.enforce_source_limits(context, source)?;
                 let value = runtime.run_source_operation(context, source, turn_started)?;
-                finish(value)
+                let finished = finish(value)?;
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(finished)
             },
         );
         if let Err(error) = &result {
@@ -309,12 +315,12 @@ impl MechRuntime {
         }
     }
 
-    pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<RuntimeValueSnapshot> {
+    pub(crate) fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<RuntimeValueSnapshot> {
         let mut context = self.runtime_context()?;
         self.run_tree_with_context(&mut context, tree)
     }
 
-    pub fn run_tree_with_context(
+    pub(crate) fn run_tree_with_context(
         &mut self,
         context: &mut RuntimeContext,
         tree: &mech_core::Program,
@@ -345,7 +351,10 @@ impl MechRuntime {
             "run_tree_with_context",
             |runtime, context| {
                 let value = runtime.run_tree_operation(context, tree, turn_started)?;
-                finish(value)
+                let finished = finish(value)?;
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(finished)
             },
         );
         if let Err(error) = &result {

@@ -1,0 +1,4 @@
+{
+  "path": "src/engine/src/resident/kernel.rs",
+  "source": "fn execute_pointer(values: &[u8]) { let _identity = values.as_ptr() as usize; }\n"
+}

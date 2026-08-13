@@ -1,6 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
-use mech_core::{LegacyValue, MResult, OperationContractDeclaration};
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
+    OperationContractDeclaration,
+};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -10,8 +14,30 @@ use mech_runtime::{
 };
 
 use crate::{
-    SceneHostSettings, SceneSnapshot, scene_error, scene_host_manifest, scene_settings_from_config,
+    CircleElement, SceneHostSettings, SceneRendererKind, SceneSnapshot, scene_error,
+    scene_host_manifest, scene_settings_from_config,
 };
+
+const BODY_PALETTE: [&str; 10] = [
+    "#ffd166", "#b8b8b8", "#f4a261", "#4cc9f0", "#e76f51", "#f9c74f", "#90be6d", "#577590",
+    "#4361ee", "#adb5bd",
+];
+
+static SCENE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
 
 pub trait SceneBackend: Clone + std::fmt::Debug + 'static {
     fn replace_scene(&mut self, scene: SceneSnapshot) -> MResult<()>;
@@ -51,13 +77,27 @@ impl SceneBackend for RecordingSceneBackend {
 #[derive(Debug)]
 pub struct SceneResourceProvider<B: SceneBackend> {
     instance: String,
+    settings: SceneHostSettings,
     backend: Arc<Mutex<B>>,
     last_accepted: Arc<Mutex<Option<SceneSnapshot>>>,
 }
 impl<B: SceneBackend> SceneResourceProvider<B> {
     pub fn new(instance: impl Into<String>, backend: B) -> Self {
+        Self::new_with_settings(
+            instance,
+            backend,
+            SceneHostSettings::new("#scene", SceneRendererKind::Svg),
+        )
+    }
+
+    pub fn new_with_settings(
+        instance: impl Into<String>,
+        backend: B,
+        settings: SceneHostSettings,
+    ) -> Self {
         Self {
             instance: instance.into(),
+            settings,
             backend: Arc::new(Mutex::new(backend)),
             last_accepted: Arc::new(Mutex::new(None)),
         }
@@ -77,8 +117,7 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send)
-            .then(mech_runtime::provider_defined_effect_contract)
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&SCENE_EFFECT_CONTRACT)
     }
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         Err(scene_error(
@@ -99,10 +138,10 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
                 "scene accepts send writes only; use <-",
             ));
         }
-        if request.path != "replace" {
+        if request.path != "replace" && request.path != "points" {
             return Err(scene_error(
                 "SceneResourceProvider",
-                "scene frame supports only the `replace` path",
+                "scene frame supports only the `replace` and `points` paths",
             ));
         }
         Ok(())
@@ -110,12 +149,16 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
     fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
         self.preflight_write(RuntimeResourceWritePreflightRequest {
             base_uri: request.base_uri,
-            path: request.path,
+            path: request.path.clone(),
             context_name: request.context_name,
             operation: request.operation,
             intent: request.intent,
         })?;
-        SceneSnapshot::from_value(&request.value).map(|_| ())
+        match request.path.as_str() {
+            "replace" => SceneSnapshot::from_value(&request.value).map(|_| ()),
+            "points" => scene_snapshot_from_points(&request.value, &self.settings).map(|_| ()),
+            _ => unreachable!("scene path was preflighted"),
+        }
     }
     fn prepare_write(
         &self,
@@ -128,13 +171,18 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
             operation: request.operation.clone(),
             intent: request.intent,
         })?;
-        let scene = SceneSnapshot::from_value(&request.value)?;
+        let scene = match request.path.as_str() {
+            "replace" => SceneSnapshot::from_value(&request.value)?,
+            "points" => scene_snapshot_from_points(&request.value, &self.settings)?,
+            _ => unreachable!("scene path was preflighted"),
+        };
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             SceneReplaceEffect {
                 backend: self.backend.clone(),
                 last_accepted: self.last_accepted.clone(),
                 scene,
                 resource: request.base_uri,
+                operation: request.path,
             },
         )))
     }
@@ -146,6 +194,7 @@ struct SceneReplaceEffect<B: SceneBackend> {
     last_accepted: Arc<Mutex<Option<SceneSnapshot>>>,
     scene: SceneSnapshot,
     resource: String,
+    operation: String,
 }
 
 impl<B: SceneBackend> RuntimeAfterCommitEffect for SceneReplaceEffect<B> {
@@ -154,7 +203,7 @@ impl<B: SceneBackend> RuntimeAfterCommitEffect for SceneReplaceEffect<B> {
             RuntimeEffectSource::ResourceProvider {
                 scheme: "scene".to_string(),
             },
-            "replace",
+            self.operation.clone(),
         )
         .with_resource(self.resource.clone())
         .with_cost(RuntimeEffectCost { bytes: 0, items: 1 })
@@ -204,14 +253,71 @@ impl<B: SceneBackend> RuntimeHostFactory for SceneHostFactory<B> {
         instance_name: &str,
         settings: &ConfigValue,
     ) -> MResult<RuntimeHostInstallation> {
-        let _settings: SceneHostSettings = scene_settings_from_config(settings)?;
+        let settings: SceneHostSettings = scene_settings_from_config(settings)?;
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(SceneResourceProvider::new(
+            resource_providers: vec![Box::new(SceneResourceProvider::new_with_settings(
                 instance_name,
                 self.backend.clone(),
+                settings,
             ))],
             input_drivers: Vec::new(),
         })
     }
+}
+
+pub fn scene_snapshot_from_points(
+    value: &LegacyValue,
+    settings: &SceneHostSettings,
+) -> MResult<SceneSnapshot> {
+    let LegacyValue::MatrixF64(matrix) = value else {
+        return Err(scene_error(
+            "ScenePoints",
+            "scene points must be a dense f64 matrix",
+        ));
+    };
+    let rows = matrix.rows();
+    let columns = matrix.cols();
+    if rows == 0 {
+        return Err(scene_error("ScenePoints", "scene points must not be empty"));
+    }
+    if columns != 2 {
+        return Err(scene_error(
+            "ScenePoints",
+            format!("scene points must have exactly 2 columns; got {columns}"),
+        ));
+    }
+    let values = matrix.as_vec();
+    let mut circles = Vec::with_capacity(rows);
+    for row in 0..rows {
+        let x = values[row];
+        let y = values[rows + row];
+        if !x.is_finite() || !y.is_finite() {
+            return Err(scene_error(
+                "ScenePoints",
+                format!("scene point row {row} contains a nonfinite coordinate"),
+            ));
+        }
+        circles.push(CircleElement {
+            id: format!("body-{row}"),
+            x,
+            y,
+            radius: if row == 0 {
+                settings.first_point_radius as f64
+            } else {
+                settings.point_radius as f64
+            },
+            fill: BODY_PALETTE[row % BODY_PALETTE.len()].to_owned(),
+            stroke: "none".to_owned(),
+            stroke_width: 0.0,
+            opacity: 1.0,
+        });
+    }
+    Ok(SceneSnapshot {
+        width: settings.width as f64,
+        height: settings.height as f64,
+        background: settings.background.clone(),
+        circles,
+        lines: Vec::new(),
+    })
 }

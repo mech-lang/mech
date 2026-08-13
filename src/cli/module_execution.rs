@@ -144,6 +144,7 @@ fn resolver_roots(canonical_roots: &[PathBuf]) -> MResult<Vec<PathBuf>> {
     Ok(roots)
 }
 
+#[cfg(feature = "legacy-interpreter")]
 pub(crate) fn execute_source_module_roots(
     config: RuntimeConfig,
     roots: &[PathBuf],
@@ -155,13 +156,13 @@ pub(crate) fn execute_source_module_roots(
 /// the resolver and module execution path with source commands, but installs
 /// only effect-free planning hosts and never starts input drivers.
 #[cfg(feature = "build")]
-pub(crate) fn execute_planning_source_module_roots(
+pub(crate) fn prepare_planning_source_module_runtime(
     config: RuntimeConfig,
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
     actor_bootstrap: Option<&ActorBootstrapConfig>,
     roots: &[PathBuf],
-) -> MResult<MechRuntime> {
+) -> MResult<(MechRuntime, Vec<PathBuf>)> {
     let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
     let mut builder = builder.planning();
     let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
@@ -176,14 +177,7 @@ pub(crate) fn execute_planning_source_module_roots(
     )?;
     builder = install_actor_planning_functions(builder, actor_bootstrap.cloned())?;
 
-    let mut runtime = builder.build()?;
-    for root in canonical_roots {
-        runtime.resolve_and_run_root_module(
-            SourceRequest::from_filesystem_path(&root)?,
-            module_build_options(),
-        )?;
-    }
-    Ok(runtime)
+    Ok((builder.build()?, canonical_roots))
 }
 
 #[cfg(feature = "build")]
@@ -278,6 +272,7 @@ pub(crate) fn execute_source_module_roots_with_report(
     })
 }
 
+#[cfg(feature = "legacy-interpreter")]
 fn execute_source_module_roots_internal(
     config: RuntimeConfig,
     roots: &[PathBuf],
@@ -290,12 +285,15 @@ fn execute_source_module_roots_internal(
         let request = SourceRequest::from_filesystem_path(&root)?;
         #[cfg(feature = "test")]
         {
-            let report =
-                runtime.resolve_and_run_root_module_report(request, module_build_options())?;
+            let report = runtime
+                .legacy_interpreter()
+                .resolve_and_run_root_module_report(request, module_build_options())?;
             integrity_evaluations.extend(report.integrity.evaluations);
         }
         #[cfg(not(feature = "test"))]
-        runtime.resolve_and_run_root_module(request, module_build_options())?;
+        runtime
+            .legacy_interpreter()
+            .resolve_and_run_root_module(request, module_build_options())?;
     }
     Ok(SourceModuleExecutionInternal {
         runtime,
@@ -321,7 +319,7 @@ fn source_module_runtime_builder(
     Ok((builder, canonical_roots))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "legacy-interpreter"))]
 mod tests {
     use super::*;
     use mech_runtime::RuntimeValueSnapshot;
@@ -389,47 +387,6 @@ mod tests {
             },
             other => panic!("expected string value, got {other:?}"),
         }
-    }
-
-    #[cfg(feature = "build")]
-    #[test]
-    fn actor_source_planning_tracks_state_put_before_later_reads() {
-        let root = temp_root("actor-state-sequence");
-        let source = root.join("main.mec");
-        std::fs::write(
-            &source,
-            "updated := actor/state/put(\"created\")\nstate := actor/state/get()\nidentifier := actor/state/id()\nidentifier\n",
-        )
-        .unwrap();
-        let bootstrap = ActorBootstrapConfig {
-            subject: "actor:planning".to_owned(),
-            message_kind: "test".to_owned(),
-            message_payload: String::new(),
-            initial_state: None,
-        };
-
-        let runtime =
-            execute_planning_source_module_roots(config(), &[], &[], Some(&bootstrap), &[source])
-                .unwrap();
-
-        assert_string(runtime.root_symbol_value("state").unwrap(), "created");
-        match runtime
-            .root_symbol_value("identifier")
-            .unwrap()
-            .into_value()
-        {
-            LegacyValue::String(value) => {
-                assert!(value.borrow().starts_with("planning-state-put-"))
-            }
-            LegacyValue::MutableReference(value) => match &*value.borrow() {
-                LegacyValue::String(value) => {
-                    assert!(value.borrow().starts_with("planning-state-put-"))
-                }
-                other => panic!("expected string value, got {other:?}"),
-            },
-            other => panic!("expected string value, got {other:?}"),
-        }
-        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

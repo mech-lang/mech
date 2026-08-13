@@ -5,12 +5,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use core::fmt;
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
-    BindingId, BytecodeArtifactSections, BytecodeProgram, CellSlotId, ConstantId, ConstantStore,
-    ConstantStoreBuilder, DimensionParameterDeclaration, DimensionParameterId,
-    DimensionParameterOrigin, InputId, IntegrityConstraintId, MechError, NodeId,
-    OperationContractId, OperationContractTable, OutputId, ParsedProgram, SchemaDraft, SchemaId,
-    SchemaTable, SchemaTableBuilder, SemanticModelError, SnapshotValueError, Value, ValueDraft,
-    write_bytecode_with_artifact,
+    ApplicationRequirement, ApplicationRequirementId, BindingId, BytecodeArtifactSections,
+    BytecodeProgram, CellSlotId, ConstantId, ConstantStore, ConstantStoreBuilder,
+    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, InputId, IntegrityConstraintId,
+    MechError, NodeId, OperationContractId, OperationContractTable, OutputId, ParsedProgram,
+    ResourceDelivery, ResourceIntent, SchemaDraft, SchemaId, SchemaTable, SchemaTableBuilder,
+    SemanticModelError, SnapshotValueError, Value, ValueDraft, write_bytecode_with_artifact,
 };
 use serde::{
     Deserialize, Serialize,
@@ -19,9 +20,10 @@ use serde::{
 
 use super::snapshot::data_draft;
 use super::{
-    ArtifactBuildError, ArtifactSource, BindingDeclaration, InitializerReference, InputDeclaration,
-    IntegrityConstraintDeclaration, NodeDeclaration, OperationReference, OutputDeclaration,
-    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
+    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration, NodeDeclaration,
+    OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
+    ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
@@ -36,6 +38,7 @@ pub struct ArtifactDecodeLimits {
     pub max_inputs: usize,
     pub max_slots: usize,
     pub max_nodes: usize,
+    pub max_requirements: usize,
     pub max_bindings: usize,
     pub max_outputs: usize,
     pub max_constraints: usize,
@@ -53,6 +56,7 @@ impl Default for ArtifactDecodeLimits {
             max_inputs: 1_000_000,
             max_slots: 1_000_000,
             max_nodes: 1_000_000,
+            max_requirements: 100_000,
             max_bindings: 1_000_000,
             max_outputs: 1_000_000,
             max_constraints: 1_000_000,
@@ -94,6 +98,7 @@ pub enum ArtifactBytecodeError {
         operation: u32,
     },
     NonCanonicalOperationTable,
+    RequirementTableMismatch,
     InvalidWireTag {
         section: &'static str,
         tag: u8,
@@ -153,10 +158,29 @@ struct WireNode {
     node: u32,
     operation: u32,
     contract: u32,
+    requirement: Option<u32>,
     input_start: u32,
     input_end: u32,
     output_start: u32,
     output_end: u32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireGraph {
+    requirements: Box<[WireRequirement]>,
+    nodes: Box<[WireNode]>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireRequirement {
+    kind: u8,
+    host_name: Option<String>,
+    base_uri: Option<String>,
+    path: Option<String>,
+    context_name: Option<String>,
+    operation: Option<String>,
+    intent: Option<u8>,
+    delivery: Option<u8>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -214,7 +238,11 @@ pub fn encode_program_artifact_bytecode_v1(
         mutable_symbols: BTreeSet::new(),
         instructions: Vec::new(),
         dictionary: BTreeMap::new(),
-        requirements: Vec::new(),
+        requirements: artifact
+            .requirements()
+            .iter()
+            .map(|(_, requirement)| requirement.clone())
+            .collect(),
     };
     Ok(write_bytecode_with_artifact(&program, &sections)?)
 }
@@ -272,21 +300,29 @@ pub fn encode_program_artifact_sections(
         )?,
         slots: encode(&slots)?,
         producers: encode(&producers)?,
-        nodes: encode(
-            &artifact
+        nodes: encode(&WireGraph {
+            requirements: artifact
+                .requirements()
+                .iter()
+                .map(|(_, requirement)| wire_requirement(requirement))
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+            nodes: artifact
                 .nodes()
                 .iter()
                 .map(|node| WireNode {
                     node: node.node.get(),
                     operation: operation_ids[&node.operation],
                     contract: node.contract.get(),
+                    requirement: node.requirement.map(ApplicationRequirementId::get),
                     input_start: node.input_bindings.start,
                     input_end: node.input_bindings.end,
                     output_start: node.output_bindings.start,
                     output_end: node.output_bindings.end,
                 })
-                .collect::<Vec<_>>(),
-        )?,
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        })?,
         bindings: encode(
             &artifact
                 .bindings()
@@ -331,7 +367,11 @@ pub fn decode_program_artifact_bytecode_v1(
     bytes: &[u8],
 ) -> Result<ProgramArtifact, ArtifactBytecodeError> {
     let parsed = ParsedProgram::from_bytes(bytes)?;
-    decode_program_artifact_sections(&parsed.artifact)
+    decode_program_artifact_sections_with_requirements(
+        &parsed.artifact,
+        Some(parsed.requirements),
+        ArtifactDecodeLimits::default(),
+    )
 }
 
 pub fn decode_program_artifact_sections(
@@ -342,6 +382,14 @@ pub fn decode_program_artifact_sections(
 
 pub fn decode_program_artifact_sections_with_limits(
     sections: &BytecodeArtifactSections,
+    limits: ArtifactDecodeLimits,
+) -> Result<ProgramArtifact, ArtifactBytecodeError> {
+    decode_program_artifact_sections_with_requirements(sections, None, limits)
+}
+
+fn decode_program_artifact_sections_with_requirements(
+    sections: &BytecodeArtifactSections,
+    requirements: Option<Vec<ApplicationRequirement>>,
     limits: ArtifactDecodeLimits,
 ) -> Result<ProgramArtifact, ArtifactBytecodeError> {
     if sections.is_empty() {
@@ -383,7 +431,34 @@ pub fn decode_program_artifact_sections_with_limits(
             tag: 0,
         });
     }
-    let nodes: Vec<WireNode> = decode_vec("nodes", &sections.nodes, limits.max_nodes)?;
+    let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
+    if graph.nodes.len() > limits.max_nodes {
+        return Err(ArtifactBytecodeError::SectionItemLimit {
+            section: "nodes",
+            limit: limits.max_nodes,
+            actual: graph.nodes.len(),
+        });
+    }
+    if graph.requirements.len() > limits.max_requirements {
+        return Err(ArtifactBytecodeError::SectionItemLimit {
+            section: "application requirements",
+            limit: limits.max_requirements,
+            actual: graph.requirements.len(),
+        });
+    }
+    let embedded_requirements = graph
+        .requirements
+        .into_vec()
+        .into_iter()
+        .map(requirement_from_wire)
+        .collect::<Result<Vec<_>, _>>()?;
+    if let Some(requirements) = requirements {
+        if requirements != embedded_requirements {
+            return Err(ArtifactBytecodeError::RequirementTableMismatch);
+        }
+    }
+    let requirements = embedded_requirements;
+    let nodes = graph.nodes.into_vec();
     let bindings: Vec<WireBinding> =
         decode_vec("bindings", &sections.bindings, limits.max_bindings)?;
     let outputs: Vec<WireOutput> = decode_vec("outputs", &sections.outputs, limits.max_outputs)?;
@@ -406,6 +481,7 @@ pub fn decode_program_artifact_sections_with_limits(
         schemas,
         constants,
         contracts,
+        requirements: ApplicationRequirementTable::from_canonical_entries(requirements)?,
         inputs: inputs
             .into_iter()
             .map(|input| InputDeclaration {
@@ -458,6 +534,7 @@ pub fn decode_program_artifact_sections_with_limits(
                     node: NodeId(node.node),
                     operation: operation(node.operation)?,
                     contract: OperationContractId::new(node.contract),
+                    requirement: node.requirement.map(ApplicationRequirementId::new),
                     input_bindings: node.input_start..node.input_end,
                     output_bindings: node.output_start..node.output_end,
                 })
@@ -688,6 +765,94 @@ fn wire_source(source: ArtifactSource) -> WireSource {
     match source {
         ArtifactSource::Constant(constant) => WireSource::Constant(constant.get()),
         ArtifactSource::Slot(slot) => WireSource::Slot(slot.get()),
+    }
+}
+
+fn wire_requirement(requirement: &ApplicationRequirement) -> WireRequirement {
+    match requirement {
+        ApplicationRequirement::HostFunction(request) => WireRequirement {
+            kind: 0,
+            host_name: Some(request.name.clone()),
+            base_uri: None,
+            path: None,
+            context_name: None,
+            operation: None,
+            intent: None,
+            delivery: None,
+        },
+        ApplicationRequirement::Resource(request) => WireRequirement {
+            kind: 1,
+            host_name: None,
+            base_uri: Some(request.base_uri.clone()),
+            path: Some(request.path.clone()),
+            context_name: Some(request.context_name.clone()),
+            operation: Some(request.operation.clone()),
+            intent: Some(request.intent as u8),
+            delivery: Some(request.delivery as u8),
+        },
+    }
+}
+
+fn requirement_from_wire(
+    requirement: WireRequirement,
+) -> Result<ApplicationRequirement, ArtifactBytecodeError> {
+    match requirement {
+        WireRequirement {
+            kind: 0,
+            host_name: Some(name),
+            base_uri: None,
+            path: None,
+            context_name: None,
+            operation: None,
+            intent: None,
+            delivery: None,
+        } => Ok(ApplicationRequirement::HostFunction(
+            ExecutionHostFunctionRequest { name },
+        )),
+        WireRequirement {
+            kind: 1,
+            host_name: None,
+            base_uri: Some(base_uri),
+            path: Some(path),
+            context_name: Some(context_name),
+            operation: Some(operation),
+            intent: Some(intent),
+            delivery: Some(delivery),
+        } => {
+            let intent = match intent {
+                1 => ResourceIntent::Read,
+                2 => ResourceIntent::Assign,
+                3 => ResourceIntent::Send,
+                tag => {
+                    return Err(ArtifactBytecodeError::InvalidWireTag {
+                        section: "application requirements",
+                        tag,
+                    });
+                }
+            };
+            let delivery = match delivery {
+                0 => ResourceDelivery::Snapshot,
+                1 => ResourceDelivery::Live,
+                tag => {
+                    return Err(ArtifactBytecodeError::InvalidWireTag {
+                        section: "application requirements",
+                        tag,
+                    });
+                }
+            };
+            Ok(ApplicationRequirement::Resource(ExecutionResourceRequest {
+                base_uri,
+                path,
+                context_name,
+                operation,
+                intent,
+                delivery,
+            }))
+        }
+        other => Err(ArtifactBytecodeError::InvalidWireTag {
+            section: "application requirements",
+            tag: other.kind,
+        }),
     }
 }
 

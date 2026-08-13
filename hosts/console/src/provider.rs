@@ -1,6 +1,10 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
-use mech_core::{LegacyValue, MResult, OperationContractDeclaration};
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
+    OperationContractDeclaration,
+};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -10,6 +14,22 @@ use mech_runtime::{
 };
 
 use crate::{console_error, console_host_manifest};
+
+static CONSOLE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
 
 pub trait ConsoleBackend: std::fmt::Debug {
     fn write_line(&mut self, text: &str) -> MResult<()>;
@@ -90,8 +110,7 @@ impl<B: ConsoleBackend + 'static> RuntimeResourceProvider for ConsoleResourcePro
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send)
-            .then(mech_runtime::provider_defined_effect_contract)
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&CONSOLE_EFFECT_CONTRACT)
     }
 
     fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {

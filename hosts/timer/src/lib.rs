@@ -13,7 +13,7 @@ pub mod browser;
 #[cfg(feature = "native")]
 pub mod native;
 
-pub use config::{TimerHostSettings, timer_settings_from_config};
+pub use config::{TimerHostSettings, TimerQueuePolicy, timer_settings_from_config};
 pub use manual::{ManualMonotonicTimerBackend, ManualTimerInputDriver};
 pub use module::timer_host_manifest;
 pub use provider::TimerResourceProvider;

@@ -11,9 +11,7 @@ use super::invalid;
 
 /// Validates the canonical, host-independent representation carried by the
 /// bytecode-v1 application-requirements section.
-pub(crate) fn validate_application_requirement(
-    requirement: &ApplicationRequirement,
-) -> MResult<()> {
+pub fn validate_application_requirement(requirement: &ApplicationRequirement) -> MResult<()> {
     match requirement {
         ApplicationRequirement::HostFunction(request) => {
             if request.name.is_empty() {

@@ -883,15 +883,19 @@ mod external_bytecode_tests {
         EncodedConstant, ExecutionHostFunctionRequest, ExecutionResourceRequest,
         ExternalHostCallFunction, ExternalResourceReadFunction, ExternalResourceWriteFunction,
         FunctionArgs, FunctionArgumentRole, FunctionCatalog, FunctionCatalogBuilder,
-        FunctionRuntimeType, InitialSolvePolicy, LegacyValue, MResult, MechError,
+        FunctionRuntimeType, GenericError, InitialSolvePolicy, LegacyValue, MResult, MechError,
         MechExecutionServices, MechFunction, MechFunctionCompiler, MechFunctionFactory,
         MechFunctionImpl, MechProgram, MechProgramConfig, ParsedProgram, ReactiveCellId, Ref,
-        Register, ResourceDelivery, ResourceIntent, RuntimeFunctionContract, RuntimeFunctionId,
-        RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, ToValue, ValRef,
-        apply_stable_value_update, hash_str, write_bytecode,
+        Register, ResourceDelivery, ResourceIntent, ResourceReadPlanningUnsupported,
+        RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature,
+        RuntimeOutputAliasPolicy, RuntimeType, ToValue, ValRef, apply_stable_value_update,
+        hash_str, write_bytecode,
     };
     use std::collections::{BTreeMap, BTreeSet};
-    use std::sync::Arc;
+    use std::sync::{
+        Arc,
+        atomic::{AtomicUsize, Ordering},
+    };
 
     #[derive(Debug)]
     struct CopyString {
@@ -947,6 +951,63 @@ mod external_bytecode_tests {
         }
     }
 
+    static MISMATCH_DOWNSTREAM_EXECUTIONS: AtomicUsize = AtomicUsize::new(0);
+
+    #[derive(Debug)]
+    struct CountedCopyString {
+        output: Ref<String>,
+        input: Ref<String>,
+    }
+
+    impl MechFunctionFactory for CountedCopyString {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
+            <String as FunctionRuntimeType>::REPRESENTATION,
+            <String as FunctionRuntimeType>::REPRESENTATION,
+        );
+
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            match args {
+                FunctionArgs::Unary(output, input) => Ok(Box::new(Self {
+                    output: output.try_function_ref(FunctionArgumentRole::Output)?,
+                    input: input.try_function_ref(FunctionArgumentRole::Input(0))?,
+                })),
+                _ => Err(MechError::new(
+                    super::super::super::IncorrectNumberOfArguments {
+                        expected: 1,
+                        found: args.len(),
+                    },
+                    None,
+                )),
+            }
+        }
+    }
+
+    impl MechFunctionImpl for CountedCopyString {
+        fn solve_result(&self) -> MResult<()> {
+            MISMATCH_DOWNSTREAM_EXECUTIONS.fetch_add(1, Ordering::SeqCst);
+            *self.output.borrow_mut() = self.input.borrow().clone();
+            Ok(())
+        }
+
+        fn out(&self) -> LegacyValue {
+            self.output.to_value()
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            "CountedCopyString".into()
+        }
+    }
+
+    impl MechFunctionCompiler for CountedCopyString {
+        fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
     fn copy_string_catalog() -> Arc<FunctionCatalog> {
         let mut builder = FunctionCatalogBuilder::new();
         builder
@@ -958,15 +1019,29 @@ mod external_bytecode_tests {
         Arc::new(builder.build().unwrap())
     }
 
+    fn counted_copy_string_catalog() -> Arc<FunctionCatalog> {
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory::<CountedCopyString>(
+                "CountedCopyString",
+                RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias),
+            )
+            .unwrap();
+        Arc::new(builder.build().unwrap())
+    }
+
     #[derive(Default)]
     struct RecordingExternalServices {
         host_requests: Vec<ExecutionHostFunctionRequest>,
         host_arguments: Vec<Vec<LegacyValue>>,
+        planning_requests: Vec<ExecutionResourceRequest>,
         read_requests: Vec<ExecutionResourceRequest>,
         writes: Vec<(ExecutionResourceRequest, LegacyValue)>,
         bindings: Vec<(u64, ExecutionResourceRequest, usize)>,
         binding_targets: Vec<ValRef>,
         host_result: Option<LegacyValue>,
+        planning_result: Option<LegacyValue>,
+        planning_error: Option<MechError>,
         read_result: Option<LegacyValue>,
     }
 
@@ -987,6 +1062,22 @@ mod external_bytecode_tests {
                 .host_result
                 .clone()
                 .unwrap_or_else(|| LegacyValue::F64(Ref::new(9.0))))
+        }
+
+        fn plan_resource_read_output(
+            &mut self,
+            request: &ExecutionResourceRequest,
+        ) -> MResult<LegacyValue> {
+            self.planning_requests.push(request.clone());
+            if let Some(error) = self.planning_error.take() {
+                return Err(error);
+            }
+            self.planning_result
+                .as_ref()
+                .or(self.read_result.as_ref())
+                .cloned()
+                .unwrap_or_else(|| LegacyValue::F64(Ref::new(0.0)))
+                .try_deep_snapshot()
         }
 
         fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
@@ -1017,6 +1108,58 @@ mod external_bytecode_tests {
                 .push((interpreter_id, request.clone(), target.addr()));
             self.binding_targets.push(target);
             Ok(())
+        }
+    }
+
+    #[derive(Default)]
+    struct ReadOnlyResourceServices {
+        read_calls: usize,
+    }
+
+    impl MechExecutionServices for ReadOnlyResourceServices {
+        fn invoke_host_function(
+            &mut self,
+            _request: &ExecutionHostFunctionRequest,
+            _arguments: &[LegacyValue],
+        ) -> MResult<LegacyValue> {
+            Err(MechError::new(
+                GenericError {
+                    msg: "unexpected host call".into(),
+                },
+                None,
+            ))
+        }
+
+        fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+            self.read_calls += 1;
+            Ok(string_value("actual"))
+        }
+
+        fn write_resource(
+            &mut self,
+            _request: &ExecutionResourceRequest,
+            _value: &LegacyValue,
+        ) -> MResult<()> {
+            Err(MechError::new(
+                GenericError {
+                    msg: "unexpected resource write".into(),
+                },
+                None,
+            ))
+        }
+
+        fn bind_live_resource(
+            &mut self,
+            _interpreter_id: u64,
+            _request: &ExecutionResourceRequest,
+            _target: ValRef,
+        ) -> MResult<()> {
+            Err(MechError::new(
+                GenericError {
+                    msg: "unexpected live binding".into(),
+                },
+                None,
+            ))
         }
     }
 
@@ -1121,9 +1264,17 @@ mod external_bytecode_tests {
         instructions: Vec<BytecodeInstruction>,
         symbols: &[(&str, u32)],
     ) -> ParsedProgram {
+        let constants = if instructions
+            .iter()
+            .any(|instruction| matches!(instruction, BytecodeInstruction::ConstLoad { .. }))
+        {
+            vec![string_constant("seed")]
+        } else {
+            Vec::new()
+        };
         parse_program(
             register_count,
-            vec![string_constant("seed")],
+            constants,
             instructions,
             vec![ApplicationRequirement::Resource(request(
                 ResourceIntent::Read,
@@ -1332,10 +1483,6 @@ mod external_bytecode_tests {
             1,
             ResourceDelivery::Snapshot,
             vec![
-                BytecodeInstruction::ConstLoad {
-                    dst: 0,
-                    constant: 0,
-                },
                 BytecodeInstruction::ResourceRead {
                     requirement: 0,
                     dst: 0,
@@ -1399,10 +1546,6 @@ mod external_bytecode_tests {
                     ResourceDelivery::Snapshot,
                     vec![
                         BytecodeInstruction::ConstLoad {
-                            dst: 0,
-                            constant: 0,
-                        },
-                        BytecodeInstruction::ConstLoad {
                             dst: 1,
                             constant: 0,
                         },
@@ -1453,15 +1596,222 @@ mod external_bytecode_tests {
     }
 
     #[test]
-    fn live_resource_updates_keep_register_identity_and_rerun_dependents() {
+    fn resource_read_planning_representation_allows_downstream_function_install() {
+        let parsed = resource_program(
+            2,
+            ResourceDelivery::Snapshot,
+            vec![
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeUnary {
+                    function: RuntimeFunctionId::from_name("CopyString").raw(),
+                    dst: 1,
+                    src: 0,
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+            &[],
+        );
+        let mut program =
+            MechProgram::with_function_catalog(MechProgramConfig::default(), copy_string_catalog());
+        let mut services = RecordingExternalServices {
+            planning_result: Some(string_value("planning-only")),
+            read_result: Some(string_value("actual-runtime")),
+            ..Default::default()
+        };
+
+        let result = program
+            .run_bytecode_program_with_services(&parsed, &mut services)
+            .unwrap();
+
+        assert_string(&result, "actual-runtime");
+        assert_eq!(services.planning_requests.len(), 1);
+        assert_eq!(services.read_requests.len(), 1);
+        assert!(services.bindings.is_empty());
+    }
+
+    #[test]
+    fn resource_read_actual_value_must_match_planned_representation() {
+        MISMATCH_DOWNSTREAM_EXECUTIONS.store(0, Ordering::SeqCst);
         let parsed = resource_program(
             2,
             ResourceDelivery::Live,
+            vec![
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::ConstLoad {
+                    dst: 1,
+                    constant: 0,
+                },
+                BytecodeInstruction::RuntimeUnary {
+                    function: RuntimeFunctionId::from_name("CountedCopyString").raw(),
+                    dst: 1,
+                    src: 0,
+                },
+                BytecodeInstruction::Return { src: 1 },
+            ],
+            &[],
+        );
+        let mut program = MechProgram::with_function_catalog(
+            MechProgramConfig::default(),
+            counted_copy_string_catalog(),
+        );
+        let mut services = RecordingExternalServices {
+            planning_result: Some(string_value("planning-only")),
+            read_result: Some(LegacyValue::F64(Ref::new(7.0))),
+            ..Default::default()
+        };
+
+        let error = program
+            .run_bytecode_program_with_services(&parsed, &mut services)
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
+        assert_eq!(services.planning_requests.len(), 1);
+        assert_eq!(services.read_requests.len(), 1);
+        assert!(services.bindings.is_empty());
+        assert_eq!(MISMATCH_DOWNSTREAM_EXECUTIONS.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn resource_read_planning_failure_does_not_consume_or_install() {
+        let prior = parse_program(
+            1,
+            vec![string_constant("prior")],
             vec![
                 BytecodeInstruction::ConstLoad {
                     dst: 0,
                     constant: 0,
                 },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            Vec::new(),
+            &[("prior", 0)],
+        );
+        let failing = resource_program(
+            1,
+            ResourceDelivery::Live,
+            vec![
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            &[("replacement", 0)],
+        );
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        program.run_bytecode_program(&prior).unwrap();
+        let prior_plan = plan_shape(&program);
+        let prior_register = program.interpreter().bytecode_registers.cell(0).unwrap();
+        let prior_symbol = symbol_cell(&program, "prior");
+        let mut services = RecordingExternalServices {
+            planning_error: Some(MechError::new(
+                GenericError {
+                    msg: "deliberate planning failure".into(),
+                },
+                None,
+            )),
+            ..Default::default()
+        };
+
+        let error = program
+            .run_bytecode_program_with_services(&failing, &mut services)
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "GenericError");
+        assert_eq!(services.planning_requests.len(), 1);
+        assert!(services.read_requests.is_empty());
+        assert!(services.bindings.is_empty());
+        assert_eq!(plan_shape(&program), prior_plan);
+        let restored_register = program.interpreter().bytecode_registers.cell(0).unwrap();
+        let restored_symbol = symbol_cell(&program, "prior");
+        assert!(restored_register.same_handle(&prior_register));
+        assert!(restored_symbol.same_handle(&prior_symbol));
+        assert!(restored_symbol.same_handle(&restored_register));
+        assert_string(&program.interpreter().out, "prior");
+        assert!(
+            program
+                .interpreter()
+                .symbols()
+                .borrow()
+                .get(hash_str("replacement"))
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn bytecode_resource_read_requires_non_consuming_planning_service() {
+        let parsed = resource_program(
+            1,
+            ResourceDelivery::Snapshot,
+            vec![
+                BytecodeInstruction::ResourceRead {
+                    requirement: 0,
+                    dst: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            &[],
+        );
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut services = ReadOnlyResourceServices::default();
+
+        let error = program
+            .run_bytecode_program_with_services(&parsed, &mut services)
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "ResourceReadPlanningUnsupported");
+        assert_eq!(
+            error
+                .kind_as::<ResourceReadPlanningUnsupported>()
+                .unwrap()
+                .request,
+            request(ResourceIntent::Read, ResourceDelivery::Snapshot),
+        );
+        assert_eq!(services.read_calls, 0);
+    }
+
+    #[test]
+    fn bytecode_without_resource_read_does_not_request_resource_planning() {
+        let parsed = parse_program(
+            1,
+            vec![string_constant("pure")],
+            vec![
+                BytecodeInstruction::ConstLoad {
+                    dst: 0,
+                    constant: 0,
+                },
+                BytecodeInstruction::Return { src: 0 },
+            ],
+            Vec::new(),
+            &[],
+        );
+        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut services = RecordingExternalServices::default();
+
+        let result = program
+            .run_bytecode_program_with_services(&parsed, &mut services)
+            .unwrap();
+
+        assert_string(&result, "pure");
+        assert!(services.planning_requests.is_empty());
+    }
+
+    #[test]
+    fn live_resource_updates_keep_register_identity_and_rerun_dependents() {
+        let parsed = resource_program(
+            2,
+            ResourceDelivery::Live,
+            vec![
                 BytecodeInstruction::ConstLoad {
                     dst: 1,
                     constant: 0,

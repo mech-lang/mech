@@ -14,11 +14,16 @@ To start the REPL, run:
 mech
 ```
 
-You can load a script into the REPL by running with the `--repl` option:
+The REPL is available only in the full developer distribution. A targetless
+session may load scripts explicitly with `:load`:
 
 ```sh
-mech my_script.mec --repl
+mech --repl
+> :load my_script.mec
 ```
+
+Production targets cannot be combined with `--repl`; they are owned by the
+resident executor and cannot be mutated by the developer interpreter.
 
 Once inside, you can enter commands prefixed with `:`, otherwise the REPL will interpret the input as a Mech expression, evaluate it, and print the result with the associated type.
 

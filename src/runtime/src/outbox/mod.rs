@@ -25,8 +25,10 @@ pub struct OutboxEffectId {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum OutboxDeliveryPolicy {
+    AtMostOnce,
     #[default]
     AtLeastOnce,
+    IdempotentRetry,
     ProviderTransactional,
 }
 

@@ -1,0 +1,7 @@
+{
+  "sources": {
+    "src/engine/src/artifact/model.rs": "pub struct ProgramArtifact { revision: u64 }\n",
+    "src/engine/src/resident/artifact.rs": "pub(crate) struct ProgramArtifact { slots: usize }\n",
+    "src/engine/src/duplicate.rs": "struct ProgramArtifact { duplicate: bool }\n"
+  }
+}

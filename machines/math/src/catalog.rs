@@ -53,19 +53,6 @@ fn validate_op_assign_slice(args: &FunctionArgs) -> MResult<()> {
         let input_value = args
             .input_value(input_index)
             .expect("input index is bounded");
-        if let Some(input) = input_value
-            .function_matrix_descriptor(FunctionArgumentRole::Input(input_index))?
-            && input.rows.saturating_mul(input.cols) > output_elements
-        {
-            return Err(function_shape_contract_violation(
-                contract,
-                format!(
-                    "matrix input {input_index} has {} elements, output has {}",
-                    input.rows.saturating_mul(input.cols),
-                    output_elements,
-                ),
-            ));
-        }
         let validate_indices = |indices: Vec<usize>| -> MResult<()> {
             for index in indices {
                 if index == 0 || index > output_elements {
@@ -2218,6 +2205,24 @@ mod tests {
             let error = validate_op_assign_slice(&args).unwrap_err();
             assert_eq!(error.kind_name(), "FunctionShapeContractViolation");
         }
+    }
+
+    #[cfg(all(feature = "op_assign", feature = "u8", feature = "matrix"))]
+    #[test]
+    fn op_assign_contract_allows_one_source_row_per_repeated_destination_index() {
+        let args = FunctionArgs::Binary(
+            mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DMatrix(
+                mech_core::Ref::new(DMatrix::zeros(2, 2)),
+            )),
+            mech_core::LegacyValue::MatrixU8(mech_core::matrix::Matrix::DMatrix(
+                mech_core::Ref::new(DMatrix::zeros(3, 2)),
+            )),
+            mech_core::LegacyValue::MatrixIndex(mech_core::matrix::Matrix::DVector(
+                mech_core::Ref::new(DVector::from_vec(vec![1usize, 2, 1])),
+            )),
+        );
+
+        validate_op_assign_slice(&args).unwrap();
     }
 
     #[cfg(all(

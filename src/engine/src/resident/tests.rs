@@ -1,10 +1,11 @@
 use mech_core::InstanceEpoch;
 
+use super::ResidentCandidateExecutionError as ResidentExecutionError;
 use super::*;
 
 #[test]
 fn candidate_reads_observe_own_writes_before_publication() {
-    let mut instance = ReactiveInstance::frozen_ekf_batch(1);
+    let mut instance = GateBInstance::new(1);
     let published = instance.state.published_state(InstanceEpoch(0), 0);
     let mut candidate = instance.begin_candidate([1.0, 0.1, 24.0, -0.6]).unwrap();
     execute_ekf_candidate(&mut candidate).unwrap();
@@ -28,7 +29,7 @@ fn candidate_reads_observe_own_writes_before_publication() {
 
 #[test]
 fn aborts_reuse_the_same_two_buffers() {
-    let mut instance = ReactiveInstance::frozen_ekf_batch(1);
+    let mut instance = GateBInstance::new(1);
     let addresses = instance.state.buffer_addresses();
     for _ in 0..10_000 {
         let mut candidate = instance.begin_candidate([1.0, 0.1, 24.0, -0.6]).unwrap();
@@ -45,7 +46,7 @@ fn aborts_reuse_the_same_two_buffers() {
 
 #[test]
 fn maximum_epoch_is_legal_once_and_never_reused() {
-    let mut instance = ReactiveInstance::frozen_ekf_batch(1);
+    let mut instance = GateBInstance::new(1);
     instance.next_epoch = Some(InstanceEpoch(u64::MAX));
     let mut candidate = instance.begin_candidate([1.0, 0.1, 24.0, -0.6]).unwrap();
     assert_eq!(candidate.working_epoch, InstanceEpoch(u64::MAX));
@@ -61,7 +62,7 @@ fn maximum_epoch_is_legal_once_and_never_reused() {
 
 #[test]
 fn accepted_candidate_tracks_touched_invalidated_and_changed_outputs() {
-    let mut instance = ReactiveInstance::frozen_ekf_batch(8);
+    let mut instance = GateBInstance::new(8);
     let mut candidate = instance.begin_candidate([1.0, 0.1, 24.0, -0.6]).unwrap();
     execute_ekf_candidate(&mut candidate).unwrap();
     assert_eq!(candidate.instance.workspace.touched_slots.len(), 16);
@@ -73,7 +74,7 @@ fn accepted_candidate_tracks_touched_invalidated_and_changed_outputs() {
 #[test]
 fn aborted_and_accepted_epochs_are_never_reused() {
     let input = [1.0, 0.1, 24.0, -0.6];
-    let mut instance = ReactiveInstance::frozen_ekf_batch(1);
+    let mut instance = GateBInstance::new(1);
     let first = instance.begin_candidate(input).unwrap();
     let rejected_epoch = first.working_epoch;
     first.abort();

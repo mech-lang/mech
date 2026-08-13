@@ -1,0 +1,13 @@
+{
+  "candidate_bytes": 96,
+  "candidate_seed_bytes": 0,
+  "d1_frozen_trajectory_sha256": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+  "generic_executor": "src/engine/src/resident/general/execution.rs",
+  "generic_trajectory_sha256": "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758",
+  "production_dirty_propagation": true,
+  "publication_store_count": 1,
+  "schema_version": 1,
+  "source_bytecode_trajectory_equal": true,
+  "steady_state_allocations": 0,
+  "turns": 4096
+}

@@ -22,7 +22,7 @@ fn cli_hosted_native_application_builds_and_emits_once() {
 
     assert_exact_mech_packages(
         &result.plan,
-        &["mech-core", "mech-engine", "mech-terminal", "mech-runtime"],
+        &["mech-core", "mech-engine", "mech-runtime", "mech-terminal"],
     );
     assert_eq!(result.plan.runtime_config.name, "native-generated-runtime");
     assert_eq!(

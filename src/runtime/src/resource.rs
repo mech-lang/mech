@@ -1,4 +1,5 @@
 use std::collections::{HashMap, HashSet};
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration};
@@ -39,6 +40,31 @@ pub struct RuntimeResourceWriteRequest {
     pub operation: RuntimeCapabilityOperation,
     pub value: LegacyValue,
     pub intent: RuntimeResourceWriteIntent,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RuntimeResidentResourceWriteRequest {
+    pub base_uri: String,
+    pub path: String,
+    pub context_name: String,
+    pub operation: RuntimeCapabilityOperation,
+    pub value: LegacyValue,
+    pub intent: RuntimeResourceWriteIntent,
+    pub effect_id: crate::RuntimeEffectId,
+    pub idempotency_key: String,
+}
+
+impl RuntimeResidentResourceWriteRequest {
+    pub fn into_legacy_request(self) -> RuntimeResourceWriteRequest {
+        RuntimeResourceWriteRequest {
+            base_uri: self.base_uri,
+            path: self.path,
+            context_name: self.context_name,
+            operation: self.operation,
+            value: self.value,
+            intent: self.intent,
+        }
+    }
 }
 
 pub trait RuntimeResourceProvider: std::fmt::Debug {
@@ -115,6 +141,17 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
             None,
         ))
     }
+
+    fn supports_resident_idempotency(&self, _intent: RuntimeResourceWriteIntent) -> bool {
+        false
+    }
+
+    fn prepare_resident_write(
+        &self,
+        request: RuntimeResidentResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
+        self.prepare_write(request.into_legacy_request())
+    }
 }
 
 #[derive(Debug)]
@@ -122,23 +159,89 @@ struct RuntimeResourceProviderEntry {
     scheme: String,
     bases: Vec<String>,
     equivalent_base_uri_groups: Vec<Vec<String>>,
-    provider: Box<dyn RuntimeResourceProvider>,
+    provider: Rc<dyn RuntimeResourceProvider>,
+}
+
+#[derive(Clone)]
+pub(crate) struct RuntimeResidentProviderBinding {
+    scheme: String,
+    provider: Rc<dyn RuntimeResourceProvider>,
+}
+
+impl std::fmt::Debug for RuntimeResidentProviderBinding {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("RuntimeResidentProviderBinding")
+            .field("scheme", &self.scheme)
+            .finish_non_exhaustive()
+    }
+}
+
+impl RuntimeResidentProviderBinding {
+    pub(crate) fn scheme(&self) -> &str {
+        &self.scheme
+    }
+
+    pub(crate) fn semantic_read_contract(
+        &self,
+    ) -> MResult<Option<&'static OperationContractDeclaration>> {
+        invoke_extension_value(
+            format!("resource provider `{}`", self.scheme),
+            "semantic_read_contract",
+            || self.provider.semantic_read_contract(),
+        )
+    }
+
+    pub(crate) fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> MResult<Option<&'static OperationContractDeclaration>> {
+        invoke_extension_value(
+            format!("resource provider `{}`", self.scheme),
+            "semantic_write_contract",
+            || self.provider.semantic_write_contract(intent),
+        )
+    }
+
+    pub(crate) fn supports_idempotency(&self, intent: RuntimeResourceWriteIntent) -> MResult<bool> {
+        invoke_extension_value(
+            format!("resource provider `{}`", self.scheme),
+            "supports_resident_idempotency",
+            || self.provider.supports_resident_idempotency(intent),
+        )
+    }
+
+    pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        invoke_extension(
+            format!("resource provider `{}`", self.scheme),
+            "read",
+            || self.provider.read(request),
+        )
+    }
+
+    pub(crate) fn prepare_write(
+        &self,
+        request: RuntimeResidentResourceWriteRequest,
+    ) -> MResult<PreparedRuntimeEffect> {
+        invoke_extension(
+            format!("resource provider `{}`", self.scheme),
+            "prepare_resident_write",
+            || self.provider.prepare_resident_write(request),
+        )
+    }
 }
 
 #[derive(Debug, Default)]
-pub(crate) struct RuntimeResourceRegistry {
+pub struct RuntimeResourceRegistry {
     providers: Vec<RuntimeResourceProviderEntry>,
 }
 
 impl RuntimeResourceRegistry {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self::default()
     }
 
-    pub(crate) fn register_provider(
-        &mut self,
-        provider: Box<dyn RuntimeResourceProvider>,
-    ) -> MResult<()> {
+    pub fn register_provider(&mut self, provider: Box<dyn RuntimeResourceProvider>) -> MResult<()> {
         let (scheme, bases, equivalent_groups) =
             catch_extension("resource provider", "registration metadata", || {
                 (
@@ -195,7 +298,7 @@ impl RuntimeResourceRegistry {
             scheme,
             bases,
             equivalent_base_uri_groups,
-            provider,
+            provider: Rc::from(provider),
         });
         Ok(())
     }
@@ -274,6 +377,26 @@ impl RuntimeResourceRegistry {
                     .iter()
                     .find(|entry| entry.scheme == scheme && entry.bases.is_empty())
             })
+    }
+
+    pub(crate) fn resident_provider_binding(
+        &self,
+        base_uri: &str,
+    ) -> MResult<RuntimeResidentProviderBinding> {
+        let scheme = resource_uri_scheme(base_uri)?.to_string();
+        let target = self.provider_entry_for(&scheme, base_uri).ok_or_else(|| {
+            MechError::new(
+                RuntimeResourceProviderNotFound {
+                    scheme: scheme.clone(),
+                    uri: base_uri.to_owned(),
+                },
+                None,
+            )
+        })?;
+        Ok(RuntimeResidentProviderBinding {
+            scheme,
+            provider: Rc::clone(&target.provider),
+        })
     }
 
     pub(crate) fn semantic_read_contract(
@@ -369,6 +492,24 @@ impl RuntimeResourceRegistry {
             format!("resource provider `{scheme}`"),
             "preflight_write",
             || entry.provider.preflight_write(request),
+        )
+    }
+
+    pub(crate) fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
+        let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
+            return Err(MechError::new(
+                RuntimeResourceProviderNotFound {
+                    scheme,
+                    uri: request.base_uri,
+                },
+                None,
+            ));
+        };
+        invoke_extension(
+            format!("resource provider `{scheme}`"),
+            "plan_write",
+            || entry.provider.plan_write(request),
         )
     }
 

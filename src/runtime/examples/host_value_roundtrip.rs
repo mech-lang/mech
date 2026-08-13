@@ -1,6 +1,8 @@
 use std::fmt::Display;
 use std::sync::Arc;
 
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
+
 use mech_core::{LegacyValue, MResult};
 
 use mech_runtime::{

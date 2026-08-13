@@ -165,6 +165,10 @@ where
         let variable_register = compile_register_initial!(self.var, self.initial, ctx);
         let variable_name = self.name.borrow().clone();
         let variable_mutable = *self.mutable.borrow();
+        if variable_mutable {
+            let initializer = self.initial.compile_const(ctx)?;
+            ctx.record_state_initializer(variable_register, initializer)?;
+        }
         ctx.define_symbol(
             self.var.addr(),
             variable_register,
@@ -176,7 +180,15 @@ where
             T::as_value_kind(),
             MatA::as_na_kind()
         );
-        compile_binop!(name, self.var, self.name, self.mutable, ctx);
+        let name_register = compile_register_brrw!(self.name, ctx);
+        let mutable_register = compile_register_brrw!(self.mutable, ctx);
+        ctx.emit_declaration_binary(
+            hash_str(&name),
+            variable_register,
+            name_register,
+            mutable_register,
+        );
+        Ok(variable_register)
     }
 }
 
@@ -231,12 +243,26 @@ macro_rules! impl_variable_define_fxn {
       #[cfg(feature = "compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let variable_register = compile_register_initial!(self.var, self.initial, ctx);
+          let variable_value = self.var.to_value();
+          let variable_register =
+              compile_value_register_for_ptr(&variable_value, self.var.addr(), ctx)?;
           let variable_name = self.name.borrow().clone();
           let variable_mutable = *self.mutable.borrow();
+          if variable_mutable {
+            let initializer = self.initial.compile_const(ctx)?;
+            ctx.record_state_initializer(variable_register, initializer)?;
+          }
           ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
           let name = format!(stringify!([<VariableDefine $kind:camel>]));
-          compile_binop!(name, self.var, self.name, self.mutable, ctx );
+          let name_register = compile_register_brrw!(self.name, ctx);
+          let mutable_register = compile_register_brrw!(self.mutable, ctx);
+          ctx.emit_declaration_binary(
+            hash_str(&name),
+            variable_register,
+            name_register,
+            mutable_register,
+          );
+          Ok(variable_register)
         }
       }
     }
@@ -608,7 +634,9 @@ impl MechFunctionImpl for VariableDefineEmpty {
 #[cfg(feature = "compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let variable_register = compile_register_initial!(self.var, self.initial, ctx);
+        let variable_value = self.var.borrow().clone();
+        let variable_register =
+            compile_value_register_for_ptr(&variable_value, self.var.addr(), ctx)?;
         let variable_name = self.name.borrow().clone();
         let variable_mutable = *self.mutable.borrow();
         ctx.define_symbol(

@@ -50,6 +50,9 @@ impl NativeApplicationBuilder {
         if let Some(target) = request.target.as_deref() {
             plan::validate_target(target)?;
         }
+        if let Some(config) = request.runtime_config.as_ref() {
+            validate_production_native_runtime_config(config)?;
+        }
 
         let program = ParsedProgram::from_bytes(&request.bytecode)?;
         plan::validate_target_index_constants(&program, request.target.as_deref())?;
@@ -105,6 +108,7 @@ impl NativeApplicationBuilder {
             runtime_features.extend(runtime_types.cargo_features.iter().cloned());
             runtime_features.insert("runtime".to_owned());
             runtime_features.insert("string".to_owned());
+            runtime_features.insert("resident-routing".to_owned());
             // Hosted execution owns the transaction boundary, so it must
             // enable the validation hook whenever the bytecode carries an
             // integrity-constraint marker. Engine-only applications enforce
@@ -353,6 +357,19 @@ impl NativeApplicationBuilder {
             request.offline,
         )
     }
+}
+
+pub(crate) fn validate_production_native_runtime_config(
+    config: &NativeRuntimeConfig,
+) -> MResult<()> {
+    config.runtime.validate_production_program_routing()?;
+    if config.actor_bootstrap.is_some() {
+        return Err(error::native_build_error(
+            error::NativeBuildErrorKind::NativeActorBootstrapUnsupported,
+            None,
+        ));
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug)]

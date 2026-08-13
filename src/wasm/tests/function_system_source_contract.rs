@@ -1,7 +1,9 @@
 use std::collections::BTreeSet;
 
 use mech_core::{LegacyValue, OperationId, RuntimeFunctionId};
-use mech_runtime::{RuntimeBuilder, RuntimeValueSnapshot};
+use mech_runtime::{
+    RuntimeBuilder, RuntimeValueSnapshot, legacy_interpreter::LegacyInterpreterTestExt as _,
+};
 use mech_stdlib::source_catalog;
 use mech_wasm as _;
 use serde::Deserialize;

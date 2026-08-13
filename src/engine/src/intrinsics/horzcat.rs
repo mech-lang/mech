@@ -1,5 +1,49 @@
 #[macro_use]
 use crate::intrinsics::*;
+use std::sync::LazyLock;
+
+fn horizontal_concatenation_contract(inputs: InputPortLayout) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs,
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: "horizontal-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+static PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| {
+        horizontal_concatenation_contract(InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 1,
+        })
+    });
+static PURE_HORIZONTAL_UNARY_BUILD_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| {
+        horizontal_concatenation_contract(InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ))
+    });
 
 // Horizontal Concatenate -----------------------------------------------------
 
@@ -456,6 +500,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateTwoArgs\n{:#?}", self.out)
     }
@@ -560,6 +607,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateThreeArgs\n{:#?}", self.out)
@@ -677,6 +727,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateFourArgs\n{:#?}", self.out)
@@ -802,6 +855,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateNArgs\n{:#?}", self.out)
     }
@@ -832,7 +888,10 @@ where
             });
         }
         ctx.emit_varop(
-            hash_str("HorizontalConcatenateNArgs"),
+            hash_str(&format!(
+                "HorizontalConcatenateNArgs<{}>",
+                T::as_value_kind()
+            )),
             registers[0],
             input_registers,
         );
@@ -998,6 +1057,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("HorizontalConcatenateRDN\n{:#?}", self.out)
@@ -1355,6 +1417,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_UNARY_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -7173,6 +7238,15 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     #[cfg(all(feature = "matrix4", feature = "vector4"))]
     install_horzcat_factories!(builder, HorizontalConcatenateV4V4V4V4);
 
+    Ok(())
+}
+
+/// Installs the variadic f64 factory needed to execute and compile ordinary
+/// dynamic-matrix source without expanding the frozen runtime-only catalog.
+#[cfg(feature = "source")]
+pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    register_horizontal_concatenate_n_args_f64(builder)?;
     Ok(())
 }
 

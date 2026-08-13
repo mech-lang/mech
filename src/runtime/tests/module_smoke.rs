@@ -2,6 +2,8 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
+use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
+
 #[cfg(feature = "compiler")]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use mech_core::{

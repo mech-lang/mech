@@ -7,9 +7,9 @@
 use std::collections::BTreeMap;
 
 use mech_core::{
-    BindingId, CellSlotId, ConstantId, ConstantStore, InputId, IntegrityConstraintId, NodeId,
-    OperationContractDeclaration, OperationContractId, OperationContractTable, OutputId, SchemaId,
-    SchemaTable,
+    ApplicationRequirementId, BindingId, CellSlotId, ConstantId, ConstantStore, InputId,
+    IntegrityConstraintId, MResult, NodeId, OperationContractDeclaration, OperationContractId,
+    OperationContractTable, OutputId, SchemaId, SchemaTable,
 };
 
 #[cfg(feature = "compiler")]
@@ -30,9 +30,10 @@ use mech_core::{
 };
 
 use super::{
-    ArtifactBuildError, ArtifactSource, BindingDeclaration, InitializerReference, InputDeclaration,
-    IntegrityConstraintDeclaration, NodeDeclaration, OperationReference, OutputDeclaration,
-    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
+    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration, NodeDeclaration,
+    OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
+    ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -73,6 +74,7 @@ pub enum SourceNodeOutput {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceNode {
     pub operation: OperationReference,
+    pub requirement: Option<ApplicationRequirementId>,
     pub inputs: Box<[SourceValue]>,
     pub outputs: Box<[SourceNodeOutput]>,
 }
@@ -92,6 +94,7 @@ pub struct SourceIntegrityConstraint {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct SourceProgram {
+    pub requirements: ApplicationRequirementTable,
     pub inputs: Box<[SourceInput]>,
     pub states: Box<[SourceState]>,
     pub nodes: Box<[SourceNode]>,
@@ -102,6 +105,57 @@ pub struct SourceProgram {
 pub struct ArtifactBuildContext<'a> {
     schemas: &'a SchemaTable,
     constants: &'a ConstantStore,
+}
+
+/// Resolves the exact provider-independent semantic contract that an external
+/// requirement contributes to an immutable compiler artifact.
+///
+/// The source interpreter can discover resource requests without knowing a
+/// host provider. D3 supplies this resolver only at the explicit resident
+/// compilation boundary; ordinary compilation retains its existing behavior.
+#[cfg(feature = "compiler")]
+pub trait ExternalRequirementContractResolver {
+    fn resolve_external_contract(
+        &self,
+        requirement: &ApplicationRequirement,
+    ) -> MResult<Option<&'static OperationContractDeclaration>>;
+}
+
+#[cfg(feature = "compiler")]
+pub fn resolve_compiled_external_contracts(
+    compiled: &mut CompiledBytecode,
+    resolver: &dyn ExternalRequirementContractResolver,
+) -> MResult<()> {
+    for (instruction, contract) in compiled
+        .program
+        .instructions
+        .iter()
+        .zip(&mut compiled.instruction_contracts)
+    {
+        let requirement = match instruction {
+            BytecodeInstruction::HostCall { requirement, .. }
+            | BytecodeInstruction::ResourceRead { requirement, .. }
+            | BytecodeInstruction::ResourceWrite { requirement, .. }
+            | BytecodeInstruction::ResourceSend { requirement, .. } => *requirement,
+            _ => continue,
+        };
+        let requirement = compiled
+            .program
+            .requirements
+            .get(requirement as usize)
+            .ok_or_else(|| {
+                mech_core::MechError::new(
+                    mech_core::GenericError {
+                        msg: "compiled external requirement is out of range".to_owned(),
+                    },
+                    None,
+                )
+            })?;
+        if let Some(resolved) = resolver.resolve_external_contract(requirement)? {
+            *contract = Some(resolved);
+        }
+    }
+    Ok(())
 }
 
 impl<'a> ArtifactBuildContext<'a> {
@@ -265,6 +319,7 @@ pub fn compile_source_program_with_contracts(
             node,
             operation: declaration.operation.clone(),
             contract: OperationContractId::new(0),
+            requirement: declaration.requirement,
             input_bindings: input_start..input_end,
             output_bindings: output_start..output_end,
         });
@@ -314,6 +369,7 @@ pub fn compile_source_program_with_contracts(
         schemas: context.schemas.clone(),
         constants: context.constants.clone(),
         contracts: OperationContractTable::empty(),
+        requirements: graph.requirements.clone(),
         inputs: inputs.into_boxed_slice(),
         slots: slots.into_boxed_slice(),
         nodes: nodes.into_boxed_slice(),
@@ -437,6 +493,11 @@ pub fn compile_executable_program_artifact(
         compiled.program.register_count as usize,
         compiled.register_collection_cardinalities.len(),
     )?;
+    validate_compiled_metadata_length(
+        "register_state_initializers",
+        compiled.program.register_count as usize,
+        compiled.register_state_initializers.len(),
+    )?;
     validate_compiled_instruction_roles(compiled, catalog)?;
 
     let legacy_bytes = write_bytecode(&compiled.program)?;
@@ -552,11 +613,20 @@ pub fn compile_executable_program_artifact(
         if has_mutable && has_immutable && immutable_precedes_state {
             return Err(ArtifactBuildError::AmbiguousRegisterRole { register });
         }
+        let has_constant_seed = compiled.program.instructions.iter().any(|instruction| {
+            matches!(
+                instruction,
+                BytecodeInstruction::ConstLoad { dst, .. }
+                    | BytecodeInstruction::CompositePack { dst, .. }
+                    if *dst == register
+            )
+        });
         register_constant_roles[register_index] = Some(if has_mutable {
             CompilerConstantRole::StateInitializer
         } else if pending_schema.contains_reference
             && has_immutable
             && !computed_registers[register_index]
+            && !has_constant_seed
         {
             CompilerConstantRole::ExternalInput
         } else {
@@ -584,6 +654,14 @@ pub fn compile_executable_program_artifact(
         {
             continue;
         }
+        if role == CompilerConstantRole::StateInitializer
+            && compiled.register_state_initializers[register_index].is_some()
+        {
+            // The declaration snapshot is authoritative. The executable
+            // register seed may already contain post-elaboration state and is
+            // neither an artifact constant nor part of ProgramRevision.
+            continue;
+        }
         let schema = register_schemas
             .get(register_index)
             .copied()
@@ -605,6 +683,31 @@ pub fn compile_executable_program_artifact(
         )?;
         pending_constants
             .entry((constant, schema))
+            .or_insert(semantic);
+    }
+    for (register, constant) in compiled.register_state_initializers.iter().enumerate() {
+        let Some(constant) = constant else {
+            continue;
+        };
+        let schema = register_schemas.get(register).copied().flatten().ok_or(
+            ArtifactBuildError::MissingRegisterKind {
+                instruction: 0,
+                register: register as u32,
+            },
+        )?;
+        let semantic = pending_register_schemas[register]
+            .as_ref()
+            .expect("schema and pending schema are parallel")
+            .semantic
+            .clone();
+        legacy_constants.get(*constant as usize).ok_or(
+            ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                reference: "state initializer bytecode constant",
+                index: *constant,
+            },
+        )?;
+        pending_constants
+            .entry((*constant, schema))
             .or_insert(semantic);
     }
 
@@ -634,6 +737,29 @@ pub fn compile_executable_program_artifact(
         .map(|(key, handle)| Ok((key, constant_build.resolve(handle)?)))
         .collect::<Result<BTreeMap<_, _>, ArtifactBuildError>>()?;
     let (constant_store, _) = constant_build.into_parts();
+    let explicit_state_initializers = compiled
+        .register_state_initializers
+        .iter()
+        .enumerate()
+        .map(|(register, constant)| {
+            let Some(constant) = constant else {
+                return Ok(None);
+            };
+            let schema =
+                register_schemas[register].ok_or(ArtifactBuildError::MissingRegisterKind {
+                    instruction: 0,
+                    register: register as u32,
+                })?;
+            constants
+                .get(&(*constant, schema))
+                .copied()
+                .map(Some)
+                .ok_or(ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                    reference: "state initializer constant",
+                    index: *constant,
+                })
+        })
+        .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
 
     let mut inputs = Vec::<SourceInput>::new();
     let mut input_indexes = vec![None::<u32>; compiled.program.register_count as usize];
@@ -667,9 +793,98 @@ pub fn compile_executable_program_artifact(
         input_indexes[register as usize] = Some(input);
     }
 
+    let mut mutable_declaration_instructions = vec![None; compiled.program.register_count as usize];
+    for (instruction_index, (instruction, role)) in compiled
+        .program
+        .instructions
+        .iter()
+        .zip(&compiled.instruction_roles)
+        .enumerate()
+    {
+        if *role != Some(CompiledInstructionRole::DeclarationMarker) {
+            continue;
+        }
+        let Some(register) = instruction_destination(instruction) else {
+            continue;
+        };
+        if definitions_by_register[register as usize]
+            .iter()
+            .any(|definition| definition.mutable)
+        {
+            mutable_declaration_instructions[register as usize].get_or_insert(instruction_index);
+        }
+    }
+    let assigned_state_registers = compiled
+        .program
+        .instructions
+        .iter()
+        .zip(&compiled.instruction_roles)
+        .enumerate()
+        .filter_map(|(instruction_index, (instruction, role))| {
+            let register = matches!(role, Some(CompiledInstructionRole::Node(_)))
+                .then(|| instruction_destination(instruction))
+                .flatten()?;
+            mutable_declaration_instructions[register as usize]
+                .is_some_and(|declaration| instruction_index > declaration)
+                .then_some(register)
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    let mut inferred_state_initializers = vec![None; compiled.program.register_count as usize];
+    for instruction in &compiled.program.instructions {
+        let (register, constant) = match instruction {
+            BytecodeInstruction::ConstLoad { dst, constant } => (*dst, *constant),
+            BytecodeInstruction::CompositePack { dst, template, .. } => (*dst, *template),
+            _ => continue,
+        };
+        if register_constant_roles[register as usize]
+            != Some(CompilerConstantRole::StateInitializer)
+        {
+            continue;
+        }
+        let Some(schema) = register_schemas[register as usize] else {
+            continue;
+        };
+        inferred_state_initializers[register as usize] =
+            constants.get(&(constant, schema)).copied();
+    }
+
+    let mut register_state_indexes = vec![None::<u32>; compiled.program.register_count as usize];
+    let mut pending_states = definitions_by_register
+        .iter()
+        .enumerate()
+        .filter_map(|(register, definitions)| {
+            definitions
+                .iter()
+                .find(|definition| definition.mutable)
+                .filter(|_| assigned_state_registers.contains(&(register as u32)))
+                .map(|definition| (definition.ordinal, register))
+        })
+        .collect::<Vec<_>>();
+    pending_states.sort_by_key(|(ordinal, _)| *ordinal);
+    let mut states = Vec::<SourceState>::with_capacity(pending_states.len());
+    for (_, register) in pending_states {
+        let state = checked_u32(states.len(), "state")?;
+        let schema = register_schemas[register].ok_or(ArtifactBuildError::MissingRegisterKind {
+            instruction: 0,
+            register: register as u32,
+        })?;
+        let initializer = explicit_state_initializers[register]
+            .or(inferred_state_initializers[register])
+            .ok_or(ArtifactBuildError::MissingRegisterSource {
+                instruction: 0,
+                register: register as u32,
+                role: "state initializer",
+            })?;
+        register_state_indexes[register] = Some(state);
+        states.push(SourceState {
+            schema,
+            initializer: Some(initializer),
+            producer_node: u32::MAX,
+            producer_output_ordinal: 0,
+        });
+    }
+
     let mut registers = vec![None::<RegisterSemantic>; compiled.program.register_count as usize];
-    let mut state_initializers = vec![None::<ConstantId>; compiled.program.register_count as usize];
-    let mut states = Vec::<SourceState>::new();
     let mut nodes = Vec::<SourceNode>::new();
     let mut node_contracts = Vec::<Option<&'static OperationContractDeclaration>>::new();
     let mut lowered_declared_source_nodes = std::collections::BTreeSet::new();
@@ -700,9 +915,24 @@ pub fn compile_executable_program_artifact(
                             source: SourceValue::Input(input),
                             schema,
                         }),
-                    Some(
-                        CompilerConstantRole::Snapshot | CompilerConstantRole::StateInitializer,
-                    ) => schema.and_then(|schema| {
+                    Some(CompilerConstantRole::StateInitializer) => {
+                        match register_state_indexes.get(*dst as usize).copied().flatten() {
+                            Some(state) => schema.map(|schema| RegisterSemantic {
+                                source: SourceValue::State(state),
+                                schema,
+                            }),
+                            None => schema.and_then(|schema| {
+                                constants
+                                    .get(&(*constant, schema))
+                                    .copied()
+                                    .map(|constant| RegisterSemantic {
+                                        source: SourceValue::Constant(constant),
+                                        schema,
+                                    })
+                            }),
+                        }
+                    }
+                    Some(CompilerConstantRole::Snapshot) => schema.and_then(|schema| {
                         constants
                             .get(&(*constant, schema))
                             .copied()
@@ -713,18 +943,6 @@ pub fn compile_executable_program_artifact(
                     }),
                     None => None,
                 };
-                if register_constant_roles
-                    .get(*dst as usize)
-                    .copied()
-                    .flatten()
-                    == Some(CompilerConstantRole::StateInitializer)
-                {
-                    state_initializers[*dst as usize] =
-                        semantic.and_then(|value| match value.source {
-                            SourceValue::Constant(constant) => Some(constant),
-                            _ => None,
-                        });
-                }
                 set_register(&mut registers, *dst, semantic)?;
             }
             BytecodeInstruction::Return { .. } => {
@@ -743,6 +961,16 @@ pub fn compile_executable_program_artifact(
                             return Err(ArtifactBuildError::UnexpectedInstructionRole {
                                 instruction: instruction_id,
                                 role: "integrity marker",
+                            });
+                        }
+                        continue;
+                    }
+                    Some(CompiledInstructionRole::DeclarationMarker) => {
+                        if !matches!(instruction, BytecodeInstruction::RuntimeBinary { .. })
+                            || !is_variable_definition_instruction(instruction, catalog)
+                        {
+                            return Err(ArtifactBuildError::InvalidDeclarationMarker {
+                                instruction: instruction_id,
                             });
                         }
                         continue;
@@ -773,38 +1001,69 @@ pub fn compile_executable_program_artifact(
                         register: dst,
                     });
                 }
-                if let BytecodeInstruction::CompositePack { template, .. } = instruction {
-                    if register_constant_roles.get(dst as usize).copied().flatten()
-                        == Some(CompilerConstantRole::StateInitializer)
+                let declaration = compiled.instruction_contracts[instruction_index].or_else(|| {
+                    instruction
+                        .runtime_function()
+                        .and_then(|function| catalog.runtime_entry_by_raw(function))
+                        .and_then(|entry| entry.semantic_contract())
+                });
+                let declaration = declaration.filter(|declaration| {
+                    semantics.requirement.is_none_or(|requirement| {
+                        compiled
+                            .program
+                            .requirements
+                            .get(requirement.get() as usize)
+                            .is_some_and(|requirement| {
+                                external_declaration_matches_requirement(declaration, requirement)
+                            })
+                    })
+                });
+                if kind == CompiledNodeKind::Combinational
+                    && is_literal_constructor_operation(&semantics.operation)
+                    && (register_state_indexes[dst as usize].is_some()
+                        || prior
+                            .is_some_and(|value| matches!(value.source, SourceValue::Constant(_))))
+                {
+                    if register_state_indexes[dst as usize].is_some() {
+                        continue;
+                    }
+                    let constructor_inputs = semantic_input_registers(&semantics, declaration)?
+                        .iter()
+                        .map(|input| {
+                            register(&registers, *input)?
+                                .map(|value| value.source)
+                                .ok_or(ArtifactBuildError::MissingRegisterSource {
+                                    instruction: instruction_id,
+                                    register: *input,
+                                    role: "literal constructor input",
+                                })
+                        })
+                        .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
+                    if constructor_inputs
+                        .iter()
+                        .all(|source| matches!(source, SourceValue::Constant(_)))
                     {
-                        let schema = schema.expect("non-pseudo composite destination has schema");
-                        let initializer = constants.get(&(*template, schema)).copied().ok_or(
-                            ArtifactBuildError::SourceGraphReferenceOutOfRange {
-                                reference: "state initializer constant",
-                                index: *template,
-                            },
-                        )?;
-                        state_initializers[dst as usize] = Some(initializer);
+                        continue;
                     }
                 }
                 let node_index = checked_u32(nodes.len(), "NodeId")?;
-                let state_index = if kind == CompiledNodeKind::Register {
-                    let schema = schema.ok_or(ArtifactBuildError::MissingRegisterKind {
+                let state_index = if register_state_indexes[dst as usize].is_some()
+                    && mutable_declaration_instructions[dst as usize]
+                        .is_some_and(|marker| instruction_index > marker)
+                {
+                    let _schema = schema.ok_or(ArtifactBuildError::MissingRegisterKind {
                         instruction: instruction_id,
                         register: dst,
                     })?;
-                    let state = checked_u32(states.len(), "state")?;
-                    states.push(SourceState {
-                        schema,
-                        initializer: state_initializers[dst as usize].or_else(|| {
-                            prior.and_then(|value| match value.source {
-                                SourceValue::Constant(constant) => Some(constant),
-                                _ => None,
-                            })
-                        }),
-                        producer_node: node_index,
-                        producer_output_ordinal: 0,
-                    });
+                    let state = register_state_indexes[dst as usize].ok_or(
+                        ArtifactBuildError::MissingRegisterSource {
+                            instruction: instruction_id,
+                            register: dst,
+                            role: "state declaration",
+                        },
+                    )?;
+                    let declaration = &mut states[state as usize];
+                    declaration.producer_node = node_index;
                     Some(state)
                 } else {
                     None
@@ -813,12 +1072,6 @@ pub fn compile_executable_program_artifact(
                 // catalog-installed runtime functions also carry authoritative
                 // semantic metadata. Preserve that declaration when the
                 // specialized function uses the trait's default `None`.
-                let declaration = compiled.instruction_contracts[instruction_index].or_else(|| {
-                    instruction
-                        .runtime_function()
-                        .and_then(|function| catalog.runtime_entry_by_raw(function))
-                        .and_then(|entry| entry.semantic_contract())
-                });
                 let semantic_inputs = semantic_input_registers(&semantics, declaration)?
                     .iter()
                     .map(|input| {
@@ -850,6 +1103,7 @@ pub fn compile_executable_program_artifact(
                 }
                 nodes.push(SourceNode {
                     operation: semantics.operation,
+                    requirement: semantics.requirement,
                     inputs: semantic_inputs,
                     outputs: match (state_index, schema) {
                         (Some(state), _) => vec![SourceNodeOutput::State(state)],
@@ -915,6 +1169,7 @@ pub fn compile_executable_program_artifact(
                             module_path: vec!["core".to_owned()].into_boxed_slice(),
                             operation_name: "literal".to_owned(),
                         },
+                        requirement: None,
                         inputs: vec![SourceValue::Constant(constant)].into_boxed_slice(),
                         outputs: vec![SourceNodeOutput::Derived {
                             schema: returned.schema,
@@ -995,8 +1250,21 @@ pub fn compile_executable_program_artifact(
         });
     }
 
+    let (inputs, mut nodes, outputs, mut constraints) =
+        prune_unused_inputs(inputs, nodes, outputs, constraints)?;
+    let constant_store = prune_unused_constants(
+        &schemas,
+        &constant_store,
+        &mut states,
+        &mut nodes,
+        &mut constraints,
+    )?;
+
     compile_source_program_with_contracts(
         &SourceProgram {
+            requirements: ApplicationRequirementTable::from_canonical_entries(
+                compiled.program.requirements.clone(),
+            )?,
             inputs: inputs.into_boxed_slice(),
             states: states.into_boxed_slice(),
             nodes: nodes.into_boxed_slice(),
@@ -1006,6 +1274,182 @@ pub fn compile_executable_program_artifact(
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
         &node_contracts,
     )
+}
+
+#[cfg(feature = "compiler")]
+fn external_declaration_matches_requirement(
+    declaration: &OperationContractDeclaration,
+    requirement: &ApplicationRequirement,
+) -> bool {
+    match (requirement, &declaration.interaction) {
+        (ApplicationRequirement::HostFunction(_), _) => true,
+        (
+            ApplicationRequirement::Resource(request),
+            mech_core::ExternalInteraction::Observation(_),
+        ) => {
+            request.intent == mech_core::ResourceIntent::Read
+                && request.delivery == mech_core::ResourceDelivery::Live
+        }
+        (ApplicationRequirement::Resource(request), mech_core::ExternalInteraction::Effect(_)) => {
+            request.intent == mech_core::ResourceIntent::Send
+                && request.delivery == mech_core::ResourceDelivery::Snapshot
+        }
+        (
+            ApplicationRequirement::Resource(request),
+            mech_core::ExternalInteraction::TransactionalExternal(_),
+        ) => {
+            matches!(
+                request.intent,
+                mech_core::ResourceIntent::Assign | mech_core::ResourceIntent::Send
+            ) && request.delivery == mech_core::ResourceDelivery::Snapshot
+        }
+        _ => false,
+    }
+}
+
+#[cfg(feature = "compiler")]
+fn prune_unused_constants(
+    schemas: &SchemaTable,
+    constants: &ConstantStore,
+    states: &mut [SourceState],
+    nodes: &mut [SourceNode],
+    constraints: &mut [SourceIntegrityConstraint],
+) -> Result<ConstantStore, ArtifactBuildError> {
+    let mut used = std::collections::BTreeSet::<ConstantId>::new();
+    for state in states.iter() {
+        if let Some(constant) = state.initializer {
+            used.insert(constant);
+        }
+    }
+    for node in nodes.iter() {
+        for source in &node.inputs {
+            if let SourceValue::Constant(constant) = source {
+                used.insert(*constant);
+            }
+        }
+    }
+    for constraint in constraints.iter() {
+        for source in &constraint.inputs {
+            if let SourceValue::Constant(constant) = source {
+                used.insert(*constant);
+            }
+        }
+    }
+
+    let mut builder = ConstantStoreBuilder::new(schemas);
+    let mut remap = std::collections::BTreeMap::<ConstantId, ConstantHandle>::new();
+    for constant in used {
+        let value = constants
+            .get(constant)
+            .ok_or(ArtifactBuildError::UnknownConstant { constant })?;
+        remap.insert(constant, builder.insert(value.clone())?);
+    }
+    let build = builder.finish()?;
+    let remap = remap
+        .into_iter()
+        .map(|(old, handle)| Ok((old, build.resolve(handle)?)))
+        .collect::<Result<std::collections::BTreeMap<_, _>, ArtifactBuildError>>()?;
+    let (constants, _) = build.into_parts();
+    let remap_source = |source: &mut SourceValue| {
+        if let SourceValue::Constant(constant) = source {
+            *constant = remap[constant];
+        }
+    };
+    for state in states {
+        if let Some(constant) = &mut state.initializer {
+            *constant = remap[constant];
+        }
+    }
+    for node in nodes {
+        for source in &mut node.inputs {
+            remap_source(source);
+        }
+    }
+    for constraint in constraints {
+        for source in &mut constraint.inputs {
+            remap_source(source);
+        }
+    }
+    Ok(constants)
+}
+
+#[cfg(feature = "compiler")]
+fn is_literal_constructor_operation(operation: &OperationReference) -> bool {
+    operation.module_path.as_ref() == ["runtime"]
+        && (operation
+            .operation_name
+            .starts_with("HorizontalConcatenate")
+            || operation.operation_name.starts_with("VerticalConcatenate"))
+}
+
+#[cfg(feature = "compiler")]
+fn prune_unused_inputs(
+    inputs: Vec<SourceInput>,
+    mut nodes: Vec<SourceNode>,
+    mut outputs: Vec<SourceOutput>,
+    mut constraints: Vec<SourceIntegrityConstraint>,
+) -> Result<
+    (
+        Vec<SourceInput>,
+        Vec<SourceNode>,
+        Vec<SourceOutput>,
+        Vec<SourceIntegrityConstraint>,
+    ),
+    ArtifactBuildError,
+> {
+    let mut used = vec![false; inputs.len()];
+    let mut note = |source: SourceValue| {
+        if let SourceValue::Input(input) = source {
+            if let Some(used) = used.get_mut(input as usize) {
+                *used = true;
+            }
+        }
+    };
+    for node in &nodes {
+        for source in &node.inputs {
+            note(*source);
+        }
+    }
+    for output in &outputs {
+        if let SourceSlot::Input(input) = output.source {
+            note(SourceValue::Input(input));
+        }
+    }
+    for constraint in &constraints {
+        for source in &constraint.inputs {
+            note(*source);
+        }
+    }
+    let mut remap = vec![None; inputs.len()];
+    let mut retained = Vec::new();
+    for (old, input) in inputs.into_iter().enumerate() {
+        if used[old] {
+            let next = checked_u32(retained.len(), "InputId")?;
+            remap[old] = Some(next);
+            retained.push(input);
+        }
+    }
+    let remap_value = |source: &mut SourceValue| {
+        if let SourceValue::Input(input) = source {
+            *input = remap[*input as usize].expect("used inputs have a remapped identity");
+        }
+    };
+    for node in &mut nodes {
+        for source in &mut node.inputs {
+            remap_value(source);
+        }
+    }
+    for output in &mut outputs {
+        if let SourceSlot::Input(input) = &mut output.source {
+            *input = remap[*input as usize].expect("used inputs have a remapped identity");
+        }
+    }
+    for constraint in &mut constraints {
+        for source in &mut constraint.inputs {
+            remap_value(source);
+        }
+    }
+    Ok((retained, nodes, outputs, constraints))
 }
 
 #[cfg(feature = "compiler")]
@@ -1226,6 +1670,9 @@ fn validate_compiled_instruction_roles(
             }
             BytecodeInstruction::RuntimeVariadic { .. }
                 if *role == Some(CompiledInstructionRole::IntegrityMarker) => {}
+            BytecodeInstruction::RuntimeBinary { .. }
+                if *role == Some(CompiledInstructionRole::DeclarationMarker)
+                    && is_variable_definition_instruction(instruction, catalog) => {}
             _ => match role {
                 Some(CompiledInstructionRole::Node(_)) => {
                     instruction_semantics(instruction, catalog, &compiled.program.requirements)?;
@@ -1234,6 +1681,11 @@ fn validate_compiled_instruction_roles(
                     return Err(ArtifactBuildError::UnexpectedInstructionRole {
                         instruction: instruction_id,
                         role: "integrity marker",
+                    });
+                }
+                Some(CompiledInstructionRole::DeclarationMarker) => {
+                    return Err(ArtifactBuildError::InvalidDeclarationMarker {
+                        instruction: instruction_id,
                     });
                 }
                 None => {
@@ -1252,6 +1704,7 @@ fn instruction_role_name(role: CompiledInstructionRole) -> &'static str {
     match role {
         CompiledInstructionRole::Node(_) => "node",
         CompiledInstructionRole::IntegrityMarker => "integrity marker",
+        CompiledInstructionRole::DeclarationMarker => "declaration marker",
     }
 }
 
@@ -1260,6 +1713,7 @@ struct CompiledInstructionSemantics {
     destination: u32,
     inputs: Vec<u32>,
     operation: OperationReference,
+    requirement: Option<ApplicationRequirementId>,
 }
 
 /// Some executable instructions use their destination as the logical base of
@@ -1420,16 +1874,19 @@ fn instruction_semantics(
                 module_path: vec!["core".to_owned()].into_boxed_slice(),
                 operation_name: "composite-pack".to_owned(),
             },
+            requirement: None,
         },
         BytecodeInstruction::RuntimeNullary { function, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeUnary { function, dst, src } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeBinary {
             function,
@@ -1440,6 +1897,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*lhs, *rhs],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeTernary {
             function,
@@ -1451,6 +1909,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*a, *b, *c],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeQuaternary {
             function,
@@ -1463,6 +1922,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*a, *b, *c, *d],
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::RuntimeVariadic {
             function,
@@ -1472,6 +1932,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: arguments.clone(),
             operation: runtime(*function)?,
+            requirement: None,
         },
         BytecodeInstruction::HostCall {
             requirement,
@@ -1493,12 +1954,14 @@ fn instruction_semantics(
                 destination: *dst,
                 inputs: arguments.clone(),
                 operation: operation_reference_from_name("host", &request.name)?,
+                requirement: Some(ApplicationRequirementId::new(*requirement)),
             }
         }
         BytecodeInstruction::ResourceRead { requirement, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
             operation: resource_operation_reference(*requirement, requirements, "read")?,
+            requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
         BytecodeInstruction::ResourceWrite {
             requirement,
@@ -1508,6 +1971,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*src],
             operation: resource_operation_reference(*requirement, requirements, "write")?,
+            requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
         BytecodeInstruction::ResourceSend {
             requirement,
@@ -1517,6 +1981,7 @@ fn instruction_semantics(
             destination: *dst,
             inputs: vec![*src],
             operation: resource_operation_reference(*requirement, requirements, "send")?,
+            requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
     };
     Ok(Some(semantics))

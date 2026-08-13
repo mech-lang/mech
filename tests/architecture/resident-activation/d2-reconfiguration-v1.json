@@ -1,0 +1,13 @@
+{
+  "activation_fact_identity_participates": true,
+  "active_candidate_rejected": true,
+  "changed_layout_advances_layout_generation": true,
+  "compatible_state_requires_explicit_mapping": true,
+  "failed_migration_is_atomic": true,
+  "incompatible_state_can_explicitly_reset": true,
+  "incompatible_state_rejected": true,
+  "same_layout_preserves_layout_generation": true,
+  "same_revision_is_noop": true,
+  "schema_version": 1,
+  "swap_insert_delete_regressions": true
+}

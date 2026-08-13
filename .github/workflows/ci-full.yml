@@ -33,6 +33,63 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  migration-contracts:
+    name: Migration contract qualification
+    runs-on: ubuntu-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: "0"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Install migration contract tools
+        run: |
+          rustup toolchain install nightly-2026-03-03 --profile minimal
+          if ! command -v rg >/dev/null 2>&1
+          then
+            sudo apt-get update
+            sudo apt-get install --yes ripgrep
+          fi
+      - name: Replay migration architecture evidence
+        run: |
+          python3 scripts/generate-value-system-inventory.py --check
+          python3 scripts/generate-value-system-inventory.py \
+            --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
+            --check-legacy-baseline
+          python3 scripts/check-value-system-contract.py
+          python3 scripts/check-program-artifact-contract.py
+          python3 scripts/check-operation-contract.py
+          python3 scripts/check-resident-activation-contract.py
+          python3 scripts/generate-d1-contract.py --check
+          python3 scripts/check-d1-contract.py
+          python3 scripts/generate-d2-contract.py --check
+          python3 scripts/check-d2-contract.py
+          python3 scripts/generate-d3-contract.py --check
+          python3 scripts/check-d3-contract.py
+          python3 scripts/generate-d4-contract.py --check
+          python3 scripts/check-d4-contract.py
+          python3 scripts/check-gate-d-contract.py \
+            --report benchmarks/runtime/gate-d/d3-resident-external.json \
+            --expected-phase D3-resident-external
+          python3 -B -m unittest \
+            scripts/tests/test_generate_value_system_inventory.py \
+            scripts/tests/test_check_value_system_contract.py \
+            scripts/tests/test_check_program_artifact_contract.py \
+            scripts/tests/test_check_operation_contract.py \
+            scripts/tests/test_generate_resident_activation_contract.py \
+            scripts/tests/test_check_resident_activation_contract.py \
+            scripts/tests/test_generate_d1_contract.py \
+            scripts/tests/test_check_d1_contract.py \
+            scripts/tests/test_generate_d2_contract.py \
+            scripts/tests/test_check_d2_contract.py \
+            scripts/tests/test_generate_d3_contract.py \
+            scripts/tests/test_check_d3_contract.py \
+            scripts/tests/test_generate_d4_contract.py \
+            scripts/tests/test_check_d4_contract.py \
+            scripts/tests/test_run_gate_a_benchmarks.py \
+            scripts/tests/test_run_gate_b_benchmarks.py
+
   cargo-features:
     name: Cargo feature and example checks
     runs-on: ubuntu-latest
@@ -66,7 +123,7 @@ jobs:
 
           # The default CLI is the concrete standard compiler distribution.
           cargo build --bin mech
-          ./target/debug/mech test examples/working
+          ./target/debug/mech run tests/fixtures/standard-resident-scalar.mec
 
           # Prelude-only no-default feature checks.
           cargo check --no-default-features

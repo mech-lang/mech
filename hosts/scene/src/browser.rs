@@ -113,6 +113,13 @@ impl BrowserSceneRegistry {
     pub fn target_count(&self) -> usize {
         self.targets.lock().map(|g| g.len()).unwrap_or(0)
     }
+    pub fn latest(&self, instance: &str) -> Option<SceneSnapshot> {
+        self.targets.lock().ok().and_then(|targets| {
+            targets
+                .get(instance)
+                .and_then(|target| target.latest.clone())
+        })
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -173,12 +180,13 @@ impl mech_runtime::RuntimeHostFactory for BrowserSceneHostFactory {
         settings: &mech_runtime::ConfigValue,
     ) -> MResult<mech_runtime::RuntimeHostInstallation> {
         let parsed = crate::scene_settings_from_config(settings)?;
-        self.registry.register(instance_name, parsed)?;
+        self.registry.register(instance_name, parsed.clone())?;
         Ok(mech_runtime::RuntimeHostInstallation {
             interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(crate::SceneResourceProvider::new(
+            resource_providers: vec![Box::new(crate::SceneResourceProvider::new_with_settings(
                 instance_name,
                 BrowserSceneBackend::new(instance_name, self.registry.clone()),
+                parsed,
             ))],
             input_drivers: Vec::new(),
         })

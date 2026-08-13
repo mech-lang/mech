@@ -3,4 +3,3 @@
 
 tick := @timer/tick
 @out/line <- tick
-tick

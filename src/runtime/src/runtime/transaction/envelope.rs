@@ -40,6 +40,10 @@ pub(in crate::runtime) struct RuntimeExecutionTransaction {
     pub(in crate::runtime) context_identity: RuntimeTransactionContextIdentity,
     pub(in crate::runtime) context_baseline: RuntimeContextCheckpoint,
     pub(in crate::runtime) program: Option<RuntimeProgramBaseline>,
+    /// Set only by successful retained legacy execution. Publication is
+    /// deferred to transaction commit so aborted programs claim no owner.
+    #[cfg(feature = "resident-routing")]
+    pub(in crate::runtime) claims_legacy_program_owner: bool,
     pub(in crate::runtime) effects: RuntimeEffectJournal,
     pub(in crate::runtime) capabilities: RuntimeCapabilityOverlay,
     pub(in crate::runtime) state: RuntimeExecutionTransactionState,
@@ -59,6 +63,8 @@ impl RuntimeExecutionTransaction {
             context_identity,
             context_baseline,
             program: None,
+            #[cfg(feature = "resident-routing")]
+            claims_legacy_program_owner: false,
             effects: RuntimeEffectJournal::new(),
             capabilities: RuntimeCapabilityOverlay::default(),
             state: RuntimeExecutionTransactionState::Active,

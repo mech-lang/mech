@@ -94,4 +94,12 @@ if grep -Ein -- '</script' include/document.js; then
   fail "include/document.js cannot be safely embedded inside a script element"
 fi
 
+for contract in \
+  'function supportsInteractiveEvaluation()' \
+  'typeof state.document?.evaluate === "function"' \
+  'interactive source evaluation is unavailable in standard resident documents' \
+  'Mech document command input'; do
+  require_literal include/document.js "$contract"
+done
+
 echo "shipped document shim contracts are present"

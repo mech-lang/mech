@@ -1,4 +1,4 @@
-use mech_core::{LegacyValue, MResult, Ref};
+use mech_core::{LegacyValue, MResult, OperationContractDeclaration, Ref};
 use mech_runtime::{RuntimeResourceProvider, RuntimeResourceReadRequest};
 
 use crate::{SharedTimerSnapshot, TimerSnapshot, timer_error, timer_input_base_uri};
@@ -7,13 +7,23 @@ use crate::{SharedTimerSnapshot, TimerSnapshot, timer_error, timer_input_base_ur
 pub struct TimerResourceProvider {
     instance: String,
     snapshot: SharedTimerSnapshot,
+    planning_snapshot: TimerSnapshot,
 }
 
 impl TimerResourceProvider {
     pub fn new(instance: impl Into<String>, snapshot: SharedTimerSnapshot) -> Self {
+        Self::new_with_planning_snapshot(instance, snapshot, TimerSnapshot::default())
+    }
+
+    pub fn new_with_planning_snapshot(
+        instance: impl Into<String>,
+        snapshot: SharedTimerSnapshot,
+        planning_snapshot: TimerSnapshot,
+    ) -> Self {
         Self {
             instance: instance.into(),
             snapshot,
+            planning_snapshot,
         }
     }
 
@@ -48,6 +58,10 @@ impl RuntimeResourceProvider for TimerResourceProvider {
         vec![self.base_uri()]
     }
 
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         if request.base_uri != self.base_uri() {
             return Err(timer_error(
@@ -55,7 +69,7 @@ impl RuntimeResourceProvider for TimerResourceProvider {
                 format!("unknown timer resource `{}`", request.base_uri),
             ));
         }
-        Self::value_for(TimerSnapshot::default(), &request.path)
+        Self::value_for(self.planning_snapshot, &request.path)
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
@@ -77,6 +91,8 @@ impl RuntimeResourceProvider for TimerResourceProvider {
 mod tests {
     use super::*;
     use crate::{TIMER_PATHS, new_shared_snapshot};
+    use mech_core::{ExternalInteraction, ObservationContract, ObservationReplayPolicy};
+    use mech_runtime::RuntimeHostInputValue;
 
     fn request(base_uri: &str, path: &str) -> RuntimeResourceReadRequest {
         RuntimeResourceReadRequest {
@@ -142,6 +158,60 @@ mod tests {
                     .unwrap(),
             ),
             9.0,
+        );
+    }
+
+    #[test]
+    fn resident_contract_captures_timer_reads_as_input_facts() {
+        let provider =
+            TimerResourceProvider::new("clock", new_shared_snapshot(TimerSnapshot::default()));
+        assert!(matches!(
+            &provider.semantic_read_contract().unwrap().interaction,
+            ExternalInteraction::Observation(ObservationContract {
+                replay: ObservationReplayPolicy::CaptureAsInputFact,
+            })
+        ));
+    }
+
+    #[test]
+    fn sixty_hertz_planning_delta_is_one_sixtieth() {
+        let snapshot = new_shared_snapshot(TimerSnapshot::default());
+        let provider = TimerResourceProvider::new_with_planning_snapshot(
+            "clock",
+            snapshot,
+            TimerSnapshot::new(0, 60, 0),
+        );
+        assert_eq!(
+            f64_value(
+                provider
+                    .plan_read(request("timer://clock/tick", "delta-seconds"))
+                    .unwrap(),
+            ),
+            1.0 / 60.0,
+        );
+    }
+
+    #[test]
+    fn live_read_matches_the_snapshot_carried_by_the_trigger_packet() {
+        let emitted = TimerSnapshot::new(1, 60, 0);
+        let snapshot = new_shared_snapshot(emitted);
+        let provider = TimerResourceProvider::new("clock", snapshot);
+        let packet = emitted.into_host_input("clock").unwrap();
+        let update = packet
+            .updates
+            .iter()
+            .find(|update| update.source.path() == "delta-seconds")
+            .unwrap();
+        let RuntimeHostInputValue::F64(trigger_value) = &update.value else {
+            panic!("timer delta trigger must be f64")
+        };
+        assert_eq!(
+            f64_value(
+                provider
+                    .read(request("timer://clock/tick", "delta-seconds"))
+                    .unwrap(),
+            ),
+            *trigger_value,
         );
     }
 }

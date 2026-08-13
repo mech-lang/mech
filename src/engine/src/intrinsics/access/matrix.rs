@@ -10,7 +10,7 @@ use std::sync::LazyLock;
 
 fn matrix_selection_contract(
     input_count: usize,
-    postcondition_name: &'static str,
+    _postcondition_name: &'static str,
 ) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -26,12 +26,8 @@ fn matrix_selection_contract(
         outputs: vec![OutputPortPolicy {
             access: AccessMode::Write,
             delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Build {
-                postcondition: ShapeContractReference {
-                    module_path: vec!["matrix".to_owned(), "selection".to_owned()]
-                        .into_boxed_slice(),
-                    contract_name: postcondition_name.to_owned(),
-                },
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
             },
             alias: AliasPolicy::NoAlias,
             change_detection: ChangeDetectionPolicy::KernelReported,
@@ -80,6 +76,16 @@ declare_matrix_selection_contract!(
     PURE_BINARY_LOGICAL_ROWS_ALL_COLUMNS_CONTRACT,
     2,
     "logical-rows-all-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_BINARY_ALL_ROWS_EXPLICIT_COLUMNS_CONTRACT,
+    2,
+    "all-rows-explicit-columns-output"
+);
+declare_matrix_selection_contract!(
+    PURE_BINARY_ALL_ROWS_LOGICAL_COLUMNS_CONTRACT,
+    2,
+    "all-rows-logical-columns-output"
 );
 declare_matrix_selection_contract!(
     PURE_TERNARY_SCALAR_ROW_EXPLICIT_COLUMNS_CONTRACT,
@@ -2590,8 +2596,18 @@ macro_rules! impl_access_all_range_arms {
   }
 }
 
-impl_all_fxn_v!(Access2DARV, assign_2d_all_range_v, usize);
-impl_all_fxn_v!(Access2DARVB, assign_2d_all_range_vb, bool);
+impl_all_fxn_v!(
+    Access2DARV,
+    assign_2d_all_range_v,
+    usize,
+    PURE_BINARY_ALL_ROWS_EXPLICIT_COLUMNS_CONTRACT
+);
+impl_all_fxn_v!(
+    Access2DARVB,
+    assign_2d_all_range_vb,
+    bool,
+    PURE_BINARY_ALL_ROWS_LOGICAL_COLUMNS_CONTRACT
+);
 
 fn matrix_access_all_range_fxn(
     source: LegacyValue,

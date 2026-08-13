@@ -3,23 +3,26 @@
 use mech_engine::*;
 
 use mech_core::{
-    AccessMode, AliasPolicy, CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle,
-    ConstantStoreBuilder, DeliveryMode, DimensionExpr, DimensionLifetime,
-    DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin, EffectContract,
-    EffectDeliveryPolicy, ExternalInteraction, FloatWidth, IdempotencyRequirement, InputPortLayout,
-    InputPortPolicy, IntegerWidth, KindExpr, LegacyOpaqueOperationContract, LegacyValue,
-    NominalKey, NominalKind, OperationContractDeclaration, OperationContractId,
-    OperationContractTable, OperationContractTableBuilder, OutputConstruction, OutputPortPolicy,
-    RegionPolicy, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaBody,
-    SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder, ShapeContractReference, ShapeRule,
-    Value, ValueDataDraft, ValueDraft,
+    AccessMode, AliasPolicy, ApplicationRequirement, ApplicationRequirementId, BytecodeProgram,
+    CanonicalNominalPath, ChangeDetectionPolicy, ConstantHandle, ConstantStoreBuilder,
+    DeliveryMode, DimensionExpr, DimensionLifetime, DimensionParameterDeclaration,
+    DimensionParameterId, DimensionParameterOrigin, EffectContract, EffectDeliveryPolicy,
+    ExecutionResourceRequest, ExternalInteraction, FloatWidth, IdempotencyRequirement,
+    InputPortLayout, InputPortPolicy, IntegerWidth, KindExpr, LegacyOpaqueOperationContract,
+    LegacyValue, NominalKey, NominalKind, ObservationContract, ObservationReplayPolicy,
+    OperationContractDeclaration, OperationContractId, OperationContractTable,
+    OperationContractTableBuilder, OutputConstruction, OutputPortPolicy, RegionPolicy,
+    ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, ResourceDelivery,
+    ResourceIntent, SchemaBody, SchemaDraft, SchemaField, SchemaHandle, SchemaTableBuilder,
+    ShapeContractReference, ShapeRule, Value, ValueDataDraft, ValueDraft,
     snapshot::{
         Complex32Bits, Complex64Bits, ConstantStoreBuild, EnumDraft, F32Bits, F64Bits,
         MapEntryDraft, NamedValueDraft, OptionDraft, ReifiedTypeDraft, SnapshotValidationContext,
         TableColumnDraft,
     },
+    write_bytecode_with_artifact,
 };
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy)]
 struct Schemas {
@@ -209,6 +212,7 @@ fn node(
 ) -> SourceNode {
     SourceNode {
         operation,
+        requirement: None,
         inputs: inputs.into_boxed_slice(),
         outputs: outputs.into_boxed_slice(),
     }
@@ -488,6 +492,33 @@ fn pure_full_write_contract(
     }
 }
 
+fn pure_state_rmw_contract(base_input: u16) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                };
+                2
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input,
+                regions: RegionPolicy::WholeValue,
+            },
+            alias: AliasPolicy::MayAlias { input: base_input },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
 fn build_both_with_contracts(
     data: &FixtureData,
     graph: SourceProgram,
@@ -683,6 +714,49 @@ fn combinational_cycles_are_rejected_but_state_feedback_is_valid() {
 }
 
 #[test]
+fn state_reads_depend_on_the_latest_preceding_writer() {
+    let data = fixture_data();
+    let graph = SourceProgram {
+        states: vec![SourceState {
+            schema: data.schema.f64_,
+            initializer: Some(data.constant.one),
+            producer_node: 0,
+            producer_output_ordinal: 0,
+        }]
+        .into_boxed_slice(),
+        nodes: vec![
+            node(
+                operation("state", "write"),
+                vec![
+                    SourceValue::NodeOutput {
+                        node: 1,
+                        output_ordinal: 0,
+                    },
+                    SourceValue::State(0),
+                ],
+                vec![SourceNodeOutput::State(0)],
+            ),
+            node(
+                operation("state", "read-after-write"),
+                vec![SourceValue::State(0)],
+                vec![SourceNodeOutput::Derived {
+                    schema: data.schema.f64_,
+                }],
+            ),
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    let write = Box::leak(Box::new(pure_state_rmw_contract(1)));
+    let read = Box::leak(Box::new(pure_full_write_contract(1, 1)));
+    let mut context = ArtifactBuildContext::new(&data.schemas, &data.constants);
+    assert!(matches!(
+        compile_source_program_with_contracts(&graph, &mut context, &[Some(write), Some(read)],),
+        Err(ArtifactBuildError::CombinationalCycle)
+    ));
+}
+
+#[test]
 fn compiler_pseudo_values_never_enter_snapshot_constants() {
     assert_eq!(
         compiler_ir_from_legacy_pseudo_value(&LegacyValue::Empty).unwrap(),
@@ -841,6 +915,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         schemas: data.schemas.clone(),
         constants: data.constants.clone(),
         contracts,
+        requirements: ApplicationRequirementTable::empty(),
         inputs: Box::new([]),
         slots: vec![SlotDeclaration {
             slot: CellSlotId(0),
@@ -857,6 +932,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
             node: NodeId(0),
             operation: operation("test", "producer"),
             contract: OperationContractId::new(0),
+            requirement: None,
             input_bindings: 0..0,
             output_bindings: 0..0,
         }]
@@ -1056,7 +1132,7 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
     let mut missing_binding = sections.clone();
     missing_binding.bindings = b"[]".to_vec();
     let mut nodes: serde_json::Value = serde_json::from_slice(&missing_binding.nodes).unwrap();
-    for node in nodes.as_array_mut().unwrap() {
+    for node in nodes["nodes"].as_array_mut().unwrap() {
         node["input_start"] = serde_json::Value::from(0);
         node["input_end"] = serde_json::Value::from(0);
         node["output_start"] = serde_json::Value::from(0);
@@ -1127,7 +1203,7 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
 
     let mut unknown_contract = sections.clone();
     let mut nodes: serde_json::Value = serde_json::from_slice(&unknown_contract.nodes).unwrap();
-    nodes.as_array_mut().unwrap()[0]["contract"] = serde_json::Value::from(u32::MAX);
+    nodes["nodes"].as_array_mut().unwrap()[0]["contract"] = serde_json::Value::from(u32::MAX);
     unknown_contract.nodes = serde_json::to_vec(&nodes).unwrap();
     assert!(matches!(
         decode_program_artifact_sections(&unknown_contract),
@@ -1154,7 +1230,7 @@ fn decoded_artifact_sections_revalidate_structure_and_limits() {
     operations.as_array_mut().unwrap().swap(0, 1);
     reordered_operation.operations = serde_json::to_vec(&operations).unwrap();
     let mut nodes: serde_json::Value = serde_json::from_slice(&reordered_operation.nodes).unwrap();
-    for node in nodes.as_array_mut().unwrap() {
+    for node in nodes["nodes"].as_array_mut().unwrap() {
         node["operation"] = match node["operation"].as_u64().unwrap() {
             0 => serde_json::Value::from(1),
             1 => serde_json::Value::from(0),
@@ -1215,13 +1291,184 @@ fn program_revision_changes_with_semantic_graph_order() {
     assert_ne!(forward.revision(), reversed.revision());
 }
 
+#[test]
+fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() {
+    let data = fixture_data();
+    let requirements = ApplicationRequirementTable::from_canonical_entries(vec![
+        ApplicationRequirement::Resource(ExecutionResourceRequest {
+            base_uri: "gate-d3://input/value".to_owned(),
+            path: "sample".to_owned(),
+            context_name: "value".to_owned(),
+            operation: "read".to_owned(),
+            intent: ResourceIntent::Read,
+            delivery: ResourceDelivery::Live,
+        }),
+        ApplicationRequirement::Resource(ExecutionResourceRequest {
+            base_uri: "gate-d3://scene/output".to_owned(),
+            path: "frame".to_owned(),
+            context_name: "output".to_owned(),
+            operation: "write".to_owned(),
+            intent: ResourceIntent::Send,
+            delivery: ResourceDelivery::Snapshot,
+        }),
+    ])
+    .unwrap();
+    let graph = SourceProgram {
+        requirements,
+        nodes: vec![
+            SourceNode {
+                operation: operation("resource", "read"),
+                requirement: Some(ApplicationRequirementId::new(0)),
+                inputs: Box::new([]),
+                outputs: vec![SourceNodeOutput::Derived {
+                    schema: data.schema.f64_,
+                }]
+                .into_boxed_slice(),
+            },
+            SourceNode {
+                operation: operation("resource", "write"),
+                requirement: Some(ApplicationRequirementId::new(1)),
+                inputs: vec![SourceValue::NodeOutput {
+                    node: 0,
+                    output_ordinal: 0,
+                }]
+                .into_boxed_slice(),
+                outputs: Box::new([]),
+            },
+        ]
+        .into_boxed_slice(),
+        outputs: vec![SourceOutput {
+            name: "output".to_owned(),
+            source: SourceSlot::NodeOutput {
+                node: 0,
+                output_ordinal: 0,
+            },
+            schema: data.schema.f64_,
+        }]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+    let observation = Box::leak(Box::new(OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(Box::new([])),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::AlwaysChanged,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Observation(ObservationContract {
+            replay: ObservationReplayPolicy::CaptureAsInputFact,
+        }),
+    }));
+    let effect = Box::leak(Box::new(OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::IdempotentRetry,
+            idempotency: IdempotencyRequirement::Required,
+        }),
+    }));
+    let artifact = compile_source_program_with_contracts(
+        &graph,
+        &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
+        &[Some(observation), Some(effect)],
+    )
+    .unwrap();
+    assert_eq!(artifact.requirements(), &graph.requirements);
+    assert_eq!(
+        artifact.nodes()[0].requirement,
+        Some(ApplicationRequirementId::new(0))
+    );
+    assert_eq!(
+        artifact.nodes()[1].requirement,
+        Some(ApplicationRequirementId::new(1))
+    );
+    assert!(artifact.nodes()[1].output_bindings.is_empty());
+    assert!(!artifact.slots().iter().any(|slot| matches!(
+        slot.producer,
+        ProducerReference::NodeOutput { node, .. } if node == NodeId::new(1)
+    )));
+
+    let decoded = decode_program_artifact_bytecode_v1(
+        &encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(decoded.revision(), artifact.revision());
+    assert_eq!(decoded.requirements(), artifact.requirements());
+    assert_eq!(decoded.nodes(), artifact.nodes());
+
+    let sections = encode_program_artifact_sections(&artifact).unwrap();
+    let missing_outer = write_bytecode_with_artifact(
+        &BytecodeProgram {
+            register_count: 0,
+            constants: Vec::new(),
+            symbols: BTreeMap::new(),
+            mutable_symbols: BTreeSet::new(),
+            instructions: Vec::new(),
+            dictionary: BTreeMap::new(),
+            requirements: Vec::new(),
+        },
+        &sections,
+    )
+    .unwrap();
+    assert!(matches!(
+        decode_program_artifact_bytecode_v1(&missing_outer),
+        Err(ArtifactBytecodeError::RequirementTableMismatch)
+    ));
+}
+
+#[test]
+fn artifact_requirement_table_rejects_noncanonical_resource_syntax() {
+    assert!(
+        ApplicationRequirementTable::from_canonical_entries(vec![
+            ApplicationRequirement::Resource(ExecutionResourceRequest {
+                base_uri: "gate-d3://scene/output/".to_owned(),
+                path: "frame/../latest".to_owned(),
+                context_name: "output".to_owned(),
+                operation: "read".to_owned(),
+                intent: ResourceIntent::Send,
+                delivery: ResourceDelivery::Live,
+            })
+        ])
+        .is_err()
+    );
+}
+
 fn artifact_with_declaration(
     data: &FixtureData,
     declaration: OperationContractDeclaration,
 ) -> ProgramArtifact {
+    let mut graph = scalar_add(data);
+    if matches!(
+        declaration.interaction,
+        ExternalInteraction::TransactionalExternal(_)
+    ) {
+        graph.requirements = ApplicationRequirementTable::from_canonical_entries(vec![
+            ApplicationRequirement::Resource(ExecutionResourceRequest {
+                base_uri: "test://transactional".to_owned(),
+                path: "value".to_owned(),
+                context_name: "transactional".to_owned(),
+                operation: "write".to_owned(),
+                intent: ResourceIntent::Assign,
+                delivery: ResourceDelivery::Snapshot,
+            }),
+        ])
+        .unwrap();
+        graph.nodes[0].requirement = Some(ApplicationRequirementId::new(0));
+    }
     let declaration = Box::leak(Box::new(declaration));
     compile_source_program_with_contracts(
-        &scalar_add(data),
+        &graph,
         &mut ArtifactBuildContext::new(&data.schemas, &data.constants),
         &[Some(declaration)],
     )
@@ -1277,13 +1524,25 @@ fn program_revision_commits_to_every_operation_contract_semantic() {
         artifact_with_declaration(&data, always_changed).revision()
     );
 
+    let mut effect_node = node(
+        operation("resource", "write"),
+        vec![SourceValue::Constant(data.constant.one)],
+        Vec::new(),
+    );
+    effect_node.requirement = Some(ApplicationRequirementId::new(0));
     let effect_source = SourceProgram {
-        nodes: vec![node(
-            operation("resource", "write"),
-            vec![SourceValue::Constant(data.constant.one)],
-            Vec::new(),
-        )]
-        .into_boxed_slice(),
+        requirements: ApplicationRequirementTable::from_canonical_entries(vec![
+            ApplicationRequirement::Resource(ExecutionResourceRequest {
+                base_uri: "test://effect".to_owned(),
+                path: "value".to_owned(),
+                context_name: "effect".to_owned(),
+                operation: "write".to_owned(),
+                intent: ResourceIntent::Send,
+                delivery: ResourceDelivery::Snapshot,
+            }),
+        ])
+        .unwrap(),
+        nodes: vec![effect_node].into_boxed_slice(),
         ..SourceProgram::default()
     };
     let effect_contract = |delivery| OperationContractDeclaration {
@@ -1377,6 +1636,7 @@ fn contract_insertion_order_does_not_change_program_revision() {
             schemas: base.schemas().clone(),
             constants: base.constants().clone(),
             contracts,
+            requirements: base.requirements().clone(),
             inputs: base.inputs().to_vec().into_boxed_slice(),
             slots: base.slots().to_vec().into_boxed_slice(),
             nodes: nodes.into_boxed_slice(),
@@ -1707,6 +1967,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
         schemas,
         constants,
         contracts: OperationContractTable::empty(),
+        requirements: ApplicationRequirementTable::empty(),
         inputs: Box::new([]),
         slots: Box::new([]),
         nodes: Box::new([]),

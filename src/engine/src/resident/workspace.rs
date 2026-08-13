@@ -1,27 +1,10 @@
 use mech_core::{InstanceEpoch, SlotIndex};
 
-use super::{ActivatedPlan, NodeIndex, slot};
-
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub(crate) struct EkfScratch {
-    pub(crate) trig: [f64; 2],
-    pub(crate) motion_jacobian: [f64; 9],
-    pub(crate) control_jacobian: [f64; 6],
-    pub(crate) predicted_state: [f64; 3],
-    pub(crate) predicted_covariance: [f64; 9],
-    pub(crate) delta_range: [f64; 3],
-    pub(crate) predicted_measurement: [f64; 2],
-    pub(crate) measurement_jacobian: [f64; 6],
-    pub(crate) innovation_covariance: [f64; 4],
-    pub(crate) inverse_innovation: [f64; 4],
-    pub(crate) gain: [f64; 6],
-    pub(crate) innovation: [f64; 2],
-    pub(crate) corrected_state: [f64; 3],
-    pub(crate) corrected_covariance: [f64; 9],
-}
+use super::{GateBPlan, NodeIndex, slot};
+use crate::efficacy::ekf::operation::EkfScratch;
 
 #[derive(Debug)]
-pub(crate) struct TurnWorkspace {
+pub(crate) struct GateBWorkspace {
     pub(crate) input: [f64; 4],
     pub(crate) scratch: Box<[EkfScratch]>,
     pub(crate) slot_epoch_marks: Box<[InstanceEpoch]>,
@@ -35,8 +18,8 @@ pub(crate) struct TurnWorkspace {
     pub(crate) linear_node_order: Box<[NodeIndex]>,
 }
 
-impl TurnWorkspace {
-    pub(crate) fn activate(plan: &ActivatedPlan) -> Self {
+impl GateBWorkspace {
+    pub(crate) fn activate(plan: &GateBPlan) -> Self {
         let persistent_capacity = plan.instances * 2;
         Self {
             input: [0.0; 4],
@@ -118,8 +101,8 @@ mod tests {
 
     #[test]
     fn dense_marks_skip_a_clean_branch_and_deduplicate_invalidations() {
-        let plan = ActivatedPlan::activate(super::super::ProgramArtifact::frozen_ekf_batch(1));
-        let mut workspace = TurnWorkspace::activate(&plan);
+        let plan = GateBPlan::from_control_fixture(super::super::GateBControlFixture::new(1));
+        let mut workspace = GateBWorkspace::activate(&plan);
         let epoch = InstanceEpoch(7);
         let order = [
             NodeIndex(0),

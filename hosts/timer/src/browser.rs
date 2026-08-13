@@ -10,10 +10,12 @@ use mech_runtime::{
 use wasm_bindgen::JsCast;
 use wasm_bindgen::prelude::Closure;
 
-use crate::delivery::{TimerSubmitState, submit_pending_timer_snapshots};
+use crate::delivery::{
+    TimerSubmitState, extend_pending_timer_snapshots, submit_pending_timer_snapshots,
+};
 use crate::{
-    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerResourceProvider,
-    TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
+    FixedStepScheduler, MonotonicTimerBackend, SharedTimerSnapshot, TimerQueuePolicy,
+    TimerResourceProvider, TimerSnapshot, new_shared_snapshot, timer_error, timer_host_manifest,
     timer_settings_from_config, timer_source_matches,
 };
 
@@ -36,6 +38,7 @@ pub struct BrowserTimerInputDriver<B: MonotonicTimerBackend> {
     scheduler: Arc<Mutex<FixedStepScheduler>>,
     snapshot: SharedTimerSnapshot,
     pending: Arc<Mutex<VecDeque<TimerSnapshot>>>,
+    queue_policy: TimerQueuePolicy,
     ingress: Option<RuntimeIngress>,
     interval_handle: Option<i32>,
     closure: Option<Closure<dyn FnMut()>>,
@@ -56,12 +59,29 @@ impl<B: MonotonicTimerBackend> BrowserTimerInputDriver<B> {
         scheduler: FixedStepScheduler,
         snapshot: SharedTimerSnapshot,
     ) -> Self {
+        Self::new_with_queue_policy(
+            instance,
+            backend,
+            scheduler,
+            snapshot,
+            TimerQueuePolicy::Ordered,
+        )
+    }
+
+    pub fn new_with_queue_policy(
+        instance: impl Into<String>,
+        backend: B,
+        scheduler: FixedStepScheduler,
+        snapshot: SharedTimerSnapshot,
+        queue_policy: TimerQueuePolicy,
+    ) -> Self {
         Self {
             instance: instance.into(),
             backend,
             scheduler: Arc::new(Mutex::new(scheduler)),
             snapshot,
             pending: Arc::new(Mutex::new(VecDeque::new())),
+            queue_policy,
             ingress: None,
             interval_handle: None,
             closure: None,
@@ -112,15 +132,22 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
         let snapshot = self.snapshot.clone();
         let pending = self.pending.clone();
         let instance = self.instance.clone();
+        let queue_policy = self.queue_policy;
         let live = self.live.clone();
         let callback = Closure::wrap(Box::new(move || {
             if !live.load(Ordering::SeqCst) {
                 return;
             }
             let state = pending.lock().map_err(|_| ()).and_then(|mut pending| {
-                submit_pending_timer_snapshots(&instance, Some(&ingress), &snapshot, &mut pending)
-                    .map(|(_, state)| state)
-                    .map_err(|_| ())
+                submit_pending_timer_snapshots(
+                    &instance,
+                    Some(&ingress),
+                    &snapshot,
+                    &mut pending,
+                    queue_policy,
+                )
+                .map(|(_, state)| state)
+                .map_err(|_| ())
             });
             match state {
                 Ok(TimerSubmitState::Drained) => {}
@@ -143,15 +170,25 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
                 .map(|mut s| s.due_steps(now))
                 .unwrap_or_default();
             if let Ok(mut pending) = pending.lock() {
-                pending.extend(emissions.into_iter().map(|e| e.snapshot));
+                extend_pending_timer_snapshots(
+                    &mut pending,
+                    emissions.into_iter().map(|e| e.snapshot),
+                    queue_policy,
+                );
             } else {
                 live.store(false, Ordering::SeqCst);
                 return;
             }
             let state = pending.lock().map_err(|_| ()).and_then(|mut pending| {
-                submit_pending_timer_snapshots(&instance, Some(&ingress), &snapshot, &mut pending)
-                    .map(|(_, state)| state)
-                    .map_err(|_| ())
+                submit_pending_timer_snapshots(
+                    &instance,
+                    Some(&ingress),
+                    &snapshot,
+                    &mut pending,
+                    queue_policy,
+                )
+                .map(|(_, state)| state)
+                .map_err(|_| ())
             });
             if matches!(state, Ok(TimerSubmitState::Closed) | Err(())) {
                 live.store(false, Ordering::SeqCst);
@@ -186,10 +223,47 @@ impl<B: MonotonicTimerBackend> RuntimeHostInputDriver for BrowserTimerInputDrive
         if let Ok(mut scheduler) = self.scheduler.lock() {
             scheduler.pause();
         }
+        self.pending
+            .lock()
+            .map_err(|_| timer_error("TimerDriverStop", "timer pending queue lock is poisoned"))?
+            .clear();
         Ok(())
     }
     fn is_live(&self) -> bool {
         self.live.load(Ordering::SeqCst)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Clone, Copy, Debug)]
+    struct FixedBackend;
+
+    impl MonotonicTimerBackend for FixedBackend {
+        fn now_ms(&self) -> MResult<f64> {
+            Ok(0.0)
+        }
+    }
+
+    #[test]
+    fn stop_discards_private_ordered_backlog_before_restart() {
+        let mut driver = BrowserTimerInputDriver::new(
+            "physics",
+            FixedBackend,
+            FixedStepScheduler::new(60, 8),
+            new_shared_snapshot(TimerSnapshot::new(0, 60, 0)),
+        );
+        driver
+            .pending
+            .lock()
+            .unwrap()
+            .push_back(TimerSnapshot::new(7, 60, 0));
+
+        driver.stop().unwrap();
+
+        assert!(driver.pending.lock().unwrap().is_empty());
     }
 }
 
@@ -240,15 +314,17 @@ impl<B: MonotonicTimerBackend> RuntimeHostFactory for BrowserTimerHostFactory<B>
         let snapshot = new_shared_snapshot(initial);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(TimerResourceProvider::new(
+            resource_providers: vec![Box::new(TimerResourceProvider::new_with_planning_snapshot(
                 instance_name,
                 snapshot.clone(),
+                initial,
             ))],
-            input_drivers: vec![Box::new(BrowserTimerInputDriver::new(
+            input_drivers: vec![Box::new(BrowserTimerInputDriver::new_with_queue_policy(
                 instance_name,
                 self.backend.clone(),
                 FixedStepScheduler::new(settings.frequency_hz, settings.max_catch_up_steps),
                 snapshot,
+                settings.queue_policy,
             ))],
         })
     }

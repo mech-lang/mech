@@ -1,3 +1,5 @@
+#![cfg(feature = "compiler")]
+
 use mech_bytecode::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,
@@ -818,6 +820,7 @@ fn compiled_fixture(
         instruction_source_nodes: vec![None; instruction_roles.len()],
         instruction_roles,
         register_collection_cardinalities: vec![None; register_kinds.len()],
+        register_state_initializers: vec![None; register_kinds.len()],
         register_kinds,
         symbol_definitions: Vec::new(),
         return_register,

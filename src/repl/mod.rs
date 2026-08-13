@@ -501,11 +501,13 @@ impl MechRepl {
                 for source_path in paths {
                     let request = runtime_repl_load_request(&source_path)?;
                     let (runtime, context) = self.runtime_with_next_turn_context()?;
-                    result = runtime.resolve_and_run_root_module_with_context(
-                        context,
-                        request,
-                        crate::cli::run::cli_module_options(),
-                    )?;
+                    result = runtime
+                        .legacy_interpreter()
+                        .resolve_and_run_root_module_with_context(
+                            context,
+                            request,
+                            crate::cli::run::cli_module_options(),
+                        )?;
                 }
                 Ok(format!("\n{}\n{}\n", result.kind(), result))
             }
@@ -514,7 +516,9 @@ impl MechRepl {
                 for (_, source) in code {
                     let source = source.to_string();
                     let (runtime, context) = self.runtime_with_next_turn_context()?;
-                    result = runtime.run_string_with_context(context, &source)?;
+                    result = runtime
+                        .legacy_interpreter()
+                        .run_string_with_context(context, &source)?;
                 }
                 let kind_formatted = format!("{}", result.kind()).ansi_color(218);
                 Ok(format!("\n{}\n{}\n", kind_formatted, result))

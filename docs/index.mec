@@ -75,7 +75,7 @@ Mech Documentation
 
 - [`mech`](/reference/commands/mech.html)
 - [`mech run`](/reference/commands/run.html)
-- [`mech test`](/reference/commands/test.html)
+- [`mech test`](/reference/commands/test.html) (full distribution only)
 - [`mech serve`](/reference/commands/serve.html)
 - [`mech build`](/reference/commands/build.html)
 - [`mech format`](/reference/commands/format.html)

@@ -1,0 +1,76 @@
+{
+  "activated_node_count": 20,
+  "activation_executes_turn": false,
+  "constants": {
+    "dt": 0.05,
+    "landmark": [
+      25.0,
+      -10.0
+    ],
+    "measurement_covariance": [
+      0.25,
+      0.0,
+      0.0,
+      0.0009
+    ],
+    "process_covariance": [
+      0.04,
+      0.0,
+      0.0,
+      0.0025
+    ]
+  },
+  "constraint_count": 3,
+  "deterministic_reactivation": true,
+  "first_candidate_epoch": 1,
+  "gate": "D1",
+  "input": {
+    "artifact_slot": 2,
+    "location": "InputFrame",
+    "physical_slot": 2
+  },
+  "layout_generation": 0,
+  "output": {
+    "artifact_slot": 0,
+    "location": "State",
+    "physical_slot": 0
+  },
+  "persistent_candidate_bytes": 96,
+  "physical_slot_count": 21,
+  "plan_generation": 0,
+  "predicate_kernel_count": 3,
+  "program_revision": "affa67678a3991807c39daee9d99cf8f71e51f54c168b719528eea6314d25cea",
+  "projection": "activation",
+  "published_epoch": 0,
+  "resident_kernel_count": 15,
+  "schema_version": 1,
+  "state": [
+    {
+      "artifact_slot": 0,
+      "initializer": [
+        2.0,
+        1.0,
+        0.15
+      ],
+      "location": "State",
+      "physical_slot": 0
+    },
+    {
+      "artifact_slot": 1,
+      "initializer": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.05
+      ],
+      "location": "Covariance",
+      "physical_slot": 1
+    }
+  ],
+  "state_copy_count": 2
+}

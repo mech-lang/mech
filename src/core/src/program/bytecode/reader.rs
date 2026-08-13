@@ -244,6 +244,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         &instructions,
         constants.len(),
         requirements.len(),
+        !artifact.is_empty(),
     )?;
     for register in symbols.values().copied() {
         if !initialized[register as usize] {
@@ -294,6 +295,7 @@ fn validate_composite_packs(
     }
     let values = decode_constants(types, constants, blob)?;
     let mut registers = vec![None::<LegacyValue>; register_count];
+    let mut dynamic = vec![false; register_count];
     for instruction in instructions {
         match instruction {
             BytecodeInstruction::ConstLoad { dst, constant } => {
@@ -305,13 +307,37 @@ fn validate_composite_packs(
                 children,
             } => {
                 let template = &values[*template as usize];
-                let children = children
+                let static_children = children
                     .iter()
-                    .map(|child| registers[*child as usize].clone().unwrap())
-                    .collect::<Vec<_>>();
-                let rebuilt = crate::rebuild_bytecode_composite(template, children)?;
-                registers[*dst as usize] = Some(rebuilt);
+                    .map(|child| registers[*child as usize].clone())
+                    .collect::<Option<Vec<_>>>();
+                if let Some(children) = static_children {
+                    registers[*dst as usize] =
+                        Some(crate::rebuild_bytecode_composite(template, children)?);
+                } else {
+                    for child in children {
+                        if registers[*child as usize].is_none() && !dynamic[*child as usize] {
+                            return invalid(format!(
+                                "CompositePack child register {child} has no producer"
+                            ));
+                        }
+                    }
+                    let template_children = crate::bytecode_composite_children(template)
+                        .ok_or_else(|| {
+                            invalid::<()>("CompositePack template is not a composite value")
+                                .unwrap_err()
+                        })?;
+                    if template_children.len() != children.len() {
+                        return invalid(format!(
+                            "CompositePack template expects {} children, found {}",
+                            template_children.len(),
+                            children.len(),
+                        ));
+                    }
+                    dynamic[*dst as usize] = true;
+                }
             }
+            BytecodeInstruction::ResourceRead { dst, .. } => dynamic[*dst as usize] = true,
             _ => {}
         }
     }
@@ -635,6 +661,7 @@ fn validate_constant_and_requirement_reachability(
     instructions: &[BytecodeInstruction],
     constant_count: usize,
     requirement_count: usize,
+    artifact_present: bool,
 ) -> MResult<()> {
     let mut constants = vec![false; constant_count];
     let mut requirements = vec![false; requirement_count];
@@ -674,7 +701,9 @@ fn validate_constant_and_requirement_reachability(
         )
         .with_compiler_loc());
     }
-    if let Some(requirement) = requirements.iter().position(|referenced| !referenced) {
+    if !artifact_present
+        && let Some(requirement) = requirements.iter().position(|referenced| !referenced)
+    {
         return Err(MechError::new(
             BytecodeUnreferencedRequirement {
                 requirement: u32::try_from(requirement).unwrap_or(u32::MAX),
@@ -1202,7 +1231,13 @@ fn validate_instructions(
                 dst,
             } => {
                 requirement(*req)?;
-                require_initialized_register(&register, &initialized, index, *dst)?;
+                let destination = register(index, *dst)?;
+                if initialized[destination] {
+                    return invalid(format!(
+                        "instruction {index} register {dst} is initialized more than once"
+                    ));
+                }
+                initialized[destination] = true;
             }
             BytecodeInstruction::ResourceWrite {
                 requirement: req,

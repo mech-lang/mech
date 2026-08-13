@@ -1,0 +1,5 @@
+{
+  "path": "src/engine/src/resident/candidate.rs",
+  "baseline": "",
+  "current": "fn begin_candidate() { let _schemas: Option<SchemaTable> = None; }\n"
+}

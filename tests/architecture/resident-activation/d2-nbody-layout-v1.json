@@ -1,0 +1,19 @@
+{
+  "activation_storage": "immutable typed arenas",
+  "candidate_bytes": 480,
+  "candidate_materialized_bytes": 480,
+  "candidate_seed_bytes": 480,
+  "dual_state_payload_bytes": 960,
+  "fixed_width_node_mask": false,
+  "generic_executor": "src/engine/src/resident/general/execution.rs",
+  "node_mask_word_bits": 64,
+  "publication_store_count": 1,
+  "schema_version": 1,
+  "slot_count": 154,
+  "state_slot_count": 2,
+  "typed_arenas": [
+    "Bool/u8",
+    "Index/u64",
+    "F64/f64"
+  ]
+}

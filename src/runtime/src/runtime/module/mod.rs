@@ -646,7 +646,7 @@ impl MechRuntime {
         )
     }
 
-    pub fn resolve_and_run_root_module(
+    pub(crate) fn resolve_and_run_root_module(
         &mut self,
         request: impl Into<SourceRequest>,
         options: ModuleBuildOptions<'_>,
@@ -656,7 +656,7 @@ impl MechRuntime {
         self.resolve_and_run_root_module_with_context(&mut context, request, options)
     }
 
-    pub fn resolve_and_run_root_module_with_context(
+    pub(crate) fn resolve_and_run_root_module_with_context(
         &mut self,
         context: &mut RuntimeContext,
         request: impl Into<SourceRequest>,
@@ -667,7 +667,7 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "invariant_define")]
-    pub fn resolve_and_run_root_module_report(
+    pub(crate) fn resolve_and_run_root_module_report(
         &mut self,
         request: impl Into<SourceRequest>,
         options: ModuleBuildOptions<'_>,
@@ -678,7 +678,7 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "invariant_define")]
-    pub fn resolve_and_run_root_module_report_with_context(
+    pub(crate) fn resolve_and_run_root_module_report_with_context(
         &mut self,
         context: &mut RuntimeContext,
         request: impl Into<SourceRequest>,
@@ -746,11 +746,14 @@ impl MechRuntime {
                     runtime.validate_live_context_candidate(context)?;
                     runtime.commit_live_context_candidate(context);
                 }
-                Ok(RootModuleExecution {
+                let execution = RootModuleExecution {
                     result: crate::RuntimeValueSnapshot::try_capture(&result)?,
                     #[cfg(feature = "invariant_define")]
                     integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
-                })
+                };
+                #[cfg(feature = "resident-routing")]
+                runtime.stage_legacy_program_owner(context)?;
+                Ok(execution)
             },
         );
 

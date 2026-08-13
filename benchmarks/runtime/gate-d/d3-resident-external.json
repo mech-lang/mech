@@ -1,0 +1,227 @@
+{
+  "controls": {
+    "ratios": {
+      "high_epoch": 0.9970866485259036,
+      "history_100k": 1.0097698048561559,
+      "history_1k": 0.999696619354297
+    },
+    "timings": {
+      "high-epoch": {
+        "max_ns": 2921.2138671875,
+        "median_ns": 2875.762939453125,
+        "min_ns": 2863.63720703125,
+        "p95_ns": 2921.2138671875,
+        "samples": 3
+      },
+      "history-0": {
+        "max_ns": 2928.33447265625,
+        "median_ns": 2884.16552734375,
+        "min_ns": 2882.82275390625,
+        "p95_ns": 2928.33447265625,
+        "samples": 3
+      },
+      "history-100k": {
+        "max_ns": 2914.205078125,
+        "median_ns": 2912.34326171875,
+        "min_ns": 2903.74755859375,
+        "p95_ns": 2914.205078125,
+        "samples": 3
+      },
+      "history-1k": {
+        "max_ns": 2902.34375,
+        "median_ns": 2883.29052734375,
+        "min_ns": 2874.6845703125,
+        "p95_ns": 2902.34375,
+        "samples": 3
+      }
+    }
+  },
+  "d2_pure": {
+    "current_ns_per_turn": 323.5393347167969,
+    "frozen_ns_per_turn": 317.74862196180555,
+    "frozen_semantic_head": "96fd051608f9d9df9eb4e9b345af7c23279c6c67",
+    "nbody_report": "benchmarks/runtime/gate-d/d2-resident-nbody.json",
+    "regression_ratio": 1.0182241947085058
+  },
+  "decision": "Pass",
+  "fixtures": {
+    "effect": {
+      "lanes": {
+        "bytecode": {
+          "candidate_allocations": 0,
+          "effect_batch_hash": "fb6d2eeb0b81ce7b16decc793c0944007ea0cd87a3853c4de3a181582a4b1f78",
+          "effect_id_hash": "d382972185562fd71abcab687aa774d706677993e2dc83ce4350002896490ab3",
+          "idempotency_key_hash": "8c6c2eec10ad841d02ab26e106d62f2050ddbb9ea6258c8588a71a468464f3e1",
+          "ordinary_outbox_appends_per_turn": 1.0,
+          "provider_reads_per_turn": 1.0,
+          "publication_stores_per_turn": 1.0,
+          "receipt_appends_per_turn": 1.0,
+          "receipt_hash": "2e141835983cb4fd3a4bf941a0e56f2961570203e19fd9b046a0ecf5c9cf0588",
+          "state_hash": 11936116888897963276,
+          "timing": {
+            "max_ns": 3016.17431640625,
+            "median_ns": 2909.26611328125,
+            "min_ns": 2900.604248046875,
+            "p95_ns": 3016.17431640625,
+            "samples": 10
+          }
+        },
+        "source": {
+          "candidate_allocations": 0,
+          "effect_batch_hash": "fb6d2eeb0b81ce7b16decc793c0944007ea0cd87a3853c4de3a181582a4b1f78",
+          "effect_id_hash": "d382972185562fd71abcab687aa774d706677993e2dc83ce4350002896490ab3",
+          "idempotency_key_hash": "8c6c2eec10ad841d02ab26e106d62f2050ddbb9ea6258c8588a71a468464f3e1",
+          "ordinary_outbox_appends_per_turn": 1.0,
+          "provider_reads_per_turn": 1.0,
+          "publication_stores_per_turn": 1.0,
+          "receipt_appends_per_turn": 1.0,
+          "receipt_hash": "2e141835983cb4fd3a4bf941a0e56f2961570203e19fd9b046a0ecf5c9cf0588",
+          "state_hash": 11936116888897963276,
+          "timing": {
+            "max_ns": 5430.27734375,
+            "median_ns": 2928.7923583984375,
+            "min_ns": 2908.172607421875,
+            "p95_ns": 5430.27734375,
+            "samples": 10
+          }
+        }
+      },
+      "replay": {
+        "effect_batch_hash": "fb6d2eeb0b81ce7b16decc793c0944007ea0cd87a3853c4de3a181582a4b1f78",
+        "effect_batch_hash_exact": true,
+        "effect_id_hash": "d382972185562fd71abcab687aa774d706677993e2dc83ce4350002896490ab3",
+        "effect_id_hash_exact": true,
+        "elapsed_ns": 7849375,
+        "fixture": "effect",
+        "idempotency_key_hash": "8c6c2eec10ad841d02ab26e106d62f2050ddbb9ea6258c8588a71a468464f3e1",
+        "idempotency_key_hash_exact": true,
+        "provider_reads": 0,
+        "publication_stores": 4096,
+        "receipt_hash": "2e141835983cb4fd3a4bf941a0e56f2961570203e19fd9b046a0ecf5c9cf0588",
+        "receipt_hash_exact": true,
+        "state_hash": 11936116888897963276,
+        "state_hash_exact": true,
+        "turns": 4096
+      },
+      "source_bytecode_exact": true,
+      "source_bytecode_ratio": 1.0067117425346712
+    },
+    "transactional": {
+      "lanes": {
+        "bytecode": {
+          "candidate_allocations": 0,
+          "effect_batch_hash": "79cf5c905db8097facf500b67ca34a4a400e8b6f0e4c74a259e7ce0e31c5b547",
+          "effect_id_hash": "d382972185562fd71abcab687aa774d706677993e2dc83ce4350002896490ab3",
+          "idempotency_key_hash": "fad030caffd57790f19f8697a88bd5198607c1a08e4c6829b05c7421ed4f88b8",
+          "ordinary_outbox_appends_per_turn": 0.0,
+          "provider_reads_per_turn": 1.0,
+          "publication_stores_per_turn": 1.0,
+          "receipt_appends_per_turn": 1.0,
+          "receipt_hash": "7ccb043dd47063d566eeb6c57abe515f478c4be8a01cbce25ae417152dc24767",
+          "state_hash": 16972381692412436126,
+          "timing": {
+            "max_ns": 2665.9140625,
+            "median_ns": 2639.8468017578125,
+            "min_ns": 2625.35595703125,
+            "p95_ns": 2665.9140625,
+            "samples": 10
+          }
+        },
+        "source": {
+          "candidate_allocations": 0,
+          "effect_batch_hash": "79cf5c905db8097facf500b67ca34a4a400e8b6f0e4c74a259e7ce0e31c5b547",
+          "effect_id_hash": "d382972185562fd71abcab687aa774d706677993e2dc83ce4350002896490ab3",
+          "idempotency_key_hash": "fad030caffd57790f19f8697a88bd5198607c1a08e4c6829b05c7421ed4f88b8",
+          "ordinary_outbox_appends_per_turn": 0.0,
+          "provider_reads_per_turn": 1.0,
+          "publication_stores_per_turn": 1.0,
+          "receipt_appends_per_turn": 1.0,
+          "receipt_hash": "7ccb043dd47063d566eeb6c57abe515f478c4be8a01cbce25ae417152dc24767",
+          "state_hash": 16972381692412436126,
+          "timing": {
+            "max_ns": 2676.605224609375,
+            "median_ns": 2638.890625,
+            "min_ns": 2629.87255859375,
+            "p95_ns": 2676.605224609375,
+            "samples": 10
+          }
+        }
+      },
+      "replay": {
+        "effect_batch_hash": "79cf5c905db8097facf500b67ca34a4a400e8b6f0e4c74a259e7ce0e31c5b547",
+        "effect_batch_hash_exact": true,
+        "effect_id_hash": "d382972185562fd71abcab687aa774d706677993e2dc83ce4350002896490ab3",
+        "effect_id_hash_exact": true,
+        "elapsed_ns": 7819833,
+        "fixture": "transactional",
+        "idempotency_key_hash": "fad030caffd57790f19f8697a88bd5198607c1a08e4c6829b05c7421ed4f88b8",
+        "idempotency_key_hash_exact": true,
+        "provider_reads": 0,
+        "publication_stores": 4096,
+        "receipt_hash": "7ccb043dd47063d566eeb6c57abe515f478c4be8a01cbce25ae417152dc24767",
+        "receipt_hash_exact": true,
+        "state_hash": 16972381692412436126,
+        "state_hash_exact": true,
+        "turns": 4096
+      },
+      "source_bytecode_exact": true,
+      "source_bytecode_ratio": 1.0003623404277366
+    }
+  },
+  "gate": "D",
+  "generated_at_utc": "2026-08-12T22:07:15.954986+00:00",
+  "hard_gates": {
+    "accepted_publication_store": true,
+    "accepted_receipt_append": true,
+    "candidate_allocations": true,
+    "d2_pure_regression": true,
+    "epoch_independent": true,
+    "history_independent": true,
+    "live_reads_exact": true,
+    "no_commit_runtime": true,
+    "no_legacy_journal": true,
+    "no_premature_delivery": true,
+    "no_rejected_delivery": true,
+    "no_runtime_execution_transaction": true,
+    "ordinary_outbox_append": true,
+    "rejected_publication_store": true,
+    "replay_exact": true,
+    "replay_reads_zero": true,
+    "source_bytecode_exact": true,
+    "source_bytecode_ratio": true
+  },
+  "machine": {
+    "architecture": "arm64",
+    "platform": "macOS-26.2-arm64-arm-64bit",
+    "processor": "arm"
+  },
+  "phase": "D3-resident-external",
+  "sample_protocol": {
+    "profile": "release",
+    "samples": 10,
+    "turns_per_sample": 4096
+  },
+  "schema_version": 1,
+  "semantic_commit": "cf61038766c3ec6c83fe6aeac5d0c41d579036f1",
+  "structural": {
+    "candidate_allocations": 0,
+    "commit_runtime_calls": 0,
+    "effects_delivered_before_publication": 0,
+    "effects_delivered_for_rejected_turns": 0,
+    "legacy_journal_captures": 0,
+    "post_candidate_rejections": 1,
+    "publication_stores_per_accepted_turn": 1,
+    "publication_stores_per_rejected_turn": 0,
+    "rejected_delivery_count": 0,
+    "rejected_outbox_batch_appends": 0,
+    "rejected_provider_preparation_attempts": 1,
+    "rejected_receipt_appends": 1,
+    "runtime_execution_transaction_constructions": 0
+  },
+  "thresholds": {
+    "d2_pure_complete_turn_regression_max": 1.05,
+    "d3_source_bytecode_ratio_max": 1.03,
+    "high_epoch_ratio_max": 1.05,
+    "history_ratio_max": 1.05
+  }
+}

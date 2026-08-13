@@ -1,5 +1,7 @@
 use mech_core::CellSlotId;
 
+use crate::efficacy::ekf::operation::{EkfConstants, EkfKernel};
+
 pub(crate) const LOGICAL_SLOTS_PER_EKF: u32 = 17;
 pub(crate) const NODES_PER_EKF: usize = 15;
 
@@ -28,43 +30,16 @@ pub(crate) struct SlotDecl {
     pub(crate) instance: u32,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum EkfOp {
-    TrigonometricState,
-    MotionJacobian,
-    ControlJacobian,
-    PredictedState,
-    PredictedCovariance,
-    LandmarkDeltaAndRange,
-    PredictedMeasurement,
-    MeasurementJacobian,
-    InnovationCovariance,
-    Solve2x2,
-    KalmanGain,
-    Innovation,
-    CorrectedState,
-    JosephCovarianceUpdate,
-    CovarianceSymmetrization,
-}
-
 #[derive(Clone, Debug)]
 pub(crate) struct NodeDecl {
-    pub(crate) op: EkfOp,
+    pub(crate) op: EkfKernel,
     pub(crate) instance: u32,
     pub(crate) reads: Box<[CellSlotId]>,
     pub(crate) writes: Box<[CellSlotId]>,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub(crate) struct EkfConstants {
-    pub(crate) dt: f64,
-    pub(crate) landmark: [f64; 2],
-    pub(crate) process_covariance: [f64; 4],
-    pub(crate) measurement_covariance: [f64; 4],
-}
-
 #[derive(Clone, Debug)]
-pub(crate) struct ProgramArtifact {
+pub(crate) struct GateBControlFixture {
     pub(crate) instances: usize,
     pub(crate) slots: Box<[SlotDecl]>,
     pub(crate) nodes: Box<[NodeDecl]>,
@@ -105,7 +80,7 @@ pub(crate) mod slot {
     }
 }
 
-fn node(instance: u32, op: EkfOp, reads: &[u32], writes: &[u32]) -> NodeDecl {
+fn node(instance: u32, op: EkfKernel, reads: &[u32], writes: &[u32]) -> NodeDecl {
     NodeDecl {
         op,
         instance,
@@ -121,7 +96,7 @@ fn node(instance: u32, op: EkfOp, reads: &[u32], writes: &[u32]) -> NodeDecl {
 }
 
 fn append_ekf_nodes(nodes: &mut Vec<NodeDecl>, instance: u32) {
-    use EkfOp::*;
+    use EkfKernel::*;
     use slot::*;
 
     nodes.extend([
@@ -212,8 +187,8 @@ fn append_ekf_nodes(nodes: &mut Vec<NodeDecl>, instance: u32) {
     ]);
 }
 
-impl ProgramArtifact {
-    pub(crate) fn frozen_ekf_batch(instances: usize) -> Self {
+impl GateBControlFixture {
+    pub(crate) fn new(instances: usize) -> Self {
         assert!(instances > 0, "resident EKF batch must not be empty");
         let slot_capacity = instances
             .checked_mul(LOGICAL_SLOTS_PER_EKF as usize)

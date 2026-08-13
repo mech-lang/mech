@@ -1,0 +1,5 @@
+error[E0599]: no method named `into_coordinator_parts` found for struct `ReactiveInstance` in the current scope
+ --> tests/ui/resident_external_sealed/external_activation_decomposition.rs:4:44
+  |
+4 |     let (_instance, _authority) = instance.into_coordinator_parts();
+  |                                            ^^^^^^^^^^^^^^^^^^^^^^ method not found in `ReactiveInstance`

@@ -1,5 +1,33 @@
 #[macro_use]
 use crate::intrinsics::*;
+use std::sync::LazyLock;
+
+static PURE_VERTICAL_VARIADIC_BUILD_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 1,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: "vertical-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 // Vertical Concatenate -----------------------------------------------------
 
@@ -375,6 +403,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateTwoArgs\n{:#?}", self.out)
     }
@@ -701,6 +732,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateNArgs\n{:#?}", self.out)
@@ -1254,6 +1288,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_VERTICAL_VARIADIC_BUILD_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("VerticalConcatenateVDN\n{:#?}", self.out)

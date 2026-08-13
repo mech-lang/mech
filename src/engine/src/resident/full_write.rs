@@ -2,7 +2,10 @@ use core::sync::atomic::{AtomicU64, Ordering};
 
 use mech_core::InstanceEpoch;
 
-use super::{ResidentExecutionError, bench::ResidentTurnSummary, publish_epoch};
+use super::{
+    ResidentCandidateExecutionError as ResidentExecutionError, bench::ResidentTurnSummary,
+    publish_epoch,
+};
 
 pub const FULL_WRITE_ELEMENTS: usize = 64 * 64;
 
@@ -53,10 +56,9 @@ impl PreparedResidentFullWrite<'_> {
 
 impl Drop for PreparedResidentFullWrite<'_> {
     fn drop(&mut self) {
-        debug_assert!(
-            self.candidate.is_none(),
-            "prepared resident full write must publish or abort explicitly"
-        );
+        if let Some(candidate) = self.candidate.take() {
+            candidate.abort();
+        }
     }
 }
 
@@ -107,10 +109,9 @@ impl PreparedFullWriteCandidate<'_> {
 
 impl Drop for PreparedFullWriteCandidate<'_> {
     fn drop(&mut self) {
-        debug_assert!(
-            self.resident.is_none(),
-            "resident full-write candidate must publish or abort explicitly"
-        );
+        if let Some(resident) = self.resident.take() {
+            resident.buffer_epochs[self.candidate] = None;
+        }
     }
 }
 

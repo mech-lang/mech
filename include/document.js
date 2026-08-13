@@ -384,20 +384,12 @@ function outputAddress(element) {
   };
 }
 
-function resolveNamedInterpreter(name) {
-  const identifier = state.document.interpreterIdByName(name);
-  if (identifier === null || identifier === undefined) {
-    throw new Error(`named interpreter \`${name}\` was not found`);
-  }
-  return identifier.toString();
-}
-
 function prepareVarPlaceholders() {
   const root = state.root;
   if (!root) {
     return;
   }
-  const pattern = /\{\{VAR:([^@}\s]+)(?:@([^}\s]+))?\}\}/g;
+  const pattern = /\{\{VAR:([^@}\s]+)\}\}/g;
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const candidates = [];
   while (walker.nextNode()) {
@@ -420,15 +412,6 @@ function prepareVarPlaceholders() {
       const placeholder = document.createElement("span");
       placeholder.className = "mech-var-placeholder";
       placeholder.dataset.mechVarName = match[1];
-      try {
-        placeholder.dataset.mechInterpreterId = match[2]
-          ? resolveNamedInterpreter(match[2])
-          : "0";
-      } catch (error) {
-        placeholder.dataset.mechInterpreterError = errorMessage(error);
-        placeholder.textContent = "[unresolved Mech variable]";
-        appendError(error);
-      }
       fragment.append(placeholder);
       cursor = pattern.lastIndex;
     }
@@ -501,12 +484,9 @@ function renderValues() {
     }
   }
   for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
-    if (placeholder.dataset.mechInterpreterError) {
-      continue;
-    }
     try {
       const rendered = state.document.renderedSymbol(
-        BigInt(placeholder.dataset.mechInterpreterId || "0"),
+        0n,
         placeholder.dataset.mechVarName,
       );
       if (rendered !== null) {
@@ -559,6 +539,10 @@ function appendRenderedResult(rendered) {
 function appendConsoleError(error) {
   appendTranscriptRow("mech-repl-error", errorMessage(error));
   appendError(error);
+}
+
+function supportsInteractiveEvaluation() {
+  return typeof state.document?.evaluate === "function";
 }
 
 function appendHelp() {
@@ -642,6 +626,11 @@ async function runConsoleCommand(source) {
     return;
   }
   if (!input.startsWith(":")) {
+    if (!supportsInteractiveEvaluation()) {
+      throw new Error(
+        "interactive source evaluation is unavailable in standard resident documents; use :help for document commands",
+      );
+    }
     const rendered = state.document.evaluate(source);
     appendRenderedResult(rendered);
     renderValues();
@@ -709,12 +698,20 @@ function attachConsole() {
   transcriptElement.setAttribute("aria-live", "polite");
   const inputRow = document.createElement("div");
   inputRow.className = "mech-repl-input-row";
+  const interactiveEvaluation = supportsInteractiveEvaluation();
   const prompt = document.createElement("span");
   prompt.className = "repl-prompt";
-  prompt.textContent = ">:";
+  prompt.textContent = interactiveEvaluation ? ">:" : ":";
   const input = document.createElement("textarea");
   input.className = "repl-input";
-  input.setAttribute("aria-label", "Mech REPL input");
+  input.dataset.mechInteractiveEvaluation = interactiveEvaluation ? "available" : "unavailable";
+  input.setAttribute(
+    "aria-label",
+    interactiveEvaluation ? "Mech developer REPL input" : "Mech document command input",
+  );
+  if (!interactiveEvaluation) {
+    input.placeholder = "Document commands only (:help)";
+  }
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
