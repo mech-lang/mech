@@ -1033,7 +1033,7 @@ impl<'a> Compiler<'a> {
             && contract.outputs[0].delivery == DeliveryMode::Signal
             && matches!(
                 contract.outputs[0].construction,
-                OutputConstruction::Replace { .. }
+                OutputConstruction::Replace { .. } | OutputConstruction::FullWrite { .. }
             )
             && contract.outputs[0].alias == AliasPolicy::NoAlias;
         if !admitted {
@@ -1041,7 +1041,7 @@ impl<'a> Compiler<'a> {
                 GpuDiagnosticCode::PortContractUnsupported,
                 Some(node),
                 Some(operation.to_owned()),
-                "state Assign must be pure whole-value replacement with no aliases",
+                "state Assign must be a pure full write with no aliases",
             );
         }
         admitted
