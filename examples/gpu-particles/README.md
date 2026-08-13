@@ -16,10 +16,15 @@ The GPU program is lowered from the ordinary matrix expressions in
 `particles.mec`. Unsupported regions fail with compiler diagnostics instead of
 silently moving to the CPU.
 
+The project configuration explicitly selects `../../src/wasm/pkg`. This keeps
+the GPU-capable JavaScript/WASM pair together and prevents `mech serve` from
+falling back to a differently profiled WASM module embedded in an older native
+executable.
+
 ## macOS
 
 Install `wasm-pack` once if it is not already available, then build the browser
-runtime before building the server so the executable embeds the new WASM files:
+runtime before building and starting the server:
 
 ```text
 cargo install wasm-pack --locked

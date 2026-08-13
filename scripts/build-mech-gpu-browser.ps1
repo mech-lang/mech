@@ -23,6 +23,12 @@ try {
       !(Test-Path "src/wasm/pkg/mech_wasm_bg.wasm")) {
     throw "The Mech GPU browser package is incomplete."
   }
+
+  $wasmGlue = Get-Content "src/wasm/pkg/mech_wasm.js" -Raw
+  if (!$wasmGlue.Contains("export class WasmMixedGpuProject") -or
+      !$wasmGlue.Contains("static fromSource(")) {
+    throw "The Mech GPU browser package does not export WasmMixedGpuProject.fromSource."
+  }
 } finally {
   Pop-Location
 }

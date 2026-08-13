@@ -940,6 +940,13 @@ positions = next-positions
             ConfigProfileOptions::default(),
         )
         .unwrap();
+        assert_eq!(
+            document
+                .serve
+                .as_ref()
+                .and_then(|serve| serve.wasm.as_deref()),
+            Some(std::path::Path::new("../../src/wasm/pkg")),
+        );
         let tree = mech_syntax::parse(SERVED_SOURCE).unwrap();
         let prepared = compile_named_gpu_region(&document, &tree, 0.0).unwrap();
 
