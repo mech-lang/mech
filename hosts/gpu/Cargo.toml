@@ -28,6 +28,11 @@ path = "examples/particle_benchmark.rs"
 required-features = ["native"]
 
 [[example]]
+name = "compute_backend_benchmark"
+path = "examples/compute_backend_benchmark.rs"
+required-features = ["native"]
+
+[[example]]
 name = "parallel_ekf_benchmark"
 path = "examples/parallel_ekf_benchmark.rs"
 required-features = ["native"]
