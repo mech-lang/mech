@@ -240,9 +240,10 @@ impl<B: MonotonicTimerBackend> RuntimeHostFactory for BrowserTimerHostFactory<B>
         let snapshot = new_shared_snapshot(initial);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(TimerResourceProvider::new(
+            resource_providers: vec![Box::new(TimerResourceProvider::new_with_planning_snapshot(
                 instance_name,
                 snapshot.clone(),
+                initial,
             ))],
             input_drivers: vec![Box::new(BrowserTimerInputDriver::new(
                 instance_name,

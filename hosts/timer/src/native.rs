@@ -611,9 +611,10 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostFactory for NativeTimerH
         let snapshot = new_shared_snapshot(initial);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(TimerResourceProvider::new(
+            resource_providers: vec![Box::new(TimerResourceProvider::new_with_planning_snapshot(
                 instance_name,
                 snapshot.clone(),
+                initial,
             ))],
             input_drivers: vec![Box::new(NativeTimerInputDriver::new(
                 instance_name,
