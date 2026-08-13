@@ -174,7 +174,11 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
         "state initializers are retained"
     );
     let placement = GpuHost.plan(&artifact);
-    assert!(placement.fully_accelerated);
+    assert!(
+        placement.fully_accelerated,
+        "unexpected CPU placement: {:#?}",
+        placement.nodes
+    );
     assert_eq!(placement.gpu_regions.len(), 1);
     assert_eq!(
         placement

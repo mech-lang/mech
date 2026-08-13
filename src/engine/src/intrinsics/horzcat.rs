@@ -7273,12 +7273,12 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 /// dynamic-matrix source without expanding the frozen runtime-only catalog.
 #[cfg(feature = "semantic-compiler")]
 pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    // Native planning installs the same variadic compiler output with linkage
-    // metadata.  Source-only catalogs still need the unlinked factory, while
-    // compiler catalogs must keep the linked entry rather than register it a
-    // second time.
-    #[cfg(all(feature = "f64", feature = "matrixd", not(feature = "native-plan")))]
-    register_horizontal_concatenate_n_args_f64(builder)?;
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    if !builder.contains_runtime_factory(mech_core::RuntimeFunctionId::from_name(
+        "HorizontalConcatenateNArgs<f64>",
+    )) {
+        register_horizontal_concatenate_n_args_f64(builder)?;
+    }
     Ok(())
 }
 
