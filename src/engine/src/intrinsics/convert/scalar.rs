@@ -762,6 +762,15 @@ fn impl_conversion_fxn(
     )
 }
 
+pub(crate) fn convert_literal_value(
+    source_value: LegacyValue,
+    target_kind: LegacyValue,
+) -> MResult<LegacyValue> {
+    let conversion = impl_conversion_fxn(source_value, target_kind)?;
+    conversion.solve_result()?;
+    Ok(conversion.out())
+}
+
 pub struct ConvertKind {}
 
 impl FunctionSpecializer for ConvertKind {

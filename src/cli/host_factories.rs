@@ -3,6 +3,8 @@ use std::collections::BTreeSet;
 #[cfg(feature = "console_host_native")]
 use mech_console::NativeConsoleHostFactory;
 use mech_core::MResult;
+#[cfg(feature = "gpu_executor_native")]
+use mech_gpu::NativeGpuHostFactory;
 use mech_runtime::{RuntimeBuilder, RuntimeHostFactory};
 #[cfg(feature = "scene_host_native")]
 use mech_scene::NativeSceneHostFactory;
@@ -46,6 +48,13 @@ pub fn register_cli_host_factories(
         let scene_factory = NativeSceneHostFactory::new()?;
         providers.insert(scene_factory.provider_name().to_string());
         builder = builder.host_factory(Box::new(scene_factory))?;
+    }
+
+    #[cfg(feature = "gpu_executor_native")]
+    {
+        let gpu_factory = NativeGpuHostFactory::new();
+        providers.insert(gpu_factory.provider_name().to_string());
+        builder = builder.host_factory(Box::new(gpu_factory))?;
     }
 
     Ok((builder, providers))

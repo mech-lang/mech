@@ -403,6 +403,16 @@ pub enum ArtifactBuildError {
     MissingInputInterfaceName {
         register: u32,
     },
+    MissingExternalInputDefinition {
+        name: String,
+    },
+    AmbiguousExternalInputDefinition {
+        name: String,
+    },
+    InvalidExternalInputDefinition {
+        name: String,
+        register: u32,
+    },
     AmbiguousRegisterRole {
         register: u32,
     },

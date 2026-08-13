@@ -1,0 +1,27 @@
++> math
+
+// The complete particle application is Mech: size, initial state, constants,
+// and the recurring simulation step. The configured executor decides whether
+// the typed recurring graph runs on the CPU or GPU.
+particle-count := 2000000f32
+particle-index := 1f32..=particle-count
+radius-seed := math/sin(particle-index * 12.9898<f32>) * 0.5<f32> + 0.5<f32>
+arm := math/mod(particle-index, 4f32)
+radius := 0.06<f32> + radius-seed * 0.86<f32>
+angle := radius * 14f32 + arm * 1.5707963<f32>
+particle-x := math/cos(angle) * radius
+particle-y := math/sin(angle) * radius
+~positions := [particle-x; particle-y]
+~velocities := [(0f32 - particle-y); particle-x] * 0.72<f32>
+origin := 0f32
+attraction := 0.45<f32>
+nonlinear-attraction := 0.65<f32>
+dt := 0.02<f32>
+position-square := positions * positions
+restoring-force := attraction + position-square * nonlinear-attraction
+acceleration := (origin - positions) * restoring-force
+next-velocities := velocities + acceleration * dt
+next-positions := positions + next-velocities * dt
+velocities = next-velocities
+positions = next-positions
+(positions, velocities)

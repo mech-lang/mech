@@ -1,0 +1,63 @@
+config := {
+  hosts: [
+    {
+      name: "clock"
+      provider: "timer"
+      settings: {
+        frequency-hz: 2
+        max-catch-up-steps: 1
+      }
+    }
+    {
+      name: "particles"
+      provider: "gpu"
+      settings: {
+        source: "kernel.mec"
+        backend: "auto"
+        backends: ["wgpu" "cpu"]
+        turns-per-dispatch: 1
+        inputs: {
+          force-x: 0.0
+          force-y: 0.0
+          force-enabled: 0.0
+          dt: 0.016
+        }
+      }
+    }
+    {
+      name: "console"
+      provider: "console"
+      settings: {}
+    }
+  ]
+
+  run: {
+    paths: ["app.mec"]
+    grants: [
+      {
+        target: "clock/tick"
+        operations: ["read"]
+        paths: ["tick"]
+      }
+      {
+        target: "particles/kernel"
+        operations: ["read", "write"]
+        paths: [
+          "adapter"
+          "turns"
+          "dispatch-ms"
+          "input/force-x"
+          "input/force-y"
+          "input/force-enabled"
+          "input/dt"
+          "turn"
+        ]
+      }
+      {
+        target: "console/output"
+        operations: ["write"]
+        paths: ["line"]
+      }
+    ]
+  }
+}

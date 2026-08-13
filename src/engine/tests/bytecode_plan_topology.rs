@@ -2,6 +2,8 @@ use mech_bytecode::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,
 };
+#[cfg(feature = "native-plan")]
+use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, EncodedConstant,
@@ -444,7 +446,7 @@ fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> M
         assert_eq!(artifact_a.bindings(), artifact_b.bindings());
         assert_eq!(artifact_a.outputs(), artifact_b.outputs());
         assert!(!artifact_a.schemas().is_empty());
-        assert!(!artifact_a.constants().is_empty());
+        assert_eq!(artifact_a.constants().len(), artifact_b.constants().len());
     }
     Ok(())
 }
@@ -468,6 +470,24 @@ fn compile_artifact_fixture(source: &str) -> MResult<(ProgramArtifact, ProgramAr
         bytecode_artifact.constraints()
     );
     Ok((source_artifact, bytecode_artifact))
+}
+
+#[test]
+fn composite_return_materialization_has_semantic_node_metadata() -> MResult<()> {
+    let (artifact, decoded) = compile_artifact_fixture("(1.0, 2.0)")?;
+    let composite = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack"
+        })
+        .expect("direct tuple return must retain its composite-pack node");
+    assert_eq!(composite.input_bindings.len(), 2);
+    assert_eq!(composite.output_bindings.len(), 1);
+    assert_eq!(artifact.outputs().len(), 1);
+    assert_eq!(artifact.outputs(), decoded.outputs());
+    Ok(())
 }
 
 fn assert_f64_schema(artifact: &ProgramArtifact, schema: mech_core::SchemaId) {
@@ -654,6 +674,45 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "native-plan")]
+#[test]
+fn mutable_matrix_state_retains_its_declaration_time_initializer() -> MResult<()> {
+    let mut builder = FunctionCatalogBuilder::new();
+    mech_engine::install_intrinsic_native_plan(&mut builder)?;
+    mech_engine::install_intrinsic_source(&mut builder)?;
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        Arc::new(builder.build()?),
+    );
+    program.run_string(
+        "~state := [1.0 2.0; 3.0 4.0]\nreplacement := [0.0 0.0; 0.0 0.0]\nstate = replacement\nstate",
+    )?;
+    let artifact = program.compile_program_product()?.into_parts().0;
+    let state = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == SlotRole::State)
+        .expect("mutable matrix must produce a state slot");
+    let InitializerReference::Constant(initializer) = state
+        .initializer
+        .expect("mutable matrix state must retain an initializer");
+    let ValueData::Matrix(initializer) = artifact.constants().get(initializer).unwrap().data()
+    else {
+        panic!("matrix state initializer must remain a matrix")
+    };
+    let SequenceView::F64(values) = initializer.elements() else {
+        panic!("matrix state initializer must retain f64 elements")
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        vec![1.0, 2.0, 3.0, 4.0]
+    );
+    Ok(())
+}
+
 #[test]
 fn constant_matrix_inside_event_remains_an_explicit_artifact_constructor() -> MResult<()> {
     let (artifact, bytecode_artifact) = compile_artifact_fixture(include_str!(
@@ -685,6 +744,35 @@ fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
         .find(|slot| slot.role == SlotRole::State)
         .expect("equal state initializer must retain its state role");
     assert!(state.initializer.is_some());
+    Ok(())
+}
+
+#[test]
+fn state_reads_precede_the_first_commit_and_multiple_commits_remain_distinct() -> MResult<()> {
+    let (artifact, decoded) = compile_artifact_fixture(
+        "~state := 1.0\nlimit := 2.0\nbefore := state < limit\nstate = limit\nstate = 3.0\nstate",
+    )?;
+    assert_eq!(artifact.revision(), decoded.revision());
+    let states = artifact
+        .slots()
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+        .collect::<Vec<_>>();
+    assert_eq!(states.len(), 2);
+
+    let first_state = states[0].slot;
+    let first_consumer = artifact
+        .nodes()
+        .iter()
+        .find(|node| node.operation.operation_name == TEST_LESS_RUNTIME)
+        .expect("source contains a comparison before the first commit");
+    assert!(first_consumer.input_bindings.clone().any(|index| matches!(
+        artifact.bindings().get(index as usize),
+        Some(BindingDeclaration::Input {
+            source: ArtifactSource::Slot(slot),
+            ..
+        }) if *slot == first_state
+    )));
     Ok(())
 }
 
@@ -1583,6 +1671,21 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     }
     assert_matrix_literal_chain(&source.interpreter().plan());
     assert_matrix_literal_chain(&decoded.interpreter().plan());
+    Ok(())
+}
+
+#[test]
+fn typed_literal_conversion_is_folded_into_the_constant() -> MResult<()> {
+    let mut source = source_program();
+    let output = source.run_string("1f32")?;
+    assert!(matches!(output, LegacyValue::F32(_)));
+
+    let artifact = source.compile_program_product()?.into_parts().0;
+    assert!(artifact.nodes().iter().all(|node| {
+        node.operation.module_path.as_ref() != ["convert"]
+            && !node.operation.operation_name.contains("Convert")
+    }));
+    assert_eq!(artifact.constants().len(), 1);
     Ok(())
 }
 

@@ -1,0 +1,43 @@
++> math
+
+-- This entire recurring numeric graph is compiled by the configured GPU host.
+-- These named scalar declarations are the kernel's host input interface. The
+-- defaults establish types; the configured GPU host supplies turn values.
+force-x := 0f32
+force-y := 0f32
+force-enabled := 0f32
+dt := 0.016<f32>
+
+particle-count := 4096f32
+particle-index := 1f32..=particle-count
+radius-seed := math/sin(particle-index * 12.9898<f32>) * 0.5<f32> + 0.5<f32>
+arm := math/mod(particle-index, 4f32)
+radius := 0.06<f32> + radius-seed * 0.86<f32>
+angle := radius * 14f32 + arm * 1.5707963<f32>
+particle-x := math/cos(angle) * radius
+particle-y := math/sin(angle) * radius
+
+~x := particle-x + 0f32
+~y := particle-y + 0f32
+~vx := (0f32 - particle-y) * 0.72<f32>
+~vy := particle-x * 0.72<f32>
+
+dx := force-x - x
+dy := force-y - y
+force-distance2 := dx * dx + dy * dy + 0.02<f32>
+external-force := force-enabled * 0.002<f32> / force-distance2
+position-square := x * x + y * y
+restoring-force := 0.45<f32> + position-square * 0.65<f32>
+ax := (0f32 - x) * restoring-force + dx * external-force
+ay := (0f32 - y) * restoring-force + dy * external-force
+next-vx := vx + ax * dt
+next-vy := vy + ay * dt
+next-x := x + next-vx * dt
+next-y := y + next-vy * dt
+
+vx = next-vx
+vy = next-vy
+x = next-x
+y = next-y
+
+x

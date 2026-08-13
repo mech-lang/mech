@@ -24,6 +24,7 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
     let uuid = generate_uuid();
     let input_mode = options.input_mode;
     let loaded_config = options.loaded_config;
+    let backend_override = options.backend;
     let runtime_config = effective_run_runtime_config(
         loaded_config.as_ref(),
         format!("program-{}", uuid),
@@ -37,10 +38,39 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         loaded_config.as_ref(),
         options.cli_capability_selection,
     )?;
-    let configured_hosts = loaded_config
+    let mut configured_hosts = loaded_config
         .as_ref()
         .map(|loaded| loaded.document.hosts.clone())
         .unwrap_or_default();
+    if let Some(loaded) = loaded_config.as_ref() {
+        for host in &mut configured_hosts {
+            if host.provider != "gpu" {
+                continue;
+            }
+            let mech_runtime::ConfigValue::Map(settings) = &mut host.settings else {
+                continue;
+            };
+            let Some(mech_runtime::ConfigValue::String(source)) = settings.get_mut("source") else {
+                continue;
+            };
+            let path = crate::resolve_config_path(&loaded.base_dir, std::path::Path::new(source));
+            *source = path.to_string_lossy().into_owned();
+        }
+    }
+    if let Some(backend) = backend_override {
+        for host in &mut configured_hosts {
+            if host.provider != "gpu" {
+                continue;
+            }
+            let mech_runtime::ConfigValue::Map(settings) = &mut host.settings else {
+                continue;
+            };
+            settings.insert(
+                "backend".to_owned(),
+                mech_runtime::ConfigValue::String(backend.clone()),
+            );
+        }
+    }
     let configured_run_grants = loaded_config
         .as_ref()
         .and_then(|loaded| loaded.document.run.as_ref())
@@ -159,6 +189,7 @@ mod tests {
             time: false,
             repl: false,
             rounds_per_step: None,
+            backend: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),
@@ -189,6 +220,7 @@ mod tests {
             time: false,
             repl: false,
             rounds_per_step: None,
+            backend: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),

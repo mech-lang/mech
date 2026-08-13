@@ -15,6 +15,7 @@ pub(crate) struct RunCliArgs {
     pub time: bool,
     pub repl: bool,
     pub rounds_per_step: Option<usize>,
+    pub backend: Option<String>,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
 }
 
@@ -46,6 +47,9 @@ impl RunCliArgs {
             rounds_per_step: run_matches
                 .and_then(|matches| matches.get_one::<usize>("rounds-per-step").copied())
                 .or(root.rounds_per_step),
+            backend: run_matches
+                .and_then(|matches| matches.get_one::<String>("backend"))
+                .cloned(),
             cli_capability_selection: cli_host_capability_selection(root_matches, run_matches),
         })
     }
@@ -59,6 +63,7 @@ pub(crate) struct PreparedRunOptions {
     pub time: bool,
     pub repl: bool,
     pub rounds_per_step: Option<usize>,
+    pub backend: Option<String>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub config_event: config::ConfigLoadEvent,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
@@ -86,6 +91,7 @@ pub(crate) fn prepare_run_options(
         time: args.time,
         repl: args.repl,
         rounds_per_step: args.rounds_per_step,
+        backend: args.backend,
         loaded_config,
         config_event: loaded.event,
         cli_capability_selection: args.cli_capability_selection,

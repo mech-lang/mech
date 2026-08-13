@@ -1,0 +1,23 @@
+config := {
+  runtime: {
+    name: "gpu-particles"
+    limits: {
+      max-turn-duration-ms: 10000
+    }
+  }
+
+  run: {
+    paths: ["particles.mec"]
+    executor: {
+      provider: "gpu"
+      turns: 120
+    }
+  }
+
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["particles.mec"]
+    shim: "index.html"
+  }
+}

@@ -63,6 +63,12 @@ pub(crate) fn command() -> Command {
       .value_parser(crate::cli::rounds_per_step_value_parser())
       .help("Sets the number of rounds per step. Must be a positive integer. Overrides runtime.limits.max-steps-per-turn.")
       .required(false))
+    .arg(Arg::new("backend")
+      .long("backend")
+      .value_name("BACKEND")
+      .value_parser(["auto", "wgpu", "cpu"])
+      .help("Override the configured accelerator backend for this run.")
+      .required(false))
     .arg(Arg::new("trace")
       .long("trace")
       .help("Print trace output for state-machine arms and function calls")
@@ -101,7 +107,7 @@ pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
     collect_run_targets_with_capabilities(path, authority.kernel())
 }
 
-fn collect_run_targets_with_capabilities(
+pub(crate) fn collect_run_targets_with_capabilities(
     path: &Path,
     kernel: &mech_runtime::SharedCapabilityKernel,
 ) -> MResult<Vec<PathBuf>> {
@@ -233,6 +239,25 @@ fn print_run_runtime_events(events: &[RuntimeEvent]) {
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
+    if plan
+        .loaded_config
+        .as_ref()
+        .and_then(|config| config.document.run.as_ref())
+        .and_then(|run| run.executor.as_ref())
+        .is_some()
+    {
+        #[cfg(feature = "gpu_executor_native")]
+        return crate::cli::executor::run(&plan);
+        #[cfg(not(feature = "gpu_executor_native"))]
+        return Err(MechError::new(
+            CliRunError {
+                operation: "select_executor".to_string(),
+                reason: "this project configures run.executor; rebuild Mech with `--features gpu_executor_native`".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
     let mut runtime = new_cli_runtime_with_source_resolver(
         plan.runtime_config,
         &plan.cli_grants,
@@ -434,6 +459,7 @@ mod command_outcome_tests {
             time: false,
             repl: false,
             rounds_per_step: None,
+            backend: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),

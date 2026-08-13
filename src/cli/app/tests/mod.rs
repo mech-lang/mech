@@ -854,6 +854,32 @@ fn run_rounds_per_step_overrides_root_value() {
     assert_eq!(args.rounds_per_step, Some(20));
 }
 
+#[cfg(feature = "run")]
+#[test]
+fn run_backend_selects_accelerator_executor() {
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "run", "--backend", "cpu", "demo.mec"])
+        .unwrap();
+    let args = crate::cli::run_options::RunCliArgs::from_matches(
+        super::root_flags(&matches),
+        &matches,
+        matches.subcommand_matches("run"),
+    )
+    .unwrap();
+
+    assert_eq!(args.backend.as_deref(), Some("cpu"));
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn run_backend_rejects_unknown_executor() {
+    let error = super::build_cli()
+        .try_get_matches_from(["mech", "run", "--backend", "cuda", "demo.mec"])
+        .unwrap_err();
+
+    assert_eq!(error.kind(), clap::error::ErrorKind::InvalidValue);
+}
+
 #[cfg(all(
     test,
     feature = "build",

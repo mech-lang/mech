@@ -4,7 +4,7 @@
 //! and its decoder reconstructs and validates the same artifact; it does not
 //! feed a separate compatibility graph back into this compiler.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
     BindingId, CellSlotId, ConstantId, ConstantStore, InputId, IntegrityConstraintId, NodeId,
@@ -412,6 +412,18 @@ pub fn compile_executable_program_artifact(
     compiled: &CompiledBytecode,
     catalog: &FunctionCatalog,
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_executable_program_artifact_with_external_inputs(compiled, catalog, &BTreeSet::new())
+}
+
+/// Compiles an executable artifact while promoting the named immutable source
+/// declarations to host-provided input slots. The declarations still provide
+/// the input schemas, but their source snapshots are not embedded as constants.
+#[cfg(feature = "compiler")]
+pub fn compile_executable_program_artifact_with_external_inputs(
+    compiled: &CompiledBytecode,
+    catalog: &FunctionCatalog,
+    external_inputs: &BTreeSet<String>,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
     validate_compiled_metadata_length(
         "instruction_roles",
         compiled.program.instructions.len(),
@@ -529,6 +541,45 @@ pub fn compile_executable_program_artifact(
         }
     }
 
+    let mut explicit_external_registers = BTreeMap::<usize, &str>::new();
+    for name in external_inputs {
+        let matching_registers = definitions_by_register
+            .iter()
+            .enumerate()
+            .filter(|(_, definitions)| {
+                definitions
+                    .iter()
+                    .any(|definition| !definition.mutable && definition.name == *name)
+            })
+            .map(|(register, _)| register)
+            .collect::<Vec<_>>();
+        let [register] = matching_registers.as_slice() else {
+            return Err(if matching_registers.is_empty() {
+                ArtifactBuildError::MissingExternalInputDefinition { name: name.clone() }
+            } else {
+                ArtifactBuildError::AmbiguousExternalInputDefinition { name: name.clone() }
+            });
+        };
+        if computed_registers[*register]
+            || definitions_by_register[*register]
+                .iter()
+                .any(|definition| definition.mutable)
+        {
+            return Err(ArtifactBuildError::InvalidExternalInputDefinition {
+                name: name.clone(),
+                register: checked_u32(*register, "bytecode register")?,
+            });
+        }
+        if explicit_external_registers
+            .insert(*register, name)
+            .is_some()
+        {
+            return Err(ArtifactBuildError::AmbiguousExternalInputDefinition {
+                name: name.clone(),
+            });
+        }
+    }
+
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     enum CompilerConstantRole {
         Snapshot,
@@ -565,17 +616,21 @@ pub fn compile_executable_program_artifact(
                     if *dst == register
             )
         });
-        register_constant_roles[register_index] = Some(if has_mutable {
-            CompilerConstantRole::StateInitializer
-        } else if pending_schema.contains_reference
-            && has_immutable
-            && !computed_registers[register_index]
-            && !has_constant_seed
-        {
-            CompilerConstantRole::ExternalInput
-        } else {
-            CompilerConstantRole::Snapshot
-        });
+        register_constant_roles[register_index] = Some(
+            if explicit_external_registers.contains_key(&register_index) {
+                CompilerConstantRole::ExternalInput
+            } else if has_mutable {
+                CompilerConstantRole::StateInitializer
+            } else if pending_schema.contains_reference
+                && has_immutable
+                && !computed_registers[register_index]
+                && !has_constant_seed
+            {
+                CompilerConstantRole::ExternalInput
+            } else {
+                CompilerConstantRole::Snapshot
+            },
+        );
     }
 
     let mut pending_constants = BTreeMap::<(u32, SchemaId), CompilerLegacyContext>::new();
@@ -713,11 +768,18 @@ pub fn compile_executable_program_artifact(
             continue;
         }
         let register = checked_u32(register, "bytecode register")?;
-        let definition = definitions_by_register[register as usize]
-            .iter()
-            .copied()
-            .find(|definition| !definition.mutable)
-            .ok_or(ArtifactBuildError::MissingInputInterfaceName { register })?;
+        let definitions = &definitions_by_register[register as usize];
+        let definition = match explicit_external_registers.get(&(register as usize)) {
+            Some(name) => definitions
+                .iter()
+                .copied()
+                .find(|definition| !definition.mutable && definition.name == **name),
+            None => definitions
+                .iter()
+                .copied()
+                .find(|definition| !definition.mutable),
+        }
+        .ok_or(ArtifactBuildError::MissingInputInterfaceName { register })?;
         let schema =
             register_schemas[register as usize].ok_or(ArtifactBuildError::MissingRegisterKind {
                 instruction: 0,

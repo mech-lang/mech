@@ -1342,10 +1342,21 @@ impl MechProgram {
 
     #[cfg(feature = "compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
+        self.compile_program_product_with_external_inputs(&BTreeSet::new())
+    }
+
+    /// Compiles a program product whose named immutable declarations are
+    /// supplied by the embedding host instead of captured as constants.
+    #[cfg(feature = "compiler")]
+    pub fn compile_program_product_with_external_inputs(
+        &mut self,
+        external_inputs: &BTreeSet<String>,
+    ) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
-        let artifact = compile_executable_program_artifact(
+        let artifact = compile_executable_program_artifact_with_external_inputs(
             &compiled,
             self.interpreter.function_catalog().as_ref(),
+            external_inputs,
         )
         .map_err(|error| {
             MechError::new(
@@ -1492,7 +1503,13 @@ fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
         }
     }
 
-    let return_register = context.resolve_value_register(&program.interpreter.out)?;
+    // A composite return may materialize a CompositePack instruction. Keep it
+    // inside the semantic plan so accelerator placement sees the real output
+    // boundary instead of an unowned bytecode instruction.
+    context.begin_plan_node(CompiledNodeKind::Combinational)?;
+    let return_result = context.resolve_value_register(&program.interpreter.out);
+    context.end_plan_node();
+    let return_register = return_result?;
     let compiled = context.finish_program(return_register)?;
 
     #[cfg(feature = "invariant_define")]
