@@ -49,6 +49,7 @@ impl Default for CompilerPlanningConfig {
 #[derive(Debug)]
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
+    compute_regions: Box<[ArtifactComputeRegion]>,
     bytecode: Vec<u8>,
 }
 
@@ -71,6 +72,10 @@ impl ProgramCompilationProduct {
 
     pub fn bytecode(&self) -> &[u8] {
         &self.bytecode
+    }
+
+    pub fn compute_regions(&self) -> &[ArtifactComputeRegion] {
+        &self.compute_regions
     }
 
     pub fn into_parts(self) -> (ProgramArtifact, Vec<u8>) {
@@ -362,7 +367,8 @@ impl CompilerPlanningProgram {
         &self,
         compiled: CompilerPlanningBytecode,
     ) -> MResult<ProgramCompilationProduct> {
-        let artifact = compile_executable_program_artifact_with_outputs(
+        let (artifact, compute_regions) =
+            compile_executable_program_artifact_product_with_outputs(
             &compiled.bytecode,
             &compiled.published_outputs,
             self.interpreter.function_catalog().as_ref(),
@@ -376,7 +382,8 @@ impl CompilerPlanningProgram {
             )
             .with_compiler_loc()
         })?;
-        let sections = encode_program_artifact_sections(&artifact).map_err(|error| {
+        let sections = encode_program_artifact_sections_with_regions(&artifact, &compute_regions)
+            .map_err(|error| {
             MechError::new(
                 ProgramArtifactCompilationError {
                     reason: format!("unable to encode source ProgramArtifact: {error:?}"),
@@ -386,7 +393,11 @@ impl CompilerPlanningProgram {
             .with_compiler_loc()
         })?;
         let bytecode = write_bytecode_with_artifact(&compiled.bytecode.program, &sections)?;
-        Ok(ProgramCompilationProduct { artifact, bytecode })
+        Ok(ProgramCompilationProduct {
+            artifact,
+            compute_regions,
+            bytecode,
+        })
     }
 }
 
@@ -530,6 +541,32 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
         let compile_result = step.compile(&mut context);
         context.end_plan_node();
         compile_result?;
+    }
+
+    for region in &state.compute_regions {
+        let start = u32::try_from(region.plan_nodes.start).map_err(|_| {
+            MechError::new(
+                BytecodeValidationError {
+                    reason: format!(
+                        "compute region `{}` start exceeds source node identity space",
+                        region.name,
+                    ),
+                },
+                None,
+            )
+        })?;
+        let end = u32::try_from(region.plan_nodes.end).map_err(|_| {
+            MechError::new(
+                BytecodeValidationError {
+                    reason: format!(
+                        "compute region `{}` end exceeds source node identity space",
+                        region.name,
+                    ),
+                },
+                None,
+            )
+        })?;
+        context.record_compute_region(region.name.clone(), region.placement, start..end)?;
     }
 
     #[cfg(feature = "invariant_define")]

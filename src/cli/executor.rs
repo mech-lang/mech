@@ -79,12 +79,17 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
     let source_elapsed = source_started.elapsed();
 
     let artifact_started = Instant::now();
-    let artifact = source_program.compile_program_artifact()?;
+    let product = source_program.compile_program_product()?;
     let artifact_elapsed = artifact_started.elapsed();
 
     let lower_started = Instant::now();
-    let placement = GpuHost.plan(&artifact);
-    let program = GpuHost.compile(&artifact).map_err(|error| {
+    let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
+    let program_result = match executor.provider.as_str() {
+        "cpu" => GpuHost.compile_cpu_with_regions(product.artifact(), product.compute_regions()),
+        "gpu" => GpuHost.compile_with_regions(product.artifact(), product.compute_regions()),
+        _ => unreachable!("provider was validated above"),
+    };
+    let program = program_result.map_err(|error| {
         executor_error(
             "admit_program",
             format!(

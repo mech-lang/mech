@@ -6,5 +6,5 @@
 // facade selected by full compiler distributions.
 pub use mech_core::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
-    CompiledNodeKind, CompiledSymbolDefinition,
+    CompiledComputeRegion, CompiledNodeKind, CompiledSymbolDefinition,
 };

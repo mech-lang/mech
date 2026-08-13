@@ -240,6 +240,69 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
     Ok((input, Subtitle { text, level: 2 }))
 }
 
+// compute-subtitle := +(!"@", text), "@", ("compute" | "cpu" | "gpu"), newline, +dash, newline ;
+//
+// Unlike ordinary Mechdown section titles this form is intentionally
+// unnumbered. The `@` suffix is compiler metadata, not part of the displayed
+// title.
+pub fn compute_subtitle(input: ParseString) -> ParseResult<(Subtitle, ComputePlacement)> {
+    let (input, title_tokens) = many1(nom_tuple((is_not(at), text)))(input)?;
+    let (input, _) = at(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, placement_token) = many1(alpha_token)(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, _) = new_line(input)?;
+    let (input, _) = many1(dash)(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, _) = new_line(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, _) = whitespace0(input)?;
+
+    let placement_text = placement_token
+        .iter()
+        .map(Token::to_string)
+        .collect::<String>();
+    let placement = match placement_text.as_str() {
+        "compute" => ComputePlacement::Compute,
+        "cpu" => ComputePlacement::Cpu,
+        "gpu" => ComputePlacement::Gpu,
+        _ => {
+            return Err(nom::Err::Failure(ParseError::new(
+                input,
+                "Expected compute placement: compute, cpu, or gpu",
+            )));
+        }
+    };
+
+    let mut title_tokens = title_tokens
+        .into_iter()
+        .map(|(_, token)| token)
+        .collect::<Vec<_>>();
+    while title_tokens
+        .last()
+        .is_some_and(|token| matches!(token.kind, TokenKind::Space | TokenKind::Tab))
+    {
+        title_tokens.pop();
+    }
+    if title_tokens.is_empty() {
+        return Err(nom::Err::Failure(ParseError::new(
+            input,
+            "Compute region name cannot be empty",
+        )));
+    }
+    let title = Paragraph::from_tokens(title_tokens);
+    Ok((
+        input,
+        (
+            Subtitle {
+                text: title,
+                level: 2,
+            },
+            placement,
+        ),
+    ))
+}
+
 // subtitle := *(space-tab), "(", +(alpha | digit | period), ")", *(space-tab), paragraph-newline, *(space-tab), whitespace* ;
 pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
     let (input, _) = peek(is_not(alt((error_sigil, info_sigil))))(input)?;
@@ -1272,7 +1335,17 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 
 // section := ?ul-subtitle, +section-element ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
-    let (input, subtitle) = opt(ul_subtitle)(input)?;
+    let (input, heading) = opt(alt((
+        |input| {
+            compute_subtitle(input)
+                .map(|(input, (title, placement))| (input, (title, Some(placement))))
+        },
+        |input| ul_subtitle(input).map(|(input, title)| (input, (title, None))),
+    )))(input)?;
+    let (subtitle, compute) = match heading {
+        Some((title, placement)) => (Some(title), placement),
+        None => (None, None),
+    };
 
     let mut elements = vec![];
 
@@ -1286,7 +1359,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         }
 
         // Stop if the next thing is a new section (peek, do not consume)
-        if ul_subtitle(new_input.clone()).is_ok() {
+        if compute_subtitle(new_input.clone()).is_ok() || ul_subtitle(new_input.clone()).is_ok() {
             //println!("Next section detected, ending current section");
             break;
         }
@@ -1345,7 +1418,14 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
             }
         }
     }
-    Ok((new_input, Section { subtitle, elements }))
+    Ok((
+        new_input,
+        Section {
+            subtitle,
+            compute,
+            elements,
+        },
+    ))
 }
 
 // body := whitespace0, +(section, eof), eof ;

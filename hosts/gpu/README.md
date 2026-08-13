@@ -15,9 +15,10 @@ remain resident between turns.
 The returned `GpuProgram` includes generated WGSL, its binding layout, and CPU
 and GPU resident executors. Both are lowered from the same `ProgramArtifact`.
 `GpuHost::plan` reports every node target, GPU region, slot residence, and
-upload/readback boundary. An unsupported node is assigned to CPU with a reason;
-mixed-region execution still fails closed until the runtime scheduler can
-coordinate those boundaries.
+upload/readback boundary. `GpuHost::plan_with_regions` also honors named
+Mechdown compute sections and preserves their boundaries. An unsupported node
+is assigned to CPU with a reason; mixed-region execution still fails closed
+until the runtime scheduler can coordinate those boundaries.
 
 With the `native` feature, `GpuProgram::run_gpu` dispatches that WGSL through
 `wgpu`. It uses Metal on macOS and an available Vulkan or Direct3D 12 backend
@@ -49,14 +50,14 @@ separately.
 
 This crate now proves the lower half of automatic acceleration:
 
-1. Mech source compiles to a typed artifact with explicit state slots.
+1. One Mech document compiles to a typed artifact with explicit state slots and
+   named compute-region metadata.
 2. Capability admission and placement use operation contracts and schemas, not
    variable names or a precompiled particle kernel.
 3. CPU and GPU sessions execute the same stateful graph.
 4. State residency and transfer boundaries are derived and inspectable.
 
-Two contracts are still needed before `mech run` can attach this provider to an
-arbitrary application:
+Two contracts are still needed before arbitrary mixed applications can run:
 
 - The runtime needs a generic activated-plan/execution-provider interface that
   can schedule CPU and GPU regions on the same reactive turn.
@@ -66,5 +67,6 @@ arbitrary application:
   artifact.
 
 Those are artifact/executor design requirements, not particle-demo concerns.
-The GPU provider should be selected in `.mcfg` once that interface exists; Mech
-source files should not contain device directives or Rust callbacks.
+The executor is selected in `.mcfg`. Source may use backend-neutral
+`section @ compute` boundaries or hard `@ cpu`/`@ gpu` requirements, but never
+contains device buffers, pointers, upload operations, or Rust callbacks.

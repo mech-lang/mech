@@ -175,6 +175,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         BytecodeSectionKind::ArtifactIntegrityConstraints,
         BytecodeSectionKind::ArtifactOperations,
         BytecodeSectionKind::ArtifactOperationContracts,
+        BytecodeSectionKind::ArtifactComputeRegions,
     ];
     let mut artifact_bytes = Vec::with_capacity(artifact_kinds.len());
     let mut total_artifact_bytes = 0_usize;
@@ -208,6 +209,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         integrity_constraints: artifact_bytes.next().unwrap(),
         operations: artifact_bytes.next().unwrap(),
         operation_contracts: artifact_bytes.next().unwrap(),
+        compute_regions: artifact_bytes.next().unwrap(),
     };
     if artifact.ordered().iter().any(|section| section.is_empty()) && !artifact.is_empty() {
         return invalid("ProgramArtifact bytecode sections must be all present or all absent");

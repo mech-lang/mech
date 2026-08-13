@@ -934,6 +934,7 @@ mod tests {
             body: mech_core::Body {
                 sections: vec![mech_core::Section {
                     subtitle: None,
+                    compute: None,
                     elements: vec![SectionElement::MechCode(vec![(code, None)])],
                 }],
             },
