@@ -54,6 +54,53 @@ checks sampled resident output against the repeated recurrence, and reports
 compilation, one-shot execution, resident dispatch, and final readback
 separately.
 
+## Generic parallel EKF proof
+
+[`fixtures/ekf-kernel.mec`](fixtures/ekf-kernel.mec) is a complete extended
+Kalman filter update written with ordinary Mech matrix operations. The source
+contains matrix construction, `**`, transpose, dot products, scalar
+broadcasting, `sin`, `cos`, and `atan2`, including the Joseph-form covariance
+update. It contains no EKF-specific function or precompiled EKF call.
+
+`GpuHost::compile_batched` consumes the same typed `ProgramArtifact` produced by
+that source. For fixed `f32` shapes it scalarizes generic matrix multiply,
+transpose, dot, concatenation, arithmetic, and trigonometry into one register
+program. WGSL generation then maps one complete scalarized program over each
+independent filter. Intermediate matrices remain invocation-local values;
+only filter inputs and the state/covariance buffers cross the kernel boundary.
+
+Run the proof with the number of filters followed by CPU reference turns,
+single-submission GPU turns, and turns recorded into one GPU submission:
+
+```text
+cargo run -p mech-gpu --release --features native \
+  --example parallel_ekf_benchmark -- 100000 3 20 120
+```
+
+Measured on an Apple M1 through Metal on 2026-08-13:
+
+| Filters | Generic scalar CPU | GPU, one submission/turn | GPU, 120 turns/submission |
+| ---: | ---: | ---: | ---: |
+| 100,000 | 1.168 M EKF-turns/s | 62.529 M EKF-turns/s | 377.438 M EKF-turns/s |
+| 1,000,000 | 1.169 M EKF-turns/s | 263.672 M EKF-turns/s | 341.157 M EKF-turns/s |
+
+The maximum CPU/GPU absolute error after four validation turns was
+`7.629e-5`. The test suite separately compares one scalarized CPU turn with the
+ordinary Mech interpreter's result, so GPU validation does not rely only on two
+executors sharing the same lowered implementation.
+
+These labels are narrow on purpose. "Generic scalar CPU" is the portable
+scalar IR evaluator in this crate, not the retained runtime, an optimized AOT
+CPU kernel, or raw Rust. The 120-turn GPU number records multiple dependent
+dispatches in one command submission and does not include final readback.
+
+The current proof takes the outer filter count as an activation parameter to
+`compile_batched`; the filter body itself is ordinary high-level Mech. A
+language-level broadcast call and compiler-derived outer batch are still
+needed before an array of filters can be expressed and inferred entirely by
+source. Likewise, the generic batched kernel is not yet connected to the
+mixed-region runtime host used by the particle example.
+
 ## Runtime integration boundary
 
 This crate now proves the lower half of automatic acceleration:
