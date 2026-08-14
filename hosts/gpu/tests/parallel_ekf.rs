@@ -1,22 +1,13 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{Body, LegacyValue, MechCode, Program, Ref, Section, SectionElement, hash_str};
-use mech_engine::{ArtifactComputeRegion, MechProgram, MechProgramConfig, ProgramArtifact};
-use mech_gpu::{BatchedExecutionError, BatchedGpuProgram, BatchedIntegrityViolation, GpuHost};
+use mech_engine::{
+    ArtifactComputeRegion, MechProgram, MechProgramConfig, ProgramArtifact,
+    decode_program_artifact_sections, encode_program_artifact_sections,
+};
+use mech_gpu::{BatchedExecutionError, BatchedGpuProgram, GpuHost};
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
-const COVARIANCE_SYMMETRY_TOLERANCE: f32 = 1.0e-4;
-
-fn protect_robot_estimate(program: BatchedGpuProgram) -> BatchedGpuProgram {
-    let covariance_slot = program
-        .state_shapes()
-        .find_map(|(slot, rows, columns)| (rows == 3 && columns == 3).then_some(slot))
-        .expect("EKF artifact must contain one 3x3 covariance state");
-    program
-        .with_robot_state_integrity(covariance_slot, COVARIANCE_SYMMETRY_TOLERANCE)
-        .expect("robot-state integrity policy must match the EKF artifact")
-}
-
 fn symbol_f32_values(program: &MechProgram, name: &str) -> Vec<f32> {
     program
         .interpreter()
@@ -30,7 +21,11 @@ fn symbol_f32_values(program: &MechProgram, name: &str) -> Vec<f32> {
 }
 
 fn source_tree(instances: usize) -> Program {
-    let source = SOURCE.replacen("100000f32", &format!("{instances}f32"), 1);
+    source_tree_from(SOURCE, instances)
+}
+
+fn source_tree_from(source: &str, instances: usize) -> Program {
+    let source = source.replacen("100000f32", &format!("{instances}f32"), 1);
     mech_syntax::parse(&source).expect("EKF array source must parse")
 }
 
@@ -168,15 +163,22 @@ fn source_inputs(program: &MechProgram, artifact: &ProgramArtifact) -> BTreeMap<
         .collect()
 }
 
-fn protected_source_program(instances: usize) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
-    let tree = source_tree(instances);
+fn source_program(instances: usize) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
+    source_program_from(SOURCE, instances)
+}
+
+fn source_program_from(
+    source: &str,
+    instances: usize,
+) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
+    let tree = source_tree_from(source, instances);
     let driver = evaluate_driver(&tree);
     let (_, artifact, regions) = compile_compute(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
     let program = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .expect("generic fixed-shape operations must lower");
-    (protect_robot_estimate(program), inputs)
+    (program, inputs)
 }
 
 #[test]
@@ -256,7 +258,6 @@ fn mech_arrays_define_the_broadcast_extent() {
     let lowered = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .unwrap();
-    let lowered = protect_robot_estimate(lowered);
     assert_eq!(lowered.instances(), 7);
     assert_eq!(lowered.workgroup_count(), 1);
     assert_eq!(lowered.simd_lanes(), 4);
@@ -321,60 +322,93 @@ fn empty_mech_array_is_rejected() {
 }
 
 #[test]
-fn robot_integrity_policy_checks_finite_positive_and_symmetric_candidates() {
-    let (program, inputs) = protected_source_program(2);
-    let cpu = program.prepare_cpu(&inputs).unwrap();
-    let published = cpu.state().clone();
-    program
-        .validate_robot_state_candidate(&published)
-        .expect("the initial estimate must satisfy the policy");
-    let covariance_slot = program.robot_state_integrity().unwrap().covariance_slot();
-    let state_slot = program
-        .state_shapes()
-        .find_map(|(slot, rows, columns)| {
-            (slot != covariance_slot && rows * columns == 3).then_some(slot)
-        })
-        .unwrap();
+fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
+    let tree = source_tree(2);
+    let driver = evaluate_driver(&tree);
+    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    assert_eq!(artifact.constraints().len(), 3);
+    assert_eq!(
+        artifact
+            .constraints()
+            .iter()
+            .map(|constraint| constraint.name.as_str())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from([
+            "finite-candidate!",
+            "positive-covariance!",
+            "symmetric-covariance!",
+        ])
+    );
+    let encoded = encode_program_artifact_sections(&artifact).unwrap();
+    let decoded = decode_program_artifact_sections(&encoded).unwrap();
+    assert_eq!(
+        decoded
+            .constraints()
+            .iter()
+            .map(|constraint| constraint.name.as_str())
+            .collect::<BTreeSet<_>>(),
+        BTreeSet::from([
+            "finite-candidate!",
+            "positive-covariance!",
+            "symmetric-covariance!",
+        ])
+    );
+    let renamed_source = SOURCE.replacen("finite-candidate! :=", "finite-estimate! :=", 1);
+    let renamed_tree = source_tree_from(&renamed_source, 2);
+    let renamed_driver = evaluate_driver(&renamed_tree);
+    let (_, renamed_artifact, _) = compile_compute(&renamed_tree, &renamed_driver);
+    assert_ne!(artifact.revision(), renamed_artifact.revision());
+    assert!(SOURCE.contains("finite-candidate! :="));
+    assert!(SOURCE.contains("positive-covariance! :="));
+    assert!(SOURCE.contains("symmetric-covariance! :="));
 
-    let mut non_finite = published.clone();
-    non_finite.get_mut(&state_slot).unwrap()[1] = f32::NAN;
-    assert!(matches!(
-        program
-            .validate_robot_state_candidate(&non_finite)
-            .unwrap_err(),
-        BatchedExecutionError::Integrity(fault)
-            if matches!(fault.violation, BatchedIntegrityViolation::NonFiniteState)
-    ));
+    let inputs = source_inputs(&driver, &artifact);
+    let program = GpuHost
+        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .expect("generic source constraints must lower with the numeric region");
+    assert_eq!(
+        program.integrity_constraints().collect::<Vec<_>>(),
+        artifact
+            .constraints()
+            .iter()
+            .map(|constraint| constraint.constraint)
+            .collect::<Vec<_>>()
+    );
+    assert!(program.wgsl().contains("integrity_code"));
+}
 
-    let mut non_positive = published.clone();
-    non_positive.get_mut(&covariance_slot).unwrap()[4] = 0.0;
-    assert!(matches!(
-        program
-            .validate_robot_state_candidate(&non_positive)
-            .unwrap_err(),
-        BatchedExecutionError::Integrity(fault)
-            if matches!(fault.violation, BatchedIntegrityViolation::NonPositiveCovarianceDiagonal { slot } if slot == covariance_slot)
-    ));
+#[test]
+fn source_constraints_report_the_failed_rule() {
+    let (program, mut inputs) = source_program(2);
+    inputs
+        .get_mut("measurement-noise")
+        .unwrap()
+        .iter_mut()
+        .for_each(|value| *value = -0.15);
+    let mut non_positive = program.prepare_cpu(&inputs).unwrap();
+    let error = non_positive.dispatch_turns(1).unwrap_err();
+    let BatchedExecutionError::Integrity(fault) = error else {
+        panic!("expected an integrity fault, found {error}");
+    };
+    assert_eq!(fault.constraint_name.as_ref(), "positive-covariance!");
 
-    let mut asymmetric = published.clone();
-    asymmetric.get_mut(&covariance_slot).unwrap()[3] = COVARIANCE_SYMMETRY_TOLERANCE * 2.0;
-    assert!(matches!(
-        program
-            .validate_robot_state_candidate(&asymmetric)
-            .unwrap_err(),
-        BatchedExecutionError::Integrity(fault)
-            if matches!(fault.violation, BatchedIntegrityViolation::CovarianceAsymmetry { slot, .. } if slot == covariance_slot)
-    ));
-
-    asymmetric.get_mut(&covariance_slot).unwrap()[3] = COVARIANCE_SYMMETRY_TOLERANCE;
-    program
-        .validate_robot_state_candidate(&asymmetric)
-        .expect("symmetry error at the declared tolerance is accepted");
+    let asymmetric_source = SOURCE.replacen(
+        "corrected-covariance := correction ** predicted-covariance ** correction' + (gain ** gain') * measurement-noise",
+        "corrected-covariance-base := correction ** predicted-covariance ** correction' + (gain ** gain') * measurement-noise\ncorrected-covariance := corrected-covariance-base + [0f32 0.01<f32> 0f32; 0f32 0f32 0f32; 0f32 0f32 0f32]",
+        1,
+    );
+    let (program, inputs) = source_program_from(&asymmetric_source, 2);
+    let mut asymmetric = program.prepare_cpu(&inputs).unwrap();
+    let error = asymmetric.dispatch_turns(1).unwrap_err();
+    let BatchedExecutionError::Integrity(fault) = error else {
+        panic!("expected an integrity fault, found {error}");
+    };
+    assert_eq!(fault.constraint_name.as_ref(), "symmetric-covariance!");
 }
 
 #[test]
 fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
-    let (program, mut inputs) = protected_source_program(8);
+    let (program, mut inputs) = source_program(8);
     inputs
         .get_mut("bearing")
         .unwrap()
@@ -390,6 +424,10 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
     assert_eq!(scalar.state(), &scalar_published);
     assert_eq!(scalar.fault_count(), 1);
     assert_eq!(scalar.last_fault().unwrap().attempted_turn, 1);
+    assert_eq!(
+        scalar.last_fault().unwrap().constraint_name.as_ref(),
+        "finite-candidate!"
+    );
 
     let mut simd = program.prepare_simd_cpu(&inputs).unwrap();
     let simd_published = simd.state().clone();
@@ -399,6 +437,10 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
     ));
     assert_eq!(simd.state(), &simd_published);
     assert_eq!(simd.fault_count(), 1);
+    assert_eq!(
+        simd.last_fault().unwrap().constraint_name.as_ref(),
+        "finite-candidate!"
+    );
 
     #[cfg(feature = "jit")]
     {
@@ -410,6 +452,10 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
         ));
         assert_eq!(jit.state(), &jit_published);
         assert_eq!(jit.fault_count(), 1);
+        assert_eq!(
+            jit.last_fault().unwrap().constraint_name.as_ref(),
+            "finite-candidate!"
+        );
     }
 }
 
@@ -423,8 +469,6 @@ fn source_driven_broadcast_matches_the_native_gpu() {
     let lowered = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .unwrap();
-    let lowered = protect_robot_estimate(lowered);
-
     let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
     cpu.dispatch_turns(4).unwrap();
     let expected = cpu.state().clone();
@@ -447,7 +491,7 @@ fn source_driven_broadcast_matches_the_native_gpu() {
 #[cfg(feature = "native")]
 #[test]
 fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
-    let (program, mut inputs) = protected_source_program(32);
+    let (program, mut inputs) = source_program(32);
     inputs
         .get_mut("bearing")
         .unwrap()
@@ -472,6 +516,10 @@ fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
     assert_eq!(after, before);
     assert_eq!(gpu.fault_count(), 1);
     assert_eq!(gpu.last_fault().unwrap().attempted_turn, 1);
+    assert_eq!(
+        gpu.last_fault().unwrap().constraint_name.as_ref(),
+        "finite-candidate!"
+    );
 }
 
 fn assert_close(expected: &[f32], actual: &[f32], tolerance: f32) {

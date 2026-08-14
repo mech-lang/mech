@@ -62,8 +62,9 @@ pub struct CompiledSymbolDefinition {
     pub ordinal: u32,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CompiledIntegrityConstraint {
+    pub name: String,
     pub result_register: Register,
 }
 
@@ -298,7 +299,11 @@ impl CompileCtx {
         self.current_source_node = None;
     }
 
-    pub fn record_integrity_constraint(&mut self, result_register: Register) -> MResult<()> {
+    pub fn record_integrity_constraint(
+        &mut self,
+        name: String,
+        result_register: Register,
+    ) -> MResult<()> {
         if result_register >= self.next_register {
             return invalid(format!(
                 "integrity result register {result_register} is outside register count {}",
@@ -306,7 +311,10 @@ impl CompileCtx {
             ));
         }
         self.integrity_constraints
-            .push(CompiledIntegrityConstraint { result_register });
+            .push(CompiledIntegrityConstraint {
+                name,
+                result_register,
+            });
         Ok(())
     }
 

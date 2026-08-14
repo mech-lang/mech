@@ -219,6 +219,8 @@ struct WireOutput {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct WireConstraint {
     constraint: u32,
+    #[serde(default)]
+    name: String,
     operation: u32,
     contract: u32,
     inputs: Box<[WireSource]>,
@@ -370,6 +372,7 @@ pub fn encode_program_artifact_sections_with_regions(
                 .iter()
                 .map(|constraint| WireConstraint {
                     constraint: constraint.constraint.get(),
+                    name: constraint.name.clone(),
                     operation: operation_ids[&constraint.operation],
                     contract: constraint.contract.get(),
                     inputs: constraint.inputs.iter().copied().map(wire_source).collect(),
@@ -624,6 +627,7 @@ fn decode_program_artifact_product_sections_with_requirements(
             .map(|constraint| {
                 Ok(IntegrityConstraintDeclaration {
                     constraint: IntegrityConstraintId(constraint.constraint),
+                    name: constraint.name,
                     operation: operation(constraint.operation)?,
                     contract: OperationContractId::new(constraint.contract),
                     inputs: constraint

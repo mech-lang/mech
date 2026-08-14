@@ -81,6 +81,7 @@ pub struct SourceOutput {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceIntegrityConstraint {
+    pub name: String,
     pub operation: OperationReference,
     pub inputs: Box<[SourceValue]>,
 }
@@ -387,6 +388,7 @@ pub fn compile_source_program_with_contracts(
         .map(|(index, constraint)| {
             Ok(IntegrityConstraintDeclaration {
                 constraint: IntegrityConstraintId(checked_u32(index, "IntegrityConstraintId")?),
+                name: constraint.name.clone(),
                 operation: constraint.operation.clone(),
                 contract: OperationContractId::new(0),
                 inputs: constraint
@@ -1188,6 +1190,7 @@ pub fn compile_executable_program_artifact_product(
             });
         }
         constraints.push(SourceIntegrityConstraint {
+            name: constraint.name.clone(),
             operation: OperationReference {
                 module_path: vec!["integrity".to_owned()].into_boxed_slice(),
                 operation_name: "assert".to_owned(),

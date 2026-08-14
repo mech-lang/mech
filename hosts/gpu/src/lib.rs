@@ -1579,6 +1579,11 @@ fn turn_required_nodes(artifact: &ProgramArtifact) -> BTreeSet<NodeId> {
     for output in artifact.outputs() {
         visit_turn_source(artifact, ArtifactSource::Slot(output.source), &mut required);
     }
+    for constraint in artifact.constraints() {
+        for source in &constraint.inputs {
+            visit_turn_source(artifact, *source, &mut required);
+        }
+    }
     required
 }
 
