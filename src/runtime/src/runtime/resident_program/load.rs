@@ -125,38 +125,21 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
-    pub fn compile_source_program_bytecode(&mut self, source: &str) -> MResult<Vec<u8>> {
-        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
-        Ok(self.plan_source_product(source)?.into_parts().1)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
-    pub fn compile_root_program_bytecode(&mut self, request: SourceRequest) -> MResult<Vec<u8>> {
-        let options =
-            ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[]);
-        Ok(self
-            .plan_root_source_product(request, options)?
-            .into_parts()
-            .1)
-    }
-
-    #[cfg(feature = "resident-routing-source")]
     fn plan_root_source_product(
         &mut self,
         request: SourceRequest,
         module_options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_session()?
-            .compile_root(request, module_options)
+        self.compiler_view()?.compile_root(request, module_options)
     }
 
     #[cfg(feature = "resident-routing-source")]
     fn plan_source_product(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
-        self.compiler_session()?.compile_source(source)
+        self.compiler_view()?.compile_source(source)
     }
 
     #[cfg(feature = "resident-routing-source")]
-    fn compiler_session(&self) -> MResult<super::super::program::ProgramCompilerSession<'_>> {
+    fn compiler_view(&self) -> MResult<super::super::program::ProgramCompilerView<'_>> {
         let program_config = MechProgramConfig {
             name: self.config.name.clone(),
             environment: MechProgramEnvironment {
@@ -166,7 +149,7 @@ impl MechRuntime {
                 rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
             },
         };
-        Ok(super::super::program::ProgramCompilerSession::new(
+        Ok(super::super::program::ProgramCompilerView::new(
             Arc::clone(&self.function_catalog),
             self.source_resolver.as_ref(),
             &self.resources,

@@ -2,7 +2,7 @@ use super::extension::{catch_extension, invoke_extension};
 use super::transaction::{
     RuntimeExecutionTransaction, RuntimeExecutionTransactionState, check_transactional_capability,
 };
-use super::{MechRuntime, RuntimeExecutionMode, RuntimeInvalidOperationError};
+use super::{MechRuntime, RuntimeInvalidOperationError};
 use crate::{
     ActorId, ActorRecord, CapabilityId, CapabilityKernel, CapabilityRequest, EventId,
     HostCallPolicy, HostFunctionNotFoundError, HostRegistry, IdGenerator, InvalidHostFunctionError,
@@ -10,8 +10,8 @@ use crate::{
     RuntimeCallContext, RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectId, RuntimeEvent,
     RuntimeEventKind, RuntimeId, RuntimeManagedServices, RuntimePreparedHostCall,
     RuntimeResourceKey, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    RuntimeTransactionNotFoundError, RuntimeValueSnapshot, default_host_capability_request,
+    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, RuntimeTransactionNotFoundError,
+    RuntimeValueSnapshot, default_host_capability_request,
 };
 use mech_core::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
@@ -20,7 +20,6 @@ use mech_core::{
 
 pub(crate) struct RuntimeExecutionSession<'a> {
     pub(crate) runtime_id: RuntimeId,
-    pub(crate) execution_mode: RuntimeExecutionMode,
     pub(crate) max_events: Option<usize>,
     pub(crate) context: &'a mut RuntimeContext,
     pub(crate) transaction: &'a mut RuntimeExecutionTransaction,
@@ -35,7 +34,6 @@ pub(crate) struct RuntimeExecutionSession<'a> {
 
 struct RuntimeSessionServices<'a> {
     runtime_id: RuntimeId,
-    execution_mode: RuntimeExecutionMode,
     max_events: Option<usize>,
     transaction: &'a mut RuntimeExecutionTransaction,
     id_generator: &'a mut dyn IdGenerator,
@@ -151,15 +149,13 @@ impl RuntimeSessionServices<'_> {
         let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
         self.check_resource_capability(&operation, &key)?;
 
-        if self.execution_mode == RuntimeExecutionMode::Execute {
-            let resource_identity = self.resources.staged_resource_identity_for(&key.base_uri)?;
-            if let Some(value) = self
-                .transaction
-                .effects
-                .staged_resource_value(&resource_identity, &key.path)
-            {
-                return value.try_deep_snapshot();
-            }
+        let resource_identity = self.resources.staged_resource_identity_for(&key.base_uri)?;
+        if let Some(value) = self
+            .transaction
+            .effects
+            .staged_resource_value(&resource_identity, &key.path)
+        {
+            return value.try_deep_snapshot();
         }
 
         let runtime_request = RuntimeResourceReadRequest {
@@ -167,37 +163,8 @@ impl RuntimeSessionServices<'_> {
             path: key.path,
             context_name: request.context_name.clone(),
         };
-        let value = match self.execution_mode {
-            RuntimeExecutionMode::Execute => self.resources.read(runtime_request)?,
-            RuntimeExecutionMode::Plan => self.resources.plan_read(runtime_request)?,
-        };
+        let value = self.resources.read(runtime_request)?;
         value.try_deep_snapshot()
-    }
-
-    fn plan_external_resource_read(
-        &mut self,
-        request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
-        self.validate_context()?;
-        if request.intent != ResourceIntent::Read {
-            return Err(MechError::new(
-                RuntimeInvalidOperationError {
-                    operation: "execution_plan_resource_read",
-                    reason: format!("resource read received {:?} intent", request.intent),
-                },
-                None,
-            ));
-        }
-        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
-        let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
-        self.check_resource_capability(&operation, &key)?;
-        self.resources
-            .plan_read(RuntimeResourceReadRequest {
-                base_uri: key.base_uri,
-                path: key.path,
-                context_name: request.context_name.clone(),
-            })?
-            .try_deep_snapshot()
     }
 
     fn write_external_resource(
@@ -222,18 +189,6 @@ impl RuntimeSessionServices<'_> {
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
         let operation = RuntimeCapabilityOperation::from_name(request.operation.clone())?;
         self.check_resource_capability(&operation, &key)?;
-
-        if self.execution_mode == RuntimeExecutionMode::Plan {
-            return self
-                .resources
-                .preflight_write(RuntimeResourceWritePreflightRequest {
-                    base_uri: key.base_uri,
-                    path: key.path,
-                    context_name: request.context_name.clone(),
-                    operation,
-                    intent,
-                });
-        }
 
         let value = value.try_deep_snapshot()?;
         let runtime_request = RuntimeResourceWriteRequest {
@@ -429,7 +384,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     ) -> MResult<LegacyValue> {
         let Self {
             runtime_id,
-            execution_mode,
             max_events,
             context,
             transaction,
@@ -445,7 +399,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         let name = request.name.as_str();
         let mut services = RuntimeSessionServices {
             runtime_id: *runtime_id,
-            execution_mode: *execution_mode,
             max_events: *max_events,
             transaction,
             id_generator: &mut **id_generator,
@@ -511,12 +464,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
                 .map_err(|panic| panic.into_error())?
                 .unwrap_or_else(|| default_host_capability_request(&call_context, name));
             services.check_capability(&capability_request)?;
-            if *execution_mode == RuntimeExecutionMode::Plan {
-                let snapshot = invoke_extension(component, "plan", || {
-                    function.plan(&call_context, &arguments)
-                })?;
-                return snapshot.into_value().try_deep_snapshot();
-            }
             match function {
                 RegisteredHostFunction::Pure(function) => {
                     let snapshot = invoke_extension(component, "invoke", || {
@@ -561,7 +508,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
         let Self {
             runtime_id,
-            execution_mode,
             max_events,
             context,
             transaction,
@@ -574,7 +520,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         } = self;
         RuntimeSessionServices {
             runtime_id: *runtime_id,
-            execution_mode: *execution_mode,
             max_events: *max_events,
             transaction,
             id_generator: &mut **id_generator,
@@ -593,7 +538,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     ) -> MResult<LegacyValue> {
         let Self {
             runtime_id,
-            execution_mode,
             max_events,
             context,
             transaction,
@@ -606,7 +550,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         } = self;
         RuntimeSessionServices {
             runtime_id: *runtime_id,
-            execution_mode: *execution_mode,
             max_events: *max_events,
             transaction,
             id_generator: &mut **id_generator,
@@ -616,7 +559,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
             event_sequence,
             context,
         }
-        .plan_external_resource_read(request)
+        .read_external_resource(request)
     }
 
     fn write_resource(
@@ -626,7 +569,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
     ) -> MResult<()> {
         let Self {
             runtime_id,
-            execution_mode,
             max_events,
             context,
             transaction,
@@ -639,7 +581,6 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         } = self;
         RuntimeSessionServices {
             runtime_id: *runtime_id,
-            execution_mode: *execution_mode,
             max_events: *max_events,
             transaction,
             id_generator: &mut **id_generator,
@@ -685,7 +626,6 @@ impl MechRuntime {
         let max_events = self.execution_session_max_events();
         let MechRuntime {
             id,
-            execution_mode,
             event_sequence,
             id_generator,
             store,
@@ -703,7 +643,6 @@ impl MechRuntime {
             })?;
         let mut session = RuntimeExecutionSession {
             runtime_id: *id,
-            execution_mode: *execution_mode,
             max_events,
             context,
             transaction,

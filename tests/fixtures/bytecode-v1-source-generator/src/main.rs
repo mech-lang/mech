@@ -67,11 +67,12 @@ fn compile_standard(source: &str) -> Vec<u8> {
 }
 
 fn compile_source_fixture(builder: RuntimeBuilder, source: &str) -> Vec<u8> {
-    let mut runtime = builder
-        .build()
-        .expect("planning runtime construction failed");
-    runtime
-        .compile_source_program_bytecode(source)
+    let mut compiler = builder
+        .build_compiler()
+        .expect("program compiler construction failed");
+    compiler
+        .compile_source(source)
+        .map(|product| product.into_parts().1)
         .expect("source fixture bytecode compilation failed")
 }
 

@@ -549,6 +549,13 @@ Auto-review stops are recorded here and work proceeds on another dependency
 slice. They are not treated as requests to restore legacy behavior, reopen D5,
 or add resident semantics.
 
+E2 continues on the open E1 head; neither PR is merged as part of this work.
+An E2 mandatory-stop discovery is recorded in this log with its exact caller,
+command, error, and retained capability. The rejected target remains unchanged,
+and work continues on independent E2 slices until no independent scoped work
+remains. A stop is not generic authorization to broaden E2 or restore a legacy
+fallback.
+
 When a proposed deletion actually breaks a retained capability, add a row here
 before changing code. Record the smallest failing command and error, identify the
 surviving product owner, and distinguish a real E1 stop from a legacy-only test

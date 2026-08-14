@@ -2,4 +2,5 @@
 
 mod compiler;
 
-pub(crate) use compiler::ProgramCompilerSession;
+pub(crate) use compiler::ProgramCompilerView;
+pub use compiler::{CompilerImportValueUnsupported, ProgramCompiler};

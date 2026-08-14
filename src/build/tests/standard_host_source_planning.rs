@@ -11,13 +11,9 @@ use mech_build::{
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, ParsedProgram, ResourceIntent, hash_str,
 };
-#[cfg(feature = "experimental-actors")]
-use mech_core::{LegacyValue, Ref};
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig,
 };
-#[cfg(feature = "experimental-actors")]
-use mech_runtime::{PlannedPureHostFunction, RuntimeValueSnapshot};
 
 struct ProviderCase {
     provider: &'static str,
@@ -137,8 +133,7 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
     } else {
         ConfigValue::Map(BTreeMap::new())
     };
-    let mut runtime = RuntimeBuilder::new()
-        .planning()
+    let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .host_factory(standard_planning_host_factory(case.provider).unwrap())
         .unwrap()
@@ -156,11 +151,12 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
                 .collect(),
             paths: case.paths.iter().map(|path| (*path).to_owned()).collect(),
         })
-        .build()
+        .build_compiler()
         .unwrap();
     ParsedProgram::from_bytes(
-        &runtime
-            .compile_source_program_bytecode(case.source)
+        &compiler
+            .compile_source(case.source)
+            .map(|product| product.into_parts().1)
             .unwrap(),
     )
     .unwrap()
@@ -190,13 +186,13 @@ fn every_standard_provider_plans_source_to_bytecode() {
 
 #[test]
 fn integrity_constraints_are_explicit_native_linkage_requirements() {
-    let mut runtime = RuntimeBuilder::new()
-        .planning()
+    let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .build()
+        .build_compiler()
         .unwrap();
-    let bytecode = runtime
-        .compile_source_program_bytecode("x := 1.0\nsafe! := x <= 2.0")
+    let bytecode = compiler
+        .compile_source("x := 1.0\nsafe! := x <= 2.0")
+        .map(|product| product.into_parts().1)
         .unwrap();
     let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
     assert!(parsed.instructions.iter().any(|instruction| matches!(
@@ -281,8 +277,7 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         matches!(instruction, BytecodeInstruction::RuntimeBinary { dst, .. } if *dst == source)
     }));
 
-    let mut planning_runtime = RuntimeBuilder::new()
-        .planning()
+    let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .host_factory(standard_planning_host_factory("cli").unwrap())
         .unwrap()
@@ -296,11 +291,12 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
             operations: vec!["write".to_owned()],
             paths: vec!["line".to_owned()],
         })
-        .build()
+        .build_compiler()
         .unwrap();
     let request = NativeBuildRequest {
-        bytecode: planning_runtime
-            .compile_source_program_bytecode(case.source)
+        bytecode: compiler
+            .compile_source(case.source)
+            .map(|product| product.into_parts().1)
             .unwrap(),
         runtime_config: Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
@@ -333,48 +329,4 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
     })
     .plan(&request)
     .unwrap();
-}
-
-#[cfg(feature = "experimental-actors")]
-const ACTOR_FUNCTIONS: &[(&str, &str)] = &[
-    ("actor/message/kind", "actor/message/kind()"),
-    ("actor/message/payload", "actor/message/payload()"),
-    ("actor/state/get", "actor/state/get()"),
-    ("actor/state/id", "actor/state/id()"),
-    ("actor/state/put", "actor/state/put(\"planned\")"),
-];
-
-#[cfg(feature = "experimental-actors")]
-#[test]
-fn every_trusted_actor_function_plans_source_to_bytecode() {
-    for (name, source) in ACTOR_FUNCTIONS {
-        let planned_name = (*name).to_owned();
-        let mut runtime = RuntimeBuilder::new()
-            .planning()
-            .function_catalog(mech_stdlib::source_catalog())
-            .host_function(PlannedPureHostFunction::new(
-                *name,
-                move |_context, _arguments| {
-                    RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(String::new())))
-                },
-                move |_context, _arguments| panic!("{planned_name} executed while source planning"),
-            ))
-            .unwrap()
-            .build()
-            .unwrap();
-        let parsed =
-            ParsedProgram::from_bytes(&runtime.compile_source_program_bytecode(source).unwrap())
-                .unwrap();
-        assert_eq!(
-            parsed
-                .requirements
-                .iter()
-                .filter_map(|requirement| match requirement {
-                    ApplicationRequirement::HostFunction(request) => Some(request.name.as_str()),
-                    _ => None,
-                })
-                .collect::<Vec<_>>(),
-            [*name],
-        );
-    }
 }

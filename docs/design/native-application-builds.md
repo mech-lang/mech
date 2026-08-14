@@ -8,20 +8,20 @@ crate, feature, installer, and host factory.
 
 ## Source planning
 
-Source builds use the maintained module-aware source pipeline in
-`RuntimeExecutionMode::Plan`:
+Source builds use the maintained module-aware source pipeline through the
+owned `ProgramCompiler` returned by `RuntimeBuilder::build_compiler`:
 
 1. Canonicalize source roots while preserving explicit root order; sort files
    discovered inside directories.
 2. Create the maintained file source resolver and load the selected `.mcfg`.
-3. Create a deterministic `<binary-name>-planner` runtime configuration.
+3. Create deterministic `<binary-name>-compiler` compilation configuration.
 4. Materialize configured provider names, effect-free trusted planning host
    factories, host instances, run grants, and the trusted actor functions.
 5. Inject `mech_stdlib::source_catalog()`, resolve retained root modules in
    order, and compile official bytecode v1.
 
-Planning validates resource reads and effects but performs no external read,
-prepare, apply, deliver, driver attach, or driver start. Planner diagnostics,
+Compilation validates resource reads and effects but performs no external read,
+prepare, apply, deliver, driver attach, or driver start. Compiler diagnostics,
 source paths, resolver roots, filesystem capabilities, and temporary limits
 are not embedded in the generated application. Direct `.mecb` input bypasses
 source compilation but is parsed as official v1 and checked against the same

@@ -7,9 +7,9 @@ use mech_core::*;
 #[cfg(feature = "build")]
 use mech_runtime::{
     ActorBootstrapConfig, ActorHostPlanningState, HostInstanceConfig, PlannedPureHostFunction,
-    RunResourceGrantConfig, RuntimeValueSnapshot,
+    ProgramCompiler, RunResourceGrantConfig, RuntimeValueSnapshot,
 };
-use mech_runtime::{FileSourceResolver, MechRuntime, RuntimeBuilder, RuntimeConfig};
+use mech_runtime::{FileSourceResolver, RuntimeBuilder, RuntimeConfig};
 
 #[derive(Debug, Clone)]
 struct RuntimeStepLimitConversionError {
@@ -122,19 +122,19 @@ fn resolver_roots(canonical_roots: &[PathBuf]) -> MResult<Vec<PathBuf>> {
     Ok(roots)
 }
 
-/// Compile trusted local roots in plan mode for the build command. This shares
-/// the resolver and module execution path with source commands, but installs
-/// only effect-free planning hosts and never starts input drivers.
+/// Construct the compiler owner for trusted local build roots. It shares the
+/// resolver and provider-planning environment with runtime source loading but
+/// never constructs a live runtime or attaches input drivers.
 #[cfg(feature = "build")]
-pub(crate) fn prepare_planning_source_module_runtime(
+pub(crate) fn prepare_source_program_compiler(
     config: RuntimeConfig,
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
     actor_bootstrap: Option<&ActorBootstrapConfig>,
     roots: &[PathBuf],
-) -> MResult<(MechRuntime, Vec<PathBuf>)> {
+) -> MResult<(ProgramCompiler, Vec<PathBuf>)> {
     let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
-    let mut builder = builder.planning();
+    let mut builder = builder;
     let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
     for provider in &providers {
         builder = builder.host_factory(mech_build::selected_planning_host_factory(provider)?)?;
@@ -147,7 +147,7 @@ pub(crate) fn prepare_planning_source_module_runtime(
     )?;
     builder = install_actor_planning_functions(builder, actor_bootstrap.cloned())?;
 
-    Ok((builder.build()?, canonical_roots))
+    Ok((builder.build_compiler()?, canonical_roots))
 }
 
 #[cfg(feature = "build")]

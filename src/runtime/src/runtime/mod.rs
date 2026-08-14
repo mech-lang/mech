@@ -60,8 +60,10 @@ pub use self::errors::*;
 #[cfg(feature = "runtime_bench_probes")]
 #[doc(hidden)]
 pub use self::gate_a_probe::{GateACostSnapshot, gate_a_cost_snapshot, reset_gate_a_costs};
+#[cfg(feature = "resident-routing-source")]
+pub use self::program::{CompilerImportValueUnsupported, ProgramCompiler};
 #[cfg(feature = "resident-routing")]
 pub use self::resident_program::*;
 pub use self::resources::{RuntimeResourceBinding, RuntimeResourceBindingError};
-pub use self::state::{MechRuntime, RuntimeExecutionMode};
+pub use self::state::MechRuntime;
 pub use self::transaction::{RuntimeHealth, RuntimePoisonRecord};

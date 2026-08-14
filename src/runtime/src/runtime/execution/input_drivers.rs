@@ -1,4 +1,4 @@
-use crate::runtime::{MechRuntime, RuntimeExecutionMode, RuntimeInvalidOperationError, extension};
+use crate::runtime::{MechRuntime, RuntimeInvalidOperationError, extension};
 use mech_core::{MResult, MechError};
 
 impl MechRuntime {
@@ -106,9 +106,6 @@ impl MechRuntime {
     }
 
     pub fn start_input_drivers(&mut self) -> MResult<()> {
-        if self.execution_mode == RuntimeExecutionMode::Plan {
-            return Ok(());
-        }
         if self.ingress().is_closed()? {
             return Err(crate::input::input_error(
                 "RuntimeIngressClosed",

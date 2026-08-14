@@ -38,12 +38,14 @@ impl RuntimeArity {
 }
 
 fn compile_source(source: &str) -> Vec<u8> {
-    let mut runtime = RuntimeBuilder::new()
-        .planning()
+    let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .build()
+        .build_compiler()
         .unwrap();
-    runtime.compile_source_program_bytecode(source).unwrap()
+    compiler
+        .compile_source(source)
+        .map(|product| product.into_parts().1)
+        .unwrap()
 }
 
 #[test]

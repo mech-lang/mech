@@ -219,17 +219,16 @@ fn runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
         .build()
 }
 
-fn planning_runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
+fn compiler_with_drivers(drivers: Vec<MockDriver>) -> MResult<super::super::ProgramCompiler> {
     RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .planning()
         .host_factory(Box::new(MockDriverFactory::new(drivers)))?
         .host_instance(HostInstanceConfig {
             name: "clock".to_string(),
             provider: "test-input".to_string(),
             settings: ConfigValue::Map(Default::default()),
         })
-        .build()
+        .build_compiler()
 }
 
 fn activate_mock_inputs(runtime: &mut MechRuntime, names: &[&str]) {
@@ -296,13 +295,10 @@ fn build_attaches_and_starts_driven_input_drivers() {
 }
 
 #[test]
-fn planning_never_attaches_starts_or_stops_input_drivers() {
+fn compiler_never_attaches_starts_or_stops_input_drivers() {
     let state = Rc::new(RefCell::new(MockDriverState::default()));
     {
-        let mut runtime =
-            planning_runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
-        assert_eq!(runtime.input_driver_count(), 0);
-        runtime.start_input_drivers().unwrap();
+        let _compiler = compiler_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
         assert_eq!(state.borrow().attach_count, 0);
         assert_eq!(state.borrow().start_count, 0);
         assert_eq!(state.borrow().stop_count, 0);

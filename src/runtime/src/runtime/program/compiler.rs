@@ -8,9 +8,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use mech_core::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult,
-    MechExecutionServices, MechSourceCode, ModuleManifestCatalog, Ref, ResourceIntent, ValRef,
-    hash_str,
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
+    MechErrorKind, MechExecutionServices, MechSourceCode, ModuleManifestCatalog, Ref,
+    ResourceIntent, hash_str,
 };
 use mech_engine::{MechProgram, MechProgramConfig, ProgramCompilationProduct};
 
@@ -19,20 +19,95 @@ use crate::{
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
     RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
     RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
-    RuntimeResourceKey, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, SourceExportDeclaration,
-    SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest,
-    SourceResolver, import_may_resolve_source_dependency, import_requires_source_dependency,
-    module_namespace_for_import, source_request_for_import,
+    RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
+    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind,
+    SourceIndex, SourceRequest, SourceResolver, import_may_resolve_source_dependency,
+    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
 };
 
-use super::super::resident_program::{ResidentRouteFailureClass, route_failure, unsupported_route};
+use super::super::resident_program::{
+    ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route,
+};
 
-/// A planning-only compiler workspace borrowed from one runtime construction.
+/// The sole owner of source-to-resident-artifact compilation.
 ///
-/// Deliberately absent: runtime transactions, retained reactive state,
-/// savepoints, live bindings, event history, and program ownership.
-pub(crate) struct ProgramCompilerSession<'a> {
+/// Deliberately absent: input drivers, a live runtime store, runtime
+/// transactions, retained reactive state, event history, and program
+/// ownership.
+pub struct ProgramCompiler {
+    function_catalog: Arc<mech_core::FunctionCatalog>,
+    source_resolver: Box<dyn SourceResolver>,
+    resources: RuntimeResourceRegistry,
+    module_builder: ModuleBuilder,
+    host_interfaces: HostInterfaceCatalog,
+    module_manifests: ModuleManifestCatalog,
+    program_config: MechProgramConfig,
+}
+
+impl std::fmt::Debug for ProgramCompiler {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ProgramCompiler")
+            .field("function_catalog", &"<FunctionCatalog>")
+            .field("source_resolver", &"<dyn SourceResolver>")
+            .field("resources", &self.resources)
+            .field("module_builder", &self.module_builder)
+            .field("host_interfaces", &self.host_interfaces)
+            .field("module_manifests", &self.module_manifests)
+            .field("program_config", &self.program_config)
+            .finish()
+    }
+}
+
+impl ProgramCompiler {
+    pub(crate) fn new(
+        function_catalog: Arc<mech_core::FunctionCatalog>,
+        source_resolver: Box<dyn SourceResolver>,
+        resources: RuntimeResourceRegistry,
+        module_builder: ModuleBuilder,
+        host_interfaces: HostInterfaceCatalog,
+        module_manifests: ModuleManifestCatalog,
+        program_config: MechProgramConfig,
+    ) -> Self {
+        Self {
+            function_catalog,
+            source_resolver,
+            resources,
+            module_builder,
+            host_interfaces,
+            module_manifests,
+            program_config,
+        }
+    }
+
+    pub fn compile_source(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_source(source)
+    }
+
+    pub fn compile_root(
+        &mut self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_root(request, options)
+    }
+
+    fn view(&self) -> ProgramCompilerView<'_> {
+        ProgramCompilerView::new(
+            Arc::clone(&self.function_catalog),
+            self.source_resolver.as_ref(),
+            &self.resources,
+            &self.module_builder,
+            &self.host_interfaces,
+            &self.module_manifests,
+            self.program_config.clone(),
+        )
+    }
+}
+
+/// A short-lived borrowed view used when an already constructed runtime loads
+/// source through the same compiler implementation.
+pub(crate) struct ProgramCompilerView<'a> {
     function_catalog: Arc<mech_core::FunctionCatalog>,
     source_resolver: &'a dyn SourceResolver,
     resources: &'a RuntimeResourceRegistry,
@@ -51,10 +126,57 @@ struct CompilerModule {
 
 #[derive(Clone)]
 struct CompilerModuleInstance {
-    exports: HashMap<String, ValRef>,
+    exports: HashMap<String, CompilerExportValue>,
 }
 
-impl<'a> ProgramCompilerSession<'a> {
+#[derive(Clone)]
+struct CompilerExportValue {
+    module: String,
+    export: String,
+    value: LegacyValue,
+}
+
+impl CompilerExportValue {
+    fn fresh_reference(&self) -> MResult<Ref<LegacyValue>> {
+        self.value
+            .try_deep_snapshot()
+            .map(Ref::new)
+            .map_err(|_| unsupported_compiler_import(self))
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct CompilerImportValueUnsupported {
+    pub module: String,
+    pub export: String,
+    pub kind: String,
+}
+
+impl MechErrorKind for CompilerImportValueUnsupported {
+    fn name(&self) -> &str {
+        "CompilerImportValueUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "compiler import `{}` from module `{}` cannot snapshot value kind `{}`",
+            self.export, self.module, self.kind,
+        )
+    }
+}
+
+fn unsupported_compiler_import(value: &CompilerExportValue) -> MechError {
+    MechError::new(
+        CompilerImportValueUnsupported {
+            module: value.module.clone(),
+            export: value.export.clone(),
+            kind: value.value.kind().to_string(),
+        },
+        None,
+    )
+}
+
+impl<'a> ProgramCompilerView<'a> {
     pub(crate) fn new(
         function_catalog: Arc<mech_core::FunctionCatalog>,
         source_resolver: &'a dyn SourceResolver,
@@ -358,7 +480,25 @@ impl<'a> ProgramCompilerSession<'a> {
                     None,
                 )
             })?;
-            exports.insert(name, value);
+            let borrowed = value.borrow();
+            let snapshot = borrowed.try_deep_snapshot().map_err(|_| {
+                MechError::new(
+                    CompilerImportValueUnsupported {
+                        module: canonical_uri.to_owned(),
+                        export: name.clone(),
+                        kind: borrowed.kind().to_string(),
+                    },
+                    None,
+                )
+            })?;
+            exports.insert(
+                name.clone(),
+                CompilerExportValue {
+                    module: canonical_uri.to_owned(),
+                    export: name,
+                    value: snapshot,
+                },
+            );
         }
         drop(symbols);
         instances.insert(canonical_uri.to_owned(), CompilerModuleInstance { exports });
@@ -502,7 +642,7 @@ fn install_function_imports(
 fn build_import_environment(
     module: &CompilerModule,
     instances: &HashMap<String, CompilerModuleInstance>,
-) -> MResult<HashMap<String, ValRef>> {
+) -> MResult<HashMap<String, CompilerExportValue>> {
     let mut environment = HashMap::new();
     let mut ownership = HashMap::<String, String>::new();
     for (import, dependency) in &module.import_edges {
@@ -567,10 +707,10 @@ fn build_import_environment(
 }
 
 fn insert_import(
-    environment: &mut HashMap<String, ValRef>,
+    environment: &mut HashMap<String, CompilerExportValue>,
     ownership: &mut HashMap<String, String>,
     binding: String,
-    value: ValRef,
+    value: CompilerExportValue,
     source: &str,
 ) -> MResult<()> {
     if let Some(first) = ownership.insert(binding.clone(), source.to_owned()) {
@@ -589,13 +729,13 @@ fn insert_import(
 
 fn install_environment(
     program: &mut MechProgram,
-    environment: &HashMap<String, ValRef>,
+    environment: &HashMap<String, CompilerExportValue>,
 ) -> MResult<()> {
     let symbols = program.interpreter_mut().symbols();
     let mut symbols = symbols.borrow_mut();
     for (name, value) in environment {
         let id = hash_str(name);
-        symbols.symbols.insert(id, value.clone());
+        symbols.symbols.insert(id, value.fresh_reference()?);
         symbols.dictionary.borrow_mut().insert(id, name.clone());
     }
     Ok(())
@@ -676,12 +816,13 @@ impl CompilerPlanningServices<'_> {
 }
 
 fn classify_source_planning(error: mech_core::MechError) -> mech_core::MechError {
-    if error.kind_name() == "ResidentRouteFailure" {
+    if error.kind_as::<ResidentRouteFailure>().is_some() {
         return error;
     }
-    let class = match error.kind_name().as_str() {
-        "RuntimeResourceProviderNotFound" => ResidentRouteFailureClass::ProviderUnavailable,
-        _ => ResidentRouteFailureClass::InvalidArtifact,
+    let class = if error.kind_as::<RuntimeResourceProviderNotFound>().is_some() {
+        ResidentRouteFailureClass::ProviderUnavailable
+    } else {
+        ResidentRouteFailureClass::InvalidArtifact
     };
     route_failure(class, format!("resident source planning failed: {error:?}"))
 }

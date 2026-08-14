@@ -1,4 +1,5 @@
-use super::super::MechRuntime;
+#[cfg(feature = "compiler")]
+use crate::ProgramCompiler;
 #[cfg(feature = "compiler")]
 use mech_core::{
     ExternalInteraction, LegacyValue, ParsedProgram, Ref, ResolvedOperationContract,
@@ -13,10 +14,7 @@ use std::sync::{
 };
 
 #[cfg(feature = "compiler")]
-use crate::runtime::test_support::{
-    capabilities::{grant_read, grant_write},
-    providers::{TestAfterCommitEffect, test_runtime_builder},
-};
+use crate::runtime::test_support::providers::{TestAfterCommitEffect, test_runtime_builder};
 #[cfg(feature = "compiler")]
 use crate::{
     PreparedRuntimeEffect, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostInputDriver,
@@ -103,13 +101,13 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
 }
 
 #[cfg(feature = "compiler")]
-fn planning_runtime_with_write_counters() -> (MechRuntime, Arc<PlanningWriteCounters>) {
+fn compiler_with_write_counters() -> (ProgramCompiler, Arc<PlanningWriteCounters>) {
     let counters = Arc::new(PlanningWriteCounters::default());
     let runtime = test_runtime_builder()
         .resource_provider(Box::new(PlanningWriteProvider {
             counters: Arc::clone(&counters),
         }))
-        .build()
+        .build_compiler()
         .unwrap();
     (runtime, counters)
 }
@@ -206,8 +204,7 @@ fn compile_execution_mode_live_source() -> (Arc<ExecutionModeCounters>, Arc<Live
 {
     let resource_counters = Arc::new(ExecutionModeCounters::default());
     let driver_counters = Arc::new(LiveReadDriverCounters::default());
-    let mut runtime = test_runtime_builder()
-        .planning()
+    let mut compiler = test_runtime_builder()
         .test_input_driver(CountingLiveReadDriver {
             counters: Arc::clone(&driver_counters),
             live: false,
@@ -215,12 +212,9 @@ fn compile_execution_mode_live_source() -> (Arc<ExecutionModeCounters>, Arc<Live
         .resource_provider(Box::new(ExecutionModeReadProvider {
             counters: Arc::clone(&resource_counters),
         }))
-        .build()
+        .build_compiler()
         .unwrap();
-    grant_read(&mut runtime, MODE_READ_BASE_URI, "value");
-    runtime
-        .compile_source_program_bytecode(EXECUTION_MODE_LIVE_SOURCE)
-        .unwrap();
+    compiler.compile_source(EXECUTION_MODE_LIVE_SOURCE).unwrap();
     (resource_counters, driver_counters)
 }
 
@@ -238,15 +232,15 @@ fn plan_source_live_read_only_plans_without_binding_or_driver_effects() {
 #[cfg(feature = "compiler")]
 #[test]
 fn provider_transaction_contract_reaches_the_source_program_artifact() {
-    let (mut runtime, counters) = planning_runtime_with_write_counters();
-    grant_write(&mut runtime, PLANNING_WRITE_BASE_URI, "sent");
+    let (mut compiler, counters) = compiler_with_write_counters();
 
-    let bytecode = runtime
-        .compile_source_program_bytecode(
+    let bytecode = compiler
+        .compile_source(
             r#"@out := counting://sink{:write(sent)}
 @out/sent <- 2.0
 "#,
         )
+        .map(|product| product.into_parts().1)
         .unwrap();
     let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
     let artifact = decode_program_artifact_sections(&parsed.artifact).unwrap();

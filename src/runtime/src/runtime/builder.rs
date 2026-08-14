@@ -1,9 +1,9 @@
 //! Runtime construction and dependency assembly.
 
+use super::MechRuntime;
 use super::extension;
 use super::resources::{runtime_resource_binding_error, validate_resource_binding_name};
 use super::transaction::RuntimeHealth;
-use super::{MechRuntime, RuntimeExecutionMode};
 use crate::{
     BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY, DefaultHostCallPolicy,
     DefaultIdGenerator, HostCallPolicy, HostInstanceConfig, HostInterfaceCatalog, HostRegistry,
@@ -16,6 +16,8 @@ use crate::{
 };
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
+#[cfg(feature = "resident-routing-source")]
+use mech_engine::{MechProgramConfig, MechProgramEnvironment};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -27,7 +29,6 @@ use std::sync::Arc;
 
 pub struct RuntimeBuilder {
     config: RuntimeConfig,
-    execution_mode: RuntimeExecutionMode,
     function_catalog: Arc<FunctionCatalog>,
     id_generator: Box<dyn IdGenerator>,
     store: Box<dyn MechStore>,
@@ -56,7 +57,6 @@ impl std::fmt::Debug for RuntimeBuilder {
 
         f.debug_struct("RuntimeBuilder")
             .field("config", &self.config)
-            .field("execution_mode", &self.execution_mode)
             .field("function_catalog", &function_catalog)
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
@@ -83,7 +83,6 @@ impl Default for RuntimeBuilder {
     fn default() -> Self {
         Self {
             config: RuntimeConfig::default(),
-            execution_mode: RuntimeExecutionMode::Execute,
             function_catalog: mech_engine::empty_function_catalog(),
             id_generator: Box::new(DefaultIdGenerator::new()),
             store: Box::new(extension::RuntimeStoreBoundary::new(Box::new(
@@ -129,11 +128,6 @@ impl RuntimeBuilder {
 
     pub fn config(mut self, config: RuntimeConfig) -> Self {
         self.config = config;
-        self
-    }
-
-    pub fn planning(mut self) -> Self {
-        self.execution_mode = RuntimeExecutionMode::Plan;
         self
     }
 
@@ -271,6 +265,51 @@ impl RuntimeBuilder {
         self
     }
 
+    #[cfg(feature = "resident-routing-source")]
+    pub fn build_compiler(mut self) -> MResult<super::ProgramCompiler> {
+        self.config.validate()?;
+
+        let mut host_interfaces = HostInterfaceCatalog::new();
+        for host_instance in &self.host_instances {
+            let installation = self.host_factories.instantiate(host_instance)?;
+            host_interfaces.register(installation.interface)?;
+            self.resource_providers
+                .extend(installation.resource_providers);
+            // Compiler construction deliberately owns no input drivers. Host
+            // factories may describe them, but they are neither attached nor
+            // started and are dropped with the planning-only installation.
+            drop(installation.input_drivers);
+        }
+
+        let mut resources = RuntimeResourceRegistry::new();
+        for spec in &self.config_specs {
+            register_config_spec_resources(&mut resources, spec)?;
+        }
+        for provider in self.resource_providers {
+            resources.register_provider(provider)?;
+        }
+
+        let program_config = MechProgramConfig {
+            name: self.config.name,
+            environment: MechProgramEnvironment {
+                trace_enabled: self.config.diagnostics.trace_enabled,
+                debug_enabled: self.config.diagnostics.debug_enabled,
+                profile_enabled: self.config.diagnostics.profile_enabled,
+                rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
+            },
+        };
+
+        Ok(super::ProgramCompiler::new(
+            self.function_catalog,
+            self.source_resolver,
+            resources,
+            self.module_builder,
+            host_interfaces,
+            self.module_manifests,
+            program_config,
+        ))
+    }
+
     pub fn build(mut self) -> MResult<MechRuntime> {
         self.config.validate()?;
         self.scheduler_policy.validate()?;
@@ -305,7 +344,6 @@ impl RuntimeBuilder {
             id: runtime_id,
             event_sequence: 0,
             config: self.config,
-            execution_mode: self.execution_mode,
             function_catalog,
             #[cfg(feature = "resident-routing")]
             active_program: Default::default(),
@@ -363,44 +401,40 @@ impl RuntimeBuilder {
             runtime.bind_context_export(&alias, &module, &item)?;
         }
 
-        if runtime.execution_mode == RuntimeExecutionMode::Execute {
-            let ingress = runtime.ingress();
-            for index in 0..runtime.input_drivers.len() {
-                if let Err(error) =
-                    extension::invoke_extension("host input driver", "attach", || {
-                        runtime.input_drivers[index].attach(ingress.clone())
-                    })
-                {
-                    let _ = runtime.close_ingress();
-                    let mut cleanup_failures = Vec::new();
-                    for rollback_index in (0..=index).rev() {
-                        if let Err(cleanup_error) =
-                            extension::invoke_extension("host input driver", "stop", || {
-                                runtime.input_drivers[rollback_index].stop()
-                            })
-                        {
-                            cleanup_failures.push(format!(
-                                "input driver {} stop failed: {:?}",
-                                rollback_index, cleanup_error,
-                            ));
-                        }
-                    }
-                    runtime.attached_input_driver_count = 0;
-                    runtime.input_driver_cleanup_armed = false;
-                    if !cleanup_failures.is_empty() {
-                        return Err(runtime.poison_program_operation(
-                            "build",
-                            None,
-                            format!("{:?}", error),
-                            cleanup_failures,
+        let ingress = runtime.ingress();
+        for index in 0..runtime.input_drivers.len() {
+            if let Err(error) = extension::invoke_extension("host input driver", "attach", || {
+                runtime.input_drivers[index].attach(ingress.clone())
+            }) {
+                let _ = runtime.close_ingress();
+                let mut cleanup_failures = Vec::new();
+                for rollback_index in (0..=index).rev() {
+                    if let Err(cleanup_error) =
+                        extension::invoke_extension("host input driver", "stop", || {
+                            runtime.input_drivers[rollback_index].stop()
+                        })
+                    {
+                        cleanup_failures.push(format!(
+                            "input driver {} stop failed: {:?}",
+                            rollback_index, cleanup_error,
                         ));
                     }
-                    return Err(error);
                 }
-                runtime.attached_input_driver_count += 1;
+                runtime.attached_input_driver_count = 0;
+                runtime.input_driver_cleanup_armed = false;
+                if !cleanup_failures.is_empty() {
+                    return Err(runtime.poison_program_operation(
+                        "build",
+                        None,
+                        format!("{:?}", error),
+                        cleanup_failures,
+                    ));
+                }
+                return Err(error);
             }
-            runtime.input_driver_cleanup_armed = true;
+            runtime.attached_input_driver_count += 1;
         }
+        runtime.input_driver_cleanup_armed = true;
 
         let mut context = runtime.runtime_context()?;
 
@@ -417,18 +451,9 @@ impl RuntimeBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{RuntimeBuilder, RuntimeExecutionMode};
+    use super::RuntimeBuilder;
     use mech_core::FunctionCatalogBuilder;
     use std::sync::Arc;
-
-    #[test]
-    fn execution_mode_defaults_to_execute_and_planning_selects_plan() {
-        let execute = RuntimeBuilder::new().build().unwrap();
-        let plan = RuntimeBuilder::new().planning().build().unwrap();
-
-        assert_eq!(execute.execution_mode(), RuntimeExecutionMode::Execute);
-        assert_eq!(plan.execution_mode(), RuntimeExecutionMode::Plan);
-    }
 
     #[test]
     fn custom_function_catalog_reaches_runtime() {

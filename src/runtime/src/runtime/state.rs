@@ -19,12 +19,6 @@ use crate::runtime::resident_program::ResidentProductionProbe;
 #[cfg(feature = "resident-routing")]
 use crate::runtime::resident_program::{ActiveProgramExecution, RuntimeProgramExecutionInfo};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RuntimeExecutionMode {
-    Execute,
-    Plan,
-}
-
 pub(in crate::runtime) struct ScopedRuntimeState<T: Copy> {
     state: Rc<Cell<Option<T>>>,
     previous: Option<T>,
@@ -48,7 +42,6 @@ pub struct MechRuntime {
     pub(super) id: RuntimeId,
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
-    pub(super) execution_mode: RuntimeExecutionMode,
     pub(super) function_catalog: Arc<FunctionCatalog>,
     #[cfg(feature = "resident-routing")]
     pub(super) active_program: ActiveProgramExecution,
@@ -86,7 +79,6 @@ impl std::fmt::Debug for MechRuntime {
             .field("id", &self.id)
             .field("event_sequence", &self.event_sequence)
             .field("config", &self.config)
-            .field("execution_mode", &self.execution_mode)
             .field("function_catalog", &"<FunctionCatalog>")
             .field("active_program", &self.program_route_for_debug())
             .field("id_generator", &"<dyn IdGenerator>")
@@ -124,10 +116,6 @@ impl MechRuntime {
 
     pub fn config(&self) -> &RuntimeConfig {
         &self.config
-    }
-
-    pub fn execution_mode(&self) -> RuntimeExecutionMode {
-        self.execution_mode
     }
 
     pub(crate) fn health(&self) -> &RuntimeHealth {

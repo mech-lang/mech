@@ -10,7 +10,7 @@ use mech_build::{
 use mech_core::*;
 use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, SourceRequest};
 
-use crate::cli::module_execution::{module_runtime_config, prepare_planning_source_module_runtime};
+use crate::cli::module_execution::{module_runtime_config, prepare_source_program_compiler};
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::source_discovery::{DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources};
 
@@ -265,7 +265,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 crate::apply_runtime_config_patch(planner_config, &config.document.runtime)?;
         }
         planner_config.validate_production_program_routing()?;
-        let (mut runtime, roots) = prepare_planning_source_module_runtime(
+        let (mut compiler, roots) = prepare_source_program_compiler(
             planner_config,
             &configured_hosts,
             &run_grants,
@@ -273,7 +273,14 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             &source_roots,
         )?;
         let request = SourceRequest::from_filesystem_path(&roots[0])?;
-        let bytecode = runtime.compile_root_program_bytecode(request)?;
+        let options = mech_runtime::ModuleBuildOptions::new(
+            env!("CARGO_PKG_VERSION"),
+            "v0.3",
+            "native",
+            &[],
+            &[],
+        );
+        let bytecode = compiler.compile_root(request, options)?.into_parts().1;
         (bytecode, loaded_config)
     };
 
