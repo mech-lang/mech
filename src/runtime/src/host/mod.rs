@@ -1,7 +1,7 @@
 //! Host integration boundary.
 //!
 //! `host.rs` defines how embedders expose native functionality to the Mech
-//! runtime without baking those APIs into the interpreter.
+//! runtime without baking those APIs into resident program execution.
 //!
 //! Host functions are runtime-facing capabilities:
 //!

@@ -32,9 +32,7 @@
 
 use super::MechRuntime;
 use crate::{HostCall, RuntimeContext, RuntimeEventKind, RuntimeValueSnapshot};
-use mech_core::{
-    ExecutionHostFunctionRequest, LegacyValue, MResult, MechError, MechExecutionServices,
-};
+use mech_core::{ExecutionHostFunctionRequest, LegacyValue, MResult, MechExecutionServices};
 
 impl MechRuntime {
     pub fn call_host(&mut self, call: HostCall) -> MResult<RuntimeValueSnapshot> {

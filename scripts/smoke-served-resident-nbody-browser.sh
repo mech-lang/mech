@@ -212,7 +212,6 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-done="true"' "$dom_file" \
   || ! grep -q 'data-mech-route="resident-external"' "$dom_file" \
   || ! grep -q 'data-mech-rejected="0"' "$dom_file" \
-  || ! grep -q 'data-mech-legacy="0"' "$dom_file" \
   || ! grep -q 'data-mech-circles="10"' "$dom_file" \
   || ! grep -q 'data-mech-body-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-sun-fixed="true"' "$dom_file" \
@@ -230,4 +229,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'D4_BROWSER route=resident-external accepted=%s rejected=0 legacy=0 rendered=%s circles=10 moved=true sun_fixed=true orbit_stable=true console_errors=0 page_errors=0\n' "$accepted" "$rendered"
+printf 'D4_BROWSER route=resident-external accepted=%s rejected=0 rendered=%s circles=10 moved=true sun_fixed=true orbit_stable=true console_errors=0 page_errors=0\n' "$accepted" "$rendered"

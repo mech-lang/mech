@@ -278,7 +278,7 @@ def source_errors(root: Path) -> list[str]:
         and "4_096" in resident_tests,
         "browser fixed orbit proof": all(
             token in browser_smoke
-            for token in ("mechSunFixed", "mechOrbitStable", 'data-mech-legacy="0"')
+            for token in ("mechSunFixed", "mechOrbitStable", 'data-mech-rejected="0"')
         ),
         "4096 product trajectory": "product_nbody_source_and_bytecode_match_d2_for_4096_accepted_turns" in resident_tests
         and "4_096" in resident_tests,

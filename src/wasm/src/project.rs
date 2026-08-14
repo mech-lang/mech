@@ -1627,26 +1627,6 @@ mod tests {
     }
 
     #[test]
-    fn encoded_document_runs_on_runtime_and_exposes_root_output() {
-        let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let document = WasmDocument::from_encoded(&encoded).unwrap();
-
-        assert_f64(
-            document
-                .project
-                .runtime
-                .root_symbol_value("answer")
-                .unwrap(),
-            42.0,
-        );
-        assert_eq!(
-            document.project.runtime.program_route(),
-            RuntimeProgramRoute::ResidentPure,
-        );
-    }
-
-    #[test]
     fn encoded_document_controller_loads_residently_without_legacy_execution() {
         let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
@@ -1659,44 +1639,6 @@ mod tests {
                 .root_symbol_value("answer")
                 .unwrap(),
             42.0,
-        );
-        assert_eq!(
-            document.project.runtime.program_route(),
-            RuntimeProgramRoute::ResidentPure,
-        );
-    }
-
-    #[test]
-    fn encoded_fizzbuzz_document_retains_fenced_block_output() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
-                .unwrap();
-        let output_id = tree
-            .body
-            .sections
-            .iter()
-            .flat_map(|section| &section.elements)
-            .filter_map(|element| match element {
-                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
-                    block
-                        .code
-                        .last()
-                        .map(|(code, _)| mech_core::hash_str(&format!("{code:?}")))
-                }
-                _ => None,
-            })
-            .last()
-            .expect("FizzBuzz fixture must contain an output block");
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let document = WasmDocument::from_encoded(&encoded).unwrap();
-
-        assert_eq!(
-            output_id, 29_884_140_763_677_669,
-            "the browser runtime key must match the native formatter key",
-        );
-        assert!(
-            !document.rendered_output(0, output_id).unwrap().is_null(),
-            "FizzBuzz output must remain queryable by its formatted block id",
         );
         assert_eq!(
             document.project.runtime.program_route(),

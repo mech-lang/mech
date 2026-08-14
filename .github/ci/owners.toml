@@ -26,7 +26,7 @@ cross_cutting = true
 
 [owners.mech-runtime]
 paths = ["src/runtime/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-runtime", "--lib", "--no-default-features", "--features", "full_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-runtime", "--lib", "--no-default-features", "--features", "full_compiler,resident-routing-source"]
 standard = true
 cross_cutting = true
 

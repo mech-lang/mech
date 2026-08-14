@@ -147,8 +147,6 @@
     "machines/math/src/trig/sinh.rs",
     "machines/math/src/trig/tan.rs",
     "machines/math/src/trig/tanh.rs",
-    "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-    "machines/matrix/examples/runtime_loop_benchmark.rs",
     "machines/matrix/examples/steady_state_benchmark.rs",
     "machines/matrix/src/catalog.rs",
     "machines/matrix/src/dot.rs",
@@ -459,9 +457,6 @@
     "src/lib.rs",
     "src/project.rs",
     "src/runtime/src/actor.rs",
-    "src/runtime/src/actor_behavior.rs",
-    "src/runtime/src/bin/address_target_diagnostics.rs",
-    "src/runtime/src/bin/module_smoke.rs",
     "src/runtime/src/bin/support/mod.rs",
     "src/runtime/src/capability/basic.rs",
     "src/runtime/src/capability/capability.rs",
@@ -539,31 +534,18 @@
     "src/runtime/src/runtime/context_registry.rs",
     "src/runtime/src/runtime/errors.rs",
     "src/runtime/src/runtime/events.rs",
-    "src/runtime/src/runtime/execution/audit.rs",
-    "src/runtime/src/runtime/execution/bytecode.rs",
-    "src/runtime/src/runtime/execution/context_preflight.rs",
-    "src/runtime/src/runtime/execution/host_input.rs",
     "src/runtime/src/runtime/execution/input_drivers.rs",
-    "src/runtime/src/runtime/execution/live_registration.rs",
     "src/runtime/src/runtime/execution/mod.rs",
-    "src/runtime/src/runtime/execution/module.rs",
-    "src/runtime/src/runtime/execution/module_environment.rs",
     "src/runtime/src/runtime/execution/query.rs",
-    "src/runtime/src/runtime/execution/reactive.rs",
-    "src/runtime/src/runtime/execution/source.rs",
-    "src/runtime/src/runtime/execution/source_reconstruction.rs",
     "src/runtime/src/runtime/execution_session.rs",
     "src/runtime/src/runtime/extension.rs",
-    "src/runtime/src/runtime/external.rs",
     "src/runtime/src/runtime/gate_a_probe.rs",
     "src/runtime/src/runtime/host/mod.rs",
     "src/runtime/src/runtime/id.rs",
     "src/runtime/src/runtime/lifecycle.rs",
     "src/runtime/src/runtime/limits.rs",
-    "src/runtime/src/runtime/live_state.rs",
     "src/runtime/src/runtime/mod.rs",
     "src/runtime/src/runtime/module/mod.rs",
-    "src/runtime/src/runtime/module/tests/function_imports.rs",
     "src/runtime/src/runtime/object.rs",
     "src/runtime/src/runtime/operation_context.rs",
     "src/runtime/src/runtime/program/compiler.rs",
@@ -588,8 +570,7 @@
     "src/runtime/src/runtime/transaction/health.rs",
     "src/runtime/src/runtime/transaction/mod.rs",
     "src/runtime/src/runtime/transaction/modules.rs",
-    "src/runtime/src/runtime/transaction/program.rs",
-    "src/runtime/src/runtime/transaction/reactive.rs",
+    "src/runtime/src/runtime/transaction/operation.rs",
     "src/runtime/src/runtime/transaction/savepoint.rs",
     "src/runtime/src/scheduler.rs",
     "src/runtime/src/service/mod.rs",
@@ -1430,28 +1411,6 @@
       "targets": [
         {
           "kinds": [
-            "example"
-          ],
-          "name": "actor_context_host",
-          "reachable_rust_files": [
-            "src/runtime/examples/actor_context_host.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/actor_context_host.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "actor_state_host",
-          "reachable_rust_files": [
-            "src/runtime/examples/actor_state_host.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/actor_state_host.rs"
-        },
-        {
-          "kinds": [
             "test"
           ],
           "name": "config_profile",
@@ -1459,28 +1418,6 @@
             "src/runtime/tests/config_profile.rs"
           ],
           "root": "src/runtime/tests/config_profile.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "dep_cycle",
-          "reachable_rust_files": [
-            "src/runtime/examples/dep_cycle.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/dep_cycle.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "dep_diamond",
-          "reachable_rust_files": [
-            "src/runtime/examples/dep_diamond.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/dep_diamond.rs"
         },
         {
           "kinds": [
@@ -1512,16 +1449,11 @@
             "src/runtime/src/ledger/tests.rs",
             "src/runtime/src/outbox/tests.rs",
             "src/runtime/src/resident_external/tests.rs",
-            "src/runtime/src/runtime/actor/tests/actor_turns.rs",
             "src/runtime/src/runtime/actor/tests/limits.rs",
             "src/runtime/src/runtime/actor/tests/mod.rs",
             "src/runtime/src/runtime/actor/tests/transactional_mailbox.rs",
             "src/runtime/src/runtime/execution/tests/mod.rs",
-            "src/runtime/src/runtime/execution/tests/module_execution.rs",
-            "src/runtime/src/runtime/execution/tests/queries.rs",
-            "src/runtime/src/runtime/execution/tests/reactive.rs",
             "src/runtime/src/runtime/execution/tests/source.rs",
-            "src/runtime/src/runtime/host/tests/checkpoint.rs",
             "src/runtime/src/runtime/host/tests/transaction/authorization.rs",
             "src/runtime/src/runtime/host/tests/transaction/effects.rs",
             "src/runtime/src/runtime/host/tests/transaction/events.rs",
@@ -1529,23 +1461,12 @@
             "src/runtime/src/runtime/host/tests/transaction/planning.rs",
             "src/runtime/src/runtime/host/tests/transaction/rollback.rs",
             "src/runtime/src/runtime/host/tests/transaction/support.rs",
-            "src/runtime/src/runtime/input_tests/admission.rs",
-            "src/runtime/src/runtime/input_tests/binding.rs",
-            "src/runtime/src/runtime/input_tests/integrity.rs",
             "src/runtime/src/runtime/input_tests/mod.rs",
             "src/runtime/src/runtime/input_tests/queue.rs",
-            "src/runtime/src/runtime/input_tests/reactive_hosts.rs",
-            "src/runtime/src/runtime/input_tests/rollback.rs",
-            "src/runtime/src/runtime/input_tests/scheduling.rs",
             "src/runtime/src/runtime/input_tests/snapshot_boundaries.rs",
-            "src/runtime/src/runtime/module/tests/build.rs",
-            "src/runtime/src/runtime/module/tests/commit_failures.rs",
-            "src/runtime/src/runtime/module/tests/dependency_graph.rs",
             "src/runtime/src/runtime/module/tests/mod.rs",
             "src/runtime/src/runtime/module/tests/provisional_visibility.rs",
-            "src/runtime/src/runtime/module/tests/rollback.rs",
             "src/runtime/src/runtime/module/tests/support.rs",
-            "src/runtime/src/runtime/module/tests/validation.rs",
             "src/runtime/src/runtime/resident_program/artifact_tests.rs",
             "src/runtime/src/runtime/resident_program/tests.rs",
             "src/runtime/src/runtime/schedule/tests/extension_panics.rs",
@@ -1559,7 +1480,6 @@
             "src/runtime/src/runtime/test_support/mod.rs",
             "src/runtime/src/runtime/test_support/providers.rs",
             "src/runtime/src/runtime/test_support/stores.rs",
-            "src/runtime/src/runtime/test_support/values.rs",
             "src/runtime/src/runtime/transaction/tests/capabilities/grants.rs",
             "src/runtime/src/runtime/transaction/tests/capabilities/mod.rs",
             "src/runtime/src/runtime/transaction/tests/capabilities/overlays.rs",
@@ -1579,15 +1499,6 @@
             "src/runtime/src/runtime/transaction/tests/modules/mod.rs",
             "src/runtime/src/runtime/transaction/tests/modules/rollback.rs",
             "src/runtime/src/runtime/transaction/tests/modules/staging.rs",
-            "src/runtime/src/runtime/transaction/tests/program/effects.rs",
-            "src/runtime/src/runtime/transaction/tests/program/mod.rs",
-            "src/runtime/src/runtime/transaction/tests/program/savepoints.rs",
-            "src/runtime/src/runtime/transaction/tests/program/support.rs",
-            "src/runtime/src/runtime/transaction/tests/reactive/coordination.rs",
-            "src/runtime/src/runtime/transaction/tests/reactive/finalization.rs",
-            "src/runtime/src/runtime/transaction/tests/reactive/mod.rs",
-            "src/runtime/src/runtime/transaction/tests/reactive/rollback.rs",
-            "src/runtime/src/runtime/transaction/tests/reactive/service_borrow.rs",
             "src/runtime/src/runtime/transaction/tests/store/abort.rs",
             "src/runtime/src/runtime/transaction/tests/store/begin.rs",
             "src/runtime/src/runtime/transaction/tests/store/commit.rs",
@@ -1683,61 +1594,6 @@
         },
         {
           "kinds": [
-            "example"
-          ],
-          "name": "runtime_dep_src",
-          "reachable_rust_files": [
-            "src/runtime/examples/runtime_dep_src.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/runtime_dep_src.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "runtime_services_host",
-          "reachable_rust_files": [
-            "src/runtime/examples/runtime_services_host.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/runtime_services_host.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "scheduled_actor_native_functions",
-          "reachable_rust_files": [
-            "src/runtime/examples/scheduled_actor_native_functions.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/scheduled_actor_native_functions.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "scheduled_actor_state_host",
-          "reachable_rust_files": [
-            "src/runtime/examples/scheduled_actor_state_host.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/scheduled_actor_state_host.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "scheduled_runtime",
-          "reachable_rust_files": [
-            "src/runtime/examples/scheduled_runtime.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/scheduled_runtime.rs"
-        },
-        {
-          "kinds": [
             "test"
           ],
           "name": "sealed_api",
@@ -1745,17 +1601,6 @@
             "src/runtime/tests/sealed_api.rs"
           ],
           "root": "src/runtime/tests/sealed_api.rs"
-        },
-        {
-          "kinds": [
-            "example"
-          ],
-          "name": "source_import_dependency",
-          "reachable_rust_files": [
-            "src/runtime/examples/source_import_dependency.rs",
-            "src/runtime/examples/support/mod.rs"
-          ],
-          "root": "src/runtime/examples/source_import_dependency.rs"
         },
         {
           "kinds": [
@@ -2313,8 +2158,6 @@
     "machines/math/src/trig/sinh.rs",
     "machines/math/src/trig/tan.rs",
     "machines/math/src/trig/tanh.rs",
-    "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-    "machines/matrix/examples/runtime_loop_benchmark.rs",
     "machines/matrix/examples/steady_state_benchmark.rs",
     "machines/matrix/src/catalog.rs",
     "machines/matrix/src/dot.rs",
@@ -2735,22 +2578,8 @@
     "src/runtime/benches/support/gate_b/resident_kernel.rs",
     "src/runtime/benches/support/gate_b/resident_turn.rs",
     "src/runtime/benches/support/mod.rs",
-    "src/runtime/examples/actor_context_host.rs",
-    "src/runtime/examples/actor_state_host.rs",
-    "src/runtime/examples/dep_cycle.rs",
-    "src/runtime/examples/dep_diamond.rs",
-    "src/runtime/examples/runtime_dep_src.rs",
-    "src/runtime/examples/runtime_services_host.rs",
-    "src/runtime/examples/scheduled_actor_native_functions.rs",
-    "src/runtime/examples/scheduled_actor_state_host.rs",
-    "src/runtime/examples/scheduled_runtime.rs",
-    "src/runtime/examples/source_import_dependency.rs",
-    "src/runtime/examples/support/mod.rs",
     "src/runtime/examples/transactional_runtime.rs",
     "src/runtime/src/actor.rs",
-    "src/runtime/src/actor_behavior.rs",
-    "src/runtime/src/bin/address_target_diagnostics.rs",
-    "src/runtime/src/bin/module_smoke.rs",
     "src/runtime/src/bin/support/mod.rs",
     "src/runtime/src/capability/basic.rs",
     "src/runtime/src/capability/capability.rs",
@@ -2826,7 +2655,6 @@
     "src/runtime/src/resource.rs",
     "src/runtime/src/resource_contract.rs",
     "src/runtime/src/runtime/actor/mod.rs",
-    "src/runtime/src/runtime/actor/tests/actor_turns.rs",
     "src/runtime/src/runtime/actor/tests/limits.rs",
     "src/runtime/src/runtime/actor/tests/mod.rs",
     "src/runtime/src/runtime/actor/tests/transactional_mailbox.rs",
@@ -2835,30 +2663,15 @@
     "src/runtime/src/runtime/context_registry.rs",
     "src/runtime/src/runtime/errors.rs",
     "src/runtime/src/runtime/events.rs",
-    "src/runtime/src/runtime/execution/audit.rs",
-    "src/runtime/src/runtime/execution/bytecode.rs",
-    "src/runtime/src/runtime/execution/context_preflight.rs",
-    "src/runtime/src/runtime/execution/host_input.rs",
     "src/runtime/src/runtime/execution/input_drivers.rs",
-    "src/runtime/src/runtime/execution/live_registration.rs",
     "src/runtime/src/runtime/execution/mod.rs",
-    "src/runtime/src/runtime/execution/module.rs",
-    "src/runtime/src/runtime/execution/module_environment.rs",
     "src/runtime/src/runtime/execution/query.rs",
-    "src/runtime/src/runtime/execution/reactive.rs",
-    "src/runtime/src/runtime/execution/source.rs",
-    "src/runtime/src/runtime/execution/source_reconstruction.rs",
     "src/runtime/src/runtime/execution/tests/mod.rs",
-    "src/runtime/src/runtime/execution/tests/module_execution.rs",
-    "src/runtime/src/runtime/execution/tests/queries.rs",
-    "src/runtime/src/runtime/execution/tests/reactive.rs",
     "src/runtime/src/runtime/execution/tests/source.rs",
     "src/runtime/src/runtime/execution_session.rs",
     "src/runtime/src/runtime/extension.rs",
-    "src/runtime/src/runtime/external.rs",
     "src/runtime/src/runtime/gate_a_probe.rs",
     "src/runtime/src/runtime/host/mod.rs",
-    "src/runtime/src/runtime/host/tests/checkpoint.rs",
     "src/runtime/src/runtime/host/tests/transaction/authorization.rs",
     "src/runtime/src/runtime/host/tests/transaction/effects.rs",
     "src/runtime/src/runtime/host/tests/transaction/events.rs",
@@ -2867,29 +2680,16 @@
     "src/runtime/src/runtime/host/tests/transaction/rollback.rs",
     "src/runtime/src/runtime/host/tests/transaction/support.rs",
     "src/runtime/src/runtime/id.rs",
-    "src/runtime/src/runtime/input_tests/admission.rs",
-    "src/runtime/src/runtime/input_tests/binding.rs",
-    "src/runtime/src/runtime/input_tests/integrity.rs",
     "src/runtime/src/runtime/input_tests/mod.rs",
     "src/runtime/src/runtime/input_tests/queue.rs",
-    "src/runtime/src/runtime/input_tests/reactive_hosts.rs",
-    "src/runtime/src/runtime/input_tests/rollback.rs",
-    "src/runtime/src/runtime/input_tests/scheduling.rs",
     "src/runtime/src/runtime/input_tests/snapshot_boundaries.rs",
     "src/runtime/src/runtime/lifecycle.rs",
     "src/runtime/src/runtime/limits.rs",
-    "src/runtime/src/runtime/live_state.rs",
     "src/runtime/src/runtime/mod.rs",
     "src/runtime/src/runtime/module/mod.rs",
-    "src/runtime/src/runtime/module/tests/build.rs",
-    "src/runtime/src/runtime/module/tests/commit_failures.rs",
-    "src/runtime/src/runtime/module/tests/dependency_graph.rs",
-    "src/runtime/src/runtime/module/tests/function_imports.rs",
     "src/runtime/src/runtime/module/tests/mod.rs",
     "src/runtime/src/runtime/module/tests/provisional_visibility.rs",
-    "src/runtime/src/runtime/module/tests/rollback.rs",
     "src/runtime/src/runtime/module/tests/support.rs",
-    "src/runtime/src/runtime/module/tests/validation.rs",
     "src/runtime/src/runtime/object.rs",
     "src/runtime/src/runtime/operation_context.rs",
     "src/runtime/src/runtime/program/compiler.rs",
@@ -2918,7 +2718,6 @@
     "src/runtime/src/runtime/test_support/mod.rs",
     "src/runtime/src/runtime/test_support/providers.rs",
     "src/runtime/src/runtime/test_support/stores.rs",
-    "src/runtime/src/runtime/test_support/values.rs",
     "src/runtime/src/runtime/transaction/abort.rs",
     "src/runtime/src/runtime/transaction/capabilities.rs",
     "src/runtime/src/runtime/transaction/commit.rs",
@@ -2928,8 +2727,7 @@
     "src/runtime/src/runtime/transaction/health.rs",
     "src/runtime/src/runtime/transaction/mod.rs",
     "src/runtime/src/runtime/transaction/modules.rs",
-    "src/runtime/src/runtime/transaction/program.rs",
-    "src/runtime/src/runtime/transaction/reactive.rs",
+    "src/runtime/src/runtime/transaction/operation.rs",
     "src/runtime/src/runtime/transaction/savepoint.rs",
     "src/runtime/src/runtime/transaction/tests/capabilities/grants.rs",
     "src/runtime/src/runtime/transaction/tests/capabilities/mod.rs",
@@ -2950,15 +2748,6 @@
     "src/runtime/src/runtime/transaction/tests/modules/mod.rs",
     "src/runtime/src/runtime/transaction/tests/modules/rollback.rs",
     "src/runtime/src/runtime/transaction/tests/modules/staging.rs",
-    "src/runtime/src/runtime/transaction/tests/program/effects.rs",
-    "src/runtime/src/runtime/transaction/tests/program/mod.rs",
-    "src/runtime/src/runtime/transaction/tests/program/savepoints.rs",
-    "src/runtime/src/runtime/transaction/tests/program/support.rs",
-    "src/runtime/src/runtime/transaction/tests/reactive/coordination.rs",
-    "src/runtime/src/runtime/transaction/tests/reactive/finalization.rs",
-    "src/runtime/src/runtime/transaction/tests/reactive/mod.rs",
-    "src/runtime/src/runtime/transaction/tests/reactive/rollback.rs",
-    "src/runtime/src/runtime/transaction/tests/reactive/service_borrow.rs",
     "src/runtime/src/runtime/transaction/tests/store/abort.rs",
     "src/runtime/src/runtime/transaction/tests/store/begin.rs",
     "src/runtime/src/runtime/transaction/tests/store/commit.rs",
@@ -7107,47 +6896,9 @@
             "line": 493
           }
         ]
-      },
-      {
-        "count": 1,
-        "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-        "sites": [
-          {
-            "column": 22,
-            "fingerprint": "be6ce3d3001ef247d0513016b79c23bc3a341837082a37c88d33939fa0e62725",
-            "line": 3474
-          }
-        ]
-      },
-      {
-        "count": 1,
-        "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-        "sites": [
-          {
-            "column": 22,
-            "fingerprint": "7c67f0415c996db405144d3b0f8055bce5e5638a1e552b1531e21056e24c4e59",
-            "line": 101
-          }
-        ]
       }
     ],
     "reactive-cell-id": [
-      {
-        "count": 2,
-        "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-        "sites": [
-          {
-            "column": 5,
-            "fingerprint": "3acf8254715928bb096f6b7b6a4326267be94da93e7a9fd7f8e29bc62ae0de30",
-            "line": 4
-          },
-          {
-            "column": 16,
-            "fingerprint": "81a6e67bcfce0be74ce971a19cf3d2b72eb9f5939d2df129bd10d1954a817d56",
-            "line": 228
-          }
-        ]
-      },
       {
         "count": 3,
         "path": "machines/matrix/examples/steady_state_benchmark.rs",
@@ -10240,97 +9991,18 @@
         ]
       },
       {
-        "count": 1,
-        "path": "src/runtime/src/input.rs",
-        "sites": [
-          {
-            "column": 28,
-            "fingerprint": "99da8881d864af142d2ea80fb23d91f8ec85b824e52405d3c52560589aaff273",
-            "line": 163
-          }
-        ]
-      },
-      {
-        "count": 2,
-        "path": "src/runtime/src/runtime/execution/live_registration.rs",
-        "sites": [
-          {
-            "column": 86,
-            "fingerprint": "f973071eeaff9297e21e801729fb9979deab66137ab2968e2c2e6405b7a5788d",
-            "line": 5
-          },
-          {
-            "column": 17,
-            "fingerprint": "f973071eeaff9297e21e801729fb9979deab66137ab2968e2c2e6405b7a5788d",
-            "line": 15
-          }
-        ]
-      },
-      {
-        "count": 3,
-        "path": "src/runtime/src/runtime/execution/module.rs",
-        "sites": [
-          {
-            "column": 64,
-            "fingerprint": "58de934fe7f4761d9309bf9bd957d1853631be04841f4b4e6961fb6498549f30",
-            "line": 60
-          },
-          {
-            "column": 45,
-            "fingerprint": "16a19f6e2ce559e3779272f2ec9dd4dd887498335fc3d1c3289da0a9569bd785",
-            "line": 720
-          },
-          {
-            "column": 45,
-            "fingerprint": "16a19f6e2ce559e3779272f2ec9dd4dd887498335fc3d1c3289da0a9569bd785",
-            "line": 803
-          }
-        ]
-      },
-      {
-        "count": 5,
-        "path": "src/runtime/src/runtime/execution/module_environment.rs",
-        "sites": [
-          {
-            "column": 53,
-            "fingerprint": "f973071eeaff9297e21e801729fb9979deab66137ab2968e2c2e6405b7a5788d",
-            "line": 8
-          },
-          {
-            "column": 45,
-            "fingerprint": "364649a62364484b02ab0e1b670ab70cc26129adff06920b22be597c30aa6b7d",
-            "line": 22
-          },
-          {
-            "column": 39,
-            "fingerprint": "d4537655ebe2b98b59f74f1e67593aa82a5014e053f1b5aa4205e4ec1d05c374",
-            "line": 132
-          },
-          {
-            "column": 34,
-            "fingerprint": "5d9a59ecc94d1950f20b654ec3026b006819ce371a03f14ec587e6440a29adcf",
-            "line": 239
-          },
-          {
-            "column": 29,
-            "fingerprint": "a16bfb0ec3ee24913678b2bf021588ce4be670eea360598382bc843c9a8312f3",
-            "line": 240
-          }
-        ]
-      },
-      {
         "count": 2,
         "path": "src/runtime/src/runtime/execution_session.rs",
         "sites": [
           {
             "column": 44,
             "fingerprint": "f973071eeaff9297e21e801729fb9979deab66137ab2968e2c2e6405b7a5788d",
-            "line": 20
+            "line": 18
           },
           {
-            "column": 17,
+            "column": 18,
             "fingerprint": "0261b4b1dfc28a3d379785958c3fa00efe91c5ff71cc8ce193c8c2849273de91",
-            "line": 666
+            "line": 659
           }
         ]
       },
@@ -10367,22 +10039,6 @@
             "column": 35,
             "fingerprint": "6da56b88724e13fc6eb4ee7f05373a18d04e571bd64b5981036fa97870fe3b24",
             "line": 592
-          }
-        ]
-      },
-      {
-        "count": 2,
-        "path": "src/runtime/src/runtime/transaction/reactive.rs",
-        "sites": [
-          {
-            "column": 28,
-            "fingerprint": "f973071eeaff9297e21e801729fb9979deab66137ab2968e2c2e6405b7a5788d",
-            "line": 12
-          },
-          {
-            "column": 17,
-            "fingerprint": "11dec07c3211b5bfc49da537a332e0516511e7b2f75bfd8264be8343809b6a6e",
-            "line": 145
           }
         ]
       }
@@ -13547,28 +13203,6 @@
             "line": 493
           }
         ]
-      },
-      {
-        "count": 1,
-        "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-        "sites": [
-          {
-            "column": 9,
-            "fingerprint": "6973a3b499c2e49952e98eb5f74be171ddc6379c2940ed1c417f90c72b6b3615",
-            "line": 3474
-          }
-        ]
-      },
-      {
-        "count": 1,
-        "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-        "sites": [
-          {
-            "column": 9,
-            "fingerprint": "7041f33de3fd37d6f77ef64d2110e773310b2d77e7666b6c28b9c0c585b16963",
-            "line": 101
-          }
-        ]
       }
     ],
     "value-state-journal": [
@@ -14132,22 +13766,6 @@
       "id": "reactive-cell-id",
       "pattern": "ReactiveCellId",
       "uses": [
-        {
-          "count": 2,
-          "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-          "sites": [
-            {
-              "column": 5,
-              "fingerprint": "3acf8254715928bb096f6b7b6a4326267be94da93e7a9fd7f8e29bc62ae0de30",
-              "line": 4
-            },
-            {
-              "column": 16,
-              "fingerprint": "81a6e67bcfce0be74ce971a19cf3d2b72eb9f5939d2df129bd10d1954a817d56",
-              "line": 228
-            }
-          ]
-        },
         {
           "count": 3,
           "path": "machines/matrix/examples/steady_state_benchmark.rs",
@@ -19284,55 +18902,6 @@
       "variant": "Bool"
     },
     {
-      "column": 20,
-      "enum": "LegacyValue",
-      "line": 121,
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "variant": "Bool"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 140,
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "variant": "Bool"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 159,
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "variant": "Bool"
-    },
-    {
-      "column": 48,
-      "enum": "LegacyValue",
-      "line": 172,
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "variant": "Bool"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 183,
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "variant": "Bool"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 210,
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "variant": "Bool"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 221,
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "variant": "Bool"
-    },
-    {
       "column": 9,
       "enum": "LegacyValue",
       "line": 281,
@@ -19358,13 +18927,6 @@
       "enum": "LegacyValue",
       "line": 185,
       "path": "src/runtime/src/resident_external/value_adapter.rs",
-      "variant": "Bool"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 1142,
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
       "variant": "Bool"
     },
     {
@@ -20649,79 +20211,16 @@
       "variant": "Empty"
     },
     {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 1160,
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 31,
-      "enum": "LegacyValue",
-      "line": 1656,
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 25,
-      "enum": "LegacyValue",
-      "line": 387,
-      "path": "src/runtime/src/runtime/execution/module.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 23,
-      "enum": "LegacyValue",
-      "line": 534,
-      "path": "src/runtime/src/runtime/execution/module.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 41,
-      "enum": "LegacyValue",
-      "line": 669,
-      "path": "src/runtime/src/runtime/execution/module.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 26,
-      "enum": "LegacyValue",
-      "line": 27,
-      "path": "src/runtime/src/runtime/execution/source.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 33,
-      "enum": "LegacyValue",
-      "line": 99,
-      "path": "src/runtime/src/runtime/execution/source.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 33,
-      "enum": "LegacyValue",
-      "line": 302,
-      "path": "src/runtime/src/runtime/execution/source.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 30,
-      "enum": "LegacyValue",
-      "line": 95,
-      "path": "src/runtime/src/runtime/external.rs",
-      "variant": "Empty"
-    },
-    {
       "column": 20,
       "enum": "LegacyValue",
-      "line": 37,
+      "line": 33,
       "path": "src/runtime/src/snapshot/mod.rs",
       "variant": "Empty"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 49,
+      "line": 45,
       "path": "src/runtime/src/snapshot/mod.rs",
       "variant": "Empty"
     },
@@ -22238,20 +21737,6 @@
       "variant": "F64"
     },
     {
-      "column": 27,
-      "enum": "LegacyValue",
-      "line": 261,
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "variant": "F64"
-    },
-    {
-      "column": 27,
-      "enum": "LegacyValue",
-      "line": 177,
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "variant": "F64"
-    },
-    {
       "column": 9,
       "enum": "LegacyValue",
       "line": 127,
@@ -22935,34 +22420,6 @@
       "enum": "LegacyValue",
       "line": 210,
       "path": "src/runtime/src/resident_external/value_adapter.rs",
-      "variant": "F64"
-    },
-    {
-      "column": 29,
-      "enum": "LegacyValue",
-      "line": 75,
-      "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-      "variant": "F64"
-    },
-    {
-      "column": 29,
-      "enum": "LegacyValue",
-      "line": 79,
-      "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-      "variant": "F64"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 100,
-      "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-      "variant": "F64"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 102,
-      "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
       "variant": "F64"
     },
     {
@@ -36583,76 +36040,6 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 226,
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 21,
-      "enum": "LegacyValue",
-      "line": 227,
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 25,
-      "enum": "LegacyValue",
-      "line": 262,
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 25,
-      "enum": "LegacyValue",
-      "line": 265,
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 415,
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 25,
-      "enum": "LegacyValue",
-      "line": 178,
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 41,
-      "enum": "LegacyValue",
-      "line": 182,
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 41,
-      "enum": "LegacyValue",
-      "line": 185,
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 341,
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 355,
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "variant": "MatrixF64"
-    },
-    {
-      "column": 21,
-      "enum": "LegacyValue",
       "line": 197,
       "path": "machines/matrix/examples/steady_state_benchmark.rs",
       "variant": "MatrixF64"
@@ -47062,20 +46449,6 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 3474,
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 101,
-      "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
       "line": 200,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
@@ -48985,13 +48358,6 @@
       "variant": "String"
     },
     {
-      "column": 26,
-      "enum": "LegacyValue",
-      "line": 149,
-      "path": "src/runtime/src/actor_behavior.rs",
-      "variant": "String"
-    },
-    {
       "column": 20,
       "enum": "LegacyValue",
       "line": 49,
@@ -49094,13 +48460,6 @@
       "enum": "LegacyValue",
       "line": 41,
       "path": "src/runtime/src/input.rs",
-      "variant": "String"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 1129,
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
       "variant": "String"
     },
     {
@@ -61709,7 +61068,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 929
+      "rust_file_count": 873
     },
     {
       "directory": "hosts/browser",
@@ -61787,7 +61146,7 @@
       "directory": "src/runtime",
       "manifest": "src/runtime/Cargo.toml",
       "name": "mech-runtime",
-      "rust_file_count": 297
+      "rust_file_count": 243
     },
     {
       "directory": "src/stdlib",

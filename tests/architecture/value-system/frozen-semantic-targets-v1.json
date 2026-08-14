@@ -2558,42 +2558,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/bin/address_target_diagnostics.rs",
-      "sites": [
-        {
-          "column": 20,
-          "line": 121
-        },
-        {
-          "column": 9,
-          "line": 140
-        },
-        {
-          "column": 13,
-          "line": 159
-        },
-        {
-          "column": 48,
-          "line": 172
-        },
-        {
-          "column": 13,
-          "line": 183
-        },
-        {
-          "column": 13,
-          "line": 210
-        },
-        {
-          "column": 13,
-          "line": 221
-        }
-      ],
-      "target": "bool-snapshot",
-      "variant": "Bool"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/runtime/src/host/arg.rs",
       "sites": [
         {
@@ -2627,18 +2591,6 @@
         {
           "column": 9,
           "line": 185
-        }
-      ],
-      "target": "bool-snapshot",
-      "variant": "Bool"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "sites": [
-        {
-          "column": 13,
-          "line": 1142
         }
       ],
       "target": "bool-snapshot",
@@ -3854,22 +3806,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/repl/mod.rs",
-      "sites": [
-        {
-          "column": 34,
-          "line": 348
-        },
-        {
-          "column": 34,
-          "line": 361
-        }
-      ],
-      "target": "execution-no-result",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/runtime/src/host/actor.rs",
       "sites": [
         {
@@ -3938,99 +3874,15 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "sites": [
-        {
-          "column": 13,
-          "line": 1160
-        }
-      ],
-      "target": "source-empty-expression",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "sites": [
-        {
-          "column": 31,
-          "line": 1656
-        }
-      ],
-      "target": "uninitialized-storage",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/module.rs",
-      "sites": [
-        {
-          "column": 23,
-          "line": 534
-        },
-        {
-          "column": 41,
-          "line": 669
-        }
-      ],
-      "target": "execution-no-result",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/module.rs",
-      "sites": [
-        {
-          "column": 25,
-          "line": 387
-        }
-      ],
-      "target": "uninitialized-storage",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/source.rs",
-      "sites": [
-        {
-          "column": 26,
-          "line": 27
-        },
-        {
-          "column": 33,
-          "line": 99
-        },
-        {
-          "column": 33,
-          "line": 302
-        }
-      ],
-      "target": "execution-no-result",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/external.rs",
-      "sites": [
-        {
-          "column": 30,
-          "line": 95
-        }
-      ],
-      "target": "uninitialized-storage",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/runtime/src/snapshot/mod.rs",
       "sites": [
         {
           "column": 20,
-          "line": 37
+          "line": 33
         },
         {
           "column": 31,
-          "line": 49
+          "line": 45
         }
       ],
       "target": "generic-dispatch",
@@ -5470,30 +5322,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "sites": [
-        {
-          "column": 27,
-          "line": 261
-        }
-      ],
-      "target": "floating-point-snapshot",
-      "variant": "F64"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "sites": [
-        {
-          "column": 27,
-          "line": 177
-        }
-      ],
-      "target": "floating-point-snapshot",
-      "variant": "F64"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "machines/range/src/catalog.rs",
       "sites": [
         {
@@ -6063,30 +5891,6 @@
         {
           "column": 9,
           "line": 210
-        }
-      ],
-      "target": "floating-point-snapshot",
-      "variant": "F64"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-      "sites": [
-        {
-          "column": 29,
-          "line": 75
-        },
-        {
-          "column": 29,
-          "line": 79
-        },
-        {
-          "column": 9,
-          "line": 100
-        },
-        {
-          "column": 13,
-          "line": 102
         }
       ],
       "target": "floating-point-snapshot",
@@ -15882,62 +15686,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "machines/matrix/examples/rectangular_runtime_benchmark.rs",
-      "sites": [
-        {
-          "column": 21,
-          "line": 226
-        },
-        {
-          "column": 21,
-          "line": 227
-        },
-        {
-          "column": 25,
-          "line": 262
-        },
-        {
-          "column": 25,
-          "line": 265
-        },
-        {
-          "column": 13,
-          "line": 415
-        }
-      ],
-      "target": "typed-matrix-snapshot",
-      "variant": "MatrixF64"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "machines/matrix/examples/runtime_loop_benchmark.rs",
-      "sites": [
-        {
-          "column": 25,
-          "line": 178
-        },
-        {
-          "column": 41,
-          "line": 182
-        },
-        {
-          "column": 41,
-          "line": 185
-        },
-        {
-          "column": 9,
-          "line": 341
-        },
-        {
-          "column": 9,
-          "line": 355
-        }
-      ],
-      "target": "typed-matrix-snapshot",
-      "variant": "MatrixF64"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "machines/matrix/examples/steady_state_benchmark.rs",
       "sites": [
         {
@@ -25038,30 +24786,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 3474
-        }
-      ],
-      "target": "mutable-reference-runtime-storage",
-      "variant": "MutableReference"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/module/tests/function_imports.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 101
-        }
-      ],
-      "target": "mutable-reference-runtime-storage",
-      "variant": "MutableReference"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "sites": [
         {
@@ -26462,7 +26186,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 188
+          "line": 207
         }
       ],
       "target": "string-snapshot",
@@ -26962,18 +26686,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/actor_behavior.rs",
-      "sites": [
-        {
-          "column": 26,
-          "line": 149
-        }
-      ],
-      "target": "string-snapshot",
-      "variant": "String"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/runtime/src/host/actor.rs",
       "sites": [
         {
@@ -27051,18 +26763,6 @@
         {
           "column": 56,
           "line": 41
-        }
-      ],
-      "target": "string-snapshot",
-      "variant": "String"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/execution/context_preflight.rs",
-      "sites": [
-        {
-          "column": 13,
-          "line": 1129
         }
       ],
       "target": "string-snapshot",

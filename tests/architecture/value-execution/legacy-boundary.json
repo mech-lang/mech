@@ -15,9 +15,8 @@
       "description": "Legacy runtime operation savepoint capture and its coordinators",
       "pattern": "capture_runtime_operation_savepoint",
       "allowed": [
-        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "gate_a_capture_runtime_operation_savepoint", "max_occurrences": 2 },
-        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
-        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "with_atomic_program_operation", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/operation.rs", "scope_contains": "gate_a_capture_runtime_operation_savepoint", "max_occurrences": 2 },
+        { "path": "src/runtime/src/runtime/transaction/operation.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/transaction/modules.rs", "scope_contains": "with_atomic_module_operation", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/transaction/reactive.rs", "scope_contains": "with_atomic_reactive_turn", "max_occurrences": 1 }
       ]
@@ -27,7 +26,7 @@
       "description": "Legacy staged RuntimeTransaction cloning for operation rollback",
       "pattern": "transaction.store.clone()",
       "allowed": [
-        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
+        { "path": "src/runtime/src/runtime/transaction/operation.rs", "scope_contains": "pub(in crate::runtime) fn capture_runtime_operation_savepoint", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_effect", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/execution_session.rs", "scope_contains": "fn stage_resource_effect", "max_occurrences": 1 },
         { "path": "src/runtime/src/runtime/transaction/capabilities.rs", "scope_contains": "fn grant_capability_with_context", "max_occurrences": 1 },
@@ -41,7 +40,7 @@
       "description": "Legacy RuntimeTransaction savepoint clone restoration",
       "pattern": "savepoint.store.clone()",
       "allowed": [
-        { "path": "src/runtime/src/runtime/transaction/program.rs", "scope_contains": "rollback_runtime_operation", "max_occurrences": 1 }
+        { "path": "src/runtime/src/runtime/transaction/operation.rs", "scope_contains": "rollback_runtime_operation", "max_occurrences": 1 }
       ]
     },
     {

@@ -1,7 +1,7 @@
 //! Runtime shell for Mech.
 //!
-//! `MechRuntime` is the host-facing runtime object. It wraps the current
-//! program/interpreter layer and owns the system-level components:
+//! `MechRuntime` is the host-facing runtime object. It owns resident program
+//! activation and execution together with the system-level components:
 //!
 //! - ID generator
 //! - store

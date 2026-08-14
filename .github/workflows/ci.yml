@@ -116,7 +116,6 @@ jobs:
           test "$(wc -l < /tmp/mech-standard-live-values.out)" -ge 2
           test "$(sort -u /tmp/mech-standard-live-values.out | wc -l)" -ge 2
           grep -F '"route":"resident-external"' /tmp/mech-standard-live-timer.out
-          grep -F '"legacy_turns":0' /tmp/mech-standard-live-timer.out
           grep -F '"resident_accepted_turns":2' /tmp/mech-standard-live-timer.out
           grep -F '"resident_rejected_turns":0' /tmp/mech-standard-live-timer.out
 
@@ -198,7 +197,7 @@ jobs:
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           ! grep -q '^[[:space:]]*evaluate(source)' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech
-      - name: Verify resident rendering without legacy turns or browser errors
+      - name: Verify resident rendering without browser errors
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
       - name: Remove generated browser package
         if: always()
