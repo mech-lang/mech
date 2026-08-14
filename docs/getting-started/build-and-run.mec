@@ -38,7 +38,6 @@ Useful flags:
 |------|-------------|
 | `--debug` | Print debug diagnostics. |
 | `--trace` | Print trace output for selected runtime steps. |
-| `--time` | Print timing information. |
 | `--rounds-per-step N` | Override the runtime step limit for the turn. |
 
 3. Build bytecode with `mech build`

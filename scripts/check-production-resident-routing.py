@@ -14,6 +14,7 @@ PRODUCT_ROOTS = (
     Path("src/build/src"),
     Path("src/wasm/src"),
     Path("hosts/browser/src"),
+    Path("hosts/terminal/src"),
 )
 PROHIBITED_ROUTE_REFERENCES = (
     "RuntimeExecutionMode",
@@ -184,6 +185,7 @@ def check_required_product_seams() -> list[str]:
         "src/build/src/project/render.rs": "load_bytecode_program",
         "src/wasm/src/project.rs": "load_root_program",
         "hosts/browser/src/config.rs": "resident_durability",
+        "hosts/terminal/src/provider.rs": "CLI_OUTPUT_EFFECT_CONTRACT",
     }
     failures: list[str] = []
     for relative, needle in required.items():
@@ -249,6 +251,69 @@ def check_required_product_seams() -> list[str]:
         failures.append(
             "src/runtime/src/runtime/program/compiler.rs: compiler modules must not share ValRef identity"
         )
+    terminal_provider = (ROOT / "hosts/terminal/src/provider.rs").read_text(
+        encoding="utf-8"
+    )
+    for terminal_contract in (
+        "semantic_read_contract",
+        "resource_observation_contract",
+        "observation_requires_input_driver",
+        "semantic_write_contract",
+        "RuntimeResourceWriteIntent::Send",
+        "EffectDeliveryPolicy::AtMostOnce",
+        "IdempotencyRequirement::NotRequired",
+        "PreparedRuntimeEffect::AfterCommit",
+        "require a scalar string payload",
+    ):
+        if terminal_contract not in terminal_provider:
+            failures.append(
+                "hosts/terminal/src/provider.rs: missing retained resident terminal contract "
+                f"{terminal_contract}"
+            )
+    build_compiler = (ROOT / "src/cli/module_execution.rs").read_text(encoding="utf-8")
+    for build_contract in (
+        'providers.insert("cli".to_string())',
+        'name: "cli".to_string()',
+        "cli_grants.to_run_resource_grants()",
+    ):
+        if build_contract not in build_compiler:
+            failures.append(
+                "src/cli/module_execution.rs: terminal source planning must retain "
+                f"{build_contract}"
+            )
+    terminal_run_factory = (ROOT / "src/cli/host_factories.rs").read_text(
+        encoding="utf-8"
+    )
+    if "CliHostFactory::new" not in terminal_run_factory:
+        failures.append(
+            "src/cli/host_factories.rs: normal mech run must install CliHostFactory"
+        )
+    root_manifest = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
+    for terminal_feature in (
+        'cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]',
+        'mech-terminal = { version = "0.3.5", default-features = false, optional = true }',
+    ):
+        if terminal_feature not in root_manifest:
+            failures.append(
+                f"Cargo.toml: retained terminal product closure is missing {terminal_feature}"
+            )
+    retired_time_surfaces = {
+        "src/cli/app/mod.rs": ('Arg::new("time")', 'get_flag("time")'),
+        "src/cli/commands/run.rs": ('Arg::new("time")', 'get_flag("time")'),
+        "src/cli/commands/build.rs": ('get_flag("time")',),
+        "src/cli/run_options.rs": ("PreparedRunOptions.time",),
+        "src/cli/runtime_plan.rs": ("root.time",),
+        "docs/getting-started/build-and-run.mec": ("--time",),
+        "docs/reference/commands/run.mec": ("--time",),
+    }
+    for relative, obsolete_tokens in retired_time_surfaces.items():
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        for obsolete_token in obsolete_tokens:
+            if obsolete_token in source:
+                failures.append(
+                    f"{relative}: retired interpreter profiling surface remains: "
+                    f"{obsolete_token}"
+                )
     artifact_model = (ROOT / "src/engine/src/artifact/model.rs").read_text(
         encoding="utf-8"
     )

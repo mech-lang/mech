@@ -248,7 +248,6 @@ mod build_input_tests {
             offline: true,
             debug: false,
             trace: false,
-            time: false,
             rounds_per_step: 10_000,
         }
     }

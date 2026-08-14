@@ -37,5 +37,4 @@ mech run '1 + 1'
 ```sh
 mech run main.mec --debug
 mech run main.mec --trace
-mech run main.mec --time
 ```

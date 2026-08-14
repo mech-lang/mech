@@ -54,14 +54,12 @@ pub(crate) fn module_runtime_config(
     name: String,
     debug_enabled: bool,
     trace_enabled: bool,
-    profile_enabled: bool,
     max_steps_per_turn: usize,
 ) -> MResult<RuntimeConfig> {
     let mut config = RuntimeConfig::default();
     config.name = name;
     config.diagnostics.debug_enabled = debug_enabled;
     config.diagnostics.trace_enabled = trace_enabled;
-    config.diagnostics.profile_enabled = profile_enabled;
     config.limits.max_steps_per_turn =
         Some(u64::try_from(max_steps_per_turn).map_err(|error| {
             MechError::new(
@@ -128,6 +126,7 @@ fn resolver_roots(canonical_roots: &[PathBuf]) -> MResult<Vec<PathBuf>> {
 #[cfg(feature = "build")]
 pub(crate) fn prepare_source_program_compiler(
     config: RuntimeConfig,
+    cli_grants: &crate::cli::host_grants::EffectiveCliHostGrants,
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
     actor_bootstrap: Option<&ActorBootstrapConfig>,
@@ -135,15 +134,34 @@ pub(crate) fn prepare_source_program_compiler(
 ) -> MResult<(ProgramCompiler, Vec<PathBuf>)> {
     let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
     let mut builder = builder;
-    let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
+    let mut providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
+    providers.insert("cli".to_string());
     for provider in &providers {
         builder = builder.host_factory(mech_build::selected_planning_host_factory(provider)?)?;
     }
-    (builder, _) = crate::cli::host_configuration::materialize_host_configuration(
+    let (next_builder, mut registered_instances) =
+        crate::cli::host_configuration::materialize_host_configuration(
+            builder,
+            configured_hosts,
+            &[],
+            &providers,
+        )?;
+    builder = next_builder;
+    if !registered_instances.contains("cli") {
+        registered_instances.insert("cli".to_string());
+        builder = builder.host_instance(HostInstanceConfig {
+            name: "cli".to_string(),
+            provider: "cli".to_string(),
+            settings: mech_runtime::ConfigValue::Map(std::collections::BTreeMap::new()),
+        });
+    }
+    for grant in cli_grants.to_run_resource_grants() {
+        builder = builder.run_resource_grant(grant);
+    }
+    builder = crate::cli::host_configuration::materialize_run_grants(
         builder,
-        configured_hosts,
         run_grants,
-        &providers,
+        &registered_instances,
     )?;
     builder = install_actor_planning_functions(builder, actor_bootstrap.cloned())?;
 

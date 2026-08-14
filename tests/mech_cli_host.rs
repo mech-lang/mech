@@ -19,6 +19,22 @@ fn write_resident_source(root: &std::path::Path) -> std::path::PathBuf {
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
+fn write_cli_host_source(root: &std::path::Path) -> std::path::PathBuf {
+    let source_path = root.join("cli_host.mec");
+    std::fs::write(
+        &source_path,
+        r#"+> @env := cli/env
++> @out := cli/stdout
+
+@out/line <- @env/MECH_CLI_HOST_TEST
+"done"
+"#,
+    )
+    .unwrap();
+    source_path
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
 fn assert_success_contains(output: std::process::Output, expected: &str) {
     assert!(
         output.status.success(),
@@ -64,6 +80,308 @@ fn mech_run_subcommand_runs_resident_source() {
         .unwrap();
 
     assert_success_contains(output, "424242");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_rejects_retired_interpreter_time_flag() {
+    let root = temp_root("retired-time");
+    let source_path = write_resident_source(&root);
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg("--time")
+        .arg(&source_path)
+        .current_dir(&root)
+        .output()
+        .unwrap();
+
+    let combined = assert_failure_contains(output, "unexpected argument '--time'");
+    assert!(!combined.contains("Cycle Time:"), "{combined}");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_captures_cli_env_and_delivers_stdout_after_resident_commit() {
+    let root = temp_root("resident-env-stdout");
+    let source_path = write_cli_host_source(&root);
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg(&source_path)
+        .current_dir(&root)
+        .env("MECH_CLI_HOST_TEST", "resident-cli-ok")
+        .output()
+        .unwrap();
+
+    assert_success_contains(output, "resident-cli-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn mech_run_delivers_stderr_after_resident_commit() {
+    let root = temp_root("resident-stderr");
+    let source_path = root.join("stderr.mec");
+    std::fs::write(
+        &source_path,
+        "+> @err := cli/stderr\n@err/line <- \"resident-stderr-ok\"\n",
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg(&source_path)
+        .current_dir(&root)
+        .output()
+        .unwrap();
+
+    assert!(
+        output.status.success(),
+        "stderr resident program failed:\n{}",
+        combined_output(&output)
+    );
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("resident-stderr-ok"),
+        "expected resident stderr output, got:\n{}",
+        combined_output(&output)
+    );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn denied_env_read_rejects_resident_turn_before_stdout_delivery() {
+    let root = temp_root("resident-deny-env");
+    let source_path = root.join("deny-env.mec");
+    std::fs::write(
+        &source_path,
+        r#"+> @out := cli/stdout
++> @env := cli/env
+
+@out/line <- "must-not-write"
+value := @env/HOME
+"done"
+"#,
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg("--deny-default-capabilities")
+        .arg("--capabilities")
+        .arg(":cli/stdout")
+        .arg("--allow-read")
+        .arg(&source_path)
+        .arg(&source_path)
+        .current_dir(&root)
+        .output()
+        .unwrap();
+
+    let combined = assert_failure_contains(output, "CapabilityDenied");
+    assert!(
+        !combined.lines().any(|line| line == "must-not-write"),
+        "rejected resident program delivered stdout:\n{combined}"
+    );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn denied_stdout_blocks_resident_output() {
+    let root = temp_root("resident-deny-stdout");
+    let source_path = root.join("deny-stdout.mec");
+    std::fs::write(
+        &source_path,
+        "+> @out := cli/stdout\n@out/line <- \"denied-output\"\n",
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg("--deny-default-capabilities")
+        .arg("--allow-read")
+        .arg(&source_path)
+        .arg(&source_path)
+        .current_dir(&root)
+        .output()
+        .unwrap();
+
+    let combined = assert_failure_contains(output, "CapabilityDenied");
+    assert!(
+        !combined.lines().any(|line| line == "denied-output"),
+        "denied resident output was delivered:\n{combined}"
+    );
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn path_scoped_cli_env_grant_works() {
+    let root = temp_root("resident-env-path");
+    std::fs::write(
+        root.join("path.mec"),
+        "+> @env := cli/env\nvalue := @env/MECH_CLI_SCOPED_ENV\nvalue\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("mech.mcfg"),
+        r#"config := { run: { grants: [{ target: "cli/env" operations: ["read"] paths: ["MECH_CLI_SCOPED_ENV"] }] } }"#,
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg("--deny-default-capabilities")
+        .arg("path.mec")
+        .current_dir(&root)
+        .env("MECH_CLI_SCOPED_ENV", "scoped-env-ok")
+        .output()
+        .unwrap();
+
+    assert_success_contains(output, "scoped-env-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn path_scoped_cli_stdout_grant_works() {
+    let root = temp_root("resident-stdout-path");
+    std::fs::write(
+        root.join("line.mec"),
+        "+> @out := cli/stdout\n@out/line <- \"scoped-stdout-ok\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("mech.mcfg"),
+        r#"config := { run: { grants: [{ target: "cli/stdout" operations: ["write"] paths: ["line"] }] } }"#,
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg("--deny-default-capabilities")
+        .arg("line.mec")
+        .current_dir(&root)
+        .output()
+        .unwrap();
+
+    assert_success_contains(output, "scoped-stdout-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn configured_cli_host_alias_runs_residently() {
+    let root = temp_root("resident-cli-alias");
+    std::fs::write(
+        root.join("term.mec"),
+        "+> @out := term/stdout\n@out/line <- \"resident-alias-ok\"\n",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("mech.mcfg"),
+        r#"config := {
+  hosts: [{ name: "term" provider: "cli" settings: {} }]
+  run: { grants: [{ target: "term/stdout" operations: ["write"] paths: ["line"] }] }
+}"#,
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg("--deny-default-capabilities")
+        .arg("term.mec")
+        .current_dir(&root)
+        .output()
+        .unwrap();
+
+    assert_success_contains(output, "resident-alias-ok");
+}
+
+#[cfg(all(feature = "run", feature = "cli_host"))]
+#[test]
+fn resident_cli_source_executes_exactly_once() {
+    let root = temp_root("resident-cli-once");
+    let source_path = root.join("once.mec");
+    std::fs::write(
+        &source_path,
+        "+> @out := cli/stdout\n@out/line <- \"resident-once\"\n\"done\"\n",
+    )
+    .unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("run")
+        .arg(&source_path)
+        .current_dir(&root)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "resident CLI source failed:\n{}",
+        combined_output(&output)
+    );
+
+    let combined = combined_output(&output);
+    let count = combined
+        .lines()
+        .filter(|line| *line == "resident-once")
+        .count();
+    assert_eq!(
+        count, 1,
+        "resident source executed {count} times:\n{combined}"
+    );
+}
+
+#[cfg(all(feature = "run", feature = "build", feature = "cli_host"))]
+#[test]
+fn resident_cli_source_and_bytecode_have_matching_behavior() {
+    let root = temp_root("resident-cli-bytecode");
+    let source_path = write_cli_host_source(&root);
+    let bytecode_path = root.join("cli_host.mecb");
+
+    let build = std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+        .arg("--no-config")
+        .arg("build")
+        .arg(&source_path)
+        .arg("--emit")
+        .arg("bytecode")
+        .arg("--out")
+        .arg(&bytecode_path)
+        .arg("--offline")
+        .current_dir(&root)
+        .output()
+        .unwrap();
+    assert!(
+        build.status.success(),
+        "terminal bytecode build failed:\n{}",
+        combined_output(&build)
+    );
+
+    let execute = |path: &std::path::Path| {
+        std::process::Command::new(env!("CARGO_BIN_EXE_mech"))
+            .arg("run")
+            .arg(path)
+            .current_dir(&root)
+            .env("MECH_CLI_HOST_TEST", "source-bytecode-match")
+            .output()
+            .unwrap()
+    };
+    let source = execute(&source_path);
+    let bytecode = execute(&bytecode_path);
+    assert!(
+        source.status.success(),
+        "terminal source execution failed:\n{}",
+        combined_output(&source)
+    );
+    assert!(
+        bytecode.status.success(),
+        "terminal bytecode execution failed:\n{}",
+        combined_output(&bytecode)
+    );
+
+    let emitted_line = |output: &std::process::Output| {
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter(|line| *line == "source-bytecode-match")
+            .count()
+    };
+    assert_eq!(emitted_line(&source), 1);
+    assert_eq!(emitted_line(&bytecode), 1);
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]

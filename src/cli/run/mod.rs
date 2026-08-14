@@ -179,7 +179,7 @@ fn cli_runtime_builder(
         });
     }
 
-    for grant in cli_grants_to_run_resource_grants(cli_grants) {
+    for grant in cli_grants.to_run_resource_grants() {
         builder = builder.run_resource_grant(grant);
     }
 
@@ -195,7 +195,6 @@ pub fn effective_run_runtime_config(
     name: String,
     debug_enabled: bool,
     trace_enabled: bool,
-    profile_enabled: bool,
     rounds_per_step: Option<usize>,
 ) -> MResult<RuntimeConfig> {
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
@@ -218,10 +217,6 @@ pub fn effective_run_runtime_config(
         config.diagnostics.trace_enabled = true;
     }
 
-    if profile_enabled {
-        config.diagnostics.profile_enabled = true;
-    }
-
     if let Some(rounds_per_step) = rounds_per_step {
         config.limits.max_steps_per_turn = Some(rounds_per_step as u64);
     }
@@ -232,34 +227,6 @@ pub fn effective_run_runtime_config(
 
 pub fn cli_module_options() -> ModuleBuildOptions<'static> {
     ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[])
-}
-
-fn cli_grants_to_run_resource_grants(
-    grants: &host_grants::EffectiveCliHostGrants,
-) -> Vec<RunResourceGrantConfig> {
-    let mut out = Vec::new();
-    if !grants.env_read_paths.is_empty() {
-        out.push(RunResourceGrantConfig {
-            target: "cli/env".to_string(),
-            operations: vec!["read".to_string()],
-            paths: grants.env_read_paths.clone(),
-        });
-    }
-    if !grants.stdout_write_paths.is_empty() {
-        out.push(RunResourceGrantConfig {
-            target: "cli/stdout".to_string(),
-            operations: vec!["write".to_string()],
-            paths: grants.stdout_write_paths.clone(),
-        });
-    }
-    if !grants.stderr_write_paths.is_empty() {
-        out.push(RunResourceGrantConfig {
-            target: "cli/stderr".to_string(),
-            operations: vec!["write".to_string()],
-            paths: grants.stderr_write_paths.clone(),
-        });
-    }
-    out
 }
 
 pub fn cli_host_capability_args() -> Vec<Arg> {

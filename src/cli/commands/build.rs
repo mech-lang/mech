@@ -159,7 +159,6 @@ pub(crate) struct BuildOptions {
     pub offline: bool,
     pub debug: bool,
     pub trace: bool,
-    pub time: bool,
     pub rounds_per_step: usize,
 }
 
@@ -197,7 +196,6 @@ impl BuildOptions {
             offline: matches.get_flag("offline"),
             debug: root.debug,
             trace: root.trace,
-            time: root.time,
             rounds_per_step: root.rounds_per_step.unwrap_or(10_000),
         };
         if options.emit == BuildEmit::CargoProject && options.keep_project {
@@ -253,11 +251,14 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         }
         let configured_hosts = configured_hosts(loaded_config.as_ref());
         let run_grants = configured_run_grants(loaded_config.as_ref());
+        let cli_grants = crate::cli::host_grants::effective_cli_host_grants(
+            loaded_config.as_ref(),
+            crate::cli::host_grants::CliHostCapabilitySelection::default(),
+        )?;
         let mut planner_config = module_runtime_config(
             format!("{binary_name}-planner"),
             options.debug,
             options.trace,
-            options.time,
             options.rounds_per_step,
         )?;
         if let Some(config) = loaded_config.as_ref() {
@@ -266,6 +267,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         }
         let (mut compiler, roots) = prepare_source_program_compiler(
             planner_config,
+            &cli_grants,
             &configured_hosts,
             &run_grants,
             None,

@@ -17,6 +17,5 @@ impl CliOutcome {
 pub(crate) struct RootFlags {
     pub debug: bool,
     pub trace: bool,
-    pub time: bool,
     pub rounds_per_step: Option<usize>,
 }

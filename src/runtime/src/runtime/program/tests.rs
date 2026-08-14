@@ -1150,7 +1150,7 @@ fn production_unsupported_semantics_fail_without_installing_legacy() {
     let mut runtime = runtime();
     let error = runtime
         .load_source_program(
-            r#"message := "resident strings are deliberately unsupported""#,
+            "tuple := (1, 2); tuple.2",
             crate::ResidentDurabilityPolicy::Volatile,
         )
         .unwrap_err();
@@ -1160,6 +1160,24 @@ fn production_unsupported_semantics_fail_without_installing_legacy() {
         ResidentRouteFailureClass::SemanticUnsupported
     );
     assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
+}
+
+#[test]
+fn production_scalar_string_source_loads_residently_without_fallback() {
+    let mut runtime = runtime();
+    let outcome = runtime
+        .load_source_program(
+            r#"message := "resident scalar string""#,
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+
+    assert_eq!(outcome.route, RuntimeProgramRoute::ResidentPure);
+    assert!(matches!(
+        outcome.initial_value.to_value(),
+        LegacyValue::String(_)
+    ));
+    assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
 }
 
 #[test]

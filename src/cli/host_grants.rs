@@ -17,6 +17,32 @@ impl EffectiveCliHostGrants {
             stderr_write_paths: Vec::new(),
         }
     }
+
+    pub fn to_run_resource_grants(&self) -> Vec<mech_runtime::RunResourceGrantConfig> {
+        let mut out = Vec::new();
+        if !self.env_read_paths.is_empty() {
+            out.push(mech_runtime::RunResourceGrantConfig {
+                target: "cli/env".to_string(),
+                operations: vec!["read".to_string()],
+                paths: self.env_read_paths.clone(),
+            });
+        }
+        if !self.stdout_write_paths.is_empty() {
+            out.push(mech_runtime::RunResourceGrantConfig {
+                target: "cli/stdout".to_string(),
+                operations: vec!["write".to_string()],
+                paths: self.stdout_write_paths.clone(),
+            });
+        }
+        if !self.stderr_write_paths.is_empty() {
+            out.push(mech_runtime::RunResourceGrantConfig {
+                target: "cli/stderr".to_string(),
+                operations: vec!["write".to_string()],
+                paths: self.stderr_write_paths.clone(),
+            });
+        }
+        out
+    }
 }
 
 impl Default for EffectiveCliHostGrants {
@@ -133,48 +159,4 @@ fn union_string(paths: &mut Vec<String>, value: &str) {
     if !paths.iter().any(|path| path == value) {
         paths.push(value.to_string());
     }
-}
-
-fn intersect_env_paths(current: &[String], configured: &[String]) -> Vec<String> {
-    if current.is_empty() || configured.is_empty() {
-        return Vec::new();
-    }
-    if current.iter().any(|path| path == "*") {
-        return configured.to_vec();
-    }
-    if configured.iter().any(|path| path == "*") {
-        return current.to_vec();
-    }
-    intersect_paths(current, configured)
-}
-
-fn intersect_paths(current: &[String], configured: &[String]) -> Vec<String> {
-    current
-        .iter()
-        .filter(|path| {
-            configured
-                .iter()
-                .any(|configured_path| configured_path == *path)
-        })
-        .cloned()
-        .collect()
-}
-
-fn validated_cli_stream_paths(where_: &str, paths: &[String]) -> MResult<Vec<String>> {
-    let mut out = Vec::new();
-    for path in paths {
-        match path.as_str() {
-            "text" | "line" => out.push(path.clone()),
-            other => {
-                return Err(MechError::new(
-                    GenericError {
-                        msg: format!("{where_} cannot grant unsupported CLI stream path `{other}`"),
-                    },
-                    None,
-                )
-                .with_compiler_loc());
-            }
-        }
-    }
-    Ok(out)
 }

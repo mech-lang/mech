@@ -8,13 +8,11 @@ pub mod capabilities;
 pub mod commands;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;
-#[cfg(feature = "cli_core")]
-pub(crate) mod diagnostics;
 #[cfg(any(feature = "build", feature = "run"))]
 pub(crate) mod host_configuration;
 #[cfg(feature = "run")]
 pub mod host_factories;
-#[cfg(feature = "run")]
+#[cfg(any(feature = "build", feature = "run"))]
 pub mod host_grants;
 #[cfg(feature = "build")]
 pub(crate) mod module_execution;

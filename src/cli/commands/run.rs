@@ -47,11 +47,6 @@ pub(crate) fn command() -> Command {
       .long("debug")
       .help("Print debug info")
       .action(ArgAction::SetTrue))
-    .arg(Arg::new("time")
-      .short('t')
-      .long("time")
-      .help("Measure how long the program takes to execute.")
-      .action(ArgAction::SetTrue))
     .arg(Arg::new("rounds-per-step")
       .long("rounds-per-step")
       .value_name("ROUNDS")
@@ -562,7 +557,6 @@ mod command_outcome_tests {
             explicit_run_command: true,
             debug: false,
             trace: false,
-            time: false,
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,

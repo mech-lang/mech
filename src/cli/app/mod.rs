@@ -51,13 +51,6 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
-            Arg::new("time")
-                .short('t')
-                .long("time")
-                .help("Measure how long the programs takes to execute.")
-                .action(ArgAction::SetTrue),
-        )
-        .arg(
             Arg::new("rounds-per-step")
                 .long("rounds-per-step")
                 .value_name("ROUNDS")
@@ -98,7 +91,6 @@ fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
     RootFlags {
         debug: cli_matches.get_flag("debug"),
         trace: cli_matches.get_flag("trace"),
-        time: cli_matches.get_flag("time"),
         rounds_per_step: cli_matches.get_one::<usize>("rounds-per-step").copied(),
     }
 }

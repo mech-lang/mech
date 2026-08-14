@@ -12,7 +12,6 @@ pub(crate) struct RunCliArgs {
     pub explicit_run_command: bool,
     pub debug: bool,
     pub trace: bool,
-    pub time: bool,
     pub rounds_per_step: Option<usize>,
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
@@ -39,7 +38,6 @@ impl RunCliArgs {
             explicit_run_command: run_matches.is_some(),
             debug: root.debug || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false),
             trace: root.trace || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false),
-            time: root.time || run_matches.map(|m| m.get_flag("time")).unwrap_or(false),
             rounds_per_step: run_matches
                 .and_then(|matches| matches.get_one::<usize>("rounds-per-step").copied())
                 .or(root.rounds_per_step),
@@ -58,7 +56,6 @@ pub(crate) struct PreparedRunOptions {
     pub explicit_run_command: bool,
     pub debug: bool,
     pub trace: bool,
-    pub time: bool,
     pub rounds_per_step: Option<usize>,
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
@@ -86,7 +83,6 @@ pub(crate) fn prepare_run_options(
         explicit_run_command: args.explicit_run_command,
         debug: args.debug,
         trace: args.trace,
-        time: args.time,
         rounds_per_step: args.rounds_per_step,
         runtime_info: args.runtime_info,
         max_live_turns: args.max_live_turns,

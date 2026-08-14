@@ -30,7 +30,6 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         format!("program-{}", uuid),
         options.debug,
         options.trace,
-        options.time,
         options.rounds_per_step,
     )?;
     let cli_grants = host_grants::effective_cli_host_grants(
@@ -159,7 +158,6 @@ mod tests {
             explicit_run_command: true,
             debug: false,
             trace: false,
-            time: false,
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,
@@ -190,7 +188,6 @@ mod tests {
             explicit_run_command: true,
             debug: false,
             trace: false,
-            time: false,
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,
