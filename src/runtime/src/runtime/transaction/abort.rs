@@ -287,9 +287,6 @@ impl MechRuntime {
     ) -> Vec<String> {
         let mut failures = Vec::new();
 
-        #[cfg(test)]
-        failures.extend(self.apply_program_transaction_test_fault(transaction_id));
-
         match self.abort_runtime_transaction_cleanup(context, reason, false) {
             Ok((cleaned_transaction_id, cleanup_failures)) => {
                 failures.extend(cleanup_failures);

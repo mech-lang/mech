@@ -5,9 +5,10 @@ use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedPureHostFunction,
     PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
-    RuntimeCallContext, RuntimeHealth, RuntimePreparedHostCall, RuntimeValueSnapshot,
+    RuntimeCallContext, RuntimeHealth, RuntimeInvalidOperationError, RuntimePreparedHostCall,
+    RuntimeValueSnapshot,
 };
-use mech_core::{LegacyValue, Ref};
+use mech_core::{LegacyValue, MechError, Ref};
 
 use super::support::RecordingHostEffect;
 
@@ -109,6 +110,38 @@ fn runtime_managed_host_panic_is_an_ordinary_rollback_failure() {
 
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
     assert!(format!("{error:?}").contains("deliberate runtime-managed host panic"));
+    assert!(runtime.active_program_operation.get().is_none());
+    assert!(matches!(runtime.health, RuntimeHealth::Healthy));
+}
+
+#[test]
+fn runtime_managed_host_error_stays_contained_and_cleans_transaction_state() {
+    let mut runtime = MechRuntime::builder()
+        .host_function(PlannedRuntimeManagedHostFunction::new(
+            "sealed/managed-error",
+            |_context, _arguments| Ok(snapshot(LegacyValue::F64(Ref::new(1.0)))),
+            |_services, _context, _arguments| {
+                Err(MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "sealed/managed-error",
+                        reason: "deliberate execution-session failure".to_string(),
+                    },
+                    None,
+                ))
+            },
+        ))
+        .unwrap()
+        .build()
+        .unwrap();
+    grant_host_call(&mut runtime, CapabilityId(700), "sealed/managed-error");
+
+    let error = runtime
+        .call_host(HostCall::new("sealed/managed-error", Vec::new()))
+        .unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
+    assert!(runtime.active_transactions.is_empty());
+    assert!(runtime.active_effect_phase.get().is_none());
     assert!(runtime.active_program_operation.get().is_none());
     assert!(matches!(runtime.health, RuntimeHealth::Healthy));
 }

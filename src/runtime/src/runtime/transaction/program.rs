@@ -89,34 +89,9 @@ pub(in crate::runtime) struct ActiveRuntimeProgramOperation {
 }
 
 #[cfg(test)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ProgramTransactionTestFault {
-    RemoveImplicitEnvelopeBeforeCleanup,
-    FailImplicitStoreAbort,
-}
-
-#[cfg(test)]
 thread_local! {
-  static PROGRAM_TRANSACTION_TEST_FAULT:
-    std::cell::RefCell<Option<ProgramTransactionTestFault>> =
-      const { std::cell::RefCell::new(None) };
   static RUNTIME_PROGRAM_CHECKPOINT_COUNT:
     std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-
-#[cfg(test)]
-fn set_program_transaction_test_fault(fault: ProgramTransactionTestFault) {
-    PROGRAM_TRANSACTION_TEST_FAULT.with(|slot| {
-        assert!(
-            slot.replace(Some(fault)).is_none(),
-            "program transaction test fault was already armed",
-        );
-    });
-}
-
-#[cfg(test)]
-fn take_program_transaction_test_fault() -> Option<ProgramTransactionTestFault> {
-    PROGRAM_TRANSACTION_TEST_FAULT.with(|slot| slot.replace(None))
 }
 
 #[cfg(test)]
@@ -593,35 +568,6 @@ impl MechRuntime {
             };
             self.program = predecessor;
         }
-    }
-
-    #[cfg(test)]
-    pub(in crate::runtime) fn apply_program_transaction_test_fault(
-        &mut self,
-        transaction_id: TransactionId,
-    ) -> Vec<String> {
-        let mut failures = Vec::new();
-
-        match take_program_transaction_test_fault() {
-            Some(ProgramTransactionTestFault::RemoveImplicitEnvelopeBeforeCleanup) => {
-                self.active_transactions.remove(&transaction_id);
-            }
-            Some(ProgramTransactionTestFault::FailImplicitStoreAbort) => {
-                match self.active_transactions.get_mut(&transaction_id) {
-          Some(transaction) => {
-            transaction.store.status =
-              crate::transaction::TransactionStatus::Committed;
-          }
-          None => failures.push(format!(
-            "could not arm staged-store abort failure for missing implicit transaction {}",
-            transaction_id,
-          )),
-        }
-            }
-            None => {}
-        }
-
-        failures
     }
 
     pub(in crate::runtime) fn preflight_atomic_program_operation(

@@ -23,7 +23,6 @@ runtime_bench_gate_b = ["compiler", "mech-engine/resident-artifact"]
 resident-external = ["runtime", "mech-engine/resident-artifact"]
 resident-routing = ["resident-external"]
 resident-routing-source = ["resident-routing", "compiler"]
-legacy-interpreter = ["runtime", "source"]
 runtime_bench_gate_d = ["runtime_bench_gate_b", "runtime_default"]
 runtime_bench_gate_d3 = ["resident-external", "runtime_bench_gate_d"]
 native-link = ["runtime", "string"]
@@ -300,19 +299,9 @@ path = "tests/config_profile.rs"
 required-features = ["source_default"]
 
 [[test]]
-name = "module_smoke"
-path = "tests/module_smoke.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[test]]
-name = "generic_host"
-path = "tests/generic_host.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[test]]
-name = "sealed_snapshots"
-path = "tests/sealed_snapshots.rs"
-required-features = ["source_default", "legacy-interpreter"]
+name = "generic_host_kernel"
+path = "tests/generic_host_kernel.rs"
+required-features = ["runtime_default"]
 
 [[test]]
 name = "recording_bench_facade"

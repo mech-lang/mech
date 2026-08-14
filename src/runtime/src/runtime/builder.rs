@@ -451,7 +451,7 @@ impl RuntimeBuilder {
 
 #[cfg(test)]
 mod tests {
-    use super::{MechProgramConfig, RuntimeBuilder, RuntimeExecutionMode};
+    use super::{RuntimeBuilder, RuntimeExecutionMode};
     use mech_core::FunctionCatalogBuilder;
     use std::sync::Arc;
 
@@ -465,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn custom_function_catalog_reaches_retained_and_runtime_created_programs() {
+    fn custom_function_catalog_reaches_runtime() {
         let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
         let runtime = RuntimeBuilder::new()
             .function_catalog(Arc::clone(&catalog))
@@ -473,10 +473,6 @@ mod tests {
             .unwrap();
 
         assert!(Arc::ptr_eq(&runtime.function_catalog, &catalog));
-        assert!(Arc::ptr_eq(runtime.program().function_catalog(), &catalog));
-
-        let isolated = runtime.new_program(MechProgramConfig::default());
-        assert!(Arc::ptr_eq(isolated.function_catalog(), &catalog));
     }
 
     #[test]
@@ -487,30 +483,5 @@ mod tests {
         assert_eq!(runtime.function_catalog.specializer_count(), 0);
         assert_eq!(runtime.function_catalog.intrinsic_specializer_count(), 0);
         assert_eq!(runtime.function_catalog.all_exports().len(), 0);
-    }
-
-    #[cfg(feature = "source")]
-    #[test]
-    fn bare_runtime_rejects_source_catalog_operations() {
-        let mut runtime = RuntimeBuilder::new().build().unwrap();
-
-        let error = runtime.run_string("x := 1").unwrap_err();
-
-        assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
-        assert!(error.kind_message().contains("var/define"));
-    }
-
-    #[cfg(feature = "source")]
-    #[test]
-    fn injected_intrinsic_catalog_executes_source() {
-        let mut catalog = FunctionCatalogBuilder::new();
-        mech_engine::install_intrinsic_runtime(&mut catalog).unwrap();
-        mech_engine::install_intrinsic_source(&mut catalog).unwrap();
-        let mut runtime = RuntimeBuilder::new()
-            .function_catalog(Arc::new(catalog.build().unwrap()))
-            .build()
-            .unwrap();
-
-        runtime.run_string("x := 1\nx").unwrap();
     }
 }

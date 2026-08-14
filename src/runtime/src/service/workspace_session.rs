@@ -388,14 +388,12 @@ mod tests {
         }));
     }
 
+    #[cfg(feature = "resident-routing-source")]
     #[test]
     fn server_workspace_session_accepts_an_explicit_function_catalog() {
         let root = setup_session_root();
         std::fs::write(root.join("main.mec"), "true\n").unwrap();
-        let mut builder = mech_core::FunctionCatalogBuilder::new();
-        mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
-        mech_engine::install_intrinsic_source(&mut builder).unwrap();
-        let catalog = Arc::new(builder.build().unwrap());
+        let catalog = mech_stdlib::source_catalog();
 
         let mut session = ServerWorkspaceSession::open_with_function_catalog(
             &root,
@@ -406,11 +404,16 @@ mod tests {
         )
         .unwrap();
 
-        let result = session.runtime_mut().run_string("result := true").unwrap();
-        assert!(matches!(
-            result.into_value(),
-            mech_core::LegacyValue::Bool(_)
-        ));
+        let result = session
+            .runtime_mut()
+            .load_production_source_program(
+                include_str!(
+                    "../../../../tests/architecture/resident-activation/n-body-source-v1.mec"
+                ),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .unwrap();
+        assert_eq!(result.route, crate::RuntimeProgramRoute::ResidentPure,);
     }
 
     #[test]

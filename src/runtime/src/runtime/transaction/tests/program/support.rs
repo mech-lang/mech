@@ -1,12 +1,8 @@
 use crate::{
     MechRuntime, PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeContext,
-    RuntimeEffectMetadata, RuntimeEffectSource, RuntimeInvalidOperationError,
-    RuntimeTransactionalEffect,
+    RuntimeEffectMetadata, RuntimeEffectSource,
 };
-use mech_core::{
-    ExecutionHostFunctionRequest, LegacyValue, MResult, MechError, MechExecutionServices,
-};
-use std::sync::{Arc, Mutex};
+use mech_core::{ExecutionHostFunctionRequest, LegacyValue, MResult, MechExecutionServices};
 
 #[derive(Debug)]
 struct SavepointAfterCommitEffect {
@@ -50,55 +46,4 @@ pub(super) fn invoke_host_callback(
             &[],
         )
     })
-}
-
-#[derive(Debug)]
-pub(super) struct CommitDecisionEffect {
-    pub(super) name: &'static str,
-    pub(super) log: Arc<Mutex<Vec<String>>>,
-    pub(super) fail_commit: bool,
-}
-
-impl RuntimeTransactionalEffect for CommitDecisionEffect {
-    fn metadata(&self) -> RuntimeEffectMetadata {
-        RuntimeEffectMetadata::new(
-            RuntimeEffectSource::HostFunction {
-                name: self.name.to_string(),
-            },
-            "commit-decision",
-        )
-    }
-
-    fn prepare(&mut self) -> MResult<()> {
-        self.log
-            .lock()
-            .unwrap()
-            .push(format!("{}:prepare", self.name));
-        Ok(())
-    }
-
-    fn commit(&mut self) -> MResult<()> {
-        self.log
-            .lock()
-            .unwrap()
-            .push(format!("{}:commit", self.name));
-        if self.fail_commit {
-            return Err(MechError::new(
-                RuntimeInvalidOperationError {
-                    operation: "commit_decision_test",
-                    reason: format!("{} deliberate commit failure", self.name),
-                },
-                None,
-            ));
-        }
-        Ok(())
-    }
-
-    fn abort(&mut self) -> MResult<()> {
-        self.log
-            .lock()
-            .unwrap()
-            .push(format!("{}:abort", self.name));
-        Ok(())
-    }
 }

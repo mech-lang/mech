@@ -1,5 +1,6 @@
 use super::{event_count, new_runtime};
-use crate::{EventId, ObjectId, ObjectRecord, RuntimeEventKind};
+use crate::runtime::gate_a_probe::{gate_a_cost_snapshot, reset_gate_a_costs};
+use crate::{EventId, ObjectId, ObjectRecord, RuntimeConfig, RuntimeEventKind};
 
 #[test]
 fn transaction_commit_persists_staged_events_once() {
@@ -99,4 +100,84 @@ fn transaction_commit_persists_staged_events_once() {
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
     assert_eq!(context.transaction, None);
     assert_eq!(context.event_storage_physical_len(), context.events().len());
+}
+
+#[test]
+fn active_transaction_bounds_hidden_event_history() {
+    const LIMIT: usize = 3;
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(LIMIT as u64);
+    let mut runtime = crate::MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    for object in 1..=LIMIT as u128 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "seed", object.to_string()),
+            )
+            .unwrap();
+    }
+
+    let baseline_physical = context.event_storage_physical_len();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    reset_gate_a_costs();
+    for object in 100..=355 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "staged", object.to_string()),
+            )
+            .unwrap();
+        assert_eq!(context.events().len(), LIMIT);
+        assert!(context.event_storage_physical_len() <= baseline_physical + 4 * LIMIT);
+    }
+
+    assert_eq!(gate_a_cost_snapshot().context_event_snapshot_items, 0);
+    runtime
+        .abort_runtime_transaction(&mut context, "bounded active history")
+        .unwrap();
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(context.events().len(), LIMIT);
+    assert!(context.event_storage_physical_len() < 2 * LIMIT);
+}
+
+#[test]
+fn outer_commit_bounds_hidden_context_event_history() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(3);
+    let mut runtime = crate::MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+
+    for object in 1..=3 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "seed", object.to_string()),
+            )
+            .unwrap();
+    }
+
+    reset_gate_a_costs();
+    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
+    for object in 10..=13 {
+        runtime
+            .put_object_with_context(
+                &mut context,
+                ObjectRecord::text(ObjectId(object), "staged", object.to_string()),
+            )
+            .unwrap();
+    }
+
+    assert_eq!(context.events().len(), 3);
+    assert!(context.event_storage_physical_len() > context.events().len());
+    runtime.commit_runtime_transaction(&mut context).unwrap();
+
+    assert!(!runtime.active_transactions.contains_key(&transaction_id));
+    assert_eq!(context.transaction, None);
+    assert_eq!(context.events().len(), 3);
+    assert!(context.event_storage_physical_len() < 2 * context.events().len());
+    let costs = gate_a_cost_snapshot();
+    assert_eq!(costs.context_event_snapshot_count, 0);
+    assert_eq!(costs.context_event_snapshot_items, 0);
 }
