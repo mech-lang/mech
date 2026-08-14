@@ -603,7 +603,7 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
         for constraint in state.integrity_constraints.values() {
             let result = LegacyValue::MutableReference(constraint.result.clone());
             let result_register = context.resolve_value_register(&result)?;
-            context.record_integrity_constraint(result_register)?;
+            context.record_integrity_constraint(constraint.name.clone(), result_register)?;
             let name = LegacyValue::String(Ref::new(constraint.name.clone()));
             let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
             let operator = match &constraint.operator {

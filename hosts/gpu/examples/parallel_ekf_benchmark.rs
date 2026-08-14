@@ -9,7 +9,6 @@ use mech_engine::{ArtifactComputeRegion, MechProgram, MechProgramConfig, Program
 use mech_gpu::GpuHost;
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
-const COVARIANCE_SYMMETRY_TOLERANCE: f32 = 1.0e-4;
 
 fn main() {
     let requested_instances = argument(1, 100_000_usize).max(1);
@@ -26,13 +25,15 @@ fn main() {
     let program = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .unwrap_or_else(|error| panic!("generic EKF source must be admitted: {error}"));
-    let covariance_slot = program
-        .state_shapes()
-        .find_map(|(slot, rows, columns)| (rows == 3 && columns == 3).then_some(slot))
-        .expect("EKF artifact must contain one 3x3 covariance state");
-    let program = program
-        .with_robot_state_integrity(covariance_slot, COVARIANCE_SYMMETRY_TOLERANCE)
-        .expect("robot-state integrity policy must match the EKF artifact");
+    assert_eq!(
+        program.integrity_constraints().count(),
+        3,
+        "the Mech artifact must carry all robot-state constraints"
+    );
+    let constraint_names = program
+        .named_integrity_constraints()
+        .map(|(_, name)| name)
+        .collect::<Vec<_>>();
     let compile_time = compile_started.elapsed();
     let instances = program.instances() as usize;
     assert_eq!(
@@ -111,8 +112,8 @@ fn main() {
     println!("GPU workgroups: {}", program.workgroup_count());
     println!("CPU SIMD width: {} f32 lanes", program.simd_lanes());
     println!(
-        "robot integrity: all state finite; covariance diagonal > 0; symmetry tolerance {:.1e}",
-        COVARIANCE_SYMMETRY_TOLERANCE
+        "Mech integrity constraints: {}",
+        constraint_names.join(", ")
     );
     println!(
         "integrity failure: reject candidate, retain previous published estimate, record latest fault + count"

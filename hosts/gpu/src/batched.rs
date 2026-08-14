@@ -1,7 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    CellSlotId, DimensionExpr, FloatWidth, NodeId, SchemaBody, ValueData, snapshot::SequenceView,
+    CellSlotId, DimensionExpr, FloatWidth, IntegrityConstraintId, NodeId, SchemaBody, ValueData,
+    snapshot::SequenceView,
 };
 use mech_engine::{
     ArtifactComputeRegion, ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
@@ -73,10 +74,73 @@ impl ScalarOperand {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ComparisonOperation {
+    Equal,
+    NotEqual,
+    Less,
+    Greater,
+    LessEqual,
+    GreaterEqual,
+}
+
+impl ComparisonOperation {
+    fn apply(self, left: f32, right: f32) -> bool {
+        match self {
+            Self::Equal => left == right,
+            Self::NotEqual => left != right,
+            Self::Less => left < right,
+            Self::Greater => left > right,
+            Self::LessEqual => left <= right,
+            Self::GreaterEqual => left >= right,
+        }
+    }
+
+    const fn wgsl(self) -> &'static str {
+        match self {
+            Self::Equal => "==",
+            Self::NotEqual => "!=",
+            Self::Less => "<",
+            Self::Greater => ">",
+            Self::LessEqual => "<=",
+            Self::GreaterEqual => ">=",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum LogicOperation {
+    And,
+    Or,
+    Xor,
+    Not,
+}
+
+impl LogicOperation {
+    fn apply(self, left: bool, right: Option<bool>) -> bool {
+        match self {
+            Self::And => left && right.expect("binary logic operation has a right operand"),
+            Self::Or => left || right.expect("binary logic operation has a right operand"),
+            Self::Xor => left ^ right.expect("binary logic operation has a right operand"),
+            Self::Not => !left,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 enum ScalarComputation {
     Copy(ScalarOperand),
     Negate(ScalarOperand),
+    Absolute(ScalarOperand),
+    Compare {
+        operation: ComparisonOperation,
+        left: ScalarOperand,
+        right: ScalarOperand,
+    },
+    Logic {
+        operation: LogicOperation,
+        inputs: Vec<ScalarOperand>,
+    },
     Elementwise {
         operation: ElementwiseOperation,
         inputs: Vec<ScalarOperand>,
@@ -89,6 +153,27 @@ impl ScalarComputation {
         match self {
             Self::Copy(input) => input.evaluate(registers),
             Self::Negate(input) => -input.evaluate(registers),
+            Self::Absolute(input) => input.evaluate(registers).abs(),
+            Self::Compare {
+                operation,
+                left,
+                right,
+            } => {
+                if operation.apply(left.evaluate(registers), right.evaluate(registers)) {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
+            Self::Logic { operation, inputs } => {
+                let left = inputs[0].evaluate(registers) != 0.0;
+                let right = inputs.get(1).map(|input| input.evaluate(registers) != 0.0);
+                if operation.apply(left, right) {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
             Self::Elementwise { operation, inputs } => {
                 let mut values = [0.0_f32; 2];
                 for (index, input) in inputs.iter().enumerate() {
@@ -107,6 +192,33 @@ impl ScalarComputation {
         match self {
             Self::Copy(input) => input.wgsl(),
             Self::Negate(input) => format!("-({})", input.wgsl()),
+            Self::Absolute(input) => format!("abs({})", input.wgsl()),
+            Self::Compare {
+                operation,
+                left,
+                right,
+            } => format!(
+                "select(0.0, 1.0, ({}) {} ({}))",
+                left.wgsl(),
+                operation.wgsl(),
+                right.wgsl()
+            ),
+            Self::Logic { operation, inputs } => {
+                let left = format!("({} != 0.0)", inputs[0].wgsl());
+                let condition = match operation {
+                    LogicOperation::And => {
+                        format!("{left} && ({} != 0.0)", inputs[1].wgsl())
+                    }
+                    LogicOperation::Or => {
+                        format!("{left} || ({} != 0.0)", inputs[1].wgsl())
+                    }
+                    LogicOperation::Xor => {
+                        format!("{left} != ({} != 0.0)", inputs[1].wgsl())
+                    }
+                    LogicOperation::Not => format!("!{left}"),
+                };
+                format!("select(0.0, 1.0, {condition})")
+            }
             Self::Elementwise { operation, inputs } => {
                 let inputs = inputs.iter().map(|input| input.wgsl()).collect::<Vec<_>>();
                 operation.wgsl_expression(&inputs, 1)
@@ -123,6 +235,38 @@ impl ScalarComputation {
         match self {
             Self::Copy(input) => input.evaluate_simd(registers),
             Self::Negate(input) => -input.evaluate_simd(registers),
+            Self::Absolute(input) => input.evaluate_simd(registers).abs(),
+            Self::Compare {
+                operation,
+                left,
+                right,
+            } => {
+                let left = left.evaluate_simd(registers).to_array();
+                let right = right.evaluate_simd(registers).to_array();
+                f32x4::new(std::array::from_fn(|lane| {
+                    if operation.apply(left[lane], right[lane]) {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                }))
+            }
+            Self::Logic { operation, inputs } => {
+                let left = inputs[0].evaluate_simd(registers).to_array();
+                let right = inputs
+                    .get(1)
+                    .map(|input| input.evaluate_simd(registers).to_array());
+                f32x4::new(std::array::from_fn(|lane| {
+                    if operation.apply(
+                        left[lane] != 0.0,
+                        right.as_ref().map(|values| values[lane] != 0.0),
+                    ) {
+                        1.0
+                    } else {
+                        0.0
+                    }
+                }))
+            }
             Self::Elementwise { operation, inputs } => {
                 let mut values = [f32x4::ZERO; 2];
                 for (index, input) in inputs.iter().enumerate() {
@@ -178,6 +322,13 @@ struct BatchedState {
     write_binding: u32,
 }
 
+#[derive(Clone, Debug)]
+struct BatchedConstraint {
+    id: IntegrityConstraintId,
+    name: Box<str>,
+    predicate: ScalarOperand,
+}
+
 /// A generic fixed-shape numeric artifact scalarized once and mapped over an
 /// outer batch. Each GPU invocation executes one complete source program.
 #[derive(Clone, Debug)]
@@ -188,34 +339,8 @@ pub struct BatchedGpuProgram {
     instructions: Vec<ScalarInstruction>,
     inputs: Vec<BatchedInput>,
     states: Vec<BatchedState>,
-    robot_integrity: Option<RobotStateIntegrityPolicy>,
+    constraints: Vec<BatchedConstraint>,
     wgsl: String,
-}
-
-/// Publication checks for robot estimates produced by a fixed-shape numeric
-/// region. The numeric graph stays generic; this policy identifies the state
-/// slot that carries covariance and declares its accepted symmetry error.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct RobotStateIntegrityPolicy {
-    covariance_slot: CellSlotId,
-    symmetry_tolerance: f32,
-}
-
-impl RobotStateIntegrityPolicy {
-    pub const fn covariance_slot(self) -> CellSlotId {
-        self.covariance_slot
-    }
-
-    pub const fn symmetry_tolerance(self) -> f32 {
-        self.symmetry_tolerance
-    }
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum BatchedIntegrityViolation {
-    NonFiniteState,
-    NonPositiveCovarianceDiagonal { slot: CellSlotId },
-    CovarianceAsymmetry { slot: CellSlotId, tolerance: f32 },
 }
 
 /// Bounded fault evidence for one rejected candidate. Sessions retain only the
@@ -224,7 +349,8 @@ pub enum BatchedIntegrityViolation {
 pub struct BatchedIntegrityFault {
     pub attempted_turn: u64,
     pub instance: u32,
-    pub violation: BatchedIntegrityViolation,
+    pub constraint: IntegrityConstraintId,
+    pub constraint_name: Box<str>,
 }
 
 #[derive(Debug, Default)]
@@ -373,70 +499,16 @@ impl BatchedGpuProgram {
             .map(|state| (state.slot, state.shape.elements()))
     }
 
-    pub fn state_shapes(&self) -> impl Iterator<Item = (CellSlotId, usize, usize)> + '_ {
-        self.states
-            .iter()
-            .map(|state| (state.slot, state.shape.rows, state.shape.columns))
+    pub fn integrity_constraints(&self) -> impl Iterator<Item = IntegrityConstraintId> + '_ {
+        self.constraints.iter().map(|constraint| constraint.id)
     }
 
-    /// Attaches robot-estimate publication checks to this compiled numeric
-    /// region. Every state value must be finite; the selected covariance must
-    /// also have a positive diagonal and be symmetric within `tolerance`.
-    pub fn with_robot_state_integrity(
-        mut self,
-        covariance_slot: CellSlotId,
-        tolerance: f32,
-    ) -> Result<Self, BatchedExecutionError> {
-        if !tolerance.is_finite() || tolerance < 0.0 {
-            return Err(BatchedExecutionError::IntegrityConfiguration(
-                "covariance symmetry tolerance must be finite and non-negative".to_owned(),
-            ));
-        }
-        let Some(covariance) = self
-            .states
-            .iter()
-            .find(|state| state.slot == covariance_slot)
-        else {
-            return Err(BatchedExecutionError::IntegrityConfiguration(format!(
-                "covariance slot {} is not a state slot",
-                covariance_slot.get()
-            )));
-        };
-        if covariance.shape.rows != covariance.shape.columns {
-            return Err(BatchedExecutionError::IntegrityConfiguration(format!(
-                "covariance slot {} is {}x{}, expected a square matrix",
-                covariance_slot.get(),
-                covariance.shape.rows,
-                covariance.shape.columns
-            )));
-        }
-        self.robot_integrity = Some(RobotStateIntegrityPolicy {
-            covariance_slot,
-            symmetry_tolerance: tolerance,
-        });
-        self.wgsl = generate_wgsl(
-            self.instances,
-            &self.register_offsets,
-            &self.instructions,
-            &self.inputs,
-            &self.states,
-            self.robot_integrity,
-        );
-        Ok(self)
-    }
-
-    pub const fn robot_state_integrity(&self) -> Option<RobotStateIntegrityPolicy> {
-        self.robot_integrity
-    }
-
-    /// Validates an externally produced candidate against the same publication
-    /// policy used by resident sessions. Hosts can use this before importing a
-    /// checkpoint or device-produced state.
-    pub fn validate_robot_state_candidate(
+    pub fn named_integrity_constraints(
         &self,
-        candidate: &BTreeMap<CellSlotId, Vec<f32>>,
-    ) -> Result<(), BatchedExecutionError> {
-        self.validate_candidate(candidate, 0)
+    ) -> impl Iterator<Item = (IntegrityConstraintId, &str)> + '_ {
+        self.constraints
+            .iter()
+            .map(|constraint| (constraint.id, constraint.name.as_ref()))
     }
 
     pub fn prepare_cpu(
@@ -449,7 +521,6 @@ impl BatchedGpuProgram {
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
-        self.validate_candidate(&state, 0)?;
         Ok(BatchedCpuSession {
             program: self,
             inputs,
@@ -472,7 +543,6 @@ impl BatchedGpuProgram {
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
-        self.validate_candidate(&state, 0)?;
         Ok(BatchedSimdCpuSession {
             program: self,
             inputs,
@@ -537,79 +607,39 @@ impl BatchedGpuProgram {
             .collect()
     }
 
-    fn validate_candidate(
+    fn failed_constraint(
         &self,
-        candidate: &BTreeMap<CellSlotId, Vec<f32>>,
+        registers: &[f32],
         attempted_turn: u64,
-    ) -> Result<(), BatchedExecutionError> {
-        let Some(policy) = self.robot_integrity else {
-            return Ok(());
-        };
-        for instance in 0..self.instances as usize {
-            for state in &self.states {
-                let elements = state.shape.elements();
-                let expected = elements * self.instances as usize;
-                let Some(values) = candidate.get(&state.slot) else {
-                    return Err(BatchedExecutionError::IntegrityConfiguration(format!(
-                        "candidate is missing state slot {}",
-                        state.slot.get()
-                    )));
-                };
-                if values.len() != expected {
-                    return Err(BatchedExecutionError::IntegrityConfiguration(format!(
-                        "candidate state slot {} has {} values, expected {expected}",
-                        state.slot.get(),
-                        values.len()
-                    )));
+        instance: u32,
+    ) -> Option<BatchedIntegrityFault> {
+        self.constraints.iter().find_map(|constraint| {
+            (constraint.predicate.evaluate(registers) == 0.0).then_some(BatchedIntegrityFault {
+                attempted_turn,
+                instance,
+                constraint: constraint.id,
+                constraint_name: constraint.name.clone(),
+            })
+        })
+    }
+
+    fn failed_constraint_codes(
+        &self,
+        codes: &[f32],
+        attempted_turn: u64,
+    ) -> Option<BatchedIntegrityFault> {
+        codes.iter().enumerate().find_map(|(instance, code)| {
+            let index = *code as usize;
+            (index != 0).then(|| {
+                let constraint = &self.constraints[index - 1];
+                BatchedIntegrityFault {
+                    attempted_turn,
+                    instance: instance as u32,
+                    constraint: constraint.id,
+                    constraint_name: constraint.name.clone(),
                 }
-                for component in 0..elements {
-                    if !values[instance * elements + component].is_finite() {
-                        return Err(BatchedExecutionError::Integrity(BatchedIntegrityFault {
-                            attempted_turn,
-                            instance: instance as u32,
-                            violation: BatchedIntegrityViolation::NonFiniteState,
-                        }));
-                    }
-                }
-            }
-            let covariance = self
-                .states
-                .iter()
-                .find(|state| state.slot == policy.covariance_slot)
-                .expect("integrity covariance slot was validated during configuration");
-            let dimension = covariance.shape.rows;
-            let elements = covariance.shape.elements();
-            let values = &candidate[&covariance.slot];
-            let base = instance * elements;
-            for diagonal in 0..dimension {
-                if values[base + covariance.shape.index(diagonal, diagonal)] <= 0.0 {
-                    return Err(BatchedExecutionError::Integrity(BatchedIntegrityFault {
-                        attempted_turn,
-                        instance: instance as u32,
-                        violation: BatchedIntegrityViolation::NonPositiveCovarianceDiagonal {
-                            slot: covariance.slot,
-                        },
-                    }));
-                }
-            }
-            for column in 1..dimension {
-                for row in 0..column {
-                    let left = values[base + covariance.shape.index(row, column)];
-                    let right = values[base + covariance.shape.index(column, row)];
-                    if (left - right).abs() > policy.symmetry_tolerance {
-                        return Err(BatchedExecutionError::Integrity(BatchedIntegrityFault {
-                            attempted_turn,
-                            instance: instance as u32,
-                            violation: BatchedIntegrityViolation::CovarianceAsymmetry {
-                                slot: covariance.slot,
-                                tolerance: policy.symmetry_tolerance,
-                            },
-                        }));
-                    }
-                }
-            }
-        }
-        Ok(())
+            })
+        })
     }
 }
 
@@ -639,6 +669,12 @@ impl BatchedCpuSession<'_> {
                     self.registers[instruction.output] =
                         instruction.computation.evaluate(&self.registers);
                 }
+                if let Some(fault) =
+                    self.program
+                        .failed_constraint(&self.registers, attempted_turn, instance as u32)
+                {
+                    return Err(self.faults.record(fault));
+                }
                 for state in &self.program.states {
                     let elements = state.shape.elements();
                     let destination = self.next_state.get_mut(&state.slot).unwrap();
@@ -647,15 +683,6 @@ impl BatchedCpuSession<'_> {
                             source.evaluate(&self.registers);
                     }
                 }
-            }
-            if let Err(error) = self
-                .program
-                .validate_candidate(&self.next_state, attempted_turn)
-            {
-                return match error {
-                    BatchedExecutionError::Integrity(fault) => Err(self.faults.record(fault)),
-                    error => Err(error),
-                };
             }
             std::mem::swap(&mut self.state, &mut self.next_state);
         }
@@ -706,6 +733,23 @@ impl BatchedSimdCpuSession<'_> {
                     self.registers[instruction.output] =
                         instruction.computation.evaluate_simd(&self.registers);
                 }
+                for constraint in &self.program.constraints {
+                    let lanes = constraint
+                        .predicate
+                        .evaluate_simd(&self.registers)
+                        .to_array();
+                    if let Some(lane) = lanes.iter().enumerate().find_map(|(lane, value)| {
+                        let instance = first_instance + lane;
+                        (instance < instances && *value == 0.0).then_some(lane)
+                    }) {
+                        return Err(self.faults.record(BatchedIntegrityFault {
+                            attempted_turn,
+                            instance: (first_instance + lane) as u32,
+                            constraint: constraint.id,
+                            constraint_name: constraint.name.clone(),
+                        }));
+                    }
+                }
                 for state in &self.program.states {
                     let elements = state.shape.elements();
                     let destination = self.next_state.get_mut(&state.slot).unwrap();
@@ -719,15 +763,6 @@ impl BatchedSimdCpuSession<'_> {
                         }
                     }
                 }
-            }
-            if let Err(error) = self
-                .program
-                .validate_candidate(&self.next_state, attempted_turn)
-            {
-                return match error {
-                    BatchedExecutionError::Integrity(fault) => Err(self.faults.record(fault)),
-                    error => Err(error),
-                };
             }
             std::mem::swap(&mut self.state, &mut self.next_state);
         }
@@ -946,13 +981,6 @@ impl<'a> BatchCompiler<'a> {
                 "the outer batch must contain at least one instance",
             );
         }
-        if !self.artifact.constraints().is_empty() {
-            self.reject(
-                None,
-                None,
-                "integrity constraints are not admitted by the fail-stop batch kernel",
-            );
-        }
         self.collect_slots();
         self.collect_inputs();
         self.lower_nodes();
@@ -969,6 +997,48 @@ impl<'a> BatchCompiler<'a> {
                 format!("state slot {} has no whole-value update", slot.get()),
             );
         }
+        if !self.diagnostics.is_empty() {
+            return Err(GpuAdmissionError {
+                diagnostics: self.diagnostics,
+            });
+        }
+
+        let constraints = self
+            .artifact
+            .constraints()
+            .iter()
+            .map(|constraint| {
+                let [predicate] = constraint.inputs.as_ref() else {
+                    return Err(format!(
+                        "integrity constraint {} must have one predicate input",
+                        constraint.constraint.get()
+                    ));
+                };
+                Ok(BatchedConstraint {
+                    id: constraint.constraint,
+                    name: constraint.name.clone().into_boxed_str(),
+                    predicate: self.operand(*predicate, 0)?,
+                })
+            })
+            .collect::<Result<Vec<_>, String>>();
+        let constraints = match constraints {
+            Ok(constraints) if constraints.len() < 256 => constraints,
+            Ok(constraints) => {
+                self.reject(
+                    None,
+                    None,
+                    format!(
+                        "checked batch kernels support at most 255 integrity constraints, found {}",
+                        constraints.len()
+                    ),
+                );
+                Vec::new()
+            }
+            Err(detail) => {
+                self.reject(None, None, detail);
+                Vec::new()
+            }
+        };
         if !self.diagnostics.is_empty() {
             return Err(GpuAdmissionError {
                 diagnostics: self.diagnostics,
@@ -1013,7 +1083,7 @@ impl<'a> BatchCompiler<'a> {
             &self.instructions,
             &inputs,
             &states,
-            None,
+            &constraints,
         );
         Ok(BatchedGpuProgram {
             instances: self.instances,
@@ -1022,7 +1092,7 @@ impl<'a> BatchCompiler<'a> {
             instructions: self.instructions,
             inputs,
             states,
-            robot_integrity: None,
+            constraints,
             wgsl,
         })
     }
@@ -1146,7 +1216,9 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             let output = outputs[0];
-            let result = if runtime_operation && name.starts_with("HorizontalConcatenate") {
+            let result = if runtime_operation && name.starts_with("Access2DSS") {
+                self.lower_access_2d(output, &inputs)
+            } else if runtime_operation && name.starts_with("HorizontalConcatenate") {
                 self.lower_concatenate(output, &inputs, true)
             } else if runtime_operation && name.starts_with("VerticalConcatenate") {
                 self.lower_concatenate(output, &inputs, false)
@@ -1158,6 +1230,12 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_dot(output, &inputs)
             } else if runtime_operation && name.starts_with("Negate") {
                 self.lower_negate(output, &inputs)
+            } else if runtime_operation && name.starts_with("MathAbs") {
+                self.lower_absolute(output, &inputs)
+            } else if runtime_operation && let Some(operation) = comparison_operation(name) {
+                self.lower_compare(output, &inputs, operation)
+            } else if runtime_operation && let Some(operation) = logic_operation(name) {
+                self.lower_logic(output, &inputs, operation)
             } else if runtime_operation && let Some(operation) = scalar_operation(name) {
                 self.lower_elementwise(output, &inputs, operation)
             } else {
@@ -1240,6 +1318,37 @@ impl<'a> BatchCompiler<'a> {
         Ok(())
     }
 
+    fn lower_access_2d(
+        &mut self,
+        output: CellSlotId,
+        inputs: &[ArtifactSource],
+    ) -> Result<(), String> {
+        if inputs.len() != 3 || self.shape(output)?.elements() != 1 {
+            return Err(
+                "fixed scalar matrix access requires a matrix, row, column, and scalar output"
+                    .to_owned(),
+            );
+        }
+        let shape = self.source_shape(inputs[0])?;
+        let row = self.constant_index(inputs[1], "row")?;
+        let column = self.constant_index(inputs[2], "column")?;
+        if row >= shape.rows || column >= shape.columns {
+            return Err(format!(
+                "matrix access [{},{}] is outside {}x{}",
+                row + 1,
+                column + 1,
+                shape.rows,
+                shape.columns
+            ));
+        }
+        self.emit(
+            output,
+            0,
+            ScalarComputation::Copy(self.operand(inputs[0], shape.index(row, column))?),
+        );
+        Ok(())
+    }
+
     fn lower_negate(
         &mut self,
         output: CellSlotId,
@@ -1253,6 +1362,63 @@ impl<'a> BatchCompiler<'a> {
             let input = self.operand(inputs[0], component)?;
             self.emit(output, component, ScalarComputation::Negate(input));
         }
+        Ok(())
+    }
+
+    fn lower_absolute(
+        &mut self,
+        output: CellSlotId,
+        inputs: &[ArtifactSource],
+    ) -> Result<(), String> {
+        if inputs.len() != 1 || self.shape(output)?.elements() != 1 {
+            return Err("absolute value requires one scalar input and output".to_owned());
+        }
+        self.emit(
+            output,
+            0,
+            ScalarComputation::Absolute(self.operand(inputs[0], 0)?),
+        );
+        Ok(())
+    }
+
+    fn lower_compare(
+        &mut self,
+        output: CellSlotId,
+        inputs: &[ArtifactSource],
+        operation: ComparisonOperation,
+    ) -> Result<(), String> {
+        if inputs.len() != 2 || self.shape(output)?.elements() != 1 {
+            return Err("comparison requires two scalar inputs and one scalar output".to_owned());
+        }
+        self.emit(
+            output,
+            0,
+            ScalarComputation::Compare {
+                operation,
+                left: self.operand(inputs[0], 0)?,
+                right: self.operand(inputs[1], 0)?,
+            },
+        );
+        Ok(())
+    }
+
+    fn lower_logic(
+        &mut self,
+        output: CellSlotId,
+        inputs: &[ArtifactSource],
+        operation: LogicOperation,
+    ) -> Result<(), String> {
+        let expected = usize::from(operation != LogicOperation::Not) + 1;
+        if inputs.len() != expected || self.shape(output)?.elements() != 1 {
+            return Err(format!(
+                "logic operation requires {expected} scalar input(s) and one scalar output"
+            ));
+        }
+        let inputs = inputs
+            .iter()
+            .map(|source| self.operand(*source, 0))
+            .collect::<Result<Vec<_>, _>>()?;
+        self.emit(output, 0, ScalarComputation::Logic { operation, inputs });
         Ok(())
     }
 
@@ -1411,6 +1577,24 @@ impl<'a> BatchCompiler<'a> {
         }
     }
 
+    fn constant_index(&self, source: ArtifactSource, role: &str) -> Result<usize, String> {
+        let ArtifactSource::Constant(constant) = source else {
+            return Err(format!("matrix {role} index must be compile-time constant"));
+        };
+        let value = self
+            .artifact
+            .constants()
+            .get(constant)
+            .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
+        let ValueData::Index(index) = value.data() else {
+            return Err(format!("matrix {role} index is not an index value"));
+        };
+        let zero_based = index
+            .checked_sub(1)
+            .ok_or_else(|| format!("matrix {role} index must be at least 1"))?;
+        usize::try_from(zero_based).map_err(|_| format!("matrix {role} index does not fit usize"))
+    }
+
     fn source_shape(&self, source: ArtifactSource) -> Result<FixedShape, String> {
         match source {
             ArtifactSource::Slot(slot) => self.shape(slot),
@@ -1473,6 +1657,38 @@ fn scalar_operation(name: &str) -> Option<ElementwiseOperation> {
     }
 }
 
+fn comparison_operation(name: &str) -> Option<ComparisonOperation> {
+    if name.starts_with("EQ") {
+        Some(ComparisonOperation::Equal)
+    } else if name.starts_with("NEQ") {
+        Some(ComparisonOperation::NotEqual)
+    } else if name.starts_with("LTE") {
+        Some(ComparisonOperation::LessEqual)
+    } else if name.starts_with("LT") {
+        Some(ComparisonOperation::Less)
+    } else if name.starts_with("GTE") {
+        Some(ComparisonOperation::GreaterEqual)
+    } else if name.starts_with("GT") {
+        Some(ComparisonOperation::Greater)
+    } else {
+        None
+    }
+}
+
+fn logic_operation(name: &str) -> Option<LogicOperation> {
+    if name.starts_with("And") {
+        Some(LogicOperation::And)
+    } else if name.starts_with("Or") {
+        Some(LogicOperation::Or)
+    } else if name.starts_with("Xor") {
+        Some(LogicOperation::Xor)
+    } else if name.starts_with("Not") {
+        Some(LogicOperation::Not)
+    } else {
+        None
+    }
+}
+
 fn fixed_shape(
     artifact: &ProgramArtifact,
     schema: mech_core::SchemaId,
@@ -1483,6 +1699,7 @@ fn fixed_shape(
         .ok_or_else(|| "schema does not exist".to_owned())?;
     match schema.body() {
         SchemaBody::FloatingPoint(FloatWidth::W32) => Ok(FixedShape::scalar()),
+        SchemaBody::Bool => Ok(FixedShape::scalar()),
         SchemaBody::Matrix {
             element,
             dimensions,
@@ -1550,7 +1767,7 @@ fn generate_wgsl(
     instructions: &[ScalarInstruction],
     inputs: &[BatchedInput],
     states: &[BatchedState],
-    robot_integrity: Option<RobotStateIntegrityPolicy>,
+    constraints: &[BatchedConstraint],
 ) -> String {
     let mut shader = String::from("// Generic fixed-shape Mech batch kernel.\n");
     for input in inputs {
@@ -1572,13 +1789,10 @@ fn generate_wgsl(
             state.slot.get()
         ));
     }
-    if robot_integrity.is_some() {
+    if !constraints.is_empty() {
         let binding = inputs.len() as u32 + states.len() as u32 * 2;
         shader.push_str(&format!(
             "@group(0) @binding({binding}) var<storage, read_write> integrity_fault: array<atomic<u32>>;\n\n\
-             fn mech_is_finite(value: f32) -> bool {{\n\
-               return value == value && abs(value) <= 3.402823466e+38;\n\
-             }}\n\n\
              fn record_integrity_fault(code: u32, instance: u32) {{\n\
                atomicAdd(&integrity_fault[0], 1u);\n\
                atomicMin(&integrity_fault[1], (instance << 8u) | code);\n\
@@ -1619,36 +1833,14 @@ fn generate_wgsl(
             instruction.computation.wgsl()
         ));
     }
-    if let Some(policy) = robot_integrity {
+    if !constraints.is_empty() {
         shader.push_str("  var integrity_code = 0u;\n");
-        for state in states {
-            for source in &state.update {
-                shader.push_str(&format!(
-                    "  if (integrity_code == 0u && !mech_is_finite({})) {{ integrity_code = 1u; }}\n",
-                    source.wgsl(),
-                ));
-            }
-        }
-        let covariance = states
-            .iter()
-            .find(|state| state.slot == policy.covariance_slot)
-            .expect("integrity covariance slot was validated during configuration");
-        for diagonal in 0..covariance.shape.rows {
-            let component = covariance.shape.index(diagonal, diagonal);
+        for (index, constraint) in constraints.iter().enumerate() {
+            let code = index + 1;
             shader.push_str(&format!(
-                "  if (integrity_code == 0u && !({} > 0.0)) {{ integrity_code = 2u; }}\n",
-                covariance.update[component].wgsl(),
+                "  if (integrity_code == 0u && {} == 0.0) {{ integrity_code = {code}u; }}\n",
+                constraint.predicate.wgsl()
             ));
-        }
-        for column in 1..covariance.shape.columns {
-            for row in 0..column {
-                let left = covariance.update[covariance.shape.index(row, column)].wgsl();
-                let right = covariance.update[covariance.shape.index(column, row)].wgsl();
-                shader.push_str(&format!(
-                    "  if (integrity_code == 0u && abs(({left}) - ({right})) > {}) {{ integrity_code = 3u; }}\n",
-                    super::format_wgsl_f32(policy.symmetry_tolerance),
-                ));
-            }
         }
         shader.push_str(
             "  if (integrity_code != 0u) { record_integrity_fault(integrity_code, index); }\n",
@@ -1682,7 +1874,6 @@ mod native {
 
     use super::{
         BatchedExecutionError, BatchedFaultRecorder, BatchedGpuProgram, BatchedIntegrityFault,
-        BatchedIntegrityViolation, RobotStateIntegrityPolicy,
     };
 
     const GPU_FAULT_WORDS: usize = 2;
@@ -1696,7 +1887,7 @@ mod native {
         bind_groups: [wgpu::BindGroup; 2],
         output_buffers: [BTreeMap<CellSlotId, Arc<wgpu::Buffer>>; 2],
         output_elements: BTreeMap<CellSlotId, usize>,
-        integrity: Option<RobotStateIntegrityPolicy>,
+        constraints: Box<[super::BatchedConstraint]>,
         integrity_fault: Option<Arc<wgpu::Buffer>>,
         integrity_readback: Option<wgpu::Buffer>,
         workgroups: u32,
@@ -1726,7 +1917,7 @@ mod native {
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
-            if self.robot_integrity.is_some() && self.instances >= (1 << 24) {
+            if !self.constraints.is_empty() && self.instances >= (1 << 24) {
                 return Err(BatchedExecutionError::IntegrityConfiguration(
                     "checked GPU fault records support fewer than 2^24 instances".to_owned(),
                 ));
@@ -1746,7 +1937,7 @@ mod native {
             let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
             let required_storage_buffers = (self.inputs.len()
                 + self.states.len() * 2
-                + usize::from(self.robot_integrity.is_some()))
+                + usize::from(!self.constraints.is_empty()))
                 as u32;
             let limits = adapter.limits();
             if required_storage_buffers > limits.max_storage_buffers_per_shader_stage {
@@ -1794,7 +1985,6 @@ mod native {
             }
 
             let initial_state = self.initial_state();
-            self.validate_candidate(&initial_state, 0)?;
             let mut state_buffers = BTreeMap::new();
             for state in &self.states {
                 let initial = Arc::new(device.create_buffer_init(
@@ -1813,9 +2003,9 @@ mod native {
                 state_buffers.insert(state.slot, [initial, alternate]);
             }
 
-            let integrity_fault = self.robot_integrity.map(|_| {
+            let integrity_fault = (!self.constraints.is_empty()).then(|| {
                 Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("Mech robot-state integrity fault"),
+                    label: Some("Mech integrity-constraint fault"),
                     size: (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
                     usage: wgpu::BufferUsages::STORAGE
                         | wgpu::BufferUsages::COPY_SRC
@@ -1823,9 +2013,9 @@ mod native {
                     mapped_at_creation: false,
                 }))
             });
-            let integrity_readback = self.robot_integrity.map(|_| {
+            let integrity_readback = (!self.constraints.is_empty()).then(|| {
                 device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("Mech robot-state integrity readback"),
+                    label: Some("Mech integrity-constraint readback"),
                     size: (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
                     usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                     mapped_at_creation: false,
@@ -1850,7 +2040,7 @@ mod native {
                         count: None,
                     })
                     .collect::<Vec<_>>();
-            if self.robot_integrity.is_some() {
+            if !self.constraints.is_empty() {
                 layout_entries.push(wgpu::BindGroupLayoutEntry {
                     binding: (self.inputs.len() + self.states.len() * 2) as u32,
                     visibility: wgpu::ShaderStages::COMPUTE,
@@ -1936,7 +2126,7 @@ mod native {
                 bind_groups,
                 output_buffers,
                 output_elements,
-                integrity: self.robot_integrity,
+                constraints: self.constraints.clone().into_boxed_slice(),
                 integrity_fault,
                 integrity_readback,
                 workgroups: self.workgroup_count(),
@@ -1956,7 +2146,7 @@ mod native {
             if turns == 0 {
                 return Err(BatchedExecutionError::ZeroTurns);
             }
-            if self.integrity.is_some() {
+            if !self.constraints.is_empty() {
                 return self.dispatch_checked_turns(turns);
             }
             let started = Instant::now();
@@ -2026,27 +2216,24 @@ mod native {
                 self.device.poll(wgpu::Maintain::Wait);
                 let words = self.read_integrity_fault()?;
                 if words[0] != 0 {
-                    let policy = self.integrity.expect("checked GPU session has a policy");
                     let packed = words[1];
                     let code = packed & 0xff;
+                    if code == 0 {
+                        return Err(BatchedExecutionError::Native(
+                            "GPU returned an empty integrity constraint code".to_owned(),
+                        ));
+                    }
+                    let constraint_index = code as usize - 1;
+                    let Some(constraint) = self.constraints.get(constraint_index) else {
+                        return Err(BatchedExecutionError::Native(format!(
+                            "GPU returned unknown integrity constraint code {code}"
+                        )));
+                    };
                     let fault = BatchedIntegrityFault {
                         attempted_turn,
                         instance: packed >> 8,
-                        violation: match code {
-                            1 => BatchedIntegrityViolation::NonFiniteState,
-                            2 => BatchedIntegrityViolation::NonPositiveCovarianceDiagonal {
-                                slot: policy.covariance_slot,
-                            },
-                            3 => BatchedIntegrityViolation::CovarianceAsymmetry {
-                                slot: policy.covariance_slot,
-                                tolerance: policy.symmetry_tolerance,
-                            },
-                            _ => {
-                                return Err(BatchedExecutionError::Native(format!(
-                                    "GPU returned unknown integrity fault code {code}"
-                                )));
-                            }
-                        },
+                        constraint: constraint.id,
+                        constraint_name: constraint.name.clone(),
                     };
                     return Err(self.faults.record(fault));
                 }

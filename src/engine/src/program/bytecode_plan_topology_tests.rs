@@ -1065,8 +1065,10 @@ fn malformed_compiled_sidecars_fail_closed() {
         Vec::new(),
         0,
     );
-    non_boolean_integrity.integrity_constraints =
-        vec![CompiledIntegrityConstraint { result_register: 0 }];
+    non_boolean_integrity.integrity_constraints = vec![CompiledIntegrityConstraint {
+        name: "constraint-0".to_owned(),
+        result_register: 0,
+    }];
     assert!(matches!(
         crate::compile_executable_program_artifact(&non_boolean_integrity, &catalog),
         Err(crate::ArtifactBuildError::IntegrityConstraintSchemaMismatch { constraint: 0, .. })
@@ -1086,8 +1088,10 @@ fn malformed_compiled_sidecars_fail_closed() {
     ));
 
     let mut wrong_integrity_register = non_boolean_integrity.clone();
-    wrong_integrity_register.integrity_constraints =
-        vec![CompiledIntegrityConstraint { result_register: 1 }];
+    wrong_integrity_register.integrity_constraints = vec![CompiledIntegrityConstraint {
+        name: "constraint-1".to_owned(),
+        result_register: 1,
+    }];
     assert!(matches!(
         crate::compile_executable_program_artifact(&wrong_integrity_register, &catalog),
         Err(

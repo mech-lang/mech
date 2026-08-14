@@ -129,6 +129,7 @@ pub struct OutputDeclaration {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntegrityConstraintDeclaration {
     pub constraint: IntegrityConstraintId,
+    pub name: String,
     pub operation: OperationReference,
     pub contract: OperationContractId,
     pub inputs: Box<[ArtifactSource]>,

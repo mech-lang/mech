@@ -210,6 +210,7 @@ pub(super) fn program_revision(
     writer.u32(draft.constraints.len() as u32);
     for constraint in &draft.constraints {
         writer.u32(constraint.constraint.get());
+        writer.string(&constraint.name);
         writer.operation(&constraint.operation);
         writer.u32(constraint.contract.get());
         writer.u32(constraint.inputs.len() as u32);
