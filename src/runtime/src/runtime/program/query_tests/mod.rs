@@ -1,2 +1,2 @@
-#[cfg(feature = "compiler")]
+#[cfg(feature = "resident-routing-source")]
 mod source;

@@ -9,6 +9,19 @@ cd "${REPO_ROOT}"
 TARGET_DIR="${REPO_ROOT}/target/dynamic-modules"
 MODULE_DIR="${REPO_ROOT}/target/mech-modules"
 PROFILE_DIR="${TARGET_DIR}/debug"
+EXTERNAL_LOCK_DIR="${TARGET_DIR}/locks"
+MATH_LOCKFILE="${EXTERNAL_LOCK_DIR}/math/Cargo.lock"
+COMBINATORICS_LOCKFILE="${EXTERNAL_LOCK_DIR}/combinatorics/Cargo.lock"
+STATUS_LOCKFILE="${EXTERNAL_LOCK_DIR}/status/Cargo.lock"
+
+external_cargo() {
+local lockfile="$1"
+shift
+cargo +nightly-2026-03-03 \
+  -Z lockfile-path \
+  --config "resolver.lockfile-path=\"${lockfile}\"" \
+  "$@"
+}
 
 export CARGO_HTTP_MULTIPLEXING=false
 
@@ -42,23 +55,34 @@ fi
 cp "${source_path}" "${staged_path}"
 }
 
-echo "checking interpreter with dynamic modules enabled"
-cargo check -p mech-engine --no-default-features --features "base dynamic-modules f64"
+ROOT_FEATURES="distribution-standard dynamic-modules"
+
+mkdir -p \
+  "${EXTERNAL_LOCK_DIR}/math" \
+  "${EXTERNAL_LOCK_DIR}/combinatorics" \
+  "${EXTERNAL_LOCK_DIR}/status"
+
+echo "checking the supported distribution with dynamic modules enabled"
+cargo +nightly-2026-03-03 check --locked --no-default-features --features "${ROOT_FEATURES}"
 
 echo "testing math dynamic provider"
-cargo test --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module"
+external_cargo "${MATH_LOCKFILE}" generate-lockfile --offline --manifest-path machines/math/Cargo.toml
+external_cargo "${MATH_LOCKFILE}" test --locked --offline --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module"
 
 echo "building math dynamic provider"
-cargo build --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
+external_cargo "${MATH_LOCKFILE}" build --locked --offline --manifest-path machines/math/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
 
 echo "testing combinatorics dynamic provider"
-cargo test --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module"
+external_cargo "${COMBINATORICS_LOCKFILE}" generate-lockfile --offline --manifest-path machines/combinatorics/Cargo.toml
+external_cargo "${COMBINATORICS_LOCKFILE}" test --locked --offline --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module"
 
 echo "building combinatorics dynamic provider"
-cargo build --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
+external_cargo "${COMBINATORICS_LOCKFILE}" build --locked --offline --manifest-path machines/combinatorics/Cargo.toml --no-default-features --features "dynamic-module" --target-dir "${TARGET_DIR}"
 
 echo "building dynamic status test provider"
-cargo build \
+external_cargo "${STATUS_LOCKFILE}" generate-lockfile --offline \
+  --manifest-path tests/fixtures/dynamic-status-module/Cargo.toml
+external_cargo "${STATUS_LOCKFILE}" build --locked --offline \
   --manifest-path tests/fixtures/dynamic-status-module/Cargo.toml \
   --target-dir "${TARGET_DIR}"
 
@@ -71,19 +95,19 @@ stage_module "mech_combinatorics" "mech_module_combinatorics"
 stage_module "mech_dynamic_status_test" "mech_module_status_test"
 
 echo "running dynamic math integration tests"
-MECH_MODULE_PATH="${MODULE_DIR}" cargo test --test dynamic_math --no-default-features --features "base dynamic-modules f64"
+MECH_MODULE_PATH="${MODULE_DIR}" cargo +nightly-2026-03-03 test --locked --test dynamic_math --no-default-features --features "${ROOT_FEATURES}"
 
 echo "running dynamic combinatorics integration tests"
-MECH_MODULE_PATH="${MODULE_DIR}" cargo test --test dynamic_combinatorics --no-default-features --features "base dynamic-modules f64"
+MECH_MODULE_PATH="${MODULE_DIR}" cargo +nightly-2026-03-03 test --locked --test dynamic_combinatorics --no-default-features --features "${ROOT_FEATURES}"
 
 echo "running dynamic status failure tests"
 MECH_MODULE_PATH="${MODULE_DIR}" \
-  cargo test \
+  cargo +nightly-2026-03-03 test --locked \
     --test dynamic_status_failures \
     --no-default-features \
-    --features "base dynamic-modules f64"
+    --features "${ROOT_FEATURES}"
 
 echo "running dynamic module smoke tests"
-MECH_MODULE_PATH="${MODULE_DIR}" cargo test --test dynamic_modules --no-default-features --features "base dynamic-modules f64"
+MECH_MODULE_PATH="${MODULE_DIR}" cargo +nightly-2026-03-03 test --locked --test dynamic_modules --no-default-features --features "${ROOT_FEATURES}"
 
 echo "dynamic module smoke path passed"
