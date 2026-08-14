@@ -14,7 +14,7 @@ use mech_core::CellSlotId;
 use super::{
     BatchedExecutionError, BatchedFaultRecorder, BatchedGpuProgram, BatchedIntegrityFault,
     BinaryOperation, ComparisonOperation, ElementwiseOperation, LogicOperation, ScalarComputation,
-    ScalarOperand, UnaryOperation,
+    ScalarOperand, ScalarPredicate, UnaryOperation,
 };
 
 type NativeTurn = unsafe extern "C" fn(
@@ -22,8 +22,7 @@ type NativeTurn = unsafe extern "C" fn(
     state_pointers: *const *const f32,
     next_state_pointers: *const *mut f32,
     instances: usize,
-    constraint_results: *mut f32,
-);
+) -> u64;
 
 struct NativeKernel {
     _module: JITModule,
@@ -39,7 +38,6 @@ pub struct BatchedJitCpuSession<'a> {
     input_pointers: Vec<*const f32>,
     state_pointers: Vec<*const f32>,
     next_state_pointers: Vec<*mut f32>,
-    constraint_results: Vec<f32>,
     faults: BatchedFaultRecorder,
 }
 
@@ -69,7 +67,6 @@ impl BatchedGpuProgram {
             input_pointers,
             state_pointers: Vec::with_capacity(self.states.len()),
             next_state_pointers: Vec::with_capacity(self.states.len()),
-            constraint_results: vec![0.0; self.instances as usize],
             faults: BatchedFaultRecorder::default(),
         };
         session.refresh_state_pointers();
@@ -89,18 +86,17 @@ impl BatchedJitCpuSession<'_> {
             // tables and their backing f32 buffers remain live for the call, and
             // every generated access is bounded by the admitted fixed shapes and
             // the program's instance count.
-            unsafe {
+            let packed_fault = unsafe {
                 (self.kernel.turn)(
                     self.input_pointers.as_ptr(),
                     self.state_pointers.as_ptr(),
                     self.next_state_pointers.as_ptr(),
                     self.program.instances as usize,
-                    self.constraint_results.as_mut_ptr(),
-                );
-            }
+                )
+            };
             if let Some(fault) = self
                 .program
-                .failed_constraint_codes(&self.constraint_results, attempted_turn)
+                .failed_packed_constraint(packed_fault, attempted_turn)
             {
                 return Err(self.faults.record(fault));
             }
@@ -168,9 +164,10 @@ impl NativeKernel {
 
         let pointer_type = module.target_config().pointer_type();
         let mut signature = module.make_signature();
-        for _ in 0..5 {
+        for _ in 0..4 {
             signature.params.push(AbiParam::new(pointer_type));
         }
+        signature.returns.push(AbiParam::new(types::I64));
         let function_id = module
             .declare_function("mech_fixed_numeric_turn", Linkage::Local, &signature)
             .map_err(native_error)?;
@@ -184,9 +181,13 @@ impl NativeKernel {
             let entry = builder.create_block();
             let header = builder.create_block();
             let body = builder.create_block();
+            let advance = builder.create_block();
+            let fault = builder.create_block();
             let exit = builder.create_block();
             builder.append_block_params_for_function_params(entry);
             builder.append_block_param(header, pointer_type);
+            builder.append_block_param(fault, pointer_type);
+            builder.append_block_param(fault, types::I32);
             builder.switch_to_block(entry);
 
             let parameters = builder.block_params(entry).to_vec();
@@ -194,7 +195,6 @@ impl NativeKernel {
             let state_table = parameters[1];
             let next_state_table = parameters[2];
             let instances = parameters[3];
-            let constraint_results = parameters[4];
             let pointer_bytes = i32::try_from(pointer_type.bytes()).unwrap();
             let flags = MemFlags::trusted();
             let input_bases = (0..program.inputs.len())
@@ -282,27 +282,14 @@ impl NativeKernel {
                 )?;
                 registers[instruction.output] = Some(value);
             }
-            let mut constraint_code = builder.ins().f32const(0.0);
+            let mut constraint_code = builder.ins().iconst(types::I32, 0);
             for (index, constraint) in program.constraints.iter().enumerate() {
-                let condition =
-                    lower_boolean_operand(&mut builder, constraint.predicate, &registers)?;
-                let zero = builder.ins().f32const(0.0);
-                let code_is_empty = builder.ins().fcmp(FloatCC::Equal, constraint_code, zero);
+                let condition = lower_predicate(&mut builder, &constraint.predicate, &registers)?;
+                let code_is_empty = builder.ins().icmp_imm(IntCC::Equal, constraint_code, 0);
                 let failed = builder.ins().bnot(condition);
                 let record = builder.ins().band(code_is_empty, failed);
-                let code = builder.ins().f32const((index + 1) as f32);
+                let code = builder.ins().iconst(types::I32, (index + 1) as i64);
                 constraint_code = builder.ins().select(record, code, constraint_code);
-            }
-            if !program.constraints.is_empty() {
-                store_component(
-                    &mut builder,
-                    constraint_results,
-                    instance,
-                    1,
-                    0,
-                    pointer_type,
-                    constraint_code,
-                );
             }
             for (index, state) in program.states.iter().enumerate() {
                 for (component, source) in state.update.iter().enumerate() {
@@ -318,11 +305,36 @@ impl NativeKernel {
                     );
                 }
             }
+
+            let has_fault = builder.ins().icmp_imm(IntCC::NotEqual, constraint_code, 0);
+            builder.ins().brif(
+                has_fault,
+                fault,
+                &[instance.into(), constraint_code.into()],
+                advance,
+                &[],
+            );
+
+            builder.switch_to_block(advance);
             let next_instance = builder.ins().iadd_imm(instance, 1);
             builder.ins().jump(header, &[next_instance.into()]);
 
+            builder.switch_to_block(fault);
+            let fault_instance = builder.block_params(fault)[0];
+            let fault_code = builder.block_params(fault)[1];
+            let fault_instance = if pointer_type == types::I64 {
+                fault_instance
+            } else {
+                builder.ins().uextend(types::I64, fault_instance)
+            };
+            let fault_code = builder.ins().uextend(types::I64, fault_code);
+            let packed = builder.ins().ishl_imm(fault_instance, 8);
+            let packed = builder.ins().bor(packed, fault_code);
+            builder.ins().return_(&[packed]);
+
             builder.switch_to_block(exit);
-            builder.ins().return_(&[]);
+            let success = builder.ins().iconst(types::I64, 0);
+            builder.ins().return_(&[success]);
             builder.seal_all_blocks();
             builder.finalize();
         }
@@ -333,7 +345,7 @@ impl NativeKernel {
         module.clear_context(&mut context);
         module.finalize_definitions().map_err(native_error)?;
         let code = module.get_finalized_function(function_id);
-        // SAFETY: `code` is the finalized entry point for the four-pointer
+        // SAFETY: `code` is the finalized entry point for the four-argument
         // signature constructed above. The module remains owned by the kernel.
         let turn = unsafe { mem::transmute::<*const u8, NativeTurn>(code) };
         Ok(Self {
@@ -371,6 +383,10 @@ fn lower_computation(
         ScalarComputation::Absolute(input) => {
             let value = lower_numeric_operand(builder, *input, registers)?;
             NativeRegister::F32(builder.ins().fabs(value))
+        }
+        ScalarComputation::IsFinite(input) => {
+            let value = lower_numeric_operand(builder, *input, registers)?;
+            NativeRegister::Bool(lower_is_finite(builder, value))
         }
         ScalarComputation::Compare {
             operation,
@@ -443,6 +459,95 @@ fn lower_computation(
             NativeRegister::F32(sum)
         }
     })
+}
+
+fn lower_predicate(
+    builder: &mut FunctionBuilder<'_>,
+    predicate: &ScalarPredicate,
+    registers: &[Option<NativeRegister>],
+) -> Result<Value, BatchedExecutionError> {
+    Ok(match predicate {
+        ScalarPredicate::Value(operand) => match lower_operand(builder, *operand, registers)? {
+            NativeRegister::Bool(value) => value,
+            NativeRegister::F32(value) => {
+                let zero = builder.ins().f32const(0.0);
+                builder.ins().fcmp(FloatCC::NotEqual, value, zero)
+            }
+        },
+        ScalarPredicate::IsFinite(operand) => {
+            let value = lower_numeric_operand(builder, *operand, registers)?;
+            lower_is_finite(builder, value)
+        }
+        ScalarPredicate::AbsoluteDifferenceWithin {
+            left,
+            right,
+            tolerance,
+        } => {
+            let left = lower_numeric_operand(builder, *left, registers)?;
+            let right = lower_numeric_operand(builder, *right, registers)?;
+            let tolerance = lower_numeric_operand(builder, *tolerance, registers)?;
+            let difference = builder.ins().fsub(left, right);
+            let difference = builder.ins().fabs(difference);
+            builder
+                .ins()
+                .fcmp(FloatCC::LessThanOrEqual, difference, tolerance)
+        }
+        ScalarPredicate::Compare {
+            operation,
+            left,
+            right,
+        } => {
+            let left = lower_numeric_operand(builder, *left, registers)?;
+            let right = lower_numeric_operand(builder, *right, registers)?;
+            builder.ins().fcmp(
+                match operation {
+                    ComparisonOperation::Equal => FloatCC::Equal,
+                    ComparisonOperation::NotEqual => FloatCC::NotEqual,
+                    ComparisonOperation::Less => FloatCC::LessThan,
+                    ComparisonOperation::Greater => FloatCC::GreaterThan,
+                    ComparisonOperation::LessEqual => FloatCC::LessThanOrEqual,
+                    ComparisonOperation::GreaterEqual => FloatCC::GreaterThanOrEqual,
+                },
+                left,
+                right,
+            )
+        }
+        ScalarPredicate::All(inputs) => {
+            let mut inputs = inputs.iter();
+            let mut condition = lower_predicate(
+                builder,
+                inputs.next().expect("flattened conjunction is non-empty"),
+                registers,
+            )?;
+            for input in inputs {
+                let next = lower_predicate(builder, input, registers)?;
+                condition = builder.ins().band(condition, next);
+            }
+            condition
+        }
+        ScalarPredicate::Logic { operation, inputs } => {
+            let left = lower_predicate(builder, &inputs[0], registers)?;
+            if *operation == LogicOperation::Not {
+                builder.ins().bnot(left)
+            } else {
+                let right = lower_predicate(builder, &inputs[1], registers)?;
+                match operation {
+                    LogicOperation::And => builder.ins().band(left, right),
+                    LogicOperation::Or => builder.ins().bor(left, right),
+                    LogicOperation::Xor => builder.ins().bxor(left, right),
+                    LogicOperation::Not => unreachable!(),
+                }
+            }
+        }
+    })
+}
+
+fn lower_is_finite(builder: &mut FunctionBuilder<'_>, value: Value) -> Value {
+    let bits = builder.ins().bitcast(types::I32, MemFlags::new(), value);
+    let exponent = builder.ins().band_imm(bits, 0x7f80_0000);
+    builder
+        .ins()
+        .icmp_imm(IntCC::NotEqual, exponent, 0x7f80_0000)
 }
 
 fn lower_operand(

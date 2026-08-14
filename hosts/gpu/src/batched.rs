@@ -8,7 +8,7 @@ use mech_engine::{
     ArtifactComputeRegion, ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
     SlotRole,
 };
-use wide::f32x4;
+use wide::{CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, f32x4};
 
 use super::{
     BinaryOperation, ElementwiseOperation, GpuAdmissionError, GpuDiagnostic, GpuDiagnosticCode,
@@ -96,6 +96,21 @@ impl ComparisonOperation {
         }
     }
 
+    fn apply_simd(self, left: f32x4, right: f32x4) -> f32x4 {
+        self.mask_simd(left, right).blend(f32x4::ONE, f32x4::ZERO)
+    }
+
+    fn mask_simd(self, left: f32x4, right: f32x4) -> f32x4 {
+        match self {
+            Self::Equal => left.cmp_eq(right),
+            Self::NotEqual => left.cmp_ne(right),
+            Self::Less => left.cmp_lt(right),
+            Self::Greater => left.cmp_gt(right),
+            Self::LessEqual => left.cmp_le(right),
+            Self::GreaterEqual => left.cmp_ge(right),
+        }
+    }
+
     const fn wgsl(self) -> &'static str {
         match self {
             Self::Equal => "==",
@@ -132,6 +147,7 @@ enum ScalarComputation {
     Copy(ScalarOperand),
     Negate(ScalarOperand),
     Absolute(ScalarOperand),
+    IsFinite(ScalarOperand),
     Compare {
         operation: ComparisonOperation,
         left: ScalarOperand,
@@ -148,12 +164,177 @@ enum ScalarComputation {
     SumProducts(Vec<(ScalarOperand, ScalarOperand)>),
 }
 
+#[derive(Clone, Debug)]
+enum ScalarPredicate {
+    Value(ScalarOperand),
+    IsFinite(ScalarOperand),
+    AbsoluteDifferenceWithin {
+        left: ScalarOperand,
+        right: ScalarOperand,
+        tolerance: ScalarOperand,
+    },
+    Compare {
+        operation: ComparisonOperation,
+        left: ScalarOperand,
+        right: ScalarOperand,
+    },
+    All(Vec<ScalarPredicate>),
+    Logic {
+        operation: LogicOperation,
+        inputs: Vec<ScalarPredicate>,
+    },
+}
+
+impl ScalarPredicate {
+    fn evaluate(&self, registers: &[f32]) -> bool {
+        match self {
+            Self::Value(value) => value.evaluate(registers) != 0.0,
+            Self::IsFinite(value) => value.evaluate(registers).is_finite(),
+            Self::AbsoluteDifferenceWithin {
+                left,
+                right,
+                tolerance,
+            } => {
+                (left.evaluate(registers) - right.evaluate(registers)).abs()
+                    <= tolerance.evaluate(registers)
+            }
+            Self::Compare {
+                operation,
+                left,
+                right,
+            } => operation.apply(left.evaluate(registers), right.evaluate(registers)),
+            Self::All(inputs) => inputs.iter().all(|input| input.evaluate(registers)),
+            Self::Logic { operation, inputs } => {
+                let left = inputs[0].evaluate(registers);
+                let right = inputs.get(1).map(|input| input.evaluate(registers));
+                operation.apply(left, right)
+            }
+        }
+    }
+
+    fn evaluate_simd_mask(&self, registers: &[f32x4]) -> f32x4 {
+        match self {
+            Self::Value(value) => value.evaluate_simd(registers).cmp_ne(f32x4::ZERO),
+            Self::IsFinite(value) => value.evaluate_simd(registers).is_finite(),
+            Self::AbsoluteDifferenceWithin {
+                left,
+                right,
+                tolerance,
+            } => (left.evaluate_simd(registers) - right.evaluate_simd(registers))
+                .abs()
+                .cmp_le(tolerance.evaluate_simd(registers)),
+            Self::Compare {
+                operation,
+                left,
+                right,
+            } => operation.mask_simd(
+                left.evaluate_simd(registers),
+                right.evaluate_simd(registers),
+            ),
+            Self::All(inputs) => inputs.iter().fold(!f32x4::ZERO, |mask, input| {
+                mask & input.evaluate_simd_mask(registers)
+            }),
+            Self::Logic { operation, inputs } => {
+                let left = inputs[0].evaluate_simd_mask(registers);
+                let right = inputs
+                    .get(1)
+                    .map(|input| input.evaluate_simd_mask(registers));
+                match operation {
+                    LogicOperation::And => left & right.unwrap(),
+                    LogicOperation::Or => left | right.unwrap(),
+                    LogicOperation::Xor => left ^ right.unwrap(),
+                    LogicOperation::Not => !left,
+                }
+            }
+        }
+    }
+
+    fn wgsl(&self) -> String {
+        match self {
+            Self::Value(value) => format!("({} != 0.0)", value.wgsl()),
+            Self::IsFinite(value) => {
+                format!("(abs({}) <= 3.402823466e38)", value.wgsl())
+            }
+            Self::AbsoluteDifferenceWithin {
+                left,
+                right,
+                tolerance,
+            } => format!(
+                "(abs(({}) - ({})) <= ({}))",
+                left.wgsl(),
+                right.wgsl(),
+                tolerance.wgsl()
+            ),
+            Self::Compare {
+                operation,
+                left,
+                right,
+            } => format!(
+                "(({}) {} ({}))",
+                left.wgsl(),
+                operation.wgsl(),
+                right.wgsl()
+            ),
+            Self::All(inputs) => format!(
+                "({})",
+                inputs
+                    .iter()
+                    .map(ScalarPredicate::wgsl)
+                    .collect::<Vec<_>>()
+                    .join(" && ")
+            ),
+            Self::Logic { operation, inputs } => {
+                let left = inputs[0].wgsl();
+                match operation {
+                    LogicOperation::And => format!("({left} && {})", inputs[1].wgsl()),
+                    LogicOperation::Or => format!("({left} || {})", inputs[1].wgsl()),
+                    LogicOperation::Xor => format!("({left} != {})", inputs[1].wgsl()),
+                    LogicOperation::Not => format!("(!{left})"),
+                }
+            }
+        }
+    }
+
+    fn collect_registers(&self, registers: &mut BTreeSet<usize>) {
+        match self {
+            Self::Value(value) | Self::IsFinite(value) => {
+                collect_operand_register(*value, registers);
+            }
+            Self::AbsoluteDifferenceWithin {
+                left,
+                right,
+                tolerance,
+            } => {
+                collect_operand_register(*left, registers);
+                collect_operand_register(*right, registers);
+                collect_operand_register(*tolerance, registers);
+            }
+            Self::Compare { left, right, .. } => {
+                collect_operand_register(*left, registers);
+                collect_operand_register(*right, registers);
+            }
+            Self::All(inputs) | Self::Logic { inputs, .. } => {
+                for input in inputs {
+                    input.collect_registers(registers);
+                }
+            }
+        }
+    }
+}
+
 impl ScalarComputation {
     fn evaluate(&self, registers: &[f32]) -> f32 {
         match self {
             Self::Copy(input) => input.evaluate(registers),
             Self::Negate(input) => -input.evaluate(registers),
             Self::Absolute(input) => input.evaluate(registers).abs(),
+            Self::IsFinite(input) => {
+                if input.evaluate(registers).is_finite() {
+                    1.0
+                } else {
+                    0.0
+                }
+            }
             Self::Compare {
                 operation,
                 left,
@@ -193,6 +374,9 @@ impl ScalarComputation {
             Self::Copy(input) => input.wgsl(),
             Self::Negate(input) => format!("-({})", input.wgsl()),
             Self::Absolute(input) => format!("abs({})", input.wgsl()),
+            Self::IsFinite(input) => {
+                format!("select(0.0, 1.0, abs({}) <= 3.402823466e38)", input.wgsl())
+            }
             Self::Compare {
                 operation,
                 left,
@@ -236,36 +420,30 @@ impl ScalarComputation {
             Self::Copy(input) => input.evaluate_simd(registers),
             Self::Negate(input) => -input.evaluate_simd(registers),
             Self::Absolute(input) => input.evaluate_simd(registers).abs(),
+            Self::IsFinite(input) => input
+                .evaluate_simd(registers)
+                .is_finite()
+                .blend(f32x4::ONE, f32x4::ZERO),
             Self::Compare {
                 operation,
                 left,
                 right,
-            } => {
-                let left = left.evaluate_simd(registers).to_array();
-                let right = right.evaluate_simd(registers).to_array();
-                f32x4::new(std::array::from_fn(|lane| {
-                    if operation.apply(left[lane], right[lane]) {
-                        1.0
-                    } else {
-                        0.0
-                    }
-                }))
-            }
+            } => operation.apply_simd(
+                left.evaluate_simd(registers),
+                right.evaluate_simd(registers),
+            ),
             Self::Logic { operation, inputs } => {
-                let left = inputs[0].evaluate_simd(registers).to_array();
+                let left = inputs[0].evaluate_simd(registers).cmp_ne(f32x4::ZERO);
                 let right = inputs
                     .get(1)
-                    .map(|input| input.evaluate_simd(registers).to_array());
-                f32x4::new(std::array::from_fn(|lane| {
-                    if operation.apply(
-                        left[lane] != 0.0,
-                        right.as_ref().map(|values| values[lane] != 0.0),
-                    ) {
-                        1.0
-                    } else {
-                        0.0
-                    }
-                }))
+                    .map(|input| input.evaluate_simd(registers).cmp_ne(f32x4::ZERO));
+                let mask = match operation {
+                    LogicOperation::And => left & right.unwrap(),
+                    LogicOperation::Or => left | right.unwrap(),
+                    LogicOperation::Xor => left ^ right.unwrap(),
+                    LogicOperation::Not => !left,
+                };
+                mask.blend(f32x4::ONE, f32x4::ZERO)
             }
             Self::Elementwise { operation, inputs } => {
                 let mut values = [f32x4::ZERO; 2];
@@ -296,6 +474,138 @@ impl ScalarComputation {
             }),
         }
     }
+
+    fn collect_registers(&self, registers: &mut BTreeSet<usize>) {
+        match self {
+            Self::Copy(input)
+            | Self::Negate(input)
+            | Self::Absolute(input)
+            | Self::IsFinite(input) => {
+                collect_operand_register(*input, registers);
+            }
+            Self::Compare { left, right, .. } => {
+                collect_operand_register(*left, registers);
+                collect_operand_register(*right, registers);
+            }
+            Self::Logic { inputs, .. } | Self::Elementwise { inputs, .. } => {
+                for input in inputs {
+                    collect_operand_register(*input, registers);
+                }
+            }
+            Self::SumProducts(terms) => {
+                for (left, right) in terms {
+                    collect_operand_register(*left, registers);
+                    collect_operand_register(*right, registers);
+                }
+            }
+        }
+    }
+}
+
+fn collect_operand_register(operand: ScalarOperand, registers: &mut BTreeSet<usize>) {
+    if let ScalarOperand::Register(register) = operand {
+        registers.insert(register);
+    }
+}
+
+fn compile_scalar_predicate(
+    operand: ScalarOperand,
+    producers: &BTreeMap<usize, &ScalarComputation>,
+) -> ScalarPredicate {
+    let ScalarOperand::Register(register) = operand else {
+        return ScalarPredicate::Value(operand);
+    };
+    match producers.get(&register).copied() {
+        Some(ScalarComputation::Copy(input)) => compile_scalar_predicate(*input, producers),
+        Some(ScalarComputation::IsFinite(input)) => ScalarPredicate::IsFinite(*input),
+        Some(ScalarComputation::Compare {
+            operation,
+            left,
+            right,
+        }) => compile_comparison_predicate(*operation, *left, *right, producers),
+        Some(ScalarComputation::Logic { operation, inputs }) => {
+            let inputs = inputs
+                .iter()
+                .map(|input| compile_scalar_predicate(*input, producers))
+                .collect::<Vec<_>>();
+            if *operation == LogicOperation::And {
+                ScalarPredicate::All(flatten_all(inputs))
+            } else {
+                ScalarPredicate::Logic {
+                    operation: *operation,
+                    inputs,
+                }
+            }
+        }
+        _ => ScalarPredicate::Value(operand),
+    }
+}
+
+fn flatten_all(inputs: Vec<ScalarPredicate>) -> Vec<ScalarPredicate> {
+    inputs
+        .into_iter()
+        .flat_map(|input| match input {
+            ScalarPredicate::All(nested) => nested,
+            input => vec![input],
+        })
+        .collect()
+}
+
+fn compile_comparison_predicate(
+    operation: ComparisonOperation,
+    left: ScalarOperand,
+    right: ScalarOperand,
+    producers: &BTreeMap<usize, &ScalarComputation>,
+) -> ScalarPredicate {
+    if operation == ComparisonOperation::LessEqual
+        && let ScalarOperand::Register(absolute_register) = left
+        && let Some(ScalarComputation::Absolute(ScalarOperand::Register(difference_register))) =
+            producers.get(&absolute_register).copied()
+        && let Some(ScalarComputation::Elementwise {
+            operation: ElementwiseOperation::Binary(BinaryOperation::Subtract),
+            inputs,
+        }) = producers.get(difference_register).copied()
+        && inputs.len() == 2
+    {
+        return ScalarPredicate::AbsoluteDifferenceWithin {
+            left: inputs[0],
+            right: inputs[1],
+            tolerance: right,
+        };
+    }
+    ScalarPredicate::Compare {
+        operation,
+        left,
+        right,
+    }
+}
+
+fn prune_dead_instructions(
+    instructions: Vec<ScalarInstruction>,
+    states: &BTreeMap<CellSlotId, PendingState>,
+    constraints: &[BatchedConstraint],
+) -> Vec<ScalarInstruction> {
+    let mut live = BTreeSet::new();
+    for state in states.values() {
+        if let Some(update) = &state.update {
+            for source in update {
+                collect_operand_register(*source, &mut live);
+            }
+        }
+    }
+    for constraint in constraints {
+        constraint.predicate.collect_registers(&mut live);
+    }
+
+    let mut retained = Vec::with_capacity(instructions.len());
+    for instruction in instructions.into_iter().rev() {
+        if live.contains(&instruction.output) {
+            instruction.computation.collect_registers(&mut live);
+            retained.push(instruction);
+        }
+    }
+    retained.reverse();
+    retained
 }
 
 #[derive(Clone, Debug)]
@@ -326,7 +636,7 @@ struct BatchedState {
 struct BatchedConstraint {
     id: IntegrityConstraintId,
     name: Box<str>,
-    predicate: ScalarOperand,
+    predicate: ScalarPredicate,
 }
 
 /// A generic fixed-shape numeric artifact scalarized once and mapped over an
@@ -614,7 +924,7 @@ impl BatchedGpuProgram {
         instance: u32,
     ) -> Option<BatchedIntegrityFault> {
         self.constraints.iter().find_map(|constraint| {
-            (constraint.predicate.evaluate(registers) == 0.0).then_some(BatchedIntegrityFault {
+            (!constraint.predicate.evaluate(registers)).then_some(BatchedIntegrityFault {
                 attempted_turn,
                 instance,
                 constraint: constraint.id,
@@ -623,22 +933,20 @@ impl BatchedGpuProgram {
         })
     }
 
-    fn failed_constraint_codes(
+    fn failed_packed_constraint(
         &self,
-        codes: &[f32],
+        packed: u64,
         attempted_turn: u64,
     ) -> Option<BatchedIntegrityFault> {
-        codes.iter().enumerate().find_map(|(instance, code)| {
-            let index = *code as usize;
-            (index != 0).then(|| {
-                let constraint = &self.constraints[index - 1];
-                BatchedIntegrityFault {
-                    attempted_turn,
-                    instance: instance as u32,
-                    constraint: constraint.id,
-                    constraint_name: constraint.name.clone(),
-                }
-            })
+        let code = (packed & 0xff) as usize;
+        (code != 0).then(|| {
+            let constraint = &self.constraints[code - 1];
+            BatchedIntegrityFault {
+                attempted_turn,
+                instance: (packed >> 8) as u32,
+                constraint: constraint.id,
+                constraint_name: constraint.name.clone(),
+            }
         })
     }
 }
@@ -734,14 +1042,12 @@ impl BatchedSimdCpuSession<'_> {
                         instruction.computation.evaluate_simd(&self.registers);
                 }
                 for constraint in &self.program.constraints {
-                    let lanes = constraint
-                        .predicate
-                        .evaluate_simd(&self.registers)
-                        .to_array();
-                    if let Some(lane) = lanes.iter().enumerate().find_map(|(lane, value)| {
-                        let instance = first_instance + lane;
-                        (instance < instances && *value == 0.0).then_some(lane)
-                    }) {
+                    let valid_mask = constraint.predicate.evaluate_simd_mask(&self.registers);
+                    let active_lanes = (instances - first_instance).min(SIMD_LANES);
+                    let active_mask = (1_u32 << active_lanes) - 1;
+                    let failed_lanes = (!valid_mask).move_mask() as u32 & active_mask;
+                    if failed_lanes != 0 {
+                        let lane = failed_lanes.trailing_zeros() as usize;
                         return Err(self.faults.record(BatchedIntegrityFault {
                             attempted_turn,
                             instance: (first_instance + lane) as u32,
@@ -1003,6 +1309,11 @@ impl<'a> BatchCompiler<'a> {
             });
         }
 
+        let predicate_producers = self
+            .instructions
+            .iter()
+            .map(|instruction| (instruction.output, &instruction.computation))
+            .collect::<BTreeMap<_, _>>();
         let constraints = self
             .artifact
             .constraints()
@@ -1017,10 +1328,14 @@ impl<'a> BatchCompiler<'a> {
                 Ok(BatchedConstraint {
                     id: constraint.constraint,
                     name: constraint.name.clone().into_boxed_str(),
-                    predicate: self.operand(*predicate, 0)?,
+                    predicate: compile_scalar_predicate(
+                        self.operand(*predicate, 0)?,
+                        &predicate_producers,
+                    ),
                 })
             })
             .collect::<Result<Vec<_>, String>>();
+        drop(predicate_producers);
         let constraints = match constraints {
             Ok(constraints) if constraints.len() < 256 => constraints,
             Ok(constraints) => {
@@ -1044,6 +1359,11 @@ impl<'a> BatchCompiler<'a> {
                 diagnostics: self.diagnostics,
             });
         }
+        self.instructions = prune_dead_instructions(
+            std::mem::take(&mut self.instructions),
+            &self.states,
+            &constraints,
+        );
 
         let mut binding = 0_u32;
         let inputs = self
@@ -1390,16 +1710,54 @@ impl<'a> BatchCompiler<'a> {
         if inputs.len() != 2 || self.shape(output)?.elements() != 1 {
             return Err("comparison requires two scalar inputs and one scalar output".to_owned());
         }
+        let right = self.operand(inputs[1], 0)?;
+        if operation == ComparisonOperation::LessEqual
+            && matches!(right, ScalarOperand::Constant(value) if value == f32::MAX)
+            && let Some(value) = self.absolute_value_input(inputs[0])
+        {
+            self.emit(
+                output,
+                0,
+                ScalarComputation::IsFinite(self.operand(value, 0)?),
+            );
+            return Ok(());
+        }
         self.emit(
             output,
             0,
             ScalarComputation::Compare {
                 operation,
                 left: self.operand(inputs[0], 0)?,
-                right: self.operand(inputs[1], 0)?,
+                right,
             },
         );
         Ok(())
+    }
+
+    fn absolute_value_input(&self, source: ArtifactSource) -> Option<ArtifactSource> {
+        let ArtifactSource::Slot(slot) = source else {
+            return None;
+        };
+        let slot = self
+            .artifact
+            .slots()
+            .iter()
+            .find(|declaration| declaration.slot == slot)?;
+        let ProducerReference::NodeOutput { node, .. } = slot.producer else {
+            return None;
+        };
+        let node = self.artifact.nodes().get(node.get() as usize)?;
+        if node.operation.module_path.as_ref() != ["runtime"]
+            || !node.operation.operation_name.starts_with("MathAbs")
+        {
+            return None;
+        }
+        node.input_bindings.clone().find_map(|binding| {
+            match self.artifact.bindings().get(binding as usize) {
+                Some(BindingDeclaration::Input { source, .. }) => Some(*source),
+                _ => None,
+            }
+        })
     }
 
     fn lower_logic(
@@ -1838,7 +2196,7 @@ fn generate_wgsl(
         for (index, constraint) in constraints.iter().enumerate() {
             let code = index + 1;
             shader.push_str(&format!(
-                "  if (integrity_code == 0u && {} == 0.0) {{ integrity_code = {code}u; }}\n",
+                "  if (integrity_code == 0u && !{}) {{ integrity_code = {code}u; }}\n",
                 constraint.predicate.wgsl()
             ));
         }
