@@ -25,44 +25,20 @@ pub(crate) fn output_value(
             LegacyValue::F64(Ref::new(values[0]))
         }
         ResidentValueBorrow::Bool { shape, values } => LegacyValue::MatrixBool(Matrix::from_vec(
-            to_column_major(
-                &values.iter().map(|value| *value != 0).collect::<Vec<_>>(),
-                shape.rows as usize,
-                shape.columns as usize,
-            ),
+            values.iter().map(|value| *value != 0).collect(),
             shape.rows as usize,
             shape.columns as usize,
         )),
         ResidentValueBorrow::Index { shape, values } => LegacyValue::MatrixIndex(Matrix::from_vec(
-            to_column_major(
-                &values
-                    .iter()
-                    .map(|value| *value as usize)
-                    .collect::<Vec<_>>(),
-                shape.rows as usize,
-                shape.columns as usize,
-            ),
+            values.iter().map(|value| *value as usize).collect(),
             shape.rows as usize,
             shape.columns as usize,
         )),
         ResidentValueBorrow::F64 { shape, values } => LegacyValue::MatrixF64(Matrix::from_vec(
-            to_column_major(values, shape.rows as usize, shape.columns as usize),
+            values.to_vec(),
             shape.rows as usize,
             shape.columns as usize,
         )),
     };
     RuntimeValueSnapshot::try_capture(&legacy).map(Some)
-}
-
-fn to_column_major<T: Copy>(values: &[T], rows: usize, columns: usize) -> Vec<T> {
-    if values.is_empty() {
-        return Vec::new();
-    }
-    let mut column_major = vec![values[0]; values.len()];
-    for row in 0..rows {
-        for column in 0..columns {
-            column_major[column * rows + row] = values[row * columns + column];
-        }
-    }
-    column_major
 }

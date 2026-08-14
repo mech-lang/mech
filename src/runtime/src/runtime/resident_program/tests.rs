@@ -616,6 +616,136 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
 }
 
 #[test]
+fn literal_scalar_output_is_published_without_fake_state() {
+    let mut source_runtime = runtime();
+    let loaded = source_runtime
+        .load_source_program(
+            "answer := 42.0\nanswer",
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+    assert!(matches!(
+        loaded.initial_value.to_value(),
+        LegacyValue::F64(value) if *value.borrow() == 42.0
+    ));
+    let ActiveProgramExecution::ResidentPure(execution) = &source_runtime.active_program else {
+        panic!("literal source must own a resident instance")
+    };
+    let published = execution.artifact.outputs()[0].source;
+    assert_eq!(
+        execution.artifact.slots()[published.get() as usize].role,
+        SlotRole::Output
+    );
+    assert!(execution.instance.state_borrow(published).is_none());
+    let revision = execution.artifact.revision();
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+
+    let mut decoded = runtime();
+    let loaded = decoded
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(loaded.info.program_revision, Some(revision));
+    assert!(matches!(
+        loaded.initial_value.to_value(),
+        LegacyValue::F64(value) if *value.borrow() == 42.0
+    ));
+}
+
+#[test]
+fn computed_scalar_output_is_materialized_during_activation() {
+    let mut runtime = runtime();
+    let loaded = runtime
+        .load_source_program(
+            "answer := 40.0 + 2.0\nanswer",
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+    assert!(matches!(
+        loaded.initial_value.to_value(),
+        LegacyValue::F64(value) if *value.borrow() == 42.0
+    ));
+}
+
+#[test]
+fn literal_bool_and_matrix_outputs_are_published() {
+    let mut boolean = runtime();
+    let loaded = boolean
+        .load_source_program(
+            "answer := true\nanswer",
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert!(matches!(
+        loaded.initial_value.to_value(),
+        LegacyValue::Bool(value) if *value.borrow()
+    ));
+
+    let mut matrix = runtime();
+    let loaded = matrix
+        .load_source_program(
+            "answer := [1.0 2.0; 3.0 4.0]\nanswer",
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    let LegacyValue::MatrixF64(value) = loaded.initial_value.to_value() else {
+        panic!("matrix output must retain its f64 matrix representation")
+    };
+    assert_eq!((value.rows(), value.cols()), (2, 2));
+    assert_eq!(value.as_vec(), [1.0, 3.0, 2.0, 4.0]);
+}
+
+#[test]
+fn turn_derived_output_is_published_from_resident_scratch() {
+    let plans = Arc::new(AtomicUsize::new(0));
+    let reads = Arc::new(AtomicUsize::new(0));
+    let mut runtime = runtime();
+    runtime
+        .register_resource_provider(Box::new(PlanningObservationProvider {
+            plans,
+            reads,
+            value_bits: Arc::new(AtomicU64::new(0.0_f64.to_bits())),
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    runtime
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_023),
+            subject,
+            "test://clock/tick/delta-seconds",
+            ["read"],
+        )))
+        .unwrap();
+    runtime
+        .load_source_program(
+            r#"
+@clock := test://clock/tick{:read(delta-seconds)}
+delta := @clock/delta-seconds
+output := delta + 1.0
+output
+"#,
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(8.0),
+        ))
+        .unwrap();
+    runtime.drain_resident_host_inputs(1).unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("observation-derived output must remain resident")
+    };
+    assert!(matches!(
+        execution.coordinator.instance().output_borrow(0),
+        Some(ResidentValueBorrow::F64 { values, .. }) if values == [9.0]
+    ));
+}
+
+#[test]
 fn empty_runtime_step_fails_without_an_execution_fallback() {
     let mut runtime = runtime();
 

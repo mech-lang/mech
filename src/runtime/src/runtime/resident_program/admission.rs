@@ -16,8 +16,7 @@ pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::M
         | UnsupportedChangeDetection { .. }
         | InvalidAlias { .. }
         | InvalidNodeOutput { .. }
-        | MissingResidentFactory { .. }
-        | OutputMustBeStateBacked { .. } => ResidentRouteFailureClass::SemanticUnsupported,
+        | MissingResidentFactory { .. } => ResidentRouteFailureClass::SemanticUnsupported,
         InvalidSnapshotRepresentation
         | MissingStateInitializer { .. }
         | InvalidExternalNode { .. }

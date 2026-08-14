@@ -233,7 +233,13 @@ fn validate_slots(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError
                 ProducerReference::NodeOutput { .. },
                 Some(InitializerReference::Constant(_)),
             )
-            | (SlotRole::Derived, ProducerReference::NodeOutput { .. }, None) => {}
+            | (SlotRole::Derived, ProducerReference::NodeOutput { .. }, None)
+            | (SlotRole::Output, ProducerReference::Output { .. }, None)
+            | (
+                SlotRole::Output,
+                ProducerReference::Output { .. },
+                Some(InitializerReference::Constant(_)),
+            ) => {}
             _ => return Err(ArtifactBuildError::InvalidSlotRole { slot: slot.slot }),
         }
         if let Some(InitializerReference::Constant(constant)) = slot.initializer {
@@ -269,6 +275,20 @@ fn validate_slots(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError
             ProducerReference::NodeOutput { node, .. } => {
                 require_node(draft, node)?;
             }
+            ProducerReference::Output { output, source } => {
+                let Some(declaration) = draft.outputs.get(output.get() as usize) else {
+                    return Err(ArtifactBuildError::InvalidSlotRole { slot: slot.slot });
+                };
+                if declaration.output != output || declaration.source != slot.slot {
+                    return Err(ArtifactBuildError::ProducerBindingMismatch { slot: slot.slot });
+                }
+                validate_source(draft, source)?;
+                if source == ArtifactSource::Slot(slot.slot)
+                    || source_schema(draft, source)? != slot.schema
+                {
+                    return Err(ArtifactBuildError::ProducerBindingMismatch { slot: slot.slot });
+                }
+            }
         }
     }
     for input in &draft.inputs {
@@ -293,6 +313,7 @@ fn producer_key(producer: ProducerReference) -> (u8, u32, u16) {
             node,
             output_ordinal,
         } => (1, node.get(), output_ordinal),
+        ProducerReference::Output { output, .. } => (2, output.get(), 0),
     }
 }
 
@@ -636,7 +657,8 @@ fn validate_outputs_and_constraints(
 ) -> Result<(), ArtifactBuildError> {
     for output in &draft.outputs {
         let slot = require_slot(draft, output.source)?;
-        if slot.schema != output.schema {
+        if slot.schema != output.schema || !matches!(slot.role, SlotRole::State | SlotRole::Output)
+        {
             return Err(ArtifactBuildError::InterfaceSlotMismatch {
                 interface: "output",
                 slot: output.source,
@@ -707,6 +729,7 @@ fn validate_combinational_graph(draft: &ProgramArtifactDraft) -> Result<(), Arti
                         Some(producer.get() as usize)
                     }
                     ProducerReference::Input(_) => None,
+                    ProducerReference::Output { .. } => None,
                 }
             };
             let Some(from) = from else { continue };

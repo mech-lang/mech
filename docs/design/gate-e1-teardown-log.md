@@ -558,6 +558,15 @@ and work continues on independent E2 slices until no independent scoped work
 remains. A stop is not generic authorization to broaden E2 or restore a legacy
 fallback.
 
+## E2 consolidation progress
+
+| Discovery | Evidence | Disposition |
+|---|---|---|
+| Browser DOM/provider deletion crosses a retained shipping caller | Removing `BrowserResourceProvider` and the WASM DOM backend breaks `src/wasm/src/project.rs` and the documented `examples/browser-dom-demo` product path | Mandatory stop logged. The rejected deletion was restored exactly; no provider semantics were invented. Continue independent E2 work and revisit only with an explicit retained browser replacement contract. |
+| Browser envelope routing discriminator is authenticated compatibility data | Removing the obsolete configurable routing word changes signed browser envelope bytes and invalidates existing signatures | Mandatory stop logged. Configuration and routing policy were deleted, while a fixed reserved compatibility word preserves the authenticated byte sequence. |
+| Ordinary outputs were persistent only when disguised as state | `answer := 42.0; answer` failed on the E1 base with `OutputMustBeStateBacked`; imported and computed scalar product tests had the same retained-capability gap | Resolved in E2 with `SlotRole::Output`, bytecode-v1 encoding, generic activation/turn materialization, candidate abort/publication participation, publication hashing, and output-query ownership. Output slots are not exposed by `state_borrow`. |
+| The focused compiler topology target already contains stale expectations on the exact E1 head | `cargo test -p mech-engine --features compiler_default --test bytecode_plan_topology ordinary_source_artifacts_preserve_exact_semantics -- --exact` fails on E1 head `8cdd5b5` because the fixture declares a local constant named `input` but expects an admitted external input; two state-count cases fail similarly in the full target | Pre-existing test-ownership drift, not caused by output publication. Keep retained semantic tests green and correct or reclassify these expectations in the E2 test-ownership slice rather than weakening product behavior. |
+
 When a proposed deletion actually breaks a retained capability, add a row here
 before changing code. Record the smallest failing command and error, identify the
 surviving product owner, and distinguish a real E1 stop from a legacy-only test

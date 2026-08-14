@@ -232,7 +232,7 @@ fn single_node_fixture(
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "result".to_owned(),
-            source: SourceSlot::NodeOutput {
+            source: SourceValue::NodeOutput {
                 node: 0,
                 output_ordinal: 0,
             },
@@ -295,7 +295,7 @@ fn stateful_register(data: &FixtureData) -> SourceProgram {
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "state".to_owned(),
-            source: SourceSlot::State(0),
+            source: SourceValue::State(0),
             schema: data.schema.f64_,
         }]
         .into_boxed_slice(),
@@ -436,12 +436,12 @@ fn ekf(data: &FixtureData) -> SourceProgram {
         outputs: vec![
             SourceOutput {
                 name: "state".to_owned(),
-                source: SourceSlot::State(0),
+                source: SourceValue::State(0),
                 schema: data.schema.vector3,
             },
             SourceOutput {
                 name: "covariance".to_owned(),
-                source: SourceSlot::State(1),
+                source: SourceValue::State(1),
                 schema: data.schema.matrix3,
             },
         ]
@@ -662,10 +662,18 @@ fn state_slots_are_initialized_and_break_feedback_cycles() {
 }
 
 #[test]
-fn constants_are_sources_and_never_receive_slots() {
+fn constants_remain_sources_and_outputs_receive_only_publication_slots() {
     let data = fixture_data();
     let (artifact, _) = build_both(&data, scalar_add(&data));
-    assert_eq!(artifact.slots().len(), 1);
+    assert_eq!(artifact.slots().len(), 2);
+    assert_eq!(
+        artifact
+            .slots()
+            .iter()
+            .filter(|slot| slot.role == SlotRole::Output)
+            .count(),
+        1
+    );
     assert_eq!(artifact.constants().len(), data.constants.len());
     assert!(artifact.bindings().iter().any(|binding| matches!(
         binding,
@@ -1339,7 +1347,7 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "output".to_owned(),
-            source: SourceSlot::NodeOutput {
+            source: SourceValue::NodeOutput {
                 node: 0,
                 output_ordinal: 0,
             },

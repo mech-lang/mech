@@ -44,13 +44,6 @@ pub enum SourceValue {
     NodeOutput { node: u32, output_ordinal: u16 },
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum SourceSlot {
-    Input(u32),
-    State(u32),
-    NodeOutput { node: u32, output_ordinal: u16 },
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceInput {
     pub name: String,
@@ -82,7 +75,7 @@ pub struct SourceNode {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceOutput {
     pub name: String,
-    pub source: SourceSlot,
+    pub source: SourceValue,
     pub schema: SchemaId,
 }
 
@@ -325,20 +318,63 @@ pub fn compile_source_program_with_contracts(
         });
     }
 
+    let mut published_sources = BTreeMap::<CellSlotId, CellSlotId>::new();
     let outputs = graph
         .outputs
         .iter()
         .enumerate()
         .map(|(index, output)| {
+            let output_id = OutputId(checked_u32(index, "OutputId")?);
+            let source = resolve_source(output.source, &input_slots, &state_slots, &output_slots)?;
+            let persistent = match source {
+                ArtifactSource::Slot(source) => matches!(
+                    slots[source.get() as usize].role,
+                    SlotRole::State | SlotRole::Output
+                )
+                .then_some(source),
+                ArtifactSource::Constant(_) => None,
+            };
+            let source_slot = match source {
+                ArtifactSource::Slot(source) => Some(source),
+                ArtifactSource::Constant(_) => None,
+            };
+            let source = if let Some(source) = persistent {
+                source
+            } else if let Some(target) =
+                source_slot.and_then(|source| published_sources.get(&source).copied())
+            {
+                target
+            } else {
+                let target = CellSlotId(next_slot);
+                next_slot = next_slot.checked_add(1).ok_or(
+                    ArtifactBuildError::ArtifactIdentityExhausted {
+                        identity: "CellSlotId",
+                    },
+                )?;
+                slots.push(SlotDeclaration {
+                    slot: target,
+                    schema: output.schema,
+                    role: SlotRole::Output,
+                    producer: ProducerReference::Output {
+                        output: output_id,
+                        source,
+                    },
+                    initializer: match source {
+                        ArtifactSource::Constant(constant) => {
+                            Some(InitializerReference::Constant(constant))
+                        }
+                        ArtifactSource::Slot(_) => None,
+                    },
+                });
+                if let Some(source) = source_slot {
+                    published_sources.insert(source, target);
+                }
+                target
+            };
             Ok(OutputDeclaration {
-                output: OutputId(checked_u32(index, "OutputId")?),
+                output: output_id,
                 name: output.name.clone(),
-                source: resolve_slot_source(
-                    output.source,
-                    &input_slots,
-                    &state_slots,
-                    &output_slots,
-                )?,
+                source,
                 schema: output.schema,
             })
         })
@@ -1161,37 +1197,7 @@ pub fn compile_executable_program_artifact(
         .unwrap_or(u32::MAX);
     let outputs = match register(&registers, compiled.return_register)? {
         Some(returned) => {
-            let source = match returned.source {
-                SourceValue::Constant(constant) => {
-                    let node = checked_u32(nodes.len(), "NodeId")?;
-                    nodes.push(SourceNode {
-                        operation: OperationReference {
-                            module_path: vec!["core".to_owned()].into_boxed_slice(),
-                            operation_name: "literal".to_owned(),
-                        },
-                        requirement: None,
-                        inputs: vec![SourceValue::Constant(constant)].into_boxed_slice(),
-                        outputs: vec![SourceNodeOutput::Derived {
-                            schema: returned.schema,
-                        }]
-                        .into_boxed_slice(),
-                    });
-                    node_contracts.push(None);
-                    SourceSlot::NodeOutput {
-                        node,
-                        output_ordinal: 0,
-                    }
-                }
-                SourceValue::Input(input) => SourceSlot::Input(input),
-                SourceValue::State(state) => SourceSlot::State(state),
-                SourceValue::NodeOutput {
-                    node,
-                    output_ordinal,
-                } => SourceSlot::NodeOutput {
-                    node,
-                    output_ordinal,
-                },
-            };
+            let source = returned.source;
             let output_name = definitions_by_register[compiled.return_register as usize]
                 .iter()
                 .max_by_key(|definition| definition.ordinal)
@@ -1250,13 +1256,14 @@ pub fn compile_executable_program_artifact(
         });
     }
 
-    let (inputs, mut nodes, outputs, mut constraints) =
+    let (inputs, mut nodes, mut outputs, mut constraints) =
         prune_unused_inputs(inputs, nodes, outputs, constraints)?;
     let constant_store = prune_unused_constants(
         &schemas,
         &constant_store,
         &mut states,
         &mut nodes,
+        &mut outputs,
         &mut constraints,
     )?;
 
@@ -1313,6 +1320,7 @@ fn prune_unused_constants(
     constants: &ConstantStore,
     states: &mut [SourceState],
     nodes: &mut [SourceNode],
+    outputs: &mut [SourceOutput],
     constraints: &mut [SourceIntegrityConstraint],
 ) -> Result<ConstantStore, ArtifactBuildError> {
     let mut used = std::collections::BTreeSet::<ConstantId>::new();
@@ -1326,6 +1334,11 @@ fn prune_unused_constants(
             if let SourceValue::Constant(constant) = source {
                 used.insert(*constant);
             }
+        }
+    }
+    for output in outputs.iter() {
+        if let SourceValue::Constant(constant) = output.source {
+            used.insert(constant);
         }
     }
     for constraint in constraints.iter() {
@@ -1364,6 +1377,9 @@ fn prune_unused_constants(
         for source in &mut node.inputs {
             remap_source(source);
         }
+    }
+    for output in outputs {
+        remap_source(&mut output.source);
     }
     for constraint in constraints {
         for source in &mut constraint.inputs {
@@ -1411,9 +1427,7 @@ fn prune_unused_inputs(
         }
     }
     for output in &outputs {
-        if let SourceSlot::Input(input) = output.source {
-            note(SourceValue::Input(input));
-        }
+        note(output.source);
     }
     for constraint in &constraints {
         for source in &constraint.inputs {
@@ -1440,9 +1454,7 @@ fn prune_unused_inputs(
         }
     }
     for output in &mut outputs {
-        if let SourceSlot::Input(input) = &mut output.source {
-            *input = remap[*input as usize].expect("used inputs have a remapped identity");
-        }
+        remap_value(&mut output.source);
     }
     for constraint in &mut constraints {
         for source in &mut constraint.inputs {
@@ -2017,37 +2029,6 @@ fn resolve_source(
             },
         )?),
     })
-}
-
-fn resolve_slot_source(
-    source: SourceSlot,
-    inputs: &[CellSlotId],
-    states: &[CellSlotId],
-    outputs: &BTreeMap<(u32, u16), CellSlotId>,
-) -> Result<CellSlotId, ArtifactBuildError> {
-    match source {
-        SourceSlot::Input(index) => inputs.get(index as usize).copied().ok_or(
-            ArtifactBuildError::SourceGraphReferenceOutOfRange {
-                reference: "input",
-                index,
-            },
-        ),
-        SourceSlot::State(index) => states.get(index as usize).copied().ok_or(
-            ArtifactBuildError::SourceGraphReferenceOutOfRange {
-                reference: "state",
-                index,
-            },
-        ),
-        SourceSlot::NodeOutput {
-            node,
-            output_ordinal,
-        } => outputs.get(&(node, output_ordinal)).copied().ok_or(
-            ArtifactBuildError::SourceGraphReferenceOutOfRange {
-                reference: "node output",
-                index: node,
-            },
-        ),
-    }
 }
 
 fn checked_u32(value: usize, identity: &'static str) -> Result<u32, ArtifactBuildError> {

@@ -128,6 +128,9 @@ pub enum ResidentExecutionError {
     InvalidWrite {
         node: NodeId,
     },
+    InvalidOutputMaterialization {
+        slot: CellSlotId,
+    },
     ExternalSummaryRequired,
     ExternalPublicationUnauthorized,
     EffectIntentCapacity,
@@ -689,6 +692,7 @@ impl ReactiveInstance {
         {
             self.workspace.all_outputs_initialized = true;
         }
+        self.materialize_outputs(before_epoch, working_epoch, false)?;
         self.validate_constraints(working_epoch)
     }
 
@@ -744,6 +748,7 @@ impl ReactiveInstance {
                 self.workspace.all_outputs_initialized = true;
             }
         }
+        self.materialize_outputs(before_epoch, working_epoch, true)?;
         self.validate_constraints(working_epoch)
     }
 
@@ -801,7 +806,79 @@ impl ReactiveInstance {
                 self.workspace.all_outputs_initialized = true;
             }
         }
+        self.materialize_outputs(before_epoch, working_epoch, true)?;
         self.validate_constraints(working_epoch)
+    }
+
+    fn materialize_outputs(
+        &mut self,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        record_summary: bool,
+    ) -> Result<(), ResidentExecutionError> {
+        for index in 0..self.plan.output_materializations.len() {
+            let materialization = self.plan.output_materializations[index];
+            let target = materialization.target;
+            let target_region = self.plan.slots[target.get() as usize].region;
+            match materialization.source {
+                ResidentReadLocation::Constant(source) => {
+                    let candidate = self.state.candidate_buffer(target, before_epoch);
+                    copy_input(
+                        &mut self.state.buffers[candidate],
+                        target_region,
+                        self.activation.read(source),
+                    )
+                    .map_err(|_| {
+                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    })?;
+                    self.state.tag(target, candidate, working_epoch);
+                }
+                ResidentReadLocation::Input(source) => {
+                    let candidate = self.state.candidate_buffer(target, before_epoch);
+                    copy_input(
+                        &mut self.state.buffers[candidate],
+                        target_region,
+                        self.workspace.input.read(source),
+                    )
+                    .map_err(|_| {
+                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    })?;
+                    self.state.tag(target, candidate, working_epoch);
+                }
+                ResidentReadLocation::Scratch(source) => {
+                    let candidate = self.state.candidate_buffer(target, before_epoch);
+                    copy_input(
+                        &mut self.state.buffers[candidate],
+                        target_region,
+                        self.workspace.scratch.read(source),
+                    )
+                    .map_err(|_| {
+                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    })?;
+                    self.state.tag(target, candidate, working_epoch);
+                }
+                ResidentReadLocation::State {
+                    slot: source_slot,
+                    region: source_region,
+                } => self.state.materialize_state_slot(
+                    target,
+                    target_region,
+                    source_slot,
+                    source_region,
+                    before_epoch,
+                    working_epoch,
+                ),
+            }
+            if record_summary {
+                let slot = SlotIndex::new(target.get());
+                self.workspace.touched_slots.push(slot);
+                let candidate = self.state.select_buffer(target, working_epoch);
+                if !self.state.same_at(target, candidate, before_epoch) {
+                    self.workspace.changed_slots.push(slot);
+                }
+            }
+        }
+        Ok(())
     }
 
     fn validate_constraints(
@@ -1321,6 +1398,29 @@ impl StateArena {
         }
         self.version_mut(slot).epochs[candidate] = Some(working);
         (candidate, true)
+    }
+
+    fn materialize_state_slot(
+        &mut self,
+        target_slot: CellSlotId,
+        target_region: ResidentRegion,
+        source_slot: CellSlotId,
+        source_region: ResidentRegion,
+        before: InstanceEpoch,
+        working: InstanceEpoch,
+    ) {
+        let source_buffer = self.select_buffer(source_slot, working);
+        let target_buffer = self.candidate_buffer(target_slot, before);
+        if source_buffer == target_buffer {
+            self.buffers[target_buffer].copy_region_within(target_region, source_region);
+        } else if target_buffer == 0 {
+            let [target, source] = &mut self.buffers;
+            target.copy_region_from(target_region, source, source_region);
+        } else {
+            let [source, target] = &mut self.buffers;
+            target.copy_region_from(target_region, source, source_region);
+        }
+        self.tag(target_slot, target_buffer, working);
     }
 
     fn tag(&mut self, slot: CellSlotId, buffer: usize, epoch: InstanceEpoch) {

@@ -43,6 +43,7 @@ pub struct ResidentRegion {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedSlot {
     pub artifact_id: CellSlotId,
+    pub role: SlotRole,
     pub physical_index: SlotIndex,
     pub schema: SchemaId,
     pub schema_key: SchemaKey,
@@ -211,6 +212,12 @@ pub struct ActivatedOutput {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ActivatedOutputMaterialization {
+    target: CellSlotId,
+    source: ResidentReadLocation,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ActivatedConstraint {
     pub artifact_id: IntegrityConstraintId,
     pub predicate: ResidentReadLocation,
@@ -257,6 +264,7 @@ pub struct ActivatedPlan {
     pub topology: DependencyTopology,
     pub inputs: Box<[ActivatedInput]>,
     pub outputs: Box<[ActivatedOutput]>,
+    output_materializations: Box<[ActivatedOutputMaterialization]>,
     pub constraints: Box<[ActivatedConstraint]>,
     pub activation_nodes: Box<[NodeId]>,
     activation_steps: Box<[ActivatedOnceNode]>,
@@ -400,6 +408,17 @@ impl TypedResidentArena {
             _ => unreachable!("resident region kinds were checked"),
         }
     }
+
+    fn copy_region_within(&mut self, target: ResidentRegion, source: ResidentRegion) {
+        debug_assert_eq!(target.kind, source.kind);
+        debug_assert_eq!(target.len, source.len);
+        let source = source.offset..source.offset + source.len;
+        match target.kind {
+            ResidentValueKind::Bool => self.bools.copy_within(source, target.offset),
+            ResidentValueKind::Index => self.indexes.copy_within(source, target.offset),
+            ResidentValueKind::F64 => self.f64s.copy_within(source, target.offset),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -494,6 +513,16 @@ impl StateArena {
         let region = self.version(slot).region;
         crate::resident_value_adapter::write_value(&mut self.buffers[0], region, value)?;
         Ok(())
+    }
+
+    fn initialize_from_arena(
+        &mut self,
+        slot: CellSlotId,
+        source: &TypedResidentArena,
+        source_region: ResidentRegion,
+    ) {
+        let target = self.version(slot).region;
+        self.buffers[0].copy_region_from(target, source, source_region);
     }
 
     fn install_migrated(
@@ -666,7 +695,7 @@ impl ReactiveInstance {
 
     pub fn state_borrow(&self, slot: CellSlotId) -> Option<ResidentValueBorrow<'_>> {
         let resolved = self.plan.slots.get(slot.get() as usize)?;
-        if resolved.storage != ResidentStorageClass::State {
+        if resolved.role != SlotRole::State {
             return None;
         }
         let value = self.state.read_published(slot, self.published_epoch());
@@ -744,7 +773,7 @@ impl ReactiveInstance {
                 .plan
                 .slots
                 .iter()
-                .filter(|slot| slot.storage == ResidentStorageClass::State)
+                .filter(|slot| slot.role == SlotRole::State)
             {
                 mappings.insert(slot.artifact_id, slot.artifact_id);
                 sources.insert(slot.artifact_id);
@@ -762,7 +791,7 @@ impl ReactiveInstance {
                 .plan
                 .slots
                 .get(target.get() as usize)
-                .is_none_or(|slot| slot.storage != ResidentStorageClass::State)
+                .is_none_or(|slot| slot.role != SlotRole::State)
             {
                 return Err(ResidentActivationError::InvalidStateMigration);
             }
@@ -771,14 +800,14 @@ impl ReactiveInstance {
             .plan
             .slots
             .iter()
-            .filter(|slot| slot.storage == ResidentStorageClass::State)
+            .filter(|slot| slot.role == SlotRole::State)
         {
             let compatible = mappings.get(&target.artifact_id).and_then(|source_id| {
                 self.plan
                     .slots
                     .get(source_id.get() as usize)
                     .filter(|source| {
-                        source.storage == ResidentStorageClass::State
+                        source.role == SlotRole::State
                             && source.schema_key == target.schema_key
                             && source.shape == target.shape
                     })
@@ -863,9 +892,6 @@ pub enum ResidentActivationError {
     },
     InvalidDependency {
         node: NodeId,
-    },
-    OutputMustBeStateBacked {
-        slot: CellSlotId,
     },
     UnknownOutput {
         output: usize,
@@ -993,7 +1019,7 @@ fn activate_internal(
     for slot in plan
         .slots
         .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
+        .filter(|slot| slot.role == SlotRole::State)
     {
         let declaration = &artifact.slots()[slot.artifact_id.get() as usize];
         let Some(InitializerReference::Constant(constant)) = declaration.initializer else {
@@ -1007,6 +1033,11 @@ fn activate_internal(
             },
         )?;
         state.initialize(slot.artifact_id, value)?;
+    }
+    for materialization in plan.output_materializations.iter().copied() {
+        if let ResidentReadLocation::Constant(source) = materialization.source {
+            state.initialize_from_arena(materialization.target, &activation, source);
+        }
     }
     let workspace = TurnWorkspace::new(input_sizes, scratch_sizes, &plan);
     Ok(ReactiveInstance {
@@ -1276,6 +1307,7 @@ fn build_layout(
         let producer_class = match declaration.producer {
             ProducerReference::Input(_) => Some(NodeClass::Observation),
             ProducerReference::NodeOutput { node, .. } => Some(classes[node.get() as usize]),
+            ProducerReference::Output { .. } => None,
         };
         let storage = match declaration.role {
             SlotRole::Input => ResidentStorageClass::Input,
@@ -1287,6 +1319,7 @@ fn build_layout(
                 ResidentStorageClass::Constant
             }
             SlotRole::Derived => ResidentStorageClass::Scratch,
+            SlotRole::Output => ResidentStorageClass::State,
         };
         let shape = slot_shape(artifact, declaration.slot, facts)?;
         let (kind, resident_shape) = schema_layout(artifact, declaration.schema, &shape)?;
@@ -1300,6 +1333,7 @@ fn build_layout(
         let schema = artifact.schemas().entry(declaration.schema).unwrap();
         slots.push(ResolvedSlot {
             artifact_id: declaration.slot,
+            role: declaration.role,
             physical_index: SlotIndex::new(declaration.slot.get()),
             schema: declaration.schema,
             schema_key: schema.key(),
@@ -1328,6 +1362,14 @@ fn slot_shape(
     let declaration = &artifact.slots()[slot.get() as usize];
     if let Some(InitializerReference::Constant(constant)) = declaration.initializer {
         return Ok(artifact.constants().get(constant).unwrap().shape().clone());
+    }
+    if let ProducerReference::Output { source, .. } = declaration.producer {
+        return match source {
+            ArtifactSource::Constant(constant) => {
+                Ok(artifact.constants().get(constant).unwrap().shape().clone())
+            }
+            ArtifactSource::Slot(source) => slot_shape(artifact, source, facts),
+        };
     }
     if let Some(shape) = facts.slot_shapes.get(&slot) {
         let schema = artifact
@@ -1629,20 +1671,32 @@ fn build_plan(
         .iter()
         .map(|output| {
             let slot = &layout.slots[output.source.get() as usize];
-            if slot.storage != ResidentStorageClass::State {
-                return Err(ResidentActivationError::OutputMustBeStateBacked {
-                    slot: output.source,
-                });
-            }
-            Ok(ActivatedOutput {
+            debug_assert_eq!(slot.storage, ResidentStorageClass::State);
+            ActivatedOutput {
                 slot: slot.physical_index,
                 schema: slot.schema,
                 schema_key: slot.schema_key,
                 shape: slot.shape.clone(),
                 region: slot.region,
-            })
+            }
         })
-        .collect::<Result<Vec<_>, _>>()?
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let output_materializations = artifact
+        .slots()
+        .iter()
+        .filter_map(|slot| match (slot.role, slot.producer) {
+            (SlotRole::Output, ProducerReference::Output { source, .. }) => {
+                Some(resolve_read(artifact, &layout, source).map(|source| {
+                    ActivatedOutputMaterialization {
+                        target: slot.slot,
+                        source,
+                    }
+                }))
+            }
+            _ => None,
+        })
+        .collect::<Result<Vec<_>, ResidentActivationError>>()?
         .into_boxed_slice();
     let constraints = artifact
         .constraints()
@@ -1740,6 +1794,7 @@ fn build_plan(
         topology,
         inputs,
         outputs,
+        output_materializations,
         constraints,
         activation_nodes,
         activation_steps,
@@ -2051,6 +2106,7 @@ fn build_topology(
                         artifact_to_activated[node.get() as usize]
                     }
                     ProducerReference::Input(_) => None,
+                    ProducerReference::Output { .. } => None,
                 }
             };
             if let Some(parent) = parent {
@@ -2253,6 +2309,9 @@ fn activated_input_source(artifact: &ProgramArtifact, slot: CellSlotId) -> Activ
                 .requirement
                 .expect("validated observation has an application requirement");
             ActivatedInputSource::Observation { node, requirement }
+        }
+        ProducerReference::Output { .. } => {
+            unreachable!("published output slots are not resident inputs")
         }
     }
 }
