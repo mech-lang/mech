@@ -69,6 +69,20 @@ are common to both served modes. The native CPU snapshot is only a lower bound
 for browser CPU presentation: browser mode also copies the snapshot across the
 WASM/JavaScript boundary and uploads it to the WebGPU render buffer.
 
+To record only steady-state compute throughput over time, with no readback,
+rendering, transactional graph, or batched dispatch, add a duration and CSV
+path:
+
+```text
+cargo run -p mech-gpu --release --features native \
+  --example compute_backend_benchmark -- \
+  1000000 1 1 20 /tmp/mech-compute-timeline.csv
+```
+
+Each CPU observation is one turn. Each GPU observation aggregates 100
+individually submitted and synchronized turns to make the plot readable; it
+does not submit a 100-turn batch.
+
 ## Generic parallel EKF proof
 
 [`fixtures/ekf-kernel.mec`](fixtures/ekf-kernel.mec) is a complete extended
