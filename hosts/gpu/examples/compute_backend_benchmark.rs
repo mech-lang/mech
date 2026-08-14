@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, env, hint::black_box, time::Duration, time::Instant};
+use std::{collections::BTreeMap, env, fs, hint::black_box, time::Duration, time::Instant};
 
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
 use mech_engine::{MechProgram, MechProgramConfig};
@@ -10,6 +10,8 @@ fn main() {
     let particles = argument(1, 1_000_000usize);
     let cpu_samples = argument(2, 20usize).max(1);
     let gpu_samples = argument(3, 120usize).max(1);
+    let timeline_seconds = argument(4, 0u64);
+    let timeline_path = env::args().nth(5);
     let source = PARTICLE_SOURCE.replacen("1000000f32", &format!("{particles}f32"), 1);
 
     let compile_started = Instant::now();
@@ -49,6 +51,20 @@ fn main() {
         .read_outputs()
         .expect("GPU validation output must read");
     let maximum_error = maximum_error(&cpu_validation_output, &gpu_validation_output);
+
+    if timeline_seconds > 0 {
+        let path = timeline_path.expect("timeline output path is required");
+        write_timeline(
+            &program,
+            &inputs,
+            particles,
+            Duration::from_secs(timeline_seconds),
+            &path,
+        );
+        println!("timeline: {path}");
+        println!("maximum CPU/GPU absolute error: {maximum_error:.3e}");
+        return;
+    }
 
     let mut cpu = program
         .prepare_cpu(&inputs)
@@ -243,6 +259,58 @@ fn print_samples(label: &str, particles: usize, samples: &mut [Duration]) {
         milliseconds(p95),
         throughput(particles, median),
     );
+}
+
+fn write_timeline(
+    program: &mech_gpu::GpuProgram,
+    inputs: &BTreeMap<String, Vec<f32>>,
+    particles: usize,
+    duration: Duration,
+    path: &str,
+) {
+    let mut rows = String::from(
+        "backend,elapsed_seconds,window_turns,window_seconds,throughput_million_per_second\n",
+    );
+
+    let mut cpu = program
+        .prepare_cpu(inputs)
+        .expect("timeline CPU session must prepare");
+    cpu.dispatch_turns(1).expect("timeline CPU warmup must run");
+    let cpu_started = Instant::now();
+    while cpu_started.elapsed() < duration {
+        let window_started = Instant::now();
+        cpu.dispatch_turns(1).expect("timeline CPU turn must run");
+        let window = window_started.elapsed();
+        rows.push_str(&format!(
+            "cpu,{:.6},1,{:.6},{:.6}\n",
+            cpu_started.elapsed().as_secs_f64(),
+            window.as_secs_f64(),
+            throughput(particles, window),
+        ));
+    }
+
+    let mut gpu = program
+        .prepare_resident(inputs)
+        .expect("timeline GPU session must prepare");
+    gpu.dispatch_turns(1).expect("timeline GPU warmup must run");
+    let gpu_started = Instant::now();
+    const GPU_WINDOW_TURNS: u32 = 100;
+    while gpu_started.elapsed() < duration {
+        let window_started = Instant::now();
+        for _ in 0..GPU_WINDOW_TURNS {
+            gpu.dispatch_turns(1)
+                .expect("timeline synchronized GPU turn must run");
+        }
+        let window = window_started.elapsed();
+        rows.push_str(&format!(
+            "gpu,{:.6},{GPU_WINDOW_TURNS},{:.6},{:.6}\n",
+            gpu_started.elapsed().as_secs_f64(),
+            window.as_secs_f64(),
+            particles as f64 * f64::from(GPU_WINDOW_TURNS) / window.as_secs_f64() / 1_000_000.0,
+        ));
+    }
+
+    fs::write(path, rows).expect("timeline CSV must write");
 }
 
 fn throughput(particles: usize, duration: Duration) -> f64 {
