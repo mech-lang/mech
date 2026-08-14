@@ -10,8 +10,8 @@ format, or benchmark evidence produced by E2.
 - Base branch: `refactor/e2-consolidate-resident-architecture`
 - Exact E2 base: `f16e6b5d8a01b226353aba914c7c8ac1fcc90e31`
 - E3 implementation head before this closeout commit:
-  `b46391153eea4c345da6f4a972c0f4081b80bae7`
-  (`test(value-system): reconcile post-migration inventory`)
+  `75e359b3673b86338b4b8e2438a1e84b7f042f1e`
+  (`fix(ci): reconcile permanent full-validation contracts`).
 - Final E3 head: the commit containing this document. Its exact external SHA
   is recorded in the draft PR description and the full-validation run because
   a commit cannot contain its own content-addressed identity.
@@ -25,12 +25,14 @@ E1, E2, and E3 remain stacked, draft, and unmerged during review.
 3. `refactor(build,bytecode): remove experimental actor migration fixtures`
 4. `test(value-system): reconcile post-migration inventory`
 5. `docs(architecture): close Gate E migration`
+6. `fix(ci): reconcile permanent full-validation contracts`
+7. `docs(architecture): finalize E3 and define E4 hardening gate`
 
 For Commit 4, the inventory generator found `current-inventory.json` current.
 The permanent D0 activation projection was mechanically reconciled by removing
 six deleted legacy occurrences and re-anchoring surviving line coordinates.
 The exhaustive contract then produced exactly the one controlled stale-evidence
-finding assigned to F0; no unrelated metadata was changed.
+finding assigned to F0 evidence refresh; no unrelated metadata was changed.
 
 ## Deleted migration surfaces
 
@@ -97,12 +99,46 @@ The following E3-owned proofs pass at the closeout tree:
   frozen-target, matrix-adapter, inventory, or immutable-growth failure;
 - no diff from the exact E2 base under `benchmarks/runtime/`.
 
+Commit 6 additionally makes reusable full validation check out the exact PR
+head, provisions ripgrep for both function-system slices, replaces stale
+workflow profile names with permanent checker-owned names, derives every
+distribution-size shard and combine row from one script-owned JSON list,
+permits the exact authenticated `mech-program-v1\0` domain separator without
+permitting obsolete package reachability. The strict checker remains nonzero
+until F0 refreshes the controlled Gate B evidence. The narrow CI form passes
+only for exactly one visible `C0-GATE-B-EVIDENCE-STALE` finding; zero findings
+also passes, while any other, combined, or duplicate finding fails.
+
+The corrective local replay passed 167 CI/value-system regression tests,
+including all five controlled-evidence cases, all exact-head checkout checks,
+all authoritative profile-name checks, distribution-size single-source
+checks, and six obsolete-program reachability cases. The live strict command
+returned 1 with exactly the controlled Gate B finding. The live controlled
+command returned 0 while printing that same finding. Formatting, patch
+hygiene, workflow YAML parsing, inventory, production routing, native-host
+catalog, bytecode-v1 format, Gate D evidence, complete function-system
+migration, selected/full runtime profiles, and the authoritative `full`
+native-linkage surface passed. No benchmark file differs from exact E2.
+
 The GitHub impact job automatically requested the full validation workflow on
 the pushed E3 head; full validation was not skipped. The first complete run,
-`31821030259`, finished with 53 successful jobs and exposed the permanent
-qualification gaps recorded below. E3-owned checker and generated-build
-failures found by that run were corrected and locally replayed. Commands that
-remain blocked are recorded below rather than described as passing.
+`31826043920`, checked synthetic merge SHA
+`022fdc3416160ca204e305cdbba1c7f6264f382a`, not the PR head, and exposed the
+permanent qualification gaps recorded below. E3-owned checker and
+generated-build failures found by that run were corrected and locally
+replayed.
+
+Corrective run `31835368918` checked exact E3 Commit 6
+`75e359b3673b86338b4b8e2438a1e84b7f042f1e`: the reusable workflow received
+that SHA as `validation_ref`, every checkout resolved it, and the job HEADs
+matched it. All 19 selected checks passed. The complete workflow graph
+finished 84 jobs: 60 succeeded, 23 failed on retained product or frozen
+product-contract gaps listed here and in the E4 handoff, and one aggregate
+path was skipped. The exact-head run also proved the corrected profile matrix,
+all five script-owned distribution-size rows and their fail-closed combine,
+both function-system tool installations, and the narrow visible Gate B stale
+evidence exception. Commands that remain blocked are recorded below rather
+than described as passing.
 
 ## Mandatory-stop record
 
@@ -141,7 +177,7 @@ remain blocked are recorded below rather than described as passing.
 - Disposition: moved fixtures and their test references remain; runtime code,
   feature boundaries, and benchmark evidence are unchanged. The focused
   source/bytecode artifact-equivalence owner passes. Final feature-closure
-  resolution remains part of exhaustive F0 validation.
+  resolution is an E4 acceptance item.
 
 ### Bytecode corpus source-generator base failures
 
@@ -163,7 +199,7 @@ remain blocked are recorded below rather than described as passing.
   deterministic manifest/hash expectations. Every remaining committed fixture
   byte is unchanged, the static corpus contract and core codec tests pass, and
   compiler/runtime semantics are untouched. The generator command remains an
-  explicit F0 root-bytecode stop rather than a false E3 pass.
+  explicit E4 root-bytecode stop rather than a false E3 pass.
 
 The full-CI run also showed that the bytecode determinism job had fetched only
 the outer generator graph before invoking the inner source generator offline.
@@ -187,7 +223,7 @@ remains part of this bytecode stop and was not hidden by disabling the test.
   production source are byte-for-byte unchanged from E2; the removed
   `experimental-actors` forwarding belonged only to the separate standard
   profile. An additional full E2 rebuild was not used as evidence after it
-  consumed 74 GB; exact execution remains an F0 generated-native check.
+  consumed 74 GB; exact execution remains an E4 generated-native check.
 - Permanent owner: fixed-matrix generated-native application closure.
 - Disposition: the failing product test remains enabled. E3 does not change
   engine factory semantics, broaden generated feature closures, or weaken the
@@ -195,16 +231,17 @@ remains part of this bytecode stop and was not hidden by disabling the test.
 
 ### Frozen distribution and feature-profile disagreements
 
-- Full CI currently requests `standard-runtime`, `standard-source`, and
-  `standard-compiler` from `check-static-distribution-profiles.sh`, but that
-  permanent checker owns `selected-runtime` and `full-*` profiles. Its size
-  matrix likewise requests three unsupported `standard-*` names, and native
-  linkage requests a `standard` surface where the checker owns `full` plus
-  extended shards.
-- Automatic review rejected replacing those names with `full-*`, because that
-  would silently remove intended standard coverage. The workflow matrices are
-  therefore left visible and failing until real standard profile owners are
-  implemented or the required coverage is explicitly redefined.
+- The discovery run requested `standard-runtime`, `standard-source`, and
+  `standard-compiler` from a checker that owns `selected-runtime` and
+  `full-*`; requested three unsupported `standard-*` size names; and requested
+  native-linkage `standard` where that checker owns `full` plus extended
+  shards. Commit 6 corrects those workflow-only names. Standard product
+  coverage remains owned by selected CI, standard distribution contracts, and
+  standard packaging; no Cargo feature or shipping surface changed.
+- Distribution-size profiles now come from one deterministic
+  `report-distribution-sizes.sh --profiles-json` output used by matrix shards,
+  artifact rows, and the fail-closed combine job. Missing rows and unknown
+  names fail.
 - With dev-only Cargo edges correctly excluded, the shipping WASM
   `browser_project` graph still enables `mech-combinatorics`, while the frozen
   WASM-source profile explicitly forbids it. This is a real profile-contract
@@ -212,8 +249,16 @@ remains part of this bytecode stop and was not hidden by disabling the test.
 - The supported selected-runtime and full-runtime static profiles pass. The
   full-source catalog constructs 9,011 runtime factories while its frozen
   assertion expects 9,010. E3 does not refresh that permanent surface without
-  identifying the additional factory. Full-compiler was not described as
-  passing after the serial validation stopped at full-source.
+  identifying the additional factory. Full-compiler reaches the same retained
+  factory-surface disagreement.
+- Every authoritative native-linkage surface shard now generates and uploads,
+  including `full`. Their merger reaches the permanent summary comparison and
+  reports `tests/architecture/native-linkage/coverage.json` stale. E3 does not
+  accept or regenerate that product inventory without an exact report diff and
+  an explanation of its relationship to the independent 9,011/9,010 factory
+  disagreement. The linkage catalog, owner manifests, engine factories, and
+  frozen summary are unchanged from exact E2; the corrected workflow exposes
+  the disagreement instead of failing earlier on the invalid `standard` shard.
 - Bare `run`, `serve`, `browser_project_runner`, and core `no_std` qualification
   jobs also lack parts of the current resident/source closure. E3 keeps those
   checks visible instead of replacing them with broader profiles after
@@ -230,8 +275,10 @@ remains part of this bytecode stop and was not hidden by disabling the test.
   the runtime or the assertion.
 - The native hosted build suite still asserts that two source roots compile in
   caller order, while production resident builds reject multiple roots with
-  `MultipleRootsUnsupported`. Automatic review rejected changing that product
-  assertion during E3, so the disagreement remains explicit.
+  `MultipleRootsUnsupported`. A focused exact-E2 replay stops even earlier on
+  the obsolete five-argument `module_runtime_config` test-helper call. E3
+  changes neither the product assertion, helper, nor root policy; the complete
+  CLI/build closure is assigned to E4.
 - The runtime boundary job previously stopped on wildcard imports in inline
   test modules and `tests.rs`. E3 now scopes the production audit correctly and
   removes the remaining inline-test wildcards; the complete boundary audit
@@ -246,7 +293,7 @@ remains part of this bytecode stop and was not hidden by disabling the test.
 - The likely cross-volume temporary-file replacement needs a focused Windows
   reproduction, but automatic review rejected changing shipping packaging in
   E3 without that proof. Linux/macOS packaging owners and the local packaging
-  contract remain unchanged; Windows packaging remains an explicit F0 stop.
+  contract remain unchanged; Windows packaging remains an explicit E4 stop.
 
 ### Automatic-review stop dispositions
 
@@ -254,11 +301,13 @@ remains part of this bytecode stop and was not hidden by disabling the test.
   Disposition: retained product assertion preserved and gap logged.
 - Rejected: changing the Windows packager's temporary-directory placement.
   Disposition: shipping packager unchanged pending a Windows reproduction.
-- Rejected: replacing standard distribution/linkage matrices with full
-  profiles or removing `no_std`, WASM subprofile, run-only, and live-resource
-  coverage. Disposition: disputed coverage remains visible. Only the deleted
-  `native_live_resource` target was replaced with the surviving generated-live
-  end-to-end owner.
+- Initially rejected: replacing stale standard distribution/linkage workflow
+  names without an explicit coverage disposition. Superseded after explicit
+  approval and proof that the authoritative owners accept `full-*`/`full` and
+  that standard product coverage remains elsewhere. The unrelated `no_std`,
+  WASM subprofile, run-only, and live-resource failures remain visible for E4;
+  only the deleted `native_live_resource` target was replaced with the
+  surviving generated-live end-to-end owner.
 
 No stop restored interpreter execution, added a host semantic contract,
 deleted a retained host, weakened a current product assertion, refreshed a
@@ -275,21 +324,27 @@ runtime-factory surface, or refreshed a benchmark number.
   unchanged.
 - Shipping interpreter/fallback reachability remains absent.
 
-## Exact F0 handoff
+## Mandatory E4 handoff
+
+E3 is not independently mergeable. The exact retained-product work queue is
+`docs/design/gate-e4-handoff.md`. E4 is stacked on the final E3 head and must
+make selected and full validation green except for the single narrowly
+controlled `C0-GATE-B-EVIDENCE-STALE` finding. No E1-E4 pull request may merge
+before that acceptance rule is satisfied.
+
+## Evidence-only F0 handoff
 
 F0 contains only:
 
-1. controlled Gate B/D evidence refresh against the exact final stack;
-2. resolution of the two EKF fault-injection issues;
-3. resolution of root bytecode/source-generator, generated-native, retained
-   product, feature-profile, and Windows packaging failures exposed by the
-   exact E3 full-CI run;
-4. exhaustive standard/full source, bytecode, generated native, WASM, browser,
-   CLI, host, capability, replay, effect, packaging, and distribution
-   validation;
-5. final proof of zero shipping interpreter/fallback reachability; and
-6. reproducible browser, driver, and toolchain pinning.
+1. refresh controlled Gate B evidence on the exact E4-complete stack;
+2. refresh controlled Gate D evidence where required;
+3. remove the controlled stale-evidence option from the CI invocation;
+4. prove the strict value-system checker is fully green;
+5. pin browser, driver, Rust, wasm-pack, and other validation tools;
+6. run final release, packaging, distribution, source, bytecode, native, WASM,
+   browser, host, capability, replay, and effect qualification;
+7. produce the final zero-interpreter/fallback reachability proof; and
+8. record the exact final SHA and immutable evidence manifests.
 
-E3 creates no additional product or host behavior. It hands the explicitly
-logged permanent qualification gaps to F0 without misclassifying them as
-migration cleanup or silently weakening their owners.
+E3 creates no additional product or host behavior. It hands known product
+correctness work to E4; F0 is not the first owner of any known product fix.
