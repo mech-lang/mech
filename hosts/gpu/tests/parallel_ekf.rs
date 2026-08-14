@@ -2,9 +2,20 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{Body, LegacyValue, MechCode, Program, Ref, Section, SectionElement, hash_str};
 use mech_engine::{ArtifactComputeRegion, MechProgram, MechProgramConfig, ProgramArtifact};
-use mech_gpu::GpuHost;
+use mech_gpu::{BatchedExecutionError, BatchedGpuProgram, BatchedIntegrityViolation, GpuHost};
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
+const COVARIANCE_SYMMETRY_TOLERANCE: f32 = 1.0e-4;
+
+fn protect_robot_estimate(program: BatchedGpuProgram) -> BatchedGpuProgram {
+    let covariance_slot = program
+        .state_shapes()
+        .find_map(|(slot, rows, columns)| (rows == 3 && columns == 3).then_some(slot))
+        .expect("EKF artifact must contain one 3x3 covariance state");
+    program
+        .with_robot_state_integrity(covariance_slot, COVARIANCE_SYMMETRY_TOLERANCE)
+        .expect("robot-state integrity policy must match the EKF artifact")
+}
 
 fn symbol_f32_values(program: &MechProgram, name: &str) -> Vec<f32> {
     program
@@ -157,6 +168,17 @@ fn source_inputs(program: &MechProgram, artifact: &ProgramArtifact) -> BTreeMap<
         .collect()
 }
 
+fn protected_source_program(instances: usize) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
+    let tree = source_tree(instances);
+    let driver = evaluate_driver(&tree);
+    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    let inputs = source_inputs(&driver, &artifact);
+    let program = GpuHost
+        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .expect("generic fixed-shape operations must lower");
+    (protect_robot_estimate(program), inputs)
+}
+
 #[test]
 fn high_level_ekf_source_matches_ordinary_mech_after_generic_lowering() {
     let tree = source_tree(1);
@@ -234,6 +256,7 @@ fn mech_arrays_define_the_broadcast_extent() {
     let lowered = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .unwrap();
+    let lowered = protect_robot_estimate(lowered);
     assert_eq!(lowered.instances(), 7);
     assert_eq!(lowered.workgroup_count(), 1);
     assert_eq!(lowered.simd_lanes(), 4);
@@ -297,6 +320,99 @@ fn empty_mech_array_is_rejected() {
     );
 }
 
+#[test]
+fn robot_integrity_policy_checks_finite_positive_and_symmetric_candidates() {
+    let (program, inputs) = protected_source_program(2);
+    let cpu = program.prepare_cpu(&inputs).unwrap();
+    let published = cpu.state().clone();
+    program
+        .validate_robot_state_candidate(&published)
+        .expect("the initial estimate must satisfy the policy");
+    let covariance_slot = program.robot_state_integrity().unwrap().covariance_slot();
+    let state_slot = program
+        .state_shapes()
+        .find_map(|(slot, rows, columns)| {
+            (slot != covariance_slot && rows * columns == 3).then_some(slot)
+        })
+        .unwrap();
+
+    let mut non_finite = published.clone();
+    non_finite.get_mut(&state_slot).unwrap()[1] = f32::NAN;
+    assert!(matches!(
+        program
+            .validate_robot_state_candidate(&non_finite)
+            .unwrap_err(),
+        BatchedExecutionError::Integrity(fault)
+            if matches!(fault.violation, BatchedIntegrityViolation::NonFiniteState)
+    ));
+
+    let mut non_positive = published.clone();
+    non_positive.get_mut(&covariance_slot).unwrap()[4] = 0.0;
+    assert!(matches!(
+        program
+            .validate_robot_state_candidate(&non_positive)
+            .unwrap_err(),
+        BatchedExecutionError::Integrity(fault)
+            if matches!(fault.violation, BatchedIntegrityViolation::NonPositiveCovarianceDiagonal { slot } if slot == covariance_slot)
+    ));
+
+    let mut asymmetric = published.clone();
+    asymmetric.get_mut(&covariance_slot).unwrap()[3] = COVARIANCE_SYMMETRY_TOLERANCE * 2.0;
+    assert!(matches!(
+        program
+            .validate_robot_state_candidate(&asymmetric)
+            .unwrap_err(),
+        BatchedExecutionError::Integrity(fault)
+            if matches!(fault.violation, BatchedIntegrityViolation::CovarianceAsymmetry { slot, .. } if slot == covariance_slot)
+    ));
+
+    asymmetric.get_mut(&covariance_slot).unwrap()[3] = COVARIANCE_SYMMETRY_TOLERANCE;
+    program
+        .validate_robot_state_candidate(&asymmetric)
+        .expect("symmetry error at the declared tolerance is accepted");
+}
+
+#[test]
+fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
+    let (program, mut inputs) = protected_source_program(8);
+    inputs
+        .get_mut("bearing")
+        .unwrap()
+        .iter_mut()
+        .for_each(|value| *value = f32::NAN);
+
+    let mut scalar = program.prepare_cpu(&inputs).unwrap();
+    let scalar_published = scalar.state().clone();
+    assert!(matches!(
+        scalar.dispatch_turns(1).unwrap_err(),
+        BatchedExecutionError::Integrity(_)
+    ));
+    assert_eq!(scalar.state(), &scalar_published);
+    assert_eq!(scalar.fault_count(), 1);
+    assert_eq!(scalar.last_fault().unwrap().attempted_turn, 1);
+
+    let mut simd = program.prepare_simd_cpu(&inputs).unwrap();
+    let simd_published = simd.state().clone();
+    assert!(matches!(
+        simd.dispatch_turns(1).unwrap_err(),
+        BatchedExecutionError::Integrity(_)
+    ));
+    assert_eq!(simd.state(), &simd_published);
+    assert_eq!(simd.fault_count(), 1);
+
+    #[cfg(feature = "jit")]
+    {
+        let mut jit = program.prepare_jit_cpu(&inputs).unwrap();
+        let jit_published = jit.state().clone();
+        assert!(matches!(
+            jit.dispatch_turns(1).unwrap_err(),
+            BatchedExecutionError::Integrity(_)
+        ));
+        assert_eq!(jit.state(), &jit_published);
+        assert_eq!(jit.fault_count(), 1);
+    }
+}
+
 #[cfg(feature = "native")]
 #[test]
 fn source_driven_broadcast_matches_the_native_gpu() {
@@ -307,6 +423,7 @@ fn source_driven_broadcast_matches_the_native_gpu() {
     let lowered = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .unwrap();
+    let lowered = protect_robot_estimate(lowered);
 
     let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
     cpu.dispatch_turns(4).unwrap();
@@ -325,6 +442,36 @@ fn source_driven_broadcast_matches_the_native_gpu() {
     for (slot, expected) in expected {
         assert_close(&expected, &actual[&slot], 1.0e-4);
     }
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn checked_gpu_rejects_candidate_and_keeps_published_estimate() {
+    let (program, mut inputs) = protected_source_program(32);
+    inputs
+        .get_mut("bearing")
+        .unwrap()
+        .iter_mut()
+        .for_each(|value| *value = f32::NAN);
+    let mut gpu = match program.prepare_resident(&inputs) {
+        Ok(gpu) => gpu,
+        Err(BatchedExecutionError::Native(message))
+            if message.to_ascii_lowercase().contains("adapter")
+                && message.to_ascii_lowercase().contains("unavailable") =>
+        {
+            return;
+        }
+        Err(error) => panic!("native GPU preparation failed: {error}"),
+    };
+    let (_, before) = gpu.read_published_state().unwrap();
+    assert!(matches!(
+        gpu.dispatch_turns(1).unwrap_err(),
+        BatchedExecutionError::Integrity(_)
+    ));
+    let (_, after) = gpu.read_published_state().unwrap();
+    assert_eq!(after, before);
+    assert_eq!(gpu.fault_count(), 1);
+    assert_eq!(gpu.last_fault().unwrap().attempted_turn, 1);
 }
 
 fn assert_close(expected: &[f32], actual: &[f32], tolerance: f32) {

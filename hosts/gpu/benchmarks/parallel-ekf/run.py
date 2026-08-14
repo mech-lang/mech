@@ -217,8 +217,8 @@ def main() -> None:
                 number(text, r"GPU single-submit throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
             ),
-            "Mech GPU, 120 turns/submission": statistics.median(
-                number(text, r"GPU batched throughput: ([0-9.]+) million")
+            "Mech GPU, checked repeated turns": statistics.median(
+                number(text, r"GPU checked repeated throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
             ),
         }

@@ -188,7 +188,63 @@ pub struct BatchedGpuProgram {
     instructions: Vec<ScalarInstruction>,
     inputs: Vec<BatchedInput>,
     states: Vec<BatchedState>,
+    robot_integrity: Option<RobotStateIntegrityPolicy>,
     wgsl: String,
+}
+
+/// Publication checks for robot estimates produced by a fixed-shape numeric
+/// region. The numeric graph stays generic; this policy identifies the state
+/// slot that carries covariance and declares its accepted symmetry error.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct RobotStateIntegrityPolicy {
+    covariance_slot: CellSlotId,
+    symmetry_tolerance: f32,
+}
+
+impl RobotStateIntegrityPolicy {
+    pub const fn covariance_slot(self) -> CellSlotId {
+        self.covariance_slot
+    }
+
+    pub const fn symmetry_tolerance(self) -> f32 {
+        self.symmetry_tolerance
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum BatchedIntegrityViolation {
+    NonFiniteState,
+    NonPositiveCovarianceDiagonal { slot: CellSlotId },
+    CovarianceAsymmetry { slot: CellSlotId, tolerance: f32 },
+}
+
+/// Bounded fault evidence for one rejected candidate. Sessions retain only the
+/// latest record plus a total count, never an append-only transaction log.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BatchedIntegrityFault {
+    pub attempted_turn: u64,
+    pub instance: u32,
+    pub violation: BatchedIntegrityViolation,
+}
+
+#[derive(Debug, Default)]
+struct BatchedFaultRecorder {
+    attempted_turns: u64,
+    fault_count: u64,
+    last_fault: Option<BatchedIntegrityFault>,
+}
+
+impl BatchedFaultRecorder {
+    fn next_turn(&mut self) -> u64 {
+        self.attempted_turns = self.attempted_turns.saturating_add(1);
+        self.attempted_turns
+    }
+
+    fn record(&mut self, fault: BatchedIntegrityFault) -> BatchedExecutionError {
+        self.fault_count = self.fault_count.saturating_add(1);
+        self.last_fault = Some(fault.clone());
+        BatchedExecutionError::Integrity(fault)
+    }
 }
 
 #[derive(Debug)]
@@ -198,6 +254,7 @@ pub struct BatchedCpuSession<'a> {
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
     registers: Vec<f32>,
+    faults: BatchedFaultRecorder,
 }
 
 #[derive(Debug)]
@@ -207,6 +264,7 @@ pub struct BatchedSimdCpuSession<'a> {
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
     registers: Vec<f32x4>,
+    faults: BatchedFaultRecorder,
 }
 
 impl super::GpuHost {
@@ -315,6 +373,72 @@ impl BatchedGpuProgram {
             .map(|state| (state.slot, state.shape.elements()))
     }
 
+    pub fn state_shapes(&self) -> impl Iterator<Item = (CellSlotId, usize, usize)> + '_ {
+        self.states
+            .iter()
+            .map(|state| (state.slot, state.shape.rows, state.shape.columns))
+    }
+
+    /// Attaches robot-estimate publication checks to this compiled numeric
+    /// region. Every state value must be finite; the selected covariance must
+    /// also have a positive diagonal and be symmetric within `tolerance`.
+    pub fn with_robot_state_integrity(
+        mut self,
+        covariance_slot: CellSlotId,
+        tolerance: f32,
+    ) -> Result<Self, BatchedExecutionError> {
+        if !tolerance.is_finite() || tolerance < 0.0 {
+            return Err(BatchedExecutionError::IntegrityConfiguration(
+                "covariance symmetry tolerance must be finite and non-negative".to_owned(),
+            ));
+        }
+        let Some(covariance) = self
+            .states
+            .iter()
+            .find(|state| state.slot == covariance_slot)
+        else {
+            return Err(BatchedExecutionError::IntegrityConfiguration(format!(
+                "covariance slot {} is not a state slot",
+                covariance_slot.get()
+            )));
+        };
+        if covariance.shape.rows != covariance.shape.columns {
+            return Err(BatchedExecutionError::IntegrityConfiguration(format!(
+                "covariance slot {} is {}x{}, expected a square matrix",
+                covariance_slot.get(),
+                covariance.shape.rows,
+                covariance.shape.columns
+            )));
+        }
+        self.robot_integrity = Some(RobotStateIntegrityPolicy {
+            covariance_slot,
+            symmetry_tolerance: tolerance,
+        });
+        self.wgsl = generate_wgsl(
+            self.instances,
+            &self.register_offsets,
+            &self.instructions,
+            &self.inputs,
+            &self.states,
+            self.robot_integrity,
+        );
+        Ok(self)
+    }
+
+    pub const fn robot_state_integrity(&self) -> Option<RobotStateIntegrityPolicy> {
+        self.robot_integrity
+    }
+
+    /// Validates an externally produced candidate against the same publication
+    /// policy used by resident sessions. Hosts can use this before importing a
+    /// checkpoint or device-produced state.
+    pub fn validate_robot_state_candidate(
+        &self,
+        candidate: &BTreeMap<CellSlotId, Vec<f32>>,
+    ) -> Result<(), BatchedExecutionError> {
+        self.validate_candidate(candidate, 0)
+    }
+
     pub fn prepare_cpu(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
@@ -325,12 +449,14 @@ impl BatchedGpuProgram {
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
+        self.validate_candidate(&state, 0)?;
         Ok(BatchedCpuSession {
             program: self,
             inputs,
             state,
             next_state,
             registers: vec![0.0; self.register_count],
+            faults: BatchedFaultRecorder::default(),
         })
     }
 
@@ -346,12 +472,14 @@ impl BatchedGpuProgram {
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
+        self.validate_candidate(&state, 0)?;
         Ok(BatchedSimdCpuSession {
             program: self,
             inputs,
             state,
             next_state,
             registers: vec![f32x4::ZERO; self.register_count],
+            faults: BatchedFaultRecorder::default(),
         })
     }
 
@@ -408,6 +536,81 @@ impl BatchedGpuProgram {
             })
             .collect()
     }
+
+    fn validate_candidate(
+        &self,
+        candidate: &BTreeMap<CellSlotId, Vec<f32>>,
+        attempted_turn: u64,
+    ) -> Result<(), BatchedExecutionError> {
+        let Some(policy) = self.robot_integrity else {
+            return Ok(());
+        };
+        for instance in 0..self.instances as usize {
+            for state in &self.states {
+                let elements = state.shape.elements();
+                let expected = elements * self.instances as usize;
+                let Some(values) = candidate.get(&state.slot) else {
+                    return Err(BatchedExecutionError::IntegrityConfiguration(format!(
+                        "candidate is missing state slot {}",
+                        state.slot.get()
+                    )));
+                };
+                if values.len() != expected {
+                    return Err(BatchedExecutionError::IntegrityConfiguration(format!(
+                        "candidate state slot {} has {} values, expected {expected}",
+                        state.slot.get(),
+                        values.len()
+                    )));
+                }
+                for component in 0..elements {
+                    if !values[instance * elements + component].is_finite() {
+                        return Err(BatchedExecutionError::Integrity(BatchedIntegrityFault {
+                            attempted_turn,
+                            instance: instance as u32,
+                            violation: BatchedIntegrityViolation::NonFiniteState,
+                        }));
+                    }
+                }
+            }
+            let covariance = self
+                .states
+                .iter()
+                .find(|state| state.slot == policy.covariance_slot)
+                .expect("integrity covariance slot was validated during configuration");
+            let dimension = covariance.shape.rows;
+            let elements = covariance.shape.elements();
+            let values = &candidate[&covariance.slot];
+            let base = instance * elements;
+            for diagonal in 0..dimension {
+                if values[base + covariance.shape.index(diagonal, diagonal)] <= 0.0 {
+                    return Err(BatchedExecutionError::Integrity(BatchedIntegrityFault {
+                        attempted_turn,
+                        instance: instance as u32,
+                        violation: BatchedIntegrityViolation::NonPositiveCovarianceDiagonal {
+                            slot: covariance.slot,
+                        },
+                    }));
+                }
+            }
+            for column in 1..dimension {
+                for row in 0..column {
+                    let left = values[base + covariance.shape.index(row, column)];
+                    let right = values[base + covariance.shape.index(column, row)];
+                    if (left - right).abs() > policy.symmetry_tolerance {
+                        return Err(BatchedExecutionError::Integrity(BatchedIntegrityFault {
+                            attempted_turn,
+                            instance: instance as u32,
+                            violation: BatchedIntegrityViolation::CovarianceAsymmetry {
+                                slot: covariance.slot,
+                                tolerance: policy.symmetry_tolerance,
+                            },
+                        }));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 impl BatchedCpuSession<'_> {
@@ -416,6 +619,7 @@ impl BatchedCpuSession<'_> {
             return Err(BatchedExecutionError::ZeroTurns);
         }
         for _ in 0..turns {
+            let attempted_turn = self.faults.next_turn();
             for instance in 0..self.program.instances as usize {
                 for input in &self.program.inputs {
                     let offset = self.program.register_offsets[&input.slot];
@@ -444,6 +648,15 @@ impl BatchedCpuSession<'_> {
                     }
                 }
             }
+            if let Err(error) = self
+                .program
+                .validate_candidate(&self.next_state, attempted_turn)
+            {
+                return match error {
+                    BatchedExecutionError::Integrity(fault) => Err(self.faults.record(fault)),
+                    error => Err(error),
+                };
+            }
             std::mem::swap(&mut self.state, &mut self.next_state);
         }
         Ok(())
@@ -451,6 +664,14 @@ impl BatchedCpuSession<'_> {
 
     pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
         &self.state
+    }
+
+    pub const fn fault_count(&self) -> u64 {
+        self.faults.fault_count
+    }
+
+    pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
+        self.faults.last_fault.as_ref()
     }
 }
 
@@ -461,6 +682,7 @@ impl BatchedSimdCpuSession<'_> {
         }
         let instances = self.program.instances as usize;
         for _ in 0..turns {
+            let attempted_turn = self.faults.next_turn();
             for first_instance in (0..instances).step_by(SIMD_LANES) {
                 for input in &self.program.inputs {
                     let offset = self.program.register_offsets[&input.slot];
@@ -498,6 +720,15 @@ impl BatchedSimdCpuSession<'_> {
                     }
                 }
             }
+            if let Err(error) = self
+                .program
+                .validate_candidate(&self.next_state, attempted_turn)
+            {
+                return match error {
+                    BatchedExecutionError::Integrity(fault) => Err(self.faults.record(fault)),
+                    error => Err(error),
+                };
+            }
             std::mem::swap(&mut self.state, &mut self.next_state);
         }
         Ok(())
@@ -505,6 +736,14 @@ impl BatchedSimdCpuSession<'_> {
 
     pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
         &self.state
+    }
+
+    pub const fn fault_count(&self) -> u64 {
+        self.faults.fault_count
+    }
+
+    pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
+        self.faults.last_fault.as_ref()
     }
 }
 
@@ -525,7 +764,7 @@ fn gather_simd(
     f32x4::new(lanes)
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum BatchedExecutionError {
     ZeroTurns,
     MissingInput(String),
@@ -535,6 +774,8 @@ pub enum BatchedExecutionError {
         expected_batch: usize,
         actual: usize,
     },
+    IntegrityConfiguration(String),
+    Integrity(BatchedIntegrityFault),
     Native(String),
 }
 
@@ -772,6 +1013,7 @@ impl<'a> BatchCompiler<'a> {
             &self.instructions,
             &inputs,
             &states,
+            None,
         );
         Ok(BatchedGpuProgram {
             instances: self.instances,
@@ -780,6 +1022,7 @@ impl<'a> BatchCompiler<'a> {
             instructions: self.instructions,
             inputs,
             states,
+            robot_integrity: None,
             wgsl,
         })
     }
@@ -1307,6 +1550,7 @@ fn generate_wgsl(
     instructions: &[ScalarInstruction],
     inputs: &[BatchedInput],
     states: &[BatchedState],
+    robot_integrity: Option<RobotStateIntegrityPolicy>,
 ) -> String {
     let mut shader = String::from("// Generic fixed-shape Mech batch kernel.\n");
     for input in inputs {
@@ -1326,6 +1570,19 @@ fn generate_wgsl(
             "@group(0) @binding({}) var<storage, read_write> state_write_{}: array<f32>;\n",
             state.write_binding,
             state.slot.get()
+        ));
+    }
+    if robot_integrity.is_some() {
+        let binding = inputs.len() as u32 + states.len() as u32 * 2;
+        shader.push_str(&format!(
+            "@group(0) @binding({binding}) var<storage, read_write> integrity_fault: array<atomic<u32>>;\n\n\
+             fn mech_is_finite(value: f32) -> bool {{\n\
+               return value == value && abs(value) <= 3.402823466e+38;\n\
+             }}\n\n\
+             fn record_integrity_fault(code: u32, instance: u32) {{\n\
+               atomicAdd(&integrity_fault[0], 1u);\n\
+               atomicMin(&integrity_fault[1], (instance << 8u) | code);\n\
+             }}\n"
         ));
     }
     shader.push_str(&format!(
@@ -1362,6 +1619,41 @@ fn generate_wgsl(
             instruction.computation.wgsl()
         ));
     }
+    if let Some(policy) = robot_integrity {
+        shader.push_str("  var integrity_code = 0u;\n");
+        for state in states {
+            for source in &state.update {
+                shader.push_str(&format!(
+                    "  if (integrity_code == 0u && !mech_is_finite({})) {{ integrity_code = 1u; }}\n",
+                    source.wgsl(),
+                ));
+            }
+        }
+        let covariance = states
+            .iter()
+            .find(|state| state.slot == policy.covariance_slot)
+            .expect("integrity covariance slot was validated during configuration");
+        for diagonal in 0..covariance.shape.rows {
+            let component = covariance.shape.index(diagonal, diagonal);
+            shader.push_str(&format!(
+                "  if (integrity_code == 0u && !({} > 0.0)) {{ integrity_code = 2u; }}\n",
+                covariance.update[component].wgsl(),
+            ));
+        }
+        for column in 1..covariance.shape.columns {
+            for row in 0..column {
+                let left = covariance.update[covariance.shape.index(row, column)].wgsl();
+                let right = covariance.update[covariance.shape.index(column, row)].wgsl();
+                shader.push_str(&format!(
+                    "  if (integrity_code == 0u && abs(({left}) - ({right})) > {}) {{ integrity_code = 3u; }}\n",
+                    super::format_wgsl_f32(policy.symmetry_tolerance),
+                ));
+            }
+        }
+        shader.push_str(
+            "  if (integrity_code != 0u) { record_integrity_fault(integrity_code, index); }\n",
+        );
+    }
     for state in states {
         for (component, source) in state.update.iter().enumerate() {
             shader.push_str(&format!(
@@ -1388,7 +1680,12 @@ mod native {
     use mech_core::CellSlotId;
     use wgpu::util::DeviceExt;
 
-    use super::{BatchedExecutionError, BatchedGpuProgram};
+    use super::{
+        BatchedExecutionError, BatchedFaultRecorder, BatchedGpuProgram, BatchedIntegrityFault,
+        BatchedIntegrityViolation, RobotStateIntegrityPolicy,
+    };
+
+    const GPU_FAULT_WORDS: usize = 2;
 
     #[derive(Debug)]
     pub struct BatchedResidentGpuSession {
@@ -1399,9 +1696,13 @@ mod native {
         bind_groups: [wgpu::BindGroup; 2],
         output_buffers: [BTreeMap<CellSlotId, Arc<wgpu::Buffer>>; 2],
         output_elements: BTreeMap<CellSlotId, usize>,
+        integrity: Option<RobotStateIntegrityPolicy>,
+        integrity_fault: Option<Arc<wgpu::Buffer>>,
+        integrity_readback: Option<wgpu::Buffer>,
         workgroups: u32,
         next_group: usize,
         last_output_group: Option<usize>,
+        faults: BatchedFaultRecorder,
     }
 
     #[derive(Clone, Debug)]
@@ -1425,6 +1726,11 @@ mod native {
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
+            if self.robot_integrity.is_some() && self.instances >= (1 << 24) {
+                return Err(BatchedExecutionError::IntegrityConfiguration(
+                    "checked GPU fault records support fewer than 2^24 instances".to_owned(),
+                ));
+            }
             let instance = wgpu::Instance::default();
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
@@ -1438,7 +1744,10 @@ mod native {
                 })?;
             let adapter_info = adapter.get_info();
             let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
-            let required_storage_buffers = (self.inputs.len() + self.states.len() * 2) as u32;
+            let required_storage_buffers = (self.inputs.len()
+                + self.states.len() * 2
+                + usize::from(self.robot_integrity.is_some()))
+                as u32;
             let limits = adapter.limits();
             if required_storage_buffers > limits.max_storage_buffers_per_shader_stage {
                 return Err(BatchedExecutionError::Native(format!(
@@ -1485,6 +1794,7 @@ mod native {
             }
 
             let initial_state = self.initial_state();
+            self.validate_candidate(&initial_state, 0)?;
             let mut state_buffers = BTreeMap::new();
             for state in &self.states {
                 let initial = Arc::new(device.create_buffer_init(
@@ -1503,7 +1813,26 @@ mod native {
                 state_buffers.insert(state.slot, [initial, alternate]);
             }
 
-            let layout_entries =
+            let integrity_fault = self.robot_integrity.map(|_| {
+                Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("Mech robot-state integrity fault"),
+                    size: (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
+                    usage: wgpu::BufferUsages::STORAGE
+                        | wgpu::BufferUsages::COPY_SRC
+                        | wgpu::BufferUsages::COPY_DST,
+                    mapped_at_creation: false,
+                }))
+            });
+            let integrity_readback = self.robot_integrity.map(|_| {
+                device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some("Mech robot-state integrity readback"),
+                    size: (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
+                    usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                    mapped_at_creation: false,
+                })
+            });
+
+            let mut layout_entries =
                 self.inputs
                     .iter()
                     .map(|input| (input.binding, true))
@@ -1521,13 +1850,25 @@ mod native {
                         count: None,
                     })
                     .collect::<Vec<_>>();
+            if self.robot_integrity.is_some() {
+                layout_entries.push(wgpu::BindGroupLayoutEntry {
+                    binding: (self.inputs.len() + self.states.len() * 2) as u32,
+                    visibility: wgpu::ShaderStages::COMPUTE,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        has_dynamic_offset: false,
+                        min_binding_size: None,
+                    },
+                    count: None,
+                });
+            }
             let bind_group_layout =
                 device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                     label: Some("Mech fixed-shape batch bindings"),
                     entries: &layout_entries,
                 });
             let bind_groups = [0, 1].map(|group| {
-                let entries = self
+                let mut entries = self
                     .inputs
                     .iter()
                     .map(|input| wgpu::BindGroupEntry {
@@ -1547,6 +1888,12 @@ mod native {
                         ]
                     }))
                     .collect::<Vec<_>>();
+                if let Some(fault) = &integrity_fault {
+                    entries.push(wgpu::BindGroupEntry {
+                        binding: (self.inputs.len() + self.states.len() * 2) as u32,
+                        resource: fault.as_entire_binding(),
+                    });
+                }
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("Mech fixed-shape batch bind group"),
                     layout: &bind_group_layout,
@@ -1589,9 +1936,13 @@ mod native {
                 bind_groups,
                 output_buffers,
                 output_elements,
+                integrity: self.robot_integrity,
+                integrity_fault,
+                integrity_readback,
                 workgroups: self.workgroup_count(),
                 next_group: 0,
                 last_output_group: None,
+                faults: BatchedFaultRecorder::default(),
             })
         }
     }
@@ -1604,6 +1955,9 @@ mod native {
         pub fn dispatch_turns(&mut self, turns: u32) -> Result<Duration, BatchedExecutionError> {
             if turns == 0 {
                 return Err(BatchedExecutionError::ZeroTurns);
+            }
+            if self.integrity.is_some() {
+                return self.dispatch_checked_turns(turns);
             }
             let started = Instant::now();
             let mut encoder = self
@@ -1630,12 +1984,130 @@ mod native {
             Ok(started.elapsed())
         }
 
+        fn dispatch_checked_turns(
+            &mut self,
+            turns: u32,
+        ) -> Result<Duration, BatchedExecutionError> {
+            let started = Instant::now();
+            for _ in 0..turns {
+                let attempted_turn = self.faults.next_turn();
+                let fault_buffer = self
+                    .integrity_fault
+                    .as_ref()
+                    .expect("checked GPU session has a fault buffer");
+                let cleared_fault = [0_u32, u32::MAX];
+                self.queue
+                    .write_buffer(fault_buffer, 0, bytemuck::cast_slice(&cleared_fault));
+                let group = self.next_group;
+                let mut encoder =
+                    self.device
+                        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                            label: Some("Mech checked fixed-shape batch turn"),
+                        });
+                {
+                    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+                        label: Some("Mech checked fixed-shape batch compute pass"),
+                        timestamp_writes: None,
+                    });
+                    pass.set_pipeline(&self.pipeline);
+                    pass.set_bind_group(0, &self.bind_groups[group], &[]);
+                    pass.dispatch_workgroups(self.workgroups, 1, 1);
+                }
+                encoder.copy_buffer_to_buffer(
+                    fault_buffer,
+                    0,
+                    self.integrity_readback
+                        .as_ref()
+                        .expect("checked GPU session has a fault readback"),
+                    0,
+                    (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
+                );
+                self.queue.submit(Some(encoder.finish()));
+                self.device.poll(wgpu::Maintain::Wait);
+                let words = self.read_integrity_fault()?;
+                if words[0] != 0 {
+                    let policy = self.integrity.expect("checked GPU session has a policy");
+                    let packed = words[1];
+                    let code = packed & 0xff;
+                    let fault = BatchedIntegrityFault {
+                        attempted_turn,
+                        instance: packed >> 8,
+                        violation: match code {
+                            1 => BatchedIntegrityViolation::NonFiniteState,
+                            2 => BatchedIntegrityViolation::NonPositiveCovarianceDiagonal {
+                                slot: policy.covariance_slot,
+                            },
+                            3 => BatchedIntegrityViolation::CovarianceAsymmetry {
+                                slot: policy.covariance_slot,
+                                tolerance: policy.symmetry_tolerance,
+                            },
+                            _ => {
+                                return Err(BatchedExecutionError::Native(format!(
+                                    "GPU returned unknown integrity fault code {code}"
+                                )));
+                            }
+                        },
+                    };
+                    return Err(self.faults.record(fault));
+                }
+                self.last_output_group = Some(group);
+                self.next_group = 1 - group;
+            }
+            Ok(started.elapsed())
+        }
+
+        fn read_integrity_fault(&self) -> Result<[u32; GPU_FAULT_WORDS], BatchedExecutionError> {
+            let readback = self
+                .integrity_readback
+                .as_ref()
+                .expect("checked GPU session has a fault readback");
+            let slice = readback.slice(..);
+            let (sender, receiver) = mpsc::channel();
+            slice.map_async(wgpu::MapMode::Read, move |result| {
+                let _ = sender.send(result);
+            });
+            self.device.poll(wgpu::Maintain::Wait);
+            receiver
+                .recv()
+                .map_err(|_| BatchedExecutionError::Native("map channel closed".to_owned()))?
+                .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
+            let mapped = slice.get_mapped_range();
+            let mut words = [0_u32; GPU_FAULT_WORDS];
+            words.copy_from_slice(bytemuck::cast_slice::<u8, u32>(&mapped));
+            drop(mapped);
+            readback.unmap();
+            Ok(words)
+        }
+
+        pub const fn fault_count(&self) -> u64 {
+            self.faults.fault_count
+        }
+
+        pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
+            self.faults.last_fault.as_ref()
+        }
+
         pub fn read_state(
             &self,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let group = self.last_output_group.ok_or_else(|| {
                 BatchedExecutionError::Native("no batch turns have run".to_owned())
             })?;
+            self.read_state_group(group)
+        }
+
+        /// Reads the currently published state, including the initial state or
+        /// the estimate retained after a rejected candidate.
+        pub fn read_published_state(
+            &self,
+        ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
+            self.read_state_group(1 - self.next_group)
+        }
+
+        fn read_state_group(
+            &self,
+            group: usize,
+        ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let started = Instant::now();
             let mut encoder = self
                 .device

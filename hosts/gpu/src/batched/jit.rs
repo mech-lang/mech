@@ -10,8 +10,8 @@ use cranelift_module::{Linkage, Module, default_libcall_names};
 use mech_core::CellSlotId;
 
 use super::{
-    BatchedExecutionError, BatchedGpuProgram, BinaryOperation, ElementwiseOperation,
-    ScalarComputation, ScalarOperand, UnaryOperation,
+    BatchedExecutionError, BatchedFaultRecorder, BatchedGpuProgram, BatchedIntegrityFault,
+    BinaryOperation, ElementwiseOperation, ScalarComputation, ScalarOperand, UnaryOperation,
 };
 
 type NativeTurn = unsafe extern "C" fn(
@@ -35,6 +35,7 @@ pub struct BatchedJitCpuSession<'a> {
     input_pointers: Vec<*const f32>,
     state_pointers: Vec<*const f32>,
     next_state_pointers: Vec<*mut f32>,
+    faults: BatchedFaultRecorder,
 }
 
 impl BatchedGpuProgram {
@@ -48,6 +49,7 @@ impl BatchedGpuProgram {
             .iter()
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
+        self.validate_candidate(&state, 0)?;
         let kernel = NativeKernel::compile(self)?;
         let input_pointers = self
             .inputs
@@ -63,6 +65,7 @@ impl BatchedGpuProgram {
             input_pointers,
             state_pointers: Vec::with_capacity(self.states.len()),
             next_state_pointers: Vec::with_capacity(self.states.len()),
+            faults: BatchedFaultRecorder::default(),
         };
         session.refresh_state_pointers();
         Ok(session)
@@ -75,6 +78,7 @@ impl BatchedJitCpuSession<'_> {
             return Err(BatchedExecutionError::ZeroTurns);
         }
         for _ in 0..turns {
+            let attempted_turn = self.faults.next_turn();
             self.refresh_state_pointers();
             // SAFETY: The generated function uses the exact ABI below. All pointer
             // tables and their backing f32 buffers remain live for the call, and
@@ -88,6 +92,15 @@ impl BatchedJitCpuSession<'_> {
                     self.program.instances as usize,
                 );
             }
+            if let Err(error) = self
+                .program
+                .validate_candidate(&self.next_state, attempted_turn)
+            {
+                return match error {
+                    BatchedExecutionError::Integrity(fault) => Err(self.faults.record(fault)),
+                    error => Err(error),
+                };
+            }
             mem::swap(&mut self.state, &mut self.next_state);
         }
         Ok(())
@@ -95,6 +108,14 @@ impl BatchedJitCpuSession<'_> {
 
     pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
         &self.state
+    }
+
+    pub const fn fault_count(&self) -> u64 {
+        self.faults.fault_count
+    }
+
+    pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
+        self.faults.last_fault.as_ref()
     }
 
     fn refresh_state_pointers(&mut self) {
