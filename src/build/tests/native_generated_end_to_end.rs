@@ -34,9 +34,10 @@ fn every_generated_application_fixture_builds_and_executes() {
             "{}",
             generated.case,
         );
-        if let Some((requested, host_instance, host_context)) = match generated.case {
-            "cli" => Some(("cli://stdout", "cli", "stdout")),
-            "console" => Some(("console://output", "console", "output")),
+        if let Some((requested, operation, host_instance, host_context)) = match generated.case {
+            "cli" => Some(("cli://stdout", "write", "cli", "stdout")),
+            "console" => Some(("console://output", "write", "console", "output")),
+            "robot-arm" => Some(("robot://arm/commands", "move", "arm", "commands")),
             _ => None,
         } {
             assert!(
@@ -49,6 +50,7 @@ fn every_generated_application_fixture_builds_and_executes() {
                             requirement,
                             PlannedApplicationRequirement::Resource { request, owner }
                                 if request.base_uri == requested
+                                    && request.operation == operation
                                     && owner.host_instance == host_instance
                                     && owner.host_context == host_context
                         )

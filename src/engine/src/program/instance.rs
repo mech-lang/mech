@@ -11,8 +11,10 @@ use std::time::Instant;
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{
-    FunctionSpecializer, LegacyValue, MResult, MechError, MechErrorKind, MechFunction,
-    MechSourceCode, ParsedProgram, ValueKind, hash_str, validate_stable_value_update,
+    ApplicationRequirement, FunctionSpecializer, LegacyValue, MResult, MechError, MechErrorKind,
+    MechFunction, MechSourceCode, ParsedProgram, ResourceIntent, ValueKind,
+    compare_application_requirements, hash_str, validate_application_requirement,
+    validate_stable_value_update,
 };
 
 #[cfg(feature = "compiler")]
@@ -94,6 +96,17 @@ pub struct ProgramSolveOutcome {
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
     bytecode: Vec<u8>,
+}
+
+/// Compiler-only instruction for preserving a source-declared custom send
+/// operation in the canonical application requirement. It does not grant
+/// authority or change interpreter execution.
+#[cfg(feature = "compiler")]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompiledResourceSendOperation {
+    pub base_uri: String,
+    pub path: Option<String>,
+    pub operation: String,
 }
 
 #[cfg(feature = "compiler")]
@@ -498,6 +511,22 @@ impl MechProgram {
         self.finalize_program_product(compiled)
     }
 
+    /// Finalizes a source compiler product after replacing generic send names
+    /// with the operation explicitly declared by the source context. The
+    /// transformed requirements are re-canonicalized before artifact and
+    /// bytecode-v1 encoding, so both routes retain identical authority data.
+    #[cfg(feature = "compiler")]
+    pub fn compile_program_product_with_resource_send_operations(
+        &mut self,
+        resolver: &dyn ExternalRequirementContractResolver,
+        operations: &[CompiledResourceSendOperation],
+    ) -> MResult<ProgramCompilationProduct> {
+        let mut compiled = compile_bytecode(self)?;
+        preserve_compiled_resource_send_operations(&mut compiled, operations)?;
+        resolve_compiled_external_contracts(&mut compiled, resolver)?;
+        self.finalize_program_product(compiled)
+    }
+
     #[cfg(feature = "compiler")]
     fn finalize_program_product(
         &self,
@@ -528,6 +557,104 @@ impl MechProgram {
         let bytecode = write_bytecode_with_artifact(&compiled.program, &sections)?;
         Ok(ProgramCompilationProduct { artifact, bytecode })
     }
+}
+
+#[cfg(feature = "compiler")]
+fn preserve_compiled_resource_send_operations(
+    compiled: &mut CompiledBytecode,
+    operations: &[CompiledResourceSendOperation],
+) -> MResult<()> {
+    if operations.is_empty() {
+        return Ok(());
+    }
+
+    let mut rewritten = compiled.program.requirements.clone();
+    for requirement in &mut rewritten {
+        let ApplicationRequirement::Resource(request) = requirement else {
+            continue;
+        };
+        if request.intent != ResourceIntent::Send {
+            continue;
+        }
+        let mut selected = None;
+        for exact in [true, false] {
+            for declaration in operations.iter().filter(|declaration| {
+                declaration.base_uri == request.base_uri
+                    && declaration.path.is_some() == exact
+                    && declaration
+                        .path
+                        .as_deref()
+                        .map_or(!exact, |path| path == request.path)
+            }) {
+                match selected {
+                    None => selected = Some(declaration.operation.as_str()),
+                    Some(operation) if operation == declaration.operation => {}
+                    Some(operation) => {
+                        return Err(MechError::new(
+                            GenericError {
+                                msg: format!(
+                                    "Resource send `{}/{}` resolves to both `{operation}` and `{}`",
+                                    request.base_uri, request.path, declaration.operation,
+                                ),
+                            },
+                            None,
+                        )
+                        .with_compiler_loc());
+                    }
+                }
+            }
+            if selected.is_some() {
+                break;
+            }
+        }
+        if let Some(operation) = selected {
+            request.operation = operation.to_owned();
+            validate_application_requirement(requirement)?;
+        }
+    }
+
+    let mut canonical = rewritten.clone();
+    canonical.sort_by(compare_application_requirements);
+    canonical.dedup();
+    let remap = rewritten
+        .iter()
+        .map(|requirement| {
+            canonical
+                .binary_search_by(|candidate| {
+                    compare_application_requirements(candidate, requirement)
+                })
+                .map(|index| index as u32)
+                .map_err(|_| {
+                    MechError::new(
+                        GenericError {
+                            msg: "Unable to canonicalize rewritten resource requirement".to_owned(),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })
+        })
+        .collect::<MResult<Vec<_>>>()?;
+    for instruction in &mut compiled.program.instructions {
+        let requirement = match instruction {
+            mech_core::BytecodeInstruction::HostCall { requirement, .. }
+            | mech_core::BytecodeInstruction::ResourceRead { requirement, .. }
+            | mech_core::BytecodeInstruction::ResourceWrite { requirement, .. }
+            | mech_core::BytecodeInstruction::ResourceSend { requirement, .. } => requirement,
+            _ => continue,
+        };
+        *requirement = *remap.get(*requirement as usize).ok_or_else(|| {
+            MechError::new(
+                GenericError {
+                    msg: "Resource requirement remap index is out of range".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+    }
+    compiled.program.requirements = canonical;
+    Ok(())
 }
 
 /// Builds the executable compiler product before the C3 semantic artifact is

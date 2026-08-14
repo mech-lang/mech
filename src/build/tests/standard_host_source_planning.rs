@@ -5,14 +5,15 @@ use std::path::PathBuf;
 
 use mech_build::{
     NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
-    NativeDependencySource, NativeEmit, NativeRuntimeConfig, standard_native_host_catalog,
-    standard_planning_host_factory,
+    NativeDependencySource, NativeEmit, NativeRuntimeConfig, selected_planning_host_factory,
+    standard_native_host_catalog,
 };
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, ParsedProgram, ResourceIntent, hash_str,
 };
 use mech_runtime::{
-    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig,
+    ConfigValue, HostInstanceConfig, ProgramCompiler, RunResourceGrantConfig, RuntimeBuilder,
+    RuntimeConfig,
 };
 
 struct ProviderCase {
@@ -118,7 +119,7 @@ const PROVIDER_CASES: &[ProviderCase] = &[
     },
 ];
 
-fn compile_provider(case: &ProviderCase) -> ParsedProgram {
+fn provider_compiler(case: &ProviderCase) -> ProgramCompiler {
     let settings = if case.provider == "scene" {
         ConfigValue::Map(BTreeMap::from([
             (
@@ -133,9 +134,9 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
     } else {
         ConfigValue::Map(BTreeMap::new())
     };
-    let mut compiler = RuntimeBuilder::new()
+    RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(standard_planning_host_factory(case.provider).unwrap())
+        .host_factory(selected_planning_host_factory(case.provider).unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
             name: case.instance.to_owned(),
@@ -152,14 +153,12 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
             paths: case.paths.iter().map(|path| (*path).to_owned()).collect(),
         })
         .build_compiler()
-        .unwrap();
-    ParsedProgram::from_bytes(
-        &compiler
-            .compile_source(case.source)
-            .map(|product| product.into_parts().1)
-            .unwrap(),
-    )
-    .unwrap()
+        .unwrap()
+}
+
+fn compile_provider(case: &ProviderCase) -> ParsedProgram {
+    let product = provider_compiler(case).compile_source(case.source).unwrap();
+    ParsedProgram::from_bytes(product.bytecode()).unwrap()
 }
 
 #[test]
@@ -175,6 +174,7 @@ fn every_standard_provider_plans_source_to_bytecode() {
                             && request.path == case.path
                             && request.context_name
                                 == case.target.rsplit('/').next().unwrap()
+                            && request.operation == case.operations[0]
                             && request.intent == case.intent
                 )
             }),
@@ -182,6 +182,47 @@ fn every_standard_provider_plans_source_to_bytecode() {
             case.provider
         );
     }
+}
+
+#[test]
+fn robot_custom_send_operation_survives_source_artifact_and_bytecode() {
+    let case = PROVIDER_CASES
+        .iter()
+        .find(|case| case.provider == "robot-arm")
+        .unwrap();
+    let product = provider_compiler(case).compile_source(case.source).unwrap();
+    assert!(
+        product
+            .artifact()
+            .requirements()
+            .iter()
+            .any(|(_, requirement)| {
+                matches!(
+                    requirement,
+                    ApplicationRequirement::Resource(request)
+                        if request.base_uri == "robot://arm/commands"
+                            && request.path == "move"
+                            && request.operation == "move"
+                            && request.intent == ResourceIntent::Send
+                )
+            })
+    );
+    assert!(product.artifact().nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["resource", "send"]
+            && node.operation.operation_name == "move"
+    }));
+
+    let decoded = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(decoded.requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            ApplicationRequirement::Resource(request)
+                if request.base_uri == "robot://arm/commands"
+                    && request.path == "move"
+                    && request.operation == "move"
+                    && request.intent == ResourceIntent::Send
+        )
+    }));
 }
 
 #[test]
@@ -259,7 +300,7 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         target: "cli/stdout",
         operations: &["write"],
         paths: &["line"],
-        source: "@out := cli://stdout{:write(line)}\nx := 1\n@out/line <- x + 1",
+        source: "@out := cli://stdout{:write(line)}\nx := \"planned\"\n@out/line <- x + \" output\"",
         base_uri: "cli://stdout",
         path: "line",
         intent: ResourceIntent::Send,
@@ -279,7 +320,7 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
 
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(standard_planning_host_factory("cli").unwrap())
+        .host_factory(selected_planning_host_factory("cli").unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
             name: "cli".to_owned(),

@@ -12,7 +12,9 @@ use mech_core::{
     MechErrorKind, MechExecutionServices, MechSourceCode, ModuleManifestCatalog, Ref,
     ResourceIntent, hash_str,
 };
-use mech_engine::{MechProgram, MechProgramConfig, ProgramCompilationProduct};
+use mech_engine::{
+    CompiledResourceSendOperation, MechProgram, MechProgramConfig, ProgramCompilationProduct,
+};
 
 use crate::{
     CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder, ModuleVersionId,
@@ -197,13 +199,17 @@ impl<'a> ProgramCompilerView<'a> {
 
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
         let mut program = self.new_program();
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        let operations =
+            compiled_resource_send_operations(&SourceIndex::from_program(&tree).all_contexts());
         let mut services = CompilerPlanningServices {
             providers: self.resources,
+            resource_send_operations: &operations,
         };
         program
-            .run_string_with_services(source, &mut services)
+            .run_tree_with_services(&tree, &mut services)
             .map_err(classify_source_planning)?;
-        self.finalize(program)
+        self.finalize(program, &operations)
     }
 
     pub(crate) fn compile_root(
@@ -225,7 +231,14 @@ impl<'a> ProgramCompilerView<'a> {
             &mut active,
             Some(&mut root_program),
         )?;
-        self.finalize(root_program.expect("root compiler program is retained until finalization"))
+        let operations = modules
+            .values()
+            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
+            .collect::<Vec<_>>();
+        self.finalize(
+            root_program.expect("root compiler program is retained until finalization"),
+            &operations,
+        )
     }
 
     fn new_program(&self) -> MechProgram {
@@ -235,10 +248,14 @@ impl<'a> ProgramCompilerView<'a> {
         )
     }
 
-    fn finalize(&self, mut program: MechProgram) -> MResult<ProgramCompilationProduct> {
+    fn finalize(
+        &self,
+        mut program: MechProgram,
+        operations: &[CompiledResourceSendOperation],
+    ) -> MResult<ProgramCompilationProduct> {
         let resolver = ResidentExternalContractResolver::new(self.resources);
         program
-            .compile_program_product_with_external_contracts(&resolver)
+            .compile_program_product_with_resource_send_operations(&resolver, operations)
             .map_err(|error| {
                 route_failure(
                     ResidentRouteFailureClass::InvalidArtifact,
@@ -458,8 +475,10 @@ impl<'a> ProgramCompilerView<'a> {
         let environment = build_import_environment(module, instances)?;
         install_environment(program, &environment)?;
         let tree = executable_tree(&module.source.source)?;
+        let resource_send_operations = compiled_resource_send_operations(&module.source.contexts);
         let mut services = CompilerPlanningServices {
             providers: self.resources,
+            resource_send_operations: &resource_send_operations,
         };
         program
             .run_tree_with_services(&tree, &mut services)
@@ -504,6 +523,65 @@ impl<'a> ProgramCompilerView<'a> {
         active.pop();
         Ok(())
     }
+}
+
+fn compiled_resource_send_operations(
+    contexts: &[crate::SourceContextDeclaration],
+) -> Vec<CompiledResourceSendOperation> {
+    contexts
+        .iter()
+        .filter_map(|context| {
+            let crate::SourceContextBase::ResourceUri(base_uri) = &context.base else {
+                return None;
+            };
+            Some(context.capabilities.iter().filter_map(move |capability| {
+                (capability.operation != "read").then(|| CompiledResourceSendOperation {
+                    base_uri: base_uri.clone(),
+                    path: match &capability.scope {
+                        crate::SourceContextCapabilityScope::Path(path) => Some(path.clone()),
+                        crate::SourceContextCapabilityScope::Wildcard => None,
+                    },
+                    operation: capability.operation.clone(),
+                })
+            }))
+        })
+        .flatten()
+        .collect()
+}
+
+fn declared_resource_send_operation<'a>(
+    request: &ExecutionResourceRequest,
+    operations: &'a [CompiledResourceSendOperation],
+) -> MResult<Option<&'a str>> {
+    let mut selected = None;
+    for exact in [true, false] {
+        for declaration in operations.iter().filter(|declaration| {
+            declaration.base_uri == request.base_uri
+                && declaration.path.is_some() == exact
+                && declaration
+                    .path
+                    .as_deref()
+                    .map_or(!exact, |path| path == request.path)
+        }) {
+            match selected {
+                None => selected = Some(declaration.operation.as_str()),
+                Some(operation) if operation == declaration.operation => {}
+                Some(operation) => {
+                    return Err(route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        format!(
+                            "resource send `{}/{}` resolves to both `{operation}` and `{}`",
+                            request.base_uri, request.path, declaration.operation,
+                        ),
+                    ));
+                }
+            }
+        }
+        if selected.is_some() {
+            break;
+        }
+    }
+    Ok(selected)
 }
 
 fn install_context_imports(program: &mut MechProgram, module: &CompilerModule) -> MResult<()> {
@@ -764,6 +842,7 @@ fn install_environment(
 
 struct CompilerPlanningServices<'a> {
     providers: &'a RuntimeResourceRegistry,
+    resource_send_operations: &'a [CompiledResourceSendOperation],
 }
 
 impl MechExecutionServices for CompilerPlanningServices<'_> {
@@ -805,11 +884,17 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
                 ));
             }
         };
+        let operation = if request.intent == ResourceIntent::Send {
+            declared_resource_send_operation(request, self.resource_send_operations)?
+                .unwrap_or(&request.operation)
+        } else {
+            &request.operation
+        };
         self.providers.plan_write(RuntimeResourceWriteRequest {
             base_uri: key.base_uri,
             path: key.path,
             context_name: request.context_name.clone(),
-            operation: RuntimeCapabilityOperation::from_name(request.operation.clone())?,
+            operation: RuntimeCapabilityOperation::from_name(operation.to_owned())?,
             value: value.try_deep_snapshot()?,
             intent,
         })
