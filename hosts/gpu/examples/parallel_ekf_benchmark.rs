@@ -9,12 +9,13 @@ use mech_engine::{ArtifactComputeRegion, MechProgram, MechProgramConfig, Program
 use mech_gpu::GpuHost;
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
+const COVARIANCE_SYMMETRY_TOLERANCE: f32 = 1.0e-4;
 
 fn main() {
     let requested_instances = argument(1, 100_000_usize).max(1);
     let cpu_turns = argument(2, 3_u32).max(1);
     let single_gpu_turns = argument(3, 20_u32).max(1);
-    let batched_gpu_turns = argument(4, 120_u32).max(1);
+    let checked_gpu_turns = argument(4, 120_u32).max(1);
     let validation_turns = 4;
 
     let compile_started = Instant::now();
@@ -25,6 +26,13 @@ fn main() {
     let program = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .unwrap_or_else(|error| panic!("generic EKF source must be admitted: {error}"));
+    let covariance_slot = program
+        .state_shapes()
+        .find_map(|(slot, rows, columns)| (rows == 3 && columns == 3).then_some(slot))
+        .expect("EKF artifact must contain one 3x3 covariance state");
+    let program = program
+        .with_robot_state_integrity(covariance_slot, COVARIANCE_SYMMETRY_TOLERANCE)
+        .expect("robot-state integrity policy must match the EKF artifact");
     let compile_time = compile_started.elapsed();
     let instances = program.instances() as usize;
     assert_eq!(
@@ -92,7 +100,7 @@ fn main() {
         gpu.dispatch_turns(1).unwrap();
     }
     let single_per_turn = single_started.elapsed() / single_gpu_turns;
-    let batched = gpu.dispatch_turns(batched_gpu_turns).unwrap() / batched_gpu_turns;
+    let checked_repeated = gpu.dispatch_turns(checked_gpu_turns).unwrap() / checked_gpu_turns;
     let (readback, state) = gpu.read_state().unwrap();
     std::hint::black_box(state);
 
@@ -102,6 +110,13 @@ fn main() {
     println!("generated WGSL bytes: {}", program.wgsl().len());
     println!("GPU workgroups: {}", program.workgroup_count());
     println!("CPU SIMD width: {} f32 lanes", program.simd_lanes());
+    println!(
+        "robot integrity: all state finite; covariance diagonal > 0; symmetry tolerance {:.1e}",
+        COVARIANCE_SYMMETRY_TOLERANCE
+    );
+    println!(
+        "integrity failure: reject candidate, retain previous published estimate, record latest fault + count"
+    );
     println!("adapter: {}", actual.adapter);
     println!(
         "source + artifact + scalarization: {:.3} ms",
@@ -126,8 +141,8 @@ fn main() {
         millis(single_per_turn)
     );
     println!(
-        "resident GPU, one batched submission: {:.3} ms/turn ({batched_gpu_turns} turns)",
-        millis(batched)
+        "resident GPU, checked repeated turns: {:.3} ms/turn ({checked_gpu_turns} turns)",
+        millis(checked_repeated)
     );
     println!(
         "Mech scalar throughput: {:.3} million EKF-turns/s",
@@ -146,8 +161,8 @@ fn main() {
         throughput(instances, single_per_turn)
     );
     println!(
-        "GPU batched throughput: {:.3} million EKF-turns/s",
-        throughput(instances, batched)
+        "GPU checked repeated throughput: {:.3} million EKF-turns/s",
+        throughput(instances, checked_repeated)
     );
     println!("final state readback: {:.3} ms", millis(readback));
     println!("maximum CPU/GPU absolute error: {max_error:.3e}");

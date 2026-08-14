@@ -105,15 +105,27 @@ per-filter host call. Intermediate matrices remain invocation-local values;
 only filter inputs and persistent state/covariance buffers cross the kernel
 boundary.
 
+The running proof attaches a `RobotStateIntegrityPolicy` at the publication
+boundary. It requires every state and covariance value to be finite, every
+covariance diagonal value to be positive, and covariance to be symmetric
+within the explicitly declared `1e-4` `f32` tolerance. Scalar, SIMD, and JIT
+executors validate their candidate buffer before swapping it live. WGSL writes
+a compact device fault record, and the GPU host advances its published
+ping-pong buffer only after that record passes. On failure the whole candidate
+turn is rejected, the previous estimate remains published, and the session
+retains a bounded fault count plus its latest structured fault.
+
 Run the proof with the number of filters followed by CPU reference turns,
-single-submission GPU turns, and turns recorded into one GPU submission:
+single-turn GPU samples, and checked repeated GPU turns:
 
 ```text
-cargo run -p mech-gpu --release --features native \
+cargo run -p mech-gpu --release --features native,jit \
   --example parallel_ekf_benchmark -- 100000 3 20 120
 ```
 
-Measured on an Apple M1 through Metal on 2026-08-14:
+The following Apple M1 data is the preserved unchecked baseline from commit
+`6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e`. It predates the publication
+checks and must not be labeled as checked execution:
 
 | Filters | Scalar evaluator | SIMD evaluator | Cranelift JIT | GPU, one submission/turn | GPU, 120 turns/submission |
 | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -130,8 +142,11 @@ scalar IR evaluator in this crate, not the retained runtime or raw Rust. The
 four-lane SIMD executor runs the same scalarized artifact using `wide::f32x4`.
 The JIT translates the same generic instructions to Cranelift IR and keeps the
 finalized function resident in executable memory; it contains no EKF-specific
-operation. The 120-turn GPU number records multiple dependent dispatches in
-one command submission and does not include final readback.
+operation. The old 120-turn GPU number records multiple dependent dispatches
+in one command submission and does not include final readback. Checked GPU
+execution now validates before every publication, so it intentionally submits
+and reads compact fault status once per turn; safe multi-turn batching needs a
+future device-side transaction protocol.
 
 [`benchmarks/parallel-ekf`](benchmarks/parallel-ekf) contains the reproducible
 two-panel comparison: Mech scalar versus SIMD versus JIT versus GPU, and scalar

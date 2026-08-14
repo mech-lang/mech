@@ -25,6 +25,10 @@ EKF step @ compute
 
 -- This region is one filter. Array-valued activation inputs broadcast this
 -- fixed-shape body over their common outer extent.
+-- Publication is guarded separately by RobotStateIntegrityPolicy in the
+-- compiled executor: every state value must be finite, covariance diagonal
+-- values must be greater than zero, and covariance symmetry error must be at
+-- most 1e-4. A rejected candidate never replaces the published estimate.
 dt := lane-dt
 linear-velocity := lane-linear-velocity
 angular-velocity := lane-angular-velocity

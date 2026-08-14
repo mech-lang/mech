@@ -35,12 +35,21 @@ implementation changes only the physical value type of the scalarized
 instruction stream to `wide::f32x4`; it uses NEON on Apple Silicon and SSE
 where available. The JIT converts that instruction stream into one native SSA
 function containing the complete outer filter loop. The primary GPU lane
-submits and synchronizes one Mech turn at a time. The batched GPU lane is
-reported separately because it records 120 dependent turns in one submission
-and therefore amortizes synchronization.
+submits and synchronizes one Mech turn at a time.
 
-Apple M1 median of five processes after one discarded process warmup,
-100,000 filters, 2026-08-14:
+The current executable attaches a separate robot-state publication policy to
+the generic numeric artifact. All state and covariance values must be finite,
+covariance diagonals must be positive, and covariance must be symmetric within
+the declared `1e-4` tolerance. A failed candidate is rejected before the
+published buffer changes. The session records only a fault count and latest
+structured fault, so fault evidence cannot grow an unbounded log. GPU turns
+read a compact device fault status before advancing the published ping-pong
+buffer; checked multi-turn calls therefore execute as repeated checked turns.
+
+The table below is the preserved **unchecked** Apple M1 baseline from commit
+`6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e`: five-process median after one
+discarded warmup, 100,000 filters, 2026-08-14. It predates the integrity policy
+and must not be presented as checked throughput.
 
 | Mech backend | Million EKF-turns/s | Scalar speedup |
 | --- | ---: | ---: |
@@ -90,7 +99,8 @@ thread counts were pinned to one.
 The publication evidence is checked in as
 [`results/apple-m1-2026-08-14.json`](results/apple-m1-2026-08-14.json). It was
 generated from commit `6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e` and contains
-all discarded warmups and measured stdout. The raw samples also show why these
+all discarded warmups and measured stdout. This file is retained as pre-policy
+evidence rather than silently relabeled. The raw samples also show why these
 figures remain provisional: synchronized GPU samples ranged from `48.613` to
 `65.510 M/s`, while the JIT backend samples stayed between `17.225` and
 `17.343 M/s` at the 100,000-filter setting.
