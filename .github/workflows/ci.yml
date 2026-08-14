@@ -48,7 +48,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
-          # D0 validates the exact five-commit PR head, not GitHub's synthetic merge commit.
+          # Static architecture contracts validate the exact PR head.
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
       - name: Install formatting and contract tools
@@ -62,12 +62,16 @@ jobs:
       - name: Check formatting and cheap global contracts
         run: |
           cargo +nightly-2026-03-03 fmt --all -- --check
-          python3 -B -m unittest tests.ci.test_ci_impact
+          python3 -B -m unittest \
+            tests.ci.test_ci_impact \
+            tests.ci.test_ci_full_contract
           python3 scripts/check-production-resident-routing.py
           scripts/check-unsafe-boundaries.sh
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-value-execution-boundary.py
-          python3 -B -m unittest scripts/tests/test_check_value_execution_boundary.py
+          python3 -B -m unittest \
+            scripts/tests/test_check_obsolete_program_reachability.py \
+            scripts/tests/test_check_value_execution_boundary.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
@@ -228,6 +232,7 @@ jobs:
     uses: ./.github/workflows/ci-full.yml
     with:
       release_channel: stable
+      validation_ref: ${{ github.event.pull_request.head.sha }}
 
   pr-gate:
     name: PR gate

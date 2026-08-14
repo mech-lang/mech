@@ -2,6 +2,32 @@
 set -eu
 
 repository_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+supported_profiles='selected-bytecode-runtime
+full-bytecode-runtime
+full-source-runtime
+full-compiler-tooling
+wasm-browser-project'
+
+profiles_json() {
+  printf '%s\n' "$supported_profiles" | python3 -c \
+    'import json, sys; print(json.dumps(sys.stdin.read().splitlines(), separators=(",", ":")))'
+}
+
+profile_is_supported() {
+  candidate=$1
+  for profile in $supported_profiles
+  do
+    [ "$candidate" = "$profile" ] && return 0
+  done
+  return 1
+}
+
+if [ "${1:-}" = --profiles-json ]
+then
+  profiles_json
+  exit 0
+fi
+
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/mech-distribution-sizes.XXXXXX")
 trap 'rm -rf "$scratch"' EXIT HUP INT TERM
 
@@ -14,10 +40,10 @@ fail() {
   exit 1
 }
 
-case "$requested_profile" in
-  all|selected-bytecode-runtime|full-bytecode-runtime|full-source-runtime|full-compiler-tooling|wasm-browser-project) ;;
-  *) fail "unknown distribution profile: $requested_profile" ;;
-esac
+if [ "$requested_profile" != all ] && ! profile_is_supported "$requested_profile"
+then
+  fail "unknown distribution profile: $requested_profile"
+fi
 
 include_profile() {
   [ "$requested_profile" = all ] || [ "$requested_profile" = "$1" ]

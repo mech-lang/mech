@@ -22,7 +22,6 @@ obsolete_interpreter="mech-inter""preter"
 obsolete_interpreter_ident="mech_inter""preter"
 # Match repository-root references without rejecting engine's src/interpreter module.
 obsolete_interpreter_path="(^|[^[:alnum:]_./-])src/inter""preter/"
-obsolete_program="mech-pro""gram"
 
 [ -f "$repository_root/src/engine/Cargo.toml" ] || fail "src/engine/Cargo.toml is missing"
 [ ! -e "$repository_root/src/inter""preter" ] || fail "obsolete interpreter package directory still exists"
@@ -65,22 +64,12 @@ then
   fail "active repository input still names the obsolete interpreter package"
 fi
 
-if rg -n -H \
-  "$obsolete_program" \
-  "$repository_root" \
-  --glob 'Cargo.toml' \
-  --glob '*.rs' \
-  --glob '!target/**' \
-  --glob '!tests/architecture/**' |
-  awk '
-    index($0, "class=\\\"") && index($0, "mech-program") { next }
-    index($0, "/src/engine/src/artifact/encoding.rs:") &&
-      index($0, "mech-program-v1") { next }
-    { print }
-  ' |
-  grep .
+if python3 "$repository_root/scripts/check-obsolete-program-reachability.py" \
+  --root "$repository_root"
 then
-  fail "active Rust or manifest input still names the obsolete program package"
+  :
+else
+  fail "active Rust or manifest input still reaches the obsolete program package"
 fi
 
 legacy_pattern='FunctionDescriptor|FunctionCompilerDescriptor|ModuleItemDescriptor|FunctionSystem|default_function_system|\bFunctionTable\b|FunctionCompilerTable|FunctionsSnapshot|FunctionsRef|(struct|type)[[:space:]]+Functions\b|StaticNativeFunctionCompiler|NativeFunctionCompiler|LegacyFunctionBoundary|LegacySourceSpecializer|legacy_source_specializer|RuntimeFunctionUnavailable|register_descriptor|register_fxn_descriptor|register_define|register_horizontal_concatenate_fxn|register_vertical_concatenate_fxn|legacy_.*fallback|is_prelude_name|load_prelude|load_stdlib|LinkedModuleLoader'

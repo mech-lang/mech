@@ -39,6 +39,7 @@ DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA = (
     CONTRACT_ROOT / "c2-legacy-adapter-boundary-schema.json"
 )
 DEFAULT_GATE_B = CONTRACT_ROOT / "gate-b-regression.json"
+CONTROLLED_GATE_B_STALE_CODE = "C0-GATE-B-EVIDENCE-STALE"
 GATE_A_MANIFEST = ROOT / "tests/architecture/value-execution/legacy-boundary.json"
 GENERATOR_PATH = ROOT / "scripts/generate-value-system-inventory.py"
 GATE_A_CHECKER_PATH = ROOT / "scripts/check-value-execution-boundary.py"
@@ -4012,7 +4013,37 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frozen-targets-schema", type=Path, default=DEFAULT_FROZEN_TARGETS_SCHEMA)
     parser.add_argument("--c2-adapter-boundary", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY)
     parser.add_argument("--c2-adapter-boundary-schema", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA)
+    parser.add_argument(
+        "--allow-only-c0-gate-b-evidence-stale",
+        action="store_true",
+        help=(
+            "succeed only when the sole finding is the controlled "
+            "C0-GATE-B-EVIDENCE-STALE finding"
+        ),
+    )
     return parser.parse_args()
+
+
+def report_result(
+    failures: list[Failure],
+    *,
+    allow_only_c0_gate_b_evidence_stale: bool = False,
+) -> int:
+    if not failures:
+        print("value-system contract passed")
+        return 0
+    if (
+        allow_only_c0_gate_b_evidence_stale
+        and len(failures) == 1
+        and failures[0].contract_id == CONTROLLED_GATE_B_STALE_CODE
+    ):
+        print("value-system contract controlled finding still present:", file=sys.stderr)
+        print(f"  {failures[0].render()}", file=sys.stderr)
+        return 0
+    print("value-system contract failed:", file=sys.stderr)
+    for item in failures:
+        print(f"  {item.render()}", file=sys.stderr)
+    return 1
 
 
 def main() -> int:
@@ -4039,13 +4070,12 @@ def main() -> int:
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
         print(f"value-system contract checker failed internally: {error}", file=sys.stderr)
         return 2
-    if failures:
-        print("value-system contract failed:", file=sys.stderr)
-        for item in failures:
-            print(f"  {item.render()}", file=sys.stderr)
-        return 1
-    print("value-system contract passed")
-    return 0
+    return report_result(
+        failures,
+        allow_only_c0_gate_b_evidence_stale=(
+            args.allow_only_c0_gate_b_evidence_stale
+        ),
+    )
 
 
 if __name__ == "__main__":

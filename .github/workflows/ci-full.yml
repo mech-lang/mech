@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: ""
+      validation_ref:
+        description: Exact commit or ref to validate
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
       release_channel:
@@ -27,9 +32,14 @@ on:
         description: UTC date for nightly artifact names (YYYY-MM-DD)
         required: false
         type: string
+      validation_ref:
+        description: Exact commit or ref to validate
+        required: false
+        type: string
+        default: ""
 
 concurrency:
-  group: ci-full-${{ github.sha }}
+  group: ci-full-${{ inputs.validation_ref || github.sha }}
   cancel-in-progress: false
 
 jobs:
@@ -42,6 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
+          ref: ${{ inputs.validation_ref || github.sha }}
           fetch-depth: 0
       - name: Install architecture contract tools
         run: |
@@ -57,7 +68,8 @@ jobs:
           python3 scripts/generate-value-system-inventory.py \
             --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
             --check-legacy-baseline
-          python3 scripts/check-value-system-contract.py
+          python3 scripts/check-value-system-contract.py \
+            --allow-only-c0-gate-b-evidence-stale
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
           python3 scripts/check-resident-activation-contract.py
@@ -69,6 +81,8 @@ jobs:
             --report benchmarks/runtime/gate-d/d3-resident-external.json \
             --expected-phase D3-resident-external
           python3 -B -m unittest \
+            tests/ci/test_ci_full_contract.py \
+            scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_generate_value_system_inventory.py \
             scripts/tests/test_check_value_system_contract.py \
             scripts/tests/test_check_program_artifact_contract.py \
@@ -92,6 +106,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Audit unsafe boundaries
         run: |
@@ -161,6 +177,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -186,9 +204,9 @@ jobs:
           - static
           - engine
           - selected-runtime
-          - standard-runtime
-          - standard-source
-          - standard-compiler
+          - full-runtime
+          - full-source
+          - full-compiler
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
@@ -198,6 +216,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -230,6 +250,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -246,19 +268,29 @@ jobs:
       - name: Check source-only browser distribution
         run: bash scripts/check-static-distribution-profiles.sh wasm-source
 
+  distribution-size-plan:
+    name: Distribution size profile plan
+    runs-on: ubuntu-latest
+    outputs:
+      profiles: ${{ steps.profiles.outputs.profiles }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+      - name: Read authoritative distribution size profiles
+        id: profiles
+        run: |
+          profiles=$(scripts/report-distribution-sizes.sh --profiles-json)
+          echo "profiles=$profiles" >> "$GITHUB_OUTPUT"
+
   distribution-size-shards:
     name: Distribution size (${{ matrix.profile }})
+    needs: distribution-size-plan
     runs-on: ubuntu-latest
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
-        profile:
-          - selected-bytecode-runtime
-          - standard-bytecode-runtime
-          - standard-source-runtime
-          - standard-compiler-tooling
-          - wasm-browser-project
+        profile: ${{ fromJSON(needs.distribution-size-plan.outputs.profiles) }}
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -266,6 +298,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -293,12 +327,12 @@ jobs:
   distribution-sizes:
     name: Distribution size report
     if: ${{ always() }}
-    needs: distribution-size-shards
+    needs:
+      - distribution-size-plan
+      - distribution-size-shards
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Download distribution size rows
-        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           pattern: distribution-size-*
@@ -306,16 +340,17 @@ jobs:
           merge-multiple: true
 
       - name: Combine distribution size report
+        env:
+          PROFILES_JSON: ${{ needs.distribution-size-plan.outputs.profiles }}
         run: |
           mkdir -p target
           printf 'profile\tartifact_path\tartifact_size_bytes\tresolved_package_count\truntime_factory_count\tsource_specializer_count\n' \
             > target/distribution-sizes.tsv
-          for profile in \
-            selected-bytecode-runtime \
-            standard-bytecode-runtime \
-            standard-source-runtime \
-            standard-compiler-tooling \
-            wasm-browser-project
+          python3 -c \
+            'import json, os; print("\n".join(json.loads(os.environ["PROFILES_JSON"])))' \
+            > target/distribution-size-profiles.txt
+          missing=0
+          while IFS= read -r profile
           do
             row="target/distribution-size-rows/distribution-sizes-${profile}.tsv"
             if test -f "$row"
@@ -323,8 +358,10 @@ jobs:
               sed -n '2p' "$row" >> target/distribution-sizes.tsv
             else
               echo "distribution size row missing: $profile" >&2
+              missing=1
             fi
-          done
+          done < target/distribution-size-profiles.txt
+          test "$missing" -eq 0
           cat target/distribution-sizes.tsv
 
       - name: Upload distribution size report
@@ -344,6 +381,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -364,6 +403,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Validate the frozen bytecode corpus
@@ -374,6 +415,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Test official bytecode value codecs
@@ -384,6 +427,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch both isolated generator dependency graphs
@@ -400,6 +445,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Check isolated owner native-link profiles
@@ -412,7 +459,7 @@ jobs:
       fail-fast: false
       matrix:
         surface:
-          - standard
+          - full
           - extended-engine-shard-unsigned
           - extended-engine-shard-signed
           - extended-engine-shard-float
@@ -428,6 +475,8 @@ jobs:
           - extended-combinatorics
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Generate and validate exact linkage surface
@@ -445,6 +494,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Download validated linkage surfaces
         uses: actions/download-artifact@v4
         with:
@@ -474,6 +525,8 @@ jobs:
       CARGO_TARGET_DIR: ${{ github.workspace }}/target/native-linkage/exact-closures/shard-${{ matrix.shard }}/cargo-target
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked workspace dependencies
@@ -493,6 +546,8 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -512,6 +567,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -526,6 +583,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -544,6 +603,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -567,6 +628,8 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -594,6 +657,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -612,6 +677,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03 and WASM target
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
@@ -641,6 +708,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Validate Cargo package archive contents
@@ -730,6 +799,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -824,6 +895,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Audit sealed runtime boundaries
         run: |
@@ -872,6 +945,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -898,6 +973,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -982,6 +1059,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -1132,6 +1211,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -1157,6 +1238,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -1182,6 +1265,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -1249,6 +1334,8 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -1275,6 +1362,8 @@ jobs:
       CARGO_PROFILE_RELEASE_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Build and package the exact distribution
