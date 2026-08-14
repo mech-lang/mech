@@ -44,7 +44,7 @@ Run the release benchmark with a particle count, CPU turn count, and GPU sample
 count:
 
 ```text
-cargo run -p mech-gpu --release --features native \
+cargo run -p mech-gpu --release --features native,jit \
   --example particle_benchmark -- 2000000 2 2 120
 ```
 
@@ -58,7 +58,7 @@ To compare the selectable backends using the exact `particle-field @ compute`
 region from the served example, run:
 
 ```text
-cargo run -p mech-gpu --release --features native \
+cargo run -p mech-gpu --release --features native,jit \
   --example compute_backend_benchmark -- 1000000 5 60
 ```
 
@@ -98,10 +98,12 @@ no EKF-specific operation or precompiled EKF call.
 derives their common outer extent, rejects inconsistent extents, and never
 receives a filter count. For fixed `f32` inner shapes it scalarizes generic
 matrix multiply, transpose, dot, concatenation, arithmetic, and trigonometry
-into one register program. WGSL generation maps one complete scalarized
-program over each independent filter. Intermediate matrices remain
-invocation-local values; only filter inputs and persistent state/covariance
-buffers cross the kernel boundary.
+into one register program. That program can run in the portable scalar
+evaluator, the four-lane SIMD evaluator, a Cranelift native JIT function, or
+WGSL. Both native code and WGSL own the outer filter loop, so there is no
+per-filter host call. Intermediate matrices remain invocation-local values;
+only filter inputs and persistent state/covariance buffers cross the kernel
+boundary.
 
 Run the proof with the number of filters followed by CPU reference turns,
 single-submission GPU turns, and turns recorded into one GPU submission:
@@ -113,26 +115,28 @@ cargo run -p mech-gpu --release --features native \
 
 Measured on an Apple M1 through Metal on 2026-08-13:
 
-| Filters | Mech scalar CPU | Mech SIMD CPU | GPU, one submission/turn | GPU, 120 turns/submission |
-| ---: | ---: | ---: | ---: | ---: |
-| 100,000 | 1.222 M EKF-turns/s | 4.416 M EKF-turns/s | 61.060 M EKF-turns/s | 329.650 M EKF-turns/s |
+| Filters | Scalar evaluator | SIMD evaluator | Cranelift JIT | GPU, one submission/turn | GPU, 120 turns/submission |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 100,000 | 1.215 M EKF-turns/s | 4.322 M EKF-turns/s | 17.183 M EKF-turns/s | 63.888 M EKF-turns/s | 329.395 M EKF-turns/s |
 
 The maximum CPU/GPU absolute error after four validation turns was
-`7.629e-5`. The test suite separately compares one scalarized CPU turn with the
-ordinary Mech interpreter's result, so GPU validation does not rely only on two
-executors sharing the same lowered implementation.
+`6.866e-5`; JIT output matched the scalar evaluator bit-for-bit. The test suite
+separately compares one scalarized CPU turn with the ordinary Mech execution
+result, so accelerator validation does not rely only on executors sharing the
+same lowered implementation.
 
 These labels are narrow on purpose. "Generic scalar CPU" is the portable
-scalar IR evaluator in this crate, not the retained runtime, an optimized AOT
-CPU kernel, or raw Rust. The four-lane SIMD executor runs the same scalarized
-artifact using `wide::f32x4`; it does not contain an EKF-specific operation.
-The 120-turn GPU number records multiple dependent dispatches in one command
-submission and does not include final readback.
+scalar IR evaluator in this crate, not the retained runtime or raw Rust. The
+four-lane SIMD executor runs the same scalarized artifact using `wide::f32x4`.
+The JIT translates the same generic instructions to Cranelift IR and keeps the
+finalized function resident in executable memory; it contains no EKF-specific
+operation. The 120-turn GPU number records multiple dependent dispatches in
+one command submission and does not include final readback.
 
 [`benchmarks/parallel-ekf`](benchmarks/parallel-ekf) contains the reproducible
-two-panel comparison: Mech scalar versus SIMD versus GPU, and scalar outer-loop
-Mech versus Rust, NumPy, Julia, and LuaJIT. The latter comparison uses matching
-inputs and checksums and keeps setup outside timing.
+two-panel comparison: Mech scalar versus SIMD versus JIT versus GPU, and scalar
+outer-loop Mech/JIT versus optimized Rust, NumPy, Julia, and LuaJIT. The latter
+comparison uses matching inputs and checksums and keeps setup outside timing.
 
 The benchmark's optional count argument changes the `filter-count` value in
 the Mech source before parsing so the same workload can be scaled. The backend

@@ -14,6 +14,11 @@ use super::{
     UnaryOperation, WORKGROUP_SIZE, display_operation, turn_required_nodes,
 };
 
+#[cfg(feature = "jit")]
+mod jit;
+#[cfg(feature = "jit")]
+pub use jit::*;
+
 const SIMD_LANES: usize = 4;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -42,6 +42,13 @@ fn main() {
         simd_max_error <= 1.0e-4,
         "SIMD result differs from scalar CPU lowering by {simd_max_error}"
     );
+    let mut jit_validation = program.prepare_jit_cpu(&inputs).unwrap();
+    jit_validation.dispatch_turns(validation_turns).unwrap();
+    let jit_max_error = maximum_error(&expected, jit_validation.state());
+    assert!(
+        jit_max_error <= 1.0e-4,
+        "JIT result differs from scalar CPU lowering by {jit_max_error}"
+    );
     let mut gpu_validation = program.prepare_resident(&inputs).unwrap();
     let actual = gpu_validation.run_turns(validation_turns).unwrap();
     let max_error = maximum_error(&expected, &actual.state);
@@ -65,6 +72,16 @@ fn main() {
     simd.dispatch_turns(cpu_turns).unwrap();
     let simd_per_turn = simd_started.elapsed() / cpu_turns;
     let simd_checksum = state_checksum(simd.state());
+
+    let mut jit_warmup = program.prepare_jit_cpu(&inputs).unwrap();
+    jit_warmup.dispatch_turns(5).unwrap();
+    let jit_prepare_started = Instant::now();
+    let mut jit = program.prepare_jit_cpu(&inputs).unwrap();
+    let jit_prepare = jit_prepare_started.elapsed();
+    let jit_started = Instant::now();
+    jit.dispatch_turns(cpu_turns).unwrap();
+    let jit_per_turn = jit_started.elapsed() / cpu_turns;
+    let jit_checksum = state_checksum(jit.state());
 
     let prepare_started = Instant::now();
     let mut gpu = program.prepare_resident(&inputs).unwrap();
@@ -91,6 +108,7 @@ fn main() {
         millis(compile_time)
     );
     println!("resident GPU prepare: {:.3} ms", millis(resident_prepare));
+    println!("Cranelift JIT prepare: {:.3} ms", millis(jit_prepare));
     println!(
         "Mech scalar CPU: {:.3} ms/turn ({cpu_turns} turns)",
         millis(cpu_per_turn)
@@ -98,6 +116,10 @@ fn main() {
     println!(
         "Mech SIMD CPU: {:.3} ms/turn ({cpu_turns} turns)",
         millis(simd_per_turn)
+    );
+    println!(
+        "Mech Cranelift JIT CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(jit_per_turn)
     );
     println!(
         "resident GPU, one submission per turn: {:.3} ms/turn ({single_gpu_turns} turns)",
@@ -116,6 +138,10 @@ fn main() {
         throughput(instances, simd_per_turn)
     );
     println!(
+        "Mech Cranelift JIT throughput: {:.3} million EKF-turns/s",
+        throughput(instances, jit_per_turn)
+    );
+    println!(
         "GPU single-submit throughput: {:.3} million EKF-turns/s",
         throughput(instances, single_per_turn)
     );
@@ -126,8 +152,10 @@ fn main() {
     println!("final state readback: {:.3} ms", millis(readback));
     println!("maximum CPU/GPU absolute error: {max_error:.3e}");
     println!("maximum scalar/SIMD absolute error: {simd_max_error:.3e}");
+    println!("maximum scalar/JIT absolute error: {jit_max_error:.3e}");
     println!("Mech scalar checksum: {cpu_checksum:.9}");
     println!("Mech SIMD checksum: {simd_checksum:.9}");
+    println!("Mech Cranelift JIT checksum: {jit_checksum:.9}");
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {

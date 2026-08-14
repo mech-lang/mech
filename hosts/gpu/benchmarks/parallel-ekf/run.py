@@ -81,7 +81,9 @@ def main() -> None:
     if missing:
         raise RuntimeError(f"missing benchmark tools: {', '.join(missing)}")
     if not args.mech_binary.is_file():
-        raise RuntimeError("build parallel_ekf_benchmark with --release --features native first")
+        raise RuntimeError(
+            "build parallel_ekf_benchmark with --release --features native,jit first"
+        )
 
     with tempfile.TemporaryDirectory(prefix="mech-ekf-") as temporary:
         rust_binary = Path(temporary) / "rust-scalar"
@@ -102,7 +104,7 @@ def main() -> None:
         common = [str(args.scalar_instances), str(args.scalar_turns)]
         language_commands = {
             "Mech scalar": None,
-            "Rust scalar fixed-shape": [str(rust_binary), *common],
+            "Rust optimized fixed-shape": [str(rust_binary), *common],
             "NumPy scalar outer loop": [
                 args.python,
                 str(HERE / "numpy_scalar.py"),
@@ -148,13 +150,24 @@ def main() -> None:
                 for text in scalar_mech_outputs
             ),
         )
+        scalar["Mech Cranelift JIT"] = (
+            statistics.median(
+                number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")
+                for text in scalar_mech_outputs
+            )
+            * 1e6,
+            statistics.median(
+                number(text, r"Mech Cranelift JIT checksum: ([0-9.eE+-]+)")
+                for text in scalar_mech_outputs
+            ),
+        )
         for lane, command in language_commands.items():
             if command is not None:
                 count = (
                     args.luajit_samples if lane.startswith("LuaJIT") else args.samples
                 )
                 scalar[lane] = medians(sample(command, count, environment))
-        reference = scalar["Rust scalar fixed-shape"][1]
+        reference = scalar["Rust optimized fixed-shape"][1]
         for lane, (_, checksum) in scalar.items():
             if abs(checksum - reference) > 0.1:
                 raise RuntimeError(f"{lane} checksum {checksum} differs from Rust {reference}")
@@ -162,6 +175,10 @@ def main() -> None:
         backend = {
             "Mech scalar": statistics.median(
                 number(text, r"Mech scalar throughput: ([0-9.]+) million")
+                for text in backend_mech_outputs
+            ),
+            "Mech Cranelift JIT": statistics.median(
+                number(text, r"Mech Cranelift JIT throughput: ([0-9.]+) million")
                 for text in backend_mech_outputs
             ),
             "Mech SIMD (4xf32)": statistics.median(
