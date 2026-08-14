@@ -142,7 +142,7 @@ pub mod state_machines;
 pub mod statements;
 #[cfg(feature = "source")]
 pub mod structures;
-#[cfg(test)]
+#[cfg(all(test, feature = "functions"))]
 #[path = "../tests/support/mod.rs"]
 pub(crate) mod test_support;
 pub mod tracing;
@@ -319,5 +319,15 @@ macro_rules! print_plan {
     };
 }
 
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "compiler"
+))]
 pub mod artifact;
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "compiler"
+))]
 pub use crate::artifact::*;

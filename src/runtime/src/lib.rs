@@ -59,7 +59,8 @@ pub use self::operation::*;
 pub use self::resource::*;
 pub use self::resource_contract::*;
 #[cfg(feature = "resident-external")]
-pub use self::runtime::resident_external::*;
+#[cfg(feature = "resident-routing")]
+pub use self::runtime::program::external::*;
 #[cfg(feature = "runtime")]
 pub use self::snapshot::*;
 

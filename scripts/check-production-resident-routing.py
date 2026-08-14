@@ -256,12 +256,34 @@ def check_required_product_seams() -> list[str]:
         failures.append(
             "src/engine/src/artifact/model.rs: SlotRole::Output must own resident publication storage"
         )
-    resident_authority = (
-        ROOT / "src/runtime/src/runtime/resident_program/authority.rs"
-    ).read_text(encoding="utf-8")
+    resident_authority_path = Path(
+        "src/runtime/src/runtime/program/external/admission.rs"
+    )
+    resident_authority = (ROOT / resident_authority_path).read_text(encoding="utf-8")
     if "ResidentAdmissionProof" not in resident_authority:
+        failures.append(f"{resident_authority_path}: missing ResidentAdmissionProof")
+    for obsolete_owner in (
+        "src/runtime/src/runtime/resident_program",
+        "src/runtime/src/resident_external",
+        "src/runtime/src/runtime/execution/query.rs",
+    ):
+        if (ROOT / obsolete_owner).exists():
+            failures.append(f"{obsolete_owner}: obsolete competing program owner remains")
+    coordinator_path = Path(
+        "src/runtime/src/runtime/program/external/coordinator.rs"
+    )
+    coordinator = (ROOT / coordinator_path).read_text(encoding="utf-8")
+    authority_impls = coordinator.count(
+        "impl ResidentExternalPublicationAuthority for RuntimeResidentPublicationAuthority"
+    )
+    publication_callers = len(re.findall(r"\.publish_external\s*\(", coordinator))
+    if authority_impls != 1:
         failures.append(
-            "src/runtime/src/runtime/resident_program/authority.rs: missing ResidentAdmissionProof"
+            f"{coordinator_path}: expected one publication authority impl, found {authority_impls}"
+        )
+    if publication_callers != 1:
+        failures.append(
+            f"{coordinator_path}: expected one publication authority caller, found {publication_callers}"
         )
     required_surface_contracts = {
         "src/cli/commands/run.rs": (

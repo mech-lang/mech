@@ -499,7 +499,8 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
             .iter()
             .map(|input| input.name.as_str())
             .collect::<Vec<_>>(),
-        vec!["input"]
+        Vec::<&str>::new(),
+        "a local constant binding is not a host observation input"
     );
     assert_eq!(
         scalar
@@ -525,7 +526,8 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
             .iter()
             .map(|input| input.name.as_str())
             .collect::<Vec<_>>(),
-        vec!["input"]
+        Vec::<&str>::new(),
+        "the state source is a local constant, not a host observation input"
     );
     let state_slots = state
         .slots()
@@ -577,14 +579,27 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
             .body(),
         SchemaBody::Bool
     ));
-    let ProducerReference::NodeOutput { node, .. } = comparison
+    let comparison_output = comparison
         .slots()
         .iter()
         .find(|slot| slot.slot == comparison.outputs()[0].source)
-        .unwrap()
+        .expect("comparison output must have a publication slot");
+    assert_eq!(comparison_output.role, SlotRole::Output);
+    let ProducerReference::Output {
+        source: ArtifactSource::Slot(comparison_source),
+        ..
+    } = comparison_output.producer
+    else {
+        panic!("comparison output must publish a node-derived slot")
+    };
+    let ProducerReference::NodeOutput { node, .. } = comparison
+        .slots()
+        .iter()
+        .find(|slot| slot.slot == comparison_source)
+        .expect("comparison source slot must exist")
         .producer
     else {
-        panic!("comparison output must be produced by a node")
+        panic!("comparison source must be produced by a node")
     };
     let comparison_node = &comparison.nodes()[node.get() as usize];
     let comparison_input_schemas = comparison_node
@@ -660,8 +675,10 @@ fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
     let (artifact, decoded) =
         compile_artifact_fixture("input := 1.0\n~state := 1.0\nstate = input\noutput := state")?;
     assert_eq!(artifact.revision(), decoded.revision());
-    assert_eq!(artifact.inputs().len(), 1);
-    assert_eq!(artifact.inputs()[0].name, "input");
+    assert!(
+        artifact.inputs().is_empty(),
+        "the immutable local constant must not become a host observation input"
+    );
     let state = artifact
         .slots()
         .iter()
@@ -672,7 +689,8 @@ fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
 }
 
 #[test]
-fn composite_register_helpers_do_not_become_state_and_keep_the_initializer() -> MResult<()> {
+fn composite_helpers_and_mutable_metadata_without_a_declaration_do_not_become_state() -> MResult<()>
+{
     let tuple = LegacyValue::Tuple(Ref::new(mech_core::MechTuple::from_vec(vec![
         LegacyValue::from(1.0_f64),
         LegacyValue::from(2.0_f64),
@@ -749,13 +767,10 @@ fn composite_register_helpers_do_not_become_state_and_keep_the_initializer() -> 
         .iter()
         .filter(|slot| slot.role == SlotRole::State)
         .collect::<Vec<_>>();
-    assert_eq!(states.len(), 1, "only the temporal assignment is stateful");
-    let InitializerReference::Constant(initializer) = states[0]
-        .initializer
-        .expect("composite state must retain a snapshot initializer");
-    let initializer = artifact.constants().get(initializer).unwrap();
-    assert_eq!(initializer.schema(), states[0].schema);
-    assert!(matches!(initializer.data(), ValueData::Tuple(_)));
+    assert!(
+        states.is_empty(),
+        "a composite helper and bare mutable symbol metadata must not manufacture temporal state without a declaration marker"
+    );
     Ok(())
 }
 

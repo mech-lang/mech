@@ -2494,7 +2494,7 @@
       "sites": [
         {
           "column": 59,
-          "line": 1491
+          "line": 659
         }
       ],
       "target": "bool-snapshot",
@@ -2578,7 +2578,7 @@
       "sites": [
         {
           "column": 54,
-          "line": 34
+          "line": 50
         }
       ],
       "target": "bool-snapshot",
@@ -2586,7 +2586,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "sites": [
         {
           "column": 9,
@@ -2598,7 +2598,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/resident_program/execution.rs",
+      "path": "src/runtime/src/runtime/program/value.rs",
       "sites": [
         {
           "column": 13,
@@ -3714,7 +3714,7 @@
       "sites": [
         {
           "column": 25,
-          "line": 1329
+          "line": 497
         }
       ],
       "target": "execution-no-result",
@@ -3726,15 +3726,15 @@
       "sites": [
         {
           "column": 25,
-          "line": 1463
+          "line": 631
         },
         {
           "column": 28,
-          "line": 1469
+          "line": 637
         },
         {
           "column": 28,
-          "line": 1474
+          "line": 642
         }
       ],
       "target": "option-absence",
@@ -3866,7 +3866,7 @@
       "sites": [
         {
           "column": 48,
-          "line": 32
+          "line": 48
         }
       ],
       "target": "option-absence",
@@ -5110,7 +5110,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 118
+          "line": 134
         }
       ],
       "target": "floating-point-snapshot",
@@ -5159,34 +5159,6 @@
         {
           "column": 37,
           "line": 1036
-        }
-      ],
-      "target": "floating-point-snapshot",
-      "variant": "F64"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "machines/combinatorics/tests/reactive.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 46
-        },
-        {
-          "column": 20,
-          "line": 69
-        },
-        {
-          "column": 45,
-          "line": 94
-        },
-        {
-          "column": 41,
-          "line": 121
-        },
-        {
-          "column": 9,
-          "line": 217
         }
       ],
       "target": "floating-point-snapshot",
@@ -5862,7 +5834,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 125
+          "line": 141
         }
       ],
       "target": "floating-point-snapshot",
@@ -5870,7 +5842,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/resident_external/test_provider.rs",
+      "path": "src/runtime/src/runtime/program/external/test_provider.rs",
       "sites": [
         {
           "column": 12,
@@ -5886,7 +5858,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "sites": [
         {
           "column": 9,
@@ -5898,7 +5870,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/resident_program/execution.rs",
+      "path": "src/runtime/src/runtime/program/value.rs",
       "sites": [
         {
           "column": 13,
@@ -6310,7 +6282,7 @@
       "sites": [
         {
           "column": 54,
-          "line": 111
+          "line": 127
         }
       ],
       "target": "signed-integer-snapshot",
@@ -6714,7 +6686,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 90
+          "line": 106
         }
       ],
       "target": "signed-integer-snapshot",
@@ -7130,7 +7102,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 97
+          "line": 113
         }
       ],
       "target": "signed-integer-snapshot",
@@ -7598,7 +7570,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 104
+          "line": 120
         }
       ],
       "target": "signed-integer-snapshot",
@@ -8002,7 +7974,7 @@
       "sites": [
         {
           "column": 52,
-          "line": 83
+          "line": 99
         }
       ],
       "target": "signed-integer-snapshot",
@@ -9706,7 +9678,7 @@
       "sites": [
         {
           "column": 55,
-          "line": 131
+          "line": 147
         }
       ],
       "target": "index-snapshot",
@@ -9714,7 +9686,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "sites": [
         {
           "column": 9,
@@ -9726,7 +9698,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/resident_program/execution.rs",
+      "path": "src/runtime/src/runtime/program/value.rs",
       "sites": [
         {
           "column": 13,
@@ -13022,7 +12994,19 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/resident_program/execution.rs",
+      "path": "src/runtime/src/input.rs",
+      "sites": [
+        {
+          "column": 20,
+          "line": 155
+        }
+      ],
+      "target": "typed-matrix-snapshot",
+      "variant": "MatrixBool"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/runtime/program/value.rs",
       "sites": [
         {
           "column": 56,
@@ -14638,30 +14622,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "machines/combinatorics/tests/reactive.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 53
-        },
-        {
-          "column": 9,
-          "line": 88
-        },
-        {
-          "column": 13,
-          "line": 115
-        },
-        {
-          "column": 15,
-          "line": 252
-        }
-      ],
-      "target": "typed-matrix-snapshot",
-      "variant": "MatrixF64"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "machines/math/src/arithmetic/copysign.rs",
       "sites": [
         {
@@ -16090,7 +16050,19 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "path": "src/runtime/src/input.rs",
+      "sites": [
+        {
+          "column": 20,
+          "line": 187
+        }
+      ],
+      "target": "typed-matrix-snapshot",
+      "variant": "MatrixF64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "sites": [
         {
           "column": 19,
@@ -16102,11 +16074,11 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/resident_program/execution.rs",
+      "path": "src/runtime/src/runtime/program/value.rs",
       "sites": [
         {
           "column": 55,
-          "line": 48
+          "line": 37
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -19282,11 +19254,23 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/runtime/resident_program/execution.rs",
+      "path": "src/runtime/src/input.rs",
+      "sites": [
+        {
+          "column": 20,
+          "line": 171
+        }
+      ],
+      "target": "typed-matrix-snapshot",
+      "variant": "MatrixIndex"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/runtime/program/value.rs",
       "sites": [
         {
           "column": 57,
-          "line": 36
+          "line": 32
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -21782,7 +21766,7 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/runtime/src/resident_external/value_adapter.rs",
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "sites": [
         {
           "column": 13,
@@ -21835,18 +21819,6 @@
         {
           "column": 18,
           "line": 1082
-        }
-      ],
-      "target": "mutable-reference-runtime-storage",
-      "variant": "MutableReference"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "machines/combinatorics/tests/reactive.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 30
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24670,27 +24642,27 @@
       "sites": [
         {
           "column": 40,
-          "line": 64
+          "line": 39
         },
         {
           "column": 44,
-          "line": 73
+          "line": 48
         },
         {
           "column": 26,
-          "line": 1427
+          "line": 595
         },
         {
           "column": 30,
-          "line": 1468
+          "line": 636
         },
         {
           "column": 30,
-          "line": 1473
+          "line": 641
         },
         {
           "column": 9,
-          "line": 1672
+          "line": 766
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -26606,35 +26578,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 1430
+          "line": 598
         },
         {
           "column": 30,
-          "line": 1431
+          "line": 599
         },
         {
           "column": 21,
-          "line": 1434
+          "line": 602
         },
         {
           "column": 21,
-          "line": 1437
+          "line": 605
         },
         {
           "column": 21,
-          "line": 1440
+          "line": 608
         },
         {
           "column": 21,
-          "line": 1443
+          "line": 611
         },
         {
           "column": 21,
-          "line": 1446
+          "line": 614
         },
         {
           "column": 21,
-          "line": 1449
+          "line": 617
         }
       ],
       "target": "string-snapshot",
@@ -26762,7 +26734,7 @@
       "sites": [
         {
           "column": 56,
-          "line": 41
+          "line": 57
         }
       ],
       "target": "string-snapshot",
@@ -27814,18 +27786,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "machines/combinatorics/tests/reactive.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 31
-        }
-      ],
-      "target": "typed-wrapper-removal",
-      "variant": "Typed"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/core/src/function/argument.rs",
       "sites": [
         {
@@ -28630,7 +28590,7 @@
       "sites": [
         {
           "column": 54,
-          "line": 76
+          "line": 92
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -29018,7 +28978,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 55
+          "line": 71
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -29406,7 +29366,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 62
+          "line": 78
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -29846,7 +29806,7 @@
       "sites": [
         {
           "column": 53,
-          "line": 69
+          "line": 85
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -30238,7 +30198,7 @@
       "sites": [
         {
           "column": 52,
-          "line": 48
+          "line": 64
         }
       ],
       "target": "unsigned-integer-snapshot",
@@ -30386,7 +30346,7 @@
       "sites": [
         {
           "column": 28,
-          "line": 1535
+          "line": 1547
         }
       ],
       "target": "kind-wildcard",
@@ -31238,7 +31198,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 1535
+          "line": 1547
         }
       ],
       "target": "value-kind-hole",
@@ -34190,11 +34150,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1524
+          "line": 1536
         },
         {
           "column": 14,
-          "line": 1526
+          "line": 1538
         }
       ],
       "target": "reified-type-schema",
@@ -34358,15 +34318,15 @@
       "sites": [
         {
           "column": 36,
-          "line": 410
+          "line": 446
         },
         {
           "column": 9,
-          "line": 1481
+          "line": 1493
         },
         {
           "column": 17,
-          "line": 1485
+          "line": 1497
         }
       ],
       "target": "map-schema",
@@ -34706,15 +34666,15 @@
       "sites": [
         {
           "column": 13,
-          "line": 408
+          "line": 444
         },
         {
           "column": 9,
-          "line": 1462
+          "line": 1474
         },
         {
           "column": 17,
-          "line": 1465
+          "line": 1477
         }
       ],
       "target": "matrix-schema",
@@ -35114,7 +35074,7 @@
       "sites": [
         {
           "column": 45,
-          "line": 1535
+          "line": 1547
         }
       ],
       "target": "kind-never",
@@ -35318,11 +35278,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1520
+          "line": 1532
         },
         {
           "column": 14,
-          "line": 1522
+          "line": 1534
         }
       ],
       "target": "option-schema",
@@ -35854,11 +35814,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1469
+          "line": 1481
         },
         {
           "column": 14,
-          "line": 1479
+          "line": 1491
         }
       ],
       "target": "record-schema",
@@ -36106,11 +36066,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1458
+          "line": 1470
         },
         {
           "column": 9,
-          "line": 1536
+          "line": 1548
         }
       ],
       "target": "reference-binding-contract",
@@ -36378,15 +36338,15 @@
       "sites": [
         {
           "column": 13,
-          "line": 410
+          "line": 446
         },
         {
           "column": 9,
-          "line": 1513
+          "line": 1525
         },
         {
           "column": 17,
-          "line": 1516
+          "line": 1528
         }
       ],
       "target": "set-schema",
@@ -36874,15 +36834,15 @@
       "sites": [
         {
           "column": 13,
-          "line": 409
+          "line": 445
         },
         {
           "column": 9,
-          "line": 1489
+          "line": 1501
         },
         {
           "column": 14,
-          "line": 1499
+          "line": 1511
         }
       ],
       "target": "table-schema",
@@ -37154,11 +37114,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1501
+          "line": 1513
         },
         {
           "column": 14,
-          "line": 1511
+          "line": 1523
         }
       ],
       "target": "tuple-schema",

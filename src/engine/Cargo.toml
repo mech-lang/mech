@@ -491,3 +491,39 @@ web-time = "1.1.0"
 [[test]]
 name = "bytecode_plan_topology"
 required-features = ["compiler"]
+
+[[test]]
+name = "context_bindings"
+required-features = ["source"]
+
+[[test]]
+name = "native_linkage"
+required-features = ["native-link"]
+
+[[test]]
+name = "program"
+required-features = ["source"]
+
+[[test]]
+name = "program_artifact_contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "resident_activation_contract"
+required-features = ["compiler"]
+
+[[test]]
+name = "resident_ekf_artifact_closure"
+required-features = ["compiler", "resident-artifact"]
+
+[[test]]
+name = "resident_ekf_contract"
+required-features = ["resident-ekf"]
+
+[[test]]
+name = "resident_ekf_program_activation"
+required-features = ["compiler", "resident-artifact"]
+
+[[test]]
+name = "resident_ekf_program_execution"
+required-features = ["compiler", "resident-artifact"]

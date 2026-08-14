@@ -11,7 +11,7 @@ use crate::{
     RuntimeCapabilityOperation, RuntimeResourceKey, runtime::MechRuntime,
 };
 
-use super::{ResidentRouteFailureClass, route_failure};
+use super::super::{ResidentRouteFailureClass, route_failure};
 
 #[derive(Clone, Debug)]
 pub(crate) struct ResidentAdmissionGrant {
@@ -145,7 +145,8 @@ impl MechRuntime {
     }
 
     pub(crate) fn revalidate_active_resident_grants(&self) -> MResult<()> {
-        let super::ActiveProgramExecution::ResidentExternal(execution) = &self.active_program
+        let super::super::ActiveProgramExecution::ResidentExternal(execution) =
+            &self.active_program
         else {
             return Ok(());
         };

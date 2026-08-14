@@ -253,6 +253,26 @@ name = "sealed_api"
 path = "tests/sealed_api.rs"
 required-features = ["source_default"]
 
+[[test]]
+name = "resident_external_gate_d3"
+path = "tests/resident_external_gate_d3.rs"
+required-features = ["runtime_bench_gate_d3"]
+
+[[test]]
+name = "resident_external_sealed_api"
+path = "tests/resident_external_sealed_api.rs"
+required-features = ["resident-external"]
+
+[[test]]
+name = "resident_gate_b_contract"
+path = "tests/resident_gate_b_contract.rs"
+required-features = ["runtime_bench_gate_b"]
+
+[[test]]
+name = "resource_preflight"
+path = "tests/resource_preflight.rs"
+required-features = ["runtime_default"]
+
 [[bench]]
 name = "recording_primitives"
 harness = false

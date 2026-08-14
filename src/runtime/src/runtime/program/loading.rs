@@ -26,8 +26,8 @@ use crate::{
 #[cfg(feature = "resident-routing-source")]
 use mech_engine::{MechProgramConfig, MechProgramEnvironment, ProgramCompilationProduct};
 
-use super::admission::activation_failure_for_artifact;
-use super::execution::initial_value;
+use super::diagnostics::activation_failure_for_artifact;
+use super::value::initial_value;
 use super::{
     ActiveProgramExecution, ResidentExternalExecution, ResidentPureExecution,
     ResidentRouteFailureClass, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
@@ -139,7 +139,7 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
-    fn compiler_view(&self) -> MResult<super::super::program::ProgramCompilerView<'_>> {
+    fn compiler_view(&self) -> MResult<super::ProgramCompilerView<'_>> {
         let program_config = MechProgramConfig {
             name: self.config.name.clone(),
             environment: MechProgramEnvironment {
@@ -149,7 +149,7 @@ impl MechRuntime {
                 rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
             },
         };
-        Ok(super::super::program::ProgramCompilerView::new(
+        Ok(super::ProgramCompilerView::new(
             Arc::clone(&self.function_catalog),
             self.source_resolver.as_ref(),
             &self.resources,

@@ -1,3 +1,4 @@
+mod admission;
 mod authority;
 mod coordinator;
 mod input_facts;
@@ -18,6 +19,8 @@ pub use outbox_delivery::*;
 pub use provider::*;
 pub use receipt::*;
 pub use value_adapter::*;
+
+pub(crate) use admission::ResidentAdmissionProof;
 
 pub use crate::turn_record::{
     InputSequence, InputSequenceRange, LedgerSequence, TurnFailurePhase, TurnId,

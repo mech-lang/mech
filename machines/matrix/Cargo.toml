@@ -119,6 +119,11 @@ mech-runtime = { path = "../../src/runtime", default-features = false, features 
   "compiler", "f64", "matrixd", "vectord", "variables", "formulas",
 ] }
 
+[[example]]
+name = "steady_state_benchmark"
+path = "examples/steady_state_benchmark.rs"
+required-features = ["compiler", "f64", "matrixd", "vectord", "matmul", "solve"]
+
 [patch.crates-io]
 mech-bytecode = { path = "../../src/bytecode" }
 mech-core = { path = "../../src/core" }

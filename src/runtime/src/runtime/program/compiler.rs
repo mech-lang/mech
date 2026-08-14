@@ -26,9 +26,7 @@ use crate::{
     import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
 };
 
-use super::super::resident_program::{
-    ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route,
-};
+use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route};
 
 /// The sole owner of source-to-resident-artifact compilation.
 ///

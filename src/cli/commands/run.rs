@@ -79,8 +79,8 @@ pub(crate) fn add_cli_host_capability_args(command: Command) -> Command {
     command.args(crate::cli::run::cli_host_capability_args())
 }
 
-const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "csv", "js"];
-const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖", "mdoc", "mpkg"];
+const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
+const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
 pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {

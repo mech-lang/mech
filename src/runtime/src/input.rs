@@ -1,6 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
+#[cfg(feature = "matrix")]
 use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
@@ -144,6 +145,7 @@ impl RuntimeHostInputValue {
                 "f64 host input values require the `f64` feature",
             )),
             RuntimeHostInputValue::Index(value) => Ok(LegacyValue::Index(Ref::new(value))),
+            #[cfg(feature = "matrix")]
             RuntimeHostInputValue::BoolMatrix {
                 rows,
                 columns,
@@ -154,6 +156,12 @@ impl RuntimeHostInputValue {
                     values, rows, columns,
                 )))
             }
+            #[cfg(not(feature = "matrix"))]
+            RuntimeHostInputValue::BoolMatrix { .. } => Err(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "bool matrix host input values require the `matrix` feature",
+            )),
+            #[cfg(feature = "matrix")]
             RuntimeHostInputValue::IndexMatrix {
                 rows,
                 columns,
@@ -164,6 +172,12 @@ impl RuntimeHostInputValue {
                     values, rows, columns,
                 )))
             }
+            #[cfg(not(feature = "matrix"))]
+            RuntimeHostInputValue::IndexMatrix { .. } => Err(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "index matrix host input values require the `matrix` feature",
+            )),
+            #[cfg(feature = "matrix")]
             RuntimeHostInputValue::F64Matrix {
                 rows,
                 columns,
@@ -174,10 +188,16 @@ impl RuntimeHostInputValue {
                     values, rows, columns,
                 )))
             }
+            #[cfg(not(feature = "matrix"))]
+            RuntimeHostInputValue::F64Matrix { .. } => Err(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "f64 matrix host input values require the `matrix` feature",
+            )),
         }
     }
 }
 
+#[cfg(feature = "matrix")]
 fn validate_matrix_input(rows: usize, columns: usize, value_count: usize) -> MResult<()> {
     let expected = rows.checked_mul(columns).ok_or_else(|| {
         input_error(

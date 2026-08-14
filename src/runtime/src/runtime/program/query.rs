@@ -21,7 +21,7 @@ impl MechRuntime {
             else {
                 return Ok(None);
             };
-            return super::super::resident_program::output_value(instance, index);
+            return super::output_value(instance, index);
         }
         let _ = output_id;
         Ok(None)
@@ -102,7 +102,7 @@ impl MechRuntime {
         &mech_engine::ProgramArtifact,
         &mech_engine::resident::ReactiveInstance,
     )> {
-        use crate::runtime::resident_program::ActiveProgramExecution;
+        use crate::runtime::program::ActiveProgramExecution;
         match &self.active_program {
             ActiveProgramExecution::ResidentPure(execution) => {
                 Some((&execution.artifact, &execution.instance))
@@ -137,17 +137,15 @@ impl MechRuntime {
                     None,
                 ));
             };
-            let value = super::super::resident_program::output_value(instance, index)?.ok_or_else(
-                || {
-                    MechError::new(
-                        RuntimeInvalidOperationError {
-                            operation: "resident_symbol_values",
-                            reason: format!("resident output symbol `{name}` has no value"),
-                        },
-                        None,
-                    )
-                },
-            )?;
+            let value = super::output_value(instance, index)?.ok_or_else(|| {
+                MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "resident_symbol_values",
+                        reason: format!("resident output symbol `{name}` has no value"),
+                    },
+                    None,
+                )
+            })?;
             values.push((name.to_owned(), value));
         }
         Ok(values)

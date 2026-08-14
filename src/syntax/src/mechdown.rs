@@ -1372,7 +1372,7 @@ pub fn body(input: ParseString) -> ParseResult<Body> {
     Ok((new_input, Body { sections }))
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "formatter"))]
 mod tests {
     use super::*;
     use crate::{Formatter, parser};

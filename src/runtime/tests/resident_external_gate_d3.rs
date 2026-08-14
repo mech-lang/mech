@@ -16,7 +16,7 @@ use mech_engine::__resident::{
 use mech_engine::{
     MechProgram, MechProgramConfig, ProgramArtifact, decode_program_artifact_sections,
 };
-use mech_runtime::runtime::resident_external::test_provider::{
+use mech_runtime::runtime::program::external::test_provider::{
     D3InputProvider, D3ProviderTrace, D3SceneProvider, D3TransactionalProvider,
     SharedD3ProviderTrace,
 };

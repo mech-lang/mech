@@ -21,9 +21,8 @@ impl MechRuntime {
     pub fn driven_live_input_binding_count(&self) -> MResult<usize> {
         let mut count = 0;
         #[cfg(feature = "resident-routing")]
-        if let crate::runtime::resident_program::ActiveProgramExecution::ResidentExternal(
-            execution,
-        ) = &self.active_program
+        if let crate::runtime::program::ActiveProgramExecution::ResidentExternal(execution) =
+            &self.active_program
         {
             for source in execution.trigger_sources.iter() {
                 let mut driven = false;
@@ -65,13 +64,11 @@ impl MechRuntime {
         #[cfg(feature = "resident-routing")]
         if matches!(
             self.active_program,
-            crate::runtime::resident_program::ActiveProgramExecution::ResidentExternal(_)
+            crate::runtime::program::ActiveProgramExecution::ResidentExternal(_)
         ) {
             let outcome = self.drain_resident_host_inputs(max_inputs)?;
             if let Some(turn) = outcome.turn.as_ref() {
-                if let Some(error) =
-                    crate::runtime::resident_program::resident_host_turn_error(turn)
-                {
+                if let Some(error) = crate::runtime::program::resident_host_turn_error(turn) {
                     return Err(error);
                 }
             }
@@ -123,7 +120,7 @@ impl MechRuntime {
                 let driver = &self.input_drivers[index];
                 #[cfg(feature = "resident-routing")]
                 let resident = match &self.active_program {
-                    crate::runtime::resident_program::ActiveProgramExecution::ResidentExternal(
+                    crate::runtime::program::ActiveProgramExecution::ResidentExternal(
                         execution,
                     ) => execution
                         .trigger_sources

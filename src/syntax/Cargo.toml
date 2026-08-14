@@ -180,3 +180,8 @@ paste = "1.0.15"
 version = "0.2.19"
 default-features = false
 features = ["libm"]
+
+[[test]]
+name = "formatter"
+path = "tests/formatter.rs"
+required-features = ["formatter", "mika", "variable_define"]

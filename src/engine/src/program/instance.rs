@@ -12,7 +12,7 @@ use std::time::Instant;
 use mech_core::FunctionCatalog;
 use mech_core::{
     FunctionSpecializer, LegacyValue, MResult, MechError, MechErrorKind, MechFunction,
-    MechSourceCode, ParsedProgram, ValRef, ValueKind, hash_str, validate_stable_value_update,
+    MechSourceCode, ParsedProgram, ValueKind, hash_str, validate_stable_value_update,
 };
 
 #[cfg(feature = "compiler")]

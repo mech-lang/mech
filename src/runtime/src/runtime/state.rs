@@ -15,9 +15,9 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 #[cfg(feature = "resident-routing")]
-use crate::runtime::resident_program::ResidentProductionProbe;
+use crate::runtime::program::ResidentProductionProbe;
 #[cfg(feature = "resident-routing")]
-use crate::runtime::resident_program::{ActiveProgramExecution, RuntimeProgramExecutionInfo};
+use crate::runtime::program::{ActiveProgramExecution, RuntimeProgramExecutionInfo};
 
 pub(in crate::runtime) struct ScopedRuntimeState<T: Copy> {
     state: Rc<Cell<Option<T>>>,

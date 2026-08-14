@@ -34,7 +34,7 @@ use crate::{
 use super::*;
 
 const SOURCE: &str =
-    include_str!("../../../../tests/architecture/resident-activation/ekf-source-v1.mec");
+    include_str!("../../../../../../tests/architecture/resident-activation/ekf-source-v1.mec");
 
 static EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
@@ -2382,14 +2382,14 @@ fn ordinary_source_and_bytecode_freeze_equivalent_external_artifacts() -> MResul
     for (source, protocol, expected_effect) in [
         (
             include_str!(
-                "../../../../tests/architecture/resident-external/d3-effect-source-v1.mec"
+                "../../../../../../tests/architecture/resident-external/d3-effect-source-v1.mec"
             ),
             ProviderProtocol::AfterCommit,
             EFFECT_CONTRACT.interaction.clone(),
         ),
         (
             include_str!(
-                "../../../../tests/architecture/resident-external/d3-transactional-source-v1.mec"
+                "../../../../../../tests/architecture/resident-external/d3-transactional-source-v1.mec"
             ),
             ProviderProtocol::Compensatable,
             COMPENSATABLE_CONTRACT.interaction.clone(),

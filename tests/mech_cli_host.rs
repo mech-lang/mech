@@ -328,7 +328,7 @@ fn mech_run_file_dependency_denied_by_filesystem_capability() {
 
 #[cfg(all(feature = "run", feature = "cli_host"))]
 #[test]
-fn mech_run_explicit_loader_supported_text_file_still_runs() {
+fn mech_run_rejects_non_resident_text_root() {
     let root = temp_root("run-explicit-js");
     let source = root.join("script.js");
     std::fs::write(&source, "x := 21 + 21\n").unwrap();
@@ -340,10 +340,10 @@ fn mech_run_explicit_loader_supported_text_file_still_runs() {
         .output()
         .unwrap();
 
+    let combined = assert_failure_contains(output, "Unsupported source extension");
     assert!(
-        output.status.success(),
-        "explicit loader-supported file should still run:\n{}",
-        combined_output(&output)
+        combined.contains("expected one of: mec, 🤖, mecb"),
+        "expected the executable-root extension failure, got:\n{combined}"
     );
 }
 

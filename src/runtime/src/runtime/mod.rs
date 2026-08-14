@@ -23,7 +23,6 @@ mod components;
 pub(crate) mod effect_journal;
 mod errors;
 mod events;
-mod execution;
 mod execution_session;
 pub(crate) mod extension;
 #[cfg(any(test, feature = "runtime_bench_probes"))]
@@ -36,13 +35,7 @@ mod limits;
 mod module;
 mod object;
 mod operation_context;
-#[cfg(feature = "resident-routing-source")]
-mod program;
-#[cfg(feature = "resident-external")]
-#[path = "../resident_external/mod.rs"]
-pub mod resident_external;
-#[cfg(feature = "resident-routing")]
-mod resident_program;
+pub mod program;
 mod resources;
 mod schedule;
 mod state;
@@ -60,10 +53,7 @@ pub use self::errors::*;
 #[cfg(feature = "runtime_bench_probes")]
 #[doc(hidden)]
 pub use self::gate_a_probe::{GateACostSnapshot, gate_a_cost_snapshot, reset_gate_a_costs};
-#[cfg(feature = "resident-routing-source")]
-pub use self::program::{CompilerImportValueUnsupported, ProgramCompiler};
-#[cfg(feature = "resident-routing")]
-pub use self::resident_program::*;
+pub use self::program::*;
 pub use self::resources::{RuntimeResourceBinding, RuntimeResourceBindingError};
 pub use self::state::MechRuntime;
 pub use self::transaction::{RuntimeHealth, RuntimePoisonRecord};
