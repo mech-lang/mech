@@ -224,11 +224,17 @@ This follow-up exposed four additional design requirements:
    families and validates their schemas and arity. Production admission should
    use declared semantic contracts, not runtime factory-name compatibility.
 4. **Submission policy is part of the physical plan.** On the measured Apple
-   M1, the source-driven 100,000-filter run reached 51.134 million
-   EKF-turns/s with one command submission per turn and 344.443 million when
-   120 dependent turns were recorded in one submission. The scheduler needs an
-   explicit way to batch or retain device work while preserving observation
-   and effect boundaries.
+   M1, the source-driven 100,000-filter run reached 61.060 million
+   EKF-turns/s with one command submission per turn and a median 329.650
+   million when 120 dependent turns were recorded in one submission. The
+   scheduler needs an explicit way to batch or retain device work while
+   preserving observation and effect boundaries.
+5. **The broadcast axis is also a viable CPU vector axis.** A four-lane
+   `f32` executor now evaluates the exact same scalarized instruction stream
+   and reaches 4.416 million EKF-turns/s versus 1.222 million for the scalar
+   evaluator. This 3.61x speedup requires neither source changes nor an
+   EKF-specific kernel. A future CPU backend can combine wider vectors, native
+   code generation, and multicore partitioning independently.
 
 The generic CPU number reported by this proof is a scalar IR evaluator. It is
 not evidence about retained Mech, AOT code generation, SIMD, or raw Rust. A

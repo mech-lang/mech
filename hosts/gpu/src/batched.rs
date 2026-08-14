@@ -7,11 +7,14 @@ use mech_engine::{
     ArtifactComputeRegion, ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
     SlotRole,
 };
+use wide::f32x4;
 
 use super::{
-    ElementwiseOperation, GpuAdmissionError, GpuDiagnostic, GpuDiagnosticCode, WORKGROUP_SIZE,
-    display_operation, turn_required_nodes,
+    BinaryOperation, ElementwiseOperation, GpuAdmissionError, GpuDiagnostic, GpuDiagnosticCode,
+    UnaryOperation, WORKGROUP_SIZE, display_operation, turn_required_nodes,
 };
+
+const SIMD_LANES: usize = 4;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct FixedShape {
@@ -54,6 +57,13 @@ impl ScalarOperand {
         match self {
             Self::Register(register) => format!("r{register}"),
             Self::Constant(value) => super::format_wgsl_f32(value),
+        }
+    }
+
+    fn evaluate_simd(self, registers: &[f32x4]) -> f32x4 {
+        match self {
+            Self::Register(register) => registers[register],
+            Self::Constant(value) => f32x4::splat(value),
         }
     }
 }
@@ -103,6 +113,40 @@ impl ScalarComputation {
                 .join(" + "),
         }
     }
+
+    fn evaluate_simd(&self, registers: &[f32x4]) -> f32x4 {
+        match self {
+            Self::Copy(input) => input.evaluate_simd(registers),
+            Self::Negate(input) => -input.evaluate_simd(registers),
+            Self::Elementwise { operation, inputs } => {
+                let mut values = [f32x4::ZERO; 2];
+                for (index, input) in inputs.iter().enumerate() {
+                    values[index] = input.evaluate_simd(registers);
+                }
+                match operation {
+                    ElementwiseOperation::Binary(operation) => match operation {
+                        BinaryOperation::Add => values[0] + values[1],
+                        BinaryOperation::Subtract => values[0] - values[1],
+                        BinaryOperation::Multiply => values[0] * values[1],
+                        BinaryOperation::Divide => values[0] / values[1],
+                    },
+                    ElementwiseOperation::Unary(operation) => match operation {
+                        UnaryOperation::Sin => values[0].sin(),
+                        UnaryOperation::Cos => values[0].cos(),
+                    },
+                    ElementwiseOperation::Atan2 => values[0].atan2(values[1]),
+                    ElementwiseOperation::Identity => values[0],
+                    ElementwiseOperation::Pack2 => {
+                        unreachable!("pack2 is not admitted by the fixed-shape scalarizer")
+                    }
+                }
+            }
+            Self::SumProducts(terms) => terms.iter().fold(f32x4::ZERO, |sum, (left, right)| {
+                left.evaluate_simd(registers)
+                    .mul_add(right.evaluate_simd(registers), sum)
+            }),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -149,6 +193,15 @@ pub struct BatchedCpuSession<'a> {
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
     registers: Vec<f32>,
+}
+
+#[derive(Debug)]
+pub struct BatchedSimdCpuSession<'a> {
+    program: &'a BatchedGpuProgram,
+    inputs: BTreeMap<CellSlotId, Vec<f32>>,
+    state: BTreeMap<CellSlotId, Vec<f32>>,
+    next_state: BTreeMap<CellSlotId, Vec<f32>>,
+    registers: Vec<f32x4>,
 }
 
 impl super::GpuHost {
@@ -276,6 +329,31 @@ impl BatchedGpuProgram {
         })
     }
 
+    /// Prepares a four-lane `f32` CPU executor for the same scalarized region
+    /// used by the scalar CPU and GPU backends.
+    pub fn prepare_simd_cpu(
+        &self,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedSimdCpuSession<'_>, BatchedExecutionError> {
+        let inputs = self.expand_inputs(inputs)?;
+        let state = self.initial_state();
+        let next_state = state
+            .iter()
+            .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
+            .collect();
+        Ok(BatchedSimdCpuSession {
+            program: self,
+            inputs,
+            state,
+            next_state,
+            registers: vec![f32x4::ZERO; self.register_count],
+        })
+    }
+
+    pub const fn simd_lanes(&self) -> usize {
+        SIMD_LANES
+    }
+
     fn expand_inputs(
         &self,
         provided: &BTreeMap<String, Vec<f32>>,
@@ -369,6 +447,77 @@ impl BatchedCpuSession<'_> {
     pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
         &self.state
     }
+}
+
+impl BatchedSimdCpuSession<'_> {
+    pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), BatchedExecutionError> {
+        if turns == 0 {
+            return Err(BatchedExecutionError::ZeroTurns);
+        }
+        let instances = self.program.instances as usize;
+        for _ in 0..turns {
+            for first_instance in (0..instances).step_by(SIMD_LANES) {
+                for input in &self.program.inputs {
+                    let offset = self.program.register_offsets[&input.slot];
+                    let elements = input.shape.elements();
+                    let values = &self.inputs[&input.slot];
+                    for component in 0..elements {
+                        self.registers[offset + component] =
+                            gather_simd(values, first_instance, instances, elements, component);
+                    }
+                }
+                for state in &self.program.states {
+                    let offset = self.program.register_offsets[&state.slot];
+                    let elements = state.shape.elements();
+                    let values = &self.state[&state.slot];
+                    for component in 0..elements {
+                        self.registers[offset + component] =
+                            gather_simd(values, first_instance, instances, elements, component);
+                    }
+                }
+                for instruction in &self.program.instructions {
+                    self.registers[instruction.output] =
+                        instruction.computation.evaluate_simd(&self.registers);
+                }
+                for state in &self.program.states {
+                    let elements = state.shape.elements();
+                    let destination = self.next_state.get_mut(&state.slot).unwrap();
+                    for (component, source) in state.update.iter().enumerate() {
+                        let lanes = source.evaluate_simd(&self.registers).to_array();
+                        for (lane, value) in lanes.into_iter().enumerate() {
+                            let instance = first_instance + lane;
+                            if instance < instances {
+                                destination[instance * elements + component] = value;
+                            }
+                        }
+                    }
+                }
+            }
+            std::mem::swap(&mut self.state, &mut self.next_state);
+        }
+        Ok(())
+    }
+
+    pub fn state(&self) -> &BTreeMap<CellSlotId, Vec<f32>> {
+        &self.state
+    }
+}
+
+fn gather_simd(
+    values: &[f32],
+    first_instance: usize,
+    instances: usize,
+    elements: usize,
+    component: usize,
+) -> f32x4 {
+    let mut lanes = [0.0; SIMD_LANES];
+    for (lane, value) in lanes.iter_mut().enumerate() {
+        let instance = first_instance + lane;
+        if instance < instances {
+            *value = values[instance * elements + component];
+        }
+    }
+    f32x4::new(lanes)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
