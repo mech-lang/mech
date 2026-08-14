@@ -1,22 +1,12 @@
 //! Runtime component access and controlled replacement.
 
 use super::MechRuntime;
-use crate::{
-    CapabilityKernel, HostCallPolicy, HostRegistry, MechStore, ModuleBuilder, Scheduler,
-    SchedulerPolicy, SourceResolver,
-};
+use crate::{CapabilityKernel, MechStore, SchedulerPolicy, SourceResolver};
 use mech_core::MResult;
 
 impl MechRuntime {
     pub(crate) fn store(&self) -> &dyn MechStore {
         self.store.as_ref()
-    }
-
-    /// Unchecked administrative escape hatch outside runtime-owned poison
-    /// enforcement. Runtime internals must not use it to bypass mutation
-    /// preflight.
-    pub(crate) fn store_mut(&mut self) -> &mut dyn MechStore {
-        self.store.as_mut()
     }
 
     pub(crate) fn capability_kernel(&self) -> &dyn CapabilityKernel {
@@ -34,13 +24,6 @@ impl MechRuntime {
         self.source_resolver.as_ref()
     }
 
-    /// Unchecked administrative escape hatch outside runtime-owned poison
-    /// enforcement. Runtime internals must not use it to bypass mutation
-    /// preflight.
-    pub(crate) fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
-        self.source_resolver.as_mut()
-    }
-
     pub(crate) fn set_source_resolver(
         &mut self,
         source_resolver: impl SourceResolver + 'static,
@@ -50,62 +33,8 @@ impl MechRuntime {
         Ok(())
     }
 
-    pub(crate) fn host_registry(&self) -> &dyn HostRegistry {
-        self.host_registry.as_ref()
-    }
-
-    /// Unchecked administrative escape hatch outside runtime-owned poison
-    /// enforcement. Runtime internals must not use it to bypass mutation
-    /// preflight.
-    pub(crate) fn host_registry_mut(&mut self) -> &mut dyn HostRegistry {
-        self.host_registry.as_mut()
-    }
-
-    pub(crate) fn host_policy(&self) -> &dyn HostCallPolicy {
-        self.host_policy.as_ref()
-    }
-
-    /// Unchecked administrative escape hatch outside runtime-owned poison
-    /// enforcement. Runtime internals must not use it to bypass mutation
-    /// preflight.
-    pub(crate) fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
-        self.host_policy.as_mut()
-    }
-
-    pub(crate) fn scheduler(&self) -> &dyn Scheduler {
-        self.scheduler.as_ref()
-    }
-
-    /// Unchecked administrative escape hatch outside runtime-owned poison
-    /// enforcement. Runtime internals must not use it to bypass mutation
-    /// preflight.
-    pub(crate) fn scheduler_mut(&mut self) -> &mut dyn Scheduler {
-        self.scheduler.as_mut()
-    }
-
     pub fn scheduler_policy(&self) -> &SchedulerPolicy {
         &self.scheduler_policy
-    }
-
-    /// Unchecked administrative escape hatch outside runtime-owned poison
-    /// enforcement. Runtime internals must not use it to bypass mutation
-    /// preflight.
-    pub(crate) fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
-        &mut self.scheduler_policy
-    }
-
-    pub(crate) fn module_builder(&self) -> &ModuleBuilder {
-        &self.module_builder
-    }
-
-    pub(crate) fn set_scheduler_policy(
-        &mut self,
-        scheduler_policy: SchedulerPolicy,
-    ) -> MResult<()> {
-        self.ensure_runtime_mutation_allowed("set_scheduler_policy")?;
-        scheduler_policy.validate()?;
-        self.scheduler_policy = scheduler_policy;
-        Ok(())
     }
 
     // ---------------------------------------------------------------------------

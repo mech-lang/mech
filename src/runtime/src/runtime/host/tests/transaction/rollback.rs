@@ -1,68 +1,18 @@
-use std::sync::{Arc, Mutex};
-
 use crate::runtime::test_support::capabilities::grant_host_call;
 use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedPureHostFunction,
-    PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, PreparedRuntimeEffect,
-    RuntimeCallContext, RuntimeHealth, RuntimeInvalidOperationError, RuntimePreparedHostCall,
-    RuntimeValueSnapshot,
+    PlannedRuntimeManagedHostFunction, PlannedStagedHostFunction, RuntimeHealth,
+    RuntimeInvalidOperationError, RuntimeValueSnapshot,
 };
 use mech_core::{LegacyValue, MechError, Ref};
-
-use super::support::RecordingHostEffect;
 
 fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
     RuntimeValueSnapshot::try_capture(&value).expect("acyclic fixture")
 }
 
 #[test]
-fn failed_later_operation_discards_only_its_staged_host_effect() {
-    let log = Arc::new(Mutex::new(Vec::new()));
-    let effect_log = log.clone();
-    let mut runtime = test_runtime_builder()
-        .host_function(PlannedStagedHostFunction::new(
-            "demo/staged",
-            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                Ok(snapshot(LegacyValue::String(Ref::new(
-                    "provisional".to_string(),
-                ))))
-            },
-            move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
-                Ok(RuntimePreparedHostCall {
-                    value: snapshot(LegacyValue::String(Ref::new("provisional".to_string()))),
-                    effect: PreparedRuntimeEffect::AfterCommit(Box::new(RecordingHostEffect {
-                        log: effect_log.clone(),
-                        entry: "delivered".to_string(),
-                    })),
-                })
-            },
-        ))
-        .unwrap()
-        .build()
-        .unwrap();
-    grant_host_call(&mut runtime, CapabilityId(700), "demo/staged");
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-
-    runtime
-        .call_host_with_context(&mut context, HostCall::new("demo/staged", Vec::new()))
-        .unwrap();
-    let failed = runtime.run_string_with_context(
-        &mut context,
-        "discarded := demo/staged()\nbroken := missing + 1",
-    );
-
-    assert!(failed.is_err());
-    assert!(runtime.program.root_symbol_value("discarded").is_err());
-    assert!(log.lock().unwrap().is_empty());
-
-    runtime.commit_runtime_transaction(&mut context).unwrap();
-    assert_eq!(log.lock().unwrap().as_slice(), &["delivered".to_string()],);
-}
-
-#[test]
-fn pure_host_panic_rolls_back_and_restores_program_and_guard() {
+fn pure_host_panic_is_contained_without_poisoning_runtime() {
     let mut runtime = test_runtime_builder()
         .host_function(PlannedPureHostFunction::new(
             "sealed/pure-panic",
@@ -75,7 +25,6 @@ fn pure_host_panic_rolls_back_and_restores_program_and_guard() {
         .build()
         .unwrap();
     grant_host_call(&mut runtime, CapabilityId(700), "sealed/pure-panic");
-    runtime.run_string("panic-anchor := 1.0").unwrap();
 
     let error = runtime
         .call_host(HostCall::new("sealed/pure-panic", Vec::new()))
@@ -83,9 +32,6 @@ fn pure_host_panic_rolls_back_and_restores_program_and_guard() {
 
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
     assert!(format!("{error:?}").contains("deliberate pure host panic"));
-    assert!(runtime.program.root_symbol_value("panic-anchor").is_ok());
-    assert!(runtime.program.root_symbol_value("discarded").is_err());
-    assert!(runtime.active_program_operation.get().is_none());
     assert!(matches!(runtime.health, RuntimeHealth::Healthy));
 }
 
@@ -110,7 +56,6 @@ fn runtime_managed_host_panic_is_an_ordinary_rollback_failure() {
 
     assert_eq!(error.kind_name(), "RuntimeExtensionPanicked");
     assert!(format!("{error:?}").contains("deliberate runtime-managed host panic"));
-    assert!(runtime.active_program_operation.get().is_none());
     assert!(matches!(runtime.health, RuntimeHealth::Healthy));
 }
 
@@ -142,7 +87,6 @@ fn runtime_managed_host_error_stays_contained_and_cleans_transaction_state() {
     assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
     assert!(runtime.active_transactions.is_empty());
     assert!(runtime.active_effect_phase.get().is_none());
-    assert!(runtime.active_program_operation.get().is_none());
     assert!(matches!(runtime.health, RuntimeHealth::Healthy));
 }
 

@@ -1,14 +1,12 @@
 use crate::RuntimeValueSnapshot;
-use crate::runtime::MechRuntime;
-#[cfg(feature = "resident-routing")]
-use crate::runtime::RuntimeInvalidOperationError;
-use mech_core::MResult;
-#[cfg(feature = "resident-routing")]
-use mech_core::MechError;
+use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
+use mech_core::{MResult, MechError};
+
+const ROOT_INTERPRETER_ID: u64 = 0;
 
 impl MechRuntime {
     pub fn root_interpreter_id(&self) -> u64 {
-        self.program.interpreter().id
+        ROOT_INTERPRETER_ID
     }
 
     pub fn root_plan_len(&self) -> usize {
@@ -16,7 +14,7 @@ impl MechRuntime {
         if let Some((_, instance)) = self.resident_artifact_and_instance() {
             return instance.plan.execution_node_count();
         }
-        self.program.interpreter().plan_len()
+        0
     }
 
     pub fn output_value_for_interpreter(
@@ -38,11 +36,8 @@ impl MechRuntime {
             };
             return super::super::resident_program::output_value(instance, index);
         }
-        self.program
-            .output_value_for_interpreter(interpreter_id, output_id)
-            .as_ref()
-            .map(RuntimeValueSnapshot::try_capture)
-            .transpose()
+        let _ = (interpreter_id, output_id);
+        Ok(None)
     }
 
     pub fn symbol_name_for_interpreter_output(
@@ -61,8 +56,8 @@ impl MechRuntime {
                 .find(|output| u64::from(output.output.get()) == output_id)
                 .map(|output| output.name.clone());
         }
-        self.program
-            .symbol_name_for_interpreter_output(interpreter_id, output_id)
+        let _ = (interpreter_id, output_id);
+        None
     }
 
     pub fn symbol_values_for_interpreter(
@@ -79,15 +74,11 @@ impl MechRuntime {
                 .resident_symbol_values(names.iter().map(String::as_str))
                 .map(Some);
         }
-        self.program
-            .symbol_values_for_interpreter(interpreter_id, names)
-            .map(|values| {
-                values
-                    .into_iter()
-                    .map(|(name, value)| Ok((name, RuntimeValueSnapshot::try_capture(&value)?)))
-                    .collect::<MResult<Vec<_>>>()
-            })
-            .transpose()
+        if interpreter_id == ROOT_INTERPRETER_ID {
+            Ok(Some(Vec::new()))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn root_symbol_value(&self, name: &str) -> MResult<RuntimeValueSnapshot> {
@@ -107,9 +98,7 @@ impl MechRuntime {
                     )
                 });
         }
-        self.program
-            .root_symbol_value(name)
-            .and_then(|value| RuntimeValueSnapshot::try_capture(&value))
+        Err(missing_resident_symbol("root_symbol_value", name))
     }
 
     pub fn root_symbol_values(
@@ -120,12 +109,10 @@ impl MechRuntime {
         if self.resident_artifact_and_instance().is_some() {
             return self.resident_symbol_values(names.iter().copied());
         }
-        self.program.root_symbol_values(names).and_then(|values| {
-            values
-                .into_iter()
-                .map(|(name, value)| Ok((name, RuntimeValueSnapshot::try_capture(&value)?)))
-                .collect::<MResult<Vec<_>>>()
-        })
+        match names.first() {
+            Some(name) => Err(missing_resident_symbol("root_symbol_values", name)),
+            None => Ok(Vec::new()),
+        }
     }
 
     pub fn root_symbol_values_all(&self) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
@@ -135,11 +122,7 @@ impl MechRuntime {
                 artifact.outputs().iter().map(|output| output.name.as_str()),
             );
         }
-        self.program
-            .root_symbol_values_all()
-            .into_iter()
-            .map(|(name, value)| Ok((name, RuntimeValueSnapshot::try_capture(&value)?)))
-            .collect::<MResult<Vec<_>>>()
+        Ok(Vec::new())
     }
 
     #[cfg(feature = "resident-routing")]
@@ -157,7 +140,7 @@ impl MechRuntime {
             ActiveProgramExecution::ResidentExternal(execution) => {
                 Some((&execution.artifact, execution.coordinator.instance()))
             }
-            ActiveProgramExecution::None | ActiveProgramExecution::Legacy => None,
+            ActiveProgramExecution::None => None,
         }
     }
 
@@ -199,4 +182,14 @@ impl MechRuntime {
         }
         Ok(values)
     }
+}
+
+fn missing_resident_symbol(operation: &'static str, name: &str) -> MechError {
+    MechError::new(
+        RuntimeInvalidOperationError {
+            operation,
+            reason: format!("resident output symbol `{name}` was not found"),
+        },
+        None,
+    )
 }

@@ -308,8 +308,6 @@ impl MechRuntime {
     ) -> MResult<T> {
         self.ensure_runtime_mutation_allowed(operation)?;
         self.validate_context_for_runtime(context)?;
-        self.reject_program_operation_reentrancy(operation)?;
-
         let implicit = context.transaction.is_none();
         if implicit {
             self.begin_runtime_transaction_internal(

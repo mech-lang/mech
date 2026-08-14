@@ -156,33 +156,6 @@ impl RuntimeHostInputSource {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct RuntimeLiveResourceBinding {
-    pub interpreter_id: u64,
-    pub source: RuntimeHostInputSource,
-    pub target: mech_core::ValRef,
-}
-
-impl RuntimeLiveResourceBinding {
-    pub(crate) fn same_identity(&self, other: &Self) -> bool {
-        self.interpreter_id == other.interpreter_id
-            && self.source == other.source
-            && self.target.as_ptr() == other.target.as_ptr()
-    }
-
-    pub(crate) fn target_address(&self) -> usize {
-        self.target.as_ptr() as usize
-    }
-}
-
-impl PartialEq for RuntimeLiveResourceBinding {
-    fn eq(&self, other: &Self) -> bool {
-        self.same_identity(other)
-    }
-}
-
-impl Eq for RuntimeLiveResourceBinding {}
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeHostInputUpdate {
     pub source: RuntimeHostInputSource,

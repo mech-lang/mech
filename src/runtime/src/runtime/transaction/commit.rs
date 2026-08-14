@@ -176,7 +176,6 @@ impl MechRuntime {
 
     pub fn begin_transaction(&mut self, context: &mut RuntimeContext) -> MResult<TransactionId> {
         self.ensure_runtime_mutation_allowed("begin_transaction")?;
-        self.reject_program_operation_reentrancy("begin_transaction")?;
         self.begin_runtime_transaction_internal(context, RuntimeExecutionTransactionMode::Explicit)
     }
 
@@ -246,7 +245,6 @@ impl MechRuntime {
         context: &mut RuntimeContext,
     ) -> MResult<RuntimeCommitOutcome> {
         self.ensure_runtime_mutation_allowed("commit_runtime_transaction")?;
-        self.reject_program_operation_reentrancy("commit_runtime_transaction")?;
         match self.commit_runtime_transaction_detailed_internal(context)? {
             RuntimeCommitResolution::Committed(outcome) => Ok(outcome),
             RuntimeCommitResolution::CommittedWithError {
@@ -273,29 +271,6 @@ impl MechRuntime {
         self.validate_context_for_runtime(context)?;
 
         let transaction_id = Self::context_transaction_id(context)?;
-        let has_program_baseline = self
-            .active_execution_transaction(transaction_id)?
-            .program
-            .is_some();
-        #[cfg(feature = "invariant_define")]
-        let transaction_mode = self.active_execution_transaction(transaction_id)?.mode;
-        if has_program_baseline && self.program_transaction_owner != Some(transaction_id) {
-            return self.coordinator_invariant_failure(
-        "commit_runtime_transaction",
-        Some(transaction_id),
-        format!(
-          "transaction {} contains a retained-program baseline but program ownership is {:?}",
-          transaction_id,
-          self.program_transaction_owner,
-        ),
-      );
-        }
-        #[cfg(feature = "invariant_define")]
-        if transaction_mode == RuntimeExecutionTransactionMode::Explicit
-            && self.program_transaction_owner == Some(transaction_id)
-        {
-            self.program.validate_integrity_constraints()?;
-        }
         let access = self
             .active_execution_transaction(transaction_id)?
             .context_baseline
@@ -363,13 +338,6 @@ impl MechRuntime {
                 }
             };
             context.transaction = None;
-            if self.program_transaction_owner == Some(transaction_id) {
-                self.program_transaction_owner = None;
-            }
-            #[cfg(feature = "resident-routing")]
-            if envelope.claims_legacy_program_owner {
-                self.publish_legacy_program_owner();
-            }
             self.push_persisted_event_to_context(context, commit_event)?;
             return Ok(RuntimeCommitResolution::Committed(RuntimeCommitOutcome {
                 transaction_id: id,
@@ -562,13 +530,6 @@ impl MechRuntime {
         drop(phase_guard);
 
         context.transaction = None;
-        if self.program_transaction_owner == Some(transaction_id) {
-            self.program_transaction_owner = None;
-        }
-        #[cfg(feature = "resident-routing")]
-        if envelope.claims_legacy_program_owner {
-            self.publish_legacy_program_owner();
-        }
         self.push_persisted_event_to_context(context, commit_event)?;
 
         let mut audit_failures = Vec::new();
@@ -662,9 +623,6 @@ impl MechRuntime {
     ) -> Option<RuntimeCommitResolution> {
         error.kind_as::<RuntimeStoreCommitIndeterminate>()?;
         context.transaction = None;
-        if self.program_transaction_owner == Some(transaction_id) {
-            self.program_transaction_owner = None;
-        }
         let mut rollback_failures = Vec::new();
         if let Err(compaction_error) = context.finish_event_transaction_scope() {
             rollback_failures.push(format!(

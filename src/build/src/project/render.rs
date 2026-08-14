@@ -507,7 +507,7 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
     }).unwrap_or_else(|| "null".to_string());
     let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
     let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
-    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"legacy_turns\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.legacy_turns, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
 }
 
 fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
@@ -668,7 +668,7 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
     }).unwrap_or_else(|| "null".to_string());
     let plan = info.plan_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
     let layout = info.layout_generation.map(|value| value.get().saturating_add(1).to_string()).unwrap_or_else(|| "null".to_string());
-    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"legacy_turns\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.legacy_turns, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
+    format!("{{\"route\":\"{route}\",\"routing_policy\":\"{policy}\",\"program_revision\":{revision},\"plan_generation\":{plan},\"layout_generation\":{layout},\"requirements\":{},\"observations\":{},\"effects\":{},\"resident_accepted_turns\":{},\"resident_rejected_turns\":{},\"coalesced_host_packets\":{},\"ignored_host_packets\":{}}}", info.requirement_count, info.observation_count, info.effect_count, info.resident_accepted_turns, info.resident_rejected_turns, info.coalesced_host_packets, info.ignored_host_packets)
 }
 
 fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
@@ -1317,7 +1317,7 @@ mod tests {
                 )
             );
             assert!(source.contains("std::process::exit(2)"));
-            assert!(source.contains("\\\"legacy_turns\\\":{}"));
+            assert!(source.contains("\\\"resident_accepted_turns\\\":{}"));
         }
     }
 

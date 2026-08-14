@@ -568,6 +568,37 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
     else {
         panic!("source route must own a pure resident instance")
     };
+    assert_eq!(source_runtime.root_interpreter_id(), 0);
+    assert_eq!(
+        source_runtime.root_plan_len(),
+        source_execution.instance.plan.execution_node_count()
+    );
+    let output = source_execution
+        .artifact
+        .outputs()
+        .first()
+        .expect("the resident fixture must expose an output");
+    let output_id = u64::from(output.output.get());
+    assert_eq!(
+        source_runtime.symbol_name_for_interpreter_output(0, output_id),
+        Some(output.name.clone())
+    );
+    assert!(
+        source_runtime
+            .output_value_for_interpreter(0, output_id)
+            .unwrap()
+            .is_some()
+    );
+    assert!(
+        source_runtime
+            .output_value_for_interpreter(1, output_id)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(
+        source_runtime.root_symbol_values_all().unwrap().len(),
+        source_execution.artifact.outputs().len()
+    );
     let bytecode = encode_program_artifact_bytecode_v1(&source_execution.artifact).unwrap();
 
     let mut bytecode_runtime = runtime();
@@ -582,6 +613,32 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
         source.info.layout_generation,
         bytecode.info.layout_generation
     );
+}
+
+#[test]
+fn empty_runtime_step_fails_without_an_execution_fallback() {
+    let mut runtime = runtime();
+
+    assert_eq!(runtime.root_interpreter_id(), 0);
+    assert_eq!(runtime.root_plan_len(), 0);
+    assert!(runtime.root_symbol_values_all().unwrap().is_empty());
+    assert!(
+        runtime
+            .output_value_for_interpreter(0, u64::MAX)
+            .unwrap()
+            .is_none()
+    );
+    assert_eq!(
+        runtime
+            .root_symbol_value("missing")
+            .unwrap_err()
+            .kind_name(),
+        "RuntimeInvalidOperation"
+    );
+    let error = runtime.step_active_program().unwrap_err();
+
+    assert_eq!(error.kind_name(), "ResidentRouteFailure");
+    assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
 }
 
 #[test]
@@ -656,7 +713,6 @@ fn external_activation_requires_exactly_one_input_driver() {
             "expected {expected}, got {error:?}",
         );
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
-        assert_eq!(runtime.program_execution_info().legacy_turns, 0);
     }
 }
 
@@ -796,7 +852,6 @@ fn production_source_and_bytecode_load_residently_without_engine_selection() {
         source.info.policy,
         crate::ResidentRoutingPolicy::RequireResident
     );
-    assert_eq!(source.info.legacy_turns, 0);
 
     let ActiveProgramExecution::ResidentPure(execution) = &source_runtime.active_program else {
         unreachable!()
@@ -811,7 +866,6 @@ fn production_source_and_bytecode_load_residently_without_engine_selection() {
         decoded.info.policy,
         crate::ResidentRoutingPolicy::RequireResident
     );
-    assert_eq!(decoded.info.legacy_turns, 0);
 }
 
 #[test]
@@ -829,7 +883,6 @@ fn production_unsupported_semantics_fail_without_installing_legacy() {
         ResidentRouteFailureClass::SemanticUnsupported
     );
     assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
-    assert_eq!(runtime.program_execution_info().legacy_turns, 0);
 }
 
 #[test]
@@ -1208,7 +1261,6 @@ output := delta
     let provider_error = runtime
         .load_production_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap_err();
-    assert_ne!(runtime.program_route(), RuntimeProgramRoute::Legacy);
     assert!(
         provider_error
             .kind_message()
@@ -1226,7 +1278,6 @@ output := delta
             .kind_message()
             .starts_with("InvalidBytecode:")
     );
-    assert_ne!(runtime.program_route(), RuntimeProgramRoute::Legacy);
 }
 
 fn product_nbody_bytecode() -> Vec<u8> {
@@ -1268,7 +1319,6 @@ fn product_nbody_denied_grant_missing_provider_and_contract_mismatch_never_fallb
             "expected {expected}, got {error:?}"
         );
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
-        assert_eq!(runtime.program_execution_info().legacy_turns, 0);
     }
 }
 
@@ -1294,7 +1344,6 @@ fn successful_resident_activation_never_falls_back_to_a_second_program() {
         RuntimeProgramRoute::ResidentExternal
     );
     assert_eq!(runtime.program_execution_info().program_revision, revision);
-    assert_eq!(runtime.program_execution_info().legacy_turns, 0);
 }
 
 fn product_nbody_state_slots(
@@ -1410,7 +1459,6 @@ fn public_nbody_viewer_preserves_the_working_fixed_sun_orbits_residently() {
     let info = runtime.program_execution_info();
     assert_eq!(info.resident_accepted_turns, 4_096);
     assert_eq!(info.resident_rejected_turns, 0);
-    assert_eq!(info.legacy_turns, 0);
 }
 
 #[test]
@@ -1605,7 +1653,6 @@ fn product_nbody_source_and_bytecode_match_d2_for_4096_accepted_turns() {
         let info = runtime.program_execution_info();
         assert_eq!(info.resident_accepted_turns, 4_096);
         assert_eq!(info.resident_rejected_turns, 0);
-        assert_eq!(info.legacy_turns, 0);
         assert_eq!(info.requirement_count, 2);
         assert_eq!(info.observation_count, 1);
         assert_eq!(info.effect_count, 1);
@@ -1619,7 +1666,6 @@ fn product_nbody_source_and_bytecode_match_d2_for_4096_accepted_turns() {
         let probe = runtime.resident_production_probe();
         assert_eq!(probe.resident_turns, 4_096);
         assert_eq!(probe.resident_rejections, 0);
-        assert_eq!(probe.legacy_turns, 0);
         assert_eq!(probe.scene_effects_prepared, 4_096);
         assert_eq!(probe.scene_effects_delivered, 4_096);
         assert_eq!(probe.scene_effects_before_publication, 0);

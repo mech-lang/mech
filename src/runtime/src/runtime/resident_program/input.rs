@@ -72,7 +72,6 @@ pub(crate) fn resident_host_turn_error(
 pub struct ResidentProductionProbe {
     pub resident_turns: u64,
     pub resident_rejections: u64,
-    pub legacy_turns: u64,
     pub scene_effects_prepared: u64,
     pub scene_effects_delivered: u64,
     pub scene_effects_before_publication: u64,

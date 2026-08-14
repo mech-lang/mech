@@ -15,7 +15,6 @@ use super::ActiveProgramExecution;
 pub enum RuntimeProgramRoute {
     #[default]
     None,
-    Legacy,
     ResidentPure,
     ResidentExternal,
 }
@@ -34,7 +33,6 @@ pub struct RuntimeProgramExecutionInfo {
     pub resident_rejected_turns: u64,
     pub coalesced_host_packets: u64,
     pub ignored_host_packets: u64,
-    pub legacy_turns: u64,
 }
 
 impl Default for RuntimeProgramExecutionInfo {
@@ -52,7 +50,6 @@ impl Default for RuntimeProgramExecutionInfo {
             resident_rejected_turns: 0,
             coalesced_host_packets: 0,
             ignored_host_packets: 0,
-            legacy_turns: 0,
         }
     }
 }
@@ -170,45 +167,6 @@ pub(crate) fn ensure_supported_durability(policy: ResidentDurabilityPolicy) -> M
 }
 
 impl MechRuntime {
-    /// Stages legacy ownership in the transaction that installed retained
-    /// executable state. Planning transactions intentionally do not claim a
-    /// production program route.
-    pub(in crate::runtime) fn stage_legacy_program_owner(
-        &mut self,
-        context: &crate::RuntimeContext,
-    ) -> MResult<()> {
-        if self.execution_mode == crate::runtime::RuntimeExecutionMode::Plan {
-            return Ok(());
-        }
-        let transaction_id = Self::context_transaction_id(context)?;
-        self.active_execution_transaction_mut(transaction_id)?
-            .claims_legacy_program_owner = true;
-        Ok(())
-    }
-
-    /// Publishes a transaction's successful legacy ownership claim.
-    pub(in crate::runtime) fn publish_legacy_program_owner(&mut self) {
-        match self.active_program {
-            ActiveProgramExecution::None => {
-                self.active_program = ActiveProgramExecution::Legacy;
-                self.program_execution_info = RuntimeProgramExecutionInfo {
-                    route: RuntimeProgramRoute::Legacy,
-                    policy: crate::ResidentRoutingPolicy::LegacyOnly,
-                    legacy_turns: 1,
-                    ..RuntimeProgramExecutionInfo::default()
-                };
-            }
-            ActiveProgramExecution::Legacy => {
-                self.program_execution_info.legacy_turns =
-                    self.program_execution_info.legacy_turns.saturating_add(1);
-            }
-            ActiveProgramExecution::ResidentPure(_)
-            | ActiveProgramExecution::ResidentExternal(_) => {
-                debug_assert!(false, "resident ownership excludes legacy program commits");
-            }
-        }
-    }
-
     pub fn program_route(&self) -> RuntimeProgramRoute {
         self.program_execution_info.route
     }
@@ -281,7 +239,9 @@ impl MechRuntime {
             ActiveProgramExecution::ResidentExternal(_) => Err(invalid_active_program(
                 "external resident programs advance only from admitted host input",
             )),
-            ActiveProgramExecution::Legacy | ActiveProgramExecution::None => self.step(0),
+            ActiveProgramExecution::None => Err(invalid_active_program(
+                "program stepping requires an active resident program",
+            )),
         }
     }
 
@@ -303,11 +263,7 @@ impl MechRuntime {
     }
 
     pub fn unload_active_program(&mut self) -> MResult<()> {
-        let retained_legacy = self.program.interpreter().has_retained_execution_state()
-            || !self.live_input_bindings.is_empty()
-            || self.live_context_template.is_some();
-        let program_owned =
-            !matches!(self.active_program, ActiveProgramExecution::None) || retained_legacy;
+        let program_owned = !matches!(self.active_program, ActiveProgramExecution::None);
         let drivers_stopped = self.input_drivers[..self.attached_input_driver_count]
             .iter()
             .try_fold(true, |stopped, driver| {
@@ -334,12 +290,6 @@ impl MechRuntime {
             }
         } else if program_owned && (self.pending_host_input_count()? != 0 || !drivers_stopped) {
             return Err(MechError::new(ResidentProgramNotQuiescent, None));
-        }
-        if program_owned {
-            let replacement = self.new_program(self.program.config.clone());
-            self.program = replacement;
-            self.live_input_bindings.clear();
-            self.live_context_template = None;
         }
         self.active_program = ActiveProgramExecution::None;
         self.program_execution_info = RuntimeProgramExecutionInfo::default();

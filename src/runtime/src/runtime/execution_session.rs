@@ -1,5 +1,4 @@
 use super::extension::{catch_extension, invoke_extension};
-use super::live_state::LiveRegistrationMode;
 use super::transaction::{
     RuntimeExecutionTransaction, RuntimeExecutionTransactionState, check_transactional_capability,
 };
@@ -9,23 +8,19 @@ use crate::{
     HostCallPolicy, HostFunctionNotFoundError, HostRegistry, IdGenerator, InvalidHostFunctionError,
     MechStore, ObjectId, ObjectRecord, PreparedRuntimeEffect, RegisteredHostFunction,
     RuntimeCallContext, RuntimeCapabilityOperation, RuntimeContext, RuntimeEffectId, RuntimeEvent,
-    RuntimeEventKind, RuntimeHostInputSource, RuntimeId, RuntimeLiveResourceBinding,
-    RuntimeManagedServices, RuntimePreparedHostCall, RuntimeResourceKey,
-    RuntimeResourceReadRequest, RuntimeResourceRegistry, RuntimeResourceWriteIntent,
-    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    RuntimeEventKind, RuntimeId, RuntimeManagedServices, RuntimePreparedHostCall,
+    RuntimeResourceKey, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
     RuntimeTransactionNotFoundError, RuntimeValueSnapshot, default_host_capability_request,
 };
 use mech_core::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
     MechExecutionServices, ResourceIntent, ValRef,
 };
-use mech_engine::MechProgram;
-use std::collections::BTreeMap;
 
 pub(crate) struct RuntimeExecutionSession<'a> {
     pub(crate) runtime_id: RuntimeId,
     pub(crate) execution_mode: RuntimeExecutionMode,
-    pub(crate) live_registration_mode: LiveRegistrationMode,
     pub(crate) max_events: Option<usize>,
     pub(crate) context: &'a mut RuntimeContext,
     pub(crate) transaction: &'a mut RuntimeExecutionTransaction,
@@ -33,8 +28,6 @@ pub(crate) struct RuntimeExecutionSession<'a> {
     pub(crate) store: &'a mut dyn MechStore,
     pub(crate) capability_kernel: &'a mut dyn CapabilityKernel,
     pub(crate) resources: &'a mut RuntimeResourceRegistry,
-    pub(crate) live_input_bindings:
-        &'a mut BTreeMap<RuntimeHostInputSource, Vec<RuntimeLiveResourceBinding>>,
     pub(crate) host_registry: &'a dyn HostRegistry,
     pub(crate) host_policy: &'a dyn HostCallPolicy,
     pub(crate) event_sequence: &'a mut u64,
@@ -661,18 +654,17 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
 
     fn bind_live_resource(
         &mut self,
-        interpreter_id: u64,
-        request: &ExecutionResourceRequest,
-        target: ValRef,
+        _interpreter_id: u64,
+        _request: &ExecutionResourceRequest,
+        _target: ValRef,
     ) -> MResult<()> {
-        MechRuntime::bind_live_resource_target_in(
-            self.execution_mode,
-            self.live_registration_mode,
-            self.live_input_bindings,
-            interpreter_id,
-            request,
-            target,
-        )
+        Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "bind_live_resource",
+                reason: "live resource targets belong to the resident compiler session".to_string(),
+            },
+            None,
+        ))
     }
 }
 
@@ -682,53 +674,6 @@ impl MechRuntime {
             .limits
             .max_in_memory_events
             .map(|max| usize::try_from(max).unwrap_or(usize::MAX))
-    }
-
-    pub(super) fn with_retained_program_execution_session<T>(
-        &mut self,
-        context: &mut RuntimeContext,
-        execute: impl FnOnce(&mut MechProgram, &mut RuntimeExecutionSession<'_>) -> MResult<T>,
-    ) -> MResult<T> {
-        let transaction_id = Self::context_transaction_id(context)?;
-        let max_events = self.execution_session_max_events();
-        let MechRuntime {
-            id,
-            execution_mode,
-            event_sequence,
-            program,
-            id_generator,
-            store,
-            capability_kernel,
-            host_registry,
-            host_policy,
-            active_transactions,
-            resources,
-            live_registration_mode,
-            live_input_bindings,
-            ..
-        } = self;
-        let transaction = active_transactions
-            .get_mut(&transaction_id)
-            .ok_or_else(|| {
-                MechError::new(RuntimeTransactionNotFoundError { transaction_id }, None)
-            })?;
-        let mut session = RuntimeExecutionSession {
-            runtime_id: *id,
-            execution_mode: *execution_mode,
-            live_registration_mode: *live_registration_mode,
-            max_events,
-            context,
-            transaction,
-            id_generator: id_generator.as_mut(),
-            store: store.as_mut(),
-            capability_kernel: capability_kernel.as_mut(),
-            resources,
-            live_input_bindings,
-            host_registry: host_registry.as_ref(),
-            host_policy: host_policy.as_ref(),
-            event_sequence,
-        };
-        execute(program, &mut session)
     }
 
     pub(super) fn with_runtime_execution_session<T>(
@@ -749,8 +694,6 @@ impl MechRuntime {
             host_policy,
             active_transactions,
             resources,
-            live_registration_mode,
-            live_input_bindings,
             ..
         } = self;
         let transaction = active_transactions
@@ -761,7 +704,6 @@ impl MechRuntime {
         let mut session = RuntimeExecutionSession {
             runtime_id: *id,
             execution_mode: *execution_mode,
-            live_registration_mode: *live_registration_mode,
             max_events,
             context,
             transaction,
@@ -769,58 +711,10 @@ impl MechRuntime {
             store: store.as_mut(),
             capability_kernel: capability_kernel.as_mut(),
             resources,
-            live_input_bindings,
             host_registry: host_registry.as_ref(),
             host_policy: host_policy.as_ref(),
             event_sequence,
         };
         execute(&mut session)
-    }
-
-    pub(super) fn with_isolated_program_execution_session<T>(
-        &mut self,
-        context: &mut RuntimeContext,
-        program: &mut MechProgram,
-        execute: impl FnOnce(&mut MechProgram, &mut RuntimeExecutionSession<'_>) -> MResult<T>,
-    ) -> MResult<T> {
-        let transaction_id = Self::context_transaction_id(context)?;
-        let max_events = self.execution_session_max_events();
-        let MechRuntime {
-            id,
-            execution_mode,
-            event_sequence,
-            id_generator,
-            store,
-            capability_kernel,
-            host_registry,
-            host_policy,
-            active_transactions,
-            resources,
-            live_registration_mode,
-            live_input_bindings,
-            ..
-        } = self;
-        let transaction = active_transactions
-            .get_mut(&transaction_id)
-            .ok_or_else(|| {
-                MechError::new(RuntimeTransactionNotFoundError { transaction_id }, None)
-            })?;
-        let mut session = RuntimeExecutionSession {
-            runtime_id: *id,
-            execution_mode: *execution_mode,
-            live_registration_mode: *live_registration_mode,
-            max_events,
-            context,
-            transaction,
-            id_generator: id_generator.as_mut(),
-            store: store.as_mut(),
-            capability_kernel: capability_kernel.as_mut(),
-            resources,
-            live_input_bindings,
-            host_registry: host_registry.as_ref(),
-            host_policy: host_policy.as_ref(),
-            event_sequence,
-        };
-        execute(program, &mut session)
     }
 }

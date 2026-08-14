@@ -111,7 +111,6 @@ harness = '''<script>
           root.dataset.mechRoute = info.route;
           root.dataset.mechAccepted = String(info.resident_accepted_turns);
           root.dataset.mechRejected = String(info.resident_rejected_turns);
-          root.dataset.mechLegacy = String(info.legacy_turns);
           root.dataset.mechRendered = String(renderedUpdates);
           root.dataset.mechCircles = String(circles.length);
           root.dataset.mechBodyMoved = String(

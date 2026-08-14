@@ -1,5 +1,5 @@
-use crate::runtime::{MechRuntime, RuntimeExecutionMode, extension};
-use mech_core::MResult;
+use crate::runtime::{MechRuntime, RuntimeExecutionMode, RuntimeInvalidOperationError, extension};
+use mech_core::{MResult, MechError};
 
 impl MechRuntime {
     pub fn ingress(&self) -> crate::RuntimeIngress {
@@ -20,20 +20,6 @@ impl MechRuntime {
 
     pub fn driven_live_input_binding_count(&self) -> MResult<usize> {
         let mut count = 0;
-        for (source, bindings) in &self.live_input_bindings {
-            let mut driven = false;
-            for driver in &self.input_drivers[..self.attached_input_driver_count] {
-                if extension::invoke_extension_value("host input driver", "drives", || {
-                    driver.drives(source)
-                })? {
-                    driven = true;
-                    break;
-                }
-            }
-            if driven {
-                count += bindings.len();
-            }
-        }
         #[cfg(feature = "resident-routing")]
         if let crate::runtime::resident_program::ActiveProgramExecution::ResidentExternal(
             execution,
@@ -73,6 +59,9 @@ impl MechRuntime {
         &mut self,
         max_inputs: usize,
     ) -> MResult<Vec<crate::RuntimeHostInputOutcome>> {
+        if max_inputs == 0 || self.pending_host_input_count()? == 0 {
+            return Ok(Vec::new());
+        }
         #[cfg(feature = "resident-routing")]
         if matches!(
             self.active_program,
@@ -97,23 +86,13 @@ impl MechRuntime {
                 })
                 .collect());
         }
-        let mut outcomes = Vec::new();
-        for _ in 0..max_inputs {
-            let input = {
-                let mut guard = self.host_input_queue.lock().map_err(|_| {
-                    crate::input::input_error(
-                        "RuntimeIngressUnavailable",
-                        "host input queue lock is poisoned",
-                    )
-                })?;
-                guard.queue.pop_front()
-            };
-            let Some(input) = input else {
-                break;
-            };
-            outcomes.push(self.apply_host_input(input)?);
-        }
-        Ok(outcomes)
+        Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "drain_host_inputs",
+                reason: "queued host input requires an active resident external program".to_owned(),
+            },
+            None,
+        ))
     }
 
     pub fn close_ingress(&mut self) -> MResult<()> {
@@ -146,17 +125,6 @@ impl MechRuntime {
             }
             let has_driven_input = {
                 let driver = &self.input_drivers[index];
-                let legacy = self.live_input_bindings.iter().try_fold(
-                    false,
-                    |driven, (source, bindings)| {
-                        if driven || bindings.is_empty() {
-                            return Ok(driven);
-                        }
-                        extension::invoke_extension_value("host input driver", "drives", || {
-                            driver.drives(source)
-                        })
-                    },
-                )?;
                 #[cfg(feature = "resident-routing")]
                 let resident = match &self.active_program {
                     crate::runtime::resident_program::ActiveProgramExecution::ResidentExternal(
@@ -176,7 +144,7 @@ impl MechRuntime {
                 };
                 #[cfg(not(feature = "resident-routing"))]
                 let resident = false;
-                legacy || resident
+                resident
             };
             if !has_driven_input {
                 continue;

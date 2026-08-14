@@ -349,11 +349,8 @@ impl MechRuntime {
             return original_error;
         }
         let original_error_text = format!("{:?}", original_error);
-        match self.abort_runtime_transaction_cleanup(
-            context,
-            "implicit resource operation failed",
-            false,
-        ) {
+        match self.abort_runtime_transaction_cleanup(context, "implicit resource operation failed")
+        {
             Ok((cleaned_transaction_id, mut failures)) => {
                 if cleaned_transaction_id != transaction_id {
                     failures.push(format!(

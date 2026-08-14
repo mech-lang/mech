@@ -1,7 +1,5 @@
 use super::RuntimeContextCheckpoint;
 use crate::RuntimeTransaction;
-use crate::runtime::live_state::RuntimeLiveStateSnapshot;
-use mech_engine::MechProgramCheckpoint;
 
 #[derive(Clone)]
 pub(in crate::runtime) struct RuntimeOperationSavepoint {
@@ -10,14 +8,4 @@ pub(in crate::runtime) struct RuntimeOperationSavepoint {
     pub(in crate::runtime) effect_mark: usize,
     pub(in crate::runtime) capability_mark: usize,
     pub(in crate::runtime) context: RuntimeContextCheckpoint,
-}
-
-#[derive(Clone)]
-pub(in crate::runtime) struct RuntimeProgramOperationSavepoint {
-    pub(in crate::runtime) program: MechProgramCheckpoint,
-    pub(in crate::runtime) live: RuntimeLiveStateSnapshot,
-    pub(in crate::runtime) replacement_depth: usize,
-    #[cfg(feature = "resident-routing")]
-    pub(in crate::runtime) claims_legacy_program_owner: bool,
-    pub(in crate::runtime) runtime: RuntimeOperationSavepoint,
 }

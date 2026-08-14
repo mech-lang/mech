@@ -34,7 +34,7 @@ fn failed_retained_operation_truncates_capability_overlay() {
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     let id = CapabilityId(100);
 
-    let result: MResult<()> = runtime.with_atomic_program_operation(
+    let result: MResult<()> = runtime.with_atomic_module_operation(
         &mut context,
         "test_capability_overlay",
         |runtime, context| {

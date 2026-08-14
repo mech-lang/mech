@@ -3,10 +3,9 @@ use std::sync::{Arc, Mutex};
 
 use crate::{
     Capability, CapabilityDecision, CapabilityId, CapabilityRequest, RuntimeAfterCommitEffect,
-    RuntimeEffectMetadata, RuntimeEffectSource, RuntimeInvalidOperationError,
-    RuntimeTransactionalEffect,
+    RuntimeEffectMetadata, RuntimeEffectSource,
 };
-use mech_core::{MResult, MechError};
+use mech_core::MResult;
 
 #[derive(Debug)]
 pub(super) struct RecordingHostEffect {
@@ -65,11 +64,6 @@ impl Capability for PreviewUnsupportedCapability {
 }
 
 #[derive(Debug)]
-pub(super) struct PreviewLifecycleEffect {
-    pub(super) log: Arc<Mutex<Vec<String>>>,
-}
-
-#[derive(Debug)]
 pub(super) struct CountingAfterCommitEffect {
     pub(super) deliveries: Arc<AtomicUsize>,
 }
@@ -87,37 +81,5 @@ impl RuntimeAfterCommitEffect for CountingAfterCommitEffect {
     fn deliver(&mut self) -> MResult<()> {
         self.deliveries.fetch_add(1, Ordering::SeqCst);
         Ok(())
-    }
-}
-
-impl RuntimeTransactionalEffect for PreviewLifecycleEffect {
-    fn metadata(&self) -> RuntimeEffectMetadata {
-        RuntimeEffectMetadata::new(
-            RuntimeEffectSource::HostFunction {
-                name: "demo/staged-lifecycle".to_string(),
-            },
-            "preview-lifecycle",
-        )
-    }
-
-    fn prepare(&mut self) -> MResult<()> {
-        self.log.lock().unwrap().push("prepare".to_string());
-        Ok(())
-    }
-
-    fn commit(&mut self) -> MResult<()> {
-        self.log.lock().unwrap().push("commit".to_string());
-        Ok(())
-    }
-
-    fn abort(&mut self) -> MResult<()> {
-        self.log.lock().unwrap().push("abort".to_string());
-        Err(MechError::new(
-            RuntimeInvalidOperationError {
-                operation: "preview_lifecycle_abort",
-                reason: "abort must not run for preview-only effects".to_string(),
-            },
-            None,
-        ))
     }
 }

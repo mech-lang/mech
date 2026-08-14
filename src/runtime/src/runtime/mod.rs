@@ -26,14 +26,12 @@ mod events;
 mod execution;
 mod execution_session;
 pub(crate) mod extension;
-mod external;
 #[cfg(any(test, feature = "runtime_bench_probes"))]
 pub(crate) mod gate_a_probe;
 mod host;
 mod id;
 mod lifecycle;
 mod limits;
-mod live_state;
 #[cfg(feature = "source")]
 mod module;
 mod object;
@@ -59,10 +57,6 @@ pub(crate) mod test_support;
 
 pub use self::builder::RuntimeBuilder;
 pub use self::errors::*;
-pub use self::external::{
-    ExternalOperationArityMismatch, ExternalRequirementCanonicalizationOverflow,
-    ExternalRequirementCatalog, ExternalRequirementDigestCollision, hidden_external_operation_name,
-};
 #[cfg(feature = "runtime_bench_probes")]
 #[doc(hidden)]
 pub use self::gate_a_probe::{GateACostSnapshot, gate_a_cost_snapshot, reset_gate_a_costs};

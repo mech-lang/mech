@@ -20,7 +20,7 @@ fn rollback_retains_prefix_and_removes_suffix() {
 }
 
 #[test]
-fn program_operation_rollback_removes_later_module_work() {
+fn atomic_operation_rollback_removes_later_module_work() {
     let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
@@ -34,7 +34,7 @@ fn program_operation_rollback_removes_later_module_work() {
         .unwrap();
 
     let error = runtime
-        .with_atomic_program_operation(
+        .with_atomic_module_operation(
             &mut context,
             "module_journal_savepoint_test",
             |runtime, _| {

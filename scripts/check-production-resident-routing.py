@@ -19,6 +19,8 @@ PROHIBITED_ROUTE_REFERENCES = (
     "ResidentRoutingPolicy::PreferResident",
     "ResidentRoutingPolicy::LegacyOnly",
     "RuntimeProgramRoute::Legacy",
+    "legacy_turns",
+    "legacyTurns",
 )
 OLD_EXECUTOR_CALL = re.compile(
     r"\.(?:run_string(?:_with_context)?|run_source(?:_with_context)?|"
@@ -227,7 +229,7 @@ def check_required_product_seams() -> list[str]:
             "Exactly one resident source root or one .mecb bytecode file",
         ),
         "src/build/src/project/render.rs": (
-            '\\"legacy_turns\\":{}',
+            '\\"resident_accepted_turns\\":{}',
             "limit.saturating_sub(completed_live_turns)",
         ),
         "src/build/src/lib.rs": (

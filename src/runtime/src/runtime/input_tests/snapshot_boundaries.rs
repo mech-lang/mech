@@ -4,22 +4,21 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use mech_core::{
     LegacyValue, MResult, MechMap, Ref, ValRef, ValueSnapshotBorrowConflict,
-    ValueSnapshotCollectionCollision, hash_str,
+    ValueSnapshotCollectionCollision,
 };
 
 use crate::runtime::test_support::capabilities::{
     CapabilityUseProbe, grant_host_call, grant_resource,
 };
 use crate::runtime::test_support::events::events_since;
-use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::runtime::test_support::stores::StoreCommitProbe;
 use crate::{
-    CapabilityId, DeterministicHostFunction, HostCall, HostCallPolicy, InMemorySourceResolver,
-    ModuleBuildOptions, PreparedRuntimeEffect, RegisteredHostFunction, RuntimeAfterCommitEffect,
-    RuntimeBuilder, RuntimeCallContext, RuntimeCapabilityOperation, RuntimeEffectMetadata,
-    RuntimeEffectSource, RuntimeEventKind, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    RuntimeValueSnapshot, SharedCapabilityKernel,
+    CapabilityId, DeterministicHostFunction, HostCall, HostCallPolicy, PreparedRuntimeEffect,
+    RegisteredHostFunction, RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeCallContext,
+    RuntimeCapabilityOperation, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeEventKind,
+    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
+    RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest, RuntimeValueSnapshot,
+    SharedCapabilityKernel,
 };
 
 const SNAPSHOT_RESOURCE: &str = "snapshot://boundary";
@@ -27,10 +26,6 @@ const SNAPSHOT_PATH: &str = "value";
 
 thread_local! {
     static HOST_RESULT_CYCLE: RefCell<Option<ValRef>> =
-        const { RefCell::new(None) };
-    static MODULE_PLAN_CYCLE: RefCell<Option<ValRef>> =
-        const { RefCell::new(None) };
-    static SOURCE_PLAN_CYCLE: RefCell<Option<ValRef>> =
         const { RefCell::new(None) };
 }
 
@@ -579,126 +574,5 @@ fn stale_map_key_collision_is_rejected_before_host_invocation() {
         )),
         1,
     );
-    assert!(!runtime.is_poisoned());
-}
-
-#[test]
-fn cyclic_root_symbol_query_returns_structured_snapshot_error() {
-    let mut runtime = test_runtime_builder().build().unwrap();
-    runtime.run_string("safe := 41.0").unwrap();
-    let health_before = runtime.runtime_health();
-    let cycle = cyclic_node();
-    let cyclic_id = hash_str("cyclic");
-    let symbols = runtime.program.interpreter().symbols();
-    symbols.borrow_mut().insert(
-        cyclic_id,
-        LegacyValue::MutableReference(cycle.clone()),
-        false,
-    );
-
-    let error = runtime.root_symbol_value("cyclic").unwrap_err();
-
-    assert_cycle_error(&error);
-    assert_eq!(runtime.runtime_health(), health_before);
-    let safe = runtime.root_symbol_value("safe").unwrap().into_value();
-    let LegacyValue::F64(safe) = safe else {
-        panic!("expected safe scalar query");
-    };
-    assert_eq!(*safe.borrow(), 41.0);
-    *cycle.borrow_mut() = LegacyValue::Empty;
-    assert!(!runtime.is_poisoned());
-}
-
-#[test]
-fn cyclic_host_plan_rolls_back_source_operation() {
-    let mut runtime = test_runtime_builder()
-        .host_function(DeterministicHostFunction::new(
-            "snapshot/source-cycle",
-            move |_context, _arguments| -> MResult<LegacyValue> {
-                Ok(thread_local_cycle(&SOURCE_PLAN_CYCLE))
-            },
-            move |_context, _arguments| -> MResult<LegacyValue> {
-                Ok(thread_local_cycle(&SOURCE_PLAN_CYCLE))
-            },
-        ))
-        .unwrap()
-        .build()
-        .unwrap();
-    runtime.run_string("baseline := 1.0").unwrap();
-    let event_start = runtime.list_events(None).unwrap().len();
-
-    let error = runtime
-        .run_string("candidate := snapshot/source-cycle()\ncandidate")
-        .unwrap_err();
-    clear_thread_local_cycle(&SOURCE_PLAN_CYCLE);
-
-    assert_cycle_error(&error);
-    assert!(runtime.root_symbol_value("candidate").is_err());
-    assert!(runtime.root_symbol_value("baseline").is_ok());
-    let events = events_since(&runtime, event_start);
-    assert_eq!(
-        event_count(&events, |kind| matches!(
-            kind,
-            RuntimeEventKind::ProgramCompleted { .. },
-        )),
-        0,
-    );
-    assert_eq!(
-        event_count(&events, |kind| matches!(
-            kind,
-            RuntimeEventKind::ProgramFailed { .. },
-        )),
-        1,
-    );
-    assert!(!runtime.is_poisoned());
-}
-
-#[test]
-fn cyclic_module_host_plan_rolls_back_module_graph() {
-    let mut resolver = InMemorySourceResolver::new();
-    resolver
-        .insert_string("root.mec", "answer := snapshot/module-cycle()\nanswer\n")
-        .unwrap();
-    let mut runtime = RuntimeBuilder::new()
-        .source_resolver(resolver)
-        .host_function(DeterministicHostFunction::new(
-            "snapshot/module-cycle",
-            move |_context, _arguments| -> MResult<LegacyValue> {
-                Ok(thread_local_cycle(&MODULE_PLAN_CYCLE))
-            },
-            move |_context, _arguments| -> MResult<LegacyValue> {
-                Ok(thread_local_cycle(&MODULE_PLAN_CYCLE))
-            },
-        ))
-        .unwrap()
-        .build()
-        .unwrap();
-    let event_start = runtime.list_events(None).unwrap().len();
-
-    let error = runtime
-        .resolve_and_run_root_module(
-            "root.mec",
-            ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
-        )
-        .unwrap_err();
-
-    assert_cycle_error(&error);
-    assert!(
-        runtime
-            .store
-            .find_module_by_name("memory:root.mec")
-            .unwrap()
-            .is_none(),
-    );
-    let events = events_since(&runtime, event_start);
-    assert_eq!(
-        event_count(&events, |kind| matches!(
-            kind,
-            RuntimeEventKind::ModuleExecutionCompleted { .. }
-                | RuntimeEventKind::ProgramCompleted { .. },
-        )),
-        0,
-    );
-    clear_thread_local_cycle(&MODULE_PLAN_CYCLE);
     assert!(!runtime.is_poisoned());
 }

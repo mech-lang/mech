@@ -1,9 +1,8 @@
 use crate::runtime::test_support::providers::test_runtime_builder;
-use crate::{InMemoryStore, RuntimeConfig};
-use mech_core::LegacyValue;
+use crate::{InMemoryStore, ObjectId, ObjectRecord, RuntimeConfig};
 
 #[test]
-fn store_commit_panic_is_indeterminate_and_never_rolled_back() {
+fn store_commit_panic_is_indeterminate_and_cleans_transaction_scope() {
     let mut store = InMemoryStore::new();
     store.panic_on_commit_runtime_for_test();
     let mut config = RuntimeConfig::default();
@@ -14,9 +13,24 @@ fn store_commit_panic_is_indeterminate_and_never_rolled_back() {
         .build()
         .unwrap();
     let mut context = runtime.runtime_context().unwrap();
+    runtime
+        .put_object_with_context(
+            &mut context,
+            ObjectRecord::text(ObjectId(41), "seed", "retained-before-transaction"),
+        )
+        .unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     runtime
-        .run_string_with_context(&mut context, "store-commit-panic-state := 42.0")
+        .put_object_with_context(
+            &mut context,
+            ObjectRecord::text(ObjectId(42), "state", "committed-before-panic"),
+        )
+        .unwrap();
+    runtime
+        .put_object_with_context(
+            &mut context,
+            ObjectRecord::text(ObjectId(43), "state", "latest-visible-event"),
+        )
         .unwrap();
     assert_eq!(context.events().len(), 1);
     assert!(context.event_storage_physical_len() > context.events().len());
@@ -31,13 +45,13 @@ fn store_commit_panic_is_indeterminate_and_never_rolled_back() {
     assert_eq!(context.transaction, None);
     assert_eq!(context.event_storage_physical_len(), context.events().len());
     assert_eq!(context.event_storage_physical_len(), 1);
-    assert_eq!(runtime.program_transaction_owner, None);
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
-    let retained = runtime
-        .root_symbol_value("store-commit-panic-state")
-        .unwrap();
-    match retained.to_value() {
-        LegacyValue::F64(value) => assert_eq!(*value.borrow(), 42.0),
-        other => panic!("expected retained f64 value, got {other:?}"),
-    }
+    assert_eq!(
+        runtime.get_object(ObjectId(41)).unwrap(),
+        Some(ObjectRecord::text(
+            ObjectId(41),
+            "seed",
+            "retained-before-transaction",
+        )),
+    );
 }

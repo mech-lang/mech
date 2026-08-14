@@ -1,57 +1,16 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 
-use mech_core::{MResult, MechError, MechErrorKind};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
 use super::super::{MechRuntime, RuntimeBuilder};
-use crate::runtime::test_support::{
-    capabilities::grant_read,
-    providers::{test_provider_with, test_runtime},
-    values::{f64_value, symbol_value},
-};
 use crate::{
-    ConfigValue, HostContextManifest, HostInstanceConfig, HostManifestConfig, RuntimeHostFactory,
-    RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue,
-    RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider, materialize_host_manifest,
+    BasicCapability, CapabilityId, ConfigValue, HostContextManifest, HostInstanceConfig,
+    HostManifestConfig, ResidentDurabilityPolicy, RuntimeHostFactory, RuntimeHostInput,
+    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue, RuntimeHostInstallation,
+    RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest, materialize_host_manifest,
 };
-
-const TEST_CLOCK_BASE_URI: &str = "test://clock/ticks";
-
-#[test]
-fn failed_dequeued_host_input_is_consumed_and_later_packet_remains() {
-    let mut runtime = test_runtime(test_provider_with(TEST_CLOCK_BASE_URI, "value", 1.0));
-    grant_read(&mut runtime, TEST_CLOCK_BASE_URI, "value");
-    let mut context = runtime.runtime_context().unwrap();
-    runtime
-        .run_string_with_context(
-            &mut context,
-            "@pulse := test://clock/ticks{:read(value)}\noutput := @pulse/value",
-        )
-        .unwrap();
-    let source = RuntimeHostInputSource::new(TEST_CLOCK_BASE_URI, "value").unwrap();
-    let ingress = runtime.ingress();
-    ingress
-        .submit(RuntimeHostInput::single(
-            source.clone(),
-            RuntimeHostInputValue::String("wrong kind".to_string()),
-        ))
-        .unwrap();
-    ingress
-        .submit(RuntimeHostInput::single(
-            source,
-            RuntimeHostInputValue::F64(9.0),
-        ))
-        .unwrap();
-
-    assert!(runtime.drain_host_inputs(2).is_err());
-    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 1.0);
-
-    let outcomes = runtime.drain_host_inputs(1).unwrap();
-    assert_eq!(outcomes.len(), 1);
-    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
-    assert_eq!(f64_value(&symbol_value(&runtime, "output")), 9.0);
-}
 
 #[derive(Debug, Clone)]
 struct MockDriver {
@@ -61,8 +20,6 @@ struct MockDriver {
 }
 
 const MOCK_DRIVER_BASE_URI: &str = "test-input://clock/ticks";
-
-const MOCK_DRIVER_PATH: &str = "value";
 
 #[derive(Debug, Default)]
 struct MockDriverState {
@@ -99,7 +56,7 @@ impl MockDriver {
 
 impl RuntimeHostInputDriver for MockDriver {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
-        source.base_uri() == MOCK_DRIVER_BASE_URI && source.path() == MOCK_DRIVER_PATH
+        source.base_uri() == MOCK_DRIVER_BASE_URI && source.path() == self.name
     }
 
     fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
@@ -165,6 +122,31 @@ impl RuntimeHostInputDriver for MockDriver {
 }
 
 #[derive(Debug)]
+struct MockResourceProvider;
+
+impl RuntimeResourceProvider for MockResourceProvider {
+    fn scheme(&self) -> &str {
+        "test-input"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        vec![MOCK_DRIVER_BASE_URI.to_owned()]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static mech_core::OperationContractDeclaration> {
+        Some(crate::resource_observation_contract())
+    }
+
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        Ok(LegacyValue::F64(Ref::new(1.0)))
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        Ok(LegacyValue::F64(Ref::new(1.0)))
+    }
+}
+
+#[derive(Debug)]
 struct MockDriverFactory {
     manifest: HostManifestConfig,
     drivers: Vec<MockDriver>,
@@ -203,7 +185,7 @@ impl RuntimeHostFactory for MockDriverFactory {
     ) -> MResult<RuntimeHostInstallation> {
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: Vec::<Box<dyn RuntimeResourceProvider>>::new(),
+            resource_providers: vec![Box::new(MockResourceProvider)],
             input_drivers: self
                 .drivers
                 .iter()
@@ -227,6 +209,7 @@ fn drivers_with_events(
 
 fn runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
     RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .host_factory(Box::new(MockDriverFactory::new(drivers)))?
         .host_instance(HostInstanceConfig {
             name: "clock".to_string(),
@@ -238,6 +221,7 @@ fn runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
 
 fn planning_runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntime> {
     RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
         .planning()
         .host_factory(Box::new(MockDriverFactory::new(drivers)))?
         .host_instance(HostInstanceConfig {
@@ -248,16 +232,30 @@ fn planning_runtime_with_drivers(drivers: Vec<MockDriver>) -> MResult<MechRuntim
         .build()
 }
 
-fn bind_single_mock_input(runtime: &mut MechRuntime) {
-    let source = RuntimeHostInputSource::new(MOCK_DRIVER_BASE_URI, MOCK_DRIVER_PATH).unwrap();
-    runtime.live_input_bindings.insert(
-        source.clone(),
-        vec![crate::RuntimeLiveResourceBinding {
-            interpreter_id: 1,
-            source,
-            target: mech_core::Ref::new(mech_core::LegacyValue::F64(mech_core::Ref::new(0.0))),
-        }],
-    );
+fn activate_mock_inputs(runtime: &mut MechRuntime, names: &[&str]) {
+    let subject = runtime.runtime_context().unwrap().subject;
+    let mut source = String::new();
+    let mut values = Vec::new();
+    for (index, name) in names.iter().enumerate() {
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                CapabilityId(8_800 + index as u128),
+                &subject,
+                format!("{MOCK_DRIVER_BASE_URI}/{name}"),
+                ["read"],
+            )))
+            .unwrap();
+        source.push_str(&format!(
+            "@input-{name} := {MOCK_DRIVER_BASE_URI}{{:read({name})}}\n{name}-value := @input-{name}/{name}\n",
+        ));
+        values.push(format!("{name}-value"));
+    }
+    source.push_str("~state := 0.0\nstate += ");
+    source.push_str(&values.join(" + "));
+    source.push_str("\noutput := state\n");
+    runtime
+        .load_production_source_program(&source, ResidentDurabilityPolicy::Volatile)
+        .unwrap();
 }
 
 #[derive(Debug, Clone)]
@@ -287,11 +285,11 @@ fn mock_error(name: &'static str, message: impl Into<String>) -> MechError {
 fn build_attaches_and_starts_driven_input_drivers() {
     let state = Rc::new(RefCell::new(MockDriverState::default()));
     let mut runtime = runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
-    bind_single_mock_input(&mut runtime);
     assert_eq!(state.borrow().attach_count, 1);
     assert_eq!(state.borrow().start_count, 0);
     assert_eq!(state.borrow().stop_count, 0);
     assert!(!state.borrow().live);
+    activate_mock_inputs(&mut runtime, &["a"]);
     runtime.start_input_drivers().unwrap();
     assert_eq!(state.borrow().start_count, 1);
     assert!(state.borrow().live);
@@ -303,7 +301,6 @@ fn planning_never_attaches_starts_or_stops_input_drivers() {
     {
         let mut runtime =
             planning_runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
-        bind_single_mock_input(&mut runtime);
         assert_eq!(runtime.input_driver_count(), 0);
         runtime.start_input_drivers().unwrap();
         assert_eq!(state.borrow().attach_count, 0);
@@ -312,6 +309,23 @@ fn planning_never_attaches_starts_or_stops_input_drivers() {
         assert!(!state.borrow().live);
     }
     assert_eq!(state.borrow().stop_count, 0);
+}
+
+#[test]
+fn queued_input_without_resident_owner_fails_without_dequeue() {
+    let mut runtime = MechRuntime::builder().build().unwrap();
+    runtime
+        .ingress()
+        .submit(RuntimeHostInput::single(
+            RuntimeHostInputSource::new(MOCK_DRIVER_BASE_URI, "a").unwrap(),
+            RuntimeHostInputValue::F64(1.0),
+        ))
+        .unwrap();
+
+    let error = runtime.drain_host_inputs(1).unwrap_err();
+
+    assert_eq!(error.kind_name(), "RuntimeInvalidOperation");
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
 }
 
 #[test]
@@ -360,7 +374,7 @@ fn start_failure_stops_only_drivers_started_by_the_call() {
     let (drivers, events) =
         drivers_with_events(&[("a", a.clone()), ("b", b.clone()), ("c", c.clone())]);
     let mut runtime = runtime_with_drivers(drivers).unwrap();
-    bind_single_mock_input(&mut runtime);
+    activate_mock_inputs(&mut runtime, &["a", "b", "c"]);
     let error = format!("{:?}", runtime.start_input_drivers().unwrap_err());
     assert!(error.contains("MockStartError"));
     let stop_events: Vec<String> = events
@@ -385,7 +399,7 @@ fn input_driver_panic_is_converted_and_started_drivers_are_stopped() {
     }));
     let (drivers, events) = drivers_with_events(&[("a", a.clone()), ("b", b.clone())]);
     let mut runtime = runtime_with_drivers(drivers).unwrap();
-    bind_single_mock_input(&mut runtime);
+    activate_mock_inputs(&mut runtime, &["a", "b"]);
 
     let error = runtime.start_input_drivers().unwrap_err();
 
@@ -412,7 +426,7 @@ fn stop_input_drivers_attempts_every_driver() {
     let (drivers, events) =
         drivers_with_events(&[("a", a.clone()), ("b", b.clone()), ("c", c.clone())]);
     let mut runtime = runtime_with_drivers(drivers).unwrap();
-    bind_single_mock_input(&mut runtime);
+    activate_mock_inputs(&mut runtime, &["a", "b", "c"]);
     runtime.start_input_drivers().unwrap();
     let error = format!("{:?}", runtime.stop_input_drivers().unwrap_err());
     assert!(error.contains("MockStopError"));
@@ -432,7 +446,7 @@ fn stop_input_drivers_attempts_every_driver() {
 fn shutdown_closes_ingress_before_stopping_drivers() {
     let state = Rc::new(RefCell::new(MockDriverState::default()));
     let mut runtime = runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
-    bind_single_mock_input(&mut runtime);
+    activate_mock_inputs(&mut runtime, &["a"]);
     runtime.start_input_drivers().unwrap();
     let ingress = state.borrow().attached_ingress.clone().unwrap();
     runtime.shutdown().unwrap();
@@ -458,7 +472,7 @@ fn drop_stops_live_input_drivers() {
     let state = Rc::new(RefCell::new(MockDriverState::default()));
     {
         let mut runtime = runtime_with_drivers(vec![MockDriver::new("a", state.clone())]).unwrap();
-        bind_single_mock_input(&mut runtime);
+        activate_mock_inputs(&mut runtime, &["a"]);
         runtime.start_input_drivers().unwrap();
         assert!(state.borrow().live);
     }

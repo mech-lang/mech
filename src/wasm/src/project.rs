@@ -310,11 +310,6 @@ impl WasmProject {
             &JsValue::from_str("coalesced"),
             &JsValue::from_f64(info.coalesced_host_packets as f64),
         )?;
-        Reflect::set(
-            &out,
-            &JsValue::from_str("legacyTurns"),
-            &JsValue::from_f64(info.legacy_turns as f64),
-        )?;
         Ok(out.into())
     }
 
@@ -1398,7 +1393,6 @@ fn runtime_info_value(info: &RuntimeProgramExecutionInfo) -> Result<JsValue, JsV
             "resident_rejected_turns",
             JsValue::from_f64(info.resident_rejected_turns as f64),
         ),
-        ("legacy_turns", JsValue::from_f64(info.legacy_turns as f64)),
         (
             "coalesced_host_packets",
             JsValue::from_f64(info.coalesced_host_packets as f64),
@@ -1574,7 +1568,6 @@ mod tests {
             .expect("production project failure must retain its resident route class");
         assert_eq!(failure.class, expected);
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
-        assert_eq!(runtime.program_execution_info().legacy_turns, 0);
     }
 
     #[test]
@@ -1670,14 +1663,6 @@ mod tests {
         assert_eq!(
             document.project.runtime.program_route(),
             RuntimeProgramRoute::ResidentPure,
-        );
-        assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0,
         );
     }
 

@@ -1,7 +1,6 @@
 //! Runtime construction and dependency assembly.
 
 use super::extension;
-use super::live_state::LiveRegistrationMode;
 use super::resources::{runtime_resource_binding_error, validate_resource_binding_name};
 use super::transaction::RuntimeHealth;
 use super::{MechRuntime, RuntimeExecutionMode};
@@ -17,9 +16,8 @@ use crate::{
 };
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog, ModuleManifestConfig};
-use mech_engine::{MechProgram, MechProgramConfig, MechProgramEnvironment};
 use std::cell::Cell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -285,16 +283,6 @@ impl RuntimeBuilder {
 
         let runtime_id = self.id_generator.runtime_id();
 
-        let program_config = MechProgramConfig {
-            name: self.config.name.clone(),
-            environment: MechProgramEnvironment {
-                trace_enabled: self.config.diagnostics.trace_enabled,
-                debug_enabled: self.config.diagnostics.debug_enabled,
-                profile_enabled: self.config.diagnostics.profile_enabled,
-                rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
-            },
-        };
-
         let mut host_interfaces = HostInterfaceCatalog::new();
         for host_instance in &self.host_instances {
             let installation = self.host_factories.instantiate(host_instance)?;
@@ -312,8 +300,6 @@ impl RuntimeBuilder {
         self.store.configure_event_retention(max_events)?;
 
         let function_catalog = Arc::clone(&self.function_catalog);
-        let program =
-            MechProgram::with_function_catalog(program_config, Arc::clone(&function_catalog));
 
         let mut runtime = MechRuntime {
             id: runtime_id,
@@ -321,7 +307,6 @@ impl RuntimeBuilder {
             config: self.config,
             execution_mode: self.execution_mode,
             function_catalog,
-            program,
             #[cfg(feature = "resident-routing")]
             active_program: Default::default(),
             #[cfg(feature = "resident-routing")]
@@ -339,22 +324,16 @@ impl RuntimeBuilder {
             scheduler: self.scheduler,
             scheduler_policy: self.scheduler_policy,
             active_transactions: HashMap::new(),
-            program_transaction_owner: None,
-            active_program_operation: Rc::new(Cell::new(None)),
             active_effect_phase: Rc::new(Cell::new(None)),
             health: RuntimeHealth::Healthy,
             module_builder: self.module_builder,
             resources: RuntimeResourceRegistry::new(),
             resource_bindings: HashMap::new(),
-            external_requirements: Default::default(),
-            live_registration_mode: LiveRegistrationMode::RetainedRoot,
-            live_input_bindings: BTreeMap::new(),
             host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(
                 RuntimeHostInputQueueState::new(self.host_input_capacity),
             )),
             input_drivers: self.input_drivers,
             attached_input_driver_count: 0,
-            live_context_template: None,
             input_driver_cleanup_armed: false,
             host_interfaces,
             module_manifests: self.module_manifests,

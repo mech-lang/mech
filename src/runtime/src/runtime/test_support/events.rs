@@ -20,23 +20,3 @@ pub(crate) fn event_count(
 ) -> usize {
     events.iter().filter(|event| predicate(&event.kind)).count()
 }
-
-pub(crate) fn event_position(
-    events: &[RuntimeEvent],
-    predicate: impl Fn(&RuntimeEventKind) -> bool,
-) -> Option<usize> {
-    events.iter().position(|event| predicate(&event.kind))
-}
-
-pub(crate) fn assert_event_before(
-    events: &[RuntimeEvent],
-    before: impl Fn(&RuntimeEventKind) -> bool,
-    after: impl Fn(&RuntimeEventKind) -> bool,
-) {
-    let before = event_position(events, before).expect("expected earlier runtime event");
-    let after = event_position(events, after).expect("expected later runtime event");
-    assert!(
-        before < after,
-        "expected event at {before} before event at {after}",
-    );
-}

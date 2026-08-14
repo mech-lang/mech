@@ -87,19 +87,7 @@ impl RuntimeConfig {
     }
 
     /// Validate the execution policy accepted by shipping products.
-    ///
-    /// The remaining legacy-only policy exists solely until the interpreter
-    /// caller closure is removed; production entry points must reject it.
     pub fn validate_production_program_routing(&self) -> MResult<()> {
-        if self.program_routing.resident_routing != ResidentRoutingPolicy::RequireResident {
-            return Err(MechError::new(
-                InvalidRuntimeConfigValue {
-                    field: "runtime.program-routing.resident-routing",
-                    reason: "production products require `require-resident` routing".to_string(),
-                },
-                None,
-            ));
-        }
         Ok(())
     }
 
@@ -180,7 +168,6 @@ impl RuntimeConfig {
 pub enum ResidentRoutingPolicy {
     #[default]
     RequireResident = 1,
-    LegacyOnly = 2,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -400,16 +387,6 @@ mod tests {
         let config = RuntimeConfig::default();
         assert!(config.validate().is_ok());
         assert!(config.validate_production_program_routing().is_ok());
-    }
-
-    #[test]
-    fn production_routing_rejects_interpreter_selection() {
-        let mut config = RuntimeConfig::default();
-        config.program_routing.resident_routing = ResidentRoutingPolicy::LegacyOnly;
-        let error = config
-            .validate_production_program_routing()
-            .expect_err("shipping products must reject interpreter routing");
-        assert_eq!(error.kind_name(), "InvalidRuntimeConfigValue");
     }
 
     #[test]

@@ -24,7 +24,6 @@ use authority::ResidentGrantSet;
 
 pub(crate) enum ActiveProgramExecution {
     None,
-    Legacy,
     ResidentPure(ResidentPureExecution),
     ResidentExternal(ResidentExternalExecution),
 }

@@ -9,5 +9,4 @@ fn malformed_bytecode_fails_closed_without_installing_a_route() {
         .unwrap_err();
     assert!(error.kind_message().starts_with("InvalidBytecode:"));
     assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
-    assert_eq!(runtime.program_execution_info().legacy_turns, 0);
 }

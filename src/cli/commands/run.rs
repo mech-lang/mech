@@ -416,7 +416,6 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> serde_json::Value {
         "requirements": info.requirement_count,
         "observations": info.observation_count,
         "effects": info.effect_count,
-        "legacy_turns": info.legacy_turns,
         "resident_accepted_turns": info.resident_accepted_turns,
         "resident_rejected_turns": info.resident_rejected_turns,
         "coalesced_host_packets": info.coalesced_host_packets,

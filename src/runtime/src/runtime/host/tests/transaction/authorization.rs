@@ -17,7 +17,7 @@ fn snapshot(value: LegacyValue) -> RuntimeValueSnapshot {
 }
 
 #[test]
-fn pure_host_source_execution_consumes_single_use_capability() {
+fn pure_host_call_consumes_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
     let mut runtime = test_runtime_builder()
@@ -37,7 +37,7 @@ fn pure_host_source_execution_consumes_single_use_capability() {
     grant_host_call_with_limit(&mut runtime, CapabilityId(710), "demo/pure-limited", 1);
 
     runtime
-        .run_string("pure-limited-result := demo/pure-limited()")
+        .call_host(HostCall::new("demo/pure-limited", Vec::new()))
         .unwrap();
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert!(
@@ -49,7 +49,7 @@ fn pure_host_source_execution_consumes_single_use_capability() {
 }
 
 #[test]
-fn runtime_managed_source_execution_consumes_single_use_capability() {
+fn runtime_managed_host_call_consumes_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
     let mut runtime = test_runtime_builder()
@@ -69,7 +69,7 @@ fn runtime_managed_source_execution_consumes_single_use_capability() {
     grant_host_call_with_limit(&mut runtime, CapabilityId(711), "demo/managed-limited", 1);
 
     runtime
-        .run_string("managed-limited-result := demo/managed-limited()")
+        .call_host(HostCall::new("demo/managed-limited", Vec::new()))
         .unwrap();
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert!(
@@ -81,7 +81,7 @@ fn runtime_managed_source_execution_consumes_single_use_capability() {
 }
 
 #[test]
-fn staged_source_execution_consumes_single_use_capability() {
+fn staged_host_call_consumes_single_use_capability() {
     let calls = Arc::new(AtomicUsize::new(0));
     let deliveries = Arc::new(AtomicUsize::new(0));
     let callback_calls = calls.clone();
@@ -111,7 +111,7 @@ fn staged_source_execution_consumes_single_use_capability() {
     grant_host_call_with_limit(&mut runtime, CapabilityId(712), "demo/staged-limited", 1);
 
     runtime
-        .run_string("staged-limited-result := demo/staged-limited()")
+        .call_host(HostCall::new("demo/staged-limited", Vec::new()))
         .unwrap();
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert_eq!(deliveries.load(Ordering::SeqCst), 1);

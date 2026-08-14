@@ -41,9 +41,6 @@ fn explicit_transaction_owns_provisional_graph_visibility() {
     );
     assert!(runtime.store.get_module(module).unwrap().is_none());
     assert!(runtime.store.get_module_version(version).unwrap().is_none(),);
-    assert!(runtime.run_module_with_context(&mut owner, version).is_ok(),);
-    assert!(runtime.run_module(version).is_err());
-
     runtime.commit_runtime_transaction(&mut owner).unwrap();
     assert!(runtime.store.get_module(module).unwrap().is_some());
     assert!(runtime.store.get_module_version(version).unwrap().is_some(),);
@@ -123,40 +120,6 @@ fn committed_equal_version_emits_no_second_compile_event() {
 
     assert_eq!(second, first);
     assert_eq!(compiled_after, compiled_before);
-}
-
-#[test]
-fn module_only_work_is_allowed_while_another_transaction_owns_program() {
-    let mut runtime = runtime_with_sources(&[("module-b.mec", "value := 2\nvalue\n")]);
-    let mut context_a = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context_a).unwrap();
-    runtime
-        .run_string_with_context(&mut context_a, "transaction-a-owner := 1")
-        .unwrap();
-
-    let mut context_b = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context_b).unwrap();
-    let version = runtime
-        .build_module_from_request_with_context(
-            &mut context_b,
-            "module-b.mec",
-            test_module_options(),
-        )
-        .unwrap()
-        .unwrap();
-
-    assert!(
-        runtime
-            .get_module_version_visible(&context_b, version)
-            .unwrap()
-            .is_some(),
-    );
-    runtime
-        .abort_runtime_transaction(&mut context_b, "discard B")
-        .unwrap();
-    runtime
-        .abort_runtime_transaction(&mut context_a, "discard A")
-        .unwrap();
 }
 
 #[test]

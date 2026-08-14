@@ -935,69 +935,6 @@ impl MechRuntime {
 
         Ok(effect_id)
     }
-
-    pub(in crate::runtime) fn execute_runtime_effect_immediately(
-        &mut self,
-        mut effect: PreparedRuntimeEffect,
-    ) -> MResult<RuntimeEffectId> {
-        self.ensure_runtime_mutation_allowed("execute_runtime_effect_immediately")?;
-
-        let effect_id = RuntimeEffectId {
-            transaction: self.next_transaction_id(),
-            sequence: 0,
-        };
-        match &mut effect {
-            PreparedRuntimeEffect::Transactional(effect) => {
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Preparing,
-                );
-                let prepare_result = effect.prepare();
-                drop(phase_guard);
-                prepare_result?;
-
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Committing,
-                );
-                let commit_result = effect.commit();
-                drop(phase_guard);
-                if let Err(error) = commit_result {
-                    return Err(self.poison_external_commit_indeterminate(
-                        effect_id.transaction,
-                        vec![RuntimeEffectFailure {
-                            effect_id,
-                            phase: RuntimeEffectFailurePhase::Commit,
-                            message: format!("{:?}", error),
-                        }],
-                        vec![format!(
-                            "immediate transactional effect {} commit failed: {:?}",
-                            effect_id, error,
-                        )],
-                    ));
-                }
-            }
-            PreparedRuntimeEffect::Compensatable(effect) => {
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Applying,
-                );
-                let result = effect.apply();
-                drop(phase_guard);
-                result?;
-            }
-            PreparedRuntimeEffect::AfterCommit(effect) => {
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Delivering,
-                );
-                let result = effect.deliver();
-                drop(phase_guard);
-                result?;
-            }
-        }
-        Ok(effect_id)
-    }
 }
 
 #[cfg(test)]

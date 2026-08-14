@@ -15,79 +15,13 @@ error[E0599]: no method named `take_program` found for struct `MechRuntime` in t
 6 |   let _ = runtime.take_program();
   |                   ^^^^^^^^^^^^ method not found in `MechRuntime`
 
-error[E0624]: method `store_mut` is private
+error[E0624]: method `capability_kernel_mut` is private
  --> tests/ui/sealed/runtime_component_access.rs:7:19
   |
-7 |   let _ = runtime.store_mut();
-  |                   ^^^^^^^^^ private method
-  |
- ::: src/runtime/components.rs
-  |
-  |     pub(crate) fn store_mut(&mut self) -> &mut dyn MechStore {
-  |     -------------------------------------------------------- private method defined here
-
-error[E0624]: method `capability_kernel_mut` is private
- --> tests/ui/sealed/runtime_component_access.rs:8:19
-  |
-8 |   let _ = runtime.capability_kernel_mut();
+7 |   let _ = runtime.capability_kernel_mut();
   |                   ^^^^^^^^^^^^^^^^^^^^^ private method
   |
  ::: src/runtime/components.rs
   |
   |     pub(crate) fn capability_kernel_mut(&mut self) -> &mut dyn CapabilityKernel {
   |     --------------------------------------------------------------------------- private method defined here
-
-error[E0624]: method `source_resolver_mut` is private
- --> tests/ui/sealed/runtime_component_access.rs:9:19
-  |
-9 |   let _ = runtime.source_resolver_mut();
-  |                   ^^^^^^^^^^^^^^^^^^^ private method
-  |
- ::: src/runtime/components.rs
-  |
-  |     pub(crate) fn source_resolver_mut(&mut self) -> &mut dyn SourceResolver {
-  |     ----------------------------------------------------------------------- private method defined here
-
-error[E0624]: method `host_registry_mut` is private
-  --> tests/ui/sealed/runtime_component_access.rs:10:19
-   |
-10 |   let _ = runtime.host_registry_mut();
-   |                   ^^^^^^^^^^^^^^^^^ private method
-   |
-  ::: src/runtime/components.rs
-   |
-   |     pub(crate) fn host_registry_mut(&mut self) -> &mut dyn HostRegistry {
-   |     ------------------------------------------------------------------- private method defined here
-
-error[E0624]: method `host_policy_mut` is private
-  --> tests/ui/sealed/runtime_component_access.rs:11:19
-   |
-11 |   let _ = runtime.host_policy_mut();
-   |                   ^^^^^^^^^^^^^^^ private method
-   |
-  ::: src/runtime/components.rs
-   |
-   |     pub(crate) fn host_policy_mut(&mut self) -> &mut dyn HostCallPolicy {
-   |     ------------------------------------------------------------------- private method defined here
-
-error[E0624]: method `scheduler_mut` is private
-  --> tests/ui/sealed/runtime_component_access.rs:12:19
-   |
-12 |   let _ = runtime.scheduler_mut();
-   |                   ^^^^^^^^^^^^^ private method
-   |
-  ::: src/runtime/components.rs
-   |
-   |     pub(crate) fn scheduler_mut(&mut self) -> &mut dyn Scheduler {
-   |     ------------------------------------------------------------ private method defined here
-
-error[E0624]: method `scheduler_policy_mut` is private
-  --> tests/ui/sealed/runtime_component_access.rs:13:19
-   |
-13 |   let _ = runtime.scheduler_policy_mut();
-   |                   ^^^^^^^^^^^^^^^^^^^^ private method
-   |
-  ::: src/runtime/components.rs
-   |
-   |     pub(crate) fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
-   |     --------------------------------------------------------------------- private method defined here

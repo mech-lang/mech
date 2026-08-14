@@ -396,15 +396,11 @@ impl MechRuntime {
                 "a runtime transaction is active; finish it before loading a program",
             ));
         }
-        if matches!(self.active_program, ActiveProgramExecution::None)
-            && !self.program.interpreter().has_retained_execution_state()
-            && self.live_input_bindings.is_empty()
-            && self.live_context_template.is_none()
-        {
+        if matches!(self.active_program, ActiveProgramExecution::None) {
             Ok(())
         } else {
             Err(invalid_active_program(
-                "one runtime may own only one resident or retained legacy program; unload it first",
+                "one runtime may own only one resident program; unload it first",
             ))
         }
     }
