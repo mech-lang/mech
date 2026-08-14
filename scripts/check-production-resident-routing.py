@@ -399,6 +399,20 @@ def check_required_product_seams() -> list[str]:
     ):
         if (ROOT / relative).exists():
             failures.append(f"{relative}: retired interpreter command documentation remains")
+    for relative in (
+        "scripts/check-d3-contract.py",
+        "scripts/generate-d3-contract.py",
+        "scripts/check-d4-contract.py",
+        "scripts/generate-d4-contract.py",
+        "scripts/tests/test_check_d3_contract.py",
+        "scripts/tests/test_generate_d3_contract.py",
+        "scripts/tests/test_check_d4_contract.py",
+        "scripts/tests/test_generate_d4_contract.py",
+        "tests/architecture/resident-external",
+        "tests/architecture/production-resident",
+    ):
+        if (ROOT / relative).exists():
+            failures.append(f"{relative}: retired D3/D4 migration scaffold remains")
     return failures
 
 

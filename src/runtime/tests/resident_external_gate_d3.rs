@@ -33,9 +33,9 @@ const TURNS: usize = 4_096;
 const SAMPLES: usize = 10;
 const HISTORY_SAMPLES: usize = 3;
 const EFFECT_SOURCE: &str =
-    include_str!("../../../tests/architecture/resident-external/d3-effect-source-v1.mec");
+    include_str!("../../../tests/fixtures/resident-external/effect-source.mec");
 const TRANSACTIONAL_SOURCE: &str =
-    include_str!("../../../tests/architecture/resident-external/d3-transactional-source-v1.mec");
+    include_str!("../../../tests/fixtures/resident-external/transactional-source.mec");
 
 struct CountingAllocator;
 

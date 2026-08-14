@@ -2381,15 +2381,13 @@ impl MechExecutionServices for SourceFixtureServices {
 fn ordinary_source_and_bytecode_freeze_equivalent_external_artifacts() -> MResult<()> {
     for (source, protocol, expected_effect) in [
         (
-            include_str!(
-                "../../../../../../tests/architecture/resident-external/d3-effect-source-v1.mec"
-            ),
+            include_str!("../../../../../../tests/fixtures/resident-external/effect-source.mec"),
             ProviderProtocol::AfterCommit,
             EFFECT_CONTRACT.interaction.clone(),
         ),
         (
             include_str!(
-                "../../../../../../tests/architecture/resident-external/d3-transactional-source-v1.mec"
+                "../../../../../../tests/fixtures/resident-external/transactional-source.mec"
             ),
             ProviderProtocol::Compensatable,
             COMPENSATABLE_CONTRACT.interaction.clone(),

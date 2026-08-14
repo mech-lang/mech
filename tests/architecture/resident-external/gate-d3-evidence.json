@@ -1,6 +1,0 @@
-{
-  "schema_version": 1,
-  "semantic_commit": "cf61038766c3ec6c83fe6aeac5d0c41d579036f1",
-  "evidence_path": "benchmarks/runtime/gate-d/d3-resident-external.json",
-  "evidence_sha256": "90582fdc0d5773be84d83084205edb1188b175ca6c3f464124450daea5539b52"
-}

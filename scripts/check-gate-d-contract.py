@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_REPORT = ROOT / "benchmarks/runtime/gate-d/d2-resident-nbody.json"
 DEFAULT_POINTER = ROOT / "tests/architecture/resident-activation/gate-d-regression.json"
 D3_REPORT = ROOT / "benchmarks/runtime/gate-d/d3-resident-external.json"
-D3_POINTER = ROOT / "tests/architecture/resident-external/gate-d3-evidence.json"
+D3_SEMANTIC_COMMIT = "cf61038766c3ec6c83fe6aeac5d0c41d579036f1"
+D3_EVIDENCE_SHA256 = "90582fdc0d5773be84d83084205edb1188b175ca6c3f464124450daea5539b52"
 D3_HARD_GATES = {
     "accepted_publication_store",
     "accepted_receipt_append",
@@ -84,17 +85,26 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     report_path = args.report if args.report.is_absolute() else ROOT / args.report
     pointer_arg = args.pointer
-    if pointer_arg is None:
-        pointer_path = (
-            D3_POINTER if report_path.resolve() == D3_REPORT.resolve() else DEFAULT_POINTER
-        )
+    is_d3_report = report_path.resolve() == D3_REPORT.resolve()
+    if pointer_arg is None and is_d3_report:
+        pointer = {
+            "semantic_commit": D3_SEMANTIC_COMMIT,
+            "evidence_path": D3_REPORT.relative_to(ROOT).as_posix(),
+            "evidence_sha256": D3_EVIDENCE_SHA256,
+        }
+        pointer_path = None
     else:
-        pointer_path = pointer_arg if pointer_arg.is_absolute() else ROOT / pointer_arg
+        pointer_path = (
+            DEFAULT_POINTER
+            if pointer_arg is None
+            else pointer_arg if pointer_arg.is_absolute() else ROOT / pointer_arg
+        )
     errors: list[str] = []
     try:
         report_bytes = report_path.read_bytes()
         report = json.loads(report_bytes)
-        pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+        if pointer_path is not None:
+            pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         print(f"Gate D contract failed: {error}")
         return 2
