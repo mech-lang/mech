@@ -74,7 +74,7 @@ rendering, transactional graph, or batched dispatch, add a duration and CSV
 path:
 
 ```text
-cargo run -p mech-gpu --release --features native \
+cargo run -p mech-gpu --release --features native,jit \
   --example compute_backend_benchmark -- \
   1000000 1 1 20 /tmp/mech-compute-timeline.csv
 ```
@@ -113,11 +113,11 @@ cargo run -p mech-gpu --release --features native \
   --example parallel_ekf_benchmark -- 100000 3 20 120
 ```
 
-Measured on an Apple M1 through Metal on 2026-08-13:
+Measured on an Apple M1 through Metal on 2026-08-14:
 
 | Filters | Scalar evaluator | SIMD evaluator | Cranelift JIT | GPU, one submission/turn | GPU, 120 turns/submission |
 | ---: | ---: | ---: | ---: | ---: | ---: |
-| 100,000 | 1.215 M EKF-turns/s | 4.322 M EKF-turns/s | 17.183 M EKF-turns/s | 63.888 M EKF-turns/s | 329.395 M EKF-turns/s |
+| 100,000 | 1.216 M EKF-turns/s | 4.414 M EKF-turns/s | 17.306 M EKF-turns/s | 53.557 M EKF-turns/s | 343.969 M EKF-turns/s |
 
 The maximum CPU/GPU absolute error after four validation turns was
 `6.866e-5`; JIT output matched the scalar evaluator bit-for-bit. The test suite

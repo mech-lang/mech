@@ -1,0 +1,167 @@
+{
+  "configuration": {
+    "backend_cpu_turns": 5,
+    "backend_instances": 100000,
+    "luajit_samples": 7,
+    "samples": 5,
+    "scalar_instances": 10000,
+    "scalar_turns": 20,
+    "thread_environment": {
+      "MKL_NUM_THREADS": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    }
+  },
+  "generated_at": "2026-08-14T14:40:09.266866-04:00",
+  "platform": {
+    "description": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "machine": "arm64"
+  },
+  "runs": {
+    "Julia scalar outer loop": {
+      "command": [
+        "/opt/homebrew/bin/julia",
+        "--startup-file=no",
+        "/private/tmp/mech-program-gpu/hosts/gpu/benchmarks/parallel-ekf/julia_scalar.jl",
+        "10000",
+        "20"
+      ],
+      "discarded_warmup_stdout": "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.070010542\nthroughput: 2.856712636219843e6\nchecksum: 2.682056074361449e6\n",
+      "measured_stdout": [
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.07219\nthroughput: 2.7704668236597865e6\nchecksum: 2.682056074361449e6\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.071792125\nthroughput: 2.7858208682358963e6\nchecksum: 2.682056074361449e6\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.072087541\nthroughput: 2.7744045257418337e6\nchecksum: 2.682056074361449e6\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.069446708\nthroughput: 2.879906128883748e6\nchecksum: 2.682056074361449e6\n",
+        "lane: Julia scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.068486\nthroughput: 2.920304879829454e6\nchecksum: 2.682056074361449e6\n"
+      ]
+    },
+    "LuaJIT scalar outer loop": {
+      "command": [
+        "/opt/homebrew/bin/luajit",
+        "/private/tmp/mech-program-gpu/hosts/gpu/benchmarks/parallel-ekf/luajit_scalar.lua",
+        "10000",
+        "20"
+      ],
+      "discarded_warmup_stdout": "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.096886000\nthroughput: 2064281.733\nchecksum: 2682056.068860276\n",
+      "measured_stdout": [
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.083613000\nthroughput: 2391972.540\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.190461000\nthroughput: 1050083.744\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.099216000\nthroughput: 2015803.903\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.201453000\nthroughput: 992787.400\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.183611000\nthroughput: 1089259.358\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.185892000\nthroughput: 1075893.530\nchecksum: 2682056.068860276\n",
+        "lane: LuaJIT scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 0.098473000\nthroughput: 2031013.577\nchecksum: 2682056.068860276\n"
+      ]
+    },
+    "NumPy scalar outer loop": {
+      "command": [
+        "/private/tmp/mech-ekf-bench-venv/bin/python",
+        "/private/tmp/mech-program-gpu/hosts/gpu/benchmarks/parallel-ekf/numpy_scalar.py",
+        "10000",
+        "20"
+      ],
+      "discarded_warmup_stdout": "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.609133460\nthroughput: 55414.964\nchecksum: 2682056.057376927\n",
+      "measured_stdout": [
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.626759876\nthroughput: 55145.642\nchecksum: 2682056.057376927\n",
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.604493208\nthroughput: 55486.302\nchecksum: 2682056.057376927\n",
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.637968667\nthroughput: 54975.735\nchecksum: 2682056.057376927\n",
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.615298502\nthroughput: 55320.467\nchecksum: 2682056.057376927\n",
+        "lane: NumPy scalar outer loop\ninstances: 10000\nturns: 20\nelapsed_s: 3.638733961\nthroughput: 54964.172\nchecksum: 2682056.057376927\n"
+      ]
+    },
+    "Rust optimized fixed-shape": {
+      "command": [
+        "/var/folders/dm/wq2dx4rj733bb3k003l_pzqr0000gn/T/mech-ekf-8a6kdatt/rust-scalar",
+        "10000",
+        "20"
+      ],
+      "discarded_warmup_stdout": "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.029004667\nthroughput: 6895442.034\nchecksum: 2682056.074091980\n",
+      "measured_stdout": [
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.016131333\nthroughput: 12398231.442\nchecksum: 2682056.074091980\n",
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.012011917\nthroughput: 16650131.698\nchecksum: 2682056.074091980\n",
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.009852792\nthroughput: 20298814.793\nchecksum: 2682056.074091980\n",
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.009634542\nthroughput: 20758641.148\nchecksum: 2682056.074091980\n",
+        "lane: Rust optimized fixed-shape\ninstances: 10000\nturns: 20\nelapsed_s: 0.009618791\nthroughput: 20792633.918\nchecksum: 2682056.074091980\n"
+      ]
+    },
+    "mech_backend_settings": {
+      "command": [
+        "/private/tmp/mech-program-gpu/target/release/examples/parallel_ekf_benchmark",
+        "100000",
+        "5",
+        "40",
+        "120"
+      ],
+      "discarded_warmup_stdout": "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10109\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 52.191 ms\nresident GPU prepare: 3.947 ms\nCranelift JIT prepare: 3.261 ms\nMech scalar CPU: 82.286 ms/turn (5 turns)\nMech SIMD CPU: 22.742 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.721 ms/turn (5 turns)\nresident GPU, one submission per turn: 2.172 ms/turn (40 turns)\nresident GPU, one batched submission: 0.291 ms/turn (120 turns)\nMech scalar throughput: 1.215 million EKF-turns/s\nMech SIMD throughput: 4.397 million EKF-turns/s\nMech Cranelift JIT throughput: 17.479 million EKF-turns/s\nGPU single-submit throughput: 46.047 million EKF-turns/s\nGPU batched throughput: 343.584 million EKF-turns/s\nfinal state readback: 2.339 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379895236\n",
+      "measured_stdout": [
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10109\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 57.233 ms\nresident GPU prepare: 3.863 ms\nCranelift JIT prepare: 3.340 ms\nMech scalar CPU: 82.188 ms/turn (5 turns)\nMech SIMD CPU: 22.653 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.806 ms/turn (5 turns)\nresident GPU, one submission per turn: 2.020 ms/turn (40 turns)\nresident GPU, one batched submission: 0.228 ms/turn (120 turns)\nMech scalar throughput: 1.217 million EKF-turns/s\nMech SIMD throughput: 4.414 million EKF-turns/s\nMech Cranelift JIT throughput: 17.225 million EKF-turns/s\nGPU single-submit throughput: 49.500 million EKF-turns/s\nGPU batched throughput: 438.654 million EKF-turns/s\nfinal state readback: 4.092 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379895236\n",
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10109\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 57.694 ms\nresident GPU prepare: 3.873 ms\nCranelift JIT prepare: 3.306 ms\nMech scalar CPU: 82.303 ms/turn (5 turns)\nMech SIMD CPU: 22.702 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.779 ms/turn (5 turns)\nresident GPU, one submission per turn: 1.753 ms/turn (40 turns)\nresident GPU, one batched submission: 0.291 ms/turn (120 turns)\nMech scalar throughput: 1.215 million EKF-turns/s\nMech SIMD throughput: 4.405 million EKF-turns/s\nMech Cranelift JIT throughput: 17.303 million EKF-turns/s\nGPU single-submit throughput: 57.037 million EKF-turns/s\nGPU batched throughput: 343.969 million EKF-turns/s\nfinal state readback: 2.427 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379895236\n",
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10109\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 55.590 ms\nresident GPU prepare: 4.044 ms\nCranelift JIT prepare: 3.344 ms\nMech scalar CPU: 82.205 ms/turn (5 turns)\nMech SIMD CPU: 22.656 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.768 ms/turn (5 turns)\nresident GPU, one submission per turn: 1.867 ms/turn (40 turns)\nresident GPU, one batched submission: 0.253 ms/turn (120 turns)\nMech scalar throughput: 1.216 million EKF-turns/s\nMech SIMD throughput: 4.414 million EKF-turns/s\nMech Cranelift JIT throughput: 17.338 million EKF-turns/s\nGPU single-submit throughput: 53.557 million EKF-turns/s\nGPU batched throughput: 395.418 million EKF-turns/s\nfinal state readback: 2.408 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379895236\n",
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10109\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 55.709 ms\nresident GPU prepare: 4.141 ms\nCranelift JIT prepare: 3.413 ms\nMech scalar CPU: 82.283 ms/turn (5 turns)\nMech SIMD CPU: 22.589 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.766 ms/turn (5 turns)\nresident GPU, one submission per turn: 2.057 ms/turn (40 turns)\nresident GPU, one batched submission: 0.304 ms/turn (120 turns)\nMech scalar throughput: 1.215 million EKF-turns/s\nMech SIMD throughput: 4.427 million EKF-turns/s\nMech Cranelift JIT throughput: 17.343 million EKF-turns/s\nGPU single-submit throughput: 48.613 million EKF-turns/s\nGPU batched throughput: 329.308 million EKF-turns/s\nfinal state readback: 11.875 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379895236\n",
+        "EKF instances: 100000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10109\nGPU workgroups: 1563\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 58.249 ms\nresident GPU prepare: 3.889 ms\nCranelift JIT prepare: 3.241 ms\nMech scalar CPU: 82.090 ms/turn (5 turns)\nMech SIMD CPU: 22.716 ms/turn (5 turns)\nMech Cranelift JIT CPU: 5.779 ms/turn (5 turns)\nresident GPU, one submission per turn: 1.526 ms/turn (40 turns)\nresident GPU, one batched submission: 0.303 ms/turn (120 turns)\nMech scalar throughput: 1.218 million EKF-turns/s\nMech SIMD throughput: 4.402 million EKF-turns/s\nMech Cranelift JIT throughput: 17.306 million EKF-turns/s\nGPU single-submit throughput: 65.510 million EKF-turns/s\nGPU batched throughput: 329.572 million EKF-turns/s\nfinal state readback: 2.348 ms\nmaximum CPU/GPU absolute error: 6.866e-5\nmaximum scalar/SIMD absolute error: 6.104e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 27045907.379895236\nMech SIMD checksum: 27045907.581036136\nMech Cranelift JIT checksum: 27045907.379895236\n"
+      ]
+    },
+    "mech_scalar_settings": {
+      "command": [
+        "/private/tmp/mech-program-gpu/target/release/examples/parallel_ekf_benchmark",
+        "10000",
+        "20",
+        "20",
+        "120"
+      ],
+      "discarded_warmup_stdout": "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10108\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 46.215 ms\nresident GPU prepare: 1.367 ms\nCranelift JIT prepare: 1.238 ms\nMech scalar CPU: 8.237 ms/turn (20 turns)\nMech SIMD CPU: 2.268 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.576 ms/turn (20 turns)\nresident GPU, one submission per turn: 1.903 ms/turn (20 turns)\nresident GPU, one batched submission: 0.026 ms/turn (120 turns)\nMech scalar throughput: 1.214 million EKF-turns/s\nMech SIMD throughput: 4.408 million EKF-turns/s\nMech Cranelift JIT throughput: 17.358 million EKF-turns/s\nGPU single-submit throughput: 5.255 million EKF-turns/s\nGPU batched throughput: 385.802 million EKF-turns/s\nfinal state readback: 1.643 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056255098\n",
+      "measured_stdout": [
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10108\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 47.472 ms\nresident GPU prepare: 1.459 ms\nCranelift JIT prepare: 1.234 ms\nMech scalar CPU: 8.292 ms/turn (20 turns)\nMech SIMD CPU: 2.267 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.576 ms/turn (20 turns)\nresident GPU, one submission per turn: 2.355 ms/turn (20 turns)\nresident GPU, one batched submission: 0.026 ms/turn (120 turns)\nMech scalar throughput: 1.206 million EKF-turns/s\nMech SIMD throughput: 4.410 million EKF-turns/s\nMech Cranelift JIT throughput: 17.355 million EKF-turns/s\nGPU single-submit throughput: 4.247 million EKF-turns/s\nGPU batched throughput: 386.115 million EKF-turns/s\nfinal state readback: 1.627 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056255098\n",
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10108\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 47.228 ms\nresident GPU prepare: 1.435 ms\nCranelift JIT prepare: 1.261 ms\nMech scalar CPU: 8.244 ms/turn (20 turns)\nMech SIMD CPU: 2.269 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.575 ms/turn (20 turns)\nresident GPU, one submission per turn: 1.904 ms/turn (20 turns)\nresident GPU, one batched submission: 0.026 ms/turn (120 turns)\nMech scalar throughput: 1.213 million EKF-turns/s\nMech SIMD throughput: 4.408 million EKF-turns/s\nMech Cranelift JIT throughput: 17.385 million EKF-turns/s\nGPU single-submit throughput: 5.253 million EKF-turns/s\nGPU batched throughput: 386.324 million EKF-turns/s\nfinal state readback: 9.178 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056255098\n",
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10108\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 47.746 ms\nresident GPU prepare: 1.460 ms\nCranelift JIT prepare: 1.248 ms\nMech scalar CPU: 8.208 ms/turn (20 turns)\nMech SIMD CPU: 2.268 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.575 ms/turn (20 turns)\nresident GPU, one submission per turn: 1.902 ms/turn (20 turns)\nresident GPU, one batched submission: 0.026 ms/turn (120 turns)\nMech scalar throughput: 1.218 million EKF-turns/s\nMech SIMD throughput: 4.409 million EKF-turns/s\nMech Cranelift JIT throughput: 17.390 million EKF-turns/s\nGPU single-submit throughput: 5.256 million EKF-turns/s\nGPU batched throughput: 385.981 million EKF-turns/s\nfinal state readback: 1.626 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056255098\n",
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10108\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 46.878 ms\nresident GPU prepare: 1.479 ms\nCranelift JIT prepare: 1.240 ms\nMech scalar CPU: 8.424 ms/turn (20 turns)\nMech SIMD CPU: 2.271 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.571 ms/turn (20 turns)\nresident GPU, one submission per turn: 2.280 ms/turn (20 turns)\nresident GPU, one batched submission: 0.026 ms/turn (120 turns)\nMech scalar throughput: 1.187 million EKF-turns/s\nMech SIMD throughput: 4.402 million EKF-turns/s\nMech Cranelift JIT throughput: 17.517 million EKF-turns/s\nGPU single-submit throughput: 4.386 million EKF-turns/s\nGPU batched throughput: 386.160 million EKF-turns/s\nfinal state readback: 1.617 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056255098\n",
+        "EKF instances: 10000\nbatch extent authority: Mech input arrays\nsource artifact nodes: 108\ngenerated WGSL bytes: 10108\nGPU workgroups: 157\nCPU SIMD width: 4 f32 lanes\nadapter: Apple M1 (Metal)\nsource + artifact + scalarization: 46.956 ms\nresident GPU prepare: 1.405 ms\nCranelift JIT prepare: 1.240 ms\nMech scalar CPU: 8.221 ms/turn (20 turns)\nMech SIMD CPU: 2.268 ms/turn (20 turns)\nMech Cranelift JIT CPU: 0.572 ms/turn (20 turns)\nresident GPU, one submission per turn: 1.903 ms/turn (20 turns)\nresident GPU, one batched submission: 0.089 ms/turn (120 turns)\nMech scalar throughput: 1.216 million EKF-turns/s\nMech SIMD throughput: 4.410 million EKF-turns/s\nMech Cranelift JIT throughput: 17.493 million EKF-turns/s\nGPU single-submit throughput: 5.256 million EKF-turns/s\nGPU batched throughput: 112.779 million EKF-turns/s\nfinal state readback: 1.636 ms\nmaximum CPU/GPU absolute error: 6.104e-5\nmaximum scalar/SIMD absolute error: 4.578e-5\nmaximum scalar/JIT absolute error: 0.000e0\nMech scalar checksum: 2682056.056255098\nMech SIMD checksum: 2682056.074020825\nMech Cranelift JIT checksum: 2682056.056255098\n"
+      ]
+    }
+  },
+  "schema_version": 1,
+  "summary": {
+    "mech_backends_million_ekf_turns_per_second": {
+      "Mech Cranelift JIT": 17.306,
+      "Mech GPU, 120 turns/submission": 343.969,
+      "Mech GPU, one submission/turn": 53.557,
+      "Mech SIMD (4xf32)": 4.414,
+      "Mech scalar": 1.216
+    },
+    "scalar_outer_loop": {
+      "Julia scalar outer loop": {
+        "checksum": 2682056.074361449,
+        "ekf_turns_per_second": 2785820.8682358963
+      },
+      "LuaJIT scalar outer loop": {
+        "checksum": 2682056.068860276,
+        "ekf_turns_per_second": 1089259.358
+      },
+      "Mech Cranelift JIT": {
+        "checksum": 2682056.056255098,
+        "ekf_turns_per_second": 17390000.0
+      },
+      "Mech scalar": {
+        "checksum": 2682056.056255098,
+        "ekf_turns_per_second": 1213000.0
+      },
+      "NumPy scalar outer loop": {
+        "checksum": 2682056.057376927,
+        "ekf_turns_per_second": 55145.642
+      },
+      "Rust optimized fixed-shape": {
+        "checksum": 2682056.07409198,
+        "ekf_turns_per_second": 20298814.793
+      }
+    }
+  },
+  "versions": {
+    "git_commit": "6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e",
+    "julia": "julia version 1.12.6",
+    "luajit": "LuaJIT 2.1.1785763465 -- Copyright (C) 2005-2026 Mike Pall. https://luajit.org/",
+    "numpy": "2.5.2",
+    "python": "Python 3.14.6",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)"
+  }
+}
