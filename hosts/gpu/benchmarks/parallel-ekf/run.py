@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import datetime
+import json
 import os
+import platform
 import re
 import shutil
 import statistics
@@ -37,9 +40,21 @@ def number(text: str, pattern: str) -> float:
     return float(match.group(1))
 
 
-def sample(command: list[str], count: int, environment: dict[str, str]) -> list[str]:
-    output(command, environment)
-    return [output(command, environment) for _ in range(count)]
+def sample(
+    command: list[str],
+    count: int,
+    environment: dict[str, str],
+    evidence: dict[str, dict[str, object]],
+    name: str,
+) -> list[str]:
+    warmup = output(command, environment)
+    measured = [output(command, environment) for _ in range(count)]
+    evidence[name] = {
+        "command": command,
+        "discarded_warmup_stdout": warmup,
+        "measured_stdout": measured,
+    }
+    return measured
 
 
 def medians(outputs: list[str]) -> tuple[float, float]:
@@ -62,6 +77,11 @@ def main() -> None:
         default=ROOT / "target/release/examples/parallel_ekf_benchmark",
     )
     parser.add_argument("--python", default=sys.executable)
+    parser.add_argument(
+        "--evidence-output",
+        type=Path,
+        help="write commands, metadata, warmups, and every measured stdout as JSON",
+    )
     args = parser.parse_args()
     environment = os.environ.copy()
     for name in (
@@ -84,6 +104,8 @@ def main() -> None:
         raise RuntimeError(
             "build parallel_ekf_benchmark with --release --features native,jit first"
         )
+
+    evidence_runs: dict[str, dict[str, object]] = {}
 
     with tempfile.TemporaryDirectory(prefix="mech-ekf-") as temporary:
         rust_binary = Path(temporary) / "rust-scalar"
@@ -126,6 +148,8 @@ def main() -> None:
             [str(args.mech_binary), *common, str(max(20, args.scalar_turns)), "120"],
             args.samples,
             environment,
+            evidence_runs,
+            "mech_scalar_settings",
         )
         backend_mech_outputs = sample(
             [
@@ -137,6 +161,8 @@ def main() -> None:
             ],
             args.samples,
             environment,
+            evidence_runs,
+            "mech_backend_settings",
         )
         scalar = {}
         scalar["Mech scalar"] = (
@@ -166,7 +192,9 @@ def main() -> None:
                 count = (
                     args.luajit_samples if lane.startswith("LuaJIT") else args.samples
                 )
-                scalar[lane] = medians(sample(command, count, environment))
+                scalar[lane] = medians(
+                    sample(command, count, environment, evidence_runs, lane)
+                )
         reference = scalar["Rust optimized fixed-shape"][1]
         for lane, (_, checksum) in scalar.items():
             if abs(checksum - reference) > 0.1:
@@ -202,6 +230,65 @@ def main() -> None:
         print("| --- | ---: |")
         for lane, (throughput, _) in scalar.items():
             print(f"| {lane} | {throughput / 1e6:.3f} |")
+
+        if args.evidence_output is not None:
+            metadata_commands = {
+                "git_commit": ["git", "rev-parse", "HEAD"],
+                "rustc": [required["rustc"], "--version"],
+                "python": [args.python, "--version"],
+                "numpy": [
+                    args.python,
+                    "-c",
+                    "import numpy; print(numpy.__version__)",
+                ],
+                "julia": [required["julia"], "--version"],
+                "luajit": [required["luajit"], "-v"],
+            }
+            evidence = {
+                "schema_version": 1,
+                "generated_at": datetime.datetime.now().astimezone().isoformat(),
+                "platform": {
+                    "description": platform.platform(),
+                    "machine": platform.machine(),
+                },
+                "configuration": {
+                    "scalar_instances": args.scalar_instances,
+                    "scalar_turns": args.scalar_turns,
+                    "backend_instances": args.backend_instances,
+                    "backend_cpu_turns": args.backend_cpu_turns,
+                    "samples": args.samples,
+                    "luajit_samples": args.luajit_samples,
+                    "thread_environment": {
+                        name: environment[name]
+                        for name in (
+                            "OMP_NUM_THREADS",
+                            "OPENBLAS_NUM_THREADS",
+                            "MKL_NUM_THREADS",
+                            "VECLIB_MAXIMUM_THREADS",
+                        )
+                    },
+                },
+                "versions": {
+                    name: output(command, environment).strip()
+                    for name, command in metadata_commands.items()
+                },
+                "summary": {
+                    "mech_backends_million_ekf_turns_per_second": backend,
+                    "scalar_outer_loop": {
+                        lane: {
+                            "ekf_turns_per_second": throughput,
+                            "checksum": checksum,
+                        }
+                        for lane, (throughput, checksum) in scalar.items()
+                    },
+                },
+                "runs": evidence_runs,
+            }
+            args.evidence_output.parent.mkdir(parents=True, exist_ok=True)
+            args.evidence_output.write_text(
+                json.dumps(evidence, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
 
 
 if __name__ == "__main__":
