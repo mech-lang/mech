@@ -217,29 +217,6 @@ impl MechRuntime {
         self.program_execution_info.clone()
     }
 
-    #[cfg(any(test, feature = "legacy-interpreter"))]
-    pub fn record_legacy_program_route(
-        &mut self,
-        policy: crate::ResidentRoutingPolicy,
-        turns: u64,
-    ) -> MResult<()> {
-        if matches!(self.active_program, ActiveProgramExecution::Legacy) {
-            self.program_execution_info.policy = policy;
-            self.program_execution_info.legacy_turns =
-                self.program_execution_info.legacy_turns.max(turns);
-            return Ok(());
-        }
-        self.ensure_program_slot_available()?;
-        self.active_program = ActiveProgramExecution::Legacy;
-        self.program_execution_info = RuntimeProgramExecutionInfo {
-            route: RuntimeProgramRoute::Legacy,
-            policy,
-            legacy_turns: turns,
-            ..RuntimeProgramExecutionInfo::default()
-        };
-        Ok(())
-    }
-
     pub(crate) fn program_route_for_debug(&self) -> RuntimeProgramRoute {
         self.program_route()
     }

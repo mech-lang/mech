@@ -181,3 +181,78 @@ fn outer_commit_bounds_hidden_context_event_history() {
     assert_eq!(costs.context_event_snapshot_count, 0);
     assert_eq!(costs.context_event_snapshot_items, 0);
 }
+
+#[test]
+fn context_event_retention_is_bounded() {
+    let mut config = RuntimeConfig::default();
+    config.limits.max_in_memory_events = Some(2);
+    let mut runtime = crate::MechRuntime::new(config).unwrap();
+    let mut context = runtime.runtime_context().unwrap();
+    runtime
+        .put_object_with_context(&mut context, ObjectRecord::text(ObjectId(1), "text", "one"))
+        .unwrap();
+    runtime
+        .put_object_with_context(&mut context, ObjectRecord::text(ObjectId(2), "text", "two"))
+        .unwrap();
+    runtime
+        .put_object_with_context(
+            &mut context,
+            ObjectRecord::text(ObjectId(3), "text", "three"),
+        )
+        .unwrap();
+    let object_ids = context
+        .events()
+        .iter()
+        .filter_map(|event| match event.kind {
+            RuntimeEventKind::ObjectCreated { object_id } => Some(object_id),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(object_ids, vec![ObjectId(2), ObjectId(3)]);
+    assert!(context.event_storage_physical_len() < 2 * context.events().len());
+    assert_eq!(context.event_storage_physical_len(), 3);
+}
+
+#[test]
+fn context_event_retention_steady_state_is_amortized_and_snapshot_free() {
+    for limit in [1usize, 3, 32] {
+        let mut config = RuntimeConfig::default();
+        config.limits.max_in_memory_events = Some(limit as u64);
+        let mut runtime = crate::MechRuntime::new(config).unwrap();
+        let mut context = runtime.runtime_context().unwrap();
+
+        for index in 0..limit {
+            let id = ObjectId(10_000 + index as u128);
+            runtime
+                .put_object_with_context(
+                    &mut context,
+                    ObjectRecord::text(id, "seed", index.to_string()),
+                )
+                .unwrap();
+        }
+        assert_eq!(context.events().len(), limit);
+
+        reset_gate_a_costs();
+        let appended = 4 * limit;
+        for index in 0..appended {
+            let id = ObjectId(20_000 + index as u128);
+            runtime
+                .put_object_with_context(
+                    &mut context,
+                    ObjectRecord::text(id, "steady", index.to_string()),
+                )
+                .unwrap();
+            assert_eq!(context.events().len(), limit);
+            assert!(
+                context.event_storage_physical_len() < 2 * limit,
+                "limit {limit} exceeded the post-scope physical bound after append {index}",
+            );
+        }
+
+        let costs = gate_a_cost_snapshot();
+        assert_eq!(costs.context_event_snapshot_count, 0);
+        assert_eq!(costs.context_event_snapshot_items, 0);
+        assert_eq!(costs.events_appended, appended as u64);
+        assert!(costs.context_event_compaction_moved_items <= costs.events_appended);
+    }
+}

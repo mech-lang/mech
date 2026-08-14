@@ -125,14 +125,6 @@ impl MechRuntime {
         })
     }
 
-    pub(crate) fn call_host_value_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        call: HostCall,
-    ) -> MResult<LegacyValue> {
-        self.call_host_with_context_map(context, call, Ok)
-    }
-
     fn call_host_with_context_map<T>(
         &mut self,
         context: &mut RuntimeContext,

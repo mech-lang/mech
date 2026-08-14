@@ -22,8 +22,6 @@ mod snapshot;
 #[cfg(feature = "runtime")]
 pub mod actor;
 #[cfg(feature = "runtime")]
-pub mod actor_behavior;
-#[cfg(feature = "runtime")]
 pub mod capability;
 #[cfg(feature = "runtime")]
 pub mod context;
@@ -67,8 +65,6 @@ pub use self::snapshot::*;
 
 #[cfg(feature = "runtime")]
 pub use self::actor::*;
-#[cfg(feature = "runtime")]
-pub use self::actor_behavior::*;
 #[cfg(feature = "runtime")]
 pub use self::capability::*;
 #[cfg(feature = "runtime")]

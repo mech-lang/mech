@@ -3,7 +3,6 @@ use mech_runtime::MechRuntime;
 fn main() {
   let mut runtime = MechRuntime::builder().build().unwrap();
   let _ = runtime.program();
-  let _ = runtime.program_mut();
   let _ = runtime.take_program();
   let _ = runtime.store_mut();
   let _ = runtime.capability_kernel_mut();
@@ -12,5 +11,4 @@ fn main() {
   let _ = runtime.host_policy_mut();
   let _ = runtime.scheduler_mut();
   let _ = runtime.scheduler_policy_mut();
-  let _ = runtime.actor_behavior_driver_mut();
 }

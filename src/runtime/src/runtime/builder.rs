@@ -6,14 +6,13 @@ use super::resources::{runtime_resource_binding_error, validate_resource_binding
 use super::transaction::RuntimeHealth;
 use super::{MechRuntime, RuntimeExecutionMode};
 use crate::{
-    ActorBehaviorDriver, BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY,
-    DefaultHostCallPolicy, DefaultIdGenerator, HostCallPolicy, HostInstanceConfig,
-    HostInterfaceCatalog, HostRegistry, IdGenerator, InMemoryDocsProvider, InMemoryHostRegistry,
-    InMemoryScheduler, InMemorySourceResolver, InMemoryStore, MechStore, ModuleBuilder,
-    NoActorBehaviorDriver, RegisteredHostFunction, RunResourceGrantConfig, RuntimeConfig,
-    RuntimeConfigSpec, RuntimeEventKind, RuntimeHostFactory, RuntimeHostFactoryRegistry,
-    RuntimeHostInputDriver, RuntimeHostInputQueueState, RuntimeResourceProvider,
-    RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver,
+    BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY, DefaultHostCallPolicy,
+    DefaultIdGenerator, HostCallPolicy, HostInstanceConfig, HostInterfaceCatalog, HostRegistry,
+    IdGenerator, InMemoryDocsProvider, InMemoryHostRegistry, InMemoryScheduler,
+    InMemorySourceResolver, InMemoryStore, MechStore, ModuleBuilder, RegisteredHostFunction,
+    RunResourceGrantConfig, RuntimeConfig, RuntimeConfigSpec, RuntimeEventKind, RuntimeHostFactory,
+    RuntimeHostFactoryRegistry, RuntimeHostInputDriver, RuntimeHostInputQueueState,
+    RuntimeResourceProvider, RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver,
     materialize_config_spec_grants, register_config_spec_resources,
 };
 use mech_core::FunctionCatalog;
@@ -40,7 +39,6 @@ pub struct RuntimeBuilder {
     host_policy: Box<dyn HostCallPolicy>,
     scheduler: Box<dyn Scheduler>,
     scheduler_policy: SchedulerPolicy,
-    actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
     module_builder: ModuleBuilder,
     config_specs: Vec<RuntimeConfigSpec>,
     resource_providers: Vec<Box<dyn RuntimeResourceProvider>>,
@@ -70,7 +68,6 @@ impl std::fmt::Debug for RuntimeBuilder {
             .field("host_policy", &"<dyn HostCallPolicy>")
             .field("scheduler", &"<dyn Scheduler>")
             .field("scheduler_policy", &self.scheduler_policy)
-            .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
             .field("module_builder", &self.module_builder)
             .field("config_specs", &self.config_specs)
             .field("resource_providers", &self.resource_providers.len())
@@ -102,7 +99,6 @@ impl Default for RuntimeBuilder {
             host_policy: Box::new(DefaultHostCallPolicy),
             scheduler: Box::new(InMemoryScheduler::new()),
             scheduler_policy: SchedulerPolicy::default(),
-            actor_behavior_driver: Box::new(NoActorBehaviorDriver::new()),
             module_builder: ModuleBuilder::new(),
             config_specs: Vec::new(),
             resource_providers: Vec::new(),
@@ -195,14 +191,6 @@ impl RuntimeBuilder {
 
     pub fn scheduler_policy(mut self, scheduler_policy: SchedulerPolicy) -> Self {
         self.scheduler_policy = scheduler_policy;
-        self
-    }
-
-    pub fn actor_behavior_driver(
-        mut self,
-        actor_behavior_driver: impl ActorBehaviorDriver + 'static,
-    ) -> Self {
-        self.actor_behavior_driver = Box::new(actor_behavior_driver);
         self
     }
 
@@ -355,7 +343,6 @@ impl RuntimeBuilder {
             active_program_operation: Rc::new(Cell::new(None)),
             active_effect_phase: Rc::new(Cell::new(None)),
             health: RuntimeHealth::Healthy,
-            actor_behavior_driver: self.actor_behavior_driver,
             module_builder: self.module_builder,
             resources: RuntimeResourceRegistry::new(),
             resource_bindings: HashMap::new(),

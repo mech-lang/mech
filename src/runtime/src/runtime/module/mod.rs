@@ -26,8 +26,6 @@ use crate::{
     SourceRequest, SourceScope, module_id,
 };
 use mech_core::{MResult, MechError, MechSourceCode};
-#[cfg(feature = "invariant_define")]
-use mech_engine::IntegrityConstraintReport;
 use std::collections::{HashMap, HashSet};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
@@ -36,8 +34,6 @@ use web_time::Instant;
 
 struct RootModuleExecution {
     result: crate::RuntimeValueSnapshot,
-    #[cfg(feature = "invariant_define")]
-    integrity: IntegrityConstraintReport,
 }
 
 pub(in crate::runtime) fn validate_module_import_edges(
@@ -666,31 +662,6 @@ impl MechRuntime {
             .map(|execution| execution.result)
     }
 
-    #[cfg(feature = "invariant_define")]
-    pub(crate) fn resolve_and_run_root_module_report(
-        &mut self,
-        request: impl Into<SourceRequest>,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
-        self.ensure_runtime_mutation_allowed("resolve_and_run_root_module_report")?;
-        let mut context = self.runtime_context()?;
-        self.resolve_and_run_root_module_report_with_context(&mut context, request, options)
-    }
-
-    #[cfg(feature = "invariant_define")]
-    pub(crate) fn resolve_and_run_root_module_report_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        request: impl Into<SourceRequest>,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
-        self.resolve_and_run_root_module_execution_with_context(context, request, options)
-            .map(|execution| crate::RuntimeRootModuleExecutionReport {
-                result: execution.result,
-                integrity: execution.integrity,
-            })
-    }
-
     fn resolve_and_run_root_module_execution_with_context(
         &mut self,
         context: &mut RuntimeContext,
@@ -748,8 +719,6 @@ impl MechRuntime {
                 }
                 let execution = RootModuleExecution {
                     result: crate::RuntimeValueSnapshot::try_capture(&result)?,
-                    #[cfg(feature = "invariant_define")]
-                    integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
                 };
                 #[cfg(feature = "resident-routing")]
                 runtime.stage_legacy_program_owner(context)?;

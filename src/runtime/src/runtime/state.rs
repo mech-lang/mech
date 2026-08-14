@@ -6,10 +6,10 @@ use super::transaction::{
     ActiveRuntimeProgramOperation, RuntimeExecutionTransaction, RuntimeHealth,
 };
 use crate::{
-    ActiveRuntimeEffectPhase, ActorBehaviorDriver, CapabilityKernel, HostCallPolicy,
-    HostInterfaceCatalog, HostRegistry, IdGenerator, MechStore, ModuleBuilder, RuntimeConfig,
-    RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeId, RuntimeLiveResourceBinding,
-    RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver, TransactionId,
+    ActiveRuntimeEffectPhase, CapabilityKernel, HostCallPolicy, HostInterfaceCatalog, HostRegistry,
+    IdGenerator, MechStore, ModuleBuilder, RuntimeConfig, RuntimeHostInputDriver,
+    RuntimeHostInputQueue, RuntimeId, RuntimeLiveResourceBinding, RuntimeResourceRegistry,
+    Scheduler, SchedulerPolicy, SourceResolver, TransactionId,
 };
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog};
@@ -77,7 +77,6 @@ pub struct MechRuntime {
     pub(super) active_program_operation: Rc<Cell<Option<ActiveRuntimeProgramOperation>>>,
     pub(super) active_effect_phase: Rc<Cell<Option<ActiveRuntimeEffectPhase>>>,
     pub(super) health: RuntimeHealth,
-    pub(super) actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
     pub(super) module_builder: ModuleBuilder,
     pub(super) resources: RuntimeResourceRegistry,
     pub(super) resource_bindings: HashMap<String, RuntimeResourceBinding>,
@@ -114,7 +113,6 @@ impl std::fmt::Debug for MechRuntime {
             .field("scheduler_policy", &self.scheduler_policy)
             .field("active_transactions", &self.active_transactions.len())
             .field("active_effect_phase", &self.active_effect_phase.get())
-            .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
             .field("module_builder", &self.module_builder)
             .field("resources", &self.resources)
             .field("resource_bindings", &self.resource_bindings)
@@ -148,20 +146,8 @@ impl MechRuntime {
         self.execution_mode
     }
 
-    pub fn external_requirements(&self) -> &ExternalRequirementCatalog {
-        &self.external_requirements
-    }
-
     pub(crate) fn program(&self) -> &MechProgram {
         &self.program
-    }
-
-    /// Low-level manual escape hatch outside runtime-owned atomic execution.
-    ///
-    /// Callers must not use it while a transaction owns the retained program.
-    /// Runtime internals must not use it to bypass the program coordinator.
-    pub(crate) fn program_mut(&mut self) -> &mut MechProgram {
-        &mut self.program
     }
 
     pub(in crate::runtime) fn new_program(&self, config: MechProgramConfig) -> MechProgram {

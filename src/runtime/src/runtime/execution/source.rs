@@ -1,11 +1,11 @@
 use super::RuntimeProgramTarget;
 use crate::event::RuntimeEventKind;
 use crate::resolver::SourceScope;
+use crate::runtime::MechRuntime;
 #[cfg(feature = "compiler")]
 use crate::runtime::RuntimeProgramBusy;
-use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
 use crate::{ResourceBudgetExceededError, RuntimeContext, RuntimeValueSnapshot};
-use mech_core::{LegacyValue, MResult, MechError, MechSourceCode};
+use mech_core::{LegacyValue, MResult, MechError};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
@@ -121,14 +121,6 @@ impl MechRuntime {
         })
     }
 
-    pub(crate) fn run_string_value_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        source: &str,
-    ) -> MResult<LegacyValue> {
-        self.run_string_with_context_map(context, source, Ok)
-    }
-
     fn run_string_with_context_map<T>(
         &mut self,
         context: &mut RuntimeContext,
@@ -198,199 +190,6 @@ impl MechRuntime {
                     }
                     Err(error) => Err(error),
                 }
-            }
-            Err(error) => Err(error),
-        };
-
-        let result = result.and_then(|value| {
-            self.enforce_turn_duration(turn_started)?;
-            if self.has_live_input_bindings() {
-                self.validate_live_context_candidate(context)?;
-                self.commit_live_context_candidate(context);
-            }
-            Ok(value)
-        });
-        if result.is_ok() {
-            self.emit_event_to_context(
-                context,
-                RuntimeEventKind::ProgramCompleted {
-                    task_id: context.task,
-                },
-            )?;
-            if let Some(started) = profile_started {
-                self.emit_event_to_context(
-                    context,
-                    RuntimeEventKind::ProgramProfiled {
-                        task_id: context.task,
-                        duration_ns: started.elapsed().as_nanos(),
-                    },
-                )?;
-            }
-        }
-
-        result
-    }
-
-    pub(crate) fn run_source_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        source: &MechSourceCode,
-    ) -> MResult<RuntimeValueSnapshot> {
-        self.run_source_with_context_map(context, source, |value| {
-            RuntimeValueSnapshot::try_capture(&value)
-        })
-    }
-
-    pub(crate) fn run_source(&mut self, source: &MechSourceCode) -> MResult<RuntimeValueSnapshot> {
-        let mut context = self.runtime_context()?;
-        self.run_source_with_context(&mut context, source)
-    }
-
-    pub(crate) fn run_source_value_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        source: &MechSourceCode,
-    ) -> MResult<LegacyValue> {
-        self.run_source_with_context_map(context, source, Ok)
-    }
-
-    fn run_source_with_context_map<T>(
-        &mut self,
-        context: &mut RuntimeContext,
-        source: &MechSourceCode,
-        finish: impl FnOnce(LegacyValue) -> MResult<T>,
-    ) -> MResult<T> {
-        let turn_started = Instant::now();
-        if let MechSourceCode::ByteCode(bytes) = source {
-            return self.evaluate_bytecode_once_with_context_map(context, bytes, finish);
-        }
-
-        let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
-        let result = self.with_atomic_program_operation(
-            context,
-            "run_source_with_context",
-            |runtime, context| {
-                runtime.enforce_source_limits(context, source)?;
-                let value = runtime.run_source_operation(context, source, turn_started)?;
-                let finished = finish(value)?;
-                #[cfg(feature = "resident-routing")]
-                runtime.stage_legacy_program_owner(context)?;
-                Ok(finished)
-            },
-        );
-        if let Err(error) = &result {
-            self.emit_program_failure_audit(context, error, profile_started);
-        }
-        result
-    }
-
-    fn run_source_operation(
-        &mut self,
-        context: &mut RuntimeContext,
-        source: &MechSourceCode,
-        turn_started: Instant,
-    ) -> MResult<LegacyValue> {
-        match source {
-            MechSourceCode::String(source) => {
-                self.run_string_operation(context, source, turn_started)
-            }
-            MechSourceCode::Tree(tree) => self.run_tree_operation(context, tree, turn_started),
-            MechSourceCode::ByteCode(bytes) => {
-                self.evaluate_bytecode_once_with_context_inner_map(context, bytes, turn_started, Ok)
-            }
-            MechSourceCode::Program(sources) => {
-                let mut value = LegacyValue::Empty;
-                for source in sources {
-                    value = self.run_source_operation(context, source, turn_started)?;
-                }
-                Ok(value)
-            }
-            unsupported => Err(MechError::new(
-                RuntimeInvalidOperationError {
-                    operation: "run_source",
-                    reason: format!("unsupported program source: {:?}", unsupported),
-                },
-                None,
-            )),
-        }
-    }
-
-    pub(crate) fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<RuntimeValueSnapshot> {
-        let mut context = self.runtime_context()?;
-        self.run_tree_with_context(&mut context, tree)
-    }
-
-    pub(crate) fn run_tree_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        tree: &mech_core::Program,
-    ) -> MResult<RuntimeValueSnapshot> {
-        self.run_tree_with_context_map(context, tree, |value| {
-            RuntimeValueSnapshot::try_capture(&value)
-        })
-    }
-
-    pub(crate) fn run_tree_value_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        tree: &mech_core::Program,
-    ) -> MResult<LegacyValue> {
-        self.run_tree_with_context_map(context, tree, Ok)
-    }
-
-    fn run_tree_with_context_map<T>(
-        &mut self,
-        context: &mut RuntimeContext,
-        tree: &mech_core::Program,
-        finish: impl FnOnce(LegacyValue) -> MResult<T>,
-    ) -> MResult<T> {
-        let turn_started = Instant::now();
-        let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
-        let result = self.with_atomic_program_operation(
-            context,
-            "run_tree_with_context",
-            |runtime, context| {
-                let value = runtime.run_tree_operation(context, tree, turn_started)?;
-                let finished = finish(value)?;
-                #[cfg(feature = "resident-routing")]
-                runtime.stage_legacy_program_owner(context)?;
-                Ok(finished)
-            },
-        );
-        if let Err(error) = &result {
-            self.emit_program_failure_audit(context, error, profile_started);
-        }
-        result
-    }
-
-    fn run_tree_operation(
-        &mut self,
-        context: &mut RuntimeContext,
-        tree: &mech_core::Program,
-        turn_started: Instant,
-    ) -> MResult<LegacyValue> {
-        self.validate_context_for_runtime(context)?;
-        context.charge_step()?;
-        let profile_started = self.config.diagnostics.profile_enabled.then(Instant::now);
-
-        self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ProgramStarted {
-                task_id: context.task,
-            },
-        )?;
-
-        let result = match self.preflight_context_capabilities(context, tree, &SourceScope::Program)
-        {
-            Ok(()) => {
-                self.register_retained_program_host_functions(context)?;
-                self.run_tree_on_program(
-                    context,
-                    &mut RuntimeProgramTarget::Retained,
-                    tree,
-                    None,
-                    true,
-                )
             }
             Err(error) => Err(error),
         };

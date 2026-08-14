@@ -15,16 +15,11 @@ mech-core = {
   default-features = false,
   features = ["program"],
 }
-mech-engine = {
-  path = "../../../src/engine",
-  default-features = false,
-  features = ["compiler"],
-}
 mech-native-live-host-fixture = { path = "../native-live-host" }
 mech-runtime = {
   path = "../../../src/runtime",
   default-features = false,
-  features = ["compiler", "runtime_default", "serde"],
+  features = ["resident-routing-source", "runtime_default", "serde"],
 }
 mech-stdlib = {
   path = "../../../src/stdlib",

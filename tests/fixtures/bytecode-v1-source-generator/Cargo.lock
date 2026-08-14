@@ -144,7 +144,6 @@ version = "0.0.0"
 dependencies = [
  "mech-build",
  "mech-core",
- "mech-engine",
  "mech-native-live-host-fixture",
  "mech-runtime",
  "mech-stdlib",

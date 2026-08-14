@@ -228,66 +228,6 @@ rand_core = { version = "0.6.4", optional = true }
 uuid = { version = "1.23.1", features = ["js"] }
 web-time = "1.1.0"
 
-[[bin]]
-name = "address_target_diagnostics"
-path = "src/bin/address_target_diagnostics.rs"
-required-features = ["source_default"]
-
-[[bin]]
-name = "module_smoke"
-path = "src/bin/module_smoke.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "actor_context_host"
-path = "examples/actor_context_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "actor_state_host"
-path = "examples/actor_state_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "dep_cycle"
-path = "examples/dep_cycle.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "dep_diamond"
-path = "examples/dep_diamond.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "runtime_dep_src"
-path = "examples/runtime_dep_src.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "runtime_services_host"
-path = "examples/runtime_services_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "scheduled_actor_native_functions"
-path = "examples/scheduled_actor_native_functions.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "scheduled_actor_state_host"
-path = "examples/scheduled_actor_state_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "scheduled_runtime"
-path = "examples/scheduled_runtime.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "source_import_dependency"
-path = "examples/source_import_dependency.rs"
-required-features = ["source_default"]
-
 [[example]]
 name = "transactional_runtime"
 path = "examples/transactional_runtime.rs"

@@ -535,17 +535,6 @@ impl MechRuntime {
             .check_scoped(request, &context.authority)
     }
 
-    pub(in crate::runtime) fn preview_capability_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        request: &CapabilityRequest,
-    ) -> MResult<CapabilityId> {
-        self.ensure_runtime_mutation_allowed("preview_capability_with_context")?;
-        self.validate_context_for_runtime(context)?;
-        context.charge_step()?;
-        self.preview_capability_for_execution(context, request)
-    }
-
     pub(in crate::runtime) fn preview_capability_for_execution(
         &self,
         context: &RuntimeContext,

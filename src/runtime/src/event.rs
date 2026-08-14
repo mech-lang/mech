@@ -153,17 +153,6 @@ pub enum RuntimeEventKind {
         actor_id: ActorId,
         message_id: MessageId,
     },
-    ActorTurnStarted {
-        actor_id: ActorId,
-    },
-    ActorTurnCompleted {
-        actor_id: ActorId,
-    },
-    ActorTurnFailed {
-        actor_id: ActorId,
-        message: String,
-    },
-
     ObjectCreated {
         object_id: ObjectId,
     },
@@ -279,9 +268,6 @@ impl RuntimeEventKind {
             RuntimeEventKind::TaskFailed { .. } => ":task/failed",
             RuntimeEventKind::ActorCreated { .. } => ":actor/created",
             RuntimeEventKind::ActorMessageSent { .. } => ":actor/message/sent",
-            RuntimeEventKind::ActorTurnStarted { .. } => ":actor/turn/started",
-            RuntimeEventKind::ActorTurnCompleted { .. } => ":actor/turn/completed",
-            RuntimeEventKind::ActorTurnFailed { .. } => ":actor/turn/failed",
             RuntimeEventKind::ObjectCreated { .. } => ":object/created",
             RuntimeEventKind::ObjectUpdated { .. } => ":object/updated",
             RuntimeEventKind::TransactionStarted { .. } => ":transaction/started",

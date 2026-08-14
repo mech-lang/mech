@@ -359,36 +359,6 @@ jobs:
       - name: Check complete function-system migration contracts
         run: bash scripts/check-complete-function-system-migration.sh
 
-  runtime-source-targets:
-    name: Runtime source targets (${{ matrix.slice }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        slice:
-          - basic
-          - hosts
-          - actors
-          - modules
-          - diagnostics
-          - standard
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Run ${{ matrix.slice }} source targets
-        run: bash scripts/run-runtime-source-targets.sh "${{ matrix.slice }}"
-
   bytecode-v1-format:
     name: Bytecode v1 format
     runs-on: ubuntu-latest
@@ -682,7 +652,6 @@ jobs:
       - distribution-contracts
       - engine-catalog
       - function-system-contracts
-      - runtime-source-targets
       - wasm-source-profile
       - bytecode-v1-format
       - bytecode-v1-values
@@ -706,7 +675,6 @@ jobs:
           FEATURE_RESULT: ${{ needs.cargo-features.result }}
           DISTRIBUTION_RESULT: ${{ needs.distribution-contracts.result }}
           FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
-          RUNTIME_SOURCE_TARGETS_RESULT: ${{ needs.runtime-source-targets.result }}
           WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
           BYTECODE_FORMAT_RESULT: ${{ needs.bytecode-v1-format.result }}
           BYTECODE_VALUES_RESULT: ${{ needs.bytecode-v1-values.result }}
@@ -727,7 +695,6 @@ jobs:
           test "$ENGINE_CATALOG_RESULT" = success
           test "$FEATURE_RESULT" = success
           test "$FUNCTION_SYSTEM_RESULT" = success
-          test "$RUNTIME_SOURCE_TARGETS_RESULT" = success
           test "$WASM_SOURCE_RESULT" = success
           test "$BYTECODE_FORMAT_RESULT" = success
           test "$BYTECODE_VALUES_RESULT" = success

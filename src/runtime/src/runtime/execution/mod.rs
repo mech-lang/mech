@@ -43,13 +43,12 @@ use source_reconstruction::module_source_for_scope;
 
 #[cfg(test)]
 use crate::{
-    CapabilityId, MechRuntime, ObjectId, ObjectRecord, ResourceBudgetExceededError, RuntimeConfig,
-    RuntimeEventKind,
+    CapabilityId, MechRuntime, ResourceBudgetExceededError, RuntimeConfig, RuntimeEventKind,
 };
 #[cfg(all(test, feature = "compiler"))]
 use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 #[cfg(test)]
-use mech_core::{LegacyValue, MResult, MechFunctionImpl, MechSourceCode, hash_str};
+use mech_core::{LegacyValue, MResult, MechFunctionImpl};
 
 #[cfg(test)]
 mod tests;

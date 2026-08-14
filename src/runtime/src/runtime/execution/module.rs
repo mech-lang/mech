@@ -87,16 +87,6 @@ impl MechRuntime {
         self.run_module_with_context(&mut context, version)
     }
 
-    pub fn run_module_scope(
-        &mut self,
-        version: ModuleVersionId,
-        scope: SourceScope,
-    ) -> MResult<RuntimeModuleResult> {
-        let mut context = self.runtime_context()?.with_module_version(version);
-
-        self.run_module_scope_with_context(&mut context, version, scope)
-    }
-
     pub fn run_module_with_context(
         &mut self,
         context: &mut RuntimeContext,

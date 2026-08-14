@@ -2,8 +2,8 @@
 
 use super::MechRuntime;
 use crate::{
-    ActorBehaviorDriver, CapabilityKernel, HostCallPolicy, HostRegistry, MechStore, ModuleBuilder,
-    Scheduler, SchedulerPolicy, SourceResolver,
+    CapabilityKernel, HostCallPolicy, HostRegistry, MechStore, ModuleBuilder, Scheduler,
+    SchedulerPolicy, SourceResolver,
 };
 use mech_core::MResult;
 
@@ -92,17 +92,6 @@ impl MechRuntime {
     /// preflight.
     pub(crate) fn scheduler_policy_mut(&mut self) -> &mut SchedulerPolicy {
         &mut self.scheduler_policy
-    }
-
-    pub(crate) fn actor_behavior_driver(&self) -> &dyn ActorBehaviorDriver {
-        self.actor_behavior_driver.as_ref()
-    }
-
-    /// Unchecked administrative escape hatch outside runtime-owned poison
-    /// enforcement. Runtime internals must not use it to bypass mutation
-    /// preflight.
-    pub(crate) fn actor_behavior_driver_mut(&mut self) -> &mut dyn ActorBehaviorDriver {
-        self.actor_behavior_driver.as_mut()
     }
 
     pub(crate) fn module_builder(&self) -> &ModuleBuilder {

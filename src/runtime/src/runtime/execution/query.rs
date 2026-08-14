@@ -1,21 +1,12 @@
 use crate::RuntimeValueSnapshot;
-use crate::runtime::{MechRuntime, RuntimeInvalidOperationError, RuntimeProgramBusy};
-use mech_core::{LegacyValue, MResult, MechError, MechSourceCode, Program, SectionElement};
+use crate::runtime::MechRuntime;
+#[cfg(feature = "resident-routing")]
+use crate::runtime::RuntimeInvalidOperationError;
+use mech_core::MResult;
+#[cfg(feature = "resident-routing")]
+use mech_core::MechError;
 
 impl MechRuntime {
-    #[cfg(feature = "invariant_define")]
-    pub fn integrity_constraint_report(&self) -> MResult<mech_engine::IntegrityConstraintReport> {
-        self.program.integrity_constraint_report()
-    }
-
-    pub fn out_string(&self) -> String {
-        self.program.out_string()
-    }
-
-    pub fn has_interpreter(&self, interpreter_id: u64) -> bool {
-        self.program.has_interpreter(interpreter_id)
-    }
-
     pub fn root_interpreter_id(&self) -> u64 {
         self.program.interpreter().id
     }
@@ -26,20 +17,6 @@ impl MechRuntime {
             return instance.plan.execution_node_count();
         }
         self.program.interpreter().plan_len()
-    }
-
-    /// Resolves a named fenced-document interpreter to its stable runtime ID.
-    ///
-    /// The source metadata is retained by the root interpreter, while the
-    /// hierarchy confirms that the corresponding interpreter still exists.
-    /// Callers receive only an ID; no live interpreter or borrow escapes this
-    /// query boundary.
-    pub fn interpreter_id_by_name(&self, name: &str) -> MResult<Option<u64>> {
-        let mut candidate = None;
-        for source in &self.program.interpreter().code {
-            collect_interpreter_id_from_source(source, name, &mut candidate);
-        }
-        Ok(candidate.filter(|id| self.program.has_interpreter(*id)))
     }
 
     pub fn output_value_for_interpreter(
@@ -221,78 +198,5 @@ impl MechRuntime {
             values.push((name.to_owned(), value));
         }
         Ok(values)
-    }
-
-    pub fn bind_ans_for_interpreter(
-        &mut self,
-        interpreter_id: u64,
-        value: &LegacyValue,
-    ) -> MResult<()> {
-        if let Some(owner) = self.program_transaction_owner {
-            return Err(MechError::new(
-                RuntimeProgramBusy {
-                    operation: "bind_ans_for_interpreter",
-                    owner,
-                    requester: None,
-                },
-                None,
-            ));
-        }
-
-        if self.program.bind_ans_for_interpreter(interpreter_id, value) {
-            return Ok(());
-        }
-
-        Err(MechError::new(
-            RuntimeInvalidOperationError {
-                operation: "bind_ans_for_interpreter",
-                reason: format!("interpreter id {} not found", interpreter_id),
-            },
-            None,
-        ))
-    }
-}
-
-fn collect_interpreter_id_from_source(
-    source: &MechSourceCode,
-    name: &str,
-    candidate: &mut Option<u64>,
-) {
-    match source {
-        MechSourceCode::Tree(tree) => {
-            collect_interpreter_id_from_program(tree, name, candidate);
-        }
-        MechSourceCode::Program(sources) => {
-            for source in sources {
-                collect_interpreter_id_from_source(source, name, candidate);
-            }
-        }
-        _ => {}
-    }
-}
-
-fn collect_interpreter_id_from_program(program: &Program, name: &str, candidate: &mut Option<u64>) {
-    for section in &program.body.sections {
-        for element in &section.elements {
-            collect_interpreter_id_from_element(element, name, candidate);
-        }
-    }
-}
-
-fn collect_interpreter_id_from_element(
-    element: &SectionElement,
-    name: &str,
-    candidate: &mut Option<u64>,
-) {
-    match element {
-        SectionElement::FencedMechCode(block)
-            if !block.config.disabled && block.config.namespace_str == name =>
-        {
-            *candidate = Some(block.config.namespace);
-        }
-        SectionElement::Float((element, _)) => {
-            collect_interpreter_id_from_element(element, name, candidate);
-        }
-        _ => {}
     }
 }

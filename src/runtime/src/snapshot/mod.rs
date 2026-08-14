@@ -7,9 +7,6 @@ use mech_core::{LegacyValue, MResult, MechError, ValueKind};
 
 use crate::{CapabilityId, ModuleVersionId};
 
-#[cfg(feature = "invariant_define")]
-use mech_engine::IntegrityConstraintReport;
-
 #[cfg(test)]
 #[path = "tests.rs"]
 mod tests;
@@ -117,13 +114,6 @@ impl Display for RuntimeValueSnapshot {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.value, formatter)
     }
-}
-
-#[cfg(feature = "invariant_define")]
-#[derive(Clone, Debug)]
-pub struct RuntimeRootModuleExecutionReport {
-    pub result: RuntimeValueSnapshot,
-    pub integrity: IntegrityConstraintReport,
 }
 
 #[derive(Clone, Debug, PartialEq)]

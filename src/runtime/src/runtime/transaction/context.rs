@@ -1,7 +1,7 @@
 use crate::context_events::RuntimeContextEventMark;
 use crate::runtime::MechRuntime;
 use crate::{
-    AccessSet, ActorId, ActorTurn, MessageRecord, ModuleVersionId, ObjectId, ResourceBudget,
+    AccessSet, ActorId, MessageRecord, ModuleVersionId, ObjectId, ResourceBudget,
     RuntimeAuthorityScope, RuntimeContext, RuntimeId, RuntimeInvalidOperationError, TaskId,
     TransactionId,
 };
@@ -68,13 +68,6 @@ impl RuntimeTransactionContextIdentity {
 
     pub(in crate::runtime) fn set_actor_state(&mut self, state: ObjectId) {
         self.actor_state = Some(state);
-    }
-
-    pub(in crate::runtime) fn bind_actor_turn(&mut self, turn: &ActorTurn) {
-        self.subject = turn.subject.clone();
-        self.actor = Some(turn.actor);
-        self.actor_message = Some(turn.message.clone());
-        self.actor_state = turn.state;
     }
 }
 
