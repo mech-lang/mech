@@ -68,7 +68,7 @@ supports the repository's Rust `1.92` minimum. JIT preparation took `3.340 ms`
 in the first recorded hardware run. Its state matched the scalar evaluator
 bit-for-bit after four validation turns.
 
-## Checked evaluated artifact
+## Initial checked evaluated artifact
 
 Commit `7605c5c9081a22d7bcba0b0c288570a7c3a41f41` compiles the three
 source-authored constraints into every backend. Five release-mode processes
@@ -97,6 +97,47 @@ checked repeated lane validates before every publication. Comparing those
 numbers would attribute a guarantee-boundary change to constraint arithmetic.
 All five checked process samples are preserved in
 [`results/apple-m1-checked-integrity-2026-08-14.json`](results/apple-m1-checked-integrity-2026-08-14.json).
+
+## Optimized checked artifact
+
+Commit `efc85d48e562fe4ccc1af535e04f9bf4617e05a6` keeps the same source
+constraints, named faults, candidate rejection, bounded fault state, and
+previous-estimate retention. It changes their generic execution strategy:
+
+- constraint-only Boolean graphs compile as predicates rather than `f32`
+  result registers;
+- dead numeric instructions are removed after tracing state outputs and
+  predicate inputs;
+- `abs(x) <= f32::MAX` lowers to exact `f32` finiteness testing and
+  `abs(left - right) <= tolerance` lowers to one predicate;
+- SIMD comparisons remain native masks until the final fault decision; and
+- JIT code returns its first packed fault instead of writing and rescanning a
+  result for every filter.
+
+Five isolated release processes on the same Apple M1 Metal adapter, with
+100,000 filters, five scalar reference turns, 40 single GPU samples, and 120
+repeated checked GPU turns, produced:
+
+| Checked Mech backend | Time/turn | Million EKF-turns/s | Initial checked | Change | Unchecked reference | Remaining checked cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Scalar artifact evaluator | 106.286 ms | 0.941 | 0.818 | +15.0% | 1.216 | -22.6% |
+| SIMD (`4xf32`) | 26.233 ms | 3.812 | 3.154 | +20.9% | 4.414 | -13.6% |
+| Cranelift JIT | 6.849 ms | 14.600 | 12.339 | +18.3% | 17.306 | -15.6% |
+| GPU, one checked submission/turn | 1.630 ms | 61.348 | 51.497 | +19.1% | 53.557 | noisy |
+| GPU, repeated checked turns | 1.820 ms | 54.959 | 56.580 | -2.9% | not comparable | not comparable |
+
+Source parsing, artifact construction, and scalarization took a median
+`64.134 ms`; JIT preparation took `3.494 ms`. Maximum CPU/GPU absolute error
+remained `6.866e-5`, and JIT output remained bit-for-bit equal to scalar.
+All 27 package tests passed, including the three injected integrity failures
+and GPU publication retention. The generated WGSL shrank from 13,908 to
+11,733 bytes as dead constraint arithmetic disappeared.
+
+GPU one-turn samples ranged from `47.859` to `62.495 M/s`; per-turn host
+synchronization still dominates and makes this too noisy to attribute the
+median change to device predicate lowering. Raw samples, command parameters,
+implementation commit, and validation commands are preserved in
+[`results/apple-m1-checked-integrity-optimized-2026-08-14.json`](results/apple-m1-checked-integrity-optimized-2026-08-14.json).
 
 ## Scalar outer-loop languages
 

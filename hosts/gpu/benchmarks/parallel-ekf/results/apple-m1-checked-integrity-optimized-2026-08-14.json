@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-14",
+  "implementation_commit": "efc85d48e562fe4ccc1af535e04f9bf4617e05a6",
+  "platform": {
+    "adapter": "Apple M1 (Metal)",
+    "machine": "arm64"
+  },
+  "configuration": {
+    "instances": 100000,
+    "scalar_reference_turns": 5,
+    "single_gpu_samples_per_process": 40,
+    "repeated_checked_gpu_turns": 120,
+    "process_samples": 5,
+    "command": "cargo run --quiet -p mech-gpu --release --features native,jit --example parallel_ekf_benchmark -- 100000 5 40 120",
+    "integrity_constraints": [
+      "finite-candidate!",
+      "positive-covariance!",
+      "symmetric-covariance!"
+    ],
+    "symmetry_tolerance_f32": 0.0001,
+    "failure_behavior": "Reject the complete candidate turn, retain the previously published estimate, increment a bounded fault count, and replace the latest named fault."
+  },
+  "optimizations": [
+    "Compile constraint-only comparison and Boolean expressions as predicates rather than materialized f32 registers.",
+    "Prune scalar instructions not needed by state output or predicate numeric inputs.",
+    "Lower abs(x) <= f32::MAX to an exact f32 finiteness predicate.",
+    "Lower abs(left - right) <= tolerance to one absolute-difference predicate.",
+    "Evaluate SIMD predicates with native comparison masks and move_mask rather than unpacking lanes.",
+    "Return the first packed fault from JIT code rather than writing and scanning one result per filter."
+  ],
+  "samples": [
+    {
+      "source_artifact_scalarization_ms": 63.825,
+      "gpu_prepare_ms": 4.187,
+      "jit_prepare_ms": 3.494,
+      "scalar_ms_per_turn": 106.681,
+      "scalar_million_turns_per_second": 0.937,
+      "simd_ms_per_turn": 27.170,
+      "simd_million_turns_per_second": 3.680,
+      "jit_ms_per_turn": 6.951,
+      "jit_million_turns_per_second": 14.387,
+      "gpu_single_checked_ms_per_turn": 1.600,
+      "gpu_single_checked_million_turns_per_second": 62.495,
+      "gpu_repeated_checked_ms_per_turn": 1.875,
+      "gpu_repeated_checked_million_turns_per_second": 53.324
+    },
+    {
+      "source_artifact_scalarization_ms": 64.134,
+      "gpu_prepare_ms": 4.165,
+      "jit_prepare_ms": 3.516,
+      "scalar_ms_per_turn": 106.126,
+      "scalar_million_turns_per_second": 0.942,
+      "simd_ms_per_turn": 26.155,
+      "simd_million_turns_per_second": 3.823,
+      "jit_ms_per_turn": 6.861,
+      "jit_million_turns_per_second": 14.574,
+      "gpu_single_checked_ms_per_turn": 1.938,
+      "gpu_single_checked_million_turns_per_second": 51.609,
+      "gpu_repeated_checked_ms_per_turn": 1.820,
+      "gpu_repeated_checked_million_turns_per_second": 54.959
+    },
+    {
+      "source_artifact_scalarization_ms": 63.988,
+      "gpu_prepare_ms": 4.073,
+      "jit_prepare_ms": 3.479,
+      "scalar_ms_per_turn": 106.465,
+      "scalar_million_turns_per_second": 0.939,
+      "simd_ms_per_turn": 26.218,
+      "simd_million_turns_per_second": 3.814,
+      "jit_ms_per_turn": 6.849,
+      "jit_million_turns_per_second": 14.600,
+      "gpu_single_checked_ms_per_turn": 1.601,
+      "gpu_single_checked_million_turns_per_second": 62.450,
+      "gpu_repeated_checked_ms_per_turn": 1.780,
+      "gpu_repeated_checked_million_turns_per_second": 56.182
+    },
+    {
+      "source_artifact_scalarization_ms": 64.303,
+      "gpu_prepare_ms": 4.190,
+      "jit_prepare_ms": 3.465,
+      "scalar_ms_per_turn": 106.286,
+      "scalar_million_turns_per_second": 0.941,
+      "simd_ms_per_turn": 26.233,
+      "simd_million_turns_per_second": 3.812,
+      "jit_ms_per_turn": 6.848,
+      "jit_million_turns_per_second": 14.602,
+      "gpu_single_checked_ms_per_turn": 1.630,
+      "gpu_single_checked_million_turns_per_second": 61.348,
+      "gpu_repeated_checked_ms_per_turn": 1.743,
+      "gpu_repeated_checked_million_turns_per_second": 57.362
+    },
+    {
+      "source_artifact_scalarization_ms": 64.158,
+      "gpu_prepare_ms": 4.064,
+      "jit_prepare_ms": 3.525,
+      "scalar_ms_per_turn": 106.171,
+      "scalar_million_turns_per_second": 0.942,
+      "simd_ms_per_turn": 26.256,
+      "simd_million_turns_per_second": 3.809,
+      "jit_ms_per_turn": 6.831,
+      "jit_million_turns_per_second": 14.639,
+      "gpu_single_checked_ms_per_turn": 2.089,
+      "gpu_single_checked_million_turns_per_second": 47.859,
+      "gpu_repeated_checked_ms_per_turn": 1.949,
+      "gpu_repeated_checked_million_turns_per_second": 51.300
+    }
+  ],
+  "medians": {
+    "source_artifact_scalarization_ms": 64.134,
+    "gpu_prepare_ms": 4.165,
+    "jit_prepare_ms": 3.494,
+    "scalar_ms_per_turn": 106.286,
+    "scalar_million_turns_per_second": 0.941,
+    "simd_ms_per_turn": 26.233,
+    "simd_million_turns_per_second": 3.812,
+    "jit_ms_per_turn": 6.849,
+    "jit_million_turns_per_second": 14.600,
+    "gpu_single_checked_ms_per_turn": 1.630,
+    "gpu_single_checked_million_turns_per_second": 61.348,
+    "gpu_repeated_checked_ms_per_turn": 1.820,
+    "gpu_repeated_checked_million_turns_per_second": 54.959,
+    "maximum_cpu_gpu_absolute_error": 0.00006866,
+    "maximum_scalar_simd_absolute_error": 0.00006104,
+    "maximum_scalar_jit_absolute_error": 0.0
+  },
+  "previous_checked_reference": {
+    "commit": "7605c5c9081a22d7bcba0b0c288570a7c3a41f41",
+    "evidence": "apple-m1-checked-integrity-2026-08-14.json",
+    "scalar_million_turns_per_second": 0.818,
+    "simd_million_turns_per_second": 3.154,
+    "jit_million_turns_per_second": 12.339,
+    "gpu_single_checked_million_turns_per_second": 51.497,
+    "gpu_repeated_checked_million_turns_per_second": 56.580
+  },
+  "relative_to_previous_checked_percent": {
+    "scalar": 15.0,
+    "simd": 20.9,
+    "jit": 18.3,
+    "gpu_single_checked": 19.1,
+    "gpu_repeated_checked": -2.9,
+    "gpu_warning": "Synchronized GPU samples are noisy and host synchronization dominates this path; do not interpret the single-turn change as a kernel-only speedup."
+  },
+  "unchecked_reference": {
+    "commit": "6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e",
+    "scalar_million_turns_per_second": 1.216,
+    "simd_million_turns_per_second": 4.414,
+    "jit_million_turns_per_second": 17.306,
+    "gpu_single_submission_million_turns_per_second": 53.557,
+    "gpu_120_turn_batch_million_turns_per_second": 343.969,
+    "comparison_warning": "The unchecked 120-turn batch publishes once after the batch. It is not comparable with repeated checked turns, which validate before every publication."
+  },
+  "validation": {
+    "commands": [
+      "cargo test -p mech-gpu --features native,jit --test parallel_ekf",
+      "cargo test -p mech-gpu --features native,jit",
+      "cargo fmt --all -- --check",
+      "git diff --check"
+    ],
+    "package_tests_passed": 27,
+    "tests_failed": 0,
+    "coverage": [
+      "source constraint names and artifact round-trip",
+      "artifact identity changes when a constraint is renamed",
+      "finite candidate rejection",
+      "positive covariance diagonal rejection",
+      "covariance symmetry rejection",
+      "scalar, SIMD, JIT, and GPU execution",
+      "previous GPU state remains published after rejection"
+    ]
+  }
+}
