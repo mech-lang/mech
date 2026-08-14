@@ -240,7 +240,6 @@
     "src/cli/commands/run.rs",
     "src/cli/commands/serve.rs",
     "src/cli/config.rs",
-    "src/cli/diagnostics.rs",
     "src/cli/host_configuration.rs",
     "src/cli/host_factories.rs",
     "src/cli/host_grants.rs",
@@ -2226,7 +2225,6 @@
     "src/cli/commands/run.rs",
     "src/cli/commands/serve.rs",
     "src/cli/config.rs",
-    "src/cli/diagnostics.rs",
     "src/cli/host_configuration.rs",
     "src/cli/host_factories.rs",
     "src/cli/host_grants.rs",
@@ -6717,27 +6715,27 @@
           {
             "column": 53,
             "fingerprint": "b2528bf6cacb9a733eacff80d0b32aef6272ff2eb5883bf40278a77ce35cfc2e",
-            "line": 39
+            "line": 41
           },
           {
             "column": 57,
             "fingerprint": "c0c2cbd0afed04920380f5fa60a850c2e313f771f249e59b856436e397197d87",
-            "line": 48
+            "line": 50
           },
           {
             "column": 39,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 569
+            "line": 696
           },
           {
             "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 610
+            "line": 737
           },
           {
             "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 615
+            "line": 742
           }
         ]
       },
@@ -9766,12 +9764,12 @@
           {
             "column": 11,
             "fingerprint": "bfd101c68c13e70f655e98459b0bbe4ea1dfb1f04367eb29fdfbe74750bc5b9a",
-            "line": 31
+            "line": 33
           },
           {
             "column": 40,
             "fingerprint": "4a2189bf73d064eed6e053e93108c2bf4ed925a6eaffbfe0c7ba374df2c56496",
-            "line": 42
+            "line": 44
           }
         ]
       },
@@ -12895,27 +12893,27 @@
           {
             "column": 40,
             "fingerprint": "410198d8b266b603a0de8c56e797de253ad587bf4e97beafbc7b6bacff3d6e76",
-            "line": 39
+            "line": 41
           },
           {
             "column": 44,
             "fingerprint": "cb7447a0eb5c815bd59547342fd2769af0032aede733eb5105a80fba0616bef1",
-            "line": 48
+            "line": 50
           },
           {
             "column": 26,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 569
+            "line": 696
           },
           {
             "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 610
+            "line": 737
           },
           {
             "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 615
+            "line": 742
           }
         ]
       },
@@ -18583,7 +18581,7 @@
     {
       "column": 59,
       "enum": "LegacyValue",
-      "line": 633,
+      "line": 760,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Bool"
     },
@@ -19794,28 +19792,28 @@
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 471,
+      "line": 484,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 605,
+      "line": 732,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
     {
       "column": 28,
       "enum": "LegacyValue",
-      "line": 611,
+      "line": 738,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
     {
       "column": 28,
       "enum": "LegacyValue",
-      "line": 616,
+      "line": 743,
       "path": "src/engine/src/program/instance.rs",
       "variant": "Empty"
     },
@@ -46023,35 +46021,35 @@
     {
       "column": 40,
       "enum": "LegacyValue",
-      "line": 39,
+      "line": 41,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
     {
       "column": 44,
       "enum": "LegacyValue",
-      "line": 48,
+      "line": 50,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 569,
+      "line": 696,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 610,
+      "line": 737,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 615,
+      "line": 742,
       "path": "src/engine/src/program/instance.rs",
       "variant": "MutableReference"
     },
@@ -47563,21 +47561,28 @@
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 131,
+      "line": 166,
       "path": "hosts/terminal/src/provider.rs",
       "variant": "String"
     },
     {
       "column": 23,
       "enum": "LegacyValue",
-      "line": 147,
+      "line": 182,
       "path": "hosts/terminal/src/provider.rs",
       "variant": "String"
     },
     {
-      "column": 9,
+      "column": 13,
       "enum": "LegacyValue",
-      "line": 285,
+      "line": 238,
+      "path": "hosts/terminal/src/provider.rs",
+      "variant": "String"
+    },
+    {
+      "column": 37,
+      "enum": "LegacyValue",
+      "line": 268,
       "path": "hosts/terminal/src/provider.rs",
       "variant": "String"
     },
@@ -47962,56 +47967,56 @@
     {
       "column": 24,
       "enum": "LegacyValue",
-      "line": 572,
+      "line": 699,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 573,
+      "line": 700,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 576,
+      "line": 703,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 579,
+      "line": 706,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 582,
+      "line": 709,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 585,
+      "line": 712,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 588,
+      "line": 715,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 591,
+      "line": 718,
       "path": "src/engine/src/program/instance.rs",
       "variant": "String"
     },
@@ -60768,7 +60773,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 864
+      "rust_file_count": 863
     },
     {
       "directory": "hosts/browser",

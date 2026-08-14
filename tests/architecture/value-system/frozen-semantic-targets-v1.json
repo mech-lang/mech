@@ -2494,7 +2494,7 @@
       "sites": [
         {
           "column": 59,
-          "line": 633
+          "line": 760
         }
       ],
       "target": "bool-snapshot",
@@ -3714,7 +3714,7 @@
       "sites": [
         {
           "column": 25,
-          "line": 471
+          "line": 484
         }
       ],
       "target": "execution-no-result",
@@ -3726,15 +3726,15 @@
       "sites": [
         {
           "column": 25,
-          "line": 605
+          "line": 732
         },
         {
           "column": 28,
-          "line": 611
+          "line": 738
         },
         {
           "column": 28,
-          "line": 616
+          "line": 743
         }
       ],
       "target": "option-absence",
@@ -24646,23 +24646,23 @@
       "sites": [
         {
           "column": 40,
-          "line": 39
+          "line": 41
         },
         {
           "column": 44,
-          "line": 48
+          "line": 50
         },
         {
           "column": 26,
-          "line": 569
+          "line": 696
         },
         {
           "column": 30,
-          "line": 610
+          "line": 737
         },
         {
           "column": 30,
-          "line": 615
+          "line": 742
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -26206,15 +26206,19 @@
       "sites": [
         {
           "column": 16,
-          "line": 131
+          "line": 166
         },
         {
           "column": 23,
-          "line": 147
+          "line": 182
         },
         {
-          "column": 9,
-          "line": 285
+          "column": 13,
+          "line": 238
+        },
+        {
+          "column": 37,
+          "line": 268
         }
       ],
       "target": "string-snapshot",
@@ -26586,35 +26590,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 572
+          "line": 699
         },
         {
           "column": 30,
-          "line": 573
+          "line": 700
         },
         {
           "column": 21,
-          "line": 576
+          "line": 703
         },
         {
           "column": 21,
-          "line": 579
+          "line": 706
         },
         {
           "column": 21,
-          "line": 582
+          "line": 709
         },
         {
           "column": 21,
-          "line": 585
+          "line": 712
         },
         {
           "column": 21,
-          "line": 588
+          "line": 715
         },
         {
           "column": 21,
-          "line": 591
+          "line": 718
         }
       ],
       "target": "string-snapshot",
