@@ -211,21 +211,24 @@ This follow-up exposed four additional design requirements:
    source should remain matrix source. Expanding a 3x3 product is a backend
    choice informed by shapes and target cost, not a language rewrite or a
    special EKF intrinsic.
-2. **The outer parallel axis needs an activation contract.** The prototype
-   receives the number of independent filters as `compile_batched` input.
-   Eventually a source broadcast and its inferred batch extent should become
-   an artifact/activation mapping. A magic source variable or EKF-specific
-   convention would be the wrong interface.
+2. **The outer parallel axis is an activation property.** The follow-up spike
+   now receives actual arrays produced by the ordinary section of the same
+   Mech document. `compile_broadcast_with_regions` derives one common extent
+   from artifact inner shapes and activation lengths; singleton inputs
+   broadcast, while missing, fractional, zero, and conflicting extents fail
+   admission. No compiler API receives a filter count. A compact artifact form
+   for literal user-function broadcast remains future compiler work.
 3. **Canonical operation identity and contracts remain blockers.** Several
    typed concatenate, dot, and trigonometric nodes still carry legacy opaque
    contracts. The prototype admits an audited set of exact runtime operation
    families and validates their schemas and arity. Production admission should
    use declared semantic contracts, not runtime factory-name compatibility.
 4. **Submission policy is part of the physical plan.** On the measured Apple
-   M1, 100,000 filters reached 62.529 million EKF-turns/s with one command
-   submission per turn and 377.438 million when 120 dependent turns were
-   recorded in one submission. The scheduler needs an explicit way to batch or
-   retain device work while preserving observation and effect boundaries.
+   M1, the source-driven 100,000-filter run reached 51.134 million
+   EKF-turns/s with one command submission per turn and 344.443 million when
+   120 dependent turns were recorded in one submission. The scheduler needs an
+   explicit way to batch or retain device work while preserving observation
+   and effect boundaries.
 
 The generic CPU number reported by this proof is a scalar IR evaluator. It is
 not evidence about retained Mech, AOT code generation, SIMD, or raw Rust. A
