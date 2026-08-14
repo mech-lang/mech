@@ -1,5 +1,9 @@
 # Gate E1 teardown log
 
+> Historical record. Dispositions below describe the state when each stop was
+> discovered. They are not the current E2/E3/F0 action list.
+> See `gate-e2-closeout.md` for authoritative current status.
+
 This is the working handoff log for the forward-only E1 teardown. It records
 what was removed, which retained v0.4 capability was checked before removal,
 and what a subsequent hardening round still needs to inspect.
@@ -581,8 +585,9 @@ that should be removed.
 
 ## Follow-up inventory
 
-These are observations to inspect in later E1 slices or the subsequent
-hardening round. They are not requests to restore legacy behavior.
+This section preserves the observations recorded during E1. It is not an
+active queue. Every item has a current disposition in
+`docs/design/gate-e2-closeout.md`; that file is authoritative.
 
 - Resident source/bytecode planning checks `max_source_bytes` before compilation
   or decoding but does not charge the artifact, compiler working set, or source
@@ -640,29 +645,33 @@ hardening round. They are not requests to restore legacy behavior.
   that pre-existing activation behavior; verify retained product fixtures and
   record any actual retained-capability break separately.
 
-## Final E1 proof still required
+## Current E2 closeout proof
 
-Current reachability checkpoint after the deletion slices:
+The final E2 tree resolves the open reachability observations that were known
+when E1 ended:
 
-- Cargo manifests contain no `legacy-interpreter` feature, and
-  `RuntimeProgramRoute` contains only `None`, `ResidentPure`, and
-  `ResidentExternal`.
-- Runtime production code mentions `MechProgram` only inside the isolated
-  `runtime/program/compiler.rs` session; `MechRuntime` no longer owns one.
-- One shipping exception remains outside the runtime crate: the generated
-  native `Engine` template calls `MechProgram::run_bytecode` directly.
-- Two active distribution fixtures also execute through `MechProgram`; they
-  are validation-owner gaps rather than shipping entry points and are logged
-  above.
-- `RuntimeExecutionMode` and the generic `RuntimeExecutionTransaction`
-  envelope remain reachable through direct planning and independently retained
-  store/module/capability/effect transactions. Their E2 ownership decision is
-  logged above; E1 did remove the private program-specific coordinator.
+- Cargo manifests contain no `legacy-interpreter` feature, and no shipping
+  entry point selects an interpreter or fallback route.
+- `MechRuntime` owns resident artifacts and turns; compiler-only
+  `build_compiler()` owns short-lived source planning and attaches no input
+  drivers.
+- `RuntimeExecutionMode` is absent.
+- Generated native and full source/bytecode fixtures activate through the
+  resident runtime rather than executing a retained `MechProgram`.
+- Ordinary outputs use `SlotRole::Output`; they no longer require state
+  disguise.
+- Browser DOM, terminal env/output, console, scene, timer, time, and robot
+  capabilities have explicit retained owners. Robot custom commands preserve
+  their declared operation through source, artifact, bytecode, admission, and
+  provider preparation.
+- Multiple source roots remain supported by `mech build` in caller order;
+  bytecode builds remain single-input and reject mixed source/bytecode roots.
+- Bare runtime and syntax test profiles compile under the features that own
+  their tests, and dynamic-module integration uses the supported explicit
+  distribution profile.
+- The live value inventory, migration classifications, and frozen semantic
+  targets match the final E2 Rust tree. The only controlled checker failure is
+  `[C0-GATE-B-EVIDENCE-STALE]`, assigned to F0 evidence refresh.
 
-- No production import or feature enables the legacy interpreter.
-- No shipping entry point selects a legacy program route.
-- Retained source and bytecode fixtures pass on native and WASM/browser paths.
-- Capability enforcement, resident external effects, replay, and established
-  shipping hosts pass their focused suites.
-- Static distribution, value-system, production-resident, and packaging
-  contracts match the final intentionally reduced surface.
+The authoritative remaining scope and final validation record are in
+`docs/design/gate-e2-closeout.md`.
