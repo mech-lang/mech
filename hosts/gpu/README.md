@@ -151,7 +151,7 @@ execution now validates before every publication, so it intentionally submits
 and reads compact fault status once per turn; safe multi-turn batching needs a
 future device-side transaction protocol.
 
-The checked evaluated artifact at commit
+The initial checked evaluated artifact at commit
 `7605c5c9081a22d7bcba0b0c288570a7c3a41f41` produced these five-process
 medians on Apple M1 Metal with 100,000 filters:
 
@@ -171,6 +171,30 @@ unchecked 120-turn batched figure is not comparable because it crosses the
 host publication boundary only after all 120 turns. Raw checked samples are
 recorded in
 [`apple-m1-checked-integrity-2026-08-14.json`](benchmarks/parallel-ekf/results/apple-m1-checked-integrity-2026-08-14.json).
+
+Commit `efc85d48e562fe4ccc1af535e04f9bf4617e05a6` optimizes the generic
+checked path without removing a constraint or changing publication behavior.
+Constraint-only Boolean expressions become predicates instead of materialized
+`f32` registers, dead numeric instructions are pruned, generic finiteness and
+absolute-difference forms receive exact peephole lowering, SIMD uses native
+comparison masks, and JIT code returns its first packed fault instead of
+writing and rescanning one code per filter. The same five-process protocol,
+with five scalar turns and 40 single-turn GPU samples, produced:
+
+| Checked backend | Time/turn | Million EKF-turns/s | Change from initial checked |
+| --- | ---: | ---: | ---: |
+| Scalar artifact evaluator | 106.286 ms | 0.941 | +15.0% |
+| SIMD (`4xf32`) | 26.233 ms | 3.812 | +20.9% |
+| Cranelift JIT | 6.849 ms | 14.600 | +18.3% |
+| GPU, one checked submission/turn | 1.630 ms | 61.348 | +19.1% |
+| GPU, repeated checked turns | 1.820 ms | 54.959 | -2.9% |
+
+Synchronized GPU samples remain noisy and are dominated by per-turn host
+synchronization, so their apparent change is not a kernel-only result. The
+stable native measurements still trail the older unchecked reference by
+22.6% for scalar, 13.6% for SIMD, and 15.6% for JIT. Raw optimized samples and
+the exact validation record are in
+[`apple-m1-checked-integrity-optimized-2026-08-14.json`](benchmarks/parallel-ekf/results/apple-m1-checked-integrity-optimized-2026-08-14.json).
 
 [`benchmarks/parallel-ekf`](benchmarks/parallel-ekf) contains the reproducible
 two-panel comparison: Mech scalar versus SIMD versus JIT versus GPU, and scalar
