@@ -105,15 +105,18 @@ per-filter host call. Intermediate matrices remain invocation-local values;
 only filter inputs and persistent state/covariance buffers cross the kernel
 boundary.
 
-The running proof attaches a `RobotStateIntegrityPolicy` at the publication
-boundary. It requires every state and covariance value to be finite, every
-covariance diagonal value to be positive, and covariance to be symmetric
-within the explicitly declared `1e-4` `f32` tolerance. Scalar, SIMD, and JIT
-executors validate their candidate buffer before swapping it live. WGSL writes
-a compact device fault record, and the GPU host advances its published
-ping-pong buffer only after that record passes. On failure the whole candidate
-turn is rejected, the previous estimate remains published, and the session
-retains a bounded fault count plus its latest structured fault.
+The Mech source declares three named integrity constraints:
+`finite-candidate!`, `positive-covariance!`, and `symmetric-covariance!`.
+They use ordinary absolute value, comparison, Boolean, and fixed matrix-index
+operations; there is no EKF validation primitive or separate Rust policy.
+Their names survive artifact and bytecode encoding, participate in artifact
+identity, and appear in structured faults. Scalar, SIMD, and JIT executors
+evaluate the constraints against a candidate buffer before swapping it live.
+WGSL writes a compact device fault record, and the GPU host advances its
+published ping-pong buffer only after that record passes. On failure the whole
+candidate turn is rejected, the previous estimate remains published, and the
+session retains a bounded fault count plus its latest named fault rather than
+an append-only transaction log.
 
 Run the proof with the number of filters followed by CPU reference turns,
 single-turn GPU samples, and checked repeated GPU turns:
@@ -147,6 +150,27 @@ in one command submission and does not include final readback. Checked GPU
 execution now validates before every publication, so it intentionally submits
 and reads compact fault status once per turn; safe multi-turn batching needs a
 future device-side transaction protocol.
+
+The checked evaluated artifact at commit
+`7605c5c9081a22d7bcba0b0c288570a7c3a41f41` produced these five-process
+medians on Apple M1 Metal with 100,000 filters:
+
+| Checked backend | Time/turn | Million EKF-turns/s |
+| --- | ---: | ---: |
+| Scalar artifact evaluator | 122.212 ms | 0.818 |
+| SIMD (`4xf32`) | 31.702 ms | 3.154 |
+| Cranelift JIT | 8.105 ms | 12.339 |
+| GPU, one checked submission/turn | 1.942 ms | 51.497 |
+| GPU, repeated checked turns | 1.767 ms | 56.580 |
+
+Source parsing, artifact construction, and scalarization took a median
+`107.022 ms`; JIT preparation took `3.573 ms`. The maximum CPU/GPU absolute
+error was `6.866e-5`, and JIT output matched the scalar evaluator bit-for-bit.
+The checked GPU figures include validation before every publication. The old
+unchecked 120-turn batched figure is not comparable because it crosses the
+host publication boundary only after all 120 turns. Raw checked samples are
+recorded in
+[`apple-m1-checked-integrity-2026-08-14.json`](benchmarks/parallel-ekf/results/apple-m1-checked-integrity-2026-08-14.json).
 
 [`benchmarks/parallel-ekf`](benchmarks/parallel-ekf) contains the reproducible
 two-panel comparison: Mech scalar versus SIMD versus JIT versus GPU, and scalar

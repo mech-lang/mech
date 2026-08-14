@@ -37,14 +37,16 @@ where available. The JIT converts that instruction stream into one native SSA
 function containing the complete outer filter loop. The primary GPU lane
 submits and synchronizes one Mech turn at a time.
 
-The current executable attaches a separate robot-state publication policy to
-the generic numeric artifact. All state and covariance values must be finite,
-covariance diagonals must be positive, and covariance must be symmetric within
-the declared `1e-4` tolerance. A failed candidate is rejected before the
-published buffer changes. The session records only a fault count and latest
-structured fault, so fault evidence cannot grow an unbounded log. GPU turns
-read a compact device fault status before advancing the published ping-pong
-buffer; checked multi-turn calls therefore execute as repeated checked turns.
+The Mech source itself declares `finite-candidate!`,
+`positive-covariance!`, and `symmetric-covariance!` using generic numeric,
+comparison, Boolean, and matrix-index operations. There is no EKF validation
+primitive or separate Rust publication policy. Constraint names survive
+artifact and bytecode encoding, affect artifact identity, and are reported by
+structured faults. A failed candidate is rejected before the published buffer
+changes. The session records only a fault count and latest named fault, so
+fault evidence cannot grow an unbounded log. GPU turns read a compact device
+fault status before advancing the published ping-pong buffer; checked
+multi-turn calls therefore execute as repeated checked turns.
 
 The table below is the preserved **unchecked** Apple M1 baseline from commit
 `6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e`: five-process median after one
@@ -65,6 +67,36 @@ checks are outside the timed regions. Cranelift `0.131.3` is pinned because it
 supports the repository's Rust `1.92` minimum. JIT preparation took `3.340 ms`
 in the first recorded hardware run. Its state matched the scalar evaluator
 bit-for-bit after four validation turns.
+
+## Checked evaluated artifact
+
+Commit `7605c5c9081a22d7bcba0b0c288570a7c3a41f41` compiles the three
+source-authored constraints into every backend. Five release-mode processes
+on Apple M1 Metal, with 100,000 filters, three scalar reference turns, 20
+single GPU samples, and 120 repeated checked GPU turns, produced these
+medians:
+
+| Checked Mech backend | Time/turn | Million EKF-turns/s | Unchecked reference | Relative change |
+| --- | ---: | ---: | ---: | ---: |
+| Scalar artifact evaluator | 122.212 ms | 0.818 | 1.216 | -32.7% |
+| SIMD (`4xf32`) | 31.702 ms | 3.154 | 4.414 | -28.5% |
+| Cranelift JIT | 8.105 ms | 12.339 | 17.306 | -28.7% |
+| GPU, one checked submission/turn | 1.942 ms | 51.497 | 53.557 | -3.8% |
+| GPU, repeated checked turns | 1.767 ms | 56.580 | not comparable | not comparable |
+
+Source parsing, artifact construction, and scalarization took a median
+`107.022 ms`; JIT preparation took `3.573 ms`. Maximum CPU/GPU absolute error
+was `6.866e-5`, and JIT output matched scalar output bit-for-bit. The Apple
+Metal correctness suite passed all nine tests, including injected finite,
+positive-diagonal, and symmetry failures and proof that an invalid GPU
+candidate leaves the previous state published.
+
+The old `343.969 M/s` GPU number is deliberately excluded from the overhead
+calculation: it publishes only after a 120-turn command batch, while the
+checked repeated lane validates before every publication. Comparing those
+numbers would attribute a guarantee-boundary change to constraint arithmetic.
+All five checked process samples are preserved in
+[`results/apple-m1-checked-integrity-2026-08-14.json`](results/apple-m1-checked-integrity-2026-08-14.json).
 
 ## Scalar outer-loop languages
 
