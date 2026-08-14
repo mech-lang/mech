@@ -4,7 +4,8 @@ use mech_core::{
     CellSlotId, DimensionExpr, FloatWidth, NodeId, SchemaBody, ValueData, snapshot::SequenceView,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole,
+    ArtifactComputeRegion, ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
+    SlotRole,
 };
 
 use super::{
@@ -153,12 +154,81 @@ pub struct BatchedCpuSession<'a> {
 impl super::GpuHost {
     /// Scalarizes generic fixed-shape f32 math and matrix operations, then maps
     /// the resulting kernel over `instances` independent program states.
+    ///
+    /// Prefer [`Self::compile_broadcast`] for source-driven activation. This
+    /// count-taking entry point remains only for callers that have not moved
+    /// their batch extent into actual input values yet.
     pub fn compile_batched(
         &self,
         artifact: &ProgramArtifact,
         instances: u32,
     ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
         BatchCompiler::new(artifact, instances).compile()
+    }
+
+    /// Compiles one fixed-shape source program and derives its outer broadcast
+    /// extent from the supplied input arrays.
+    ///
+    /// Every required input contains either one source value (broadcast to all
+    /// lanes) or one value per lane. Non-singleton extents must agree. The
+    /// artifact remains one EKF-sized graph regardless of the number of lanes.
+    pub fn compile_broadcast(
+        &self,
+        artifact: &ProgramArtifact,
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
+        let instances = infer_broadcast_instances(artifact, inputs)?;
+        BatchCompiler::new(artifact, instances).compile()
+    }
+
+    /// Admits one named compute region and derives its outer extent from the
+    /// region's activation arrays.
+    pub fn compile_broadcast_with_regions(
+        &self,
+        artifact: &ProgramArtifact,
+        regions: &[ArtifactComputeRegion],
+        inputs: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
+        let plan = self.plan_with_regions(artifact, regions);
+        let mut diagnostics = plan
+            .violations
+            .iter()
+            .map(|violation| GpuDiagnostic {
+                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
+                node: violation.node,
+                operation: None,
+                detail: format!("region `{}`: {}", violation.region, violation.reason),
+            })
+            .collect::<Vec<_>>();
+        for region in regions
+            .iter()
+            .filter(|region| region.placement == mech_core::ComputePlacement::Cpu)
+        {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
+                node: region.nodes.first().copied(),
+                operation: None,
+                detail: format!(
+                    "region `{}` requires CPU execution and cannot be lowered for GPU broadcast",
+                    region.name
+                ),
+            });
+        }
+        if regions.len() != 1 {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
+                node: None,
+                operation: None,
+                detail: format!(
+                    "source-driven broadcast requires exactly one compute region, found {}",
+                    regions.len()
+                ),
+            });
+        }
+        if !diagnostics.is_empty() {
+            return Err(GpuAdmissionError { diagnostics });
+        }
+        self.compile_broadcast(artifact, inputs)
     }
 }
 
@@ -321,6 +391,123 @@ impl std::fmt::Display for BatchedExecutionError {
 }
 
 impl std::error::Error for BatchedExecutionError {}
+
+fn infer_broadcast_instances(
+    artifact: &ProgramArtifact,
+    inputs: &BTreeMap<String, Vec<f32>>,
+) -> Result<u32, GpuAdmissionError> {
+    let required = turn_required_nodes(artifact);
+    let required_slots = required
+        .iter()
+        .flat_map(|node| artifact.nodes()[node.get() as usize].input_bindings.clone())
+        .filter_map(|binding| match artifact.bindings().get(binding as usize) {
+            Some(BindingDeclaration::Input {
+                source: ArtifactSource::Slot(slot),
+                ..
+            }) => Some(*slot),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+    let slots = artifact
+        .slots()
+        .iter()
+        .map(|slot| (slot.slot, slot.schema))
+        .collect::<BTreeMap<_, _>>();
+    let mut diagnostics = Vec::new();
+    let mut batch = None::<usize>;
+
+    for input in artifact
+        .inputs()
+        .iter()
+        .filter(|input| required_slots.contains(&input.slot))
+    {
+        let Some(values) = inputs.get(&input.name) else {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::ShapeMismatch,
+                node: None,
+                operation: None,
+                detail: format!(
+                    "broadcast activation is missing required input `{}`",
+                    input.name
+                ),
+            });
+            continue;
+        };
+        let Some(schema) = slots.get(&input.slot) else {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::ArtifactMalformed,
+                node: None,
+                operation: None,
+                detail: format!("input `{}` refers to an unknown slot", input.name),
+            });
+            continue;
+        };
+        let elements = match fixed_shape(artifact, *schema) {
+            Ok(shape) => shape.elements(),
+            Err(detail) => {
+                diagnostics.push(GpuDiagnostic {
+                    code: GpuDiagnosticCode::SchemaUnsupported,
+                    node: None,
+                    operation: None,
+                    detail: format!("input `{}`: {detail}", input.name),
+                });
+                continue;
+            }
+        };
+        if elements == 0 {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::ShapeMismatch,
+                node: None,
+                operation: None,
+                detail: format!("input `{}` has a zero-sized inner shape", input.name),
+            });
+            continue;
+        }
+        if values.is_empty() || values.len() % elements != 0 {
+            diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::ShapeMismatch,
+                node: None,
+                operation: None,
+                detail: format!(
+                    "input `{}` has {} element(s); one broadcast item requires {elements}",
+                    input.name,
+                    values.len()
+                ),
+            });
+            continue;
+        }
+        let extent = values.len() / elements;
+        if extent == 1 {
+            continue;
+        }
+        match batch {
+            None => batch = Some(extent),
+            Some(expected) if expected == extent => {}
+            Some(expected) => diagnostics.push(GpuDiagnostic {
+                code: GpuDiagnosticCode::ShapeMismatch,
+                node: None,
+                operation: None,
+                detail: format!(
+                    "input `{}` has broadcast extent {extent}, expected 1 or {expected}",
+                    input.name
+                ),
+            }),
+        }
+    }
+
+    if !diagnostics.is_empty() {
+        return Err(GpuAdmissionError { diagnostics });
+    }
+    let instances = batch.unwrap_or(1);
+    u32::try_from(instances).map_err(|_| GpuAdmissionError {
+        diagnostics: vec![GpuDiagnostic {
+            code: GpuDiagnosticCode::ShapeMismatch,
+            node: None,
+            operation: None,
+            detail: format!("broadcast extent {instances} exceeds the u32 executor limit"),
+        }],
+    })
+}
 
 struct PendingState {
     slot: CellSlotId,

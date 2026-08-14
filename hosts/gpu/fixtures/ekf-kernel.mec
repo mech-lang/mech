@@ -1,14 +1,39 @@
 +> math
 
-dt := 0.1<f32>
-linear-velocity := host-linear-velocity
-angular-velocity := host-angular-velocity
-bearing := host-bearing
+EKF array inputs
+-------------------------------------------------------------------------------
+
+-- This ordinary Mech section constructs the outer arrays. The accelerator
+-- derives the broadcast extent from these values; no host API supplies a
+-- filter count to the kernel compiler.
+filter-count := 100000f32
+filter-index := 1f32..=filter-count
+filter-phase := 6.283185307179586<f32> * (filter-index - 1f32) / filter-count
+lane-dt := 0.1<f32>
+lane-linear-velocity := 1f32 + 0.05<f32> * math/sin(filter-phase * 3f32)
+lane-angular-velocity := 0.015<f32> * (1f32 + 0.1<f32> * math/sin(filter-phase * 2f32))
+lane-bearing := -0.55<f32> + 0.01<f32> * math/sin(filter-phase * 7f32) + 0.005<f32> * math/sin(filter-phase * 11f32)
+lane-measurement-noise := 0.25<f32>
+dt := lane-dt
+linear-velocity := lane-linear-velocity
+angular-velocity := lane-angular-velocity
+bearing := lane-bearing
+measurement-noise := lane-measurement-noise
+
+EKF step @ compute
+-------------------------------------------------------------------------------
+
+-- This region is one filter. Array-valued activation inputs broadcast this
+-- fixed-shape body over their common outer extent.
+dt := lane-dt
+linear-velocity := lane-linear-velocity
+angular-velocity := lane-angular-velocity
+bearing := lane-bearing
+measurement-noise := lane-measurement-noise
 landmark := [140f32; 12f32]
 
 process-noise := [0.01<f32> 0f32
                   0f32      0.0025<f32>]
-measurement-noise := 0.25<f32>
 identity := [1f32 0f32 0f32
              0f32 1f32 0f32
              0f32 0f32 1f32]

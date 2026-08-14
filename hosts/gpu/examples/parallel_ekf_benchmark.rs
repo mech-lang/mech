@@ -1,26 +1,36 @@
-use std::{collections::BTreeMap, env, time::Instant};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    env,
+    time::Instant,
+};
 
-use mech_core::{LegacyValue, Ref, hash_str};
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_core::{Body, LegacyValue, MechCode, Program, Ref, Section, SectionElement, hash_str};
+use mech_engine::{ArtifactComputeRegion, MechProgram, MechProgramConfig, ProgramArtifact};
 use mech_gpu::GpuHost;
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
 
 fn main() {
-    let instances = argument(1, 100_000_usize);
+    let requested_instances = argument(1, 100_000_usize).max(1);
     let cpu_turns = argument(2, 3_u32).max(1);
     let single_gpu_turns = argument(3, 20_u32).max(1);
     let batched_gpu_turns = argument(4, 120_u32).max(1);
     let validation_turns = 4;
 
     let compile_started = Instant::now();
-    let artifact = compile_artifact();
-    let instances_u32 = u32::try_from(instances).expect("filter count must fit u32");
+    let tree = source_tree(requested_instances);
+    let driver = evaluate_driver(&tree);
+    let (artifact, regions) = compile_artifact(&tree, &driver);
+    let inputs = source_inputs(&driver, &artifact);
     let program = GpuHost
-        .compile_batched(&artifact, instances_u32)
+        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .unwrap_or_else(|error| panic!("generic EKF source must be admitted: {error}"));
     let compile_time = compile_started.elapsed();
-    let inputs = inputs(instances);
+    let instances = program.instances() as usize;
+    assert_eq!(
+        instances, requested_instances,
+        "the accelerator must infer the Mech array extent"
+    );
 
     let mut cpu_validation = program.prepare_cpu(&inputs).unwrap();
     cpu_validation.dispatch_turns(validation_turns).unwrap();
@@ -53,6 +63,7 @@ fn main() {
     std::hint::black_box(state);
 
     println!("EKF instances: {instances}");
+    println!("batch extent authority: Mech input arrays");
     println!("source artifact nodes: {}", artifact.nodes().len());
     println!("generated WGSL bytes: {}", program.wgsl().len());
     println!("GPU workgroups: {}", program.workgroup_count());
@@ -102,60 +113,140 @@ fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
         .unwrap_or(default)
 }
 
-fn compile_artifact() -> mech_engine::ProgramArtifact {
+fn source_tree(instances: usize) -> Program {
+    let source = SOURCE.replacen("100000f32", &format!("{instances}f32"), 1);
+    mech_syntax::parse(&source).expect("EKF array source must parse")
+}
+
+fn evaluate_driver(tree: &Program) -> MechProgram {
     let mut program = MechProgram::with_function_catalog(
         MechProgramConfig::default(),
         mech_stdlib::source_native_plan_catalog(),
     );
-    let symbols = program.interpreter().symbols();
-    for (name, value) in [
-        ("host-linear-velocity", 1.0_f32),
-        ("host-angular-velocity", 0.015_f32),
-        ("host-bearing", -0.55_f32),
-    ] {
-        let id = hash_str(name);
-        symbols
-            .borrow_mut()
-            .insert(id, LegacyValue::F32(Ref::new(value)), false);
-        symbols
-            .borrow()
-            .dictionary
-            .borrow_mut()
-            .insert(id, name.to_owned());
-    }
-    program.run_string(SOURCE).expect("EKF source must run");
     program
-        .compile_program_artifact()
+        .run_tree(&projected_tree(tree, false))
+        .expect("Mech EKF array inputs must evaluate");
+    program
+}
+
+fn compile_artifact(
+    tree: &Program,
+    driver: &MechProgram,
+) -> (ProgramArtifact, Box<[ArtifactComputeRegion]>) {
+    let mut program = MechProgram::with_function_catalog(
+        MechProgramConfig::default(),
+        mech_stdlib::source_native_plan_catalog(),
+    );
+    seed_lane_inputs(&program, driver, tree);
+    program
+        .run_tree(&projected_tree(tree, true))
+        .expect("single-EKF compute region must run");
+    program
+        .compile_program_artifact_with_regions()
         .expect("EKF source must compile to a typed artifact")
 }
 
-fn inputs(instances: usize) -> BTreeMap<String, Vec<f32>> {
-    let denominator = instances.max(1) as f32;
-    let linear_velocity = (0..instances)
-        .map(|index| {
-            let phase = std::f32::consts::TAU * index as f32 / denominator;
-            1.0 + 0.05 * (phase * 3.0).sin()
+fn seed_lane_inputs(target: &MechProgram, driver: &MechProgram, tree: &Program) {
+    let compute_definitions = tree
+        .body
+        .sections
+        .iter()
+        .filter(|section| section.compute.is_some())
+        .flat_map(|section| &section.elements)
+        .filter_map(|element| match element {
+            SectionElement::MechCode(code) => Some(code),
+            _ => None,
         })
-        .collect();
-    let angular_velocity = (0..instances)
-        .map(|index| {
-            let phase = std::f32::consts::TAU * index as f32 / denominator;
-            0.015 * (1.0 + 0.1 * (phase * 2.0).cos())
+        .flatten()
+        .filter_map(|(code, _)| match code {
+            MechCode::Statement(mech_core::Statement::VariableDefine(definition)) => {
+                Some(definition.var.name.hash())
+            }
+            _ => None,
         })
-        .collect();
-    let bearing = (0..instances)
-        .map(|index| {
-            let phase = std::f32::consts::TAU * index as f32 / denominator;
-            -0.55 + 0.01 * (phase * 7.0).sin() + 0.005 * (phase * 11.0).cos()
+        .collect::<BTreeSet<_>>();
+    let driver_symbols = driver.interpreter().symbols();
+    let lane_values = {
+        let symbols = driver_symbols.borrow();
+        let dictionary = symbols.dictionary.borrow();
+        symbols
+            .symbols
+            .iter()
+            .filter(|(id, _)| !compute_definitions.contains(id))
+            .filter_map(|(id, cell)| {
+                let values = cell.borrow().as_vecf32().ok()?;
+                Some((*id, dictionary.get(id)?.clone(), *values.first()?))
+            })
+            .collect::<Vec<_>>()
+    };
+    let target_symbols = target.interpreter().symbols();
+    for (id, name, value) in lane_values {
+        target_symbols
+            .borrow_mut()
+            .insert(id, LegacyValue::F32(Ref::new(value)), false);
+        target_symbols
+            .borrow()
+            .dictionary
+            .borrow_mut()
+            .insert(id, name);
+    }
+}
+
+fn source_inputs(program: &MechProgram, artifact: &ProgramArtifact) -> BTreeMap<String, Vec<f32>> {
+    let symbols = program.interpreter().symbols();
+    let symbols = symbols.borrow();
+    artifact
+        .inputs()
+        .iter()
+        .filter_map(|input| {
+            symbols.get(hash_str(&input.name)).map(|cell| {
+                let values = cell.borrow().as_vecf32().unwrap_or_else(|error| {
+                    panic!("Mech array input `{}` must be f32: {error:?}", input.name)
+                });
+                (input.name.clone(), values)
+            })
         })
-        .collect();
-    BTreeMap::from([
-        ("dt".to_owned(), vec![0.1]),
-        ("linear-velocity".to_owned(), linear_velocity),
-        ("angular-velocity".to_owned(), angular_velocity),
-        ("bearing".to_owned(), bearing),
-        ("measurement-noise".to_owned(), vec![0.25]),
-    ])
+        .collect()
+}
+
+fn projected_tree(tree: &Program, compute: bool) -> Program {
+    let imports = tree
+        .body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .filter_map(|element| {
+            let SectionElement::MechCode(code) = element else {
+                return None;
+            };
+            let imports = code
+                .iter()
+                .filter(|(code, _)| matches!(code, MechCode::Import(_)))
+                .cloned()
+                .collect::<Vec<_>>();
+            (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
+        })
+        .collect::<Vec<_>>();
+    let selected = tree
+        .body
+        .sections
+        .iter()
+        .find(|section| section.compute.is_some() == compute)
+        .unwrap_or_else(|| panic!("EKF source must contain the selected section"))
+        .clone();
+    Program {
+        title: tree.title.clone(),
+        body: Body {
+            sections: vec![
+                Section {
+                    subtitle: None,
+                    compute: None,
+                    elements: imports,
+                },
+                selected,
+            ],
+        },
+    }
 }
 
 fn maximum_error(

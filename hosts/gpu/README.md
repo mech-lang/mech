@@ -85,18 +85,23 @@ does not submit a 100-turn batch.
 
 ## Generic parallel EKF proof
 
-[`fixtures/ekf-kernel.mec`](fixtures/ekf-kernel.mec) is a complete extended
-Kalman filter update written with ordinary Mech matrix operations. The source
-contains matrix construction, `**`, transpose, dot products, scalar
-broadcasting, `sin`, `cos`, and `atan2`, including the Joseph-form covariance
-update. It contains no EKF-specific function or precompiled EKF call.
+[`fixtures/ekf-kernel.mec`](fixtures/ekf-kernel.mec) is one Mech document. Its
+ordinary section constructs arrays of controls and observations, while its
+named `EKF step @ compute` region contains one extended Kalman filter update
+written with ordinary matrix operations. The filter contains matrix
+construction, `**`, transpose, dot products, scalar broadcasting, `sin`,
+`cos`, and `atan2`, including the Joseph-form covariance update. It contains
+no EKF-specific operation or precompiled EKF call.
 
-`GpuHost::compile_batched` consumes the same typed `ProgramArtifact` produced by
-that source. For fixed `f32` shapes it scalarizes generic matrix multiply,
-transpose, dot, concatenation, arithmetic, and trigonometry into one register
-program. WGSL generation then maps one complete scalarized program over each
-independent filter. Intermediate matrices remain invocation-local values;
-only filter inputs and the state/covariance buffers cross the kernel boundary.
+`GpuHost::compile_broadcast_with_regions` consumes the compiler's typed
+`ProgramArtifact`, named-region metadata, and the actual Mech array values. It
+derives their common outer extent, rejects inconsistent extents, and never
+receives a filter count. For fixed `f32` inner shapes it scalarizes generic
+matrix multiply, transpose, dot, concatenation, arithmetic, and trigonometry
+into one register program. WGSL generation maps one complete scalarized
+program over each independent filter. Intermediate matrices remain
+invocation-local values; only filter inputs and persistent state/covariance
+buffers cross the kernel boundary.
 
 Run the proof with the number of filters followed by CPU reference turns,
 single-submission GPU turns, and turns recorded into one GPU submission:
@@ -110,8 +115,8 @@ Measured on an Apple M1 through Metal on 2026-08-13:
 
 | Filters | Generic scalar CPU | GPU, one submission/turn | GPU, 120 turns/submission |
 | ---: | ---: | ---: | ---: |
-| 100,000 | 1.168 M EKF-turns/s | 62.529 M EKF-turns/s | 377.438 M EKF-turns/s |
-| 1,000,000 | 1.169 M EKF-turns/s | 263.672 M EKF-turns/s | 341.157 M EKF-turns/s |
+| 100,000 | 1.166 M EKF-turns/s | 51.134 M EKF-turns/s | 344.443 M EKF-turns/s |
+| 1,000,000 | 1.166 M EKF-turns/s | 231.214 M EKF-turns/s | 350.055 M EKF-turns/s |
 
 The maximum CPU/GPU absolute error after four validation turns was
 `7.629e-5`. The test suite separately compares one scalarized CPU turn with the
@@ -123,12 +128,17 @@ scalar IR evaluator in this crate, not the retained runtime, an optimized AOT
 CPU kernel, or raw Rust. The 120-turn GPU number records multiple dependent
 dispatches in one command submission and does not include final readback.
 
-The current proof takes the outer filter count as an activation parameter to
-`compile_batched`; the filter body itself is ordinary high-level Mech. A
-language-level broadcast call and compiler-derived outer batch are still
-needed before an array of filters can be expressed and inferred entirely by
-source. Likewise, the generic batched kernel is not yet connected to the
-mixed-region runtime host used by the particle example.
+The benchmark's optional count argument changes the `filter-count` value in
+the Mech source before parsing so the same workload can be scaled. The backend
+still receives only the resulting arrays and infers their extent. State and
+covariance are genuine per-lane resident arrays, initialized by broadcasting
+the one-filter source initializer.
+
+This is a region-level broadcast spike, not yet a general compiled user-call.
+The compiler still needs a compact representation for a literal
+`ekf(states, observations)` user-function broadcast, and the generic batched
+kernel is not yet connected to the mixed-region runtime host used by the
+particle example.
 
 ## Runtime integration boundary
 
