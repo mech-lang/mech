@@ -4,6 +4,7 @@ use std::sync::{
 };
 use std::time::Duration;
 
+use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
@@ -120,6 +121,33 @@ struct PlanningObservationProvider {
     plans: Arc<AtomicUsize>,
     reads: Arc<AtomicUsize>,
     value_bits: Arc<AtomicU64>,
+}
+
+#[derive(Debug)]
+struct TypedObservationProvider {
+    planned: LegacyValue,
+}
+
+impl RuntimeResourceProvider for TypedObservationProvider {
+    fn scheme(&self) -> &str {
+        "test"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        vec!["test://typed/value".to_owned()]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::resource_observation_contract())
+    }
+
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        self.planned.try_deep_snapshot()
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        panic!("typed resident host packets must not re-read the provider")
+    }
 }
 
 #[derive(Debug)]
@@ -715,6 +743,7 @@ fn turn_derived_output_is_published_from_resident_scratch() {
 @clock := test://clock/tick{:read(delta-seconds)}
 delta := @clock/delta-seconds
 output := delta + 1.0
+valid! := output < 10.0
 output
 "#,
             crate::ResidentDurabilityPolicy::Volatile,
@@ -735,6 +764,147 @@ output
         execution.coordinator.instance().output_borrow(0),
         Some(ResidentValueBorrow::F64 { values, .. }) if values == [9.0]
     ));
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(10.0),
+        ))
+        .unwrap();
+    let rejected = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        rejected.turn,
+        Some(crate::ResidentExternalTurnOutcome::Rejected { .. })
+    ));
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        unreachable!()
+    };
+    assert!(matches!(
+        execution.coordinator.instance().output_borrow(0),
+        Some(ResidentValueBorrow::F64 { values, .. }) if values == [9.0]
+    ));
+}
+
+fn assert_typed_observation_round_trip(planned: LegacyValue, packet: crate::RuntimeHostInputValue) {
+    const SOURCE: &str = r#"
+@typed := test://typed/value{:read(data)}
+@typed/data
+"#;
+
+    let planned_for_bytecode = planned.try_deep_snapshot().unwrap();
+    let mut source = runtime();
+    source
+        .register_resource_provider(Box::new(TypedObservationProvider { planned }))
+        .unwrap();
+    let subject = source.runtime_context().unwrap().subject;
+    source
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_024),
+            subject,
+            "test://typed/value/data",
+            ["read"],
+        )))
+        .unwrap();
+    source
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &source.active_program else {
+        panic!("typed observation must remain resident")
+    };
+    let revision = execution.artifact.revision();
+    let output = execution.artifact.outputs()[0].output;
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+    source
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://typed/value", "data").unwrap(),
+            packet.clone(),
+        ))
+        .unwrap();
+    let source_turn = source.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        source_turn.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    let source_value = source.output_value(output).unwrap().unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &source.active_program else {
+        unreachable!()
+    };
+    assert_eq!(execution.coordinator.input_facts().count(), 1);
+
+    let mut decoded = runtime();
+    decoded
+        .register_resource_provider(Box::new(TypedObservationProvider {
+            planned: planned_for_bytecode,
+        }))
+        .unwrap();
+    let subject = decoded.runtime_context().unwrap().subject;
+    decoded
+        .grant_capability(Arc::new(BasicCapability::from_keys(
+            CapabilityId(9_024),
+            subject,
+            "test://typed/value/data",
+            ["read"],
+        )))
+        .unwrap();
+    let loaded = decoded
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    assert_eq!(loaded.info.program_revision, Some(revision));
+    decoded
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://typed/value", "data").unwrap(),
+            packet,
+        ))
+        .unwrap();
+    let decoded_turn = decoded.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        decoded_turn.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(source_value, decoded.output_value(output).unwrap().unwrap());
+}
+
+#[test]
+fn resident_observation_profile_covers_scalars_and_dense_matrices() {
+    assert_typed_observation_round_trip(
+        LegacyValue::Bool(Ref::new(false)),
+        crate::RuntimeHostInputValue::Bool(true),
+    );
+    assert_typed_observation_round_trip(
+        LegacyValue::Index(Ref::new(0)),
+        crate::RuntimeHostInputValue::Index(7),
+    );
+    assert_typed_observation_round_trip(
+        LegacyValue::F64(Ref::new(0.0)),
+        crate::RuntimeHostInputValue::F64(7.5),
+    );
+    assert_typed_observation_round_trip(
+        LegacyValue::MatrixBool(ValueMatrix::from_vec(vec![false; 4], 2, 2)),
+        crate::RuntimeHostInputValue::BoolMatrix {
+            rows: 2,
+            columns: 2,
+            values: vec![true, false, false, true],
+        },
+    );
+    assert_typed_observation_round_trip(
+        LegacyValue::MatrixIndex(ValueMatrix::from_vec(vec![0; 4], 2, 2)),
+        crate::RuntimeHostInputValue::IndexMatrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1, 2, 3, 4],
+        },
+    );
+    assert_typed_observation_round_trip(
+        LegacyValue::MatrixF64(ValueMatrix::from_vec(vec![0.0; 4], 2, 2)),
+        crate::RuntimeHostInputValue::F64Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1.0, 2.0, 3.0, 4.0],
+        },
+    );
 }
 
 #[test]

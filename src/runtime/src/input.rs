@@ -1,6 +1,7 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
+use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
@@ -23,6 +24,21 @@ pub enum RuntimeHostInputValue {
     F32(f32),
     F64(f64),
     Index(usize),
+    BoolMatrix {
+        rows: usize,
+        columns: usize,
+        values: Vec<bool>,
+    },
+    IndexMatrix {
+        rows: usize,
+        columns: usize,
+        values: Vec<usize>,
+    },
+    F64Matrix {
+        rows: usize,
+        columns: usize,
+        values: Vec<f64>,
+    },
 }
 
 impl RuntimeHostInputValue {
@@ -128,8 +144,54 @@ impl RuntimeHostInputValue {
                 "f64 host input values require the `f64` feature",
             )),
             RuntimeHostInputValue::Index(value) => Ok(LegacyValue::Index(Ref::new(value))),
+            RuntimeHostInputValue::BoolMatrix {
+                rows,
+                columns,
+                values,
+            } => {
+                validate_matrix_input(rows, columns, values.len())?;
+                Ok(LegacyValue::MatrixBool(ValueMatrix::from_vec(
+                    values, rows, columns,
+                )))
+            }
+            RuntimeHostInputValue::IndexMatrix {
+                rows,
+                columns,
+                values,
+            } => {
+                validate_matrix_input(rows, columns, values.len())?;
+                Ok(LegacyValue::MatrixIndex(ValueMatrix::from_vec(
+                    values, rows, columns,
+                )))
+            }
+            RuntimeHostInputValue::F64Matrix {
+                rows,
+                columns,
+                values,
+            } => {
+                validate_matrix_input(rows, columns, values.len())?;
+                Ok(LegacyValue::MatrixF64(ValueMatrix::from_vec(
+                    values, rows, columns,
+                )))
+            }
         }
     }
+}
+
+fn validate_matrix_input(rows: usize, columns: usize, value_count: usize) -> MResult<()> {
+    let expected = rows.checked_mul(columns).ok_or_else(|| {
+        input_error(
+            "RuntimeHostInputMatrixInvalid",
+            "host input matrix dimensions overflow",
+        )
+    })?;
+    if rows == 0 || columns == 0 || expected != value_count {
+        return Err(input_error(
+            "RuntimeHostInputMatrixInvalid",
+            "host input matrix dimensions must be nonzero and match the value count",
+        ));
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

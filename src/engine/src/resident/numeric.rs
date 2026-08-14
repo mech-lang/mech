@@ -34,6 +34,8 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "AddSS<f64>", bind_add)?;
     register(builder, &runtime, "AddSVD<f64>", bind_add)?;
     register(builder, &runtime, "AddVDS<f64>", bind_add)?;
+    register(builder, &runtime, "DivSS<f64>", bind_div)?;
+    register(builder, &runtime, "LTSS<f64>", bind_less_than)?;
     register(
         builder,
         &runtime,
@@ -697,6 +699,37 @@ fn bind_mul(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, multiply)
+}
+
+fn bind_div(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, divide)
+}
+
+fn bind_less_than(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        2,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::ExactScalar,
+    )?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::Bool,
+    )?;
+    if request
+        .inputs
+        .iter()
+        .any(|input| input.shape != ResidentShape::SCALAR)
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(less_than, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_binary(
@@ -1592,6 +1625,25 @@ fn multiply(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     binary_f64(inputs, output, |left, right| left * right)
+}
+
+fn divide(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(inputs, output, |left, right| left / right)
+}
+
+fn less_than(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    write_bool(output, f64_scalar(inputs, 0)? < f64_scalar(inputs, 1)?)
 }
 
 fn power(
