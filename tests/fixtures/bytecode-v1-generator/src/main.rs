@@ -9,10 +9,9 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use mech_build::{
-    MECH_COMPONENT_VERSION, NativeActorBootstrap, NativeApplicationBuilder,
-    NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest, NativeDependencySource,
-    NativeEmit, NativeHostCatalog, NativeHostLinkage, NativeRuntimeConfig, NativeTargetFamily,
-    selected_native_host_catalog,
+    MECH_COMPONENT_VERSION, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile,
+    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog, NativeHostLinkage,
+    NativeRuntimeConfig, NativeTargetFamily, selected_native_host_catalog,
 };
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant, MResult,
@@ -31,7 +30,7 @@ use sha2::{Digest, Sha256};
 
 type AppResult<T> = Result<T, Box<dyn Error>>;
 
-const FIXTURE_FILES: [&str; 21] = [
+const FIXTURE_FILES: [&str; 20] = [
     "canonical-scalars.mecb",
     "canonical-matrices.mecb",
     "canonical-composites.mecb",
@@ -51,11 +50,10 @@ const FIXTURE_FILES: [&str; 21] = [
     "timer.mecb",
     "scene.mecb",
     "robot-arm.mecb",
-    "actor-host-function.mecb",
     "synthetic-live-read.mecb",
 ];
 const SOURCE_DIRECTORY: &str = "sources";
-const SOURCE_FILES: [&str; 18] = [
+const SOURCE_FILES: [&str; 17] = [
     "literal-f64.mec",
     "scalar-add.mec",
     "fixed-matrix-add-f64.mec",
@@ -72,7 +70,6 @@ const SOURCE_FILES: [&str; 18] = [
     "timer.mec",
     "scene.mec",
     "robot-arm.mec",
-    "actor-host-function.mec",
     "synthetic-live-read.mec",
 ];
 const DEFAULT_DETERMINISM_RUNS: usize = 5;
@@ -119,7 +116,6 @@ const ROBOT_ARM_SOURCE: &str = concat!(
     "@arm := robot://arm/commands{:move(move)}\n",
     "@arm/move <- true\n\"robot-done\"",
 );
-const ACTOR_SOURCE: &str = "state := actor/state/id()\n\"actor-done\"";
 const LIVE_SOURCE: &str = concat!(
     "+> @clock := test-live/clock\n\n",
     "+> @out := test-live/output\n\n",
@@ -200,7 +196,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
     let (scene, scene_functions) = compile_source(&source_compiler, "scene", SCENE_SOURCE)?;
     let (robot_arm, robot_arm_functions) =
         compile_source(&source_compiler, "robot-arm", ROBOT_ARM_SOURCE)?;
-    let (actor, actor_functions) = compile_source(&source_compiler, "actor", ACTOR_SOURCE)?;
     let (live, live_functions) = compile_source(&source_compiler, "synthetic-live", LIVE_SOURCE)?;
 
     Ok(vec![
@@ -401,17 +396,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             robot_arm_functions,
             json!("robot-done"),
         )?,
-        Fixture {
-            file: "actor-host-function.mecb",
-            source_file: Some("actor-host-function.mec"),
-            source: Some(ACTOR_SOURCE),
-            construction: None,
-            runtime_functions: actor_functions,
-            bytes: actor,
-            runtime_config: Some(actor_runtime_config()),
-            plan_catalog: PlanCatalog::Standard,
-            expected_output: json!("actor-done"),
-        },
         Fixture {
             file: "synthetic-live-read.mecb",
             source_file: Some("synthetic-live-read.mec"),
@@ -994,20 +978,6 @@ fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
                 ],
             },
         ],
-    }
-}
-
-fn actor_runtime_config() -> NativeRuntimeConfig {
-    NativeRuntimeConfig {
-        runtime: RuntimeConfig::new("bytecode-v1-actor"),
-        actor_bootstrap: Some(NativeActorBootstrap {
-            subject: "fixture-actor".to_owned(),
-            message_kind: "fixture-message".to_owned(),
-            message_payload: "fixture-payload".to_owned(),
-            initial_state: Some("fixture-state".to_owned()),
-        }),
-        hosts: Vec::new(),
-        run_grants: Vec::new(),
     }
 }
 

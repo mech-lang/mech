@@ -1,4 +1,4 @@
-#![cfg(feature = "full-hosts")]
+#![cfg(feature = "standard-hosts")]
 
 use std::fs;
 use std::fs::File;

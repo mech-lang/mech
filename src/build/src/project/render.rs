@@ -559,9 +559,10 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
                 .min(64);
             let outcomes = runtime.drain_host_inputs(drain_limit)?;
             completed_live_turns = completed_live_turns.saturating_add(
-                outcomes.iter().filter(|outcome| {
-                    outcome.turn.is_some() || outcome.resident_turn.is_some()
-                }).count(),
+                outcomes
+                    .iter()
+                    .filter(|outcome| outcome.resident_turn.is_some())
+                    .count(),
             );
             if outcomes.is_empty() {
                 std::thread::sleep(Duration::from_millis(10));

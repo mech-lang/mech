@@ -13,7 +13,7 @@ mech-core = {
 mech-build = {
   path = "../../../src/build",
   default-features = false,
-  features = ["full-hosts", "experimental-actors"],
+  features = ["full-hosts"],
 }
 mech-engine = {
   path = "../../../src/engine",

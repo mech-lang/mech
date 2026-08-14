@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 use mech_build::{
     NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
     NativeDependencySource, NativeEmit, NativeRuntimeConfig, PlannedResourceGrantKey,
-    render_generated_native_project, standard_native_host_catalog,
+    full_native_host_catalog, render_generated_native_project,
 };
 use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
@@ -86,7 +86,7 @@ fn configured_standard_hosts_are_pruned_to_exact_bytecode_owners() {
     };
     let builder = NativeApplicationBuilder::new(NativeBuildEnvironment {
         function_catalog: mech_stdlib::native_plan_catalog(),
-        host_catalog: standard_native_host_catalog().unwrap(),
+        host_catalog: full_native_host_catalog().unwrap(),
         dependency_source: NativeDependencySource::Registry {
             version: mech_build::MECH_COMPONENT_VERSION.to_owned(),
         },
@@ -114,7 +114,7 @@ fn configured_standard_hosts_are_pruned_to_exact_bytecode_owners() {
             .iter()
             .map(|package| package.package.as_str())
             .collect::<Vec<_>>(),
-        ["mech-core", "mech-engine", "mech-console", "mech-runtime"]
+        ["mech-console", "mech-core", "mech-engine", "mech-runtime"]
     );
 
     let project =

@@ -60,17 +60,5 @@ fn every_generated_application_fixture_builds_and_executes() {
                 grant.host_instance == host_instance && grant.host_context == host_context
             }));
         }
-        if generated.case.starts_with("actor-") {
-            let runtime = result.runtime_source.unwrap();
-            for installer in [
-                "install_actor_message_kind",
-                "install_actor_message_payload",
-                "install_actor_state_id",
-                "install_actor_state_get",
-                "install_actor_state_put",
-            ] {
-                assert!(runtime.contains(installer));
-            }
-        }
     }
 }

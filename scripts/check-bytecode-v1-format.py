@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "d3c8eedeaf96e98636ee30dc6540b0def272cb89c8d56de2746868e04bf8358b"
+EXPECTED_MANIFEST_SHA256 = "af5cdbf41ab606f7a25ae8323194ccb0892588899568c757e8271a2d400853f7"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
@@ -35,7 +35,6 @@ EXPECTED_FIXTURE_SHA256 = {
     "timer.mecb": "47fe9a2d688f0c0b305c5fbb72275643520d08fbae5039d6be4ec2ce10c5ac5f",
     "scene.mecb": "c8657cefc24b45499fb212cbc50014a18f8d8e44559aa8a326eed39b2e7f16c0",
     "robot-arm.mecb": "a4553c4898358c17b71b60f065025304b7d4f82af48f6869dc9fbea433f2ae27",
-    "actor-host-function.mecb": "fd112615fcde983adbc927a4c7f3c8a980a4d6fe689669ecb2552cb02bc21cf4",
     "synthetic-live-read.mecb": "b5ac2e489216b77408941425cbe29e81d55d44085950a761dd830ee9dd505b20",
 }
 EXPECTED_FILES = [
@@ -58,12 +57,10 @@ EXPECTED_FILES = [
     "timer.mecb",
     "scene.mecb",
     "robot-arm.mecb",
-    "actor-host-function.mecb",
     "synthetic-live-read.mecb",
 ]
 SOURCE_DIRECTORY = "sources"
 EXPECTED_SOURCE_FILES = [
-    "actor-host-function.mec",
     "cli-stdout.mec",
     "console.mec",
     "dynamic-matrix-add-f64.mec",

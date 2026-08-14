@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the closed standard native-host and actor-function catalog."""
+"""Enforce the closed standard and full native-host catalogs."""
 
 from __future__ import annotations
 
@@ -72,33 +72,20 @@ def main() -> int:
             require(f'cargo_features: &["{feature}"]' in source, f"{provider} feature list is not exact")
             require(f'factory_path: "{factory}"' in source, f"{provider} factory path is not exact")
 
-        expected_actor_functions = {
-            "actor/message/kind",
-            "actor/message/payload",
-            "actor/state/get",
-            "actor/state/id",
-            "actor/state/put",
-        }
         actor_functions = set(re.findall(r'name:\s*"(actor/[a-z/-]+)"', source))
-        require(actor_functions == expected_actor_functions, f"actor function set drifted: {sorted(actor_functions)}")
-        require('cargo_features: ACTOR_FEATURES' in source, "actor feature closure is not shared")
-        actor_features = re.search(
-            r'const\s+ACTOR_FEATURES:\s*&\[&str\]\s*=\s*&\[(.*?)\];',
-            source,
-            re.DOTALL,
-        )
-        require(actor_features is not None, "actor feature closure is missing")
-        features = re.findall(r'"([a-z-]+)"', actor_features.group(1))
-        require(features == ["native-link", "runtime", "string"], "actor feature closure is not exact")
+        require(not actor_functions, f"actor migration functions returned: {sorted(actor_functions)}")
+        require("ACTOR_FEATURES" not in source, "actor migration feature closure returned")
         require(
-            '#[cfg(feature = "experimental-actors")]\nfn actor_host_function_linkages()'
-            in source,
-            "actor linkages are not gated by the experimental feature",
+            "actor_host_function_linkages" not in source,
+            "actor migration linkage catalog returned",
         )
         require(
-            '#[cfg(feature = "experimental-actors")]\n    for linkage in actor_host_function_linkages()'
-            in source,
-            "actor catalog insertion is not gated by the experimental feature",
+            "insert_experimental_actor_functions" not in source,
+            "actor migration catalog insertion returned",
+        )
+        require(
+            "assert_eq!(catalog.function_count(), 0);" in source,
+            "catalog tests no longer prove that migration functions are absent",
         )
         require(not re.search(r'provider:\s*"browser"', source), "browser provider entered native catalog")
 
@@ -125,8 +112,8 @@ def main() -> int:
             "full native host feature is not standard plus robot-arm",
         )
         require(
-            "experimental-actors = []" in build_manifest,
-            "experimental actor feature is missing",
+            "experimental-actors" not in build_manifest,
+            "experimental actor build feature returned",
         )
 
         expected_runtime_features = {
@@ -178,7 +165,7 @@ def main() -> int:
         return 1
     print(
         "native host catalog contract passed "
-        "(five standard providers, six full providers, actors experimental)"
+        "(five standard providers, six full providers, no actor migration linkages)"
     )
     return 0
 

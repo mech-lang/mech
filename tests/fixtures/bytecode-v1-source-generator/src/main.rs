@@ -5,7 +5,7 @@ use std::fs;
 use mech_build::selected_planning_host_factory;
 use mech_core::{
     BytecodeInstruction, ModuleManifestConfig, ModuleManifestExportConfig,
-    ModuleManifestExportKind, ParsedProgram, Ref, LegacyValue,
+    ModuleManifestExportKind, ParsedProgram,
 };
 use mech_native_live_host_fixture::{
     TEST_LIVE_BASE_URI, TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_PATH, TEST_LIVE_PROVIDER,
@@ -13,8 +13,7 @@ use mech_native_live_host_fixture::{
     TEST_LIVE_TUPLE_PATH, TestLiveHostFactory, empty_settings,
 };
 use mech_runtime::{
-    ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeValueSnapshot,
+    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder,
 };
 
 fn main() {
@@ -30,7 +29,6 @@ fn main() {
         "console" | "time" | "timer" | "scene" | "robot-arm" => {
             compile_source_fixture(host_builder(&mode), &source)
         }
-        "actor" => compile_source_fixture(actor_builder(), &source),
         "synthetic-live" => compile_source_fixture(live_builder(), &source),
         _ => panic!("unknown source fixture mode `{mode}`"),
     };
@@ -155,19 +153,6 @@ fn host_configuration(
         "robot-arm" => ("arm", "arm/commands", vec!["move"], vec!["move"], empty()),
         _ => panic!("unsupported host provider `{provider}`"),
     }
-}
-
-fn actor_builder() -> RuntimeBuilder {
-    RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_catalog())
-        .host_function(PlannedPureHostFunction::new(
-            "actor/state/id",
-            |_context, _arguments| {
-                RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(String::new())))
-            },
-            |_context, _arguments| panic!("actor/state/id executed while planning"),
-        ))
-        .unwrap()
 }
 
 fn live_builder() -> RuntimeBuilder {
