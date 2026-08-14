@@ -2,7 +2,6 @@ use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
-use mech_engine::ProgramInputTurnOutcome;
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
 
@@ -205,7 +204,6 @@ pub struct RuntimeHostInputOutcome {
     pub update_count: usize,
     pub ignored_update_count: usize,
     pub binding_count: usize,
-    pub turn: Option<ProgramInputTurnOutcome>,
     /// Resident turn produced by this drain batch. When several packets are
     /// coalesced, the single resident decision is attached to the final
     /// packet outcome; all earlier packet outcomes contain `None`.

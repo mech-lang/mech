@@ -388,7 +388,7 @@ fn live_drain_limit(max_live_turns: Option<usize>, completed_live_turns: usize) 
 fn successful_live_turn_count(outcomes: &[mech_runtime::RuntimeHostInputOutcome]) -> usize {
     outcomes
         .iter()
-        .filter(|outcome| outcome.turn.is_some() || outcome.resident_turn.is_some())
+        .filter(|outcome| outcome.resident_turn.is_some())
         .count()
 }
 
@@ -398,7 +398,6 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> serde_json::Value {
         mech_runtime::RuntimeProgramRoute::None => "none",
         mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
         mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
-        _ => "invalid-production-route",
     };
     let revision = info.program_revision.map(|revision| {
         revision
@@ -478,20 +477,22 @@ mod command_outcome_tests {
     }
 
     #[test]
-    fn live_turn_limit_counts_legacy_turn_outcomes() {
+    fn live_turn_limit_counts_resident_turn_outcomes() {
         let outcomes = [
             mech_runtime::RuntimeHostInputOutcome {
                 update_count: 1,
                 ignored_update_count: 0,
                 binding_count: 1,
-                turn: Some(Default::default()),
-                resident_turn: None,
+                resident_turn: Some(mech_runtime::ResidentExternalTurnOutcome::Accepted {
+                    turn: mech_runtime::TurnId::new(1).unwrap(),
+                    receipt_sequence: mech_runtime::LedgerSequence::new(1).unwrap(),
+                    delivery_failures: Vec::new().into_boxed_slice(),
+                }),
             },
             mech_runtime::RuntimeHostInputOutcome {
                 update_count: 1,
                 ignored_update_count: 1,
                 binding_count: 0,
-                turn: None,
                 resident_turn: None,
             },
         ];

@@ -8,7 +8,7 @@ use mech_core::{
     BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
     MResult, MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, ValueKind, hash_str,
 };
-use mech_engine::{MechProgram, MechProgramConfig, ProgramInputId, ProgramInputUpdate};
+use mech_engine::{MechProgram, MechProgramConfig};
 use nalgebra::DMatrix;
 
 #[derive(Default)]
@@ -183,7 +183,7 @@ fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
 }
 
 #[test]
-fn compiled_set_membership_retains_reactive_element_cells() -> MResult<()> {
+fn compiled_set_membership_round_trips_through_bytecode() -> MResult<()> {
     let bytecode = compile_source("x := 2\nitems := {1, 2, 3}\nmember := x ∈ items\nmember")?;
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     let mut compiled = standard_program();
@@ -192,22 +192,11 @@ fn compiled_set_membership_retains_reactive_element_cells() -> MResult<()> {
         LegacyValue::Bool(Ref::new(true))
     );
 
-    compiled.update_inputs_and_advance_turn(&[ProgramInputUpdate {
-        input: ProgramInputId {
-            interpreter_id: compiled.interpreter().id,
-            symbol_id: hash_str("x"),
-        },
-        value: LegacyValue::F64(Ref::new(4.0)),
-    }])?;
-    assert_eq!(
-        compiled.root_symbol_value("member")?,
-        LegacyValue::Bool(Ref::new(false))
-    );
     Ok(())
 }
 
 #[test]
-fn compiled_integrity_constraints_are_reconstructed_and_enforced() -> MResult<()> {
+fn compiled_integrity_constraints_are_reconstructed() -> MResult<()> {
     let mut source_program = standard_program();
     source_program.run_string("x := 1.0\nsafe! := x <= 2.0")?;
     let source_report = source_program.integrity_constraint_report()?;
@@ -246,24 +235,6 @@ fn compiled_integrity_constraints_are_reconstructed_and_enforced() -> MResult<()
     );
     assert!(report.evaluations[0].passed);
 
-    let error = compiled
-        .update_inputs_and_advance_turn(&[ProgramInputUpdate {
-            input: ProgramInputId {
-                interpreter_id: compiled.interpreter().id,
-                symbol_id: hash_str("x"),
-            },
-            value: LegacyValue::F64(Ref::new(3.0)),
-        }])
-        .unwrap_err();
-    assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
-    assert_eq!(
-        compiled.root_symbol_value("x")?,
-        LegacyValue::F64(Ref::new(1.0))
-    );
-    assert_eq!(
-        compiled.root_symbol_value("safe!")?,
-        LegacyValue::Bool(Ref::new(true)),
-    );
     Ok(())
 }
 

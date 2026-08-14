@@ -1,7 +1,6 @@
 #![cfg(feature = "source")]
 
-use mech_core::{GenericError, MechError, NoMechExecutionServices, nodes::*};
-use mech_engine::{MechProgram, MechProgramConfig, ProgramTurnFinalization};
+use mech_core::nodes::*;
 
 fn statements(src: &str) -> Vec<Statement> {
     let program = mech_syntax::parser::parse(src).expect("parse failed");
@@ -69,28 +68,4 @@ fn program_browser_resource_write() {
 #[test]
 fn program_browser_resource_define_syntax_is_rejected() {
     assert!(mech_syntax::parser::parse("@browser/title := \"Hello\"").is_err());
-}
-
-#[test]
-fn coordinated_turn_rollback_is_safe_and_returns_the_finalizer_error() {
-    let mut program = MechProgram::new(MechProgramConfig::default());
-    let mut services = NoMechExecutionServices;
-
-    let error = program
-        .update_inputs_and_advance_turn_coordinated(&[], &mut services, |_| {
-            ProgramTurnFinalization::Rollback(MechError::new(
-                GenericError {
-                    msg: "deliberate finalizer rollback".into(),
-                },
-                None,
-            ))
-        })
-        .unwrap_err();
-
-    assert_eq!(error.kind_name(), "GenericError");
-    assert!(
-        error
-            .kind_message()
-            .contains("deliberate finalizer rollback")
-    );
 }

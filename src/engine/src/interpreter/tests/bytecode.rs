@@ -888,8 +888,7 @@ mod external_bytecode_tests {
         MechFunctionImpl, MechProgram, MechProgramConfig, ParsedProgram, ReactiveCellId, Ref,
         Register, ResourceDelivery, ResourceIntent, ResourceReadPlanningUnsupported,
         RuntimeFunctionContract, RuntimeFunctionId, RuntimeFunctionSignature,
-        RuntimeOutputAliasPolicy, RuntimeType, ToValue, ValRef, apply_stable_value_update,
-        hash_str, write_bytecode,
+        RuntimeOutputAliasPolicy, RuntimeType, ToValue, ValRef, hash_str, write_bytecode,
     };
     use std::collections::{BTreeMap, BTreeSet};
     use std::sync::{
@@ -1804,75 +1803,6 @@ mod external_bytecode_tests {
 
         assert_string(&result, "pure");
         assert!(services.planning_requests.is_empty());
-    }
-
-    #[test]
-    fn live_resource_updates_keep_register_identity_and_rerun_dependents() {
-        let parsed = resource_program(
-            2,
-            ResourceDelivery::Live,
-            vec![
-                BytecodeInstruction::ConstLoad {
-                    dst: 1,
-                    constant: 0,
-                },
-                BytecodeInstruction::ResourceRead {
-                    requirement: 0,
-                    dst: 0,
-                },
-                BytecodeInstruction::RuntimeUnary {
-                    function: RuntimeFunctionId::from_name("CopyString").raw(),
-                    dst: 1,
-                    src: 0,
-                },
-                BytecodeInstruction::Return { src: 1 },
-            ],
-            &[("live-input", 0), ("live-copy", 1)],
-        );
-        let mut program =
-            MechProgram::with_function_catalog(MechProgramConfig::default(), copy_string_catalog());
-        let interpreter_id = program.interpreter().id;
-        let mut services = RecordingExternalServices {
-            read_result: Some(string_value("live-initial")),
-            ..Default::default()
-        };
-
-        let result = program
-            .run_bytecode_program_with_services(&parsed, &mut services)
-            .unwrap();
-        assert_string(&result, "live-initial");
-        let input_register = program.interpreter().bytecode_registers.cell(0).unwrap();
-        let output_register = program.interpreter().bytecode_registers.cell(1).unwrap();
-        let input_symbol = symbol_cell(&program, "live-input");
-        let output_symbol = symbol_cell(&program, "live-copy");
-        let live_target = services.binding_targets.first().unwrap().clone();
-        assert!(live_target.same_handle(&input_register));
-        assert!(input_symbol.same_handle(&input_register));
-        assert!(output_symbol.same_handle(&output_register));
-        let input_value = input_register.borrow().as_string().unwrap();
-        let output_value = output_register.borrow().as_string().unwrap();
-
-        apply_stable_value_update(live_target.clone(), string_value("live-updated")).unwrap();
-        let dirty_cells = live_target.borrow().reactive_root_cell_ids();
-        program
-            .advance_reactive_turn_with_services(interpreter_id, &dirty_cells, &mut services)
-            .unwrap();
-
-        assert!(
-            input_register.same_handle(&program.interpreter().bytecode_registers.cell(0).unwrap())
-        );
-        assert!(
-            output_register.same_handle(&program.interpreter().bytecode_registers.cell(1).unwrap())
-        );
-        assert_eq!(
-            input_value.addr(),
-            input_register.borrow().as_string().unwrap().addr()
-        );
-        assert_eq!(
-            output_value.addr(),
-            output_register.borrow().as_string().unwrap().addr()
-        );
-        assert_string(&output_symbol.borrow(), "live-updated");
     }
 
     #[test]

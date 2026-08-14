@@ -2116,7 +2116,6 @@ name = "mech-engine"
 version = "0.3.5"
 dependencies = [
  "byteorder",
- "criterion",
  "grapheme",
  "indexmap",
  "libloading",

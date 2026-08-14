@@ -81,7 +81,6 @@ impl MechRuntime {
                     update_count: 0,
                     ignored_update_count: 0,
                     binding_count: 0,
-                    turn: None,
                     resident_turn: (index == last).then(|| outcome.turn.clone()).flatten(),
                 })
                 .collect());

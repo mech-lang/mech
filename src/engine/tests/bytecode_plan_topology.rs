@@ -20,8 +20,7 @@ use mech_core::{
 use mech_engine::Interpreter;
 use mech_engine::{
     ArtifactSource, BindingDeclaration, InitializerReference, MechProgram, MechProgramConfig,
-    ProducerReference, ProgramArtifact, ProgramInputId, ProgramInputUpdate, SlotRole,
-    decode_program_artifact_sections,
+    ProducerReference, ProgramArtifact, SlotRole, decode_program_artifact_sections,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -1567,29 +1566,6 @@ fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
     }
     assert_matrix_literal_chain(&source.interpreter().plan());
     assert_matrix_literal_chain(&decoded.interpreter().plan());
-    Ok(())
-}
-
-#[test]
-fn decoded_matrix_comprehension_publishes_reactive_results() -> MResult<()> {
-    let mut source = source_program();
-    source.run_string("x := 1.0\npayload := [x 2.0]\npayload")?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    decoded.run_bytecode(&bytecode)?;
-
-    decoded.update_inputs_and_advance_turn(&[ProgramInputUpdate {
-        input: ProgramInputId {
-            interpreter_id: decoded.interpreter().id,
-            symbol_id: hash_str("x"),
-        },
-        value: LegacyValue::from(3.0f64),
-    }])?;
-
-    let LegacyValue::MatrixF64(payload) = decoded.root_symbol_value("payload")? else {
-        panic!("expected decoded matrix payload")
-    };
-    assert_eq!(payload.as_vec(), vec![3.0, 2.0]);
     Ok(())
 }
 

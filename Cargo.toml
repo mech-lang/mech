@@ -117,7 +117,6 @@ full-hosts = [
       "dep:mech-robot-arm", "mech-robot-arm/provider",
       "mech-build?/full-hosts",
       ]
-experimental-actors = ["mech-build?/experimental-actors"]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
       "cli", "async", "trace",
