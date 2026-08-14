@@ -36,9 +36,9 @@ pub struct RuntimeConfig {
     /// Human-readable runtime name.
     pub name: String,
 
-    /// Product-level program routing and durability choices.
+    /// Retention policy for resident program evidence.
     #[cfg_attr(feature = "serde", serde(default))]
-    pub program_routing: ProgramRoutingConfig,
+    pub resident_durability: ResidentDurabilityPolicy,
 
     /// Execution and resource limits.
     pub limits: RuntimeLimits,
@@ -51,7 +51,7 @@ impl Default for RuntimeConfig {
     fn default() -> Self {
         Self {
             name: "runtime".to_string(),
-            program_routing: ProgramRoutingConfig::default(),
+            resident_durability: ResidentDurabilityPolicy::default(),
             limits: RuntimeLimits::default(),
             diagnostics: DiagnosticsConfig::default(),
         }
@@ -71,8 +71,11 @@ impl RuntimeConfig {
         self
     }
 
-    pub fn with_program_routing(mut self, program_routing: ProgramRoutingConfig) -> Self {
-        self.program_routing = program_routing;
+    pub fn with_resident_durability(
+        mut self,
+        resident_durability: ResidentDurabilityPolicy,
+    ) -> Self {
+        self.resident_durability = resident_durability;
         self
     }
 
@@ -86,21 +89,13 @@ impl RuntimeConfig {
         Ok(())
     }
 
-    /// Validate the execution policy accepted by shipping products.
-    pub fn validate_production_program_routing(&self) -> MResult<()> {
-        Ok(())
-    }
-
     pub fn apply_patch(mut self, patch: &crate::RuntimeConfigPatch) -> MResult<Self> {
         if let Some(name) = &patch.name {
             self.name = name.clone();
         }
 
-        if let Some(value) = patch.program_routing.resident_routing {
-            self.program_routing.resident_routing = value;
-        }
-        if let Some(value) = patch.program_routing.resident_durability {
-            self.program_routing.resident_durability = value;
+        if let Some(value) = patch.resident_durability {
+            self.resident_durability = value;
         }
 
         if let Some(value) = patch.limits.max_steps_per_turn {
@@ -163,15 +158,6 @@ impl RuntimeConfig {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum ResidentRoutingPolicy {
-    #[default]
-    RequireResident = 1,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum ResidentDurabilityPolicy {
     #[default]
@@ -180,13 +166,6 @@ pub enum ResidentDurabilityPolicy {
     AsynchronousDurable,
     SynchronousDurable,
     ReplicatedDurable,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct ProgramRoutingConfig {
-    pub resident_routing: ResidentRoutingPolicy,
-    pub resident_durability: ResidentDurabilityPolicy,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -386,7 +365,6 @@ mod tests {
     fn default_config_is_valid() {
         let config = RuntimeConfig::default();
         assert!(config.validate().is_ok());
-        assert!(config.validate_production_program_routing().is_ok());
     }
 
     #[test]

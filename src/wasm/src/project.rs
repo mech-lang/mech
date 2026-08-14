@@ -374,9 +374,9 @@ mod document {
         runtime: &mut MechRuntime,
         root_specifier: &str,
     ) -> Result<(), JsValue> {
-        let durability = runtime.config().program_routing.resident_durability;
+        let durability = runtime.config().resident_durability;
         runtime
-            .load_production_root_program(
+            .load_root_program(
                 SourceRequest::new(root_specifier),
                 browser_module_options(),
                 durability,
@@ -837,9 +837,6 @@ fn build_runtime(
     let runtime_config = mech_runtime::RuntimeConfig::default()
         .apply_patch(&document.runtime)
         .map_err(to_js_error)?;
-    runtime_config
-        .validate_production_program_routing()
-        .map_err(to_js_error)?;
     let mut builder = runtime_builder_with_factories(
         #[cfg(feature = "browser_host_scene")]
         scenes,
@@ -864,9 +861,6 @@ fn build_runtime_from_authority(
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
     let runtime_config = authority.into_runtime_config().map_err(to_js_error)?;
-    runtime_config
-        .validate_production_program_routing()
-        .map_err(to_js_error)?;
     let mut builder = runtime_builder_with_factories(
         #[cfg(feature = "browser_host_scene")]
         scenes,
@@ -1330,8 +1324,8 @@ fn run_source_roots<'a>(
             None,
         ));
     }
-    let durability = runtime.config().program_routing.resident_durability;
-    runtime.load_production_root_program(
+    let durability = runtime.config().resident_durability;
+    runtime.load_root_program(
         SourceRequest::new(roots[0].clone()),
         browser_module_options(),
         durability,

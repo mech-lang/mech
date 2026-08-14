@@ -79,7 +79,7 @@ pub fn verify_browser_host_delegation(
 
 pub fn encode_browser_host_config(out: &mut Vec<u8>, config: &BrowserHostConfig) {
     encode_string(out, &config.runtime.name);
-    encode_program_routing(out, config.runtime.program_routing);
+    encode_resident_runtime_header(out, config.runtime.resident_durability);
     encode_option_u64(out, config.runtime.limits.max_steps_per_turn);
     encode_option_u64(out, config.runtime.limits.max_turn_duration_ms);
     encode_option_u64(out, config.runtime.limits.max_memory_bytes);
@@ -129,7 +129,7 @@ pub fn encode_browser_runtime_injection_config(
     config: &BrowserRuntimeInjectionConfig,
 ) {
     encode_string(out, &config.runtime.name);
-    encode_program_routing(out, config.runtime.program_routing);
+    encode_resident_runtime_header(out, config.runtime.resident_durability);
     encode_option_u64(out, config.runtime.limits.max_steps_per_turn);
     encode_option_u64(out, config.runtime.limits.max_turn_duration_ms);
     encode_option_u64(out, config.runtime.limits.max_memory_bytes);
@@ -178,19 +178,21 @@ pub fn encode_browser_runtime_injection_config(
     }
 }
 
-fn encode_program_routing(out: &mut Vec<u8>, config: mech_runtime::ProgramRoutingConfig) {
-    // The pre-launch routing field remains in signed envelopes until E2/E3;
-    // the runtime enum owns its stable discriminants while products expose
-    // only the resident-required policy.
-    let routing = config.resident_routing as u64;
-    let durability = match config.resident_durability {
+fn encode_resident_runtime_header(
+    out: &mut Vec<u8>,
+    resident_durability: mech_runtime::ResidentDurabilityPolicy,
+) {
+    // Preserve the authenticated pre-launch payload layout without retaining
+    // a configurable engine policy. The first word is the former
+    // require-resident discriminator and is now a fixed reserved value.
+    let durability = match resident_durability {
         mech_runtime::ResidentDurabilityPolicy::Volatile => 0,
         mech_runtime::ResidentDurabilityPolicy::Retained => 1,
         mech_runtime::ResidentDurabilityPolicy::AsynchronousDurable => 2,
         mech_runtime::ResidentDurabilityPolicy::SynchronousDurable => 3,
         mech_runtime::ResidentDurabilityPolicy::ReplicatedDurable => 4,
     };
-    encode_u64(out, routing);
+    encode_u64(out, 1);
     encode_u64(out, durability);
 }
 
@@ -320,7 +322,7 @@ mod tests {
         BrowserHostConfig {
             runtime: BrowserHostRuntimeConfig {
                 name: "demo".to_string(),
-                program_routing: mech_runtime::ProgramRoutingConfig::default(),
+                resident_durability: mech_runtime::ResidentDurabilityPolicy::Volatile,
                 limits: BrowserHostRuntimeLimits {
                     max_steps_per_turn: Some(100),
                     max_turn_duration_ms: None,
@@ -488,8 +490,7 @@ mod tests {
         let config = host_config();
         let baseline = encode_browser_host_config_for_test(config.clone());
         let mut changed = config;
-        changed.runtime.program_routing.resident_durability =
-            mech_runtime::ResidentDurabilityPolicy::Retained;
+        changed.runtime.resident_durability = mech_runtime::ResidentDurabilityPolicy::Retained;
         assert_ne!(baseline, encode_browser_host_config_for_test(changed));
     }
 
@@ -602,7 +603,6 @@ mod tests {
             .payload
             .runtime_injection
             .runtime
-            .program_routing
             .resident_durability = mech_runtime::ResidentDurabilityPolicy::Retained;
         assert!(verify_browser_host_delegation(&envelope, request(&key)).is_err());
     }

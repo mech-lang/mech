@@ -485,7 +485,7 @@ fn external_runtime(
         )))
         .unwrap();
     runtime
-        .load_production_source_program(external_source(), durability)
+        .load_source_program(external_source(), durability)
         .unwrap();
     (runtime, plans, reads, value_bits)
 }
@@ -515,7 +515,7 @@ fn independent_external_runtime() -> (crate::MechRuntime, Arc<AtomicUsize>) {
             .unwrap();
     }
     runtime
-        .load_production_source_program(
+        .load_source_program(
             r#"
 @fast := test://clock/fast{:read(delta-seconds)}
 @slow := test://clock/slow{:read(delta-seconds)}
@@ -560,7 +560,7 @@ fn unactivated_external_runtime(driver_count: usize) -> crate::MechRuntime {
 fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output() {
     let mut source_runtime = runtime();
     let source = source_runtime
-        .load_production_source_program(PURE_SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .load_source_program(PURE_SOURCE, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(source.route, RuntimeProgramRoute::ResidentPure);
     assert!(!source.initial_value.is_empty());
@@ -603,7 +603,7 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
 
     let mut bytecode_runtime = runtime();
     let bytecode = bytecode_runtime
-        .load_production_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(bytecode.route, RuntimeProgramRoute::ResidentPure);
     assert_eq!(source.initial_value, bytecode.initial_value);
@@ -674,7 +674,7 @@ fn resident_root_plans_the_resolved_source_import_closure_before_route_selection
         .unwrap();
 
     let outcome = source_runtime
-        .load_production_root_program(
+        .load_root_program(
             "main.mec".into(),
             ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
             crate::ResidentDurabilityPolicy::Volatile,
@@ -688,7 +688,7 @@ fn resident_root_plans_the_resolved_source_import_closure_before_route_selection
     let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
     let mut bytecode_runtime = unactivated_external_runtime(1);
     let decoded = bytecode_runtime
-        .load_production_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(decoded.route, RuntimeProgramRoute::ResidentExternal);
     assert_eq!(outcome.info.program_revision, decoded.info.program_revision);
@@ -703,10 +703,7 @@ fn external_activation_requires_exactly_one_input_driver() {
     ] {
         let mut runtime = unactivated_external_runtime(driver_count);
         let error = runtime
-            .load_production_source_program(
-                external_source(),
-                crate::ResidentDurabilityPolicy::Volatile,
-            )
+            .load_source_program(external_source(), crate::ResidentDurabilityPolicy::Volatile)
             .unwrap_err();
         assert!(
             error.kind_message().starts_with(expected),
@@ -734,10 +731,7 @@ fn finite_use_capability_cannot_authorize_a_resident_session() {
         .unwrap();
 
     let error = runtime
-        .load_production_source_program(
-            external_source(),
-            crate::ResidentDurabilityPolicy::Volatile,
-        )
+        .load_source_program(external_source(), crate::ResidentDurabilityPolicy::Volatile)
         .unwrap_err();
     assert!(error.kind_message().starts_with("AuthorizationDenied:"));
     assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
@@ -754,7 +748,7 @@ fn invalidated_admitted_grant_blocks_next_drain_before_dequeue_or_publication() 
         ["read"],
     );
     runtime
-        .load_production_source_program(
+        .load_source_program(
             PRODUCT_NBODY_SOURCE,
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -812,7 +806,7 @@ fn invalidated_admitted_grant_blocks_outbox_retry_before_preparation_or_delivery
     );
     scene.lock().unwrap().delivery_failures_remaining = 1;
     runtime
-        .load_production_source_program(
+        .load_source_program(
             PRODUCT_NBODY_SOURCE,
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -845,13 +839,9 @@ fn invalidated_admitted_grant_blocks_outbox_retry_before_preparation_or_delivery
 fn production_source_and_bytecode_load_residently_without_engine_selection() {
     let mut source_runtime = runtime();
     let source = source_runtime
-        .load_production_source_program(PURE_SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .load_source_program(PURE_SOURCE, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(source.route, RuntimeProgramRoute::ResidentPure);
-    assert_eq!(
-        source.info.policy,
-        crate::ResidentRoutingPolicy::RequireResident
-    );
 
     let ActiveProgramExecution::ResidentPure(execution) = &source_runtime.active_program else {
         unreachable!()
@@ -859,20 +849,16 @@ fn production_source_and_bytecode_load_residently_without_engine_selection() {
     let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
     let mut bytecode_runtime = runtime();
     let decoded = bytecode_runtime
-        .load_production_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(decoded.route, RuntimeProgramRoute::ResidentPure);
-    assert_eq!(
-        decoded.info.policy,
-        crate::ResidentRoutingPolicy::RequireResident
-    );
 }
 
 #[test]
 fn production_unsupported_semantics_fail_without_installing_legacy() {
     let mut runtime = runtime();
     let error = runtime
-        .load_production_source_program(
+        .load_source_program(
             r#"message := "resident strings are deliberately unsupported""#,
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -917,7 +903,7 @@ fn resident_loaders_enforce_source_limits_before_planning_or_decoding() {
 
     let mut source_runtime = crate::MechRuntime::new(config.clone()).unwrap();
     let source_error = source_runtime
-        .load_production_source_program("1234", crate::ResidentDurabilityPolicy::Volatile)
+        .load_source_program("1234", crate::ResidentDurabilityPolicy::Volatile)
         .unwrap_err();
     let source_budget = source_error
         .kind_as::<crate::ResourceBudgetExceededError>()
@@ -928,7 +914,7 @@ fn resident_loaders_enforce_source_limits_before_planning_or_decoding() {
 
     let mut bytecode_runtime = crate::MechRuntime::new(config).unwrap();
     let bytecode_error = bytecode_runtime
-        .load_production_bytecode_program(&[0, 1, 2, 3], crate::ResidentDurabilityPolicy::Volatile)
+        .load_bytecode_program(&[0, 1, 2, 3], crate::ResidentDurabilityPolicy::Volatile)
         .unwrap_err();
     let bytecode_budget = bytecode_error
         .kind_as::<crate::ResourceBudgetExceededError>()
@@ -945,7 +931,7 @@ fn active_runtime_transaction_blocks_program_load_without_freezing_transaction_c
     runtime.begin_transaction(&mut context).unwrap();
 
     let error = runtime
-        .load_production_source_program(PURE_SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .load_source_program(PURE_SOURCE, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap_err();
     assert_eq!(error.kind_name(), "ResidentRouteFailure");
     assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
@@ -1050,7 +1036,7 @@ fn every_root_loader_rejects_unimplemented_durability_with_the_route_classificat
         .build()
         .unwrap();
     let error = runtime
-        .load_production_root_program(
+        .load_root_program(
             "main.mec".into(),
             ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
             crate::ResidentDurabilityPolicy::SynchronousDurable,
@@ -1130,7 +1116,7 @@ fn duplicate_observations_share_one_authoritative_host_update() {
         )))
         .unwrap();
     runtime
-        .load_production_source_program(
+        .load_source_program(
             r#"
 @first := test://clock/tick{:read(delta-seconds)}
 @second := test://clock/tick{:read(delta-seconds)}
@@ -1259,7 +1245,7 @@ output := delta
 "#;
     let mut runtime = runtime();
     let provider_error = runtime
-        .load_production_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap_err();
     assert!(
         provider_error
@@ -1268,7 +1254,7 @@ output := delta
     );
 
     let bytecode_error = runtime
-        .load_production_bytecode_program(
+        .load_bytecode_program(
             b"not bytecode-v1",
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -1283,7 +1269,7 @@ output := delta
 fn product_nbody_bytecode() -> Vec<u8> {
     let (mut runtime, _) = product_nbody_runtime();
     runtime
-        .load_production_source_program(
+        .load_source_program(
             PRODUCT_NBODY_SOURCE,
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -1312,7 +1298,7 @@ fn product_nbody_denied_grant_missing_provider_and_contract_mismatch_never_fallb
         ),
     ] {
         let error = runtime
-            .load_production_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+            .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
             .unwrap_err();
         assert!(
             error.kind_message().starts_with(expected),
@@ -1326,14 +1312,14 @@ fn product_nbody_denied_grant_missing_provider_and_contract_mismatch_never_fallb
 fn successful_resident_activation_never_falls_back_to_a_second_program() {
     let (mut runtime, _) = product_nbody_runtime();
     runtime
-        .load_production_source_program(
+        .load_source_program(
             PRODUCT_NBODY_SOURCE,
             crate::ResidentDurabilityPolicy::Volatile,
         )
         .unwrap();
     let revision = runtime.program_execution_info().program_revision;
     let error = runtime
-        .load_production_source_program(
+        .load_source_program(
             r#"message := "unsupported second program""#,
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -1416,7 +1402,7 @@ fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
 fn public_nbody_viewer_preserves_the_working_fixed_sun_orbits_residently() {
     let (mut runtime, scene) = product_nbody_runtime();
     let loaded = runtime
-        .load_production_source_program(
+        .load_source_program(
             PUBLIC_NBODY_VIEWER_SOURCE,
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -1465,7 +1451,7 @@ fn public_nbody_viewer_preserves_the_working_fixed_sun_orbits_residently() {
 fn effect_only_resident_program_executes_once_during_activation() {
     let (mut runtime, scene) = product_nbody_runtime();
     let loaded = runtime
-        .load_production_source_program(
+        .load_source_program(
             r#"
 @scene := scene://orbit/frame{:write(points)}
 points := [1.0 2.0]
@@ -1492,7 +1478,7 @@ fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly
     );
     runtime.config.limits.max_turn_duration_ms = Some(1);
     runtime
-        .load_production_source_program(
+        .load_source_program(
             PRODUCT_NBODY_SOURCE,
             crate::ResidentDurabilityPolicy::Retained,
         )
@@ -1533,7 +1519,7 @@ fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly
 fn product_nbody_source_and_bytecode_match_d2_for_4096_accepted_turns() {
     let (mut source_runtime, source_scene) = product_nbody_runtime();
     let source = source_runtime
-        .load_production_source_program(
+        .load_source_program(
             PRODUCT_NBODY_SOURCE,
             crate::ResidentDurabilityPolicy::Volatile,
         )
@@ -1549,7 +1535,7 @@ fn product_nbody_source_and_bytecode_match_d2_for_4096_accepted_turns() {
 
     let (mut bytecode_runtime, bytecode_scene) = product_nbody_runtime();
     let decoded = bytecode_runtime
-        .load_production_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(decoded.route, RuntimeProgramRoute::ResidentExternal);
     assert_eq!(source.info.program_revision, decoded.info.program_revision);

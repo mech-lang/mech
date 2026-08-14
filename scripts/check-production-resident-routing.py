@@ -16,8 +16,9 @@ PRODUCT_ROOTS = (
     Path("hosts/browser/src"),
 )
 PROHIBITED_ROUTE_REFERENCES = (
-    "ResidentRoutingPolicy::PreferResident",
-    "ResidentRoutingPolicy::LegacyOnly",
+    "ResidentRoutingPolicy",
+    "ProgramRoutingConfig",
+    "program_routing",
     "RuntimeProgramRoute::Legacy",
     "legacy_turns",
     "legacyTurns",
@@ -173,10 +174,10 @@ def check_feature_boundaries() -> list[str]:
 
 def check_required_product_seams() -> list[str]:
     required = {
-        "src/cli/commands/run.rs": "load_production_source_program",
-        "src/build/src/project/render.rs": "load_production_bytecode_program",
-        "src/wasm/src/project.rs": "load_production_root_program",
-        "hosts/browser/src/config.rs": "validate_production_program_routing",
+        "src/cli/commands/run.rs": "load_source_program",
+        "src/build/src/project/render.rs": "load_bytecode_program",
+        "src/wasm/src/project.rs": "load_root_program",
+        "hosts/browser/src/config.rs": "resident_durability",
     }
     failures: list[str] = []
     for relative, needle in required.items():
@@ -221,6 +222,16 @@ def check_required_product_seams() -> list[str]:
         failures.append(
             "src/build/src/lib.rs: production native plans must not select legacy-interpreter"
         )
+    runtime_config = (ROOT / "src/runtime/src/config/mod.rs").read_text(encoding="utf-8")
+    if "pub resident_durability: ResidentDurabilityPolicy" not in runtime_config:
+        failures.append(
+            "src/runtime/src/config/mod.rs: RuntimeConfig must directly own resident durability"
+        )
+    for token in ("ResidentRoutingPolicy", "ProgramRoutingConfig", "program_routing"):
+        if token in runtime_config:
+            failures.append(
+                f"src/runtime/src/config/mod.rs: obsolete routing policy remains: {token}"
+            )
     required_surface_contracts = {
         "src/cli/commands/run.rs": (
             "live_drain_limit(max_live_turns, completed_live_turns)",

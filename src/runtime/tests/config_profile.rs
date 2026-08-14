@@ -432,37 +432,19 @@ fn config_profile_valid_log_levels_accepted() {
 }
 
 #[test]
-fn config_profile_accepts_resident_program_routing_policy() {
-    let doc = parse(
-        r#"config := {runtime: {program-routing: {
-  resident-routing: "require-resident"
-  resident-durability: "retained"
-}}}
-"#,
-    )
-    .unwrap();
+fn config_profile_accepts_resident_durability() {
+    let doc = parse(r#"config := {runtime: {resident-durability: "retained"}}"#).unwrap();
     assert_eq!(
-        doc.runtime.program_routing.resident_routing,
-        Some(ResidentRoutingPolicy::RequireResident),
-    );
-    assert_eq!(
-        doc.runtime.program_routing.resident_durability,
+        doc.runtime.resident_durability,
         Some(ResidentDurabilityPolicy::Retained),
     );
 }
 
 #[test]
-fn config_profile_rejects_unknown_resident_program_routing_values() {
-    for (field, value) in [
-        ("resident-routing", "sometimes-resident"),
-        ("resident-durability", "eventually-durable"),
-    ] {
-        let message = err_text(&format!(
-            "config := {{runtime: {{program-routing: {{{field}: \"{value}\"}}}}}}\n",
-        ));
-        assert!(message.contains("InvalidConfigField"));
-        assert!(message.contains(field));
-    }
+fn config_profile_rejects_unknown_resident_durability() {
+    let message = err_text(r#"config := {runtime: {resident-durability: "eventually-durable"}}"#);
+    assert!(message.contains("InvalidConfigField"));
+    assert!(message.contains("resident-durability"));
 }
 
 #[test]

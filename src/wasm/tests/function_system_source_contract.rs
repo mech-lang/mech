@@ -129,7 +129,7 @@ fn cross_target_source_contract() {
             panic!("failed to build runtime for `{}`: {error:?}", case.name)
         });
         let snapshot = runtime
-            .load_production_source_program(&case.source, ResidentDurabilityPolicy::Volatile)
+            .load_source_program(&case.source, ResidentDurabilityPolicy::Volatile)
             .unwrap_or_else(|error| panic!("source case `{}` failed: {error:?}", case.name));
         assert_expected(case, snapshot.initial_value);
     }
@@ -174,7 +174,7 @@ fn scalar_source_addition_uses_the_explicit_catalog() {
         .expect("standard WASM runtime must build");
 
     let snapshot = runtime
-        .load_production_source_program("1.0 + 2.0", ResidentDurabilityPolicy::Volatile)
+        .load_source_program("1.0 + 2.0", ResidentDurabilityPolicy::Volatile)
         .expect("scalar source addition must specialize through the catalog");
 
     assert_f64_snapshot(snapshot.initial_value, 3.0);

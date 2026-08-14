@@ -70,12 +70,7 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         .map(|options| options.paths)
         .unwrap_or_default();
 
-    // Production routing policy becomes authoritative only when there is a
-    // program to load.
-    if !missing_run_options {
-        runtime_config.validate_production_program_routing()?;
-    }
-    let resident_durability = runtime_config.program_routing.resident_durability;
+    let resident_durability = runtime_config.resident_durability;
 
     filesystem_access.kernel = filesystem_access.authority.kernel().clone();
 

@@ -362,7 +362,7 @@ impl NativeApplicationBuilder {
 pub(crate) fn validate_production_native_runtime_config(
     config: &NativeRuntimeConfig,
 ) -> MResult<()> {
-    config.runtime.validate_production_program_routing()?;
+    config.runtime.validate()?;
     if config.actor_bootstrap.is_some() {
         return Err(error::native_build_error(
             error::NativeBuildErrorKind::NativeActorBootstrapUnsupported,

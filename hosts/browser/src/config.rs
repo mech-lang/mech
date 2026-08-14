@@ -99,7 +99,7 @@ impl BrowserRuntimeInjectionConfig {
         runtime_config: &RuntimeConfig,
         profile: &BrowserRuntimeProviderProfile,
     ) -> MResult<Self> {
-        runtime_config.validate_production_program_routing()?;
+        runtime_config.validate()?;
         for host in &document.hosts {
             if host.name == "browser" && host.provider != "browser" {
                 return Err(invalid_error(
@@ -182,7 +182,7 @@ impl BrowserRuntimeInjectionConfig {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BrowserHostRuntimeConfig {
     pub name: String,
-    pub program_routing: mech_runtime::ProgramRoutingConfig,
+    pub resident_durability: mech_runtime::ResidentDurabilityPolicy,
     pub limits: BrowserHostRuntimeLimits,
     pub diagnostics: BrowserHostDiagnosticsConfig,
 }
@@ -282,7 +282,7 @@ impl BrowserHostConfig {
         document: &MechConfigDocument,
         runtime_config: &RuntimeConfig,
     ) -> MResult<Self> {
-        runtime_config.validate_production_program_routing()?;
+        runtime_config.validate()?;
         let browser = browser_config_from_hosts(document)?;
         Ok(Self {
             runtime: BrowserHostRuntimeConfig::from(runtime_config),
@@ -306,7 +306,7 @@ impl BrowserHostConfig {
         };
         let config = RuntimeConfig {
             name: self.runtime.name.clone(),
-            program_routing: self.runtime.program_routing,
+            resident_durability: self.runtime.resident_durability,
             limits: RuntimeLimits {
                 max_steps_per_turn: self.runtime.limits.max_steps_per_turn,
                 max_turn_duration_ms: self.runtime.limits.max_turn_duration_ms,
@@ -325,7 +325,6 @@ impl BrowserHostConfig {
             },
         };
         config.validate()?;
-        config.validate_production_program_routing()?;
         Ok(config)
     }
 
@@ -408,7 +407,7 @@ impl From<&RuntimeConfig> for BrowserHostRuntimeConfig {
     fn from(config: &RuntimeConfig) -> Self {
         Self {
             name: config.name.clone(),
-            program_routing: config.program_routing,
+            resident_durability: config.resident_durability,
             limits: BrowserHostRuntimeLimits {
                 max_steps_per_turn: config.limits.max_steps_per_turn,
                 max_turn_duration_ms: config.limits.max_turn_duration_ms,

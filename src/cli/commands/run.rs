@@ -257,7 +257,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     if plan.missing_run_options {
         return Err(MechError::new(
             mech_runtime::ResidentRouteFailure {
-                class: mech_runtime::ResidentRouteFailureClass::ReplUnsupported,
+                class: mech_runtime::ResidentRouteFailureClass::SemanticUnsupported,
                 reason: "the production run command requires a resident program target".to_string(),
             },
             None,
@@ -266,7 +266,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
 
     let result: MResult<RuntimeValueSnapshot> = match &plan.input_mode {
         RunInputMode::InlineSource(source) => runtime
-            .load_production_source_program(source.trim(), plan.resident_durability)
+            .load_source_program(source.trim(), plan.resident_durability)
             .map(|outcome| outcome.initial_value),
         _ => {
             if plan.run_paths.is_empty() {
@@ -291,7 +291,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                     )
                 })?;
                 runtime
-                    .load_production_root_program(
+                    .load_root_program(
                         SourceRequest::from_filesystem_path(&canonical_target)?,
                         cli_module_options(),
                         plan.resident_durability,

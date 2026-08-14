@@ -2,7 +2,7 @@ use mech_core::{
     LayoutGeneration, MResult, MechError, MechErrorKind, PlanGeneration, ProgramRevision,
 };
 
-use crate::{ResidentDurabilityPolicy, ResidentRoutingPolicy, RuntimeValueSnapshot};
+use crate::{ResidentDurabilityPolicy, RuntimeValueSnapshot};
 use crate::{ResidentExternalHealth, runtime::MechRuntime};
 #[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
 use std::time::Instant;
@@ -22,7 +22,6 @@ pub enum RuntimeProgramRoute {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RuntimeProgramExecutionInfo {
     pub route: RuntimeProgramRoute,
-    pub policy: ResidentRoutingPolicy,
     pub program_revision: Option<ProgramRevision>,
     pub plan_generation: Option<PlanGeneration>,
     pub layout_generation: Option<LayoutGeneration>,
@@ -39,7 +38,6 @@ impl Default for RuntimeProgramExecutionInfo {
     fn default() -> Self {
         Self {
             route: RuntimeProgramRoute::None,
-            policy: ResidentRoutingPolicy::RequireResident,
             program_revision: None,
             plan_generation: None,
             layout_generation: None,
@@ -74,7 +72,6 @@ pub struct RuntimeResidentEvidence {
 pub enum ResidentRouteFailureClass {
     SemanticUnsupported,
     MultipleRootsUnsupported,
-    ReplUnsupported,
     ProviderUnavailable,
     ProviderContractMismatch,
     AuthorizationDenied,
@@ -161,7 +158,7 @@ pub(crate) fn ensure_supported_durability(policy: ResidentDurabilityPolicy) -> M
     } else {
         Err(route_failure(
             ResidentRouteFailureClass::InternalFailure,
-            format!("resident durability {policy:?} is unavailable in D4"),
+            format!("resident durability {policy:?} is not implemented"),
         ))
     }
 }

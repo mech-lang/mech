@@ -36,7 +36,7 @@ use super::{
 
 impl MechRuntime {
     #[cfg(feature = "resident-routing-source")]
-    pub fn load_production_source_program(
+    pub fn load_source_program(
         &mut self,
         source: &str,
         durability: crate::ResidentDurabilityPolicy,
@@ -50,7 +50,7 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
-    pub fn load_production_root_program(
+    pub fn load_root_program(
         &mut self,
         request: SourceRequest,
         module_options: ModuleBuildOptions<'_>,
@@ -96,7 +96,7 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing")]
-    pub fn load_production_bytecode_program(
+    pub fn load_bytecode_program(
         &mut self,
         bytecode: &[u8],
         durability: crate::ResidentDurabilityPolicy,
@@ -246,7 +246,6 @@ impl MechRuntime {
             } else {
                 RuntimeProgramRoute::ResidentPure
             },
-            policy: crate::ResidentRoutingPolicy::RequireResident,
             program_revision: Some(artifact.revision()),
             plan_generation: Some(instance.plan.plan_generation),
             layout_generation: Some(instance.plan.layout_generation),

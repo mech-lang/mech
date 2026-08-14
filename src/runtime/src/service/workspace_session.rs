@@ -406,7 +406,7 @@ mod tests {
 
         let result = session
             .runtime_mut()
-            .load_production_source_program(
+            .load_source_program(
                 include_str!(
                     "../../../../tests/architecture/resident-activation/n-body-source-v1.mec"
                 ),

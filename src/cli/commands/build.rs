@@ -264,7 +264,6 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             planner_config =
                 crate::apply_runtime_config_patch(planner_config, &config.document.runtime)?;
         }
-        planner_config.validate_production_program_routing()?;
         let (mut compiler, roots) = prepare_source_program_compiler(
             planner_config,
             &configured_hosts,
@@ -565,7 +564,7 @@ fn validate_production_build_config(
         )?,
         None => RuntimeConfig::new(binary_name),
     };
-    runtime.validate_production_program_routing()?;
+    runtime.validate()?;
     if config
         .and_then(|config| config.document.build.as_ref())
         .and_then(|build| build.actor.as_ref())
@@ -607,7 +606,6 @@ fn native_runtime_config(
         RuntimeConfig::new(binary_name),
         &config.document.runtime,
     )?;
-    runtime.validate_production_program_routing()?;
     let (hosts, run_grants) = if needs_resource_config {
         (
             configured_hosts(Some(config)),

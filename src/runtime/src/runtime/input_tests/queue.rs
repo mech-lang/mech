@@ -253,7 +253,7 @@ fn activate_mock_inputs(runtime: &mut MechRuntime, names: &[&str]) {
     source.push_str(&values.join(" + "));
     source.push_str("\noutput := state\n");
     runtime
-        .load_production_source_program(&source, ResidentDurabilityPolicy::Volatile)
+        .load_source_program(&source, ResidentDurabilityPolicy::Volatile)
         .unwrap();
 }
 
