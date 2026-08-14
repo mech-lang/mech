@@ -244,6 +244,14 @@ fn mech_arrays_define_the_broadcast_extent() {
     for (slot, expected) in cpu.state() {
         assert_close(expected, &simd.state()[slot], 1.0e-4);
     }
+    #[cfg(feature = "jit")]
+    {
+        let mut jit = lowered.prepare_jit_cpu(&inputs).unwrap();
+        jit.dispatch_turns(2).unwrap();
+        for (slot, expected) in cpu.state() {
+            assert_close(expected, &jit.state()[slot], 1.0e-4);
+        }
+    }
     let state_sizes = lowered
         .state_layout()
         .map(|(slot, elements)| cpu.state()[&slot].len() / elements)
@@ -306,7 +314,8 @@ fn source_driven_broadcast_matches_the_native_gpu() {
     let mut gpu = match lowered.prepare_resident(&inputs) {
         Ok(gpu) => gpu,
         Err(mech_gpu::BatchedExecutionError::Native(message))
-            if message.contains("AdapterUnavailable") =>
+            if message.to_ascii_lowercase().contains("adapter")
+                && message.to_ascii_lowercase().contains("unavailable") =>
         {
             return;
         }

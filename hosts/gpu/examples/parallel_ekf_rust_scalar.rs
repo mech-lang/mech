@@ -54,7 +54,7 @@ fn main() {
         .map(|value| *value as f64)
         .sum::<f64>();
     black_box((&state, &covariance));
-    println!("lane: Rust scalar fixed-shape");
+    println!("lane: Rust optimized fixed-shape");
     println!("instances: {instances}");
     println!("turns: {turns}");
     println!("elapsed_s: {seconds:.9}");
@@ -114,7 +114,7 @@ fn dispatch(
     }
 }
 
-#[inline(never)]
+#[inline(always)]
 fn step(
     state: &mut [f32],
     covariance: &mut [f32],
@@ -199,6 +199,7 @@ fn step(
     }
 }
 
+#[inline(always)]
 fn matmul(a: &[f32], rows: usize, inner: usize, b: &[f32], columns: usize, out: &mut [f32]) {
     for column in 0..columns {
         for row in 0..rows {
@@ -209,6 +210,7 @@ fn matmul(a: &[f32], rows: usize, inner: usize, b: &[f32], columns: usize, out: 
     }
 }
 
+#[inline(always)]
 fn transpose(input: &[f32], rows: usize, columns: usize, out: &mut [f32]) {
     for column in 0..columns {
         for row in 0..rows {
