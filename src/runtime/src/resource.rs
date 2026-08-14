@@ -325,22 +325,6 @@ impl RuntimeResourceRegistry {
         self.providers.iter().any(|entry| entry.scheme == scheme)
     }
 
-    pub(crate) fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
-        let scheme = resource_uri_scheme(candidate)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, candidate) else {
-            return Ok(None);
-        };
-        if let Some(base) = entry
-            .bases
-            .iter()
-            .filter(|base| resource_base_matches(base, candidate))
-            .max_by_key(|base| base.len())
-        {
-            return Ok(Some(base.clone()));
-        }
-        Ok(Some(resource_uri_origin(candidate)?.to_string()))
-    }
-
     pub(crate) fn equivalent_base_uris_for(&self, base_uri: &str) -> MResult<Vec<String>> {
         let normalized = canonicalize_resource_base_uri(base_uri)?;
         let Some(entry) = self
@@ -417,49 +401,6 @@ impl RuntimeResourceRegistry {
         })
     }
 
-    pub(crate) fn semantic_read_contract(
-        &self,
-        base_uri: &str,
-    ) -> MResult<Option<&'static OperationContractDeclaration>> {
-        let scheme = resource_uri_scheme(base_uri)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, base_uri) else {
-            return Err(MechError::new(
-                RuntimeResourceProviderNotFound {
-                    scheme,
-                    uri: base_uri.to_owned(),
-                },
-                None,
-            ));
-        };
-        invoke_extension_value(
-            format!("resource provider `{scheme}`"),
-            "semantic_read_contract",
-            || entry.provider.semantic_read_contract(),
-        )
-    }
-
-    pub(crate) fn semantic_write_contract(
-        &self,
-        base_uri: &str,
-        intent: RuntimeResourceWriteIntent,
-    ) -> MResult<Option<&'static OperationContractDeclaration>> {
-        let scheme = resource_uri_scheme(base_uri)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, base_uri) else {
-            return Err(MechError::new(
-                RuntimeResourceProviderNotFound {
-                    scheme,
-                    uri: base_uri.to_owned(),
-                },
-                None,
-            ));
-        };
-        invoke_extension_value(
-            format!("resource provider `{scheme}`"),
-            "semantic_write_contract",
-            || entry.provider.semantic_write_contract(intent),
-        )
-    }
-
     pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
@@ -490,27 +431,6 @@ impl RuntimeResourceRegistry {
         invoke_extension(format!("resource provider `{scheme}`"), "plan_read", || {
             entry.provider.plan_read(request)
         })
-    }
-
-    pub(crate) fn preflight_write(
-        &self,
-        request: RuntimeResourceWritePreflightRequest,
-    ) -> MResult<()> {
-        let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
-            return Err(MechError::new(
-                RuntimeResourceProviderNotFound {
-                    scheme,
-                    uri: request.base_uri,
-                },
-                None,
-            ));
-        };
-        invoke_extension(
-            format!("resource provider `{scheme}`"),
-            "preflight_write",
-            || entry.provider.preflight_write(request),
-        )
     }
 
     pub(crate) fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
