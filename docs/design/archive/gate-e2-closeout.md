@@ -1,6 +1,9 @@
 # Gate E2 closeout
 
-This is the authoritative status source for PR #758,
+> Historical record. See `../gate-e3-closeout.md` for the authoritative Gate E
+> status and F0 handoff.
+
+This was the authoritative status source for PR #758,
 `refactor/e2-consolidate-resident-architecture`. The PR remains stacked on
 `codex/e1-delete-legacy-executor`; neither PR is merged or retargeted here.
 The E1 base used for this closeout is
