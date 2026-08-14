@@ -77,11 +77,24 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertEqual(result["changed_owners"], [])
                 self.assertFalse(result["cross_cutting_standard_suite_required"])
 
-    def test_full_label_is_the_only_pr_full_validation_trigger(self):
+    def test_full_label_requests_full_validation_for_ordinary_changes(self):
         ordinary = self.classify(["machines/math/src/add.rs"])
         requested = self.classify(["machines/math/src/add.rs"], ["ci:full"])
         self.assertFalse(ordinary["full_validation_required"])
         self.assertTrue(requested["full_validation_required"])
+
+    def test_architecture_contract_changes_require_full_validation(self):
+        for path in (
+            ".github/workflows/ci-full.yml",
+            "scripts/check-operation-contract.py",
+            "tests/architecture/program-artifact/v1.json",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertIn("architecture-contracts", result["matched_owners"])
+                self.assertTrue(result["full_validation_required"])
+                self.assertTrue(result["cross_cutting_standard_suite_required"])
+                self.assertTrue(result["browser_canary_required"])
 
     def test_docs_only_change_can_still_request_full_validation(self):
         result = self.classify(["README.md"], ["ci:full"])

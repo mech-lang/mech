@@ -141,7 +141,15 @@ pub(crate) fn record_transaction_committed() {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{
+        GateACostSnapshot, gate_a_cost_snapshot, record_commit_runtime_call,
+        record_context_event_compaction, record_context_event_lengths,
+        record_context_event_snapshot, record_event_appended,
+        record_in_memory_store_apply_duration, record_in_memory_store_clone,
+        record_in_memory_store_prepare_duration, record_program_checkpoint,
+        record_reactive_journal_cells, record_runtime_transaction_savepoint_clone,
+        record_transaction_committed, reset_gate_a_costs,
+    };
 
     #[test]
     fn counters_are_thread_local_and_resettable() {

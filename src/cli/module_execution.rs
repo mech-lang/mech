@@ -284,14 +284,8 @@ mod tests {
 
     #[test]
     fn module_runtime_config_preserves_unbounded_tool_duration() {
-        let config = module_runtime_config(
-            "tool-duration-test".to_string(),
-            false,
-            false,
-            false,
-            12_345,
-        )
-        .unwrap();
+        let config =
+            module_runtime_config("tool-duration-test".to_string(), false, false, 12_345).unwrap();
 
         assert_eq!(config.limits.max_steps_per_turn, Some(12_345));
         assert_eq!(config.limits.max_turn_duration_ms, None);

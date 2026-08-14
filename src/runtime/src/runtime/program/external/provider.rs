@@ -390,7 +390,9 @@ impl MechErrorKind for UnsupportedResidentExternalRequirement {
 mod tests {
     use mech_core::{EffectContract, EffectDeliveryPolicy, IdempotencyRequirement};
 
-    use super::*;
+    use super::{
+        ExternalInteraction, NodeId, requires_provider_idempotency, validate_effect_admission,
+    };
 
     #[test]
     fn resident_retry_policy_and_idempotency_claims_are_coherent() {

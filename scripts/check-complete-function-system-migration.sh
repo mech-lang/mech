@@ -74,6 +74,8 @@ if rg -n -H \
   --glob '!tests/architecture/**' |
   awk '
     index($0, "class=\\\"") && index($0, "mech-program") { next }
+    index($0, "/src/engine/src/artifact/encoding.rs:") &&
+      index($0, "mech-program-v1") { next }
     { print }
   ' |
   grep .

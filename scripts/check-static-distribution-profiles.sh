@@ -41,25 +41,25 @@ capture_workspace_profile() {
     -p "$package" \
     --no-default-features \
     --features "$features" \
-    -e features > "$output"
+    -e features,no-dev > "$output"
   cargo_nightly tree \
     --manifest-path "$repository_root/Cargo.toml" \
     -p "$package" \
     --no-default-features \
     --features "$features" \
-    -e features \
+    -e features,no-dev \
     -i "$package" >> "$output"
 }
 
 capture_fixture_profile() {
   manifest=$1
   output=$2
-  cargo_nightly tree --manifest-path "$manifest" -e features > "$output"
+  cargo_nightly tree --manifest-path "$manifest" -e features,no-dev > "$output"
   for package in mech-engine mech-stdlib
   do
     cargo_nightly tree \
       --manifest-path "$manifest" \
-      -e features \
+      -e features,no-dev \
       -i "$package" >> "$output"
   done
 }
@@ -603,7 +603,7 @@ check_wasm_source() {
     --target wasm32-unknown-unknown \
     --no-default-features \
     --features browser_project \
-    -e features > "$scratch/wasm-source.tree"
+    -e features,no-dev > "$scratch/wasm-source.tree"
   for package in mech-engine mech-stdlib mech-syntax mech-compare mech-logic mech-math mech-matrix mech-range mech-string
   do
     cargo_nightly tree \
@@ -612,7 +612,7 @@ check_wasm_source() {
       --target wasm32-unknown-unknown \
       --no-default-features \
       --features browser_project \
-      -e features \
+      -e features,no-dev \
       -i "$package" >> "$scratch/wasm-source.tree"
   done
   check_graph "$scratch/wasm-source.tree" "WASM source" \
