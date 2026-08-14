@@ -269,6 +269,22 @@ def check_required_product_seams() -> list[str]:
     ):
         if (ROOT / obsolete_owner).exists():
             failures.append(f"{obsolete_owner}: obsolete competing program owner remains")
+    runtime_sources = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in sorted((ROOT / "src/runtime/src").rglob("*.rs"))
+    )
+    for obsolete_resource_surface in (
+        "RuntimeResourceBinding",
+        "resource_binding(",
+        "read_bound_resource(",
+        "write_bound_resource(",
+        "context_export_binding(",
+    ):
+        if obsolete_resource_surface in runtime_sources:
+            failures.append(
+                "src/runtime/src: obsolete direct resource-binding surface remains: "
+                f"{obsolete_resource_surface}"
+            )
     coordinator_path = Path(
         "src/runtime/src/runtime/program/external/coordinator.rs"
     )

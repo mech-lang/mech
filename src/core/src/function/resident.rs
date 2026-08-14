@@ -10,6 +10,7 @@ pub enum ResidentValueKind {
     Bool,
     Index,
     F64,
+    String,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -67,6 +68,7 @@ pub enum ResidentValueRef<'a> {
     Bool(&'a [u8]),
     Index(&'a [u64]),
     F64(&'a [f64]),
+    String(&'a [String]),
 }
 
 impl ResidentValueRef<'_> {
@@ -75,6 +77,7 @@ impl ResidentValueRef<'_> {
             Self::Bool(_) => ResidentValueKind::Bool,
             Self::Index(_) => ResidentValueKind::Index,
             Self::F64(_) => ResidentValueKind::F64,
+            Self::String(_) => ResidentValueKind::String,
         }
     }
 
@@ -83,6 +86,7 @@ impl ResidentValueRef<'_> {
             Self::Bool(values) => values.len(),
             Self::Index(values) => values.len(),
             Self::F64(values) => values.len(),
+            Self::String(values) => values.len(),
         }
     }
 
@@ -96,6 +100,7 @@ pub enum ResidentValueMut<'a> {
     Bool(&'a mut [u8]),
     Index(&'a mut [u64]),
     F64(&'a mut [f64]),
+    String(&'a mut [String]),
 }
 
 impl ResidentValueMut<'_> {
@@ -104,6 +109,7 @@ impl ResidentValueMut<'_> {
             Self::Bool(_) => ResidentValueKind::Bool,
             Self::Index(_) => ResidentValueKind::Index,
             Self::F64(_) => ResidentValueKind::F64,
+            Self::String(_) => ResidentValueKind::String,
         }
     }
 
@@ -112,6 +118,7 @@ impl ResidentValueMut<'_> {
             Self::Bool(values) => values.len(),
             Self::Index(values) => values.len(),
             Self::F64(values) => values.len(),
+            Self::String(values) => values.len(),
         }
     }
 }

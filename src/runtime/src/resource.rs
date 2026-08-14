@@ -78,6 +78,13 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         None
     }
 
+    /// Whether a resident observation is activated only by matching host-input
+    /// packets. Snapshot providers return `false` so activation captures the
+    /// value directly from [`Self::read`] for the initial turn.
+    fn observation_requires_input_driver(&self, _request: &RuntimeResourceReadRequest) -> bool {
+        true
+    }
+
     fn semantic_write_contract(
         &self,
         _intent: RuntimeResourceWriteIntent,
@@ -200,6 +207,17 @@ impl RuntimeResidentProviderBinding {
             format!("resource provider `{}`", self.scheme),
             "semantic_write_contract",
             || self.provider.semantic_write_contract(intent),
+        )
+    }
+
+    pub(crate) fn observation_requires_input_driver(
+        &self,
+        request: &RuntimeResourceReadRequest,
+    ) -> MResult<bool> {
+        invoke_extension_value(
+            format!("resource provider `{}`", self.scheme),
+            "observation_requires_input_driver",
+            || self.provider.observation_requires_input_driver(request),
         )
     }
 

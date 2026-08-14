@@ -24,6 +24,9 @@ pub(crate) fn output_value(
         ResidentValueBorrow::F64 { shape: _, values } if values.len() == 1 => {
             LegacyValue::F64(Ref::new(values[0]))
         }
+        ResidentValueBorrow::String { shape: _, values } if values.len() == 1 => {
+            LegacyValue::String(Ref::new(values[0].clone()))
+        }
         ResidentValueBorrow::Bool { shape, values } => LegacyValue::MatrixBool(Matrix::from_vec(
             values.iter().map(|value| *value != 0).collect(),
             shape.rows as usize,
@@ -39,6 +42,9 @@ pub(crate) fn output_value(
             shape.rows as usize,
             shape.columns as usize,
         )),
+        ResidentValueBorrow::String { .. } => {
+            unreachable!("resident string matrices are rejected during activation")
+        }
     };
     RuntimeValueSnapshot::try_capture(&legacy).map(Some)
 }

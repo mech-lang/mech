@@ -9,7 +9,7 @@ mod context;
 mod destructure;
 mod integrity;
 
-pub(crate) use context::context_read;
+pub(crate) use context::{context_assign, context_read};
 pub use context::{context_declaration, context_send};
 #[cfg(feature = "tuple")]
 pub use destructure::tuple_destructure;

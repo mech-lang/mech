@@ -7,10 +7,14 @@ use mech_browser::{
     BrowserDomManifestEntry, BrowserDomPath, BrowserDomProperty, BrowserDomScope, BrowserOperation,
     BrowserResource, BrowserResourceProvider,
 };
-use mech_core::{LegacyValue, MResult, Ref};
+use mech_core::{
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
+    MResult, ObservationContract, ObservationReplayPolicy, Ref,
+};
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest,
 };
 
 #[derive(Debug, Clone)]
@@ -37,6 +41,7 @@ impl BrowserDomBackend for TestDomBackend {
 
 #[derive(Debug, Clone, Default)]
 struct RecordingDomBackend {
+    reads: Arc<std::sync::atomic::AtomicUsize>,
     writes: Arc<Mutex<Vec<String>>>,
 }
 
@@ -46,6 +51,7 @@ impl BrowserDomBackend for RecordingDomBackend {
         _entry: &BrowserDomManifestEntry,
         _requested_path: &BrowserDomPath,
     ) -> MResult<String> {
+        self.reads.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
         Ok(String::new())
     }
 
@@ -57,6 +63,14 @@ impl BrowserDomBackend for RecordingDomBackend {
     ) -> MResult<()> {
         self.writes.lock().unwrap().push(value.to_string());
         Ok(())
+    }
+}
+
+fn read_request() -> RuntimeResourceReadRequest {
+    RuntimeResourceReadRequest {
+        base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
+        path: "body/header/title".to_string(),
+        context_name: "ui".to_string(),
     }
 }
 
@@ -111,10 +125,62 @@ fn default_browser_provider_preflights_legacy_dom_base() {
 }
 
 #[test]
+fn browser_dom_declares_snapshot_observation_and_assign_effect_semantics() {
+    let provider = BrowserResourceProvider::new(authority(), TestDomBackend);
+    assert!(matches!(
+        provider.semantic_read_contract().unwrap().interaction,
+        ExternalInteraction::Observation(ObservationContract {
+            replay: ObservationReplayPolicy::CaptureAsInputFact,
+        }),
+    ));
+    assert!(matches!(
+        provider
+            .semantic_write_contract(RuntimeResourceWriteIntent::Assign)
+            .unwrap()
+            .interaction,
+        ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    ));
+    assert!(
+        provider
+            .semantic_write_contract(RuntimeResourceWriteIntent::Send)
+            .is_none()
+    );
+    assert!(!provider.observation_requires_input_driver(&read_request()));
+}
+
+#[test]
+fn browser_dom_planning_validates_without_touching_the_backend() {
+    let backend = RecordingDomBackend::default();
+    let observed = backend.clone();
+    let provider = BrowserResourceProvider::new(authority(), backend);
+
+    assert_eq!(
+        provider.plan_read(read_request()).unwrap(),
+        LegacyValue::String(Ref::new(String::new())),
+    );
+    provider
+        .plan_write(RuntimeResourceWriteRequest {
+            base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),
+            path: "body/header/title".to_string(),
+            context_name: "ui".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            value: LegacyValue::String(Ref::new("planned".to_string())),
+            intent: RuntimeResourceWriteIntent::Assign,
+        })
+        .unwrap();
+
+    assert_eq!(observed.reads.load(std::sync::atomic::Ordering::SeqCst), 0,);
+    assert!(observed.writes.lock().unwrap().is_empty());
+}
+
+#[test]
 fn browser_dom_write_is_deferred_until_delivery() {
     let backend = RecordingDomBackend::default();
     let observed = backend.clone();
-    let mut provider = BrowserResourceProvider::new(authority(), backend);
+    let provider = BrowserResourceProvider::new(authority(), backend);
     let effect = provider
         .prepare_write(RuntimeResourceWriteRequest {
             base_uri: BROWSER_DOM_PROVIDER_URI.to_string(),

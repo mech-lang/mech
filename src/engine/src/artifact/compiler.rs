@@ -1298,8 +1298,10 @@ fn external_declaration_matches_requirement(
                 && request.delivery == mech_core::ResourceDelivery::Live
         }
         (ApplicationRequirement::Resource(request), mech_core::ExternalInteraction::Effect(_)) => {
-            request.intent == mech_core::ResourceIntent::Send
-                && request.delivery == mech_core::ResourceDelivery::Snapshot
+            matches!(
+                request.intent,
+                mech_core::ResourceIntent::Assign | mech_core::ResourceIntent::Send
+            ) && request.delivery == mech_core::ResourceDelivery::Snapshot
         }
         (
             ApplicationRequirement::Resource(request),

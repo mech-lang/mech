@@ -480,8 +480,10 @@ fn validate_node_requirement(
             Ok(())
         }
         (ExternalInteraction::Effect(_), Some(ApplicationRequirement::Resource(request)))
-            if request.intent == ResourceIntent::Send
-                && request.delivery == ResourceDelivery::Snapshot
+            if matches!(
+                request.intent,
+                ResourceIntent::Assign | ResourceIntent::Send
+            ) && request.delivery == ResourceDelivery::Snapshot
                 && contract.outputs.is_empty() =>
         {
             Ok(())

@@ -313,17 +313,23 @@ impl ResidentExternalCoordinator {
     }
 
     pub fn trigger_sources(&self) -> MResult<Box<[crate::RuntimeHostInputSource]>> {
-        let sources = self
-            .bound
-            .observations()
-            .iter()
-            .map(|observation| {
-                crate::RuntimeHostInputSource::new(
-                    observation.request.base_uri.clone(),
-                    observation.request.path.clone(),
-                )
-            })
-            .collect::<MResult<std::collections::BTreeSet<_>>>()?;
+        let mut sources = std::collections::BTreeSet::new();
+        for observation in self.bound.observations() {
+            let binding = observation.provider_binding.as_ref().ok_or_else(|| {
+                invalid_value("live observation has no provider binding".to_owned())
+            })?;
+            let request = RuntimeResourceReadRequest {
+                base_uri: observation.request.base_uri.clone(),
+                path: observation.request.path.clone(),
+                context_name: observation.request.context_name.clone(),
+            };
+            if binding.observation_requires_input_driver(&request)? {
+                sources.insert(crate::RuntimeHostInputSource::new(
+                    request.base_uri,
+                    request.path,
+                )?);
+            }
+        }
         Ok(sources.into_iter().collect::<Vec<_>>().into_boxed_slice())
     }
 
@@ -1957,6 +1963,10 @@ fn resident_scalar_bytes(kind: ResidentValueKind) -> usize {
     match kind {
         ResidentValueKind::Bool => 1,
         ResidentValueKind::Index | ResidentValueKind::F64 => 8,
+        // String payloads are dynamic. Reserve a conservative bounded lane
+        // before provider capture/effect materialization; numeric estimates
+        // remain exact and structurally unchanged.
+        ResidentValueKind::String => 64 * 1_024,
     }
 }
 

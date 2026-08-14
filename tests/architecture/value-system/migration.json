@@ -5669,7 +5669,7 @@
       "sites": [
         {
           "column": 59,
-          "line": 659
+          "line": 633
         }
       ],
       "target": "bool-snapshot",
@@ -5789,7 +5789,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 185
+          "line": 186
         }
       ],
       "target": "bool-snapshot",
@@ -7126,7 +7126,7 @@
       "sites": [
         {
           "column": 25,
-          "line": 497
+          "line": 471
         }
       ],
       "target": "execution-no-result",
@@ -7141,15 +7141,15 @@
       "sites": [
         {
           "column": 25,
-          "line": 631
+          "line": 605
         },
         {
           "column": 28,
-          "line": 637
+          "line": 611
         },
         {
           "column": 28,
-          "line": 642
+          "line": 616
         }
       ],
       "target": "option-absence",
@@ -7164,11 +7164,11 @@
       "sites": [
         {
           "column": 16,
-          "line": 18
+          "line": 17
         },
         {
           "column": 20,
-          "line": 23
+          "line": 22
         }
       ],
       "target": "execution-no-result",
@@ -7183,11 +7183,15 @@
       "sites": [
         {
           "column": 27,
-          "line": 88
+          "line": 87
         },
         {
           "column": 26,
-          "line": 131
+          "line": 128
+        },
+        {
+          "column": 26,
+          "line": 165
         }
       ],
       "target": "uninitialized-storage",
@@ -9655,7 +9659,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 210
+          "line": 211
         }
       ],
       "target": "floating-point-snapshot",
@@ -12377,7 +12381,7 @@
       "sites": [
         {
           "column": 52,
-          "line": 136
+          "line": 134
         }
       ],
       "target": "id-snapshot",
@@ -13939,7 +13943,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 222
+          "line": 223
         }
       ],
       "target": "index-snapshot",
@@ -15143,23 +15147,23 @@
       "sites": [
         {
           "column": 36,
-          "line": 203
+          "line": 201
         },
         {
           "column": 36,
-          "line": 254
+          "line": 252
         },
         {
           "column": 36,
-          "line": 283
+          "line": 281
         },
         {
           "column": 36,
-          "line": 360
+          "line": 358
         },
         {
           "column": 36,
-          "line": 371
+          "line": 369
         }
       ],
       "target": "index-all-selection-ir",
@@ -17553,7 +17557,7 @@
       "sites": [
         {
           "column": 56,
-          "line": 27
+          "line": 30
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -20867,7 +20871,7 @@
       "sites": [
         {
           "column": 55,
-          "line": 37
+          "line": 40
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -24415,7 +24419,7 @@
       "sites": [
         {
           "column": 57,
-          "line": 32
+          "line": 35
         }
       ],
       "target": "typed-matrix-snapshot",
@@ -30865,19 +30869,15 @@
         },
         {
           "column": 26,
-          "line": 595
+          "line": 569
         },
         {
           "column": 30,
-          "line": 636
+          "line": 610
         },
         {
           "column": 30,
-          "line": 641
-        },
-        {
-          "column": 9,
-          "line": 766
+          "line": 615
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -32648,11 +32648,19 @@
       "sites": [
         {
           "column": 12,
-          "line": 139
+          "line": 183
+        },
+        {
+          "column": 12,
+          "line": 198
         },
         {
           "column": 13,
-          "line": 206
+          "line": 254
+        },
+        {
+          "column": 37,
+          "line": 280
         }
       ],
       "target": "string-snapshot",
@@ -33171,35 +33179,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 598
+          "line": 572
         },
         {
           "column": 30,
-          "line": 599
+          "line": 573
         },
         {
           "column": 21,
-          "line": 602
+          "line": 576
         },
         {
           "column": 21,
-          "line": 605
+          "line": 579
         },
         {
           "column": 21,
-          "line": 608
+          "line": 582
         },
         {
           "column": 21,
-          "line": 611
+          "line": 585
         },
         {
           "column": 21,
-          "line": 614
+          "line": 588
         },
         {
           "column": 21,
-          "line": 617
+          "line": 591
         }
       ],
       "target": "string-snapshot",
@@ -37539,7 +37547,7 @@
       "sites": [
         {
           "column": 28,
-          "line": 1547
+          "line": 1549
         }
       ],
       "target": "kind-wildcard",
@@ -38585,7 +38593,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 1547
+          "line": 1549
         }
       ],
       "target": "value-kind-hole",
@@ -42015,11 +42023,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1536
+          "line": 1538
         },
         {
           "column": 14,
-          "line": 1538
+          "line": 1540
         }
       ],
       "target": "reified-type-schema",
@@ -42223,11 +42231,11 @@
         },
         {
           "column": 9,
-          "line": 1493
+          "line": 1495
         },
         {
           "column": 17,
-          "line": 1497
+          "line": 1499
         }
       ],
       "target": "map-schema",
@@ -42623,11 +42631,11 @@
         },
         {
           "column": 9,
-          "line": 1474
+          "line": 1476
         },
         {
           "column": 17,
-          "line": 1477
+          "line": 1479
         }
       ],
       "target": "matrix-schema",
@@ -43105,7 +43113,7 @@
       "sites": [
         {
           "column": 45,
-          "line": 1547
+          "line": 1549
         }
       ],
       "target": "kind-never",
@@ -43342,11 +43350,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1532
+          "line": 1534
         },
         {
           "column": 14,
-          "line": 1534
+          "line": 1536
         }
       ],
       "target": "option-schema",
@@ -43990,11 +43998,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1481
+          "line": 1483
         },
         {
           "column": 14,
-          "line": 1491
+          "line": 1493
         }
       ],
       "target": "record-schema",
@@ -44297,11 +44305,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1470
+          "line": 1472
         },
         {
           "column": 9,
-          "line": 1548
+          "line": 1550
         }
       ],
       "target": "reference-binding-contract",
@@ -44629,11 +44637,11 @@
         },
         {
           "column": 9,
-          "line": 1525
+          "line": 1527
         },
         {
           "column": 17,
-          "line": 1528
+          "line": 1530
         }
       ],
       "target": "set-schema",
@@ -45236,11 +45244,11 @@
         },
         {
           "column": 9,
-          "line": 1501
+          "line": 1503
         },
         {
           "column": 14,
-          "line": 1511
+          "line": 1513
         }
       ],
       "target": "table-schema",
@@ -45570,11 +45578,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1513
+          "line": 1515
         },
         {
           "column": 14,
-          "line": 1523
+          "line": 1525
         }
       ],
       "target": "tuple-schema",
@@ -47354,6 +47362,37 @@
       ],
       "target": "unsigned-integer-schema",
       "variant": "U8"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
+      "roles": [
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 231
+        }
+      ],
+      "target": "string-snapshot",
+      "variant": "String"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/runtime/src/runtime/program/value.rs",
+      "roles": [
+        "host-output",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 13,
+          "line": 28
+        }
+      ],
+      "target": "string-snapshot",
+      "variant": "String"
     }
   ]
 }

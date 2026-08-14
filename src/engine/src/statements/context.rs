@@ -1,13 +1,12 @@
 use crate::{
-    ContextBase, ContextDeclaration, ContextSend, ExecutionResourceRequest,
+    ContextBase, ContextDeclaration, ContextSend, Environment, ExecutionResourceRequest,
     ExternalResourceReadFunction, ExternalResourceWriteFunction, GenericError, Identifier,
     InitialSolvePolicy, InterpreterExecution, LegacyValue, MResult, MechError, Ref,
-    ResourceDelivery, ResourceIntent, UndefinedContextError, ValRef, Var,
+    ResourceDelivery, ResourceIntent, UndefinedContextError, ValRef, Var, VariableAssign,
     execute_specialized_function, expression,
 };
 
 // Interpreter-local context bindings are for direct interpreter execution.
-// Host runtime resource bindings are owned by MechRuntime.resource_bindings.
 pub fn context_declaration(
     ctx: &ContextDeclaration,
     p: &InterpreterExecution<'_>,
@@ -96,6 +95,41 @@ pub(crate) fn context_read(
     let arguments = Vec::<LegacyValue>::new();
     execute_specialized_function(Box::new(function), &arguments, interpreter)?;
     Ok(output)
+}
+
+pub(crate) fn context_assign(
+    assignment: &VariableAssign,
+    environment: Option<&Environment>,
+    interpreter: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
+    let context = assignment.target.context.as_ref().ok_or_else(|| {
+        MechError::new(
+            GenericError {
+                msg: "context_assign requires a context-addressed target".to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(assignment.target.tokens())
+    })?;
+    let request = resource_request(
+        context,
+        &assignment.target.name,
+        "write",
+        ResourceIntent::Assign,
+        ResourceDelivery::Snapshot,
+        interpreter,
+    )?;
+    let input = expression(&assignment.expression, environment, interpreter)?;
+    let arguments = vec![input.clone()];
+    let function = ExternalResourceWriteFunction {
+        request,
+        input,
+        output: Ref::new(LegacyValue::Empty),
+        initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
+        semantic_contract: None,
+    };
+    execute_specialized_function(Box::new(function), &arguments, interpreter)
 }
 
 /// Lower a direct source send into the same external resource node used by

@@ -2,7 +2,6 @@
 
 use super::MechRuntime;
 use super::extension;
-use super::resources::{runtime_resource_binding_error, validate_resource_binding_name};
 use super::transaction::RuntimeHealth;
 use crate::{
     BasicCapabilityKernel, CapabilityKernel, DEFAULT_HOST_INPUT_CAPACITY, DefaultHostCallPolicy,
@@ -47,8 +46,6 @@ pub struct RuntimeBuilder {
     host_instances: Vec<HostInstanceConfig>,
     run_grants: Vec<RunResourceGrantConfig>,
     module_manifests: ModuleManifestCatalog,
-    resource_bindings: Vec<(String, String)>,
-    context_export_bindings: Vec<(String, String, String)>,
 }
 
 impl std::fmt::Debug for RuntimeBuilder {
@@ -73,8 +70,6 @@ impl std::fmt::Debug for RuntimeBuilder {
             .field("host_instances", &self.host_instances)
             .field("run_grants", &self.run_grants)
             .field("module_manifests", &self.module_manifests)
-            .field("resource_bindings", &self.resource_bindings)
-            .field("context_export_bindings", &self.context_export_bindings)
             .finish()
     }
 }
@@ -105,8 +100,6 @@ impl Default for RuntimeBuilder {
             host_instances: Vec::new(),
             run_grants: Vec::new(),
             module_manifests: ModuleManifestCatalog::new(),
-            resource_bindings: Vec::new(),
-            context_export_bindings: Vec::new(),
         }
     }
 }
@@ -214,40 +207,6 @@ impl RuntimeBuilder {
     pub fn run_resource_grant(mut self, grant: RunResourceGrantConfig) -> Self {
         self.run_grants.push(grant);
         self
-    }
-
-    pub fn resource_binding(
-        mut self,
-        name: impl Into<String>,
-        uri: impl Into<String>,
-    ) -> MResult<Self> {
-        let name = name.into();
-        if !validate_resource_binding_name(&name) {
-            return Err(runtime_resource_binding_error(
-                name,
-                "resource binding names must be non-empty simple tokens",
-            ));
-        }
-        self.resource_bindings.push((name, uri.into()));
-        Ok(self)
-    }
-
-    pub fn context_export_binding(
-        mut self,
-        alias: impl Into<String>,
-        module: impl Into<String>,
-        item: impl Into<String>,
-    ) -> MResult<Self> {
-        let alias = alias.into();
-        if !validate_resource_binding_name(&alias) {
-            return Err(runtime_resource_binding_error(
-                alias,
-                "context export aliases must be non-empty simple tokens",
-            ));
-        }
-        self.context_export_bindings
-            .push((alias, module.into(), item.into()));
-        Ok(self)
     }
 
     pub fn resource_provider(mut self, provider: Box<dyn RuntimeResourceProvider>) -> Self {
@@ -366,7 +325,6 @@ impl RuntimeBuilder {
             health: RuntimeHealth::Healthy,
             module_builder: self.module_builder,
             resources: RuntimeResourceRegistry::new(),
-            resource_bindings: HashMap::new(),
             host_input_queue: std::sync::Arc::new(std::sync::Mutex::new(
                 RuntimeHostInputQueueState::new(self.host_input_capacity),
             )),
@@ -391,14 +349,6 @@ impl RuntimeBuilder {
 
         for grant in &self.run_grants {
             runtime.install_run_resource_grant(grant)?;
-        }
-
-        for (name, uri) in self.resource_bindings {
-            runtime.bind_resource_root(name, uri)?;
-        }
-
-        for (alias, module, item) in self.context_export_bindings {
-            runtime.bind_context_export(&alias, &module, &item)?;
         }
 
         let ingress = runtime.ingress();

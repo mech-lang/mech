@@ -1577,8 +1577,227 @@ mod tests {
         .unwrap()
     }
 
+    #[cfg(feature = "browser_host_dom")]
+    #[derive(Clone, Debug, Default)]
+    struct ResidentDomBackend {
+        state: std::sync::Arc<std::sync::Mutex<ResidentDomState>>,
+        read_delay: std::time::Duration,
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    #[derive(Debug, Default)]
+    struct ResidentDomState {
+        reads: Vec<String>,
+        writes: Vec<(String, String)>,
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    impl ResidentDomBackend {
+        fn with_read_delay(read_delay: std::time::Duration) -> Self {
+            Self {
+                read_delay,
+                ..Self::default()
+            }
+        }
+
+        fn reads(&self) -> Vec<String> {
+            self.state.lock().unwrap().reads.clone()
+        }
+
+        fn writes(&self) -> Vec<(String, String)> {
+            self.state.lock().unwrap().writes.clone()
+        }
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    impl mech_browser::BrowserDomBackend for ResidentDomBackend {
+        fn read_dom_string(
+            &self,
+            _entry: &mech_browser::BrowserDomManifestEntry,
+            requested_path: &mech_browser::BrowserDomPath,
+        ) -> mech_core::MResult<String> {
+            std::thread::sleep(self.read_delay);
+            self.state
+                .lock()
+                .unwrap()
+                .reads
+                .push(requested_path.as_str().to_string());
+            Ok("Ada".to_string())
+        }
+
+        fn write_dom_string(
+            &mut self,
+            _entry: &mech_browser::BrowserDomManifestEntry,
+            requested_path: &mech_browser::BrowserDomPath,
+            value: &str,
+        ) -> mech_core::MResult<()> {
+            self.state
+                .lock()
+                .unwrap()
+                .writes
+                .push((requested_path.as_str().to_string(), value.to_string()));
+            Ok(())
+        }
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn browser_dom_document() -> MechConfigDocument {
+        parse_config_document(
+            "examples/browser-dom-demo/demo.mcfg",
+            include_str!("../../../examples/browser-dom-demo/demo.mcfg"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap()
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn browser_dom_sources() -> HashMap<String, String> {
+        HashMap::from([(
+            "demo.mec".to_string(),
+            include_str!("../../../examples/browser-dom-demo/demo.mec").to_string(),
+        )])
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn browser_dom_builder(
+        document: &MechConfigDocument,
+        backend: ResidentDomBackend,
+    ) -> RuntimeBuilder {
+        let runtime_config = mech_runtime::RuntimeConfig::default()
+            .apply_patch(&document.runtime)
+            .unwrap();
+        let mut builder = browser_runtime_builder()
+            .config(runtime_config)
+            .source_resolver(project_source_resolver(&browser_dom_sources()).unwrap())
+            .host_factory(Box::new(BrowserHostFactory::new(backend).unwrap()))
+            .unwrap();
+        for host in &document.hosts {
+            builder = builder.host_instance(host.clone());
+        }
+        for grant in &document.run.as_ref().unwrap().grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+        builder
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn assert_browser_dom_result(runtime: &MechRuntime, backend: &ResidentDomBackend) {
+        assert_eq!(
+            runtime.program_route(),
+            RuntimeProgramRoute::ResidentExternal
+        );
+        let info = runtime.program_execution_info();
+        assert_eq!(info.resident_accepted_turns, 1);
+        assert_eq!(info.observation_count, 1, "{info:?}");
+        assert_eq!(
+            backend.reads(),
+            vec!["body/content/mech-sandbox/input/_value".to_string()],
+        );
+        let mut writes = backend.writes();
+        writes.sort();
+        let mut expected = vec![
+            (
+                "body/content/mech-sandbox/output/_value".to_string(),
+                "Hello, Ada — computed in Mech".to_string(),
+            ),
+            (
+                "body/content/mech-sandbox/status".to_string(),
+                "Read `Ada` from the DOM and wrote the computed result back.".to_string(),
+            ),
+            (
+                "body/content/mech-sandbox/status/_class".to_string(),
+                "ready".to_string(),
+            ),
+            (
+                "body/content/mech-sandbox/title".to_string(),
+                "Hello, Ada".to_string(),
+            ),
+        ];
+        expected.sort();
+        assert_eq!(writes, expected);
+    }
+
+    #[cfg(feature = "browser_host_dom")]
     #[test]
-    fn unsupported_string_concatenation_fails_closed_without_legacy_execution() {
+    fn unchanged_browser_dom_demo_runs_source_and_bytecode_residently() {
+        let document = browser_dom_document();
+
+        let source_backend = ResidentDomBackend::default();
+        let mut source_runtime = browser_dom_builder(&document, source_backend.clone())
+            .build()
+            .unwrap();
+        run_project_sources(&mut source_runtime, &document).unwrap();
+        assert_browser_dom_result(&source_runtime, &source_backend);
+
+        let planning_backend = ResidentDomBackend::default();
+        let mut compiler = browser_dom_builder(&document, planning_backend.clone())
+            .build_compiler()
+            .unwrap();
+        let bytecode = compiler
+            .compile_root(SourceRequest::new("demo.mec"), browser_module_options())
+            .unwrap()
+            .into_parts()
+            .1;
+        assert!(planning_backend.reads().is_empty());
+        assert!(planning_backend.writes().is_empty());
+
+        let bytecode_backend = ResidentDomBackend::default();
+        let mut bytecode_runtime = browser_dom_builder(&document, bytecode_backend.clone())
+            .build()
+            .unwrap();
+        bytecode_runtime
+            .load_bytecode_program(&bytecode, mech_runtime::ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+        assert_browser_dom_result(&bytecode_runtime, &bytecode_backend);
+        assert_eq!(
+            source_runtime.program_execution_info().program_revision,
+            bytecode_runtime.program_execution_info().program_revision,
+        );
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    #[test]
+    fn rejected_browser_dom_candidate_performs_zero_writes() {
+        let document = browser_dom_document();
+        let backend = ResidentDomBackend::with_read_delay(std::time::Duration::from_millis(5));
+        let mut config = mech_runtime::RuntimeConfig::default();
+        config.limits.max_turn_duration_ms = Some(1);
+        let mut runtime = browser_dom_builder(&document, backend.clone())
+            .config(config)
+            .build()
+            .unwrap();
+
+        let error = run_project_sources(&mut runtime, &document).unwrap_err();
+        assert_production_route_failed_closed(
+            &runtime,
+            &error,
+            ResidentRouteFailureClass::ActivationFailure,
+        );
+        assert!(backend.writes().is_empty());
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    #[test]
+    fn browser_dom_demo_authority_denial_fails_before_writes() {
+        let mut document = browser_dom_document();
+        document.run.as_mut().unwrap().grants.clear();
+        let backend = ResidentDomBackend::default();
+        let mut runtime = browser_dom_builder(&document, backend.clone())
+            .build()
+            .unwrap();
+
+        let error = run_project_sources(&mut runtime, &document).unwrap_err();
+        assert_production_route_failed_closed(
+            &runtime,
+            &error,
+            ResidentRouteFailureClass::AuthorizationDenied,
+        );
+        assert!(backend.reads().is_empty());
+        assert!(backend.writes().is_empty());
+    }
+
+    #[test]
+    fn scalar_string_concatenation_uses_resident_execution() {
         let document = project_document(&["demo.mec"]);
 
         let mut sources = HashMap::new();
@@ -1592,11 +1811,11 @@ mod tests {
             .build()
             .unwrap();
 
-        let error = run_project_sources(&mut runtime, &document).unwrap_err();
-        assert_production_route_failed_closed(
-            &runtime,
-            &error,
-            ResidentRouteFailureClass::SemanticUnsupported,
+        run_project_sources(&mut runtime, &document).unwrap();
+        assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
+        assert_eq!(
+            runtime.root_symbol_value("greeting").unwrap().into_value(),
+            mech_core::LegacyValue::String(mech_core::Ref::new("Hello, Ada".to_string())),
         );
     }
 

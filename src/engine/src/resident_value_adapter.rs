@@ -38,6 +38,9 @@ impl ReactiveInstance {
             ResidentValueBorrow::F64 { values, .. } if scalar => {
                 ValueDataDraft::F64(F64Bits::from_f64(values[0]))
             }
+            ResidentValueBorrow::String { values, .. } if scalar => {
+                ValueDataDraft::String(values[0].clone())
+            }
             ResidentValueBorrow::Bool { values, .. } => ValueDataDraft::Matrix(
                 canonical_matrix_indices(declaration.region.shape)
                     .map(|index| ValueDataDraft::Bool(values[index] != 0))
@@ -56,6 +59,9 @@ impl ReactiveInstance {
                     .collect::<Vec<_>>()
                     .into_boxed_slice(),
             ),
+            ResidentValueBorrow::String { .. } => {
+                return Err(ResidentActivationError::InvalidSnapshotRepresentation);
+            }
         };
         ValueDraft {
             schema: declaration.schema,
@@ -92,6 +98,7 @@ pub(crate) fn materialize_resident_value(
         ResidentValueRef::F64(values) if scalar => {
             ValueDataDraft::F64(F64Bits::from_f64(values[0]))
         }
+        ResidentValueRef::String(values) if scalar => ValueDataDraft::String(values[0].clone()),
         ResidentValueRef::Bool(values) => ValueDataDraft::Matrix(
             canonical_matrix_indices(region.shape)
                 .map(|index| ValueDataDraft::Bool(values[index] != 0))
@@ -110,6 +117,14 @@ pub(crate) fn materialize_resident_value(
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         ),
+        ResidentValueRef::String(_) => {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "resident string matrices are unsupported".to_string(),
+                },
+                None,
+            ));
+        }
     };
     ValueDraft {
         schema,
@@ -141,6 +156,9 @@ pub(crate) fn write_value(
         }
         (ResidentValueMut::F64(target), ValueData::F64(value)) if target.len() == 1 => {
             target[0] = value.to_f64();
+        }
+        (ResidentValueMut::String(target), ValueData::String(value)) if target.len() == 1 => {
+            target[0] = value.to_string();
         }
         (ResidentValueMut::Bool(target), ValueData::Matrix(matrix)) => {
             let SequenceView::Bool(source) = matrix.elements() else {

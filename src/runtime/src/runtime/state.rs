@@ -1,5 +1,4 @@
 use super::builder::RuntimeBuilder;
-use super::resources::RuntimeResourceBinding;
 use super::transaction::{ActiveRuntimeTransaction, RuntimeHealth};
 use crate::{
     ActiveRuntimeEffectPhase, CapabilityKernel, HostCallPolicy, HostInterfaceCatalog, HostRegistry,
@@ -64,7 +63,6 @@ pub struct MechRuntime {
     pub(super) health: RuntimeHealth,
     pub(super) module_builder: ModuleBuilder,
     pub(super) resources: RuntimeResourceRegistry,
-    pub(super) resource_bindings: HashMap<String, RuntimeResourceBinding>,
     pub(super) host_input_queue: RuntimeHostInputQueue,
     pub(super) input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
     pub(super) attached_input_driver_count: usize,
@@ -93,7 +91,6 @@ impl std::fmt::Debug for MechRuntime {
             .field("active_effect_phase", &self.active_effect_phase.get())
             .field("module_builder", &self.module_builder)
             .field("resources", &self.resources)
-            .field("resource_bindings", &self.resource_bindings)
             .field("input_drivers", &self.input_drivers.len())
             .field("host_interfaces", &self.host_interfaces)
             .field("module_manifests", &self.module_manifests)

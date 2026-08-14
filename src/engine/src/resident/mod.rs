@@ -9,6 +9,8 @@ pub(crate) mod general;
 mod kernel;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod text;
 mod workspace;
 mod efficacy {
     pub(crate) mod ekf;

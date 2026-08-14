@@ -1183,7 +1183,9 @@ fn index_at(
             }
             Ok(value as u64)
         }
-        ResidentValueRef::Bool(_) => Err(ResidentKernelError::InvalidInput),
+        ResidentValueRef::Bool(_) | ResidentValueRef::String(_) => {
+            Err(ResidentKernelError::InvalidInput)
+        }
     }
 }
 

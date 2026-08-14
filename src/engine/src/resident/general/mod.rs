@@ -320,6 +320,7 @@ pub struct ResidentArenaSizes {
     pub bools: usize,
     pub indexes: usize,
     pub f64s: usize,
+    pub strings: usize,
 }
 
 impl ResidentArenaSizes {
@@ -328,6 +329,7 @@ impl ResidentArenaSizes {
             ResidentValueKind::Bool => &mut self.bools,
             ResidentValueKind::Index => &mut self.indexes,
             ResidentValueKind::F64 => &mut self.f64s,
+            ResidentValueKind::String => &mut self.strings,
         };
         let offset = *cursor;
         *cursor = cursor.checked_add(len)?;
@@ -340,6 +342,7 @@ pub struct TypedResidentArena {
     bools: Box<[u8]>,
     indexes: Box<[u64]>,
     f64s: Box<[f64]>,
+    strings: Box<[String]>,
 }
 
 impl TypedResidentArena {
@@ -348,6 +351,7 @@ impl TypedResidentArena {
             bools: vec![0; sizes.bools].into_boxed_slice(),
             indexes: vec![0; sizes.indexes].into_boxed_slice(),
             f64s: vec![0.0; sizes.f64s].into_boxed_slice(),
+            strings: vec![String::new(); sizes.strings].into_boxed_slice(),
         }
     }
 
@@ -363,12 +367,17 @@ impl TypedResidentArena {
         &self.f64s
     }
 
+    pub fn string_storage(&self) -> &[String] {
+        &self.strings
+    }
+
     pub(crate) fn read(&self, region: ResidentRegion) -> ResidentValueRef<'_> {
         let range = region.offset..region.offset + region.len;
         match region.kind {
             ResidentValueKind::Bool => ResidentValueRef::Bool(&self.bools[range]),
             ResidentValueKind::Index => ResidentValueRef::Index(&self.indexes[range]),
             ResidentValueKind::F64 => ResidentValueRef::F64(&self.f64s[range]),
+            ResidentValueKind::String => ResidentValueRef::String(&self.strings[range]),
         }
     }
 
@@ -384,6 +393,7 @@ impl TypedResidentArena {
             ResidentValueKind::Bool => ResidentValueMut::Bool(&mut self.bools[range]),
             ResidentValueKind::Index => ResidentValueMut::Index(&mut self.indexes[range]),
             ResidentValueKind::F64 => ResidentValueMut::F64(&mut self.f64s[range]),
+            ResidentValueKind::String => ResidentValueMut::String(&mut self.strings[range]),
         }
     }
 
@@ -405,6 +415,9 @@ impl TypedResidentArena {
             (ResidentValueMut::F64(target), ResidentValueRef::F64(source)) => {
                 target.copy_from_slice(source)
             }
+            (ResidentValueMut::String(target), ResidentValueRef::String(source)) => {
+                target.clone_from_slice(source)
+            }
             _ => unreachable!("resident region kinds were checked"),
         }
     }
@@ -417,6 +430,10 @@ impl TypedResidentArena {
             ResidentValueKind::Bool => self.bools.copy_within(source, target.offset),
             ResidentValueKind::Index => self.indexes.copy_within(source, target.offset),
             ResidentValueKind::F64 => self.f64s.copy_within(source, target.offset),
+            ResidentValueKind::String => {
+                let values = self.strings[source].to_vec();
+                self.strings[target.offset..target.offset + target.len].clone_from_slice(&values);
+            }
         }
     }
 }
@@ -615,6 +632,10 @@ pub enum ResidentValueBorrow<'a> {
         shape: ResidentShape,
         values: &'a [f64],
     },
+    String {
+        shape: ResidentShape,
+        values: &'a [String],
+    },
 }
 
 impl ResidentValueBorrow<'_> {
@@ -623,6 +644,7 @@ impl ResidentValueBorrow<'_> {
             Self::Bool { values, .. } => values.len(),
             Self::Index { values, .. } => values.len(),
             Self::F64 { values, .. } => values.len(),
+            Self::String { values, .. } => values.len(),
         }
     }
 
@@ -690,6 +712,10 @@ impl ReactiveInstance {
                 shape: output.region.shape,
                 values,
             },
+            ResidentValueRef::String(values) => ResidentValueBorrow::String {
+                shape: output.region.shape,
+                values,
+            },
         })
     }
 
@@ -709,6 +735,10 @@ impl ReactiveInstance {
                 values,
             },
             ResidentValueRef::F64(values) => ResidentValueBorrow::F64 {
+                shape: resolved.region.shape,
+                values,
+            },
+            ResidentValueRef::String(values) => ResidentValueBorrow::String {
                 shape: resolved.region.shape,
                 values,
             },
@@ -1419,11 +1449,13 @@ fn schema_layout(
         SchemaBody::Bool => Some(ResidentValueKind::Bool),
         SchemaBody::Index => Some(ResidentValueKind::Index),
         SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => Some(ResidentValueKind::F64),
+        SchemaBody::String => Some(ResidentValueKind::String),
         _ => None,
     };
     match schema_entry.schema().body() {
         body @ (SchemaBody::Bool
         | SchemaBody::Index
+        | SchemaBody::String
         | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)) => {
             Ok((kind(body).unwrap(), ResidentShape::SCALAR))
         }
@@ -2023,6 +2055,7 @@ enum OwnedResidentValue {
     Bool(Box<[u8]>),
     Index(Box<[u64]>),
     F64(Box<[f64]>),
+    String(Box<[String]>),
 }
 
 impl OwnedResidentValue {
@@ -2031,6 +2064,7 @@ impl OwnedResidentValue {
             Self::Bool(values) => ResidentValueRef::Bool(values),
             Self::Index(values) => ResidentValueRef::Index(values),
             Self::F64(values) => ResidentValueRef::F64(values),
+            Self::String(values) => ResidentValueRef::String(values),
         }
     }
 }
@@ -2073,6 +2107,9 @@ fn owned_activation_input(
         }
         ResidentValueRef::F64(values) => {
             OwnedResidentValue::F64(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::String(values) => {
+            OwnedResidentValue::String(values.to_vec().into_boxed_slice())
         }
     })
 }

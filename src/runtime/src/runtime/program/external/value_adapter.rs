@@ -74,6 +74,7 @@ fn legacy_data(
             legacy_f64(value).map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
         }
         SchemaBody::Index => legacy_index(value).map(ValueDataDraft::Index),
+        SchemaBody::String => legacy_string(value).map(ValueDataDraft::String),
         SchemaBody::Matrix {
             element,
             dimensions,
@@ -222,6 +223,13 @@ fn legacy_index(value: &LegacyValue) -> MResult<u64> {
         LegacyValue::Index(value) => u64::try_from(*value.borrow())
             .map_err(|_| unsupported("provider index does not fit canonical u64")),
         _ => Err(unsupported("provider returned a non-index value")),
+    }
+}
+
+fn legacy_string(value: &LegacyValue) -> MResult<String> {
+    match value {
+        LegacyValue::String(value) => Ok(value.borrow().clone()),
+        _ => Err(unsupported("provider returned a non-string value")),
     }
 }
 

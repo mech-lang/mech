@@ -15,6 +15,8 @@ pub fn install_intrinsic_runtime(builder: &mut FunctionCatalogBuilder) -> MResul
 pub fn install_intrinsic_resident(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "resident-artifact")]
     crate::resident::numeric::install(builder)?;
+    #[cfg(feature = "resident-artifact")]
+    crate::resident::text::install(builder)?;
     Ok(())
 }
 

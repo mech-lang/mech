@@ -454,6 +454,7 @@ impl<'a> ProgramCompilerView<'a> {
             &mut owned_program
         };
         install_function_imports(program, &module.source.imports, &module.import_edges)?;
+        install_context_imports(program, module)?;
         let environment = build_import_environment(module, instances)?;
         install_environment(program, &environment)?;
         let tree = executable_tree(&module.source.source)?;
@@ -503,6 +504,28 @@ impl<'a> ProgramCompilerView<'a> {
         active.pop();
         Ok(())
     }
+}
+
+fn install_context_imports(program: &mut MechProgram, module: &CompilerModule) -> MResult<()> {
+    for import in &module.source.imports {
+        let Some(SourceImportAlias::Context(alias)) = &import.alias else {
+            continue;
+        };
+        let declaration = module
+            .source
+            .contexts
+            .iter()
+            .find(|context| context.name == *alias)
+            .ok_or_else(|| invalid_context_import(&import.specifier, "materialized declaration"))?;
+        let crate::SourceContextBase::ResourceUri(base_uri) = &declaration.base else {
+            return Err(invalid_context_import(
+                &import.specifier,
+                "resolved resource URI",
+            ));
+        };
+        program.install_compiler_context(alias, base_uri);
+    }
+    Ok(())
 }
 
 fn invalid_context_import(specifier: &str, missing: &'static str) -> mech_core::MechError {

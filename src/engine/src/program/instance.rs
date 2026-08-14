@@ -198,6 +198,25 @@ impl MechProgram {
         crate::import_module_glob(&self.interpreter, module)
     }
 
+    /// Installs one context import that the source compiler already resolved
+    /// through its host-interface/module-manifest catalogs.
+    #[cfg(feature = "source")]
+    pub fn install_compiler_context(&mut self, alias: &str, base_uri: &str) {
+        let context_name = base_uri
+            .trim_end_matches('/')
+            .rsplit('/')
+            .next()
+            .unwrap_or(base_uri)
+            .to_owned();
+        self.interpreter.context_bindings.borrow_mut().insert(
+            hash_str(alias),
+            RuntimeContextBinding {
+                context_name,
+                base_uri: base_uri.to_owned(),
+            },
+        );
+    }
+
     pub fn register_function_extension(
         &mut self,
         name: impl Into<String>,
@@ -363,47 +382,6 @@ impl MechProgram {
         self.interpreter.out.to_string()
     }
 
-    pub fn has_interpreter(&self, interpreter_id: u64) -> bool {
-        with_interpreter(&self.interpreter, interpreter_id, &mut |_| ()).is_some()
-    }
-
-    pub fn output_value_for_interpreter(
-        &self,
-        interpreter_id: u64,
-        output_id: u64,
-    ) -> Option<LegacyValue> {
-        with_interpreter(&self.interpreter, interpreter_id, &mut |interpreter| {
-            interpreter.out_values.borrow().get(&output_id).cloned()
-        })
-        .flatten()
-    }
-
-    pub fn symbol_name_for_interpreter_output(
-        &self,
-        interpreter_id: u64,
-        output_id: u64,
-    ) -> Option<String> {
-        with_interpreter(&self.interpreter, interpreter_id, &mut |interpreter| {
-            interpreter
-                .symbols()
-                .borrow()
-                .get_symbol_name_by_id(output_id)
-        })
-        .flatten()
-    }
-
-    pub fn symbol_values_for_interpreter(
-        &self,
-        interpreter_id: u64,
-        names: &[String],
-    ) -> Option<Vec<(String, LegacyValue)>> {
-        with_interpreter(&self.interpreter, interpreter_id, &mut |interpreter| {
-            let symbols = interpreter.symbols();
-            let symbols_brrw = symbols.borrow();
-            symbol_rows(&symbols_brrw, names)
-        })
-    }
-
     pub fn root_symbol_value(&self, name: &str) -> MResult<LegacyValue> {
         let mut values = self.root_symbol_values(&[name])?;
         Ok(values.remove(0).1)
@@ -434,10 +412,6 @@ impl MechProgram {
         let mut values = symbol_rows(&symbols_brrw, &[]);
         values.sort_by(|left, right| left.0.cmp(&right.0));
         values
-    }
-
-    pub fn bind_ans_for_interpreter(&mut self, interpreter_id: u64, value: &LegacyValue) -> bool {
-        bind_ans_recursive(&mut self.interpreter, interpreter_id, value)
     }
 
     #[cfg(feature = "functions")]
@@ -701,83 +675,6 @@ impl MechErrorKind for ProgramOutputNotFound {
     fn message(&self) -> String {
         format!("program output symbol `{}` was not found", self.name)
     }
-}
-
-fn with_interpreter<T>(
-    interpreter: &Interpreter,
-    interpreter_id: u64,
-    f: &mut impl FnMut(&Interpreter) -> T,
-) -> Option<T> {
-    if interpreter_id == 0 || interpreter.id == interpreter_id {
-        return Some(f(interpreter));
-    }
-
-    let sub_interpreters = interpreter
-        .sub_interpreters
-        .borrow()
-        .values()
-        .cloned()
-        .collect::<Vec<_>>();
-    for sub_interpreter in sub_interpreters {
-        let sub_interpreter = sub_interpreter.borrow();
-        if let Some(result) = with_interpreter(sub_interpreter.as_ref(), interpreter_id, f) {
-            return Some(result);
-        }
-    }
-
-    None
-}
-
-fn bind_ans_recursive(
-    interpreter: &mut Interpreter,
-    interpreter_id: u64,
-    value: &LegacyValue,
-) -> bool {
-    if interpreter_id == 0 || interpreter.id == interpreter_id {
-        bind_ans_on_interpreter(interpreter, value);
-        return true;
-    }
-
-    let child_ids = {
-        let sub_interpreters = interpreter.sub_interpreters.borrow();
-        sub_interpreters.keys().copied().collect::<Vec<_>>()
-    };
-
-    for child_id in child_ids {
-        let child = interpreter
-            .sub_interpreters
-            .borrow()
-            .get(&child_id)
-            .cloned();
-        let Some(child) = child else {
-            continue;
-        };
-        let mut child = child.borrow_mut();
-        if bind_ans_recursive(child.as_mut(), interpreter_id, value) {
-            return true;
-        }
-    }
-
-    false
-}
-
-fn bind_ans_on_interpreter(interpreter: &mut Interpreter, value: &LegacyValue) {
-    let resolved_value = match value {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        _ => value.clone(),
-    };
-    let ans_id = hash_str("ans");
-    let symbols = interpreter.symbols();
-    let mut symbols_brrw = symbols.borrow_mut();
-    symbols_brrw.insert(ans_id, resolved_value, false);
-    symbols_brrw
-        .dictionary
-        .borrow_mut()
-        .insert(ans_id, "ans".to_string());
-    interpreter
-        .dictionary()
-        .borrow_mut()
-        .insert(ans_id, "ans".to_string());
 }
 
 fn symbol_rows(
@@ -1089,82 +986,6 @@ mod tests {
         }
 
         Ok(())
-    }
-
-    fn program_with_nested_interpreter(nested_id: u64, child_id: u64) -> MechProgram {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        let mut child = program.interpreter().clone();
-        child.clear();
-        child.id = child_id;
-        let mut nested = program.interpreter().clone();
-        nested.clear();
-        nested.id = nested_id;
-        child
-            .sub_interpreters
-            .borrow_mut()
-            .insert(nested_id, Ref::new(Box::new(nested)));
-        program
-            .interpreter_mut()
-            .sub_interpreters
-            .borrow_mut()
-            .insert(child_id, Ref::new(Box::new(child)));
-        program
-    }
-
-    #[test]
-    fn program_has_interpreter_finds_nested_interpreter() {
-        let program = program_with_nested_interpreter(4242, 2424);
-        assert!(program.has_interpreter(4242));
-    }
-
-    #[test]
-    fn program_output_value_for_interpreter_finds_nested_interpreter() {
-        let nested_id = 4242;
-        let child_id = 2424;
-        let output_id = 101;
-        let mut program = program_with_nested_interpreter(nested_id, child_id);
-        {
-            let root = program.interpreter_mut();
-            let child = root
-                .sub_interpreters
-                .borrow()
-                .get(&child_id)
-                .unwrap()
-                .clone();
-            let child = child.borrow();
-            let nested = child
-                .sub_interpreters
-                .borrow()
-                .get(&nested_id)
-                .unwrap()
-                .clone();
-            let nested = nested.borrow();
-            nested
-                .out_values
-                .borrow_mut()
-                .insert(output_id, LegacyValue::U64(mech_core::Ref::new(42)));
-        }
-
-        assert!(
-            program
-                .output_value_for_interpreter(nested_id, output_id)
-                .is_some()
-        );
-    }
-
-    #[test]
-    fn program_bind_ans_for_interpreter_binds_ans() {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        let value = LegacyValue::U64(mech_core::Ref::new(42));
-        assert!(program.bind_ans_for_interpreter(0, &value));
-        let ans_id = hash_str("ans");
-        let bound = program
-            .interpreter()
-            .symbols()
-            .borrow()
-            .get(ans_id)
-            .map(|value| value.borrow().clone());
-        assert_eq!(bound, Some(value));
     }
 }
 
