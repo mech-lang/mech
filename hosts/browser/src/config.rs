@@ -893,12 +893,9 @@ mod tests {
     use super::*;
     use crate::BrowserResourceKind;
     use mech_core::LegacyValue;
-    use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
     use mech_runtime::{
         ConfigProfileOptions, RuntimeHostFactory, RuntimeHostInstallation, RuntimeResourceProvider,
-        RuntimeResourceReadRequest, RuntimeResourceWriteIntent,
-        RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-        materialize_host_manifest, parse_config_document,
+        RuntimeResourceReadRequest, materialize_host_manifest, parse_config_document,
     };
 
     fn cfg_string(value: &str) -> ConfigValue {
@@ -994,23 +991,6 @@ config := {
             BrowserDomProperty::parse_config_name("inner-html", None).unwrap(),
             BrowserDomProperty::InnerHtml
         );
-    }
-
-    #[test]
-    fn browser_product_authority_rejects_interpreter_routing() {
-        let document = config_document();
-        for routing in [
-            mech_runtime::ResidentRoutingPolicy::PreferResident,
-            mech_runtime::ResidentRoutingPolicy::LegacyOnly,
-        ] {
-            let mut runtime = RuntimeConfig::default();
-            runtime.program_routing.resident_routing = routing;
-            assert!(
-                BrowserRuntimeInjectionConfig::from_document_and_runtime(&document, &runtime)
-                    .is_err()
-            );
-            assert!(BrowserHostConfig::from_document_and_runtime(&document, &runtime).is_err());
-        }
     }
 
     #[test]
@@ -1624,6 +1604,59 @@ config := {
         assert_eq!(injected.run_grants[0].target, "ui/dom");
     }
 
+    #[derive(Debug)]
+    struct ConfigBrowserProvider {
+        instance: String,
+    }
+
+    impl RuntimeResourceProvider for ConfigBrowserProvider {
+        fn scheme(&self) -> &str {
+            "browser"
+        }
+
+        fn base_uris(&self) -> Vec<String> {
+            vec![format!("browser://{}/dom", self.instance)]
+        }
+
+        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+            panic!("configuration construction does not execute providers")
+        }
+    }
+
+    #[derive(Debug)]
+    struct ConfigBrowserFactory {
+        manifest: mech_runtime::HostManifestConfig,
+    }
+
+    impl RuntimeHostFactory for ConfigBrowserFactory {
+        fn provider_name(&self) -> &str {
+            "browser"
+        }
+
+        fn manifest(&self) -> &mech_runtime::HostManifestConfig {
+            &self.manifest
+        }
+
+        fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
+            browser_config_from_settings(settings).map(|_| ())
+        }
+
+        fn instantiate(
+            &self,
+            instance_name: &str,
+            settings: &ConfigValue,
+        ) -> MResult<RuntimeHostInstallation> {
+            self.validate_settings(instance_name, settings)?;
+            Ok(RuntimeHostInstallation {
+                interface: materialize_host_manifest(instance_name, &self.manifest)?,
+                input_drivers: Vec::new(),
+                resource_providers: vec![Box::new(ConfigBrowserProvider {
+                    instance: instance_name.to_string(),
+                })],
+            })
+        }
+    }
+
     #[test]
     fn browser_runtime_injection_filters_non_browser_run_grants() {
         let document = parse_config_document(
@@ -1672,9 +1705,8 @@ config := {
         assert_eq!(injected.run_grants[0].target, "browser/dom");
 
         let mut builder = mech_runtime::RuntimeBuilder::new()
-            .host_factory(Box::new(RecordingBrowserFactory {
+            .host_factory(Box::new(ConfigBrowserFactory {
                 manifest: crate::browser_host_manifest().unwrap(),
-                writes: std::sync::Arc::new(std::sync::Mutex::new(Vec::new())),
             }))
             .unwrap();
         for host in injected.hosts {
@@ -2309,222 +2341,6 @@ config := {
                 .iter()
                 .any(|host| host.name == "browser")
         );
-    }
-
-    #[derive(Clone, Debug, Default)]
-    struct RecordingBrowserProvider {
-        instance: String,
-        writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
-    }
-
-    #[derive(Debug)]
-    struct RecordingBrowserEffect {
-        writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
-        path: String,
-        value: String,
-    }
-
-    impl mech_runtime::RuntimeAfterCommitEffect for RecordingBrowserEffect {
-        fn metadata(&self) -> mech_runtime::RuntimeEffectMetadata {
-            mech_runtime::RuntimeEffectMetadata::new(
-                mech_runtime::RuntimeEffectSource::ResourceProvider {
-                    scheme: "browser".to_string(),
-                },
-                "assign",
-            )
-        }
-
-        fn deliver(&mut self) -> MResult<()> {
-            self.writes
-                .lock()
-                .unwrap()
-                .push((self.path.clone(), self.value.clone()));
-            Ok(())
-        }
-    }
-
-    impl RuntimeResourceProvider for RecordingBrowserProvider {
-        fn scheme(&self) -> &str {
-            "browser"
-        }
-
-        fn base_uris(&self) -> Vec<String> {
-            vec![format!("browser://{}/dom", self.instance)]
-        }
-
-        fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-            panic!("configured browser instance test does not read")
-        }
-
-        fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
-            assert_eq!(request.base_uri, format!("browser://{}/dom", self.instance));
-            assert!(request.path.starts_with("body/content/"));
-            assert_eq!(request.intent, RuntimeResourceWriteIntent::Assign);
-            Ok(())
-        }
-
-        fn prepare_write(
-            &self,
-            request: RuntimeResourceWriteRequest,
-        ) -> MResult<mech_runtime::PreparedRuntimeEffect> {
-            self.preflight_write(RuntimeResourceWritePreflightRequest {
-                base_uri: request.base_uri.clone(),
-                path: request.path.clone(),
-                context_name: request.context_name.clone(),
-                operation: request.operation.clone(),
-                intent: request.intent,
-            })?;
-            let LegacyValue::String(value) = request.value else {
-                panic!("configured browser instance test writes a string")
-            };
-            Ok(mech_runtime::PreparedRuntimeEffect::AfterCommit(Box::new(
-                RecordingBrowserEffect {
-                    writes: self.writes.clone(),
-                    path: request.path,
-                    value: value.borrow().as_str().to_string(),
-                },
-            )))
-        }
-    }
-
-    #[derive(Debug)]
-    struct RecordingBrowserFactory {
-        manifest: mech_runtime::HostManifestConfig,
-        writes: std::sync::Arc<std::sync::Mutex<Vec<(String, String)>>>,
-    }
-
-    impl RuntimeHostFactory for RecordingBrowserFactory {
-        fn provider_name(&self) -> &str {
-            "browser"
-        }
-
-        fn manifest(&self) -> &mech_runtime::HostManifestConfig {
-            &self.manifest
-        }
-
-        fn validate_settings(&self, _instance_name: &str, settings: &ConfigValue) -> MResult<()> {
-            browser_config_from_settings(settings).map(|_| ())
-        }
-
-        fn instantiate(
-            &self,
-            instance_name: &str,
-            settings: &ConfigValue,
-        ) -> MResult<RuntimeHostInstallation> {
-            self.validate_settings(instance_name, settings)?;
-            Ok(RuntimeHostInstallation {
-                interface: materialize_host_manifest(instance_name, &self.manifest)?,
-                input_drivers: Vec::new(),
-                resource_providers: vec![Box::new(RecordingBrowserProvider {
-                    instance: instance_name.to_string(),
-                    writes: self.writes.clone(),
-                })],
-            })
-        }
-    }
-
-    #[test]
-    fn configured_browser_instance_name_resolves_dom_context() {
-        let settings = cfg_map(vec![(
-            "dom",
-            cfg_list(vec![cfg_map(vec![
-                ("path", cfg_string("body/content/output/_value")),
-                ("selector", cfg_string("#output")),
-                ("property", cfg_string("value")),
-                ("operations", cfg_list(vec![cfg_string("write")])),
-            ])]),
-        )]);
-        let writes = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
-        let mut runtime = mech_runtime::RuntimeBuilder::new()
-            .host_factory(Box::new(RecordingBrowserFactory {
-                manifest: crate::browser_host_manifest().unwrap(),
-                writes: writes.clone(),
-            }))
-            .unwrap()
-            .host_instance(mech_runtime::HostInstanceConfig {
-                name: "ui".to_string(),
-                provider: "browser".to_string(),
-                settings,
-            })
-            .run_resource_grant(mech_runtime::RunResourceGrantConfig {
-                target: "ui/dom".to_string(),
-                operations: vec!["write".to_string()],
-                paths: vec!["body/content/output/_value".to_string()],
-            })
-            .build()
-            .unwrap();
-
-        runtime
-            .run_string(
-                r#"+> @ui := ui/dom
-@ui/body/content/output/_value = "ok"
-"#,
-            )
-            .unwrap();
-
-        let writes = writes.lock().unwrap();
-        assert_eq!(writes.len(), 1);
-        assert_eq!(
-            writes[0],
-            ("body/content/output/_value".to_string(), "ok".to_string())
-        );
-    }
-
-    #[test]
-    fn browser_runtime_grants_do_not_broaden_from_settings() {
-        let settings = cfg_map(vec![(
-            "dom",
-            cfg_list(vec![
-                cfg_map(vec![
-                    ("path", cfg_string("body/content/allowed/_value")),
-                    ("selector", cfg_string("#allowed")),
-                    ("property", cfg_string("value")),
-                    ("operations", cfg_list(vec![cfg_string("write")])),
-                ]),
-                cfg_map(vec![
-                    ("path", cfg_string("body/content/denied/_value")),
-                    ("selector", cfg_string("#denied")),
-                    ("property", cfg_string("value")),
-                    ("operations", cfg_list(vec![cfg_string("write")])),
-                ]),
-            ]),
-        )]);
-        let writes = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
-        let mut runtime = mech_runtime::RuntimeBuilder::new()
-            .host_factory(Box::new(RecordingBrowserFactory {
-                manifest: crate::browser_host_manifest().unwrap(),
-                writes,
-            }))
-            .unwrap()
-            .host_instance(mech_runtime::HostInstanceConfig {
-                name: "ui".to_string(),
-                provider: "browser".to_string(),
-                settings,
-            })
-            .run_resource_grant(mech_runtime::RunResourceGrantConfig {
-                target: "ui/dom".to_string(),
-                operations: vec!["write".to_string()],
-                paths: vec!["body/content/allowed/_value".to_string()],
-            })
-            .build()
-            .unwrap();
-
-        runtime
-            .run_string(
-                r#"+> @ui := ui/dom
-@ui/body/content/allowed/_value = "ok"
-"#,
-            )
-            .unwrap();
-
-        let result = runtime.run_string(
-            r#"+> @ui := ui/dom
-@ui/body/content/denied/_value = "no"
-"#,
-        );
-        assert!(result.is_err());
-        let error = format!("{:?}", result.err().unwrap());
-        assert!(error.contains("CapabilityDenied"), "got {error}");
     }
 
     #[cfg(feature = "serde")]

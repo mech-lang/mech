@@ -20,29 +20,20 @@ pub extern crate mech_syntax as syntax;
 pub use mech_core::*;
 pub use mech_engine::*;
 
-use mech_core::nodes::Program;
-
 extern crate colored;
 use colored::*;
 
 extern crate bincode;
-use crossterm::{ExecutableCommand, QueueableCommand, cursor, style::Print, terminal};
 use std::fs::{File, OpenOptions, canonicalize, create_dir};
 use std::io::{BufReader, BufWriter, Write, stdout};
 
 use std::io;
 use std::io::prelude::*;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::sync::RwLock;
 use std::thread::{self, JoinHandle};
 use std::time::{Duration, Instant, SystemTime};
-use tabled::{
-    Tabled,
-    builder::Builder,
-    grid::config::HorizontalLine,
-    settings::{Alignment, Modify, Panel, Span, Style, object::Rows},
-};
 //use websocket::sync::Server;
 use crossbeam_channel::Sender;
 use crossbeam_channel::{Receiver, unbounded};
@@ -53,7 +44,6 @@ use std::{env, fs};
 use notify::{Event, RecursiveMode, Result as NResult, Watcher, recommended_watcher};
 use rand::Rng;
 use rand::rngs::OsRng;
-use std::collections::HashSet;
 use std::sync::Arc;
 use std::sync::mpsc;
 #[cfg(feature = "wasm")]
@@ -66,14 +56,10 @@ pub mod cli;
 pub mod fs_paths;
 #[cfg(any(feature = "build", feature = "project"))]
 mod project;
-#[cfg(feature = "repl")]
-mod repl;
 #[cfg(feature = "serve")]
 mod serve;
 #[cfg(any(feature = "cli_core", feature = "bundle_web_core"))]
 pub mod source_discovery;
-#[cfg(feature = "test")]
-mod test;
 #[cfg(feature = "web_host")]
 mod web_host;
 
@@ -81,25 +67,13 @@ mod web_host;
 pub use self::bundle_web::*;
 #[cfg(any(feature = "build", feature = "project"))]
 pub use self::project::*;
-#[cfg(feature = "repl")]
-pub use self::repl::*;
 #[cfg(feature = "serve")]
 pub use self::serve::*;
-#[cfg(feature = "test")]
-pub use self::test::*;
 #[cfg(feature = "web_host")]
 pub use self::web_host::*;
 
 pub use mech_core::*;
 pub use mech_syntax::*;
-
-// Print a prompt
-// 4, 8, 15, 16, 23, 42
-pub fn print_prompt() {
-    stdout().flush();
-    print!("{}", ">: ".truecolor(246, 192, 78));
-    stdout().flush();
-}
 
 // Generate a new id for creating unique owner ids
 #[cfg(not(feature = "wasm"))]
@@ -111,114 +85,6 @@ pub fn generate_uuid() -> u64 {
 pub fn generate_uuid() -> u64 {
     let mut rng = WebCryptoRng {};
     rng.next_u64()
-}
-
-pub fn mech_table_style() -> Style<(), (), (), (), (), (), 2, 0> {
-    Style::empty().horizontals([
-        (1, HorizontalLine::filled('-').into()),
-        (2, HorizontalLine::filled('-').into()),
-    ])
-}
-
-pub fn help() -> String {
-    let mut builder = Builder::default();
-    builder.push_record(vec![
-        "Command".bright_white().to_string(),
-        "Short".bright_white().to_string(),
-        "Parameters".to_string(),
-        "Description".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":cd".bright_yellow().to_string(),
-        "".bright_yellow().to_string(),
-        "target-path".to_string(),
-        "Change directory to target-path, which can be relative or absolute.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":clc".bright_yellow().to_string(),
-        "".bright_yellow().to_string(),
-        "".to_string(),
-        "Clear the screen".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":code".bright_yellow().to_string(),
-        ":c".bright_yellow().to_string(),
-        "mech-code".to_string(),
-        "Execute inline Mech code.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":clear".bright_yellow().to_string(),
-        "".bright_yellow().to_string(),
-        "[target-variable]".to_string(),
-        "Clear the interpreter state".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":docs".bright_yellow().to_string(),
-        ":d".bright_yellow().to_string(),
-        "[doc-name]".to_string(),
-        "Search documentation for a given doc".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":help".bright_yellow().to_string(),
-        ":h".bright_yellow().to_string(),
-        "".to_string(),
-        "Display this help message.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":load".bright_yellow().to_string(),
-        "".bright_yellow().to_string(),
-        "file-path".to_string(),
-        "Load a file.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":ls".bright_yellow().to_string(),
-        "".bright_yellow().to_string(),
-        "[target-path]".to_string(),
-        "List directory contents. Optionally supply a target path.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":plan".bright_yellow().to_string(),
-        ":p".bright_yellow().to_string(),
-        "".to_string(),
-        "Display each step of the current plan.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":quit".bright_yellow().to_string(),
-        ":q".bright_yellow().to_string(),
-        "".to_string(),
-        "Quit the REPL.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":step".bright_yellow().to_string(),
-        "".bright_yellow().to_string(),
-        "[#step-index] [step-count]".to_string(),
-        "Iterate the step-index of the plan step-count times.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":symbols".bright_yellow().to_string(),
-        ":s".bright_yellow().to_string(),
-        "[search-pattern]".to_string(),
-        "Search symbol directory. If no pattern is provided, the entire directory is printed."
-            .to_string(),
-    ]);
-    builder.push_record(vec![
-        ":version".bright_yellow().to_string(),
-        ":v".bright_yellow().to_string(),
-        "".to_string(),
-        "Print version information.".to_string(),
-    ]);
-    builder.push_record(vec![
-        ":whos".bright_yellow().to_string(),
-        ":w".bright_yellow().to_string(),
-        "[search pattern]".to_string(),
-        "Print summary table of session variables. Supply a search pattern to filter the table."
-            .to_string(),
-    ]);
-    let mut table = builder.build();
-    table
-        .with(mech_table_style())
-        .with(Panel::header(format!("{}", "Help".yellow())));
-    format!("\n{table}\n")
 }
 
 pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
@@ -243,126 +109,6 @@ pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {
 
     println!("Done.");
     Ok(())
-}
-
-pub(crate) fn ls_path(path: &Path) -> MResult<String> {
-    let current_dir = path.canonicalize()?;
-    let mut builder = Builder::default();
-    builder.push_record(vec!["Mode", "Last Write Time", "Length", "Name"]);
-    for entry in fs::read_dir(&current_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        let metadata = fs::metadata(&path)?;
-        let file_type = if metadata.is_dir() { "d----" } else { "-a---" };
-        let last_write_time = metadata.modified()?;
-        let last_write_time: chrono::DateTime<chrono::Local> = last_write_time.into();
-        let length = if metadata.is_file() {
-            metadata.len().to_string()
-        } else {
-            "".to_string()
-        };
-        let name = path
-            .file_name()
-            .map(|name| name.to_string_lossy().into_owned())
-            .unwrap_or_default();
-        builder.push_record(vec![
-            file_type.to_string(),
-            last_write_time.format("%m/%d/%Y %I:%M %p").to_string(),
-            length,
-            name,
-        ]);
-    }
-    let mut table = builder.build();
-    table
-        .with(mech_table_style())
-        .with(Panel::header(format!("{}", "Directory Listing".yellow())));
-    Ok(format!(
-        "\nDirectory: {}\n\n{table}\n",
-        current_dir.display()
-    ))
-}
-
-pub fn ls() -> String {
-    ls_path(Path::new("./")).unwrap()
-}
-
-#[cfg(feature = "pretty_print")]
-fn pretty_print_tree(tree: &Program) -> String {
-    let tree_hash = hash_str(&format!("{:#?}", tree));
-    let formatted_tree = tree.pretty_print();
-    let mut builder = Builder::default();
-    builder.push_record(vec![format!("Hash: {}", tree_hash)]);
-    builder.push_record(vec![format!("{}", formatted_tree)]);
-    let mut table = builder.build();
-    table
-        .with(Style::modern_rounded())
-        .with(Panel::header("Syntax Tree"));
-    format!("{table}")
-}
-
-#[cfg(feature = "whos")]
-pub fn whos(retained_program: &MechProgram, names: Vec<String>) -> String {
-    let mut builder = Builder::default();
-    builder.push_record(vec!["Name", "Size", "Bytes", "Kind"]);
-    let state = retained_program.interpreter().state.borrow();
-    let symbol_table = state.symbol_table.borrow();
-    let dictionary = symbol_table.dictionary.borrow();
-    if names.is_empty() {
-        // Print all symbols
-        for (id, value_ref) in symbol_table.symbols.iter() {
-            if let Some(name) = dictionary.get(id) {
-                let value_brrw = value_ref.borrow();
-                builder.push_record(vec![
-                    name.clone(),
-                    format!("{:?}", value_brrw.shape()),
-                    format!("{}", value_brrw.size_of()),
-                    format!("{}", value_brrw.kind()),
-                ]);
-            }
-        }
-    } else {
-        // Create a hash set for fast lookup
-        let names_set: HashSet<_> = names.iter().collect();
-        // Print only requested symbols
-        for (id, value_ref) in symbol_table.symbols.iter() {
-            if let Some(name) = dictionary.get(id) {
-                if names_set.contains(name) {
-                    let value_brrw = value_ref.borrow();
-                    builder.push_record(vec![
-                        name.clone(),
-                        format!("{:?}", value_brrw.shape()),
-                        format!("{}", value_brrw.size_of()),
-                        format!("{}", value_brrw.kind()),
-                    ]);
-                }
-            }
-        }
-    }
-    let mut table = builder.build();
-    table
-        .with(mech_table_style())
-        .with(Panel::header(format!("{}", "Whos".yellow())));
-
-    format!("\n{table}\n")
-}
-
-#[cfg(feature = "pretty_print")]
-fn pretty_print_symbols(retained_program: &MechProgram) -> String {
-    let mut builder = Builder::default();
-    let symbol_table = retained_program.interpreter().pretty_print_symbols();
-    builder.push_record(vec![format!("{}", symbol_table)]);
-
-    let mut table = builder.build();
-    table
-        .with(mech_table_style())
-        .with(Panel::header(format!("{}", "Symbols".yellow())));
-    format!("\n{table}\n")
-}
-
-pub fn clc() {
-    let mut stdo = stdout();
-    stdo.execute(terminal::Clear(terminal::ClearType::All));
-    stdo.execute(cursor::MoveTo(0, 0));
 }
 
 pub enum Source<'a> {

@@ -9,8 +9,6 @@ pub mod id;
 pub mod input;
 #[cfg(feature = "runtime")]
 mod ledger;
-#[cfg(feature = "legacy-interpreter")]
-pub mod legacy_interpreter;
 pub mod operation;
 #[cfg(feature = "runtime")]
 mod outbox;

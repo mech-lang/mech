@@ -38,6 +38,8 @@ mod live_state;
 mod module;
 mod object;
 mod operation_context;
+#[cfg(feature = "resident-routing-source")]
+mod program;
 #[cfg(feature = "resident-external")]
 #[path = "../resident_external/mod.rs"]
 pub mod resident_external;

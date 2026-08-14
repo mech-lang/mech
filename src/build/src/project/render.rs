@@ -733,165 +733,7 @@ fn main() {
 }
 
 fn render_hosted_main_source_for_plan(plan: &NativeBuildPlan) -> String {
-    let mut actor_functions = plan
-        .application_requirements
-        .iter()
-        .filter_map(|requirement| match requirement {
-            PlannedApplicationRequirement::HostFunction {
-                name,
-                context: NativeHostFunctionContext::ActorTurn,
-                ..
-            } => Some(name.as_str()),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    actor_functions.sort_unstable();
-    actor_functions.dedup();
-
-    let mut source = render_hosted_main_source(plan.live);
-    if actor_functions.is_empty() {
-        return source;
-    }
-    assert!(
-        plan.actor_bootstrap.is_some(),
-        "actor-turn plans must carry an actor bootstrap"
-    );
-
-    let resident_install = "        let durability = runtime.config().program_routing.resident_durability;\n        let outcome = runtime.load_production_bytecode_program(\n            PROGRAM,\n            durability,\n        )?;\n        let value = outcome.initial_value;";
-    assert!(
-        source.contains(resident_install),
-        "hosted main template must retain the program-install seam"
-    );
-    source = source.replace(
-        resident_install,
-        "        let value = install_actor_bytecode(&mut runtime)?;",
-    );
-    let seam = "fn parse_arguments() -> Result<GeneratedArguments, ()> {";
-    assert!(
-        source.contains(seam),
-        "hosted main template lost parse seam"
-    );
-    source.replace(
-        seam,
-        &format!(
-            "{}\n\n{seam}",
-            render_actor_install_source(&actor_functions)
-        ),
-    )
-}
-
-fn render_actor_install_source(actor_functions: &[&str]) -> String {
-    let verifies_state_mutation = actor_functions.contains(&"actor/state/put");
-    let actor_functions = actor_functions
-        .iter()
-        .map(|name| rust_string_literal(name))
-        .collect::<Vec<_>>()
-        .join(", ");
-    format!(
-        r#"fn actor_error(message: impl Into<String>) -> mech_core::MechError {{
-    mech_core::MechError::new(
-        mech_core::GenericError {{ msg: message.into() }},
-        None,
-    )
-}}
-
-fn install_actor_bytecode(
-    runtime: &mut mech_runtime::MechRuntime,
-) -> mech_core::MResult<mech_runtime::RuntimeValueSnapshot> {{
-    const REQUIRED_ACTOR_FUNCTIONS: &[&str] = &[{actor_functions}];
-    const VERIFIES_STATE_MUTATION: bool = {verifies_state_mutation};
-
-    let subject_name = runtime::ACTOR_BOOTSTRAP_SUBJECT;
-    let subject = mech_runtime::BasicSubject::new(subject_name);
-    let initial_state = match runtime::ACTOR_BOOTSTRAP_INITIAL_STATE {{
-        Some(value) => {{
-            let state = runtime.next_object_id();
-            runtime.put_object(mech_runtime::ObjectRecord::text(
-                state,
-                "actor-state",
-                value,
-            ))?;
-            Some(state)
-        }}
-        None => None,
-    }};
-
-    let mut capabilities = Vec::with_capacity(REQUIRED_ACTOR_FUNCTIONS.len());
-    for function in REQUIRED_ACTOR_FUNCTIONS {{
-        let id = runtime.next_capability_id();
-        runtime.grant_capability(std::sync::Arc::new(
-            mech_runtime::BasicCapability::new(
-                id,
-                &subject,
-                &mech_runtime::BasicResource::new(format!("host:{{function}}")),
-                [mech_runtime::BasicOperation::new("call")],
-            ),
-        ))?;
-        capabilities.push(id);
-    }}
-
-    let actor = runtime.create_actor(
-        subject_name,
-        None,
-        initial_state,
-        capabilities,
-    )?;
-    runtime.send_message(
-        actor,
-        runtime::ACTOR_BOOTSTRAP_MESSAGE_KIND,
-        runtime::ACTOR_BOOTSTRAP_MESSAGE_PAYLOAD.as_bytes().to_vec(),
-    )?;
-    let actor_record = runtime
-        .get_actor(actor)?
-        .ok_or_else(|| actor_error("generated actor bootstrap record is missing"))?;
-    let message = runtime
-        .peek_message(actor)?
-        .ok_or_else(|| actor_error("generated actor bootstrap message is missing"))?;
-    let turn = mech_runtime::ActorTurn::new(actor_record, message)?;
-    let mut context = runtime.context_for_actor_turn(&turn)?;
-    runtime.begin_transaction(&mut context)?;
-    let evaluation = (|| {{
-        runtime
-            .next_actor_turn_with_context(&mut context, actor)?
-            .ok_or_else(|| actor_error("generated actor turn was not available"))?;
-        runtime
-            .legacy_interpreter()
-            .install_bytecode_with_context(&mut context, PROGRAM)
-    }})();
-
-    match evaluation {{
-        Ok(value) => {{
-            runtime.commit_runtime_transaction(&mut context)?;
-            if runtime.peek_message(actor)?.is_some() {{
-                return Err(actor_error(
-                    "generated actor message acknowledgement did not commit",
-                ));
-            }}
-            if VERIFIES_STATE_MUTATION {{
-                let state = runtime
-                    .get_actor(actor)?
-                    .and_then(|actor| actor.state)
-                    .ok_or_else(|| actor_error("generated actor state is missing after commit"))?;
-                if initial_state.is_some_and(|initial| state == initial)
-                    || runtime.get_object(state)?.is_none()
-                {{
-                    return Err(actor_error(
-                        "generated actor state mutation did not commit",
-                    ));
-                }}
-            }}
-            Ok(value)
-        }}
-        Err(error) => {{
-            runtime.abort_runtime_transaction(
-                &mut context,
-                format!("generated actor execution failed: {{error:?}}"),
-            )?;
-            Err(error)
-        }}
-    }}
-}}"#,
-    )
+    render_hosted_main_source(plan.live)
 }
 
 /// Render direct Rust constructors for the trusted runtime configuration,
@@ -1010,6 +852,10 @@ pub fn render_project_sources(
     plan: &NativeBuildPlan,
     runtime_config: Option<&NativeRuntimeConfig>,
 ) -> MResult<GeneratedSourceSet> {
+    // Reject unsupported actor-turn plans before selecting any source
+    // template. This keeps the legacy actor bootstrap renderer unreachable
+    // from every public project-rendering entry point.
+    validate_runtime_config_implications(plan, runtime_config)?;
     let mut sources = GeneratedSourceSet::new();
     sources.insert("src/catalog.rs", render_catalog_source(plan)?)?;
     sources.insert(
@@ -1349,7 +1195,7 @@ mod tests {
     }
 
     #[test]
-    fn actor_bootstrap_template_is_quarantined_from_production_rendering() {
+    fn actor_bootstrap_has_no_legacy_execution_template() {
         let mut plan = base_plan(NativeApplicationKind::Hosted);
         plan.application_requirements = [
             "actor/message/kind",
@@ -1378,15 +1224,9 @@ mod tests {
             initial_state: Some("render-test-state".into()),
         });
 
-        let source = render_hosted_main_source_for_plan(&plan);
-        assert!(source.contains("REQUIRED_ACTOR_FUNCTIONS"));
-        assert!(source.contains("actor/message/kind"));
-        assert!(source.contains("runtime.begin_transaction(&mut context)?"));
-        assert!(source.contains("runtime.commit_runtime_transaction(&mut context)?"));
-        assert!(source.contains("runtime.abort_runtime_transaction("));
-        assert!(source.contains("generated actor state mutation did not commit"));
-        assert!(source.contains("BasicCapability::new"));
-        assert!(source.contains("let value = install_actor_bytecode(&mut runtime)?;"));
+        let hosted = render_hosted_main_source_for_plan(&plan);
+        assert!(!hosted.contains("legacy_interpreter"));
+        assert!(!hosted.contains("install_actor_bytecode"));
 
         let config = NativeRuntimeConfig {
             runtime: plan.runtime_config.clone(),
@@ -1394,7 +1234,7 @@ mod tests {
             hosts: Vec::new(),
             run_grants: Vec::new(),
         };
-        let error = render_runtime_source(&plan, Some(&config)).unwrap_err();
+        let error = render_project_sources(&plan, Some(&config)).unwrap_err();
         assert_eq!(error.kind_name(), "NativeActorBootstrapUnsupported");
     }
 

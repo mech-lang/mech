@@ -1,9 +1,7 @@
 use std::collections::BTreeSet;
 
 use mech_core::{LegacyValue, OperationId, RuntimeFunctionId};
-use mech_runtime::{
-    RuntimeBuilder, RuntimeValueSnapshot, legacy_interpreter::LegacyInterpreterTestExt as _,
-};
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeValueSnapshot};
 use mech_stdlib::source_catalog;
 use mech_wasm as _;
 use serde::Deserialize;
@@ -131,9 +129,9 @@ fn cross_target_source_contract() {
             panic!("failed to build runtime for `{}`: {error:?}", case.name)
         });
         let snapshot = runtime
-            .run_string(&case.source)
+            .load_production_source_program(&case.source, ResidentDurabilityPolicy::Volatile)
             .unwrap_or_else(|error| panic!("source case `{}` failed: {error:?}", case.name));
-        assert_expected(case, snapshot);
+        assert_expected(case, snapshot.initial_value);
     }
 }
 
@@ -176,8 +174,8 @@ fn scalar_source_addition_uses_the_explicit_catalog() {
         .expect("standard WASM runtime must build");
 
     let snapshot = runtime
-        .run_string("1.0 + 2.0")
+        .load_production_source_program("1.0 + 2.0", ResidentDurabilityPolicy::Volatile)
         .expect("scalar source addition must specialize through the catalog");
 
-    assert_f64_snapshot(snapshot, 3.0);
+    assert_f64_snapshot(snapshot.initial_value, 3.0);
 }

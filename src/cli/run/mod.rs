@@ -2,8 +2,7 @@ use clap::{Arg, ArgAction};
 use mech_core::*;
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, ModuleBuildOptions, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeValueSnapshot, SourceRequest,
-    SourceResolver, parse_host_context_target,
+    RuntimeBuilder, RuntimeConfig, SourceResolver,
 };
 use std::ffi::OsStr;
 use std::path::Path;
@@ -564,58 +563,8 @@ pub fn effective_run_runtime_config(
     Ok(config)
 }
 
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source_with_events(
-    runtime: &mut MechRuntime,
-    source: &str,
-) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
-    let mut context = runtime.runtime_context()?;
-    let result = runtime
-        .legacy_interpreter()
-        .run_string_with_context(&mut context, source)?;
-    Ok((result, context.events().to_vec()))
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source_code_with_events(
-    runtime: &mut MechRuntime,
-    source: &MechSourceCode,
-) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
-    let mut context = runtime.runtime_context()?;
-    let result = runtime
-        .legacy_interpreter()
-        .run_source_with_context(&mut context, source)?;
-    Ok((result, context.events().to_vec()))
-}
-
 pub fn cli_module_options() -> ModuleBuildOptions<'static> {
     ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[])
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_root_module_with_events(
-    runtime: &mut MechRuntime,
-    request: SourceRequest,
-    options: ModuleBuildOptions<'_>,
-) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
-    let mut context = runtime.runtime_context()?;
-    let result = runtime
-        .legacy_interpreter()
-        .resolve_and_run_root_module_with_context(&mut context, request, options)?;
-    Ok((result, context.events().to_vec()))
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<RuntimeValueSnapshot> {
-    run_cli_source_with_events(runtime, source).map(|(value, _)| value)
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source_code(
-    runtime: &mut MechRuntime,
-    source: &MechSourceCode,
-) -> MResult<RuntimeValueSnapshot> {
-    run_cli_source_code_with_events(runtime, source).map(|(value, _)| value)
 }
 
 fn cli_grants_to_run_resource_grants(
@@ -687,7 +636,7 @@ pub fn cli_host_capability_selection(
     }
 }
 
-#[cfg(all(test, feature = "legacy-interpreter"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use mech_runtime::{ConfigProfileOptions, parse_config_document};
@@ -770,18 +719,13 @@ mod tests {
         )
         .unwrap();
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &host_grants::EffectiveCliHostGrants::default(),
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
     }
 
     #[test]
@@ -803,18 +747,13 @@ mod tests {
         )
         .unwrap();
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &host_grants::EffectiveCliHostGrants::default(),
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := term/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
     }
 
     #[test]
@@ -870,37 +809,15 @@ mod tests {
             host_grants::CliHostCapabilitySelection::default(),
         )
         .unwrap();
+        assert_eq!(cli_grants, host_grants::EffectiveCliHostGrants::empty(),);
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &cli_grants,
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @env := cli/env\nx := @env/HOME\n")
-                .is_err()
-        );
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @err := cli/stderr\n@err/line <- \"bad\"\n")
-                .is_err()
-        );
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n")
-                .is_err()
-        );
     }
 
     #[test]
@@ -924,32 +841,19 @@ mod tests {
             },
         )
         .unwrap();
+        assert!(cli_grants.env_read_paths.is_empty());
+        assert!(cli_grants.stdout_write_paths.is_empty());
+        assert_eq!(
+            cli_grants.stderr_write_paths,
+            vec!["text".to_string(), "line".to_string()],
+        );
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &cli_grants,
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @err := cli/stderr\n@err/line <- \"ok\"\n")
-            .unwrap();
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @env := cli/env\nx := @env/HOME\n")
-                .is_err()
-        );
     }
 }
-
-#[cfg(all(test, feature = "legacy-interpreter"))]
-#[path = "tests/resource_aliases.rs"]
-mod resource_alias_tests;

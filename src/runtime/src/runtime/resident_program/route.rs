@@ -57,32 +57,6 @@ impl Default for RuntimeProgramExecutionInfo {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct RuntimeProgramLoadOptions {
-    pub routing: ResidentRoutingPolicy,
-    pub durability: ResidentDurabilityPolicy,
-}
-
-impl Default for RuntimeProgramLoadOptions {
-    fn default() -> Self {
-        Self::production(ResidentDurabilityPolicy::Volatile)
-    }
-}
-
-impl RuntimeProgramLoadOptions {
-    /// The one shipping program-loading policy.
-    ///
-    /// Production callers choose durability only. Execution-engine selection
-    /// remains available solely to the temporary legacy-interpreter facade
-    /// and migration tests until E1 removes it.
-    pub const fn production(durability: ResidentDurabilityPolicy) -> Self {
-        Self {
-            routing: ResidentRoutingPolicy::RequireResident,
-            durability,
-        }
-    }
-}
-
 #[derive(Debug)]
 pub struct RuntimeProgramLoadOutcome {
     pub route: RuntimeProgramRoute,
@@ -179,16 +153,6 @@ pub(crate) fn invalid_active_program(reason: impl Into<String>) -> mech_core::Me
 
 pub(crate) fn unsupported_route(reason: impl Into<String>) -> mech_core::MechError {
     route_failure(ResidentRouteFailureClass::SemanticUnsupported, reason)
-}
-
-/// Returns whether a resident-routing failure may safely select the legacy
-/// executor under [`ResidentRoutingPolicy::PreferResident`]. Authority,
-/// provider, bytecode, activation, and internal failures are never eligible.
-#[cfg(any(test, feature = "legacy-interpreter"))]
-pub fn resident_fallback_eligible(error: &MechError) -> bool {
-    error
-        .kind_as::<ResidentRouteFailure>()
-        .is_some_and(|failure| failure.class == ResidentRouteFailureClass::SemanticUnsupported)
 }
 
 pub(crate) fn ensure_supported_durability(policy: ResidentDurabilityPolicy) -> MResult<()> {

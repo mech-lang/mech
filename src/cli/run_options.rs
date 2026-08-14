@@ -13,7 +13,6 @@ pub(crate) struct RunCliArgs {
     pub debug: bool,
     pub trace: bool,
     pub time: bool,
-    pub repl: bool,
     pub rounds_per_step: Option<usize>,
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
@@ -35,16 +34,12 @@ impl RunCliArgs {
         } else {
             vec![]
         };
-        let repl = root.repl;
-        #[cfg(feature = "repl")]
-        let repl = repl || run_matches.map(|m| m.get_flag("repl")).unwrap_or(false);
         Ok(Self {
             input_mode: classify_run_inputs(inputs),
             explicit_run_command: run_matches.is_some(),
             debug: root.debug || run_matches.map(|m| m.get_flag("debug")).unwrap_or(false),
             trace: root.trace || run_matches.map(|m| m.get_flag("trace")).unwrap_or(false),
             time: root.time || run_matches.map(|m| m.get_flag("time")).unwrap_or(false),
-            repl,
             rounds_per_step: run_matches
                 .and_then(|matches| matches.get_one::<usize>("rounds-per-step").copied())
                 .or(root.rounds_per_step),
@@ -64,7 +59,6 @@ pub(crate) struct PreparedRunOptions {
     pub debug: bool,
     pub trace: bool,
     pub time: bool,
-    pub repl: bool,
     pub rounds_per_step: Option<usize>,
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
@@ -93,7 +87,6 @@ pub(crate) fn prepare_run_options(
         debug: args.debug,
         trace: args.trace,
         time: args.time,
-        repl: args.repl,
         rounds_per_step: args.rounds_per_step,
         runtime_info: args.runtime_info,
         max_live_turns: args.max_live_turns,

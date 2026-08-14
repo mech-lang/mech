@@ -749,10 +749,6 @@ fn root_command_parses_available_subcommands() {
     super::build_cli()
         .try_get_matches_from(["mech", "serve", "demo.mec", "--port", "8082"])
         .unwrap();
-    #[cfg(feature = "test")]
-    super::build_cli()
-        .try_get_matches_from(["mech", "test", "demo.mec", "--verbose"])
-        .unwrap();
     #[cfg(feature = "bundle_web")]
     super::build_cli()
         .try_get_matches_from(["mech", "bundle-web", "--help"])
@@ -856,7 +852,6 @@ fn run_rounds_per_step_overrides_root_value() {
 #[cfg(all(
     test,
     feature = "build",
-    feature = "test",
     feature = "formatter",
     feature = "bundle_web",
     feature = "run",
@@ -881,11 +876,6 @@ mod filesystem_flag_dispatch_tests {
     #[test]
     fn filesystem_flags_rejected_for_build() {
         assert!(dispatch_error(&["mech", "build", "--allow-read", "."]).contains(MESSAGE));
-    }
-
-    #[test]
-    fn filesystem_flags_rejected_for_test() {
-        assert!(dispatch_error(&["mech", "test", "--allow-read", "."]).contains(MESSAGE));
     }
 
     #[test]

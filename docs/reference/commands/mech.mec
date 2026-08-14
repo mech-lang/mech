@@ -2,15 +2,13 @@
 ===============================================================================
 
 `mech` is the main command-line tool for running, serving, formatting, and
-bundling Mech projects. The full distribution also includes developer REPL and
-test commands; the standard production binary does not.
+bundling Mech projects.
 
 1. Common usage
 -------------------------------------------------------------------------------
 
 ```sh
 mech run main.mec
-mech test . # full distribution only
 mech serve .
 mech format main.mec
 mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo

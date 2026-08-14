@@ -217,27 +217,3 @@ fn windows_build_executes_source_module_graph() {
         assert_command_success("Windows run built bytecode", &run_output);
     }
 }
-
-#[cfg(feature = "test")]
-#[test]
-fn windows_test_executes_source_module_graph() {
-    let fixture = TestDirectory::new("test module graph");
-    let project = fixture.path().join("source tests").join("nested # %");
-    let report = fixture.path().join("reports ü # %").join("result # %.json");
-    std::fs::create_dir_all(report.parent().unwrap()).unwrap();
-    let root = write_module_graph(&project, true);
-
-    let mut command = mech_command(fixture.path(), "test");
-    command.arg(&root).arg(OsStr::new("--out")).arg(&report);
-    let output = run_command(command, "Windows test module graph");
-    assert_command_success("Windows test module graph", &output);
-    assert!(
-        report
-            .metadata()
-            .map(|metadata| metadata.len())
-            .unwrap_or(0)
-            > 0,
-        "Windows test did not create nonempty report at {}",
-        report.display(),
-    );
-}

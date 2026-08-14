@@ -9,13 +9,15 @@ use mech_build::{
     standard_planning_host_factory,
 };
 use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, LegacyValue, ParsedProgram, Ref, ResourceIntent,
-    hash_str,
+    ApplicationRequirement, BytecodeInstruction, ParsedProgram, ResourceIntent, hash_str,
 };
+#[cfg(feature = "experimental-actors")]
+use mech_core::{LegacyValue, Ref};
 use mech_runtime::{
-    ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeConfig, RuntimeValueSnapshot,
+    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder, RuntimeConfig,
 };
+#[cfg(feature = "experimental-actors")]
+use mech_runtime::{PlannedPureHostFunction, RuntimeValueSnapshot};
 
 struct ProviderCase {
     provider: &'static str,
@@ -102,7 +104,7 @@ const PROVIDER_CASES: &[ProviderCase] = &[
         target: "scene/frame",
         operations: &["write"],
         paths: &["replace"],
-        source: "@frame := scene://scene/frame{:write(replace)}\n@frame/replace <- \"planned\"",
+        source: "@frame := scene://scene/frame{:write(replace)}\nscene := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- scene",
         base_uri: "scene://scene/frame",
         path: "replace",
         intent: ResourceIntent::Send,
@@ -156,8 +158,12 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
         })
         .build()
         .unwrap();
-    runtime.run_string(case.source).unwrap();
-    ParsedProgram::from_bytes(&runtime.compile_program_bytecode().unwrap()).unwrap()
+    ParsedProgram::from_bytes(
+        &runtime
+            .compile_source_program_bytecode(case.source)
+            .unwrap(),
+    )
+    .unwrap()
 }
 
 #[test]
@@ -189,8 +195,9 @@ fn integrity_constraints_are_explicit_native_linkage_requirements() {
         .function_catalog(mech_stdlib::source_catalog())
         .build()
         .unwrap();
-    runtime.run_string("x := 1.0\nsafe! := x <= 2.0").unwrap();
-    let bytecode = runtime.compile_program_bytecode().unwrap();
+    let bytecode = runtime
+        .compile_source_program_bytecode("x := 1.0\nsafe! := x <= 2.0")
+        .unwrap();
     let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
     assert!(parsed.instructions.iter().any(|instruction| matches!(
         instruction,
@@ -291,9 +298,10 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         })
         .build()
         .unwrap();
-    planning_runtime.run_string(case.source).unwrap();
     let request = NativeBuildRequest {
-        bytecode: planning_runtime.compile_program_bytecode().unwrap(),
+        bytecode: planning_runtime
+            .compile_source_program_bytecode(case.source)
+            .unwrap(),
         runtime_config: Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
             actor_bootstrap: None,
@@ -354,9 +362,9 @@ fn every_trusted_actor_function_plans_source_to_bytecode() {
             .unwrap()
             .build()
             .unwrap();
-        runtime.run_string(source).unwrap();
         let parsed =
-            ParsedProgram::from_bytes(&runtime.compile_program_bytecode().unwrap()).unwrap();
+            ParsedProgram::from_bytes(&runtime.compile_source_program_bytecode(source).unwrap())
+                .unwrap();
         assert_eq!(
             parsed
                 .requirements
@@ -370,4 +378,3 @@ fn every_trusted_actor_function_plans_source_to_bytecode() {
         );
     }
 }
-use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

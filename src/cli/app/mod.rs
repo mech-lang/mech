@@ -72,21 +72,10 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::SetTrue),
         );
 
-    #[cfg(feature = "repl")]
-    let cli_command = cli_command.arg(
-        Arg::new("repl")
-            .short('r')
-            .long("repl")
-            .help("Start the targetless full-developer REPL")
-            .action(ArgAction::SetTrue),
-    );
-
     #[cfg(feature = "formatter")]
     let cli_command = cli_command.subcommand(crate::cli::commands::format::command());
     #[cfg(feature = "build")]
     let cli_command = cli_command.subcommand(crate::cli::commands::build::command());
-    #[cfg(feature = "test")]
-    let cli_command = cli_command.subcommand(crate::cli::commands::test::command());
     #[cfg(feature = "run")]
     let cli_command = cli_command.subcommand(crate::cli::commands::run::command());
     #[cfg(feature = "serve")]
@@ -110,10 +99,6 @@ fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
         debug: cli_matches.get_flag("debug"),
         trace: cli_matches.get_flag("trace"),
         time: cli_matches.get_flag("time"),
-        #[cfg(feature = "repl")]
-        repl: cli_matches.get_flag("repl"),
-        #[cfg(not(feature = "repl"))]
-        repl: false,
         rounds_per_step: cli_matches.get_one::<usize>("rounds-per-step").copied(),
     }
 }
@@ -143,13 +128,6 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
         let args = crate::cli::serve_options::ServeCliArgs::from_matches(serve_matches);
         let plan = crate::cli::commands::serve::prepare(args, serve_matches, resources)?;
         return crate::cli::commands::serve::run(plan).await;
-    }
-
-    #[cfg(feature = "test")]
-    if let Some(matches) = cli_matches.subcommand_matches("test") {
-        reject_filesystem_capability_args(matches)?;
-        let options = crate::cli::commands::test::TestOptions::from_matches(flags, matches)?;
-        return crate::cli::commands::test::run(options);
     }
 
     #[cfg(feature = "build")]
@@ -187,23 +165,9 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
         let options = crate::cli::run_options::prepare_run_options(args, config_matches)?;
         let plan = crate::cli::runtime_plan::build_run_execution_plan(options)?;
         let outcome = crate::cli::commands::run::run(plan)?;
-        #[cfg(feature = "repl")]
-        if matches!(outcome, CliOutcome::EnterRepl(_)) {
-            return Ok(outcome);
-        }
         if !matches!(outcome, CliOutcome::Success) {
             return Ok(outcome);
         }
-    }
-
-    #[cfg(feature = "repl")]
-    if flags.repl {
-        return Ok(CliOutcome::EnterRepl(
-            crate::cli::commands::repl::ReplStartup {
-                #[cfg(feature = "run")]
-                runtime: None,
-            },
-        ));
     }
 
     Ok(CliOutcome::success())
@@ -231,11 +195,6 @@ fn apply_outcome(outcome: CliOutcome) -> MResult<()> {
     match outcome {
         CliOutcome::Success => Ok(()),
         CliOutcome::Exit(code) => terminate_process(code),
-        #[cfg(feature = "repl")]
-        CliOutcome::EnterRepl(startup) => {
-            let outcome = crate::cli::commands::repl::run(startup)?;
-            apply_outcome(outcome)
-        }
     }
 }
 

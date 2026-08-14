@@ -22,5 +22,4 @@ wasm-bindgen = { version = "0.2.105", optional = true }
 web-sys = { version = "0.3.82", optional = true, features = ["console"] }
 
 [dev-dependencies]
-mech-engine = { version = "0.3.5", default-features = false }
-mech-runtime = { version = "0.3.5", default-features = false, features = ["source", "legacy-interpreter"] }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["source"] }

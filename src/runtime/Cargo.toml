@@ -71,9 +71,9 @@ source_default = [
   "watcher",
 ]
 compiler_default = ["source_default", "compiler"]
-full_runtime = ["runtime_default", "legacy-interpreter"]
-full_source = ["source_default", "legacy-interpreter"]
-full_compiler = ["compiler_default", "legacy-interpreter"]
+full_runtime = ["runtime_default"]
+full_source = ["source_default"]
+full_compiler = ["compiler_default"]
 default = []
 base = ["compiler_default", "mech-core/base", "mech-engine/base"]
 
@@ -250,21 +250,6 @@ path = "examples/actor_state_host.rs"
 required-features = ["source_default"]
 
 [[example]]
-name = "arbitrary_rust_host_function"
-path = "examples/arbitrary_rust_host_function.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[example]]
-name = "arbitrary_rust_host_functions2"
-path = "examples/arbitrary_rust_host_functions2.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[example]]
-name = "basic_runtime"
-path = "examples/basic_runtime.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[example]]
 name = "dep_cycle"
 path = "examples/dep_cycle.rs"
 required-features = ["source_default"]
@@ -273,11 +258,6 @@ required-features = ["source_default"]
 name = "dep_diamond"
 path = "examples/dep_diamond.rs"
 required-features = ["source_default"]
-
-[[example]]
-name = "host_value_roundtrip"
-path = "examples/host_value_roundtrip.rs"
-required-features = ["source_default", "legacy-interpreter"]
 
 [[example]]
 name = "runtime_dep_src"
@@ -330,11 +310,6 @@ path = "tests/generic_host.rs"
 required-features = ["source_default", "legacy-interpreter"]
 
 [[test]]
-name = "native_live_resource"
-path = "tests/native_live_resource.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[test]]
 name = "sealed_snapshots"
 path = "tests/sealed_snapshots.rs"
 required-features = ["source_default", "legacy-interpreter"]
@@ -350,21 +325,6 @@ path = "tests/sealed_api.rs"
 required-features = ["source_default"]
 
 [[bench]]
-name = "program_transaction"
-harness = false
-required-features = ["source_default", "legacy-interpreter"]
-
-[[bench]]
-name = "reactive_transaction"
-harness = false
-required-features = ["source_default", "legacy-interpreter"]
-
-[[bench]]
-name = "history_scaling"
-harness = false
-required-features = ["source_default", "runtime_bench_probes", "legacy-interpreter"]
-
-[[bench]]
 name = "recording_primitives"
 harness = false
 required-features = ["runtime_default", "runtime_bench_probes"]
@@ -372,4 +332,4 @@ required-features = ["runtime_default", "runtime_bench_probes"]
 [[bench]]
 name = "resident_ekf"
 harness = false
-required-features = ["source_default", "runtime_bench_gate_b", "legacy-interpreter"]
+required-features = ["source_default", "runtime_bench_gate_b"]

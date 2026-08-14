@@ -1,0 +1,687 @@
+//! Isolated compiler workspace for resident source products.
+//!
+//! This session may use compiler-era `MechProgram` and `LegacyValue`
+//! representations while planning source. Those values never become runtime
+//! owners: each program is local to one compilation and is dropped after the
+//! immutable `ProgramArtifact` and bytecode-v1 product are finalized.
+
+use std::{collections::HashMap, sync::Arc};
+
+use mech_core::{
+    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult,
+    MechExecutionServices, MechSourceCode, ModuleManifestCatalog, Ref, ResourceIntent, ValRef,
+    hash_str,
+};
+use mech_engine::{MechProgram, MechProgramConfig, ProgramCompilationProduct};
+
+use crate::{
+    CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder, ModuleVersionId,
+    ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
+    RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
+    RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
+    RuntimeResourceKey, RuntimeResourceReadRequest, RuntimeResourceRegistry,
+    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest, SourceExportDeclaration,
+    SourceImportAlias, SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest,
+    SourceResolver, import_may_resolve_source_dependency, import_requires_source_dependency,
+    module_namespace_for_import, source_request_for_import,
+};
+
+use super::super::resident_program::{ResidentRouteFailureClass, route_failure, unsupported_route};
+
+/// A planning-only compiler workspace borrowed from one runtime construction.
+///
+/// Deliberately absent: runtime transactions, retained reactive state,
+/// savepoints, live bindings, event history, and program ownership.
+pub(crate) struct ProgramCompilerSession<'a> {
+    function_catalog: Arc<mech_core::FunctionCatalog>,
+    source_resolver: &'a dyn SourceResolver,
+    resources: &'a RuntimeResourceRegistry,
+    module_builder: &'a ModuleBuilder,
+    host_interfaces: &'a HostInterfaceCatalog,
+    module_manifests: &'a ModuleManifestCatalog,
+    program_config: MechProgramConfig,
+}
+
+#[derive(Clone)]
+struct CompilerModule {
+    source: ResolvedSource,
+    import_edges: Vec<(SourceImportDeclaration, String)>,
+    module_version: ModuleVersionId,
+}
+
+#[derive(Clone)]
+struct CompilerModuleInstance {
+    exports: HashMap<String, ValRef>,
+}
+
+impl<'a> ProgramCompilerSession<'a> {
+    pub(crate) fn new(
+        function_catalog: Arc<mech_core::FunctionCatalog>,
+        source_resolver: &'a dyn SourceResolver,
+        resources: &'a RuntimeResourceRegistry,
+        module_builder: &'a ModuleBuilder,
+        host_interfaces: &'a HostInterfaceCatalog,
+        module_manifests: &'a ModuleManifestCatalog,
+        program_config: MechProgramConfig,
+    ) -> Self {
+        Self {
+            function_catalog,
+            source_resolver,
+            resources,
+            module_builder,
+            host_interfaces,
+            module_manifests,
+            program_config,
+        }
+    }
+
+    pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
+        let mut program = self.new_program();
+        let mut services = CompilerPlanningServices {
+            providers: self.resources,
+        };
+        program
+            .run_string_with_services(source, &mut services)
+            .map_err(classify_source_planning)?;
+        self.finalize(program)
+    }
+
+    pub(crate) fn compile_root(
+        &self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        request.validate()?;
+        let mut modules = HashMap::new();
+        let mut stack = Vec::new();
+        let root = self.resolve_module(request, options, &mut modules, &mut stack)?;
+        let mut instances = HashMap::new();
+        let mut active = Vec::new();
+        let mut root_program = Some(self.new_program());
+        self.execute_module(
+            &root,
+            &modules,
+            &mut instances,
+            &mut active,
+            Some(&mut root_program),
+        )?;
+        self.finalize(root_program.expect("root compiler program is retained until finalization"))
+    }
+
+    fn new_program(&self) -> MechProgram {
+        MechProgram::with_function_catalog(
+            self.program_config.clone(),
+            Arc::clone(&self.function_catalog),
+        )
+    }
+
+    fn finalize(&self, mut program: MechProgram) -> MResult<ProgramCompilationProduct> {
+        let resolver = ResidentExternalContractResolver::new(self.resources);
+        program
+            .compile_program_product_with_external_contracts(&resolver)
+            .map_err(|error| {
+                route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    format!("resident ProgramArtifact finalization failed: {error:?}"),
+                )
+            })
+    }
+
+    fn resolve_module(
+        &self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+        modules: &mut HashMap<String, CompilerModule>,
+        stack: &mut Vec<String>,
+    ) -> MResult<String> {
+        let mut resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
+            route_failure(
+                ResidentRouteFailureClass::InvalidArtifact,
+                format!(
+                    "root or imported source `{}` was not found",
+                    request.specifier
+                ),
+            )
+        })?;
+        index_source(&mut resolved)?;
+        resolved.capability_requirements.extend(
+            options
+                .capability_requirements
+                .iter()
+                .map(|resource| CapabilityRequest::from_keys("compiler", "use", *resource)),
+        );
+        let canonical_uri = resolved.canonical_uri.clone();
+        if modules.contains_key(&canonical_uri) {
+            return Ok(canonical_uri);
+        }
+        if stack.contains(&canonical_uri) {
+            let mut cycle = stack.clone();
+            cycle.push(canonical_uri);
+            return Err(mech_core::MechError::new(
+                RuntimeModuleDependencyCycleError { cycle },
+                None,
+            ));
+        }
+        stack.push(canonical_uri.clone());
+
+        let mut import_edges = Vec::new();
+        for import in resolved.imports.clone() {
+            if !import_may_resolve_source_dependency(&import) {
+                continue;
+            }
+            let dependency_request =
+                source_request_for_import(&import, Some(&resolved.canonical_uri));
+            match self.source_resolver.resolve(&dependency_request)? {
+                Some(_) => {
+                    let dependency =
+                        self.resolve_module(dependency_request, options, modules, stack)?;
+                    import_edges.push((import, dependency));
+                }
+                None if import_requires_source_dependency(&import) => {
+                    return Err(mech_core::MechError::new(
+                        RuntimeModuleDependencyMissingError {
+                            module: resolved.canonical_uri.clone(),
+                            specifier: dependency_request.specifier,
+                            referrer: dependency_request.referrer,
+                        },
+                        None,
+                    ));
+                }
+                None => {}
+            }
+        }
+
+        // Keep ModuleBuilder in the compiler boundary as the validation and
+        // deterministic module-identity authority, without persisting records
+        // into the runtime store. Dependency identities remain part of the
+        // root identity even though the records themselves are ephemeral.
+        let dependency_versions = import_edges
+            .iter()
+            .map(|(_, dependency)| {
+                modules
+                    .get(dependency)
+                    .expect("resolved dependency is retained by the compiler session")
+                    .module_version
+            })
+            .collect::<Vec<_>>();
+        let feature_flags = options
+            .feature_flags
+            .iter()
+            .map(|flag| (*flag).to_owned())
+            .collect::<Vec<_>>();
+        let mut builder = self.module_builder.clone();
+        let mut record = builder.build_resolved_source(
+            resolved.clone(),
+            options.compiler_version,
+            options.language_edition,
+            options.target,
+            &feature_flags,
+            &dependency_versions,
+            &resolved.capability_requirements,
+        )?;
+        self.materialize_manifest_context_imports(&mut record)?;
+        let module_version = record.module_version;
+        resolved.contexts = record.contexts;
+        resolved.scopes = record.scopes;
+
+        stack.pop();
+        modules.insert(
+            canonical_uri.clone(),
+            CompilerModule {
+                source: resolved,
+                import_edges,
+                module_version,
+            },
+        );
+        Ok(canonical_uri)
+    }
+
+    fn materialize_manifest_context_imports(
+        &self,
+        record: &mut crate::RuntimeModuleRecord,
+    ) -> MResult<()> {
+        for scope in &mut record.scopes {
+            let context_imports = scope
+                .imports
+                .iter()
+                .filter_map(|import| match &import.alias {
+                    Some(SourceImportAlias::Context(alias)) => Some((import, alias.clone())),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+
+            for (import, alias) in context_imports {
+                if scope.contexts.iter().any(|context| context.name == alias) {
+                    return Err(mech_core::MechError::new(
+                        RuntimeInvalidOperationError {
+                            operation: "compile_root",
+                            reason: format!(
+                                "context import duplicates an existing context binding `{alias}`"
+                            ),
+                        },
+                        None,
+                    ));
+                }
+                let module = import
+                    .module
+                    .as_deref()
+                    .ok_or_else(|| invalid_context_import(&import.specifier, "module"))?;
+                let item = import
+                    .item
+                    .as_deref()
+                    .ok_or_else(|| invalid_context_import(&import.specifier, "item"))?;
+                let target = format!("{module}/{item}");
+                let (base_uri, operations) =
+                    if let Some(export) = self.host_interfaces.resolve_optional(&target)? {
+                        (export.base_uri.clone(), export.operations.clone())
+                    } else {
+                        let export = self.module_manifests.context_export(module, item)?;
+                        (export.base_uri.clone(), export.operations.clone())
+                    };
+                let declaration = crate::SourceContextDeclaration {
+                    name: alias,
+                    base: crate::SourceContextBase::ResourceUri(base_uri),
+                    capabilities: operations
+                        .iter()
+                        .map(|operation| crate::SourceContextCapability {
+                            operation: operation.clone(),
+                            scope: crate::SourceContextCapabilityScope::Wildcard,
+                        })
+                        .collect(),
+                };
+                scope.contexts.push(declaration.clone());
+                record.contexts.push(declaration);
+            }
+        }
+        Ok(())
+    }
+
+    fn execute_module(
+        &self,
+        canonical_uri: &str,
+        modules: &HashMap<String, CompilerModule>,
+        instances: &mut HashMap<String, CompilerModuleInstance>,
+        active: &mut Vec<String>,
+        root_program: Option<&mut Option<MechProgram>>,
+    ) -> MResult<()> {
+        if instances.contains_key(canonical_uri) {
+            return Ok(());
+        }
+        if active.iter().any(|uri| uri == canonical_uri) {
+            let mut cycle = active.clone();
+            cycle.push(canonical_uri.to_owned());
+            return Err(mech_core::MechError::new(
+                RuntimeModuleDependencyCycleError { cycle },
+                None,
+            ));
+        }
+        active.push(canonical_uri.to_owned());
+        let module = modules.get(canonical_uri).ok_or_else(|| {
+            route_failure(
+                ResidentRouteFailureClass::InternalFailure,
+                format!("compiler module `{canonical_uri}` was not retained"),
+            )
+        })?;
+        for (_, dependency) in &module.import_edges {
+            self.execute_module(dependency, modules, instances, active, None)?;
+        }
+
+        let mut owned_program;
+        let program = if let Some(slot) = root_program {
+            slot.as_mut().expect("root program is present")
+        } else {
+            owned_program = self.new_program();
+            &mut owned_program
+        };
+        install_function_imports(program, &module.source.imports, &module.import_edges)?;
+        let environment = build_import_environment(module, instances)?;
+        install_environment(program, &environment)?;
+        let tree = executable_tree(&module.source.source)?;
+        let mut services = CompilerPlanningServices {
+            providers: self.resources,
+        };
+        program
+            .run_tree_with_services(&tree, &mut services)
+            .map_err(classify_source_planning)?;
+
+        let symbols = program.interpreter().symbols();
+        let symbols = symbols.borrow();
+        let mut exports = HashMap::new();
+        for export in source_exports(&module.source) {
+            let name = export.name.clone();
+            let value = symbols.get(hash_str(&name)).ok_or_else(|| {
+                mech_core::MechError::new(
+                    RuntimeModuleExportNotFound {
+                        dependency: canonical_uri.to_owned(),
+                        export: name.clone(),
+                    },
+                    None,
+                )
+            })?;
+            exports.insert(name, value);
+        }
+        drop(symbols);
+        instances.insert(canonical_uri.to_owned(), CompilerModuleInstance { exports });
+        active.pop();
+        Ok(())
+    }
+}
+
+fn invalid_context_import(specifier: &str, missing: &'static str) -> mech_core::MechError {
+    mech_core::MechError::new(
+        RuntimeInvalidOperationError {
+            operation: "compile_root",
+            reason: format!("context import `{specifier}` is missing {missing} metadata"),
+        },
+        None,
+    )
+}
+
+fn index_source(resolved: &mut ResolvedSource) -> MResult<()> {
+    if !resolved.scopes.is_empty() {
+        return Ok(());
+    }
+    let tree = source_tree(&resolved.source)?;
+    let Some(tree) = tree else {
+        return Ok(());
+    };
+    let index = SourceIndex::from_program(&tree);
+    index.validate_address_targets()?;
+    resolved.imports = index.all_imports();
+    resolved.exports = index.all_exports();
+    resolved.contexts = index.all_contexts();
+    resolved.address_references = index.all_address_references();
+    resolved.scopes = index.module_scopes();
+    Ok(())
+}
+
+fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {
+    match source {
+        MechSourceCode::String(source) => Ok(Some(mech_syntax::parser::parse(source.trim())?)),
+        MechSourceCode::Tree(tree) => Ok(Some(tree.clone())),
+        MechSourceCode::Program(_) => Ok(None),
+        MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Ok(None),
+        MechSourceCode::Image(_, _) => Err(unsupported_route(
+            "image source cannot be compiled as a resident program",
+        )),
+    }
+}
+
+fn executable_tree(source: &MechSourceCode) -> MResult<mech_core::Program> {
+    match source {
+        MechSourceCode::String(source) => sanitize_tree(mech_syntax::parser::parse(source.trim())?),
+        MechSourceCode::Tree(tree) => sanitize_tree(tree.clone()),
+        MechSourceCode::Program(sources) => {
+            let mut sections = Vec::new();
+            for source in sources {
+                sections.extend(executable_tree(source)?.body.sections);
+            }
+            Ok(mech_core::Program {
+                title: None,
+                body: mech_core::Body { sections },
+            })
+        }
+        MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Err(unsupported_route(
+            "root bytecode and HTML are handled outside the source compiler session",
+        )),
+        MechSourceCode::Image(_, _) => Err(unsupported_route(
+            "image source cannot be compiled as a resident program",
+        )),
+    }
+}
+
+fn sanitize_tree(mut tree: mech_core::Program) -> MResult<mech_core::Program> {
+    for section in &mut tree.body.sections {
+        for element in &mut section.elements {
+            let mech_core::SectionElement::MechCode(codes) = element else {
+                continue;
+            };
+            codes.retain(|(code, _)| {
+                !matches!(
+                    code,
+                    mech_core::MechCode::Import(_)
+                        | mech_core::MechCode::Statement(
+                            mech_core::Statement::ImportDeclaration(_)
+                                | mech_core::Statement::ExportDeclaration(_)
+                        )
+                )
+            });
+        }
+    }
+    Ok(tree)
+}
+
+fn source_exports(source: &ResolvedSource) -> Vec<SourceExportDeclaration> {
+    source
+        .scopes
+        .iter()
+        .find(|scope| matches!(scope.scope, crate::SourceScope::Program))
+        .map(|scope| scope.exports.clone())
+        .unwrap_or_else(|| source.exports.clone())
+}
+
+fn install_function_imports(
+    program: &mut MechProgram,
+    imports: &[SourceImportDeclaration],
+    source_edges: &[(SourceImportDeclaration, String)],
+) -> MResult<()> {
+    for import in imports {
+        if matches!(import.alias, Some(SourceImportAlias::Context(_)))
+            || source_edges.iter().any(|(edge, _)| edge == import)
+        {
+            continue;
+        }
+        let module = import.module.as_deref().unwrap_or(&import.specifier);
+        match &import.kind {
+            SourceImportKind::Namespace => program.load_function_module(module)?,
+            SourceImportKind::Single { name } => match &import.alias {
+                Some(SourceImportAlias::Value(alias)) => {
+                    program.import_function_module_item_as(module, name, alias)?;
+                }
+                Some(SourceImportAlias::Context(_)) => {}
+                None => program.import_function_module_item(module, name)?,
+            },
+            SourceImportKind::Wildcard => program.import_function_module_glob(module)?,
+            SourceImportKind::DependencyOnly => {
+                return Err(mech_core::MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "compile_root",
+                        reason: format!(
+                            "required source dependency `{}` was not resolved",
+                            import.specifier
+                        ),
+                    },
+                    None,
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn build_import_environment(
+    module: &CompilerModule,
+    instances: &HashMap<String, CompilerModuleInstance>,
+) -> MResult<HashMap<String, ValRef>> {
+    let mut environment = HashMap::new();
+    let mut ownership = HashMap::<String, String>::new();
+    for (import, dependency) in &module.import_edges {
+        let instance = instances.get(dependency).ok_or_else(|| {
+            route_failure(
+                ResidentRouteFailureClass::InternalFailure,
+                format!("dependency `{dependency}` was not compiled"),
+            )
+        })?;
+        match &import.kind {
+            SourceImportKind::DependencyOnly | SourceImportKind::Namespace => {
+                let Some(namespace) = module_namespace_for_import(import) else {
+                    continue;
+                };
+                for (name, value) in &instance.exports {
+                    insert_import(
+                        &mut environment,
+                        &mut ownership,
+                        format!("{namespace}/{name}"),
+                        value.clone(),
+                        &import.specifier,
+                    )?;
+                }
+            }
+            SourceImportKind::Single { name } => {
+                let value = instance.exports.get(name).ok_or_else(|| {
+                    mech_core::MechError::new(
+                        RuntimeModuleExportNotFound {
+                            dependency: dependency.clone(),
+                            export: name.clone(),
+                        },
+                        None,
+                    )
+                })?;
+                let binding = match &import.alias {
+                    Some(SourceImportAlias::Value(alias)) => alias.clone(),
+                    Some(SourceImportAlias::Context(_)) => continue,
+                    None => name.clone(),
+                };
+                insert_import(
+                    &mut environment,
+                    &mut ownership,
+                    binding,
+                    value.clone(),
+                    &import.specifier,
+                )?;
+            }
+            SourceImportKind::Wildcard => {
+                for (name, value) in &instance.exports {
+                    insert_import(
+                        &mut environment,
+                        &mut ownership,
+                        name.clone(),
+                        value.clone(),
+                        &import.specifier,
+                    )?;
+                }
+            }
+        }
+    }
+    Ok(environment)
+}
+
+fn insert_import(
+    environment: &mut HashMap<String, ValRef>,
+    ownership: &mut HashMap<String, String>,
+    binding: String,
+    value: ValRef,
+    source: &str,
+) -> MResult<()> {
+    if let Some(first) = ownership.insert(binding.clone(), source.to_owned()) {
+        return Err(mech_core::MechError::new(
+            RuntimeModuleImportConflict {
+                binding,
+                first_import: first,
+                second_import: source.to_owned(),
+            },
+            None,
+        ));
+    }
+    environment.insert(binding, value);
+    Ok(())
+}
+
+fn install_environment(
+    program: &mut MechProgram,
+    environment: &HashMap<String, ValRef>,
+) -> MResult<()> {
+    let symbols = program.interpreter_mut().symbols();
+    let mut symbols = symbols.borrow_mut();
+    for (name, value) in environment {
+        let id = hash_str(name);
+        symbols.symbols.insert(id, value.clone());
+        symbols.dictionary.borrow_mut().insert(id, name.clone());
+    }
+    Ok(())
+}
+
+struct CompilerPlanningServices<'a> {
+    providers: &'a RuntimeResourceRegistry,
+}
+
+impl MechExecutionServices for CompilerPlanningServices<'_> {
+    fn invoke_host_function(
+        &mut self,
+        request: &ExecutionHostFunctionRequest,
+        _arguments: &[LegacyValue],
+    ) -> MResult<LegacyValue> {
+        Err(unsupported_route(format!(
+            "resident source requires host function `{}`",
+            request.name,
+        )))
+    }
+
+    fn plan_resource_read_output(
+        &mut self,
+        request: &ExecutionResourceRequest,
+    ) -> MResult<LegacyValue> {
+        self.plan_read(request)
+    }
+
+    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+        self.plan_read(request)
+    }
+
+    fn write_resource(
+        &mut self,
+        request: &ExecutionResourceRequest,
+        value: &LegacyValue,
+    ) -> MResult<()> {
+        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+        let intent = match request.intent {
+            ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
+            ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
+            ResourceIntent::Read => {
+                return Err(route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    "resident source attempted a read through the write planning path",
+                ));
+            }
+        };
+        self.providers.plan_write(RuntimeResourceWriteRequest {
+            base_uri: key.base_uri,
+            path: key.path,
+            context_name: request.context_name.clone(),
+            operation: RuntimeCapabilityOperation::from_name(request.operation.clone())?,
+            value: value.try_deep_snapshot()?,
+            intent,
+        })
+    }
+
+    fn bind_live_resource(
+        &mut self,
+        _interpreter_id: u64,
+        _request: &ExecutionResourceRequest,
+        _target: Ref<LegacyValue>,
+    ) -> MResult<()> {
+        Ok(())
+    }
+}
+
+impl CompilerPlanningServices<'_> {
+    fn plan_read(&self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
+        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+        self.providers.plan_read(RuntimeResourceReadRequest {
+            base_uri: key.base_uri,
+            path: key.path,
+            context_name: request.context_name.clone(),
+        })
+    }
+}
+
+fn classify_source_planning(error: mech_core::MechError) -> mech_core::MechError {
+    if error.kind_name() == "ResidentRouteFailure" {
+        return error;
+    }
+    let class = match error.kind_name().as_str() {
+        "RuntimeResourceProviderNotFound" => ResidentRouteFailureClass::ProviderUnavailable,
+        _ => ResidentRouteFailureClass::InvalidArtifact,
+    };
+    route_failure(class, format!("resident source planning failed: {error:?}"))
+}

@@ -72,14 +72,6 @@ pub(crate) fn command() -> Command {
       .value_parser(crate::cli::rounds_per_step_value_parser())
       .help("Stop after this many accepted live turns")
       .required(false));
-    #[cfg(feature = "repl")]
-    let command = command.arg(
-        Arg::new("repl")
-            .short('r')
-            .long("repl")
-            .help("Developer-only REPL flag; production inputs cannot be combined with a REPL")
-            .action(ArgAction::SetTrue),
-    );
     command
 }
 
@@ -251,16 +243,6 @@ fn print_value(value: &RuntimeValueSnapshot) {
 }
 
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
-    if plan.repl_requested && !plan.missing_run_options {
-        return Err(MechError::new(
-            mech_runtime::ResidentRouteFailure {
-                class: mech_runtime::ResidentRouteFailureClass::ReplUnsupported,
-                reason: "interactive REPL mutation cannot be combined with a resident production target; start the full developer REPL without a target instead".to_string(),
-            },
-            None,
-        ));
-    }
-
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
     let mut runtime = new_cli_runtime_with_source_resolver(
@@ -273,17 +255,10 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     )?;
 
     if plan.missing_run_options {
-        #[cfg(feature = "repl")]
-        return Ok(CliOutcome::EnterRepl(
-            crate::cli::commands::repl::ReplStartup {
-                runtime: Some(runtime),
-            },
-        ));
-        #[cfg(not(feature = "repl"))]
         return Err(MechError::new(
             mech_runtime::ResidentRouteFailure {
                 class: mech_runtime::ResidentRouteFailureClass::ReplUnsupported,
-                reason: "the production run command requires a resident program; interactive mutation is available only in the full developer distribution".to_string(),
+                reason: "the production run command requires a resident program target".to_string(),
             },
             None,
         ));
@@ -588,7 +563,6 @@ mod command_outcome_tests {
             debug: false,
             trace: false,
             time: false,
-            repl: false,
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,

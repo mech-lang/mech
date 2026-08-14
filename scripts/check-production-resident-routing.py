@@ -149,11 +149,11 @@ def check_feature_boundaries() -> list[str]:
     failures: list[str] = []
     contracts = (
         ("Cargo.toml", "distribution-standard", False),
-        ("Cargo.toml", "distribution-full", True),
+        ("Cargo.toml", "distribution-full", False),
         ("src/runtime/Cargo.toml", "source_default", False),
-        ("src/runtime/Cargo.toml", "full_compiler", True),
+        ("src/runtime/Cargo.toml", "full_compiler", False),
         ("src/wasm/Cargo.toml", "browser_project", False),
-        ("src/wasm/Cargo.toml", "full", True),
+        ("src/wasm/Cargo.toml", "full", False),
     )
     for manifest, root, expected in contracts:
         features = manifest_features(manifest)
@@ -185,16 +185,16 @@ def check_required_product_seams() -> list[str]:
     evaluate_boundary = re.compile(
         r'#\[cfg\(feature = "legacy-interpreter"\)\]\s*pub fn evaluate\s*\('
     )
-    if evaluate_boundary.search(wasm_source) is None:
+    if evaluate_boundary.search(wasm_source) is not None:
         failures.append(
-            "src/wasm/src/project.rs: WasmDocument.evaluate must exist only in legacy-interpreter builds"
+            "src/wasm/src/project.rs: WasmDocument.evaluate must not remain in the shipping wrapper"
         )
-    if "pub(super) developer_runtime: MechRuntime" not in wasm_source or not re.search(
+    if "pub(super) developer_runtime: MechRuntime" in wasm_source or re.search(
         r"self\s*\.developer_runtime\s*\.legacy_interpreter\(\)\s*\.run_string\(",
         wasm_source,
     ):
         failures.append(
-            "src/wasm/src/project.rs: developer evaluation must use a separate interpreter runtime"
+            "src/wasm/src/project.rs: developer interpreter runtime must not remain in the shipping wrapper"
         )
     controller_source = (ROOT / "include/document.js").read_text(encoding="utf-8")
     if (
@@ -221,7 +221,6 @@ def check_required_product_seams() -> list[str]:
         )
     required_surface_contracts = {
         "src/cli/commands/run.rs": (
-            "production inputs cannot be combined with a REPL",
             "live_drain_limit(max_live_turns, completed_live_turns)",
         ),
         "src/cli/commands/build.rs": (
@@ -238,13 +237,6 @@ def check_required_product_seams() -> list[str]:
         "scripts/smoke-formatted-document-browser.sh": (
             'submit(":whos answer")',
         ),
-        "docs/getting-started/repl.mec": (
-            "Production targets cannot be combined with `--repl`",
-        ),
-        "docs/reference/commands/test.mec": (
-            "available only in the full",
-            "--features distribution-full",
-        ),
         "docs/guides/native-applications.mec": (
             "accepts exactly one",
         ),
@@ -254,6 +246,12 @@ def check_required_product_seams() -> list[str]:
         for needle in needles:
             if needle not in source:
                 failures.append(f"{relative}: missing production surface contract {needle}")
+    for relative in (
+        "docs/getting-started/repl.mec",
+        "docs/reference/commands/test.mec",
+    ):
+        if (ROOT / relative).exists():
+            failures.append(f"{relative}: retired interpreter command documentation remains")
     return failures
 
 

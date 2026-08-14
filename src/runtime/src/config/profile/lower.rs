@@ -415,12 +415,10 @@ impl ConfigLowerer {
                 "resident-routing" => {
                     let value = expect_string("runtime.program-routing.resident-routing", value)?;
                     out.resident_routing = Some(match value.as_str() {
-                        "prefer-resident" => crate::ResidentRoutingPolicy::PreferResident,
                         "require-resident" => crate::ResidentRoutingPolicy::RequireResident,
-                        "legacy-only" => crate::ResidentRoutingPolicy::LegacyOnly,
                         other => {
                             return invalid(format!(
-                                "runtime.program-routing.resident-routing must be one of prefer-resident, require-resident, legacy-only; got `{other}`"
+                                "runtime.program-routing.resident-routing must be require-resident; got `{other}`"
                             ));
                         }
                     });
@@ -763,6 +761,29 @@ mod tests {
             run.paths,
             vec![PathBuf::from("foo.mec"), PathBuf::from("bar.mec")]
         );
+    }
+
+    #[test]
+    fn runtime_routing_accepts_only_required_resident_execution() {
+        let document = parse(
+            r#"config := {runtime: {program-routing: {resident-routing: "require-resident"}}}"#,
+        )
+        .unwrap();
+        assert_eq!(
+            document.runtime.program_routing.resident_routing,
+            Some(crate::ResidentRoutingPolicy::RequireResident)
+        );
+
+        for routing in ["prefer-resident", "legacy-only"] {
+            let source = format!(
+                "config := {{runtime: {{program-routing: {{resident-routing: \"{routing}\"}}}}}}"
+            );
+            let error = parse(&source).expect_err("legacy routing must be unrepresentable");
+            assert!(
+                error.kind_message().contains("must be require-resident"),
+                "unexpected error for {routing}: {error:?}"
+            );
+        }
     }
 
     #[test]

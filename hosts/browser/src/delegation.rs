@@ -484,13 +484,9 @@ mod tests {
     }
 
     #[test]
-    fn browser_host_payload_covers_resident_routing_and_durability() {
+    fn browser_host_payload_covers_resident_durability() {
         let config = host_config();
         let baseline = encode_browser_host_config_for_test(config.clone());
-        let mut changed = config.clone();
-        changed.runtime.program_routing.resident_routing =
-            mech_runtime::ResidentRoutingPolicy::LegacyOnly;
-        assert_ne!(baseline, encode_browser_host_config_for_test(changed));
         let mut changed = config;
         changed.runtime.program_routing.resident_durability =
             mech_runtime::ResidentDurabilityPolicy::Retained;
@@ -598,18 +594,8 @@ mod tests {
 
     #[cfg(feature = "delegation_signing")]
     #[test]
-    fn modified_resident_routing_fails_signature_verification() {
+    fn modified_resident_durability_fails_signature_verification() {
         let key = signing_key();
-        let mut envelope =
-            sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
-        envelope
-            .payload
-            .runtime_injection
-            .runtime
-            .program_routing
-            .resident_routing = mech_runtime::ResidentRoutingPolicy::LegacyOnly;
-        assert!(verify_browser_host_delegation(&envelope, request(&key)).is_err());
-
         let mut envelope =
             sign_browser_host_delegation(header(), runtime_injection_config(), &key).unwrap();
         envelope

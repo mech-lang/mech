@@ -1,11 +1,11 @@
 use std::collections::BTreeMap;
 
 use mech_build::selected_planning_host_factory;
+#[cfg(feature = "experimental-actors")]
 use mech_core::{LegacyValue, Ref};
-use mech_runtime::{
-    ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeValueSnapshot,
-};
+use mech_runtime::{ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder};
+#[cfg(feature = "experimental-actors")]
+use mech_runtime::{PlannedPureHostFunction, RuntimeValueSnapshot};
 
 use super::{OwnerProfile, fixture_path};
 
@@ -18,6 +18,7 @@ pub struct GeneratedCase {
 }
 
 pub fn generated_cases() -> Vec<GeneratedCase> {
+    #[allow(unused_mut)]
     let mut cases = vec![
         frozen(
             "literal",
@@ -162,12 +163,11 @@ fn compiled(
         .function_catalog(mech_stdlib::source_catalog())
         .build()
         .unwrap();
-    runtime.run_string(source).unwrap();
     GeneratedCase {
         profile: OwnerProfile::Standard,
         case,
         binary_name,
-        bytecode: runtime.compile_program_bytecode().unwrap(),
+        bytecode: runtime.compile_source_program_bytecode(source).unwrap(),
         expected_stdout,
     }
 }
@@ -197,7 +197,6 @@ fn hosted(
         })
         .build()
         .unwrap();
-    runtime.run_string(source).unwrap();
     GeneratedCase {
         profile: if provider == "robot-arm" {
             OwnerProfile::Full
@@ -206,7 +205,7 @@ fn hosted(
         },
         case,
         binary_name,
-        bytecode: runtime.compile_program_bytecode().unwrap(),
+        bytecode: runtime.compile_source_program_bytecode(source).unwrap(),
         expected_stdout,
     }
 }
@@ -238,21 +237,19 @@ fn actor_case(
             .unwrap();
     }
     let mut runtime = builder.build().unwrap();
-    runtime
-        .run_string(concat!(
-            "kind := actor/message/kind()\n",
-            "payload := actor/message/payload()\n",
-            "state-id := actor/state/id()\n",
-            "state := actor/state/get()\n",
-            "updated := actor/state/put(kind)\n",
-            "payload",
-        ))
-        .unwrap();
+    let source = concat!(
+        "kind := actor/message/kind()\n",
+        "payload := actor/message/payload()\n",
+        "state-id := actor/state/id()\n",
+        "state := actor/state/get()\n",
+        "updated := actor/state/put(kind)\n",
+        "payload",
+    );
     GeneratedCase {
         profile: OwnerProfile::Standard,
         case,
         binary_name,
-        bytecode: runtime.compile_program_bytecode().unwrap(),
+        bytecode: runtime.compile_source_program_bytecode(source).unwrap(),
         expected_stdout: expected,
     }
 }
@@ -304,4 +301,3 @@ fn host_configuration(
         _ => panic!("unsupported generated host provider {provider}"),
     }
 }
-use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

@@ -7,8 +7,7 @@ Mech Documentation
 1. [Introduction](getting-started/introduction.html)
 2. [Install Mech](getting-started/install.html)
 3. [Build and Run Mech Programs](getting-started/build-and-run.html)
-4. [Mech REPL](getting-started/repl.html)
-5. [Your First Mech Project](getting-started/first-project.html)
+4. [Your First Mech Project](getting-started/first-project.html)
 
 2. Language Reference
 -------------------------------------------------------------------------------
@@ -75,7 +74,6 @@ Mech Documentation
 
 - [`mech`](/reference/commands/mech.html)
 - [`mech run`](/reference/commands/run.html)
-- [`mech test`](/reference/commands/test.html) (full distribution only)
 - [`mech serve`](/reference/commands/serve.html)
 - [`mech build`](/reference/commands/build.html)
 - [`mech format`](/reference/commands/format.html)

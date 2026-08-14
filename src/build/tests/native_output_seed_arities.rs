@@ -43,8 +43,7 @@ fn compile_source(source: &str) -> Vec<u8> {
         .function_catalog(mech_stdlib::source_catalog())
         .build()
         .unwrap();
-    runtime.run_string(source).unwrap();
-    runtime.compile_program_bytecode().unwrap()
+    runtime.compile_source_program_bytecode(source).unwrap()
 }
 
 #[test]
@@ -111,4 +110,3 @@ fn poisoned_output_seeds_are_recomputed_for_every_runtime_arity() {
         assert_eq!(result.stdout.unwrap().trim(), expected, "{name}");
     }
 }
-use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

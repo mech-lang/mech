@@ -6,13 +6,12 @@ This section documents the command-line tools and subcommands.
 1. Tools
 -------------------------------------------------------------------------------
 
-- [`mech`](mech.html) - runtime, serve, format, build, and bundle command, plus full-distribution developer tools.
+- [`mech`](mech.html) - runtime, serve, format, build, and bundle command.
 
 2. `mech` subcommands
 -------------------------------------------------------------------------------
 
 - [`mech run`](run.html)
-- [`mech test`](test.html) (full distribution only)
 - [`mech serve`](serve.html)
 - [`mech build`](build.html)
 - [`mech format`](format.html)

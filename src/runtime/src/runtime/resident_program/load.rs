@@ -7,9 +7,7 @@ use web_time::Instant;
 #[cfg(feature = "resident-routing-source")]
 use mech_core::MechSourceCode;
 use mech_core::{
-    ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
-    MResult, MechError, MechExecutionServices, ParsedProgram, ReactiveInstanceId, Ref,
-    ResourceIntent,
+    ApplicationRequirement, MResult, MechError, ParsedProgram, ReactiveInstanceId, ResourceIntent,
 };
 use mech_engine::{
     ProgramArtifact, decode_program_artifact_sections,
@@ -20,12 +18,10 @@ use mech_engine::{
 };
 
 #[cfg(feature = "resident-routing-source")]
-use crate::{ModuleBuildOptions, ResidentExternalContractResolver, SourceRequest};
+use crate::{ModuleBuildOptions, SourceRequest};
 use crate::{
-    ResidentExternalCoordinator, ResidentExternalLimits, ResidentRoutingPolicy,
-    RuntimeCapabilityOperation, RuntimeResourceKey, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
-    RuntimeValueSnapshot, runtime::MechRuntime,
+    ResidentExternalCoordinator, ResidentExternalLimits, RuntimeResourceWriteIntent,
+    runtime::MechRuntime,
 };
 #[cfg(feature = "resident-routing-source")]
 use mech_engine::{MechProgramConfig, MechProgramEnvironment, ProgramCompilationProduct};
@@ -34,8 +30,8 @@ use super::admission::activation_failure_for_artifact;
 use super::execution::initial_value;
 use super::{
     ActiveProgramExecution, ResidentExternalExecution, ResidentPureExecution,
-    ResidentRouteFailureClass, RuntimeProgramExecutionInfo, RuntimeProgramLoadOptions,
-    RuntimeProgramLoadOutcome, RuntimeProgramRoute, invalid_active_program, route_failure,
+    ResidentRouteFailureClass, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome,
+    RuntimeProgramRoute, invalid_active_program, route_failure,
 };
 
 impl MechRuntime {
@@ -109,97 +105,6 @@ impl MechRuntime {
         self.load_production_with(durability, |runtime| runtime.decode_artifact(bytecode))
     }
 
-    #[cfg(all(
-        feature = "resident-routing-source",
-        any(test, feature = "legacy-interpreter")
-    ))]
-    pub fn load_source_program(
-        &mut self,
-        source: &str,
-        options: RuntimeProgramLoadOptions,
-    ) -> MResult<RuntimeProgramLoadOutcome> {
-        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
-        self.load_with_selection(
-            options,
-            |runtime| {
-                Ok(Arc::new(
-                    runtime.plan_source_product(source)?.into_parts().0,
-                ))
-            },
-            |runtime| runtime.run_string(source),
-        )
-    }
-
-    #[cfg(all(
-        feature = "resident-routing-source",
-        any(test, feature = "legacy-interpreter")
-    ))]
-    pub fn load_root_program(
-        &mut self,
-        request: SourceRequest,
-        module_options: ModuleBuildOptions<'_>,
-        options: RuntimeProgramLoadOptions,
-    ) -> MResult<RuntimeProgramLoadOutcome> {
-        let resident_request = request.clone();
-        self.load_with_selection(
-            options,
-            |runtime| {
-                let resolved = runtime
-                    .resolve_source(resident_request.clone())?
-                    .ok_or_else(|| {
-                        route_failure(
-                            ResidentRouteFailureClass::InvalidArtifact,
-                            format!("root source `{}` was not found", resident_request.specifier),
-                        )
-                    })?;
-                match &resolved.source {
-                    MechSourceCode::String(source) => {
-                        runtime.enforce_source_byte_limit(
-                            u64::try_from(source.len()).unwrap_or(u64::MAX),
-                        )?;
-                        Ok(Arc::new(
-                            runtime
-                                .plan_root_source_product(resident_request.clone(), module_options)?
-                                .into_parts()
-                                .0,
-                        ))
-                    }
-                    MechSourceCode::ByteCode(bytecode) => {
-                        runtime.enforce_source_byte_limit(
-                            u64::try_from(bytecode.len()).unwrap_or(u64::MAX),
-                        )?;
-                        runtime.decode_artifact(bytecode)
-                    }
-                    _ => Err(route_failure(
-                        ResidentRouteFailureClass::SemanticUnsupported,
-                        "root source kind is not resident-routable",
-                    )),
-                }
-            },
-            |runtime| runtime.resolve_and_run_root_module(request, module_options),
-        )
-    }
-
-    #[cfg(all(
-        feature = "resident-routing",
-        any(test, feature = "legacy-interpreter")
-    ))]
-    pub fn load_bytecode_program(
-        &mut self,
-        bytecode: &[u8],
-        options: RuntimeProgramLoadOptions,
-    ) -> MResult<RuntimeProgramLoadOutcome> {
-        self.enforce_source_byte_limit(u64::try_from(bytecode.len()).unwrap_or(u64::MAX))?;
-        self.load_with_selection(
-            options,
-            |runtime| runtime.decode_artifact(bytecode),
-            |runtime| {
-                let mut context = runtime.runtime_context()?;
-                runtime.evaluate_bytecode_once_with_context(&mut context, bytecode)
-            },
-        )
-    }
-
     fn load_production_with<Resident>(
         &mut self,
         durability: crate::ResidentDurabilityPolicy,
@@ -210,9 +115,8 @@ impl MechRuntime {
     {
         self.ensure_program_slot_available()?;
         super::ensure_supported_durability(durability)?;
-        let options = RuntimeProgramLoadOptions::production(durability);
-        let result =
-            resident(self).and_then(|artifact| self.install_resident_artifact(artifact, options));
+        let result = resident(self)
+            .and_then(|artifact| self.install_resident_artifact(artifact, durability));
         if result.is_err() {
             debug_assert!(matches!(self.active_program, ActiveProgramExecution::None));
             self.program_execution_info = RuntimeProgramExecutionInfo::default();
@@ -220,37 +124,10 @@ impl MechRuntime {
         result
     }
 
-    #[cfg(any(test, feature = "legacy-interpreter"))]
-    fn load_with_selection<Resident, Legacy>(
-        &mut self,
-        options: RuntimeProgramLoadOptions,
-        resident: Resident,
-        legacy: Legacy,
-    ) -> MResult<RuntimeProgramLoadOutcome>
-    where
-        Resident: FnOnce(&mut Self) -> MResult<Arc<ProgramArtifact>>,
-        Legacy: FnOnce(&mut Self) -> MResult<RuntimeValueSnapshot>,
-    {
-        self.ensure_program_slot_available()?;
-        super::ensure_supported_durability(options.durability)?;
-        if options.routing == ResidentRoutingPolicy::LegacyOnly {
-            let value = legacy(self)?;
-            return self.install_legacy_outcome(value, options.routing);
-        }
-
-        let resident_outcome =
-            resident(self).and_then(|artifact| self.install_resident_artifact(artifact, options));
-        match resident_outcome {
-            Ok(outcome) => Ok(outcome),
-            Err(error)
-                if options.routing == ResidentRoutingPolicy::PreferResident
-                    && super::resident_fallback_eligible(&error) =>
-            {
-                let value = legacy(self)?;
-                self.install_legacy_outcome(value, options.routing)
-            }
-            Err(error) => Err(error),
-        }
+    #[cfg(feature = "resident-routing-source")]
+    pub fn compile_source_program_bytecode(&mut self, source: &str) -> MResult<Vec<u8>> {
+        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        Ok(self.plan_source_product(source)?.into_parts().1)
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -269,43 +146,18 @@ impl MechRuntime {
         request: SourceRequest,
         module_options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
-        let previous_mode = self.execution_mode;
-        self.execution_mode = crate::runtime::RuntimeExecutionMode::Plan;
-        let result = (|| {
-            self.resolve_and_run_root_module(request, module_options)?;
-            let resolver = ResidentExternalContractResolver::new(&self.resources);
-            self.program
-                .compile_program_product_with_external_contracts(&resolver)
-                .map_err(|error| {
-                    route_failure(
-                        ResidentRouteFailureClass::InvalidArtifact,
-                        format!("resident root ProgramArtifact finalization failed: {error:?}"),
-                    )
-                })
-        })();
-        self.execution_mode = previous_mode;
-
-        // Module planning intentionally uses the real import/environment path,
-        // but the resulting interpreter is only a compiler workspace. Resident
-        // ownership starts from the artifact, so do not retain a second legacy
-        // executable after the closure has been compiled.
-        self.program = self.new_program(MechProgramConfig {
-            name: self.config.name.clone(),
-            environment: MechProgramEnvironment {
-                trace_enabled: self.config.diagnostics.trace_enabled,
-                debug_enabled: self.config.diagnostics.debug_enabled,
-                profile_enabled: self.config.diagnostics.profile_enabled,
-                rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
-            },
-        });
-        self.live_input_bindings.clear();
-        self.live_context_template = None;
-        result
+        self.compiler_session()?
+            .compile_root(request, module_options)
     }
 
     #[cfg(feature = "resident-routing-source")]
     fn plan_source_product(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
-        let mut program = self.new_program(MechProgramConfig {
+        self.compiler_session()?.compile_source(source)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn compiler_session(&self) -> MResult<super::super::program::ProgramCompilerSession<'_>> {
+        let program_config = MechProgramConfig {
             name: self.config.name.clone(),
             environment: MechProgramEnvironment {
                 trace_enabled: self.config.diagnostics.trace_enabled,
@@ -313,22 +165,16 @@ impl MechRuntime {
                 profile_enabled: self.config.diagnostics.profile_enabled,
                 rounds_per_step: self.config.limits.max_steps_per_turn_as_usize()?,
             },
-        });
-        let mut services = ResidentSourcePlanningServices {
-            providers: &self.resources,
         };
-        program
-            .run_string_with_services(source, &mut services)
-            .map_err(classify_source_planning)?;
-        let resolver = ResidentExternalContractResolver::new(&self.resources);
-        program
-            .compile_program_product_with_external_contracts(&resolver)
-            .map_err(|error| {
-                route_failure(
-                    ResidentRouteFailureClass::InvalidArtifact,
-                    format!("resident ProgramArtifact finalization failed: {error:?}"),
-                )
-            })
+        Ok(super::super::program::ProgramCompilerSession::new(
+            Arc::clone(&self.function_catalog),
+            self.source_resolver.as_ref(),
+            &self.resources,
+            &self.module_builder,
+            &self.host_interfaces,
+            &self.module_manifests,
+            program_config,
+        ))
     }
 
     #[cfg(feature = "resident-routing")]
@@ -352,7 +198,7 @@ impl MechRuntime {
     fn install_resident_artifact(
         &mut self,
         artifact: Arc<ProgramArtifact>,
-        options: RuntimeProgramLoadOptions,
+        durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
         let external = !artifact.requirements().is_empty();
         let activation_options = ResidentActivationOptions {
@@ -365,9 +211,8 @@ impl MechRuntime {
         };
 
         // Provider availability and semantic contracts are authority failures,
-        // not semantic-admission failures. Check them first so an unrelated
-        // legacy-opaque node cannot make a missing or incompatible provider
-        // eligible for preferred legacy fallback.
+        // not semantic-admission failures. Check them before activation so
+        // callers receive the correct failure classification.
         if external {
             self.preflight_provider_contract_presence(&artifact)?;
         }
@@ -418,7 +263,7 @@ impl MechRuntime {
             } else {
                 RuntimeProgramRoute::ResidentPure
             },
-            policy: options.routing,
+            policy: crate::ResidentRoutingPolicy::RequireResident,
             program_revision: Some(artifact.revision()),
             plan_generation: Some(instance.plan.plan_generation),
             layout_generation: Some(instance.plan.layout_generation),
@@ -436,7 +281,7 @@ impl MechRuntime {
                 Arc::clone(&artifact),
                 &self.resources,
                 &authority,
-                options.durability,
+                durability,
                 ResidentExternalLimits::default(),
             )?;
             let trigger_sources = coordinator.trigger_sources()?;
@@ -545,27 +390,6 @@ impl MechRuntime {
         Ok(())
     }
 
-    #[cfg(any(test, feature = "legacy-interpreter"))]
-    fn install_legacy_outcome(
-        &mut self,
-        value: RuntimeValueSnapshot,
-        policy: ResidentRoutingPolicy,
-    ) -> MResult<RuntimeProgramLoadOutcome> {
-        let info = RuntimeProgramExecutionInfo {
-            route: RuntimeProgramRoute::Legacy,
-            policy,
-            legacy_turns: 1,
-            ..RuntimeProgramExecutionInfo::default()
-        };
-        self.active_program = ActiveProgramExecution::Legacy;
-        self.program_execution_info = info.clone();
-        Ok(RuntimeProgramLoadOutcome {
-            route: RuntimeProgramRoute::Legacy,
-            initial_value: value,
-            info,
-        })
-    }
-
     pub(super) fn ensure_program_slot_available(&self) -> MResult<()> {
         if !self.active_transactions.is_empty() {
             return Err(invalid_active_program(
@@ -631,95 +455,6 @@ impl MechRuntime {
         }
         Ok(())
     }
-}
-
-#[cfg(feature = "resident-routing-source")]
-struct ResidentSourcePlanningServices<'a> {
-    providers: &'a RuntimeResourceRegistry,
-}
-
-#[cfg(feature = "resident-routing-source")]
-impl MechExecutionServices for ResidentSourcePlanningServices<'_> {
-    fn invoke_host_function(
-        &mut self,
-        request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
-        Err(super::unsupported_route(format!(
-            "resident source requires host function `{}`",
-            request.name,
-        )))
-    }
-
-    fn plan_resource_read_output(
-        &mut self,
-        request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
-        self.plan_read(request)
-    }
-
-    fn read_resource(&mut self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        self.plan_read(request)
-    }
-
-    fn write_resource(
-        &mut self,
-        request: &ExecutionResourceRequest,
-        value: &LegacyValue,
-    ) -> MResult<()> {
-        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
-        let intent = match request.intent {
-            ResourceIntent::Assign => RuntimeResourceWriteIntent::Assign,
-            ResourceIntent::Send => RuntimeResourceWriteIntent::Send,
-            ResourceIntent::Read => {
-                return Err(route_failure(
-                    ResidentRouteFailureClass::InvalidArtifact,
-                    "resident source attempted a read through the write planning path",
-                ));
-            }
-        };
-        self.providers.plan_write(RuntimeResourceWriteRequest {
-            base_uri: key.base_uri,
-            path: key.path,
-            context_name: request.context_name.clone(),
-            operation: RuntimeCapabilityOperation::from_name(request.operation.clone())?,
-            value: value.try_deep_snapshot()?,
-            intent,
-        })
-    }
-
-    fn bind_live_resource(
-        &mut self,
-        _interpreter_id: u64,
-        _request: &ExecutionResourceRequest,
-        _target: Ref<LegacyValue>,
-    ) -> MResult<()> {
-        Ok(())
-    }
-}
-
-#[cfg(feature = "resident-routing-source")]
-impl ResidentSourcePlanningServices<'_> {
-    fn plan_read(&self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
-        self.providers.plan_read(RuntimeResourceReadRequest {
-            base_uri: key.base_uri,
-            path: key.path,
-            context_name: request.context_name.clone(),
-        })
-    }
-}
-
-#[cfg(feature = "resident-routing-source")]
-fn classify_source_planning(error: MechError) -> MechError {
-    if error.kind_name() == "ResidentRouteFailure" {
-        return error;
-    }
-    let class = match error.kind_name().as_str() {
-        "RuntimeResourceProviderNotFound" => ResidentRouteFailureClass::ProviderUnavailable,
-        _ => ResidentRouteFailureClass::InvalidArtifact,
-    };
-    route_failure(class, format!("resident source planning failed: {error:?}"))
 }
 
 fn classify_provider_preflight(error: MechError) -> MechError {

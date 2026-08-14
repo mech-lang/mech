@@ -95,11 +95,15 @@ if grep -Ein -- '</script' include/document.js; then
 fi
 
 for contract in \
-  'function supportsInteractiveEvaluation()' \
-  'typeof state.document?.evaluate === "function"' \
+  'input.dataset.mechInteractiveEvaluation = "unavailable"' \
   'interactive source evaluation is unavailable in standard resident documents' \
   'Mech document command input'; do
   require_literal include/document.js "$contract"
 done
+
+if grep -Fq -- 'state.document.evaluate' include/document.js || \
+  grep -Fq -- 'supportsInteractiveEvaluation' include/document.js; then
+  fail "the shipped document controller retains a developer-evaluation path"
+fi
 
 echo "shipped document shim contracts are present"

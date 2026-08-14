@@ -372,11 +372,6 @@ mod document {
     #[wasm_bindgen]
     pub struct WasmDocument {
         pub(super) project: WasmProject,
-        #[cfg(feature = "legacy-interpreter")]
-        // The full/developer console owns an interpreter runtime that is
-        // deliberately disjoint from the resident document owner. Ad-hoc
-        // evaluation can neither mutate nor select execution for the product.
-        pub(super) developer_runtime: MechRuntime,
         bootstrap: WasmDocumentBootstrap,
     }
 
@@ -390,21 +385,6 @@ mod document {
                 SourceRequest::new(root_specifier),
                 browser_module_options(),
                 durability,
-            )
-            .map(|_| ())
-            .map_err(to_js_error)
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    fn load_developer_document_root(
-        runtime: &mut MechRuntime,
-        root_specifier: &str,
-    ) -> Result<(), JsValue> {
-        runtime
-            .legacy_interpreter()
-            .resolve_and_run_root_module(
-                SourceRequest::new(root_specifier),
-                browser_module_options(),
             )
             .map(|_| ())
             .map_err(to_js_error)
@@ -430,28 +410,12 @@ mod document {
             .build()
             .map_err(to_js_error)?;
             load_resident_document_root(&mut runtime, &source.root_specifier)?;
-            #[cfg(feature = "legacy-interpreter")]
-            let mut developer_runtime = {
-                #[cfg(feature = "browser_host_scene")]
-                let developer_scenes = BrowserSceneRegistry::new();
-                runtime_builder_with_factories(
-                    #[cfg(feature = "browser_host_scene")]
-                    developer_scenes,
-                )?
-                .source_resolver(document_source_resolver(tree.clone(), &source)?)
-                .build()
-                .map_err(to_js_error)?
-            };
-            #[cfg(feature = "legacy-interpreter")]
-            load_developer_document_root(&mut developer_runtime, &source.root_specifier)?;
             Ok(Self {
                 project: WasmProject::from_runtime(
                     runtime,
                     #[cfg(feature = "browser_host_scene")]
                     scenes,
                 ),
-                #[cfg(feature = "legacy-interpreter")]
-                developer_runtime,
                 bootstrap: WasmDocumentBootstrap::Detached,
             })
         }
@@ -505,29 +469,12 @@ mod document {
             .build()
             .map_err(to_js_error)?;
             load_resident_document_root(&mut runtime, &bootstrap.root_specifier)?;
-            #[cfg(feature = "legacy-interpreter")]
-            let mut developer_runtime = {
-                #[cfg(feature = "browser_host_scene")]
-                let developer_scenes = BrowserSceneRegistry::new();
-                runtime_builder_with_factories(
-                    #[cfg(feature = "browser_host_scene")]
-                    developer_scenes,
-                )?
-                .source_resolver(document_source_resolver(tree, &bootstrap)?)
-                .build()
-                .map_err(to_js_error)?
-            };
-            #[cfg(feature = "legacy-interpreter")]
-            load_developer_document_root(&mut developer_runtime, &bootstrap.root_specifier)?;
-
             Ok(Self {
                 project: WasmProject::from_runtime(
                     runtime,
                     #[cfg(feature = "browser_host_scene")]
                     scenes,
                 ),
-                #[cfg(feature = "legacy-interpreter")]
-                developer_runtime,
                 bootstrap: WasmDocumentBootstrap::SourceBacked(bootstrap),
             })
         }
@@ -613,30 +560,12 @@ mod document {
                 scenes.clone(),
             )?;
             load_resident_document_root(&mut runtime, &source.root_specifier)?;
-            #[cfg(feature = "legacy-interpreter")]
-            let mut developer_runtime = {
-                #[cfg(feature = "browser_host_scene")]
-                let developer_scenes = BrowserSceneRegistry::new();
-                let developer_resolver = document_source_resolver(tree, &source)?;
-                build_runtime_from_authority(
-                    &document,
-                    &authority,
-                    developer_resolver,
-                    #[cfg(feature = "browser_host_scene")]
-                    developer_scenes,
-                )?
-            };
-            #[cfg(feature = "legacy-interpreter")]
-            load_developer_document_root(&mut developer_runtime, &source.root_specifier)?;
-
             Ok(Self {
                 project: WasmProject::from_runtime(
                     runtime,
                     #[cfg(feature = "browser_host_scene")]
                     scenes,
                 ),
-                #[cfg(feature = "legacy-interpreter")]
-                developer_runtime,
                 bootstrap: WasmDocumentBootstrap::Served(ServedDocumentBootstrap {
                     source,
                     config_source: config_source.to_string(),
@@ -694,13 +623,7 @@ mod document {
             let was_started = self.project.started && !self.project.stopped;
 
             self.project.stop()?;
-            #[cfg(feature = "legacy-interpreter")]
-            self.developer_runtime.shutdown().map_err(to_js_error)?;
             self.project = replacement.project;
-            #[cfg(feature = "legacy-interpreter")]
-            {
-                self.developer_runtime = replacement.developer_runtime;
-            }
             self.bootstrap = replacement.bootstrap;
             if was_started {
                 self.project.start()?;
@@ -756,19 +679,6 @@ mod document {
             Ok(rows.into())
         }
 
-        /// Evaluates developer-console source in an isolated interpreter.
-        /// The resident document remains the sole product execution owner.
-        #[cfg(feature = "legacy-interpreter")]
-        pub fn evaluate(&mut self, source: &str) -> Result<JsValue, JsValue> {
-            let rendered = self
-                .developer_runtime
-                .legacy_interpreter()
-                .run_string(source)
-                .map_err(to_js_error)
-                .and_then(rendered_value)?;
-            Ok(rendered)
-        }
-
         pub fn start(&mut self) -> Result<(), JsValue> {
             self.project.start()
         }
@@ -778,13 +688,7 @@ mod document {
         }
 
         pub fn stop(&mut self) -> Result<(), JsValue> {
-            let was_stopped = self.project.stopped;
-            self.project.stop()?;
-            #[cfg(feature = "legacy-interpreter")]
-            if !was_stopped {
-                self.developer_runtime.shutdown().map_err(to_js_error)?;
-            }
-            Ok(())
+            self.project.stop()
         }
     }
 }
@@ -1613,7 +1517,6 @@ fn to_js_error(error: MechError) -> JsValue {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
 
     const CONFIG: &str = r#"config := {
   hosts: []
@@ -1734,13 +1637,20 @@ mod tests {
     fn encoded_document_runs_on_runtime_and_exposes_root_output() {
         let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let mut runtime = browser_runtime_builder().build().unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
 
-        let decoded: mech_core::nodes::Program =
-            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
-        runtime.run_tree(&decoded).unwrap();
-
-        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
+        assert_f64(
+            document
+                .project
+                .runtime
+                .root_symbol_value("answer")
+                .unwrap(),
+            42.0,
+        );
+        assert_eq!(
+            document.project.runtime.program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
     }
 
     #[test]
@@ -1793,22 +1703,19 @@ mod tests {
             .last()
             .expect("FizzBuzz fixture must contain an output block");
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let decoded: mech_core::nodes::Program =
-            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
-        let mut runtime = browser_runtime_builder().build().unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
 
         assert_eq!(
             output_id, 29_884_140_763_677_669,
             "the browser runtime key must match the native formatter key",
         );
-        runtime.run_tree(&decoded).unwrap();
-
         assert!(
-            runtime
-                .output_value_for_interpreter(runtime.root_interpreter_id(), output_id,)
-                .unwrap()
-                .is_some(),
+            !document.rendered_output(0, output_id).unwrap().is_null(),
             "FizzBuzz output must remain queryable by its formatted block id",
+        );
+        assert_eq!(
+            document.project.runtime.program_route(),
+            RuntimeProgramRoute::ResidentPure,
         );
     }
 
@@ -2550,104 +2457,6 @@ mod browser_tests {
         let encoded =
             encoded_document("The document evaluates {answer + 1} inline.\n\nanswer := 41");
         assert_resident_rejection(WasmDocument::from_encoded(&encoded), "SemanticUnsupported");
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_evaluate_returns_rendered_value() {
-        let encoded = encoded_document("~answer := 0\nanswer += 42\nanswer");
-        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-
-        let rendered = document.evaluate("answer + 1").unwrap();
-        assert_eq!(
-            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
-                .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("43"),
-        );
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_evaluate_isolated_from_resident_root_symbol() {
-        let encoded = encoded_document("~answer := 0\nanswer += 41\nanswer");
-        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-
-        document.evaluate("answer = 7").unwrap();
-
-        let developer_answer = document.evaluate("answer").unwrap();
-        assert_eq!(
-            Reflect::get(&developer_answer, &JsValue::from_str("inlineHtml"))
-                .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("7"),
-        );
-        let answer = document.rendered_symbol(0, "answer").unwrap();
-        assert_eq!(
-            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
-                .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("41"),
-        );
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_evaluate_never_enters_legacy_on_resident_owner() {
-        let encoded = encoded_document("~answer := 0\nanswer += 42\nanswer");
-        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-
-        assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0
-        );
-        document.evaluate("answer + 1").unwrap();
-        assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0
-        );
-        assert!(
-            document
-                .developer_runtime
-                .program_execution_info()
-                .legacy_turns
-                > 0
-        );
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_failed_evaluation_leaves_resident_owner_untouched() {
-        let encoded = encoded_document("~answer := 0\nanswer += 42\nanswer");
-        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-        assert!(document.evaluate("missing-document-symbol").is_err());
-        assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0
-        );
-        let answer = document.rendered_symbol(0, "answer").unwrap();
-        assert_eq!(
-            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
-                .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("42"),
-        );
     }
 
     #[wasm_bindgen_test]
