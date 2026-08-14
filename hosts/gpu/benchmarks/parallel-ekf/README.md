@@ -3,6 +3,30 @@
 This benchmark produces two distinct comparisons from the high-level EKF in
 `../../fixtures/ekf-kernel.mec`.
 
+## Exact checkout and source map
+
+The complete spike is on branch `codex/mech-program-gpu` and is reviewed in
+[PR #757](https://github.com/mech-lang/mech/pull/757). It is not present in a
+plain `integration/value-executor-v0.4` checkout.
+
+```text
+git fetch origin codex/mech-program-gpu
+git switch --track origin/codex/mech-program-gpu
+```
+
+| Role | Checked-in source |
+| --- | --- |
+| High-level Mech EKF | `hosts/gpu/fixtures/ekf-kernel.mec` |
+| Mech artifact benchmark harness | `hosts/gpu/examples/parallel_ekf_benchmark.rs` |
+| Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
+| Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
+| Optimized Rust control | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
+| NumPy control | `hosts/gpu/benchmarks/parallel-ekf/numpy_scalar.py` |
+| Julia control | `hosts/gpu/benchmarks/parallel-ekf/julia_scalar.jl` |
+| LuaJIT control | `hosts/gpu/benchmarks/parallel-ekf/luajit_scalar.lua` |
+| Controlled runner | `hosts/gpu/benchmarks/parallel-ekf/run.py` |
+| Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
+
 ## Mech physical backends
 
 The scalar CPU, four-lane SIMD CPU, Cranelift JIT, and GPU lanes execute the
@@ -69,6 +93,11 @@ Build the native Mech benchmark, then run the complete comparison:
 cargo build -p mech-gpu --release --features native,jit --example parallel_ekf_benchmark
 python3 hosts/gpu/benchmarks/parallel-ekf/run.py --python /path/to/python-with-numpy
 ```
+
+Add `--evidence-output /path/to/results.json` to record the exact Git commit,
+platform, tool versions, thread environment, commands, discarded warmups,
+every measured process stdout, parsed checksums, and summary medians. Published
+results should include this generated JSON rather than only the tables above.
 
 The runner compiles the checked-in Rust control directly with
 `rustc -C opt-level=3 -C target-cpu=native`, validates every scalar and JIT
