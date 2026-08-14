@@ -113,10 +113,9 @@ cargo run -p mech-gpu --release --features native \
 
 Measured on an Apple M1 through Metal on 2026-08-13:
 
-| Filters | Generic scalar CPU | GPU, one submission/turn | GPU, 120 turns/submission |
-| ---: | ---: | ---: | ---: |
-| 100,000 | 1.166 M EKF-turns/s | 51.134 M EKF-turns/s | 344.443 M EKF-turns/s |
-| 1,000,000 | 1.166 M EKF-turns/s | 231.214 M EKF-turns/s | 350.055 M EKF-turns/s |
+| Filters | Mech scalar CPU | Mech SIMD CPU | GPU, one submission/turn | GPU, 120 turns/submission |
+| ---: | ---: | ---: | ---: | ---: |
+| 100,000 | 1.222 M EKF-turns/s | 4.416 M EKF-turns/s | 61.060 M EKF-turns/s | 329.650 M EKF-turns/s |
 
 The maximum CPU/GPU absolute error after four validation turns was
 `7.629e-5`. The test suite separately compares one scalarized CPU turn with the
@@ -125,8 +124,15 @@ executors sharing the same lowered implementation.
 
 These labels are narrow on purpose. "Generic scalar CPU" is the portable
 scalar IR evaluator in this crate, not the retained runtime, an optimized AOT
-CPU kernel, or raw Rust. The 120-turn GPU number records multiple dependent
-dispatches in one command submission and does not include final readback.
+CPU kernel, or raw Rust. The four-lane SIMD executor runs the same scalarized
+artifact using `wide::f32x4`; it does not contain an EKF-specific operation.
+The 120-turn GPU number records multiple dependent dispatches in one command
+submission and does not include final readback.
+
+[`benchmarks/parallel-ekf`](benchmarks/parallel-ekf) contains the reproducible
+two-panel comparison: Mech scalar versus SIMD versus GPU, and scalar outer-loop
+Mech versus Rust, NumPy, Julia, and LuaJIT. The latter comparison uses matching
+inputs and checksums and keeps setup outside timing.
 
 The benchmark's optional count argument changes the `filter-count` value in
 the Mech source before parsing so the same workload can be scaled. The backend

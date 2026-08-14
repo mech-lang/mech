@@ -236,8 +236,14 @@ fn mech_arrays_define_the_broadcast_extent() {
         .unwrap();
     assert_eq!(lowered.instances(), 7);
     assert_eq!(lowered.workgroup_count(), 1);
+    assert_eq!(lowered.simd_lanes(), 4);
     let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
     cpu.dispatch_turns(2).unwrap();
+    let mut simd = lowered.prepare_simd_cpu(&inputs).unwrap();
+    simd.dispatch_turns(2).unwrap();
+    for (slot, expected) in cpu.state() {
+        assert_close(expected, &simd.state()[slot], 1.0e-4);
+    }
     let state_sizes = lowered
         .state_layout()
         .map(|(slot, elements)| cpu.state()[&slot].len() / elements)

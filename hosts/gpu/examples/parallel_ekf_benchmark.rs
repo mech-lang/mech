@@ -35,6 +35,13 @@ fn main() {
     let mut cpu_validation = program.prepare_cpu(&inputs).unwrap();
     cpu_validation.dispatch_turns(validation_turns).unwrap();
     let expected = cpu_validation.state().clone();
+    let mut simd_validation = program.prepare_simd_cpu(&inputs).unwrap();
+    simd_validation.dispatch_turns(validation_turns).unwrap();
+    let simd_max_error = maximum_error(&expected, simd_validation.state());
+    assert!(
+        simd_max_error <= 1.0e-4,
+        "SIMD result differs from scalar CPU lowering by {simd_max_error}"
+    );
     let mut gpu_validation = program.prepare_resident(&inputs).unwrap();
     let actual = gpu_validation.run_turns(validation_turns).unwrap();
     let max_error = maximum_error(&expected, &actual.state);
@@ -43,11 +50,21 @@ fn main() {
         "GPU result differs from generic CPU lowering by {max_error}"
     );
 
+    let mut cpu_warmup = program.prepare_cpu(&inputs).unwrap();
+    cpu_warmup.dispatch_turns(5).unwrap();
     let mut cpu = program.prepare_cpu(&inputs).unwrap();
-    cpu.dispatch_turns(1).unwrap();
     let cpu_started = Instant::now();
     cpu.dispatch_turns(cpu_turns).unwrap();
     let cpu_per_turn = cpu_started.elapsed() / cpu_turns;
+    let cpu_checksum = state_checksum(cpu.state());
+
+    let mut simd_warmup = program.prepare_simd_cpu(&inputs).unwrap();
+    simd_warmup.dispatch_turns(5).unwrap();
+    let mut simd = program.prepare_simd_cpu(&inputs).unwrap();
+    let simd_started = Instant::now();
+    simd.dispatch_turns(cpu_turns).unwrap();
+    let simd_per_turn = simd_started.elapsed() / cpu_turns;
+    let simd_checksum = state_checksum(simd.state());
 
     let prepare_started = Instant::now();
     let mut gpu = program.prepare_resident(&inputs).unwrap();
@@ -67,6 +84,7 @@ fn main() {
     println!("source artifact nodes: {}", artifact.nodes().len());
     println!("generated WGSL bytes: {}", program.wgsl().len());
     println!("GPU workgroups: {}", program.workgroup_count());
+    println!("CPU SIMD width: {} f32 lanes", program.simd_lanes());
     println!("adapter: {}", actual.adapter);
     println!(
         "source + artifact + scalarization: {:.3} ms",
@@ -74,8 +92,12 @@ fn main() {
     );
     println!("resident GPU prepare: {:.3} ms", millis(resident_prepare));
     println!(
-        "generic resident CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        "Mech scalar CPU: {:.3} ms/turn ({cpu_turns} turns)",
         millis(cpu_per_turn)
+    );
+    println!(
+        "Mech SIMD CPU: {:.3} ms/turn ({cpu_turns} turns)",
+        millis(simd_per_turn)
     );
     println!(
         "resident GPU, one submission per turn: {:.3} ms/turn ({single_gpu_turns} turns)",
@@ -86,8 +108,12 @@ fn main() {
         millis(batched)
     );
     println!(
-        "CPU throughput: {:.3} million EKF-turns/s",
+        "Mech scalar throughput: {:.3} million EKF-turns/s",
         throughput(instances, cpu_per_turn)
+    );
+    println!(
+        "Mech SIMD throughput: {:.3} million EKF-turns/s",
+        throughput(instances, simd_per_turn)
     );
     println!(
         "GPU single-submit throughput: {:.3} million EKF-turns/s",
@@ -99,6 +125,9 @@ fn main() {
     );
     println!("final state readback: {:.3} ms", millis(readback));
     println!("maximum CPU/GPU absolute error: {max_error:.3e}");
+    println!("maximum scalar/SIMD absolute error: {simd_max_error:.3e}");
+    println!("Mech scalar checksum: {cpu_checksum:.9}");
+    println!("Mech SIMD checksum: {simd_checksum:.9}");
 }
 
 fn argument<T: std::str::FromStr>(index: usize, default: T) -> T {
@@ -262,6 +291,14 @@ fn maximum_error(
                 .map(|(left, right)| (left - right).abs())
         })
         .fold(0.0_f32, f32::max)
+}
+
+fn state_checksum(state: &BTreeMap<mech_core::CellSlotId, Vec<f32>>) -> f64 {
+    state
+        .values()
+        .flatten()
+        .map(|value| f64::from(*value))
+        .sum()
 }
 
 fn millis(duration: std::time::Duration) -> f64 {
