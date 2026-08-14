@@ -16,12 +16,18 @@ PRODUCT_ROOTS = (
     Path("hosts/browser/src"),
 )
 PROHIBITED_ROUTE_REFERENCES = (
+    "RuntimeExecutionMode",
     "ResidentRoutingPolicy",
     "ProgramRoutingConfig",
     "program_routing",
     "RuntimeProgramRoute::Legacy",
     "legacy_turns",
     "legacyTurns",
+    "load_production_",
+    "rootInterpreterId",
+    "output_value_for_interpreter",
+    "symbol_name_for_interpreter_output",
+    "symbol_values_for_interpreter",
 )
 OLD_EXECUTOR_CALL = re.compile(
     r"\.(?:run_string(?:_with_context)?|run_source(?:_with_context)?|"
@@ -232,6 +238,31 @@ def check_required_product_seams() -> list[str]:
             failures.append(
                 f"src/runtime/src/config/mod.rs: obsolete routing policy remains: {token}"
             )
+    compiler_source = (ROOT / "src/runtime/src/runtime/program/compiler.rs").read_text(
+        encoding="utf-8"
+    )
+    if "pub struct ProgramCompiler" not in compiler_source:
+        failures.append(
+            "src/runtime/src/runtime/program/compiler.rs: ProgramCompiler must own source compilation"
+        )
+    if re.search(r"\bValRef\b", compiler_source):
+        failures.append(
+            "src/runtime/src/runtime/program/compiler.rs: compiler modules must not share ValRef identity"
+        )
+    artifact_model = (ROOT / "src/engine/src/artifact/model.rs").read_text(
+        encoding="utf-8"
+    )
+    if "Output" not in artifact_model or "pub enum SlotRole" not in artifact_model:
+        failures.append(
+            "src/engine/src/artifact/model.rs: SlotRole::Output must own resident publication storage"
+        )
+    resident_authority = (
+        ROOT / "src/runtime/src/runtime/resident_program/authority.rs"
+    ).read_text(encoding="utf-8")
+    if "ResidentAdmissionProof" not in resident_authority:
+        failures.append(
+            "src/runtime/src/runtime/resident_program/authority.rs: missing ResidentAdmissionProof"
+        )
     required_surface_contracts = {
         "src/cli/commands/run.rs": (
             "live_drain_limit(max_live_turns, completed_live_turns)",

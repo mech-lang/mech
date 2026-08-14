@@ -20,7 +20,7 @@ use std::sync::Arc;
 use mech_engine::{ProgramArtifact, resident::ReactiveInstance};
 
 use crate::{ResidentExternalCoordinator, RuntimeHostInputSource};
-use authority::ResidentGrantSet;
+use authority::ResidentAdmissionProof;
 
 pub(crate) enum ActiveProgramExecution {
     None,
@@ -37,7 +37,7 @@ pub(crate) struct ResidentExternalExecution {
     pub(crate) artifact: Arc<ProgramArtifact>,
     pub(crate) coordinator: ResidentExternalCoordinator,
     pub(crate) trigger_sources: Box<[RuntimeHostInputSource]>,
-    pub(crate) grants: ResidentGrantSet,
+    pub(crate) grants: ResidentAdmissionProof,
 }
 
 impl Default for ActiveProgramExecution {

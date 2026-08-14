@@ -1,4 +1,4 @@
-use super::transaction::{RuntimeCommitResolution, RuntimeExecutionTransactionMode};
+use super::transaction::{RuntimeCommitResolution, RuntimeTransactionScope};
 use super::{MechRuntime, RuntimeInvalidOperationError};
 use crate::{
     CapabilityId, CapabilityRequest, ResourcePathCapability, RunResourceGrantConfig,
@@ -276,7 +276,7 @@ impl MechRuntime {
         if context.transaction.is_none() {
             let transaction_id = self.begin_runtime_transaction_internal(
                 context,
-                RuntimeExecutionTransactionMode::ImplicitResourceOperation,
+                RuntimeTransactionScope::ImplicitResourceOperation,
             )?;
             let effect_id = match self.write_resource_with_context(context, request) {
                 Ok(effect_id) => effect_id,
@@ -344,7 +344,7 @@ impl MechRuntime {
                 if failures.is_empty() {
                     original_error
                 } else {
-                    self.poison_program_operation(
+                    self.poison_runtime_operation(
                         operation,
                         Some(transaction_id),
                         original_error_text,
@@ -352,7 +352,7 @@ impl MechRuntime {
                     )
                 }
             }
-            Err(cleanup_error) => self.poison_program_operation(
+            Err(cleanup_error) => self.poison_runtime_operation(
                 operation,
                 Some(transaction_id),
                 original_error_text,
@@ -395,7 +395,7 @@ impl MechRuntime {
         if context.transaction.is_none() {
             let transaction_id = self.begin_runtime_transaction_internal(
                 context,
-                RuntimeExecutionTransactionMode::ImplicitResourceOperation,
+                RuntimeTransactionScope::ImplicitResourceOperation,
             )?;
             let value = match self.read_resource_with_context_map(context, request, finish) {
                 Ok(value) => value,
@@ -426,7 +426,7 @@ impl MechRuntime {
                 .resources
                 .staged_resource_identity_for(&request.base_uri)?;
             if let Some(value) = self
-                .active_execution_transaction(transaction_id)?
+                .active_runtime_transaction(transaction_id)?
                 .effects
                 .staged_resource_value(&resource_identity, &request.path)
             {

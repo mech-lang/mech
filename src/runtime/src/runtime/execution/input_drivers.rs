@@ -165,7 +165,7 @@ impl MechRuntime {
                     }
                 }
                 if !cleanup_failures.is_empty() {
-                    return Err(self.poison_program_operation(
+                    return Err(self.poison_runtime_operation(
                         "start_input_drivers",
                         None,
                         format!("{:?}", error),
@@ -198,7 +198,7 @@ impl MechRuntime {
             }
         }
         if !panic_failures.is_empty() {
-            return Err(self.poison_program_operation(
+            return Err(self.poison_runtime_operation(
                 "stop_input_drivers",
                 None,
                 first_error

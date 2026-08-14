@@ -15,7 +15,7 @@ use mech_browser::BrowserRuntimeInjectionConfig;
 use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
 #[cfg(feature = "browser_host_console")]
 use mech_console::BrowserConsoleHostFactory;
-use mech_core::{MechError, MechErrorKind, MechSourceCode};
+use mech_core::{MechError, MechErrorKind, MechSourceCode, OutputId};
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
     ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
@@ -186,16 +186,13 @@ impl WasmProject {
         }
     }
 
-    #[wasm_bindgen(js_name = rootInterpreterId)]
-    pub fn root_interpreter_id(&self) -> u64 {
-        self.runtime.root_interpreter_id()
-    }
-
     #[wasm_bindgen(js_name = renderedOutput)]
-    pub fn rendered_output(&self, interpreter_id: u64, output_id: u64) -> Result<JsValue, JsValue> {
-        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+    pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
+        let Ok(output_id) = u32::try_from(output_id) else {
+            return Ok(JsValue::NULL);
+        };
         self.runtime
-            .output_value_for_interpreter(interpreter_id, output_id)
+            .output_value(OutputId::new(output_id))
             .map_err(to_js_error)?
             .map(rendered_value)
             .transpose()
@@ -203,26 +200,18 @@ impl WasmProject {
     }
 
     #[wasm_bindgen(js_name = renderedSymbol)]
-    pub fn rendered_symbol(&self, interpreter_id: u64, name: &str) -> Result<JsValue, JsValue> {
-        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+    pub fn rendered_symbol(&self, name: &str) -> Result<JsValue, JsValue> {
         let names = vec![name.to_string()];
         let value = self
             .runtime
-            .symbol_values_for_interpreter(interpreter_id, &names)
+            .program_output_values(&names)
             .map_err(to_js_error)?
-            .and_then(|mut values| values.pop().map(|(_, value)| value));
+            .pop()
+            .map(|(_, value)| value);
         value
             .map(rendered_value)
             .transpose()
             .map(|value| value.unwrap_or(JsValue::NULL))
-    }
-
-    fn actual_interpreter_id(&self, interpreter_id: u64) -> u64 {
-        if interpreter_id == 0 {
-            self.runtime.root_interpreter_id()
-        } else {
-            interpreter_id
-        }
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
@@ -569,23 +558,14 @@ mod document {
             })
         }
 
-        #[wasm_bindgen(js_name = rootInterpreterId)]
-        pub fn root_interpreter_id(&self) -> u64 {
-            self.project.root_interpreter_id()
-        }
-
         #[wasm_bindgen(js_name = renderedOutput)]
-        pub fn rendered_output(
-            &self,
-            interpreter_id: u64,
-            output_id: u64,
-        ) -> Result<JsValue, JsValue> {
-            self.project.rendered_output(interpreter_id, output_id)
+        pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
+            self.project.rendered_output(output_id)
         }
 
         #[wasm_bindgen(js_name = renderedSymbol)]
-        pub fn rendered_symbol(&self, interpreter_id: u64, name: &str) -> Result<JsValue, JsValue> {
-            self.project.rendered_symbol(interpreter_id, name)
+        pub fn rendered_symbol(&self, name: &str) -> Result<JsValue, JsValue> {
+            self.project.rendered_symbol(name)
         }
 
         #[wasm_bindgen(js_name = reset)]
@@ -2241,7 +2221,7 @@ mod browser_tests {
 
     #[cfg(feature = "served_project_authority")]
     fn assert_configured_answer(document: &WasmDocument) {
-        let configured_answer = document.rendered_symbol(0, "configured-answer").unwrap();
+        let configured_answer = document.rendered_symbol("configured-answer").unwrap();
         assert_eq!(
             Reflect::get(&configured_answer, &JsValue::from_str("inlineHtml"))
                 .unwrap()
@@ -2358,7 +2338,7 @@ mod browser_tests {
         let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-        let rendered = document.rendered_symbol(0, "answer").unwrap();
+        let rendered = document.rendered_symbol("answer").unwrap();
         assert!(!rendered.is_null());
         assert_eq!(
             Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
@@ -2367,7 +2347,7 @@ mod browser_tests {
                 .as_deref(),
             Some("42"),
         );
-        assert!(document.rendered_output(0, u64::MAX).unwrap().is_null());
+        assert!(document.rendered_output(u64::MAX).unwrap().is_null());
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
@@ -2388,7 +2368,7 @@ mod browser_tests {
 
         document.reset(&replacement).unwrap();
 
-        let answer = document.rendered_symbol(0, "answer").unwrap();
+        let answer = document.rendered_symbol("answer").unwrap();
         assert_eq!(
             Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
                 .unwrap()

@@ -1,6 +1,6 @@
 use super::builder::RuntimeBuilder;
 use super::resources::RuntimeResourceBinding;
-use super::transaction::{RuntimeExecutionTransaction, RuntimeHealth};
+use super::transaction::{ActiveRuntimeTransaction, RuntimeHealth};
 use crate::{
     ActiveRuntimeEffectPhase, CapabilityKernel, HostCallPolicy, HostInterfaceCatalog, HostRegistry,
     IdGenerator, MechStore, ModuleBuilder, RuntimeConfig, RuntimeHostInputDriver,
@@ -59,7 +59,7 @@ pub struct MechRuntime {
     pub(super) host_policy: Box<dyn HostCallPolicy>,
     pub(super) scheduler: Box<dyn Scheduler>,
     pub(super) scheduler_policy: SchedulerPolicy,
-    pub(super) active_transactions: HashMap<TransactionId, RuntimeExecutionTransaction>,
+    pub(super) active_transactions: HashMap<TransactionId, ActiveRuntimeTransaction>,
     pub(super) active_effect_phase: Rc<Cell<Option<ActiveRuntimeEffectPhase>>>,
     pub(super) health: RuntimeHealth,
     pub(super) module_builder: ModuleBuilder,

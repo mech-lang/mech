@@ -46,7 +46,7 @@ impl MechRuntime {
             return Ok(());
         }
 
-        Err(self.poison_program_operation(
+        Err(self.poison_runtime_operation(
             "abort_runtime_transaction",
             Some(transaction_id),
             reason,

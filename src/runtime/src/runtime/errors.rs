@@ -116,16 +116,16 @@ impl MechErrorKind for RuntimePoisoned {
 }
 
 #[derive(Debug, Clone)]
-pub struct RuntimeProgramRollbackFailed {
+pub struct RuntimeOperationRollbackFailed {
     pub operation: &'static str,
     pub transaction_id: Option<TransactionId>,
     pub original_error: String,
     pub rollback_failures: Vec<String>,
 }
 
-impl MechErrorKind for RuntimeProgramRollbackFailed {
+impl MechErrorKind for RuntimeOperationRollbackFailed {
     fn name(&self) -> &str {
-        "RuntimeProgramRollbackFailed"
+        "RuntimeOperationRollbackFailed"
     }
 
     fn message(&self) -> String {

@@ -568,7 +568,6 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
     else {
         panic!("source route must own a pure resident instance")
     };
-    assert_eq!(source_runtime.root_interpreter_id(), 0);
     assert_eq!(
         source_runtime.root_plan_len(),
         source_execution.instance.plan.execution_node_count()
@@ -578,22 +577,15 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
         .outputs()
         .first()
         .expect("the resident fixture must expose an output");
-    let output_id = u64::from(output.output.get());
     assert_eq!(
-        source_runtime.symbol_name_for_interpreter_output(0, output_id),
+        source_runtime.output_name(output.output),
         Some(output.name.clone())
     );
     assert!(
         source_runtime
-            .output_value_for_interpreter(0, output_id)
+            .output_value(output.output)
             .unwrap()
             .is_some()
-    );
-    assert!(
-        source_runtime
-            .output_value_for_interpreter(1, output_id)
-            .unwrap()
-            .is_none()
     );
     assert_eq!(
         source_runtime.root_symbol_values_all().unwrap().len(),
@@ -749,12 +741,11 @@ output
 fn empty_runtime_step_fails_without_an_execution_fallback() {
     let mut runtime = runtime();
 
-    assert_eq!(runtime.root_interpreter_id(), 0);
     assert_eq!(runtime.root_plan_len(), 0);
     assert!(runtime.root_symbol_values_all().unwrap().is_empty());
     assert!(
         runtime
-            .output_value_for_interpreter(0, u64::MAX)
+            .output_value(mech_core::OutputId::new(u32::MAX))
             .unwrap()
             .is_none()
     );

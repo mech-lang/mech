@@ -121,7 +121,7 @@ impl MechRuntime {
         }
 
         if let Some(transaction_id) = context.transaction {
-            let transaction = self.active_execution_transaction(transaction_id)?;
+            let transaction = self.active_runtime_transaction(transaction_id)?;
 
             if let Some(reason) = transaction.context_identity.mismatch_reason(context) {
                 return Err(MechError::new(

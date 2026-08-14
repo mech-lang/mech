@@ -1,14 +1,8 @@
 use crate::RuntimeValueSnapshot;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
-use mech_core::{MResult, MechError};
-
-const ROOT_INTERPRETER_ID: u64 = 0;
+use mech_core::{MResult, MechError, OutputId};
 
 impl MechRuntime {
-    pub fn root_interpreter_id(&self) -> u64 {
-        ROOT_INTERPRETER_ID
-    }
-
     pub fn root_plan_len(&self) -> usize {
         #[cfg(feature = "resident-routing")]
         if let Some((_, instance)) = self.resident_artifact_and_instance() {
@@ -17,68 +11,44 @@ impl MechRuntime {
         0
     }
 
-    pub fn output_value_for_interpreter(
-        &self,
-        interpreter_id: u64,
-        output_id: u64,
-    ) -> MResult<Option<RuntimeValueSnapshot>> {
+    pub fn output_value(&self, output_id: OutputId) -> MResult<Option<RuntimeValueSnapshot>> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, instance)) = self.resident_artifact_and_instance() {
-            if interpreter_id != self.root_interpreter_id() {
-                return Ok(None);
-            }
             let Some(index) = artifact
                 .outputs()
                 .iter()
-                .position(|output| u64::from(output.output.get()) == output_id)
+                .position(|output| output.output == output_id)
             else {
                 return Ok(None);
             };
             return super::super::resident_program::output_value(instance, index);
         }
-        let _ = (interpreter_id, output_id);
+        let _ = output_id;
         Ok(None)
     }
 
-    pub fn symbol_name_for_interpreter_output(
-        &self,
-        interpreter_id: u64,
-        output_id: u64,
-    ) -> Option<String> {
+    pub fn output_name(&self, output_id: OutputId) -> Option<String> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
-            if interpreter_id != self.root_interpreter_id() {
-                return None;
-            }
             return artifact
                 .outputs()
                 .iter()
-                .find(|output| u64::from(output.output.get()) == output_id)
+                .find(|output| output.output == output_id)
                 .map(|output| output.name.clone());
         }
-        let _ = (interpreter_id, output_id);
+        let _ = output_id;
         None
     }
 
-    pub fn symbol_values_for_interpreter(
+    pub fn program_output_values(
         &self,
-        interpreter_id: u64,
         names: &[String],
-    ) -> MResult<Option<Vec<(String, RuntimeValueSnapshot)>>> {
+    ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if self.resident_artifact_and_instance().is_some() {
-            if interpreter_id != self.root_interpreter_id() {
-                return Ok(None);
-            }
-            return self
-                .resident_symbol_values(names.iter().map(String::as_str))
-                .map(Some);
+            return self.resident_symbol_values(names.iter().map(String::as_str));
         }
-        if interpreter_id == ROOT_INTERPRETER_ID {
-            Ok(Some(Vec::new()))
-        } else {
-            Ok(None)
-        }
+        Ok(Vec::new())
     }
 
     pub fn root_symbol_value(&self, name: &str) -> MResult<RuntimeValueSnapshot> {

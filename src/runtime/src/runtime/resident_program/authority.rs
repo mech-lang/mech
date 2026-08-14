@@ -14,7 +14,7 @@ use crate::{
 use super::{ResidentRouteFailureClass, route_failure};
 
 #[derive(Clone, Debug)]
-pub(crate) struct ResidentGrant {
+pub(crate) struct ResidentAdmissionGrant {
     requirement: ApplicationRequirement,
     request: CapabilityRequest,
     capability: CapabilityId,
@@ -22,12 +22,12 @@ pub(crate) struct ResidentGrant {
 }
 
 #[derive(Clone, Debug, Default)]
-pub(crate) struct ResidentGrantSet {
-    grants: Box<[ResidentGrant]>,
+pub(crate) struct ResidentAdmissionProof {
+    grants: Box<[ResidentAdmissionGrant]>,
     requirements: BTreeSet<Vec<u8>>,
 }
 
-impl ResidentExternalAuthority for ResidentGrantSet {
+impl ResidentExternalAuthority for ResidentAdmissionProof {
     fn authorize(&self, requirement: &ApplicationRequirement) -> MResult<()> {
         let canonical = canonical_application_requirement_bytes(requirement)?;
         if self.requirements.contains(&canonical) {
@@ -43,7 +43,7 @@ impl ResidentExternalAuthority for ResidentGrantSet {
     }
 }
 
-impl ResidentGrantSet {
+impl ResidentAdmissionProof {
     pub(crate) fn revalidate(&self, runtime: &MechRuntime) -> MResult<()> {
         for grant in &self.grants {
             if !grant.authority_scope.contains(grant.capability) {
@@ -88,7 +88,7 @@ impl MechRuntime {
     pub(crate) fn build_resident_authority(
         &self,
         artifact: &ProgramArtifact,
-    ) -> MResult<ResidentGrantSet> {
+    ) -> MResult<ResidentAdmissionProof> {
         let context = self.runtime_context()?;
         let mut grants = Vec::with_capacity(artifact.requirements().len());
         let mut requirements = BTreeSet::new();
@@ -129,14 +129,14 @@ impl MechRuntime {
                 ));
             }
             requirements.insert(canonical_application_requirement_bytes(requirement)?);
-            grants.push(ResidentGrant {
+            grants.push(ResidentAdmissionGrant {
                 requirement: requirement.clone(),
                 request,
                 capability,
                 authority_scope: context.authority.clone(),
             });
         }
-        let grant_set = ResidentGrantSet {
+        let grant_set = ResidentAdmissionProof {
             grants: grants.into_boxed_slice(),
             requirements,
         };

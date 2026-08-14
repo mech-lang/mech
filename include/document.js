@@ -380,7 +380,6 @@ function outputAddress(element) {
   }
   return {
     outputId: BigInt(element.id.slice(0, separator)),
-    interpreterId: BigInt(element.id.slice(separator + 1)),
   };
 }
 
@@ -423,14 +422,12 @@ function prepareVarPlaceholders() {
 function createOutputEntry(address, rendered) {
   const row = document.createElement("article");
   row.className = "mech-document-output-entry";
-  row.dataset.mechInterpreterId = address.interpreterId.toString();
   row.dataset.mechOutputId = address.outputId.toString();
   row.dataset.mechRenderedKind = rendered.kind;
 
   const heading = document.createElement("header");
   heading.className = "mech-document-output-heading";
-  heading.textContent =
-    `interpreter ${address.interpreterId} · output ${address.outputId} · ${rendered.kind}`;
+  heading.textContent = `output ${address.outputId} · ${rendered.kind}`;
   const body = document.createElement("div");
   body.className = "mech-document-output-html";
   body.innerHTML = rendered.blockHtml;
@@ -457,10 +454,7 @@ function renderValues() {
   for (const output of state.root?.querySelectorAll(".mech-block-output[id]") || []) {
     try {
       const address = outputAddress(output);
-      const rendered = state.document.renderedOutput(
-        address.interpreterId,
-        address.outputId,
-      );
+      const rendered = state.document.renderedOutput(address.outputId);
       if (rendered !== null) {
         output.innerHTML = rendered.blockHtml;
         outputEntries.push({ address, rendered });
@@ -472,10 +466,7 @@ function renderValues() {
   for (const output of state.root?.querySelectorAll(".mech-inline-mech-code[id]") || []) {
     try {
       const address = outputAddress(output);
-      const rendered = state.document.renderedOutput(
-        address.interpreterId,
-        address.outputId,
-      );
+      const rendered = state.document.renderedOutput(address.outputId);
       if (rendered !== null) {
         output.innerHTML = rendered.inlineHtml;
       }
@@ -485,10 +476,7 @@ function renderValues() {
   }
   for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
     try {
-      const rendered = state.document.renderedSymbol(
-        0n,
-        placeholder.dataset.mechVarName,
-      );
+      const rendered = state.document.renderedSymbol(placeholder.dataset.mechVarName);
       if (rendered !== null) {
         placeholder.innerHTML = rendered.inlineHtml;
       }

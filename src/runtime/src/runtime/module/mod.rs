@@ -190,7 +190,7 @@ impl MechRuntime {
         }
 
         let module = ModuleRecord::new(id, canonical_uri).with_description(name.to_string());
-        self.active_execution_transaction_mut(transaction_id)?
+        self.active_runtime_transaction_mut(transaction_id)?
             .modules
             .stage_module(module)?;
         Ok(id)
@@ -623,7 +623,7 @@ impl MechRuntime {
             }
 
             let staged = self
-                .active_execution_transaction_mut(transaction_id)?
+                .active_runtime_transaction_mut(transaction_id)?
                 .modules
                 .stage_version(version)?;
 

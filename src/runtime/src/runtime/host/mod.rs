@@ -115,7 +115,7 @@ impl MechRuntime {
                     failed_host_audit,
                 ) {
                     Ok(()) => Err(error),
-                    Err(cleanup_error) => Err(self.poison_program_operation(
+                    Err(cleanup_error) => Err(self.poison_runtime_operation(
                         "call_host_with_context",
                         transaction_id,
                         original,

@@ -423,7 +423,7 @@ impl RuntimeBuilder {
                 runtime.attached_input_driver_count = 0;
                 runtime.input_driver_cleanup_armed = false;
                 if !cleanup_failures.is_empty() {
-                    return Err(runtime.poison_program_operation(
+                    return Err(runtime.poison_runtime_operation(
                         "build",
                         None,
                         format!("{:?}", error),

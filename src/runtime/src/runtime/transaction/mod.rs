@@ -18,7 +18,7 @@ pub(in crate::runtime) use commit::RuntimeCommitResolution;
 pub(super) use context::{RuntimeContextCheckpoint, RuntimeTransactionContextIdentity};
 pub(super) use effects::RuntimeEffectJournal;
 pub(super) use envelope::{
-    RuntimeExecutionTransaction, RuntimeExecutionTransactionMode, RuntimeExecutionTransactionState,
+    ActiveRuntimeTransaction, ActiveRuntimeTransactionState, RuntimeTransactionScope,
 };
 pub use health::{RuntimeHealth, RuntimePoisonRecord};
 pub(super) use modules::RuntimeModuleJournal;

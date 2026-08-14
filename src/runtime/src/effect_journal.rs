@@ -1,6 +1,6 @@
 //! Runtime-owned effect journal and lifecycle mechanics.
 
-use super::transaction::{RuntimeExecutionTransactionState, RuntimeHealth, RuntimePoisonRecord};
+use super::transaction::{ActiveRuntimeTransactionState, RuntimeHealth, RuntimePoisonRecord};
 use crate::runtime::MechRuntime;
 use crate::runtime::extension::{catch_extension, invoke_extension};
 use crate::runtime::state::ScopedRuntimeState;
@@ -790,8 +790,8 @@ impl MechRuntime {
         self.validate_context_for_runtime(context)?;
 
         let transaction_id = Self::context_transaction_id(context)?;
-        if self.active_execution_transaction(transaction_id)?.state
-            != RuntimeExecutionTransactionState::Active
+        if self.active_runtime_transaction(transaction_id)?.state
+            != ActiveRuntimeTransactionState::Active
         {
             return Err(MechError::new(
                 RuntimeInvalidOperationError {
@@ -811,7 +811,7 @@ impl MechRuntime {
         let cost = metadata.cost;
         context.charge_bytes(cost.bytes)?;
         context.charge_items(cost.items)?;
-        let transaction = self.active_execution_transaction(transaction_id)?;
+        let transaction = self.active_runtime_transaction(transaction_id)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
             transaction.store.gate_a_staged_item_count(),
@@ -819,7 +819,7 @@ impl MechRuntime {
         let store_before = transaction.store.clone();
         let effect_mark = transaction.effects.mark();
         let effect_id = self
-            .active_execution_transaction_mut(transaction_id)?
+            .active_runtime_transaction_mut(transaction_id)?
             .effects
             .stage(transaction_id, effect);
 
@@ -838,7 +838,7 @@ impl MechRuntime {
                 ActiveRuntimeEffectPhase::Aborting,
             );
             let cleanup = {
-                let transaction = self.active_execution_transaction_mut(transaction_id)?;
+                let transaction = self.active_runtime_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 transaction.effects.rollback_to(effect_mark)
             };
@@ -869,8 +869,8 @@ impl MechRuntime {
         self.validate_context_for_runtime(context)?;
 
         let transaction_id = Self::context_transaction_id(context)?;
-        if self.active_execution_transaction(transaction_id)?.state
-            != RuntimeExecutionTransactionState::Active
+        if self.active_runtime_transaction(transaction_id)?.state
+            != ActiveRuntimeTransactionState::Active
         {
             return Err(MechError::new(
                 RuntimeInvalidOperationError {
@@ -890,7 +890,7 @@ impl MechRuntime {
         let cost = metadata.cost;
         context.charge_bytes(cost.bytes)?;
         context.charge_items(cost.items)?;
-        let transaction = self.active_execution_transaction(transaction_id)?;
+        let transaction = self.active_runtime_transaction(transaction_id)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
             transaction.store.gate_a_staged_item_count(),
@@ -898,7 +898,7 @@ impl MechRuntime {
         let store_before = transaction.store.clone();
         let effect_mark = transaction.effects.mark();
         let effect_id = self
-            .active_execution_transaction_mut(transaction_id)?
+            .active_runtime_transaction_mut(transaction_id)?
             .effects
             .stage_resource_write(transaction_id, effect, resource_identity, path, value);
 
@@ -917,7 +917,7 @@ impl MechRuntime {
                 ActiveRuntimeEffectPhase::Aborting,
             );
             let cleanup = {
-                let transaction = self.active_execution_transaction_mut(transaction_id)?;
+                let transaction = self.active_runtime_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 transaction.effects.rollback_to(effect_mark)
             };

@@ -1,6 +1,6 @@
 use super::extension::{catch_extension, invoke_extension};
 use super::transaction::{
-    RuntimeExecutionTransaction, RuntimeExecutionTransactionState, check_transactional_capability,
+    ActiveRuntimeTransaction, ActiveRuntimeTransactionState, check_transactional_capability,
 };
 use super::{MechRuntime, RuntimeInvalidOperationError};
 use crate::{
@@ -22,7 +22,7 @@ pub(crate) struct RuntimeExecutionSession<'a> {
     pub(crate) runtime_id: RuntimeId,
     pub(crate) max_events: Option<usize>,
     pub(crate) context: &'a mut RuntimeContext,
-    pub(crate) transaction: &'a mut RuntimeExecutionTransaction,
+    pub(crate) transaction: &'a mut ActiveRuntimeTransaction,
     pub(crate) id_generator: &'a mut dyn IdGenerator,
     pub(crate) store: &'a mut dyn MechStore,
     pub(crate) capability_kernel: &'a mut dyn CapabilityKernel,
@@ -35,7 +35,7 @@ pub(crate) struct RuntimeExecutionSession<'a> {
 struct RuntimeSessionServices<'a> {
     runtime_id: RuntimeId,
     max_events: Option<usize>,
-    transaction: &'a mut RuntimeExecutionTransaction,
+    transaction: &'a mut ActiveRuntimeTransaction,
     id_generator: &'a mut dyn IdGenerator,
     store: &'a mut dyn MechStore,
     capability_kernel: &'a mut dyn CapabilityKernel,
@@ -70,7 +70,7 @@ impl RuntimeSessionServices<'_> {
                 None,
             ));
         }
-        if self.transaction.state != RuntimeExecutionTransactionState::Active {
+        if self.transaction.state != ActiveRuntimeTransactionState::Active {
             return Err(MechError::new(
                 RuntimeInvalidOperationError {
                     operation: "runtime_execution_session",

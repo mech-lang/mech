@@ -5,8 +5,8 @@ use crate::runtime::MechRuntime;
 use crate::runtime::state::ScopedRuntimeState;
 use crate::{
     ActiveRuntimeEffectPhase, RuntimeContext, RuntimeEffectId, RuntimeEffectOperationReentrant,
-    RuntimeEventKind, RuntimeHealth, RuntimePoisonRecord, RuntimePoisoned,
-    RuntimeProgramRollbackFailed, TransactionId,
+    RuntimeEventKind, RuntimeHealth, RuntimeOperationRollbackFailed, RuntimePoisonRecord,
+    RuntimePoisoned, TransactionId,
 };
 use mech_core::{MResult, MechError};
 use std::collections::HashSet;
@@ -66,7 +66,7 @@ impl MechRuntime {
         Ok(())
     }
 
-    pub(in crate::runtime) fn poison_program_operation(
+    pub(in crate::runtime) fn poison_runtime_operation(
         &mut self,
         operation: &'static str,
         transaction_id: Option<TransactionId>,
@@ -80,7 +80,7 @@ impl MechRuntime {
             rollback_failures: rollback_failures.clone(),
         });
         MechError::new(
-            RuntimeProgramRollbackFailed {
+            RuntimeOperationRollbackFailed {
                 operation,
                 transaction_id,
                 original_error,
@@ -96,7 +96,7 @@ impl MechRuntime {
         transaction_id: TransactionId,
     ) -> MResult<RuntimeOperationSavepoint> {
         context.prepare_event_checkpoint();
-        let transaction = self.active_execution_transaction(transaction_id)?;
+        let transaction = self.active_runtime_transaction(transaction_id)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
             transaction.store.gate_a_staged_item_count(),

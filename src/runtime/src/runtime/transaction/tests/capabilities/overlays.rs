@@ -51,7 +51,7 @@ fn failed_retained_operation_truncates_capability_overlay() {
     assert_eq!(result.unwrap_err().kind_name(), "GenericError");
     assert!(
         runtime
-            .active_execution_transaction(transaction_id)
+            .active_runtime_transaction(transaction_id)
             .unwrap()
             .capabilities
             .is_empty()

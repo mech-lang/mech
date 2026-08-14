@@ -328,7 +328,7 @@ impl MechRuntime {
 
         if let Some(transaction_id) = context.transaction {
             if self
-                .active_execution_transaction(transaction_id)?
+                .active_runtime_transaction(transaction_id)?
                 .capabilities
                 .provisional(id)
                 .is_some()
@@ -340,7 +340,7 @@ impl MechRuntime {
                 ));
             }
 
-            let transaction = self.active_execution_transaction(transaction_id)?;
+            let transaction = self.active_runtime_transaction(transaction_id)?;
             #[cfg(any(test, feature = "runtime_bench_probes"))]
             crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
                 transaction.store.gate_a_staged_item_count(),
@@ -349,14 +349,14 @@ impl MechRuntime {
             let overlay_mark = transaction.capabilities.mark();
             let context_authority_before = context.authority.clone();
 
-            self.active_execution_transaction_mut(transaction_id)?
+            self.active_runtime_transaction_mut(transaction_id)?
                 .capabilities
                 .stage_grant(capability)?;
             if let Err(error) = self.emit_event_to_context(
                 context,
                 RuntimeEventKind::CapabilityGranted { capability_id: id },
             ) {
-                let transaction = self.active_execution_transaction_mut(transaction_id)?;
+                let transaction = self.active_runtime_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 let rollback_result = transaction.capabilities.rollback_to(overlay_mark);
                 context.authority = context_authority_before;
@@ -429,7 +429,7 @@ impl MechRuntime {
 
         if let Some(transaction_id) = context.transaction {
             let staged = self
-                .active_execution_transaction(transaction_id)?
+                .active_runtime_transaction(transaction_id)?
                 .capabilities
                 .provisional(capability);
             let live = if staged.is_none() {
@@ -449,7 +449,7 @@ impl MechRuntime {
                 ));
             }
 
-            let transaction = self.active_execution_transaction(transaction_id)?;
+            let transaction = self.active_runtime_transaction(transaction_id)?;
             #[cfg(any(test, feature = "runtime_bench_probes"))]
             crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
                 transaction.store.gate_a_staged_item_count(),
@@ -458,7 +458,7 @@ impl MechRuntime {
             let overlay_mark = transaction.capabilities.mark();
             let context_authority_before = context.authority.clone();
 
-            self.active_execution_transaction_mut(transaction_id)?
+            self.active_runtime_transaction_mut(transaction_id)?
                 .capabilities
                 .stage_revocation(capability)?;
             context.remove_capability(capability);
@@ -468,7 +468,7 @@ impl MechRuntime {
                     capability_id: capability,
                 },
             ) {
-                let transaction = self.active_execution_transaction_mut(transaction_id)?;
+                let transaction = self.active_runtime_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 let rollback_result = transaction.capabilities.rollback_to(overlay_mark);
                 context.authority = context_authority_before;
@@ -543,13 +543,13 @@ impl MechRuntime {
         self.validate_context_for_runtime(context)?;
         if let Some(transaction_id) = context.transaction {
             let provisional = self
-                .active_execution_transaction(transaction_id)?
+                .active_runtime_transaction(transaction_id)?
                 .capabilities
                 .preview_check(request, &context.authority)?;
             if let Some(capability) = provisional {
                 return Ok(capability);
             }
-            let transaction = self.active_execution_transaction(transaction_id)?;
+            let transaction = self.active_runtime_transaction(transaction_id)?;
             let revocations = transaction.capabilities.revocation_ids();
             let pending_uses = transaction.capabilities.pending_uses().clone();
             return self.capability_kernel.preview_scoped_with_transaction(

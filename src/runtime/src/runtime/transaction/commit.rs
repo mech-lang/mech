@@ -1,9 +1,8 @@
 //! Runtime transaction commit and durable-publication protocol.
 
 use super::{
-    RuntimeContextCheckpoint, RuntimeExecutionTransaction, RuntimeExecutionTransactionMode,
-    RuntimeExecutionTransactionState, RuntimeHealth, RuntimePoisonRecord,
-    RuntimeTransactionContextIdentity,
+    ActiveRuntimeTransaction, ActiveRuntimeTransactionState, RuntimeContextCheckpoint,
+    RuntimeHealth, RuntimePoisonRecord, RuntimeTransactionContextIdentity, RuntimeTransactionScope,
 };
 use crate::runtime::MechRuntime;
 use crate::runtime::state::ScopedRuntimeState;
@@ -44,7 +43,7 @@ fn module_journal_validation_error(
 
 impl MechRuntime {
     fn validate_runtime_module_journal(&self, transaction_id: TransactionId) -> MResult<()> {
-        let journal = &self.active_execution_transaction(transaction_id)?.modules;
+        let journal = &self.active_runtime_transaction(transaction_id)?.modules;
         if journal.is_empty() {
             return Ok(());
         }
@@ -176,13 +175,13 @@ impl MechRuntime {
 
     pub fn begin_transaction(&mut self, context: &mut RuntimeContext) -> MResult<TransactionId> {
         self.ensure_runtime_mutation_allowed("begin_transaction")?;
-        self.begin_runtime_transaction_internal(context, RuntimeExecutionTransactionMode::Explicit)
+        self.begin_runtime_transaction_internal(context, RuntimeTransactionScope::Explicit)
     }
 
     pub(in crate::runtime) fn begin_runtime_transaction_internal(
         &mut self,
         context: &mut RuntimeContext,
-        mode: RuntimeExecutionTransactionMode,
+        scope: RuntimeTransactionScope,
     ) -> MResult<TransactionId> {
         self.ensure_runtime_mutation_allowed("begin_runtime_transaction_internal")?;
         self.validate_context_for_runtime(context)?;
@@ -199,9 +198,9 @@ impl MechRuntime {
 
         let context_baseline = RuntimeContextCheckpoint::capture(context);
         let id = self.next_transaction_id();
-        let transaction = RuntimeExecutionTransaction::new(
+        let transaction = ActiveRuntimeTransaction::new(
             RuntimeTransaction::new(id, context.subject.clone()),
-            mode,
+            scope,
             RuntimeTransactionContextIdentity::capture(context),
             context_baseline.clone(),
         );
@@ -272,12 +271,12 @@ impl MechRuntime {
 
         let transaction_id = Self::context_transaction_id(context)?;
         let access = self
-            .active_execution_transaction(transaction_id)?
+            .active_runtime_transaction(transaction_id)?
             .context_baseline
             .access_delta(context);
 
         let journal_failures = self
-            .active_execution_transaction(transaction_id)?
+            .active_runtime_transaction(transaction_id)?
             .effects
             .validate_active(transaction_id);
         if !journal_failures.is_empty() {
@@ -292,8 +291,8 @@ impl MechRuntime {
         self.validate_runtime_module_journal(transaction_id)?;
 
         {
-            let transaction = self.active_execution_transaction_mut(transaction_id)?;
-            if transaction.state != RuntimeExecutionTransactionState::Active {
+            let transaction = self.active_runtime_transaction_mut(transaction_id)?;
+            if transaction.state != ActiveRuntimeTransactionState::Active {
                 return Err(MechError::new(
                     RuntimeInvalidOperationError {
                         operation: "commit_runtime_transaction",
@@ -302,7 +301,7 @@ impl MechRuntime {
                     None,
                 ));
             }
-            transaction.state = RuntimeExecutionTransactionState::Committing;
+            transaction.state = ActiveRuntimeTransactionState::Committing;
         }
 
         let mut envelope = self
@@ -319,7 +318,7 @@ impl MechRuntime {
                 match Self::build_runtime_store_commit(&mut envelope, &access, &commit_event) {
                     Ok(commit) => commit,
                     Err(error) => {
-                        envelope.state = RuntimeExecutionTransactionState::Active;
+                        envelope.state = ActiveRuntimeTransactionState::Active;
                         self.active_transactions.insert(transaction_id, envelope);
                         return Err(error);
                     }
@@ -332,7 +331,7 @@ impl MechRuntime {
                     {
                         return Ok(resolution);
                     }
-                    envelope.state = RuntimeExecutionTransactionState::Active;
+                    envelope.state = ActiveRuntimeTransactionState::Active;
                     self.active_transactions.insert(transaction_id, envelope);
                     return Err(error);
                 }
@@ -381,7 +380,7 @@ impl MechRuntime {
                     RuntimeEventKind::EffectAborted { effect_id },
                 );
             }
-            envelope.state = RuntimeExecutionTransactionState::Active;
+            envelope.state = ActiveRuntimeTransactionState::Active;
             self.active_transactions.insert(transaction_id, envelope);
             if cleanup.is_empty() {
                 return Err(step.error);
@@ -420,7 +419,7 @@ impl MechRuntime {
                             RuntimeEventKind::EffectAborted { effect_id },
                         );
                     }
-                    envelope.state = RuntimeExecutionTransactionState::Active;
+                    envelope.state = ActiveRuntimeTransactionState::Active;
                     self.active_transactions.insert(transaction_id, envelope);
                     if aborted.is_empty() {
                         return Err(error);
@@ -439,7 +438,7 @@ impl MechRuntime {
             let original_error_text = format!("{:?}", error);
             let cleanup =
                 self.cleanup_before_store_retry(&mut envelope, capability_checkpoint, context);
-            envelope.state = RuntimeExecutionTransactionState::Active;
+            envelope.state = ActiveRuntimeTransactionState::Active;
             self.active_transactions.insert(transaction_id, envelope);
             if cleanup.is_empty() {
                 return Err(error);
@@ -462,7 +461,7 @@ impl MechRuntime {
             let original_error_text = format!("{:?}", step.error);
             let cleanup =
                 self.cleanup_before_store_retry(&mut envelope, capability_checkpoint, context);
-            envelope.state = RuntimeExecutionTransactionState::Active;
+            envelope.state = ActiveRuntimeTransactionState::Active;
             self.active_transactions.insert(transaction_id, envelope);
             if cleanup.is_empty() {
                 return Err(step.error);
@@ -483,7 +482,7 @@ impl MechRuntime {
                 let original_error_text = format!("{:?}", error);
                 let cleanup =
                     self.cleanup_before_store_retry(&mut envelope, capability_checkpoint, context);
-                envelope.state = RuntimeExecutionTransactionState::Active;
+                envelope.state = ActiveRuntimeTransactionState::Active;
                 self.active_transactions.insert(transaction_id, envelope);
                 if cleanup.is_empty() {
                     return Err(error);
@@ -508,7 +507,7 @@ impl MechRuntime {
                 let original_error_text = format!("{:?}", error);
                 let cleanup =
                     self.cleanup_before_store_retry(&mut envelope, capability_checkpoint, context);
-                envelope.state = RuntimeExecutionTransactionState::Active;
+                envelope.state = ActiveRuntimeTransactionState::Active;
                 self.active_transactions.insert(transaction_id, envelope);
                 if cleanup.is_empty() {
                     return Err(error);
@@ -644,7 +643,7 @@ impl MechRuntime {
 
     fn cleanup_before_store_retry(
         &mut self,
-        envelope: &mut RuntimeExecutionTransaction,
+        envelope: &mut ActiveRuntimeTransaction,
         capability_checkpoint: Option<Box<dyn CapabilityKernelCheckpoint>>,
         context: &mut RuntimeContext,
     ) -> Vec<String> {
@@ -714,7 +713,7 @@ impl MechRuntime {
 
     fn stage_effect_lifecycle_event(
         &mut self,
-        envelope: &mut RuntimeExecutionTransaction,
+        envelope: &mut ActiveRuntimeTransaction,
         context: &mut RuntimeContext,
         kind: RuntimeEventKind,
     ) -> MResult<EventId> {
@@ -739,7 +738,7 @@ impl MechRuntime {
         Ok(id)
     }
 
-    fn apply_capability_overlay(&mut self, envelope: &RuntimeExecutionTransaction) -> MResult<()> {
+    fn apply_capability_overlay(&mut self, envelope: &ActiveRuntimeTransaction) -> MResult<()> {
         for (_, capability) in envelope.capabilities.grants() {
             self.capability_kernel
                 .grant(CapabilityGrant::new(capability))?;
@@ -755,7 +754,7 @@ impl MechRuntime {
     }
 
     fn build_runtime_store_commit(
-        envelope: &mut RuntimeExecutionTransaction,
+        envelope: &mut ActiveRuntimeTransaction,
         access: &AccessSet,
         commit_event: &RuntimeEvent,
     ) -> MResult<RuntimeStoreCommit> {

@@ -102,7 +102,7 @@ fn store_failure_restores_provisional_usage_delta() {
     assert_eq!(observed_kernel.successful_uses_for_test(id), 0);
     assert_eq!(
         runtime
-            .active_execution_transaction(transaction_id)
+            .active_runtime_transaction(transaction_id)
             .unwrap()
             .capabilities
             .usage_deltas()
