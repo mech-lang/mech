@@ -253,6 +253,47 @@ pub struct MatrixValue {
 }
 
 impl MatrixValue {
+    /// Builds a canonical dense boolean matrix payload from values whose
+    /// schema and shape were already validated by resident activation.
+    pub fn from_bool_elements(elements: Box<[bool]>) -> Self {
+        Self {
+            elements: SequenceStorage::Bool(elements),
+        }
+    }
+
+    /// Builds a canonical dense index matrix payload from values whose schema
+    /// and shape were already validated by resident activation.
+    pub fn from_index_elements(elements: Box<[u64]>) -> Self {
+        Self {
+            elements: SequenceStorage::Index(elements),
+        }
+    }
+
+    /// Builds a canonical dense `f64` matrix payload from values whose schema
+    /// and shape were already validated by resident activation.
+    pub fn from_f64_elements(elements: Box<[F64Bits]>) -> Self {
+        Self {
+            elements: SequenceStorage::F64(elements),
+        }
+    }
+
+    /// Builds a canonical dense string matrix payload from values whose
+    /// schema and shape were already validated by resident activation.
+    pub fn from_string_elements(elements: Box<[Box<str>]>) -> Self {
+        Self {
+            elements: SequenceStorage::String(elements),
+        }
+    }
+
+    /// Builds a canonical dense matrix of snapshot-backed elements. The
+    /// resident binder must validate every element against the matrix schema
+    /// before calling this constructor.
+    pub fn from_value_elements(elements: Box<[ValueData]>) -> Self {
+        Self {
+            elements: SequenceStorage::Values(elements),
+        }
+    }
+
     pub fn elements(&self) -> SequenceView<'_> {
         self.elements.view()
     }

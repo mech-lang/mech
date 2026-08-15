@@ -478,6 +478,63 @@ pub fn f64_set_snapshot_contains(value: &Value, candidate: f64) -> Option<bool> 
         })
 }
 
+/// Constructs the canonical output of removing one `f64` element from a
+/// resident set snapshot. Key comparison uses the same normalization as set
+/// construction, including signed zero and NaN payloads.
+pub fn build_f64_set_snapshot_after_remove(
+    schema: SchemaId,
+    schema_key: SchemaKey,
+    shape: ShapeInstance,
+    expected_cardinality: usize,
+    source: &Value,
+    candidate: f64,
+) -> Option<Value> {
+    let ValueData::Set(set) = source.data() else {
+        return None;
+    };
+    let element_schema = SchemaBody::FloatingPoint(FloatWidth::W64);
+    let candidate = super::relations::normalized_key_data(
+        &element_schema,
+        ValueData::F64(super::F64Bits::from_f64(candidate)),
+    )
+    .ok()?;
+    let values = set
+        .elements()
+        .iter()
+        .filter_map(|element| {
+            let equal =
+                super::relations::compare_key_data(&element_schema, element.data(), &candidate)
+                    .ok()
+                    == Some(core::cmp::Ordering::Equal);
+            if equal {
+                None
+            } else {
+                match element.data() {
+                    ValueData::F64(value) => Some(value.to_f64()),
+                    _ => None,
+                }
+            }
+        })
+        .collect::<Vec<_>>();
+    if values.len()
+        + usize::from(f64_set_snapshot_contains(
+            source,
+            candidate_f64(&candidate),
+        )?)
+        != set.elements().len()
+    {
+        return None;
+    }
+    build_f64_set_snapshot(schema, schema_key, shape, expected_cardinality, &values)
+}
+
+fn candidate_f64(candidate: &ValueData) -> f64 {
+    match candidate {
+        ValueData::F64(value) => value.to_f64(),
+        _ => unreachable!("f64 candidate normalization preserves its data kind"),
+    }
+}
+
 pub(super) fn finalize_value(
     draft: ValueDraft,
     context: &SnapshotValidationContext<'_>,

@@ -1,16 +1,15 @@
-error[E0308]: mismatched types
-  --> tests/ui/sealed/interpreter_advance_participating_without_capability.rs:12:5
-   |
-10 |   let _ = interpreter.advance_reactive_turn_participating(
-   |                       ----------------------------------- arguments to this method are incorrect
-11 |     &[],
-12 |     &mut forged,
-   |     ^^^^^^^^^^^ expected `&mut ReactiveJournalParticipant<'_>`, found `&mut ForgedParticipant`
-   |
-   = note: expected mutable reference `&mut ReactiveJournalParticipant<'_>`
-              found mutable reference `&mut ForgedParticipant`
-note: method defined here
-  --> $WORKSPACE/src/engine/src/interpreter/mod.rs
-   |
-   |     pub fn advance_reactive_turn_participating(
-   |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+error[E0603]: struct `Interpreter` is private
+ --> tests/ui/sealed/interpreter_advance_participating_without_capability.rs:2:18
+  |
+2 | use mech_engine::Interpreter;
+  |                  ^^^^^^^^^^^ private struct
+  |
+note: the struct `Interpreter` is defined here
+ --> $WORKSPACE/src/engine/src/lib.rs
+  |
+  |     Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
+  |     ^^^^^^^^^^^
+help: import `Interpreter` directly
+  |
+2 | use mech_engine::interpreter::Interpreter;
+  |                  +++++++++++++

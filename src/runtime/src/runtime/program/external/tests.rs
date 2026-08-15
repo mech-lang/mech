@@ -26,8 +26,8 @@ use crate::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeTransactionalEffect, TransactionId,
-    config::ResidentDurabilityPolicy,
+    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+    RuntimeTransactionalEffect, TransactionId, config::ResidentDurabilityPolicy,
 };
 
 use super::*;
@@ -271,6 +271,14 @@ impl RuntimeResourceProvider for EffectProvider {
             },
             None,
         ))
+    }
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        if !self.base_uris().contains(&request.base_uri) || request.path.is_empty() {
+            return Err(test_error(
+                "D3 fixture write is outside its declared target",
+            ));
+        }
+        Ok(())
     }
     fn prepare_resident_write(
         &self,

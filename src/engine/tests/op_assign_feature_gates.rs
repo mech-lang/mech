@@ -1,20 +1,22 @@
-#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
-use mech_core::FunctionCatalogBuilder;
-#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
+#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign"))]
+use mech_core::{FunctionCatalogBuilder, NoMechExecutionServices};
+#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign"))]
+use mech_engine::{CompilerPlanningConfig, CompilerPlanningProgram};
+#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign"))]
 use std::sync::Arc;
 
-#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
+#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign"))]
 fn unavailable_operation(source: &str) -> String {
+    let tree = mech_syntax::parser::parse(source).unwrap();
     let mut builder = FunctionCatalogBuilder::new();
-    crate::install_intrinsic_runtime(&mut builder).unwrap();
-    crate::install_intrinsic_source(&mut builder).unwrap();
+    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    mech_engine::install_intrinsic_source(&mut builder).unwrap();
     let catalog = Arc::new(builder.build().unwrap());
-    let mut program = crate::CompilerPlanningProgram::with_function_catalog(
-        crate::CompilerPlanningConfig::default(),
-        catalog,
-    );
+    let mut program =
+        CompilerPlanningProgram::with_function_catalog(CompilerPlanningConfig::default(), catalog);
+    let mut services = NoMechExecutionServices;
     program
-        .plan_source_for_test(source)
+        .plan_tree_with_services(&tree, &mut services)
         .unwrap_err()
         .kind_message()
 }

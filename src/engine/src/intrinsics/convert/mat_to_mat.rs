@@ -5,6 +5,7 @@ use nalgebra::{ArrayStorage, Const, DVector, Matrix3, Matrix4, Scalar};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
+use std::sync::LazyLock;
 
 #[derive(Debug)]
 pub struct ConvertMatPassthrough {
@@ -84,6 +85,9 @@ where
     }
     fn out(&self) -> LegacyValue {
         self.out.to_value()
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_CONVERSION_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
@@ -807,6 +811,28 @@ impl_conversion_mat_to_mat_fxn! {
 }
 
 pub struct ConvertMatToMat {}
+
+static PURE_MATRIX_CONVERSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 impl FunctionSpecializer for ConvertMatToMat {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {

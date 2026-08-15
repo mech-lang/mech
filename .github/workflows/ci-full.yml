@@ -73,6 +73,7 @@ jobs:
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
           python3 scripts/check-resident-activation-contract.py
+          python3 scripts/check-compiler-planning-quarantine.py
           python3 scripts/generate-d1-contract.py --check
           python3 scripts/check-d1-contract.py
           python3 scripts/generate-d2-contract.py --check
@@ -89,6 +90,7 @@ jobs:
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
             scripts/tests/test_check_resident_activation_contract.py \
+            scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_generate_d1_contract.py \
             scripts/tests/test_check_d1_contract.py \
             scripts/tests/test_generate_d2_contract.py \

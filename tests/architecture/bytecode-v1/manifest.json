@@ -41,7 +41,26 @@
           "u64",
           "u8"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "bool",
+          "c64",
+          "f32",
+          "f64",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "r64",
+          "resident-routing",
+          "runtime",
+          "string",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8"
+        ]
       },
       "construction": "authoritative BytecodeProgram containing every canonical scalar constant; returns the String constant",
       "expected_output": "bytecode-v1 🦀",
@@ -76,7 +95,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "3d36f28a1a000b13ba550513d69a14dfee9f29e156b2869dc3bc9a397a53d5e0",
+      "native_plan_sha256": "54b911b1a59510a6b77373ba2e1cc5f72b132718a5ad4c14de27b9419e839181",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -130,6 +149,34 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "c64",
+            "f32",
+            "f64",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "r64",
+            "resident-routing",
+            "runtime",
+            "string",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -490,7 +537,41 @@
           "vector4",
           "vectord"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "bool",
+          "c64",
+          "f32",
+          "f64",
+          "i128",
+          "i16",
+          "i32",
+          "i64",
+          "i8",
+          "matrix1",
+          "matrix2",
+          "matrix2x3",
+          "matrix3",
+          "matrix3x2",
+          "matrix4",
+          "matrixd",
+          "r64",
+          "resident-routing",
+          "row_vector2",
+          "row_vector3",
+          "row_vector4",
+          "row_vectord",
+          "runtime",
+          "string",
+          "u128",
+          "u16",
+          "u32",
+          "u64",
+          "u8",
+          "vector2",
+          "vector3",
+          "vector4",
+          "vectord"
+        ]
       },
       "construction": "authoritative BytecodeProgram containing every MatrixStorage tag and every matrix element codec family; returns Matrix2<f64>",
       "expected_output": [
@@ -534,7 +615,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "9569ee66ace0c7b2815d9417ceb383e98425e14b7dcfad75d0a46c5b89aece76",
+      "native_plan_sha256": "5bf6f7e07f5310d2b632441f56d7dbf0071aae5394fdb4f2d13ce293e71845ac",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -618,6 +699,49 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "c64",
+            "f32",
+            "f64",
+            "i128",
+            "i16",
+            "i32",
+            "i64",
+            "i8",
+            "matrix1",
+            "matrix2",
+            "matrix2x3",
+            "matrix3",
+            "matrix3x2",
+            "matrix4",
+            "matrixd",
+            "r64",
+            "resident-routing",
+            "row_vector2",
+            "row_vector3",
+            "row_vector4",
+            "row_vectord",
+            "runtime",
+            "string",
+            "u128",
+            "u16",
+            "u32",
+            "u64",
+            "u8",
+            "vector2",
+            "vector3",
+            "vector4",
+            "vectord"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -1342,7 +1466,21 @@
           "tuple",
           "u8"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "atom",
+          "enum",
+          "i16",
+          "kind_annotation",
+          "map",
+          "record",
+          "resident-routing",
+          "runtime",
+          "set",
+          "string",
+          "table",
+          "tuple",
+          "u8"
+        ]
       },
       "construction": "authoritative BytecodeProgram containing atom, enum, tuple, record, map, set, table, option-none, option-some, reference, and kind constants",
       "expected_output": [
@@ -1380,7 +1518,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7819b9f9343c2a90181561e35fc3ee81b1cda1bcf8f2d2e28c8679cd3330fd12",
+      "native_plan_sha256": "528c4a249392d0b9a059c12979cd12bff1ef6b4480e844fb6418422d9ca8a053",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1424,6 +1562,29 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "atom",
+            "enum",
+            "i16",
+            "kind_annotation",
+            "map",
+            "record",
+            "resident-routing",
+            "runtime",
+            "set",
+            "string",
+            "table",
+            "tuple",
+            "u8"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -1745,7 +1906,12 @@
           "f64",
           "runtime"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "resident-routing",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": 42.0,
@@ -1780,7 +1946,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "80672bf0798d86d7aaa184333dff82198ce0b5d087a1250c0accdae26b03dceb",
+      "native_plan_sha256": "018a7424561869bffde1683b75754104e13ce1088bd739574b34aee8751af48c",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1804,6 +1970,20 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "resident-routing",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -1996,7 +2176,12 @@
           "f64",
           "runtime"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "resident-routing",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": 3.0,
@@ -2031,7 +2216,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "05468b8f6597fe23ab9133c39dc78dd25fbb699f366097e00b8692fb06313d4e",
+      "native_plan_sha256": "38c58fe10986f5a67d01256a81e7786da41bb8009c06db1988a4e7cf5956e03d",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2069,6 +2254,20 @@
           "package": "mech-math",
           "source": {
             "path": "machines/math",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "resident-routing",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -2276,7 +2475,14 @@
           "runtime",
           "vector2"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "matrix2",
+          "resident-routing",
+          "row_vector2",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": [
@@ -2320,7 +2526,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "153441b62ff25c11156bf6e492a73c2350645faebc39fe0c8a7365eb80dcd3e7",
+      "native_plan_sha256": "9a203151573194632b761d14e69137480b557363c14aed8a76f49e5ca65c346d",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2368,6 +2574,22 @@
           "package": "mech-math",
           "source": {
             "path": "machines/math",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "matrix2",
+            "resident-routing",
+            "row_vector2",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -2612,7 +2834,14 @@
           "runtime",
           "vectord"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "matrixd",
+          "resident-routing",
+          "row_vectord",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": [
@@ -2683,7 +2912,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "f0092a7aefae370e2b1e9bcbb991ac19a6ad82e4a417cee68c5bec0fced2e989",
+      "native_plan_sha256": "f16a6c707445c02f63cfe75472c1104c476fc0562203822dfe5fcde979401931",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2732,6 +2961,22 @@
           "package": "mech-math",
           "source": {
             "path": "machines/math",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "matrixd",
+            "resident-routing",
+            "row_vectord",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -2972,7 +3217,13 @@
           "runtime",
           "vectord"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "resident-routing",
+          "row_vectord",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": [
@@ -3015,7 +3266,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "e66eef23beb5b993c5edbf102b60146485f14d0523dc212f0411bce127d2c308",
+      "native_plan_sha256": "142a72fcb54a45a94b31bbfb62d1c0e9a4c6e43ba1568cbb314cfa917df23f67",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3045,6 +3296,21 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "resident-routing",
+            "row_vectord",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -3256,7 +3522,11 @@
           "runtime",
           "string"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "resident-routing",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": "bytecode-v1",
@@ -3291,7 +3561,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "247247670f905db432aed005dcec29092f9f3568c99814ecca7a30da458b4bb5",
+      "native_plan_sha256": "a8c86cffc95e6b33b57fc84430bc0838787b35c3d5272406a8e4728fd667807c",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3315,6 +3585,19 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "resident-routing",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -3511,7 +3794,13 @@
           "native-link",
           "runtime"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "matrixd",
+          "resident-routing",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": [
@@ -3548,7 +3837,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7dab5c274d7aec44dbbbe9bce19c4aeca000ddb1af1c8a633e7d6c4e7dafafd0",
+      "native_plan_sha256": "abf4c1660d6140c1529e2b2c909e1e0814d701f7a075e00b3a9a9ebf3765b5e1",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3576,6 +3865,21 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "matrixd",
+            "resident-routing",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -3791,7 +4095,13 @@
           "runtime",
           "vectord"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "resident-routing",
+          "row_vectord",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": [
@@ -3802,8 +4112,8 @@
       ],
       "file": "ternary.mecb",
       "header": {
-        "checksum_offset": 2026,
-        "file_len": 2030,
+        "checksum_offset": 2081,
+        "file_len": 2085,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 6,
@@ -3831,7 +4141,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "d15e01d36f3f9cbddb0c0bf5c99e9ff27fab61ed6714fd5efd2fb67083ab1aaa",
+      "native_plan_sha256": "68ef098d48d41183f0c729a4fc78be4f5682fac98501096318fc8039d71d5e29",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3874,6 +4184,21 @@
           "package": "mech-range",
           "source": {
             "path": "machines/range",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "resident-routing",
+            "row_vectord",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -4065,12 +4390,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 34,
+          "length": 89,
           "offset": 1992,
           "reserved": 0
         }
       ],
-      "sha256": "4cb719b39aa0bf9b0481be8b8e5e177ec2eefbcd24678cb64006f49880e79157",
+      "sha256": "0719664782a79e8a7ecf1a8316ac94189b88a338c2abf4e233c00d4c3a5bfb0e",
       "source": "1.0..1.0..=4.0",
       "source_file": "ternary.mec"
     },
@@ -4099,7 +4424,15 @@
           "variable_define",
           "vectord"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "bool",
+          "f64",
+          "matrixd",
+          "resident-routing",
+          "row_vectord",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": [
@@ -4163,7 +4496,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "32389d9c7f6bc6a36494ad900e079d0fc5dd10560bd0453369f367dd01e93841",
+      "native_plan_sha256": "687d8fe4f8bb77d092b61123be0a498d535e2794f36de324334cd76ba14e614a",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4201,6 +4534,23 @@
           "package": "mech-engine",
           "source": {
             "path": "src/engine",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "bool",
+            "f64",
+            "matrixd",
+            "resident-routing",
+            "row_vectord",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -4452,7 +4802,12 @@
           "f64",
           "runtime"
         ],
-        "mech-runtime": []
+        "mech-runtime": [
+          "f64",
+          "resident-routing",
+          "runtime",
+          "string"
+        ]
       },
       "construction": null,
       "expected_output": 0.0,
@@ -4487,7 +4842,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c068ec9480964243d86c273500a372dbeb46bd42fd6ea59713f7b5f5dcb04cc4",
+      "native_plan_sha256": "865d8b2bcded4f49766645b8ef1d66397904ca57dc9ee2225953d6b075f5f30e",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4525,6 +4880,20 @@
           "package": "mech-math",
           "source": {
             "path": "machines/math",
+            "source": "workspace"
+          }
+        },
+        {
+          "cargo_features": [
+            "f64",
+            "resident-routing",
+            "runtime",
+            "string"
+          ],
+          "crate_name": "mech_runtime",
+          "package": "mech-runtime",
+          "source": {
+            "path": "src/runtime",
             "source": "workspace"
           }
         }
@@ -4774,7 +5143,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c98383979afd29e3a5abddd19a3b83e053b2ba150e27972c5cbe4b7bc858dc4d",
+      "native_plan_sha256": "0f8ecb7cd7e93f6530bcad2deb13a37777168eee5b86a4477fb751debf6609a4",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5071,7 +5440,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "fbd327d42d67b7aeed6de8c88e53da0f9acb57cf6802750b1f6cfb7f52a4f78a",
+      "native_plan_sha256": "8cdd98449aefb0a614c928bd482cf64876ea0f0d8fd8611edc3d1f712324d4ed",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5374,7 +5743,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "5545a3a87cfbbd8e44e845a883f949e0ebf3eeccade4b561afacdbe269da9da0",
+      "native_plan_sha256": "bdc82854d403c0ec1aa3ffd8a8ed28ef2c068b0eb3cb96428a386fd752d38469",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5689,7 +6058,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c24720d27da8ff0ea1b3779de08651bc0af0ba5086d51e4770a94a70f881c0ea",
+      "native_plan_sha256": "bbdaf0fce990a1357ce569fee0fb2ab60c8b7f976a1c077e86156eb3f4d578b7",
       "origin": "source-compiler",
       "packages": [
         {
@@ -6009,7 +6378,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "9e4f7091b1979a796c322f1aaf3409e51ca6b1c4f7c3a85b04b6dc608a6c0ac7",
+      "native_plan_sha256": "849869565b65391137867b0df512c297e72cf35aa43ccc2b5d13660b0d5dbf02",
       "origin": "source-compiler",
       "packages": [
         {
@@ -6364,7 +6733,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "1015a3c4a7471e7b4ddb5e054b01692f41843aa6021fa8af338be6c85551efab",
+      "native_plan_sha256": "b97fb6465f4765be468767bac535712ef56f42b0581b1e8ec8548e0a26a1f76b",
       "origin": "source-compiler",
       "packages": [
         {

@@ -590,15 +590,16 @@ fn value_shape(value: &LegacyValue) -> Option<FrozenEkfValueShape> {
         LegacyValue::MutableReference(value) => value_shape(&value.borrow()),
         LegacyValue::F64(_) => Some(FrozenEkfValueShape::F64),
         LegacyValue::Bool(_) => Some(FrozenEkfValueShape::Bool),
-        LegacyValue::MatrixF64(Matrix::DVector(value)) => {
-            Some(FrozenEkfValueShape::Vector(value.borrow().len()))
-        }
-        LegacyValue::MatrixF64(Matrix::DMatrix(value)) => {
-            let value = value.borrow();
-            Some(FrozenEkfValueShape::Matrix {
-                rows: value.nrows(),
-                columns: value.ncols(),
-            })
+        LegacyValue::MatrixF64(value) => {
+            let shape = value.shape();
+            match shape.as_slice() {
+                [rows, 1] if *rows > 1 => Some(FrozenEkfValueShape::Vector(*rows)),
+                [rows, columns] => Some(FrozenEkfValueShape::Matrix {
+                    rows: *rows,
+                    columns: *columns,
+                }),
+                _ => None,
+            }
         }
         _ => None,
     }
@@ -666,9 +667,51 @@ fn allocate_output(shape: FrozenEkfValueShape) -> LegacyValue {
     match shape {
         FrozenEkfValueShape::Bool => LegacyValue::Bool(Ref::new(false)),
         FrozenEkfValueShape::Vector(length) => {
+            #[cfg(feature = "vector2")]
+            if length == 2 {
+                return LegacyValue::MatrixF64(Matrix::Vector2(Ref::new(
+                    nalgebra::Vector2::zeros(),
+                )));
+            }
+            #[cfg(feature = "vector3")]
+            if length == 3 {
+                return LegacyValue::MatrixF64(Matrix::Vector3(Ref::new(
+                    nalgebra::Vector3::zeros(),
+                )));
+            }
+            #[cfg(feature = "vector4")]
+            if length == 4 {
+                return LegacyValue::MatrixF64(Matrix::Vector4(Ref::new(
+                    nalgebra::Vector4::zeros(),
+                )));
+            }
             LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(length))))
         }
         FrozenEkfValueShape::Matrix { rows, columns } => {
+            #[cfg(feature = "matrix2")]
+            if (rows, columns) == (2, 2) {
+                return LegacyValue::MatrixF64(Matrix::Matrix2(Ref::new(
+                    nalgebra::Matrix2::zeros(),
+                )));
+            }
+            #[cfg(feature = "matrix3")]
+            if (rows, columns) == (3, 3) {
+                return LegacyValue::MatrixF64(Matrix::Matrix3(Ref::new(
+                    nalgebra::Matrix3::zeros(),
+                )));
+            }
+            #[cfg(feature = "matrix2x3")]
+            if (rows, columns) == (2, 3) {
+                return LegacyValue::MatrixF64(Matrix::Matrix2x3(Ref::new(
+                    nalgebra::Matrix2x3::zeros(),
+                )));
+            }
+            #[cfg(feature = "matrix3x2")]
+            if (rows, columns) == (3, 2) {
+                return LegacyValue::MatrixF64(Matrix::Matrix3x2(Ref::new(
+                    nalgebra::Matrix3x2::zeros(),
+                )));
+            }
             LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::zeros(rows, columns))))
         }
         FrozenEkfValueShape::F64 => LegacyValue::F64(Ref::new(0.0)),
@@ -686,8 +729,8 @@ fn read_array<const N: usize>(
         LegacyValue::MutableReference(value) => {
             return read_array(operation, argument, &value.borrow());
         }
-        LegacyValue::MatrixF64(Matrix::DVector(value)) => {
-            let value = value.borrow();
+        LegacyValue::MatrixF64(value) => {
+            let value = value.as_vec();
             if value.len() != N {
                 return Err(operation_error(
                     operation,
@@ -697,20 +740,7 @@ fn read_array<const N: usize>(
                     },
                 ));
             }
-            result.copy_from_slice(value.as_slice());
-        }
-        LegacyValue::MatrixF64(Matrix::DMatrix(value)) => {
-            let value = value.borrow();
-            if value.len() != N {
-                return Err(operation_error(
-                    operation,
-                    FrozenEkfOperationFailure::Shape {
-                        argument,
-                        expected: operation_spec(operation).inputs[argument],
-                    },
-                ));
-            }
-            result.copy_from_slice(value.as_slice());
+            result.copy_from_slice(&value);
         }
         _ => {
             return Err(operation_error(
@@ -749,7 +779,34 @@ fn write_array<const N: usize>(
     output: &LegacyValue,
     value: [f64; N],
 ) -> MResult<()> {
+    macro_rules! write_fixed {
+        ($output:expr) => {{
+            let mut output = $output.borrow_mut();
+            if output.len() != N {
+                return Err(operation_error(
+                    operation,
+                    FrozenEkfOperationFailure::OutputShape,
+                ));
+            }
+            output.as_mut_slice().copy_from_slice(&value);
+            Ok(())
+        }};
+    }
     match output {
+        #[cfg(feature = "vector2")]
+        LegacyValue::MatrixF64(Matrix::Vector2(output)) => write_fixed!(output),
+        #[cfg(feature = "vector3")]
+        LegacyValue::MatrixF64(Matrix::Vector3(output)) => write_fixed!(output),
+        #[cfg(feature = "vector4")]
+        LegacyValue::MatrixF64(Matrix::Vector4(output)) => write_fixed!(output),
+        #[cfg(feature = "matrix2")]
+        LegacyValue::MatrixF64(Matrix::Matrix2(output)) => write_fixed!(output),
+        #[cfg(feature = "matrix3")]
+        LegacyValue::MatrixF64(Matrix::Matrix3(output)) => write_fixed!(output),
+        #[cfg(feature = "matrix2x3")]
+        LegacyValue::MatrixF64(Matrix::Matrix2x3(output)) => write_fixed!(output),
+        #[cfg(feature = "matrix3x2")]
+        LegacyValue::MatrixF64(Matrix::Matrix3x2(output)) => write_fixed!(output),
         LegacyValue::MatrixF64(Matrix::DVector(output)) if output.borrow().len() == N => {
             output.borrow_mut().as_mut_slice().copy_from_slice(&value);
             Ok(())

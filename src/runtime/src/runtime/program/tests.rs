@@ -10,7 +10,10 @@ use mech_core::{
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
     OperationContractDeclaration, ParsedProgram, Ref, ValueData, hash_str,
 };
-use mech_engine::{SlotRole, encode_program_artifact_bytecode_v1, resident::ResidentValueBorrow};
+use mech_engine::{
+    SlotRole, decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
+    resident::ResidentValueBorrow,
+};
 use sha2::{Digest, Sha256};
 
 use crate::{
@@ -20,6 +23,7 @@ use crate::{
     RuntimeEffectSource, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress,
     RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
+    SourceRequest,
 };
 
 use super::*;
@@ -1073,6 +1077,109 @@ fn resident_root_plans_the_resolved_source_import_closure_before_route_selection
     assert_eq!(decoded.route, RuntimeProgramRoute::ResidentExternal);
     assert_eq!(outcome.info.program_revision, decoded.info.program_revision);
     assert_eq!(outcome.initial_value, decoded.initial_value);
+}
+
+#[test]
+fn explicit_root_imported_by_an_earlier_root_still_joins_the_combined_artifact() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string("dep.mec", "value := 41\n<+ value\nvalue\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+
+    let product = compiler
+        .compile_roots(
+            &[
+                SourceRequest::new("main.mec"),
+                SourceRequest::new("dep.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+    let outputs = product
+        .artifact()
+        .outputs()
+        .iter()
+        .map(|output| output.name.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        outputs,
+        ["answer", "value"],
+        "explicit roots must be published in caller order"
+    );
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    assert_eq!(
+        decoded
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>(),
+        outputs,
+        "bytecode v1 must retain every explicit root output"
+    );
+}
+
+#[test]
+fn explicit_dependency_root_plans_provider_reads_exactly_once() {
+    let plans = Arc::new(AtomicUsize::new(0));
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "main.mec",
+            "+> ./dep.mec\nanswer := dep/value + 1.0\nanswer\n",
+        )
+        .unwrap();
+    resolver
+        .insert_string(
+            "dep.mec",
+            r#"
+@clock := test://clock/tick{:read(delta-seconds)}
+value := @clock/delta-seconds
+<+ value
+value
+"#,
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .resource_provider(Box::new(PlanningObservationProvider {
+            plans: plans.clone(),
+            reads: Arc::new(AtomicUsize::new(0)),
+            value_bits: Arc::new(AtomicU64::new(41.0_f64.to_bits())),
+        }))
+        .build_compiler()
+        .unwrap();
+
+    let product = compiler
+        .compile_roots(
+            &[
+                SourceRequest::new("main.mec"),
+                SourceRequest::new("dep.mec"),
+            ],
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+
+    assert_eq!(plans.load(Ordering::SeqCst), 1);
+    let outputs = product
+        .artifact()
+        .outputs()
+        .iter()
+        .map(|output| output.name.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(outputs, ["answer", "value"]);
 }
 
 #[test]

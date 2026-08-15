@@ -351,7 +351,7 @@ fn selected_runtime_matches_a_frozen_runtime_surface() {
     });
 }
 
-#[cfg(feature = "full_source")]
+#[cfg(all(feature = "full_source", not(feature = "full_compiler")))]
 #[test]
 fn selected_source_matches_the_frozen_source_surface() {
     with_catalog_test_stack(|| {

@@ -79,11 +79,15 @@ pub use mech_core::{
     CompiledNodeKind, CompiledSymbolDefinition,
 };
 
-#[cfg(all(feature = "source", feature = "functions", feature = "symbol_table"))]
+#[cfg(all(
+    feature = "semantic-compiler",
+    feature = "functions",
+    feature = "symbol_table"
+))]
 pub mod activation;
 #[cfg(feature = "resident-ekf")]
 mod efficacy;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod function;
@@ -96,11 +100,11 @@ pub(crate) use interpreter::{
     Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
 };
 pub mod intrinsics;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod literals;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod patterns;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
@@ -147,11 +151,11 @@ pub mod __resident {
         activate_external, activate_with_options,
     };
 }
-#[cfg(all(feature = "source", feature = "state_machines"))]
+#[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
 pub mod state_machines;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod statements;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod structures;
 #[cfg(all(test, feature = "functions"))]
 #[path = "../tests/support/mod.rs"]
@@ -197,24 +201,24 @@ pub mod __mech_native {
 
 pub use mech_core::*;
 
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function::*;
 #[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 pub use crate::integrity::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::literals::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::mechdown::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::patterns::*;
 pub use crate::program::*;
-#[cfg(all(feature = "source", feature = "state_machines"))]
+#[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
 pub use crate::state_machines::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::statements::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::structures::*;
 pub use crate::tracing::*;
 

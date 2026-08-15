@@ -113,6 +113,12 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     for_each_combinatorics_scalar!(register_n_choose_k_scalar,);
     #[cfg(all(feature = "n_choose_k", feature = "matrix", feature = "matrixd"))]
     for_each_combinatorics_scalar!(register_n_choose_k_matrix,);
+    #[cfg(all(feature = "n_choose_k", feature = "f64"))]
+    builder.insert_resident_factory(
+        ["runtime"],
+        "NChooseK<f64>",
+        crate::n_choose_k::bind_resident_n_choose_k_f64,
+    )?;
     Ok(())
 }
 

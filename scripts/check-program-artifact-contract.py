@@ -214,8 +214,10 @@ def run(root: Path = ROOT) -> list[str]:
     sections = (root / "src/core/src/program/bytecode/section.rs").read_text()
     sections += (root / "src/core/src/program/bytecode/header.rs").read_text()
     test = (root / "src/engine/tests/program_artifact_contract.rs").read_text()
-    source_test = (root / "src/engine/tests/bytecode_plan_topology.rs").read_text()
-    program = (root / "src/engine/src/program/instance.rs").read_text()
+    source_test = (
+        root / "src/engine/src/program/bytecode_plan_topology_tests.rs"
+    ).read_text()
+    program = (root / "src/engine/src/program/compiler_planning.rs").read_text()
     encoding = (root / "src/engine/src/artifact/encoding.rs").read_text()
     snapshot_data = (root / "src/core/src/snapshot/data.rs").read_text()
     failures.extend(validate_model(model, manifest))
@@ -244,7 +246,7 @@ def run(root: Path = ROOT) -> list[str]:
             failures.append(f"normal compiler path is missing {required}")
     for required in (
         "include_str!",
-        "run_string",
+        "plan_source_for_test",
         "compile_program_product",
         "ParsedProgram::from_bytes",
         "decode_program_artifact_sections",

@@ -1,9 +1,11 @@
+use core::any::Any;
+
 use crate::{ResolvedOperationContract, SchemaId, SchemaKey, SchemaTable, ShapeInstance, Value};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, string::String};
+use alloc::{boxed::Box, string::String, sync::Arc};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, string::String};
+use std::{boxed::Box, string::String, sync::Arc};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ResidentValueKind {
@@ -248,6 +250,7 @@ pub struct BoundResidentKernel {
     parameters: Box<[u64]>,
     snapshot_output: Option<ResidentSnapshotOutput>,
     snapshot_schemas: Option<SchemaTable>,
+    retained_state: Option<Arc<dyn Any + Send + Sync>>,
 }
 
 #[derive(Clone, Debug)]
@@ -266,6 +269,7 @@ impl core::fmt::Debug for BoundResidentKernel {
             .field("parameters", &self.parameters)
             .field("snapshot_output", &self.snapshot_output)
             .field("snapshot_schemas", &self.snapshot_schemas.is_some())
+            .field("retained_state", &self.retained_state.is_some())
             .finish()
     }
 }
@@ -277,6 +281,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -286,6 +291,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -295,6 +301,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -304,6 +311,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -313,6 +321,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -325,6 +334,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -337,6 +347,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -349,6 +360,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -361,6 +373,7 @@ impl BoundResidentKernel {
             parameters,
             snapshot_output: None,
             snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -380,6 +393,25 @@ impl BoundResidentKernel {
 
     pub fn snapshot_schemas(&self) -> Option<&SchemaTable> {
         self.snapshot_schemas.as_ref()
+    }
+
+    /// Retains operation-owned immutable state for the lifetime of an
+    /// activated kernel. Dynamic-module kernels use this to keep the loaded
+    /// library and validated ABI function together without a process-global
+    /// registry.
+    pub fn with_retained_state<T>(mut self, state: Arc<T>) -> Self
+    where
+        T: Any + Send + Sync,
+    {
+        self.retained_state = Some(state);
+        self
+    }
+
+    pub fn retained_state<T>(&self) -> Option<&T>
+    where
+        T: Any + Send + Sync,
+    {
+        self.retained_state.as_deref()?.downcast_ref()
     }
 
     pub const fn has_direct_f64_output(&self) -> bool {

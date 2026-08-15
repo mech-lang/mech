@@ -125,6 +125,7 @@ fn assert_workspace_project(project: &Path, cargo_target: &Path) {
         [
             workspace.join("src/core").canonicalize().unwrap(),
             workspace.join("src/engine").canonicalize().unwrap(),
+            workspace.join("src/runtime").canonicalize().unwrap(),
             workspace.join("src/syntax").canonicalize().unwrap(),
         ]
     );

@@ -2,7 +2,12 @@ error[E0599]: no method named `program` found for struct `MechRuntime` in the cu
  --> tests/ui/sealed/runtime_component_access.rs:5:19
   |
 5 |   let _ = runtime.program();
-  |                   ^^^^^^^ method not found in `MechRuntime`
+  |                   ^^^^^^^
+  |
+help: there is a method `program_route` with a similar name
+  |
+5 |   let _ = runtime.program_route();
+  |                          ++++++
 
 error[E0599]: no method named `take_program` found for struct `MechRuntime` in the current scope
  --> tests/ui/sealed/runtime_component_access.rs:6:19

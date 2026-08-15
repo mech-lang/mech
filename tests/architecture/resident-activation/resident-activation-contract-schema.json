@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Permanent resident activation contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "contract",
+    "source_targets",
+    "semantic_targets",
+    "activation_owners",
+    "obsolete_owners_absent"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "contract": { "const": "resident-activation" },
+    "source_targets": {
+      "const": "tests/architecture/value-system/frozen-semantic-targets-v1.json"
+    },
+    "semantic_targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "applies_to",
+          "semantic_category",
+          "representation",
+          "key_semantics",
+          "runtime_storage"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "applies_to": { "type": "array", "minItems": 1 },
+          "semantic_category": { "type": "string", "minLength": 1 },
+          "representation": { "type": "string", "minLength": 1 },
+          "key_semantics": { "type": "string", "minLength": 1 },
+          "runtime_storage": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "activation_owners": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "markers"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "markers": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "obsolete_owners_absent": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

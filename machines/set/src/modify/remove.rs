@@ -2,6 +2,35 @@ use crate::*;
 
 use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
+use std::sync::LazyLock;
+
+static PURE_SET_REMOVE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 // Remove ------------------------------------------------------------------------
 
@@ -63,6 +92,9 @@ impl MechFunctionImpl for SetRemoveFxn {
     }
     fn out(&self) -> LegacyValue {
         LegacyValue::Set(self.out.clone())
+    }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_REMOVE_CONTRACT)
     }
     fn to_string(&self) -> String {
         format!("{:#?}", self)

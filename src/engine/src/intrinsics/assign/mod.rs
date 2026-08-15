@@ -68,6 +68,18 @@ pub(crate) fn install_frozen_ekf_state_runtime(
         RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
         &PURE_STATE_REGISTER_CONTRACT,
     )?;
+    #[cfg(feature = "vector3")]
+    builder.insert_runtime_factory_with_semantic_contract::<Assign<Vector3<f64>>>(
+        "Assign<f64Vector3>",
+        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+        &PURE_STATE_REGISTER_CONTRACT,
+    )?;
+    #[cfg(feature = "matrix3")]
+    builder.insert_runtime_factory_with_semantic_contract::<Assign<Matrix3<f64>>>(
+        "Assign<f64Matrix3>",
+        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+        &PURE_STATE_REGISTER_CONTRACT,
+    )?;
     Ok(())
 }
 

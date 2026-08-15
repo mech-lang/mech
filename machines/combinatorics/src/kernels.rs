@@ -14,6 +14,9 @@ pub mod n_choose_k {
             || k < 0.0
             || n.fract() != 0.0
             || k.fract() != 0.0
+            // Match the retained source adapter's exact f64-to-u128 bound.
+            || n > u128::MAX as f64
+            || k > u128::MAX as f64
         {
             return false;
         }
@@ -77,11 +80,13 @@ pub mod n_choose_k {
                 (-1.0, 0.0),
                 (2_000_002.0, 1_000_001.0),
                 (1.0e100, 1.0e50),
+                (1.0e100, 1.0),
             ] {
                 assert!(!supports_f64(n, k));
             }
             assert!(supports_f64(10.0, 2.0));
             assert!(supports_f64(2.0, 10.0));
+            assert!(supports_f64(u128::MAX as f64, 1.0));
         }
     }
 }

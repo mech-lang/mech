@@ -542,11 +542,22 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
         self.contract_root = self.root / "tests/architecture/value-system"
         self.contract_root.mkdir(parents=True)
         self.reference = "f" * 40
+        baseline_inventory = CHECKER.GENERATOR.generate(self.root, self.reference)
+        self.baseline = CHECKER.GENERATOR.legacy_baseline(
+            baseline_inventory, self.reference
+        )
+        self.write(
+            "src/engine/src/lib.rs",
+            '#[cfg(feature = "semantic-compiler")]\nmod interpreter;\n',
+        )
+        self.write(
+            "src/engine/src/interpreter/mod.rs",
+            "pub(crate) type InterpreterRef = Ref<Box<Interpreter>>;\n",
+        )
         self.inventory = CHECKER.GENERATOR.generate(self.root, self.reference)
         self.inventory_path = self.save("current-inventory.json", self.inventory)
         self.migration = self.make_migration()
         self.migration_path = self.save("migration.json", self.migration)
-        self.baseline = CHECKER.GENERATOR.legacy_baseline(self.inventory, self.reference)
         self.baseline_path = self.save("legacy-growth-baseline.json", self.baseline)
         self.canonical_path = self.copy_contract("canonical-encoding-v1.json")
         self.inventory_schema_path = self.copy_contract("current-inventory-schema.json")
@@ -794,27 +805,12 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
     def test_valid_fixture_passes(self):
         self.assertEqual(self.audit(), [])
 
-    def test_required_compatibility_aliases_are_exact_and_public(self):
+    def test_permanent_compatibility_aliases_are_exact_and_public(self):
         cases = (
-            (
-                "removed",
-                "src/engine/src/interpreter/mod.rs",
-                "",
-            ),
-            (
-                "target-drift",
-                "src/engine/src/interpreter/mod.rs",
-                "pub type InterpreterRef = Ref<Interpreter>;\n",
-            ),
             (
                 "private",
                 "src/core/src/program/symbol_table.rs",
                 "type SymbolTableRef = Ref<SymbolTable>;\n",
-            ),
-            (
-                "broken-route",
-                "src/engine/src/lib.rs",
-                "pub mod interpreter;\n",
             ),
         )
         for name, path, source in cases:
@@ -823,6 +819,28 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
                 self.write(path, source)
                 self.assertIn("C0-PUBLIC-COMPAT-ALIAS", self.ids(self.audit()))
                 self.write(path, original)
+
+    def test_retired_interpreter_alias_cannot_be_republished(self):
+        self.write(
+            "src/engine/src/lib.rs",
+            "pub mod interpreter;\npub use crate::interpreter::*;\n",
+        )
+        self.write(
+            "src/engine/src/interpreter/mod.rs",
+            "pub type InterpreterRef = Ref<Interpreter>;\n",
+        )
+        self.assertIn("C0-PUBLIC-COMPAT-ALIAS", self.ids(self.audit()))
+
+    def test_retired_interpreter_alias_publication_is_permitted(self):
+        self.write(
+            "src/engine/src/interpreter/mod.rs",
+            "pub(crate) type InterpreterRef = Ref<Box<Interpreter>>;\n",
+        )
+        self.write(
+            "src/engine/src/lib.rs",
+            '#[cfg(feature = "semantic-compiler")]\nmod interpreter;\n',
+        )
+        self.assertNotIn("C0-PUBLIC-COMPAT-ALIAS", self.ids(self.audit()))
 
     def test_legacy_value_alias_removal_is_permitted(self):
         self.write(
@@ -1654,7 +1672,14 @@ class BoundaryAndReportingTests(unittest.TestCase):
     def test_finalized_snapshot_kernel_imports_are_exactly_allowlisted(self):
         root = self.root_with(
             "src/engine/src/resident/set.rs",
-            "use mech_core::snapshot::{build_f64_set_snapshot, f64_set_snapshot_contains};\n",
+            "use mech_core::snapshot::{build_f64_set_snapshot, "
+            "build_f64_set_snapshot_after_remove, f64_set_snapshot_contains};\n",
+        )
+        self.assertNotIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
+        root = self.root_with(
+            "src/engine/src/resident/composite.rs",
+            "use mech_core::snapshot::{F64Bits, MatrixValue, rebuild_composite_snapshot};\n",
         )
         self.assertNotIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
 

@@ -7,7 +7,7 @@ use crate::*;
 use std::collections::HashSet;
 use std::sync::Arc;
 
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::expressions::function_call;
 
 // Functions
@@ -56,7 +56,7 @@ pub struct Stack {
 
 // Registers a user-written function so it can be called by name later.
 // Hashes the name to a u64 id used as the lookup key throughout the runtime.
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 mod source_only {
     use super::*;
 
@@ -1442,16 +1442,16 @@ mod source_only {
     }
 } // mod source_only
 
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use source_only::*;
 pub mod catalog;
 pub mod environment;
 pub mod extensions;
 #[cfg(feature = "program")]
 pub mod external;
-#[cfg(all(feature = "source", feature = "functions"))]
+#[cfg(all(feature = "semantic-compiler", feature = "functions"))]
 pub mod module;
-#[cfg(all(feature = "source", feature = "native"))]
+#[cfg(all(feature = "semantic-compiler", feature = "native"))]
 pub mod native;
 pub mod resolver;
 
@@ -1460,8 +1460,8 @@ pub use environment::*;
 pub use extensions::*;
 #[cfg(feature = "program")]
 pub use external::*;
-#[cfg(all(feature = "source", feature = "functions"))]
+#[cfg(all(feature = "semantic-compiler", feature = "functions"))]
 pub use module::*;
-#[cfg(all(feature = "source", feature = "native"))]
+#[cfg(all(feature = "semantic-compiler", feature = "native"))]
 pub use native::*;
 pub use resolver::*;

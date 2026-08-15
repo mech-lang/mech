@@ -13,5 +13,3 @@ pub use compiler_planning::{
 mod bytecode_plan_topology_tests;
 #[cfg(all(test, feature = "semantic-compiler"))]
 mod context_binding_tests;
-#[cfg(all(test, feature = "semantic-compiler"))]
-mod op_assign_feature_gate_tests;

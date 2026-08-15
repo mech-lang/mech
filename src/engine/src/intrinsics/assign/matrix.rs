@@ -77,7 +77,7 @@ macro_rules! impl_set_match_arms {
 
 #[macro_export]
 macro_rules! impl_set_all_fxn_s {
-    ($struct_name:ident, $op:ident, $ix:ty) => {
+    ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA, IxVec> {
             pub source: Ref<T>,
@@ -165,6 +165,11 @@ macro_rules! impl_set_all_fxn_s {
             fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some(&*$semantic_contract);)?
+                contract
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -189,7 +194,7 @@ macro_rules! impl_set_all_fxn_s {
                     naMatrix::<T, R1, C1, S1>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
@@ -229,7 +234,7 @@ macro_rules! assign_1d_scalar_vb {
 
 #[macro_export]
 macro_rules! impl_assign_fxn_s {
-    ($struct_name:ident, $op:ident, $ix:ty) => {
+    ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:ident)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA> {
             pub source: Ref<T>,
@@ -312,6 +317,11 @@ macro_rules! impl_assign_fxn_s {
             fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some(&*$semantic_contract);)?
+                contract
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -333,14 +343,24 @@ macro_rules! impl_assign_fxn_s {
                     T::as_value_kind(),
                     naMatrix::<T, R, C, S>::as_na_kind()
                 );
-                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
 }
 
-impl_assign_fxn_s!(Assign1DS, assign_1d_scalar, usize);
-impl_assign_fxn_s!(Assign1DB, assign_1d_scalar_b, bool);
+impl_assign_fxn_s!(
+    Assign1DS,
+    assign_1d_scalar,
+    usize,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_assign_fxn_s!(
+    Assign1DB,
+    assign_1d_scalar_b,
+    bool,
+    PURE_MATRIX_WHOLE_ASSIGNMENT_CONTRACT
+);
 impl_assign_scalar_fxn_v!(Assign1DVB, assign_1d_scalar_vb, bool);
 
 fn impl_assign_scalar_fxn(
@@ -482,10 +502,30 @@ macro_rules! set_1d_range_vec_b {
     };
 }
 
-impl_set_all_fxn_s!(Assign1DRS, set_1d_range, usize);
-impl_set_all_fxn_s!(Assign1DRB, set_1d_range_b, bool);
-impl_all_fxn_v!(Assign1DRV, set_1d_range_vec, usize);
-impl_all_fxn_v!(Assign1DRVB, set_1d_range_vec_b, bool);
+impl_set_all_fxn_s!(
+    Assign1DRS,
+    set_1d_range,
+    usize,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_set_all_fxn_s!(
+    Assign1DRB,
+    set_1d_range_b,
+    bool,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_all_fxn_v!(
+    Assign1DRV,
+    set_1d_range_vec,
+    usize,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_all_fxn_v!(
+    Assign1DRVB,
+    set_1d_range_vec_b,
+    bool,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
 
 fn impl_assign_range_fxn(
     sink: LegacyValue,
@@ -3064,3 +3104,69 @@ impl FunctionSpecializer for MatrixAssignRangeAll {
         }
     }
 }
+
+static PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
+
+static PURE_MATRIX_WHOLE_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::WholeValue,
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });

@@ -71,6 +71,73 @@ static PURE_N_CHOOSE_K_MATRIX_CONTRACT: LazyLock<OperationContractDeclaration> =
         interaction: ExternalInteraction::Pure,
     });
 
+#[cfg(feature = "f64")]
+pub(crate) fn bind_resident_n_choose_k_f64(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != 2
+        || request.inputs.len() != 2
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::ExactScalar
+        || request
+            .inputs
+            .iter()
+            .any(|input| input.kind != ResidentValueKind::F64 || input.shape != ResidentShape::SCALAR)
+        || request.output.kind != ResidentValueKind::F64
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    Ok(BoundResidentKernel::new_f64_output_2(
+        resident_n_choose_k_f64,
+        Box::new([]),
+    ))
+}
+
+#[cfg(feature = "f64")]
+fn resident_n_choose_k_f64(
+    _kernel: &BoundResidentKernel,
+    n: &[f64],
+    k: &[f64],
+    output: &mut [f64],
+) -> Result<bool, ResidentKernelError> {
+    let ([n], [k], [output]) = (n, k, output) else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    if !crate::kernels::n_choose_k::supports_f64(*n, *k) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let next = crate::kernels::n_choose_k::scalar(*n, *k);
+    let changed = output.to_bits() != next.to_bits();
+    *output = next;
+    Ok(changed)
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NChooseKResultUnrepresentable {
     pub operand_type: &'static str,

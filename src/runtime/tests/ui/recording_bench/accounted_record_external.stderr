@@ -9,11 +9,14 @@ help: the trait `mech_runtime::turn_record::sealed::Sealed` is not implemented f
   |
 3 | struct HugePayload(Vec<u8>);
   | ^^^^^^^^^^^^^^^^^^
+  = note: `HugePayload` implements similarly named trait `unicode_width::private::Sealed`, but not `mech_runtime::turn_record::sealed::Sealed`
   = help: the following other types implement trait `mech_runtime::turn_record::sealed::Sealed`:
             Box<[u8]>
+            CapturedInputBatch
+            ResidentOutboxPayload
+            ResidentTurnReceiptV1
             Vec<u8>
             mech_runtime::ledger::pool::PooledRecordBuffer
-            mech_runtime::turn_record::OwnedTurnRecord<B>
             std::string::String
 note: required by a bound in `mech_runtime::__gate_a_recording::AccountedRecord`
  --> src/turn_record.rs
@@ -22,9 +25,12 @@ note: required by a bound in `mech_runtime::__gate_a_recording::AccountedRecord`
   |                            ^^^^^^^^^^^^^^ required by this bound in `AccountedRecord`
   = note: `AccountedRecord` is a "sealed trait", because to implement it you also need to implement `mech_runtime::turn_record::sealed::Sealed`, which is not accessible; this is usually done to force you to use one of the provided types that already implement it
   = help: the following types implement the trait:
+            mech_runtime::CapturedInputBatch
+            mech_runtime::ResidentOutboxPayload
+            mech_runtime::ResidentTurnReceiptV1
             std::vec::Vec<u8>
             std::string::String
             std::boxed::Box<[u8]>
+            mech_runtime::__resident_recording::GateBFixedReceipt
             mech_runtime::ledger::pool::PooledRecordBuffer
-            mech_runtime::__gate_a_recording::OwnedEffectIntent<P>
-            mech_runtime::turn_record::OwnedTurnRecord<B>
+          and $N others

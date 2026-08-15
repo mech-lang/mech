@@ -351,11 +351,12 @@ pub fn render_catalog_source(plan: &NativeBuildPlan) -> MResult<String> {
         )
         .expect("writing to String cannot fail");
     }
-    if plan.application_kind == NativeApplicationKind::Hosted {
-        source.push_str(
-            "\n    mech_engine::install_intrinsic_resident(\n        &mut builder,\n    )?;\n",
-        );
-    }
+    // Every generated application executes its artifact through MechRuntime,
+    // including the host-free Engine form.  Install the engine-owned resident
+    // binders after the exact runtime factories so those artifacts can bind.
+    source.push_str(
+        "\n    mech_engine::install_intrinsic_resident(\n        &mut builder,\n    )?;\n",
+    );
     source.push_str("\n    Ok(Arc::new(builder.build()?))\n}\n");
     Ok(source)
 }
@@ -1040,16 +1041,14 @@ mod tests {
                 cargo_features: vec!["f64".into(), "runtime".into()],
             },
         ];
-        if kind == NativeApplicationKind::Hosted {
-            packages.push(PlannedPackage {
-                package: "mech-runtime".into(),
-                crate_name: "mech_runtime".into(),
-                source: PlannedPackageSource::Registry {
-                    version: "0.3.5".into(),
-                },
-                cargo_features: vec!["runtime".into(), "string".into()],
-            });
-        }
+        packages.push(PlannedPackage {
+            package: "mech-runtime".into(),
+            crate_name: "mech_runtime".into(),
+            source: PlannedPackageSource::Registry {
+                version: "0.3.5".into(),
+            },
+            cargo_features: vec!["runtime".into(), "string".into()],
+        });
         NativeBuildPlan {
             schema: NATIVE_BUILD_PLAN_SCHEMA.into(),
             bytecode_version: 1,
@@ -1068,11 +1067,7 @@ mod tests {
             packages,
             core_features: vec!["f64".into(), "program".into()],
             engine_features: vec!["f64".into(), "runtime".into()],
-            runtime_features: if kind == NativeApplicationKind::Hosted {
-                vec!["runtime".into(), "string".into()]
-            } else {
-                Vec::new()
-            },
+            runtime_features: vec!["runtime".into(), "string".into()],
             hosts: Vec::new(),
             run_grants: Vec::new(),
             live: false,
@@ -1161,11 +1156,13 @@ mod tests {
     }
 
     #[test]
-    fn hosted_catalog_installs_the_production_resident_factory_surface() {
-        let plan = base_plan(NativeApplicationKind::Hosted);
-        let source = render_catalog_source(&plan).unwrap();
+    fn every_generated_catalog_installs_the_production_resident_factory_surface() {
+        for kind in [NativeApplicationKind::Engine, NativeApplicationKind::Hosted] {
+            let plan = base_plan(kind);
+            let source = render_catalog_source(&plan).unwrap();
 
-        assert!(source.contains("mech_engine::install_intrinsic_resident"));
+            assert!(source.contains("mech_engine::install_intrinsic_resident"));
+        }
     }
 
     #[test]

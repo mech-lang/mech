@@ -87,7 +87,7 @@ source_default = [
 ]
 compiler_default = ["source_default", "compiler"]
 full_runtime = ["runtime_default"]
-full_source = ["source_default"]
+full_source = ["source_default", "semantic-compiler"]
 full_compiler = ["compiler_default"]
 default = []
 base = ["source_default"]

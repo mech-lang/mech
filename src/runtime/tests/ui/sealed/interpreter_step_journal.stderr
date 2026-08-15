@@ -1,5 +1,15 @@
-error[E0599]: no method named `step_with_reactive_turn_journal` found for struct `Interpreter` in the current scope
- --> tests/ui/sealed/interpreter_step_journal.rs:5:23
+error[E0603]: struct `Interpreter` is private
+ --> tests/ui/sealed/interpreter_step_journal.rs:1:18
   |
-5 |   let _ = interpreter.step_with_reactive_turn_journal();
-  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ method not found in `Interpreter`
+1 | use mech_engine::Interpreter;
+  |                  ^^^^^^^^^^^ private struct
+  |
+note: the struct `Interpreter` is defined here
+ --> $WORKSPACE/src/engine/src/lib.rs
+  |
+  |     Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
+  |     ^^^^^^^^^^^
+help: import `Interpreter` directly
+  |
+1 | use mech_engine::interpreter::Interpreter;
+  |                  +++++++++++++

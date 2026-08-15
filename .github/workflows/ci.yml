@@ -66,11 +66,13 @@ jobs:
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract
           python3 scripts/check-production-resident-routing.py
+          python3 scripts/check-compiler-planning-quarantine.py
           scripts/check-unsafe-boundaries.sh
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-value-execution-boundary.py
           python3 -B -m unittest \
             scripts/tests/test_check_obsolete_program_reachability.py \
+            scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_check_value_execution_boundary.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked

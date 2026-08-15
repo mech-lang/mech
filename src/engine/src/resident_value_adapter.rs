@@ -65,9 +65,12 @@ impl ReactiveInstance {
                     .collect::<Vec<_>>()
                     .into_boxed_slice(),
             ),
-            ResidentValueBorrow::String { .. } => {
-                return Err(ResidentActivationError::InvalidSnapshotRepresentation);
-            }
+            ResidentValueBorrow::String { values, .. } => ValueDataDraft::Matrix(
+                canonical_matrix_indices(declaration.region.shape)
+                    .map(|index| ValueDataDraft::String(values[index].clone()))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
             ResidentValueBorrow::Snapshot { .. } => {
                 return Err(ResidentActivationError::InvalidSnapshotRepresentation);
             }
@@ -127,14 +130,12 @@ pub(crate) fn materialize_resident_value(
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         ),
-        ResidentValueRef::String(_) => {
-            return Err(MechError::new(
-                GenericError {
-                    msg: "resident string matrices are unsupported".to_string(),
-                },
-                None,
-            ));
-        }
+        ResidentValueRef::String(values) => ValueDataDraft::Matrix(
+            canonical_matrix_indices(region.shape)
+                .map(|index| ValueDataDraft::String(values[index].clone()))
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
         ResidentValueRef::Snapshot(_) => {
             return Err(MechError::new(
                 GenericError {
@@ -212,6 +213,17 @@ pub(crate) fn write_value(
             }
             for (canonical, physical) in canonical_matrix_indices(region.shape).enumerate() {
                 target[physical] = source[canonical].to_f64();
+            }
+        }
+        (ResidentValueMut::String(target), ValueData::Matrix(matrix)) => {
+            let SequenceView::String(source) = matrix.elements() else {
+                return Err(ResidentActivationError::InvalidSnapshotRepresentation);
+            };
+            if target.len() != source.len() {
+                return Err(ResidentActivationError::InvalidSnapshotRepresentation);
+            }
+            for (canonical, physical) in canonical_matrix_indices(region.shape).enumerate() {
+                target[physical] = source[canonical].to_string();
             }
         }
         _ => return Err(ResidentActivationError::InvalidSnapshotRepresentation),

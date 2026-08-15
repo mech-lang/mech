@@ -2656,7 +2656,7 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn encoded_fizzbuzz_document_is_excluded_from_the_resident_browser_product() {
+    fn encoded_fizzbuzz_document_executes_in_the_resident_browser_product() {
         let tree =
             mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
                 .unwrap();
@@ -2682,7 +2682,22 @@ mod browser_tests {
         );
 
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        assert_resident_rejection(WasmDocument::from_encoded(&encoded), "InvalidArtifact");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        assert_eq!(
+            document.project.runtime.program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+        let invariant = document.rendered_symbol("first-fifteen!").unwrap();
+        assert_eq!(
+            Reflect::get(&invariant, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("true"),
+        );
+        document.start().unwrap();
+        assert!(document.frame(1).is_ok());
+        document.stop().unwrap();
     }
 
     #[wasm_bindgen_test]

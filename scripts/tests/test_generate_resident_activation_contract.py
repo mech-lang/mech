@@ -21,16 +21,44 @@ class ResidentActivationGeneratorTests(unittest.TestCase):
     def test_repository_generated_contract_is_current(self) -> None:
         self.assertEqual(GENERATOR.validate(ROOT), [])
 
-    def test_phase_d_projection_is_mechanical_and_sorted(self) -> None:
-        projection = GENERATOR.build_migration_projection(ROOT)
-        self.assertEqual(projection["target_count"], 2)
-        self.assertEqual(projection["occurrence_count"], 491)
+    def test_permanent_contract_preserves_the_exact_semantic_target_set(self) -> None:
+        permanent = GENERATOR.build_resident_activation_contract(ROOT)
+        permanent_ids = [target["id"] for target in permanent["semantic_targets"]]
         self.assertEqual(
-            [target["id"] for target in projection["targets"]],
-            ["mutable-reference-runtime-storage", "uninitialized-storage"],
+            permanent_ids,
+            list(GENERATOR.PERMANENT_TARGET_IDS),
         )
-        self.assertTrue(all(not target["implemented"] for target in projection["targets"]))
-        self.assertTrue(all(not target["legacy_removed"] for target in projection["targets"]))
+
+    def test_permanent_contract_is_structural_not_occurrence_based(self) -> None:
+        permanent = GENERATOR.build_resident_activation_contract(ROOT)
+        encoded = json.dumps(permanent)
+        self.assertNotIn("occurrence", encoded)
+        self.assertNotIn("implemented", encoded)
+        self.assertNotIn("legacy_removed", encoded)
+        self.assertNotIn("implementation_gate", encoded)
+        self.assertEqual(permanent["contract"], "resident-activation")
+
+    def test_permanent_activation_owners_are_exact_and_sorted(self) -> None:
+        permanent = GENERATOR.build_resident_activation_contract(ROOT)
+        self.assertEqual(
+            [owner["path"] for owner in permanent["activation_owners"]],
+            [
+                "src/engine/src/artifact/model.rs",
+                "src/engine/src/resident/general/mod.rs",
+                "src/runtime/src/runtime/program/loading.rs",
+                "src/runtime/src/runtime/program/external/admission.rs",
+            ],
+        )
+        self.assertEqual(
+            permanent["obsolete_owners_absent"],
+            [
+                "src/engine/src/program/instance.rs",
+                "src/runtime/src/runtime/resident_program",
+                "src/runtime/src/resident_external",
+                "src/interpreter",
+                "src/bin/interpreter2.rs",
+            ],
+        )
 
     def test_unlisted_ekf_operation_is_rejected(self) -> None:
         source = (ROOT / "tests/architecture/resident-activation/ekf-source-v1.mec").read_text()
@@ -54,7 +82,7 @@ class ResidentActivationGeneratorTests(unittest.TestCase):
         changed = source + b"\n"
         reblessed = GENERATOR.sha256_bytes(changed)
         failures = GENERATOR.validate_source_digest(changed, reblessed, reblessed + "\n")
-        self.assertTrue(any("frozen D0 SHA-256" in failure for failure in failures))
+        self.assertTrue(any("frozen SHA-256" in failure for failure in failures))
 
     def test_node_change_detection_is_frozen_per_operation(self) -> None:
         source = (ROOT / "tests/architecture/resident-activation/ekf-source-v1.mec").read_text()
@@ -139,8 +167,8 @@ class ResidentActivationGeneratorTests(unittest.TestCase):
     def test_every_object_schema_is_closed(self) -> None:
         for name in (
             "d0-boundary-schema.json",
-            "d0-migration-projection-schema.json",
             "ekf-workload-v1-schema.json",
+            "resident-activation-contract-schema.json",
         ):
             schema = json.loads(
                 (ROOT / "tests/architecture/resident-activation" / name).read_text()

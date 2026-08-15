@@ -206,7 +206,8 @@ cargo +nightly-2026-03-03 test \
   --target-dir "$root_target" \
   -p mech-engine \
   --features compiler_default \
-  --test bytecode_plan_topology
+  --lib \
+  program::bytecode_plan_topology_tests
 
 producer_tree=$(cargo +nightly-2026-03-03 tree \
   --manifest-path "$producer_manifest" \

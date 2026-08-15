@@ -76,6 +76,11 @@ pub struct CompiledIntegrityConstraint {
 #[derive(Clone, Debug)]
 pub struct CompiledBytecode {
     pub program: BytecodeProgram,
+    /// Exact canonical names for runtime instructions emitted by source
+    /// extensions that are not members of the immutable static catalog.
+    /// This sidecar is consumed while constructing the semantic artifact;
+    /// the artifact itself carries the portable operation reference.
+    pub runtime_function_names: BTreeMap<u64, String>,
     /// Parallel to `program.instructions`.
     pub instruction_roles: Vec<Option<CompiledInstructionRole>>,
     /// Portable semantic declaration captured from each specialized source
@@ -120,6 +125,7 @@ pub struct CompileCtx {
     symbols: BTreeMap<u64, Register>,
     symbol_ptrs: BTreeMap<u64, usize>,
     dictionary: BTreeMap<u64, String>,
+    runtime_function_names: BTreeMap<u64, String>,
     mutable_symbols: BTreeSet<u64>,
     pending_constants: Vec<EncodedConstant>,
     requirements: BTreeSet<CanonicalRequirement>,
@@ -148,6 +154,7 @@ impl Default for CompileCtx {
             symbols: BTreeMap::new(),
             symbol_ptrs: BTreeMap::new(),
             dictionary: BTreeMap::new(),
+            runtime_function_names: BTreeMap::new(),
             mutable_symbols: BTreeSet::new(),
             pending_constants: Vec::new(),
             requirements: BTreeSet::new(),
@@ -461,6 +468,7 @@ impl CompileCtx {
                 dictionary: self.dictionary.clone(),
                 requirements,
             },
+            runtime_function_names: self.runtime_function_names.clone(),
             instruction_roles,
             instruction_contracts,
             instruction_source_nodes,
@@ -495,6 +503,23 @@ impl CompileCtx {
 }
 
 impl BytecodeCompilerContext for CompileCtx {
+    fn function_id(&mut self, canonical_name: &str) -> MResult<u64> {
+        if canonical_name.is_empty() {
+            return invalid("runtime function name must not be empty");
+        }
+        let id = hash_str(canonical_name);
+        if let Some(existing) = self.runtime_function_names.get(&id)
+            && existing != canonical_name
+        {
+            return invalid(format!(
+                "runtime function hash collision between {existing:?} and {canonical_name:?}",
+            ));
+        }
+        self.runtime_function_names
+            .insert(id, canonical_name.to_owned());
+        Ok(id)
+    }
+
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
         self.register_for_identity(BytecodeRegisterIdentity::Cell(pointer))
     }

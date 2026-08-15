@@ -33,7 +33,7 @@ pub fn install_intrinsic_native_plan(builder: &mut FunctionCatalogBuilder) -> MR
 }
 
 /// Installs the source specializers owned by the engine's intrinsic fragment.
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub fn install_intrinsic_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     crate::intrinsics::catalog::install_source(builder)
 }

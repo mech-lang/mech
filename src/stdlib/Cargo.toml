@@ -98,7 +98,7 @@ standard_source = ["standard_runtime", "source"]
 standard_compiler = ["standard_source", "compiler"]
 
 full_runtime = ["runtime", "full_values", "full_operations"]
-full_source = ["full_runtime", "source"]
+full_source = ["full_runtime", "semantic-compiler"]
 full_compiler = ["full_source", "compiler"]
 
 standard_values = [

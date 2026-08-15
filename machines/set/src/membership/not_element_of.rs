@@ -61,6 +61,9 @@ impl MechFunctionImpl for SetNotElementOfFxn {
     fn out(&self) -> LegacyValue {
         LegacyValue::Bool(self.out.clone())
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_MEMBERSHIP_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }

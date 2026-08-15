@@ -1511,6 +1511,10 @@ where
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_UNARY_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "matrix1")]
 #[cfg(feature = "semantic-compiler")]
@@ -1597,6 +1601,10 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "row_vector2")]
@@ -1710,6 +1718,10 @@ where
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
     }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
+    }
 }
 #[cfg(feature = "row_vector3")]
 #[cfg(feature = "semantic-compiler")]
@@ -1810,6 +1822,10 @@ where
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(self.reactive_output_values())
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_HORIZONTAL_VARIADIC_BUILD_CONTRACT)
     }
 }
 #[cfg(feature = "row_vector4")]
@@ -7255,7 +7271,7 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 
 /// Installs the variadic f64 factory needed to execute and compile ordinary
 /// dynamic-matrix source without expanding the frozen runtime-only catalog.
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     // Native planning installs the same variadic compiler output with linkage
     // metadata.  Source-only catalogs still need the unlinked factory, while

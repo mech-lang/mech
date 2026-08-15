@@ -79,8 +79,8 @@ macro_rules! compile_nullop {
         // Compile out
         registers[0] = compile_register_brrw!($out, $ctx);
 
-        // Emit the operation
-        $ctx.emit_nullop(hash_str(&$name), registers[0]);
+        let function = $ctx.function_id(&$name)?;
+        $ctx.emit_nullop(function, registers[0]);
 
         return Ok(registers[0]);
     };
@@ -97,8 +97,8 @@ macro_rules! compile_unop {
         registers[0] = compile_register_brrw!($out, $ctx);
         registers[1] = compile_register_brrw!($arg, $ctx);
 
-        // Emit the operation
-        $ctx.emit_unop(hash_str(&$name), registers[0], registers[1]);
+        let function = $ctx.function_id(&$name)?;
+        $ctx.emit_unop(function, registers[0], registers[1]);
 
         return Ok(registers[0]);
     };
@@ -113,8 +113,8 @@ macro_rules! compile_binop {
         registers[0] = compile_register_brrw!($out, $ctx);
         registers[1] = compile_register_brrw!($arg1, $ctx);
         registers[2] = compile_register_brrw!($arg2, $ctx);
-
-        $ctx.emit_binop(hash_str(&$name), registers[0], registers[1], registers[2]);
+        let function = $ctx.function_id(&$name)?;
+        $ctx.emit_binop(function, registers[0], registers[1], registers[2]);
 
         return Ok(registers[0])
     };
@@ -130,9 +130,9 @@ macro_rules! compile_ternop {
         registers[1] = compile_register_brrw!($arg1, $ctx);
         registers[2] = compile_register_brrw!($arg2, $ctx);
         registers[3] = compile_register_brrw!($arg3, $ctx);
-
+        let function = $ctx.function_id(&$name)?;
         $ctx.emit_ternop(
-            hash_str(&$name),
+            function,
             registers[0],
             registers[1],
             registers[2],
@@ -154,9 +154,9 @@ macro_rules! compile_quadop {
         registers[2] = compile_register_brrw!($arg2, $ctx);
         registers[3] = compile_register_brrw!($arg3, $ctx);
         registers[4] = compile_register_brrw!($arg4, $ctx);
-
+        let function = $ctx.function_id(&$name)?;
         $ctx.emit_quadop(
-            hash_str(&$name),
+            function,
             registers[0],
             registers[1],
             registers[2],
@@ -177,11 +177,11 @@ macro_rules! compile_varop {
         for i in 0..arg_count {
             registers[i + 1] = compile_register_brrw!($args[i], $ctx);
         }
-        $ctx.emit_varop(hash_str(&$name), registers[0], (&registers[1..]).to_vec());
+        let function = $ctx.function_id(&$name)?;
+        $ctx.emit_varop(function, registers[0], (&registers[1..]).to_vec());
         return Ok(registers[0])
     };
 }
-
 #[macro_export]
 macro_rules! impl_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident) => {

@@ -1,5 +1,5 @@
 use crate::*;
-
+#[cfg(feature = "assign")]
 pub fn compile_stable_value_update(
     sink: ValRef,
     source: LegacyValue,
@@ -11,7 +11,7 @@ pub fn compile_stable_value_update(
 
     crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink), source])
 }
-
+#[cfg(feature = "assign")]
 pub fn apply_stable_value_update(sink: ValRef, source: LegacyValue) -> MResult<LegacyValue> {
     {
         let current = sink.borrow();

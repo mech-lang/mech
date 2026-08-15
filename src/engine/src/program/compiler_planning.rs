@@ -10,7 +10,7 @@ use mech_core::{
     validate_application_requirement, validate_stable_value_update,
 };
 
-#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::Register;
 
 #[cfg(all(feature = "source", feature = "native"))]
@@ -46,6 +46,7 @@ impl Default for CompilerPlanningConfig {
 }
 
 #[cfg(feature = "semantic-compiler")]
+#[derive(Debug)]
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
     bytecode: Vec<u8>,
@@ -97,6 +98,7 @@ impl MechErrorKind for ProgramArtifactCompilationError {
 pub struct CompilerPlanningProgram {
     pub config: CompilerPlanningConfig,
     pub(crate) interpreter: Interpreter,
+    published_outputs: Vec<LegacyValue>,
 }
 
 impl CompilerPlanningProgram {
@@ -113,6 +115,7 @@ impl CompilerPlanningProgram {
             Self {
                 config,
                 interpreter,
+                published_outputs: Vec::new(),
             }
         }
     }
@@ -129,6 +132,7 @@ impl CompilerPlanningProgram {
         Self {
             config,
             interpreter,
+            published_outputs: Vec::new(),
         }
     }
 
@@ -282,6 +286,13 @@ impl CompilerPlanningProgram {
         values
     }
 
+    /// Retains the observable result of one explicitly requested source root.
+    /// Dependency-only planning never calls this method, so multi-root
+    /// products publish each requested root exactly once in caller order.
+    pub fn publish_compiler_root_output(&mut self, value: LegacyValue) {
+        self.published_outputs.push(value);
+    }
+
     /// Installs one compiler-resolved source import in the ephemeral planning
     /// symbol table. This coordinate is consumed during compilation and is not
     /// retained by the runtime artifact.
@@ -306,7 +317,7 @@ impl CompilerPlanningProgram {
         resolver: &dyn ExternalRequirementContractResolver,
     ) -> MResult<ProgramCompilationProduct> {
         let mut compiled = compile_bytecode(self)?;
-        resolve_compiled_external_contracts(&mut compiled, resolver)?;
+        resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
         self.finalize_program_product(compiled)
     }
 
@@ -321,18 +332,19 @@ impl CompilerPlanningProgram {
         operations: &[CompiledResourceSendOperation],
     ) -> MResult<ProgramCompilationProduct> {
         let mut compiled = compile_bytecode(self)?;
-        preserve_compiled_resource_send_operations(&mut compiled, operations)?;
-        resolve_compiled_external_contracts(&mut compiled, resolver)?;
+        preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
+        resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
         self.finalize_program_product(compiled)
     }
 
     #[cfg(feature = "semantic-compiler")]
     fn finalize_program_product(
         &self,
-        compiled: CompiledBytecode,
+        compiled: CompilerPlanningBytecode,
     ) -> MResult<ProgramCompilationProduct> {
-        let artifact = compile_executable_program_artifact(
-            &compiled,
+        let artifact = compile_executable_program_artifact_with_outputs(
+            &compiled.bytecode,
+            &compiled.published_outputs,
             self.interpreter.function_catalog().as_ref(),
         )
         .map_err(|error| {
@@ -353,7 +365,7 @@ impl CompilerPlanningProgram {
             )
             .with_compiler_loc()
         })?;
-        let bytecode = write_bytecode_with_artifact(&compiled.program, &sections)?;
+        let bytecode = write_bytecode_with_artifact(&compiled.bytecode.program, &sections)?;
         Ok(ProgramCompilationProduct { artifact, bytecode })
     }
 }
@@ -470,7 +482,13 @@ struct RetainedIntegrityMarkerMetadata {
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompiledBytecode> {
+struct CompilerPlanningBytecode {
+    bytecode: CompiledBytecode,
+    published_outputs: Box<[Register]>,
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPlanningBytecode> {
     let state = program.interpreter.state.borrow();
     let plan = state.plan.borrow();
     let mut context = CompileCtx::new();
@@ -578,8 +596,14 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompiledBy
         }
     }
 
+    let published_outputs = program
+        .published_outputs
+        .iter()
+        .map(|value| context.resolve_value_register(value))
+        .collect::<MResult<Vec<_>>>()?
+        .into_boxed_slice();
     let return_register = context.resolve_value_register(&program.interpreter.out)?;
-    let compiled = context.finish_program(return_register)?;
+    let bytecode = context.finish_program(return_register)?;
 
     #[cfg(feature = "invariant_define")]
     {
@@ -587,7 +611,10 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompiledBy
         drop(retained_integrity_metadata);
     }
 
-    Ok(compiled)
+    Ok(CompilerPlanningBytecode {
+        bytecode,
+        published_outputs,
+    })
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

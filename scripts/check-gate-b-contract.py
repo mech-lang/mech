@@ -345,7 +345,12 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         "commit_runtime",
     }
     for source, text in resident_sources.items():
-        identifiers = set(re.split(r"[^A-Za-z0-9_]+", text))
+        # Gate B forbids the mutable legacy `Value` coordinate. The fully
+        # qualified immutable snapshot type is resident state and is allowed;
+        # keeping the qualification mandatory prevents a bare legacy import
+        # from slipping through this exception.
+        guarded_text = text.replace("mech_core::snapshot::Value", "")
+        identifiers = set(re.split(r"[^A-Za-z0-9_]+", guarded_text))
         forbidden = forbidden_resident_identifiers.intersection(identifiers)
         if source == program_activation or source == root / "src/engine/src/resident/general/execution.rs":
             forbidden.discard("Value")

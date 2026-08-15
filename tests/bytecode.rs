@@ -7,6 +7,7 @@ use mech_core::matrix::Matrix;
 use mech_core::{
     BytecodeInstruction, LegacyValue, MResult, ParsedProgram, Ref, RuntimeType, ValueKind, hash_str,
 };
+use mech_engine::decode_program_artifact_bytecode_v1;
 use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeProgramRoute};
 use nalgebra::DMatrix;
 
@@ -188,7 +189,9 @@ fn compiled_integrity_constraints_are_reconstructed() -> MResult<()> {
                 && arguments.first() == parsed.symbols.get(&hash_str("safe!"))
     )));
 
-    assert_eq!(parsed.artifact.integrity_constraints.len(), 1);
+    let artifact = decode_program_artifact_bytecode_v1(&bytecode)
+        .expect("compiled bytecode must decode its authoritative artifact sections");
+    assert_eq!(artifact.constraints().len(), 1);
     let mut runtime = RuntimeBuilder::new()
         .function_catalog(mech::stdlib::source_catalog())
         .build()?;

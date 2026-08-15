@@ -98,10 +98,12 @@ EXPECTED_HASH_CONTRACTS_V1 = {
 FINALIZED_RESIDENT_SNAPSHOT_IMPORTS = {
     "src/engine/src/resident/composite.rs": {
         ("mech_core", "snapshot", "F64Bits"),
+        ("mech_core", "snapshot", "MatrixValue"),
         ("mech_core", "snapshot", "rebuild_composite_snapshot"),
     },
     "src/engine/src/resident/set.rs": {
         ("mech_core", "snapshot", "build_f64_set_snapshot"),
+        ("mech_core", "snapshot", "build_f64_set_snapshot_after_remove"),
         ("mech_core", "snapshot", "f64_set_snapshot_contains"),
     },
 }
@@ -1316,16 +1318,30 @@ def compatibility_alias_failures(
             for row in rows
         ]
 
-    approved = baseline.get("required_compatibility_aliases", [])
-    current = live.get("required_compatibility_aliases", [])
-    if structural(current) == structural(approved):
+    approved = structural(baseline.get("required_compatibility_aliases", []))
+    current = structural(live.get("required_compatibility_aliases", []))
+    retired_executor_alias = {
+        "name": "InterpreterRef",
+        "raw_name": "InterpreterRef",
+        "target": "Ref<Box<Interpreter>>",
+        "path": "src/engine/src/interpreter/mod.rs",
+        "visibility": "pub",
+        "public_reexport_route": [
+            {
+                "declaration": "pubusecrate::interpreter::*;",
+                "path": "src/engine/src/lib.rs",
+            }
+        ],
+    }
+    permanent = [row for row in approved if row != retired_executor_alias]
+    if current == permanent:
         return []
     return [
         failure(
             "C0-PUBLIC-COMPAT-ALIAS",
             "required public compatibility aliases",
             str(baseline_path),
-            repr(approved),
+            repr(permanent),
             repr(current),
             f"{baseline_path}:required_compatibility_aliases",
         )

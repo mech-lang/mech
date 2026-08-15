@@ -13,7 +13,7 @@ use mech_build::{
 };
 use mech_core::{
     BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionCatalog, ParsedProgram,
-    RuntimeType, write_bytecode,
+    RuntimeType, write_bytecode_with_artifact,
 };
 #[cfg(feature = "fixed")]
 use mech_core::FunctionCatalogBuilder;
@@ -462,17 +462,26 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
         }
     }
 
+    // Derived resident slots are constructed from the semantic artifact and
+    // intentionally have no compiler output-seed initializer. Preserve that
+    // authoritative artifact while poisoning the legacy bytecode constants:
+    // the generated application must still execute its resident nodes and
+    // publish their calculated outputs.
+    let artifact = parsed.artifact;
     let mut instructions = parsed.instructions;
     let constants = canonicalize_mutated_constants(&mut instructions, &constants)?;
-    let poisoned = write_bytecode(&BytecodeProgram {
-        register_count: parsed.header.register_count,
-        constants,
-        symbols: parsed.symbols,
-        mutable_symbols: parsed.mutable_symbols,
-        instructions,
-        dictionary: parsed.dictionary,
-        requirements: parsed.requirements,
-    })
+    let poisoned = write_bytecode_with_artifact(
+        &BytecodeProgram {
+            register_count: parsed.header.register_count,
+            constants,
+            symbols: parsed.symbols,
+            mutable_symbols: parsed.mutable_symbols,
+            instructions,
+            dictionary: parsed.dictionary,
+            requirements: parsed.requirements,
+        },
+        &artifact,
+    )
     .map_err(|error| mech_error("output-seed bytecode rewrite", error))?;
     ParsedProgram::from_bytes(&poisoned)
         .map_err(|error| mech_error("poisoned bytecode validation", error))?;

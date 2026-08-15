@@ -1,6 +1,6 @@
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
-    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction,
+    ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
     ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
     ResolvedOperationContract, ShapeRule,
@@ -8,7 +8,496 @@ use mech_core::{
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     builder.insert_resident_factory(["runtime"], "ConcatSS<string>", bind_concat)?;
+    builder.insert_resident_factory(["runtime"], "EQSS<string>", bind_string_equal)?;
+    builder.insert_resident_factory(["runtime"], "TransposeVD<string>", bind_string_transpose)?;
+    builder.insert_resident_factory(
+        ["runtime"],
+        "Access1DSRD<string>",
+        bind_string_scalar_access,
+    )?;
+    builder.insert_resident_factory(["runtime"], "Access1DVDRD<string>", bind_string_gather)?;
+    builder.insert_resident_factory(
+        ["runtime"],
+        "ConvertMatToMat2<[f64]:1,0,[string]:1,0>",
+        bind_f64_vector_to_string,
+    )?;
+    for name in ["Assign1DB<stringDVector>", "Assign1DB<stringRowDVector>"] {
+        builder.insert_resident_factory(["runtime"], name, bind_string_all_assign)?;
+    }
+    builder.insert_resident_factory(
+        ["runtime"],
+        "Assign1DS<stringDVector>",
+        bind_string_index_assign,
+    )?;
+    builder.insert_resident_factory(
+        ["runtime"],
+        "Assign1DS<stringRowDVector>",
+        bind_string_index_assign,
+    )?;
+    for name in [
+        "Assign1DRB<stringDVectorDVector>",
+        "Assign1DRB<stringRowDVectorDVector>",
+    ] {
+        builder.insert_resident_factory(["runtime"], name, bind_string_mask_assign)?;
+    }
+    for name in [
+        "Assign1DRS<stringDVectorDVector>",
+        "Assign1DRS<stringRowDVectorDVector>",
+    ] {
+        builder.insert_resident_factory(["runtime"], name, bind_string_indices_assign)?;
+    }
     Ok(())
+}
+
+fn bind_string_transpose(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let [input] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != 1
+        || contract.outputs.len() != 1
+        || contract.inputs[0].schema != input.schema_id
+        || contract.inputs[0].access != AccessMode::Read
+        || contract.inputs[0].delivery != DeliveryMode::Signal
+        || input.kind != ResidentValueKind::String
+        || request.output.kind != ResidentValueKind::String
+        || request.output.shape.rows != input.shape.columns
+        || request.output.shape.columns != input.shape.rows
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::TransposeOf { input: 0 },
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    Ok(BoundResidentKernel::new(
+        string_transpose,
+        vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
+    ))
+}
+
+fn string_transpose(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String(input)) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [rows, columns] = kernel.parameters() else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let (rows, columns) = (*rows as usize, *columns as usize);
+    if input.len() != rows * columns || output.len() != input.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut changed = false;
+    for (index, target) in output.iter_mut().enumerate() {
+        let output_row = index % columns;
+        let output_column = index / columns;
+        let source = &input[output_column + output_row * rows];
+        if *target != *source {
+            target.clone_from(source);
+            changed = true;
+        }
+    }
+    Ok(changed)
+}
+
+fn bind_string_gather(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let [source, indexes] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != 2
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+        || source.kind != ResidentValueKind::String
+        || source.shape.len().is_none()
+        || !matches!(
+            indexes.kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index
+        )
+        || indexes.shape.len() != request.output.shape.len()
+        || request.output.kind != ResidentValueKind::String
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    Ok(BoundResidentKernel::new(string_gather, Box::new([])))
+}
+
+fn string_gather(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String(source)) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let indexes_len = inputs
+        .get(1)
+        .ok_or(ResidentKernelError::InvalidInput)?
+        .len();
+    let ResidentValueMut::String(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if indexes_len != output.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    for ordinal in 0..indexes_len {
+        checked_string_index(string_index_at(inputs, 1, ordinal)?, source.len())?;
+    }
+    let mut changed = false;
+    for (ordinal, target) in output.iter_mut().enumerate() {
+        let index = checked_string_index(string_index_at(inputs, 1, ordinal)?, source.len())?;
+        if *target != source[index] {
+            target.clone_from(&source[index]);
+            changed = true;
+        }
+    }
+    Ok(changed)
+}
+
+fn bind_string_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != 2
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+                    || layout.kind != ResidentValueKind::String
+                    || layout.shape != ResidentShape::SCALAR
+            })
+        || request.output.kind != ResidentValueKind::Bool
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::ExactScalar
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    Ok(BoundResidentKernel::new(string_equal, Box::new([])))
+}
+
+fn string_equal(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([left])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let Some(ResidentValueRef::String([right])) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::Bool([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let next = u8::from(left == right);
+    let changed = *target != next;
+    *target = next;
+    Ok(changed)
+}
+
+fn bind_string_scalar_access(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let [source, index] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != 2
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+        || source.kind != ResidentValueKind::String
+        || source.shape.len().is_none()
+        || !matches!(
+            index.kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index
+        )
+        || index.shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::String
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::Write
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            })
+        || output.alias != AliasPolicy::NoAlias
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    Ok(BoundResidentKernel::new(string_scalar_access, Box::new([])))
+}
+
+fn string_scalar_access(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String(source)) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let index = string_index_at(inputs, 1, 0)?;
+    let next = &source[checked_string_index(index, source.len())?];
+    let ResidentValueMut::String([target]) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let changed = target != next;
+    if changed {
+        target.clone_from(next);
+    }
+    Ok(changed)
+}
+
+fn bind_f64_vector_to_string(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let [input] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    let [input_contract] = contract.inputs.as_ref() else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let [output_contract] = contract.outputs.as_ref() else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || input_contract.schema != input.schema_id
+        || input_contract.access != AccessMode::Read
+        || input_contract.delivery != DeliveryMode::Signal
+        || output_contract.schema != request.output.schema_id
+        || output_contract.access != AccessMode::Write
+        || output_contract.delivery != DeliveryMode::Signal
+        || output_contract.construction
+            != (OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            })
+        || output_contract.alias != AliasPolicy::NoAlias
+        || output_contract.change_detection != ChangeDetectionPolicy::KernelReported
+        || input.kind != ResidentValueKind::F64
+        || request.output.kind != ResidentValueKind::String
+        || input.shape != request.output.shape
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new(f64_vector_to_string, Box::new([])))
+}
+
+fn f64_vector_to_string(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::F64(source)) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String(target) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if source.len() != target.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut changed = false;
+    for (source, target) in source.iter().zip(target) {
+        let next = source.to_string();
+        if *target != next {
+            *target = next;
+            changed = true;
+        }
+    }
+    Ok(changed)
+}
+
+fn validate_string_axis_zero_assignment(
+    request: &ResidentKernelBindRequest<'_>,
+    index_kind: ResidentValueKind,
+    regions: RegionPolicy,
+) -> Result<(), ResidentKernelBindError> {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    };
+    let [base, source, index] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if contract.interaction != ExternalInteraction::Pure
+        || contract.inputs.len() != 3
+        || contract.outputs.len() != 1
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .any(|(port, layout)| {
+                port.schema != layout.schema_id
+                    || port.access != AccessMode::Read
+                    || port.delivery != DeliveryMode::Signal
+            })
+        || base.kind != ResidentValueKind::String
+        || source.kind != ResidentValueKind::String
+        || source.shape != ResidentShape::SCALAR
+        || index.kind != index_kind
+        || base.schema_id != request.output.schema_id
+        || base.schema_key != request.output.schema_key
+        || base.shape != request.output.shape
+        || request.output.kind != ResidentValueKind::String
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    let output = &contract.outputs[0];
+    if output.schema != request.output.schema_id
+        || output.access != AccessMode::ReadWrite
+        || output.delivery != DeliveryMode::Signal
+        || output.construction
+            != (OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions,
+            })
+        || output.alias != (AliasPolicy::MayAlias { input: 0 })
+        || output.change_detection != ChangeDetectionPolicy::KernelReported
+    {
+        return Err(ResidentKernelBindError::UnsupportedContract);
+    }
+    Ok(())
+}
+
+fn bind_string_mask_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_string_axis_zero_assignment(
+        request,
+        ResidentValueKind::Bool,
+        RegionPolicy::IndexedAxis { axis: 0 },
+    )?;
+    if request.inputs[2].shape.len() != request.inputs[0].shape.len() {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new(string_mask_assign, Box::new([])))
+}
+
+fn bind_string_index_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_string_axis_zero_assignment(
+        request,
+        ResidentValueKind::Index,
+        RegionPolicy::IndexedAxis { axis: 0 },
+    )?;
+    if request.inputs[2].shape != ResidentShape::SCALAR {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new(string_index_assign, Box::new([])))
+}
+
+fn bind_string_indices_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_string_axis_zero_assignment(
+        request,
+        ResidentValueKind::Index,
+        RegionPolicy::IndexedAxis { axis: 0 },
+    )?;
+    Ok(BoundResidentKernel::new(
+        string_indices_assign,
+        Box::new([]),
+    ))
+}
+
+fn bind_string_all_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_string_axis_zero_assignment(
+        request,
+        ResidentValueKind::Bool,
+        RegionPolicy::WholeValue,
+    )?;
+    if request.inputs[2].shape != ResidentShape::SCALAR {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(BoundResidentKernel::new(string_all_assign, Box::new([])))
 }
 
 fn bind_concat(
@@ -75,6 +564,149 @@ fn concat(
     Ok(changed)
 }
 
+fn string_mask_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([source])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let Some(ResidentValueRef::Bool(indexes)) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String(target) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if indexes.len() != target.len() {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let mut changed = false;
+    for (target, selected) in target.iter_mut().zip(indexes) {
+        if *selected != 0 && target != source {
+            target.clone_from(source);
+            changed = true;
+        }
+    }
+    Ok(changed)
+}
+
+fn string_index_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([source])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let Some(ResidentValueRef::Index([index])) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String(target) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let Some(target) = usize::try_from(*index)
+        .ok()
+        .and_then(|index| index.checked_sub(1))
+        .and_then(|index| target.get_mut(index))
+    else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let changed = target != source;
+    if changed {
+        target.clone_from(source);
+    }
+    Ok(changed)
+}
+
+fn string_indices_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([source])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let Some(ResidentValueRef::Index(indexes)) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String(target) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    for index in indexes {
+        checked_string_index(*index, target.len())?;
+    }
+    let mut changed = false;
+    for index in indexes {
+        let index = checked_string_index(*index, target.len())?;
+        if target[index] != *source {
+            target[index].clone_from(source);
+            changed = true;
+        }
+    }
+    Ok(changed)
+}
+
+fn string_index_at(
+    inputs: &dyn ResidentKernelInputs,
+    input_index: usize,
+    ordinal: usize,
+) -> Result<u64, ResidentKernelError> {
+    match inputs.get(input_index) {
+        Some(ResidentValueRef::Index(values)) => values
+            .get(ordinal)
+            .copied()
+            .ok_or(ResidentKernelError::InvalidInput),
+        Some(ResidentValueRef::F64(values)) => {
+            let value = *values
+                .get(ordinal)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            if !value.is_finite() || value < 0.0 || value.fract() != 0.0 {
+                return Err(ResidentKernelError::InvalidInput);
+            }
+            Ok(value as u64)
+        }
+        _ => Err(ResidentKernelError::InvalidInput),
+    }
+}
+
+fn checked_string_index(index: u64, upper: usize) -> Result<usize, ResidentKernelError> {
+    if index == 0 || index > upper as u64 {
+        return Err(ResidentKernelError::IndexOutOfRange {
+            index,
+            upper_bound: upper as u64,
+        });
+    }
+    Ok(index as usize - 1)
+}
+
+fn string_all_assign(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let Some(ResidentValueRef::String([source])) = inputs.get(0) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let Some(ResidentValueRef::Bool([selected])) = inputs.get(1) else {
+        return Err(ResidentKernelError::InvalidInput);
+    };
+    let ResidentValueMut::String(target) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    if *selected == 0 {
+        return Ok(false);
+    }
+    let mut changed = false;
+    for target in target {
+        if target != source {
+            target.clone_from(source);
+            changed = true;
+        }
+    }
+    Ok(changed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -106,5 +738,67 @@ mod tests {
                 .unwrap()
         );
         assert_eq!(output[0], "Hello, Ada");
+    }
+
+    struct NumericInput([f64; 4]);
+
+    impl ResidentKernelInputs for NumericInput {
+        fn len(&self) -> usize {
+            1
+        }
+
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            (index == 0).then_some(ResidentValueRef::F64(&self.0))
+        }
+    }
+
+    #[test]
+    fn f64_vector_conversion_matches_source_string_formatting() {
+        let kernel = BoundResidentKernel::new(f64_vector_to_string, Box::new([]));
+        let inputs = NumericInput([1.0, -2.5, f64::INFINITY, f64::NAN]);
+        let mut output = [String::new(), String::new(), String::new(), String::new()];
+
+        assert!(
+            kernel
+                .execute(&inputs, ResidentValueMut::String(&mut output))
+                .unwrap()
+        );
+        assert_eq!(output, ["1", "-2.5", "inf", "NaN"]);
+    }
+
+    struct MaskInputs {
+        source: [String; 1],
+        indexes: [u8; 4],
+    }
+
+    impl ResidentKernelInputs for MaskInputs {
+        fn len(&self) -> usize {
+            2
+        }
+
+        fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+            match index {
+                0 => Some(ResidentValueRef::String(&self.source)),
+                1 => Some(ResidentValueRef::Bool(&self.indexes)),
+                _ => None,
+            }
+        }
+    }
+
+    #[test]
+    fn string_mask_assignment_updates_only_selected_resident_elements() {
+        let kernel = BoundResidentKernel::new(string_mask_assign, Box::new([]));
+        let inputs = MaskInputs {
+            source: ["Fizz".to_owned()],
+            indexes: [0, 1, 0, 1],
+        };
+        let mut output = ["1", "2", "3", "4"].map(str::to_owned);
+
+        assert!(
+            kernel
+                .execute(&inputs, ResidentValueMut::String(&mut output))
+                .unwrap()
+        );
+        assert_eq!(output, ["1", "Fizz", "3", "Fizz"]);
     }
 }

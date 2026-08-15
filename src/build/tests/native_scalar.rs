@@ -16,7 +16,10 @@ fn scalar_add_native_application_uses_only_the_exact_installer() {
     );
 
     assert!(result.poisoned_output_seed);
-    assert_exact_mech_packages(&result.plan, &["mech-core", "mech-engine", "mech-math"]);
+    assert_exact_mech_packages(
+        &result.plan,
+        &["mech-core", "mech-engine", "mech-math", "mech-runtime"],
+    );
     let catalog = result.catalog_source.unwrap();
     assert!(catalog.contains("mech_math::__mech_native::install_add_ss_f64"));
     assert_eq!(catalog.matches("__mech_native::install_").count(), 1);

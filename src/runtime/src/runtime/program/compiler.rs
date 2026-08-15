@@ -5,7 +5,10 @@
 //! local to one compilation and is dropped after finalization. Only
 //! `ProgramCompilationProduct` escapes this module.
 
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use mech_core::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
@@ -139,6 +142,7 @@ struct CompilerModule {
 #[derive(Clone)]
 struct CompilerModuleInstance {
     exports: HashMap<String, CompilerExportValue>,
+    result: LegacyValue,
 }
 
 #[derive(Clone)]
@@ -305,6 +309,16 @@ impl<'a> ProgramCompilerView<'a> {
             &mut active,
             Some(&mut root_program),
         )?;
+        root_program
+            .as_mut()
+            .expect("root compiler program is retained until finalization")
+            .publish_compiler_root_output(
+                instances
+                    .get(&root)
+                    .expect("the requested root was executed")
+                    .result
+                    .clone(),
+            );
         let operations = modules
             .values()
             .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
@@ -333,10 +347,11 @@ impl<'a> ProgramCompilerView<'a> {
             request.validate()?;
             roots.push(self.resolve_module(request.clone(), options, &mut modules, &mut stack)?);
         }
+        let plan_order = explicit_root_plan_order(&roots, &modules);
         let mut instances = HashMap::new();
         let mut active = Vec::new();
         let mut root_program = Some(self.new_program());
-        for root in roots {
+        for root in plan_order {
             self.execute_module(
                 &root,
                 &modules,
@@ -344,6 +359,18 @@ impl<'a> ProgramCompilerView<'a> {
                 &mut active,
                 Some(&mut root_program),
             )?;
+        }
+        let program = root_program
+            .as_mut()
+            .expect("root compiler program is retained until finalization");
+        for root in &roots {
+            program.publish_compiler_root_output(
+                instances
+                    .get(root)
+                    .expect("every requested root was executed")
+                    .result
+                    .clone(),
+            );
         }
         let operations = modules
             .values()
@@ -594,7 +621,7 @@ impl<'a> ProgramCompilerView<'a> {
             providers: self.resources,
             resource_send_operations: &resource_send_operations,
         };
-        program
+        let result = program
             .plan_tree_with_services(&tree, &mut services)
             .map_err(classify_source_planning)?;
 
@@ -629,10 +656,50 @@ impl<'a> ProgramCompilerView<'a> {
                 },
             );
         }
-        instances.insert(canonical_uri.to_owned(), CompilerModuleInstance { exports });
+        instances.insert(
+            canonical_uri.to_owned(),
+            CompilerModuleInstance { exports, result },
+        );
         active.pop();
         Ok(())
     }
+}
+
+/// Preserve caller order for independent roots while promoting any requested
+/// dependency ahead of its consumer. That lets an explicit dependency execute
+/// exactly once in the shared program. Caller-visible outputs are published
+/// separately after planning so this topological order cannot reorder them.
+fn explicit_root_plan_order(
+    roots: &[String],
+    modules: &HashMap<String, CompilerModule>,
+) -> Vec<String> {
+    fn visit(
+        root: &str,
+        requested: &HashSet<&str>,
+        modules: &HashMap<String, CompilerModule>,
+        visited: &mut HashSet<String>,
+        ordered: &mut Vec<String>,
+    ) {
+        if !visited.insert(root.to_owned()) {
+            return;
+        }
+        if let Some(module) = modules.get(root) {
+            for (_, dependency) in &module.import_edges {
+                if requested.contains(dependency.as_str()) {
+                    visit(dependency, requested, modules, visited, ordered);
+                }
+            }
+        }
+        ordered.push(root.to_owned());
+    }
+
+    let requested = roots.iter().map(String::as_str).collect::<HashSet<_>>();
+    let mut visited = HashSet::new();
+    let mut ordered = Vec::with_capacity(requested.len());
+    for root in roots {
+        visit(root, &requested, modules, &mut visited, &mut ordered);
+    }
+    ordered
 }
 
 fn compiled_resource_send_operations(

@@ -16,7 +16,7 @@ use crate::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeCompensatableEffect, RuntimeEffectCost,
     RuntimeEffectId, RuntimeEffectMetadata, RuntimeEffectSource,
     RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent,
+    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
 
 pub static D3_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -194,6 +194,10 @@ impl RuntimeResourceProvider for D3SceneProvider {
         )))
     }
 
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        validate_d3_write(&request, "gate-d3://scene/output", "frame")
+    }
+
     fn prepare_resident_write(
         &self,
         request: RuntimeResidentResourceWriteRequest,
@@ -285,6 +289,10 @@ impl RuntimeResourceProvider for D3TransactionalProvider {
         )))
     }
 
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        validate_d3_write(&request, "gate-d3://transactional/state", "value")
+    }
+
     fn prepare_resident_write(
         &self,
         request: RuntimeResidentResourceWriteRequest,
@@ -338,6 +346,23 @@ fn metadata(name: &str) -> RuntimeEffectMetadata {
     )
     .with_resource(name)
     .with_cost(RuntimeEffectCost { bytes: 8, items: 1 })
+}
+
+fn validate_d3_write(
+    request: &RuntimeResourceWriteRequest,
+    expected_base_uri: &str,
+    expected_path: &str,
+) -> MResult<()> {
+    if request.base_uri != expected_base_uri
+        || request.path != expected_path
+        || request.intent != RuntimeResourceWriteIntent::Send
+        || !matches!(request.value, LegacyValue::F64(_))
+    {
+        return Err(provider_error(
+            "D3 fixture write does not match its declared numeric send target",
+        ));
+    }
+    Ok(())
 }
 
 fn provider_error(message: &str) -> MechError {

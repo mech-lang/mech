@@ -19,7 +19,7 @@ mech-core = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "string"] }
 
 [dev-dependencies]
-mech-runtime = { version = "0.3.5", default-features = false, features = ["source"] }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["semantic-compiler"] }
 
 [[test]]
 name = "provider"

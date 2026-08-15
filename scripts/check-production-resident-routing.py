@@ -32,7 +32,8 @@ PROHIBITED_ROUTE_REFERENCES = (
 )
 OLD_EXECUTOR_CALL = re.compile(
     r"\.(?:run_string(?:_with_context)?|run_source(?:_with_context)?|"
-    r"run_tree(?:_with_context)?|install_bytecode_with_context|"
+    r"run_tree(?:_with_context)?|run_bytecode(?:_with_services|_program(?:_with_services)?)?|"
+    r"install_bytecode_with_context|"
     r"evaluate_bytecode_once_with_context|resolve_and_run_root_module(?:_with_context|_report)?)\s*\("
 )
 TEST_MODULE = re.compile(
@@ -102,12 +103,6 @@ def check_product_references() -> list[str]:
         lines = source.splitlines()
         for index, line in enumerate(lines):
             for match in OLD_EXECUTOR_CALL.finditer(line):
-                # The temporary developer facade is explicit authority, not a
-                # direct old-executor call. Multi-line method chains need a
-                # small look-behind window.
-                context = "\n".join(lines[max(0, index - 4) : index + 1])
-                if ".legacy_interpreter()" in context:
-                    continue
                 failures.append(
                     f"{path}:{index + 1}: direct old executor call {match.group(0).strip()}"
                 )
@@ -157,6 +152,12 @@ def feature_closure(features: dict[str, list[str]], root: str) -> set[str]:
 
 def check_feature_boundaries() -> list[str]:
     failures: list[str] = []
+    for manifest in sorted(ROOT.rglob("Cargo.toml")):
+        source = manifest.read_text(encoding="utf-8")
+        if re.search(r"(?m)^legacy-interpreter\s*=", source):
+            failures.append(
+                f"{manifest.relative_to(ROOT)}: obsolete legacy-interpreter feature remains"
+            )
     contracts = (
         ("Cargo.toml", "distribution-standard", False),
         ("Cargo.toml", "distribution-full", False),
@@ -251,6 +252,18 @@ def check_required_product_seams() -> list[str]:
         failures.append(
             "src/runtime/src/runtime/program/compiler.rs: compiler modules must not share ValRef identity"
         )
+    engine_lib = (ROOT / "src/engine/src/lib.rs").read_text(encoding="utf-8")
+    if re.search(r"(?m)^\s*pub\s+mod\s+interpreter\s*;", engine_lib):
+        failures.append("src/engine/src/lib.rs: interpreter module must remain private")
+    if not re.search(
+        r'#\[cfg\(feature = "semantic-compiler"\)\]\s*mod\s+interpreter\s*;',
+        engine_lib,
+    ):
+        failures.append(
+            "src/engine/src/lib.rs: private interpreter module must be semantic-compiler-only"
+        )
+    if (ROOT / "src/engine/src/program/instance.rs").exists():
+        failures.append("src/engine/src/program/instance.rs: obsolete program instance remains")
     terminal_provider = (ROOT / "hosts/terminal/src/provider.rs").read_text(
         encoding="utf-8"
     )
@@ -328,6 +341,8 @@ def check_required_product_seams() -> list[str]:
     if "ResidentAdmissionProof" not in resident_authority:
         failures.append(f"{resident_authority_path}: missing ResidentAdmissionProof")
     for obsolete_owner in (
+        "src/interpreter",
+        "src/bin/interpreter2.rs",
         "src/runtime/src/runtime/resident_program",
         "src/runtime/src/resident_external",
         "src/runtime/src/runtime/execution/query.rs",

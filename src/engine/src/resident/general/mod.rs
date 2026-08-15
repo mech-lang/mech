@@ -1681,15 +1681,31 @@ fn build_plan(
             .map(|source| source_port_layout(artifact, &layout, *source))
             .collect::<Result<Vec<_>, _>>()?;
         let output_layout = slot_port_layout(output);
-        let factory = catalog
-            .resident_factory(&node.operation.module_path, &node.operation.operation_name)
-            .ok_or(ResidentActivationError::MissingResidentFactory { node: node.node })?;
-        let kernel = (factory.factory)(&ResidentKernelBindRequest {
+        let bind_request = ResidentKernelBindRequest {
             contract: artifact.contracts().get(node.contract).unwrap(),
             schemas: artifact.schemas(),
             inputs: &input_layouts,
             output: output_layout,
-        })
+        };
+        let kernel = if let Some(factory) =
+            catalog.resident_factory(&node.operation.module_path, &node.operation.operation_name)
+        {
+            (factory.factory)(&bind_request)
+        } else {
+            #[cfg(feature = "dynamic-modules")]
+            {
+                crate::function::bind_dynamic_resident_operation(
+                    &node.operation.module_path,
+                    &node.operation.operation_name,
+                    &bind_request,
+                )
+                .ok_or(ResidentActivationError::MissingResidentFactory { node: node.node })?
+            }
+            #[cfg(not(feature = "dynamic-modules"))]
+            {
+                return Err(ResidentActivationError::MissingResidentFactory { node: node.node });
+            }
+        }
         .map_err(|error| ResidentActivationError::KernelBind {
             node: node.node,
             error,

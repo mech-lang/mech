@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "452887fa5bfa1114e497408282adbf0f33fba87a2a37adc771caf2e59616a0e5"
+EXPECTED_MANIFEST_SHA256 = "d628eebd1dd857d95e9a6b89a8a653cdf3a9b4d145717d84845add5c63521074"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
@@ -26,7 +26,7 @@ EXPECTED_FIXTURE_SHA256 = {
     "variadic-horzcat-f64.mecb": "51d76d630817b8e7ed43858443793189317db6c1c77aa0df199f418a9e3c8aef",
     "string.mecb": "f1d6f944a4b17053219e3ddc3b387113ac51817576d2b8021ae91e9fc51b6989",
     "unary.mecb": "0ff094aef90007caed9fd6dbac19a876e6351232c1ab3798003d36f18996e505",
-    "ternary.mecb": "4cb719b39aa0bf9b0481be8b8e5e177ec2eefbcd24678cb64006f49880e79157",
+    "ternary.mecb": "0719664782a79e8a7ecf1a8316ac94189b88a338c2abf4e233c00d4c3a5bfb0e",
     "quaternary.mecb": "5cb621f20b47e28fdd130a54453dad38b622b4e7124cc01a12f7c9f0001d8cb3",
     "named-module-operation.mecb": "173567a7d874b3b2225d3a8f79e0ddf474c94a4de721d0edbacfa97c90ff83d0",
     "cli-stdout.mecb": "dab68ba55b94e09321f6e8bcdafd7292cab1b8a983e6ae14d6ebf12e39090fe4",

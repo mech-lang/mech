@@ -596,6 +596,7 @@ fn compiled_fixture(
             dictionary: BTreeMap::new(),
             requirements,
         },
+        runtime_function_names: BTreeMap::new(),
         instruction_contracts: vec![None; instruction_roles.len()],
         instruction_source_nodes: vec![None; instruction_roles.len()],
         instruction_roles,

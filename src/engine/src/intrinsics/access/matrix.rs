@@ -2570,6 +2570,30 @@ macro_rules! impl_access_all_range_arms {
         (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))]) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
         },
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector2"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))]) if source.borrow().nrows() == 1 => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector2"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))]) => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector3"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))]) if source.borrow().nrows() == 1 => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector3"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))]) => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector4"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))]) if source.borrow().nrows() == 1 => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector4"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))]) => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
         // All Bool Vector
         #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vectord"))]
         (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixBool(Matrix::DVector(ix))]) if source.borrow().nrows() == 1 => {
@@ -3902,6 +3926,32 @@ pub(crate) mod native_declarations {
     declare_access_dynamic_for_shape!(RowVector3, "row_vector3");
     declare_access_dynamic_for_shape!(RowVector4, "row_vector4");
     declare_access_dynamic_for_shape!(RowDVector, "row_vectord");
+
+    // The retained n-body source uses a fixed three-column selector against
+    // its dynamic body table. Keep that exact all-feature representation in
+    // the runtime catalog rather than changing global shape preference.
+    declare_access_all_range_scalar!(
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector2,
+        usize,
+        ["matrixd", "vector2"];
+        f64,
+        "f64",
+        "f64"
+    );
+    declare_access_all_range_scalar!(
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector3,
+        usize,
+        ["matrixd", "vector3"];
+        f64,
+        "f64",
+        "f64"
+    );
 }
 
 #[doc(hidden)]
@@ -3961,6 +4011,32 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_access_dynamic_shape!(builder, "row_vector3", RowVector3);
     install_access_dynamic_shape!(builder, "row_vector4", RowVector4);
     install_access_dynamic_shape!(builder, "row_vectord", RowDVector);
+
+    #[cfg(all(feature = "f64", feature = "matrixd", feature = "vector3"))]
+    install_access_all_range_scalar!(
+        builder,
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector3,
+        usize;
+        f64,
+        "f64",
+        "f64"
+    );
+
+    #[cfg(all(feature = "f64", feature = "matrixd", feature = "vector2"))]
+    install_access_all_range_scalar!(
+        builder,
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector2,
+        usize;
+        f64,
+        "f64",
+        "f64"
+    );
 
     Ok(())
 }
