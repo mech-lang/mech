@@ -353,10 +353,34 @@ struct ServedDocumentBootstrap {
 mod document {
     use super::*;
 
+    pub(super) fn direct_document_output_symbols(
+        tree: &mech_core::nodes::Program,
+    ) -> HashMap<u64, String> {
+        tree.body
+            .sections
+            .iter()
+            .flat_map(|section| &section.elements)
+            .filter_map(|element| match element {
+                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
+                    let (code, _) = block.code.last()?;
+                    let symbol = match code {
+                        mech_core::nodes::MechCode::Expression(
+                            mech_core::nodes::Expression::Var(var),
+                        ) if var.context.is_none() => var.name.to_string(),
+                        _ => return None,
+                    };
+                    Some((mech_core::hash_str(&format!("{code:?}")), symbol))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
     #[wasm_bindgen]
     pub struct WasmDocument {
         pub(super) project: WasmProject,
         bootstrap: WasmDocumentBootstrap,
+        direct_output_symbols: HashMap<u64, String>,
     }
 
     fn load_resident_document_root(
@@ -379,6 +403,7 @@ mod document {
         #[wasm_bindgen(js_name = fromEncoded)]
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
             let tree = decode_document_tree(encoded)?;
+            let direct_output_symbols = direct_document_output_symbols(&tree);
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: "document.mec".to_string(),
                 source_map: HashMap::from([("document.mec".to_string(), String::new())]),
@@ -401,6 +426,7 @@ mod document {
                     scenes,
                 ),
                 bootstrap: WasmDocumentBootstrap::Detached,
+                direct_output_symbols,
             })
         }
 
@@ -442,6 +468,7 @@ mod document {
                 source_map,
                 resolutions,
             };
+            let direct_output_symbols = direct_document_output_symbols(&tree);
             #[cfg(feature = "browser_host_scene")]
             let scenes = BrowserSceneRegistry::new();
             let source_resolver = document_source_resolver(tree.clone(), &bootstrap)?;
@@ -460,6 +487,7 @@ mod document {
                     scenes,
                 ),
                 bootstrap: WasmDocumentBootstrap::SourceBacked(bootstrap),
+                direct_output_symbols,
             })
         }
 
@@ -526,6 +554,7 @@ mod document {
             resolutions: Vec<SourceResolutionEntry>,
             authority: BrowserRuntimeInjectionConfig,
         ) -> Result<WasmDocument, JsValue> {
+            let direct_output_symbols = direct_document_output_symbols(&tree);
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
@@ -555,11 +584,15 @@ mod document {
                     config_source: config_source.to_string(),
                     authority,
                 }),
+                direct_output_symbols,
             })
         }
 
         #[wasm_bindgen(js_name = renderedOutput)]
         pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
+            if let Some(symbol) = self.direct_output_symbols.get(&output_id) {
+                return self.project.rendered_symbol(symbol);
+            }
             self.project.rendered_output(output_id)
         }
 
@@ -600,6 +633,7 @@ mod document {
             self.project.stop()?;
             self.project = replacement.project;
             self.bootstrap = replacement.bootstrap;
+            self.direct_output_symbols = replacement.direct_output_symbols;
             if was_started {
                 self.project.start()?;
             }
@@ -1493,6 +1527,18 @@ mod tests {
     grants: []
   }
 }"#;
+
+    #[test]
+    fn direct_document_output_hash_maps_to_the_resident_symbol() {
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
+                .unwrap();
+        let outputs = document::direct_document_output_symbols(&tree);
+        assert_eq!(
+            outputs.get(&29_884_140_763_677_669).map(String::as_str),
+            Some("y"),
+        );
+    }
 
     #[test]
     fn required_paths_returns_configured_paths() {
@@ -2695,6 +2741,12 @@ mod browser_tests {
                 .as_deref(),
             Some("true"),
         );
+        let output = document.rendered_output(output_id).unwrap();
+        let block_html = Reflect::get(&output, &JsValue::from_str("blockHtml"))
+            .unwrap()
+            .as_string()
+            .expect("the FizzBuzz source output must render as HTML");
+        assert!(block_html.contains("✨🐝"), "{block_html}");
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();

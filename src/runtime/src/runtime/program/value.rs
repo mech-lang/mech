@@ -80,7 +80,8 @@ fn string_matrix_value(shape: ResidentShape, values: &[String]) -> LegacyValue {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::string_matrix_value;
+    use mech_core::{LegacyValue, ResidentShape};
 
     #[test]
     fn resident_string_matrix_output_materializes_without_scalar_fallback() {
