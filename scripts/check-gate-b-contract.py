@@ -245,7 +245,6 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         root / "src/runtime/benches/support/gate_b/raw_kernel.rs",
         root / "src/runtime/benches/support/gate_b/raw_epoch.rs",
         root / "src/runtime/benches/support/gate_b/full_write.rs",
-        root / "src/runtime/benches/support/gate_b/legacy_atomic.rs",
         root / "src/runtime/benches/support/gate_b/resident_kernel.rs",
         root / "src/runtime/benches/support/gate_b/resident_turn.rs",
         root / "src/runtime/benches/support/gate_b/resident_artifact.rs",
@@ -264,6 +263,13 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     errors = [f"missing required Gate B fixture: {path.relative_to(root)}" for path in required if not path.is_file()]
     if errors:
         return errors
+
+    retired_legacy_fixture = root / "src/runtime/benches/support/gate_b/legacy_atomic.rs"
+    if retired_legacy_fixture.exists():
+        errors.append(
+            "retired Gate B legacy-atomic fixture was restored: "
+            f"{retired_legacy_fixture.relative_to(root)}"
+        )
 
     trace = (gate_b_dir / "ekf-input-v1.bin").read_bytes()
     trace_hash = hashlib.sha256(trace).hexdigest()
@@ -327,7 +333,6 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     raw_kernel = read_text(root / "src/runtime/benches/support/gate_b/raw_kernel.rs")
     raw_epoch = read_text(root / "src/runtime/benches/support/gate_b/raw_epoch.rs")
     full_write = read_text(root / "src/runtime/benches/support/gate_b/full_write.rs")
-    legacy = read_text(root / "src/runtime/benches/support/gate_b/legacy_atomic.rs")
     benchmark = read_text(root / "src/runtime/benches/resident_ekf.rs")
     resident_root = root / "src/engine/src/resident"
     resident_sources = {
@@ -477,8 +482,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
     ):
         if frozen not in activation_source:
             errors.append(f"resident temporal topology contract lost: {frozen}")
-    if "raw_kernel::step(" not in raw_epoch or "raw_kernel::step(" not in legacy:
-        errors.append("raw epoch and legacy controls must call the shared raw EKF kernel")
+    if "raw_kernel::step(" not in raw_epoch:
+        errors.append("raw epoch control must call the shared raw EKF kernel")
     if raw_epoch.count("published_epoch.store(") != 1:
         errors.append("raw EKF epoch must contain exactly one publication store site")
     if full_write.count("published_epoch.store(") != 1:
@@ -491,16 +496,16 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         errors.append("raw EKF admission must be reserved during fixture setup")
     if not call_occurs_before(full_write, "reserve_retained", "pub fn run_episode"):
         errors.append("raw full-write admission must be reserved during fixture setup")
-    for frozen in (
-        "RuntimeHostInput::new(vec![",
-        "RuntimeHostInputDriver for GateBInputDriver",
-        "apply_host_input_with_context",
-        "transaction_state_values",
-    ):
-        if frozen not in legacy:
-            errors.append(f"legacy ordinary-turn fixture lost: {frozen}")
-    if legacy.count("RuntimeHostInputUpdate {") < 4:
-        errors.append("legacy EKF host-input packet no longer contains four updates")
+    retired_live_lane_tokens = (
+        "support::gate_b::legacy_atomic",
+        "LegacyAtomicFixture",
+        '"mech-legacy-atomic"',
+    )
+    for retired in retired_live_lane_tokens:
+        if retired in benchmark:
+            errors.append(
+                f"retired Gate B legacy-atomic benchmark lane was restored: {retired}"
+            )
     for frozen in (
         "Instant::now()",
         "reset_allocations();",

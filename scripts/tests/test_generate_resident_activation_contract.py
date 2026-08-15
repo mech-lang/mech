@@ -24,7 +24,7 @@ class ResidentActivationGeneratorTests(unittest.TestCase):
     def test_phase_d_projection_is_mechanical_and_sorted(self) -> None:
         projection = GENERATOR.build_migration_projection(ROOT)
         self.assertEqual(projection["target_count"], 2)
-        self.assertEqual(projection["occurrence_count"], 497)
+        self.assertEqual(projection["occurrence_count"], 491)
         self.assertEqual(
             [target["id"] for target in projection["targets"]],
             ["mutable-reference-runtime-storage", "uninitialized-storage"],

@@ -167,7 +167,7 @@ head is recorded in PR #760 after Commit 7 is pushed.
 - Commands:
   `cargo build --bin mech --no-default-features --features run`;
   `cargo test --lib --no-default-features --features run
-  cli::commands::run::tests`; and the Project browser feature-boundary commands
+  cli::commands::run::command_outcome_tests`; and the Project browser feature-boundary commands
   in `.github/workflows/ci-full.yml`.
 - Error: the reduced graphs omit retained resident-routing symbols,
   `source_catalog`, terminal-provider ownership, source loading, execution-info
@@ -237,6 +237,12 @@ head is recorded in PR #760 after Commit 7 is pushed.
 - Acceptance: the packager preserves its child diagnostic and succeeds for
   standard/full packages; Windows serve compiles and tests; the regenerated
   20-fixture corpus makes native live green.
+- E4 local validation note: the deterministic standard/full tar/zip packaging
+  contract passes on macOS. A direct `x86_64-pc-windows-gnu` CLI cross-check
+  stops in `aws-lc-sys` before Mech compilation because this validation host
+  does not provide `x86_64-w64-mingw32-gcc`. This is a validation-environment
+  stop, not a product waiver; the retained Windows jobs remain required on a
+  Windows runner.
 
 ### M. Native-linkage summary reconciliation
 
@@ -261,6 +267,127 @@ head is recorded in PR #760 after Commit 7 is pushed.
   matrix finally reaches it.
 
 ## Mandatory acceptance rule
+
+### N. Resident snapshot-producing kernel boundary
+
+- Command: `python3 scripts/check-value-system-contract.py
+  --allow-only-c0-gate-b-evidence-stale` after regenerating
+  `tests/architecture/value-system/current-inventory.json`.
+- Error: `C2-RESIDENT-LEGACY-HOT-PATH` reports snapshot imports in
+  `src/engine/src/resident/composite.rs` and
+  `src/engine/src/resident/set.rs`.
+- E2 reproduction: no. These dedicated resident kernels are introduced by E4
+  to close retained analog-clock composite packing and browser/native set
+  execution. The schema-aware strict whole-value comparison added in E4 only
+  reads already-finalized snapshots and does not trigger this finding.
+- Rejected workaround: re-exporting the snapshot helpers through the
+  `mech_core` root was rejected because it would conceal rather than resolve
+  the dependency.
+- Permanent owners: the C2 compact/pre-resolved resident-turn invariant, the
+  immutable snapshot publication boundary, and retained composite/set product
+  execution.
+- Acceptance: preserve strict deep comparison; do not hide imports or weaken
+  the checker. Snapshot-producing operations must either move construction to
+  an explicit non-hot publication/materialization boundary, or the permanent
+  contract must precisely distinguish and test finalized immutable snapshot
+  kernels from prohibited draft, hash, schema-lookup, and constant-store work.
+  The strict checker must then pass with no exception for this finding.
+
+### O. D0 migration-projection unit count
+
+- Command: `python3 -B -m unittest
+  scripts/tests/test_generate_resident_activation_contract.py`.
+- Error: the generated and committed D0 projection both contain 491
+  occurrences, while the unit test still asserts the obsolete count 497.
+- E2/E3 reproduction: yes. The exact E3 artifact already contains 491; E4's
+  regenerated projection changes only source locations after formatting.
+- Permanent owner: the mechanical D0 migration-projection generator test.
+- Acceptance: retain the two exact migration targets, update the assertion to
+  491, and require both generator `--check` and its unit suite to pass.
+
+### P. Local Chrome/ChromeDriver qualification pairing
+
+- Command: `wasm-pack test --headless --chrome src/wasm
+  --no-default-features --features browser_project,set_union,set_element_of`.
+- Error: wasm-pack selected cached ChromeDriver 152.0.7977.42 while the local
+  browser was Chrome 151.0.7922.138. The driver started, but the harness
+  returned HTTP 404 before loading or executing a Mech test.
+- E2/E3 reproduction: not applicable. This was a validation-tool mismatch,
+  not a product assertion or compiled-code failure.
+- Permanent owner: F0's pinned browser, driver, and wasm-pack qualification
+  toolchain.
+- Resolution: rerun with the already-installed matching ChromeDriver
+  151.0.7922.71 supplied explicitly through `--chromedriver`. All 16 browser
+  product tests, the official bytecode-v1 fixture test, and all three
+  cross-target source-contract tests passed.
+- Acceptance: F0 must pin a compatible Chrome/ChromeDriver pair rather than
+  relying on wasm-pack's newest cached driver selection.
+
+### Q. Gate B static checker after legacy-lane teardown
+
+- Command: `python3 -B -m unittest discover -s scripts/tests`.
+- Error: `test_committed_static_contract_passes` requires the deleted
+  `src/runtime/benches/support/gate_b/legacy_atomic.rs` fixture.
+- E2/E3 reproduction: yes. E1 deliberately removed the live legacy-atomic
+  benchmark lane, but the permanent checker continued requiring and reading
+  its source file.
+- Permanent owner: the Gate B static checker, which must distinguish immutable
+  historical benchmark evidence from the currently executable benchmark
+  surface.
+- Resolution: retain report/schema validation for historical legacy lanes and
+  the frozen denominator, remove live-source assertions for the retired lane,
+  and add negative checks that reject restoration of the legacy fixture or
+  benchmark entry point.
+- Acceptance: the committed static contract passes with the legacy source lane
+  absent, historical evidence remains validated, and restoring the deleted
+  lane is a checker failure.
+
+### R. Default core unit-test feature closure
+
+- Command: `cargo test -p mech-core`.
+- Error: the `reactive_cell_tests` module imports optional `indexmap` types
+  unconditionally while the core default feature set enables neither
+  `indexmap` nor a container feature that owns it.
+- E2/E3 reproduction: yes by source and feature inspection. Exact E3 has the
+  same unconditional imports and `default = []` feature boundary.
+- Permanent owner: the default core unit suite and the optional container
+  feature closures.
+- Resolution: gate `IndexMap` and `IndexSet` test-only imports by the exact
+  container features that use them; do not broaden the default core product.
+- Acceptance: the default core suite and the full/container-enabled core suite
+  both compile and pass.
+
+### S. Local loopback restriction during root-library qualification
+
+- Command: `cargo test --lib`.
+- Error: 336 of 337 tests pass; the server-shutdown test is denied while
+  binding `127.0.0.1:0` by the local sandbox before the assertion runs.
+- E2/E3 reproduction: not applicable. This is a validation-environment
+  restriction, not a product failure.
+- Permanent owner: the retained server lifecycle suite.
+- Resolution: rerun the exact suite with ephemeral localhost binding enabled;
+  all 337 tests pass, including shutdown-signal delivery.
+- Acceptance: do not waive or rewrite the server test; execute it in a
+  validation environment that permits loopback sockets.
+
+### T. Minimal compiler graph versus exhaustive compiler suite
+
+- Command: `cargo test -p mech-engine --lib --tests --features compiler`.
+- Error: the minimal compiler graph correctly omits standard numeric,
+  container, matrix, and complex families, while the exhaustive activation and
+  catalog test modules intentionally exercise those families; compilation
+  reports missing feature-gated test types before running a test.
+- E2/E3 reproduction: yes by feature and test-source inspection. Exact E3
+  defines `default = []`, makes `compiler` a minimal producer feature, and
+  invokes the exhaustive test suite with that insufficient graph.
+- Permanent owners: the minimal semantic/compiler feature boundary and the
+  complete standard compiler test suite.
+- Resolution: require the minimal `compiler` graph to pass `cargo check`, then
+  run every compiler-enabled engine test under `compiler_default`. Do not add
+  standard product features to the minimal compiler edge and do not skip or
+  gate away test modules.
+- Acceptance: the minimal graph compiles independently and the exhaustive
+  compiler-default engine suite passes in full.
 
 E4 is complete only when:
 

@@ -1654,7 +1654,7 @@
         },
         {
           "column": 9,
-          "line": 1993
+          "line": 2001
         }
       ],
       "target": "atom-snapshot",
@@ -2494,7 +2494,7 @@
       "sites": [
         {
           "column": 59,
-          "line": 760
+          "line": 758
         }
       ],
       "target": "bool-snapshot",
@@ -3050,7 +3050,7 @@
       "sites": [
         {
           "column": 24,
-          "line": 1287
+          "line": 1291
         }
       ],
       "target": "generic-dispatch",
@@ -3329,22 +3329,6 @@
       "path": "src/engine/src/interpreter/mod.rs",
       "sites": [
         {
-          "column": 25,
-          "line": 2580
-        },
-        {
-          "column": 29,
-          "line": 2615
-        }
-      ],
-      "target": "option-absence",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/engine/src/interpreter/mod.rs",
-      "sites": [
-        {
           "column": 33,
           "line": 1573
         },
@@ -3358,11 +3342,15 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "path": "src/engine/src/interpreter/mod.rs",
       "sites": [
         {
-          "column": 49,
-          "line": 1618
+          "column": 25,
+          "line": 2580
+        },
+        {
+          "column": 29,
+          "line": 2615
         }
       ],
       "target": "option-absence",
@@ -3382,6 +3370,18 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "sites": [
+        {
+          "column": 49,
+          "line": 1618
+        }
+      ],
+      "target": "option-absence",
+      "variant": "Empty"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "src/engine/src/intrinsics/access/table.rs",
       "sites": [
         {
@@ -3390,18 +3390,6 @@
         }
       ],
       "target": "uninitialized-storage",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/engine/src/intrinsics/assign/mod.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 635
-        }
-      ],
-      "target": "execution-no-result",
       "variant": "Empty"
     },
     {
@@ -3422,11 +3410,23 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/assign/mod.rs",
+      "sites": [
+        {
+          "column": 9,
+          "line": 635
+        }
+      ],
+      "target": "execution-no-result",
+      "variant": "Empty"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "src/engine/src/intrinsics/convert/mat_to_mat.rs",
       "sites": [
         {
           "column": 15,
-          "line": 633
+          "line": 636
         }
       ],
       "target": "generic-dispatch",
@@ -3438,14 +3438,26 @@
       "sites": [
         {
           "column": 15,
-          "line": 632
+          "line": 635
         },
         {
           "column": 132,
-          "line": 632
+          "line": 635
         }
       ],
       "target": "option-absence",
+      "variant": "Empty"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/convert/scalar.rs",
+      "sites": [
+        {
+          "column": 53,
+          "line": 491
+        }
+      ],
+      "target": "source-empty-expression",
       "variant": "Empty"
     },
     {
@@ -3482,18 +3494,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "src/engine/src/intrinsics/convert/scalar.rs",
-      "sites": [
-        {
-          "column": 53,
-          "line": 491
-        }
-      ],
-      "target": "source-empty-expression",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/engine/src/intrinsics/define.rs",
       "sites": [
         {
@@ -3518,19 +3518,19 @@
       "sites": [
         {
           "column": 11,
-          "line": 6152
+          "line": 6164
         },
         {
           "column": 14,
-          "line": 6154
+          "line": 6166
         },
         {
           "column": 17,
-          "line": 6427
+          "line": 6439
         },
         {
           "column": 22,
-          "line": 6433
+          "line": 6445
         }
       ],
       "target": "uninitialized-storage",
@@ -3558,34 +3558,22 @@
         },
         {
           "column": 24,
-          "line": 336
+          "line": 441
         },
         {
           "column": 13,
-          "line": 344
+          "line": 449
         },
         {
           "column": 28,
-          "line": 349
+          "line": 454
         },
         {
           "column": 28,
-          "line": 364
+          "line": 469
         }
       ],
       "target": "uninitialized-storage",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/engine/src/literals.rs",
-      "sites": [
-        {
-          "column": 5,
-          "line": 321
-        }
-      ],
-      "target": "source-empty-expression",
       "variant": "Empty"
     },
     {
@@ -3606,6 +3594,18 @@
         }
       ],
       "target": "unspecified-extent",
+      "variant": "Empty"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/literals.rs",
+      "sites": [
+        {
+          "column": 5,
+          "line": 321
+        }
+      ],
+      "target": "source-empty-expression",
       "variant": "Empty"
     },
     {
@@ -3714,7 +3714,7 @@
       "sites": [
         {
           "column": 25,
-          "line": 484
+          "line": 482
         }
       ],
       "target": "execution-no-result",
@@ -3726,15 +3726,15 @@
       "sites": [
         {
           "column": 25,
-          "line": 732
+          "line": 730
         },
         {
           "column": 28,
-          "line": 738
+          "line": 736
         },
         {
           "column": 28,
-          "line": 743
+          "line": 741
         }
       ],
       "target": "option-absence",
@@ -4126,11 +4126,11 @@
       "sites": [
         {
           "column": 36,
-          "line": 632
+          "line": 635
         },
         {
           "column": 36,
-          "line": 633
+          "line": 636
         }
       ],
       "target": "legacy-typed-empty-adapter",
@@ -4170,11 +4170,11 @@
       "sites": [
         {
           "column": 32,
-          "line": 6152
+          "line": 6164
         },
         {
           "column": 38,
-          "line": 6427
+          "line": 6439
         }
       ],
       "target": "legacy-typed-empty-adapter",
@@ -4266,7 +4266,7 @@
         },
         {
           "column": 9,
-          "line": 1986
+          "line": 1994
         }
       ],
       "target": "enum-snapshot",
@@ -11402,7 +11402,7 @@
         },
         {
           "column": 9,
-          "line": 2021
+          "line": 2029
         }
       ],
       "target": "map-snapshot",
@@ -21533,11 +21533,11 @@
       "path": "src/engine/src/expressions/matches.rs",
       "sites": [
         {
-          "column": 9,
-          "line": 416
+          "column": 8,
+          "line": 405
         }
       ],
-      "target": "legacy-matrix-value-adapter",
+      "target": "matrix-construction-ir",
       "variant": "MatrixValue"
     },
     {
@@ -21545,11 +21545,11 @@
       "path": "src/engine/src/expressions/matches.rs",
       "sites": [
         {
-          "column": 8,
-          "line": 405
+          "column": 9,
+          "line": 416
         }
       ],
-      "target": "matrix-construction-ir",
+      "target": "legacy-matrix-value-adapter",
       "variant": "MatrixValue"
     },
     {
@@ -21630,15 +21630,15 @@
       "sites": [
         {
           "column": 15,
-          "line": 609
+          "line": 612
         },
         {
           "column": 40,
-          "line": 653
+          "line": 656
         },
         {
           "column": 17,
-          "line": 760
+          "line": 763
         }
       ],
       "target": "homogeneous-matrix-snapshot",
@@ -21710,6 +21710,18 @@
       "sites": [
         {
           "column": 19,
+          "line": 739
+        }
+      ],
+      "target": "matrix-construction-ir",
+      "variant": "MatrixValue"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/structures.rs",
+      "sites": [
+        {
+          "column": 19,
           "line": 742
         }
       ],
@@ -21742,18 +21754,6 @@
         }
       ],
       "target": "legacy-matrix-value-adapter",
-      "variant": "MatrixValue"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "src/engine/src/structures.rs",
-      "sites": [
-        {
-          "column": 19,
-          "line": 739
-        }
-      ],
-      "target": "matrix-construction-ir",
       "variant": "MatrixValue"
     },
     {
@@ -23058,7 +23058,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 52
+          "line": 89
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23094,19 +23094,19 @@
       "sites": [
         {
           "column": 18,
-          "line": 128
+          "line": 125
         },
         {
           "column": 55,
-          "line": 128
+          "line": 125
         },
         {
           "column": 24,
-          "line": 131
+          "line": 128
         },
         {
           "column": 18,
-          "line": 134
+          "line": 131
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23118,19 +23118,19 @@
       "sites": [
         {
           "column": 18,
-          "line": 189
+          "line": 184
         },
         {
           "column": 55,
-          "line": 189
+          "line": 184
         },
         {
           "column": 24,
-          "line": 192
+          "line": 187
         },
         {
           "column": 18,
-          "line": 195
+          "line": 190
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23142,19 +23142,19 @@
       "sites": [
         {
           "column": 18,
-          "line": 132
+          "line": 129
         },
         {
           "column": 55,
-          "line": 132
+          "line": 129
         },
         {
           "column": 24,
-          "line": 135
+          "line": 132
         },
         {
           "column": 18,
-          "line": 138
+          "line": 135
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23166,19 +23166,19 @@
       "sites": [
         {
           "column": 18,
-          "line": 296
+          "line": 295
         },
         {
           "column": 54,
-          "line": 296
+          "line": 295
         },
         {
           "column": 23,
-          "line": 299
+          "line": 298
         },
         {
           "column": 18,
-          "line": 302
+          "line": 301
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23238,7 +23238,7 @@
       "sites": [
         {
           "column": 17,
-          "line": 255
+          "line": 258
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -23274,19 +23274,19 @@
       "sites": [
         {
           "column": 18,
-          "line": 127
-        },
-        {
-          "column": 54,
-          "line": 127
-        },
-        {
-          "column": 23,
           "line": 130
         },
         {
-          "column": 18,
+          "column": 54,
+          "line": 130
+        },
+        {
+          "column": 23,
           "line": 133
+        },
+        {
+          "column": 18,
+          "line": 136
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24450,7 +24450,7 @@
         },
         {
           "column": 17,
-          "line": 825
+          "line": 828
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24518,75 +24518,75 @@
       "sites": [
         {
           "column": 11,
-          "line": 6067
+          "line": 6079
         },
         {
           "column": 167,
-          "line": 6075
+          "line": 6087
         },
         {
           "column": 167,
-          "line": 6080
+          "line": 6092
         },
         {
           "column": 167,
-          "line": 6085
+          "line": 6097
         },
         {
           "column": 161,
-          "line": 6090
+          "line": 6102
         },
         {
           "column": 161,
-          "line": 6095
+          "line": 6107
         },
         {
           "column": 161,
-          "line": 6100
+          "line": 6112
         },
         {
           "column": 161,
-          "line": 6105
+          "line": 6117
         },
         {
           "column": 161,
-          "line": 6110
+          "line": 6122
         },
         {
           "column": 167,
-          "line": 6115
+          "line": 6127
         },
         {
           "column": 167,
-          "line": 6120
+          "line": 6132
         },
         {
           "column": 167,
-          "line": 6125
+          "line": 6137
         },
         {
           "column": 161,
-          "line": 6130
+          "line": 6142
         },
         {
           "column": 161,
-          "line": 6135
+          "line": 6147
         },
         {
           "column": 161,
-          "line": 6140
+          "line": 6152
         },
         {
           "column": 161,
-          "line": 6145
+          "line": 6157
         },
         {
           "column": 11,
-          "line": 6161
+          "line": 6173
         },
         {
           "column": 17,
-          "line": 6446
+          "line": 6458
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24598,7 +24598,7 @@
       "sites": [
         {
           "column": 13,
-          "line": 385
+          "line": 490
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24610,7 +24610,7 @@
       "sites": [
         {
           "column": 16,
-          "line": 2282
+          "line": 2291
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24646,23 +24646,23 @@
       "sites": [
         {
           "column": 40,
-          "line": 41
+          "line": 39
         },
         {
           "column": 44,
-          "line": 50
+          "line": 48
         },
         {
           "column": 26,
-          "line": 696
+          "line": 694
         },
         {
           "column": 30,
-          "line": 737
+          "line": 735
         },
         {
           "column": 30,
-          "line": 742
+          "line": 740
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -25162,7 +25162,7 @@
         },
         {
           "column": 9,
-          "line": 1979
+          "line": 1987
         }
       ],
       "target": "record-snapshot",
@@ -25482,7 +25482,7 @@
       "sites": [
         {
           "column": 16,
-          "line": 92
+          "line": 89
         }
       ],
       "target": "set-snapshot",
@@ -25494,11 +25494,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 119
+          "line": 117
         },
         {
           "column": 10,
-          "line": 150
+          "line": 145
         }
       ],
       "target": "set-snapshot",
@@ -25514,7 +25514,7 @@
         },
         {
           "column": 10,
-          "line": 93
+          "line": 90
         }
       ],
       "target": "set-snapshot",
@@ -25538,15 +25538,15 @@
         },
         {
           "column": 9,
-          "line": 166
+          "line": 165
         },
         {
           "column": 10,
-          "line": 187
+          "line": 186
         },
         {
           "column": 33,
-          "line": 187
+          "line": 186
         }
       ],
       "target": "set-snapshot",
@@ -25642,11 +25642,11 @@
         },
         {
           "column": 10,
-          "line": 88
+          "line": 91
         },
         {
           "column": 33,
-          "line": 88
+          "line": 91
         }
       ],
       "target": "set-snapshot",
@@ -25866,7 +25866,7 @@
         },
         {
           "column": 9,
-          "line": 2000
+          "line": 2008
         }
       ],
       "target": "set-snapshot",
@@ -26590,35 +26590,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 699
+          "line": 697
         },
         {
           "column": 30,
-          "line": 700
+          "line": 698
         },
         {
           "column": 21,
-          "line": 703
+          "line": 701
         },
         {
           "column": 21,
-          "line": 706
+          "line": 704
         },
         {
           "column": 21,
-          "line": 709
+          "line": 707
         },
         {
           "column": 21,
-          "line": 712
+          "line": 710
         },
         {
           "column": 21,
-          "line": 715
+          "line": 713
         },
         {
           "column": 21,
-          "line": 718
+          "line": 716
         }
       ],
       "target": "string-snapshot",
@@ -26886,7 +26886,7 @@
         },
         {
           "column": 9,
-          "line": 2014
+          "line": 2022
         }
       ],
       "target": "table-snapshot",
@@ -27206,15 +27206,15 @@
       "sites": [
         {
           "column": 9,
-          "line": 289
+          "line": 269
         },
         {
           "column": 13,
-          "line": 384
+          "line": 489
         },
         {
           "column": 17,
-          "line": 386
+          "line": 491
         }
       ],
       "target": "table-snapshot",
@@ -27290,7 +27290,7 @@
       "sites": [
         {
           "column": 37,
-          "line": 150
+          "line": 149
         }
       ],
       "target": "tuple-snapshot",
@@ -27386,7 +27386,7 @@
         },
         {
           "column": 9,
-          "line": 2007
+          "line": 2015
         }
       ],
       "target": "tuple-snapshot",
@@ -28194,11 +28194,11 @@
       "sites": [
         {
           "column": 11,
-          "line": 6153
+          "line": 6165
         },
         {
           "column": 17,
-          "line": 6431
+          "line": 6443
         }
       ],
       "target": "typed-wrapper-removal",
@@ -30310,11 +30310,11 @@
         },
         {
           "column": 13,
-          "line": 1238
+          "line": 1242
         },
         {
           "column": 9,
-          "line": 1257
+          "line": 1261
         }
       ],
       "target": "kind-wildcard",
@@ -30358,7 +30358,7 @@
       "sites": [
         {
           "column": 28,
-          "line": 1549
+          "line": 1561
         }
       ],
       "target": "kind-wildcard",
@@ -30406,11 +30406,11 @@
       "sites": [
         {
           "column": 55,
-          "line": 628
+          "line": 631
         },
         {
           "column": 125,
-          "line": 665
+          "line": 668
         }
       ],
       "target": "kind-wildcard",
@@ -30534,7 +30534,7 @@
         },
         {
           "column": 13,
-          "line": 1122
+          "line": 1126
         }
       ],
       "target": "atom-schema",
@@ -30746,7 +30746,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 727
+          "line": 730
         }
       ],
       "target": "bool-schema",
@@ -30770,7 +30770,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6807
+          "line": 6819
         }
       ],
       "target": "bool-schema",
@@ -30782,7 +30782,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2703
+          "line": 2712
         }
       ],
       "target": "bool-schema",
@@ -30794,7 +30794,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 253
+          "line": 261
         }
       ],
       "target": "bool-schema",
@@ -30954,7 +30954,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 759
+          "line": 762
         }
       ],
       "target": "complex-schema",
@@ -30966,7 +30966,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6828
+          "line": 6840
         }
       ],
       "target": "complex-schema",
@@ -30978,7 +30978,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2724
+          "line": 2733
         }
       ],
       "target": "complex-schema",
@@ -30990,7 +30990,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 247
+          "line": 255
         }
       ],
       "target": "complex-schema",
@@ -31014,7 +31014,7 @@
       "sites": [
         {
           "column": 30,
-          "line": 106
+          "line": 104
         }
       ],
       "target": "value-kind-hole",
@@ -31210,7 +31210,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 1549
+          "line": 1561
         }
       ],
       "target": "value-kind-hole",
@@ -31262,7 +31262,7 @@
       "sites": [
         {
           "column": 13,
-          "line": 6715
+          "line": 6727
         }
       ],
       "target": "value-kind-hole",
@@ -31882,7 +31882,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 749
+          "line": 752
         }
       ],
       "target": "floating-point-schema",
@@ -31894,7 +31894,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6730
+          "line": 6742
         }
       ],
       "target": "floating-point-schema",
@@ -31906,7 +31906,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2661
+          "line": 2670
         }
       ],
       "target": "floating-point-schema",
@@ -31918,7 +31918,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 243
+          "line": 251
         }
       ],
       "target": "floating-point-schema",
@@ -32222,7 +32222,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 751
+          "line": 754
         }
       ],
       "target": "floating-point-schema",
@@ -32250,7 +32250,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6723
+          "line": 6735
         }
       ],
       "target": "floating-point-schema",
@@ -32262,7 +32262,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2654
+          "line": 2663
         }
       ],
       "target": "floating-point-schema",
@@ -32274,7 +32274,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 245
+          "line": 253
         }
       ],
       "target": "floating-point-schema",
@@ -32526,7 +32526,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 747
+          "line": 750
         }
       ],
       "target": "signed-integer-schema",
@@ -32538,7 +32538,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6800
+          "line": 6812
         }
       ],
       "target": "signed-integer-schema",
@@ -32550,7 +32550,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 241
+          "line": 249
         }
       ],
       "target": "signed-integer-schema",
@@ -32802,7 +32802,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 741
+          "line": 744
         }
       ],
       "target": "signed-integer-schema",
@@ -32814,7 +32814,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6779
+          "line": 6791
         }
       ],
       "target": "signed-integer-schema",
@@ -32826,7 +32826,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 235
+          "line": 243
         }
       ],
       "target": "signed-integer-schema",
@@ -33078,7 +33078,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 743
+          "line": 746
         }
       ],
       "target": "signed-integer-schema",
@@ -33090,7 +33090,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6786
+          "line": 6798
         }
       ],
       "target": "signed-integer-schema",
@@ -33102,7 +33102,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 237
+          "line": 245
         }
       ],
       "target": "signed-integer-schema",
@@ -33354,7 +33354,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 745
+          "line": 748
         }
       ],
       "target": "signed-integer-schema",
@@ -33366,7 +33366,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6793
+          "line": 6805
         }
       ],
       "target": "signed-integer-schema",
@@ -33378,7 +33378,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 239
+          "line": 247
         }
       ],
       "target": "signed-integer-schema",
@@ -33630,7 +33630,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 739
+          "line": 742
         }
       ],
       "target": "signed-integer-schema",
@@ -33642,7 +33642,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6772
+          "line": 6784
         }
       ],
       "target": "signed-integer-schema",
@@ -33654,7 +33654,7 @@
       "sites": [
         {
           "column": 34,
-          "line": 233
+          "line": 241
         }
       ],
       "target": "signed-integer-schema",
@@ -33882,11 +33882,11 @@
         },
         {
           "column": 17,
-          "line": 1362
+          "line": 1366
         },
         {
           "column": 17,
-          "line": 1633
+          "line": 1641
         }
       ],
       "target": "index-schema",
@@ -34162,11 +34162,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1538
+          "line": 1550
         },
         {
           "column": 14,
-          "line": 1540
+          "line": 1552
         }
       ],
       "target": "reified-type-schema",
@@ -34334,11 +34334,11 @@
         },
         {
           "column": 9,
-          "line": 1495
+          "line": 1507
         },
         {
           "column": 17,
-          "line": 1499
+          "line": 1511
         }
       ],
       "target": "map-schema",
@@ -34498,15 +34498,15 @@
         },
         {
           "column": 25,
-          "line": 1814
+          "line": 1822
         },
         {
           "column": 25,
-          "line": 1824
+          "line": 1832
         },
         {
           "column": 41,
-          "line": 1831
+          "line": 1839
         }
       ],
       "target": "matrix-schema",
@@ -34682,11 +34682,11 @@
         },
         {
           "column": 9,
-          "line": 1476
+          "line": 1488
         },
         {
           "column": 17,
-          "line": 1479
+          "line": 1491
         }
       ],
       "target": "matrix-schema",
@@ -34854,23 +34854,23 @@
       "sites": [
         {
           "column": 56,
-          "line": 609
+          "line": 612
         },
         {
           "column": 14,
-          "line": 649
+          "line": 652
         },
         {
           "column": 16,
-          "line": 650
+          "line": 653
         },
         {
           "column": 53,
-          "line": 665
+          "line": 668
         },
         {
           "column": 55,
-          "line": 678
+          "line": 681
         }
       ],
       "target": "matrix-schema",
@@ -34918,7 +34918,7 @@
       "sites": [
         {
           "column": 11,
-          "line": 2229
+          "line": 2238
         }
       ],
       "target": "matrix-schema",
@@ -35058,7 +35058,7 @@
         },
         {
           "column": 9,
-          "line": 1258
+          "line": 1262
         }
       ],
       "target": "kind-never",
@@ -35086,7 +35086,7 @@
       "sites": [
         {
           "column": 45,
-          "line": 1549
+          "line": 1561
         }
       ],
       "target": "kind-never",
@@ -35218,11 +35218,11 @@
         },
         {
           "column": 9,
-          "line": 1259
+          "line": 1263
         },
         {
           "column": 9,
-          "line": 1278
+          "line": 1282
         }
       ],
       "target": "option-schema",
@@ -35290,11 +35290,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1534
+          "line": 1546
         },
         {
           "column": 14,
-          "line": 1536
+          "line": 1548
         }
       ],
       "target": "option-schema",
@@ -35350,7 +35350,7 @@
       "sites": [
         {
           "column": 104,
-          "line": 632
+          "line": 635
         }
       ],
       "target": "option-schema",
@@ -35382,15 +35382,15 @@
       "sites": [
         {
           "column": 34,
-          "line": 6154
+          "line": 6166
         },
         {
           "column": 42,
-          "line": 6433
+          "line": 6445
         },
         {
           "column": 13,
-          "line": 6716
+          "line": 6728
         }
       ],
       "target": "option-schema",
@@ -35614,7 +35614,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 757
+          "line": 760
         }
       ],
       "target": "rational-schema",
@@ -35626,7 +35626,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6821
+          "line": 6833
         }
       ],
       "target": "rational-schema",
@@ -35638,7 +35638,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2717
+          "line": 2726
         }
       ],
       "target": "rational-schema",
@@ -35650,7 +35650,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 249
+          "line": 257
         }
       ],
       "target": "rational-schema",
@@ -35826,11 +35826,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1483
+          "line": 1495
         },
         {
           "column": 14,
-          "line": 1493
+          "line": 1505
         }
       ],
       "target": "record-schema",
@@ -35918,23 +35918,23 @@
     },
     {
       "enum": "ValueKind",
-      "path": "src/bytecode/src/context.rs",
+      "path": "src/core/src/program/compiler/context.rs",
       "sites": [
         {
           "column": 32,
-          "line": 194
+          "line": 200
         },
         {
           "column": 22,
-          "line": 197
+          "line": 203
         },
         {
           "column": 32,
-          "line": 674
+          "line": 694
         },
         {
           "column": 39,
-          "line": 676
+          "line": 696
         }
       ],
       "target": "reference-binding-contract",
@@ -36078,11 +36078,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1472
+          "line": 1484
         },
         {
           "column": 9,
-          "line": 1550
+          "line": 1562
         }
       ],
       "target": "reference-binding-contract",
@@ -36094,7 +36094,7 @@
       "sites": [
         {
           "column": 11,
-          "line": 6174
+          "line": 6186
         }
       ],
       "target": "reference-binding-contract",
@@ -36106,7 +36106,7 @@
       "sites": [
         {
           "column": 11,
-          "line": 2228
+          "line": 2237
         }
       ],
       "target": "reference-binding-contract",
@@ -36134,7 +36134,7 @@
         },
         {
           "column": 20,
-          "line": 320
+          "line": 319
         }
       ],
       "target": "set-schema",
@@ -36146,27 +36146,27 @@
       "sites": [
         {
           "column": 10,
-          "line": 74
+          "line": 72
         },
         {
           "column": 34,
-          "line": 74
+          "line": 72
         },
         {
           "column": 10,
-          "line": 78
+          "line": 76
         },
         {
           "column": 13,
-          "line": 79
+          "line": 77
         },
         {
           "column": 25,
-          "line": 105
+          "line": 103
         },
         {
           "column": 50,
-          "line": 105
+          "line": 103
         }
       ],
       "target": "set-schema",
@@ -36354,11 +36354,11 @@
         },
         {
           "column": 9,
-          "line": 1527
+          "line": 1539
         },
         {
           "column": 17,
-          "line": 1530
+          "line": 1542
         }
       ],
       "target": "set-schema",
@@ -36478,7 +36478,7 @@
         },
         {
           "column": 17,
-          "line": 1575
+          "line": 1579
         }
       ],
       "target": "string-schema",
@@ -36610,7 +36610,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 753
+          "line": 756
         }
       ],
       "target": "string-schema",
@@ -36634,7 +36634,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6814
+          "line": 6826
         }
       ],
       "target": "string-schema",
@@ -36646,7 +36646,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2710
+          "line": 2719
         }
       ],
       "target": "string-schema",
@@ -36658,7 +36658,7 @@
       "sites": [
         {
           "column": 38,
-          "line": 251
+          "line": 259
         }
       ],
       "target": "string-schema",
@@ -36850,11 +36850,11 @@
         },
         {
           "column": 9,
-          "line": 1503
+          "line": 1515
         },
         {
           "column": 14,
-          "line": 1513
+          "line": 1525
         }
       ],
       "target": "table-schema",
@@ -36946,11 +36946,11 @@
         },
         {
           "column": 31,
-          "line": 146
+          "line": 145
         },
         {
           "column": 21,
-          "line": 194
+          "line": 193
         }
       ],
       "target": "tuple-schema",
@@ -37126,11 +37126,11 @@
       "sites": [
         {
           "column": 9,
-          "line": 1515
+          "line": 1527
         },
         {
           "column": 14,
-          "line": 1525
+          "line": 1537
         }
       ],
       "target": "tuple-schema",
@@ -37454,7 +37454,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 737
+          "line": 740
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37466,7 +37466,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6765
+          "line": 6777
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37478,7 +37478,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2696
+          "line": 2705
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37490,7 +37490,7 @@
       "sites": [
         {
           "column": 36,
-          "line": 231
+          "line": 239
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37742,7 +37742,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 731
+          "line": 734
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37754,7 +37754,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6744
+          "line": 6756
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37766,7 +37766,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2675
+          "line": 2684
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37778,7 +37778,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 225
+          "line": 233
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38030,7 +38030,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 733
+          "line": 736
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38042,7 +38042,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6751
+          "line": 6763
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38054,7 +38054,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2682
+          "line": 2691
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38066,7 +38066,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 227
+          "line": 235
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38318,7 +38318,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 735
+          "line": 738
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38330,7 +38330,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6758
+          "line": 6770
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38342,7 +38342,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2689
+          "line": 2698
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38354,7 +38354,7 @@
       "sites": [
         {
           "column": 35,
-          "line": 229
+          "line": 237
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38606,7 +38606,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 729
+          "line": 732
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38618,7 +38618,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 6737
+          "line": 6749
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38630,7 +38630,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2668
+          "line": 2677
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38642,7 +38642,7 @@
       "sites": [
         {
           "column": 34,
-          "line": 223
+          "line": 231
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38683,6 +38683,22 @@
       ],
       "target": "string-snapshot",
       "variant": "String"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/core/src/program/compiler/context.rs",
+      "sites": [
+        {
+          "column": 25,
+          "line": 206
+        },
+        {
+          "column": 25,
+          "line": 207
+        }
+      ],
+      "target": "table-schema",
+      "variant": "Table"
     }
   ],
   "schema_version": 1,

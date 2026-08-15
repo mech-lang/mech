@@ -91,6 +91,21 @@ EXPECTED_HASH_CONTRACTS_V1 = {
     },
 }
 
+# These kernels are the permanent immutable-snapshot lanes. They may call only
+# the finalized, metadata-resolved helpers listed here; drafts, hash builders,
+# schema lookup, and constant-store work remain forbidden in every resident
+# source file (including these two).
+FINALIZED_RESIDENT_SNAPSHOT_IMPORTS = {
+    "src/engine/src/resident/composite.rs": {
+        ("mech_core", "snapshot", "F64Bits"),
+        ("mech_core", "snapshot", "rebuild_composite_snapshot"),
+    },
+    "src/engine/src/resident/set.rs": {
+        ("mech_core", "snapshot", "build_f64_set_snapshot"),
+        ("mech_core", "snapshot", "f64_set_snapshot_contains"),
+    },
+}
+
 
 def load_module(name: str, path: Path):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -2661,11 +2676,15 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                 ),
                 None,
             )
+            allowed_snapshot_imports = FINALIZED_RESIDENT_SNAPSHOT_IMPORTS.get(
+                relative, set()
+            )
             snapshot_import = next(
                 (
                     binding
                     for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens)
                     if binding.path and "snapshot" in binding.path
+                    and binding.path not in allowed_snapshot_imports
                 ),
                 None,
             )
@@ -2677,8 +2696,8 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                         if forbidden_resident is not None
                         else "snapshot import",
                         relative,
-                        "resident turn remains on compact legacy cells and pre-resolved metadata",
-                        "snapshot construction, hashing, schema, or constant lookup dependency",
+                        "resident turn uses compact cells, pre-resolved metadata, or an explicitly audited finalized immutable-snapshot kernel",
+                        "unapproved snapshot construction, hashing, schema, or constant lookup dependency",
                         "src/engine/tests/resident_ekf_contract.rs",
                         forbidden_resident.line if forbidden_resident is not None else None,
                         forbidden_resident.column if forbidden_resident is not None else None,

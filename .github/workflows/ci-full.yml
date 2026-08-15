@@ -838,7 +838,14 @@ jobs:
         # Exhaustive native-link feature coverage is intentionally split across
         # the native-linkage-surface jobs instead of linked into one enormous
         # test harness on a memory-constrained hosted runner.
-        run: cargo test -p mech-engine --lib --tests --features compiler
+        run: |
+          cargo check -p mech-engine \
+            --no-default-features \
+            --features compiler
+          cargo test -p mech-engine \
+            --lib \
+            --tests \
+            --features compiler_default
 
       - name: Run retained non-UTF-8 source-root regression
         run: >-

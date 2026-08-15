@@ -1644,6 +1644,27 @@ class BoundaryAndReportingTests(unittest.TestCase):
         )
         self.assertIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
 
+    def test_general_resident_kernel_cannot_import_snapshot_helpers(self):
+        root = self.root_with(
+            "src/engine/src/resident/turn.rs",
+            "use mech_core::snapshot::build_f64_set_snapshot;\n",
+        )
+        self.assertIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
+    def test_finalized_snapshot_kernel_imports_are_exactly_allowlisted(self):
+        root = self.root_with(
+            "src/engine/src/resident/set.rs",
+            "use mech_core::snapshot::{build_f64_set_snapshot, f64_set_snapshot_contains};\n",
+        )
+        self.assertNotIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
+    def test_finalized_snapshot_kernel_cannot_import_draft_or_hash_work(self):
+        root = self.root_with(
+            "src/engine/src/resident/set.rs",
+            "use mech_core::snapshot::{build_f64_set_snapshot, ValueDraft};\n",
+        )
+        self.assertIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
     def test_open_semantic_syntax_must_keep_deserialize(self):
         source = (
             '#[cfg_attr(feature = "serde", derive(Serialize))]\n'
