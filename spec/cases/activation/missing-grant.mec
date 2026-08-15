@@ -1,0 +1,12 @@
+Missing Hard Grant Activation Case
+===============================================================================
+
+This resident program requires a host observation. The observer registers the
+provider and input driver but deliberately grants no matching capability.
+
+-- @case-id activation-missing-grant
+-- @requirements ACT-001 ACT-002
+-- @resident-program
+@clock := test://clock/tick{:read(delta-seconds)}
+delta := @clock/delta-seconds
+output := delta

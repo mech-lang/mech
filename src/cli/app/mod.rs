@@ -146,7 +146,7 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
 
     #[cfg(feature = "spec")]
     if let Some(matches) = cli_matches.subcommand_matches("spec") {
-        let options = crate::cli::commands::spec::SpecCheckOptions::from_matches(matches)?;
+        let options = crate::cli::commands::spec::SpecOptions::from_matches(matches)?;
         return crate::cli::commands::spec::run(options);
     }
 

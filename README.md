@@ -80,6 +80,25 @@ New to Mech? Start with [Learn Mech in Fifteen Minutes](https://docs.mech-lang.o
 
 Comprehensive documentation is available at [docs.mech-lang.org](https://docs.mech-lang.org) and open-sourced on [GitHub](https://github.com/mech-lang/mech/tree/main/docs).
 
+### Reflective specification prototype
+
+The optional `spec` feature adds an executable conformance prototype for the
+v0.4 resident executor. It parses `.mec`, `.mcfg`, `.mspec`, and `.mdoc` through
+one Mech frontend, evaluates stable claims with both a frozen Rust reference
+evaluator and resident Mech, and records content-addressed evidence bundles.
+
+```sh
+cargo run --features spec -- spec check
+cargo run --features spec -- spec record
+cargo run --features spec -- spec replay BUNDLE_HASH
+cargo run --features spec -- spec demo
+```
+
+`spec demo` is the quickest proof: it injects semantic, architecture, backend,
+and document-link faults and succeeds only when all are detected. See
+[`docs/specification-guide.mdoc`](docs/specification-guide.mdoc) for the current
+prototype boundary.
+
 ## Community
 
 The Mech community gathers at a few places around the Internet:

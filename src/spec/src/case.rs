@@ -1,5 +1,6 @@
+use std::collections::BTreeMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::{Result, SpecError};
 
@@ -10,6 +11,97 @@ pub(crate) struct ExecutorCase {
     pub initial_state: String,
     pub committed_state: String,
     resident_program: String,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct CaseManifest {
+    pub id: String,
+    pub requirements: Vec<String>,
+    pub metadata: BTreeMap<String, String>,
+    pub resident_program: Option<String>,
+}
+
+impl CaseManifest {
+    pub(crate) fn metadata(&self, key: &str) -> Result<&str> {
+        self.metadata
+            .get(key)
+            .map(String::as_str)
+            .ok_or_else(|| SpecError::new(format!("case {} has no @{key} annotation", self.id)))
+    }
+}
+
+pub(crate) fn load_manifests(root: &Path) -> Result<Vec<CaseManifest>> {
+    let mut paths = Vec::new();
+    collect_mec_files(root, &mut paths)?;
+    paths.sort();
+    paths
+        .into_iter()
+        .map(|path| {
+            let source = fs::read_to_string(&path).map_err(|error| {
+                SpecError::new(format!("could not read case {}: {error}", path.display()))
+            })?;
+            parse_manifest(&source, &path)
+        })
+        .collect()
+}
+
+fn collect_mec_files(directory: &Path, output: &mut Vec<PathBuf>) -> Result<()> {
+    for entry in fs::read_dir(directory).map_err(|error| {
+        SpecError::new(format!(
+            "could not inspect case directory {}: {error}",
+            directory.display()
+        ))
+    })? {
+        let entry = entry.map_err(|error| SpecError::new(format!("inspect case: {error}")))?;
+        let path = entry.path();
+        let file_type = entry
+            .file_type()
+            .map_err(|error| SpecError::new(format!("inspect {}: {error}", path.display())))?;
+        if file_type.is_dir() {
+            collect_mec_files(&path, output)?;
+        } else if file_type.is_file() && path.extension().is_some_and(|value| value == "mec") {
+            output.push(path);
+        }
+    }
+    Ok(())
+}
+
+fn parse_manifest(source: &str, path: &Path) -> Result<CaseManifest> {
+    let mut metadata = BTreeMap::new();
+    for line in source.lines() {
+        let trimmed = line.trim();
+        let Some(annotation) = trimmed.strip_prefix("-- @") else {
+            continue;
+        };
+        let Some((key, value)) = annotation.split_once(' ') else {
+            continue;
+        };
+        metadata.insert(key.to_string(), value.trim().to_string());
+    }
+    let id = metadata
+        .get("case-id")
+        .cloned()
+        .ok_or_else(|| SpecError::new(format!("case {} has no @case-id", path.display())))?;
+    let requirements: Vec<String> = metadata
+        .get("requirements")
+        .map(|value| value.split_whitespace().map(str::to_string).collect())
+        .unwrap_or_default();
+    if requirements.is_empty() {
+        return Err(SpecError::new(format!(
+            "case {} has no @requirements",
+            path.display()
+        )));
+    }
+    let resident_program = source
+        .split_once("-- @resident-program")
+        .map(|(_, program)| program.trim().to_string())
+        .filter(|program| !program.is_empty());
+    Ok(CaseManifest {
+        id,
+        requirements,
+        metadata,
+        resident_program,
+    })
 }
 
 impl ExecutorCase {
@@ -116,5 +208,21 @@ mod tests {
         assert_eq!(case.initial_state, "before");
         assert_eq!(case.committed_state, "after");
         assert!(case.resident_program().contains("~state"));
+    }
+
+    #[test]
+    fn parses_generic_case_evidence_inputs() {
+        let manifest = parse_manifest(
+            "Title\n=====\n-- @case-id benchmark\n-- @requirements BENCH-001\n-- @reference-protocol execution-only\n",
+            Path::new("benchmark.mec"),
+        )
+        .unwrap();
+        assert_eq!(manifest.id, "benchmark");
+        assert_eq!(manifest.requirements, ["BENCH-001"]);
+        assert_eq!(
+            manifest.metadata("reference-protocol").unwrap(),
+            "execution-only"
+        );
+        assert!(manifest.resident_program.is_none());
     }
 }

@@ -1,0 +1,33 @@
+Executable Specification Guide
+===============================================================================
+
+This documentation profile explains the reflective conformance prototype. A
+release render is generated from a pinned determinism bundle. Documentation is
+parsed by the unified Mech frontend but is not permitted to mutate the runtime
+under test.
+
+specification-profile := "mspec"
+bundle-policy := "content-addressed"
+
+Using the prototype
+-------------------------------------------------------------------------------
+
+Run mech spec check to collect fresh v0.4 resident-executor evidence and write
+the console, JSON, and HTML conformance views. Run mech spec record to add the
+same result and its source inputs to the content-addressed evidence store. The
+printed bundle hash can then be passed to mech spec replay.
+
+Run mech spec demo to inject semantic, repository-architecture, backend
+admission, and broken-document-reference faults. The demonstration succeeds
+only when every bad change is detected and the failed semantic witness replays
+identically.
+
+Prototype boundary
+-------------------------------------------------------------------------------
+
+The current vertical slice observes resident turns, a missing hard activation
+grant, rejected-instance cleanup, explicit transaction commit and abort,
+shutdown, repository dependency edges, benchmark protocol identity, and
+explicit GPU unavailability. A real GPU numerical differential observer
+remains follow-on work. The report does not call that unimplemented check a
+pass.

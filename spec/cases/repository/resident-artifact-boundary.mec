@@ -1,0 +1,8 @@
+Resident Artifact Boundary Case
+===============================================================================
+
+The repository observer reports parser imports from resident execution modules.
+The specification decides whether those imports are allowed.
+
+-- @case-id resident-artifact-boundary
+-- @requirements ARCH-011

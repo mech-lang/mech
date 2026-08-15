@@ -38,3 +38,5 @@ Cargo.lock
 .DS_Store
 /src/wasm/pkg
 
+# Local executable-specification evidence store
+/.mech/determinism/

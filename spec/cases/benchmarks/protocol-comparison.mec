@@ -1,0 +1,10 @@
+Benchmark Protocol Comparison Case
+===============================================================================
+
+The provider reports raw protocol identities. Compatibility is specification
+policy.
+
+-- @case-id benchmark-protocol-comparison
+-- @requirements BENCH-001
+-- @reference-protocol steady-state-v1
+-- @candidate-protocol steady-state-v1

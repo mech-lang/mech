@@ -1,14 +1,31 @@
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use mech_core::{LegacyValue, MResult, Ref};
 use mech_runtime::{
-    MechRuntime, MessageRecord, ResidentDurabilityPolicy, RuntimeBuilder, RuntimeContext,
-    RuntimeEventKind, RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue,
-    RuntimeProgramRoute, TaskRecord,
+    MechRuntime, MessageRecord, ResidentDurabilityPolicy, ResidentRouteFailure,
+    ResidentRouteFailureClass, RuntimeBuilder, RuntimeContext, RuntimeEventKind, RuntimeHostInput,
+    RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue, RuntimeIngress,
+    RuntimeProgramRoute, RuntimeResourceProvider, RuntimeResourceReadRequest, TaskRecord,
 };
 
-use crate::case::ExecutorCase;
+use crate::case::{CaseManifest, ExecutorCase};
 use crate::model::ExecutorObservations;
 use crate::{Result, SpecError};
 
-pub(crate) fn observe(case: &ExecutorCase) -> Result<ExecutorObservations> {
+pub(crate) fn observe(
+    case: &ExecutorCase,
+    repo_root: &Path,
+    cases: &[CaseManifest],
+) -> Result<ExecutorObservations> {
+    if !["RES-001", "TURN-004"]
+        .iter()
+        .all(|required| case.requirements.iter().any(|item| item == required))
+    {
+        return Err(SpecError::new(
+            "resident transaction case must cover RES-001 and TURN-004",
+        ));
+    }
     let mut runtime = runtime()?;
 
     let loaded = runtime_call(
@@ -155,6 +172,25 @@ pub(crate) fn observe(case: &ExecutorCase) -> Result<ExecutorObservations> {
         .map(|event| event.name().to_string())
         .collect();
 
+    let (repository_scanned_paths, repository_parser_import_paths) =
+        observe_resident_parser_imports(repo_root)?;
+    let benchmark_case = cases
+        .iter()
+        .find(|manifest| manifest.id == "benchmark-protocol-comparison")
+        .ok_or_else(|| SpecError::new("benchmark protocol case is missing"))?;
+    let benchmark_reference_protocol = benchmark_case.metadata("reference-protocol")?.to_string();
+    let benchmark_candidate_protocol = benchmark_case.metadata("candidate-protocol")?.to_string();
+    let activation_case = cases
+        .iter()
+        .find(|manifest| manifest.id == "activation-missing-grant")
+        .ok_or_else(|| SpecError::new("missing-grant activation case is missing"))?;
+    let activation_source = activation_case
+        .resident_program
+        .as_deref()
+        .ok_or_else(|| SpecError::new("missing-grant activation case has no resident program"))?;
+    let (activation_outcome, activation_failure_class, activation_instance_created) =
+        observe_missing_grant_activation(activation_source)?;
+
     Ok(ExecutorObservations {
         case_id: case.id.clone(),
         executor: "mech-runtime v0.4 resident executor".to_string(),
@@ -178,7 +214,177 @@ pub(crate) fn observe(case: &ExecutorCase) -> Result<ExecutorObservations> {
         shutdown_input_rejected,
         shutdown_event_observed,
         event_names,
+        activation_outcome,
+        activation_failure_class,
+        activation_instance_created,
+        backend_admission_result: "unsupported".to_string(),
+        backend_admission_reason:
+            "the prototype has no GPU observation provider and explicitly reports unsupported"
+                .to_string(),
+        repository_resident_parser_imports: !repository_parser_import_paths.is_empty(),
+        repository_parser_import_paths,
+        repository_scanned_paths,
+        benchmark_reference_protocol,
+        benchmark_candidate_protocol,
     })
+}
+
+fn observe_missing_grant_activation(source: &str) -> Result<(String, String, bool)> {
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .input_driver(SpecObservationInputDriver)
+        .resource_provider(Box::new(SpecObservationProvider))
+        .build()
+        .map_err(|error| SpecError::new(format!("build activation observer: {error:?}")))?;
+    let error = match runtime.load_source_program(source, ResidentDurabilityPolicy::Volatile) {
+        Ok(outcome) => {
+            return Err(SpecError::new(format!(
+                "missing hard capability grant unexpectedly activated through {:?}",
+                outcome.route
+            )));
+        }
+        Err(error) => error,
+    };
+    let failure = error.kind_as::<ResidentRouteFailure>().ok_or_else(|| {
+        SpecError::new(format!(
+            "missing-grant activation returned an unclassified error: {error:?}"
+        ))
+    })?;
+    let failure_class = match failure.class {
+        ResidentRouteFailureClass::AuthorizationDenied => "authorization-denied",
+        ResidentRouteFailureClass::ProviderUnavailable => "provider-unavailable",
+        ResidentRouteFailureClass::ProviderContractMismatch => "provider-contract-mismatch",
+        ResidentRouteFailureClass::ActivationFailure => "activation-failure",
+        ResidentRouteFailureClass::SemanticUnsupported => "semantic-unsupported",
+        ResidentRouteFailureClass::MultipleRootsUnsupported => "multiple-roots-unsupported",
+        ResidentRouteFailureClass::InvalidArtifact => "invalid-artifact",
+        ResidentRouteFailureClass::InvalidBytecode => "invalid-bytecode",
+        ResidentRouteFailureClass::InternalFailure => "internal-failure",
+    };
+    Ok((
+        "rejected".to_string(),
+        failure_class.to_string(),
+        runtime.program_route() != RuntimeProgramRoute::None,
+    ))
+}
+
+#[derive(Debug)]
+struct SpecObservationInputDriver;
+
+impl RuntimeHostInputDriver for SpecObservationInputDriver {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        source.base_uri() == "test://clock/tick"
+    }
+
+    fn attach(&mut self, _ingress: RuntimeIngress) -> MResult<()> {
+        Ok(())
+    }
+
+    fn start(&mut self) -> MResult<()> {
+        Ok(())
+    }
+
+    fn stop(&mut self) -> MResult<()> {
+        Ok(())
+    }
+
+    fn is_live(&self) -> bool {
+        false
+    }
+}
+
+#[derive(Debug)]
+struct SpecObservationProvider;
+
+impl RuntimeResourceProvider for SpecObservationProvider {
+    fn scheme(&self) -> &str {
+        "test"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        vec!["test://clock/tick".to_string()]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static mech_core::OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
+    fn plan_read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        Ok(LegacyValue::F64(Ref::new(1.0)))
+    }
+
+    fn read(&self, _request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        Ok(LegacyValue::F64(Ref::new(1.0)))
+    }
+}
+
+fn observe_resident_parser_imports(repo_root: &Path) -> Result<(Vec<String>, Vec<String>)> {
+    let program_root = repo_root.join("src/runtime/src/runtime/program");
+    let mut files = Vec::new();
+    collect_rust_files(&program_root, &mut files)?;
+    files.retain(|path| {
+        let file_name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("");
+        file_name != "compiler.rs"
+            && !file_name.ends_with("tests.rs")
+            && !path
+                .components()
+                .any(|component| component.as_os_str() == "tests")
+    });
+    files.sort();
+    let mut scanned = Vec::new();
+    let mut imports = Vec::new();
+    for path in files {
+        let relative = path
+            .strip_prefix(repo_root)
+            .unwrap_or(&path)
+            .display()
+            .to_string();
+        let source = fs::read_to_string(&path).map_err(|error| {
+            SpecError::new(format!(
+                "repository provider could not read {}: {error}",
+                path.display()
+            ))
+        })?;
+        if source.contains("mech_syntax::") || source.contains("use mech_syntax") {
+            imports.push(relative.clone());
+        }
+        scanned.push(relative);
+    }
+    if scanned.is_empty() {
+        return Err(SpecError::new(format!(
+            "repository provider found no resident execution modules under {}",
+            program_root.display()
+        )));
+    }
+    Ok((scanned, imports))
+}
+
+fn collect_rust_files(directory: &Path, output: &mut Vec<PathBuf>) -> Result<()> {
+    for entry in fs::read_dir(directory).map_err(|error| {
+        SpecError::new(format!(
+            "repository provider could not inspect {}: {error}",
+            directory.display()
+        ))
+    })? {
+        let entry =
+            entry.map_err(|error| SpecError::new(format!("inspect repository: {error}")))?;
+        let path = entry.path();
+        let file_type = entry.file_type().map_err(|error| {
+            SpecError::new(format!(
+                "inspect repository path {}: {error}",
+                path.display()
+            ))
+        })?;
+        if file_type.is_dir() {
+            collect_rust_files(&path, output)?;
+        } else if file_type.is_file() && path.extension().is_some_and(|value| value == "rs") {
+            output.push(path);
+        }
+    }
+    Ok(())
 }
 
 fn runtime() -> Result<MechRuntime> {

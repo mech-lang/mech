@@ -1,0 +1,9 @@
+Reflective Specification Configuration
+===============================================================================
+
+This configuration selects the specification and evidence repository. It uses
+the same Mech parser as program, specification, and documentation sources.
+
+specification := "spec/platform.mspec"
+evidence-store := ".mech/determinism"
+execution-profile := "resident-cpu"

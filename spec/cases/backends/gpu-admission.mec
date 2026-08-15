@@ -1,0 +1,8 @@
+GPU Admission Case
+===============================================================================
+
+The observer reports whether the GPU profile is available. Policy about an
+explicit unsupported result belongs to the specification.
+
+-- @case-id gpu-admission
+-- @requirements GPU-001

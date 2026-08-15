@@ -13,9 +13,13 @@ mech-runtime = { version = "0.3.5", path = "../runtime", default-features = fals
   "variable_define", "invariant_define", "variables",
 ] }
 mech-core = { version = "0.3.5", path = "../core", default-features = false }
+mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false, features = [
+  "mechdown", "bool", "string", "variable_define", "invariant_define", "variables",
+] }
 mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false, features = [
   "compiler", "bool", "string",
   "variable_define", "invariant_define", "variables", "compare_seq",
 ] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
+sha2 = "0.10.9"

@@ -10,6 +10,19 @@ enum Value {
     String(String),
 }
 
+pub(crate) fn evaluate_case(expression: &str, bindings: &BTreeMap<String, String>) -> Result<bool> {
+    let mut environment = BTreeMap::new();
+    for (name, expression) in bindings {
+        let value = resolve(expression, &environment).map_err(|message| {
+            SpecError::new(format!("example binding `{name}` is invalid: {message}"))
+        })?;
+        environment.insert(name.clone(), value);
+    }
+    evaluate_constraint(expression, &environment)
+        .map(|(passed, _, _, _)| passed)
+        .map_err(SpecError::new)
+}
+
 impl std::fmt::Display for Value {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -26,6 +39,8 @@ pub(crate) struct ReferenceEvaluation {
     pub expression: String,
     pub passed: bool,
     pub detail: String,
+    pub observed: String,
+    pub expected: String,
 }
 
 pub(crate) fn evaluate(
@@ -100,7 +115,7 @@ fn evaluate_source(
                     &format!("constraint `{name}` has no @requirement annotation"),
                 )
             })?;
-            let (passed, detail) = evaluate_constraint(expression, environment)
+            let (passed, detail, observed, expected) = evaluate_constraint(expression, environment)
                 .map_err(|message| parse_error(label, line_number, &message))?;
             environment.insert(name.to_string(), Value::Bool(passed));
             evaluations.push(ReferenceEvaluation {
@@ -109,10 +124,18 @@ fn evaluate_source(
                 expression: expression.to_string(),
                 passed,
                 detail,
+                observed,
+                expected,
             });
         } else {
-            let value = resolve(expression, environment)
-                .map_err(|message| parse_error(label, line_number, &message))?;
+            let value = if find_operator(expression, "===").is_some() {
+                let (passed, _, _, _) = evaluate_constraint(expression, environment)
+                    .map_err(|message| parse_error(label, line_number, &message))?;
+                Value::Bool(passed)
+            } else {
+                resolve(expression, environment)
+                    .map_err(|message| parse_error(label, line_number, &message))?
+            };
             if environment.insert(name.to_string(), value).is_some() {
                 return Err(parse_error(
                     label,
@@ -128,7 +151,7 @@ fn evaluate_source(
 fn evaluate_constraint(
     expression: &str,
     environment: &BTreeMap<String, Value>,
-) -> std::result::Result<(bool, String), String> {
+) -> std::result::Result<(bool, String, String, String), String> {
     let Some(operator) = find_operator(expression, "===") else {
         return Err(format!(
             "expression `{expression}` is outside the mech-contract-1 prototype; expected strict equality",
@@ -142,7 +165,7 @@ fn evaluate_constraint(
     } else {
         format!("observed {left}; expected {right}")
     };
-    Ok((passed, detail))
+    Ok((passed, detail, left.to_string(), right.to_string()))
 }
 
 fn resolve(
