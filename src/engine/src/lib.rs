@@ -87,9 +87,14 @@ mod efficacy;
 pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod function;
-#[cfg(all(feature = "program", feature = "invariant_define"))]
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 pub mod integrity;
-pub mod interpreter;
+#[cfg(feature = "semantic-compiler")]
+mod interpreter;
+#[cfg(feature = "semantic-compiler")]
+pub(crate) use interpreter::{
+    Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
+};
 pub mod intrinsics;
 #[cfg(feature = "source")]
 pub mod literals;
@@ -196,9 +201,8 @@ pub use mech_core::*;
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function::*;
-#[cfg(all(feature = "program", feature = "invariant_define"))]
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 pub use crate::integrity::*;
-pub use crate::interpreter::*;
 #[cfg(feature = "source")]
 pub use crate::literals::*;
 #[cfg(feature = "source")]

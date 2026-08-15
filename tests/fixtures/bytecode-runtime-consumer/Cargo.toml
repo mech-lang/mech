@@ -5,10 +5,10 @@ edition = "2024"
 publish = false
 
 [dependencies]
-mech-engine = {
-  path = "../../../src/engine",
+mech-runtime = {
+  path = "../../../src/runtime",
   default-features = false,
-  features = ["runtime", "f64"],
+  features = ["resident-routing", "f64"],
 }
 mech-stdlib = {
   path = "../../../src/stdlib",
@@ -20,6 +20,7 @@ mech-stdlib = {
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
 mech-engine = { path = "../../../src/engine" }
+mech-runtime = { path = "../../../src/runtime" }
 mech-stdlib = { path = "../../../src/stdlib" }
 mech-combinatorics = { path = "../../../machines/combinatorics" }
 mech-compare = { path = "../../../machines/compare" }

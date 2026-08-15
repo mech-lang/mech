@@ -484,7 +484,7 @@ mod tests {
     use super::*;
     use crate::Interpreter;
     #[cfg(feature = "program")]
-    use crate::{ExtensionFunctionId, MechProgram, MechProgramConfig};
+    use crate::{CompilerPlanningConfig, CompilerPlanningProgram, ExtensionFunctionId};
     #[cfg(all(
         feature = "program",
         feature = "source",
@@ -621,7 +621,7 @@ mod tests {
     #[cfg(feature = "program")]
     #[test]
     fn program_new_has_an_empty_catalog() {
-        let program = MechProgram::new(MechProgramConfig::default());
+        let program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
         let catalog = program.function_catalog();
 
         assert_eq!(catalog.runtime_factory_count(), 0);
@@ -633,8 +633,8 @@ mod tests {
     #[cfg(feature = "program")]
     #[test]
     fn bare_programs_have_independent_catalogs_and_environments() {
-        let first = MechProgram::new(MechProgramConfig::default());
-        let second = MechProgram::new(MechProgramConfig::default());
+        let first = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
+        let second = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
         let extension = ExtensionFunctionId::from_name("host/first-only");
 
         assert!(!Arc::ptr_eq(
@@ -643,7 +643,7 @@ mod tests {
         ));
 
         first
-            .interpreter()
+            .interpreter
             .state
             .borrow_mut()
             .function_environment
@@ -652,7 +652,7 @@ mod tests {
 
         assert_eq!(
             first
-                .interpreter()
+                .interpreter
                 .state
                 .borrow()
                 .function_environment
@@ -661,7 +661,7 @@ mod tests {
         );
         assert_eq!(
             second
-                .interpreter()
+                .interpreter
                 .state
                 .borrow()
                 .function_environment
@@ -679,9 +679,9 @@ mod tests {
     ))]
     #[test]
     fn bare_program_cannot_execute_math_add() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
 
-        let error = program.run_string("1.0 + 2.0").unwrap_err();
+        let error = program.plan_source_for_test("1.0 + 2.0").unwrap_err();
 
         assert_eq!(error.kind_name(), "FunctionOperationUnavailable");
         assert!(error.kind_message().contains("math/add"));
@@ -690,10 +690,10 @@ mod tests {
     #[cfg(all(feature = "program", feature = "source"))]
     #[test]
     fn bare_program_does_not_know_standard_modules() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
+        let mut program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
 
         assert!(!program.function_catalog().has_module("math"));
-        let error = program.run_string("+> math").unwrap_err();
+        let error = program.plan_source_for_test("+> math").unwrap_err();
 
         assert_eq!(error.kind_name(), "MissingFunction");
     }
@@ -721,9 +721,12 @@ mod tests {
             })
             .unwrap();
         let catalog = Arc::new(builder.build().unwrap());
-        let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
+        let mut program = CompilerPlanningProgram::with_function_catalog(
+            CompilerPlanningConfig::default(),
+            catalog,
+        );
 
-        let output = program.run_string("1.0 + 2.0").unwrap();
+        let output = program.plan_source_for_test("1.0 + 2.0").unwrap();
 
         let LegacyValue::F64(output) = output else {
             panic!("custom math/add must return f64");

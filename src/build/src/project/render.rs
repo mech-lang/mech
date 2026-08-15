@@ -46,14 +46,8 @@ pub fn generated_dependencies_from_plan(
         .packages
         .iter()
         .any(|package| package.package == "mech-runtime");
-    match plan.application_kind {
-        NativeApplicationKind::Engine if has_runtime => {
-            return project_invalid("an engine application may not depend on mech-runtime");
-        }
-        NativeApplicationKind::Hosted if !has_runtime => {
-            return project_invalid("a hosted application requires mech-runtime");
-        }
-        _ => {}
+    if !has_runtime {
+        return project_invalid("every generated application requires mech-runtime");
     }
 
     let mut dependencies = Vec::with_capacity(plan.packages.len());
@@ -373,10 +367,7 @@ pub fn render_engine_main_source() -> String {
         r#"mod catalog;
 
 use mech_core::{LegacyValue, MResult};
-use mech_engine::{
-    MechProgram,
-    MechProgramConfig,
-};
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 
 static PROGRAM: &[u8] =
     include_bytes!(concat!(
@@ -400,13 +391,13 @@ fn usage() {
 fn run(_once: bool) -> MResult<()> {
     let catalog = catalog::function_catalog()?;
 
-    let mut program =
-        MechProgram::with_function_catalog(
-            MechProgramConfig::default(),
-            catalog,
-        );
-
-    let value = program.run_bytecode(PROGRAM)?;
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build()?;
+    let value = runtime
+        .load_bytecode_program(PROGRAM, ResidentDurabilityPolicy::Volatile)?
+        .initial_value
+        .into_value();
 
     if !matches!(value, LegacyValue::Empty) {
         println!("{value}");

@@ -3,7 +3,7 @@ use std::env;
 use std::fs;
 
 use mech_core::{BytecodeInstruction, ParsedProgram};
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_runtime::RuntimeBuilder;
 
 fn main() {
     let output = env::args_os()
@@ -18,16 +18,14 @@ fn main() {
     let source = source
         .into_string()
         .expect("authoritative source argument must be UTF-8");
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_catalog(),
-    );
-    program
-        .run_string(&source)
-        .expect("fixed-matrix source execution failed");
-    let bytecode = program
-        .compile_bytecode()
-        .expect("fixed-matrix bytecode compilation failed");
+    let bytecode = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .expect("fixed-matrix source compiler construction failed")
+        .compile_source(&source)
+        .expect("fixed-matrix bytecode compilation failed")
+        .into_parts()
+        .1;
     let parsed = ParsedProgram::from_bytes(&bytecode).expect("fixed bytecode must parse");
     let catalog = mech_stdlib::runtime_catalog();
     let functions = parsed

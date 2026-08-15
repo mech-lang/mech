@@ -1,16 +1,8 @@
-#![cfg(feature = "source")]
+use crate::{CompilerPlanningConfig, CompilerPlanningProgram};
 
-use mech_engine::*;
-use mech_syntax::parser;
-
-fn run(src: &str) -> mech_core::MResult<Interpreter> {
-    let program = parser::parse(src).unwrap();
-    let p = Interpreter::new(0, 10_000);
-    let mut services = NoMechExecutionServices;
-    {
-        let execution = InterpreterExecution::new(&p, &mut services);
-        mech_engine::program(&program, &execution)?;
-    }
+fn run(src: &str) -> mech_core::MResult<CompilerPlanningProgram> {
+    let mut p = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
+    p.plan_source_for_test(src)?;
     Ok(p)
 }
 
@@ -28,7 +20,7 @@ fn id(name: &str) -> mech_core::Identifier {
 fn direct_context_binding_binds_base_uri() {
     let p = run("@ui := browser://dom").unwrap();
     assert_eq!(
-        p.context_binding(&id("ui")).unwrap().base_uri,
+        p.interpreter.context_binding(&id("ui")).unwrap().base_uri,
         "browser://dom"
     );
 }
@@ -37,7 +29,10 @@ fn direct_context_binding_binds_base_uri() {
 fn direct_context_binding_can_copy_context_base() {
     let p = run("@ui := browser://dom\n@child := @ui").unwrap();
     assert_eq!(
-        p.context_binding(&id("child")).unwrap().base_uri,
+        p.interpreter
+            .context_binding(&id("child"))
+            .unwrap()
+            .base_uri,
         "browser://dom"
     );
 }
@@ -46,7 +41,7 @@ fn direct_context_binding_can_copy_context_base() {
 fn browser_dom_context_import_binds_base_uri() {
     let p = run("+> @ui := browser/dom").unwrap();
     assert_eq!(
-        p.context_binding(&id("ui")).unwrap().base_uri,
+        p.interpreter.context_binding(&id("ui")).unwrap().base_uri,
         "browser://dom"
     );
 }

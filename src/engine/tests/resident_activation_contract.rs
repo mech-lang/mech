@@ -7,8 +7,7 @@ use serde_json::{Value, json};
 
 const TRACE_SHA256: &str = "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b";
 const TRAJECTORY_SHA256: &str = "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758";
-const D0_EKF_SOURCE_SHA256: &str =
-    "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec";
+const EKF_SOURCE_SHA256: &str = "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec";
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -33,14 +32,14 @@ fn ordinary_ekf_resident_source_parses_without_grammar_changes() {
 }
 
 #[test]
-fn d0_workload_retains_the_frozen_gate_b_trace_and_oracle() {
+fn workload_retains_the_frozen_gate_b_trace_and_oracle() {
     let workload = json("tests/architecture/resident-activation/ekf-workload-v1.json");
     let gate_b = json("benchmarks/runtime/gate-b/ekf-v1.json");
 
-    assert_eq!(workload["source"]["sha256"], D0_EKF_SOURCE_SHA256);
+    assert_eq!(workload["source"]["sha256"], EKF_SOURCE_SHA256);
     assert_eq!(
         read("tests/architecture/resident-activation/ekf-source-v1.sha256").trim(),
-        D0_EKF_SOURCE_SHA256
+        EKF_SOURCE_SHA256
     );
 
     assert_eq!(workload["gate_b"]["episode_length"], 4096);
@@ -154,8 +153,8 @@ fn gate_b_resident_control_remains_private_and_unrouted() {
     assert!(!public_artifact.contains("ActivatedPlan"));
     assert!(!public_artifact.contains("ReactiveInstance"));
 
-    let normal_program = read("src/engine/src/program/instance.rs");
-    assert!(!normal_program.contains("ReactiveInstance::frozen_ekf_batch"));
+    let compiler_planning = read("src/engine/src/program/compiler_planning.rs");
+    assert!(!compiler_planning.contains("ReactiveInstance::frozen_ekf_batch"));
 
     let resident_module = read("src/engine/src/resident/mod.rs");
     let resident_control = read("src/engine/src/resident/artifact.rs");

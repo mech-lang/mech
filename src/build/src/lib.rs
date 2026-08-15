@@ -110,22 +110,19 @@ impl NativeApplicationBuilder {
             engine_features.insert("vector2".to_owned());
         }
         engine_features.insert("runtime".to_owned());
-        let mut runtime_features = BTreeSet::new();
-        if application_kind == NativeApplicationKind::Hosted {
-            runtime_features.extend(runtime_types.cargo_features.iter().cloned());
-            runtime_features.insert("runtime".to_owned());
-            runtime_features.insert("string".to_owned());
-            runtime_features.insert("resident-routing".to_owned());
-            // Hosted execution owns the transaction boundary, so it must
-            // enable the validation hook whenever the bytecode carries an
-            // integrity-constraint marker. Engine-only applications enforce
-            // the same contract directly in `MechProgram`.
-            if runtime_functions
-                .iter()
-                .any(|function| function.runtime_name == "integrity/constraint")
-            {
-                runtime_features.insert("invariant_define".to_owned());
-            }
+        let mut runtime_features = runtime_types
+            .cargo_features
+            .iter()
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        runtime_features.insert("runtime".to_owned());
+        runtime_features.insert("string".to_owned());
+        runtime_features.insert("resident-routing".to_owned());
+        if runtime_functions
+            .iter()
+            .any(|function| function.runtime_name == "integrity/constraint")
+        {
+            runtime_features.insert("invariant_define".to_owned());
         }
 
         let mut packages = BTreeMap::new();
@@ -177,14 +174,12 @@ impl NativeApplicationBuilder {
             )?;
         }
 
-        if application_kind == NativeApplicationKind::Hosted {
-            merge_package(
-                &mut packages,
-                "mech-runtime",
-                "mech_runtime",
-                runtime_features.iter().cloned(),
-            )?;
-        }
+        merge_package(
+            &mut packages,
+            "mech-runtime",
+            "mech_runtime",
+            runtime_features.iter().cloned(),
+        )?;
 
         core_features = packages
             .get("mech-core")

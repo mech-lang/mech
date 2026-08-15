@@ -2,92 +2,47 @@ use crate::*;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
-#[cfg(all(target_arch = "wasm32", target_os = "unknown",))]
-use web_time::Instant;
-
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown",)))]
-use std::time::Instant;
-
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{
     ApplicationRequirement, FunctionSpecializer, LegacyValue, MResult, MechError, MechErrorKind,
-    MechFunction, MechSourceCode, ParsedProgram, ResourceIntent, ValueKind,
-    compare_application_requirements, hash_str, validate_application_requirement,
-    validate_stable_value_update,
+    MechFunction, ResourceIntent, ValueKind, compare_application_requirements, hash_str,
+    validate_application_requirement, validate_stable_value_update,
 };
 
 #[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 use mech_core::Register;
 
-use crate::Interpreter;
-#[cfg(feature = "source")]
-use mech_syntax::parser;
-
 #[cfg(all(feature = "source", feature = "native"))]
 use crate::ClosureFunctionSpecializer;
-
-pub fn compile_stable_value_update(
-    sink: ValRef,
-    source: LegacyValue,
-) -> MResult<Box<dyn MechFunction>> {
-    {
-        let current = sink.borrow();
-        validate_stable_value_update(&current, &source)?;
-    }
-
-    crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink), source])
-}
-
-pub fn apply_stable_value_update(sink: ValRef, source: LegacyValue) -> MResult<LegacyValue> {
-    {
-        let current = sink.borrow();
-        validate_stable_value_update(&current, &source)?;
-    }
-    let update =
-        crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink.clone()), source])?;
-    update.solve_result()?;
-    Ok(sink.borrow().clone())
-}
+use crate::Interpreter;
 
 #[derive(Debug, Clone)]
-pub struct MechProgramEnvironment {
-    pub trace_enabled: bool,
-    pub debug_enabled: bool,
-    pub profile_enabled: bool,
-    pub rounds_per_step: usize,
+pub struct CompilerPlanningLimits {
+    pub max_planning_steps: usize,
 }
 
-impl Default for MechProgramEnvironment {
+impl Default for CompilerPlanningLimits {
     fn default() -> Self {
         Self {
-            trace_enabled: false,
-            debug_enabled: false,
-            profile_enabled: false,
-            rounds_per_step: 10_000,
+            max_planning_steps: 10_000,
         }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct MechProgramConfig {
+pub struct CompilerPlanningConfig {
     pub name: String,
-    pub environment: MechProgramEnvironment,
+    pub limits: CompilerPlanningLimits,
 }
 
-impl Default for MechProgramConfig {
+impl Default for CompilerPlanningConfig {
     fn default() -> Self {
         Self {
             name: "program".into(),
-            environment: MechProgramEnvironment::default(),
+            limits: CompilerPlanningLimits::default(),
         }
     }
-}
-
-#[derive(Clone, Debug)]
-pub struct ProgramSolveOutcome {
-    pub value: LegacyValue,
-    pub plan_len: usize,
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -139,13 +94,13 @@ impl MechErrorKind for ProgramArtifactCompilationError {
     }
 }
 
-pub struct MechProgram {
-    pub config: MechProgramConfig,
-    interpreter: Interpreter,
+pub struct CompilerPlanningProgram {
+    pub config: CompilerPlanningConfig,
+    pub(crate) interpreter: Interpreter,
 }
 
-impl MechProgram {
-    pub fn new(config: MechProgramConfig) -> Self {
+impl CompilerPlanningProgram {
+    pub fn new(config: CompilerPlanningConfig) -> Self {
         #[cfg(feature = "functions")]
         {
             Self::with_function_catalog(config, crate::empty_function_catalog())
@@ -153,9 +108,7 @@ impl MechProgram {
         #[cfg(not(feature = "functions"))]
         {
             let id = hash_str(&format!("program/{}", config.name));
-            let mut interpreter = Interpreter::new(id, config.environment.rounds_per_step);
-
-            interpreter.set_trace_enabled(config.environment.trace_enabled);
+            let interpreter = Interpreter::new(id, config.limits.max_planning_steps);
 
             Self {
                 config,
@@ -165,12 +118,13 @@ impl MechProgram {
     }
 
     #[cfg(feature = "functions")]
-    pub fn with_function_catalog(config: MechProgramConfig, catalog: Arc<FunctionCatalog>) -> Self {
+    pub fn with_function_catalog(
+        config: CompilerPlanningConfig,
+        catalog: Arc<FunctionCatalog>,
+    ) -> Self {
         let id = hash_str(&format!("program/{}", config.name));
-        let mut interpreter =
-            Interpreter::with_function_catalog(id, config.environment.rounds_per_step, catalog);
-
-        interpreter.set_trace_enabled(config.environment.trace_enabled);
+        let interpreter =
+            Interpreter::with_function_catalog(id, config.limits.max_planning_steps, catalog);
 
         Self {
             config,
@@ -184,18 +138,18 @@ impl MechProgram {
     }
 
     #[cfg(all(feature = "source", feature = "functions"))]
-    pub fn load_function_module(&mut self, module: &str) -> MResult<()> {
+    pub fn install_function_module(&mut self, module: &str) -> MResult<()> {
         crate::load_module(&self.interpreter, module)?;
         Ok(())
     }
 
     #[cfg(all(feature = "source", feature = "functions"))]
-    pub fn import_function_module_item(&mut self, module: &str, item: &str) -> MResult<()> {
+    pub fn import_compiler_function_item(&mut self, module: &str, item: &str) -> MResult<()> {
         crate::import_module_item(&self.interpreter, module, item)
     }
 
     #[cfg(all(feature = "source", feature = "functions"))]
-    pub fn import_function_module_item_as(
+    pub fn import_compiler_function_item_as(
         &mut self,
         module: &str,
         item: &str,
@@ -205,7 +159,7 @@ impl MechProgram {
     }
 
     #[cfg(all(feature = "source", feature = "functions"))]
-    pub fn import_function_module_glob(&mut self, module: &str) -> MResult<()> {
+    pub fn import_compiler_function_glob(&mut self, module: &str) -> MResult<()> {
         crate::import_module_glob(&self.interpreter, module)
     }
 
@@ -226,6 +180,18 @@ impl MechProgram {
                 base_uri: base_uri.to_owned(),
             },
         );
+    }
+
+    pub fn bind_compiler_catalog_export(
+        &mut self,
+        export: &FunctionExport,
+        canonical_name: &str,
+    ) -> MResult<()> {
+        self.interpreter
+            .state
+            .borrow_mut()
+            .function_environment
+            .bind_catalog_export(export, canonical_name)
     }
 
     pub fn register_function_extension(
@@ -263,79 +229,10 @@ impl MechProgram {
         )
     }
 
-    pub fn from_environment(name: impl Into<String>, environment: MechProgramEnvironment) -> Self {
-        Self::new(MechProgramConfig {
-            name: name.into(),
-            environment,
-        })
-    }
-
-    pub fn environment(&self) -> &MechProgramEnvironment {
-        &self.config.environment
-    }
-
-    pub fn set_environment(&mut self, environment: MechProgramEnvironment) {
-        self.config.environment = environment;
-        self.apply_environment();
-    }
-
-    pub fn configure(
-        &mut self,
-        debug_enabled: bool,
-        trace_enabled: bool,
-        profile_enabled: bool,
-        rounds_per_step: usize,
-    ) {
-        self.set_environment(MechProgramEnvironment {
-            trace_enabled,
-            debug_enabled,
-            profile_enabled,
-            rounds_per_step,
-        });
-    }
-
-    fn apply_environment(&mut self) {
-        self.interpreter.max_steps = self.config.environment.rounds_per_step;
-        self.interpreter
-            .set_trace_enabled(self.config.environment.trace_enabled);
-    }
-
-    pub fn interpreter(&self) -> &Interpreter {
-        &self.interpreter
-    }
-
-    pub fn interpreter_mut(&mut self) -> &mut Interpreter {
-        &mut self.interpreter
-    }
-
-    pub fn into_interpreter(self) -> Interpreter {
-        self.interpreter
-    }
-
-    #[cfg(feature = "source")]
-    pub fn run_string(&mut self, source: &str) -> MResult<LegacyValue> {
-        let mut services = NoMechExecutionServices;
-        self.run_string_with_services(source, &mut services)
-    }
-
-    #[cfg(feature = "source")]
-    pub fn run_string_with_services(
-        &mut self,
-        source: &str,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
-        let tree = parser::parse(source.trim())?;
-        self.run_tree_with_services(&tree, services)
-    }
-
-    #[cfg(feature = "source")]
-    pub fn run_tree(&mut self, tree: &mech_core::Program) -> MResult<LegacyValue> {
-        let mut services = NoMechExecutionServices;
-        self.run_tree_with_services(tree, &mut services)
-    }
-
-    #[cfg(feature = "source")]
-    pub fn run_tree_with_services(
+    /// Plans a parsed source tree inside the compiler's short-lived mutable
+    /// workspace. The resulting value is a compiler coordinate only; product
+    /// callers receive `ProgramCompilationProduct` after finalization.
+    pub fn plan_tree_with_services(
         &mut self,
         tree: &mech_core::Program,
         services: &mut dyn MechExecutionServices,
@@ -343,62 +240,22 @@ impl MechProgram {
         self.interpreter.interpret_with_services(tree, services)
     }
 
-    pub fn run_bytecode(&mut self, bytecode: &[u8]) -> MResult<LegacyValue> {
+    #[cfg(test)]
+    pub(crate) fn plan_source_for_test(&mut self, source: &str) -> MResult<LegacyValue> {
+        let tree = mech_syntax::parser::parse(source.trim())?;
         let mut services = NoMechExecutionServices;
-        self.run_bytecode_with_services(bytecode, &mut services)
+        self.plan_tree_with_services(&tree, &mut services)
     }
 
-    pub fn run_bytecode_with_services(
-        &mut self,
-        bytecode: &[u8],
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
-        let parsed = ParsedProgram::from_bytes(bytecode)?;
-        self.run_bytecode_program_with_services(&parsed, services)
-    }
-
-    pub fn run_bytecode_program(&mut self, program: &ParsedProgram) -> MResult<LegacyValue> {
-        let mut services = NoMechExecutionServices;
-        self.run_bytecode_program_with_services(program, &mut services)
-    }
-
-    pub fn run_bytecode_program_with_services(
-        &mut self,
-        program: &ParsedProgram,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
-        self.interpreter
-            .run_program_with_services(program, services)
-    }
-
-    #[cfg(feature = "source")]
-    pub fn run_program(&mut self, source: &str) -> MResult<LegacyValue> {
-        self.run_profiled_string(source)
-    }
-
-    #[cfg(feature = "source")]
-    pub fn run_profiled_string(&mut self, source: &str) -> MResult<LegacyValue> {
-        let now = Instant::now();
-        let result = self.run_string(source);
-
-        if self.config.environment.profile_enabled {
-            let cycle_duration = now.elapsed().as_nanos() as f64;
-            println!("Cycle Time: {} ns", cycle_duration);
-        }
-
-        result
-    }
-
-    pub fn out_string(&self) -> String {
-        self.interpreter.out.to_string()
-    }
-
-    pub fn root_symbol_value(&self, name: &str) -> MResult<LegacyValue> {
-        let mut values = self.root_symbol_values(&[name])?;
+    pub fn compiler_root_symbol_value(&self, name: &str) -> MResult<LegacyValue> {
+        let mut values = self.compiler_root_symbol_values(&[name])?;
         Ok(values.remove(0).1)
     }
 
-    pub fn root_symbol_values(&self, names: &[&str]) -> MResult<Vec<(String, LegacyValue)>> {
+    pub fn compiler_root_symbol_values(
+        &self,
+        names: &[&str],
+    ) -> MResult<Vec<(String, LegacyValue)>> {
         let symbols = self.interpreter.symbols();
         let symbols_brrw = symbols.borrow();
         let mut values = Vec::with_capacity(names.len());
@@ -417,7 +274,7 @@ impl MechProgram {
         Ok(values)
     }
 
-    pub fn root_symbol_values_all(&self) -> Vec<(String, LegacyValue)> {
+    pub fn compiler_root_symbol_values_all(&self) -> Vec<(String, LegacyValue)> {
         let symbols = self.interpreter.symbols();
         let symbols_brrw = symbols.borrow();
         let mut values = symbol_rows(&symbols_brrw, &[]);
@@ -425,72 +282,16 @@ impl MechProgram {
         values
     }
 
-    #[cfg(feature = "functions")]
-    pub fn solve_plan(&mut self) -> MResult<ProgramSolveOutcome> {
-        let mut services = NoMechExecutionServices;
-        self.solve_plan_with_services(&mut services)
-    }
-
-    #[cfg(feature = "functions")]
-    pub fn solve_plan_with_services(
-        &mut self,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ProgramSolveOutcome> {
-        let plan_len = self.interpreter.plan_len();
-        let value = self.interpreter.solve_plan_with_services(services)?;
-        Ok(ProgramSolveOutcome { value, plan_len })
-    }
-
-    pub fn run_source(&mut self, source: &MechSourceCode) -> MResult<LegacyValue> {
-        let mut services = NoMechExecutionServices;
-        self.run_source_with_services(source, &mut services)
-    }
-
-    pub fn run_source_with_services(
-        &mut self,
-        source: &MechSourceCode,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
-        match source {
-            #[cfg(feature = "source")]
-            MechSourceCode::String(source) => self.run_string_with_services(source, services),
-            #[cfg(feature = "source")]
-            MechSourceCode::Tree(tree) => self.run_tree_with_services(tree, services),
-            MechSourceCode::ByteCode(bytecode) => {
-                self.run_bytecode_with_services(bytecode, services)
-            }
-            MechSourceCode::Program(sources) => self.run_sources_with_services(sources, services),
-            unsupported => Err(MechError::new(
-                UnsupportedProgramSourceError {
-                    source_kind: format!("{:?}", unsupported),
-                },
-                None,
-            )),
-        }
-    }
-
-    pub fn run_sources(&mut self, sources: &[MechSourceCode]) -> MResult<LegacyValue> {
-        let mut services = NoMechExecutionServices;
-        self.run_sources_with_services(sources, &mut services)
-    }
-
-    pub fn run_sources_with_services(
-        &mut self,
-        sources: &[MechSourceCode],
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<LegacyValue> {
-        let mut value = LegacyValue::Empty;
-
-        for source in sources {
-            value = self.run_source_with_services(source, services)?;
-        }
-
-        Ok(value)
-    }
-
-    #[cfg(feature = "semantic-compiler")]
-    pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
-        Ok(self.compile_program_product()?.into_parts().1)
+    /// Installs one compiler-resolved source import in the ephemeral planning
+    /// symbol table. This coordinate is consumed during compilation and is not
+    /// retained by the runtime artifact.
+    pub fn install_compiler_symbol(&mut self, name: &str, value: Ref<LegacyValue>) -> MResult<()> {
+        let id = hash_str(name);
+        let symbols = self.interpreter.symbols();
+        let mut symbols = symbols.borrow_mut();
+        symbols.symbols.insert(id, value);
+        symbols.dictionary.borrow_mut().insert(id, name.to_owned());
+        Ok(())
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -669,7 +470,7 @@ struct RetainedIntegrityMarkerMetadata {
 }
 
 #[cfg(feature = "semantic-compiler")]
-fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
+fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompiledBytecode> {
     let state = program.interpreter.state.borrow();
     let plan = state.plan.borrow();
     let mut context = CompileCtx::new();
@@ -834,8 +635,11 @@ fn symbol_rows(
 }
 
 #[cfg(test)]
-fn test_mech_program(config: MechProgramConfig) -> MechProgram {
-    MechProgram::with_function_catalog(config, crate::test_support::catalog::function_catalog())
+fn test_mech_program(config: CompilerPlanningConfig) -> CompilerPlanningProgram {
+    CompilerPlanningProgram::with_function_catalog(
+        config,
+        crate::test_support::catalog::function_catalog(),
+    )
 }
 
 #[derive(Debug, Clone)]
@@ -872,12 +676,14 @@ mod tests {
     #[test]
     fn program_uses_and_retains_an_explicit_function_catalog() {
         let catalog = Arc::new(FunctionCatalogBuilder::new().build().unwrap());
-        let mut program =
-            MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(&catalog));
+        let mut program = CompilerPlanningProgram::with_function_catalog(
+            CompilerPlanningConfig::default(),
+            Arc::clone(&catalog),
+        );
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
 
-        program.interpreter_mut().clear();
+        program.interpreter.clear();
 
         assert!(Arc::ptr_eq(program.function_catalog(), &catalog));
     }
@@ -885,25 +691,15 @@ mod tests {
     #[cfg(all(feature = "functions", feature = "native"))]
     #[test]
     fn native_closure_registration_rejects_invalid_entries_atomically() {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        let extension_count = program
-            .interpreter()
-            .state
-            .borrow()
-            .function_extensions
-            .len();
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        let extension_count = program.interpreter.state.borrow().function_extensions.len();
 
         let error = program
             .register_native_closure("", |_| Ok(LegacyValue::Empty))
             .unwrap_err();
         assert_eq!(error.kind_name(), "FunctionExtensionInvalidEntry");
         assert_eq!(
-            program
-                .interpreter()
-                .state
-                .borrow()
-                .function_extensions
-                .len(),
+            program.interpreter.state.borrow().function_extensions.len(),
             extension_count,
         );
     }
@@ -916,15 +712,15 @@ mod tests {
     ))]
     #[test]
     fn native_closure_bytecode_rejection_remains_structured() {
-        let mut program = test_mech_program(MechProgramConfig::default());
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
         program
             .register_native_closure("host/source-only", |_| Ok(LegacyValue::F64(Ref::new(4.0))))
             .unwrap();
         program
-            .run_string("source-only := host/source-only()")
+            .plan_source_for_test("source-only := host/source-only()")
             .unwrap();
 
-        let error = program.compile_bytecode().unwrap_err();
+        let error = program.compile_program_product().unwrap_err();
         assert_eq!(
             error.kind_name(),
             "ClosureNativeFunctionNotBytecodeCompilable",
@@ -932,9 +728,12 @@ mod tests {
     }
 
     #[cfg(feature = "invariant_define")]
-    fn constraint<'a>(program: &'a MechProgram, name: &str) -> mech_core::IntegrityConstraint {
+    fn constraint<'a>(
+        program: &'a CompilerPlanningProgram,
+        name: &str,
+    ) -> mech_core::IntegrityConstraint {
         program
-            .interpreter()
+            .interpreter
             .state
             .borrow()
             .integrity_constraints
@@ -951,9 +750,9 @@ mod tests {
             ("false!", "2.0 <= 1.0"),
             ("number!", "42.0"),
         ] {
-            let mut program = test_mech_program(MechProgramConfig::default());
+            let mut program = test_mech_program(CompilerPlanningConfig::default());
             program
-                .run_string(&format!("{name} := {expression}"))
+                .plan_source_for_test(&format!("{name} := {expression}"))
                 .unwrap();
             let descriptor = constraint(&program, name);
             assert_eq!(descriptor.id, hash_str(name));
@@ -962,7 +761,7 @@ mod tests {
             assert!(!descriptor.tokens.is_empty());
             assert_eq!(
                 program
-                    .interpreter()
+                    .interpreter
                     .state
                     .borrow()
                     .integrity_constraints
@@ -975,14 +774,14 @@ mod tests {
     #[cfg(feature = "invariant_define")]
     #[test]
     fn integrity_constraint_direct_operands_remain_live() {
-        let mut program = test_mech_program(MechProgramConfig::default());
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
         program
-            .run_string("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum")
+            .plan_source_for_test("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum")
             .unwrap();
 
         let descriptor = constraint(&program, "safe!");
         let target = program
-            .interpreter()
+            .interpreter
             .symbols()
             .borrow()
             .get(hash_str("target"))
@@ -1006,19 +805,19 @@ mod tests {
     fn integrity_constraint_diagnostics_do_not_recompile_complex_operands() {
         let source = "target := 1.0\nmaximum := 3.0";
         let expression = "target + 1.0 <= maximum";
-        let mut ordinary = test_mech_program(MechProgramConfig::default());
+        let mut ordinary = test_mech_program(CompilerPlanningConfig::default());
         ordinary
-            .run_string(&format!("{source}\ncandidate := {expression}"))
+            .plan_source_for_test(&format!("{source}\ncandidate := {expression}"))
             .unwrap();
-        let ordinary_plan_len = ordinary.interpreter().plan_len();
+        let ordinary_plan_len = ordinary.interpreter.plan_len();
 
-        let mut constrained = test_mech_program(MechProgramConfig::default());
+        let mut constrained = test_mech_program(CompilerPlanningConfig::default());
         constrained
-            .run_string(&format!("{source}\nsafe! := {expression}"))
+            .plan_source_for_test(&format!("{source}\nsafe! := {expression}"))
             .unwrap();
         let descriptor = constraint(&constrained, "safe!");
 
-        assert_eq!(constrained.interpreter().plan_len(), ordinary_plan_len);
+        assert_eq!(constrained.interpreter.plan_len(), ordinary_plan_len);
         assert!(descriptor.lhs.is_none());
         assert!(descriptor.operator.is_some());
         assert!(descriptor.rhs.is_some());
@@ -1045,17 +844,18 @@ mod tests {
         ]);
 
         for _ in 0..64 {
-            let mut program = test_mech_program(MechProgramConfig::default());
-            program.run_string(source)?;
+            let mut program = test_mech_program(CompilerPlanningConfig::default());
+            program.plan_source_for_test(source)?;
             let expected_expressions = program
-                .interpreter()
+                .interpreter
                 .state
                 .borrow()
                 .integrity_constraints
                 .values()
                 .map(|constraint| (constraint.name.clone(), constraint.expression.clone()))
                 .collect::<BTreeMap<_, _>>();
-            let parsed = ParsedProgram::from_bytes(&program.compile_bytecode()?)?;
+            let product = program.compile_program_product()?;
+            let parsed = ParsedProgram::from_bytes(product.bytecode())?;
             let constants = parsed.decode_constants()?;
             let constant_registers = parsed
                 .instructions
@@ -1698,54 +1498,60 @@ mod root_symbol_snapshot_tests {
 
     #[test]
     fn root_symbol_value_returns_value() {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        program.run_string("answer := 42.0").unwrap();
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program.plan_source_for_test("answer := 42.0").unwrap();
         assert_eq!(
-            f64_value(&program.root_symbol_value("answer").unwrap()),
+            f64_value(&program.compiler_root_symbol_value("answer").unwrap()),
             42.0
         );
     }
 
     #[test]
     fn root_symbol_values_preserve_order() {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        program.run_string("a := 1.0\nb := 2.0\nc := 3.0").unwrap();
-        let rows = program.root_symbol_values(&["c", "a", "b"]).unwrap();
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program
+            .plan_source_for_test("a := 1.0\nb := 2.0\nc := 3.0")
+            .unwrap();
+        let rows = program
+            .compiler_root_symbol_values(&["c", "a", "b"])
+            .unwrap();
         let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
         assert_eq!(names, vec!["c", "a", "b"]);
     }
 
     #[test]
     fn root_symbol_values_snapshot_multiple_values() {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        program.run_string("a := 1.0\nb := 2.0").unwrap();
-        let rows = program.root_symbol_values(&["a", "b"]).unwrap();
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program.plan_source_for_test("a := 1.0\nb := 2.0").unwrap();
+        let rows = program.compiler_root_symbol_values(&["a", "b"]).unwrap();
         assert_eq!(f64_value(&rows[0].1), 1.0);
         assert_eq!(f64_value(&rows[1].1), 2.0);
     }
 
     #[test]
     fn root_symbol_values_all_are_sorted_by_name() {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        program.run_string("c := 3.0\na := 1.0\nb := 2.0").unwrap();
-        let rows = program.root_symbol_values_all();
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program
+            .plan_source_for_test("c := 3.0\na := 1.0\nb := 2.0")
+            .unwrap();
+        let rows = program.compiler_root_symbol_values_all();
         let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
         assert_eq!(names, vec!["a", "ans", "b", "c"]);
     }
 
     #[test]
     fn missing_root_symbol_returns_structured_error() {
-        let program = test_mech_program(MechProgramConfig::default());
-        let err = program.root_symbol_value("missing").unwrap_err();
+        let program = test_mech_program(CompilerPlanningConfig::default());
+        let err = program.compiler_root_symbol_value("missing").unwrap_err();
         assert!(format!("{:?}", err).contains("ProgramOutputNotFound"));
     }
 
     #[test]
     fn snapshot_does_not_hold_symbol_table_borrow() {
-        let mut program = test_mech_program(MechProgramConfig::default());
-        program.run_string("answer := 42.0").unwrap();
-        let _snapshot = program.root_symbol_value("answer").unwrap();
-        let symbols = program.interpreter().symbols();
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program.plan_source_for_test("answer := 42.0").unwrap();
+        let _snapshot = program.compiler_root_symbol_value("answer").unwrap();
+        let symbols = program.interpreter.symbols();
         let _mutable_borrow = symbols.borrow_mut();
     }
 }

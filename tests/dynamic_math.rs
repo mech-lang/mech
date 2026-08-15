@@ -6,14 +6,12 @@ mod intrinsic_catalog;
 use mech_core::{LegacyValue, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {
-    let mut program = intrinsic_catalog::program();
-    program.run_string(source).is_ok()
+    intrinsic_catalog::run(source).is_ok()
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_round(source: &str) {
-    let mut program = intrinsic_catalog::program();
-    let result = program.run_string(source).unwrap();
+    let result = intrinsic_catalog::run(source).unwrap();
 
     let detached = match result {
         LegacyValue::MutableReference(v) => v.borrow().clone(),
@@ -28,8 +26,7 @@ fn run_matrix_round(source: &str) {
 
 #[cfg(feature = "dynamic-modules")]
 fn run_scalar_f64(source: &str, expected: f64) {
-    let mut program = intrinsic_catalog::program();
-    let result = program.run_string(source).unwrap();
+    let result = intrinsic_catalog::run(source).unwrap();
 
     let detached = match result {
         LegacyValue::MutableReference(v) => v.borrow().clone(),
@@ -44,8 +41,7 @@ fn run_scalar_f64(source: &str, expected: f64) {
 
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_f64(source: &str, expected: Vec<f64>, rows: usize, cols: usize) {
-    let mut program = intrinsic_catalog::program();
-    let result = program.run_string(source).unwrap();
+    let result = intrinsic_catalog::run(source).unwrap();
 
     let detached = match result {
         LegacyValue::MutableReference(v) => v.borrow().clone(),

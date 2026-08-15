@@ -1,5 +1,28 @@
 use crate::*;
 
+pub fn compile_stable_value_update(
+    sink: ValRef,
+    source: LegacyValue,
+) -> MResult<Box<dyn MechFunction>> {
+    {
+        let current = sink.borrow();
+        validate_stable_value_update(&current, &source)?;
+    }
+
+    crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink), source])
+}
+
+pub fn apply_stable_value_update(sink: ValRef, source: LegacyValue) -> MResult<LegacyValue> {
+    {
+        let current = sink.borrow();
+        validate_stable_value_update(&current, &source)?;
+    }
+    let update =
+        crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink.clone()), source])?;
+    update.solve_result()?;
+    Ok(sink.borrow().clone())
+}
+
 pub struct ProgramState {
     #[cfg(feature = "symbol_table")]
     pub symbol_table: SymbolTableRef,

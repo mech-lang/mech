@@ -60,6 +60,24 @@ fn is_f64_set(schema: Option<&mech_core::Schema>) -> bool {
     )
 }
 
+fn set_element_schema_matches(
+    schemas: &mech_core::SchemaTable,
+    element: mech_core::SchemaId,
+    set: mech_core::SchemaId,
+) -> bool {
+    schemas
+        .get(set)
+        .and_then(|schema| match schema.body() {
+            SchemaBody::Set { element, .. } => Some(element.as_ref()),
+            _ => None,
+        })
+        .is_some_and(|expected| {
+            schemas
+                .get(element)
+                .is_some_and(|actual| actual.body() == expected)
+        })
+}
+
 fn bind_union(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -107,6 +125,11 @@ fn bind_element_of(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_binary_contract(request, ChangeDetectionPolicy::ExactScalar)?;
+    let element_schema_matches = set_element_schema_matches(
+        request.schemas,
+        request.inputs[0].schema_id,
+        request.inputs[1].schema_id,
+    );
     if request.inputs[0].kind != ResidentValueKind::F64
         || request.inputs[0].shape != ResidentShape::SCALAR
         || request.inputs[1].kind != ResidentValueKind::Snapshot
@@ -116,6 +139,12 @@ fn bind_element_of(
         || request.output.shape != ResidentShape::SCALAR
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    if !element_schema_matches {
+        return Ok(BoundResidentKernel::new(
+            element_of_schema_mismatch,
+            Box::new([]),
+        ));
     }
     Ok(BoundResidentKernel::new(element_of, Box::new([])))
 }
@@ -182,4 +211,69 @@ fn element_of(
     let changed = *target != next;
     *target = next;
     Ok(changed)
+}
+
+fn element_of_schema_mismatch(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let ResidentValueMut::Bool(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let changed = *target != 0;
+    *target = 0;
+    Ok(changed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn schema(body: SchemaBody) -> mech_core::Schema {
+        mech_core::SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body,
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    #[test]
+    fn membership_requires_the_exact_set_element_schema() {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let scalar = builder
+            .insert(schema(SchemaBody::FloatingPoint(FloatWidth::W64)))
+            .unwrap();
+        let matrix = builder
+            .insert(schema(SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(1),
+                ]
+                .into_boxed_slice(),
+            }))
+            .unwrap();
+        let set = builder
+            .insert(schema(SchemaBody::Set {
+                element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                cardinality: mech_core::DimensionExpr::Constant(3),
+            }))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let set = build.resolve(set).unwrap();
+        let (schemas, _) = build.into_parts();
+
+        assert!(set_element_schema_matches(&schemas, scalar, set));
+        assert!(!set_element_schema_matches(&schemas, matrix, set));
+    }
 }

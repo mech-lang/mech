@@ -1,11 +1,11 @@
 #[cfg(all(test, feature = "functions", feature = "symbol_table", feature = "f64"))]
 mod checkpoint_tests {
     use super::super::super::{
-        BytecodeRegisterFile, Dictionary, ExtensionFunctionId, FunctionBinding,
-        FunctionCatalogBuilder, FunctionDefine, FunctionDefinition, FunctionExport,
-        FunctionExposure, FunctionExtensionEntry, FunctionSpecializer, Interpreter, LegacyValue,
-        MResult, MechFunction, MechSourceCode, ModuleManifestCatalog, OperationId, ProgramState,
-        ReactiveCellId, Ref, RuntimeContextBinding, ValRef, ValueStateBorrowConflict, hash_str,
+        Dictionary, ExtensionFunctionId, FunctionBinding, FunctionCatalogBuilder, FunctionDefine,
+        FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
+        FunctionSpecializer, Interpreter, LegacyValue, MResult, MechFunction, MechSourceCode,
+        ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
+        RuntimeContextBinding, ValRef, ValueStateBorrowConflict, hash_str,
         internal_pattern_value_identifier,
     };
     use std::collections::HashMap;
@@ -434,17 +434,10 @@ mod checkpoint_tests {
     #[test]
     fn interpreter_checkpoint_restores_private_state_and_recursive_child_identity() {
         let mut root = Interpreter::new(1, 100);
-        root.ip = 7;
-        root.profile = true;
         let (symbol_cell, symbol_backing) = install_scalar(&root, "kept", 1.0);
         let symbol_cell_address = symbol_cell.addr();
         let symbol_backing_address = symbol_backing.addr();
         let symbol_backing_identity = ReactiveCellId::new(symbol_backing.id());
-        root.bytecode_registers = BytecodeRegisterFile::new(1);
-        root.bytecode_registers
-            .load(0, f64_value(&symbol_backing))
-            .unwrap();
-        root.constants = vec![f64_value(&Ref::new(2.0))];
         root.out = f64_value(&symbol_backing);
         root.code.push(MechSourceCode::String("before".to_string()));
         root.out_values
@@ -530,10 +523,8 @@ mod checkpoint_tests {
         let child_id = 2;
         let grandchild_id = 3;
         let mut child = Interpreter::new(child_id, 200);
-        child.ip = 8;
         let (_child_cell, child_backing) = install_scalar(&child, "child", 20.0);
         let mut grandchild = Interpreter::new(grandchild_id, 300);
-        grandchild.ip = 9;
         let (_grandchild_cell, grandchild_backing) =
             install_scalar(&grandchild, "grandchild", 30.0);
         let grandchild_ref = Ref::new(Box::new(grandchild));
@@ -551,11 +542,7 @@ mod checkpoint_tests {
         let checkpoint = root.checkpoint().unwrap();
 
         root.id = 99;
-        root.ip = 99;
-        root.profile = false;
         root.max_steps = 999;
-        root.bytecode_registers = BytecodeRegisterFile::new(0);
-        root.constants.clear();
         root.code.push(MechSourceCode::String("after".to_string()));
         root.out = LegacyValue::Empty;
         root.state = Ref::new(ProgramState::new());
@@ -597,7 +584,6 @@ mod checkpoint_tests {
         {
             let mut child = removed_child.borrow_mut();
             child.id = 22;
-            child.ip = 88;
             let removed_grandchild = child
                 .sub_interpreters
                 .borrow_mut()
@@ -617,7 +603,6 @@ mod checkpoint_tests {
             "restore-before"
         );
         assert_eq!(root.id, 99);
-        assert_eq!(root.ip, 99);
         assert_ne!(root.state.addr(), state_address);
         assert!(root.sub_interpreters.borrow().contains_key(&999));
         assert!(!root.sub_interpreters.borrow().contains_key(&child_id));
@@ -627,8 +612,6 @@ mod checkpoint_tests {
         root.restore(checkpoint).unwrap();
 
         assert_eq!(root.id, 1);
-        assert_eq!(root.ip, 7);
-        assert!(root.profile);
         assert_eq!(root.max_steps, 100);
         assert_eq!(root.state.addr(), state_address);
         assert_eq!(root.symbols().addr(), symbols_address);
@@ -702,8 +685,6 @@ mod checkpoint_tests {
             }
         }
         assert_eq!(root.sub_interpreters.addr(), sub_interpreters_address);
-        assert_eq!(root.bytecode_registers.len(), 1);
-        assert_eq!(root.constants.len(), 1);
         assert_eq!(
             root.code,
             vec![MechSourceCode::String("before".to_string())]
@@ -730,7 +711,6 @@ mod checkpoint_tests {
         let restored_grandchild = {
             let child = restored_child.borrow();
             assert_eq!(child.id, child_id);
-            assert_eq!(child.ip, 8);
             assert_eq!(*child_backing.borrow(), 20.0);
             child
                 .sub_interpreters
@@ -742,7 +722,6 @@ mod checkpoint_tests {
         assert_eq!(restored_grandchild.addr(), grandchild_handle_address);
         let grandchild = restored_grandchild.borrow();
         assert_eq!(grandchild.id, grandchild_id);
-        assert_eq!(grandchild.ip, 9);
         assert_eq!(*grandchild_backing.borrow(), 30.0);
     }
 }

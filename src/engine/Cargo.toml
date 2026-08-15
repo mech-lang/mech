@@ -494,14 +494,6 @@ optional = true
 web-time = "1.1.0"
 
 [[test]]
-name = "bytecode_plan_topology"
-required-features = ["compiler_default"]
-
-[[test]]
-name = "context_bindings"
-required-features = ["source"]
-
-[[test]]
 name = "native_linkage"
 required-features = ["native-link"]
 

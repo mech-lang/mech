@@ -1,19 +1,22 @@
 #[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
 use mech_core::FunctionCatalogBuilder;
 #[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
-use mech_engine::Interpreter;
-#[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
 use std::sync::Arc;
 
 #[cfg(any(feature = "math_mul_assign", feature = "math_div_assign",))]
 fn unavailable_operation(source: &str) -> String {
-    let tree = mech_syntax::parser::parse(source).unwrap();
     let mut builder = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
-    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    crate::install_intrinsic_runtime(&mut builder).unwrap();
+    crate::install_intrinsic_source(&mut builder).unwrap();
     let catalog = Arc::new(builder.build().unwrap());
-    let mut interpreter = Interpreter::with_function_catalog(0, 10_000, catalog);
-    interpreter.interpret(&tree).unwrap_err().kind_message()
+    let mut program = crate::CompilerPlanningProgram::with_function_catalog(
+        crate::CompilerPlanningConfig::default(),
+        catalog,
+    );
+    program
+        .plan_source_for_test(source)
+        .unwrap_err()
+        .kind_message()
 }
 
 #[cfg(feature = "math_mul_assign")]

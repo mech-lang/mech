@@ -18,16 +18,15 @@ use mech_engine::{
         ResidentValueBorrow, activate_external, compile_frozen_ekf_source,
         frozen_ekf_compiler_catalog,
     },
-    ApplicationRequirementTable, ArtifactSource, BindingDeclaration, MechProgram,
-    MechProgramConfig, NodeDeclaration, OperationReference, ProgramArtifact, ProgramArtifactDraft,
-    decode_program_artifact_sections,
+    ApplicationRequirementTable, ArtifactSource, BindingDeclaration, NodeDeclaration,
+    OperationReference, ProgramArtifact, ProgramArtifactDraft, decode_program_artifact_sections,
 };
 
 use crate::{
-    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeCompensatableEffect, RuntimeEffectCost,
-    RuntimeEffectMetadata, RuntimeEffectSource, RuntimeResidentResourceWriteRequest,
-    RuntimeResourceProvider, RuntimeResourceReadRequest, RuntimeResourceRegistry,
-    RuntimeResourceWriteIntent, RuntimeTransactionalEffect, TransactionId,
+    PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeCompensatableEffect,
+    RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
+    RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
+    RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeTransactionalEffect, TransactionId,
     config::ResidentDurabilityPolicy,
 };
 
@@ -2258,17 +2257,12 @@ fn source_fixture_artifact(
     protocol: ProviderProtocol,
 ) -> MResult<(ProgramArtifact, ProgramArtifact)> {
     let trace = Arc::new(Mutex::new(ProviderTrace::default()));
-    let mut providers = RuntimeResourceRegistry::new();
-    providers.register_provider(Box::new(SourceInputProvider))?;
-    providers.register_provider(Box::new(EffectProvider { trace, protocol }))?;
-    let resolver = ResidentExternalContractResolver::new(&providers);
-    let mut services = SourceFixtureServices;
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_catalog(),
-    );
-    program.run_string_with_services(source, &mut services)?;
-    let product = program.compile_program_product_with_external_contracts(&resolver)?;
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .resource_provider(Box::new(SourceInputProvider))
+        .resource_provider(Box::new(EffectProvider { trace, protocol }))
+        .build_compiler()?;
+    let product = compiler.compile_source(source)?;
     let parsed = ParsedProgram::from_bytes(product.bytecode())?;
     let decoded = decode_program_artifact_sections(&parsed.artifact).map_err(|error| {
         test_error(&format!("D3 bytecode-v1 artifact decode failed: {error:?}"))
@@ -2335,45 +2329,6 @@ output := state
     };
     assert_eq!(values, [0.5]);
     Ok(())
-}
-
-#[cfg(feature = "semantic-compiler")]
-#[derive(Debug)]
-struct SourceFixtureServices;
-
-#[cfg(feature = "semantic-compiler")]
-impl MechExecutionServices for SourceFixtureServices {
-    fn invoke_host_function(
-        &mut self,
-        _request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
-        Err(test_error("D3 source fixture has no host call"))
-    }
-    fn plan_resource_read_output(
-        &mut self,
-        _request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
-        Ok(LegacyValue::F64(mech_core::Ref::new(0.25)))
-    }
-    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::F64(mech_core::Ref::new(0.25)))
-    }
-    fn write_resource(
-        &mut self,
-        _request: &ExecutionResourceRequest,
-        _value: &LegacyValue,
-    ) -> MResult<()> {
-        Ok(())
-    }
-    fn bind_live_resource(
-        &mut self,
-        _interpreter_id: u64,
-        _request: &ExecutionResourceRequest,
-        _target: ValRef,
-    ) -> MResult<()> {
-        Ok(())
-    }
 }
 
 #[cfg(feature = "semantic-compiler")]

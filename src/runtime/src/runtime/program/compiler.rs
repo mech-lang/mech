@@ -1,19 +1,20 @@
 //! Isolated compiler workspace for resident source products.
 //!
-//! This session may use compiler-era `MechProgram` and `LegacyValue`
-//! representations while planning source. Those values never become runtime
-//! owners: each program is local to one compilation and is dropped after the
-//! immutable `ProgramArtifact` and bytecode-v1 product are finalized.
+//! `CompilerPlanningProgram` and `LegacyValue` are private compilation
+//! coordinates. They never become runtime owners: each planning program is
+//! local to one compilation and is dropped after finalization. Only
+//! `ProgramCompilationProduct` escapes this module.
 
 use std::{collections::HashMap, sync::Arc};
 
 use mech_core::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
     MechErrorKind, MechExecutionServices, MechSourceCode, ModuleManifestCatalog, Ref,
-    ResourceIntent, hash_str,
+    ResourceIntent,
 };
 use mech_engine::{
-    CompiledResourceSendOperation, MechProgram, MechProgramConfig, ProgramCompilationProduct,
+    CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
+    ProgramCompilationProduct,
 };
 
 use crate::{
@@ -42,7 +43,7 @@ pub struct ProgramCompiler {
     module_builder: ModuleBuilder,
     host_interfaces: HostInterfaceCatalog,
     module_manifests: ModuleManifestCatalog,
-    program_config: MechProgramConfig,
+    program_config: CompilerPlanningConfig,
 }
 
 impl std::fmt::Debug for ProgramCompiler {
@@ -67,7 +68,7 @@ impl ProgramCompiler {
         module_builder: ModuleBuilder,
         host_interfaces: HostInterfaceCatalog,
         module_manifests: ModuleManifestCatalog,
-        program_config: MechProgramConfig,
+        program_config: CompilerPlanningConfig,
     ) -> Self {
         Self {
             function_catalog,
@@ -125,7 +126,7 @@ pub(crate) struct ProgramCompilerView<'a> {
     module_builder: &'a ModuleBuilder,
     host_interfaces: &'a HostInterfaceCatalog,
     module_manifests: &'a ModuleManifestCatalog,
-    program_config: MechProgramConfig,
+    program_config: CompilerPlanningConfig,
 }
 
 #[derive(Clone)]
@@ -195,7 +196,7 @@ impl<'a> ProgramCompilerView<'a> {
         module_builder: &'a ModuleBuilder,
         host_interfaces: &'a HostInterfaceCatalog,
         module_manifests: &'a ModuleManifestCatalog,
-        program_config: MechProgramConfig,
+        program_config: CompilerPlanningConfig,
     ) -> Self {
         Self {
             function_catalog,
@@ -224,7 +225,7 @@ impl<'a> ProgramCompilerView<'a> {
             resource_send_operations: &operations,
         };
         program
-            .run_tree_with_services(&sanitize_tree(tree)?, &mut services)
+            .plan_tree_with_services(&sanitize_tree(tree)?, &mut services)
             .map_err(classify_source_planning)?;
         self.finalize(program, &operations)
     }
@@ -354,8 +355,8 @@ impl<'a> ProgramCompilerView<'a> {
         )
     }
 
-    fn new_program(&self) -> MechProgram {
-        MechProgram::with_function_catalog(
+    fn new_program(&self) -> CompilerPlanningProgram {
+        CompilerPlanningProgram::with_function_catalog(
             self.program_config.clone(),
             Arc::clone(&self.function_catalog),
         )
@@ -363,7 +364,7 @@ impl<'a> ProgramCompilerView<'a> {
 
     fn finalize(
         &self,
-        mut program: MechProgram,
+        mut program: CompilerPlanningProgram,
         operations: &[CompiledResourceSendOperation],
     ) -> MResult<ProgramCompilationProduct> {
         let resolver = ResidentExternalContractResolver::new(self.resources);
@@ -552,7 +553,7 @@ impl<'a> ProgramCompilerView<'a> {
         modules: &HashMap<String, CompilerModule>,
         instances: &mut HashMap<String, CompilerModuleInstance>,
         active: &mut Vec<String>,
-        root_program: Option<&mut Option<MechProgram>>,
+        root_program: Option<&mut Option<CompilerPlanningProgram>>,
     ) -> MResult<()> {
         if instances.contains_key(canonical_uri) {
             return Ok(());
@@ -594,15 +595,13 @@ impl<'a> ProgramCompilerView<'a> {
             resource_send_operations: &resource_send_operations,
         };
         program
-            .run_tree_with_services(&tree, &mut services)
+            .plan_tree_with_services(&tree, &mut services)
             .map_err(classify_source_planning)?;
 
-        let symbols = program.interpreter().symbols();
-        let symbols = symbols.borrow();
         let mut exports = HashMap::new();
         for export in source_exports(&module.source) {
             let name = export.name.clone();
-            let value = symbols.get(hash_str(&name)).ok_or_else(|| {
+            let value = program.compiler_root_symbol_value(&name).map_err(|_| {
                 mech_core::MechError::new(
                     RuntimeModuleExportNotFound {
                         dependency: canonical_uri.to_owned(),
@@ -611,13 +610,12 @@ impl<'a> ProgramCompilerView<'a> {
                     None,
                 )
             })?;
-            let borrowed = value.borrow();
-            let snapshot = borrowed.try_deep_snapshot().map_err(|_| {
+            let snapshot = value.try_deep_snapshot().map_err(|_| {
                 MechError::new(
                     CompilerImportValueUnsupported {
                         module: canonical_uri.to_owned(),
                         export: name.clone(),
-                        kind: borrowed.kind().to_string(),
+                        kind: value.kind().to_string(),
                     },
                     None,
                 )
@@ -631,7 +629,6 @@ impl<'a> ProgramCompilerView<'a> {
                 },
             );
         }
-        drop(symbols);
         instances.insert(canonical_uri.to_owned(), CompilerModuleInstance { exports });
         active.pop();
         Ok(())
@@ -698,7 +695,7 @@ fn declared_resource_send_operation<'a>(
 }
 
 fn install_context_imports(
-    program: &mut MechProgram,
+    program: &mut CompilerPlanningProgram,
     imports: &[SourceImportDeclaration],
     contexts: &[crate::SourceContextDeclaration],
 ) -> MResult<()> {
@@ -815,7 +812,7 @@ fn source_exports(source: &ResolvedSource) -> Vec<SourceExportDeclaration> {
 }
 
 fn install_function_imports(
-    program: &mut MechProgram,
+    program: &mut CompilerPlanningProgram,
     imports: &[SourceImportDeclaration],
     source_edges: &[(SourceImportDeclaration, String)],
 ) -> MResult<()> {
@@ -827,15 +824,15 @@ fn install_function_imports(
         }
         let module = import.module.as_deref().unwrap_or(&import.specifier);
         match &import.kind {
-            SourceImportKind::Namespace => program.load_function_module(module)?,
+            SourceImportKind::Namespace => program.install_function_module(module)?,
             SourceImportKind::Single { name } => match &import.alias {
                 Some(SourceImportAlias::Value(alias)) => {
-                    program.import_function_module_item_as(module, name, alias)?;
+                    program.import_compiler_function_item_as(module, name, alias)?;
                 }
                 Some(SourceImportAlias::Context(_)) => {}
-                None => program.import_function_module_item(module, name)?,
+                None => program.import_compiler_function_item(module, name)?,
             },
-            SourceImportKind::Wildcard => program.import_function_module_glob(module)?,
+            SourceImportKind::Wildcard => program.import_compiler_function_glob(module)?,
             SourceImportKind::DependencyOnly => {
                 return Err(mech_core::MechError::new(
                     RuntimeInvalidOperationError {
@@ -942,15 +939,11 @@ fn insert_import(
 }
 
 fn install_environment(
-    program: &mut MechProgram,
+    program: &mut CompilerPlanningProgram,
     environment: &HashMap<String, CompilerExportValue>,
 ) -> MResult<()> {
-    let symbols = program.interpreter_mut().symbols();
-    let mut symbols = symbols.borrow_mut();
     for (name, value) in environment {
-        let id = hash_str(name);
-        symbols.symbols.insert(id, value.fresh_reference()?);
-        symbols.dictionary.borrow_mut().insert(id, name.clone());
+        program.install_compiler_symbol(name, value.fresh_reference()?)?;
     }
     Ok(())
 }

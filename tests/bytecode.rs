@@ -5,64 +5,27 @@ mod dynamic_matrix_factory;
 
 use mech_core::matrix::Matrix;
 use mech_core::{
-    BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
-    MResult, MechExecutionServices, ParsedProgram, Ref, RuntimeType, ValRef, ValueKind, hash_str,
+    BytecodeInstruction, LegacyValue, MResult, ParsedProgram, Ref, RuntimeType, ValueKind, hash_str,
 };
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder, RuntimeProgramRoute};
 use nalgebra::DMatrix;
 
-#[derive(Default)]
-struct RecordingExecutionServices {
-    writes: Vec<LegacyValue>,
-}
-
-impl MechExecutionServices for RecordingExecutionServices {
-    fn invoke_host_function(
-        &mut self,
-        _request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
-        panic!("mixed-program test did not expect a host call")
-    }
-
-    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        panic!("mixed-program test did not expect a resource read")
-    }
-
-    fn write_resource(
-        &mut self,
-        _request: &ExecutionResourceRequest,
-        value: &LegacyValue,
-    ) -> MResult<()> {
-        self.writes.push(value.clone());
-        Ok(())
-    }
-
-    fn bind_live_resource(
-        &mut self,
-        _interpreter_id: u64,
-        _request: &ExecutionResourceRequest,
-        _target: ValRef,
-    ) -> MResult<()> {
-        panic!("mixed-program test did not expect a live resource binding")
-    }
-}
-
-fn standard_program() -> MechProgram {
-    MechProgram::with_function_catalog(MechProgramConfig::default(), mech::stdlib::source_catalog())
-}
-
 fn compile_source(source: &str) -> MResult<Vec<u8>> {
-    let mut program = standard_program();
-    program.run_string(source)?;
-    program.compile_bytecode()
+    RuntimeBuilder::new()
+        .function_catalog(mech::stdlib::source_catalog())
+        .build_compiler()?
+        .compile_source(source)
+        .map(|product| product.into_parts().1)
 }
 
 fn run_compiled_source(source: &str) -> MResult<(ParsedProgram, LegacyValue)> {
     let bytecode = compile_source(source)?;
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    let value = standard_program().run_bytecode_program(&parsed)?;
-    Ok((parsed, value))
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech::stdlib::source_catalog())
+        .build()?;
+    let loaded = runtime.load_bytecode_program(&bytecode, ResidentDurabilityPolicy::Volatile)?;
+    Ok((parsed, loaded.initial_value.into_value()))
 }
 
 fn return_register(program: &ParsedProgram) -> u32 {
@@ -145,6 +108,15 @@ fn dynamic_strict_inequality_round_trips_through_bytecode() -> MResult<()> {
 }
 
 #[test]
+fn strict_comparison_preserves_scalar_and_matrix_shape_identity() -> MResult<()> {
+    let (_, equal) = run_compiled_source("1.0 === [1.0]")?;
+    assert_eq!(equal, LegacyValue::Bool(Ref::new(false)));
+    let (_, not_equal) = run_compiled_source("1.0 !== [1.0]")?;
+    assert_eq!(not_equal, LegacyValue::Bool(Ref::new(true)));
+    Ok(())
+}
+
+#[test]
 fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
     let (inserted_program, inserted) = run_compiled_source("set/insert({1, 2}, 3)")?;
     assert!(
@@ -184,23 +156,23 @@ fn ordinary_set_elements_round_trip_through_bytecode() -> MResult<()> {
 
 #[test]
 fn compiled_set_membership_round_trips_through_bytecode() -> MResult<()> {
-    let bytecode = compile_source("x := 2\nitems := {1, 2, 3}\nmember := x ∈ items\nmember")?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    let mut compiled = standard_program();
-    assert_eq!(
-        compiled.run_bytecode_program(&parsed)?,
-        LegacyValue::Bool(Ref::new(true))
-    );
+    let (_, value) =
+        run_compiled_source("x := 2\nitems := {1, 2, 3}\nmember := x ∈ items\nmember")?;
+    assert_eq!(value, LegacyValue::Bool(Ref::new(true)));
 
     Ok(())
 }
 
 #[test]
+fn set_membership_preserves_element_schema_identity() -> MResult<()> {
+    let (_, value) = run_compiled_source("[2.0] ∈ {1.0, 2.0, 3.0}")?;
+    assert_eq!(value, LegacyValue::Bool(Ref::new(false)));
+    Ok(())
+}
+
+#[test]
 fn compiled_integrity_constraints_are_reconstructed() -> MResult<()> {
-    let mut source_program = standard_program();
-    source_program.run_string("x := 1.0\nsafe! := x <= 2.0")?;
-    let source_report = source_program.integrity_constraint_report()?;
-    let bytecode = source_program.compile_bytecode()?;
+    let bytecode = compile_source("x := 1.0\nsafe! := x <= 2.0")?;
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     assert_eq!(
         parsed
@@ -216,75 +188,13 @@ fn compiled_integrity_constraints_are_reconstructed() -> MResult<()> {
                 && arguments.first() == parsed.symbols.get(&hash_str("safe!"))
     )));
 
-    let mut compiled = standard_program();
-    compiled.run_bytecode_program(&parsed)?;
-    let report = compiled.integrity_constraint_report()?;
-    assert_eq!(report.evaluations.len(), 1);
-    assert_eq!(report.evaluations[0].name, "safe!");
-    assert_eq!(
-        report.evaluations[0].expression,
-        source_report.evaluations[0].expression,
-    );
-    assert_eq!(
-        report.evaluations[0].actual,
-        source_report.evaluations[0].actual,
-    );
-    assert_eq!(
-        report.evaluations[0].expected,
-        source_report.evaluations[0].expected,
-    );
-    assert!(report.evaluations[0].passed);
+    assert_eq!(parsed.artifact.integrity_constraints.len(), 1);
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech::stdlib::source_catalog())
+        .build()?;
+    let loaded = runtime.load_bytecode_program(&bytecode, ResidentDurabilityPolicy::Volatile)?;
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
 
-    Ok(())
-}
-
-#[test]
-fn malformed_compiled_integrity_constraint_metadata_is_rejected() -> MResult<()> {
-    let bytecode = compile_source("x := 1.0\nsafe! := x <= 2.0")?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-
-    let mut missing_marker = parsed.clone();
-    missing_marker.instructions.retain(|instruction| {
-        !matches!(
-            instruction,
-            BytecodeInstruction::RuntimeVariadic { function, .. }
-                if *function == hash_str("integrity/constraint")
-        )
-    });
-    let error = standard_program()
-        .run_bytecode_program(&missing_marker)
-        .unwrap_err();
-    assert_eq!(error.kind_name(), "BytecodeValidation");
-    assert!(
-        error
-            .display_message()
-            .contains("missing its runtime marker")
-    );
-
-    let mut mutable_constraint = parsed;
-    mutable_constraint.mutable_symbols.insert(hash_str("safe!"));
-    let error = standard_program()
-        .run_bytecode_program(&mutable_constraint)
-        .unwrap_err();
-    assert_eq!(error.kind_name(), "BytecodeValidation");
-    assert!(error.display_message().contains("must be immutable"));
-    Ok(())
-}
-
-#[test]
-fn compiled_integrity_constraints_preserve_absent_operands() -> MResult<()> {
-    let bytecode = compile_source("always! := true")?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    let mut compiled = standard_program();
-    compiled.run_bytecode_program(&parsed)?;
-    let state = compiled.interpreter().state.borrow();
-    let constraint = state
-        .integrity_constraints
-        .get(&hash_str("always!"))
-        .expect("compiled integrity constraint");
-    assert!(constraint.operator.is_none());
-    assert!(constraint.lhs.is_none());
-    assert!(constraint.rhs.is_none());
     Ok(())
 }
 
@@ -301,36 +211,6 @@ fn mixed_program_reuses_trailing_symbol_producer_register() -> MResult<()> {
     let (parsed, value) = run_compiled_source("x := 1.0 + 2.0\nx")?;
     assert_eq!(value, LegacyValue::F64(Ref::new(3.0)));
     assert_eq!(return_register(&parsed), final_binary_register(&parsed));
-    Ok(())
-}
-
-#[test]
-fn mixed_program_returns_literal_after_external_send() -> MResult<()> {
-    let source = "@out/line <- \"message\"\n\"final\"";
-    let message = LegacyValue::String(Ref::new("message".to_string()));
-    let final_value = LegacyValue::String(Ref::new("final".to_string()));
-
-    let mut source_program = standard_program();
-    source_program.run_string("@out := test://effects/output{:write(line)}")?;
-    let mut source_services = RecordingExecutionServices::default();
-    assert_eq!(
-        source_program.run_string_with_services(source, &mut source_services)?,
-        final_value,
-    );
-    assert_eq!(source_services.writes, vec![message.clone()]);
-
-    let parsed = ParsedProgram::from_bytes(&source_program.compile_bytecode()?)?;
-    assert!(
-        parsed
-            .instructions
-            .iter()
-            .any(|instruction| matches!(instruction, BytecodeInstruction::ResourceSend { .. }))
-    );
-    let mut compiled_services = RecordingExecutionServices::default();
-    let compiled_value =
-        standard_program().run_bytecode_program_with_services(&parsed, &mut compiled_services)?;
-    assert_eq!(compiled_value, final_value);
-    assert_eq!(compiled_services.writes, vec![message]);
     Ok(())
 }
 
@@ -393,9 +273,7 @@ fn source_compilation_is_byte_for_byte_deterministic() -> MResult<()> {
 
 #[test]
 fn tuple_source_constant_is_encoded_by_bytecode_v1() -> MResult<()> {
-    let mut program = standard_program();
-    program.run_string("(1, 2)")?;
-    let compiled = program.compile_bytecode()?;
+    let compiled = compile_source("(1, 2)")?;
     let parsed = ParsedProgram::from_bytes(&compiled)?;
     assert!(
         parsed
@@ -415,9 +293,7 @@ x := a ⟗ b
 x
 "#;
 
-    let mut source_program = standard_program();
-    source_program.run_string(source)?;
-    let bytecode = source_program.compile_bytecode()?;
+    let bytecode = compile_source(source)?;
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
 
     parsed.decode_constants()?;

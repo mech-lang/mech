@@ -1,4 +1,4 @@
-use crate::MechProgram;
+use crate::CompilerPlanningProgram;
 use crate::{Interpreter, InterpreterRef};
 use mech_core::*;
 
@@ -149,11 +149,11 @@ struct ResolvedIntegrityValue {
     formatted: String,
 }
 
-impl MechProgram {
+impl CompilerPlanningProgram {
     pub fn integrity_constraint_report(&self) -> MResult<IntegrityConstraintReport> {
         let mut evaluations = Vec::new();
         let mut visited = Vec::new();
-        collect_interpreter_constraints(self.interpreter(), None, &mut visited, &mut evaluations)?;
+        collect_interpreter_constraints(&self.interpreter, None, &mut visited, &mut evaluations)?;
         evaluations.sort_by_key(|evaluation| (evaluation.interpreter_id, evaluation.constraint_id));
         Ok(IntegrityConstraintReport::from_evaluations(evaluations))
     }
@@ -553,21 +553,21 @@ fn stable_value_kind(value: &LegacyValue) -> Result<ValueKind, ()> {
 #[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
-    use crate::MechProgramConfig;
+    use crate::CompilerPlanningConfig;
     use mech_syntax::parser;
 
-    fn program_with_constraint(source: &str) -> MechProgram {
-        let mut program = MechProgram::with_function_catalog(
-            MechProgramConfig::default(),
+    fn program_with_constraint(source: &str) -> CompilerPlanningProgram {
+        let mut program = CompilerPlanningProgram::with_function_catalog(
+            CompilerPlanningConfig::default(),
             crate::test_support::catalog::function_catalog(),
         );
-        program.run_string(source).unwrap();
+        program.plan_source_for_test(source).unwrap();
         program
     }
 
-    fn set_constraint_result(program: &MechProgram, name: &str, result: LegacyValue) {
+    fn set_constraint_result(program: &CompilerPlanningProgram, name: &str, result: LegacyValue) {
         program
-            .interpreter()
+            .interpreter
             .state
             .borrow_mut()
             .integrity_constraints
@@ -690,7 +690,7 @@ mod tests {
     #[test]
     fn hierarchy_validation_is_complete_and_keyed_by_interpreter() {
         let mut program = program_with_constraint("shared! := false");
-        let root_id = program.interpreter().id;
+        let root_id = program.interpreter.id;
         let child_id = root_id.wrapping_add(101);
         let grandchild_id = root_id.wrapping_add(202);
         let mut child = Interpreter::with_function_catalog(
@@ -714,7 +714,7 @@ mod tests {
             .borrow_mut()
             .insert(grandchild_id, Ref::new(Box::new(grandchild)));
         program
-            .interpreter_mut()
+            .interpreter
             .sub_interpreters
             .borrow_mut()
             .insert(child_id, Ref::new(Box::new(child)));
@@ -744,16 +744,16 @@ mod tests {
 
     #[test]
     fn repeated_interpreter_handle_is_an_infrastructure_error() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
-        let child_id = program.interpreter().id.wrapping_add(1);
+        let mut program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
+        let child_id = program.interpreter.id.wrapping_add(1);
         let child = Ref::new(Box::new(Interpreter::new(child_id, 10_000)));
         program
-            .interpreter_mut()
+            .interpreter
             .sub_interpreters
             .borrow_mut()
             .insert(1, child.clone());
         program
-            .interpreter_mut()
+            .interpreter
             .sub_interpreters
             .borrow_mut()
             .insert(2, child);
@@ -768,7 +768,7 @@ mod tests {
     fn result_borrow_conflict_is_an_aggregated_constraint_failure() {
         let program = program_with_constraint("safe! := true");
         let result = program
-            .interpreter()
+            .interpreter
             .state
             .borrow()
             .integrity_constraints
@@ -794,7 +794,7 @@ mod tests {
         let program =
             program_with_constraint("target := 2.0\nmaximum := 1.0\nsafe! := target <= maximum");
         let lhs = program
-            .interpreter()
+            .interpreter
             .state
             .borrow()
             .integrity_constraints
@@ -819,10 +819,10 @@ mod tests {
     fn reporting_is_repeatable_and_does_not_change_program_state() {
         let program =
             program_with_constraint("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum");
-        let plan_handle = program.interpreter().plan().0.id();
-        let pending_before = program.interpreter().has_pending_reactive_registers();
+        let plan_handle = program.interpreter.plan().0.id();
+        let pending_before = program.interpreter.has_pending_reactive_registers();
         let state_len = program
-            .interpreter()
+            .interpreter
             .state
             .borrow()
             .integrity_constraints
@@ -848,14 +848,14 @@ mod tests {
                 .collect::<Vec<_>>()
         };
         assert_eq!(summary(&first), summary(&second));
-        assert_eq!(program.interpreter().plan().0.id(), plan_handle);
+        assert_eq!(program.interpreter.plan().0.id(), plan_handle);
         assert_eq!(
-            program.interpreter().has_pending_reactive_registers(),
+            program.interpreter.has_pending_reactive_registers(),
             pending_before,
         );
         assert_eq!(
             program
-                .interpreter()
+                .interpreter
                 .state
                 .borrow()
                 .integrity_constraints

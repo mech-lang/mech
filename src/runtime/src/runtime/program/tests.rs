@@ -8,7 +8,7 @@ use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{
     AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult,
-    OperationContractDeclaration, Ref, ValueData,
+    OperationContractDeclaration, ParsedProgram, Ref, ValueData, hash_str,
 };
 use mech_engine::{SlotRole, encode_program_artifact_bytecode_v1, resident::ResidentValueBorrow};
 use sha2::{Digest, Sha256};
@@ -636,6 +636,49 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
 }
 
 #[test]
+fn variable_definition_metadata_and_state_survive_resident_bytecode_admission() {
+    const SOURCE: &str = "input := 1.0\n~state := 2.0\nstate";
+
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let product = compiler.compile_source(SOURCE).unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    let input_id = hash_str("input");
+    let state_id = hash_str("state");
+    assert!(parsed.symbols.contains_key(&input_id));
+    assert!(parsed.symbols.contains_key(&state_id));
+    assert_eq!(parsed.dictionary.get(&input_id).unwrap(), "input");
+    assert_eq!(parsed.dictionary.get(&state_id).unwrap(), "state");
+    assert!(!parsed.mutable_symbols.contains(&input_id));
+    assert!(parsed.mutable_symbols.contains(&state_id));
+    assert!(
+        product
+            .artifact()
+            .slots()
+            .iter()
+            .any(|slot| slot.role == SlotRole::State)
+    );
+
+    let mut source_runtime = runtime();
+    let source = source_runtime
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let mut bytecode_runtime = runtime();
+    let bytecode = bytecode_runtime
+        .load_bytecode_program(
+            product.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(source.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(bytecode.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(source.initial_value, bytecode.initial_value);
+    assert_eq!(source.info.program_revision, bytecode.info.program_revision);
+}
+
+#[test]
 fn literal_scalar_output_is_published_without_fake_state() {
     let mut source_runtime = runtime();
     let loaded = source_runtime
@@ -686,6 +729,52 @@ fn computed_scalar_output_is_materialized_during_activation() {
         loaded.initial_value.to_value(),
         LegacyValue::F64(value) if *value.borrow() == 42.0
     ));
+}
+
+#[test]
+fn integrity_constraints_match_across_source_and_bytecode_resident_admission() {
+    const PASSING: &str = "x := 1.0\nsafe! := x <= 2.0";
+    const FAILING: &str = "x := 3.0\nsafe! := x <= 2.0";
+
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let passing = compiler.compile_source(PASSING).unwrap();
+    assert_eq!(passing.artifact().constraints().len(), 1);
+
+    let mut source_runtime = runtime();
+    let source = source_runtime
+        .load_source_program(PASSING, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let mut bytecode_runtime = runtime();
+    let bytecode = bytecode_runtime
+        .load_bytecode_program(
+            passing.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(source.initial_value, bytecode.initial_value);
+    assert_eq!(source.info.program_revision, bytecode.info.program_revision);
+
+    let failing = compiler.compile_source(FAILING).unwrap();
+    let mut rejected_source = runtime();
+    assert!(
+        rejected_source
+            .load_source_program(FAILING, crate::ResidentDurabilityPolicy::Volatile)
+            .is_err()
+    );
+    assert_eq!(rejected_source.program_route(), RuntimeProgramRoute::None);
+    let mut rejected_bytecode = runtime();
+    assert!(
+        rejected_bytecode
+            .load_bytecode_program(
+                failing.bytecode(),
+                crate::ResidentDurabilityPolicy::Volatile,
+            )
+            .is_err()
+    );
+    assert_eq!(rejected_bytecode.program_route(), RuntimeProgramRoute::None);
 }
 
 #[test]

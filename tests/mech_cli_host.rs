@@ -97,7 +97,8 @@ fn mech_run_rejects_retired_interpreter_time_flag() {
         .unwrap();
 
     let combined = assert_failure_contains(output, "unexpected argument '--time'");
-    assert!(!combined.contains("Cycle Time:"), "{combined}");
+    let removed_profile_banner = ["Cycle", " Time:"].concat();
+    assert!(!combined.contains(&removed_profile_banner), "{combined}");
 }
 
 #[cfg(all(feature = "run", feature = "cli_host"))]

@@ -12,6 +12,41 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+fn port_matches_schema_body(
+    request: &ResidentKernelBindRequest<'_>,
+    input: &mech_core::ResidentPortLayout,
+    expected: &SchemaBody,
+) -> bool {
+    request
+        .schemas
+        .get(input.schema_id)
+        .is_some_and(|schema| schema.body() == expected)
+}
+
+fn composite_children_match_output_schema(request: &ResidentKernelBindRequest<'_>) -> bool {
+    let Some(output) = request.schemas.get(request.output.schema_id) else {
+        return false;
+    };
+    let children = &request.inputs[1..];
+    match output.body() {
+        SchemaBody::Tuple(elements) => {
+            children.len() == elements.len()
+                && children
+                    .iter()
+                    .zip(elements.iter())
+                    .all(|(input, expected)| port_matches_schema_body(request, input, expected))
+        }
+        SchemaBody::Record(fields) => {
+            children.len() == fields.len()
+                && children
+                    .iter()
+                    .zip(fields.iter())
+                    .all(|(input, field)| port_matches_schema_body(request, input, &field.schema))
+        }
+        _ => false,
+    }
+}
+
 fn bind_composite_pack(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -33,7 +68,13 @@ fn bind_composite_pack(
             .inputs
             .iter()
             .any(|input| input.access != AccessMode::Read || input.delivery != DeliveryMode::Signal)
+        || contract
+            .inputs
+            .iter()
+            .zip(request.inputs.iter())
+            .any(|(contract, input)| contract.schema != input.schema_id)
         || request.inputs[0].schema_id != request.output.schema_id
+        || !composite_children_match_output_schema(request)
         || request.inputs[0].kind != ResidentValueKind::Snapshot
         || request.inputs[0].shape != ResidentShape::SCALAR
         || request.inputs[1..].iter().any(|input| {
@@ -97,4 +138,93 @@ fn composite_pack(
     };
     *target = Some(next);
     Ok(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn schema(body: SchemaBody) -> mech_core::Schema {
+        mech_core::SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body,
+        }
+        .finalize()
+        .unwrap()
+    }
+
+    fn layout(
+        schemas: &mech_core::SchemaTable,
+        schema_id: mech_core::SchemaId,
+        kind: ResidentValueKind,
+    ) -> mech_core::ResidentPortLayout {
+        mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind,
+            shape: ResidentShape::SCALAR,
+        }
+    }
+
+    #[test]
+    fn composite_children_require_the_declared_field_schema() {
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let scalar = builder
+            .insert(schema(SchemaBody::FloatingPoint(
+                mech_core::FloatWidth::W64,
+            )))
+            .unwrap();
+        let matrix = builder
+            .insert(schema(SchemaBody::Matrix {
+                element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
+                dimensions: vec![
+                    mech_core::DimensionExpr::Constant(1),
+                    mech_core::DimensionExpr::Constant(1),
+                ]
+                .into_boxed_slice(),
+            }))
+            .unwrap();
+        let tuple = builder
+            .insert(schema(SchemaBody::Tuple(
+                vec![SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)].into_boxed_slice(),
+            )))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar).unwrap();
+        let matrix = build.resolve(matrix).unwrap();
+        let tuple = build.resolve(tuple).unwrap();
+        let (schemas, _) = build.into_parts();
+        let contract =
+            ResolvedOperationContract::LegacyOpaque(mech_core::LegacyOpaqueOperationContract {
+                input_schemas: Box::new([]),
+                output_schemas: Box::new([]),
+            });
+        let output = layout(&schemas, tuple, ResidentValueKind::Snapshot);
+
+        let good = [
+            layout(&schemas, tuple, ResidentValueKind::Snapshot),
+            layout(&schemas, scalar, ResidentValueKind::F64),
+        ];
+        assert!(composite_children_match_output_schema(
+            &ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &good,
+                output,
+            }
+        ));
+
+        let bad = [
+            layout(&schemas, tuple, ResidentValueKind::Snapshot),
+            layout(&schemas, matrix, ResidentValueKind::F64),
+        ];
+        assert!(!composite_children_match_output_schema(
+            &ResidentKernelBindRequest {
+                contract: &contract,
+                schemas: &schemas,
+                inputs: &bad,
+                output,
+            }
+        ));
+    }
 }

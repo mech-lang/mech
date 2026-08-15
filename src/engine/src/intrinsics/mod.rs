@@ -15,6 +15,19 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::*;
 
+#[derive(Debug, Clone)]
+pub(crate) struct IndexOutOfBoundsError;
+
+impl MechErrorKind for IndexOutOfBoundsError {
+    fn name(&self) -> &str {
+        "IndexOutOfBounds"
+    }
+
+    fn message(&self) -> String {
+        "Index out of bounds".to_string()
+    }
+}
+
 #[cfg(feature = "functions")]
 pub mod catalog;
 

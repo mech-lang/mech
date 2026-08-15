@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use mech_core::LegacyValue;
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 use serde::Deserialize;
 
 const SOURCE_CASES: &str = include_str!(concat!(
@@ -57,13 +57,23 @@ fn main() {
             case.name,
         );
 
-        let mut program = MechProgram::with_function_catalog(
-            MechProgramConfig::default(),
-            mech_stdlib::source_catalog(),
-        );
-        let actual = program
-            .run_string(&case.source)
+        let product = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_catalog())
+            .build_compiler()
+            .expect("source compiler construction failed")
+            .compile_source(&case.source)
             .unwrap_or_else(|error| panic!("source case `{}` failed: {error:?}", case.name));
+        let mut runtime = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::runtime_catalog())
+            .build()
+            .expect("resident runtime construction failed");
+        let actual = runtime
+            .load_bytecode_program(product.bytecode(), ResidentDurabilityPolicy::Volatile)
+            .unwrap_or_else(|error| {
+                panic!("source case `{}` failed resident admission: {error:?}", case.name)
+            })
+            .initial_value
+            .into_value();
         assert_expected(case, actual);
     }
 }

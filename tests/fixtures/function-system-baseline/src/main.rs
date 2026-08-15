@@ -5,7 +5,7 @@ use mech_core::{
     RuntimeFunctionId, LegacyValue, ValueKind, hash_str,
 };
 use mech_engine as _;
-use mech_engine::{FunctionBinding, FunctionEnvironment, MechProgram, MechProgramConfig};
+use mech_engine::{FunctionBinding, FunctionEnvironment};
 use nalgebra::{DMatrix, DVector};
 #[cfg(feature = "fixed-specialization-cases")]
 use nalgebra::{Matrix2, Vector2};
@@ -468,17 +468,8 @@ fn validate_composed_runtime_catalog(
 fn generate_json_baselines(
     catalog: &Arc<FunctionCatalog>,
 ) -> AppResult<(FunctionSurface, SpecializationCases)> {
-    let program =
-        MechProgram::with_function_catalog(MechProgramConfig::default(), Arc::clone(catalog));
-    if !Arc::ptr_eq(catalog, program.function_catalog()) {
-        return Err("fresh standard program did not retain the composed standard catalog".into());
-    }
-    let function_environment = program
-        .interpreter()
-        .state
-        .borrow()
-        .function_environment
-        .clone();
+    let function_environment = FunctionEnvironment::from_catalog_defaults(catalog)
+        .map_err(|error| format!("failed to derive the default FunctionEnvironment: {error:?}"))?;
     validate_default_function_environment(catalog, &function_environment)?;
 
     let full_source_specializers = effective_source_specializers(catalog);

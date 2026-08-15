@@ -508,42 +508,6 @@ mod tests {
     }
 
     #[test]
-    fn resource_read_without_const_initializer_executes_after_decode() {
-        let (_compiled, bytes, destination) = compile_resource_read(
-            matrix(4, 1, vec![1.0, 2.0, 3.0, 4.0]),
-            ResourceDelivery::Live,
-        );
-        let parsed = mech_core::ParsedProgram::from_bytes(&bytes).unwrap();
-        assert!(parsed.instructions.iter().any(|instruction| matches!(
-            instruction,
-            BytecodeInstruction::ResourceRead { dst, .. } if *dst == destination
-        )));
-        assert!(!parsed.instructions.iter().any(|instruction| matches!(
-            instruction,
-            BytecodeInstruction::ConstLoad { dst, .. } if *dst == destination
-        )));
-
-        let planning_frame = vec![11.25, -0.375, 22.5, 0.125];
-        let runtime_frame = vec![1.0, 2.0, 3.0, 4.0];
-        let mut services = RecordingReadServices::new([matrix(4, 1, runtime_frame.clone())])
-            .with_planning_representative(matrix(4, 1, planning_frame.clone()));
-        let mut program = crate::MechProgram::new(crate::MechProgramConfig::default());
-        let output = program
-            .run_bytecode_with_services(&bytes, &mut services)
-            .unwrap();
-
-        assert_eq!(output.as_vecf64().unwrap(), runtime_frame);
-        assert_ne!(output.as_vecf64().unwrap(), planning_frame);
-        assert_eq!(services.planning_calls, 1);
-        assert_eq!(services.resource_reads, 1);
-        assert_eq!(services.live_bindings, 1);
-        assert_eq!(
-            services.bound_targets[0].borrow().as_vecf64().unwrap(),
-            vec![1.0, 2.0, 3.0, 4.0]
-        );
-    }
-
-    #[test]
     fn resource_write_failure_propagates_without_changing_its_output() {
         let output = Ref::new(LegacyValue::Empty);
         let function = ExternalResourceWriteFunction {

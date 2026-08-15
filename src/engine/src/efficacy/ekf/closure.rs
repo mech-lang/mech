@@ -12,7 +12,7 @@ use mech_core::{
 use nalgebra::DVector;
 
 use crate::{
-    ArtifactSource, Matrix, MechProgram, MechProgramConfig, ProgramArtifact,
+    ArtifactSource, CompilerPlanningConfig, CompilerPlanningProgram, Matrix, ProgramArtifact,
     decode_program_artifact_bytecode_v1,
 };
 
@@ -1095,20 +1095,18 @@ fn compile_frozen_ekf_product(
     services: &mut dyn MechExecutionServices,
 ) -> MResult<FrozenEkfCompiledProduct> {
     let catalog = frozen_ekf_compiler_catalog()?;
-    let mut program =
-        MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
-    {
-        let mut state = program.interpreter().state.borrow_mut();
-        for spec in FROZEN_EKF_OPERATIONS {
-            let export = catalog
-                .module_export("ekf", spec.module_item)
-                .expect("the frozen catalog installs every EKF module export");
-            state
-                .function_environment
-                .bind_catalog_export(export, spec.canonical_name)?;
-        }
+    let mut program = CompilerPlanningProgram::with_function_catalog(
+        CompilerPlanningConfig::default(),
+        catalog.clone(),
+    );
+    for spec in FROZEN_EKF_OPERATIONS {
+        let export = catalog
+            .module_export("ekf", spec.module_item)
+            .expect("the frozen catalog installs every EKF module export");
+        program.bind_compiler_catalog_export(export, spec.canonical_name)?;
     }
-    program.run_string_with_services(source, services)?;
+    let tree = mech_syntax::parser::parse(source.trim())?;
+    program.plan_tree_with_services(&tree, services)?;
     let (source_artifact, bytecode) = program.compile_program_product()?.into_parts();
     let parsed = mech_core::ParsedProgram::from_bytes(&bytecode)?;
     let resource_request = parsed

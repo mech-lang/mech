@@ -849,6 +849,7 @@ fn bind_bool_not(
 fn bind_strict_comparison(
     request: &ResidentKernelBindRequest<'_>,
     executor: mech_core::ResidentKernelExecutor,
+    mismatch_executor: mech_core::ResidentKernelExecutor,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     validate_full_write(
         request,
@@ -867,6 +868,9 @@ fn bind_strict_comparison(
     {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
+    if !strict_inputs_share_identity(&request.inputs[0], &request.inputs[1]) {
+        return bound(mismatch_executor, Vec::<u64>::new().into_boxed_slice());
+    }
     let kernel = bound(executor, Vec::<u64>::new().into_boxed_slice())?;
     if request
         .inputs
@@ -879,16 +883,23 @@ fn bind_strict_comparison(
     }
 }
 
+fn strict_inputs_share_identity(
+    left: &mech_core::ResidentPortLayout,
+    right: &mech_core::ResidentPortLayout,
+) -> bool {
+    left.schema_id == right.schema_id && left.kind == right.kind && left.shape == right.shape
+}
+
 fn bind_strict_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_strict_comparison(request, strict_equal)
+    bind_strict_comparison(request, strict_equal, strict_always_false)
 }
 
 fn bind_strict_not_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_strict_comparison(request, strict_not_equal)
+    bind_strict_comparison(request, strict_not_equal, strict_always_true)
 }
 
 fn bind_binary(
@@ -2026,6 +2037,28 @@ fn strict_equal(
     )
 }
 
+fn strict_always_false(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    write_bool(output, false)
+}
+
+fn strict_always_true(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    write_bool(output, true)
+}
+
 fn strict_not_equal(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -2656,6 +2689,23 @@ mod tests {
             );
             assert_eq!(output, [u8::from(expected)]);
         }
+    }
+
+    #[test]
+    fn strict_identity_distinguishes_scalar_from_one_by_one_matrix() {
+        let scalar = mech_core::ResidentPortLayout {
+            schema_id: mech_core::SchemaId::new(1),
+            schema_key: mech_core::SchemaKey::from_bytes([1; 32]),
+            kind: ResidentValueKind::F64,
+            shape: ResidentShape::SCALAR,
+        };
+        let matrix = mech_core::ResidentPortLayout {
+            schema_id: mech_core::SchemaId::new(2),
+            schema_key: mech_core::SchemaKey::from_bytes([2; 32]),
+            kind: ResidentValueKind::F64,
+            shape: ResidentShape::SCALAR,
+        };
+        assert!(!strict_inputs_share_identity(&scalar, &matrix));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 use mech_core::matrix::Matrix;
 use mech_core::{LegacyValue, Ref};
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 use wasm_bindgen_test::*;
 
 wasm_bindgen_test_configure!(run_in_browser);
@@ -23,9 +23,15 @@ const STRING: &[u8] = include_bytes!(concat!(
 ));
 
 fn run(bytecode: &[u8]) -> LegacyValue {
-    MechProgram::with_function_catalog(MechProgramConfig::default(), mech_stdlib::runtime_catalog())
-        .run_bytecode(bytecode)
-        .expect("official bytecode-v1 fixture must execute in WASM")
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::runtime_catalog())
+        .build()
+        .expect("official bytecode-v1 fixture runtime must build in WASM");
+    runtime
+        .load_bytecode_program(bytecode, ResidentDurabilityPolicy::Volatile)
+        .expect("official bytecode-v1 fixture must execute residently in WASM")
+        .initial_value
+        .into_value()
 }
 
 #[wasm_bindgen_test]

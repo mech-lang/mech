@@ -1,5 +1,15 @@
 #![cfg(feature = "compiler")]
 
+use crate::Interpreter;
+use crate::{
+    ArtifactSource, BindingDeclaration, CompilerPlanningConfig, CompilerPlanningProgram,
+    InitializerReference, ProducerReference, ProgramArtifact, SlotRole,
+    decode_program_artifact_sections,
+};
+use crate::{
+    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
+    CompiledNodeKind, CompiledSymbolDefinition,
+};
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, EncodedConstant,
@@ -12,15 +22,6 @@ use mech_core::{
     Ref, Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
     RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
     SchemaBody, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
-};
-use mech_engine::Interpreter;
-use mech_engine::{
-    ArtifactSource, BindingDeclaration, InitializerReference, MechProgram, MechProgramConfig,
-    ProducerReference, ProgramArtifact, SlotRole, decode_program_artifact_sections,
-};
-use mech_engine::{
-    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
-    CompiledNodeKind, CompiledSymbolDefinition,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -124,8 +125,8 @@ impl FunctionSpecializer for TestLessSpecializer {
 
 fn source_catalog() -> Arc<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
-    mech_engine::install_intrinsic_source(&mut builder).unwrap();
+    crate::install_intrinsic_runtime(&mut builder).unwrap();
+    crate::install_intrinsic_source(&mut builder).unwrap();
     builder
         .insert_runtime_factory::<TestLessFactory>(
             TEST_LESS_RUNTIME,
@@ -138,281 +139,24 @@ fn source_catalog() -> Arc<FunctionCatalog> {
     Arc::new(builder.build().unwrap())
 }
 
-fn source_program() -> MechProgram {
-    MechProgram::with_function_catalog(MechProgramConfig::default(), source_catalog())
-}
-
-fn runtime_program() -> MechProgram {
-    let mut builder = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
-    MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        Arc::new(builder.build().unwrap()),
+fn source_program() -> CompilerPlanningProgram {
+    CompilerPlanningProgram::with_function_catalog(
+        CompilerPlanningConfig::default(),
+        source_catalog(),
     )
-}
-
-fn symbol(interpreter: &Interpreter, name: &str) -> LegacyValue {
-    interpreter
-        .symbols()
-        .borrow()
-        .get(hash_str(name))
-        .unwrap_or_else(|| panic!("missing symbol {name}"))
-        .borrow()
-        .clone()
-}
-
-fn root_cell(value: &LegacyValue) -> ReactiveCellId {
-    let cells = value.reactive_root_cell_ids();
-    assert_eq!(cells.len(), 1);
-    cells[0]
-}
-
-fn alias_node(plan: &Plan, name: &str) -> ReactiveNodeId {
-    let plan = plan.borrow();
-    (0..plan.len())
-        .find_map(|node_id| {
-            let node = plan.node(node_id).unwrap();
-            node.function.to_string().contains(name).then_some(node_id)
-        })
-        .unwrap_or_else(|| panic!("missing {name} node"))
-}
-
-fn assert_alias_node(plan: &Plan, name: &str, output: &LegacyValue) {
-    let node_id = alias_node(plan, name);
-    let plan = plan.borrow();
-    let node = plan.node(node_id).unwrap();
-    assert!(node.inputs.is_empty());
-    assert_eq!(node.outputs.as_slice(), &output.reactive_root_cell_ids());
-}
-
-fn register_node_id_for_output(
-    interpreter: &Interpreter,
-    output_cell: ReactiveCellId,
-) -> ReactiveNodeId {
-    let plan = interpreter.plan();
-    let plan = plan.borrow();
-    let node_ids = plan
-        .nodes
-        .iter()
-        .filter(|node| node.kind == ReactiveNodeKind::Register && node.outputs == vec![output_cell])
-        .map(|node| node.id)
-        .collect::<Vec<_>>();
-    assert_eq!(node_ids.len(), 1);
-    node_ids[0]
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct RegisterGraphShape {
-    output_count: usize,
-    input_kinds: Vec<ReactiveDependencyKind>,
-    output_is_first_input: bool,
-    source_is_second_input: bool,
-    output_is_sampled_consumer: bool,
-    output_is_reactive_consumer: bool,
-    source_is_reactive_consumer: bool,
-    source_is_sampled_consumer: bool,
-}
-
-fn distinct_assignment_graph_shape(
-    interpreter: &Interpreter,
-    target_name: &str,
-    source_name: &str,
-) -> RegisterGraphShape {
-    let target_cell = root_cell(&symbol(interpreter, target_name));
-    let source_cell = root_cell(&symbol(interpreter, source_name));
-    assert_ne!(target_cell, source_cell);
-    let node_id = register_node_id_for_output(interpreter, target_cell);
-    let plan = interpreter.plan();
-    let plan = plan.borrow();
-    let node = plan.node(node_id).unwrap();
-    assert_eq!(node.kind, ReactiveNodeKind::Register);
-    assert_eq!(node.outputs, vec![target_cell]);
-    assert_eq!(node.inputs.len(), 2);
-    assert_eq!(node.inputs[0].cell, target_cell);
-    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
-    assert_eq!(node.inputs[1].cell, source_cell);
-    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
-    RegisterGraphShape {
-        output_count: node.outputs.len(),
-        input_kinds: node.inputs.iter().map(|input| input.kind).collect(),
-        output_is_first_input: node.inputs[0].cell == target_cell,
-        source_is_second_input: node.inputs[1].cell == source_cell,
-        output_is_sampled_consumer: plan.sampled_consumers_for(target_cell).contains(&node_id),
-        output_is_reactive_consumer: plan.reactive_consumers_for(target_cell).contains(&node_id),
-        source_is_reactive_consumer: plan.reactive_consumers_for(source_cell).contains(&node_id),
-        source_is_sampled_consumer: plan.sampled_consumers_for(source_cell).contains(&node_id),
-    }
-}
-
-fn decoded_assignment_graph_shape(
-    interpreter: &Interpreter,
-    output: &LegacyValue,
-) -> RegisterGraphShape {
-    let resolved_output = match output {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        other => other.clone(),
-    };
-    let output_cell = root_cell(&resolved_output);
-    let node_id = register_node_id_for_output(interpreter, output_cell);
-    let plan = interpreter.plan();
-    let plan = plan.borrow();
-    let node = plan.node(node_id).unwrap();
-    assert_eq!(node.kind, ReactiveNodeKind::Register);
-    assert_eq!(node.outputs, vec![output_cell]);
-    assert_eq!(node.outputs.len(), 1);
-    assert_eq!(node.inputs.len(), 2);
-    assert_eq!(node.inputs[0].cell, output_cell);
-    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
-    assert_ne!(node.inputs[1].cell, output_cell);
-    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
-    let source_cell = node.inputs[1].cell;
-    RegisterGraphShape {
-        output_count: node.outputs.len(),
-        input_kinds: node.inputs.iter().map(|input| input.kind).collect(),
-        output_is_first_input: node.inputs[0].cell == output_cell,
-        source_is_second_input: node.inputs[1].cell == source_cell,
-        output_is_sampled_consumer: plan.sampled_consumers_for(output_cell).contains(&node_id),
-        output_is_reactive_consumer: plan.reactive_consumers_for(output_cell).contains(&node_id),
-        source_is_reactive_consumer: plan.reactive_consumers_for(source_cell).contains(&node_id),
-        source_is_sampled_consumer: plan.sampled_consumers_for(source_cell).contains(&node_id),
-    }
-}
-
-fn expected_distinct_assignment_shape() -> RegisterGraphShape {
-    RegisterGraphShape {
-        output_count: 1,
-        input_kinds: vec![
-            ReactiveDependencyKind::Sampled,
-            ReactiveDependencyKind::Reactive,
-        ],
-        output_is_first_input: true,
-        source_is_second_input: true,
-        output_is_sampled_consumer: true,
-        output_is_reactive_consumer: false,
-        source_is_reactive_consumer: true,
-        source_is_sampled_consumer: false,
-    }
-}
-
-fn register(interpreter: &Interpreter, output_cell: ReactiveCellId) -> ReactiveNodeId {
-    let plan = interpreter.plan();
-    let plan = plan.borrow();
-    let node_ids = plan
-        .nodes
-        .iter()
-        .filter(|node| {
-            node.kind == ReactiveNodeKind::Register && node.outputs.contains(&output_cell)
-        })
-        .map(|node| node.id)
-        .collect::<Vec<_>>();
-    assert_eq!(node_ids.len(), 1);
-    node_ids[0]
-}
-
-fn assert_matrix_literal_chain(plan: &Plan) {
-    let plan = plan.borrow();
-    assert_eq!(plan.len(), 3);
-
-    let first_row = plan.node(0).unwrap();
-    let second_row = plan.node(1).unwrap();
-    let vertical = plan.node(2).unwrap();
-    assert!(!first_row.inputs.is_empty());
-    assert!(!second_row.inputs.is_empty());
-    assert!(!vertical.inputs.is_empty());
-    assert!(
-        first_row
-            .outputs
-            .iter()
-            .all(|output| !vertical.outputs.contains(output))
-    );
-    assert!(
-        second_row
-            .outputs
-            .iter()
-            .all(|output| !vertical.outputs.contains(output))
-    );
-    assert!(
-        vertical
-            .inputs
-            .iter()
-            .all(|dependency| { dependency.kind == ReactiveDependencyKind::Reactive })
-    );
-    assert!(!vertical.outputs.is_empty());
-}
-
-fn set_members(value: &LegacyValue) -> Vec<ReactiveCellId> {
-    match value {
-        LegacyValue::Set(set) => set
-            .borrow()
-            .set
-            .iter()
-            .flat_map(LegacyValue::reactive_root_cell_ids)
-            .collect(),
-        other => panic!("expected set, found {other:?}"),
-    }
-}
-
-fn assert_structural_set_node(plan: &Plan, output: &LegacyValue) {
-    let output_cell = output.reactive_root_cell_ids()[0];
-    let member_cells = set_members(output);
-    let plan = plan.borrow();
-    let (node_id, node) = (0..plan.len())
-        .find_map(|node_id| {
-            let node = plan.node(node_id).unwrap();
-            node.outputs
-                .contains(&output_cell)
-                .then_some((node_id, node))
-        })
-        .expect("set structural node should be registered");
-    assert!(node.inputs.is_empty());
-    assert_eq!(node.outputs.as_slice(), &[output_cell]);
-    for member_cell in member_cells {
-        assert!(!node.outputs.contains(&member_cell));
-        assert!(!plan.reactive_consumers_for(member_cell).contains(&node_id));
-        assert!(!plan.sampled_consumers_for(member_cell).contains(&node_id));
-    }
-}
-
-#[test]
-fn decoded_variable_definition_symbol_metadata_round_trips() -> MResult<()> {
-    let code = "input := 1.0\n~state := 2.0";
-    let mut source = source_program();
-    let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(decoded_output, source_output);
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    let input_id = hash_str("input");
-    let state_id = hash_str("state");
-    assert!(parsed.symbols.contains_key(&input_id));
-    assert!(parsed.symbols.contains_key(&state_id));
-    assert_eq!(parsed.dictionary.get(&input_id).unwrap(), "input");
-    assert_eq!(parsed.dictionary.get(&state_id).unwrap(), "state");
-    assert!(!parsed.mutable_symbols.contains(&input_id));
-    assert!(parsed.mutable_symbols.contains(&state_id));
-    for (name, expected) in [("input", 1.0), ("state", 2.0)] {
-        let value = symbol(decoded.interpreter(), name);
-        assert_eq!(*value.as_f64().unwrap().borrow(), expected);
-    }
-    let state = decoded.interpreter().state.borrow();
-    assert!(state.get_mutable_symbol(input_id).is_none());
-    assert!(state.get_mutable_symbol(state_id).is_some());
-    Ok(())
 }
 
 #[test]
 fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> MResult<()> {
     for source in [
-        include_str!("fixtures/program-artifact/scalar-alias.mec"),
-        include_str!("fixtures/program-artifact/state-register.mec"),
-        include_str!("fixtures/program-artifact/matrix-literal.mec"),
-        include_str!("fixtures/program-artifact/comparison-output.mec"),
-        include_str!("fixtures/program-artifact/integrity-constraint.mec"),
+        include_str!("../../tests/fixtures/program-artifact/scalar-alias.mec"),
+        include_str!("../../tests/fixtures/program-artifact/state-register.mec"),
+        include_str!("../../tests/fixtures/program-artifact/matrix-literal.mec"),
+        include_str!("../../tests/fixtures/program-artifact/comparison-output.mec"),
+        include_str!("../../tests/fixtures/program-artifact/integrity-constraint.mec"),
     ] {
         let mut program = source_program();
-        program.run_string(source)?;
+        program.plan_source_for_test(source)?;
         let product = program.compile_program_product()?;
         let artifact_a = product.artifact();
         let parsed = ParsedProgram::from_bytes(product.bytecode())?;
@@ -452,7 +196,7 @@ fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> M
 
 fn compile_artifact_fixture(source: &str) -> MResult<(ProgramArtifact, ProgramArtifact)> {
     let mut program = source_program();
-    program.run_string(source)?;
+    program.plan_source_for_test(source)?;
     let (source_artifact, bytecode) = program.compile_program_product()?.into_parts();
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     let bytecode_artifact = decode_program_artifact_sections(&parsed.artifact)
@@ -491,8 +235,9 @@ fn artifact_source_schema(
 
 #[test]
 fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
-    let (scalar, _) =
-        compile_artifact_fixture(include_str!("fixtures/program-artifact/scalar-alias.mec"))?;
+    let (scalar, _) = compile_artifact_fixture(include_str!(
+        "../../tests/fixtures/program-artifact/scalar-alias.mec"
+    ))?;
     assert_eq!(
         scalar
             .inputs()
@@ -518,8 +263,9 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
             .all(|input| !input.name.starts_with("input-"))
     );
 
-    let (state, _) =
-        compile_artifact_fixture(include_str!("fixtures/program-artifact/state-register.mec"))?;
+    let (state, _) = compile_artifact_fixture(include_str!(
+        "../../tests/fixtures/program-artifact/state-register.mec"
+    ))?;
     assert_eq!(
         state
             .inputs()
@@ -546,8 +292,9 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
     assert_eq!(state.outputs()[0].name, "output");
     assert_eq!(state.outputs()[0].source, state_slots[0].slot);
 
-    let (matrix, _) =
-        compile_artifact_fixture(include_str!("fixtures/program-artifact/matrix-literal.mec"))?;
+    let (matrix, _) = compile_artifact_fixture(include_str!(
+        "../../tests/fixtures/program-artifact/matrix-literal.mec"
+    ))?;
     assert!(matrix.inputs().is_empty());
     assert_eq!(matrix.outputs()[0].name, "matrix");
     assert!(matches!(
@@ -568,7 +315,7 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
     );
 
     let (comparison, _) = compile_artifact_fixture(include_str!(
-        "fixtures/program-artifact/comparison-output.mec"
+        "../../tests/fixtures/program-artifact/comparison-output.mec"
     ))?;
     assert_eq!(comparison.outputs()[0].name, "less");
     assert!(matches!(
@@ -639,7 +386,7 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
     }
 
     let (integrity, decoded_integrity) = compile_artifact_fixture(include_str!(
-        "fixtures/program-artifact/integrity-constraint.mec"
+        "../../tests/fixtures/program-artifact/integrity-constraint.mec"
     ))?;
     assert_eq!(integrity.constraints().len(), 1);
     assert_eq!(integrity.constraints(), decoded_integrity.constraints());
@@ -758,8 +505,8 @@ fn composite_helpers_and_mutable_metadata_without_a_declaration_do_not_become_st
         mutable: true,
         ordinal: 0,
     });
-    let artifact = mech_engine::compile_executable_program_artifact(&compiled, &catalog).unwrap();
-    let sections = mech_engine::encode_program_artifact_sections(&artifact).unwrap();
+    let artifact = crate::compile_executable_program_artifact(&compiled, &catalog).unwrap();
+    let sections = crate::encode_program_artifact_sections(&artifact).unwrap();
     let decoded = decode_program_artifact_sections(&sections).unwrap();
     assert_eq!(artifact.revision(), decoded.revision());
     let states = artifact
@@ -941,7 +688,7 @@ fn compiler_sidecar_resolves_declared_contracts_into_the_artifact() {
     compiled.instruction_contracts[2] = Some(unary_declared_contract());
     compiled.instruction_source_nodes[2] = Some(0);
 
-    let artifact = mech_engine::compile_executable_program_artifact(&compiled, &catalog).unwrap();
+    let artifact = crate::compile_executable_program_artifact(&compiled, &catalog).unwrap();
     let node = &artifact.nodes()[0];
     let ResolvedOperationContract::Declared(contract) =
         artifact.contracts().get(node.contract).unwrap()
@@ -956,7 +703,7 @@ fn compiler_sidecar_resolves_declared_contracts_into_the_artifact() {
 #[test]
 fn catalog_contract_fills_an_empty_specialized_function_sidecar() {
     let mut builder = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
+    crate::install_intrinsic_runtime(&mut builder).unwrap();
     builder
         .insert_runtime_factory_with_semantic_contract::<TestLessFactory>(
             TEST_LESS_RUNTIME,
@@ -968,7 +715,7 @@ fn catalog_contract_fills_an_empty_specialized_function_sidecar() {
     let compiled = valid_compiled_fixture();
     assert!(compiled.instruction_contracts[2].is_none());
 
-    let artifact = mech_engine::compile_executable_program_artifact(&compiled, &catalog).unwrap();
+    let artifact = crate::compile_executable_program_artifact(&compiled, &catalog).unwrap();
     let node = &artifact.nodes()[0];
     let ResolvedOperationContract::Declared(contract) =
         artifact.contracts().get(node.contract).unwrap()
@@ -987,11 +734,11 @@ fn malformed_compiled_sidecars_fail_closed() {
     let mut missing_role = valid_compiled_fixture();
     missing_role.instruction_roles[2] = None;
     let missing_role_error =
-        mech_engine::compile_executable_program_artifact(&missing_role, &catalog).unwrap_err();
+        crate::compile_executable_program_artifact(&missing_role, &catalog).unwrap_err();
     assert!(
         matches!(
             &missing_role_error,
-            mech_engine::ArtifactBuildError::MissingInstructionRole { instruction: 2 }
+            crate::ArtifactBuildError::MissingInstructionRole { instruction: 2 }
         ),
         "unexpected missing-role error: {missing_role_error:?}"
     );
@@ -999,66 +746,58 @@ fn malformed_compiled_sidecars_fail_closed() {
     let mut role_length = valid_compiled_fixture();
     role_length.instruction_roles.pop();
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&role_length, &catalog),
-        Err(
-            mech_engine::ArtifactBuildError::CompiledMetadataLengthMismatch {
-                table: "instruction_roles",
-                ..
-            }
-        )
+        crate::compile_executable_program_artifact(&role_length, &catalog),
+        Err(crate::ArtifactBuildError::CompiledMetadataLengthMismatch {
+            table: "instruction_roles",
+            ..
+        })
     ));
 
     let mut kind_length = valid_compiled_fixture();
     kind_length.register_kinds.pop();
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&kind_length, &catalog),
-        Err(
-            mech_engine::ArtifactBuildError::CompiledMetadataLengthMismatch {
-                table: "register_kinds",
-                ..
-            }
-        )
+        crate::compile_executable_program_artifact(&kind_length, &catalog),
+        Err(crate::ArtifactBuildError::CompiledMetadataLengthMismatch {
+            table: "register_kinds",
+            ..
+        })
     ));
 
     let mut cardinality_length = valid_compiled_fixture();
     cardinality_length.register_collection_cardinalities.pop();
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&cardinality_length, &catalog),
-        Err(
-            mech_engine::ArtifactBuildError::CompiledMetadataLengthMismatch {
-                table: "register_collection_cardinalities",
-                ..
-            }
-        )
+        crate::compile_executable_program_artifact(&cardinality_length, &catalog),
+        Err(crate::ArtifactBuildError::CompiledMetadataLengthMismatch {
+            table: "register_collection_cardinalities",
+            ..
+        })
     ));
 
     let mut mismatched_return = valid_compiled_fixture();
     let last = mismatched_return.program.instructions.len() - 1;
     mismatched_return.program.instructions[last] = BytecodeInstruction::Return { src: 0 };
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&mismatched_return, &catalog),
-        Err(
-            mech_engine::ArtifactBuildError::CompiledReturnRegisterMismatch {
-                expected: 1,
-                found: 0,
-                ..
-            }
-        )
+        crate::compile_executable_program_artifact(&mismatched_return, &catalog),
+        Err(crate::ArtifactBuildError::CompiledReturnRegisterMismatch {
+            expected: 1,
+            found: 0,
+            ..
+        })
     ));
 
     let mut nonterminal_return = valid_compiled_fixture();
     nonterminal_return.program.instructions.swap(2, 3);
     nonterminal_return.instruction_roles.swap(2, 3);
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&nonterminal_return, &catalog),
-        Err(mech_engine::ArtifactBuildError::NonTerminalCompiledReturn { .. })
+        crate::compile_executable_program_artifact(&nonterminal_return, &catalog),
+        Err(crate::ArtifactBuildError::NonTerminalCompiledReturn { .. })
     ));
 
     let mut missing_destination_kind = valid_compiled_fixture();
     missing_destination_kind.register_kinds[1] = None;
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&missing_destination_kind, &catalog),
-        Err(mech_engine::ArtifactBuildError::MissingRegisterKind {
+        crate::compile_executable_program_artifact(&missing_destination_kind, &catalog),
+        Err(crate::ArtifactBuildError::MissingRegisterKind {
             instruction: 2,
             register: 1,
         })
@@ -1108,8 +847,8 @@ fn malformed_compiled_sidecars_fail_closed() {
         1,
     );
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&missing_source, &catalog),
-        Err(mech_engine::ArtifactBuildError::MissingRegisterSource {
+        crate::compile_executable_program_artifact(&missing_source, &catalog),
+        Err(crate::ArtifactBuildError::MissingRegisterSource {
             instruction: 2,
             register: 0,
             role: "input",
@@ -1124,8 +863,8 @@ fn malformed_compiled_sidecars_fail_closed() {
     };
     *function = u64::MAX;
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&unknown_runtime, &catalog),
-        Err(mech_engine::ArtifactBuildError::UnknownRuntimeFunction { function: u64::MAX })
+        crate::compile_executable_program_artifact(&unknown_runtime, &catalog),
+        Err(crate::ArtifactBuildError::UnknownRuntimeFunction { function: u64::MAX })
     ));
 
     let requirement_mismatch = compiled_fixture(
@@ -1159,12 +898,11 @@ fn malformed_compiled_sidecars_fail_closed() {
         1,
     );
     let mismatch_error =
-        mech_engine::compile_executable_program_artifact(&requirement_mismatch, &catalog)
-            .unwrap_err();
+        crate::compile_executable_program_artifact(&requirement_mismatch, &catalog).unwrap_err();
     assert!(
         matches!(
             &mismatch_error,
-            mech_engine::ArtifactBuildError::ApplicationRequirementKindMismatch {
+            crate::ArtifactBuildError::ApplicationRequirementKindMismatch {
                 requirement: 0,
                 expected: "host function",
             }
@@ -1175,8 +913,8 @@ fn malformed_compiled_sidecars_fail_closed() {
     let mut missing_requirement = requirement_mismatch.clone();
     missing_requirement.program.requirements.clear();
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&missing_requirement, &catalog),
-        Err(mech_engine::ArtifactBuildError::UnknownApplicationRequirement { requirement: 0 })
+        crate::compile_executable_program_artifact(&missing_requirement, &catalog),
+        Err(crate::ArtifactBuildError::UnknownApplicationRequirement { requirement: 0 })
     ));
 
     let mut ambiguous_role = compiled_fixture(
@@ -1210,8 +948,8 @@ fn malformed_compiled_sidecars_fail_closed() {
         },
     ];
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&ambiguous_role, &catalog),
-        Err(mech_engine::ArtifactBuildError::AmbiguousRegisterRole { register: 0 })
+        crate::compile_executable_program_artifact(&ambiguous_role, &catalog),
+        Err(crate::ArtifactBuildError::AmbiguousRegisterRole { register: 0 })
     ));
 
     let mut non_boolean_integrity = compiled_fixture(
@@ -1245,21 +983,16 @@ fn malformed_compiled_sidecars_fail_closed() {
     non_boolean_integrity.integrity_constraints =
         vec![CompiledIntegrityConstraint { result_register: 0 }];
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&non_boolean_integrity, &catalog),
-        Err(
-            mech_engine::ArtifactBuildError::IntegrityConstraintSchemaMismatch {
-                constraint: 0,
-                ..
-            }
-        )
+        crate::compile_executable_program_artifact(&non_boolean_integrity, &catalog),
+        Err(crate::ArtifactBuildError::IntegrityConstraintSchemaMismatch { constraint: 0, .. })
     ));
 
     let mut missing_integrity_declaration = non_boolean_integrity.clone();
     missing_integrity_declaration.integrity_constraints.clear();
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&missing_integrity_declaration, &catalog),
+        crate::compile_executable_program_artifact(&missing_integrity_declaration, &catalog),
         Err(
-            mech_engine::ArtifactBuildError::IntegrityConstraintMetadataMismatch {
+            crate::ArtifactBuildError::IntegrityConstraintMetadataMismatch {
                 marker_register: Some(0),
                 declared_register: None,
                 ..
@@ -1271,9 +1004,9 @@ fn malformed_compiled_sidecars_fail_closed() {
     wrong_integrity_register.integrity_constraints =
         vec![CompiledIntegrityConstraint { result_register: 1 }];
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&wrong_integrity_register, &catalog),
+        crate::compile_executable_program_artifact(&wrong_integrity_register, &catalog),
         Err(
-            mech_engine::ArtifactBuildError::IntegrityConstraintMetadataMismatch {
+            crate::ArtifactBuildError::IntegrityConstraintMetadataMismatch {
                 marker_register: Some(0),
                 declared_register: Some(1),
                 ..
@@ -1305,8 +1038,8 @@ fn malformed_compiled_sidecars_fail_closed() {
         0,
     );
     assert!(matches!(
-        mech_engine::compile_executable_program_artifact(&unresolved_nominal, &catalog),
-        Err(mech_engine::ArtifactBuildError::Semantic(
+        crate::compile_executable_program_artifact(&unresolved_nominal, &catalog),
+        Err(crate::ArtifactBuildError::Semantic(
             mech_core::SemanticModelError::LegacyNominalUnresolved {
                 kind: mech_core::NominalKind::Atom,
                 legacy_id,
@@ -1364,7 +1097,7 @@ fn pseudo_destination_effects_preserve_the_node_and_every_input() {
     );
 
     let artifact =
-        mech_engine::compile_executable_program_artifact(&compiled, &source_catalog()).unwrap();
+        crate::compile_executable_program_artifact(&compiled, &source_catalog()).unwrap();
     let effect = artifact
         .nodes()
         .iter()
@@ -1384,241 +1117,4 @@ fn pseudo_destination_effects_preserve_the_node_and_every_input() {
             ..
         }
     ));
-}
-
-#[test]
-fn tuple_constant_round_trips_through_bytecode() -> MResult<()> {
-    let code = "tuple := (1, 2); tuple.2";
-    let mut source = source_program();
-    let source_output = source.run_string(code)?;
-    assert_alias_node(
-        &source.interpreter().plan(),
-        "TupleAccessElement",
-        &source_output,
-    );
-    let bytecode = source.compile_bytecode()?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    assert!(
-        parsed
-            .types
-            .iter()
-            .any(|ty| matches!(ty, RuntimeType::Tuple(_)))
-    );
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-    assert_eq!(decoded_output, source_output);
-    Ok(())
-}
-
-#[test]
-fn decoded_whole_variable_assignment_matches_source_graph() -> MResult<()> {
-    let code = "~x := 1.0; y := 2.0; x = y; x";
-    let mut source = source_program();
-    let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
-    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
-    let source_shape = distinct_assignment_graph_shape(source.interpreter(), "x", "y");
-    let decoded_shape = decoded_assignment_graph_shape(decoded.interpreter(), &decoded_output);
-    assert_eq!(source_shape, expected_distinct_assignment_shape());
-    assert_eq!(decoded_shape, expected_distinct_assignment_shape());
-    assert_eq!(source_shape, decoded_shape);
-    Ok(())
-}
-
-#[test]
-fn decoded_register_commit_assignment_uses_staging() -> MResult<()> {
-    let code = "~x := 1.0\ny := 2.0\nx = y\nx";
-    let mut source = source_program();
-    let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
-    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
-    let output_cell = root_cell(&decoded_output);
-    let register_node = register(decoded.interpreter(), output_cell);
-    let (source_cell, source_ref) = {
-        let plan = decoded.interpreter().plan();
-        let plan = plan.borrow();
-        let node = plan.node(register_node).unwrap();
-        let dependencies = node
-            .inputs
-            .iter()
-            .filter(|dependency| {
-                dependency.kind == ReactiveDependencyKind::Reactive
-                    && dependency.cell != output_cell
-            })
-            .collect::<Vec<_>>();
-        assert_eq!(
-            dependencies.len(),
-            1,
-            "decoded register must have exactly one distinct reactive source",
-        );
-        (
-            dependencies[0].cell,
-            symbol(decoded.interpreter(), "y").as_f64()?,
-        )
-    };
-    *source_ref.borrow_mut() = 5.0;
-    let scheduling = decoded
-        .interpreter()
-        .plan()
-        .solve_dirty_cells(&[source_cell])?;
-    assert_eq!(scheduling.pending_register_nodes, vec![register_node]);
-    let commit = decoded
-        .interpreter()
-        .plan()
-        .commit_pending_registers(&scheduling.pending_register_nodes)?;
-    assert_eq!(commit.staged_nodes, vec![register_node]);
-    assert_eq!(commit.committed_nodes, vec![register_node]);
-    assert_eq!(commit.dirty_cells, vec![output_cell]);
-    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 5.0);
-    Ok(())
-}
-
-#[test]
-fn decoded_reactive_turn_reuses_compiled_assignment_plan() -> MResult<()> {
-    let code = "~x := 1.0\ny := 2.0\nx = y\nx";
-    let mut source = source_program();
-    let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    assert_eq!(*source_output.as_f64().unwrap().borrow(), 2.0);
-    assert_eq!(*decoded_output.as_f64().unwrap().borrow(), 2.0);
-    let (x_register, x_ref, x_cell, source_cell, plan_length, node_ids, output_cells) = {
-        let plan = decoded.interpreter().plan();
-        let plan = plan.borrow();
-        let registers = plan
-            .nodes
-            .iter()
-            .filter(|node| node.kind == ReactiveNodeKind::Register)
-            .collect::<Vec<_>>();
-        assert_eq!(registers.len(), 1);
-        let x_register = registers[0].id;
-        let x_output = plan.node(x_register).unwrap().function.out();
-        let x_ref = x_output.as_f64().unwrap().clone();
-        let x_cell = root_cell(&x_output);
-        let source_dependencies = plan
-            .node(x_register)
-            .unwrap()
-            .inputs
-            .iter()
-            .filter(|dependency| {
-                dependency.kind == ReactiveDependencyKind::Reactive && dependency.cell != x_cell
-            })
-            .collect::<Vec<_>>();
-        assert_eq!(source_dependencies.len(), 1);
-        (
-            x_register,
-            x_ref,
-            x_cell,
-            source_dependencies[0].cell,
-            plan.len(),
-            plan.nodes.iter().map(|node| node.id).collect::<Vec<_>>(),
-            plan.nodes
-                .iter()
-                .map(|node| node.outputs.clone())
-                .collect::<Vec<_>>(),
-        )
-    };
-    assert_eq!(*x_ref.borrow(), 2.0);
-    let source_ref = symbol(decoded.interpreter(), "y").as_f64()?;
-    let mut turn_state = ReactiveTurnState::default();
-    for expected in [5.0, 7.0] {
-        *source_ref.borrow_mut() = expected;
-        let outcome = decoded
-            .interpreter()
-            .plan()
-            .advance_reactive_turn(&mut turn_state, &[source_cell])?;
-        assert_eq!(
-            outcome.before_commit.pending_register_nodes,
-            vec![x_register]
-        );
-        assert_eq!(outcome.register_commit.staged_nodes, vec![x_register]);
-        assert_eq!(outcome.register_commit.committed_nodes, vec![x_register]);
-        assert_eq!(outcome.register_commit.dirty_cells, vec![x_cell]);
-        assert!(outcome.after_commit.executed_nodes.is_empty());
-        assert_eq!(*x_ref.borrow(), expected);
-        assert_eq!(*decoded_output.as_f64().unwrap().borrow(), expected);
-        assert!(turn_state.pending_register_nodes.is_empty());
-        let plan = decoded.interpreter().plan();
-        let plan = plan.borrow();
-        assert_eq!(plan.len(), plan_length);
-        assert_eq!(
-            plan.nodes.iter().map(|node| node.id).collect::<Vec<_>>(),
-            node_ids,
-        );
-        assert_eq!(
-            plan.nodes
-                .iter()
-                .map(|node| node.outputs.clone())
-                .collect::<Vec<_>>(),
-            output_cells,
-        );
-    }
-    Ok(())
-}
-
-#[test]
-fn decoded_matrix_literal_preserves_dependency_chain() -> MResult<()> {
-    let code = "[1.0 2.0; 3.0 4.0]";
-    let mut source = source_program();
-    let source_output = source.run_string(code)?;
-    let bytecode = source.compile_bytecode()?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    let matrix_comprehensions = parsed
-        .instructions
-        .iter()
-        .filter_map(|instruction| match instruction {
-            BytecodeInstruction::RuntimeVariadic { arguments, .. } => Some(arguments.len()),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-    assert_eq!(
-        matrix_comprehensions,
-        vec![2, 2],
-        "each row comprehension must encode both child registers",
-    );
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-
-    for output in [&source_output, &decoded_output] {
-        match output {
-            LegacyValue::MatrixF64(matrix) => {
-                assert_eq!(matrix.shape(), vec![2, 2]);
-                assert_eq!(matrix.as_vec(), vec![1.0, 3.0, 2.0, 4.0]);
-            }
-            other => panic!("expected f64 matrix literal, got {other:?}"),
-        }
-    }
-    assert_matrix_literal_chain(&source.interpreter().plan());
-    assert_matrix_literal_chain(&decoded.interpreter().plan());
-    Ok(())
-}
-
-#[test]
-fn set_constant_round_trips_through_bytecode() -> MResult<()> {
-    let code = "{1.0, 2.0}";
-    let mut source = source_program();
-    let source_output = source.run_string(code)?;
-    assert_structural_set_node(&source.interpreter().plan(), &source_output);
-    let bytecode = source.compile_bytecode()?;
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
-    assert!(
-        parsed
-            .types
-            .iter()
-            .any(|ty| matches!(ty, RuntimeType::Set { .. }))
-    );
-    let mut decoded = runtime_program();
-    let decoded_output = decoded.run_bytecode(&bytecode)?;
-    assert_eq!(decoded_output, source_output);
-    Ok(())
 }
