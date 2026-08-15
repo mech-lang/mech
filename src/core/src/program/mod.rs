@@ -6,14 +6,14 @@ use std::collections::BTreeMap;
 
 #[cfg(feature = "program")]
 pub mod bytecode;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub mod compiler;
 #[cfg(feature = "symbol_table")]
 pub mod symbol_table;
 
 #[cfg(feature = "program")]
 pub use self::bytecode::*;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub use self::compiler::*;
 #[cfg(feature = "symbol_table")]
 pub use self::symbol_table::*;

@@ -10,9 +10,11 @@ use crate::{
 
 #[cfg(feature = "no_std")]
 use alloc::{
+    borrow::ToOwned,
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
     string::String,
+    vec::Vec,
 };
 #[cfg(not(feature = "no_std"))]
 use std::{

@@ -23,5 +23,8 @@ pub use self::error::{
     SchemaDataKind, SnapshotPath, SnapshotPathSegment, SnapshotValueError, ValueDataKind,
 };
 pub use self::sequence::SequenceView;
-pub use self::validation::{SnapshotValidationContext, Value};
+pub use self::validation::{
+    SnapshotValidationContext, Value, build_f64_set_snapshot, f64_set_snapshot_contains,
+    rebuild_composite_snapshot, rebuild_f64_set_snapshot,
+};
 pub use crate::{ConstantId, KeyHash, ValueHash};

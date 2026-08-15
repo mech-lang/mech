@@ -1,8 +1,10 @@
+//! Semantic source-plan recorder shared by artifact compilation and bytecode v1 production.
+
 use core::cmp::Ordering;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::LazyLock;
 
-use mech_core::{
+use crate::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
     DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout, InputPortPolicy,
@@ -15,7 +17,11 @@ use mech_core::{
 static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Variadic {
-            prefix: Box::new([]),
+            prefix: vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
             repeated: InputPortPolicy {
                 access: AccessMode::Read,
                 delivery: DeliveryMode::Signal,
@@ -25,7 +31,7 @@ static PURE_COMPOSITE_PACK_CONTRACT: LazyLock<OperationContractDeclaration> =
         outputs: vec![OutputPortPolicy {
             access: AccessMode::Write,
             delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::Replace {
+            construction: OutputConstruction::FullWrite {
                 shape: ShapeRule::Declared,
             },
             alias: AliasPolicy::NoAlias,
@@ -195,6 +201,20 @@ impl CompileCtx {
                         self.register_kinds.insert(register, kind);
                     }
                     (ValueKind::Reference(existing), incoming) if existing.as_ref() == incoming => {
+                    }
+                    (
+                        ValueKind::Table(existing_columns, existing_rows),
+                        ValueKind::Table(incoming_columns, incoming_rows),
+                    ) if existing_columns == incoming_columns
+                        && (*existing_rows == 0 || *incoming_rows == 0) =>
+                    {
+                        // A zero row count is the source compiler's dynamic
+                        // table shape. Once planning materializes the final
+                        // output, retain the concrete row count on the same
+                        // producer register.
+                        if *incoming_rows != 0 {
+                            self.register_kinds.insert(register, kind);
+                        }
                     }
                     _ => {
                         return invalid(format!(
@@ -729,10 +749,13 @@ impl BytecodeCompilerContext for CompileCtx {
             template,
             children,
         });
-        self.instruction_roles.push(
-            self.current_node_kind
-                .map(|_| CompiledInstructionRole::Node(CompiledNodeKind::Combinational)),
-        );
+        // Composite construction is itself a semantic node even when a tuple,
+        // record, or other literal is compiled outside a surrounding reactive
+        // source node.
+        self.instruction_roles
+            .push(Some(CompiledInstructionRole::Node(
+                CompiledNodeKind::Combinational,
+            )));
         self.instruction_contracts
             .push(Some(&PURE_COMPOSITE_PACK_CONTRACT));
         // This is a compiler-owned record/tuple/etc. construction node, not a
@@ -907,18 +930,18 @@ impl BytecodeCompilerContext for CompileCtx {
 }
 
 fn encoded_collection_cardinality(
-    runtime_type: &mech_core::RuntimeType,
+    runtime_type: &crate::RuntimeType,
     bytes: &[u8],
 ) -> MResult<Option<usize>> {
     match runtime_type {
-        mech_core::RuntimeType::Map { .. } | mech_core::RuntimeType::Set { .. } => {
+        crate::RuntimeType::Map { .. } | crate::RuntimeType::Set { .. } => {
             let count = bytes.get(..4).ok_or_else(|| {
                 invalid::<()>("collection constant is missing its element count").unwrap_err()
             })?;
             let count = u32::from_le_bytes(count.try_into().expect("four-byte slice"));
             Ok(Some(count as usize))
         }
-        mech_core::RuntimeType::Option(inner) if bytes.first() == Some(&1) => {
+        crate::RuntimeType::Option(inner) if bytes.first() == Some(&1) => {
             let length = bytes.get(1..5).ok_or_else(|| {
                 invalid::<()>("option constant is missing its child length").unwrap_err()
             })?;
@@ -1000,7 +1023,7 @@ fn invalid<T>(reason: impl Into<String>) -> MResult<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_core::{
+    use crate::{
         AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExecutionHostFunctionRequest,
         ExecutionResourceRequest, ExternalInteraction, InputPortLayout, InputPortPolicy,
         OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ResourceDelivery,
@@ -1072,13 +1095,13 @@ mod tests {
 
     #[test]
     fn runtime_producer_discards_an_earlier_planning_seed() {
-        let value = LegacyValue::F64(mech_core::Ref::new(7.0));
+        let value = LegacyValue::F64(crate::Ref::new(7.0));
         let fallback = std::ptr::from_ref(&value).addr();
         let mut context = CompileCtx::new();
         let seeded = compile_value_register(&value, fallback, &mut context).unwrap();
 
         let produced =
-            mech_core::compile_runtime_produced_register(&value, fallback, &mut context).unwrap();
+            crate::compile_runtime_produced_register(&value, fallback, &mut context).unwrap();
         let requirement = context
             .intern_requirement(resource_requirement("test://provider"))
             .unwrap();
@@ -1097,8 +1120,8 @@ mod tests {
 
     #[test]
     fn runtime_producer_keeps_a_seed_constant_used_by_another_register() {
-        let produced_value = LegacyValue::F64(mech_core::Ref::new(7.0));
-        let retained_value = LegacyValue::F64(mech_core::Ref::new(7.0));
+        let produced_value = LegacyValue::F64(crate::Ref::new(7.0));
+        let retained_value = LegacyValue::F64(crate::Ref::new(7.0));
         let produced_fallback = std::ptr::from_ref(&produced_value).addr();
         let retained_fallback = std::ptr::from_ref(&retained_value).addr();
         let mut context = CompileCtx::new();
@@ -1107,12 +1130,8 @@ mod tests {
         let retained =
             compile_value_register(&retained_value, retained_fallback, &mut context).unwrap();
 
-        mech_core::compile_runtime_produced_register(
-            &produced_value,
-            produced_fallback,
-            &mut context,
-        )
-        .unwrap();
+        crate::compile_runtime_produced_register(&produced_value, produced_fallback, &mut context)
+            .unwrap();
         let requirement = context
             .intern_requirement(resource_requirement("test://provider"))
             .unwrap();
@@ -1131,11 +1150,11 @@ mod tests {
     #[test]
     fn typed_wrappers_do_not_share_registers_with_bare_values() {
         for typed_first in [false, true] {
-            let scalar = mech_core::Ref::new(7.0);
+            let scalar = crate::Ref::new(7.0);
             let bare = LegacyValue::F64(scalar.clone());
             let typed = LegacyValue::Typed(
                 Box::new(LegacyValue::F64(scalar)),
-                mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
+                crate::ValueKind::Option(Box::new(crate::ValueKind::F64)),
             );
             let typed_clone = typed.clone();
             let mut context = CompileCtx::new();
@@ -1196,15 +1215,15 @@ mod tests {
 
     #[test]
     fn complete_typed_annotations_are_part_of_register_identity() {
-        let scalar = mech_core::Ref::new(7.0);
+        let scalar = crate::Ref::new(7.0);
         let inner = Box::new(BytecodeRegisterIdentity::Cell(scalar.id() as usize));
         let option_f64 = BytecodeRegisterIdentity::Typed {
             inner: inner.clone(),
-            annotation: mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::F64)),
+            annotation: crate::ValueKind::Option(Box::new(crate::ValueKind::F64)),
         };
         let option_u64 = BytecodeRegisterIdentity::Typed {
             inner,
-            annotation: mech_core::ValueKind::Option(Box::new(mech_core::ValueKind::U64)),
+            annotation: crate::ValueKind::Option(Box::new(crate::ValueKind::U64)),
         };
         let mut context = CompileCtx::new();
 
@@ -1227,10 +1246,9 @@ mod tests {
     #[test]
     fn mutable_references_reuse_their_producer_register() {
         for mutable_first in [false, true] {
-            let scalar = mech_core::Ref::new(7.0);
+            let scalar = crate::Ref::new(7.0);
             let bare = LegacyValue::F64(scalar.clone());
-            let mutable =
-                LegacyValue::MutableReference(mech_core::Ref::new(LegacyValue::F64(scalar)));
+            let mutable = LegacyValue::MutableReference(crate::Ref::new(LegacyValue::F64(scalar)));
             let mut context = CompileCtx::new();
 
             let (first, second) = if mutable_first {
@@ -1274,9 +1292,9 @@ mod tests {
 
     #[test]
     fn composite_values_are_lowered_from_child_registers() {
-        let scalar = mech_core::Ref::new(7.0);
+        let scalar = crate::Ref::new(7.0);
         let bare = LegacyValue::F64(scalar.clone());
-        let tuple = LegacyValue::Tuple(mech_core::Ref::new(mech_core::MechTuple::from_vec(vec![
+        let tuple = LegacyValue::Tuple(crate::Ref::new(crate::MechTuple::from_vec(vec![
             LegacyValue::F64(scalar.clone()),
             LegacyValue::F64(scalar),
         ])));

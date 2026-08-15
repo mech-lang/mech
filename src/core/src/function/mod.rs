@@ -542,19 +542,19 @@ impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
     fn commit(self: Box<Self>) {}
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub trait MechFunctionCompiler {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register>;
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub trait MechFunction: MechFunctionImpl + MechFunctionCompiler {}
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
 
-#[cfg(not(feature = "compiler"))]
+#[cfg(not(feature = "semantic-compiler"))]
 pub trait MechFunction: MechFunctionImpl {}
-#[cfg(not(feature = "compiler"))]
+#[cfg(not(feature = "semantic-compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -740,7 +740,7 @@ impl MechFunctionImpl for UserFunction {
         format!("UserFxn::{:?}", self.fxn.name)
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for UserFunction {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         todo!();

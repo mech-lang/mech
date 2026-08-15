@@ -64,7 +64,8 @@ baselib = ["bool", "string",
       "functions", "formulas"
     ]
 
-compiler = ["program"]
+semantic-compiler = ["program"]
+compiler = ["semantic-compiler"]
 program = ["crc32fast", "byteorder"]
 native-plan = ["functions"]
 pretty_print = ["tabled", "serde_json"]

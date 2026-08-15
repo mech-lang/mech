@@ -3,7 +3,7 @@
 use crate::{LegacyValue, MResult, MechError, MechErrorKind, ValRef};
 
 #[cfg(feature = "no_std")]
-use alloc::{format, string::String, vec::Vec};
+use alloc::{borrow::ToOwned, format, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{string::String, vec::Vec};
 

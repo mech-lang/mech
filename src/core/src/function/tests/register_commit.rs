@@ -1,10 +1,10 @@
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
     MechFunctionImpl, ReactiveNodeId, ReactiveNodeKind, ReactivePlan, ReactiveRegisterCommit,
     ReactiveRegisterCommitOutcome, reactive_register_sealed,
 };
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{GenericError, LegacyValue, MResult, MechError, ReactiveCellId, Ref, ToValue};
 use std::{cell::RefCell, rc::Rc};
@@ -97,7 +97,7 @@ impl MechFunctionImpl for RegisterStageTestFunction {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for RegisterStageTestFunction {
     fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
@@ -186,7 +186,7 @@ impl MechFunctionImpl for RegisterWithoutStaging {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for RegisterWithoutStaging {
     fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
@@ -369,7 +369,7 @@ fn reactive_register_commit_rejects_combinational_node_without_staging() {
             Ok(self.reactive_output_values())
         }
     }
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for Combinational {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -503,7 +503,7 @@ fn reactive_register_commit_does_not_execute_downstream_nodes() {
             Ok(self.reactive_output_values())
         }
     }
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for C {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)

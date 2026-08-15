@@ -75,7 +75,8 @@ baselib = ["bool", "string",
       "mech-core/baselib"
     ]
 
-compiler = ["mech-core/compiler"]
+semantic-compiler = ["mech-core/semantic-compiler"]
+compiler = ["semantic-compiler", "mech-core/compiler"]
 program = ["mech-core/program"]
 pretty_print = ["mech-core/pretty_print"]
 serde = ["mech-core/serde"]

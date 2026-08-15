@@ -1,4 +1,4 @@
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
     ActivationRegistrationScope, MechFunctionImpl, PatternActivationRegistration, Plan,
@@ -8,7 +8,7 @@ use super::super::{
 use super::support::TestFunction;
 #[cfg(feature = "f64")]
 use super::support::reg;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{LegacyValue, MResult, ReactiveCellId, Ref, ToValue};
 
@@ -30,7 +30,7 @@ impl MechFunctionImpl for RetainedZstFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for RetainedZstFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)

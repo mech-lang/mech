@@ -8,7 +8,7 @@ pub use crate::*;
 // code here to account for all the different combinations, but only
 // the relevant code will be compiled in any given build.
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_register_brrw {
     ($reg:expr, $ctx:ident) => {{
@@ -24,7 +24,7 @@ macro_rules! compile_register_brrw {
     }};
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_register {
     ($reg:expr, $ctx:ident) => {{
@@ -39,7 +39,7 @@ macro_rules! compile_register {
     }};
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_register_mat {
     ($reg:expr, $ctx:ident) => {{
@@ -54,7 +54,7 @@ macro_rules! compile_register_mat {
     }};
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_register_initial {
     ($reg:expr, $initial:expr, $ctx:ident) => {{
@@ -69,7 +69,7 @@ macro_rules! compile_register_initial {
     }};
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_nullop {
     ($name:tt, $out:expr, $ctx:ident) => {
@@ -86,7 +86,7 @@ macro_rules! compile_nullop {
     };
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_unop {
     ($name:tt, $out:expr, $arg:expr, $ctx:ident) => {
@@ -104,7 +104,7 @@ macro_rules! compile_unop {
     };
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_binop {
     ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $ctx:ident) => {
@@ -120,7 +120,7 @@ macro_rules! compile_binop {
     };
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_ternop {
     ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $ctx:ident) => {
@@ -143,7 +143,7 @@ macro_rules! compile_ternop {
     };
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_quadop {
     ($name:tt, $out:expr, $arg1:expr, $arg2:expr, $arg3:expr, $arg4:expr, $ctx:ident) => {
@@ -167,7 +167,7 @@ macro_rules! compile_quadop {
     };
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[macro_export]
 macro_rules! compile_varop {
     ($name:tt, $out:expr, $args:expr, $ctx:ident) => {
@@ -193,7 +193,7 @@ macro_rules! impl_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: Copy
                 + Debug
                 + Display
@@ -216,7 +216,7 @@ macro_rules! impl_binop {
                 + DivAssign
                 + Zero
                 + One,
-            #[cfg(not(feature = "compiler"))]
+            #[cfg(not(feature = "semantic-compiler"))]
             T: Copy
                 + Debug
                 + Display
@@ -311,7 +311,7 @@ macro_rules! impl_binop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind,
@@ -383,7 +383,7 @@ macro_rules! impl_unop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}", stringify!($struct_name));

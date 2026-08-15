@@ -1,4 +1,4 @@
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
     MechFunctionImpl, ReactiveDependencyKind, ReactiveDependencyScope, ReactiveNodeId,
@@ -6,7 +6,7 @@ use super::super::{
 };
 #[cfg(all(feature = "set", feature = "f64"))]
 use crate::MechSet;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
     GenericError, LegacyValue, MResult, MechError, ReactiveCellId, Ref, ToValue, ValueKind,
@@ -101,7 +101,7 @@ impl MechFunctionImpl for TestFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TestFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
@@ -202,7 +202,7 @@ impl MechFunctionImpl for TestRegister {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "compiler", feature = "f64"))]
+#[cfg(all(feature = "semantic-compiler", feature = "f64"))]
 impl MechFunctionCompiler for TestRegister {
     fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
