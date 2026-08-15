@@ -1,7 +1,8 @@
 # Gate E4 closeout
 
-Status: exact-head stabilization is locally complete on draft PR #762; remote
-exact-head CI and review remain required. This is not a merge authorization.
+Status: the post-CI exact-head correction is locally complete on draft PR
+#762; remote exact-head CI remains required. This is not a merge
+authorization.
 
 ## Boundary
 
@@ -49,7 +50,8 @@ AST-to-artifact compiler.
 8. `f6555296d83ceb4578235bc0d0f1e57013875a6a` — `test(architecture): retire active migration projection and prove compiler quarantine [E4H]`
 9. `[self-address recorded in PR evidence]` — `docs(architecture): close E4 and hand off evidence-only F0 [E4I]`
 10. `32ac722ef3353a692f240c10adab0479a49daf53` — `fix(e4): close exact-head product regressions`
-11. `[self-address recorded in PR evidence]` — `test(e4): reconcile deterministic generated artifacts and finalize closeout`
+11. `79b935247304443dd6f0830cd141b83abfba0e31` — `test(e4): reconcile deterministic generated artifacts and finalize closeout`
+12. `[self-address recorded in PR evidence]` — `fix(e4): publish formatted document outputs in resident artifacts`
 
 ## Exact-head stabilization ledger
 
@@ -57,11 +59,19 @@ Only failures reproduced by full validation run `31910896507` at exact head
 `62da5a762bb81a0211b2264fe55c97e616cc807b` remained active. Earlier E4
 failures are resolved or superseded by that run.
 
+Selected validation was green at stabilization head
+`79b935247304443dd6f0830cd141b83abfba0e31`. Full validation run
+`31913281878` then exposed one additional exact-head failure in the WASM
+bytecode-v1 product: the formatted FizzBuzz document requested resident symbol
+`y`, but the artifact published only the root invariant
+`first-fifteen!`. This is the only active post-stabilization failure; the
+correction below does not reopen E4 semantics or bytecode format.
+
 | Current-head failure | Classification and permanent owner | Narrow correction and acceptance proof |
 | --- | --- | --- |
 | Runtime wildcard-import audit found `use super::*` in the resident string-output regression. | Test-boundary regression in `runtime::program::value`; no feature or production semantic change. | Import only `string_matrix_value`, `LegacyValue`, and `ResidentShape`. The complete runtime boundary audit and focused string-matrix materialization test pass. |
 | Bytecode-v1 determinism stopped on a committed `manifest.json` mismatch. | Deterministic generated-evidence drift. Two independent fresh corpora were byte-for-byte identical; all 20 `.mecb` files and source fixtures were unchanged, while 19 derived native-plan hashes reflected the frozen E4 plan. | The checker now compares fresh run A with fresh run B before comparing either run with the repository. The committed manifest and its frozen digest were refreshed only after A equaled B. The format contract passes for all 20 fixtures and the corrected checker passes across two fresh child processes. |
-| The served FizzBuzz document reached `ready` with an empty output block while the same WASM resident artifact proved `first-fifteen! == true`. | Formatted-document adapter identity mismatch: HTML addresses an output by its stable 64-bit source-block hash, while the artifact query accepts compact `OutputId` values. The compiler, modulo, comparison, string-matrix value, and resident execution results did not diverge. | `WasmDocument` records direct fenced-output hash-to-root-symbol relationships from the decoded source tree and renders that detached resident symbol. Reset rebuilds the mapping. Native mapping coverage passes, the exact WASM profile compiles, and the browser regression now requires the rendered FizzBuzz matrix to contain `✨🐝`. |
+| The served FizzBuzz document reached `ready` with an empty output block while the same WASM resident artifact proved `first-fifteen! == true`; the subsequent exact WASM bytecode-v1 job then reported that mapped symbol `y` was absent. | Formatted-document publication mismatch at the compiler/artifact boundary. HTML addresses an output by its stable 64-bit source-block hash and the adapter resolves that hash to direct root symbol `y`, but source/root compilation had only published the final program result. The modulo, comparison, string-matrix value, and resident execution results did not diverge. | `WasmDocument` retains the direct fenced-output hash-to-root-symbol mapping. `ProgramCompiler` now publishes each unique direct fenced-output root symbol followed by the existing root result, for inline source, rooted source, and bytecode-v1 artifacts. Focused source/root/decoded-bytecode parity passes with outputs `[y, first-fifteen!]`; the complete 587-test runtime owner and integration/compile-fail/doctest suites pass; the exact WASM feature profile and native adapter mapping pass. Remote exact-head WASM execution remains the final product proof. |
 | Native application graph validation expected 17 projects but generation and the independent determinism contract produced 15; after removing the two dead actors, the checker still expected pre-resident runtime feature graphs. | Deterministic generated-contract drift. The actor entries had no remaining producer or caller, while every surviving generated product now loads emitted bytecode through `mech-runtime/resident-routing`; the emitted 15-plan set is the frozen architecture source of truth. | Remove the two obsolete actor expectations and reconcile the exact package/declared-feature projections for all 15 surviving plans. A compact independent comparison reports 15 expected, 15 actual, and zero mismatches; the full checker passes all exact direct-package, declared-feature, resolved-graph, forbidden-package, and serialized-plan checks. |
 
 ## Work-item disposition
@@ -193,14 +203,14 @@ All commands below passed on E4H `f6555296d83ceb4578235bc0d0f1e57013875a6a`:
 
 | Contract | Command/result |
 | --- | --- |
-| Complete runtime | `cargo +nightly-2026-03-03 test --locked -p mech-runtime --all-features`: 585 library tests, all integration and compile-fail guards, the controlled 4,096-turn D3 evidence lane, and doctests passed in one session. |
+| Complete runtime | `cargo +nightly-2026-03-03 test --locked -p mech-runtime --all-features`: 587 library tests, all integration and compile-fail guards, the controlled 4,096-turn D3 evidence lane, and doctests passed in one session after the post-CI correction. |
 | Generated products | `cargo +nightly-2026-03-03 test --locked -p mech-build --all-features`: all 117 unit tests plus every generated materialization, host, scalar, fixed/dynamic matrix, arity, planning, registry, and doc-test target passed. |
 | Engine owner | `cargo +nightly-2026-03-03 test --locked -p mech-engine --lib --no-default-features --features full_compiler,resident-artifact`: all 286 tests passed. `cargo +nightly-2026-03-03 check --locked -p mech-engine --no-default-features --features source` also passed and proves the source marker alone does not select compiler planning. |
 | Retained host owners | Exact all-feature owner suites for `mech-browser`, `mech-console`, `mech-scene`, `mech-time`, and `mech-timer` passed after the semantic-compiler feature-boundary correction. |
 | Retained operation regressions | Exact generated ternary inclusive-range, fixed-matrix addition, dynamic-matrix addition, poisoned output-seed arities, n-body 4,096-turn, public orbit-viewer, initializer-state, and frozen-EKF targets passed. |
 | Retained profiles | Full-source runtime, full compiler, terminal all-features, engine all-features check, and WASM source profile passed. |
 | Ordinary product canary | `mech run examples/working/fizzbuzz.mec` completed through the resident native source route and produced `bool` / `true`. The equivalent encoded document passed in headless Chrome through `mech-wasm`: 1 test passed, 15 filtered out. |
-| Bytecode v1 | The regenerated corpus passed its deterministic check for 20 fixtures across five fresh child processes; the root resident bytecode suite passed 19/19. |
+| Bytecode v1 | The regenerated corpus passed its deterministic check for 20 fixtures across two fresh child processes after the correction; all `.mecb` payloads and fixture sources remain unchanged, and only 19 compiler-derived native-plan fingerprints changed. The format contract passes all 20 fixtures. |
 | Static architecture | `bash scripts/check-static-distribution-profiles.sh static` passed compiler-planning quarantine, production resident routing, module layout, source-catalog entrypoint, and the static distribution profile. Standard/full distribution, packaging, and native-host catalog checks also passed. |
 | Value-system inventory | `python3 -B scripts/generate-value-system-inventory.py --check` reports the inventory is current. Exact occurrence classification passed for all 6,333 sites; the full checker reported only the controlled Gate B stale-evidence finding allowed until F0. |
 | Formatting | `cargo fmt --all -- --check` passed. |
@@ -209,11 +219,12 @@ All commands below passed on E4H `f6555296d83ceb4578235bc0d0f1e57013875a6a`:
 ## Change accounting
 
 Against exact E3 base `3610c66961dcc2fa23aed05833b4722ae34790c0`,
-the final E4 stack changes 298 files with 38,562 insertions and 38,737
-deletions (net `-175`). The final stabilization commit contains only
-deterministic contract reconciliation, guards, and closeout documentation; its
-exact SHA is recorded in PR evidence because a commit cannot contain its own
-content-addressed identity.
+the final E4 stack changes 298 files with 38,687 insertions and 38,738
+deletions (net `-51`). The post-CI correction contains only the causal
+formatted-document publication fix, its focused source/root/bytecode proof,
+the deterministic compiler-derived manifest refresh, and this closeout update.
+Its exact SHA is recorded in PR evidence because a commit cannot contain its
+own content-addressed identity.
 
 Remote selected/full CI results and the exact-head review disposition are PR
 evidence and must be added after the pushed E4I head is known.

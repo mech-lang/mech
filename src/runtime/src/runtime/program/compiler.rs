@@ -142,6 +142,7 @@ struct CompilerModule {
 #[derive(Clone)]
 struct CompilerModuleInstance {
     exports: HashMap<String, CompilerExportValue>,
+    document_outputs: Vec<LegacyValue>,
     result: LegacyValue,
 }
 
@@ -216,6 +217,7 @@ impl<'a> ProgramCompilerView<'a> {
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
         let mut program = self.new_program();
         let tree = mech_syntax::parser::parse(source.trim())?;
+        let document_output_names = direct_document_output_symbol_names(&tree);
         let index = SourceIndex::from_program(&tree);
         index.validate_address_targets()?;
         let imports = index.all_imports();
@@ -228,9 +230,10 @@ impl<'a> ProgramCompilerView<'a> {
             providers: self.resources,
             resource_send_operations: &operations,
         };
-        program
+        let result = program
             .plan_tree_with_services(&sanitize_tree(tree)?, &mut services)
             .map_err(classify_source_planning)?;
+        publish_document_and_root_outputs(&mut program, &document_output_names, &result)?;
         self.finalize(program, &operations)
     }
 
@@ -309,16 +312,13 @@ impl<'a> ProgramCompilerView<'a> {
             &mut active,
             Some(&mut root_program),
         )?;
-        root_program
+        let program = root_program
             .as_mut()
-            .expect("root compiler program is retained until finalization")
-            .publish_compiler_root_output(
-                instances
-                    .get(&root)
-                    .expect("the requested root was executed")
-                    .result
-                    .clone(),
-            );
+            .expect("root compiler program is retained until finalization");
+        let instance = instances
+            .get(&root)
+            .expect("the requested root was executed");
+        publish_module_outputs(program, instance);
         let operations = modules
             .values()
             .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
@@ -364,12 +364,11 @@ impl<'a> ProgramCompilerView<'a> {
             .as_mut()
             .expect("root compiler program is retained until finalization");
         for root in &roots {
-            program.publish_compiler_root_output(
+            publish_module_outputs(
+                program,
                 instances
                     .get(root)
-                    .expect("every requested root was executed")
-                    .result
-                    .clone(),
+                    .expect("every requested root was executed"),
             );
         }
         let operations = modules
@@ -624,6 +623,8 @@ impl<'a> ProgramCompilerView<'a> {
         let result = program
             .plan_tree_with_services(&tree, &mut services)
             .map_err(classify_source_planning)?;
+        let document_output_names = direct_document_output_symbol_names(&tree);
+        let document_outputs = compiler_symbol_values(program, &document_output_names)?;
 
         let mut exports = HashMap::new();
         for export in source_exports(&module.source) {
@@ -658,7 +659,11 @@ impl<'a> ProgramCompilerView<'a> {
         }
         instances.insert(
             canonical_uri.to_owned(),
-            CompilerModuleInstance { exports, result },
+            CompilerModuleInstance {
+                exports,
+                document_outputs,
+                result,
+            },
         );
         active.pop();
         Ok(())
@@ -700,6 +705,62 @@ fn explicit_root_plan_order(
         visit(root, &requested, modules, &mut visited, &mut ordered);
     }
     ordered
+}
+
+fn direct_document_output_symbol_names(tree: &mech_core::Program) -> Vec<String> {
+    let mut seen = HashSet::new();
+    tree.body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .filter_map(|element| match element {
+            mech_core::SectionElement::FencedMechCode(block) if block.config.output => {
+                let (code, _) = block.code.last()?;
+                match code {
+                    mech_core::MechCode::Expression(mech_core::Expression::Var(var))
+                        if var.context.is_none() =>
+                    {
+                        Some(var.name.to_string())
+                    }
+                    _ => None,
+                }
+            }
+            _ => None,
+        })
+        .filter(|name| seen.insert(name.clone()))
+        .collect()
+}
+
+fn compiler_symbol_values(
+    program: &CompilerPlanningProgram,
+    names: &[String],
+) -> MResult<Vec<LegacyValue>> {
+    let names = names.iter().map(String::as_str).collect::<Vec<_>>();
+    program
+        .compiler_root_symbol_values(&names)
+        .map(|values| values.into_iter().map(|(_, value)| value).collect())
+}
+
+fn publish_document_and_root_outputs(
+    program: &mut CompilerPlanningProgram,
+    document_output_names: &[String],
+    root: &LegacyValue,
+) -> MResult<()> {
+    for output in compiler_symbol_values(program, document_output_names)? {
+        program.publish_compiler_root_output(output);
+    }
+    program.publish_compiler_root_output(root.clone());
+    Ok(())
+}
+
+fn publish_module_outputs(
+    program: &mut CompilerPlanningProgram,
+    instance: &CompilerModuleInstance,
+) {
+    for output in &instance.document_outputs {
+        program.publish_compiler_root_output(output.clone());
+    }
+    program.publish_compiler_root_output(instance.result.clone());
 }
 
 fn compiled_resource_send_operations(

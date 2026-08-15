@@ -640,6 +640,58 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
 }
 
 #[test]
+fn formatted_document_outputs_survive_source_and_bytecode_publication() {
+    let source = include_str!("../../../../../examples/working/fizzbuzz.mec");
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let product = compiler.compile_source(source).unwrap();
+    let source_outputs = product
+        .artifact()
+        .outputs()
+        .iter()
+        .map(|output| output.name.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(source_outputs, ["y", "first-fifteen!"]);
+    let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
+    assert_eq!(
+        decoded
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>(),
+        source_outputs,
+        "bytecode v1 must preserve formatted-document output symbols"
+    );
+
+    let mut resolver = InMemorySourceResolver::new();
+    resolver.insert_string("fizzbuzz.mec", source).unwrap();
+    let mut rooted_compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+    let rooted = rooted_compiler
+        .compile_root(
+            SourceRequest::new("fizzbuzz.mec"),
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+    assert_eq!(
+        rooted
+            .artifact()
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>(),
+        source_outputs,
+        "rooted formatted documents must publish the same output symbols"
+    );
+}
+
+#[test]
 fn variable_definition_metadata_and_state_survive_resident_bytecode_admission() {
     const SOURCE: &str = "input := 1.0\n~state := 2.0\nstate";
 
