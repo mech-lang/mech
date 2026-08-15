@@ -1,4 +1,4 @@
-# Gate E4 hardening handoff
+# Archived Gate E4 hardening handoff
 
 E4 is the mandatory pre-merge correctness gate stacked on the final E3 head.
 This document is a work queue, not authorization to create the E4 branch or
