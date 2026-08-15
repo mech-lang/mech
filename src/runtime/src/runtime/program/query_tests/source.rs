@@ -1,31 +1,31 @@
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::ProgramCompiler;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{
     ExternalInteraction, LegacyValue, ParsedProgram, Ref, ResolvedOperationContract,
     TransactionalEffectProtocol, TransactionalExternalContract,
 };
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_engine::decode_program_artifact_sections;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use std::sync::{
     Arc,
     atomic::{AtomicUsize, Ordering},
 };
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::runtime::test_support::providers::{TestAfterCommitEffect, test_runtime_builder};
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{
     PreparedRuntimeEffect, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostInputDriver,
     RuntimeHostInputSource, RuntimeIngress, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 const PLANNING_WRITE_BASE_URI: &str = "counting://sink";
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug, Default)]
 struct PlanningWriteCounters {
     send_preflights: AtomicUsize,
@@ -33,13 +33,13 @@ struct PlanningWriteCounters {
     deliveries: AtomicUsize,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug)]
 struct PlanningWriteProvider {
     counters: Arc<PlanningWriteCounters>,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl RuntimeResourceProvider for PlanningWriteProvider {
     fn scheme(&self) -> &str {
         "counting"
@@ -100,7 +100,7 @@ impl RuntimeResourceProvider for PlanningWriteProvider {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn compiler_with_write_counters() -> (ProgramCompiler, Arc<PlanningWriteCounters>) {
     let counters = Arc::new(PlanningWriteCounters::default());
     let runtime = test_runtime_builder()
@@ -112,28 +112,28 @@ fn compiler_with_write_counters() -> (ProgramCompiler, Arc<PlanningWriteCounters
     (runtime, counters)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 const MODE_READ_BASE_URI: &str = "mode-read://input";
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 const EXECUTION_MODE_LIVE_SOURCE: &str = "@live := mode-read://input{:read(value)}\n\
      live-result := @live/value\n\
      live-result";
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug, Default)]
 struct ExecutionModeCounters {
     resource_plans: AtomicUsize,
     resource_reads: AtomicUsize,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug)]
 struct ExecutionModeReadProvider {
     counters: Arc<ExecutionModeCounters>,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl RuntimeResourceProvider for ExecutionModeReadProvider {
     fn scheme(&self) -> &str {
         "mode-read"
@@ -158,21 +158,21 @@ impl RuntimeResourceProvider for ExecutionModeReadProvider {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug, Default)]
 struct LiveReadDriverCounters {
     attaches: AtomicUsize,
     starts: AtomicUsize,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug)]
 struct CountingLiveReadDriver {
     counters: Arc<LiveReadDriverCounters>,
     live: bool,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl RuntimeHostInputDriver for CountingLiveReadDriver {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
         source.base_uri() == MODE_READ_BASE_URI && source.path() == "value"
@@ -199,7 +199,7 @@ impl RuntimeHostInputDriver for CountingLiveReadDriver {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn compile_execution_mode_live_source() -> (Arc<ExecutionModeCounters>, Arc<LiveReadDriverCounters>)
 {
     let resource_counters = Arc::new(ExecutionModeCounters::default());
@@ -218,7 +218,7 @@ fn compile_execution_mode_live_source() -> (Arc<ExecutionModeCounters>, Arc<Live
     (resource_counters, driver_counters)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[test]
 fn plan_source_live_read_only_plans_without_binding_or_driver_effects() {
     let (resource_counters, driver_counters) = compile_execution_mode_live_source();
@@ -229,7 +229,7 @@ fn plan_source_live_read_only_plans_without_binding_or_driver_effects() {
     assert_eq!(driver_counters.starts.load(Ordering::SeqCst), 0);
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[test]
 fn provider_transaction_contract_reaches_the_source_program_artifact() {
     let (mut compiler, counters) = compiler_with_write_counters();

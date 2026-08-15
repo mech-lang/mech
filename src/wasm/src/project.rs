@@ -2573,10 +2573,25 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn encoded_inline_document_is_excluded_from_the_resident_browser_product() {
+    fn encoded_inline_document_executes_in_the_resident_browser_product() {
         let encoded =
             encoded_document("The document evaluates {answer + 1} inline.\n\nanswer := 41");
-        assert_resident_rejection(WasmDocument::from_encoded(&encoded), "SemanticUnsupported");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        let answer = document.rendered_symbol("answer").unwrap();
+        assert_eq!(
+            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("41"),
+        );
+        assert_eq!(
+            document.project.runtime.program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+        document.start().unwrap();
+        assert!(document.frame(1).is_ok());
+        document.stop().unwrap();
     }
 
     #[wasm_bindgen_test]

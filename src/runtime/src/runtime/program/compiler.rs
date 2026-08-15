@@ -92,6 +92,17 @@ impl ProgramCompiler {
         self.view().compile_root(request, options)
     }
 
+    /// Compiles ordered build roots into one resident artifact. Roots share
+    /// one compiler-owned program so later roots can consume definitions from
+    /// earlier roots, matching the retained `mech build` caller-order contract.
+    pub fn compile_roots(
+        &mut self,
+        requests: &[SourceRequest],
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_roots(requests, options)
+    }
+
     fn view(&self) -> ProgramCompilerView<'_> {
         ProgramCompilerView::new(
             Arc::clone(&self.function_catalog),
@@ -200,16 +211,78 @@ impl<'a> ProgramCompilerView<'a> {
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
         let mut program = self.new_program();
         let tree = mech_syntax::parser::parse(source.trim())?;
-        let operations =
-            compiled_resource_send_operations(&SourceIndex::from_program(&tree).all_contexts());
+        let index = SourceIndex::from_program(&tree);
+        index.validate_address_targets()?;
+        let imports = index.all_imports();
+        let mut contexts = index.all_contexts();
+        self.materialize_inline_context_imports(&imports, &mut contexts)?;
+        install_function_imports(&mut program, &imports, &[])?;
+        install_context_imports(&mut program, &imports, &contexts)?;
+        let operations = compiled_resource_send_operations(&contexts);
         let mut services = CompilerPlanningServices {
             providers: self.resources,
             resource_send_operations: &operations,
         };
         program
-            .run_tree_with_services(&tree, &mut services)
+            .run_tree_with_services(&sanitize_tree(tree)?, &mut services)
             .map_err(classify_source_planning)?;
         self.finalize(program, &operations)
+    }
+
+    /// Resolve context imports for inline source through the same configured
+    /// host-interface and module-manifest owners used by rooted compilation.
+    /// Inline compilation has no persisted module record on which to attach
+    /// these declarations, so keep the materialized declarations local to the
+    /// compiler session.
+    fn materialize_inline_context_imports(
+        &self,
+        imports: &[SourceImportDeclaration],
+        contexts: &mut Vec<crate::SourceContextDeclaration>,
+    ) -> MResult<()> {
+        for import in imports {
+            let Some(SourceImportAlias::Context(alias)) = &import.alias else {
+                continue;
+            };
+            if contexts.iter().any(|context| context.name == *alias) {
+                return Err(mech_core::MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "compile_source",
+                        reason: format!(
+                            "context import duplicates an existing context binding `{alias}`"
+                        ),
+                    },
+                    None,
+                ));
+            }
+            let module = import
+                .module
+                .as_deref()
+                .ok_or_else(|| invalid_context_import(&import.specifier, "module"))?;
+            let item = import
+                .item
+                .as_deref()
+                .ok_or_else(|| invalid_context_import(&import.specifier, "item"))?;
+            let target = format!("{module}/{item}");
+            let (base_uri, operations) =
+                if let Some(export) = self.host_interfaces.resolve_optional(&target)? {
+                    (export.base_uri.clone(), export.operations.clone())
+                } else {
+                    let export = self.module_manifests.context_export(module, item)?;
+                    (export.base_uri.clone(), export.operations.clone())
+                };
+            contexts.push(crate::SourceContextDeclaration {
+                name: alias.clone(),
+                base: crate::SourceContextBase::ResourceUri(base_uri),
+                capabilities: operations
+                    .into_iter()
+                    .map(|operation| crate::SourceContextCapability {
+                        operation,
+                        scope: crate::SourceContextCapabilityScope::Wildcard,
+                    })
+                    .collect(),
+            });
+        }
+        Ok(())
     }
 
     pub(crate) fn compile_root(
@@ -231,6 +304,46 @@ impl<'a> ProgramCompilerView<'a> {
             &mut active,
             Some(&mut root_program),
         )?;
+        let operations = modules
+            .values()
+            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
+            .collect::<Vec<_>>();
+        self.finalize(
+            root_program.expect("root compiler program is retained until finalization"),
+            &operations,
+        )
+    }
+
+    pub(crate) fn compile_roots(
+        &self,
+        requests: &[SourceRequest],
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        if requests.is_empty() {
+            return Err(route_failure(
+                ResidentRouteFailureClass::SemanticUnsupported,
+                "resident source compilation requires at least one root",
+            ));
+        }
+        let mut modules = HashMap::new();
+        let mut stack = Vec::new();
+        let mut roots = Vec::with_capacity(requests.len());
+        for request in requests {
+            request.validate()?;
+            roots.push(self.resolve_module(request.clone(), options, &mut modules, &mut stack)?);
+        }
+        let mut instances = HashMap::new();
+        let mut active = Vec::new();
+        let mut root_program = Some(self.new_program());
+        for root in roots {
+            self.execute_module(
+                &root,
+                &modules,
+                &mut instances,
+                &mut active,
+                Some(&mut root_program),
+            )?;
+        }
         let operations = modules
             .values()
             .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
@@ -471,7 +584,7 @@ impl<'a> ProgramCompilerView<'a> {
             &mut owned_program
         };
         install_function_imports(program, &module.source.imports, &module.import_edges)?;
-        install_context_imports(program, module)?;
+        install_context_imports(program, &module.source.imports, &module.source.contexts)?;
         let environment = build_import_environment(module, instances)?;
         install_environment(program, &environment)?;
         let tree = executable_tree(&module.source.source)?;
@@ -584,14 +697,16 @@ fn declared_resource_send_operation<'a>(
     Ok(selected)
 }
 
-fn install_context_imports(program: &mut MechProgram, module: &CompilerModule) -> MResult<()> {
-    for import in &module.source.imports {
+fn install_context_imports(
+    program: &mut MechProgram,
+    imports: &[SourceImportDeclaration],
+    contexts: &[crate::SourceContextDeclaration],
+) -> MResult<()> {
+    for import in imports {
         let Some(SourceImportAlias::Context(alias)) = &import.alias else {
             continue;
         };
-        let declaration = module
-            .source
-            .contexts
+        let declaration = contexts
             .iter()
             .find(|context| context.name == *alias)
             .ok_or_else(|| invalid_context_import(&import.specifier, "materialized declaration"))?;

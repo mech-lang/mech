@@ -20,14 +20,15 @@ no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 runtime = ["mech-engine/runtime"]
 runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 runtime_bench_gate_b = ["compiler", "mech-engine/resident-artifact"]
-resident-external = ["runtime", "mech-engine/resident-artifact"]
+resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
 resident-routing = ["resident-external"]
-resident-routing-source = ["resident-routing", "compiler"]
+resident-routing-source = ["resident-routing", "semantic-compiler"]
 runtime_bench_gate_d = ["runtime_bench_gate_b", "runtime_default"]
 runtime_bench_gate_d3 = ["resident-external", "runtime_bench_gate_d"]
 native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
-compiler = ["source", "mech-engine/compiler"]
+semantic-compiler = ["source", "mech-engine/semantic-compiler"]
+compiler = ["semantic-compiler", "mech-engine/compiler"]
 
 runtime_default = [
   "runtime",

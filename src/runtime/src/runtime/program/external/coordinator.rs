@@ -1967,6 +1967,10 @@ fn resident_scalar_bytes(kind: ResidentValueKind) -> usize {
         // before provider capture/effect materialization; numeric estimates
         // remain exact and structurally unchanged.
         ResidentValueKind::String => 64 * 1_024,
+        // Composite snapshots may contain dynamic strings. Reserve the same
+        // conservative bounded lane used by scalar strings; exact retained
+        // bytes are still checked when the canonical payload is prepared.
+        ResidentValueKind::Snapshot => 64 * 1_024,
     }
 }
 

@@ -19,6 +19,7 @@ pub struct ResidentHostTurnFailed {
     pub turn: crate::TurnId,
     pub status: &'static str,
     pub failure_count: usize,
+    pub phase: Option<crate::TurnFailurePhase>,
 }
 
 impl MechErrorKind for ResidentHostTurnFailed {
@@ -28,9 +29,12 @@ impl MechErrorKind for ResidentHostTurnFailed {
 
     fn message(&self) -> String {
         format!(
-            "resident host turn {} completed as {} with {} reported failures",
+            "resident host turn {} completed as {}{} with {} reported failures",
             self.turn.get(),
             self.status,
+            self.phase
+                .map(|phase| format!(" during {phase:?}"))
+                .unwrap_or_default(),
             self.failure_count,
         )
     }
@@ -51,17 +55,22 @@ pub(crate) fn resident_host_turn_error(
             turn: *turn,
             status: "accepted-with-delivery-failures",
             failure_count: delivery_failures.len(),
+            phase: None,
         },
-        crate::ResidentExternalTurnOutcome::Rejected { turn, .. } => ResidentHostTurnFailed {
-            turn: *turn,
-            status: "rejected",
-            failure_count: 1,
-        },
+        crate::ResidentExternalTurnOutcome::Rejected { turn, phase, .. } => {
+            ResidentHostTurnFailed {
+                turn: *turn,
+                status: "rejected",
+                failure_count: 1,
+                phase: Some(*phase),
+            }
+        }
         crate::ResidentExternalTurnOutcome::PublishedIndeterminate { turn, failures, .. } => {
             ResidentHostTurnFailed {
                 turn: *turn,
                 status: "published-indeterminate",
                 failure_count: failures.len(),
+                phase: None,
             }
         }
     };

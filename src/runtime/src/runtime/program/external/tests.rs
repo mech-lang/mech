@@ -156,11 +156,11 @@ struct ObservationProvider {
     trace: Arc<Mutex<ProviderTrace>>,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug)]
 struct SourceInputProvider;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl RuntimeResourceProvider for SourceInputProvider {
     fn scheme(&self) -> &str {
         "gate-d3"
@@ -2252,7 +2252,7 @@ fn provider_matrix_shape_and_row_major_order_are_preserved() -> MResult<()> {
     Ok(())
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn source_fixture_artifact(
     source: &str,
     protocol: ProviderProtocol,
@@ -2276,7 +2276,7 @@ fn source_fixture_artifact(
     Ok((product.artifact().clone(), decoded))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[test]
 fn effect_payload_is_captured_before_a_later_state_mutation() -> MResult<()> {
     const SOURCE: &str = r#"
@@ -2337,11 +2337,11 @@ output := state
     Ok(())
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug)]
 struct SourceFixtureServices;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechExecutionServices for SourceFixtureServices {
     fn invoke_host_function(
         &mut self,
@@ -2376,7 +2376,7 @@ impl MechExecutionServices for SourceFixtureServices {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[test]
 fn ordinary_source_and_bytecode_freeze_equivalent_external_artifacts() -> MResult<()> {
     for (source, protocol, expected_effect) in [

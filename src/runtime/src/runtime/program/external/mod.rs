@@ -1,3 +1,4 @@
+#[cfg(feature = "resident-routing")]
 mod admission;
 mod authority;
 mod coordinator;
@@ -8,7 +9,7 @@ mod receipt;
 #[cfg(any(test, feature = "runtime_bench_gate_d3"))]
 #[doc(hidden)]
 pub mod test_provider;
-#[cfg(all(test, feature = "compiler"))]
+#[cfg(all(test, feature = "semantic-compiler"))]
 mod tests;
 mod value_adapter;
 
@@ -20,6 +21,7 @@ pub use provider::*;
 pub use receipt::*;
 pub use value_adapter::*;
 
+#[cfg(feature = "resident-routing")]
 pub(crate) use admission::ResidentAdmissionProof;
 
 pub use crate::turn_record::{

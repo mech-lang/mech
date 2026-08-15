@@ -14,20 +14,20 @@ use crate::{
 
 use super::ResidentExternalAuthority;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug)]
 pub struct ResidentExternalContractResolver<'a> {
     providers: &'a RuntimeResourceRegistry,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<'a> ResidentExternalContractResolver<'a> {
     pub const fn new(providers: &'a RuntimeResourceRegistry) -> Self {
         Self { providers }
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl mech_engine::ExternalRequirementContractResolver for ResidentExternalContractResolver<'_> {
     fn resolve_external_contract(
         &self,

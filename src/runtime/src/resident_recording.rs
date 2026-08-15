@@ -453,6 +453,11 @@ fn rejected_artifact_record(
             "ResidentKernel",
             "resident kernel execution failed",
         ),
+        ArtifactResidentExecutionError::InvalidOutputMaterialization { .. } => (
+            TurnFailurePhase::Execution,
+            "ResidentOutputMaterialization",
+            "resident output materialization failed",
+        ),
         ArtifactResidentExecutionError::ExternalSummaryRequired => (
             TurnFailurePhase::Execution,
             "ResidentExternalSummaryRequired",

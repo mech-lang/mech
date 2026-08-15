@@ -45,6 +45,14 @@ pub(crate) fn output_value(
         ResidentValueBorrow::String { .. } => {
             unreachable!("resident string matrices are rejected during activation")
         }
+        ResidentValueBorrow::Snapshot {
+            values: [Some(value)],
+            ..
+        } => super::external::provider_value_from_canonical(value, instance.plan.schemas())?,
+        ResidentValueBorrow::Snapshot { values: [None], .. } => return Ok(None),
+        ResidentValueBorrow::Snapshot { .. } => {
+            unreachable!("resident snapshot matrices are rejected during activation")
+        }
     };
     RuntimeValueSnapshot::try_capture(&legacy).map(Some)
 }
