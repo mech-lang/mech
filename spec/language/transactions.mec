@@ -1,0 +1,84 @@
+Resident Execution, Transaction, and Lifecycle Contracts
+===============================================================================
+
+This specification consumes primitive observations emitted by the v0.4
+resident-runtime observer. It uses the restricted, deterministic
+`mech-contract-1` profile so a small Rust reference evaluator and the current
+resident Mech evaluator can check the same policy independently.
+
+contract-profile := "mech-contract-1"
+
+1. Resident execution
+-------------------------------------------------------------------------------
+
+`RES-001` requires the case program to use the new production resident route.
+
+-- @requirement RES-001
+case-runs-residently! := resident-route === "resident-pure"
+
+`RES-002` requires carried state to survive an explicit resident turn and the
+runtime to report exactly that second accepted turn.
+
+-- @requirement RES-002
+resident-state-persists! := resident-initial-state === resident-next-turn-state
+
+-- @requirement RES-002
+resident-turn-advances! := resident-turns-advanced === true
+
+2. Committed transactions
+-------------------------------------------------------------------------------
+
+`TURN-001` requires an explicit commit to be represented by both a durable
+transaction record and a semantic commit event.
+
+-- @requirement TURN-001
+transaction-commit-outcome! := commit-outcome === "commit"
+
+-- @requirement TURN-001
+transaction-commit-recorded! := commit-record-observed === true
+
+-- @requirement TURN-001
+transaction-commit-event-recorded! := commit-event-observed === true
+
+`TURN-002` requires transaction-visible mailbox state to become durable after
+commit.
+
+-- @requirement TURN-002
+transaction-commit-applies-state! := commit-visible-state === commit-after-state
+
+3. Aborted transactions
+-------------------------------------------------------------------------------
+
+`TURN-003` requires an explicit abort to emit a semantic abort event.
+
+-- @requirement TURN-003
+transaction-abort-outcome! := abort-outcome === "abort"
+
+-- @requirement TURN-003
+transaction-abort-event-recorded! := abort-event-observed === true
+
+`TURN-004` is the rollback contract: aborted work must not modify durable
+mailbox state.
+
+-- @requirement TURN-004
+transaction-abort-preserves-state! := abort-before-state === abort-after-state
+
+4. State and shutdown lifecycle
+-------------------------------------------------------------------------------
+
+`TURN-005` requires committed state to remain visible in the next transaction.
+
+-- @requirement TURN-005
+transaction-state-persists! := commit-after-state === next-turn-state
+
+`LIFE-001` requires shutdown to close host-input ingress and publish the
+semantic runtime shutdown event.
+
+-- @requirement LIFE-001
+shutdown-closes-ingress! := shutdown-ingress-closed === true
+
+-- @requirement LIFE-001
+shutdown-rejects-input! := shutdown-input-rejected === true
+
+-- @requirement LIFE-001
+shutdown-event-recorded! := shutdown-event-observed === true

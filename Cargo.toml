@@ -125,6 +125,7 @@ base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
 cli_core = []
 cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
 cli = ["cli-product"]
+spec = ["cli_core", "dep:mech-spec"]
 formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
 build = [
       "cli_core", "compiler",
@@ -428,6 +429,7 @@ mech-syntax      = { version = "0.3.5", default-features = false }
 mech-engine = { version = "0.3.5", default-features = false }
 mech-stdlib = { version = "0.3.5", default-features = false }
 mech-runtime = { version = "0.3.5", default-features = false, optional = true }
+mech-spec = { version = "0.1.0", path = "src/spec", optional = true }
 mech-build = { version = "0.3.5", default-features = false, optional = true }
 mech-browser = { version = "0.3.5", default-features = false, optional = true }
 mech-terminal = { version = "0.3.5", default-features = false, optional = true }
@@ -469,6 +471,7 @@ members = [
   "src/engine",
   "src/stdlib",
   "src/runtime",
+  "src/spec",
   "src/wasm",
   "hosts/browser",
   "hosts/terminal",

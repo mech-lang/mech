@@ -1,0 +1,21 @@
+[package]
+name = "mech-spec"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+description = "Executable specification and conformance prototype for the Mech v0.4 resident executor."
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+mech-runtime = { version = "0.3.5", path = "../runtime", default-features = false, features = [
+  "resident-routing-source", "bool", "string",
+  "variable_define", "invariant_define", "variables",
+] }
+mech-core = { version = "0.3.5", path = "../core", default-features = false }
+mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false, features = [
+  "compiler", "bool", "string",
+  "variable_define", "invariant_define", "variables", "compare_seq",
+] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"

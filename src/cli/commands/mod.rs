@@ -8,3 +8,5 @@ pub(crate) mod format;
 pub(crate) mod run;
 #[cfg(feature = "serve")]
 pub(crate) mod serve;
+#[cfg(feature = "spec")]
+pub(crate) mod spec;

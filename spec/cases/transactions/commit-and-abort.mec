@@ -1,0 +1,17 @@
+Resident Commit and Abort Case
+===============================================================================
+
+The Rust veneer loads the program below through the new v0.4 resident route.
+It then uses the same runtime's explicit transaction shell to treat the first
+mailbox message as the initial state and the second as the committed state.
+Popping the first message is staged, so the second is transaction-visible; an
+abort restores the first, while a commit makes the second durable.
+
+-- @case-id resident-transaction-commit-and-abort
+-- @requirements RES-001 RES-002 TURN-001 TURN-002 TURN-003 TURN-004 TURN-005 LIFE-001
+-- @initial-state state-before
+-- @committed-state state-after
+
+-- @resident-program
+~conformance-state := "state-after"
+next-turn-state := conformance-state

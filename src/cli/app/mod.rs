@@ -69,6 +69,8 @@ pub(crate) fn build_cli() -> Command {
     let cli_command = cli_command.subcommand(crate::cli::commands::format::command());
     #[cfg(feature = "build")]
     let cli_command = cli_command.subcommand(crate::cli::commands::build::command());
+    #[cfg(feature = "spec")]
+    let cli_command = cli_command.subcommand(crate::cli::commands::spec::command());
     #[cfg(feature = "run")]
     let cli_command = cli_command.subcommand(crate::cli::commands::run::command());
     #[cfg(feature = "serve")]
@@ -140,6 +142,12 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
             resources,
         )?;
         return crate::cli::commands::format::run(options).await;
+    }
+
+    #[cfg(feature = "spec")]
+    if let Some(matches) = cli_matches.subcommand_matches("spec") {
+        let options = crate::cli::commands::spec::SpecCheckOptions::from_matches(matches)?;
+        return crate::cli::commands::spec::run(options);
     }
 
     // Historical CLI behavior treats unmatched root arguments as run inputs. When the run feature

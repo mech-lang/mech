@@ -1974,6 +1974,7 @@ dependencies = [
  "mech-robot-arm",
  "mech-runtime",
  "mech-scene",
+ "mech-spec",
  "mech-stdlib",
  "mech-syntax",
  "mech-terminal",
@@ -2222,6 +2223,17 @@ dependencies = [
  "indexmap",
  "mech-core",
  "paste",
+]
+
+[[package]]
+name = "mech-spec"
+version = "0.1.0"
+dependencies = [
+ "mech-core",
+ "mech-runtime",
+ "mech-stdlib",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
