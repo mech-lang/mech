@@ -1410,13 +1410,14 @@ fn check_corpus() -> AppResult<()> {
                 ))
                 .into());
             }
-            compare_corpora(&committed, &output)?;
             if let Some(first) = &first_run {
                 compare_corpora(first, &output)?;
             } else {
                 first_run = Some(output);
             }
         }
+        let first_run = first_run.expect("at least two determinism runs are required");
+        compare_corpora(&committed, &first_run)?;
         Ok(())
     })();
 

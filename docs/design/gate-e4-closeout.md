@@ -1,7 +1,7 @@
 # Gate E4 closeout
 
-Status: locally complete on draft PR #762; remote CI and exact-head review
-remain required. This is not a merge authorization.
+Status: exact-head stabilization is locally complete on draft PR #762; remote
+exact-head CI and review remain required. This is not a merge authorization.
 
 ## Boundary
 
@@ -48,6 +48,21 @@ AST-to-artifact compiler.
 7. `adccb7f325882bcb470f941e0603841249a680d6` — `refactor(engine): quarantine compiler planning and delete executor APIs [E4G]`
 8. `f6555296d83ceb4578235bc0d0f1e57013875a6a` — `test(architecture): retire active migration projection and prove compiler quarantine [E4H]`
 9. `[self-address recorded in PR evidence]` — `docs(architecture): close E4 and hand off evidence-only F0 [E4I]`
+10. `32ac722ef3353a692f240c10adab0479a49daf53` — `fix(e4): close exact-head product regressions`
+11. `[self-address recorded in PR evidence]` — `test(e4): reconcile deterministic generated artifacts and finalize closeout`
+
+## Exact-head stabilization ledger
+
+Only failures reproduced by full validation run `31910896507` at exact head
+`62da5a762bb81a0211b2264fe55c97e616cc807b` remained active. Earlier E4
+failures are resolved or superseded by that run.
+
+| Current-head failure | Classification and permanent owner | Narrow correction and acceptance proof |
+| --- | --- | --- |
+| Runtime wildcard-import audit found `use super::*` in the resident string-output regression. | Test-boundary regression in `runtime::program::value`; no feature or production semantic change. | Import only `string_matrix_value`, `LegacyValue`, and `ResidentShape`. The complete runtime boundary audit and focused string-matrix materialization test pass. |
+| Bytecode-v1 determinism stopped on a committed `manifest.json` mismatch. | Deterministic generated-evidence drift. Two independent fresh corpora were byte-for-byte identical; all 20 `.mecb` files and source fixtures were unchanged, while 19 derived native-plan hashes reflected the frozen E4 plan. | The checker now compares fresh run A with fresh run B before comparing either run with the repository. The committed manifest and its frozen digest were refreshed only after A equaled B. The format contract passes for all 20 fixtures and the corrected checker passes across two fresh child processes. |
+| The served FizzBuzz document reached `ready` with an empty output block while the same WASM resident artifact proved `first-fifteen! == true`. | Formatted-document adapter identity mismatch: HTML addresses an output by its stable 64-bit source-block hash, while the artifact query accepts compact `OutputId` values. The compiler, modulo, comparison, string-matrix value, and resident execution results did not diverge. | `WasmDocument` records direct fenced-output hash-to-root-symbol relationships from the decoded source tree and renders that detached resident symbol. Reset rebuilds the mapping. Native mapping coverage passes, the exact WASM profile compiles, and the browser regression now requires the rendered FizzBuzz matrix to contain `✨🐝`. |
+| Native application graph validation expected 17 projects but generation and the independent determinism contract produced 15; after removing the two dead actors, the checker still expected pre-resident runtime feature graphs. | Deterministic generated-contract drift. The actor entries had no remaining producer or caller, while every surviving generated product now loads emitted bytecode through `mech-runtime/resident-routing`; the emitted 15-plan set is the frozen architecture source of truth. | Remove the two obsolete actor expectations and reconcile the exact package/declared-feature projections for all 15 surviving plans. A compact independent comparison reports 15 expected, 15 actual, and zero mismatches; the full checker passes all exact direct-package, declared-feature, resolved-graph, forbidden-package, and serialized-plan checks. |
 
 ## Work-item disposition
 
@@ -194,10 +209,11 @@ All commands below passed on E4H `f6555296d83ceb4578235bc0d0f1e57013875a6a`:
 ## Change accounting
 
 Against exact E3 base `3610c66961dcc2fa23aed05833b4722ae34790c0`,
-the final E4 stack changes 297 files with 38,431 insertions and 38,718
-deletions (net `-287`). The final E4I changes only architecture documentation;
-its exact SHA is recorded in PR evidence because a commit cannot contain its
-own content-addressed identity.
+the final E4 stack changes 298 files with 38,562 insertions and 38,737
+deletions (net `-175`). The final stabilization commit contains only
+deterministic contract reconciliation, guards, and closeout documentation; its
+exact SHA is recorded in PR evidence because a commit cannot contain its own
+content-addressed identity.
 
 Remote selected/full CI results and the exact-head review disposition are PR
 evidence and must be added after the pushed E4I head is known.
