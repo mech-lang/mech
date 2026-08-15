@@ -462,12 +462,14 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
         }
     }
 
+    let mut instructions = parsed.instructions;
+    let constants = canonicalize_mutated_constants(&mut instructions, &constants)?;
     let poisoned = write_bytecode(&BytecodeProgram {
         register_count: parsed.header.register_count,
         constants,
         symbols: parsed.symbols,
         mutable_symbols: parsed.mutable_symbols,
-        instructions: parsed.instructions,
+        instructions,
         dictionary: parsed.dictionary,
         requirements: parsed.requirements,
     })
@@ -475,6 +477,42 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
     ParsedProgram::from_bytes(&poisoned)
         .map_err(|error| mech_error("poisoned bytecode validation", error))?;
     Ok((poisoned, constant_ids.len()))
+}
+
+fn canonicalize_mutated_constants(
+    instructions: &mut [BytecodeInstruction],
+    pending: &[EncodedConstant],
+) -> AppResult<Vec<EncodedConstant>> {
+    let mut constants = Vec::new();
+    let mut remap = vec![None; pending.len()];
+    for instruction in instructions {
+        let constant = match instruction {
+            BytecodeInstruction::ConstLoad { constant, .. } => constant,
+            BytecodeInstruction::CompositePack { template, .. } => template,
+            _ => continue,
+        };
+        let old = usize::try_from(*constant)?;
+        let value = pending
+            .get(old)
+            .ok_or("instruction constant index is outside the mutated table")?;
+        let canonical = match remap[old] {
+            Some(canonical) => canonical,
+            None => {
+                let canonical = match constants.iter().position(|existing| existing == value) {
+                    Some(index) => u32::try_from(index)?,
+                    None => {
+                        let index = u32::try_from(constants.len())?;
+                        constants.push(value.clone());
+                        index
+                    }
+                };
+                remap[old] = Some(canonical);
+                canonical
+            }
+        };
+        *constant = canonical;
+    }
+    Ok(constants)
 }
 
 fn mech_error(context: &str, error: impl std::fmt::Debug) -> io::Error {

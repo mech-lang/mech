@@ -10,12 +10,17 @@ use sha2::{Digest, Sha256};
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_016;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_RUNTIME_FACTORIES: usize = 1_307;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_320;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 63;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_RUNTIME_SURFACE_DIGEST: &str =
-    "870c27b5578109d8d5eecfc4907c874109344e775e5bb9b38fbfe53f4c205fb4";
+const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
+    "85b97baaf5861907a8e7695db8faf0df1e7316b3b765f3758bda6e24c497cd81";
+#[cfg(feature = "full_compiler")]
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_069;
+#[cfg(feature = "full_compiler")]
+const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
+    "80b3d28179381b4ee180bc90648832e15477cc1610c8be7288d97ca9c1a3be4f";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_017;
 #[cfg(feature = "full_source")]
@@ -109,16 +114,29 @@ fn canonical_runtime_surface_digest(catalog: &FunctionCatalog) -> String {
 fn assert_standard_compiler_surface(catalog: &FunctionCatalog) {
     assert_eq!(
         catalog.runtime_factory_count(),
-        EXPECTED_STANDARD_RUNTIME_FACTORIES
+        EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES
     );
     assert_eq!(
         canonical_runtime_surface_digest(catalog),
-        EXPECTED_STANDARD_RUNTIME_SURFACE_DIGEST
+        EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST
     );
     assert_eq!(
         catalog.specializer_count(),
         EXPECTED_STANDARD_SOURCE_SPECIALIZERS
     );
+}
+
+#[cfg(feature = "compiler")]
+fn assert_runtime_catalog_is_a_compiler_subset(
+    runtime: &FunctionCatalog,
+    compiler: &FunctionCatalog,
+) {
+    for entry in runtime.runtime_entries() {
+        let compiled = compiler
+            .runtime_entry(entry.id)
+            .unwrap_or_else(|| panic!("compiler catalog omitted runtime factory {}", entry.name));
+        assert_eq!(compiled.name, entry.name);
+    }
 }
 
 fn with_catalog_test_stack(test: impl FnOnce() + Send + 'static) {
@@ -345,19 +363,31 @@ fn selected_source_matches_the_frozen_source_surface() {
 
 #[cfg(feature = "full_compiler")]
 #[test]
-fn selected_compiler_preserves_the_frozen_source_catalog() {
+fn selected_compiler_closes_the_emitted_factory_surface() {
     with_catalog_test_stack(|| {
+        let runtime = mech_stdlib::runtime_catalog();
+        assert_runtime_surface(&runtime, false);
         let catalog = mech_stdlib::source_catalog();
-        assert_runtime_surface(&catalog, true);
+        assert_runtime_catalog_is_a_compiler_subset(&runtime, &catalog);
+        assert_eq!(
+            catalog.runtime_factory_count(),
+            EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES
+        );
+        assert_eq!(
+            canonical_runtime_surface_digest(&catalog),
+            EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST
+        );
         assert_source_surface(&catalog);
     });
 }
 
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 #[test]
-fn standard_compiler_matches_the_frozen_lean_surface() {
+fn standard_compiler_closes_the_emitted_factory_surface() {
     with_catalog_test_stack(|| {
+        let runtime = mech_stdlib::runtime_catalog();
         let catalog = mech_stdlib::source_catalog();
+        assert_runtime_catalog_is_a_compiler_subset(&runtime, &catalog);
         assert_standard_compiler_surface(&catalog);
     });
 }

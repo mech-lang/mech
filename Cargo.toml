@@ -149,10 +149,28 @@ cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
 bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime"]
 bundle_web = ["cli_core", "bundle_web_core"]
-serve = ["cli_core", "project", "web_host", "formatter_core", "mech-runtime", "mech-runtime/watcher", "ignore"]
+# `mech serve` owns the same retained source-to-resident compilation boundary as
+# `mech run`, plus browser hosts and workspace watching.  Keep the compiler and
+# standard source catalog on this product feature so reduced browser/Windows
+# builds cannot inherit them accidentally from a distribution default.
+serve = [
+      "cli_core", "project", "web_host", "formatter_core",
+      "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
+      "mech-syntax/program",
+      "mech-stdlib/standard_compiler",
+      "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      "mech-runtime/watcher", "ignore",
+      ]
 host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-browser", "mech-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-browser/delegation_signing"]
-formatter = ["cli_core", "formatter_core", "mech-runtime"]
+# Formatting resolves source/document inputs through the retained filesystem
+# authority, but it does not compile or execute them. Keep that runtime-kernel
+# closure explicit without pulling in the semantic compiler.
+formatter = [
+      "cli_core", "formatter_core",
+      "mech-runtime", "mech-runtime/source", "mech-runtime/serde",
+      ]
 async = []
 trace = ["mech-engine/trace"]
 dynamic-modules = ["mech-engine/dynamic-modules"]

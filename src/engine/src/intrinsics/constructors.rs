@@ -138,10 +138,17 @@ impl MechFunctionFactory for ValueSetComprehension {
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
+            // Bytecode v1 uses RuntimeNullary for a variadic operation with
+            // zero inputs. Accept that canonical encoding as the empty
+            // argument list while retaining the checked set output lane.
+            FunctionArgs::Nullary(LegacyValue::Set(out)) => Ok(Box::new(ValueSetComprehension {
+                arguments: Vec::new(),
+                out,
+            })),
             FunctionArgs::Variadic(LegacyValue::Set(out), arguments) => {
                 Ok(Box::new(ValueSetComprehension { arguments, out }))
             }
-            FunctionArgs::Variadic(out, _) => Err(MechError::new(
+            FunctionArgs::Nullary(out) | FunctionArgs::Variadic(out, _) => Err(MechError::new(
                 SetComprehensionOutputKindMismatchError { found: out.kind() },
                 None,
             )

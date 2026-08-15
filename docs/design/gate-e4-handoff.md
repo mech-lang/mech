@@ -389,6 +389,116 @@ head is recorded in PR #760 after Commit 7 is pushed.
 - Acceptance: the minimal graph compiles independently and the exhaustive
   compiler-default engine suite passes in full.
 
+### U. Final bytecode-v1 manifest digest after corpus generation
+
+- CI command: `python3 scripts/check-bytecode-v1-format.py` on exact E4 head
+  `2773d69b703a50c069e8d0d7becfdeb744efc05d`.
+- Error: the committed 20-fixture corpus and manifest were regenerated, but
+  `EXPECTED_MANIFEST_SHA256` still named an intermediate manifest digest
+  (`df7f5f...`) rather than the final committed manifest (`1e18bc...`).
+- E2/E3 reproduction: no. This digest drift was introduced while closing the
+  E4 bytecode producer/runtime boundary and regenerating the canonical corpus.
+- Permanent owner: the bytecode-v1 format checker and source/fixed generators.
+- Resolution: freeze the SHA-256 of the final committed manifest only; do not
+  change fixture payloads, bytecode semantics, or generator behavior.
+- Acceptance: the format checker validates the manifest plus every fixture,
+  both generators remain deterministic, and every later serial Static-contract
+  command passes locally before the correction is pushed.
+
+### V. Formatter-only retained filesystem authority closure
+
+- CI command: `cargo test --no-default-features --features formatter --test
+  mech_format_shims -- --nocapture` on exact E4 head
+  `1490c4e9a235dbb6191a353a202d38b3796cf2bb`.
+- Error: the formatter implementation imports the retained filesystem
+  capability authority and file source resolver, while its isolated root
+  feature enabled `mech-runtime` without the source-resolver closure that
+  exports them and indexes source dependencies.
+- E2/E3 reproduction: the manifest spelling predates E4, but E4's permanent
+  semantic-compiler/runtime feature qualification exposed the incomplete
+  isolated product closure. The shipping distribution hid it by selecting the
+  runtime through other product features.
+- Permanent owner: the root `formatter` product feature.
+- Resolution: make `mech-runtime/source` and `mech-runtime/serde` explicit
+  formatter dependencies: the first owns filesystem authority, resolution,
+  and import indexing, while the second owns the serialized document-bundle
+  resolution report. Do not enable semantic compilation, bytecode production,
+  or resident execution. Keep the unresolvable-dependency product test active
+  in this minimal profile by
+  using its existing explicit external-module shim, so missing embedded WASM
+  packaging cannot preempt the dependency-resolution assertion.
+- Acceptance: the formatter-only integration test and feature check pass, and
+  standard/full distribution projections remain unchanged.
+
+### W. Serve-only standard source catalog closure
+
+- CI command: the reduced `serve,bundle_web,formatter` product build on the
+  exact E4 stack.
+- Error: the root `serve` feature selected semantic compilation without the
+  standard source catalog, so ordinary served source could not resolve the
+  retained operation factories it emits.
+- E2/E3 reproduction: the incomplete isolated feature spelling predates E4;
+  broader development profiles hid it by selecting the standard catalog from
+  another product edge.
+- Permanent owners: the root `serve` feature and `mech-stdlib` source catalog.
+- Resolution: make the standard compiler and its source/runtime factory
+  closure explicit product dependencies. A source compiler catalog also
+  installs the native-planning linkage for every factory it may emit, without
+  duplicating variadic horizontal-concatenation registration.
+- Acceptance: the reduced serve product compiles on its own and the source
+  compiler resolves every retained factory it emits.
+
+### X. Runtime arity normalization at the bytecode boundary
+
+- CI command: `native_output_seed_arities` on the exact E4 stack.
+- Error: a typed nullary set-comprehension artifact was valid, but the
+  bytecode-v1 nullary through quaternary instruction forms reached a variadic
+  runtime signature without first being normalized to `FunctionArgs::Variadic`.
+- E2/E3 reproduction: yes in the generated-native test fixture; the previous
+  empty-set source seed also depended on an invalid `Empty` schema and masked
+  the runtime boundary defect.
+- Permanent owner: `RuntimeFunctionEntry`, which validates and instantiates
+  bytecode operations against their declared signatures.
+- Resolution: normalize fixed bytecode arities to the variadic representation
+  before both validation and instantiation. Keep schemas strict, construct a
+  typed empty set for the nullary fixture, and recanonicalize poisoned fixture
+  constants after mutation rather than accepting duplicate constant entries.
+- Acceptance: poisoned native output seeds are recomputed for nullary, unary,
+  binary, ternary, quaternary, and variadic operations.
+
+### Y. Platform-neutral bytecode-v1 native-plan evidence
+
+- CI command: `python3 scripts/check-bytecode-v1-format.py` across Linux,
+  macOS, and Windows.
+- Error: the bytecode corpus generator omitted an explicit native target, so
+  the manifest's native-plan digests described the machine that generated it.
+- E2/E3 reproduction: yes whenever the committed corpus is checked on a host
+  with a different target triple.
+- Permanent owner: the canonical bytecode-v1 corpus generator.
+- Resolution: generate the cross-platform corpus for the explicit
+  `x86_64-unknown-linux-gnu` evidence target and freeze the resulting manifest
+  digest. This changes only the 20 native-plan hashes, not bytecode payloads.
+- Acceptance: both bytecode generators are deterministic and the same
+  committed corpus passes the format checker on every supported CI host.
+
+### Z. Compiler catalog resident-binder composition
+
+- CI command: the Standard Linux `mech run
+  tests/fixtures/standard-resident-scalar.mec` canary on exact E4 head
+  `893b52a5dbc29ccc0e8582331e4609d2e0bce9ad`.
+- Error: source compilation resolved `AddAssignSS<f64>`, but resident
+  activation reported `MissingResidentFactory` for its first node.
+- E2/E3 reproduction: no. The omission was introduced when E4 composed the
+  compiler-emitted native-planning factory closure without the resident
+  binders normally installed by the runtime-catalog path.
+- Permanent owner: the standard/full source compiler catalog composition.
+- Resolution: native-planning factories remain compiler-only, while a source
+  compiler catalog additionally installs the existing intrinsic resident
+  binders required to activate the `ProgramArtifact` it emits.
+- Acceptance: the exact standard scalar source canary compiles, activates, and
+  prints `1`; runtime/distribution factory surfaces and bytecode evidence remain
+  unchanged.
+
 E4 is complete only when:
 
 ```text

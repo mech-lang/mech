@@ -1062,7 +1062,10 @@ fn native_plan(fixture: &Fixture) -> AppResult<mech_build::NativeBuildPlan> {
     let request = NativeBuildRequest {
         bytecode: fixture.bytes.clone(),
         runtime_config: fixture.runtime_config.clone(),
-        target: None,
+        // Corpus evidence must not depend on the host that regenerated it.
+        // Native planning accepts an explicit target without compiling the
+        // generated application, so use the CI reference target everywhere.
+        target: Some("x86_64-unknown-linux-gnu".to_owned()),
         profile: NativeBuildProfile::Release,
         binary_name: binary_name.clone(),
         output: repository

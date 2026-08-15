@@ -54,6 +54,9 @@ semantic-compiler = [
 ]
 compiler = [
   "semantic-compiler",
+  # Source compilation finalizes a resident ProgramArtifact immediately, so
+  # its catalog must include every concrete factory the compiler can emit.
+  "native-plan",
   "mech-engine/compiler",
   "mech-math?/compiler",
   "mech-compare?/compiler",

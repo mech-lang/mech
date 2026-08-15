@@ -1,5 +1,6 @@
 use super::super::{
-    FunctionArgs, FunctionDefinition, GuardFunctionSafety, MechFunction, UserFunctionTable,
+    FunctionArgs, FunctionDefinition, FunctionValueRepresentation, GuardFunctionSafety,
+    MechFunction, RuntimeFunctionSignature, UserFunctionTable,
 };
 #[cfg(feature = "f64")]
 use super::support::scalar;
@@ -72,6 +73,26 @@ fn function_args_returns_only_inputs() {
             .input_values(),
         vec![a, b, c, d],
     );
+}
+
+#[cfg(feature = "f64")]
+#[test]
+fn variadic_signatures_normalize_bytecode_instruction_arities() {
+    let (out, _) = scalar(0.0);
+    let (a, _) = scalar(1.0);
+    let signature = RuntimeFunctionSignature::variadic(
+        FunctionValueRepresentation::F64,
+        FunctionValueRepresentation::F64,
+    );
+
+    assert!(matches!(
+        FunctionArgs::Nullary(out.clone()).normalize_for_signature(signature),
+        FunctionArgs::Variadic(_, arguments) if arguments.is_empty()
+    ));
+    assert!(matches!(
+        FunctionArgs::Unary(out, a).normalize_for_signature(signature),
+        FunctionArgs::Variadic(_, arguments) if arguments.len() == 1
+    ));
 }
 
 #[test]

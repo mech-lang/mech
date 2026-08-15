@@ -63,6 +63,21 @@ fn set_comprehension_factory_preserves_checked_set_output() {
 
 #[cfg(feature = "set_comprehensions")]
 #[test]
+fn set_comprehension_factory_accepts_nullary_bytecode_encoding() {
+    let output = Ref::new(MechSet::new(crate::ValueKind::F64, 0));
+    let function =
+        ValueSetComprehension::new(FunctionArgs::Nullary(LegacyValue::Set(output.clone())))
+            .unwrap();
+    function.solve_result().unwrap();
+    let LegacyValue::Set(actual) = function.out() else {
+        panic!("expected set comprehension output")
+    };
+    assert_eq!(actual.addr(), output.addr());
+    assert!(actual.borrow().set.is_empty());
+}
+
+#[cfg(feature = "set_comprehensions")]
+#[test]
 fn set_comprehension_factory_rejects_non_set_output() {
     let result = ValueSetComprehension::new(FunctionArgs::Variadic(LegacyValue::Empty, Vec::new()));
     let error = match result {
