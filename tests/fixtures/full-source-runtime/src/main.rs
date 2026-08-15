@@ -42,7 +42,7 @@ fn main() {
     let corpus: SourceCorpus =
         serde_json::from_str(SOURCE_CASES).expect("shared source corpus must be valid JSON");
     assert_eq!(corpus.schema, 1, "unsupported shared source corpus schema");
-    assert_eq!(corpus.cross_target.len(), 8);
+    assert_eq!(corpus.cross_target.len(), 9);
     assert_eq!(corpus.native_modules.len(), 5);
 
     let mut names = BTreeSet::new();

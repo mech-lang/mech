@@ -178,7 +178,13 @@ def package(args: argparse.Namespace) -> Path:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     output = args.output_dir / f"{stem}{extension}"
 
-    with tempfile.TemporaryDirectory(prefix="mech-package-") as temp:
+    # Keep the completed archive on the destination volume so the final
+    # replacement is atomic on Windows as well as Unix. The system temporary
+    # directory may live on another drive, where os.replace fails with a
+    # cross-device error after an otherwise successful release build.
+    with tempfile.TemporaryDirectory(
+        prefix=".mech-package-", dir=args.output_dir
+    ) as temp:
         payload = Path(temp) / stem
         payload.mkdir()
         write_payload(args, payload)

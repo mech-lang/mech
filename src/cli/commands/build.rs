@@ -234,16 +234,11 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         let loaded_config = load_build_config(&options, None)?;
         validate_production_build_config(loaded_config.as_ref(), &binary_name)?;
         let source_roots = discover_source_roots(&options.paths)?;
-        if source_roots.len() != 1 {
-            let class = if source_roots.len() > 1 {
-                mech_runtime::ResidentRouteFailureClass::MultipleRootsUnsupported
-            } else {
-                mech_runtime::ResidentRouteFailureClass::SemanticUnsupported
-            };
+        if source_roots.is_empty() {
             return Err(MechError::new(
                 mech_runtime::ResidentRouteFailure {
-                    class,
-                    reason: "production builds require exactly one resident source root"
+                    class: mech_runtime::ResidentRouteFailureClass::SemanticUnsupported,
+                    reason: "production builds require at least one resident source root"
                         .to_string(),
                 },
                 None,
@@ -273,7 +268,10 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             None,
             &source_roots,
         )?;
-        let request = SourceRequest::from_filesystem_path(&roots[0])?;
+        let requests = roots
+            .iter()
+            .map(|root| SourceRequest::from_filesystem_path(root))
+            .collect::<MResult<Vec<_>>>()?;
         let options = mech_runtime::ModuleBuildOptions::new(
             env!("CARGO_PKG_VERSION"),
             "v0.3",
@@ -281,7 +279,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
             &[],
             &[],
         );
-        let bytecode = compiler.compile_root(request, options)?.into_parts().1;
+        let bytecode = compiler.compile_roots(&requests, options)?.into_parts().1;
         (bytecode, loaded_config)
     };
 

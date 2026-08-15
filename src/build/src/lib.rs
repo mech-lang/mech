@@ -102,6 +102,13 @@ impl NativeApplicationBuilder {
             engine_features.insert("bool".to_owned());
             engine_features.insert("vectord".to_owned());
         }
+        // Matrix2 assignment factories admit a two-element logical mask and
+        // column index. Those are implementation-side shapes, not additional
+        // bytecode value types, so close them only on the generated engine.
+        if engine_features.contains("matrix2") {
+            engine_features.insert("bool".to_owned());
+            engine_features.insert("vector2".to_owned());
+        }
         engine_features.insert("runtime".to_owned());
         let mut runtime_features = BTreeSet::new();
         if application_kind == NativeApplicationKind::Hosted {

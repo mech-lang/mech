@@ -528,15 +528,8 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         )?;
         let value = outcome.initial_value;
 
-        if !value.is_empty() {
+        if !arguments.once && !value.is_empty() {
             println!("{}", value.into_value());
-        }
-
-        if arguments.once {
-            if arguments.runtime_info {
-                println!("MECH_RUNTIME_INFO {}", runtime_info_json(&runtime));
-            }
-            return Ok(());
         }
 
         let interrupted = Arc::new(AtomicBool::new(false));
@@ -549,11 +542,16 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
         drivers_started = true;
         runtime.start_input_drivers()?;
         let mut completed_live_turns = 0usize;
+        let max_live_turns = if arguments.once {
+            Some(1)
+        } else {
+            arguments.max_live_turns
+        };
         while !interrupted.load(Ordering::SeqCst) {
-            if arguments.max_live_turns.is_some_and(|limit| completed_live_turns >= limit) {
+            if max_live_turns.is_some_and(|limit| completed_live_turns >= limit) {
                 break;
             }
-            let drain_limit = arguments.max_live_turns
+            let drain_limit = max_live_turns
                 .map(|limit| limit.saturating_sub(completed_live_turns))
                 .unwrap_or(64)
                 .min(64);
@@ -566,6 +564,13 @@ fn run(arguments: GeneratedArguments) -> (MResult<()>, Vec<MechError>) {
             );
             if outcomes.is_empty() {
                 std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+        if arguments.once {
+            if let Some((_, value)) = runtime.root_symbol_values_all()?.into_iter().next() {
+                if !value.is_empty() {
+                    println!("{}", value.into_value());
+                }
             }
         }
         if arguments.runtime_info {

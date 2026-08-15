@@ -7,9 +7,9 @@ use std::{
 
 use mech_build::{
     NativeActorBootstrap, NativeApplicationBuilder, NativeApplicationKind, NativeBuildEnvironment,
-    NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog,
-    NativeHostFunctionContext, NativeHostFunctionLinkage, NativeRuntimeConfig, WorkspacePackage,
-    fingerprint_workspace,
+    NativeBuildPlan, NativeBuildProfile, NativeBuildRequest, NativeDependencySource, NativeEmit,
+    NativeHostCatalog, NativeHostFunctionContext, NativeHostFunctionLinkage, NativeRuntimeConfig,
+    WorkspacePackage, fingerprint_workspace,
 };
 #[cfg(not(feature = "full-hosts"))]
 use mech_build::{NativeHostLinkage, NativeTargetFamily};
@@ -263,7 +263,7 @@ fn assert_owner_runtime_function(
     name: &str,
     installer_path: &str,
     package: &str,
-) {
+) -> NativeBuildPlan {
     let plan = run_owner(
         profile,
         RunnerAction::Plan,
@@ -283,6 +283,7 @@ fn assert_owner_runtime_function(
     assert_eq!(function.runtime_id, hash_str(name));
     assert_eq!(function.installer_path, installer_path);
     assert_eq!(function.package, package);
+    plan
 }
 
 #[test]
@@ -415,13 +416,25 @@ fn scalar_add_resolves_only_the_exact_scalar_installer() {
 
 #[test]
 fn fixed_matrix_add_resolves_the_exact_fixed_matrix_installer() {
-    assert_owner_runtime_function(
+    let plan = assert_owner_runtime_function(
         OwnerProfile::Fixed,
         "fixed-matrix-add-f64.mecb",
         "fixed",
         "AddM2M2<f64>",
         "mech_math::__mech_native::install_add_m2m2_f64",
         "mech-math",
+    );
+    assert!(plan.engine_features.iter().any(|feature| feature == "bool"));
+    assert!(
+        plan.engine_features
+            .iter()
+            .any(|feature| feature == "vector2")
+    );
+    assert!(plan.core_features.iter().all(|feature| feature != "bool"));
+    assert!(
+        plan.core_features
+            .iter()
+            .all(|feature| feature != "vector2")
     );
 }
 

@@ -132,7 +132,18 @@ build = [
       "mech-stdlib/native-plan",
       "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
       ]
-run = ["cli_core", "project"]
+# `mech run` is a complete source-to-resident product surface: it compiles the
+# standard language, admits the resulting resident program, and installs the
+# terminal provider used by retained CLI resources.  Keep that closure on the
+# product feature instead of relying on distribution-default feature leakage.
+run = [
+      "cli_core", "project", "cli_host",
+      "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
+      "mech-syntax/program",
+      "mech-stdlib/standard_compiler",
+      "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      ]
 project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
@@ -382,6 +393,10 @@ matrix_vertcat = ["matrix", "mech-stdlib/matrix_vertcat"]
 nalgebra = "0.34.1"
 indicatif = { version = "0.18.4", features = ["in_memory"] }
 tempfile = "3.26.0"
+# The root bytecode integration corpus deliberately exercises explicit u8/u64
+# table annotations even though the shipping standard distribution selects a
+# smaller value surface. Keep that additional closure test-owned.
+mech-stdlib = { version = "0.3.5", default-features = false, features = ["u8", "u64"] }
 
 [target.'cfg(unix)'.dev-dependencies]
 libc = "0.2"

@@ -76,7 +76,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "44922cff62f105f87f0dec7757864bd7aa8287c8a4b2f3c3847855d6e313b03f",
+      "native_plan_sha256": "b9c80e90e6dc34a9a65495df1ce4f0b94914da6e585686d90258798f6a7a114c",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -534,7 +534,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "9122ca8388b902c9bb641f4cb9fae83581eb657719db59d9749fa64eff0321fc",
+      "native_plan_sha256": "af584ffa7a78fe8c26592d225463fb0af855362a00d751461e18a1ad5bc6293b",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1380,7 +1380,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "b67603f8c9a4e39ccbda8ccc8f6d7ea16de0891143d2fc23a47fea1bed537d53",
+      "native_plan_sha256": "b31f936a7aeef28df84c536ec7571cdca246e258a0b08c6ab9c9e020a8b6d8de",
       "origin": "constructed-bytecode-program",
       "packages": [
         {
@@ -1751,8 +1751,8 @@
       "expected_output": 42.0,
       "file": "literal-f64.mecb",
       "header": {
-        "checksum_offset": 1322,
-        "file_len": 1326,
+        "checksum_offset": 1060,
+        "file_len": 1064,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 2,
@@ -1780,7 +1780,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "42bad7a2363e79bd71b585d7e368c8c72a0b2a01e7ad23d3bc7a6426fe7c8cfb",
+      "native_plan_sha256": "cc961238ca54d993291f9c1082708a8cc10dda69cb9febec721b500f88500ace",
       "origin": "source-compiler",
       "packages": [
         {
@@ -1913,7 +1913,7 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
+          "length": 48,
           "offset": 840,
           "reserved": 0
         },
@@ -1922,8 +1922,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 896,
+          "length": 49,
+          "offset": 888,
           "reserved": 0
         },
         {
@@ -1931,7 +1931,7 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
+          "length": 30,
           "offset": 944,
           "reserved": 0
         },
@@ -1940,8 +1940,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 127,
-          "offset": 1048,
+          "length": 2,
+          "offset": 976,
           "reserved": 0
         },
         {
@@ -1950,7 +1950,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1176,
+          "offset": 984,
           "reserved": 0
         },
         {
@@ -1959,7 +1959,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1232,
+          "offset": 1040,
           "reserved": 0
         },
         {
@@ -1967,8 +1967,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 53,
-          "offset": 1240,
+          "length": 2,
+          "offset": 1048,
           "reserved": 0
         },
         {
@@ -1976,12 +1976,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 26,
-          "offset": 1296,
+          "length": 4,
+          "offset": 1056,
           "reserved": 0
         }
       ],
-      "sha256": "98ed0a607513985607e3d06975487c847cef1946d4d841eb6ae2b6c59ad7fb52",
+      "sha256": "ee2bb56ea808f5f0eb394e19c50c297a3f77c43c08238eae29e61112e481ee06",
       "source": "42.0",
       "source_file": "literal-f64.mec"
     },
@@ -2002,8 +2002,8 @@
       "expected_output": 3.0,
       "file": "scalar-add-f64.mecb",
       "header": {
-        "checksum_offset": 1649,
-        "file_len": 1653,
+        "checksum_offset": 1729,
+        "file_len": 1733,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -2031,7 +2031,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "3903bca0e0b8094788b72c309c1db1c6f0c269e4396801987e6da39a71036253",
+      "native_plan_sha256": "574d7f230bdb04bae9e92e7fc7bfa6f35b03e1fc171064d18ef1ea59ff7e0a59",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2166,7 +2166,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 199,
+          "length": 133,
           "offset": 864,
           "reserved": 0
         },
@@ -2176,7 +2176,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1064,
+          "offset": 1000,
           "reserved": 0
         },
         {
@@ -2184,8 +2184,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
-          "offset": 1072,
+          "length": 101,
+          "offset": 1008,
           "reserved": 0
         },
         {
@@ -2193,8 +2193,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 1128,
+          "length": 90,
+          "offset": 1112,
           "reserved": 0
         },
         {
@@ -2202,8 +2202,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 1176,
+          "length": 148,
+          "offset": 1208,
           "reserved": 0
         },
         {
@@ -2212,7 +2212,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 196,
-          "offset": 1280,
+          "offset": 1360,
           "reserved": 0
         },
         {
@@ -2221,7 +2221,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1480,
+          "offset": 1560,
           "reserved": 0
         },
         {
@@ -2230,7 +2230,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1536,
+          "offset": 1616,
           "reserved": 0
         },
         {
@@ -2239,7 +2239,7 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 59,
-          "offset": 1544,
+          "offset": 1624,
           "reserved": 0
         },
         {
@@ -2248,11 +2248,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 41,
-          "offset": 1608,
+          "offset": 1688,
           "reserved": 0
         }
       ],
-      "sha256": "af91170ae55fc69b5949e796a843b0844986cfc6ac0d9ef89b2a70f652ae1463",
+      "sha256": "777b179d5a262e7360a99e9918b38b7cb71dc802c4de11455c69a31dd16b79e4",
       "source": "1.0 + 2.0",
       "source_file": "scalar-add.mec"
     },
@@ -2266,13 +2266,15 @@
           "row_vector2"
         ],
         "mech-engine": [
+          "bool",
           "f64",
           "matrix2",
           "matrix_horzcat",
           "matrix_vertcat",
           "native-link",
           "row_vector2",
-          "runtime"
+          "runtime",
+          "vector2"
         ],
         "mech-runtime": []
       },
@@ -2289,8 +2291,8 @@
       ],
       "file": "fixed-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 3977,
-        "file_len": 3981,
+        "checksum_offset": 3001,
+        "file_len": 3005,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 23,
@@ -2318,7 +2320,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "42e8705a91e03ad855ee47e0a76d0205c02f781dc591a80d26f75bb5f0869344",
+      "native_plan_sha256": "3abd0c8d59e25766e082d5265ae1b1cf37c354260c1a9588bc4d20643db8a86b",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2337,13 +2339,15 @@
         },
         {
           "cargo_features": [
+            "bool",
             "f64",
             "matrix2",
             "matrix_horzcat",
             "matrix_vertcat",
             "native-link",
             "row_vector2",
-            "runtime"
+            "runtime",
+            "vector2"
           ],
           "crate_name": "mech_engine",
           "package": "mech-engine",
@@ -2497,7 +2501,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 1446,
+          "length": 327,
           "offset": 1944,
           "reserved": 0
         },
@@ -2507,7 +2511,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 3392,
+          "offset": 2272,
           "reserved": 0
         },
         {
@@ -2515,8 +2519,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
-          "offset": 3400,
+          "length": 101,
+          "offset": 2280,
           "reserved": 0
         },
         {
@@ -2524,8 +2528,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 3456,
+          "length": 90,
+          "offset": 2384,
           "reserved": 0
         },
         {
@@ -2533,8 +2537,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 3504,
+          "length": 148,
+          "offset": 2480,
           "reserved": 0
         },
         {
@@ -2543,7 +2547,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 196,
-          "offset": 3608,
+          "offset": 2632,
           "reserved": 0
         },
         {
@@ -2552,7 +2556,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 3808,
+          "offset": 2832,
           "reserved": 0
         },
         {
@@ -2561,7 +2565,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 3864,
+          "offset": 2888,
           "reserved": 0
         },
         {
@@ -2570,7 +2574,7 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 61,
-          "offset": 3872,
+          "offset": 2896,
           "reserved": 0
         },
         {
@@ -2579,11 +2583,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 41,
-          "offset": 3936,
+          "offset": 2960,
           "reserved": 0
         }
       ],
-      "sha256": "566e989a560cc528d2efc01a6b77cab720477c325ac1650778edbcfe5404d414",
+      "sha256": "df96a061dd518b49b04f339a8728265d9b1d6836738455bb5379615fbc403807",
       "source": "[1.0 2.0; 3.0 4.0] + [5.0 6.0; 7.0 8.0]",
       "source_file": "fixed-matrix-add-f64.mec"
     },
@@ -2650,8 +2654,8 @@
       ],
       "file": "dynamic-matrix-add-f64.mecb",
       "header": {
-        "checksum_offset": 10673,
-        "file_len": 10677,
+        "checksum_offset": 6505,
+        "file_len": 6509,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 77,
@@ -2679,7 +2683,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "5f56e5a94f032aa5b4d32bcf17582f13c12862158251f7613428ce0d83b39b1f",
+      "native_plan_sha256": "697f5bdbcab9e5228c2f811f2387f97399c8968c773dfcefabebee9e00a42379",
       "origin": "source-compiler",
       "packages": [
         {
@@ -2861,7 +2865,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 5814,
+          "length": 1503,
           "offset": 4272,
           "reserved": 0
         },
@@ -2871,7 +2875,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 10088,
+          "offset": 5776,
           "reserved": 0
         },
         {
@@ -2879,8 +2883,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
-          "offset": 10096,
+          "length": 101,
+          "offset": 5784,
           "reserved": 0
         },
         {
@@ -2888,8 +2892,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 10152,
+          "length": 90,
+          "offset": 5888,
           "reserved": 0
         },
         {
@@ -2897,8 +2901,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 10200,
+          "length": 148,
+          "offset": 5984,
           "reserved": 0
         },
         {
@@ -2906,8 +2910,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 198,
-          "offset": 10304,
+          "length": 196,
+          "offset": 6136,
           "reserved": 0
         },
         {
@@ -2916,7 +2920,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 10504,
+          "offset": 6336,
           "reserved": 0
         },
         {
@@ -2925,7 +2929,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 10560,
+          "offset": 6392,
           "reserved": 0
         },
         {
@@ -2934,7 +2938,7 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 61,
-          "offset": 10568,
+          "offset": 6400,
           "reserved": 0
         },
         {
@@ -2943,11 +2947,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 41,
-          "offset": 10632,
+          "offset": 6464,
           "reserved": 0
         }
       ],
-      "sha256": "e902efbf7aba3d1b5b0c816606c7996182d485de7880e191590a012f7537c278",
+      "sha256": "c5971db3df6587b2e72332a939c8c5560bad908de42fdc1e5796b4611bc3d74f",
       "source": "[1.0 2.0 3.0 4.0 5.0; 6.0 7.0 8.0 9.0 10.0; 11.0 12.0 13.0 14.0 15.0; 16.0 17.0 18.0 19.0 20.0; 21.0 22.0 23.0 24.0 25.0] + [25.0 24.0 23.0 22.0 21.0; 20.0 19.0 18.0 17.0 16.0; 15.0 14.0 13.0 12.0 11.0; 10.0 9.0 8.0 7.0 6.0; 5.0 4.0 3.0 2.0 1.0]",
       "source_file": "dynamic-matrix-add-f64.mec"
     },
@@ -2982,8 +2986,8 @@
       ],
       "file": "variadic-horzcat-f64.mecb",
       "header": {
-        "checksum_offset": 2210,
-        "file_len": 2214,
+        "checksum_offset": 1612,
+        "file_len": 1616,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 8,
@@ -3011,7 +3015,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "6b4c28fb814eea995148c76ced68b02751cbce2b15c4f8555de8fe97d261f5fa",
+      "native_plan_sha256": "752bc5797f181a3b2b626517ea27a697b97c727ae8dac2d7398f6f785364806f",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3151,7 +3155,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 522,
+          "length": 192,
           "offset": 1192,
           "reserved": 0
         },
@@ -3161,7 +3165,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1720,
+          "offset": 1384,
           "reserved": 0
         },
         {
@@ -3169,8 +3173,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
-          "offset": 1728,
+          "length": 48,
+          "offset": 1392,
           "reserved": 0
         },
         {
@@ -3178,8 +3182,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 1784,
+          "length": 49,
+          "offset": 1440,
           "reserved": 0
         },
         {
@@ -3187,8 +3191,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 1832,
+          "length": 30,
+          "offset": 1496,
           "reserved": 0
         },
         {
@@ -3196,8 +3200,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 127,
-          "offset": 1936,
+          "length": 2,
+          "offset": 1528,
           "reserved": 0
         },
         {
@@ -3206,7 +3210,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 2064,
+          "offset": 1536,
           "reserved": 0
         },
         {
@@ -3215,7 +3219,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 2120,
+          "offset": 1592,
           "reserved": 0
         },
         {
@@ -3223,8 +3227,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 53,
-          "offset": 2128,
+          "length": 2,
+          "offset": 1600,
           "reserved": 0
         },
         {
@@ -3232,12 +3236,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 26,
-          "offset": 2184,
+          "length": 4,
+          "offset": 1608,
           "reserved": 0
         }
       ],
-      "sha256": "4c6360655be8e28bf4cf1a567ef86cba2e190a4f8ebcde585efff0ae6902647d",
+      "sha256": "51d76d630817b8e7ed43858443793189317db6c1c77aa0df199f418a9e3c8aef",
       "source": "[1.0 2.0 3.0 4.0 5.0]",
       "source_file": "variadic-horzcat-f64.mec"
     },
@@ -3258,8 +3262,8 @@
       "expected_output": "bytecode-v1",
       "file": "string.mecb",
       "header": {
-        "checksum_offset": 1306,
-        "file_len": 1310,
+        "checksum_offset": 1044,
+        "file_len": 1048,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 2,
@@ -3287,7 +3291,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "bfc4da788c2cf03c2e964b89855f064c0fe7f0b2398e9737e0ea3474aa7c9cf7",
+      "native_plan_sha256": "e4dbc6d2418a33c44778fc08171d1956e47b95826775beb8c4a8aacecdfdd4ac",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3420,7 +3424,7 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
+          "length": 48,
           "offset": 824,
           "reserved": 0
         },
@@ -3429,8 +3433,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 880,
+          "length": 49,
+          "offset": 872,
           "reserved": 0
         },
         {
@@ -3438,7 +3442,7 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
+          "length": 30,
           "offset": 928,
           "reserved": 0
         },
@@ -3447,8 +3451,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 127,
-          "offset": 1032,
+          "length": 2,
+          "offset": 960,
           "reserved": 0
         },
         {
@@ -3457,7 +3461,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1160,
+          "offset": 968,
           "reserved": 0
         },
         {
@@ -3466,7 +3470,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1216,
+          "offset": 1024,
           "reserved": 0
         },
         {
@@ -3474,8 +3478,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 53,
-          "offset": 1224,
+          "length": 2,
+          "offset": 1032,
           "reserved": 0
         },
         {
@@ -3483,12 +3487,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 26,
-          "offset": 1280,
+          "length": 4,
+          "offset": 1040,
           "reserved": 0
         }
       ],
-      "sha256": "b9f316040d0a7a40af1fbf99729bac0544fade75e16d0607e33d57680de299f5",
+      "sha256": "f1d6f944a4b17053219e3ddc3b387113ac51817576d2b8021ae91e9fc51b6989",
       "source": "\"bytecode-v1\"",
       "source_file": "string.mec"
     },
@@ -3515,8 +3519,8 @@
       ],
       "file": "unary.mecb",
       "header": {
-        "checksum_offset": 1618,
-        "file_len": 1622,
+        "checksum_offset": 1284,
+        "file_len": 1288,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 4,
@@ -3544,7 +3548,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "b535fb0c14d79145cbd362db6bef5815a488b17e4894298c7515ec5a175ae84a",
+      "native_plan_sha256": "d8ff07cc8a28e475c54261216864b4ce3f22468ac797e0e61d1f0c345162f273",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3682,7 +3686,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 146,
+          "length": 80,
           "offset": 976,
           "reserved": 0
         },
@@ -3692,7 +3696,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1128,
+          "offset": 1056,
           "reserved": 0
         },
         {
@@ -3700,8 +3704,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
-          "offset": 1136,
+          "length": 48,
+          "offset": 1064,
           "reserved": 0
         },
         {
@@ -3709,8 +3713,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 1192,
+          "length": 49,
+          "offset": 1112,
           "reserved": 0
         },
         {
@@ -3718,8 +3722,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 1240,
+          "length": 30,
+          "offset": 1168,
           "reserved": 0
         },
         {
@@ -3727,8 +3731,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 127,
-          "offset": 1344,
+          "length": 2,
+          "offset": 1200,
           "reserved": 0
         },
         {
@@ -3737,7 +3741,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1472,
+          "offset": 1208,
           "reserved": 0
         },
         {
@@ -3746,7 +3750,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1528,
+          "offset": 1264,
           "reserved": 0
         },
         {
@@ -3754,8 +3758,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 53,
-          "offset": 1536,
+          "length": 2,
+          "offset": 1272,
           "reserved": 0
         },
         {
@@ -3763,12 +3767,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 26,
-          "offset": 1592,
+          "length": 4,
+          "offset": 1280,
           "reserved": 0
         }
       ],
-      "sha256": "c637be7287599f4c2714f8c8d7970d77157aeace43b882eef2e07598ae1d52f9",
+      "sha256": "0ff094aef90007caed9fd6dbac19a876e6351232c1ab3798003d36f18996e505",
       "source": "[9.0]",
       "source_file": "unary.mec"
     },
@@ -3798,8 +3802,8 @@
       ],
       "file": "ternary.mecb",
       "header": {
-        "checksum_offset": 2042,
-        "file_len": 2046,
+        "checksum_offset": 2026,
+        "file_len": 2030,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 6,
@@ -3827,7 +3831,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "2ebe5f8ba6327563c3ea8a2ed89442bfc0a4ab315d88f702fad3edc8ac2d4c1e",
+      "native_plan_sha256": "c6d20bd07bd4569483dae50f9bce4c7a09cec42e594973ab8aed6aa3848d688c",
       "origin": "source-compiler",
       "packages": [
         {
@@ -3980,7 +3984,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 296,
+          "length": 133,
           "offset": 1064,
           "reserved": 0
         },
@@ -3990,7 +3994,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1360,
+          "offset": 1200,
           "reserved": 0
         },
         {
@@ -3998,8 +4002,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
-          "offset": 1368,
+          "length": 101,
+          "offset": 1208,
           "reserved": 0
         },
         {
@@ -4007,8 +4011,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 1424,
+          "length": 90,
+          "offset": 1312,
           "reserved": 0
         },
         {
@@ -4016,8 +4020,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 1472,
+          "length": 148,
+          "offset": 1408,
           "reserved": 0
         },
         {
@@ -4026,7 +4030,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 265,
-          "offset": 1576,
+          "offset": 1560,
           "reserved": 0
         },
         {
@@ -4035,7 +4039,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1848,
+          "offset": 1832,
           "reserved": 0
         },
         {
@@ -4044,7 +4048,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1904,
+          "offset": 1888,
           "reserved": 0
         },
         {
@@ -4053,7 +4057,7 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 93,
-          "offset": 1912,
+          "offset": 1896,
           "reserved": 0
         },
         {
@@ -4062,11 +4066,11 @@
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
           "length": 34,
-          "offset": 2008,
+          "offset": 1992,
           "reserved": 0
         }
       ],
-      "sha256": "3180c13013953bb47ad32a2d05ea2e11e7b907e81d4553d42c4ee34a9e0142e2",
+      "sha256": "4cb719b39aa0bf9b0481be8b8e5e177ec2eefbcd24678cb64006f49880e79157",
       "source": "1.0..1.0..=4.0",
       "source_file": "ternary.mec"
     },
@@ -4130,8 +4134,8 @@
       ],
       "file": "quaternary.mecb",
       "header": {
-        "checksum_offset": 6578,
-        "file_len": 6582,
+        "checksum_offset": 3964,
+        "file_len": 3968,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 47,
@@ -4159,7 +4163,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "91d3e7892d4c697148f3c0ab594af2d208fff81e8917396087c83342ac908a2e",
+      "native_plan_sha256": "4010724d2b185a525fc9409f7e557d87c6fc9c9b61505309f1151043c9396757",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4347,7 +4351,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 2961,
+          "length": 612,
           "offset": 3120,
           "reserved": 0
         },
@@ -4357,7 +4361,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 6088,
+          "offset": 3736,
           "reserved": 0
         },
         {
@@ -4365,8 +4369,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
-          "offset": 6096,
+          "length": 48,
+          "offset": 3744,
           "reserved": 0
         },
         {
@@ -4374,8 +4378,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 6152,
+          "length": 49,
+          "offset": 3792,
           "reserved": 0
         },
         {
@@ -4383,8 +4387,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 6200,
+          "length": 30,
+          "offset": 3848,
           "reserved": 0
         },
         {
@@ -4392,8 +4396,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 127,
-          "offset": 6304,
+          "length": 2,
+          "offset": 3880,
           "reserved": 0
         },
         {
@@ -4402,7 +4406,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 6432,
+          "offset": 3888,
           "reserved": 0
         },
         {
@@ -4411,7 +4415,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 6488,
+          "offset": 3944,
           "reserved": 0
         },
         {
@@ -4419,8 +4423,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 53,
-          "offset": 6496,
+          "length": 2,
+          "offset": 3952,
           "reserved": 0
         },
         {
@@ -4428,12 +4432,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 26,
-          "offset": 6552,
+          "length": 4,
+          "offset": 3960,
           "reserved": 0
         }
       ],
-      "sha256": "ab4954222195c41605a4c4e42fdb35769ab94d8aea50f02c63561430f5594313",
+      "sha256": "5cb621f20b47e28fdd130a54453dad38b622b4e7124cc01a12f7c9f0001d8cb3",
       "source": "a := [1.0 2.0 3.0 4.0 5.0]; b := [6.0 7.0 8.0 9.0 10.0]; c := [11.0 12.0 13.0 14.0 15.0]; d := [16.0 17.0 18.0 19.0 20.0]; [a; b; c; d]",
       "source_file": "quaternary.mec"
     },
@@ -4454,8 +4458,8 @@
       "expected_output": 0.0,
       "file": "named-module-operation.mecb",
       "header": {
-        "checksum_offset": 1338,
-        "file_len": 1342,
+        "checksum_offset": 1493,
+        "file_len": 1497,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 4,
@@ -4483,7 +4487,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c95fa6b6324eb282ccd3667d503c3d4dd3da9c153b4d34d1c0f3d2239dab4963",
+      "native_plan_sha256": "8230c62f774cbef7f734fade4fa0474a65b298fc180722ad622f7254549560a7",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4636,7 +4640,7 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
+          "length": 101,
           "offset": 848,
           "reserved": 0
         },
@@ -4645,8 +4649,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 904,
+          "length": 90,
+          "offset": 952,
           "reserved": 0
         },
         {
@@ -4654,8 +4658,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 101,
-          "offset": 952,
+          "length": 148,
+          "offset": 1048,
           "reserved": 0
         },
         {
@@ -4664,7 +4668,7 @@
           "item_count": 1,
           "kind": "ArtifactBindings",
           "length": 127,
-          "offset": 1056,
+          "offset": 1200,
           "reserved": 0
         },
         {
@@ -4673,7 +4677,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1184,
+          "offset": 1328,
           "reserved": 0
         },
         {
@@ -4682,7 +4686,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1240,
+          "offset": 1384,
           "reserved": 0
         },
         {
@@ -4691,7 +4695,7 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 60,
-          "offset": 1248,
+          "offset": 1392,
           "reserved": 0
         },
         {
@@ -4699,12 +4703,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 26,
-          "offset": 1312,
+          "length": 37,
+          "offset": 1456,
           "reserved": 0
         }
       ],
-      "sha256": "ae85588f576d164482fd8eb468fafc3eb1a1a4e48b89851b1571c070dfabbc4f",
+      "sha256": "173567a7d874b3b2225d3a8f79e0ddf474c94a4de721d0edbacfa97c90ff83d0",
       "source": "+> math\nmath/sin(0.0)",
       "source_file": "named-module-operation.mec"
     },
@@ -4732,6 +4736,7 @@
           "string"
         ],
         "mech-runtime": [
+          "resident-routing",
           "runtime",
           "string"
         ]
@@ -4740,8 +4745,8 @@
       "expected_output": "done",
       "file": "cli-stdout.mecb",
       "header": {
-        "checksum_offset": 1777,
-        "file_len": 1781,
+        "checksum_offset": 1651,
+        "file_len": 1655,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -4769,7 +4774,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "cb14d54956eb8cac2720bfae63056cc00013953396cc6e9d11dc8079c2bb1e34",
+      "native_plan_sha256": "bd3de08cd3f8c89d263e3e6e23b648053272b48c2c305efc4ca40abcc6220b56",
       "origin": "source-compiler",
       "packages": [
         {
@@ -4798,6 +4803,7 @@
         },
         {
           "cargo_features": [
+            "resident-routing",
             "runtime",
             "string"
           ],
@@ -4931,7 +4937,7 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
+          "length": 48,
           "offset": 1032,
           "reserved": 0
         },
@@ -4940,8 +4946,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 1088,
+          "length": 49,
+          "offset": 1080,
           "reserved": 0
         },
         {
@@ -4949,7 +4955,7 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 201,
+          "length": 284,
           "offset": 1136,
           "reserved": 0
         },
@@ -4958,8 +4964,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 196,
-          "offset": 1344,
+          "length": 70,
+          "offset": 1424,
           "reserved": 0
         },
         {
@@ -4968,7 +4974,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1544,
+          "offset": 1496,
           "reserved": 0
         },
         {
@@ -4977,7 +4983,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1600,
+          "offset": 1552,
           "reserved": 0
         },
         {
@@ -4985,8 +4991,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 114,
-          "offset": 1608,
+          "length": 62,
+          "offset": 1560,
           "reserved": 0
         },
         {
@@ -4994,12 +5000,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 49,
-          "offset": 1728,
+          "length": 27,
+          "offset": 1624,
           "reserved": 0
         }
       ],
-      "sha256": "4ae83459ed3f2f65ce7cee0720aa8ed859b8887c02cd67eeda26707cf692b877",
+      "sha256": "dab68ba55b94e09321f6e8bcdafd7292cab1b8a983e6ae14d6ebf12e39090fe4",
       "source": "+> @out := cli/stdout\n\n@out/line <- \"phase1-hosted-ok\"\n\n\"done\"",
       "source_file": "cli-stdout.mec"
     },
@@ -5027,6 +5033,7 @@
           "string"
         ],
         "mech-runtime": [
+          "resident-routing",
           "runtime",
           "string"
         ]
@@ -5035,8 +5042,8 @@
       "expected_output": "console-done",
       "file": "console.mecb",
       "header": {
-        "checksum_offset": 1801,
-        "file_len": 1805,
+        "checksum_offset": 1683,
+        "file_len": 1687,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -5064,7 +5071,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "2a4f25936cf06a53d50aa320e7979eaba8f48bab10ef1455bb344d379e4648f1",
+      "native_plan_sha256": "0427224f0bd5728e0816b8dce9850d8aafd97e9f5e363e6e19d506bdf786fecc",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5104,6 +5111,7 @@
         },
         {
           "cargo_features": [
+            "resident-routing",
             "runtime",
             "string"
           ],
@@ -5226,7 +5234,7 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
+          "length": 48,
           "offset": 1056,
           "reserved": 0
         },
@@ -5235,8 +5243,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 1112,
+          "length": 49,
+          "offset": 1104,
           "reserved": 0
         },
         {
@@ -5244,7 +5252,7 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 201,
+          "length": 292,
           "offset": 1160,
           "reserved": 0
         },
@@ -5253,8 +5261,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 196,
-          "offset": 1368,
+          "length": 70,
+          "offset": 1456,
           "reserved": 0
         },
         {
@@ -5263,7 +5271,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1568,
+          "offset": 1528,
           "reserved": 0
         },
         {
@@ -5272,7 +5280,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1624,
+          "offset": 1584,
           "reserved": 0
         },
         {
@@ -5280,8 +5288,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 114,
-          "offset": 1632,
+          "length": 62,
+          "offset": 1592,
           "reserved": 0
         },
         {
@@ -5289,12 +5297,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 49,
-          "offset": 1752,
+          "length": 27,
+          "offset": 1656,
           "reserved": 0
         }
       ],
-      "sha256": "8e4bcbf1ada685c8493bcbd618174d267eb883ae62b9a9674b06348bf9141a7e",
+      "sha256": "7b85fc2cb24d4371d33e5c23753ba518e5795735dd741ab89659b85b9cda94de",
       "source": "@out := console://console/output{:write(line)}\n@out/line <- \"bytecode-v1-console\"\n\"console-done\"",
       "source_file": "console.mec"
     },
@@ -5328,6 +5336,7 @@
         ],
         "mech-runtime": [
           "bool",
+          "resident-routing",
           "runtime",
           "string"
         ]
@@ -5336,8 +5345,8 @@
       "expected_output": "time-done",
       "file": "time.mecb",
       "header": {
-        "checksum_offset": 2068,
-        "file_len": 2072,
+        "checksum_offset": 1838,
+        "file_len": 1842,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 6,
@@ -5365,7 +5374,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "7e78f5a392028ee325c4d14696b0395fd5560b623be37e70170b223cc777bbe6",
+      "native_plan_sha256": "2bd004514cf2355c815039690e4c61a88e231b7904e5f26b4a68c0fa31203c76",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5400,6 +5409,7 @@
         {
           "cargo_features": [
             "bool",
+            "resident-routing",
             "runtime",
             "string"
           ],
@@ -5521,7 +5531,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 173,
+          "length": 62,
           "offset": 1056,
           "reserved": 0
         },
@@ -5531,7 +5541,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1232,
+          "offset": 1120,
           "reserved": 0
         },
         {
@@ -5539,8 +5549,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 101,
-          "offset": 1240,
+          "length": 98,
+          "offset": 1128,
           "reserved": 0
         },
         {
@@ -5548,8 +5558,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 91,
-          "offset": 1344,
+          "length": 94,
+          "offset": 1232,
           "reserved": 0
         },
         {
@@ -5557,8 +5567,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 201,
-          "offset": 1440,
+          "length": 286,
+          "offset": 1328,
           "reserved": 0
         },
         {
@@ -5566,8 +5576,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 184,
-          "offset": 1648,
+          "length": 58,
+          "offset": 1616,
           "reserved": 0
         },
         {
@@ -5576,7 +5586,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1832,
+          "offset": 1680,
           "reserved": 0
         },
         {
@@ -5585,7 +5595,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1888,
+          "offset": 1736,
           "reserved": 0
         },
         {
@@ -5593,8 +5603,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 113,
-          "offset": 1896,
+          "length": 61,
+          "offset": 1744,
           "reserved": 0
         },
         {
@@ -5602,12 +5612,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 52,
-          "offset": 2016,
+          "length": 30,
+          "offset": 1808,
           "reserved": 0
         }
       ],
-      "sha256": "0e7453df0fea9b2c83dce73bd9ebe94ca2c4d68c38e20f6581bb1aa948800aa9",
+      "sha256": "4151d91d2fa3765d4966f1e0045063b504788328fd4ea5fea4db5b4e965bf175",
       "source": "@clock := time://clock/clock{:read(second)}\nsecond := @clock/second\n\"time-done\"",
       "source_file": "time.mec"
     },
@@ -5641,6 +5651,7 @@
         ],
         "mech-runtime": [
           "bool",
+          "resident-routing",
           "runtime",
           "string"
         ]
@@ -5649,8 +5660,8 @@
       "expected_output": "timer-done",
       "file": "timer.mecb",
       "header": {
-        "checksum_offset": 2052,
-        "file_len": 2056,
+        "checksum_offset": 1822,
+        "file_len": 1826,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 6,
@@ -5678,7 +5689,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "fe767d30b2365c419c5565f011f658b01145bc1bea68fa1e0a932f81efdb8b04",
+      "native_plan_sha256": "41bf9146d2443dbe528a85a190d0a6a18b1250489d510c94afe10dd61f1d604f",
       "origin": "source-compiler",
       "packages": [
         {
@@ -5713,6 +5724,7 @@
         {
           "cargo_features": [
             "bool",
+            "resident-routing",
             "runtime",
             "string"
           ],
@@ -5834,7 +5846,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 172,
+          "length": 63,
           "offset": 1040,
           "reserved": 0
         },
@@ -5844,7 +5856,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1216,
+          "offset": 1104,
           "reserved": 0
         },
         {
@@ -5852,8 +5864,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 101,
-          "offset": 1224,
+          "length": 98,
+          "offset": 1112,
           "reserved": 0
         },
         {
@@ -5861,8 +5873,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 91,
-          "offset": 1328,
+          "length": 94,
+          "offset": 1216,
           "reserved": 0
         },
         {
@@ -5870,8 +5882,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 201,
-          "offset": 1424,
+          "length": 283,
+          "offset": 1312,
           "reserved": 0
         },
         {
@@ -5879,8 +5891,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 184,
-          "offset": 1632,
+          "length": 58,
+          "offset": 1600,
           "reserved": 0
         },
         {
@@ -5889,7 +5901,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1816,
+          "offset": 1664,
           "reserved": 0
         },
         {
@@ -5898,7 +5910,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1872,
+          "offset": 1720,
           "reserved": 0
         },
         {
@@ -5906,8 +5918,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 113,
-          "offset": 1880,
+          "length": 61,
+          "offset": 1728,
           "reserved": 0
         },
         {
@@ -5915,12 +5927,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 52,
-          "offset": 2000,
+          "length": 30,
+          "offset": 1792,
           "reserved": 0
         }
       ],
-      "sha256": "47fe9a2d688f0c0b305c5fbb72275643520d08fbae5039d6be4ec2ce10c5ac5f",
+      "sha256": "f3ecd5c2bed4f2ad1701424ec63e3e7ce62686962dcbafe6e4cd5b43bb8a70c5",
       "source": "@timer := timer://timer/tick{:read(tick)}\ntick := @timer/tick\n\"timer-done\"",
       "source_file": "timer.mec"
     },
@@ -5959,6 +5971,7 @@
           "bool",
           "f64",
           "record",
+          "resident-routing",
           "runtime",
           "string"
         ]
@@ -5967,8 +5980,8 @@
       "expected_output": "scene-done",
       "file": "scene.mecb",
       "header": {
-        "checksum_offset": 3236,
-        "file_len": 3240,
+        "checksum_offset": 3316,
+        "file_len": 3320,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 11,
@@ -5996,7 +6009,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "5698b4b80d7c0a141e946c530618b569f90e054ad007deb2e51d15e447ae21bc",
+      "native_plan_sha256": "0cd81b7d9cae5448406a6bcc316928721e2487ccd07c9b9fc08c23629b08be70",
       "origin": "source-compiler",
       "packages": [
         {
@@ -6036,6 +6049,7 @@
             "bool",
             "f64",
             "record",
+            "resident-routing",
             "runtime",
             "string"
           ],
@@ -6195,7 +6209,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 362,
+          "length": 459,
           "offset": 1568,
           "reserved": 0
         },
@@ -6205,7 +6219,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 1936,
+          "offset": 2032,
           "reserved": 0
         },
         {
@@ -6213,8 +6227,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 101,
-          "offset": 1944,
+          "length": 98,
+          "offset": 2040,
           "reserved": 0
         },
         {
@@ -6222,8 +6236,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 91,
-          "offset": 2048,
+          "length": 94,
+          "offset": 2144,
           "reserved": 0
         },
         {
@@ -6231,8 +6245,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 301,
-          "offset": 2144,
+          "length": 408,
+          "offset": 2240,
           "reserved": 0
         },
         {
@@ -6240,8 +6254,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 456,
-          "offset": 2448,
+          "length": 399,
+          "offset": 2648,
           "reserved": 0
         },
         {
@@ -6250,7 +6264,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 2904,
+          "offset": 3048,
           "reserved": 0
         },
         {
@@ -6259,7 +6273,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 2960,
+          "offset": 3104,
           "reserved": 0
         },
         {
@@ -6267,8 +6281,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 173,
-          "offset": 2968,
+          "length": 121,
+          "offset": 3112,
           "reserved": 0
         },
         {
@@ -6276,12 +6290,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 92,
-          "offset": 3144,
+          "length": 76,
+          "offset": 3240,
           "reserved": 0
         }
       ],
-      "sha256": "c8657cefc24b45499fb212cbc50014a18f8d8e44559aa8a326eed39b2e7f16c0",
+      "sha256": "a0141d46e7c89d506c444440d4fc1b6f45e1aa4610ee1ab9e4b3518e960cc9b0",
       "source": "@frame := scene://scene/frame{:write(replace)}\nframe := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- frame\n\"scene-done\"",
       "source_file": "scene.mec"
     },
@@ -6312,6 +6326,7 @@
         ],
         "mech-runtime": [
           "bool",
+          "resident-routing",
           "runtime",
           "string"
         ]
@@ -6320,8 +6335,8 @@
       "expected_output": "robot-done",
       "file": "robot-arm.mecb",
       "header": {
-        "checksum_offset": 1816,
-        "file_len": 1820,
+        "checksum_offset": 1698,
+        "file_len": 1702,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 5,
@@ -6349,7 +6364,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "32573ab3af32a9c88b90c407a009497535a735160498eff2cf71d91b334124ea",
+      "native_plan_sha256": "bc98aab0e56c1d6669b37b3c7d25931685514da0b774469409c4102410376dd5",
       "origin": "source-compiler",
       "packages": [
         {
@@ -6392,6 +6407,7 @@
         {
           "cargo_features": [
             "bool",
+            "resident-routing",
             "runtime",
             "string"
           ],
@@ -6520,7 +6536,7 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 51,
+          "length": 48,
           "offset": 1072,
           "reserved": 0
         },
@@ -6529,8 +6545,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 46,
-          "offset": 1128,
+          "length": 49,
+          "offset": 1120,
           "reserved": 0
         },
         {
@@ -6538,7 +6554,7 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 201,
+          "length": 289,
           "offset": 1176,
           "reserved": 0
         },
@@ -6547,8 +6563,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 196,
-          "offset": 1384,
+          "length": 70,
+          "offset": 1472,
           "reserved": 0
         },
         {
@@ -6557,7 +6573,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 52,
-          "offset": 1584,
+          "offset": 1544,
           "reserved": 0
         },
         {
@@ -6566,7 +6582,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 1640,
+          "offset": 1600,
           "reserved": 0
         },
         {
@@ -6574,8 +6590,8 @@
           "id": 17,
           "item_count": 1,
           "kind": "ArtifactOperations",
-          "length": 113,
-          "offset": 1648,
+          "length": 61,
+          "offset": 1608,
           "reserved": 0
         },
         {
@@ -6583,12 +6599,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 48,
-          "offset": 1768,
+          "length": 26,
+          "offset": 1672,
           "reserved": 0
         }
       ],
-      "sha256": "a4553c4898358c17b71b60f065025304b7d4f82af48f6869dc9fbea433f2ae27",
+      "sha256": "c3e44e1604fa553645efa261cd5cbc66d3c3772107a0f4594ef297ad888c01ef",
       "source": "@arm := robot://arm/commands{:move(move)}\n@arm/move <- true\n\"robot-done\"",
       "source_file": "robot-arm.mec"
     },
@@ -6651,6 +6667,7 @@
           "bool",
           "f64",
           "record",
+          "resident-routing",
           "runtime",
           "string",
           "tuple"
@@ -6663,8 +6680,8 @@
       ],
       "file": "synthetic-live-read.mecb",
       "header": {
-        "checksum_offset": 4501,
-        "file_len": 4505,
+        "checksum_offset": 5161,
+        "file_len": 5165,
         "flags": 0,
         "header_size": 64,
         "instruction_count": 22,
@@ -6692,7 +6709,7 @@
         "section_table_offset": 64,
         "version": 1
       },
-      "native_plan_sha256": "c516dfade8b507fb581304555e8c36ced3193137d2640561ef86bc1cc6b1b262",
+      "native_plan_sha256": "b85844b3a9400c2129a4b906e2e183f8594495b64ba03bf030fd149dce5bc839",
       "origin": "source-compiler",
       "packages": [
         {
@@ -6757,6 +6774,7 @@
             "bool",
             "f64",
             "record",
+            "resident-routing",
             "runtime",
             "string",
             "tuple"
@@ -6941,7 +6959,7 @@
           "id": 9,
           "item_count": 1,
           "kind": "ArtifactConstants",
-          "length": 334,
+          "length": 160,
           "offset": 1984,
           "reserved": 0
         },
@@ -6951,7 +6969,7 @@
           "item_count": 1,
           "kind": "ArtifactInputs",
           "length": 2,
-          "offset": 2320,
+          "offset": 2144,
           "reserved": 0
         },
         {
@@ -6959,8 +6977,8 @@
           "id": 11,
           "item_count": 1,
           "kind": "ArtifactSlots",
-          "length": 201,
-          "offset": 2328,
+          "length": 251,
+          "offset": 2152,
           "reserved": 0
         },
         {
@@ -6968,8 +6986,8 @@
           "id": 12,
           "item_count": 1,
           "kind": "ArtifactProducers",
-          "length": 181,
-          "offset": 2536,
+          "length": 225,
+          "offset": 2408,
           "reserved": 0
         },
         {
@@ -6977,8 +6995,8 @@
           "id": 13,
           "item_count": 1,
           "kind": "ArtifactNodes",
-          "length": 608,
-          "offset": 2720,
+          "length": 1188,
+          "offset": 2640,
           "reserved": 0
         },
         {
@@ -6986,8 +7004,8 @@
           "id": 14,
           "item_count": 1,
           "kind": "ArtifactBindings",
-          "length": 685,
-          "offset": 3328,
+          "length": 825,
+          "offset": 3832,
           "reserved": 0
         },
         {
@@ -6996,7 +7014,7 @@
           "item_count": 1,
           "kind": "ArtifactOutputs",
           "length": 53,
-          "offset": 4016,
+          "offset": 4664,
           "reserved": 0
         },
         {
@@ -7005,7 +7023,7 @@
           "item_count": 1,
           "kind": "ArtifactIntegrityConstraints",
           "length": 2,
-          "offset": 4072,
+          "offset": 4720,
           "reserved": 0
         },
         {
@@ -7014,7 +7032,7 @@
           "item_count": 1,
           "kind": "ArtifactOperations",
           "length": 239,
-          "offset": 4080,
+          "offset": 4728,
           "reserved": 0
         },
         {
@@ -7022,12 +7040,12 @@
           "id": 18,
           "item_count": 1,
           "kind": "ArtifactOperationContracts",
-          "length": 181,
-          "offset": 4320,
+          "length": 193,
+          "offset": 4968,
           "reserved": 0
         }
       ],
-      "sha256": "b5ac2e489216b77408941425cbe29e81d55d44085950a761dd830ee9dd505b20",
+      "sha256": "790261972fa44a237889b3af49183a2649b8797489a25e5d36e03b88213da587",
       "source": "+> @clock := test-live/clock\n\n+> @out := test-live/output\n\nvalue := @clock/value\ndoubled := value + value\n\npayload := (value, doubled)\nframe := {rotation: value}\n@out/tuple <- payload\n@out/frame <- frame\n\npayload",
       "source_file": "synthetic-live-read.mec"
     }
