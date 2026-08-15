@@ -46,7 +46,7 @@ impl MechFunctionImpl for ConvertSEnum {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "compiler", feature = "enum"))]
+#[cfg(all(feature = "semantic-compiler", feature = "enum"))]
 impl MechFunctionCompiler for ConvertSEnum {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSEnum<enum>");
@@ -118,7 +118,7 @@ impl MechFunctionImpl for ConvertSEmpty {
         format!("{:#?}", self)
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ConvertSEmpty {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSEmpty<empty>");
@@ -195,7 +195,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "compiler", feature = "matrix", feature = "table"))]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix", feature = "table"))]
 impl<T> MechFunctionCompiler for ConvertMat2Table<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -362,7 +362,7 @@ impl MechFunctionImpl for ConvertMatToSet {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "compiler", feature = "matrix", feature = "set"))]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix", feature = "set"))]
 impl MechFunctionCompiler for ConvertMatToSet {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertMatToSet");
@@ -398,7 +398,7 @@ impl MechFunctionImpl for ConvertSRationalToF64 {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "compiler", feature = "rational", feature = "f64"))]
+#[cfg(all(feature = "semantic-compiler", feature = "rational", feature = "f64"))]
 impl MechFunctionCompiler for ConvertSRationalToF64 {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("ConvertSRationalToF64<f64>");
@@ -546,7 +546,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<F, T> MechFunctionCompiler for ConvertScalarToScalar<F, T>
 where
     F: ConstElem + CompileConst + AsValueKind,
@@ -595,7 +595,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<F, T> MechFunctionCompiler for ConvertScalarToScalarBasic<F, T>
 where
     F: ConstElem + CompileConst + AsValueKind,

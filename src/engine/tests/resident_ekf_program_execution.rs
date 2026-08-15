@@ -10,11 +10,10 @@ use mech_core::{
 };
 use mech_engine::__gate_b_resident::ResidentEkfBatch;
 use mech_engine::__resident::{
-    ActivatedKernelNode, ActivatedPlan, ActivatedTurnStep, ActivationFacts, CapturedSignalInput,
-    FrozenEkfCompilationServices, ReactiveInstance, ResidentActivationOptions,
-    ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass, ResidentTurnSummary,
-    ResidentValueBorrow, activate, activate_with_options, compile_frozen_ekf_source,
-    frozen_ekf_compiler_catalog,
+    ActivationFacts, CapturedSignalInput, FrozenEkfCompilationServices, ReactiveInstance,
+    ResidentActivationOptions, ResidentExecutionError, ResidentIntegrityMode, ResidentStorageClass,
+    ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
+    compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
 use mech_engine::{
     ApplicationRequirementTable, ArtifactSource, BindingDeclaration, NodeDeclaration,
@@ -101,13 +100,6 @@ fn instance_with_integrity(id: u32, integrity: ResidentIntegrityMode) -> MResult
         },
     )
     .unwrap())
-}
-
-fn first_kernel(plan: &mut ActivatedPlan) -> &mut ActivatedKernelNode {
-    let ActivatedTurnStep::Kernel(node) = &mut plan.steps[0] else {
-        panic!("EKF plan begins with a resident kernel")
-    };
-    node
 }
 
 fn with_resident_effect(artifact: &ProgramArtifact) -> ProgramArtifact {
@@ -457,9 +449,10 @@ fn partial_kernel_failure_and_retry_match_a_fresh_instance() -> MResult<()> {
     let frame = frames().next().unwrap();
     let mut retried = instance(8)?;
     let mut fresh = instance(8)?;
-    let original = first_kernel(&mut retried.plan).kernel.clone();
-    first_kernel(&mut retried.plan).kernel =
-        BoundResidentKernel::new(partial_write_then_fail, Box::new([]));
+    let original = retried.plan.replace_kernel_for_test(
+        0,
+        BoundResidentKernel::new(partial_write_then_fail, Box::new([])),
+    );
 
     assert!(matches!(
         execute_turn(&mut retried, &frame),
@@ -468,7 +461,7 @@ fn partial_kernel_failure_and_retry_match_a_fresh_instance() -> MResult<()> {
             ..
         })
     ));
-    first_kernel(&mut retried.plan).kernel = original;
+    retried.plan.replace_kernel_for_test(0, original);
     let actual = execute_turn(&mut retried, &frame).unwrap();
     let expected = execute_turn(&mut fresh, &frame).unwrap();
 
@@ -531,11 +524,16 @@ fn always_changed_policy_propagates_when_the_kernel_reports_unchanged() -> MResu
     execute_turn(&mut always, &frame).unwrap();
     execute_turn(&mut reported, &frame).unwrap();
     for instance in [&mut always, &mut reported] {
-        first_kernel(&mut instance.plan).kernel =
-            BoundResidentKernel::new(report_unchanged, Box::new([]));
+        instance
+            .plan
+            .replace_kernel_for_test(0, BoundResidentKernel::new(report_unchanged, Box::new([])));
     }
-    first_kernel(&mut always.plan).change_detection = ChangeDetectionPolicy::AlwaysChanged;
-    first_kernel(&mut reported.plan).change_detection = ChangeDetectionPolicy::KernelReported;
+    always
+        .plan
+        .set_change_detection_for_test(0, ChangeDetectionPolicy::AlwaysChanged);
+    reported
+        .plan
+        .set_change_detection_for_test(0, ChangeDetectionPolicy::KernelReported);
 
     let always_summary = execute_turn(&mut always, &frame).unwrap();
     let reported_summary = execute_turn(&mut reported, &frame).unwrap();

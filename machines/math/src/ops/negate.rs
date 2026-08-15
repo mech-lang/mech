@@ -25,7 +25,7 @@ where
         + PartialEq
         + 'static
         + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
     O: FunctionRuntimeType,
@@ -94,7 +94,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<O> MechFunctionCompiler for NegateV<O>
 where
     O: CompileConst + ConstElem + AsValueKind + RuntimeCheckedNeg,
@@ -124,7 +124,7 @@ where
         + PartialEq
         + 'static
         + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     O: CompileConst + ConstElem,
     Ref<O>: ToValue,
     O: FunctionRuntimeType,
@@ -194,7 +194,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<O> MechFunctionCompiler for NegateS<O>
 where
     O: CompileConst + ConstElem + AsValueKind + RuntimeCheckedNeg,

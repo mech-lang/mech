@@ -66,7 +66,7 @@ impl MechFunctionImpl for SetEqualsFxn {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetEqualsFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetEqualsFxn".to_string();

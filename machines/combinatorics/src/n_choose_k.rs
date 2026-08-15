@@ -489,7 +489,7 @@ where
         + RuntimeNChooseK
         + PartialEq
         + PartialOrd,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
     T: FunctionRuntimeType,
@@ -638,7 +638,7 @@ mod integer_scalar_tests {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for NChooseK<T>
 where
     T: ConstElem + CompileConst + AsValueKind + RuntimeNChooseK,
@@ -702,7 +702,7 @@ where
         + AsValueKind
         + PartialEq
         + PartialOrd,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
     Ref<DMatrix<T>>: ToValue,
@@ -776,7 +776,7 @@ where
         format!("{:#?}", self)
     }
 }
-#[cfg(all(feature = "matrix", feature = "matrixd", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "matrixd", feature = "semantic-compiler"))]
 impl<T> MechFunctionCompiler for NChooseKMatrix<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -911,7 +911,7 @@ where
         + AsValueKind
         + PartialEq
         + PartialOrd,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: ConstElem + CompileConst,
     Ref<T>: ToValue,
     Ref<DMatrix<T>>: ToValue,

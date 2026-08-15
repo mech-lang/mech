@@ -70,15 +70,12 @@ impl MechFunctionImpl for SetNotElementOfFxn {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetNotElementOfFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination = compile_register_brrw!(self.out, ctx);
-        let element = compile_value_register(
-            &self.elem,
-            core::ptr::from_ref(&self.elem).addr(),
-            ctx,
-        )?;
+        let element =
+            compile_value_register(&self.elem, core::ptr::from_ref(&self.elem).addr(), ctx)?;
         let set = compile_register_brrw!(self.set, ctx);
         // Builtin operator ∉
         ctx.emit_binop(hash_str("SetNotElementOfFxn"), destination, element, set);

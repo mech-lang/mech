@@ -26,7 +26,7 @@ static RESOURCE_OBSERVATION_CONTRACT: LazyLock<OperationContractDeclaration> =
         }),
     });
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCompiler, Register};
 
 #[derive(Clone, Debug)]
@@ -145,7 +145,7 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ExternalResourceReadFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = super::compile_runtime_produced_external_output(&self.output, context)?;

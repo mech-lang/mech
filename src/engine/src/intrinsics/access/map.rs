@@ -23,7 +23,7 @@ impl MechFunctionImpl for MapAccessField {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for MapAccessField {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0];

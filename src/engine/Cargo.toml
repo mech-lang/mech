@@ -33,12 +33,17 @@ resident-artifact = [
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "dep:mech-syntax"]
-compiler = [
+semantic-compiler = [
   "source",
   "artifact-codec",
+  "mech-core/semantic-compiler",
+  "mech-core/serde",
+  "mech-syntax/semantic-compiler",
+]
+compiler = [
+  "semantic-compiler",
   "dep:mech-bytecode",
   "mech-core/compiler",
-  "mech-core/serde",
   "mech-syntax/compiler",
 ]
 
@@ -490,7 +495,7 @@ web-time = "1.1.0"
 
 [[test]]
 name = "bytecode_plan_topology"
-required-features = ["compiler"]
+required-features = ["compiler_default"]
 
 [[test]]
 name = "context_bindings"

@@ -1494,6 +1494,7 @@ struct ArenaReadAccess<'a> {
     indexes: SliceRead<'a, u64>,
     f64s: SliceRead<'a, f64>,
     strings: SliceRead<'a, String>,
+    snapshots: SliceRead<'a, Option<Value>>,
 }
 
 impl<'a> ArenaReadAccess<'a> {
@@ -1503,6 +1504,7 @@ impl<'a> ArenaReadAccess<'a> {
             indexes: SliceRead::Whole(&arena.indexes),
             f64s: SliceRead::Whole(&arena.f64s),
             strings: SliceRead::Whole(&arena.strings),
+            snapshots: SliceRead::Whole(&arena.snapshots),
         }
     }
 
@@ -1513,6 +1515,9 @@ impl<'a> ArenaReadAccess<'a> {
             ResidentValueKind::Index => self.indexes.get(range).map(ResidentValueRef::Index),
             ResidentValueKind::F64 => self.f64s.get(range).map(ResidentValueRef::F64),
             ResidentValueKind::String => self.strings.get(range).map(ResidentValueRef::String),
+            ResidentValueKind::Snapshot => {
+                self.snapshots.get(range).map(ResidentValueRef::Snapshot)
+            }
         }
     }
 
@@ -1544,6 +1549,7 @@ impl TypedResidentArena {
                         indexes: SliceRead::Whole(&self.indexes),
                         f64s: SliceRead::Whole(&self.f64s),
                         strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Whole(&self.snapshots),
                     },
                     ResidentValueMut::Bool(output),
                 )
@@ -1562,6 +1568,7 @@ impl TypedResidentArena {
                         },
                         f64s: SliceRead::Whole(&self.f64s),
                         strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Whole(&self.snapshots),
                     },
                     ResidentValueMut::Index(output),
                 )
@@ -1580,6 +1587,7 @@ impl TypedResidentArena {
                             gap_end,
                         },
                         strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Whole(&self.snapshots),
                     },
                     ResidentValueMut::F64(output),
                 )
@@ -1598,8 +1606,28 @@ impl TypedResidentArena {
                             gap_start,
                             gap_end,
                         },
+                        snapshots: SliceRead::Whole(&self.snapshots),
                     },
                     ResidentValueMut::String(output),
+                )
+            }
+            ResidentValueKind::Snapshot => {
+                let (before, tail) = self.snapshots.split_at_mut(region.offset);
+                let (output, after) = tail.split_at_mut(region.len);
+                (
+                    ArenaReadAccess {
+                        bools: SliceRead::Whole(&self.bools),
+                        indexes: SliceRead::Whole(&self.indexes),
+                        f64s: SliceRead::Whole(&self.f64s),
+                        strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Split {
+                            before,
+                            after,
+                            gap_start,
+                            gap_end,
+                        },
+                    },
+                    ResidentValueMut::Snapshot(output),
                 )
             }
         }
@@ -1620,6 +1648,7 @@ impl TypedResidentArena {
                         indexes: &self.indexes,
                         f64s: &self.f64s,
                         strings: &self.strings,
+                        snapshots: &self.snapshots,
                     },
                     ResidentValueMut::Bool(output),
                 )
@@ -1633,6 +1662,7 @@ impl TypedResidentArena {
                         indexes: before,
                         f64s: &self.f64s,
                         strings: &self.strings,
+                        snapshots: &self.snapshots,
                     },
                     ResidentValueMut::Index(output),
                 )
@@ -1646,6 +1676,7 @@ impl TypedResidentArena {
                         indexes: &self.indexes,
                         f64s: before,
                         strings: &self.strings,
+                        snapshots: &self.snapshots,
                     },
                     ResidentValueMut::F64(output),
                 )
@@ -1659,8 +1690,23 @@ impl TypedResidentArena {
                         indexes: &self.indexes,
                         f64s: &self.f64s,
                         strings: before,
+                        snapshots: &self.snapshots,
                     },
                     ResidentValueMut::String(output),
+                )
+            }
+            ResidentValueKind::Snapshot => {
+                let (before, tail) = self.snapshots.split_at_mut(region.offset);
+                let (output, _) = tail.split_at_mut(region.len);
+                (
+                    ScratchArenaReadAccess {
+                        bools: &self.bools,
+                        indexes: &self.indexes,
+                        f64s: &self.f64s,
+                        strings: &self.strings,
+                        snapshots: before,
+                    },
+                    ResidentValueMut::Snapshot(output),
                 )
             }
         }
@@ -1680,6 +1726,7 @@ impl TypedResidentArena {
                 indexes: &self.indexes,
                 f64s: before,
                 strings: &self.strings,
+                snapshots: &self.snapshots,
             },
             output,
         )
@@ -1692,6 +1739,7 @@ struct ScratchArenaReadAccess<'a> {
     indexes: &'a [u64],
     f64s: &'a [f64],
     strings: &'a [String],
+    snapshots: &'a [Option<Value>],
 }
 
 impl<'a> ScratchArenaReadAccess<'a> {
@@ -1703,6 +1751,9 @@ impl<'a> ScratchArenaReadAccess<'a> {
             ResidentValueKind::Index => self.indexes.get(range).map(ResidentValueRef::Index),
             ResidentValueKind::F64 => self.f64s.get(range).map(ResidentValueRef::F64),
             ResidentValueKind::String => self.strings.get(range).map(ResidentValueRef::String),
+            ResidentValueKind::Snapshot => {
+                self.snapshots.get(range).map(ResidentValueRef::Snapshot)
+            }
         }
     }
 
@@ -2076,6 +2127,11 @@ fn copy_input(
         {
             target.clone_from_slice(source);
         }
+        (ResidentValueMut::Snapshot(target), ResidentValueRef::Snapshot(source))
+            if target.len() == source.len() =>
+        {
+            target.clone_from_slice(source);
+        }
         _ => return Err(()),
     }
     Ok(())
@@ -2095,6 +2151,9 @@ fn regions_equal(
             .zip(right)
             .all(|(left, right)| left.to_bits() == right.to_bits()),
         (ResidentValueRef::String(left), ResidentValueRef::String(right)) => left == right,
+        // Composite producers currently declare AlwaysChanged. Keep this
+        // conservative until a schema-aware arena comparison is introduced.
+        (ResidentValueRef::Snapshot(_), ResidentValueRef::Snapshot(_)) => false,
         _ => false,
     }
 }
@@ -2105,6 +2164,7 @@ fn scalar_token(value: ResidentValueRef<'_>) -> Option<u64> {
         ResidentValueRef::Index([value]) => Some(*value),
         ResidentValueRef::F64([value]) => Some(value.to_bits()),
         ResidentValueRef::String([value]) => Some(hash_string(value)),
+        ResidentValueRef::Snapshot(_) => None,
         _ => None,
     }
 }
@@ -2115,6 +2175,7 @@ fn region_bytes(region: ResidentRegion) -> usize {
             ResidentValueKind::Bool => 1,
             ResidentValueKind::Index | ResidentValueKind::F64 => 8,
             ResidentValueKind::String => core::mem::size_of::<String>(),
+            ResidentValueKind::Snapshot => core::mem::size_of::<Option<Value>>(),
         }
 }
 
@@ -2162,6 +2223,12 @@ fn state_hash(instance: &ReactiveInstance, epoch: InstanceEpoch) -> u64 {
             ResidentValueRef::String(values) => {
                 for value in values {
                     hash = hash_word(hash, hash_string(value));
+                }
+            }
+            ResidentValueRef::Snapshot(values) => {
+                for value in values {
+                    let token = value.as_ref().map(Value::resident_token).unwrap_or(0);
+                    hash = hash_word(hash, token);
                 }
             }
         }

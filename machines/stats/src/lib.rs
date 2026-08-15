@@ -180,7 +180,7 @@ macro_rules! impl_stats_unop {
                 + PartialEq
                 + PartialOrd,
             T: StatsCheckedAdd,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
             $arg_type: FunctionRuntimeType,
@@ -249,7 +249,7 @@ macro_rules! impl_stats_unop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: CompileConst + ConstElem + AsValueKind,

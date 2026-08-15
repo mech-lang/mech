@@ -156,7 +156,7 @@ macro_rules! impl_compare_binop {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: std::fmt::Debug + Clone + 'static + AsValueKind + PartialEq + PartialOrd,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType,
@@ -220,7 +220,7 @@ macro_rules! impl_compare_binop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind,

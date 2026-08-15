@@ -39,7 +39,7 @@ where
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for TupleAssign<T>
 where
     T: CompileConst + ConstElem + AsValueKind,

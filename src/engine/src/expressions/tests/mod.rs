@@ -13,7 +13,7 @@ mod registration;
     feature = "tuple",
     feature = "f64",
     feature = "program",
-    feature = "compiler"
+    feature = "semantic-compiler"
 ))]
 mod structural_access;
 

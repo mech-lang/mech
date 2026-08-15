@@ -249,27 +249,7 @@ impl MechFunctionFactory for TableJoinFxn {
     );
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-                let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-                let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let out: Ref<MechTable> = out.try_function_ref(FunctionArgumentRole::Output)?;
-                Ok(Box::new(TableJoinFxn {
-                    lhs,
-                    rhs,
-                    out,
-                    mode: JoinMode::Inner,
-                }))
-            }
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments {
-                    expected: 2,
-                    found: args.len(),
-                },
-                None,
-            )
-            .with_compiler_loc()),
-        }
+        table_join_from_args(args, JoinMode::Inner)
     }
 }
 
@@ -297,12 +277,137 @@ impl MechFunctionImpl for TableJoinFxn {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableJoinFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableJoinFxn::{:?}", self.mode);
         compile_binop!(name, self.out, self.lhs, self.rhs, ctx);
     }
+}
+
+fn table_join_from_args(args: FunctionArgs, mode: JoinMode) -> MResult<Box<dyn MechFunction>> {
+    match args {
+        FunctionArgs::Binary(out, arg1, arg2) => {
+            let lhs: Ref<MechTable> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+            let rhs: Ref<MechTable> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+            let out: Ref<MechTable> = out.try_function_ref(FunctionArgumentRole::Output)?;
+            Ok(Box::new(TableJoinFxn {
+                lhs,
+                rhs,
+                out,
+                mode,
+            }))
+        }
+        _ => Err(MechError::new(
+            IncorrectNumberOfArguments {
+                expected: 2,
+                found: args.len(),
+            },
+            None,
+        )
+        .with_compiler_loc()),
+    }
+}
+
+macro_rules! table_join_factory {
+    ($factory:ident, $mode:ident) => {
+        #[derive(Debug)]
+        struct $factory;
+
+        impl MechFunctionFactory for $factory {
+            const SIGNATURE: RuntimeFunctionSignature = TableJoinFxn::SIGNATURE;
+
+            fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+                table_join_from_args(args, JoinMode::$mode)
+            }
+        }
+    };
+}
+
+table_join_factory!(TableInnerJoinFxn, Inner);
+table_join_factory!(TableLeftOuterJoinFxn, LeftOuter);
+table_join_factory!(TableRightOuterJoinFxn, RightOuter);
+table_join_factory!(TableFullOuterJoinFxn, FullOuter);
+table_join_factory!(TableLeftSemiJoinFxn, LeftSemi);
+table_join_factory!(TableLeftAntiJoinFxn, LeftAnti);
+
+macro_rules! table_join_native_factory {
+    ($registration:ident, $installer:ident, $name:literal, $factory:ty) => {
+        mech_core::declare_native_runtime_factory! {
+            cfg: feature = "table",
+            registration: $registration,
+            installer: $installer,
+            name: $name,
+            factory_type: $factory,
+            contract: RuntimeFunctionContract::no_matrix(
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+            ),
+            package: "mech-engine",
+            crate_name: "mech_engine",
+            installer_path: concat!(
+                "mech_engine::__mech_native::",
+                stringify!($installer),
+            ),
+            extra_cargo_features: [],
+        }
+    };
+}
+
+table_join_native_factory!(
+    register_table_inner_join,
+    install_table_inner_join,
+    "TableJoinFxn::Inner",
+    TableInnerJoinFxn
+);
+table_join_native_factory!(
+    register_table_left_outer_join,
+    install_table_left_outer_join,
+    "TableJoinFxn::LeftOuter",
+    TableLeftOuterJoinFxn
+);
+table_join_native_factory!(
+    register_table_right_outer_join,
+    install_table_right_outer_join,
+    "TableJoinFxn::RightOuter",
+    TableRightOuterJoinFxn
+);
+table_join_native_factory!(
+    register_table_full_outer_join,
+    install_table_full_outer_join,
+    "TableJoinFxn::FullOuter",
+    TableFullOuterJoinFxn
+);
+table_join_native_factory!(
+    register_table_left_semi_join,
+    install_table_left_semi_join,
+    "TableJoinFxn::LeftSemi",
+    TableLeftSemiJoinFxn
+);
+table_join_native_factory!(
+    register_table_left_anti_join,
+    install_table_left_anti_join,
+    "TableJoinFxn::LeftAnti",
+    TableLeftAntiJoinFxn
+);
+
+pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register_table_inner_join(builder)?;
+    register_table_left_outer_join(builder)?;
+    register_table_right_outer_join(builder)?;
+    register_table_full_outer_join(builder)?;
+    register_table_left_semi_join(builder)?;
+    register_table_left_anti_join(builder)?;
+    Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    pub use super::{
+        install_table_full_outer_join, install_table_inner_join, install_table_left_anti_join,
+        install_table_left_outer_join, install_table_left_semi_join,
+        install_table_right_outer_join,
+    };
 }
 
 fn rows_match(

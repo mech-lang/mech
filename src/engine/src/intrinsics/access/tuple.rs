@@ -59,7 +59,7 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     register_tuple_access_element(builder)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TupleAccessElement {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0];

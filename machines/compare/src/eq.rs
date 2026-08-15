@@ -162,7 +162,7 @@ impl MechFunctionImpl for AtomEq {
     }
 }
 #[cfg(feature = "atom")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for AtomEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("AtomEq");
@@ -227,7 +227,7 @@ impl MechFunctionImpl for TableEq {
     }
 }
 #[cfg(feature = "table")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableEq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableEq");

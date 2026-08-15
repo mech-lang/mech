@@ -138,8 +138,7 @@ impl MechFunctionImpl for SetCartesianProductFxn {
         unsafe {
             let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
             let rhs_ptr: &MechSet = &*(self.rhs.as_ptr());
-            let output_len =
-                cartesian_product_output_len(lhs_ptr.set.len(), rhs_ptr.set.len())?;
+            let output_len = cartesian_product_output_len(lhs_ptr.set.len(), rhs_ptr.set.len())?;
 
             // Construct the complete next value before replacing the reactive
             // output so a rejected expansion retains the previous result.
@@ -173,7 +172,7 @@ impl MechFunctionImpl for SetCartesianProductFxn {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetCartesianProductFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("SetCartesianProductFxn");

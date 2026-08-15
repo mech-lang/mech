@@ -31,7 +31,7 @@ macro_rules! impl_col_access_fxn {
         Ok(self.reactive_output_values())
       }
     }
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for $fxn_name {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0];
@@ -219,7 +219,7 @@ impl MechFunctionImpl for TableAccessSwizzle {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableAccessSwizzle {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0];
@@ -260,7 +260,7 @@ impl MechFunctionImpl for TableAccessScalarF {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableAccessScalarF {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0];
@@ -399,7 +399,7 @@ impl MechFunctionImpl for TableAccessRangeIndex {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableAccessRangeIndex {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0];
@@ -464,7 +464,7 @@ impl MechFunctionImpl for TableAccessRangeBool {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableAccessRangeBool {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0];

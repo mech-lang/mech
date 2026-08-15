@@ -85,7 +85,7 @@ impl MechFunctionImpl for BytecodeHashedCompositePack {
 }
 
 #[cfg(all(
-    feature = "compiler",
+    feature = "semantic-compiler",
     feature = "program",
     feature = "functions",
     feature = "symbol_table"

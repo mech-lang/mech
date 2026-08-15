@@ -24,6 +24,11 @@ impl MechFunctionImpl for StrictNotEqValue {
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::compare_full_write_contract(
+            FunctionValueRepresentation::Bool,
+        ))
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -59,7 +64,7 @@ impl MechFunctionFactory for StrictNotEqValue {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for StrictNotEqValue {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = self.out.to_value();

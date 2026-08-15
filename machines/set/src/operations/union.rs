@@ -66,6 +66,9 @@ impl MechFunctionImpl for SetUnionFxn {
     fn out(&self) -> LegacyValue {
         LegacyValue::Set(self.out.clone())
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_BINARY_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -74,7 +77,7 @@ impl MechFunctionImpl for SetUnionFxn {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetUnionFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("SetUnionFxn");

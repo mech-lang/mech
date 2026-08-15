@@ -58,7 +58,7 @@ macro_rules! horizontal_concatenate {
       where
         T: Debug + Clone + Sync + Send + PartialEq + 'static +
         ConstElem + AsValueKind,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         T: CompileConst,
         Ref<[<RowVector $vec_size>]<T>>: ToValue,
         [<RowVector $vec_size>]<T>: FunctionRuntimeType,
@@ -97,7 +97,7 @@ macro_rules! horizontal_concatenate {
         }
       }
 
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       impl<T> MechFunctionCompiler for $name<T>
       where
         T: ConstElem + CompileConst + AsValueKind
@@ -130,7 +130,7 @@ macro_rules! horzcat_two_args {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
             $e0<T>: FunctionRuntimeType,
@@ -190,7 +190,7 @@ macro_rules! horzcat_two_args {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $fxn<T>
         where
             T: ConstElem + CompileConst + AsValueKind,
@@ -230,7 +230,7 @@ macro_rules! horzcat_three_args {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
             $e0<T>: FunctionRuntimeType,
@@ -295,7 +295,7 @@ macro_rules! horzcat_three_args {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $fxn<T>
         where
             T: ConstElem + CompileConst + AsValueKind,
@@ -337,7 +337,7 @@ macro_rules! horzcat_four_args {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$out<T>>: ToValue,
             $e0<T>: FunctionRuntimeType,
@@ -413,7 +413,7 @@ macro_rules! horzcat_four_args {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $fxn<T>
         where
             T: ConstElem + CompileConst + AsValueKind,
@@ -455,7 +455,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
@@ -512,7 +512,7 @@ where
     }
 }
 #[cfg(feature = "matrixd")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateTwoArgs<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -559,7 +559,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
@@ -620,7 +620,7 @@ where
     }
 }
 #[cfg(feature = "matrixd")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateThreeArgs<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -669,7 +669,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
@@ -740,7 +740,7 @@ where
     }
 }
 #[cfg(feature = "matrixd")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateFourArgs<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -794,7 +794,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
@@ -867,7 +867,7 @@ where
     }
 }
 #[cfg(feature = "matrixd")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateNArgs<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -918,7 +918,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowDVector<T>>: ToValue,
 {
@@ -963,7 +963,7 @@ where
     }
 }
 #[cfg(feature = "row_vectord")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateRD<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -994,7 +994,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowDVector<T>>: ToValue,
 {
@@ -1070,7 +1070,7 @@ where
     }
 }
 #[cfg(feature = "row_vectord")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateRDN<T>
 where
     T: CompileConst + ConstElem + AsValueKind,
@@ -1127,7 +1127,7 @@ mech_core::declare_native_runtime_factory! {
 
 #[cfg(all(
     test,
-    feature = "compiler",
+    feature = "semantic-compiler",
     feature = "matrixd",
     feature = "row_vectord",
     feature = "f64",
@@ -1375,7 +1375,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<DMatrix<T>>: ToValue,
 {
@@ -1430,7 +1430,7 @@ where
     }
 }
 #[cfg(feature = "matrixd")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS1D<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -1461,7 +1461,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<Matrix1<T>>: ToValue,
 {
@@ -1513,7 +1513,7 @@ where
     }
 }
 #[cfg(feature = "matrix1")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -1545,7 +1545,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector2<T>>: ToValue,
 {
@@ -1600,7 +1600,7 @@ where
     }
 }
 #[cfg(feature = "row_vector2")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS2<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -1654,7 +1654,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -1712,7 +1712,7 @@ where
     }
 }
 #[cfg(feature = "row_vector3")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS3<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -1746,7 +1746,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -1813,7 +1813,7 @@ where
     }
 }
 #[cfg(feature = "row_vector4")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateS4<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -1858,7 +1858,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowDVector<T>>: ToValue,
 {
@@ -1903,7 +1903,7 @@ where
     }
 }
 #[cfg(feature = "row_vectord")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSD<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -1933,7 +1933,7 @@ macro_rules! horzcat_single {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$shape<T>>: ToValue,
             $shape<T>: FunctionRuntimeType,
@@ -1979,7 +1979,7 @@ macro_rules! horzcat_single {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $name<T>
         where
             T: ConstElem + CompileConst + AsValueKind,
@@ -2036,7 +2036,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -2095,7 +2095,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2127,7 +2127,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -2185,7 +2185,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2216,7 +2216,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector2<T>>: ToValue,
 {
@@ -2273,7 +2273,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2305,7 +2305,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector2<T>>: ToValue,
 {
@@ -2362,7 +2362,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2396,7 +2396,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -2467,7 +2467,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSSM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2501,7 +2501,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -2572,7 +2572,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2606,7 +2606,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -2677,7 +2677,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SS<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2711,7 +2711,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -2782,7 +2782,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSS<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2814,7 +2814,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -2874,7 +2874,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR3<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2906,7 +2906,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -2966,7 +2966,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector3", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR3S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -2999,7 +2999,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -3060,7 +3060,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3093,7 +3093,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -3154,7 +3154,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3187,7 +3187,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -3248,7 +3248,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SS<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3281,7 +3281,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -3344,7 +3344,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSR2<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3377,7 +3377,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -3440,7 +3440,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3473,7 +3473,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -3536,7 +3536,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2SS<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3569,7 +3569,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -3630,7 +3630,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3680,7 +3680,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -3741,7 +3741,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3774,7 +3774,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector3<T>>: ToValue,
 {
@@ -3835,7 +3835,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector3"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -3925,7 +3925,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -3988,7 +3988,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1R2<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4021,7 +4021,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4084,7 +4084,7 @@ where
     }
 }
 #[cfg(all(feature = "matrix1", feature = "row_vector2", feature = "row_vector4"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SR2<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4118,7 +4118,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4189,7 +4189,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1SM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4222,7 +4222,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4285,7 +4285,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1R2S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4318,7 +4318,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4381,7 +4381,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2M1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4414,7 +4414,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4477,7 +4477,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateR2SM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4510,7 +4510,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4573,7 +4573,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "row_vector2", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSR2M1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4607,7 +4607,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4678,7 +4678,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSSM1M1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4712,7 +4712,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4783,7 +4783,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SS<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4817,7 +4817,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4888,7 +4888,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -4922,7 +4922,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -4993,7 +4993,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SSM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -5027,7 +5027,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -5098,7 +5098,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -5245,7 +5245,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -5316,7 +5316,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateSM1M1M1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -5350,7 +5350,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -5421,7 +5421,7 @@ where
     }
 }
 #[cfg(all(feature = "row_vector4", feature = "matrix1"))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1SM1M1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -5455,7 +5455,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -5525,7 +5525,11 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
+#[cfg(all(
+    feature = "row_vector4",
+    feature = "matrix1",
+    feature = "semantic-compiler"
+))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1SM1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -5559,7 +5563,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -5629,7 +5633,11 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
+#[cfg(all(
+    feature = "row_vector4",
+    feature = "matrix1",
+    feature = "semantic-compiler"
+))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1S<T>
 where
     T: ConstElem + CompileConst + AsValueKind,
@@ -5663,7 +5671,7 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     Ref<RowVector4<T>>: ToValue,
 {
@@ -5733,7 +5741,11 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "row_vector4", feature = "matrix1", feature = "compiler"))]
+#[cfg(all(
+    feature = "row_vector4",
+    feature = "matrix1",
+    feature = "semantic-compiler"
+))]
 impl<T> MechFunctionCompiler for HorizontalConcatenateM1M1M1M1<T>
 where
     T: ConstElem + CompileConst + AsValueKind,

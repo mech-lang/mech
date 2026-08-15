@@ -67,7 +67,7 @@ impl MechFunctionFactory for ValueSet {
     }
 }
 
-#[cfg(all(feature = "set", feature = "compiler"))]
+#[cfg(all(feature = "set", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueSet {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         compile_nullop!("set/define", self.out, ctx);
@@ -158,7 +158,7 @@ impl MechFunctionFactory for ValueSetComprehension {
     }
 }
 
-#[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
+#[cfg(all(feature = "set_comprehensions", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = LegacyValue::Set(self.out.clone());
@@ -242,7 +242,7 @@ impl MechFunctionFactory for ValueMatrixComprehension {
     }
 }
 
-#[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
+#[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = self.out.borrow().clone();

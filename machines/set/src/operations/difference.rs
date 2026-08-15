@@ -74,7 +74,7 @@ impl MechFunctionImpl for SetDifferenceFxn {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetDifferenceFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("SetDifferenceFxn");

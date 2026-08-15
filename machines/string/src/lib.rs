@@ -134,7 +134,7 @@ macro_rules! impl_string_binop {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: std::fmt::Debug + Clone + Sync + Send + 'static + AsValueKind + Concat,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType,
@@ -198,7 +198,7 @@ macro_rules! impl_string_binop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind,

@@ -90,7 +90,7 @@ macro_rules! impl_checked_div_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: Copy
                 + Debug
                 + Display
@@ -114,7 +114,7 @@ macro_rules! impl_checked_div_binop {
                 + Zero
                 + One
                 + RuntimeCheckedDiv,
-            #[cfg(not(feature = "compiler"))]
+            #[cfg(not(feature = "semantic-compiler"))]
             T: Copy
                 + Debug
                 + Display
@@ -217,7 +217,7 @@ macro_rules! impl_checked_div_binop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind + RuntimeCheckedDiv,

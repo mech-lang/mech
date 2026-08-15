@@ -2,10 +2,10 @@
 use super::super::ValueMatrixComprehension;
 #[cfg(feature = "set_comprehensions")]
 use super::super::ValueSetComprehension;
+#[cfg(feature = "semantic-compiler")]
+use crate::CompileCtx;
 use crate::{FunctionArgs, LegacyValue, MechFunctionFactory, MechFunctionImpl, MechSet, Ref};
-#[cfg(feature = "compiler")]
-use mech_bytecode::CompileCtx;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeInstruction, MechFunctionCompiler, ParsedProgram, hash_str};
 #[cfg(feature = "matrix_comprehensions")]
 use nalgebra::DMatrix;
@@ -75,7 +75,7 @@ fn set_comprehension_factory_rejects_non_set_output() {
     );
 }
 
-#[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
+#[cfg(all(feature = "set_comprehensions", feature = "semantic-compiler"))]
 #[test]
 fn set_comprehension_bytecode_encodes_ordered_child_registers() {
     let first = LegacyValue::from(1u8);
@@ -96,7 +96,7 @@ fn set_comprehension_bytecode_encodes_ordered_child_registers() {
     )));
 }
 
-#[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
+#[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
 #[test]
 fn matrix_comprehension_bytecode_reuses_repeated_child_registers() {
     let repeated = LegacyValue::from(3.0f64);

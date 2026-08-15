@@ -7,7 +7,7 @@ pub(super) use super::super::{
     create_capture_slot_for_kind, detached,
 };
 pub(super) use crate::patterns::PatternBindingSink;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 pub(super) use crate::{
     C64, CompiledPattern, Dictionary, FunctionExtensionEntry, FunctionSpecializer, GenericError,
@@ -74,7 +74,7 @@ impl MechFunctionImpl for FailingPatternRegister {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for FailingPatternRegister {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(PatternRegisterStageFailure, None))

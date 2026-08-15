@@ -24,7 +24,8 @@ no_std = ["mech-core/no_std"]
 default = []
 runtime = ["mech-core/functions"]
 source = ["runtime"]
-compiler = ["runtime", "mech-core/compiler"]
+semantic-compiler = ["runtime", "mech-core/semantic-compiler"]
+compiler = ["semantic-compiler"]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 standard_values = ["f64", "row_vectord", "vectord", "matrixd"]
@@ -46,10 +47,13 @@ full_source = ["full_runtime", "source"]
 full_compiler = ["full_source", "compiler"]
 
 matrix_default = ["matmul", "transpose", "dot", "solve"]
-matmul = ["runtime", "dep:num-traits", "matrix"]
-transpose = ["runtime", "dep:num-traits", "matrix"]
-dot = ["runtime", "dep:num-traits", "matrix"]
-solve = ["runtime", "dep:num-traits", "matrix"]
+# Operation selection does not imply a matrix representation. Scalar dot and
+# matmul factories need no matrix storage at all, while every matrix-backed
+# factory declares the concrete shape feature that enables `matrix` below.
+matmul = ["runtime", "dep:num-traits"]
+transpose = ["runtime", "dep:num-traits"]
+dot = ["runtime", "dep:num-traits"]
+solve = ["runtime", "dep:num-traits", "dep:nalgebra"]
 
 bool = ["mech-core/bool"]
 string = ["mech-core/string"]

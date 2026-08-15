@@ -126,7 +126,7 @@ impl MechFunctionImpl for StringAccessElement {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for StringAccessElement {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         match self.compile_mode {

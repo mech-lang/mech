@@ -73,6 +73,12 @@ use mech_core::{MResult, hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat
 use na::DMatrix;
 use std::time::Duration;
 
+#[cfg(feature = "semantic-compiler")]
+pub use mech_core::{
+    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
+    CompiledNodeKind, CompiledSymbolDefinition,
+};
+
 #[cfg(all(feature = "source", feature = "functions", feature = "symbol_table"))]
 pub mod activation;
 #[cfg(feature = "resident-ekf")]
@@ -112,9 +118,9 @@ pub mod __gate_b_resident {
 #[cfg(feature = "resident-artifact")]
 #[doc(hidden)]
 pub mod __resident {
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub use crate::efficacy::ekf::catalog::frozen_ekf_compiler_catalog;
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub use crate::efficacy::ekf::closure::{
         FrozenEkfArtifactClosure, FrozenEkfArtifactClosureError, FrozenEkfCompilation,
         FrozenEkfCompilationServices, FrozenEkfConstantClosure, FrozenEkfConstraint,
@@ -178,6 +184,8 @@ pub mod __mech_native {
     pub use crate::intrinsics::define::install_variable_define_f64;
     #[cfg(feature = "matrix_horzcat")]
     pub use crate::intrinsics::horzcat::__mech_native::*;
+    #[cfg(feature = "table")]
+    pub use crate::intrinsics::table_ops::__mech_native::*;
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
 }
@@ -322,12 +330,12 @@ macro_rules! print_plan {
 #[cfg(any(
     feature = "artifact-codec",
     feature = "resident-artifact",
-    feature = "compiler"
+    feature = "semantic-compiler"
 ))]
 pub mod artifact;
 #[cfg(any(
     feature = "artifact-codec",
     feature = "resident-artifact",
-    feature = "compiler"
+    feature = "semantic-compiler"
 ))]
 pub use crate::artifact::*;

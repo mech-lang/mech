@@ -1045,7 +1045,7 @@ mod source_only {
             }
         }
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for NativeDependencyTestFunction {
             fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 Ok(0)
@@ -1090,7 +1090,7 @@ mod source_only {
             }
         }
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for IndexedInitializedFunction {
             fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 Ok(0)
@@ -1187,7 +1187,7 @@ mod source_only {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for DeferredNativeSolveFunction {
             fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 Ok(0)
@@ -1348,7 +1348,7 @@ mod source_only {
             }
         }
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for FailingInitializationFunction {
             fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 panic!("failing initialization test function must not be bytecode compiled")

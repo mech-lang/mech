@@ -18,7 +18,7 @@ mod bytecode_dependency_tests {
     use std::collections::{BTreeMap, BTreeSet};
     use std::sync::Arc;
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     use super::super::super::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 
     struct BytecodeDependencyTestFunction {
@@ -86,14 +86,14 @@ mod bytecode_dependency_tests {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for ExactF64Nullary {
         fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for BytecodeDependencyTestFunction {
         fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -465,7 +465,7 @@ mod bytecode_dependency_tests {
 
 #[cfg(all(
     test,
-    feature = "compiler",
+    feature = "semantic-compiler",
     feature = "program",
     feature = "functions",
     feature = "symbol_table",
@@ -871,7 +871,7 @@ mod hashed_composite_pack_tests {
 
 #[cfg(all(
     test,
-    feature = "compiler",
+    feature = "semantic-compiler",
     feature = "program",
     feature = "functions",
     feature = "symbol_table",

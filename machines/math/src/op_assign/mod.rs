@@ -216,10 +216,10 @@ macro_rules! impl_op_assign_range_fxn_s {
                 + PartialOrd
                 + AsValueKind,
             T: RuntimeCheckedOpAssign,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             IxVec: Debug + AsRef<[$ix]> + AsNaKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst + ConstElem,
             R1: Dim,
             C1: Dim,
@@ -228,7 +228,7 @@ macro_rules! impl_op_assign_range_fxn_s {
             naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
             IxVec: FunctionRuntimeType,
             T: FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -317,7 +317,7 @@ macro_rules! impl_op_assign_range_fxn_s {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
@@ -384,10 +384,10 @@ macro_rules! impl_op_assign_range_fxn_v {
                 + PartialOrd
                 + AsValueKind,
             T: RuntimeCheckedOpAssign,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             IxVec: AsNaKind + Debug + AsRef<[$ix]>,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst + ConstElem,
             R1: Dim,
             C1: Dim,
@@ -396,13 +396,13 @@ macro_rules! impl_op_assign_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: Debug + AsNaKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
             naMatrix<T, R2, C2, S2>: Debug + AsNaKind,
             naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
             naMatrix<T, R2, C2, S2>: FunctionRuntimeType,
             IxVec: FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst + ConstElem,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -494,7 +494,7 @@ macro_rules! impl_op_assign_range_fxn_v {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
@@ -594,7 +594,7 @@ macro_rules! impl_assign_scalar_scalar {
            $op_name<Output = T> + [<$op_name Assign>] +
            PartialEq + PartialOrd + AsValueKind,
         T: RuntimeCheckedOpAssign,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         Ref<T>: ToValue
         , T: FunctionRuntimeType
@@ -643,7 +643,7 @@ macro_rules! impl_assign_scalar_scalar {
           Ok(self.reactive_output_values())
         }
       }
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       impl<T> MechFunctionCompiler for [<$op_name AssignSS>]<T>
       where
         T: CompileConst + ConstElem + AsValueKind,
@@ -673,18 +673,18 @@ macro_rules! impl_assign_vector_vector {
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
         AsValueKind,
         T: RuntimeCheckedOpAssign,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         for<'a> &'a MatB: IntoIterator<Item = &'a T>,
         MatA: Debug + Clone + AsValueKind + 'static,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         MatA: CompileConst + ConstElem,
         MatB: Debug + AsValueKind + 'static,
         MatA: FunctionRuntimeType,
         MatB: FunctionRuntimeType,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         MatB: CompileConst + ConstElem,
       {
         const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
@@ -746,7 +746,7 @@ macro_rules! impl_assign_vector_vector {
           Ok(self.reactive_output_values())
         }
       }
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       impl<T, MatA, MatB> MechFunctionCompiler for [<$op_name AssignVV>]<T, MatA, MatB>
       where
         T: CompileConst + ConstElem + AsValueKind,
@@ -778,14 +778,14 @@ macro_rules! impl_assign_vector_scalar {
         T: Debug + Clone + Sync + Send + 'static + [<$op_name Assign>] +
         AsValueKind,
         T: RuntimeCheckedOpAssign,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem,
         for<'a> &'a MatA: IntoIterator<Item = &'a T>,
         for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
         MatA: Debug + Clone + AsValueKind + 'static,
         MatA: FunctionRuntimeType,
         T: FunctionRuntimeType,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         MatA: CompileConst + ConstElem,
       {
         const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -846,7 +846,7 @@ macro_rules! impl_assign_vector_scalar {
           Ok(self.reactive_output_values())
         }
       }
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       impl<T, MatA> MechFunctionCompiler for [<$op_name AssignVS>]<T, MatA>
       where
         T: CompileConst + ConstElem + AsValueKind,

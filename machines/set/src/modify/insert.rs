@@ -4,8 +4,8 @@ use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 use std::sync::LazyLock;
 
-static PURE_SET_INSERT_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
-    OperationContractDeclaration {
+static PURE_SET_INSERT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
             vec![
                 InputPortPolicy {
@@ -20,19 +20,17 @@ static PURE_SET_INSERT_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLo
             .into_boxed_slice(),
         ),
         outputs: vec![OutputPortPolicy {
-            access: AccessMode::ReadWrite,
+            access: AccessMode::Write,
             delivery: DeliveryMode::Signal,
-            construction: OutputConstruction::ReadModifyWrite {
-                base_input: 0,
-                regions: RegionPolicy::CollectionEntry,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
             },
             alias: AliasPolicy::NoAlias,
             change_detection: ChangeDetectionPolicy::KernelReported,
         }]
         .into_boxed_slice(),
         interaction: ExternalInteraction::Pure,
-    }
-});
+    });
 
 // Insert ------------------------------------------------------------------------
 
@@ -129,16 +127,13 @@ impl MechFunctionImpl for SetInsertFxn {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetInsertFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination = compile_register_brrw!(self.out, ctx);
         let set = compile_register_brrw!(self.arg1, ctx);
-        let element = compile_value_register(
-            &self.arg2,
-            core::ptr::from_ref(&self.arg2).addr(),
-            ctx,
-        )?;
+        let element =
+            compile_value_register(&self.arg2, core::ptr::from_ref(&self.arg2).addr(), ctx)?;
         ctx.emit_binop(hash_str("SetInsertFxn"), destination, set, element);
         Ok(destination)
     }
@@ -214,6 +209,9 @@ mod tests {
 
     #[test]
     fn semantic_contract_matches_the_runtime_no_alias_policy() {
-        assert_eq!(PURE_SET_INSERT_CONTRACT.outputs[0].alias, AliasPolicy::NoAlias);
+        assert_eq!(
+            PURE_SET_INSERT_CONTRACT.outputs[0].alias,
+            AliasPolicy::NoAlias
+        );
     }
 }

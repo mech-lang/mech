@@ -152,7 +152,7 @@ macro_rules! impl_powop {
                 + AsValueKind
                 + Zero
                 + One,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType,
@@ -235,7 +235,7 @@ macro_rules! impl_powop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: CompileConst + ConstElem + AsValueKind + RuntimeCheckedPow,
@@ -336,7 +336,7 @@ impl MechFunctionImpl for PowRational {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "rational", feature = "i32", feature = "compiler"))]
+#[cfg(all(feature = "rational", feature = "i32", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for PowRational {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("PowRational<{}>", R64::as_value_kind());

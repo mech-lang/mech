@@ -12,13 +12,13 @@ use mech_core::{
     OperationContractTable, OutputId, SchemaId, SchemaTable,
 };
 
-#[cfg(feature = "compiler")]
-use mech_bytecode::{
+#[cfg(feature = "semantic-compiler")]
+use crate::{
     CompiledBytecode, CompiledInstructionRole, CompiledNodeKind, CompiledSymbolDefinition,
 };
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::snapshot::SnapshotValidationContext;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{
     ApplicationRequirement, BytecodeInstruction, CanonicalNominalPath, ConstantHandle,
     ConstantStoreBuilder, DimensionEnvironmentBuilder, DimensionExpr, FunctionCatalog,
@@ -106,7 +106,7 @@ pub struct ArtifactBuildContext<'a> {
 /// The source interpreter can discover resource requests without knowing a
 /// host provider. D3 supplies this resolver only at the explicit resident
 /// compilation boundary; ordinary compilation retains its existing behavior.
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub trait ExternalRequirementContractResolver {
     fn resolve_external_contract(
         &self,
@@ -114,7 +114,7 @@ pub trait ExternalRequirementContractResolver {
     ) -> MResult<Option<&'static OperationContractDeclaration>>;
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub fn resolve_compiled_external_contracts(
     compiled: &mut CompiledBytecode,
     resolver: &dyn ExternalRequirementContractResolver,
@@ -420,20 +420,20 @@ pub fn compile_source_program_with_contracts(
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy)]
 struct RegisterSemantic {
     source: SourceValue,
     schema: SchemaId,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Debug, Default)]
 struct CompilerLegacyContext {
     extent: u64,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl CompilerLegacyContext {
     fn for_kind(
         kind: &ValueKind,
@@ -453,14 +453,14 @@ impl CompilerLegacyContext {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl NamedKindPathResolver for CompilerLegacyContext {
     fn canonical_path(&self, _id: KindId) -> Option<&CanonicalNominalPath> {
         None
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl LegacySemanticContext for CompilerLegacyContext {
     fn resolve_named_kind(&mut self, legacy_id: u64) -> Result<KindId, SemanticModelError> {
         Err(SemanticModelError::LegacyNamedKindUnresolved { legacy_id })
@@ -499,7 +499,7 @@ impl LegacySemanticContext for CompilerLegacyContext {
 /// Adapts the actual executable compiler product into C3's durable semantic
 /// graph. Execution still consumes the existing bytecode/plan; this product is
 /// emitted alongside it for bytecode-v1 persistence and later activation.
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub fn compile_executable_program_artifact(
     compiled: &CompiledBytecode,
     catalog: &FunctionCatalog,
@@ -672,9 +672,9 @@ pub fn compile_executable_program_artifact(
 
     let mut pending_constants = BTreeMap::<(u32, SchemaId), CompilerLegacyContext>::new();
     for instruction in &compiled.program.instructions {
-        let (register, constant, initializer_only) = match instruction {
-            BytecodeInstruction::ConstLoad { dst, constant } => (*dst, *constant, false),
-            BytecodeInstruction::CompositePack { dst, template, .. } => (*dst, *template, true),
+        let (register, constant) = match instruction {
+            BytecodeInstruction::ConstLoad { dst, constant } => (*dst, *constant),
+            BytecodeInstruction::CompositePack { dst, template, .. } => (*dst, *template),
             _ => continue,
         };
         let register_index = register as usize;
@@ -685,9 +685,7 @@ pub fn compile_executable_program_artifact(
         else {
             continue;
         };
-        if role == CompilerConstantRole::ExternalInput
-            || (initializer_only && role != CompilerConstantRole::StateInitializer)
-        {
+        if role == CompilerConstantRole::ExternalInput {
             continue;
         }
         if role == CompilerConstantRole::StateInitializer
@@ -1108,7 +1106,7 @@ pub fn compile_executable_program_artifact(
                 // catalog-installed runtime functions also carry authoritative
                 // semantic metadata. Preserve that declaration when the
                 // specialized function uses the trait's default `None`.
-                let semantic_inputs = semantic_input_registers(&semantics, declaration)?
+                let mut semantic_inputs = semantic_input_registers(&semantics, declaration)?
                     .iter()
                     .map(|input| {
                         if *input == dst && state_index.is_some() {
@@ -1123,8 +1121,21 @@ pub fn compile_executable_program_artifact(
                                 })
                         }
                     })
-                    .collect::<Result<Vec<_>, ArtifactBuildError>>()?
-                    .into_boxed_slice();
+                    .collect::<Result<Vec<_>, ArtifactBuildError>>()?;
+                if let Some(template) = semantics.template_constant {
+                    let schema = schema.ok_or(ArtifactBuildError::MissingRegisterKind {
+                        instruction: instruction_id,
+                        register: dst,
+                    })?;
+                    let constant = constants.get(&(template, schema)).copied().ok_or(
+                        ArtifactBuildError::SourceGraphReferenceOutOfRange {
+                            reference: "composite template constant",
+                            index: template,
+                        },
+                    )?;
+                    semantic_inputs.insert(0, SourceValue::Constant(constant));
+                }
+                let semantic_inputs = semantic_inputs.into_boxed_slice();
                 if declaration.is_some() {
                     if let Some(source_node) = compiled.instruction_source_nodes[instruction_index]
                     {
@@ -1283,7 +1294,7 @@ pub fn compile_executable_program_artifact(
     )
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn external_declaration_matches_requirement(
     declaration: &OperationContractDeclaration,
     requirement: &ApplicationRequirement,
@@ -1316,7 +1327,7 @@ fn external_declaration_matches_requirement(
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn prune_unused_constants(
     schemas: &SchemaTable,
     constants: &ConstantStore,
@@ -1391,16 +1402,17 @@ fn prune_unused_constants(
     Ok(constants)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn is_literal_constructor_operation(operation: &OperationReference) -> bool {
-    operation.module_path.as_ref() == ["runtime"]
+    (operation.module_path.as_ref() == ["runtime"]
         && (operation
             .operation_name
             .starts_with("HorizontalConcatenate")
-            || operation.operation_name.starts_with("VerticalConcatenate"))
+            || operation.operation_name.starts_with("VerticalConcatenate")))
+        || (operation.module_path.as_ref() == ["set"] && operation.operation_name == "define")
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn prune_unused_inputs(
     inputs: Vec<SourceInput>,
     mut nodes: Vec<SourceNode>,
@@ -1466,7 +1478,7 @@ fn prune_unused_inputs(
     Ok((retained, nodes, outputs, constraints))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn normalize_legacy_binding_kind(kind: ValueKind) -> (ValueKind, bool) {
     match kind {
         ValueKind::Reference(referenced) => {
@@ -1543,7 +1555,7 @@ fn normalize_legacy_binding_kind(kind: ValueKind) -> (ValueKind, bool) {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn is_compiler_pseudo_kind(kind: &ValueKind) -> bool {
     match kind {
         ValueKind::Empty | ValueKind::Any | ValueKind::None => true,
@@ -1552,7 +1564,7 @@ fn is_compiler_pseudo_kind(kind: &ValueKind) -> bool {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn register(
     registers: &[Option<RegisterSemantic>],
     register: u32,
@@ -1565,7 +1577,7 @@ fn register(
     )
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn set_register(
     registers: &mut [Option<RegisterSemantic>],
     register: u32,
@@ -1581,7 +1593,7 @@ fn set_register(
     Ok(())
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn validate_compiled_metadata_length(
     table: &'static str,
     expected: usize,
@@ -1597,7 +1609,7 @@ fn validate_compiled_metadata_length(
     Ok(())
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn validate_compiled_instruction_roles(
     compiled: &CompiledBytecode,
     catalog: &FunctionCatalog,
@@ -1713,7 +1725,7 @@ fn validate_compiled_instruction_roles(
     Ok(())
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn instruction_role_name(role: CompiledInstructionRole) -> &'static str {
     match role {
         CompiledInstructionRole::Node(_) => "node",
@@ -1722,10 +1734,11 @@ fn instruction_role_name(role: CompiledInstructionRole) -> &'static str {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 struct CompiledInstructionSemantics {
     destination: u32,
     inputs: Vec<u32>,
+    template_constant: Option<u32>,
     operation: OperationReference,
     requirement: Option<ApplicationRequirementId>,
 }
@@ -1733,7 +1746,7 @@ struct CompiledInstructionSemantics {
 /// Some executable instructions use their destination as the logical base of
 /// a read/modify/write operation without repeating it in the operand list.
 /// The semantic artifact exposes that dependency without changing bytecode.
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn semantic_input_registers(
     semantics: &CompiledInstructionSemantics,
     declaration: Option<&OperationContractDeclaration>,
@@ -1770,7 +1783,7 @@ fn semantic_input_registers(
     Ok(inputs)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn instruction_destination(instruction: &BytecodeInstruction) -> Option<u32> {
     match instruction {
         BytecodeInstruction::ConstLoad { dst, .. }
@@ -1789,7 +1802,7 @@ fn instruction_destination(instruction: &BytecodeInstruction) -> Option<u32> {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn is_variable_definition_instruction(
     instruction: &BytecodeInstruction,
     catalog: &FunctionCatalog,
@@ -1800,7 +1813,7 @@ fn is_variable_definition_instruction(
         .is_some_and(|entry| entry.name.starts_with("VariableDefine"))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn operation_reference_from_name(
     default_namespace: &'static str,
     canonical_name: &str,
@@ -1839,7 +1852,7 @@ fn operation_reference_from_name(
     })
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn resource_operation_reference(
     requirement: u32,
     requirements: &[ApplicationRequirement],
@@ -1865,7 +1878,7 @@ fn resource_operation_reference(
     })
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn instruction_semantics(
     instruction: &BytecodeInstruction,
     catalog: &FunctionCatalog,
@@ -1881,9 +1894,14 @@ fn instruction_semantics(
         BytecodeInstruction::ConstLoad { .. } | BytecodeInstruction::Return { .. } => {
             return Ok(None);
         }
-        BytecodeInstruction::CompositePack { dst, children, .. } => CompiledInstructionSemantics {
+        BytecodeInstruction::CompositePack {
+            dst,
+            template,
+            children,
+        } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: children.clone(),
+            template_constant: Some(*template),
             operation: OperationReference {
                 module_path: vec!["core".to_owned()].into_boxed_slice(),
                 operation_name: "composite-pack".to_owned(),
@@ -1893,12 +1911,14 @@ fn instruction_semantics(
         BytecodeInstruction::RuntimeNullary { function, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
+            template_constant: None,
             operation: runtime(*function)?,
             requirement: None,
         },
         BytecodeInstruction::RuntimeUnary { function, dst, src } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
+            template_constant: None,
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -1910,6 +1930,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*lhs, *rhs],
+            template_constant: None,
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -1922,6 +1943,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*a, *b, *c],
+            template_constant: None,
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -1935,6 +1957,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*a, *b, *c, *d],
+            template_constant: None,
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -1945,6 +1968,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: arguments.clone(),
+            template_constant: None,
             operation: runtime(*function)?,
             requirement: None,
         },
@@ -1967,6 +1991,7 @@ fn instruction_semantics(
             CompiledInstructionSemantics {
                 destination: *dst,
                 inputs: arguments.clone(),
+                template_constant: None,
                 operation: operation_reference_from_name("host", &request.name)?,
                 requirement: Some(ApplicationRequirementId::new(*requirement)),
             }
@@ -1974,6 +1999,7 @@ fn instruction_semantics(
         BytecodeInstruction::ResourceRead { requirement, dst } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: Vec::new(),
+            template_constant: None,
             operation: resource_operation_reference(*requirement, requirements, "read")?,
             requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
@@ -1984,6 +2010,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
+            template_constant: None,
             operation: resource_operation_reference(*requirement, requirements, "write")?,
             requirement: Some(ApplicationRequirementId::new(*requirement)),
         },
@@ -1994,6 +2021,7 @@ fn instruction_semantics(
         } => CompiledInstructionSemantics {
             destination: *dst,
             inputs: vec![*src],
+            template_constant: None,
             operation: resource_operation_reference(*requirement, requirements, "send")?,
             requirement: Some(ApplicationRequirementId::new(*requirement)),
         },

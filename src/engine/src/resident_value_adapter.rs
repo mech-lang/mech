@@ -41,6 +41,12 @@ impl ReactiveInstance {
             ResidentValueBorrow::String { values, .. } if scalar => {
                 ValueDataDraft::String(values[0].clone())
             }
+            ResidentValueBorrow::Snapshot {
+                values: [Some(value)],
+                ..
+            } => {
+                return Ok(value.clone());
+            }
             ResidentValueBorrow::Bool { values, .. } => ValueDataDraft::Matrix(
                 canonical_matrix_indices(declaration.region.shape)
                     .map(|index| ValueDataDraft::Bool(values[index] != 0))
@@ -60,6 +66,9 @@ impl ReactiveInstance {
                     .into_boxed_slice(),
             ),
             ResidentValueBorrow::String { .. } => {
+                return Err(ResidentActivationError::InvalidSnapshotRepresentation);
+            }
+            ResidentValueBorrow::Snapshot { .. } => {
                 return Err(ResidentActivationError::InvalidSnapshotRepresentation);
             }
         };
@@ -99,6 +108,7 @@ pub(crate) fn materialize_resident_value(
             ValueDataDraft::F64(F64Bits::from_f64(values[0]))
         }
         ResidentValueRef::String(values) if scalar => ValueDataDraft::String(values[0].clone()),
+        ResidentValueRef::Snapshot([Some(value)]) => return Ok(value.clone()),
         ResidentValueRef::Bool(values) => ValueDataDraft::Matrix(
             canonical_matrix_indices(region.shape)
                 .map(|index| ValueDataDraft::Bool(values[index] != 0))
@@ -121,6 +131,14 @@ pub(crate) fn materialize_resident_value(
             return Err(MechError::new(
                 GenericError {
                     msg: "resident string matrices are unsupported".to_string(),
+                },
+                None,
+            ));
+        }
+        ResidentValueRef::Snapshot(_) => {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "resident snapshot value is uninitialized".to_string(),
                 },
                 None,
             ));
@@ -159,6 +177,9 @@ pub(crate) fn write_value(
         }
         (ResidentValueMut::String(target), ValueData::String(value)) if target.len() == 1 => {
             target[0] = value.to_string();
+        }
+        (ResidentValueMut::Snapshot(target), _) if target.len() == 1 => {
+            target[0] = Some(value.clone());
         }
         (ResidentValueMut::Bool(target), ValueData::Matrix(matrix)) => {
             let SequenceView::Bool(source) = matrix.elements() else {

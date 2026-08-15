@@ -42,11 +42,14 @@ mod passthrough_transaction_state_tests {
         }
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ConvertMatPassthrough {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("ConvertMatPassthrough");
-        compile_nullop!(name, self.out, ctx);
+        // This specialization preserves the exact backing value. It is a
+        // compile-time representation choice, not an executable operation,
+        // so the semantic program must reference the existing register
+        // directly instead of emitting an unregistered nullary runtime node.
+        Ok(compile_register_brrw!(self.out, ctx))
     }
 }
 
@@ -90,7 +93,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<TFrom, TTo, FromMat, ToMat> MechFunctionCompiler
     for ConvertMatToMat2<TFrom, TTo, FromMat, ToMat>
 where
@@ -146,9 +149,9 @@ where
     Ref<na::DMatrix<TTo>>: ToValue,
     TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
     TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TFrom: CompileConst,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TTo: CompileConst,
 {
     let zero = TTo::default();
@@ -284,9 +287,9 @@ where
     Ref<na::DMatrix<TTo>>: ToValue,
     TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
     TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TFrom: CompileConst,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TTo: CompileConst,
 {
     let zero = TTo::default();

@@ -1,9 +1,5 @@
 #![cfg(feature = "compiler")]
 
-use mech_bytecode::{
-    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
-    CompiledNodeKind, CompiledSymbolDefinition,
-};
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, EncodedConstant,
@@ -21,6 +17,10 @@ use mech_engine::Interpreter;
 use mech_engine::{
     ArtifactSource, BindingDeclaration, InitializerReference, MechProgram, MechProgramConfig,
     ProducerReference, ProgramArtifact, SlotRole, decode_program_artifact_sections,
+};
+use mech_engine::{
+    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
+    CompiledNodeKind, CompiledSymbolDefinition,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -771,6 +771,25 @@ fn composite_helpers_and_mutable_metadata_without_a_declaration_do_not_become_st
         states.is_empty(),
         "a composite helper and bare mutable symbol metadata must not manufacture temporal state without a declaration marker"
     );
+    let composite = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack"
+        })
+        .expect("composite helper remains an artifact node");
+    assert_eq!(
+        composite.input_bindings.end - composite.input_bindings.start,
+        3
+    );
+    assert!(matches!(
+        artifact.bindings()[composite.input_bindings.start as usize],
+        BindingDeclaration::Input {
+            source: ArtifactSource::Constant(_),
+            ..
+        }
+    ));
     Ok(())
 }
 

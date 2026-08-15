@@ -72,16 +72,13 @@ impl MechFunctionImpl for SetRemoveFxn {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetRemoveFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination = compile_register_brrw!(self.out, ctx);
         let set = compile_register_brrw!(self.arg1, ctx);
-        let element = compile_value_register(
-            &self.arg2,
-            core::ptr::from_ref(&self.arg2).addr(),
-            ctx,
-        )?;
+        let element =
+            compile_value_register(&self.arg2, core::ptr::from_ref(&self.arg2).addr(), ctx)?;
         ctx.emit_binop(hash_str("SetRemoveFxn"), destination, set, element);
         Ok(destination)
     }

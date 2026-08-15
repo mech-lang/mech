@@ -278,6 +278,10 @@ pub struct ActivatedPlan {
 }
 
 impl ActivatedPlan {
+    pub fn schemas(&self) -> &mech_core::SchemaTable {
+        &self.schemas
+    }
+
     pub fn execution_node_count(&self) -> usize {
         self.execution_node_order.len()
     }
@@ -304,6 +308,41 @@ impl ActivatedPlan {
             })
             .count()
     }
+
+    /// Replaces one activated kernel in every execution representation.
+    ///
+    /// This is intentionally hidden and exists for fault-injection contract
+    /// tests. Pure plans retain a flattened kernel cache for the hot path, so
+    /// mutating the diagnostic `steps` view alone would not inject a fault into
+    /// the executor that production actually uses.
+    #[doc(hidden)]
+    pub fn replace_kernel_for_test(
+        &mut self,
+        index: usize,
+        kernel: BoundResidentKernel,
+    ) -> BoundResidentKernel {
+        let ActivatedTurnStep::Kernel(node) = &mut self.steps[index] else {
+            panic!("activated step {index} is not a resident kernel")
+        };
+        let previous = core::mem::replace(&mut node.kernel, kernel.clone());
+        if let Some(nodes) = &mut self.pure_kernel_steps {
+            nodes[index].kernel = kernel;
+        }
+        previous
+    }
+
+    /// Changes one activated kernel's dirty-propagation policy in every
+    /// execution representation. See [`Self::replace_kernel_for_test`].
+    #[doc(hidden)]
+    pub fn set_change_detection_for_test(&mut self, index: usize, policy: ChangeDetectionPolicy) {
+        let ActivatedTurnStep::Kernel(node) = &mut self.steps[index] else {
+            panic!("activated step {index} is not a resident kernel")
+        };
+        node.change_detection = policy;
+        if let Some(nodes) = &mut self.pure_kernel_steps {
+            nodes[index].change_detection = policy;
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -321,6 +360,7 @@ pub struct ResidentArenaSizes {
     pub indexes: usize,
     pub f64s: usize,
     pub strings: usize,
+    pub snapshots: usize,
 }
 
 impl ResidentArenaSizes {
@@ -330,6 +370,7 @@ impl ResidentArenaSizes {
             ResidentValueKind::Index => &mut self.indexes,
             ResidentValueKind::F64 => &mut self.f64s,
             ResidentValueKind::String => &mut self.strings,
+            ResidentValueKind::Snapshot => &mut self.snapshots,
         };
         let offset = *cursor;
         *cursor = cursor.checked_add(len)?;
@@ -343,6 +384,7 @@ pub struct TypedResidentArena {
     indexes: Box<[u64]>,
     f64s: Box<[f64]>,
     strings: Box<[String]>,
+    snapshots: Box<[Option<Value>]>,
 }
 
 impl TypedResidentArena {
@@ -352,6 +394,7 @@ impl TypedResidentArena {
             indexes: vec![0; sizes.indexes].into_boxed_slice(),
             f64s: vec![0.0; sizes.f64s].into_boxed_slice(),
             strings: vec![String::new(); sizes.strings].into_boxed_slice(),
+            snapshots: vec![None; sizes.snapshots].into_boxed_slice(),
         }
     }
 
@@ -371,6 +414,10 @@ impl TypedResidentArena {
         &self.strings
     }
 
+    pub fn snapshot_storage(&self) -> &[Option<Value>] {
+        &self.snapshots
+    }
+
     pub(crate) fn read(&self, region: ResidentRegion) -> ResidentValueRef<'_> {
         let range = region.offset..region.offset + region.len;
         match region.kind {
@@ -378,6 +425,7 @@ impl TypedResidentArena {
             ResidentValueKind::Index => ResidentValueRef::Index(&self.indexes[range]),
             ResidentValueKind::F64 => ResidentValueRef::F64(&self.f64s[range]),
             ResidentValueKind::String => ResidentValueRef::String(&self.strings[range]),
+            ResidentValueKind::Snapshot => ResidentValueRef::Snapshot(&self.snapshots[range]),
         }
     }
 
@@ -394,6 +442,7 @@ impl TypedResidentArena {
             ResidentValueKind::Index => ResidentValueMut::Index(&mut self.indexes[range]),
             ResidentValueKind::F64 => ResidentValueMut::F64(&mut self.f64s[range]),
             ResidentValueKind::String => ResidentValueMut::String(&mut self.strings[range]),
+            ResidentValueKind::Snapshot => ResidentValueMut::Snapshot(&mut self.snapshots[range]),
         }
     }
 
@@ -418,6 +467,9 @@ impl TypedResidentArena {
             (ResidentValueMut::String(target), ResidentValueRef::String(source)) => {
                 target.clone_from_slice(source)
             }
+            (ResidentValueMut::Snapshot(target), ResidentValueRef::Snapshot(source)) => {
+                target.clone_from_slice(source)
+            }
             _ => unreachable!("resident region kinds were checked"),
         }
     }
@@ -433,6 +485,10 @@ impl TypedResidentArena {
             ResidentValueKind::String => {
                 let values = self.strings[source].to_vec();
                 self.strings[target.offset..target.offset + target.len].clone_from_slice(&values);
+            }
+            ResidentValueKind::Snapshot => {
+                let values = self.snapshots[source].to_vec();
+                self.snapshots[target.offset..target.offset + target.len].clone_from_slice(&values);
             }
         }
     }
@@ -510,6 +566,8 @@ impl StateArena {
         self.buffers[0].bools.len()
             + self.buffers[0].indexes.len() * core::mem::size_of::<u64>()
             + self.buffers[0].f64s.len() * core::mem::size_of::<f64>()
+            + self.buffers[0].strings.len() * core::mem::size_of::<String>()
+            + self.buffers[0].snapshots.len() * core::mem::size_of::<Option<Value>>()
     }
 
     pub fn dual_payload_bytes(&self) -> usize {
@@ -636,6 +694,10 @@ pub enum ResidentValueBorrow<'a> {
         shape: ResidentShape,
         values: &'a [String],
     },
+    Snapshot {
+        shape: ResidentShape,
+        values: &'a [Option<Value>],
+    },
 }
 
 impl ResidentValueBorrow<'_> {
@@ -645,6 +707,7 @@ impl ResidentValueBorrow<'_> {
             Self::Index { values, .. } => values.len(),
             Self::F64 { values, .. } => values.len(),
             Self::String { values, .. } => values.len(),
+            Self::Snapshot { values, .. } => values.len(),
         }
     }
 
@@ -716,6 +779,10 @@ impl ReactiveInstance {
                 shape: output.region.shape,
                 values,
             },
+            ResidentValueRef::Snapshot(values) => ResidentValueBorrow::Snapshot {
+                shape: output.region.shape,
+                values,
+            },
         })
     }
 
@@ -739,6 +806,10 @@ impl ReactiveInstance {
                 values,
             },
             ResidentValueRef::String(values) => ResidentValueBorrow::String {
+                shape: resolved.region.shape,
+                values,
+            },
+            ResidentValueRef::Snapshot(values) => ResidentValueBorrow::Snapshot {
                 shape: resolved.region.shape,
                 values,
             },
@@ -1462,8 +1533,8 @@ fn schema_layout(
         SchemaBody::Matrix {
             element,
             dimensions,
-        } if dimensions.len() == 2 => {
-            let kind = kind(element).ok_or(ResidentActivationError::UnsupportedValue { schema })?;
+        } if dimensions.len() == 2 && kind(element).is_some() => {
+            let kind = kind(element).expect("guarded resident matrix element kind");
             let rows = evaluate_dimension(&dimensions[0], shape.parameter_values())?;
             let columns = evaluate_dimension(&dimensions[1], shape.parameter_values())?;
             Ok((
@@ -1476,7 +1547,7 @@ fn schema_layout(
                 },
             ))
         }
-        _ => Err(ResidentActivationError::UnsupportedValue { schema }),
+        _ => Ok((ResidentValueKind::Snapshot, ResidentShape::SCALAR)),
     }
 }
 
@@ -1615,6 +1686,7 @@ fn build_plan(
             .ok_or(ResidentActivationError::MissingResidentFactory { node: node.node })?;
         let kernel = (factory.factory)(&ResidentKernelBindRequest {
             contract: artifact.contracts().get(node.contract).unwrap(),
+            schemas: artifact.schemas(),
             inputs: &input_layouts,
             output: output_layout,
         })
@@ -2056,6 +2128,7 @@ enum OwnedResidentValue {
     Index(Box<[u64]>),
     F64(Box<[f64]>),
     String(Box<[String]>),
+    Snapshot(Box<[Option<Value>]>),
 }
 
 impl OwnedResidentValue {
@@ -2065,6 +2138,7 @@ impl OwnedResidentValue {
             Self::Index(values) => ResidentValueRef::Index(values),
             Self::F64(values) => ResidentValueRef::F64(values),
             Self::String(values) => ResidentValueRef::String(values),
+            Self::Snapshot(values) => ResidentValueRef::Snapshot(values),
         }
     }
 }
@@ -2110,6 +2184,9 @@ fn owned_activation_input(
         }
         ResidentValueRef::String(values) => {
             OwnedResidentValue::String(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Snapshot(values) => {
+            OwnedResidentValue::Snapshot(values.to_vec().into_boxed_slice())
         }
     })
 }

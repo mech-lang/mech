@@ -253,6 +253,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::horzcat::install_runtime(builder)?;
     #[cfg(feature = "matrix_vertcat")]
     super::vertcat::install_runtime(builder)?;
+    #[cfg(feature = "table")]
+    super::table_ops::install_runtime(builder)?;
 
     Ok(())
 }

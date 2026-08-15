@@ -17,9 +17,7 @@ use mech_core::{
     validate_stable_value_update,
 };
 
-#[cfg(feature = "compiler")]
-use mech_bytecode::{CompileCtx, CompiledBytecode, CompiledNodeKind};
-#[cfg(all(feature = "compiler", feature = "invariant_define"))]
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 use mech_core::Register;
 
 use crate::Interpreter;
@@ -92,7 +90,7 @@ pub struct ProgramSolveOutcome {
     pub plan_len: usize,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
     bytecode: Vec<u8>,
@@ -101,7 +99,7 @@ pub struct ProgramCompilationProduct {
 /// Compiler-only instruction for preserving a source-declared custom send
 /// operation in the canonical application requirement. It does not grant
 /// authority or change interpreter execution.
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CompiledResourceSendOperation {
     pub base_uri: String,
@@ -109,7 +107,7 @@ pub struct CompiledResourceSendOperation {
     pub operation: String,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl ProgramCompilationProduct {
     pub const fn artifact(&self) -> &ProgramArtifact {
         &self.artifact
@@ -124,13 +122,13 @@ impl ProgramCompilationProduct {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgramArtifactCompilationError {
     pub reason: String,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechErrorKind for ProgramArtifactCompilationError {
     fn name(&self) -> &str {
         "ProgramArtifactCompilationError"
@@ -490,18 +488,18 @@ impl MechProgram {
         Ok(value)
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub fn compile_bytecode(&mut self) -> MResult<Vec<u8>> {
         Ok(self.compile_program_product()?.into_parts().1)
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
         self.finalize_program_product(compiled)
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_product_with_external_contracts(
         &mut self,
         resolver: &dyn ExternalRequirementContractResolver,
@@ -515,7 +513,7 @@ impl MechProgram {
     /// with the operation explicitly declared by the source context. The
     /// transformed requirements are re-canonicalized before artifact and
     /// bytecode-v1 encoding, so both routes retain identical authority data.
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_product_with_resource_send_operations(
         &mut self,
         resolver: &dyn ExternalRequirementContractResolver,
@@ -527,7 +525,7 @@ impl MechProgram {
         self.finalize_program_product(compiled)
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     fn finalize_program_product(
         &self,
         compiled: CompiledBytecode,
@@ -559,7 +557,7 @@ impl MechProgram {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn preserve_compiled_resource_send_operations(
     compiled: &mut CompiledBytecode,
     operations: &[CompiledResourceSendOperation],
@@ -660,7 +658,7 @@ fn preserve_compiled_resource_send_operations(
 /// Builds the executable compiler product before the C3 semantic artifact is
 /// finalized. Keeping this boundary separate makes the adapter's legacy input
 /// explicit without exposing it through `ProgramArtifact`.
-#[cfg(all(feature = "compiler", feature = "invariant_define"))]
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 struct RetainedIntegrityMarkerMetadata {
     result_register: Register,
     name: LegacyValue,
@@ -670,7 +668,7 @@ struct RetainedIntegrityMarkerMetadata {
     rhs: LegacyValue,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn compile_bytecode(program: &mut MechProgram) -> MResult<CompiledBytecode> {
     let state = program.interpreter.state.borrow();
     let plan = state.plan.borrow();
@@ -862,7 +860,7 @@ mod tests {
     use mech_core::FunctionCatalogBuilder;
     use mech_core::Ref;
     #[cfg(all(
-        feature = "compiler",
+        feature = "semantic-compiler",
         feature = "source",
         feature = "invariant_define",
         feature = "compare_default",
@@ -913,7 +911,7 @@ mod tests {
     #[cfg(all(
         feature = "functions",
         feature = "native",
-        feature = "compiler",
+        feature = "semantic-compiler",
         feature = "f64"
     ))]
     #[test]
@@ -1027,7 +1025,7 @@ mod tests {
     }
 
     #[cfg(all(
-        feature = "compiler",
+        feature = "semantic-compiler",
         feature = "source",
         feature = "invariant_define",
         feature = "compare_default",
@@ -1404,7 +1402,7 @@ mod live_input_tests {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     #[test]
     fn empty_stable_assignment_bytecode_compile_returns_error() {
         let assignment =

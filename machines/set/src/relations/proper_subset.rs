@@ -66,7 +66,7 @@ impl MechFunctionImpl for SetProperSubsetFxn {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetProperSubsetFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetProperSubsetFxn".to_string();

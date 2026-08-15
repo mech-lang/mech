@@ -974,7 +974,7 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
@@ -1044,7 +1044,7 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64BroadcastFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
@@ -1102,7 +1102,7 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
@@ -1189,7 +1189,7 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ViewToF64ViewFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(

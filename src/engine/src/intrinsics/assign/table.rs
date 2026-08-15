@@ -38,7 +38,7 @@ macro_rules! impl_col_set_fxn {
         Ok(self.reactive_output_values())
       }
     }
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for $fxn_name
     where
       $vector_size_in<$out_type>: CompileConst + ConstElem + AsValueKind,
@@ -241,7 +241,7 @@ impl MechFunctionImpl for TableAppendRecord {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableAppendRecord {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableAppendRecord");
@@ -274,7 +274,7 @@ impl MechFunctionImpl for TableAppendTable {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableAppendTable {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableAppendTable");

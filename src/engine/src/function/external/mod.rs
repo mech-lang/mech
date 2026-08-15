@@ -6,12 +6,12 @@ pub use host_call::*;
 pub use resource_read::*;
 pub use resource_write::*;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{
     BytecodeCompilerContext, LegacyValue, MResult, Register, ValRef, compile_value_register,
 };
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_external_output(
     output: &ValRef,
     context: &mut dyn BytecodeCompilerContext,
@@ -20,7 +20,7 @@ pub(super) fn compile_external_output(
     compile_external_value_with_fallback(&value, output.addr(), context)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_runtime_produced_external_output(
     output: &ValRef,
     context: &mut dyn BytecodeCompilerContext,
@@ -29,7 +29,7 @@ pub(super) fn compile_runtime_produced_external_output(
     mech_core::compile_runtime_produced_register(&value, output.addr(), context)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_external_value(
     value: &LegacyValue,
     context: &mut dyn BytecodeCompilerContext,
@@ -37,7 +37,7 @@ pub(super) fn compile_external_value(
     compile_external_value_with_fallback(value, std::ptr::from_ref(value).addr(), context)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn compile_external_value_with_fallback(
     value: &LegacyValue,
     fallback: usize,
@@ -46,10 +46,10 @@ fn compile_external_value_with_fallback(
     compile_value_register(value, fallback, context)
 }
 
-#[cfg(all(test, feature = "compiler", feature = "f64"))]
+#[cfg(all(test, feature = "semantic-compiler", feature = "f64"))]
 mod tests {
     use super::*;
-    use mech_bytecode::{CompileCtx, CompiledBytecode};
+    use crate::{CompileCtx, CompiledBytecode};
     use mech_core::{
         BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError,
         InitialSolvePolicy, LegacyValue, MResult, MechError, MechExecutionServices,

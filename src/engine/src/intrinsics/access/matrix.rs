@@ -894,18 +894,18 @@ macro_rules! impl_access_all_fxn_v {
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
         ConstElem + AsValueKind,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       T: CompileConst,
       IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
       naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       naMatrix<T, R1, C1, S1>: CompileConst,
       naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -947,7 +947,7 @@ macro_rules! impl_access_all_fxn_v {
         Ok(self.reactive_output_values())
       }
     }
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
     where
       T: CompileConst + ConstElem + AsValueKind,
@@ -973,7 +973,7 @@ macro_rules! impl_access_fxn {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$arg_type>: ToValue,
             Ref<$ix_type>: ToValue,
@@ -1047,7 +1047,7 @@ macro_rules! impl_access_fxn {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: CompileConst + ConstElem + AsValueKind,
@@ -1072,7 +1072,7 @@ macro_rules! impl_access_fxn2 {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$arg_type>: ToValue,
             Ref<$ix1_type>: ToValue,
@@ -1155,7 +1155,7 @@ macro_rules! impl_access_fxn2 {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: CompileConst + ConstElem + AsValueKind,
@@ -1574,7 +1574,7 @@ mod matrix_access_scalar_value_transaction_tests {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for MatrixAccessScalarValueF {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0];

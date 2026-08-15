@@ -39,8 +39,21 @@ source = [
   "mech-stats?/source",
   "mech-combinatorics?/source",
 ]
-compiler = [
+semantic-compiler = [
   "source",
+  "mech-engine/semantic-compiler",
+  "mech-math?/semantic-compiler",
+  "mech-compare?/semantic-compiler",
+  "mech-logic?/semantic-compiler",
+  "mech-range?/semantic-compiler",
+  "mech-matrix?/semantic-compiler",
+  "mech-set?/semantic-compiler",
+  "mech-string?/semantic-compiler",
+  "mech-stats?/semantic-compiler",
+  "mech-combinatorics?/semantic-compiler",
+]
+compiler = [
+  "semantic-compiler",
   "mech-engine/compiler",
   "mech-math?/compiler",
   "mech-compare?/compiler",
