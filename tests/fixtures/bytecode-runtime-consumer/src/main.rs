@@ -1,4 +1,4 @@
-use mech_engine::{MechProgram, MechProgramConfig};
+use mech_runtime::{ResidentDurabilityPolicy, RuntimeBuilder};
 use std::env;
 use std::fs;
 
@@ -7,13 +7,15 @@ fn main() {
         .nth(1)
         .expect("usage: bytecode-runtime-consumer <input.mecb>");
     let bytecode = fs::read(input).expect("failed to read bytecode");
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::runtime_catalog(),
-    );
-    let result = program
-        .run_bytecode(&bytecode)
-        .expect("bytecode execution failed");
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::runtime_catalog())
+        .build()
+        .expect("resident runtime construction failed");
+    let result = runtime
+        .load_bytecode_program(&bytecode, ResidentDurabilityPolicy::Volatile)
+        .expect("bytecode execution failed")
+        .initial_value
+        .into_value();
     let value = result.as_f64().expect("expected f64 output");
     assert_eq!(*value.borrow(), 3.0);
 }

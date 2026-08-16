@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "contract": "resident-activation",
+  "source_targets": "tests/architecture/value-system/frozen-semantic-targets-v1.json",
+  "semantic_targets": [
+    {
+      "id": "mutable-reference-runtime-storage",
+      "applies_to": [
+        {
+          "enum": "LegacyValue",
+          "variants": [
+            "MutableReference"
+          ]
+        }
+      ],
+      "semantic_category": "runtime-slot-state",
+      "representation": "CellBinding",
+      "key_semantics": "not-keyable",
+      "runtime_storage": "instance-arena"
+    },
+    {
+      "id": "uninitialized-storage",
+      "applies_to": [
+        {
+          "enum": "LegacyValue",
+          "variants": [
+            "Empty"
+          ]
+        }
+      ],
+      "semantic_category": "runtime-slot-state",
+      "representation": "SlotInitialization::Uninitialized",
+      "key_semantics": "not-keyable",
+      "runtime_storage": "instance-arena-metadata"
+    }
+  ],
+  "activation_owners": [
+    {
+      "path": "src/engine/src/artifact/model.rs",
+      "markers": [
+        "pub struct ProgramArtifact"
+      ]
+    },
+    {
+      "path": "src/engine/src/resident/general/mod.rs",
+      "markers": [
+        "pub fn activate(",
+        "pub fn preflight_activation("
+      ]
+    },
+    {
+      "path": "src/runtime/src/runtime/program/loading.rs",
+      "markers": [
+        "pub fn load_source_program(",
+        "pub fn load_bytecode_program("
+      ]
+    },
+    {
+      "path": "src/runtime/src/runtime/program/external/admission.rs",
+      "markers": [
+        "struct ResidentAdmissionProof"
+      ]
+    }
+  ],
+  "obsolete_owners_absent": [
+    "src/engine/src/program/instance.rs",
+    "src/runtime/src/runtime/resident_program",
+    "src/runtime/src/resident_external",
+    "src/interpreter",
+    "src/bin/interpreter2.rs"
+  ]
+}

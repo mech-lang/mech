@@ -1,14 +1,10 @@
 //! Detached values and summaries returned by the public runtime API.
 
-use std::collections::BTreeMap;
 use std::fmt::{Debug, Display, Formatter};
 
 use mech_core::{LegacyValue, MResult, MechError, ValueKind};
 
-use crate::{CapabilityId, ModuleVersionId};
-
-#[cfg(feature = "invariant_define")]
-use mech_engine::IntegrityConstraintReport;
+use crate::CapabilityId;
 
 #[cfg(test)]
 #[path = "tests.rs"]
@@ -117,20 +113,6 @@ impl Display for RuntimeValueSnapshot {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         Display::fmt(&self.value, formatter)
     }
-}
-
-#[cfg(feature = "invariant_define")]
-#[derive(Clone, Debug)]
-pub struct RuntimeRootModuleExecutionReport {
-    pub result: RuntimeValueSnapshot,
-    pub integrity: IntegrityConstraintReport,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct RuntimeModuleResult {
-    pub version: ModuleVersionId,
-    pub exports: BTreeMap<String, RuntimeValueSnapshot>,
-    pub result: RuntimeValueSnapshot,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

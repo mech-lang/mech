@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
+    MResult, MechError, MechErrorKind, ObservationContract, ObservationReplayPolicy, Ref,
+};
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
@@ -148,6 +151,39 @@ fn env_plan_read_validates_keys_and_other_cli_resources_are_not_plannable() {
 }
 
 #[test]
+fn terminal_declares_snapshot_observation_and_send_effect_semantics() {
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    let env_request = RuntimeResourceReadRequest {
+        base_uri: "cli://env".to_string(),
+        path: "HOME".to_string(),
+        context_name: "env".to_string(),
+    };
+
+    assert!(matches!(
+        provider.semantic_read_contract().unwrap().interaction,
+        ExternalInteraction::Observation(ObservationContract {
+            replay: ObservationReplayPolicy::CaptureAsInputFact,
+        }),
+    ));
+    assert!(!provider.observation_requires_input_driver(&env_request));
+    assert!(matches!(
+        provider
+            .semantic_write_contract(RuntimeResourceWriteIntent::Send)
+            .unwrap()
+            .interaction,
+        ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    ));
+    assert!(
+        provider
+            .semantic_write_contract(RuntimeResourceWriteIntent::Assign)
+            .is_none()
+    );
+}
+
+#[test]
 fn env_read_propagates_backend_errors() {
     let provider = CliResourceProvider::new(FakeCliBackend {
         env_error: Some("host env decode failed".to_string()),
@@ -168,7 +204,7 @@ fn env_read_propagates_backend_errors() {
 
 #[test]
 fn env_write_and_send_error() {
-    let mut provider = CliResourceProvider::new(FakeCliBackend::default());
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
     for intent in [
         RuntimeResourceWriteIntent::Assign,
         RuntimeResourceWriteIntent::Send,
@@ -245,7 +281,7 @@ fn stdout_and_stderr_send_text_and_line() {
 
 #[test]
 fn stdout_prepare_write_buffers_until_delivery() {
-    let mut provider = CliResourceProvider::new(FakeCliBackend::default());
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
     let effect = provider
         .prepare_write(RuntimeResourceWriteRequest {
             base_uri: "cli://stdout".to_string(),
@@ -268,8 +304,54 @@ fn stdout_prepare_write_buffers_until_delivery() {
 }
 
 #[test]
+fn discarded_candidate_delivers_zero_terminal_output() {
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    let effect = provider
+        .prepare_write(RuntimeResourceWriteRequest {
+            base_uri: "cli://stdout".to_string(),
+            path: "line".to_string(),
+            context_name: "out".to_string(),
+            operation: RuntimeCapabilityOperation::Write,
+            value: str_value("rejected"),
+            intent: RuntimeResourceWriteIntent::Send,
+        })
+        .unwrap();
+
+    assert!(matches!(effect, PreparedRuntimeEffect::AfterCommit(_)));
+    drop(effect);
+    assert!(provider.backend().stdout.is_empty());
+    assert!(provider.backend().stderr.is_empty());
+}
+
+#[test]
+fn stdout_planning_accepts_only_scalar_strings_without_output() {
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
+    let request = |value| RuntimeResourceWriteRequest {
+        base_uri: "cli://stdout".to_string(),
+        path: "line".to_string(),
+        context_name: "out".to_string(),
+        operation: RuntimeCapabilityOperation::Write,
+        value,
+        intent: RuntimeResourceWriteIntent::Send,
+    };
+
+    provider.plan_write(request(str_value("planned"))).unwrap();
+    let error = provider
+        .plan_write(request(LegacyValue::Empty))
+        .unwrap_err();
+
+    assert!(
+        error
+            .display_message()
+            .contains("require a scalar string payload")
+    );
+    assert!(provider.backend().stdout.is_empty());
+    assert!(provider.backend().stderr.is_empty());
+}
+
+#[test]
 fn stdout_and_stderr_reject_assign_read_and_unknown_path() {
-    let mut provider = CliResourceProvider::new(FakeCliBackend::default());
+    let provider = CliResourceProvider::new(FakeCliBackend::default());
     assert!(
         provider
             .prepare_write(RuntimeResourceWriteRequest {

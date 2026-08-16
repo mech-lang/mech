@@ -19,11 +19,11 @@ use mech_engine::__resident::{
 };
 use mech_engine::{
     ApplicationRequirementTable, ArtifactSource, BindingDeclaration, InitializerReference,
-    InputDeclaration, MechProgram, MechProgramConfig, NodeDeclaration, OperationReference,
-    OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
-    SlotRole,
+    InputDeclaration, NodeDeclaration, OperationReference, OutputDeclaration, ProducerReference,
+    ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
     decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
 };
+use mech_runtime::RuntimeBuilder;
 use sha2::{Digest, Sha256};
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::collections::BTreeSet;
@@ -304,7 +304,6 @@ fn main() {
         energy_drift.abs() <= 1.0e-3,
         "the 4,096-turn signed-force trajectory exceeds the frozen absolute energy-drift bound"
     );
-    assert_legacy_trajectory(&catalog, &raw.masses, &trajectory_sha256);
     let mut allocation_instance = activate(
         mech_core::ReactiveInstanceId::new(2, 0),
         &artifact,
@@ -1992,173 +1991,6 @@ impl RawNbody {
     }
 }
 
-fn assert_legacy_trajectory(
-    catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
-    masses: &[f64; 10],
-    expected_hash: &str,
-) {
-    let resident_initial = compile_initial_state(catalog);
-    let (artifact, _) = compile(SOURCE, catalog.clone());
-    let mut legacy =
-        MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
-    legacy
-        .run_string(SOURCE)
-        .expect("ordinary legacy n-body source executes its numerical closure");
-    let turn_steps = semantic_legacy_turn_steps(&legacy, &artifact, catalog);
-    let mut reference = RawNbody {
-        x: resident_initial.0,
-        v: resident_initial.1,
-        masses: *masses,
-    };
-    reference.advance();
-    let mut trajectory = Sha256::new();
-    for turn in 0..4_096 {
-        if turn != 0 {
-            let plan = legacy.interpreter().plan();
-            let plan = plan.0.borrow_mut();
-            for step in &turn_steps {
-                plan[*step]
-                    .solve_result()
-                    .expect("execute one mechanically identified legacy n-body turn step");
-            }
-            reference.advance();
-        }
-        let x = initial_legacy_axis(&legacy, "x");
-        let v = initial_legacy_axis(&legacy, "v");
-        assert_quantized_equal(&x, &reference.x, turn, "legacy x");
-        assert_quantized_equal(&v, &reference.v, turn, "legacy v");
-        update_quantized(&mut trajectory, &x);
-        update_quantized(&mut trajectory, &v);
-    }
-    assert_eq!(hex(trajectory.finalize()), expected_hash);
-}
-
-fn semantic_legacy_turn_steps(
-    program: &MechProgram,
-    artifact: &ProgramArtifact,
-    catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
-) -> Vec<usize> {
-    let resident = activate(
-        mech_core::ReactiveInstanceId::new(98, 0),
-        artifact,
-        catalog,
-        &ActivationFacts::default(),
-    )
-    .expect("activate the n-body artifact to identify its resident turn nodes");
-    let expected = resident
-        .plan
-        .topology
-        .linear_node_order
-        .iter()
-        .map(|index| {
-            let artifact_node =
-                kernel_step(&resident.plan.steps[index.get() as usize]).artifact_node;
-            artifact.nodes()[artifact_node.get() as usize]
-                .operation
-                .operation_name
-                .split('<')
-                .next()
-                .expect("resident operation has a base name")
-        })
-        .collect::<Vec<_>>();
-    let activation_operations = resident
-        .plan
-        .activation_nodes
-        .iter()
-        .map(|node| {
-            artifact.nodes()[node.get() as usize]
-                .operation
-                .operation_name
-                .split('<')
-                .next()
-                .expect("activation operation has a base name")
-        })
-        .collect::<BTreeSet<_>>();
-    let plan = program.interpreter().plan();
-    let plan = plan.0.borrow();
-    let operation_name = |index: usize| {
-        plan.nodes[index]
-            .function
-            .to_string()
-            .split_whitespace()
-            .next()
-            .unwrap_or("")
-            .to_owned()
-    };
-    let mut matches = Vec::new();
-    for start in 0..plan.nodes.len() {
-        let mut cursor = start;
-        let mut steps = Vec::with_capacity(expected.len());
-        for expected_name in &expected {
-            while cursor < plan.nodes.len() {
-                let candidate = operation_name(cursor);
-                if candidate == *expected_name {
-                    break;
-                }
-                if steps.is_empty() {
-                    break;
-                }
-                if candidate.starts_with("VariableDefine")
-                    || activation_operations.contains(candidate.as_str())
-                {
-                    cursor += 1;
-                    continue;
-                }
-                break;
-            }
-            if cursor == plan.nodes.len() || operation_name(cursor) != *expected_name {
-                steps.clear();
-                break;
-            }
-            steps.push(cursor);
-            cursor += 1;
-        }
-        if !steps.is_empty() {
-            matches.push(steps);
-        }
-    }
-    assert_eq!(
-        matches.len(),
-        1,
-        "the activated resident turn operation sequence identifies one legacy closure; expected={expected:?}"
-    );
-    matches.pop().unwrap()
-}
-
-fn compile_initial_state(
-    catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
-) -> ([f64; 30], [f64; 30]) {
-    let (artifact, _) = compile(SOURCE, catalog.clone());
-    let instance = activate(
-        mech_core::ReactiveInstanceId::new(99, 0),
-        &artifact,
-        catalog,
-        &ActivationFacts::default(),
-    )
-    .unwrap();
-    let x = artifact.outputs()[0].source;
-    let v = artifact
-        .slots()
-        .iter()
-        .find(|slot| slot.role == SlotRole::State && slot.slot != x)
-        .unwrap()
-        .slot;
-    (
-        resident_f64_slot(&instance, x).try_into().unwrap(),
-        resident_f64_slot(&instance, v).try_into().unwrap(),
-    )
-}
-
-fn initial_legacy_axis(program: &MechProgram, name: &str) -> [f64; 30] {
-    program
-        .root_symbol_value(name)
-        .unwrap()
-        .as_vecf64()
-        .expect("legacy n-body state is f64")
-        .try_into()
-        .unwrap()
-}
-
 fn assert_quantized_equal(left: &[f64], right: &[f64], turn: usize, lane: &str) {
     assert_eq!(left.len(), right.len());
     for (index, (left, right)) in left.iter().zip(right).enumerate() {
@@ -2207,10 +2039,11 @@ fn compile(
     source: &str,
     catalog: std::sync::Arc<mech_core::FunctionCatalog>,
 ) -> (ProgramArtifact, Vec<u8>) {
-    let mut program = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
-    program.run_string(source).expect("source must execute");
-    program
-        .compile_program_product()
+    RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .build_compiler()
+        .expect("source compiler construction failed")
+        .compile_source(source)
         .expect("source must compile into a ProgramArtifact")
         .into_parts()
 }

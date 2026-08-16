@@ -380,7 +380,6 @@ function outputAddress(element) {
   }
   return {
     outputId: BigInt(element.id.slice(0, separator)),
-    interpreterId: BigInt(element.id.slice(separator + 1)),
   };
 }
 
@@ -423,14 +422,12 @@ function prepareVarPlaceholders() {
 function createOutputEntry(address, rendered) {
   const row = document.createElement("article");
   row.className = "mech-document-output-entry";
-  row.dataset.mechInterpreterId = address.interpreterId.toString();
   row.dataset.mechOutputId = address.outputId.toString();
   row.dataset.mechRenderedKind = rendered.kind;
 
   const heading = document.createElement("header");
   heading.className = "mech-document-output-heading";
-  heading.textContent =
-    `interpreter ${address.interpreterId} · output ${address.outputId} · ${rendered.kind}`;
+  heading.textContent = `output ${address.outputId} · ${rendered.kind}`;
   const body = document.createElement("div");
   body.className = "mech-document-output-html";
   body.innerHTML = rendered.blockHtml;
@@ -457,10 +454,7 @@ function renderValues() {
   for (const output of state.root?.querySelectorAll(".mech-block-output[id]") || []) {
     try {
       const address = outputAddress(output);
-      const rendered = state.document.renderedOutput(
-        address.interpreterId,
-        address.outputId,
-      );
+      const rendered = state.document.renderedOutput(address.outputId);
       if (rendered !== null) {
         output.innerHTML = rendered.blockHtml;
         outputEntries.push({ address, rendered });
@@ -472,10 +466,7 @@ function renderValues() {
   for (const output of state.root?.querySelectorAll(".mech-inline-mech-code[id]") || []) {
     try {
       const address = outputAddress(output);
-      const rendered = state.document.renderedOutput(
-        address.interpreterId,
-        address.outputId,
-      );
+      const rendered = state.document.renderedOutput(address.outputId);
       if (rendered !== null) {
         output.innerHTML = rendered.inlineHtml;
       }
@@ -485,10 +476,7 @@ function renderValues() {
   }
   for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
     try {
-      const rendered = state.document.renderedSymbol(
-        0n,
-        placeholder.dataset.mechVarName,
-      );
+      const rendered = state.document.renderedSymbol(placeholder.dataset.mechVarName);
       if (rendered !== null) {
         placeholder.innerHTML = rendered.inlineHtml;
       }
@@ -517,32 +505,9 @@ function appendTranscriptRow(className, text) {
   return row;
 }
 
-function appendRenderedResult(rendered) {
-  const target = transcript();
-  if (!target) {
-    return;
-  }
-  const row = document.createElement("div");
-  row.className = "mech-repl-entry mech-repl-result";
-  row.dataset.mechResultKind = rendered.kind;
-  const kind = document.createElement("span");
-  kind.className = "mech-repl-result-kind";
-  kind.textContent = rendered.kind;
-  const value = document.createElement("span");
-  value.className = "mech-repl-result-value";
-  value.innerHTML = rendered.inlineHtml;
-  row.append(kind, value);
-  target.append(row);
-  target.scrollTop = target.scrollHeight;
-}
-
 function appendConsoleError(error) {
   appendTranscriptRow("mech-repl-error", errorMessage(error));
   appendError(error);
-}
-
-function supportsInteractiveEvaluation() {
-  return typeof state.document?.evaluate === "function";
 }
 
 function appendHelp() {
@@ -620,21 +585,15 @@ function parseStepCount(argumentsList) {
   return count;
 }
 
-async function runConsoleCommand(source) {
+function runConsoleCommand(source) {
   const input = source.trim();
   if (!input) {
     return;
   }
   if (!input.startsWith(":")) {
-    if (!supportsInteractiveEvaluation()) {
-      throw new Error(
-        "interactive source evaluation is unavailable in standard resident documents; use :help for document commands",
-      );
-    }
-    const rendered = state.document.evaluate(source);
-    appendRenderedResult(rendered);
-    renderValues();
-    return;
+    throw new Error(
+      "interactive source evaluation is unavailable in standard resident documents; use :help for document commands",
+    );
   }
 
   const [command, ...argumentsList] = input.split(/\s+/);
@@ -698,20 +657,14 @@ function attachConsole() {
   transcriptElement.setAttribute("aria-live", "polite");
   const inputRow = document.createElement("div");
   inputRow.className = "mech-repl-input-row";
-  const interactiveEvaluation = supportsInteractiveEvaluation();
   const prompt = document.createElement("span");
   prompt.className = "repl-prompt";
-  prompt.textContent = interactiveEvaluation ? ">:" : ":";
+  prompt.textContent = ":";
   const input = document.createElement("textarea");
   input.className = "repl-input";
-  input.dataset.mechInteractiveEvaluation = interactiveEvaluation ? "available" : "unavailable";
-  input.setAttribute(
-    "aria-label",
-    interactiveEvaluation ? "Mech developer REPL input" : "Mech document command input",
-  );
-  if (!interactiveEvaluation) {
-    input.placeholder = "Document commands only (:help)";
-  }
+  input.dataset.mechInteractiveEvaluation = "unavailable";
+  input.setAttribute("aria-label", "Mech document command input");
+  input.placeholder = "Document commands only (:help)";
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();

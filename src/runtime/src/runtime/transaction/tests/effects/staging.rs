@@ -142,7 +142,7 @@ fn broken_effect_identity_poisons_before_external_work() {
         )
         .unwrap();
     runtime
-        .active_execution_transaction_mut(transaction_id)
+        .active_runtime_transaction_mut(transaction_id)
         .unwrap()
         .effects
         .entries[0]

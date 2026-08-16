@@ -21,8 +21,8 @@
 //! - editor/workspace buffers
 //! - embedded runtime sources
 //!
-//! MechProgram should not own source resolution. MechProgram executes source
-//! once it already has source. MechRuntime owns a SourceResolver and decides how
+//! The compiler session should not own source resolution. It compiles source
+//! only after resolution. MechRuntime owns a SourceResolver and decides how
 //! resolved sources are stored, checked, activated, and executed.
 
 #[cfg(feature = "serde")]

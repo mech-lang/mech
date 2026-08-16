@@ -68,6 +68,18 @@ pub(crate) fn install_frozen_ekf_state_runtime(
         RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
         &PURE_STATE_REGISTER_CONTRACT,
     )?;
+    #[cfg(feature = "vector3")]
+    builder.insert_runtime_factory_with_semantic_contract::<Assign<Vector3<f64>>>(
+        "Assign<f64Vector3>",
+        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+        &PURE_STATE_REGISTER_CONTRACT,
+    )?;
+    #[cfg(feature = "matrix3")]
+    builder.insert_runtime_factory_with_semantic_contract::<Assign<Matrix3<f64>>>(
+        "Assign<f64Matrix3>",
+        RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::AllowInputAlias),
+        &PURE_STATE_REGISTER_CONTRACT,
+    )?;
     Ok(())
 }
 
@@ -191,7 +203,7 @@ where
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for AssignComposite<T>
 where
     T: Clone + Debug + 'static,
@@ -417,7 +429,7 @@ impl MechFunctionImpl for AssignStructuredComposite {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for AssignStructuredComposite {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(
@@ -530,9 +542,9 @@ impl<T> MechFunctionFactory for Assign<T>
 where
     T: Clone + Debug + Sync + Send + 'static,
     Ref<T>: ToValue,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: ConstElem + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     T: FunctionRuntimeType,
     T: AssignRuntimeName,
@@ -598,7 +610,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for Assign<T>
 where
     T: CompileConst + ConstElem + AsValueKind + AssignRuntimeName,
@@ -645,7 +657,7 @@ impl MechFunctionImpl for AssignEmpty {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for AssignEmpty {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(EmptyAssignmentNotBytecodeCompilable, None).with_compiler_loc())
@@ -1018,7 +1030,7 @@ impl FunctionSpecializer for AddAssignValue {
 mod tests {
     use super::*;
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     #[test]
     fn empty_stable_assignment_bytecode_compile_returns_error() {
         use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;

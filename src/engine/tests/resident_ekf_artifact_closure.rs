@@ -9,7 +9,6 @@ use mech_core::{
 use mech_engine::__resident::{
     FrozenEkfCompilationServices, compile_frozen_ekf_source, frozen_ekf_compiler_catalog,
 };
-use mech_engine::{MechProgram, MechProgramConfig};
 
 const SOURCE: &str =
     include_str!("../../../tests/architecture/resident-activation/ekf-source-v1.mec");
@@ -271,41 +270,5 @@ fn same_schema_observation_and_planning_payloads_preserve_program_identity() -> 
     assert_eq!(compilation_a.source_closure, compilation_b.source_closure);
     assert_eq!(compilation_a.bytecode, compilation_b.bytecode);
 
-    let catalog = frozen_ekf_compiler_catalog()?;
-    let mut runtime_a =
-        MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
-    let mut runtime_b = MechProgram::with_function_catalog(MechProgramConfig::default(), catalog);
-    let runtime_observation_a = [9.0, 8.0, 7.0, 6.0];
-    let runtime_observation_b = [-4.0, 3.0, -2.0, 1.0];
-    let mut runtime_services_a =
-        FrozenEkfCompilationServices::from_frames(runtime_observation_a, planning_a);
-    let mut runtime_services_b =
-        FrozenEkfCompilationServices::from_frames(runtime_observation_b, planning_b);
-
-    runtime_a.run_bytecode_with_services(&compilation_a.bytecode, &mut runtime_services_a)?;
-    runtime_b.run_bytecode_with_services(&compilation_b.bytecode, &mut runtime_services_b)?;
-
-    assert_eq!(runtime_services_a.planned_reads.len(), 1);
-    assert_eq!(runtime_services_b.planned_reads.len(), 1);
-    assert_eq!(runtime_services_a.reads.len(), 1);
-    assert_eq!(runtime_services_b.reads.len(), 1);
-    assert_eq!(runtime_services_a.live_bindings.len(), 1);
-    assert_eq!(runtime_services_b.live_bindings.len(), 1);
-    assert_eq!(
-        runtime_services_a.live_bindings[0]
-            .target
-            .borrow()
-            .as_vecf64()
-            .expect("live binding must contain the actual observation"),
-        runtime_observation_a
-    );
-    assert_eq!(
-        runtime_services_b.live_bindings[0]
-            .target
-            .borrow()
-            .as_vecf64()
-            .expect("live binding must contain the actual observation"),
-        runtime_observation_b
-    );
     Ok(())
 }

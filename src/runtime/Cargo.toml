@@ -20,15 +20,15 @@ no_std = ["mech-core/no_std", "mech-engine/no_std", "mech-syntax?/no_std"]
 runtime = ["mech-engine/runtime"]
 runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 runtime_bench_gate_b = ["compiler", "mech-engine/resident-artifact"]
-resident-external = ["runtime", "mech-engine/resident-artifact"]
+resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
 resident-routing = ["resident-external"]
-resident-routing-source = ["resident-routing", "compiler"]
-legacy-interpreter = ["runtime", "source"]
+resident-routing-source = ["resident-routing", "semantic-compiler"]
 runtime_bench_gate_d = ["runtime_bench_gate_b", "runtime_default"]
 runtime_bench_gate_d3 = ["resident-external", "runtime_bench_gate_d"]
 native-link = ["runtime", "string"]
 source = ["runtime", "mech-engine/source", "dep:mech-syntax"]
-compiler = ["source", "mech-engine/compiler"]
+semantic-compiler = ["source", "mech-engine/semantic-compiler"]
+compiler = ["semantic-compiler", "mech-engine/compiler"]
 
 runtime_default = [
   "runtime",
@@ -71,9 +71,9 @@ source_default = [
   "watcher",
 ]
 compiler_default = ["source_default", "compiler"]
-full_runtime = ["runtime_default", "legacy-interpreter"]
-full_source = ["source_default", "legacy-interpreter"]
-full_compiler = ["compiler_default", "legacy-interpreter"]
+full_runtime = ["runtime_default"]
+full_source = ["source_default", "semantic-compiler"]
+full_compiler = ["compiler_default"]
 default = []
 base = ["compiler_default", "mech-core/base", "mech-engine/base"]
 
@@ -229,86 +229,6 @@ rand_core = { version = "0.6.4", optional = true }
 uuid = { version = "1.23.1", features = ["js"] }
 web-time = "1.1.0"
 
-[[bin]]
-name = "address_target_diagnostics"
-path = "src/bin/address_target_diagnostics.rs"
-required-features = ["source_default"]
-
-[[bin]]
-name = "module_smoke"
-path = "src/bin/module_smoke.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "actor_context_host"
-path = "examples/actor_context_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "actor_state_host"
-path = "examples/actor_state_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "arbitrary_rust_host_function"
-path = "examples/arbitrary_rust_host_function.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[example]]
-name = "arbitrary_rust_host_functions2"
-path = "examples/arbitrary_rust_host_functions2.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[example]]
-name = "basic_runtime"
-path = "examples/basic_runtime.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[example]]
-name = "dep_cycle"
-path = "examples/dep_cycle.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "dep_diamond"
-path = "examples/dep_diamond.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "host_value_roundtrip"
-path = "examples/host_value_roundtrip.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[example]]
-name = "runtime_dep_src"
-path = "examples/runtime_dep_src.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "runtime_services_host"
-path = "examples/runtime_services_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "scheduled_actor_native_functions"
-path = "examples/scheduled_actor_native_functions.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "scheduled_actor_state_host"
-path = "examples/scheduled_actor_state_host.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "scheduled_runtime"
-path = "examples/scheduled_runtime.rs"
-required-features = ["source_default"]
-
-[[example]]
-name = "source_import_dependency"
-path = "examples/source_import_dependency.rs"
-required-features = ["source_default"]
-
 [[example]]
 name = "transactional_runtime"
 path = "examples/transactional_runtime.rs"
@@ -320,24 +240,9 @@ path = "tests/config_profile.rs"
 required-features = ["source_default"]
 
 [[test]]
-name = "module_smoke"
-path = "tests/module_smoke.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[test]]
-name = "generic_host"
-path = "tests/generic_host.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[test]]
-name = "native_live_resource"
-path = "tests/native_live_resource.rs"
-required-features = ["source_default", "legacy-interpreter"]
-
-[[test]]
-name = "sealed_snapshots"
-path = "tests/sealed_snapshots.rs"
-required-features = ["source_default", "legacy-interpreter"]
+name = "generic_host_kernel"
+path = "tests/generic_host_kernel.rs"
+required-features = ["runtime_default"]
 
 [[test]]
 name = "recording_bench_facade"
@@ -349,20 +254,25 @@ name = "sealed_api"
 path = "tests/sealed_api.rs"
 required-features = ["source_default"]
 
-[[bench]]
-name = "program_transaction"
-harness = false
-required-features = ["source_default", "legacy-interpreter"]
+[[test]]
+name = "resident_external_gate_d3"
+path = "tests/resident_external_gate_d3.rs"
+required-features = ["runtime_bench_gate_d3"]
 
-[[bench]]
-name = "reactive_transaction"
-harness = false
-required-features = ["source_default", "legacy-interpreter"]
+[[test]]
+name = "resident_external_sealed_api"
+path = "tests/resident_external_sealed_api.rs"
+required-features = ["resident-external"]
 
-[[bench]]
-name = "history_scaling"
-harness = false
-required-features = ["source_default", "runtime_bench_probes", "legacy-interpreter"]
+[[test]]
+name = "resident_gate_b_contract"
+path = "tests/resident_gate_b_contract.rs"
+required-features = ["runtime_bench_gate_b"]
+
+[[test]]
+name = "resource_preflight"
+path = "tests/resource_preflight.rs"
+required-features = ["runtime_default"]
 
 [[bench]]
 name = "recording_primitives"
@@ -372,4 +282,4 @@ required-features = ["runtime_default", "runtime_bench_probes"]
 [[bench]]
 name = "resident_ekf"
 harness = false
-required-features = ["source_default", "runtime_bench_gate_b", "legacy-interpreter"]
+required-features = ["source_default", "runtime_bench_gate_b"]

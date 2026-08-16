@@ -10,7 +10,6 @@ use support::*;
 
 #[derive(Clone, Copy)]
 enum RuntimeArity {
-    Nullary,
     Unary,
     Binary,
     Ternary,
@@ -23,8 +22,7 @@ impl RuntimeArity {
         parsed.instructions.iter().any(|instruction| {
             matches!(
                 (self, instruction),
-                (Self::Nullary, BytecodeInstruction::RuntimeNullary { .. })
-                    | (Self::Unary, BytecodeInstruction::RuntimeUnary { .. })
+                (Self::Unary, BytecodeInstruction::RuntimeUnary { .. })
                     | (Self::Binary, BytecodeInstruction::RuntimeBinary { .. })
                     | (Self::Ternary, BytecodeInstruction::RuntimeTernary { .. })
                     | (
@@ -38,24 +36,19 @@ impl RuntimeArity {
 }
 
 fn compile_source(source: &str) -> Vec<u8> {
-    let mut runtime = RuntimeBuilder::new()
-        .planning()
+    let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .build()
+        .build_compiler()
         .unwrap();
-    runtime.run_string(source).unwrap();
-    runtime.compile_program_bytecode().unwrap()
+    compiler
+        .compile_source(source)
+        .map(|product| product.into_parts().1)
+        .unwrap()
 }
 
 #[test]
-fn poisoned_output_seeds_are_recomputed_for_every_runtime_arity() {
+fn poisoned_output_seeds_are_recomputed_for_every_resident_runtime_arity() {
     let cases = [
-        (
-            "nullary",
-            "{x | x <- {1.0}, false}",
-            RuntimeArity::Nullary,
-            "{}",
-        ),
         ("unary", "[9.0]", RuntimeArity::Unary, "[9]"),
         ("binary", "1.0 + 2.0", RuntimeArity::Binary, "3"),
         (
@@ -111,4 +104,3 @@ fn poisoned_output_seeds_are_recomputed_for_every_runtime_arity() {
         assert_eq!(result.stdout.unwrap().trim(), expected, "{name}");
     }
 }
-use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

@@ -4,13 +4,9 @@ use mech_core::{MResult, MechError};
 use mech_runtime::{ConfigValue, RuntimeHostFactory};
 
 use super::{NativeHostCatalog, NativeHostCatalogInvalid, NativeHostLinkage, NativeTargetFamily};
-#[cfg(feature = "experimental-actors")]
-use super::{NativeHostFunctionContext, NativeHostFunctionLinkage};
 
 const STANDARD_TARGETS: &[NativeTargetFamily] =
     &[NativeTargetFamily::Unix, NativeTargetFamily::Windows];
-#[cfg(feature = "experimental-actors")]
-const ACTOR_FEATURES: &[&str] = &["native-link", "runtime", "string"];
 
 fn validate_cli_settings(instance: &str, settings: &ConfigValue) -> MResult<()> {
     mech_terminal::CliHostFactory::new()?.validate_settings(instance, settings)
@@ -154,67 +150,12 @@ fn full_native_host_registrations() -> Vec<NativeHostLinkage> {
     registrations
 }
 
-#[cfg(feature = "experimental-actors")]
-fn actor_host_function_linkages() -> [NativeHostFunctionLinkage; 5] {
-    [
-        NativeHostFunctionLinkage {
-            name: "actor/message/kind",
-            context: NativeHostFunctionContext::ActorTurn,
-            package: "mech-runtime",
-            crate_name: "mech_runtime",
-            cargo_features: ACTOR_FEATURES,
-            installer_path: "mech_runtime::__mech_native::install_actor_message_kind",
-        },
-        NativeHostFunctionLinkage {
-            name: "actor/message/payload",
-            context: NativeHostFunctionContext::ActorTurn,
-            package: "mech-runtime",
-            crate_name: "mech_runtime",
-            cargo_features: ACTOR_FEATURES,
-            installer_path: "mech_runtime::__mech_native::install_actor_message_payload",
-        },
-        NativeHostFunctionLinkage {
-            name: "actor/state/get",
-            context: NativeHostFunctionContext::ActorTurn,
-            package: "mech-runtime",
-            crate_name: "mech_runtime",
-            cargo_features: ACTOR_FEATURES,
-            installer_path: "mech_runtime::__mech_native::install_actor_state_get",
-        },
-        NativeHostFunctionLinkage {
-            name: "actor/state/id",
-            context: NativeHostFunctionContext::ActorTurn,
-            package: "mech-runtime",
-            crate_name: "mech_runtime",
-            cargo_features: ACTOR_FEATURES,
-            installer_path: "mech_runtime::__mech_native::install_actor_state_id",
-        },
-        NativeHostFunctionLinkage {
-            name: "actor/state/put",
-            context: NativeHostFunctionContext::ActorTurn,
-            package: "mech-runtime",
-            crate_name: "mech_runtime",
-            cargo_features: ACTOR_FEATURES,
-            installer_path: "mech_runtime::__mech_native::install_actor_state_put",
-        },
-    ]
-}
-
-fn insert_experimental_actor_functions(_catalog: &mut NativeHostCatalog) -> MResult<()> {
-    #[cfg(feature = "experimental-actors")]
-    for linkage in actor_host_function_linkages() {
-        _catalog.insert_function(linkage)?;
-    }
-    Ok(())
-}
-
 /// Returns the trusted native-host catalog for the standard distribution.
 pub fn standard_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
     let mut catalog = NativeHostCatalog::new();
     for linkage in standard_native_host_registrations() {
         catalog.insert_provider(linkage)?;
     }
-    insert_experimental_actor_functions(&mut catalog)?;
     Ok(Arc::new(catalog))
 }
 
@@ -225,7 +166,6 @@ pub fn full_native_host_catalog() -> MResult<Arc<NativeHostCatalog>> {
     for linkage in full_native_host_registrations() {
         catalog.insert_provider(linkage)?;
     }
-    insert_experimental_actor_functions(&mut catalog)?;
     Ok(Arc::new(catalog))
 }
 
@@ -270,10 +210,7 @@ mod tests {
     fn standard_catalog_has_exact_provider_surface() {
         let catalog = standard_native_host_catalog().unwrap();
         assert_eq!(catalog.provider_count(), 5);
-        assert_eq!(
-            catalog.function_count(),
-            usize::from(cfg!(feature = "experimental-actors")) * 5
-        );
+        assert_eq!(catalog.function_count(), 0);
         assert_eq!(
             catalog
                 .providers()
@@ -281,21 +218,7 @@ mod tests {
                 .collect::<Vec<_>>(),
             ["cli", "console", "scene", "time", "timer"]
         );
-        if cfg!(feature = "experimental-actors") {
-            assert_eq!(
-                catalog
-                    .functions()
-                    .map(|(name, _)| name)
-                    .collect::<Vec<_>>(),
-                [
-                    "actor/message/kind",
-                    "actor/message/payload",
-                    "actor/state/get",
-                    "actor/state/id",
-                    "actor/state/put",
-                ]
-            );
-        }
+        assert!(catalog.functions().next().is_none());
     }
 
     #[cfg(feature = "full-hosts")]
@@ -303,6 +226,7 @@ mod tests {
     fn full_catalog_adds_only_robot_arm() {
         let catalog = full_native_host_catalog().unwrap();
         assert_eq!(catalog.provider_count(), 6);
+        assert_eq!(catalog.function_count(), 0);
         assert_eq!(
             catalog
                 .providers()

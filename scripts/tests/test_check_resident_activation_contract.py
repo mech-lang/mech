@@ -200,15 +200,27 @@ class ResidentActivationCheckerTests(unittest.TestCase):
         failures = CHECKER.validate_source_contract(changed, workload, ROOT)
         self.assertTrue(any("three integrity definitions" in failure for failure in failures))
 
-    def test_d_target_implementation_claim_fails(self) -> None:
-        fixture = self.fixture("migration-status")
-        projection = json.loads(
-            (ROOT / "tests/architecture/resident-activation/d0-migration-projection.json").read_text()
+    def test_missing_permanent_activation_owner_fails(self) -> None:
+        contract = json.loads(
+            (
+                ROOT
+                / "tests/architecture/resident-activation/resident-activation-contract.json"
+            ).read_text()
         )
-        target = next(row for row in projection["targets"] if row["id"] == fixture["target"])
-        target[fixture["field"]] = fixture["value"]
-        failures = CHECKER.validate_migration_status(projection)
-        self.assertTrue(any("prematurely marked implemented" in failure for failure in failures))
+        contract["activation_owners"][0]["path"] = "src/engine/src/artifact/missing.rs"
+        failures = CHECKER.validate_activation_structure(ROOT, contract)
+        self.assertTrue(any("required activation owner is missing" in failure for failure in failures))
+
+    def test_migration_fields_are_rejected_from_permanent_contract(self) -> None:
+        contract = json.loads(
+            (
+                ROOT
+                / "tests/architecture/resident-activation/resident-activation-contract.json"
+            ).read_text()
+        )
+        contract["semantic_targets"][0]["occurrences"] = []
+        failures = CHECKER.validate_activation_structure(ROOT, contract)
+        self.assertTrue(any("migration field occurrences" in failure for failure in failures))
 
     def test_stale_gate_b_evidence_fails(self) -> None:
         fixture = self.fixture("gate-b-drift")

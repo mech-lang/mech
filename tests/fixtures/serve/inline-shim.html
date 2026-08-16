@@ -29,23 +29,20 @@
       const separator = element.id.lastIndexOf(":");
       return {
         outputId: BigInt(element.id.slice(0, separator)),
-        interpreterId: BigInt(element.id.slice(separator + 1)),
       };
     }
 
     function render(documentRuntime) {
       for (const output of document.querySelectorAll(".mech-block-output[id]")) {
-        const { interpreterId, outputId } = address(output);
-        const rendered =
-          documentRuntime.renderedOutput(interpreterId, outputId);
+        const { outputId } = address(output);
+        const rendered = documentRuntime.renderedOutput(outputId);
         if (rendered !== null) {
           output.innerHTML = rendered.blockHtml;
         }
       }
       for (const output of document.querySelectorAll(".mech-inline-mech-code[id]")) {
-        const { interpreterId, outputId } = address(output);
-        const rendered =
-          documentRuntime.renderedOutput(interpreterId, outputId);
+        const { outputId } = address(output);
+        const rendered = documentRuntime.renderedOutput(outputId);
         if (rendered !== null) {
           output.innerHTML = rendered.inlineHtml;
         }

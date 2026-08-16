@@ -182,6 +182,22 @@ pub enum FunctionArgs {
 }
 
 impl FunctionArgs {
+    pub(crate) fn normalize_for_signature(self, signature: RuntimeFunctionSignature) -> Self {
+        if !matches!(signature.inputs, RuntimeFunctionInputs::Variadic { .. }) {
+            return self;
+        }
+        match self {
+            FunctionArgs::Nullary(output) => FunctionArgs::Variadic(output, Vec::new()),
+            FunctionArgs::Unary(output, a) => FunctionArgs::Variadic(output, vec![a]),
+            FunctionArgs::Binary(output, a, b) => FunctionArgs::Variadic(output, vec![a, b]),
+            FunctionArgs::Ternary(output, a, b, c) => FunctionArgs::Variadic(output, vec![a, b, c]),
+            FunctionArgs::Quaternary(output, a, b, c, d) => {
+                FunctionArgs::Variadic(output, vec![a, b, c, d])
+            }
+            args @ FunctionArgs::Variadic(_, _) => args,
+        }
+    }
+
     pub fn output_value(&self) -> &LegacyValue {
         match self {
             FunctionArgs::Nullary(output)
@@ -542,19 +558,19 @@ impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
     fn commit(self: Box<Self>) {}
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub trait MechFunctionCompiler {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register>;
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub trait MechFunction: MechFunctionImpl + MechFunctionCompiler {}
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
 
-#[cfg(not(feature = "compiler"))]
+#[cfg(not(feature = "semantic-compiler"))]
 pub trait MechFunction: MechFunctionImpl {}
-#[cfg(not(feature = "compiler"))]
+#[cfg(not(feature = "semantic-compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -740,7 +756,7 @@ impl MechFunctionImpl for UserFunction {
         format!("UserFxn::{:?}", self.fxn.name)
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for UserFunction {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         todo!();

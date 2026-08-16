@@ -3111,7 +3111,7 @@ fn rejects_noncanonical_scalar_ids_nested_in_semantic_kinds() {
     );
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 mod compiler_tests {
     #[cfg(all(feature = "table", feature = "vectord", feature = "u8"))]
     use std::collections::HashMap;

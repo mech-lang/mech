@@ -1,13 +1,11 @@
 Command Line Deployment
 ===============================================================================
 
-Use command-line execution for local scripts and project runs. Test execution
-is developer tooling available only in the full distribution.
+Use command-line execution for local scripts and project runs.
 
 ```sh
 mech run main.mec
 mech run .
-mech test . # full distribution only
 ```
 
 Command-line deployment is the simplest path. It does not require a browser shim, wasm package, or static asset bundling.

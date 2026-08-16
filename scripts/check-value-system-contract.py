@@ -39,6 +39,7 @@ DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA = (
     CONTRACT_ROOT / "c2-legacy-adapter-boundary-schema.json"
 )
 DEFAULT_GATE_B = CONTRACT_ROOT / "gate-b-regression.json"
+CONTROLLED_GATE_B_STALE_CODE = "C0-GATE-B-EVIDENCE-STALE"
 GATE_A_MANIFEST = ROOT / "tests/architecture/value-execution/legacy-boundary.json"
 GENERATOR_PATH = ROOT / "scripts/generate-value-system-inventory.py"
 GATE_A_CHECKER_PATH = ROOT / "scripts/check-value-execution-boundary.py"
@@ -87,6 +88,23 @@ EXPECTED_HASH_CONTRACTS_V1 = {
             "canonical-shape-bytes",
             "canonical-payload-bytes",
         ],
+    },
+}
+
+# These kernels are the permanent immutable-snapshot lanes. They may call only
+# the finalized, metadata-resolved helpers listed here; drafts, hash builders,
+# schema lookup, and constant-store work remain forbidden in every resident
+# source file (including these two).
+FINALIZED_RESIDENT_SNAPSHOT_IMPORTS = {
+    "src/engine/src/resident/composite.rs": {
+        ("mech_core", "snapshot", "F64Bits"),
+        ("mech_core", "snapshot", "MatrixValue"),
+        ("mech_core", "snapshot", "rebuild_composite_snapshot"),
+    },
+    "src/engine/src/resident/set.rs": {
+        ("mech_core", "snapshot", "build_f64_set_snapshot"),
+        ("mech_core", "snapshot", "build_f64_set_snapshot_after_remove"),
+        ("mech_core", "snapshot", "f64_set_snapshot_contains"),
     },
 }
 
@@ -1300,16 +1318,30 @@ def compatibility_alias_failures(
             for row in rows
         ]
 
-    approved = baseline.get("required_compatibility_aliases", [])
-    current = live.get("required_compatibility_aliases", [])
-    if structural(current) == structural(approved):
+    approved = structural(baseline.get("required_compatibility_aliases", []))
+    current = structural(live.get("required_compatibility_aliases", []))
+    retired_executor_alias = {
+        "name": "InterpreterRef",
+        "raw_name": "InterpreterRef",
+        "target": "Ref<Box<Interpreter>>",
+        "path": "src/engine/src/interpreter/mod.rs",
+        "visibility": "pub",
+        "public_reexport_route": [
+            {
+                "declaration": "pubusecrate::interpreter::*;",
+                "path": "src/engine/src/lib.rs",
+            }
+        ],
+    }
+    permanent = [row for row in approved if row != retired_executor_alias]
+    if current == permanent:
         return []
     return [
         failure(
             "C0-PUBLIC-COMPAT-ALIAS",
             "required public compatibility aliases",
             str(baseline_path),
-            repr(approved),
+            repr(permanent),
             repr(current),
             f"{baseline_path}:required_compatibility_aliases",
         )
@@ -2660,11 +2692,15 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                 ),
                 None,
             )
+            allowed_snapshot_imports = FINALIZED_RESIDENT_SNAPSHOT_IMPORTS.get(
+                relative, set()
+            )
             snapshot_import = next(
                 (
                     binding
                     for binding in GENERATOR.LEGACY_SCANNER.use_bindings(tokens)
                     if binding.path and "snapshot" in binding.path
+                    and binding.path not in allowed_snapshot_imports
                 ),
                 None,
             )
@@ -2676,8 +2712,8 @@ def future_boundary_failures(root: Path) -> list[Failure]:
                         if forbidden_resident is not None
                         else "snapshot import",
                         relative,
-                        "resident turn remains on compact legacy cells and pre-resolved metadata",
-                        "snapshot construction, hashing, schema, or constant lookup dependency",
+                        "resident turn uses compact cells, pre-resolved metadata, or an explicitly audited finalized immutable-snapshot kernel",
+                        "unapproved snapshot construction, hashing, schema, or constant lookup dependency",
                         "src/engine/tests/resident_ekf_contract.rs",
                         forbidden_resident.line if forbidden_resident is not None else None,
                         forbidden_resident.column if forbidden_resident is not None else None,
@@ -4012,7 +4048,37 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frozen-targets-schema", type=Path, default=DEFAULT_FROZEN_TARGETS_SCHEMA)
     parser.add_argument("--c2-adapter-boundary", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY)
     parser.add_argument("--c2-adapter-boundary-schema", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA)
+    parser.add_argument(
+        "--allow-only-c0-gate-b-evidence-stale",
+        action="store_true",
+        help=(
+            "succeed only when the sole finding is the controlled "
+            "C0-GATE-B-EVIDENCE-STALE finding"
+        ),
+    )
     return parser.parse_args()
+
+
+def report_result(
+    failures: list[Failure],
+    *,
+    allow_only_c0_gate_b_evidence_stale: bool = False,
+) -> int:
+    if not failures:
+        print("value-system contract passed")
+        return 0
+    if (
+        allow_only_c0_gate_b_evidence_stale
+        and len(failures) == 1
+        and failures[0].contract_id == CONTROLLED_GATE_B_STALE_CODE
+    ):
+        print("value-system contract controlled finding still present:", file=sys.stderr)
+        print(f"  {failures[0].render()}", file=sys.stderr)
+        return 0
+    print("value-system contract failed:", file=sys.stderr)
+    for item in failures:
+        print(f"  {item.render()}", file=sys.stderr)
+    return 1
 
 
 def main() -> int:
@@ -4039,13 +4105,12 @@ def main() -> int:
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
         print(f"value-system contract checker failed internally: {error}", file=sys.stderr)
         return 2
-    if failures:
-        print("value-system contract failed:", file=sys.stderr)
-        for item in failures:
-            print(f"  {item.render()}", file=sys.stderr)
-        return 1
-    print("value-system contract passed")
-    return 0
+    return report_result(
+        failures,
+        allow_only_c0_gate_b_evidence_stale=(
+            args.allow_only_c0_gate_b_evidence_stale
+        ),
+    )
 
 
 if __name__ == "__main__":

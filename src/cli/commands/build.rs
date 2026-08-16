@@ -10,7 +10,7 @@ use mech_build::{
 use mech_core::*;
 use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, SourceRequest};
 
-use crate::cli::module_execution::{module_runtime_config, prepare_planning_source_module_runtime};
+use crate::cli::module_execution::{module_runtime_config, prepare_source_program_compiler};
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::source_discovery::{DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources};
 
@@ -159,7 +159,6 @@ pub(crate) struct BuildOptions {
     pub offline: bool,
     pub debug: bool,
     pub trace: bool,
-    pub time: bool,
     pub rounds_per_step: usize,
 }
 
@@ -197,7 +196,6 @@ impl BuildOptions {
             offline: matches.get_flag("offline"),
             debug: root.debug,
             trace: root.trace,
-            time: root.time,
             rounds_per_step: root.rounds_per_step.unwrap_or(10_000),
         };
         if options.emit == BuildEmit::CargoProject && options.keep_project {
@@ -236,16 +234,11 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         let loaded_config = load_build_config(&options, None)?;
         validate_production_build_config(loaded_config.as_ref(), &binary_name)?;
         let source_roots = discover_source_roots(&options.paths)?;
-        if source_roots.len() != 1 {
-            let class = if source_roots.len() > 1 {
-                mech_runtime::ResidentRouteFailureClass::MultipleRootsUnsupported
-            } else {
-                mech_runtime::ResidentRouteFailureClass::SemanticUnsupported
-            };
+        if source_roots.is_empty() {
             return Err(MechError::new(
                 mech_runtime::ResidentRouteFailure {
-                    class,
-                    reason: "production builds require exactly one resident source root"
+                    class: mech_runtime::ResidentRouteFailureClass::SemanticUnsupported,
+                    reason: "production builds require at least one resident source root"
                         .to_string(),
                 },
                 None,
@@ -253,27 +246,40 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         }
         let configured_hosts = configured_hosts(loaded_config.as_ref());
         let run_grants = configured_run_grants(loaded_config.as_ref());
+        let cli_grants = crate::cli::host_grants::effective_cli_host_grants(
+            loaded_config.as_ref(),
+            crate::cli::host_grants::CliHostCapabilitySelection::default(),
+        )?;
         let mut planner_config = module_runtime_config(
             format!("{binary_name}-planner"),
             options.debug,
             options.trace,
-            options.time,
             options.rounds_per_step,
         )?;
         if let Some(config) = loaded_config.as_ref() {
             planner_config =
                 crate::apply_runtime_config_patch(planner_config, &config.document.runtime)?;
         }
-        planner_config.validate_production_program_routing()?;
-        let (mut runtime, roots) = prepare_planning_source_module_runtime(
+        let (mut compiler, roots) = prepare_source_program_compiler(
             planner_config,
+            &cli_grants,
             &configured_hosts,
             &run_grants,
             None,
             &source_roots,
         )?;
-        let request = SourceRequest::from_filesystem_path(&roots[0])?;
-        let bytecode = runtime.compile_root_program_bytecode(request)?;
+        let requests = roots
+            .iter()
+            .map(|root| SourceRequest::from_filesystem_path(root))
+            .collect::<MResult<Vec<_>>>()?;
+        let options = mech_runtime::ModuleBuildOptions::new(
+            env!("CARGO_PKG_VERSION"),
+            "v0.3",
+            "native",
+            &[],
+            &[],
+        );
+        let bytecode = compiler.compile_roots(&requests, options)?.into_parts().1;
         (bytecode, loaded_config)
     };
 
@@ -558,7 +564,7 @@ fn validate_production_build_config(
         )?,
         None => RuntimeConfig::new(binary_name),
     };
-    runtime.validate_production_program_routing()?;
+    runtime.validate()?;
     if config
         .and_then(|config| config.document.build.as_ref())
         .and_then(|build| build.actor.as_ref())
@@ -600,7 +606,6 @@ fn native_runtime_config(
         RuntimeConfig::new(binary_name),
         &config.document.runtime,
     )?;
-    runtime.validate_production_program_routing()?;
     let (hosts, run_grants) = if needs_resource_config {
         (
             configured_hosts(Some(config)),

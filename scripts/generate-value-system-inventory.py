@@ -1977,6 +1977,12 @@ def generate(
         "transaction-state-values-api",
     )
     legacy_aliases, compatibility_aliases = aliases(corpus)
+    compatibility_aliases = [
+        record
+        for record in compatibility_aliases
+        if record.get("visibility") == "pub"
+        and bool(record.get("public_reexport_route"))
+    ]
     return {
         "schema_version": 6,
         "reference_commit": reference_commit,

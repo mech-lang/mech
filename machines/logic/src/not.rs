@@ -21,7 +21,7 @@ pub(crate) struct NotS<T> {
 impl<T> MechFunctionFactory for NotS<T>
 where
     T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + AsValueKind + Not<Output = T>,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
     T: FunctionRuntimeType,
@@ -53,7 +53,15 @@ where
 }
 impl<T> MechFunctionImpl for NotS<T>
 where
-    T: Copy + Debug + Clone + Sync + Send + PartialEq + 'static + Not<Output = T>,
+    T: Copy
+        + Debug
+        + Clone
+        + Sync
+        + Send
+        + PartialEq
+        + 'static
+        + Not<Output = T>
+        + FunctionRuntimeType,
     Ref<T>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
@@ -67,6 +75,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::logic_unary_full_write_contract(T::REPRESENTATION))
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -75,7 +86,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for NotS<T>
 where
     T: CompileConst + ConstElem + AsValueKind,
@@ -96,12 +107,12 @@ pub struct NotV<T, MatA> {
 impl<T, MatA> MechFunctionFactory for NotV<T, MatA>
 where
     T: Debug + Clone + Sync + Send + 'static + AsValueKind + Not<Output = T>,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
     MatA: Debug + AsValueKind + 'static,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst + ConstElem,
     Ref<MatA>: ToValue,
     MatA: FunctionRuntimeType,
@@ -137,7 +148,7 @@ where
     T: Debug + Clone + Sync + Send + 'static + AsValueKind + Not<Output = T>,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
-    MatA: Debug,
+    MatA: Debug + FunctionRuntimeType,
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
@@ -154,6 +165,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(crate::logic_unary_full_write_contract(MatA::REPRESENTATION))
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -162,7 +176,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T, MatA> MechFunctionCompiler for NotV<T, MatA>
 where
     T: CompileConst + ConstElem + AsValueKind,

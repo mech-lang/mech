@@ -5,6 +5,7 @@ use nalgebra::{ArrayStorage, Const, DVector, Matrix3, Matrix4, Scalar};
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::{Index, IndexMut};
+use std::sync::LazyLock;
 
 #[derive(Debug)]
 pub struct ConvertMatPassthrough {
@@ -42,11 +43,14 @@ mod passthrough_transaction_state_tests {
         }
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ConvertMatPassthrough {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("ConvertMatPassthrough");
-        compile_nullop!(name, self.out, ctx);
+        // This specialization preserves the exact backing value. It is a
+        // compile-time representation choice, not an executable operation,
+        // so the semantic program must reference the existing register
+        // directly instead of emitting an unregistered nullary runtime node.
+        Ok(compile_register_brrw!(self.out, ctx))
     }
 }
 
@@ -82,6 +86,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_CONVERSION_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -90,7 +97,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<TFrom, TTo, FromMat, ToMat> MechFunctionCompiler
     for ConvertMatToMat2<TFrom, TTo, FromMat, ToMat>
 where
@@ -146,9 +153,9 @@ where
     Ref<na::DMatrix<TTo>>: ToValue,
     TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
     TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TFrom: CompileConst,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TTo: CompileConst,
 {
     let zero = TTo::default();
@@ -284,9 +291,9 @@ where
     Ref<na::DMatrix<TTo>>: ToValue,
     TFrom: LosslessInto<TTo> + Debug + Scalar + Clone + ConstElem + AsValueKind,
     TTo: Debug + Scalar + Default + ConstElem + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TFrom: CompileConst,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     TTo: CompileConst,
 {
     let zero = TTo::default();
@@ -804,6 +811,28 @@ impl_conversion_mat_to_mat_fxn! {
 }
 
 pub struct ConvertMatToMat {}
+
+static PURE_MATRIX_CONVERSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 impl FunctionSpecializer for ConvertMatToMat {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {

@@ -5,16 +5,15 @@ use std::path::PathBuf;
 
 use mech_build::{
     NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile, NativeBuildRequest,
-    NativeDependencySource, NativeEmit, NativeRuntimeConfig, standard_native_host_catalog,
-    standard_planning_host_factory,
+    NativeDependencySource, NativeEmit, NativeRuntimeConfig, selected_planning_host_factory,
+    standard_native_host_catalog,
 };
 use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, LegacyValue, ParsedProgram, Ref, ResourceIntent,
-    hash_str,
+    ApplicationRequirement, BytecodeInstruction, ParsedProgram, ResourceIntent, hash_str,
 };
 use mech_runtime::{
-    ConfigValue, HostInstanceConfig, PlannedPureHostFunction, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeConfig, RuntimeValueSnapshot,
+    ConfigValue, HostInstanceConfig, ProgramCompiler, RunResourceGrantConfig, RuntimeBuilder,
+    RuntimeConfig,
 };
 
 struct ProviderCase {
@@ -102,7 +101,7 @@ const PROVIDER_CASES: &[ProviderCase] = &[
         target: "scene/frame",
         operations: &["write"],
         paths: &["replace"],
-        source: "@frame := scene://scene/frame{:write(replace)}\n@frame/replace <- \"planned\"",
+        source: "@frame := scene://scene/frame{:write(replace)}\nscene := {width: 640.0, height: 480.0, background: \"black\"}\n@frame/replace <- scene",
         base_uri: "scene://scene/frame",
         path: "replace",
         intent: ResourceIntent::Send,
@@ -120,7 +119,7 @@ const PROVIDER_CASES: &[ProviderCase] = &[
     },
 ];
 
-fn compile_provider(case: &ProviderCase) -> ParsedProgram {
+fn provider_compiler(case: &ProviderCase) -> ProgramCompiler {
     let settings = if case.provider == "scene" {
         ConfigValue::Map(BTreeMap::from([
             (
@@ -135,10 +134,9 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
     } else {
         ConfigValue::Map(BTreeMap::new())
     };
-    let mut runtime = RuntimeBuilder::new()
-        .planning()
+    RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(standard_planning_host_factory(case.provider).unwrap())
+        .host_factory(selected_planning_host_factory(case.provider).unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
             name: case.instance.to_owned(),
@@ -154,10 +152,13 @@ fn compile_provider(case: &ProviderCase) -> ParsedProgram {
                 .collect(),
             paths: case.paths.iter().map(|path| (*path).to_owned()).collect(),
         })
-        .build()
-        .unwrap();
-    runtime.run_string(case.source).unwrap();
-    ParsedProgram::from_bytes(&runtime.compile_program_bytecode().unwrap()).unwrap()
+        .build_compiler()
+        .unwrap()
+}
+
+fn compile_provider(case: &ProviderCase) -> ParsedProgram {
+    let product = provider_compiler(case).compile_source(case.source).unwrap();
+    ParsedProgram::from_bytes(product.bytecode()).unwrap()
 }
 
 #[test]
@@ -173,6 +174,7 @@ fn every_standard_provider_plans_source_to_bytecode() {
                             && request.path == case.path
                             && request.context_name
                                 == case.target.rsplit('/').next().unwrap()
+                            && request.operation == case.operations[0]
                             && request.intent == case.intent
                 )
             }),
@@ -183,14 +185,56 @@ fn every_standard_provider_plans_source_to_bytecode() {
 }
 
 #[test]
-fn integrity_constraints_are_explicit_native_linkage_requirements() {
-    let mut runtime = RuntimeBuilder::new()
-        .planning()
-        .function_catalog(mech_stdlib::source_catalog())
-        .build()
+fn robot_custom_send_operation_survives_source_artifact_and_bytecode() {
+    let case = PROVIDER_CASES
+        .iter()
+        .find(|case| case.provider == "robot-arm")
         .unwrap();
-    runtime.run_string("x := 1.0\nsafe! := x <= 2.0").unwrap();
-    let bytecode = runtime.compile_program_bytecode().unwrap();
+    let product = provider_compiler(case).compile_source(case.source).unwrap();
+    assert!(
+        product
+            .artifact()
+            .requirements()
+            .iter()
+            .any(|(_, requirement)| {
+                matches!(
+                    requirement,
+                    ApplicationRequirement::Resource(request)
+                        if request.base_uri == "robot://arm/commands"
+                            && request.path == "move"
+                            && request.operation == "move"
+                            && request.intent == ResourceIntent::Send
+                )
+            })
+    );
+    assert!(product.artifact().nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["resource", "send"]
+            && node.operation.operation_name == "move"
+    }));
+
+    let decoded = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+    assert!(decoded.requirements.iter().any(|requirement| {
+        matches!(
+            requirement,
+            ApplicationRequirement::Resource(request)
+                if request.base_uri == "robot://arm/commands"
+                    && request.path == "move"
+                    && request.operation == "move"
+                    && request.intent == ResourceIntent::Send
+        )
+    }));
+}
+
+#[test]
+fn integrity_constraints_are_explicit_native_linkage_requirements() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let bytecode = compiler
+        .compile_source("x := 1.0\nsafe! := x <= 2.0")
+        .map(|product| product.into_parts().1)
+        .unwrap();
     let parsed = ParsedProgram::from_bytes(&bytecode).unwrap();
     assert!(parsed.instructions.iter().any(|instruction| matches!(
         instruction,
@@ -256,7 +300,7 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         target: "cli/stdout",
         operations: &["write"],
         paths: &["line"],
-        source: "@out := cli://stdout{:write(line)}\nx := 1\n@out/line <- x + 1",
+        source: "@out := cli://stdout{:write(line)}\nx := \"planned\"\n@out/line <- x + \" output\"",
         base_uri: "cli://stdout",
         path: "line",
         intent: ResourceIntent::Send,
@@ -274,10 +318,9 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
         matches!(instruction, BytecodeInstruction::RuntimeBinary { dst, .. } if *dst == source)
     }));
 
-    let mut planning_runtime = RuntimeBuilder::new()
-        .planning()
+    let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
-        .host_factory(standard_planning_host_factory("cli").unwrap())
+        .host_factory(selected_planning_host_factory("cli").unwrap())
         .unwrap()
         .host_instance(HostInstanceConfig {
             name: "cli".to_owned(),
@@ -289,11 +332,13 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
             operations: vec!["write".to_owned()],
             paths: vec!["line".to_owned()],
         })
-        .build()
+        .build_compiler()
         .unwrap();
-    planning_runtime.run_string(case.source).unwrap();
     let request = NativeBuildRequest {
-        bytecode: planning_runtime.compile_program_bytecode().unwrap(),
+        bytecode: compiler
+            .compile_source(case.source)
+            .map(|product| product.into_parts().1)
+            .unwrap(),
         runtime_config: Some(NativeRuntimeConfig {
             runtime: RuntimeConfig::default(),
             actor_bootstrap: None,
@@ -326,48 +371,3 @@ fn computed_resource_send_reuses_its_runtime_producer_in_native_planning() {
     .plan(&request)
     .unwrap();
 }
-
-#[cfg(feature = "experimental-actors")]
-const ACTOR_FUNCTIONS: &[(&str, &str)] = &[
-    ("actor/message/kind", "actor/message/kind()"),
-    ("actor/message/payload", "actor/message/payload()"),
-    ("actor/state/get", "actor/state/get()"),
-    ("actor/state/id", "actor/state/id()"),
-    ("actor/state/put", "actor/state/put(\"planned\")"),
-];
-
-#[cfg(feature = "experimental-actors")]
-#[test]
-fn every_trusted_actor_function_plans_source_to_bytecode() {
-    for (name, source) in ACTOR_FUNCTIONS {
-        let planned_name = (*name).to_owned();
-        let mut runtime = RuntimeBuilder::new()
-            .planning()
-            .function_catalog(mech_stdlib::source_catalog())
-            .host_function(PlannedPureHostFunction::new(
-                *name,
-                move |_context, _arguments| {
-                    RuntimeValueSnapshot::try_capture(&LegacyValue::String(Ref::new(String::new())))
-                },
-                move |_context, _arguments| panic!("{planned_name} executed while source planning"),
-            ))
-            .unwrap()
-            .build()
-            .unwrap();
-        runtime.run_string(source).unwrap();
-        let parsed =
-            ParsedProgram::from_bytes(&runtime.compile_program_bytecode().unwrap()).unwrap();
-        assert_eq!(
-            parsed
-                .requirements
-                .iter()
-                .filter_map(|requirement| match requirement {
-                    ApplicationRequirement::HostFunction(request) => Some(request.name.as_str()),
-                    _ => None,
-                })
-                .collect::<Vec<_>>(),
-            [*name],
-        );
-    }
-}
-use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

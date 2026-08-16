@@ -605,17 +605,29 @@ fn host_catalog() -> NativeHostCatalog {
 }
 
 fn catalog_with_actor(mut catalog: NativeHostCatalog) -> NativeHostCatalog {
+    for name in [
+        "actor/message/kind",
+        "actor/message/payload",
+        "actor/state/get",
+        "actor/state/id",
+        "actor/state/put",
+    ] {
+        catalog
+            .insert_function(NativeHostFunctionLinkage {
+                name,
+                context: NativeHostFunctionContext::ActorTurn,
+                package: "mech-runtime",
+                crate_name: "mech_runtime",
+                cargo_features: &["native-link", "runtime", "string"],
+                installer_path: "mech_runtime::__mech_native::synthetic_test_actor_installer",
+            })
+            .unwrap();
+    }
     catalog
-        .insert_function(NativeHostFunctionLinkage {
-            name: "actor/message/kind",
-            context: NativeHostFunctionContext::ActorTurn,
-            package: "mech-runtime",
-            crate_name: "mech_runtime",
-            cargo_features: &["native-link", "runtime", "string"],
-            installer_path: "mech_runtime::__mech_native::install_actor_message_kind",
-        })
-        .unwrap();
-    catalog
+}
+
+fn actor_host_catalog() -> NativeHostCatalog {
+    catalog_with_actor(NativeHostCatalog::new())
 }
 
 fn actor_requirement() -> ApplicationRequirement {
@@ -1324,7 +1336,7 @@ fn standard_provider_plans_resource_write_payload_types() {
 #[cfg(feature = "full-hosts")]
 #[test]
 fn trusted_actor_host_calls_plan_arity_and_output_seed_types() {
-    let catalog = standard_native_host_catalog().unwrap();
+    let catalog = actor_host_catalog();
     let config = actor_runtime_config("actor:planner", "message");
     let missing_argument = parsed_external_program(
         vec![string_constant("")],
@@ -1447,7 +1459,7 @@ fn actor_put_before_get_updates_the_shared_abstract_register_sequence() {
     validate_external_program(
         &program,
         Some(&config),
-        &standard_native_host_catalog().unwrap(),
+        &actor_host_catalog(),
         Some("x86_64-unknown-linux-gnu"),
     )
     .unwrap();

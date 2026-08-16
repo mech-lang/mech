@@ -1484,7 +1484,7 @@ impl LegacyValue {
     ) -> MResult<Box<dyn CopyMat<T>>>
     where
         T: Clone + AsValueKind,
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         T: CompileConst + ConstElem + Debug + PartialEq,
     {
         self.exact_matrix_any()
@@ -4134,7 +4134,10 @@ impl ToValue for Ref<MechRecord> {
 #[cfg(test)]
 mod reactive_cell_tests {
     use super::*;
-    use indexmap::{IndexMap, IndexSet};
+    #[cfg(any(feature = "map", feature = "record", feature = "table"))]
+    use indexmap::IndexMap;
+    #[cfg(feature = "set")]
+    use indexmap::IndexSet;
 
     fn cell_ids(ids: &[u64]) -> Vec<ReactiveCellId> {
         ids.iter().copied().map(ReactiveCellId::new).collect()

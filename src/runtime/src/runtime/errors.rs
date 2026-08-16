@@ -95,66 +95,6 @@ impl MechErrorKind for RuntimeTransactionContextMismatch {
 }
 
 #[derive(Debug, Clone)]
-pub struct RuntimeProgramBusy {
-    pub operation: &'static str,
-    pub owner: TransactionId,
-    pub requester: Option<TransactionId>,
-}
-
-impl MechErrorKind for RuntimeProgramBusy {
-    fn name(&self) -> &str {
-        "RuntimeProgramBusy"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "retained program operation `{}` is owned by transaction {}; requester is {:?}",
-            self.operation, self.owner, self.requester,
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct RuntimeProgramOperationReentrant {
-    pub active_operation: &'static str,
-    pub requested_operation: &'static str,
-    pub transaction_id: TransactionId,
-}
-
-impl MechErrorKind for RuntimeProgramOperationReentrant {
-    fn name(&self) -> &str {
-        "RuntimeProgramOperationReentrant"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "retained program operation `{}` cannot enter `{}` recursively in transaction {}",
-            self.active_operation, self.requested_operation, self.transaction_id,
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct RuntimeTransactionalLiveRegistrationUnsupported {
-    pub transaction_id: TransactionId,
-    pub owner: Option<TransactionId>,
-    pub active_operation: Option<&'static str>,
-}
-
-impl MechErrorKind for RuntimeTransactionalLiveRegistrationUnsupported {
-    fn name(&self) -> &str {
-        "RuntimeTransactionalLiveRegistrationUnsupported"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "transaction {} may register retained live state only inside its coordinated program operation (owner {:?}, active operation {:?})",
-            self.transaction_id, self.owner, self.active_operation,
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct RuntimePoisoned {
     pub operation: &'static str,
     pub poison: RuntimePoisonRecord,
@@ -176,16 +116,16 @@ impl MechErrorKind for RuntimePoisoned {
 }
 
 #[derive(Debug, Clone)]
-pub struct RuntimeProgramRollbackFailed {
+pub struct RuntimeOperationRollbackFailed {
     pub operation: &'static str,
     pub transaction_id: Option<TransactionId>,
     pub original_error: String,
     pub rollback_failures: Vec<String>,
 }
 
-impl MechErrorKind for RuntimeProgramRollbackFailed {
+impl MechErrorKind for RuntimeOperationRollbackFailed {
     fn name(&self) -> &str {
-        "RuntimeProgramRollbackFailed"
+        "RuntimeOperationRollbackFailed"
     }
 
     fn message(&self) -> String {
@@ -292,21 +232,6 @@ impl MechErrorKind for RuntimeModuleExportNotFound {
 }
 
 #[derive(Debug, Clone)]
-pub struct UnknownAddressTarget {
-    pub target: String,
-}
-
-impl MechErrorKind for UnknownAddressTarget {
-    fn name(&self) -> &str {
-        "UnknownAddressTarget"
-    }
-
-    fn message(&self) -> String {
-        format!("unknown address target `{}`", self.target)
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct RuntimeModuleImportConflict {
     pub binding: String,
     pub first_import: String,
@@ -405,24 +330,6 @@ impl MechErrorKind for RuntimeRootModuleSourceNotFound {
         format!(
             "root module source `{}` could not be resolved",
             self.specifier
-        )
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct RuntimeProgramHostNotActiveError {
-    pub function: String,
-}
-
-impl MechErrorKind for RuntimeProgramHostNotActiveError {
-    fn name(&self) -> &str {
-        "RuntimeProgramHostNotActive"
-    }
-
-    fn message(&self) -> String {
-        format!(
-            "Runtime host function `{}` was called without an active runtime context",
-            self.function,
         )
     }
 }

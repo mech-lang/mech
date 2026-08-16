@@ -23,7 +23,7 @@ static RESOURCE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
         }),
     });
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCompiler, Register};
 
 #[derive(Clone, Debug)]
@@ -131,7 +131,7 @@ impl MechFunctionImpl for ExternalResourceWriteFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ExternalResourceWriteFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         self.validate()?;

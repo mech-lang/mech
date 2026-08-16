@@ -78,6 +78,13 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
         None
     }
 
+    /// Whether a resident observation is activated only by matching host-input
+    /// packets. Snapshot providers return `false` so activation captures the
+    /// value directly from [`Self::read`] for the initial turn.
+    fn observation_requires_input_driver(&self, _request: &RuntimeResourceReadRequest) -> bool {
+        true
+    }
+
     fn semantic_write_contract(
         &self,
         _intent: RuntimeResourceWriteIntent,
@@ -203,6 +210,17 @@ impl RuntimeResidentProviderBinding {
         )
     }
 
+    pub(crate) fn observation_requires_input_driver(
+        &self,
+        request: &RuntimeResourceReadRequest,
+    ) -> MResult<bool> {
+        invoke_extension_value(
+            format!("resource provider `{}`", self.scheme),
+            "observation_requires_input_driver",
+            || self.provider.observation_requires_input_driver(request),
+        )
+    }
+
     pub(crate) fn supports_idempotency(&self, intent: RuntimeResourceWriteIntent) -> MResult<bool> {
         invoke_extension_value(
             format!("resource provider `{}`", self.scheme),
@@ -307,22 +325,6 @@ impl RuntimeResourceRegistry {
         self.providers.iter().any(|entry| entry.scheme == scheme)
     }
 
-    pub(crate) fn provider_base_uri_for(&self, candidate: &str) -> MResult<Option<String>> {
-        let scheme = resource_uri_scheme(candidate)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, candidate) else {
-            return Ok(None);
-        };
-        if let Some(base) = entry
-            .bases
-            .iter()
-            .filter(|base| resource_base_matches(base, candidate))
-            .max_by_key(|base| base.len())
-        {
-            return Ok(Some(base.clone()));
-        }
-        Ok(Some(resource_uri_origin(candidate)?.to_string()))
-    }
-
     pub(crate) fn equivalent_base_uris_for(&self, base_uri: &str) -> MResult<Vec<String>> {
         let normalized = canonicalize_resource_base_uri(base_uri)?;
         let Some(entry) = self
@@ -399,49 +401,6 @@ impl RuntimeResourceRegistry {
         })
     }
 
-    pub(crate) fn semantic_read_contract(
-        &self,
-        base_uri: &str,
-    ) -> MResult<Option<&'static OperationContractDeclaration>> {
-        let scheme = resource_uri_scheme(base_uri)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, base_uri) else {
-            return Err(MechError::new(
-                RuntimeResourceProviderNotFound {
-                    scheme,
-                    uri: base_uri.to_owned(),
-                },
-                None,
-            ));
-        };
-        invoke_extension_value(
-            format!("resource provider `{scheme}`"),
-            "semantic_read_contract",
-            || entry.provider.semantic_read_contract(),
-        )
-    }
-
-    pub(crate) fn semantic_write_contract(
-        &self,
-        base_uri: &str,
-        intent: RuntimeResourceWriteIntent,
-    ) -> MResult<Option<&'static OperationContractDeclaration>> {
-        let scheme = resource_uri_scheme(base_uri)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, base_uri) else {
-            return Err(MechError::new(
-                RuntimeResourceProviderNotFound {
-                    scheme,
-                    uri: base_uri.to_owned(),
-                },
-                None,
-            ));
-        };
-        invoke_extension_value(
-            format!("resource provider `{scheme}`"),
-            "semantic_write_contract",
-            || entry.provider.semantic_write_contract(intent),
-        )
-    }
-
     pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
@@ -472,27 +431,6 @@ impl RuntimeResourceRegistry {
         invoke_extension(format!("resource provider `{scheme}`"), "plan_read", || {
             entry.provider.plan_read(request)
         })
-    }
-
-    pub(crate) fn preflight_write(
-        &self,
-        request: RuntimeResourceWritePreflightRequest,
-    ) -> MResult<()> {
-        let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
-        let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
-            return Err(MechError::new(
-                RuntimeResourceProviderNotFound {
-                    scheme,
-                    uri: request.base_uri,
-                },
-                None,
-            ));
-        };
-        invoke_extension(
-            format!("resource provider `{scheme}`"),
-            "preflight_write",
-            || entry.provider.preflight_write(request),
-        )
     }
 
     pub(crate) fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
@@ -1132,121 +1070,6 @@ mod tests {
 
         assert_eq!(error.kind_name(), "RuntimeResourceReadNotPlannable");
         assert_eq!(reads.load(Ordering::SeqCst), 0);
-    }
-
-    #[derive(Debug, Default)]
-    struct PlanningProviderCounters {
-        planned_reads: AtomicUsize,
-        reads: AtomicUsize,
-        preflight_writes: AtomicUsize,
-        prepared_writes: AtomicUsize,
-    }
-
-    #[derive(Debug)]
-    struct SyntheticLivePlanningProvider {
-        counters: Arc<PlanningProviderCounters>,
-    }
-
-    impl RuntimeResourceProvider for SyntheticLivePlanningProvider {
-        fn scheme(&self) -> &str {
-            "synthetic-live"
-        }
-
-        fn base_uris(&self) -> Vec<String> {
-            vec!["synthetic-live://clock/clock".to_string()]
-        }
-
-        fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-            assert_eq!(request.path, "value");
-            self.counters.planned_reads.fetch_add(1, Ordering::SeqCst);
-            Ok(LegacyValue::F64(Ref::new(0.0)))
-        }
-
-        fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-            assert_eq!(request.path, "value");
-            self.counters.reads.fetch_add(1, Ordering::SeqCst);
-            Ok(LegacyValue::F64(Ref::new(7.0)))
-        }
-
-        fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
-            assert_eq!(request.path, "value");
-            self.counters
-                .preflight_writes
-                .fetch_add(1, Ordering::SeqCst);
-            Ok(())
-        }
-
-        fn prepare_write(
-            &self,
-            _request: RuntimeResourceWriteRequest,
-        ) -> MResult<PreparedRuntimeEffect> {
-            self.counters.prepared_writes.fetch_add(1, Ordering::SeqCst);
-            panic!("planning must not prepare resource effects")
-        }
-    }
-
-    fn grant_synthetic_live(runtime: &mut crate::MechRuntime, operation: &str) {
-        let subject = runtime.runtime_context().unwrap().subject().to_string();
-        let capability = crate::ResourcePathCapability::wildcard(
-            runtime.next_capability_id(),
-            subject,
-            "synthetic-live://clock/clock",
-            [operation],
-        )
-        .unwrap();
-        runtime.grant_capability(Arc::new(capability)).unwrap();
-    }
-
-    #[test]
-    fn planning_runtime_uses_only_provider_planning_and_preflight_methods() {
-        let counters = Arc::new(PlanningProviderCounters::default());
-        let provider = SyntheticLivePlanningProvider {
-            counters: Arc::clone(&counters),
-        };
-        let mut runtime = crate::RuntimeBuilder::new()
-            .planning()
-            .resource_provider(Box::new(provider))
-            .build()
-            .unwrap();
-        grant_synthetic_live(&mut runtime, "read");
-        grant_synthetic_live(&mut runtime, "write");
-
-        let planned = runtime
-            .read_resource(RuntimeResourceReadRequest {
-                base_uri: "synthetic-live://clock/clock".to_string(),
-                path: "value".to_string(),
-                context_name: "clock".to_string(),
-            })
-            .unwrap()
-            .to_value();
-        assert_eq!(planned, LegacyValue::F64(Ref::new(0.0)));
-
-        runtime
-            .write_resource(RuntimeResourceWriteRequest {
-                base_uri: "synthetic-live://clock/clock".to_string(),
-                path: "value".to_string(),
-                context_name: "clock".to_string(),
-                operation: RuntimeCapabilityOperation::Write,
-                value: LegacyValue::F64(Ref::new(9.0)),
-                intent: RuntimeResourceWriteIntent::Assign,
-            })
-            .unwrap();
-
-        runtime
-            .write_resource(RuntimeResourceWriteRequest {
-                base_uri: "synthetic-live://clock/clock".to_string(),
-                path: "value".to_string(),
-                context_name: "clock".to_string(),
-                operation: RuntimeCapabilityOperation::Write,
-                value: LegacyValue::F64(Ref::new(10.0)),
-                intent: RuntimeResourceWriteIntent::Send,
-            })
-            .unwrap();
-
-        assert_eq!(counters.planned_reads.load(Ordering::SeqCst), 1);
-        assert_eq!(counters.reads.load(Ordering::SeqCst), 0);
-        assert_eq!(counters.preflight_writes.load(Ordering::SeqCst), 2);
-        assert_eq!(counters.prepared_writes.load(Ordering::SeqCst), 0);
     }
 
     #[derive(Debug)]

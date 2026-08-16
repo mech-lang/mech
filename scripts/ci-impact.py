@@ -103,7 +103,9 @@ def classify(
         "windows_canary_required": code_changed,
         "browser_canary_required": code_changed and (browser or cross_cutting),
         "cross_cutting_standard_suite_required": code_changed and cross_cutting,
-        "full_validation_required": "ci:full" in labels,
+        "full_validation_required": (
+            "ci:full" in labels or "architecture-contracts" in matched_names
+        ),
     }
 
 

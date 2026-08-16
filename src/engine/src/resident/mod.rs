@@ -3,12 +3,18 @@ mod arena;
 mod artifact;
 pub(crate) mod bench;
 mod candidate;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod composite;
 mod full_write;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod general;
 mod kernel;
 #[cfg(feature = "resident-artifact")]
 pub(crate) mod numeric;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod set;
+#[cfg(feature = "resident-artifact")]
+pub(crate) mod text;
 mod workspace;
 mod efficacy {
     pub(crate) mod ekf;

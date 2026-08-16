@@ -76,7 +76,7 @@ where
         + PartialEq
         + PartialOrd,
     T: StatsCheckedAdd,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<DMatrix<T>>: ToValue,
     RowDVector<T>: FunctionRuntimeType,
@@ -145,7 +145,7 @@ where
 }
 
 #[cfg(all(feature = "row_vectord", feature = "matrixd", not(feature = "matrix1")))]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for StatsSumColumnRD2<T>
 where
     T: CompileConst + ConstElem + AsValueKind,

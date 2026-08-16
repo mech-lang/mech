@@ -5,7 +5,7 @@ use mech_core::{
     ValRef,
 };
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCompiler, Register};
 
 #[derive(Clone, Debug)]
@@ -77,7 +77,7 @@ impl MechFunctionImpl for ExternalHostCallFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ExternalHostCallFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = super::compile_external_output(&self.output, context)?;

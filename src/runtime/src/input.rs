@@ -1,8 +1,9 @@
 use std::collections::{HashSet, VecDeque};
 use std::sync::{Arc, Mutex};
 
+#[cfg(feature = "matrix")]
+use mech_core::structures::Matrix as ValueMatrix;
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
-use mech_engine::ProgramInputTurnOutcome;
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
 
@@ -24,6 +25,21 @@ pub enum RuntimeHostInputValue {
     F32(f32),
     F64(f64),
     Index(usize),
+    BoolMatrix {
+        rows: usize,
+        columns: usize,
+        values: Vec<bool>,
+    },
+    IndexMatrix {
+        rows: usize,
+        columns: usize,
+        values: Vec<usize>,
+    },
+    F64Matrix {
+        rows: usize,
+        columns: usize,
+        values: Vec<f64>,
+    },
 }
 
 impl RuntimeHostInputValue {
@@ -129,8 +145,73 @@ impl RuntimeHostInputValue {
                 "f64 host input values require the `f64` feature",
             )),
             RuntimeHostInputValue::Index(value) => Ok(LegacyValue::Index(Ref::new(value))),
+            #[cfg(feature = "matrix")]
+            RuntimeHostInputValue::BoolMatrix {
+                rows,
+                columns,
+                values,
+            } => {
+                validate_matrix_input(rows, columns, values.len())?;
+                Ok(LegacyValue::MatrixBool(ValueMatrix::from_vec(
+                    values, rows, columns,
+                )))
+            }
+            #[cfg(not(feature = "matrix"))]
+            RuntimeHostInputValue::BoolMatrix { .. } => Err(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "bool matrix host input values require the `matrix` feature",
+            )),
+            #[cfg(feature = "matrix")]
+            RuntimeHostInputValue::IndexMatrix {
+                rows,
+                columns,
+                values,
+            } => {
+                validate_matrix_input(rows, columns, values.len())?;
+                Ok(LegacyValue::MatrixIndex(ValueMatrix::from_vec(
+                    values, rows, columns,
+                )))
+            }
+            #[cfg(not(feature = "matrix"))]
+            RuntimeHostInputValue::IndexMatrix { .. } => Err(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "index matrix host input values require the `matrix` feature",
+            )),
+            #[cfg(feature = "matrix")]
+            RuntimeHostInputValue::F64Matrix {
+                rows,
+                columns,
+                values,
+            } => {
+                validate_matrix_input(rows, columns, values.len())?;
+                Ok(LegacyValue::MatrixF64(ValueMatrix::from_vec(
+                    values, rows, columns,
+                )))
+            }
+            #[cfg(not(feature = "matrix"))]
+            RuntimeHostInputValue::F64Matrix { .. } => Err(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "f64 matrix host input values require the `matrix` feature",
+            )),
         }
     }
+}
+
+#[cfg(feature = "matrix")]
+fn validate_matrix_input(rows: usize, columns: usize, value_count: usize) -> MResult<()> {
+    let expected = rows.checked_mul(columns).ok_or_else(|| {
+        input_error(
+            "RuntimeHostInputMatrixInvalid",
+            "host input matrix dimensions overflow",
+        )
+    })?;
+    if rows == 0 || columns == 0 || expected != value_count {
+        return Err(input_error(
+            "RuntimeHostInputMatrixInvalid",
+            "host input matrix dimensions must be nonzero and match the value count",
+        ));
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -155,33 +236,6 @@ impl RuntimeHostInputSource {
         &self.path
     }
 }
-
-#[derive(Clone, Debug)]
-pub struct RuntimeLiveResourceBinding {
-    pub interpreter_id: u64,
-    pub source: RuntimeHostInputSource,
-    pub target: mech_core::ValRef,
-}
-
-impl RuntimeLiveResourceBinding {
-    pub(crate) fn same_identity(&self, other: &Self) -> bool {
-        self.interpreter_id == other.interpreter_id
-            && self.source == other.source
-            && self.target.as_ptr() == other.target.as_ptr()
-    }
-
-    pub(crate) fn target_address(&self) -> usize {
-        self.target.as_ptr() as usize
-    }
-}
-
-impl PartialEq for RuntimeLiveResourceBinding {
-    fn eq(&self, other: &Self) -> bool {
-        self.same_identity(other)
-    }
-}
-
-impl Eq for RuntimeLiveResourceBinding {}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeHostInputUpdate {
@@ -232,7 +286,6 @@ pub struct RuntimeHostInputOutcome {
     pub update_count: usize,
     pub ignored_update_count: usize,
     pub binding_count: usize,
-    pub turn: Option<ProgramInputTurnOutcome>,
     /// Resident turn produced by this drain batch. When several packets are
     /// coalesced, the single resident decision is attached to the final
     /// packet outcome; all earlier packet outcomes contain `None`.

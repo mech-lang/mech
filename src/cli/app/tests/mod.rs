@@ -248,7 +248,6 @@ mod build_input_tests {
             offline: true,
             debug: false,
             trace: false,
-            time: false,
             rounds_per_step: 10_000,
         }
     }
@@ -555,69 +554,69 @@ mod run_collection_tests {
     }
 
     #[test]
-    fn collect_run_targets_accepts_explicit_mdoc() {
+    fn collect_run_targets_rejects_explicit_mdoc() {
         let root = temp_root("explicit-mdoc");
         let doc = root.join("doc.mdoc");
         std::fs::write(&doc, "x := 1").unwrap();
-        assert_eq!(collect_run_targets(&doc).unwrap(), vec![doc]);
+        assert!(collect_run_targets(&doc).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn collect_run_targets_discovers_mdoc_in_directory() {
+    fn collect_run_targets_ignores_mdoc_in_directory() {
         let root = temp_root("directory-mdoc");
         std::fs::write(root.join("doc.mdoc"), "x := 1").unwrap();
         std::fs::write(root.join("main.mec"), "y := 2").unwrap();
         let targets = collect_run_targets(&root).unwrap();
-        assert!(targets.contains(&root.join("doc.mdoc")));
+        assert!(!targets.contains(&root.join("doc.mdoc")));
         assert!(targets.contains(&root.join("main.mec")));
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn collect_run_targets_accepts_explicit_mpkg() {
+    fn collect_run_targets_rejects_explicit_mpkg() {
         let root = temp_root("explicit-mpkg");
         let package = root.join("project.mpkg");
         std::fs::write(&package, "{}").unwrap();
-        assert_eq!(collect_run_targets(&package).unwrap(), vec![package]);
+        assert!(collect_run_targets(&package).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn collect_run_targets_discovers_mpkg_in_directory() {
+    fn collect_run_targets_ignores_mpkg_in_directory() {
         let root = temp_root("directory-mpkg");
         std::fs::write(root.join("project.mpkg"), "{}").unwrap();
         std::fs::write(root.join("main.mec"), "y := 2").unwrap();
         let targets = collect_run_targets(&root).unwrap();
-        assert!(targets.contains(&root.join("project.mpkg")));
+        assert!(!targets.contains(&root.join("project.mpkg")));
         assert!(targets.contains(&root.join("main.mec")));
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn collect_run_targets_accepts_explicit_m_source() {
+    fn collect_run_targets_rejects_explicit_m_source() {
         let root = temp_root("explicit-m");
         let source = root.join("script.m");
         std::fs::write(&source, "x := 1").unwrap();
-        assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+        assert!(collect_run_targets(&source).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn collect_run_targets_accepts_explicit_csv_source() {
+    fn collect_run_targets_rejects_explicit_csv_source() {
         let root = temp_root("explicit-csv");
         let source = root.join("data.csv");
         std::fs::write(&source, "x,y\n1,2\n").unwrap();
-        assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+        assert!(collect_run_targets(&source).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn collect_run_targets_accepts_explicit_js_source() {
+    fn collect_run_targets_rejects_explicit_js_source() {
         let root = temp_root("explicit-js");
         let source = root.join("script.js");
         std::fs::write(&source, "console.log('mech');").unwrap();
-        assert_eq!(collect_run_targets(&source).unwrap(), vec![source]);
+        assert!(collect_run_targets(&source).is_err());
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -660,7 +659,7 @@ mod run_collection_tests {
     }
 
     #[test]
-    fn collect_run_targets_directory_only_includes_mech_source_document_package_extensions() {
+    fn collect_run_targets_directory_only_includes_executable_mech_sources() {
         let root = temp_root("directory-run-supported");
         let files = vec![
             root.join("data.csv"),
@@ -677,11 +676,7 @@ mod run_collection_tests {
 
         assert_eq!(
             collect_run_targets(&root).unwrap(),
-            vec![
-                root.join("doc.mdoc"),
-                root.join("main.mec"),
-                root.join("project.mpkg"),
-            ]
+            vec![root.join("main.mec")]
         );
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -748,10 +743,6 @@ fn root_command_parses_available_subcommands() {
     #[cfg(feature = "serve")]
     super::build_cli()
         .try_get_matches_from(["mech", "serve", "demo.mec", "--port", "8082"])
-        .unwrap();
-    #[cfg(feature = "test")]
-    super::build_cli()
-        .try_get_matches_from(["mech", "test", "demo.mec", "--verbose"])
         .unwrap();
     #[cfg(feature = "bundle_web")]
     super::build_cli()
@@ -856,7 +847,6 @@ fn run_rounds_per_step_overrides_root_value() {
 #[cfg(all(
     test,
     feature = "build",
-    feature = "test",
     feature = "formatter",
     feature = "bundle_web",
     feature = "run",
@@ -881,11 +871,6 @@ mod filesystem_flag_dispatch_tests {
     #[test]
     fn filesystem_flags_rejected_for_build() {
         assert!(dispatch_error(&["mech", "build", "--allow-read", "."]).contains(MESSAGE));
-    }
-
-    #[test]
-    fn filesystem_flags_rejected_for_test() {
-        assert!(dispatch_error(&["mech", "test", "--allow-read", "."]).contains(MESSAGE));
     }
 
     #[test]

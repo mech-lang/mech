@@ -15,6 +15,19 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::*;
 
+#[derive(Debug, Clone)]
+pub(crate) struct IndexOutOfBoundsError;
+
+impl MechErrorKind for IndexOutOfBoundsError {
+    fn name(&self) -> &str {
+        "IndexOutOfBounds"
+    }
+
+    fn message(&self) -> String {
+        "Index out of bounds".to_string()
+    }
+}
+
 #[cfg(feature = "functions")]
 pub mod catalog;
 
@@ -81,13 +94,13 @@ macro_rules! impl_range_range_fxn_v {
                 + PartialOrd
                 + ConstElem
                 + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec1: ConstElem + AsNaKind + Debug + AsRef<[$ix1]> + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec1: CompileConst,
             IxVec2: ConstElem + AsNaKind + Debug + AsRef<[$ix2]> + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec2: CompileConst,
             R1: Dim,
             C1: Dim,
@@ -96,10 +109,10 @@ macro_rules! impl_range_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
             naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -173,7 +186,7 @@ macro_rules! impl_range_range_fxn_v {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, R2, C2, S2, IxVec1, IxVec2> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec1, IxVec2>
         where
@@ -232,10 +245,10 @@ macro_rules! impl_all_fxn_v {
                 + PartialOrd
                 + ConstElem
                 + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
             C1: Dim,
@@ -244,10 +257,10 @@ macro_rules! impl_all_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
             naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -321,7 +334,7 @@ macro_rules! impl_all_fxn_v {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where

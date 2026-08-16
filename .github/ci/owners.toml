@@ -26,7 +26,7 @@ cross_cutting = true
 
 [owners.mech-runtime]
 paths = ["src/runtime/**"]
-command = ["cargo", "test", "--locked", "--offline", "-p", "mech-runtime", "--lib", "--no-default-features", "--features", "full_compiler"]
+command = ["cargo", "test", "--locked", "--offline", "-p", "mech-runtime", "--lib", "--no-default-features", "--features", "full_compiler,resident-routing-source"]
 standard = true
 cross_cutting = true
 
@@ -177,6 +177,13 @@ paths = ["tests/**", "examples/**"]
 command = []
 standard = true
 cross_cutting = false
+
+[owners.architecture-contracts]
+paths = [".github/workflows/ci-full.yml", ".github/ci/owners.toml", "scripts/ci-impact.py", "tests/ci/test_ci_impact.py", "scripts/check-*-contract.py", "scripts/generate-*-contract.py", "scripts/check-production-resident-routing.py", "scripts/check-bytecode-v1-format.py", "scripts/check-native-host-catalog.py", "scripts/tests/test_check_*_contract.py", "scripts/tests/test_generate_*_contract.py", "tests/architecture/**"]
+command = []
+standard = false
+cross_cutting = true
+browser = true
 
 [owners.ci-tools]
 paths = [".github/**", "scripts/**"]

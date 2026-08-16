@@ -4,7 +4,7 @@
 //! `RuntimeTransaction` is the staged-store component used while runtime work
 //! is executing. It stages object, task, actor, message, and event changes.
 //!
-//! The runtime-private `RuntimeExecutionTransaction` coordinates that store
+//! The runtime-private `ActiveRuntimeTransaction` coordinates that store
 //! staging with the context baseline, retained-program checkpoints, live
 //! runtime state, and explicit or implicit transaction mode. Program and live
 //! checkpoints intentionally do not belong to this store-facing type.

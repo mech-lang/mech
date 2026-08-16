@@ -1,6 +1,6 @@
 //! Transaction-local staging for module and module-version records.
 
-use super::{RuntimeCommitResolution, RuntimeExecutionTransactionMode, RuntimeOperationSavepoint};
+use super::{RuntimeCommitResolution, RuntimeOperationSavepoint, RuntimeTransactionScope};
 use crate::runtime::MechRuntime;
 use crate::{
     ModuleId, ModuleRecord, ModuleVersionId, ModuleVersionRecord, RuntimeContext,
@@ -264,7 +264,7 @@ impl MechRuntime {
         id: ModuleId,
     ) -> MResult<Option<ModuleRecord>> {
         if let Some(transaction_id) = context.transaction {
-            let transaction = self.active_execution_transaction(transaction_id)?;
+            let transaction = self.active_runtime_transaction(transaction_id)?;
             if let Some(module) = transaction.modules.get_module(id) {
                 return Ok(Some(module.clone()));
             }
@@ -278,7 +278,7 @@ impl MechRuntime {
         canonical_uri: &str,
     ) -> MResult<Option<ModuleRecord>> {
         if let Some(transaction_id) = context.transaction {
-            let transaction = self.active_execution_transaction(transaction_id)?;
+            let transaction = self.active_runtime_transaction(transaction_id)?;
             if let Some(module) = transaction.modules.find_module_by_name(canonical_uri) {
                 return Ok(Some(module.clone()));
             }
@@ -292,7 +292,7 @@ impl MechRuntime {
         id: ModuleVersionId,
     ) -> MResult<Option<ModuleVersionRecord>> {
         if let Some(transaction_id) = context.transaction {
-            let transaction = self.active_execution_transaction(transaction_id)?;
+            let transaction = self.active_runtime_transaction(transaction_id)?;
             if let Some(version) = transaction.modules.get_version(id) {
                 return Ok(Some(version.clone()));
             }
@@ -308,29 +308,27 @@ impl MechRuntime {
     ) -> MResult<T> {
         self.ensure_runtime_mutation_allowed(operation)?;
         self.validate_context_for_runtime(context)?;
-        self.reject_program_operation_reentrancy(operation)?;
-
         let implicit = context.transaction.is_none();
         if implicit {
             self.begin_runtime_transaction_internal(
                 context,
-                RuntimeExecutionTransactionMode::ImplicitModuleOperation,
+                RuntimeTransactionScope::ImplicitModuleOperation,
             )?;
         }
 
         let transaction_id = Self::context_transaction_id(context)?;
-        if self.active_execution_transaction(transaction_id)?.mode
+        if self.active_runtime_transaction(transaction_id)?.scope
             != if implicit {
-                RuntimeExecutionTransactionMode::ImplicitModuleOperation
+                RuntimeTransactionScope::ImplicitModuleOperation
             } else {
-                RuntimeExecutionTransactionMode::Explicit
+                RuntimeTransactionScope::Explicit
             }
         {
             return Err(MechError::new(
                 RuntimeInvalidOperationError {
                     operation,
                     reason: format!(
-                        "transaction {} has an incompatible execution mode",
+                        "transaction {} has an incompatible runtime scope",
                         transaction_id,
                     ),
                 },
@@ -389,7 +387,7 @@ impl MechRuntime {
         if rollback_failures.is_empty() {
             return Err(original_error);
         }
-        Err(self.poison_program_operation(
+        Err(self.poison_runtime_operation(
             operation,
             Some(transaction_id),
             original_error_text,

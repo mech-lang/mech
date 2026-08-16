@@ -7,7 +7,11 @@ use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
+    MechErrorKind, OperationContractDeclaration, Ref,
+};
 use mech_runtime::{
     ConfigValue, HostContextManifest, HostManifestConfig, MaterializedHostInterface,
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectMetadata, RuntimeEffectSource,
@@ -29,6 +33,22 @@ pub const TEST_LIVE_RECORD_PATH: &str = "frame";
 pub const TEST_LIVE_START_MARKER_ENV: &str = "MECH_TEST_LIVE_START_MARKER";
 pub const TEST_LIVE_STOP_MARKER_ENV: &str = "MECH_TEST_LIVE_STOP_MARKER";
 pub const TEST_LIVE_FAIL_AFTER_START_ENV: &str = "MECH_TEST_LIVE_FAIL_AFTER_START";
+
+static TEST_LIVE_OUTPUT_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
 
 fn write_process_marker(variable: &str) -> MResult<()> {
     let Some(path) = std::env::var_os(variable) else {
@@ -245,6 +265,8 @@ impl RuntimeHostInputDriver for TestLiveInputDriver {
                 test_live_source()?,
                 RuntimeHostInputValue::String("deliberately-invalid-live-input".to_owned()),
             ))?;
+        } else {
+            self.handle.submit(0.0)?;
         }
         Ok(())
     }
@@ -295,6 +317,17 @@ impl RuntimeResourceProvider for TestLiveResourceProvider {
             TEST_LIVE_BASE_URI.to_owned(),
             TEST_LIVE_OUTPUT_BASE_URI.to_owned(),
         ]
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&TEST_LIVE_OUTPUT_CONTRACT)
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {

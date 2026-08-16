@@ -1,4 +1,4 @@
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{
     FunctionDefinition, MechFunctionImpl, ReactiveNodeId, ReactiveNodeKind, ReactivePlan,
@@ -6,7 +6,7 @@ use super::super::{
     ReactiveTurnOutcome, ReactiveTurnState,
 };
 use super::support::reg;
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{
     FunctionDefine, GenericError, LegacyValue, MResult, MechError, Ref, ToValue, hash_str,
@@ -57,7 +57,7 @@ impl MechFunctionImpl for SchedulerFunction {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(all(feature = "f64", feature = "compiler"))]
+#[cfg(all(feature = "f64", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for SchedulerFunction {
     fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
@@ -142,7 +142,7 @@ impl MechFunctionImpl for FalliblePlanStep {
     }
 }
 
-#[cfg(all(feature = "f64", feature = "compiler"))]
+#[cfg(all(feature = "f64", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for FalliblePlanStep {
     fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
@@ -218,7 +218,7 @@ impl MechFunctionImpl for Comb {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for Comb {
     fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)

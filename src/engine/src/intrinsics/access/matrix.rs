@@ -894,18 +894,18 @@ macro_rules! impl_access_all_fxn_v {
       T: Debug + Clone + Sync + Send + 'static +
         PartialEq + PartialOrd +
         ConstElem + AsValueKind,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       T: CompileConst,
       IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       IxVec: CompileConst,
       R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
       R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
       naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       naMatrix<T, R1, C1, S1>: CompileConst,
       naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       naMatrix<T, R2, C2, S2>: CompileConst,
     {
       fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
@@ -947,7 +947,7 @@ macro_rules! impl_access_all_fxn_v {
         Ok(self.reactive_output_values())
       }
     }
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
     where
       T: CompileConst + ConstElem + AsValueKind,
@@ -973,7 +973,7 @@ macro_rules! impl_access_fxn {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$arg_type>: ToValue,
             Ref<$ix_type>: ToValue,
@@ -1047,7 +1047,7 @@ macro_rules! impl_access_fxn {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: CompileConst + ConstElem + AsValueKind,
@@ -1072,7 +1072,7 @@ macro_rules! impl_access_fxn2 {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: Debug + Clone + Sync + Send + PartialEq + 'static + ConstElem + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             Ref<$arg_type>: ToValue,
             Ref<$ix1_type>: ToValue,
@@ -1155,7 +1155,7 @@ macro_rules! impl_access_fxn2 {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: CompileConst + ConstElem + AsValueKind,
@@ -1574,7 +1574,7 @@ mod matrix_access_scalar_value_transaction_tests {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for MatrixAccessScalarValueF {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let mut registers = [0, 0, 0];
@@ -2568,6 +2568,30 @@ macro_rules! impl_access_all_range_arms {
         },
         #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
         (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::DVector(ix))]) => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector2"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))]) if source.borrow().nrows() == 1 => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector2"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector2(ix))]) => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector3"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))]) if source.borrow().nrows() == 1 => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector3"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector3(ix))]) => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "row_vectord", feature = "vector4"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))]) if source.borrow().nrows() == 1 => {
+          box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(RowDVector::from_element(ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
+        },
+        #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vector4"))]
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::$shape(source)), [LegacyValue::IndexAll, LegacyValue::MatrixIndex(Matrix::Vector4(ix))]) => {
           box_mech_fxn(Ok(Box::new([<$fxn_name V>]{source: source.clone(), ixes: ix.clone(), sink: Ref::new(DMatrix::from_element(source.borrow().nrows(), ix.borrow().len(), $value_kind::default())), _marker: std::marker::PhantomData::default() })))
         },
         // All Bool Vector
@@ -3902,6 +3926,32 @@ pub(crate) mod native_declarations {
     declare_access_dynamic_for_shape!(RowVector3, "row_vector3");
     declare_access_dynamic_for_shape!(RowVector4, "row_vector4");
     declare_access_dynamic_for_shape!(RowDVector, "row_vectord");
+
+    // The retained n-body source uses a fixed three-column selector against
+    // its dynamic body table. Keep that exact all-feature representation in
+    // the runtime catalog rather than changing global shape preference.
+    declare_access_all_range_scalar!(
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector2,
+        usize,
+        ["matrixd", "vector2"];
+        f64,
+        "f64",
+        "f64"
+    );
+    declare_access_all_range_scalar!(
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector3,
+        usize,
+        ["matrixd", "vector3"];
+        f64,
+        "f64",
+        "f64"
+    );
 }
 
 #[doc(hidden)]
@@ -3961,6 +4011,32 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     install_access_dynamic_shape!(builder, "row_vector3", RowVector3);
     install_access_dynamic_shape!(builder, "row_vector4", RowVector4);
     install_access_dynamic_shape!(builder, "row_vectord", RowDVector);
+
+    #[cfg(all(feature = "f64", feature = "matrixd", feature = "vector3"))]
+    install_access_all_range_scalar!(
+        builder,
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector3,
+        usize;
+        f64,
+        "f64",
+        "f64"
+    );
+
+    #[cfg(all(feature = "f64", feature = "matrixd", feature = "vector2"))]
+    install_access_all_range_scalar!(
+        builder,
+        Access2DARV,
+        DMatrix,
+        DMatrix,
+        Vector2,
+        usize;
+        f64,
+        "f64",
+        "f64"
+    );
 
     Ok(())
 }

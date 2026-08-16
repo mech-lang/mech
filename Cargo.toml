@@ -63,7 +63,6 @@ full_runtime = [
       "mech-engine/runtime",
       "mech-stdlib/full_runtime",
       "mech-runtime?/resident-routing",
-      "legacy-interpreter",
       ]
 full_source = [
       "full_runtime",
@@ -93,7 +92,7 @@ standard-language = [
       "set", "map", "table", "tuple", "record", "atom", "enum",
       "row_vectord", "vectord", "matrixd",
       "statements_default", "subscript_default", "state_machines",
-      "whos", "async", "trace",
+      "async", "trace",
       ]
 full-language = [
       "baselib", "pretty_print", "serde", "compiler", "program", "mika",
@@ -101,11 +100,11 @@ full-language = [
       "i8", "i16", "i32", "i64", "i128", 
       "f32", "f64", "c64", "r64",
       "statements_default", "subscript_default", "state_machines",
-      "whos", "async", "trace",
+      "async", "trace",
       "mech-core/full", "mech-syntax/full",
       ]
 standard-cli = ["cli-product"]
-full-cli = ["cli-product", "test", "repl", "legacy-interpreter"]
+full-cli = ["cli-product"]
 standard-hosts = [
       "cli_host",
       "time_host_native", "timer_host_native", "console_host_native", "scene_host_native",
@@ -118,16 +117,14 @@ full-hosts = [
       "dep:mech-robot-arm", "mech-robot-arm/provider",
       "mech-build?/full-hosts",
       ]
-experimental-actors = ["mech-build?/experimental-actors"]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
-      "cli", "whos", "async", "trace",
+      "cli", "async", "trace",
       "mech-core/base", "mech-engine/base", "mech-syntax/base",
       ]
 cli_core = []
 cli-product = ["cli_core", "build", "formatter", "serve", "bundle_web", "run"]
-cli = ["cli-product", "test", "repl", "legacy-interpreter"]
-legacy-interpreter = ["mech-runtime?/legacy-interpreter"]
+cli = ["cli-product"]
 formatter_core = ["serde", "mech-syntax/formatter", "mech-syntax/mika", "mech-core/mika", "mech-syntax/variable_define", "mech-core/variable_define"]
 build = [
       "cli_core", "compiler",
@@ -135,19 +132,45 @@ build = [
       "mech-stdlib/native-plan",
       "mech-runtime", "mech-runtime/compiler", "mech-runtime/native-link", "mech-runtime/serde",
       ]
-repl = ["cli_core", "program", "legacy-interpreter"]
-run = ["cli_core", "project"]
-test = ["cli_core", "variable_define", "invariant_define", "symbol_table", "bool", "mech-runtime", "mech-runtime/invariant_define", "legacy-interpreter"]
+# `mech run` is a complete source-to-resident product surface: it compiles the
+# standard language, admits the resulting resident program, and installs the
+# terminal provider used by retained CLI resources.  Keep that closure on the
+# product feature instead of relying on distribution-default feature leakage.
+run = [
+      "cli_core", "project", "cli_host",
+      "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
+      "mech-syntax/program",
+      "mech-stdlib/standard_compiler",
+      "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      ]
 project = ["mech-runtime", "mech-runtime/source"]
 cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]
 web_host = ["mech-runtime", "mech-browser", "mech-browser/serde", "mech-browser/provider", "dep:mech-time", "dep:mech-timer", "dep:mech-console", "dep:mech-scene"]
 bundle_web_core = ["project", "web_host", "formatter_core", "serde", "mech-runtime"]
 bundle_web = ["cli_core", "bundle_web_core"]
-serve = ["cli_core", "project", "web_host", "formatter_core", "mech-runtime", "mech-runtime/watcher", "ignore"]
+# `mech serve` owns the same retained source-to-resident compilation boundary as
+# `mech run`, plus browser hosts and workspace watching.  Keep the compiler and
+# standard source catalog on this product feature so reduced browser/Windows
+# builds cannot inherit them accidentally from a distribution default.
+serve = [
+      "cli_core", "project", "web_host", "formatter_core",
+      "mech-engine/runtime", "mech-engine/source", "mech-engine/compiler",
+      "mech-syntax/program",
+      "mech-stdlib/standard_compiler",
+      "mech-stdlib/math_add_assign", "mech-stdlib/math_sub_assign",
+      "mech-runtime/compiler", "mech-runtime/resident-routing-source",
+      "mech-runtime/watcher", "ignore",
+      ]
 host_delegation = ["serde", "mech-runtime", "mech-runtime/host_delegation", "mech-browser", "mech-browser/delegation"]
 host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_signing", "mech-browser/delegation_signing"]
-whos = ["pretty_print", "variables", "symbol_table"]
-formatter = ["cli_core", "formatter_core", "mech-runtime"]
+# Formatting resolves source/document inputs through the retained filesystem
+# authority, but it does not compile or execute them. Keep that runtime-kernel
+# closure explicit without pulling in the semantic compiler.
+formatter = [
+      "cli_core", "formatter_core",
+      "mech-runtime", "mech-runtime/source", "mech-runtime/serde",
+      ]
 async = []
 trace = ["mech-engine/trace"]
 dynamic-modules = ["mech-engine/dynamic-modules"]
@@ -388,6 +411,10 @@ matrix_vertcat = ["matrix", "mech-stdlib/matrix_vertcat"]
 nalgebra = "0.34.1"
 indicatif = { version = "0.18.4", features = ["in_memory"] }
 tempfile = "3.26.0"
+# The root bytecode integration corpus deliberately exercises explicit u8/u64
+# table annotations even though the shipping standard distribution selects a
+# smaller value surface. Keep that additional closure test-owned.
+mech-stdlib = { version = "0.3.5", default-features = false, features = ["u8", "u64"] }
 
 [target.'cfg(unix)'.dev-dependencies]
 libc = "0.2"
@@ -415,18 +442,14 @@ sevenz-rust = "0.6.1"
 colored = "3.1.1"
 serde = "1.0.228"
 serde_derive = "1.0.228"
-crossterm = "0.29.0"
-tabled = "0.20.0"
 crossbeam-channel = "0.5.15"
 serde_json = "1.0.149"
 nom = "7.1.3"
 ctrlc = "3.5.2"
 csv = "1.4.0"
-chrono = "0.4.44"
 base64 = "0.22.1"
 rand = "0.9.2"
 notify = "8.2.0"
-ariadne = "0.6.0"
 clap = { version = "4.5.60", features = ["cargo"]}
 bincode = { version = "2.0.1", features = ["serde"]}
 indexmap = { version = "2.13.0", features = ["serde"]}

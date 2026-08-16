@@ -21,12 +21,20 @@ pub enum SlotRole {
     Input,
     State,
     Derived,
+    Output,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ProducerReference {
     Input(InputId),
-    NodeOutput { node: NodeId, output_ordinal: u16 },
+    NodeOutput {
+        node: NodeId,
+        output_ordinal: u16,
+    },
+    Output {
+        output: OutputId,
+        source: ArtifactSource,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

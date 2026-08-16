@@ -4,20 +4,14 @@
 
 // Actors are the primary entities in the Mech runtime that encapsulate state and behavior. They can receive messages, execute turns, and interact with other actors. The methods in this section allow you to create, retrieve, update, and manage actors, as well as send messages to them and run their turns.
 
-use crate::runtime::{
-    MechRuntime, RuntimeInvalidOperationError, RuntimeRecordNotFoundError, extension,
-};
+use crate::runtime::{MechRuntime, RuntimeInvalidOperationError, RuntimeRecordNotFoundError};
 use crate::{
-    ActorBehaviorRuntime, ActorId, ActorRecord, ActorTurn, CapabilityId, HostCall, MessageId,
-    MessageRecord, ModuleVersionId, NoActorBehaviorDriver, ObjectId, ResourceBudgetExceededError,
-    RuntimeContext, RuntimeEventKind, RuntimeTransactionNotFoundError, TransactionId,
+    ActorId, ActorRecord, ActorTurn, CapabilityId, MessageId, MessageRecord, ModuleVersionId,
+    ObjectId, ResourceBudgetExceededError, RuntimeContext, RuntimeEventKind,
+    RuntimeTransactionNotFoundError, TransactionId,
 };
-use mech_core::{LegacyValue, MResult, MechError};
+use mech_core::{MResult, MechError};
 use std::collections::HashMap;
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-use std::time::Instant;
-#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
-use web_time::Instant;
 
 enum VisibleTransactionMessage {
     Durable(MessageRecord),
@@ -385,93 +379,6 @@ impl MechRuntime {
         };
 
         Ok(Some(ActorTurn::new(actor, message)?))
-    }
-
-    pub fn run_actor_turn_envelope(
-        &mut self,
-        context: &mut RuntimeContext,
-        turn: &ActorTurn,
-    ) -> MResult<()> {
-        self.ensure_runtime_mutation_allowed("run_actor_turn_envelope")?;
-        let turn_started = Instant::now();
-        self.validate_context_for_runtime(context)?;
-        turn.validate()?;
-
-        if context.transaction.is_some() && context.subject != turn.subject {
-            return Err(MechError::new(
-                RuntimeInvalidOperationError {
-                    operation: "run_actor_turn_envelope",
-                    reason: format!(
-                        "cannot bind actor turn subject `{}` to active transaction owned by subject `{}`",
-                        turn.subject, context.subject,
-                    ),
-                },
-                None,
-            ));
-        }
-
-        context.bind_actor_turn(turn);
-        if let Some(transaction_id) = context.transaction {
-            self.active_execution_transaction_mut(transaction_id)?
-                .context_identity
-                .bind_actor_turn(turn);
-        }
-
-        self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ActorTurnStarted {
-                actor_id: turn.actor_id(),
-            },
-        )?;
-
-        if let Some(behavior) = turn.behavior {
-            #[cfg(feature = "source")]
-            self.run_module_with_context(context, behavior)?;
-            #[cfg(not(feature = "source"))]
-            return Err(MechError::new(
-                RuntimeInvalidOperationError {
-                    operation: "run_actor_turn_envelope",
-                    reason: format!(
-                        "actor behavior module {behavior} requires the runtime source layer"
-                    ),
-                },
-                None,
-            ));
-        }
-
-        let mut driver = std::mem::replace(
-            &mut self.actor_behavior_driver,
-            Box::new(NoActorBehaviorDriver::new()),
-        );
-
-        let driver_result =
-            extension::invoke_extension("actor behavior driver", "run_actor_turn", || {
-                driver.run_actor_turn(self, context, turn)
-            });
-
-        self.actor_behavior_driver = driver;
-
-        driver_result?;
-        self.enforce_turn_duration(turn_started)?;
-
-        self.emit_event_to_context(
-            context,
-            RuntimeEventKind::ActorTurnCompleted {
-                actor_id: turn.actor_id(),
-            },
-        )?;
-
-        Ok(())
-    }
-}
-
-impl ActorBehaviorRuntime for MechRuntime {
-    fn call_host_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        call: HostCall,
-    ) -> MResult<LegacyValue> {
-        MechRuntime::call_host_value_with_context(self, context, call)
     }
 }
 

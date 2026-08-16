@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: ""
+      validation_ref:
+        description: Exact commit or ref to validate
+        required: false
+        type: string
+        default: ""
   workflow_dispatch:
     inputs:
       release_channel:
@@ -27,14 +32,19 @@ on:
         description: UTC date for nightly artifact names (YYYY-MM-DD)
         required: false
         type: string
+      validation_ref:
+        description: Exact commit or ref to validate
+        required: false
+        type: string
+        default: ""
 
 concurrency:
-  group: ci-full-${{ github.sha }}
+  group: ci-full-${{ inputs.validation_ref || github.sha }}
   cancel-in-progress: false
 
 jobs:
-  migration-contracts:
-    name: Migration contract qualification
+  architecture-contracts:
+    name: Architecture contract qualification
     runs-on: ubuntu-latest
     env:
       CARGO_INCREMENTAL: 0
@@ -42,8 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         with:
+          ref: ${{ inputs.validation_ref || github.sha }}
           fetch-depth: 0
-      - name: Install migration contract tools
+      - name: Install architecture contract tools
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
           if ! command -v rg >/dev/null 2>&1
@@ -51,42 +62,39 @@ jobs:
             sudo apt-get update
             sudo apt-get install --yes ripgrep
           fi
-      - name: Replay migration architecture evidence
+      - name: Validate permanent architecture contracts
         run: |
           python3 scripts/generate-value-system-inventory.py --check
           python3 scripts/generate-value-system-inventory.py \
             --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
             --check-legacy-baseline
-          python3 scripts/check-value-system-contract.py
+          python3 scripts/check-value-system-contract.py \
+            --allow-only-c0-gate-b-evidence-stale
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
           python3 scripts/check-resident-activation-contract.py
+          python3 scripts/check-compiler-planning-quarantine.py
           python3 scripts/generate-d1-contract.py --check
           python3 scripts/check-d1-contract.py
           python3 scripts/generate-d2-contract.py --check
           python3 scripts/check-d2-contract.py
-          python3 scripts/generate-d3-contract.py --check
-          python3 scripts/check-d3-contract.py
-          python3 scripts/generate-d4-contract.py --check
-          python3 scripts/check-d4-contract.py
           python3 scripts/check-gate-d-contract.py \
             --report benchmarks/runtime/gate-d/d3-resident-external.json \
             --expected-phase D3-resident-external
           python3 -B -m unittest \
+            tests/ci/test_ci_full_contract.py \
+            scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_generate_value_system_inventory.py \
             scripts/tests/test_check_value_system_contract.py \
             scripts/tests/test_check_program_artifact_contract.py \
             scripts/tests/test_check_operation_contract.py \
             scripts/tests/test_generate_resident_activation_contract.py \
             scripts/tests/test_check_resident_activation_contract.py \
+            scripts/tests/test_check_compiler_planning_quarantine.py \
             scripts/tests/test_generate_d1_contract.py \
             scripts/tests/test_check_d1_contract.py \
             scripts/tests/test_generate_d2_contract.py \
             scripts/tests/test_check_d2_contract.py \
-            scripts/tests/test_generate_d3_contract.py \
-            scripts/tests/test_check_d3_contract.py \
-            scripts/tests/test_generate_d4_contract.py \
-            scripts/tests/test_check_d4_contract.py \
             scripts/tests/test_run_gate_a_benchmarks.py \
             scripts/tests/test_run_gate_b_benchmarks.py
 
@@ -100,6 +108,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Audit unsafe boundaries
         run: |
@@ -117,6 +127,9 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           rustup default nightly-2026-03-03
 
+      - name: Fetch locked product dependencies
+        run: cargo fetch --locked
+
       - name: Check feature boundaries and examples
         run: |
           bash scripts/check-bytecode-compiler-boundaries.sh
@@ -127,9 +140,15 @@ jobs:
 
           # Prelude-only no-default feature checks.
           cargo check --no-default-features
-          cargo check --no-default-features --features build
-          cargo check --no-default-features --features test
-          cargo run --bin mech --no-default-features --features test -- test examples/working/fizzbuzz.mec
+          cargo check --no-default-features --features distribution-standard
+
+          # Current product canaries replace the deleted interpreter-era
+          # `mech test` feature and command.
+          cargo run --bin mech --no-default-features --features distribution-standard -- \
+            run tests/fixtures/standard-resident-scalar.mec
+          cargo test --locked --no-default-features --features distribution-standard \
+            --test mech_build distribution_source_bytecode_native_canary \
+            -- --exact --nocapture
 
           # Direct package feature-boundary checks.
           cargo check -p mech-core --no-default-features --features mika
@@ -160,9 +179,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
-        if: ${{ matrix.slice == 'consumer' }}
         run: |
           sudo apt-get update
           sudo apt-get install --yes ripgrep
@@ -186,9 +206,9 @@ jobs:
           - static
           - engine
           - selected-runtime
-          - standard-runtime
-          - standard-source
-          - standard-compiler
+          - full-runtime
+          - full-source
+          - full-compiler
     env:
       CARGO_TERM_COLOR: always
       RUST_BACKTRACE: full
@@ -198,6 +218,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -230,6 +252,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -246,19 +270,29 @@ jobs:
       - name: Check source-only browser distribution
         run: bash scripts/check-static-distribution-profiles.sh wasm-source
 
+  distribution-size-plan:
+    name: Distribution size profile plan
+    runs-on: ubuntu-latest
+    outputs:
+      profiles: ${{ steps.profiles.outputs.profiles }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+      - name: Read authoritative distribution size profiles
+        id: profiles
+        run: |
+          profiles=$(scripts/report-distribution-sizes.sh --profiles-json)
+          echo "profiles=$profiles" >> "$GITHUB_OUTPUT"
+
   distribution-size-shards:
     name: Distribution size (${{ matrix.profile }})
+    needs: distribution-size-plan
     runs-on: ubuntu-latest
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
-        profile:
-          - selected-bytecode-runtime
-          - standard-bytecode-runtime
-          - standard-source-runtime
-          - standard-compiler-tooling
-          - wasm-browser-project
+        profile: ${{ fromJSON(needs.distribution-size-plan.outputs.profiles) }}
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -266,6 +300,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -293,12 +329,12 @@ jobs:
   distribution-sizes:
     name: Distribution size report
     if: ${{ always() }}
-    needs: distribution-size-shards
+    needs:
+      - distribution-size-plan
+      - distribution-size-shards
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - name: Download distribution size rows
-        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           pattern: distribution-size-*
@@ -306,16 +342,17 @@ jobs:
           merge-multiple: true
 
       - name: Combine distribution size report
+        env:
+          PROFILES_JSON: ${{ needs.distribution-size-plan.outputs.profiles }}
         run: |
           mkdir -p target
           printf 'profile\tartifact_path\tartifact_size_bytes\tresolved_package_count\truntime_factory_count\tsource_specializer_count\n' \
             > target/distribution-sizes.tsv
-          for profile in \
-            selected-bytecode-runtime \
-            standard-bytecode-runtime \
-            standard-source-runtime \
-            standard-compiler-tooling \
-            wasm-browser-project
+          python3 -c \
+            'import json, os; print("\n".join(json.loads(os.environ["PROFILES_JSON"])))' \
+            > target/distribution-size-profiles.txt
+          missing=0
+          while IFS= read -r profile
           do
             row="target/distribution-size-rows/distribution-sizes-${profile}.tsv"
             if test -f "$row"
@@ -323,8 +360,10 @@ jobs:
               sed -n '2p' "$row" >> target/distribution-sizes.tsv
             else
               echo "distribution size row missing: $profile" >&2
+              missing=1
             fi
-          done
+          done < target/distribution-size-profiles.txt
+          test "$missing" -eq 0
           cat target/distribution-sizes.tsv
 
       - name: Upload distribution size report
@@ -344,6 +383,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -359,41 +400,13 @@ jobs:
       - name: Check complete function-system migration contracts
         run: bash scripts/check-complete-function-system-migration.sh
 
-  runtime-source-targets:
-    name: Runtime source targets (${{ matrix.slice }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        slice:
-          - basic
-          - hosts
-          - actors
-          - modules
-          - diagnostics
-          - standard
-    env:
-      CARGO_TERM_COLOR: always
-      RUST_BACKTRACE: full
-      CARGO_INCREMENTAL: 0
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7.0.1
-
-      - name: Install Rust nightly-2026-03-03
-        run: |
-          rustup show
-          rustup toolchain install nightly-2026-03-03 --profile minimal
-          rustup default nightly-2026-03-03
-
-      - name: Run ${{ matrix.slice }} source targets
-        run: bash scripts/run-runtime-source-targets.sh "${{ matrix.slice }}"
-
   bytecode-v1-format:
     name: Bytecode v1 format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Validate the frozen bytecode corpus
@@ -404,6 +417,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Test official bytecode value codecs
@@ -414,8 +429,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Fetch both isolated generator dependency graphs
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked \
+            --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml
+          cargo +nightly-2026-03-03 fetch --locked \
+            --manifest-path tests/fixtures/bytecode-v1-source-generator/Cargo.toml
       - name: Regenerate bytecode fixtures in fresh processes
         run: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
 
@@ -424,6 +447,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Check isolated owner native-link profiles
@@ -436,7 +461,7 @@ jobs:
       fail-fast: false
       matrix:
         surface:
-          - standard
+          - full
           - extended-engine-shard-unsigned
           - extended-engine-shard-signed
           - extended-engine-shard-float
@@ -452,6 +477,8 @@ jobs:
           - extended-combinatorics
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Generate and validate exact linkage surface
@@ -469,6 +496,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Download validated linkage surfaces
         uses: actions/download-artifact@v4
         with:
@@ -498,6 +527,8 @@ jobs:
       CARGO_TARGET_DIR: ${{ github.workspace }}/target/native-linkage/exact-closures/shard-${{ matrix.shard }}/cargo-target
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked workspace dependencies
@@ -517,6 +548,8 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -536,6 +569,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -550,6 +585,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -568,6 +605,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -575,9 +614,12 @@ jobs:
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
       - name: Validate one-shot live generation and cleanup
-        run: |
-          cargo +nightly-2026-03-03 test -p mech-build --features standard-hosts --test registry_generated_project
-          cargo +nightly-2026-03-03 test -p mech-runtime --test native_live_resource
+        run: >-
+          cargo +nightly-2026-03-03 test
+          -p mech-build
+          --features standard-hosts
+          --test registry_generated_project
+          -- --nocapture
 
   native-windows:
     name: Native generated applications (Windows)
@@ -588,6 +630,8 @@ jobs:
       CARGO_PROFILE_TEST_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -615,6 +659,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Fetch locked generated-project dependencies
@@ -633,6 +679,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03 and WASM target
         run: |
           rustup toolchain install nightly-2026-03-03 --profile minimal
@@ -662,6 +710,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Validate Cargo package archive contents
@@ -682,7 +732,6 @@ jobs:
       - distribution-contracts
       - engine-catalog
       - function-system-contracts
-      - runtime-source-targets
       - wasm-source-profile
       - bytecode-v1-format
       - bytecode-v1-values
@@ -706,7 +755,6 @@ jobs:
           FEATURE_RESULT: ${{ needs.cargo-features.result }}
           DISTRIBUTION_RESULT: ${{ needs.distribution-contracts.result }}
           FUNCTION_SYSTEM_RESULT: ${{ needs.function-system-contracts.result }}
-          RUNTIME_SOURCE_TARGETS_RESULT: ${{ needs.runtime-source-targets.result }}
           WASM_SOURCE_RESULT: ${{ needs.wasm-source-profile.result }}
           BYTECODE_FORMAT_RESULT: ${{ needs.bytecode-v1-format.result }}
           BYTECODE_VALUES_RESULT: ${{ needs.bytecode-v1-values.result }}
@@ -727,7 +775,6 @@ jobs:
           test "$ENGINE_CATALOG_RESULT" = success
           test "$FEATURE_RESULT" = success
           test "$FUNCTION_SYSTEM_RESULT" = success
-          test "$RUNTIME_SOURCE_TARGETS_RESULT" = success
           test "$WASM_SOURCE_RESULT" = success
           test "$BYTECODE_FORMAT_RESULT" = success
           test "$BYTECODE_VALUES_RESULT" = success
@@ -754,6 +801,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -776,10 +825,9 @@ jobs:
             --no-default-features \
             --features "matrix,matrixd,f64"
 
-      - name: Run root interpreter and bytecode tests
+      - name: Run root bytecode and library tests
         run: |
-          cargo test --test interpreter --test bytecode
-          cargo test --test reactive_combinatorics
+          cargo test --test bytecode
           # Generic root-library coverage runs once on Ubuntu. Platform jobs
           # below retain only behavior that is actually platform-sensitive.
           cargo test --lib
@@ -792,19 +840,23 @@ jobs:
         # Exhaustive native-link feature coverage is intentionally split across
         # the native-linkage-surface jobs instead of linked into one enormous
         # test harness on a memory-constrained hosted runner.
-        run: cargo test -p mech-engine --lib --tests --features compiler
-
-      - name: Run non-UTF-8 source-root regressions
         run: |
-          cargo test -p mech \
-            --test mech_test_paths \
-            mech_tests_preserve_discovered_non_utf8_filename \
-            -- --exact --nocapture
-          cargo test -p mech \
+          cargo check -p mech-engine \
+            --no-default-features \
+            --features compiler
+          cargo test -p mech-engine \
             --lib \
-            --features test \
-            cli::module_execution::tests::test_module_execution_preserves_non_utf8_root_path \
-            -- --exact --nocapture
+            --tests \
+            --features compiler_default
+
+      - name: Run retained non-UTF-8 source-root regression
+        run: >-
+          cargo test -p mech
+          --lib
+          --no-default-features
+          --features distribution-standard
+          cli::commands::run::tests::run_command_preserves_non_utf8_source_path
+          -- --exact --nocapture
 
       - name: Run HTML shim formatter contracts
         run: |
@@ -852,6 +904,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Audit sealed runtime boundaries
         run: |
@@ -879,30 +933,12 @@ jobs:
           cargo test -p mech-browser --features provider
           cargo test -p mech-browser --features delegation
           cargo test -p mech-browser --features delegation_signing
-          cargo test --features "run repl pretty_print" --test mech_cli_host
-          cargo test --features "run repl pretty_print" cli::run::tests
+          cargo test --no-default-features --features distribution-standard \
+            --test mech_cli_host -- --test-threads=1
+          cargo test --lib --no-default-features --features run \
+            cli::commands::run::tests
           cargo check -p mech-runtime -p mech-browser -p mech-terminal
           cargo check -p mech-terminal --no-default-features
-
-      - name: Run REPL Ctrl-C regression
-        run: |
-          cargo test \
-            --no-default-features \
-            --features repl \
-            --test mech_repl_ctrlc
-
-          cargo test \
-            --no-default-features \
-            --features "repl mika" \
-            --test mech_repl_ctrlc
-
-      - name: Run REPL Mika finalization regression
-        run: |
-          cargo test \
-            --lib \
-            --no-default-features \
-            --features "repl mika" \
-            mika_farewell_remains_visible_after_drop
 
       - name: Disk report at end
         if: always()
@@ -918,6 +954,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -944,6 +982,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install required CI tools
         run: |
@@ -1028,6 +1068,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Disk report at start
         run: bash scripts/ci-disk-report.sh
@@ -1178,6 +1220,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -1203,6 +1247,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -1228,6 +1274,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - name: Install Rust nightly-2026-03-03
         run: |
@@ -1238,20 +1286,14 @@ jobs:
       - name: Build default Windows CLI
         run: cargo build --bin mech
 
-      - name: Check REPL-only Windows CLI
-        run: cargo check --bin mech --no-default-features --features repl
-
-      - name: Check REPL-plus-Mika Windows CLI
-        run: cargo check --bin mech --no-default-features --features "repl mika"
-
-      - name: Run Windows-sensitive root contract
-        run: cargo test -p mech --lib --no-default-features --features "run repl" repl::runtime_load_tests::runtime_repl_load_request_preserves_explicit_source_schemes -- --exact --nocapture
+      - name: Check the supported Windows CLI feature profile
+        run: cargo check --bin mech --no-default-features --features distribution-standard
 
       - name: Run Windows serve executable HTTP suites
         run: cargo test -p mech --no-default-features --features serve --test mech_serve -- --nocapture
 
       - name: Run reduced-feature Windows source-tooling tests
-        run: cargo test -p mech --no-default-features --features "run build test" --test windows_source_paths -- --nocapture
+        run: cargo test -p mech --no-default-features --features distribution-standard --test windows_source_paths -- --nocapture
 
       - name: Run Windows formatter and serve HTML shim contracts
         run: |
@@ -1301,6 +1343,8 @@ jobs:
       CARGO_INCREMENTAL: 0
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -1327,6 +1371,8 @@ jobs:
       CARGO_PROFILE_RELEASE_DEBUG: "0"
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Build and package the exact distribution

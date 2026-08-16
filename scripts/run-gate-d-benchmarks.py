@@ -10,13 +10,18 @@ import math
 import platform
 import statistics
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+from d2_historical_evidence import D2_HEAD, run_historical_d2_fixture
 
 
 ROOT = Path(__file__).resolve().parents[1]
 D1_HEAD = "7ff20887ea2d267b790917608c4bc8826b031762"
-D2_HEAD = "96fd051608f9d9df9eb4e9b345af7c23279c6c67"
 TURNS = 4_096
 THRESHOLDS = {
     "nbody_source_bytecode_ratio_max": 1.03,
@@ -345,6 +350,8 @@ def main() -> int:
         print(f"wrote {display}: {report['decision']}")
         return 0 if report["decision"] == "Pass" else 3
     raw = load_raw(args.raw_input)
+    if args.raw_input is None:
+        raw += "\n" + run_historical_d2_fixture("--gate-d-benchmark", release=True)
     lane_samples: dict[str, list[float]] = {}
     lane_allocations: dict[str, set[int]] = {}
     cold_samples: dict[str, list[float]] = {}

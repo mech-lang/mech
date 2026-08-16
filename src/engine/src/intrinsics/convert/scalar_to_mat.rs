@@ -39,7 +39,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<F, T> MechFunctionCompiler for ConvertScalarToMat2<F, T>
 where
     T: CompileConst + ConstElem + AsValueKind,

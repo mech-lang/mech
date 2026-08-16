@@ -61,7 +61,6 @@ pub mod mechdown;
 pub mod mika;
 pub mod parser;
 pub mod patterns;
-pub mod repl;
 pub mod state_machines;
 pub mod statements;
 pub mod structures;
@@ -81,7 +80,6 @@ pub use crate::mechdown::*;
 #[cfg(feature = "mika")]
 pub use crate::mika::*;
 pub use crate::patterns::*;
-pub use crate::repl::*;
 pub use crate::state_machines::*;
 pub use crate::statements::*;
 pub use crate::structures::*;

@@ -4,14 +4,12 @@
 mod intrinsic_catalog;
 
 fn run_ok(source: &str) {
-    let mut program = intrinsic_catalog::program();
-    let result = program.run_string(source);
+    let result = intrinsic_catalog::run(source);
     assert!(result.is_ok(), "expected program to run successfully");
 }
 
 fn run_err(source: &str) {
-    let mut program = intrinsic_catalog::program();
-    let result = program.run_string(source);
+    let result = intrinsic_catalog::run(source);
     assert!(result.is_err(), "expected program to fail");
 }
 

@@ -190,7 +190,7 @@ pub trait CopyMat<T> {
     #[cfg(feature = "matrixd")]
     fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
     fn addr(&self) -> usize;
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
 
@@ -199,9 +199,9 @@ macro_rules! copy_mat {
         impl<T> CopyMat<T> for Ref<$matsize<T>>
         where
             T: Clone,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst + ConstElem,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             $matsize<T>: CompileConst + ConstElem,
         {
             #[cfg(feature = "matrixd")]
@@ -249,7 +249,7 @@ macro_rules! copy_mat {
             fn addr(&self) -> usize {
                 self.addr()
             }
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             fn compile_const_mat(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
                 self.borrow().compile_const(ctx)
             }
@@ -611,7 +611,7 @@ where
 impl<T> Matrix<T>
 where
     T: Clone + 'static,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem + AsValueKind + Debug + PartialEq,
 {
     pub fn get_copyable_matrix(&self) -> Box<dyn CopyMat<T>> {

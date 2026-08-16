@@ -13,7 +13,7 @@ use mech_build::{
 };
 use mech_core::{
     BytecodeInstruction, BytecodeProgram, EncodedConstant, FunctionCatalog, ParsedProgram,
-    RuntimeType, write_bytecode,
+    RuntimeType, write_bytecode_with_artifact,
 };
 #[cfg(feature = "fixed")]
 use mech_core::FunctionCatalogBuilder;
@@ -462,19 +462,66 @@ fn poison_runtime_output_seeds(bytes: Vec<u8>) -> AppResult<(Vec<u8>, usize)> {
         }
     }
 
-    let poisoned = write_bytecode(&BytecodeProgram {
-        register_count: parsed.header.register_count,
-        constants,
-        symbols: parsed.symbols,
-        mutable_symbols: parsed.mutable_symbols,
-        instructions: parsed.instructions,
-        dictionary: parsed.dictionary,
-        requirements: parsed.requirements,
-    })
+    // Derived resident slots are constructed from the semantic artifact and
+    // intentionally have no compiler output-seed initializer. Preserve that
+    // authoritative artifact while poisoning the legacy bytecode constants:
+    // the generated application must still execute its resident nodes and
+    // publish their calculated outputs.
+    let artifact = parsed.artifact;
+    let mut instructions = parsed.instructions;
+    let constants = canonicalize_mutated_constants(&mut instructions, &constants)?;
+    let poisoned = write_bytecode_with_artifact(
+        &BytecodeProgram {
+            register_count: parsed.header.register_count,
+            constants,
+            symbols: parsed.symbols,
+            mutable_symbols: parsed.mutable_symbols,
+            instructions,
+            dictionary: parsed.dictionary,
+            requirements: parsed.requirements,
+        },
+        &artifact,
+    )
     .map_err(|error| mech_error("output-seed bytecode rewrite", error))?;
     ParsedProgram::from_bytes(&poisoned)
         .map_err(|error| mech_error("poisoned bytecode validation", error))?;
     Ok((poisoned, constant_ids.len()))
+}
+
+fn canonicalize_mutated_constants(
+    instructions: &mut [BytecodeInstruction],
+    pending: &[EncodedConstant],
+) -> AppResult<Vec<EncodedConstant>> {
+    let mut constants = Vec::new();
+    let mut remap = vec![None; pending.len()];
+    for instruction in instructions {
+        let constant = match instruction {
+            BytecodeInstruction::ConstLoad { constant, .. } => constant,
+            BytecodeInstruction::CompositePack { template, .. } => template,
+            _ => continue,
+        };
+        let old = usize::try_from(*constant)?;
+        let value = pending
+            .get(old)
+            .ok_or("instruction constant index is outside the mutated table")?;
+        let canonical = match remap[old] {
+            Some(canonical) => canonical,
+            None => {
+                let canonical = match constants.iter().position(|existing| existing == value) {
+                    Some(index) => u32::try_from(index)?,
+                    None => {
+                        let index = u32::try_from(constants.len())?;
+                        constants.push(value.clone());
+                        index
+                    }
+                };
+                remap[old] = Some(canonical);
+                canonical
+            }
+        };
+        *constant = canonical;
+    }
+    Ok(constants)
 }
 
 fn mech_error(context: &str, error: impl std::fmt::Debug) -> io::Error {

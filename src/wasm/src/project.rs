@@ -15,7 +15,8 @@ use mech_browser::BrowserRuntimeInjectionConfig;
 use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation};
 #[cfg(feature = "browser_host_console")]
 use mech_console::BrowserConsoleHostFactory;
-use mech_core::{MechError, MechErrorKind, MechSourceCode};
+use mech_core::{MechError, MechErrorKind, MechSourceCode, OutputId};
+use mech_engine::root_document_output_ids;
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
     ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
@@ -186,16 +187,13 @@ impl WasmProject {
         }
     }
 
-    #[wasm_bindgen(js_name = rootInterpreterId)]
-    pub fn root_interpreter_id(&self) -> u64 {
-        self.runtime.root_interpreter_id()
-    }
-
     #[wasm_bindgen(js_name = renderedOutput)]
-    pub fn rendered_output(&self, interpreter_id: u64, output_id: u64) -> Result<JsValue, JsValue> {
-        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+    pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
+        let Ok(output_id) = u32::try_from(output_id) else {
+            return Ok(JsValue::NULL);
+        };
         self.runtime
-            .output_value_for_interpreter(interpreter_id, output_id)
+            .output_value(OutputId::new(output_id))
             .map_err(to_js_error)?
             .map(rendered_value)
             .transpose()
@@ -203,26 +201,18 @@ impl WasmProject {
     }
 
     #[wasm_bindgen(js_name = renderedSymbol)]
-    pub fn rendered_symbol(&self, interpreter_id: u64, name: &str) -> Result<JsValue, JsValue> {
-        let interpreter_id = self.actual_interpreter_id(interpreter_id);
+    pub fn rendered_symbol(&self, name: &str) -> Result<JsValue, JsValue> {
         let names = vec![name.to_string()];
         let value = self
             .runtime
-            .symbol_values_for_interpreter(interpreter_id, &names)
+            .program_output_values(&names)
             .map_err(to_js_error)?
-            .and_then(|mut values| values.pop().map(|(_, value)| value));
+            .pop()
+            .map(|(_, value)| value);
         value
             .map(rendered_value)
             .transpose()
             .map(|value| value.unwrap_or(JsValue::NULL))
-    }
-
-    fn actual_interpreter_id(&self, interpreter_id: u64) -> u64 {
-        if interpreter_id == 0 {
-            self.runtime.root_interpreter_id()
-        } else {
-            interpreter_id
-        }
     }
 
     pub fn start(&mut self) -> Result<(), JsValue> {
@@ -310,11 +300,6 @@ impl WasmProject {
             &JsValue::from_str("coalesced"),
             &JsValue::from_f64(info.coalesced_host_packets as f64),
         )?;
-        Reflect::set(
-            &out,
-            &JsValue::from_str("legacyTurns"),
-            &JsValue::from_f64(info.legacy_turns as f64),
-        )?;
         Ok(out.into())
     }
 
@@ -369,42 +354,31 @@ struct ServedDocumentBootstrap {
 mod document {
     use super::*;
 
+    pub(super) fn document_output_ordinals(tree: &mech_core::nodes::Program) -> HashMap<u64, u64> {
+        root_document_output_ids(tree)
+            .into_iter()
+            .enumerate()
+            .map(|(ordinal, output_id)| (output_id, ordinal as u64))
+            .collect()
+    }
+
     #[wasm_bindgen]
     pub struct WasmDocument {
         pub(super) project: WasmProject,
-        #[cfg(feature = "legacy-interpreter")]
-        // The full/developer console owns an interpreter runtime that is
-        // deliberately disjoint from the resident document owner. Ad-hoc
-        // evaluation can neither mutate nor select execution for the product.
-        pub(super) developer_runtime: MechRuntime,
         bootstrap: WasmDocumentBootstrap,
+        document_output_ordinals: HashMap<u64, u64>,
     }
 
     fn load_resident_document_root(
         runtime: &mut MechRuntime,
         root_specifier: &str,
     ) -> Result<(), JsValue> {
-        let durability = runtime.config().program_routing.resident_durability;
+        let durability = runtime.config().resident_durability;
         runtime
-            .load_production_root_program(
+            .load_root_program(
                 SourceRequest::new(root_specifier),
                 browser_module_options(),
                 durability,
-            )
-            .map(|_| ())
-            .map_err(to_js_error)
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    fn load_developer_document_root(
-        runtime: &mut MechRuntime,
-        root_specifier: &str,
-    ) -> Result<(), JsValue> {
-        runtime
-            .legacy_interpreter()
-            .resolve_and_run_root_module(
-                SourceRequest::new(root_specifier),
-                browser_module_options(),
             )
             .map(|_| ())
             .map_err(to_js_error)
@@ -415,6 +389,7 @@ mod document {
         #[wasm_bindgen(js_name = fromEncoded)]
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
             let tree = decode_document_tree(encoded)?;
+            let document_output_ordinals = document_output_ordinals(&tree);
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: "document.mec".to_string(),
                 source_map: HashMap::from([("document.mec".to_string(), String::new())]),
@@ -430,29 +405,14 @@ mod document {
             .build()
             .map_err(to_js_error)?;
             load_resident_document_root(&mut runtime, &source.root_specifier)?;
-            #[cfg(feature = "legacy-interpreter")]
-            let mut developer_runtime = {
-                #[cfg(feature = "browser_host_scene")]
-                let developer_scenes = BrowserSceneRegistry::new();
-                runtime_builder_with_factories(
-                    #[cfg(feature = "browser_host_scene")]
-                    developer_scenes,
-                )?
-                .source_resolver(document_source_resolver(tree.clone(), &source)?)
-                .build()
-                .map_err(to_js_error)?
-            };
-            #[cfg(feature = "legacy-interpreter")]
-            load_developer_document_root(&mut developer_runtime, &source.root_specifier)?;
             Ok(Self {
                 project: WasmProject::from_runtime(
                     runtime,
                     #[cfg(feature = "browser_host_scene")]
                     scenes,
                 ),
-                #[cfg(feature = "legacy-interpreter")]
-                developer_runtime,
                 bootstrap: WasmDocumentBootstrap::Detached,
+                document_output_ordinals,
             })
         }
 
@@ -494,6 +454,7 @@ mod document {
                 source_map,
                 resolutions,
             };
+            let document_output_ordinals = document_output_ordinals(&tree);
             #[cfg(feature = "browser_host_scene")]
             let scenes = BrowserSceneRegistry::new();
             let source_resolver = document_source_resolver(tree.clone(), &bootstrap)?;
@@ -505,30 +466,14 @@ mod document {
             .build()
             .map_err(to_js_error)?;
             load_resident_document_root(&mut runtime, &bootstrap.root_specifier)?;
-            #[cfg(feature = "legacy-interpreter")]
-            let mut developer_runtime = {
-                #[cfg(feature = "browser_host_scene")]
-                let developer_scenes = BrowserSceneRegistry::new();
-                runtime_builder_with_factories(
-                    #[cfg(feature = "browser_host_scene")]
-                    developer_scenes,
-                )?
-                .source_resolver(document_source_resolver(tree, &bootstrap)?)
-                .build()
-                .map_err(to_js_error)?
-            };
-            #[cfg(feature = "legacy-interpreter")]
-            load_developer_document_root(&mut developer_runtime, &bootstrap.root_specifier)?;
-
             Ok(Self {
                 project: WasmProject::from_runtime(
                     runtime,
                     #[cfg(feature = "browser_host_scene")]
                     scenes,
                 ),
-                #[cfg(feature = "legacy-interpreter")]
-                developer_runtime,
                 bootstrap: WasmDocumentBootstrap::SourceBacked(bootstrap),
+                document_output_ordinals,
             })
         }
 
@@ -595,6 +540,7 @@ mod document {
             resolutions: Vec<SourceResolutionEntry>,
             authority: BrowserRuntimeInjectionConfig,
         ) -> Result<WasmDocument, JsValue> {
+            let document_output_ordinals = document_output_ordinals(&tree);
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
@@ -613,55 +559,32 @@ mod document {
                 scenes.clone(),
             )?;
             load_resident_document_root(&mut runtime, &source.root_specifier)?;
-            #[cfg(feature = "legacy-interpreter")]
-            let mut developer_runtime = {
-                #[cfg(feature = "browser_host_scene")]
-                let developer_scenes = BrowserSceneRegistry::new();
-                let developer_resolver = document_source_resolver(tree, &source)?;
-                build_runtime_from_authority(
-                    &document,
-                    &authority,
-                    developer_resolver,
-                    #[cfg(feature = "browser_host_scene")]
-                    developer_scenes,
-                )?
-            };
-            #[cfg(feature = "legacy-interpreter")]
-            load_developer_document_root(&mut developer_runtime, &source.root_specifier)?;
-
             Ok(Self {
                 project: WasmProject::from_runtime(
                     runtime,
                     #[cfg(feature = "browser_host_scene")]
                     scenes,
                 ),
-                #[cfg(feature = "legacy-interpreter")]
-                developer_runtime,
                 bootstrap: WasmDocumentBootstrap::Served(ServedDocumentBootstrap {
                     source,
                     config_source: config_source.to_string(),
                     authority,
                 }),
+                document_output_ordinals,
             })
         }
 
-        #[wasm_bindgen(js_name = rootInterpreterId)]
-        pub fn root_interpreter_id(&self) -> u64 {
-            self.project.root_interpreter_id()
-        }
-
         #[wasm_bindgen(js_name = renderedOutput)]
-        pub fn rendered_output(
-            &self,
-            interpreter_id: u64,
-            output_id: u64,
-        ) -> Result<JsValue, JsValue> {
-            self.project.rendered_output(interpreter_id, output_id)
+        pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
+            if let Some(output_ordinal) = self.document_output_ordinals.get(&output_id) {
+                return self.project.rendered_output(*output_ordinal);
+            }
+            self.project.rendered_output(output_id)
         }
 
         #[wasm_bindgen(js_name = renderedSymbol)]
-        pub fn rendered_symbol(&self, interpreter_id: u64, name: &str) -> Result<JsValue, JsValue> {
-            self.project.rendered_symbol(interpreter_id, name)
+        pub fn rendered_symbol(&self, name: &str) -> Result<JsValue, JsValue> {
+            self.project.rendered_symbol(name)
         }
 
         #[wasm_bindgen(js_name = reset)]
@@ -694,14 +617,9 @@ mod document {
             let was_started = self.project.started && !self.project.stopped;
 
             self.project.stop()?;
-            #[cfg(feature = "legacy-interpreter")]
-            self.developer_runtime.shutdown().map_err(to_js_error)?;
             self.project = replacement.project;
-            #[cfg(feature = "legacy-interpreter")]
-            {
-                self.developer_runtime = replacement.developer_runtime;
-            }
             self.bootstrap = replacement.bootstrap;
+            self.document_output_ordinals = replacement.document_output_ordinals;
             if was_started {
                 self.project.start()?;
             }
@@ -756,19 +674,6 @@ mod document {
             Ok(rows.into())
         }
 
-        /// Evaluates developer-console source in an isolated interpreter.
-        /// The resident document remains the sole product execution owner.
-        #[cfg(feature = "legacy-interpreter")]
-        pub fn evaluate(&mut self, source: &str) -> Result<JsValue, JsValue> {
-            let rendered = self
-                .developer_runtime
-                .legacy_interpreter()
-                .run_string(source)
-                .map_err(to_js_error)
-                .and_then(rendered_value)?;
-            Ok(rendered)
-        }
-
         pub fn start(&mut self) -> Result<(), JsValue> {
             self.project.start()
         }
@@ -778,13 +683,7 @@ mod document {
         }
 
         pub fn stop(&mut self) -> Result<(), JsValue> {
-            let was_stopped = self.project.stopped;
-            self.project.stop()?;
-            #[cfg(feature = "legacy-interpreter")]
-            if !was_stopped {
-                self.developer_runtime.shutdown().map_err(to_js_error)?;
-            }
-            Ok(())
+            self.project.stop()
         }
     }
 }
@@ -938,9 +837,6 @@ fn build_runtime(
     let runtime_config = mech_runtime::RuntimeConfig::default()
         .apply_patch(&document.runtime)
         .map_err(to_js_error)?;
-    runtime_config
-        .validate_production_program_routing()
-        .map_err(to_js_error)?;
     let mut builder = runtime_builder_with_factories(
         #[cfg(feature = "browser_host_scene")]
         scenes,
@@ -965,9 +861,6 @@ fn build_runtime_from_authority(
     #[cfg(feature = "browser_host_scene")] scenes: BrowserSceneRegistry,
 ) -> Result<MechRuntime, JsValue> {
     let runtime_config = authority.into_runtime_config().map_err(to_js_error)?;
-    runtime_config
-        .validate_production_program_routing()
-        .map_err(to_js_error)?;
     let mut builder = runtime_builder_with_factories(
         #[cfg(feature = "browser_host_scene")]
         scenes,
@@ -1431,8 +1324,8 @@ fn run_source_roots<'a>(
             None,
         ));
     }
-    let durability = runtime.config().program_routing.resident_durability;
-    runtime.load_production_root_program(
+    let durability = runtime.config().resident_durability;
+    runtime.load_root_program(
         SourceRequest::new(roots[0].clone()),
         browser_module_options(),
         durability,
@@ -1494,7 +1387,6 @@ fn runtime_info_value(info: &RuntimeProgramExecutionInfo) -> Result<JsValue, JsV
             "resident_rejected_turns",
             JsValue::from_f64(info.resident_rejected_turns as f64),
         ),
-        ("legacy_turns", JsValue::from_f64(info.legacy_turns as f64)),
         (
             "coalesced_host_packets",
             JsValue::from_f64(info.coalesced_host_packets as f64),
@@ -1613,7 +1505,6 @@ fn to_js_error(error: MechError) -> JsValue {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;
 
     const CONFIG: &str = r#"config := {
   hosts: []
@@ -1622,6 +1513,29 @@ mod tests {
     grants: []
   }
 }"#;
+
+    #[test]
+    fn document_output_hashes_map_to_resident_output_ordinals() {
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
+                .unwrap();
+        let outputs = document::document_output_ordinals(&tree);
+        assert_eq!(outputs.get(&29_884_140_763_677_669), Some(&0));
+
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
+                .unwrap();
+        let outputs = document::document_output_ordinals(&tree);
+        assert_eq!(
+            outputs.get(&mech_core::hash_str("inline-eval:0:0")),
+            Some(&0)
+        );
+        assert_eq!(
+            outputs.len(),
+            2,
+            "inline and fenced root outputs are mapped"
+        );
+    }
 
     #[test]
     fn required_paths_returns_configured_paths() {
@@ -1671,7 +1585,6 @@ mod tests {
             .expect("production project failure must retain its resident route class");
         assert_eq!(failure.class, expected);
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
-        assert_eq!(runtime.program_execution_info().legacy_turns, 0);
     }
 
     #[test]
@@ -1707,8 +1620,227 @@ mod tests {
         .unwrap()
     }
 
+    #[cfg(feature = "browser_host_dom")]
+    #[derive(Clone, Debug, Default)]
+    struct ResidentDomBackend {
+        state: std::sync::Arc<std::sync::Mutex<ResidentDomState>>,
+        read_delay: std::time::Duration,
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    #[derive(Debug, Default)]
+    struct ResidentDomState {
+        reads: Vec<String>,
+        writes: Vec<(String, String)>,
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    impl ResidentDomBackend {
+        fn with_read_delay(read_delay: std::time::Duration) -> Self {
+            Self {
+                read_delay,
+                ..Self::default()
+            }
+        }
+
+        fn reads(&self) -> Vec<String> {
+            self.state.lock().unwrap().reads.clone()
+        }
+
+        fn writes(&self) -> Vec<(String, String)> {
+            self.state.lock().unwrap().writes.clone()
+        }
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    impl mech_browser::BrowserDomBackend for ResidentDomBackend {
+        fn read_dom_string(
+            &self,
+            _entry: &mech_browser::BrowserDomManifestEntry,
+            requested_path: &mech_browser::BrowserDomPath,
+        ) -> mech_core::MResult<String> {
+            std::thread::sleep(self.read_delay);
+            self.state
+                .lock()
+                .unwrap()
+                .reads
+                .push(requested_path.as_str().to_string());
+            Ok("Ada".to_string())
+        }
+
+        fn write_dom_string(
+            &mut self,
+            _entry: &mech_browser::BrowserDomManifestEntry,
+            requested_path: &mech_browser::BrowserDomPath,
+            value: &str,
+        ) -> mech_core::MResult<()> {
+            self.state
+                .lock()
+                .unwrap()
+                .writes
+                .push((requested_path.as_str().to_string(), value.to_string()));
+            Ok(())
+        }
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn browser_dom_document() -> MechConfigDocument {
+        parse_config_document(
+            "examples/browser-dom-demo/demo.mcfg",
+            include_str!("../../../examples/browser-dom-demo/demo.mcfg"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap()
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn browser_dom_sources() -> HashMap<String, String> {
+        HashMap::from([(
+            "demo.mec".to_string(),
+            include_str!("../../../examples/browser-dom-demo/demo.mec").to_string(),
+        )])
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn browser_dom_builder(
+        document: &MechConfigDocument,
+        backend: ResidentDomBackend,
+    ) -> RuntimeBuilder {
+        let runtime_config = mech_runtime::RuntimeConfig::default()
+            .apply_patch(&document.runtime)
+            .unwrap();
+        let mut builder = browser_runtime_builder()
+            .config(runtime_config)
+            .source_resolver(project_source_resolver(&browser_dom_sources()).unwrap())
+            .host_factory(Box::new(BrowserHostFactory::new(backend).unwrap()))
+            .unwrap();
+        for host in &document.hosts {
+            builder = builder.host_instance(host.clone());
+        }
+        for grant in &document.run.as_ref().unwrap().grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+        builder
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    fn assert_browser_dom_result(runtime: &MechRuntime, backend: &ResidentDomBackend) {
+        assert_eq!(
+            runtime.program_route(),
+            RuntimeProgramRoute::ResidentExternal
+        );
+        let info = runtime.program_execution_info();
+        assert_eq!(info.resident_accepted_turns, 1);
+        assert_eq!(info.observation_count, 1, "{info:?}");
+        assert_eq!(
+            backend.reads(),
+            vec!["body/content/mech-sandbox/input/_value".to_string()],
+        );
+        let mut writes = backend.writes();
+        writes.sort();
+        let mut expected = vec![
+            (
+                "body/content/mech-sandbox/output/_value".to_string(),
+                "Hello, Ada — computed in Mech".to_string(),
+            ),
+            (
+                "body/content/mech-sandbox/status".to_string(),
+                "Read `Ada` from the DOM and wrote the computed result back.".to_string(),
+            ),
+            (
+                "body/content/mech-sandbox/status/_class".to_string(),
+                "ready".to_string(),
+            ),
+            (
+                "body/content/mech-sandbox/title".to_string(),
+                "Hello, Ada".to_string(),
+            ),
+        ];
+        expected.sort();
+        assert_eq!(writes, expected);
+    }
+
+    #[cfg(feature = "browser_host_dom")]
     #[test]
-    fn unsupported_string_concatenation_fails_closed_without_legacy_execution() {
+    fn unchanged_browser_dom_demo_runs_source_and_bytecode_residently() {
+        let document = browser_dom_document();
+
+        let source_backend = ResidentDomBackend::default();
+        let mut source_runtime = browser_dom_builder(&document, source_backend.clone())
+            .build()
+            .unwrap();
+        run_project_sources(&mut source_runtime, &document).unwrap();
+        assert_browser_dom_result(&source_runtime, &source_backend);
+
+        let planning_backend = ResidentDomBackend::default();
+        let mut compiler = browser_dom_builder(&document, planning_backend.clone())
+            .build_compiler()
+            .unwrap();
+        let bytecode = compiler
+            .compile_root(SourceRequest::new("demo.mec"), browser_module_options())
+            .unwrap()
+            .into_parts()
+            .1;
+        assert!(planning_backend.reads().is_empty());
+        assert!(planning_backend.writes().is_empty());
+
+        let bytecode_backend = ResidentDomBackend::default();
+        let mut bytecode_runtime = browser_dom_builder(&document, bytecode_backend.clone())
+            .build()
+            .unwrap();
+        bytecode_runtime
+            .load_bytecode_program(&bytecode, mech_runtime::ResidentDurabilityPolicy::Volatile)
+            .unwrap();
+        assert_browser_dom_result(&bytecode_runtime, &bytecode_backend);
+        assert_eq!(
+            source_runtime.program_execution_info().program_revision,
+            bytecode_runtime.program_execution_info().program_revision,
+        );
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    #[test]
+    fn rejected_browser_dom_candidate_performs_zero_writes() {
+        let document = browser_dom_document();
+        let backend = ResidentDomBackend::with_read_delay(std::time::Duration::from_millis(5));
+        let mut config = mech_runtime::RuntimeConfig::default();
+        config.limits.max_turn_duration_ms = Some(1);
+        let mut runtime = browser_dom_builder(&document, backend.clone())
+            .config(config)
+            .build()
+            .unwrap();
+
+        let error = run_project_sources(&mut runtime, &document).unwrap_err();
+        assert_production_route_failed_closed(
+            &runtime,
+            &error,
+            ResidentRouteFailureClass::ActivationFailure,
+        );
+        assert!(backend.writes().is_empty());
+    }
+
+    #[cfg(feature = "browser_host_dom")]
+    #[test]
+    fn browser_dom_demo_authority_denial_fails_before_writes() {
+        let mut document = browser_dom_document();
+        document.run.as_mut().unwrap().grants.clear();
+        let backend = ResidentDomBackend::default();
+        let mut runtime = browser_dom_builder(&document, backend.clone())
+            .build()
+            .unwrap();
+
+        let error = run_project_sources(&mut runtime, &document).unwrap_err();
+        assert_production_route_failed_closed(
+            &runtime,
+            &error,
+            ResidentRouteFailureClass::AuthorizationDenied,
+        );
+        assert!(backend.reads().is_empty());
+        assert!(backend.writes().is_empty());
+    }
+
+    #[test]
+    fn scalar_string_concatenation_uses_resident_execution() {
         let document = project_document(&["demo.mec"]);
 
         let mut sources = HashMap::new();
@@ -1722,25 +1854,12 @@ mod tests {
             .build()
             .unwrap();
 
-        let error = run_project_sources(&mut runtime, &document).unwrap_err();
-        assert_production_route_failed_closed(
-            &runtime,
-            &error,
-            ResidentRouteFailureClass::SemanticUnsupported,
+        run_project_sources(&mut runtime, &document).unwrap();
+        assert_eq!(runtime.program_route(), RuntimeProgramRoute::ResidentPure);
+        assert_eq!(
+            runtime.root_symbol_value("greeting").unwrap().into_value(),
+            mech_core::LegacyValue::String(mech_core::Ref::new("Hello, Ada".to_string())),
         );
-    }
-
-    #[test]
-    fn encoded_document_runs_on_runtime_and_exposes_root_output() {
-        let tree = mech_syntax::parser::parse("answer := 41 + 1\nanswer").unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let mut runtime = browser_runtime_builder().build().unwrap();
-
-        let decoded: mech_core::nodes::Program =
-            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
-        runtime.run_tree(&decoded).unwrap();
-
-        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
     }
 
     #[test]
@@ -1760,55 +1879,6 @@ mod tests {
         assert_eq!(
             document.project.runtime.program_route(),
             RuntimeProgramRoute::ResidentPure,
-        );
-        assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0,
-        );
-    }
-
-    #[test]
-    fn encoded_fizzbuzz_document_retains_fenced_block_output() {
-        let tree =
-            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
-                .unwrap();
-        let output_id = tree
-            .body
-            .sections
-            .iter()
-            .flat_map(|section| &section.elements)
-            .filter_map(|element| match element {
-                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
-                    block
-                        .code
-                        .last()
-                        .map(|(code, _)| mech_core::hash_str(&format!("{code:?}")))
-                }
-                _ => None,
-            })
-            .last()
-            .expect("FizzBuzz fixture must contain an output block");
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let decoded: mech_core::nodes::Program =
-            mech_core::nodes::decode_and_decompress(&encoded).unwrap();
-        let mut runtime = browser_runtime_builder().build().unwrap();
-
-        assert_eq!(
-            output_id, 29_884_140_763_677_669,
-            "the browser runtime key must match the native formatter key",
-        );
-        runtime.run_tree(&decoded).unwrap();
-
-        assert!(
-            runtime
-                .output_value_for_interpreter(runtime.root_interpreter_id(), output_id,)
-                .unwrap()
-                .is_some(),
-            "FizzBuzz output must remain queryable by its formatted block id",
         );
     }
 
@@ -2119,6 +2189,140 @@ mod tests {
         validate_served_authority(&document, &authority).unwrap();
     }
 
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    #[derive(Debug)]
+    struct TestManualTimeHostFactory {
+        manifest: mech_runtime::HostManifestConfig,
+        snapshot: mech_time::SharedTimeSnapshot,
+        driver: mech_time::ManualTimeInputDriver,
+    }
+
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    impl TestManualTimeHostFactory {
+        fn new() -> Self {
+            let snapshot = mech_time::new_shared_snapshot(mech_time::TimeSnapshot::default());
+            Self {
+                manifest: mech_time::time_host_manifest().unwrap(),
+                driver: mech_time::ManualTimeInputDriver::new("clock", snapshot.clone()),
+                snapshot,
+            }
+        }
+    }
+
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    impl mech_runtime::RuntimeHostFactory for TestManualTimeHostFactory {
+        fn provider_name(&self) -> &str {
+            "time"
+        }
+
+        fn manifest(&self) -> &mech_runtime::HostManifestConfig {
+            &self.manifest
+        }
+
+        fn validate_settings(
+            &self,
+            _instance_name: &str,
+            settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<()> {
+            mech_time::time_settings_from_config(settings).map(|_| ())
+        }
+
+        fn instantiate(
+            &self,
+            instance_name: &str,
+            _settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
+            assert_eq!(instance_name, "clock");
+            Ok(mech_runtime::RuntimeHostInstallation {
+                interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
+                resource_providers: vec![Box::new(mech_time::TimeResourceProvider::new(
+                    instance_name,
+                    self.snapshot.clone(),
+                ))],
+                input_drivers: vec![Box::new(self.driver.clone())],
+            })
+        }
+    }
+
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    #[test]
+    fn analog_clock_scene_advances_on_every_resident_time_packet() {
+        let document = parse_config_document(
+            "examples/analog-clock/mech.mcfg",
+            include_str!("../../../examples/analog-clock/mech.mcfg"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let source = include_str!("../../../examples/analog-clock/clock.mec").to_string();
+        let sources = HashMap::from([("clock.mec".to_string(), source)]);
+        let time_factory = TestManualTimeHostFactory::new();
+        let time_driver = time_factory.driver.clone();
+        let scene_backend = mech_scene::RecordingSceneBackend::new();
+        let mut builder = browser_runtime_builder()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .host_input_capacity(16)
+            .host_factory(Box::new(time_factory))
+            .unwrap()
+            .host_factory(Box::new(
+                mech_console::ConsoleHostFactory::with_backend(
+                    mech_console::RecordingConsoleBackend::new(),
+                )
+                .unwrap(),
+            ))
+            .unwrap()
+            .host_factory(Box::new(
+                mech_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap(),
+            ))
+            .unwrap();
+        for host in &document.hosts {
+            builder = builder.host_instance(host.clone());
+        }
+        for grant in &document.run.as_ref().unwrap().grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+        let mut runtime = builder.build().unwrap();
+        run_project_sources(&mut runtime, &document).unwrap();
+        runtime.start_input_drivers().unwrap();
+
+        let rotation = |snapshot: &mech_scene::SceneSnapshot| {
+            snapshot
+                .lines
+                .iter()
+                .find(|line| line.id == "clock-second-hand")
+                .unwrap()
+                .rotation
+        };
+        for second in 1..=3 {
+            time_driver
+                .publish(mech_time::TimeSnapshot {
+                    second: f64::from(second),
+                    ..Default::default()
+                })
+                .unwrap();
+            runtime.drain_host_inputs(1).unwrap();
+            let scene = scene_backend.latest().unwrap();
+            assert_eq!(rotation(&scene), f64::from(second) * 6.0);
+        }
+        assert_eq!(runtime.program_execution_info().resident_accepted_turns, 3);
+        assert_eq!(scene_backend.generation(), 3);
+    }
+
     #[test]
     fn unsupported_generic_table_project_fails_closed_without_legacy_execution() {
         let document = parse_config_document(
@@ -2413,7 +2617,7 @@ mod browser_tests {
 
     #[cfg(feature = "served_project_authority")]
     fn assert_configured_answer(document: &WasmDocument) {
-        let configured_answer = document.rendered_symbol(0, "configured-answer").unwrap();
+        let configured_answer = document.rendered_symbol("configured-answer").unwrap();
         assert_eq!(
             Reflect::get(&configured_answer, &JsValue::from_str("inlineHtml"))
                 .unwrap()
@@ -2530,7 +2734,7 @@ mod browser_tests {
         let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-        let rendered = document.rendered_symbol(0, "answer").unwrap();
+        let rendered = document.rendered_symbol("answer").unwrap();
         assert!(!rendered.is_null());
         assert_eq!(
             Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
@@ -2539,52 +2743,18 @@ mod browser_tests {
                 .as_deref(),
             Some("42"),
         );
-        assert!(document.rendered_output(0, u64::MAX).unwrap().is_null());
+        assert!(document.rendered_output(u64::MAX).unwrap().is_null());
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
     }
 
     #[wasm_bindgen_test]
-    fn encoded_inline_document_is_excluded_from_the_resident_browser_product() {
+    fn encoded_inline_document_executes_in_the_resident_browser_product() {
         let encoded =
             encoded_document("The document evaluates {answer + 1} inline.\n\nanswer := 41");
-        assert_resident_rejection(WasmDocument::from_encoded(&encoded), "SemanticUnsupported");
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_evaluate_returns_rendered_value() {
-        let encoded = encoded_document("~answer := 0\nanswer += 42\nanswer");
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-
-        let rendered = document.evaluate("answer + 1").unwrap();
-        assert_eq!(
-            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
-                .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("43"),
-        );
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_evaluate_isolated_from_resident_root_symbol() {
-        let encoded = encoded_document("~answer := 0\nanswer += 41\nanswer");
-        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-
-        document.evaluate("answer = 7").unwrap();
-
-        let developer_answer = document.evaluate("answer").unwrap();
-        assert_eq!(
-            Reflect::get(&developer_answer, &JsValue::from_str("inlineHtml"))
-                .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("7"),
-        );
-        let answer = document.rendered_symbol(0, "answer").unwrap();
+        let answer = document.rendered_symbol("answer").unwrap();
         assert_eq!(
             Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
                 .unwrap()
@@ -2592,62 +2762,13 @@ mod browser_tests {
                 .as_deref(),
             Some("41"),
         );
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_evaluate_never_enters_legacy_on_resident_owner() {
-        let encoded = encoded_document("~answer := 0\nanswer += 42\nanswer");
-        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-
         assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0
+            document.project.runtime.program_route(),
+            RuntimeProgramRoute::ResidentPure,
         );
-        document.evaluate("answer + 1").unwrap();
-        assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0
-        );
-        assert!(
-            document
-                .developer_runtime
-                .program_execution_info()
-                .legacy_turns
-                > 0
-        );
-    }
-
-    #[cfg(feature = "legacy-interpreter")]
-    #[wasm_bindgen_test]
-    fn wasm_document_failed_evaluation_leaves_resident_owner_untouched() {
-        let encoded = encoded_document("~answer := 0\nanswer += 42\nanswer");
-        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
-        assert!(document.evaluate("missing-document-symbol").is_err());
-        assert_eq!(
-            document
-                .project
-                .runtime
-                .program_execution_info()
-                .legacy_turns,
-            0
-        );
-        let answer = document.rendered_symbol(0, "answer").unwrap();
-        assert_eq!(
-            Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
-                .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("42"),
-        );
+        document.start().unwrap();
+        assert!(document.frame(1).is_ok());
+        document.stop().unwrap();
     }
 
     #[wasm_bindgen_test]
@@ -2658,7 +2779,7 @@ mod browser_tests {
 
         document.reset(&replacement).unwrap();
 
-        let answer = document.rendered_symbol(0, "answer").unwrap();
+        let answer = document.rendered_symbol("answer").unwrap();
         assert_eq!(
             Reflect::get(&answer, &JsValue::from_str("inlineHtml"))
                 .unwrap()
@@ -2712,7 +2833,7 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn encoded_fizzbuzz_document_is_excluded_from_the_resident_browser_product() {
+    fn encoded_fizzbuzz_document_executes_in_the_resident_browser_product() {
         let tree =
             mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
                 .unwrap();
@@ -2738,7 +2859,28 @@ mod browser_tests {
         );
 
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        assert_resident_rejection(WasmDocument::from_encoded(&encoded), "InvalidArtifact");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        assert_eq!(
+            document.project.runtime.program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+        let invariant = document.rendered_symbol("first-fifteen!").unwrap();
+        assert_eq!(
+            Reflect::get(&invariant, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("true"),
+        );
+        let output = document.rendered_output(output_id).unwrap();
+        let block_html = Reflect::get(&output, &JsValue::from_str("blockHtml"))
+            .unwrap()
+            .as_string()
+            .expect("the FizzBuzz source output must render as HTML");
+        assert!(block_html.contains("✨🐝"), "{block_html}");
+        document.start().unwrap();
+        assert!(document.frame(1).is_ok());
+        document.stop().unwrap();
     }
 
     #[wasm_bindgen_test]

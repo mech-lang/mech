@@ -168,17 +168,18 @@ impl RuntimeFunctionEntry {
     }
 
     pub fn validate_args(&self, args: &FunctionArgs) -> MResult<()> {
+        let args = args.clone().normalize_for_signature(self.signature);
         args.validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
         args.validate_contract(self.contract)
             .map_err(|error| self.wrap_contract_error(error))?;
-        let function =
-            (self.factory)(args.clone()).map_err(|error| self.wrap_contract_error(error))?;
+        let function = (self.factory)(args).map_err(|error| self.wrap_contract_error(error))?;
         drop(function);
         Ok(())
     }
 
     pub fn instantiate(&self, args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        let args = args.normalize_for_signature(self.signature);
         args.validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
         args.validate_contract(self.contract)

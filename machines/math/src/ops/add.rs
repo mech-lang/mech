@@ -734,14 +734,14 @@ mod tests {
         assert_eq!(entry.id, id);
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     #[derive(Default)]
     struct RuntimeFactoryRecorder {
         next_register: Register,
         runtime_ids: Vec<u64>,
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl BytecodeCompilerContext for RuntimeFactoryRecorder {
         fn register_for_ptr_with_initialization_status(
             &mut self,
@@ -884,7 +884,7 @@ mod tests {
             function.to_string(),
         );
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         {
             let mut recorder = RuntimeFactoryRecorder::default();
             function.compile(&mut recorder).unwrap();
@@ -894,7 +894,7 @@ mod tests {
             );
         }
 
-        #[cfg(not(feature = "compiler"))]
+        #[cfg(not(feature = "semantic-compiler"))]
         let _ = expected_runtime_name;
     }
 
@@ -1235,7 +1235,7 @@ mod tests {
         dynamic_fixed.solve_result().unwrap();
         assert_eq!(dynamic_values(dynamic_fixed.out()), vec![18.0]);
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         {
             let mut fixed_dynamic_recorder = RuntimeFactoryRecorder::default();
             fixed_dynamic

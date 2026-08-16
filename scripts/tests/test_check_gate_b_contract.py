@@ -317,6 +317,56 @@ class GateBContractCheckerTests(unittest.TestCase):
     def test_committed_static_contract_passes(self):
         self.assertEqual(CHECKER.static_contract_errors(), [])
 
+    def test_snapshot_allowance_does_not_admit_bare_legacy_value(self):
+        source = CHECKER.ROOT / "src/engine/src/resident/set.rs"
+        original_read_text = CHECKER.read_text
+
+        def read_text(path):
+            text = original_read_text(path)
+            if path == source:
+                return text + "\nfn rejected(value: Value) { let _ = value; }\n"
+            return text
+
+        with mock.patch.object(CHECKER, "read_text", side_effect=read_text):
+            errors = CHECKER.static_contract_errors()
+        self.assertTrue(
+            any(
+                "resident source src/engine/src/resident/set.rs uses legacy state: Value"
+                in error
+                for error in errors
+            )
+        )
+
+    def test_static_contract_rejects_restored_legacy_atomic_fixture(self):
+        retired = (
+            CHECKER.ROOT
+            / "src/runtime/benches/support/gate_b/legacy_atomic.rs"
+        )
+        original_exists = Path.exists
+
+        def exists(path):
+            return path == retired or original_exists(path)
+
+        with mock.patch.object(Path, "exists", autospec=True, side_effect=exists):
+            errors = CHECKER.static_contract_errors()
+        self.assertTrue(
+            any("legacy-atomic fixture was restored" in error for error in errors)
+        )
+
+    def test_static_contract_rejects_restored_legacy_atomic_benchmark_lane(self):
+        benchmark = CHECKER.ROOT / "src/runtime/benches/resident_ekf.rs"
+        original_read_text = CHECKER.read_text
+
+        def read_text(path):
+            text = original_read_text(path)
+            return text + '\nconst RETIRED: &str = "mech-legacy-atomic";\n' if path == benchmark else text
+
+        with mock.patch.object(CHECKER, "read_text", side_effect=read_text):
+            errors = CHECKER.static_contract_errors()
+        self.assertTrue(
+            any("legacy-atomic benchmark lane was restored" in error for error in errors)
+        )
+
     def test_valid_b0_report_passes(self):
         self.assertEqual(CHECKER.report_contract_errors(valid_report()), [])
 

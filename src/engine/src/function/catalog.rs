@@ -14,7 +14,13 @@ pub fn install_intrinsic_runtime(builder: &mut FunctionCatalogBuilder) -> MResul
 /// separate from both legacy runtime construction and source specialization.
 pub fn install_intrinsic_resident(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "resident-artifact")]
+    crate::resident::composite::install(builder)?;
+    #[cfg(feature = "resident-artifact")]
     crate::resident::numeric::install(builder)?;
+    #[cfg(feature = "resident-artifact")]
+    crate::resident::set::install(builder)?;
+    #[cfg(feature = "resident-artifact")]
+    crate::resident::text::install(builder)?;
     Ok(())
 }
 
@@ -27,7 +33,7 @@ pub fn install_intrinsic_native_plan(builder: &mut FunctionCatalogBuilder) -> MR
 }
 
 /// Installs the source specializers owned by the engine's intrinsic fragment.
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub fn install_intrinsic_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     crate::intrinsics::catalog::install_source(builder)
 }

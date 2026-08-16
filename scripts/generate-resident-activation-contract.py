@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate and validate the deterministic D0 resident-activation contract."""
+"""Generate and validate the permanent resident-activation contract."""
 
 from __future__ import annotations
 
@@ -17,19 +17,20 @@ SOURCE_PATH = CONTRACT_DIR / "ekf-source-v1.mec"
 SOURCE_DIGEST_PATH = CONTRACT_DIR / "ekf-source-v1.sha256"
 WORKLOAD_PATH = CONTRACT_DIR / "ekf-workload-v1.json"
 WORKLOAD_SCHEMA_PATH = CONTRACT_DIR / "ekf-workload-v1-schema.json"
-BOUNDARY_PATH = CONTRACT_DIR / "d0-boundary.json"
-BOUNDARY_SCHEMA_PATH = CONTRACT_DIR / "d0-boundary-schema.json"
-PROJECTION_PATH = CONTRACT_DIR / "d0-migration-projection.json"
-PROJECTION_SCHEMA_PATH = CONTRACT_DIR / "d0-migration-projection-schema.json"
+ACTIVATION_CONTRACT_PATH = CONTRACT_DIR / "resident-activation-contract.json"
+ACTIVATION_CONTRACT_SCHEMA_PATH = CONTRACT_DIR / "resident-activation-contract-schema.json"
 FROZEN_TARGETS_PATH = ROOT / "tests/architecture/value-system/frozen-semantic-targets-v1.json"
-MIGRATION_PATH = ROOT / "tests/architecture/value-system/migration.json"
 GATE_B_CONTRACT_PATH = ROOT / "benchmarks/runtime/gate-b/ekf-v1.json"
 GATE_B_TRACE_PATH = ROOT / "benchmarks/runtime/gate-b/ekf-input-v1.bin"
 
 TRACE_SHA256 = "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b"
 TRAJECTORY_SHA256 = "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758"
-D0_EKF_SOURCE_SHA256 = "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec"
+EKF_SOURCE_SHA256 = "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec"
 EPISODE_LENGTH = 4096
+PERMANENT_TARGET_IDS = (
+    "mutable-reference-runtime-storage",
+    "uninitialized-storage",
+)
 
 EXPECTED_OPERATIONS = [
     {"ordinal": 0, "role": "resident-kernel", "operation": "ekf/trigonometric-state", "input_schemas": ["3x1"], "output_schema": "2x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
@@ -224,65 +225,52 @@ def json_schema_errors(value, schema, root_schema=None, path: str = "$") -> list
     return errors
 
 
-def build_migration_projection(root: Path = ROOT):
+def build_resident_activation_contract(root: Path = ROOT):
+    """Build the permanent structural owner contract from the frozen target set."""
     frozen = read_json(root / FROZEN_TARGETS_PATH.relative_to(ROOT))
-    migration = read_json(root / MIGRATION_PATH.relative_to(ROOT))
-    selected = sorted(
-        (target for target in frozen["targets"] if target["implementation_gate"] == "D"),
-        key=lambda target: target["id"],
-    )
-    classifications = migration["use_classifications"]
-    projected = []
-    total_occurrences = 0
     copied_fields = (
         "id",
         "applies_to",
         "semantic_category",
         "representation",
-        "implementation_gate",
         "key_semantics",
         "runtime_storage",
     )
-    for target in selected:
-        occurrences = []
-        for row in classifications:
-            if row["target"] != target["id"]:
-                continue
-            for site in row["sites"]:
-                occurrences.append(
-                    {
-                        "enum": row["enum"],
-                        "variant": row["variant"],
-                        "path": row["path"],
-                        "line": site["line"],
-                        "column": site["column"],
-                        "target": row["target"],
-                    }
-                )
-        occurrences.sort(
-            key=lambda row: (
-                row["path"],
-                row["line"],
-                row["column"],
-                row["enum"],
-                row["variant"],
-                row["target"],
-            )
-        )
-        projected_target = {field: target[field] for field in copied_fields}
-        projected_target["implemented"] = False
-        projected_target["legacy_removed"] = False
-        projected_target["occurrences"] = occurrences
-        projected.append(projected_target)
-        total_occurrences += len(occurrences)
+    targets = [
+        {field: target[field] for field in copied_fields}
+        for target in sorted(frozen["targets"], key=lambda row: row["id"])
+        if target["id"] in PERMANENT_TARGET_IDS
+    ]
     return {
         "schema_version": 1,
-        "gate": "D0",
+        "contract": "resident-activation",
         "source_targets": "tests/architecture/value-system/frozen-semantic-targets-v1.json",
-        "source_migration": "tests/architecture/value-system/migration.json",
-        "target_count": len(projected),
-        "occurrence_count": total_occurrences,
-        "targets": projected,
+        "semantic_targets": targets,
+        "activation_owners": [
+            {
+                "path": "src/engine/src/artifact/model.rs",
+                "markers": ["pub struct ProgramArtifact"],
+            },
+            {
+                "path": "src/engine/src/resident/general/mod.rs",
+                "markers": ["pub fn activate(", "pub fn preflight_activation("],
+            },
+            {
+                "path": "src/runtime/src/runtime/program/loading.rs",
+                "markers": ["pub fn load_source_program(", "pub fn load_bytecode_program("],
+            },
+            {
+                "path": "src/runtime/src/runtime/program/external/admission.rs",
+                "markers": ["struct ResidentAdmissionProof"],
+            },
+        ],
+        "obsolete_owners_absent": [
+            "src/engine/src/program/instance.rs",
+            "src/runtime/src/runtime/resident_program",
+            "src/runtime/src/resident_external",
+            "src/interpreter",
+            "src/bin/interpreter2.rs",
+        ],
     }
 
 
@@ -309,14 +297,14 @@ def validate_source_digest(
 ) -> list[str]:
     actual = sha256_bytes(source)
     failures = []
-    if actual != D0_EKF_SOURCE_SHA256:
+    if actual != EKF_SOURCE_SHA256:
         failures.append(
-            f"EKF source bytes differ from frozen D0 SHA-256 {D0_EKF_SOURCE_SHA256}"
+            f"EKF source bytes differ from frozen SHA-256 {EKF_SOURCE_SHA256}"
         )
-    if workload_digest != D0_EKF_SOURCE_SHA256:
-        failures.append("workload source SHA-256 differs from the independently pinned D0 digest")
-    if digest_document != D0_EKF_SOURCE_SHA256 + "\n":
-        failures.append("ekf-source-v1.sha256 differs from the independently pinned D0 digest")
+    if workload_digest != EKF_SOURCE_SHA256:
+        failures.append("workload source SHA-256 differs from the independently pinned digest")
+    if digest_document != EKF_SOURCE_SHA256 + "\n":
+        failures.append("ekf-source-v1.sha256 differs from the independently pinned digest")
     return failures
 
 
@@ -340,7 +328,7 @@ def validate_source(source: str, workload) -> list[str]:
     }
     for key, expected in exact_sections.items():
         if workload.get(key) != expected:
-            failures.append(f"workload {key} differs from its exact frozen D0 contract")
+            failures.append(f"workload {key} differs from its exact frozen contract")
     unlisted = sorted(set(source_operation_tokens(source)) - set(expected_names))
     if unlisted:
         failures.append("source contains unlisted EKF operations: " + ", ".join(unlisted))
@@ -393,7 +381,7 @@ def validate_forbidden_tokens(root: Path = ROOT) -> list[str]:
             source = source.replace('"commit_runtime_calls": 0', "")
         for token in tokens:
             if token in source:
-                failures.append(f"{relative} contains forbidden D0 dependency token {token}")
+                failures.append(f"{relative} contains forbidden resident dependency token {token}")
     return failures
 
 
@@ -418,7 +406,10 @@ def validate(root: Path = ROOT) -> list[str]:
 
     documents = (
         (contract_dir / "d0-boundary.json", contract_dir / "d0-boundary-schema.json"),
-        (contract_dir / "d0-migration-projection.json", contract_dir / "d0-migration-projection-schema.json"),
+        (
+            contract_dir / "resident-activation-contract.json",
+            contract_dir / "resident-activation-contract-schema.json",
+        ),
         (workload_path, contract_dir / "ekf-workload-v1-schema.json"),
     )
     for document_path, schema_path in documents:
@@ -434,10 +425,24 @@ def validate(root: Path = ROOT) -> list[str]:
     if boundary.get("publication_contract") != EXPECTED_PUBLICATION_CONTRACT:
         failures.append("D0 publication contract differs from the exact reserve/execute/prepare/publish/append sequence")
 
-    expected_projection = render_json(build_migration_projection(root))
-    projection_path = contract_dir / "d0-migration-projection.json"
-    if not projection_path.exists() or projection_path.read_text(encoding="utf-8") != expected_projection:
-        failures.append("d0-migration-projection.json is not the mechanical Phase-D projection")
+    expected_activation_contract = render_json(build_resident_activation_contract(root))
+    activation_contract_path = contract_dir / "resident-activation-contract.json"
+    if (
+        not activation_contract_path.exists()
+        or activation_contract_path.read_text(encoding="utf-8")
+        != expected_activation_contract
+    ):
+        failures.append(
+            "resident-activation-contract.json is not the permanent structural projection"
+        )
+    permanent_target_ids = [
+        target["id"]
+        for target in build_resident_activation_contract(root)["semantic_targets"]
+    ]
+    if permanent_target_ids != list(PERMANENT_TARGET_IDS):
+        failures.append(
+            "permanent resident activation target set differs from its exact frozen target set"
+        )
 
     trace_path = root / GATE_B_TRACE_PATH.relative_to(ROOT)
     if sha256_bytes(trace_path.read_bytes()) != TRACE_SHA256:
@@ -460,10 +465,10 @@ def validate(root: Path = ROOT) -> list[str]:
 def write_generated(root: Path = ROOT) -> None:
     contract_dir = root / CONTRACT_DIR.relative_to(ROOT)
     (contract_dir / "ekf-source-v1.sha256").write_text(
-        D0_EKF_SOURCE_SHA256 + "\n", encoding="utf-8"
+        EKF_SOURCE_SHA256 + "\n", encoding="utf-8"
     )
-    (contract_dir / "d0-migration-projection.json").write_text(
-        render_json(build_migration_projection(root)), encoding="utf-8"
+    (contract_dir / "resident-activation-contract.json").write_text(
+        render_json(build_resident_activation_contract(root)), encoding="utf-8"
     )
 
 
@@ -476,12 +481,12 @@ def main() -> int:
     failures = validate()
     if failures:
         for failure in failures:
-            print(f"D0 generation failure: {failure}", file=sys.stderr)
+            print(f"resident activation generation failure: {failure}", file=sys.stderr)
         return 1
     if arguments.check:
-        print("D0 resident activation generated contract is current")
+        print("resident activation generated contract is current")
     else:
-        print("generated D0 resident activation contract")
+        print("generated resident activation contract")
     return 0
 
 

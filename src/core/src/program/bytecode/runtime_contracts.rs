@@ -731,7 +731,7 @@ mod tests {
         MechFunctionImpl, Ref, ResourceDelivery, RuntimeFunctionSignature, RuntimeType, ToValue,
         write_bytecode,
     };
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 
     #[derive(Debug)]
@@ -783,7 +783,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for ExactF64Binary {
         fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -1553,7 +1553,7 @@ mod tests {
             }
         }
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for PlanningMatrixBinary {
             fn compile(&self, _context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 Ok(0)
@@ -1668,7 +1668,7 @@ mod tests {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for ExactMatrix2Binary {
             fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 Ok(0)

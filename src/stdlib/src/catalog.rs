@@ -100,28 +100,35 @@ pub fn build_runtime_catalog() -> MResult<FunctionCatalog> {
 /// bytecode. Those planning-only entries must not leak into
 /// [`build_runtime_catalog`].
 #[cfg(feature = "native-plan")]
-pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
-    let mut builder = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_native_plan(&mut builder)?;
+pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    mech_engine::install_intrinsic_native_plan(builder)?;
 
     #[cfg(feature = "mech-math")]
-    mech_math::install_native_plan(&mut builder)?;
+    mech_math::install_native_plan(builder)?;
     #[cfg(feature = "mech-compare")]
-    mech_compare::install_runtime(&mut builder)?;
+    mech_compare::install_runtime(builder)?;
     #[cfg(feature = "mech-logic")]
-    mech_logic::install_runtime(&mut builder)?;
+    mech_logic::install_runtime(builder)?;
     #[cfg(feature = "mech-range")]
-    mech_range::install_runtime(&mut builder)?;
+    mech_range::install_runtime(builder)?;
     #[cfg(feature = "mech-matrix")]
-    mech_matrix::install_runtime(&mut builder)?;
+    mech_matrix::install_runtime(builder)?;
     #[cfg(feature = "mech-set")]
-    mech_set::install_runtime(&mut builder)?;
+    mech_set::install_runtime(builder)?;
     #[cfg(feature = "mech-string")]
-    mech_string::install_runtime(&mut builder)?;
+    mech_string::install_runtime(builder)?;
     #[cfg(feature = "mech-stats")]
-    mech_stats::install_runtime(&mut builder)?;
+    mech_stats::install_runtime(builder)?;
     #[cfg(feature = "mech-combinatorics")]
-    mech_combinatorics::install_runtime(&mut builder)?;
+    mech_combinatorics::install_runtime(builder)?;
+
+    Ok(())
+}
+
+#[cfg(feature = "native-plan")]
+pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
+    let mut builder = FunctionCatalogBuilder::new();
+    install_native_plan(&mut builder)?;
 
     builder.build()
 }
@@ -129,6 +136,16 @@ pub fn build_native_plan_catalog() -> MResult<FunctionCatalog> {
 #[cfg(feature = "source")]
 pub fn build_source_catalog() -> MResult<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
+    #[cfg(feature = "native-plan")]
+    {
+        install_native_plan(&mut builder)?;
+        // Native planning replaces the runtime-factory installation above,
+        // but a source compiler also activates the ProgramArtifact it emits.
+        // Preserve the resident binders normally installed by
+        // `install_runtime` so the compiler catalog remains activation-ready.
+        mech_engine::install_intrinsic_resident(&mut builder)?;
+    }
+    #[cfg(not(feature = "native-plan"))]
     install_runtime(&mut builder)?;
     install_source(&mut builder)?;
     builder.build()

@@ -30,7 +30,7 @@ fn failed_savepoint_cleanup_preserves_effect_for_outer_abort_retry() {
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
 
-    let result: MResult<()> = runtime.with_atomic_program_operation(
+    let result: MResult<()> = runtime.with_atomic_module_operation(
         &mut context,
         "fail_once_effect_cleanup",
         |runtime, context| {
@@ -47,12 +47,10 @@ fn failed_savepoint_cleanup_preserves_effect_for_outer_abort_retry() {
 
     assert_eq!(
         result.unwrap_err().kind_name(),
-        "RuntimeProgramRollbackFailed",
+        "RuntimeOperationRollbackFailed",
     );
     assert!(runtime.is_poisoned());
-    let transaction = runtime
-        .active_execution_transaction(transaction_id)
-        .unwrap();
+    let transaction = runtime.active_runtime_transaction(transaction_id).unwrap();
     assert_eq!(transaction.effects.len(), 1);
     assert_eq!(transaction.effects.next_sequence(), 1);
     assert_eq!(attempts.load(Ordering::SeqCst), 1);
@@ -70,7 +68,7 @@ fn savepoint_rollback_discards_effect_and_staging_event() {
     let mut runtime = MechRuntime::builder().build().unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-    let result: MResult<RuntimeEffectId> = runtime.with_atomic_program_operation(
+    let result: MResult<RuntimeEffectId> = runtime.with_atomic_module_operation(
         &mut context,
         "effect_staging_event_rollback",
         |runtime, context| {
@@ -86,7 +84,7 @@ fn savepoint_rollback_discards_effect_and_staging_event() {
     assert_eq!(result.unwrap_err().kind_name(), "SyntheticEffectError");
     assert!(
         runtime
-            .active_execution_transaction(transaction_id)
+            .active_runtime_transaction(transaction_id)
             .unwrap()
             .effects
             .is_empty()
@@ -110,7 +108,7 @@ fn rolled_back_effect_cost_is_not_refunded() {
     let bytes_before = context.budget.used_bytes;
     let items_before = context.budget.used_items;
 
-    let result: MResult<()> = runtime.with_atomic_program_operation(
+    let result: MResult<()> = runtime.with_atomic_module_operation(
         &mut context,
         "costed_effect_failure",
         |runtime, context| {
@@ -130,9 +128,7 @@ fn rolled_back_effect_cost_is_not_refunded() {
     assert_eq!(result.unwrap_err().kind_name(), "SyntheticEffectError");
     assert_eq!(context.budget.used_bytes, bytes_before + 17);
     assert_eq!(context.budget.used_items, items_before + 3);
-    let transaction = runtime
-        .active_execution_transaction(transaction_id)
-        .unwrap();
+    let transaction = runtime.active_runtime_transaction(transaction_id).unwrap();
     assert_eq!(transaction.effects.len(), 0);
     assert_eq!(transaction.effects.next_sequence(), 1);
 

@@ -1,12 +1,83 @@
 use crate::*;
 #[cfg(feature = "dynamic-modules")]
 use nalgebra::{DMatrix, DVector, RowDVector};
+#[cfg(feature = "dynamic-modules")]
+use std::borrow::Borrow;
 use std::collections::{BTreeMap, BTreeSet};
 #[cfg(feature = "dynamic-modules")]
 use std::collections::{HashMap, HashSet};
 #[cfg(feature = "dynamic-modules")]
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
+
+#[cfg(feature = "dynamic-modules")]
+static DYNAMIC_UNARY_SCALAR_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| dynamic_unary_contract(ChangeDetectionPolicy::ExactScalar));
+#[cfg(feature = "dynamic-modules")]
+static DYNAMIC_UNARY_VIEW_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| dynamic_unary_contract(ChangeDetectionPolicy::KernelReported));
+#[cfg(feature = "dynamic-modules")]
+static DYNAMIC_BINARY_SCALAR_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| dynamic_binary_contract(ChangeDetectionPolicy::ExactScalar));
+#[cfg(feature = "dynamic-modules")]
+static DYNAMIC_BINARY_BROADCAST_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| dynamic_binary_contract(ChangeDetectionPolicy::KernelReported));
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_unary_contract(change_detection: ChangeDetectionPolicy) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::SameAsInput { input: 0 },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_binary_contract(
+    change_detection: ChangeDetectionPolicy,
+) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct ModuleManifest {
@@ -422,6 +493,331 @@ fn check_dynamic_kernel_status(function: &str, status: mech_abi::MechStatusV1) -
         dynamic_status_name(status),
         status.0,
     )))
+}
+
+#[cfg(feature = "dynamic-modules")]
+enum DynamicResidentKernelKind {
+    UnaryScalar(mech_abi::MechUnaryF64ToF64KernelV1),
+    BinaryScalar(mech_abi::MechBinaryF64F64ToF64KernelV1),
+    UnaryView(mech_abi::MechUnaryF64ViewToF64ViewKernelV1),
+}
+
+#[cfg(feature = "dynamic-modules")]
+struct DynamicResidentKernelState {
+    _library: Arc<libloading::Library>,
+    kernel: DynamicResidentKernelKind,
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_resident_contract_matches(
+    request: &ResidentKernelBindRequest<'_>,
+    input_count: usize,
+    shape: ShapeRule,
+    change_detection: ChangeDetectionPolicy,
+) -> bool {
+    let ResolvedOperationContract::Declared(contract) = request.contract else {
+        return false;
+    };
+    contract.interaction == ExternalInteraction::Pure
+        && contract.inputs.len() == input_count
+        && request.inputs.len() == input_count
+        && contract.outputs.len() == 1
+        && contract
+            .inputs
+            .iter()
+            .zip(request.inputs)
+            .all(|(port, layout)| {
+                port.schema == layout.schema_id
+                    && port.access == AccessMode::Read
+                    && port.delivery == DeliveryMode::Signal
+                    && layout.kind == ResidentValueKind::F64
+                    && layout.shape.len().is_some()
+            })
+        && contract.outputs[0].schema == request.output.schema_id
+        && contract.outputs[0].access == AccessMode::Write
+        && contract.outputs[0].delivery == DeliveryMode::Signal
+        && contract.outputs[0].construction == OutputConstruction::FullWrite { shape }
+        && contract.outputs[0].alias == AliasPolicy::NoAlias
+        && contract.outputs[0].change_detection == change_detection
+        && request.output.kind == ResidentValueKind::F64
+        && request.output.shape.len().is_some()
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_binary_layout_matches(request: &ResidentKernelBindRequest<'_>) -> bool {
+    let [lhs, rhs] = request.inputs else {
+        return false;
+    };
+    let output = request.output.shape;
+    (lhs.shape == ResidentShape::SCALAR || lhs.shape == output)
+        && (rhs.shape == ResidentShape::SCALAR || rhs.shape == output)
+        && (lhs.shape == output || rhs.shape == output)
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_resident_kernel_kind(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Option<ValidatedDynamicKernelKind> {
+    match request.inputs {
+        [input]
+            if input.kind == ResidentValueKind::F64
+                && request.output.kind == ResidentValueKind::F64
+                && input.shape == request.output.shape =>
+        {
+            if input.shape == ResidentShape::SCALAR {
+                Some(ValidatedDynamicKernelKind::UnaryF64ToF64)
+            } else {
+                Some(ValidatedDynamicKernelKind::UnaryF64ViewToF64View)
+            }
+        }
+        [_, _] if dynamic_binary_layout_matches(request) => {
+            Some(ValidatedDynamicKernelKind::BinaryF64F64ToF64)
+        }
+        _ => None,
+    }
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn load_dynamic_resident_kernel(
+    module: &str,
+    canonical_name: &str,
+    expected: ValidatedDynamicKernelKind,
+) -> MResult<Arc<DynamicResidentKernelState>> {
+    let path = DynamicModuleLoader::find_library(module).ok_or_else(|| {
+        DynamicModuleLoader::dynamic_error(format!("dynamic module `{module}` was not found"))
+    })?;
+    let library = Arc::new(unsafe { libloading::Library::new(&path) }.map_err(|error| {
+        DynamicModuleLoader::dynamic_error(format!(
+            "failed to open dynamic module `{module}` at {}: {error}",
+            path.display()
+        ))
+    })?);
+    let (abi_version, module_name_fn, export_count_fn, get_export_fn) = unsafe {
+        (
+            *library
+                .get::<mech_abi::MechModuleAbiVersionFnV1>(b"mech_module_abi_version_v1\0")
+                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
+            *library
+                .get::<mech_abi::MechModuleNameFnV1>(b"mech_module_name_v1\0")
+                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
+            *library
+                .get::<mech_abi::MechModuleExportCountFnV1>(b"mech_module_export_count_v1\0")
+                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
+            *library
+                .get::<mech_abi::MechModuleGetExportFnV1>(b"mech_module_get_export_v1\0")
+                .map_err(|error| DynamicModuleLoader::dynamic_error(error.to_string()))?,
+        )
+    };
+    let version = unsafe { abi_version() };
+    if version != mech_abi::MECH_MODULE_ABI_VERSION_V1 {
+        return Err(DynamicModuleLoader::dynamic_error(format!(
+            "unsupported dynamic module ABI version {version}; expected {}",
+            mech_abi::MECH_MODULE_ABI_VERSION_V1
+        )));
+    }
+    let mut module_name = mech_abi::MechStrV1 {
+        ptr: core::ptr::null(),
+        len: 0,
+    };
+    DynamicModuleLoader::call_status(
+        unsafe { module_name_fn(&mut module_name) },
+        "mech_module_name_v1",
+    )?;
+    if unsafe { mech_str_to_string(module_name) }? != module {
+        return Err(DynamicModuleLoader::dynamic_error(format!(
+            "dynamic module name did not match requested module `{module}`"
+        )));
+    }
+
+    let mut selected = None;
+    for index in 0..unsafe { export_count_fn() } {
+        let mut export = mech_abi::MechExportV1 {
+            name: mech_abi::MechStrV1 {
+                ptr: core::ptr::null(),
+                len: 0,
+            },
+            kind: mech_abi::MechKernelKindV1::BinaryF64F64ToF64,
+            function: mech_abi::MechKernelFnV1 {
+                binary_f64_f64_to_f64: dynamic_null_binary_f64_f64_to_f64,
+            },
+        };
+        DynamicModuleLoader::call_status(
+            unsafe { get_export_fn(index, &mut export) },
+            format!("mech_module_get_export_v1({index})"),
+        )?;
+        if unsafe { mech_str_to_string(export.name) }? != canonical_name
+            || DynamicModuleLoader::validate_dynamic_kernel_kind(export.kind)? != expected
+        {
+            continue;
+        }
+        if selected.is_some() {
+            return Err(DynamicModuleLoader::dynamic_error(format!(
+                "dynamic module `{module}` exported duplicate resident kernel `{canonical_name}`"
+            )));
+        }
+        selected = Some(match expected {
+            ValidatedDynamicKernelKind::UnaryF64ToF64 => {
+                DynamicResidentKernelKind::UnaryScalar(unsafe { export.function.unary_f64_to_f64 })
+            }
+            ValidatedDynamicKernelKind::BinaryF64F64ToF64 => {
+                DynamicResidentKernelKind::BinaryScalar(unsafe {
+                    export.function.binary_f64_f64_to_f64
+                })
+            }
+            ValidatedDynamicKernelKind::UnaryF64ViewToF64View => {
+                DynamicResidentKernelKind::UnaryView(unsafe {
+                    export.function.unary_f64_view_to_f64_view
+                })
+            }
+        });
+    }
+    let kernel = selected.ok_or_else(|| {
+        DynamicModuleLoader::dynamic_error(format!(
+            "dynamic module `{module}` has no compatible resident export `{canonical_name}`"
+        ))
+    })?;
+    Ok(Arc::new(DynamicResidentKernelState {
+        _library: library,
+        kernel,
+    }))
+}
+
+#[cfg(feature = "dynamic-modules")]
+pub(crate) fn bind_dynamic_resident_operation(
+    module_path: &[String],
+    operation_name: &str,
+    request: &ResidentKernelBindRequest<'_>,
+) -> Option<Result<BoundResidentKernel, ResidentKernelBindError>> {
+    let module = module_path.join("/");
+    DynamicModuleLoader::find_library(&module)?;
+    let expected = match dynamic_resident_kernel_kind(request) {
+        Some(expected) => expected,
+        None => return Some(Err(ResidentKernelBindError::UnsupportedLayout)),
+    };
+    let scalar = request.output.shape == ResidentShape::SCALAR;
+    let (shape, change_detection) = match expected {
+        ValidatedDynamicKernelKind::UnaryF64ToF64 => (
+            ShapeRule::SameAsInput { input: 0 },
+            ChangeDetectionPolicy::ExactScalar,
+        ),
+        ValidatedDynamicKernelKind::UnaryF64ViewToF64View => (
+            ShapeRule::SameAsInput { input: 0 },
+            ChangeDetectionPolicy::KernelReported,
+        ),
+        ValidatedDynamicKernelKind::BinaryF64F64ToF64 => (
+            ShapeRule::Declared,
+            if scalar {
+                ChangeDetectionPolicy::ExactScalar
+            } else {
+                ChangeDetectionPolicy::KernelReported
+            },
+        ),
+    };
+    if !dynamic_resident_contract_matches(request, request.inputs.len(), shape, change_detection) {
+        return Some(Err(ResidentKernelBindError::UnsupportedContract));
+    }
+    let canonical_name = format!("{module}/{operation_name}");
+    let state = match load_dynamic_resident_kernel(&module, &canonical_name, expected) {
+        Ok(state) => state,
+        Err(_) => return Some(Err(ResidentKernelBindError::InvalidParameters)),
+    };
+    Some(Ok(BoundResidentKernel::new(
+        dynamic_resident_execute,
+        vec![
+            u64::from(request.output.shape.rows),
+            u64::from(request.output.shape.columns),
+        ]
+        .into_boxed_slice(),
+    )
+    .with_retained_state(state)))
+}
+
+#[cfg(feature = "dynamic-modules")]
+fn dynamic_resident_execute(
+    bound: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    let state = bound
+        .retained_state::<DynamicResidentKernelState>()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let ResidentValueMut::F64(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let mut next = vec![0.0; output.len()];
+    match state.kernel {
+        DynamicResidentKernelKind::UnaryScalar(kernel) => {
+            let input = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
+            if input.len() != 1 || next.len() != 1 {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let status = unsafe { kernel(input[0], next.as_mut_ptr()) };
+            if status != mech_abi::MechStatusV1::Ok {
+                return Err(ResidentKernelError::Arithmetic);
+            }
+        }
+        DynamicResidentKernelKind::BinaryScalar(kernel) => {
+            let lhs = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
+            let rhs = inputs.f64(1).ok_or(ResidentKernelError::InvalidInput)?;
+            if (lhs.len() != 1 && lhs.len() != next.len())
+                || (rhs.len() != 1 && rhs.len() != next.len())
+            {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            for (index, target) in next.iter_mut().enumerate() {
+                let status = unsafe {
+                    kernel(
+                        lhs[if lhs.len() == 1 { 0 } else { index }],
+                        rhs[if rhs.len() == 1 { 0 } else { index }],
+                        target,
+                    )
+                };
+                if status != mech_abi::MechStatusV1::Ok {
+                    return Err(ResidentKernelError::Arithmetic);
+                }
+            }
+        }
+        DynamicResidentKernelKind::UnaryView(kernel) => {
+            let input = inputs.f64(0).ok_or(ResidentKernelError::InvalidInput)?;
+            if input.len() != next.len() {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let [rows, columns] = bound.parameters() else {
+                return Err(ResidentKernelError::InvalidShape);
+            };
+            let rows = usize::try_from(*rows).map_err(|_| ResidentKernelError::InvalidShape)?;
+            let columns =
+                usize::try_from(*columns).map_err(|_| ResidentKernelError::InvalidShape)?;
+            if rows.checked_mul(columns) != Some(output.len()) {
+                return Err(ResidentKernelError::InvalidShape);
+            }
+            let status = unsafe {
+                kernel(
+                    mech_abi::MechF64ViewV1 {
+                        ptr: input.as_ptr(),
+                        len: input.len(),
+                        rows,
+                        cols: columns,
+                    },
+                    mech_abi::MechF64ViewMutV1 {
+                        ptr: next.as_mut_ptr(),
+                        len: next.len(),
+                        rows,
+                        cols: columns,
+                    },
+                )
+            };
+            if status != mech_abi::MechStatusV1::Ok {
+                return Err(ResidentKernelError::Arithmetic);
+            }
+        }
+    }
+    let changed = output
+        .iter()
+        .zip(&next)
+        .any(|(current, incoming)| current.to_bits() != incoming.to_bits());
+    output.copy_from_slice(&next);
+    Ok(changed)
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -965,6 +1361,10 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
         self.out.to_value()
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&DYNAMIC_BINARY_SCALAR_CONTRACT)
+    }
+
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
@@ -974,19 +1374,15 @@ impl MechFunctionImpl for DynamicBinaryF64F64ToF64Function {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64ToF64Function {
-    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        Err(MechError::new(
-            GenericError {
-                msg: format!(
-                    "bytecode compilation is not implemented for dynamic function `{}`",
-                    self.name
-                ),
-            },
-            None,
-        )
-        .with_compiler_loc())
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = compile_register_brrw!(self.out, ctx);
+        let lhs = compile_register_brrw!(self.n, ctx);
+        let rhs = compile_register_brrw!(self.k, ctx);
+        let function = ctx.function_id(&self.name)?;
+        ctx.emit_binop(function, output, lhs, rhs);
+        Ok(output)
     }
 }
 
@@ -1035,6 +1431,10 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
         LegacyValue::MatrixF64(self.out.clone())
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&DYNAMIC_BINARY_BROADCAST_CONTRACT)
+    }
+
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
@@ -1044,20 +1444,27 @@ impl MechFunctionImpl for DynamicBinaryF64F64BroadcastFunction {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicBinaryF64F64BroadcastFunction {
-    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        Err(MechError::new(
-            GenericError {
-                msg: format!(
-                    "bytecode compilation is not implemented for dynamic function `{}`",
-                    self.name
-                ),
-            },
-            None,
-        )
-        .with_compiler_loc())
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = compile_register_brrw!(self.out, ctx);
+        let lhs = compile_dynamic_f64_arg(&self.lhs, ctx)?;
+        let rhs = compile_dynamic_f64_arg(&self.rhs, ctx)?;
+        let function = ctx.function_id(&self.name)?;
+        ctx.emit_binop(function, output, lhs, rhs);
+        Ok(output)
     }
+}
+
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
+fn compile_dynamic_f64_arg(
+    argument: &DynamicF64Arg,
+    ctx: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    Ok(match argument {
+        DynamicF64Arg::Scalar(value) => compile_register_brrw!(value, ctx),
+        DynamicF64Arg::Matrix(value) => compile_register_brrw!(value, ctx),
+    })
 }
 
 #[cfg(feature = "dynamic-modules")]
@@ -1093,6 +1500,10 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
         self.out.to_value()
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&DYNAMIC_UNARY_SCALAR_CONTRACT)
+    }
+
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
@@ -1102,19 +1513,14 @@ impl MechFunctionImpl for DynamicUnaryF64ToF64Function {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ToF64Function {
-    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        Err(MechError::new(
-            GenericError {
-                msg: format!(
-                    "bytecode compilation is not implemented for dynamic function `{}`",
-                    self.name
-                ),
-            },
-            None,
-        )
-        .with_compiler_loc())
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = compile_register_brrw!(self.out, ctx);
+        let input = compile_register_brrw!(self.input, ctx);
+        let function = ctx.function_id(&self.name)?;
+        ctx.emit_unop(function, output, input);
+        Ok(output)
     }
 }
 
@@ -1180,6 +1586,10 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
         LegacyValue::MatrixF64(self.out.clone())
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&DYNAMIC_UNARY_VIEW_CONTRACT)
+    }
+
     fn to_string(&self) -> String {
         format!("dynamic {}", self.name)
     }
@@ -1189,19 +1599,14 @@ impl MechFunctionImpl for DynamicUnaryF64ViewToF64ViewFunction {
     }
 }
 
-#[cfg(all(feature = "dynamic-modules", feature = "compiler"))]
+#[cfg(all(feature = "dynamic-modules", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for DynamicUnaryF64ViewToF64ViewFunction {
-    fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        Err(MechError::new(
-            GenericError {
-                msg: format!(
-                    "bytecode compilation is not implemented for dynamic function `{}`",
-                    self.name
-                ),
-            },
-            None,
-        )
-        .with_compiler_loc())
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let output = compile_register_brrw!(self.out, ctx);
+        let input = compile_register_brrw!(self.input, ctx);
+        let function = ctx.function_id(&self.name)?;
+        ctx.emit_unop(function, output, input);
+        Ok(output)
     }
 }
 

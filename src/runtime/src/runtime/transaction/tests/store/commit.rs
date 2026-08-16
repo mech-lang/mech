@@ -11,7 +11,7 @@ fn module_journal_validation_precedes_effect_preparation() {
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     runtime
-        .active_execution_transaction_mut(transaction_id)
+        .active_runtime_transaction_mut(transaction_id)
         .unwrap()
         .modules
         .stage_version(ModuleVersionRecord::new(
@@ -22,7 +22,7 @@ fn module_journal_validation_precedes_effect_preparation() {
         .unwrap();
     let lifecycle = EffectLifecycleLog::default();
     runtime
-        .active_execution_transaction_mut(transaction_id)
+        .active_runtime_transaction_mut(transaction_id)
         .unwrap()
         .effects
         .stage(

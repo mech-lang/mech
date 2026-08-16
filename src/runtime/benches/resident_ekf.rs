@@ -8,8 +8,6 @@ use std::time::{Duration, Instant};
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use mech_engine::__resident::ResidentIntegrityMode;
-#[cfg(feature = "runtime_bench_probes")]
-use mech_runtime::{gate_a_cost_snapshot, reset_gate_a_costs};
 
 mod support;
 use support::gate_b::contract::{
@@ -17,7 +15,6 @@ use support::gate_b::contract::{
     assert_state_close, reference_trajectory, trace_sha256,
 };
 use support::gate_b::full_write::{FullWriteEpochFixture, FullWriteProbe, buffer_hash};
-use support::gate_b::legacy_atomic::{LegacyEkfFixture, LegacyFullWriteFixture};
 use support::gate_b::raw_epoch::{EpochFixture, EpochProbe};
 use support::gate_b::raw_kernel::KernelFixture;
 use support::gate_b::resident_artifact::{
@@ -318,19 +315,9 @@ fn validate_controls() {
     );
     complete.validate_final();
 
-    let mut legacy = LegacyEkfFixture::new(1);
-    assert_eq!(
-        legacy.run_and_validate_every_turn(),
-        REFERENCE_TRAJECTORY_SHA256
-    );
-    validate_final(&legacy.states());
-
     let mut full_epoch = FullWriteEpochFixture::new();
     full_epoch.run_episode();
     let full_hash = buffer_hash(full_epoch.published());
-    let mut full_legacy = LegacyFullWriteFixture::new();
-    full_legacy.run_episode();
-    assert_eq!(buffer_hash(&full_legacy.published()), full_hash);
     let mut full_resident = ResidentFullWriteFixture::new();
     full_resident.run_episode();
     assert_eq!(buffer_hash(full_resident.published()), full_hash);
@@ -659,41 +646,6 @@ fn resident_artifact(c: &mut Criterion) {
     kernel_group.finish();
 }
 
-fn legacy_atomic(c: &mut Criterion) {
-    let mut group = c.benchmark_group("gate_b/mech-legacy-atomic");
-    for instances in SCALED_INSTANCES {
-        let mut correctness = LegacyEkfFixture::new(instances);
-        let trajectory_hash = correctness.run_and_validate_every_turn();
-        assert_eq!(trajectory_hash, REFERENCE_TRAJECTORY_SHA256);
-        group.bench_function(BenchmarkId::from_parameter(instances), |benchmark| {
-            benchmark.iter_custom(|iterations| {
-                let mut elapsed = Duration::ZERO;
-                for _ in 0..iterations {
-                    let mut fixture = LegacyEkfFixture::new(instances);
-                    reset_allocations();
-                    let started = Instant::now();
-                    fixture.run_episode();
-                    elapsed += started.elapsed();
-                    let allocations = allocation_snapshot();
-                    let states = fixture.states();
-                    validate_final(&states);
-                    black_box(states);
-                    report(
-                        "mech-legacy-atomic",
-                        instances,
-                        allocations,
-                        StructuralProbe::default(),
-                        &trajectory_hash,
-                        None,
-                    );
-                }
-                elapsed
-            });
-        });
-    }
-    group.finish();
-}
-
 fn full_write(c: &mut Criterion) {
     let mut group = c.benchmark_group("gate_b/full-write");
     group.bench_function("rust-epoch", |benchmark| {
@@ -717,34 +669,6 @@ fn full_write(c: &mut Criterion) {
                     fixture.probe().into(),
                     &output_hash,
                     Some(&abort_hash),
-                );
-            }
-            elapsed
-        });
-    });
-    group.bench_function("mech-legacy-atomic", |benchmark| {
-        benchmark.iter_custom(|iterations| {
-            let mut elapsed = Duration::ZERO;
-            for _ in 0..iterations {
-                let mut fixture = LegacyFullWriteFixture::new();
-                reset_allocations();
-                let started = Instant::now();
-                fixture.run_episode();
-                elapsed += started.elapsed();
-                let allocations = allocation_snapshot();
-                let published = fixture.published();
-                let output_hash = buffer_hash(&published);
-                black_box(published);
-                report(
-                    "mech-legacy-atomic-full-write",
-                    1,
-                    allocations,
-                    StructuralProbe {
-                        candidate_written_bytes: support::gate_b::full_write::WRITTEN_BYTES,
-                        ..StructuralProbe::default()
-                    },
-                    &output_hash,
-                    None,
                 );
             }
             elapsed
@@ -946,58 +870,11 @@ fn resident_structural_samples() {
     );
 }
 
-#[cfg(feature = "runtime_bench_probes")]
-fn legacy_structural_samples() {
-    for instances in SCALED_INSTANCES {
-        let mut fixture = LegacyEkfFixture::new(instances);
-        reset_gate_a_costs();
-        reset_allocations();
-        let trajectory_hash = fixture.run_and_validate_every_turn();
-        let allocations = allocation_snapshot();
-        let costs = gate_a_cost_snapshot();
-        report(
-            "mech-legacy-atomic",
-            instances,
-            allocations,
-            StructuralProbe {
-                commit_runtime_call_count: costs.commit_runtime_call_count,
-                legacy_journal_capture_count: costs.reactive_journal_cell_count,
-                ..StructuralProbe::default()
-            },
-            &trajectory_hash,
-            None,
-        );
-    }
-
-    let mut fixture = LegacyFullWriteFixture::new();
-    reset_gate_a_costs();
-    reset_allocations();
-    fixture.run_episode();
-    let allocations = allocation_snapshot();
-    let costs = gate_a_cost_snapshot();
-    let published = fixture.published();
-    let output_hash = buffer_hash(&published);
-    report(
-        "mech-legacy-atomic-full-write",
-        1,
-        allocations,
-        StructuralProbe {
-            candidate_written_bytes: support::gate_b::full_write::WRITTEN_BYTES,
-            commit_runtime_call_count: costs.commit_runtime_call_count,
-            legacy_journal_capture_count: costs.reactive_journal_cell_count,
-            ..StructuralProbe::default()
-        },
-        &output_hash,
-        None,
-    );
-}
-
 fn gate_b_controls(c: &mut Criterion) {
     validate_controls();
     #[cfg(feature = "runtime_bench_probes")]
     if std::env::var_os("MECH_GATE_B_STRUCTURAL_ONLY").is_some() {
         resident_structural_samples();
-        legacy_structural_samples();
         return;
     }
     rust_kernel(c);
@@ -1006,7 +883,6 @@ fn gate_b_controls(c: &mut Criterion) {
     resident_scheduled(c);
     resident_turn(c);
     resident_artifact(c);
-    legacy_atomic(c);
     full_write(c);
 }
 

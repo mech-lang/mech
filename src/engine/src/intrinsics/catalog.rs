@@ -4,7 +4,7 @@ use crate::intrinsics::constructors::ValueMatrixComprehension;
 use crate::intrinsics::constructors::ValueSet;
 #[cfg(feature = "set_comprehensions")]
 use crate::intrinsics::constructors::ValueSetComprehension;
-#[cfg(all(feature = "source", feature = "variable_define"))]
+#[cfg(all(feature = "semantic-compiler", feature = "variable_define"))]
 use crate::intrinsics::define::VarDefine;
 use crate::*;
 use mech_core::{
@@ -75,7 +75,7 @@ fn validate_integrity_constraint_marker(args: &FunctionArgs) -> MResult<()> {
     }
 }
 
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "matrix_horzcat")]
     crate::intrinsics::horzcat::install_source_runtime(builder)?;
@@ -253,6 +253,8 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::horzcat::install_runtime(builder)?;
     #[cfg(feature = "matrix_vertcat")]
     super::vertcat::install_runtime(builder)?;
+    #[cfg(feature = "table")]
+    super::table_ops::install_runtime(builder)?;
 
     Ok(())
 }

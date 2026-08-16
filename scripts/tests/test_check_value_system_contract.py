@@ -1,6 +1,8 @@
 import copy
+import contextlib
 import hashlib
 import importlib.util
+import io
 import json
 import subprocess
 import sys
@@ -237,7 +239,7 @@ class ReviewedContractsTests(unittest.TestCase):
             "homogeneous-matrix-snapshot",
         )
         self.assertEqual(
-            sites[("src/runtime/src/resident_external/value_adapter.rs", 45, 13)],
+            sites[("src/runtime/src/runtime/program/external/value_adapter.rs", 45, 13)],
             "legacy-matrix-value-adapter",
         )
         self.assertEqual(
@@ -540,11 +542,22 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
         self.contract_root = self.root / "tests/architecture/value-system"
         self.contract_root.mkdir(parents=True)
         self.reference = "f" * 40
+        baseline_inventory = CHECKER.GENERATOR.generate(self.root, self.reference)
+        self.baseline = CHECKER.GENERATOR.legacy_baseline(
+            baseline_inventory, self.reference
+        )
+        self.write(
+            "src/engine/src/lib.rs",
+            '#[cfg(feature = "semantic-compiler")]\nmod interpreter;\n',
+        )
+        self.write(
+            "src/engine/src/interpreter/mod.rs",
+            "pub(crate) type InterpreterRef = Ref<Box<Interpreter>>;\n",
+        )
         self.inventory = CHECKER.GENERATOR.generate(self.root, self.reference)
         self.inventory_path = self.save("current-inventory.json", self.inventory)
         self.migration = self.make_migration()
         self.migration_path = self.save("migration.json", self.migration)
-        self.baseline = CHECKER.GENERATOR.legacy_baseline(self.inventory, self.reference)
         self.baseline_path = self.save("legacy-growth-baseline.json", self.baseline)
         self.canonical_path = self.copy_contract("canonical-encoding-v1.json")
         self.inventory_schema_path = self.copy_contract("current-inventory-schema.json")
@@ -792,27 +805,12 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
     def test_valid_fixture_passes(self):
         self.assertEqual(self.audit(), [])
 
-    def test_required_compatibility_aliases_are_exact_and_public(self):
+    def test_permanent_compatibility_aliases_are_exact_and_public(self):
         cases = (
-            (
-                "removed",
-                "src/engine/src/interpreter/mod.rs",
-                "",
-            ),
-            (
-                "target-drift",
-                "src/engine/src/interpreter/mod.rs",
-                "pub type InterpreterRef = Ref<Interpreter>;\n",
-            ),
             (
                 "private",
                 "src/core/src/program/symbol_table.rs",
                 "type SymbolTableRef = Ref<SymbolTable>;\n",
-            ),
-            (
-                "broken-route",
-                "src/engine/src/lib.rs",
-                "pub mod interpreter;\n",
             ),
         )
         for name, path, source in cases:
@@ -821,6 +819,28 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
                 self.write(path, source)
                 self.assertIn("C0-PUBLIC-COMPAT-ALIAS", self.ids(self.audit()))
                 self.write(path, original)
+
+    def test_retired_interpreter_alias_cannot_be_republished(self):
+        self.write(
+            "src/engine/src/lib.rs",
+            "pub mod interpreter;\npub use crate::interpreter::*;\n",
+        )
+        self.write(
+            "src/engine/src/interpreter/mod.rs",
+            "pub type InterpreterRef = Ref<Interpreter>;\n",
+        )
+        self.assertIn("C0-PUBLIC-COMPAT-ALIAS", self.ids(self.audit()))
+
+    def test_retired_interpreter_alias_publication_is_permitted(self):
+        self.write(
+            "src/engine/src/interpreter/mod.rs",
+            "pub(crate) type InterpreterRef = Ref<Box<Interpreter>>;\n",
+        )
+        self.write(
+            "src/engine/src/lib.rs",
+            '#[cfg(feature = "semantic-compiler")]\nmod interpreter;\n',
+        )
+        self.assertNotIn("C0-PUBLIC-COMPAT-ALIAS", self.ids(self.audit()))
 
     def test_legacy_value_alias_removal_is_permitted(self):
         self.write(
@@ -1642,6 +1662,34 @@ class BoundaryAndReportingTests(unittest.TestCase):
         )
         self.assertIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
 
+    def test_general_resident_kernel_cannot_import_snapshot_helpers(self):
+        root = self.root_with(
+            "src/engine/src/resident/turn.rs",
+            "use mech_core::snapshot::build_f64_set_snapshot;\n",
+        )
+        self.assertIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
+    def test_finalized_snapshot_kernel_imports_are_exactly_allowlisted(self):
+        root = self.root_with(
+            "src/engine/src/resident/set.rs",
+            "use mech_core::snapshot::{build_f64_set_snapshot, "
+            "build_f64_set_snapshot_after_remove, f64_set_snapshot_contains};\n",
+        )
+        self.assertNotIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
+        root = self.root_with(
+            "src/engine/src/resident/composite.rs",
+            "use mech_core::snapshot::{F64Bits, MatrixValue, rebuild_composite_snapshot};\n",
+        )
+        self.assertNotIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
+    def test_finalized_snapshot_kernel_cannot_import_draft_or_hash_work(self):
+        root = self.root_with(
+            "src/engine/src/resident/set.rs",
+            "use mech_core::snapshot::{build_f64_set_snapshot, ValueDraft};\n",
+        )
+        self.assertIn("C2-RESIDENT-LEGACY-HOT-PATH", self.ids(root))
+
     def test_open_semantic_syntax_must_keep_deserialize(self):
         source = (
             '#[cfg_attr(feature = "serde", derive(Serialize))]\n'
@@ -2236,6 +2284,68 @@ class BoundaryAndReportingTests(unittest.TestCase):
                     CHECKER.CANONICAL_REFERENCE.canonical_payload(
                         schema, value, []
                     )
+
+
+class ControlledGateBEvidenceTests(unittest.TestCase):
+    def finding(self, code, subject="finding"):
+        return CHECKER.failure(
+            code,
+            subject,
+            "contract.json",
+            "expected",
+            "actual",
+            "update",
+        )
+
+    def report(self, failures):
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            status = CHECKER.report_result(
+                failures, allow_only_c0_gate_b_evidence_stale=True
+            )
+        return status, stdout.getvalue(), stderr.getvalue()
+
+    def test_zero_findings_succeeds(self):
+        status, stdout, stderr = self.report([])
+        self.assertEqual(status, 0)
+        self.assertIn("value-system contract passed", stdout)
+        self.assertEqual(stderr, "")
+
+    def test_exactly_one_controlled_finding_succeeds_and_remains_visible(self):
+        status, _stdout, stderr = self.report(
+            [self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE)]
+        )
+        self.assertEqual(status, 0)
+        self.assertIn("controlled finding still present", stderr)
+        self.assertIn("[C0-GATE-B-EVIDENCE-STALE]", stderr)
+
+    def test_one_unapproved_finding_fails(self):
+        status, _stdout, stderr = self.report(
+            [self.finding("C0-INVENTORY-DRIFT")]
+        )
+        self.assertEqual(status, 1)
+        self.assertIn("value-system contract failed", stderr)
+
+    def test_controlled_plus_another_finding_fails(self):
+        status, _stdout, stderr = self.report(
+            [
+                self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE),
+                self.finding("C0-INVENTORY-DRIFT"),
+            ]
+        )
+        self.assertEqual(status, 1)
+        self.assertIn("C0-INVENTORY-DRIFT", stderr)
+
+    def test_multiple_controlled_findings_fail(self):
+        status, _stdout, stderr = self.report(
+            [
+                self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE, "first"),
+                self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE, "second"),
+            ]
+        )
+        self.assertEqual(status, 1)
+        self.assertEqual(stderr.count("[C0-GATE-B-EVIDENCE-STALE]"), 2)
 
 
 if __name__ == "__main__":

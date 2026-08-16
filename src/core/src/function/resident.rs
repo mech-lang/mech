@@ -1,15 +1,21 @@
-use crate::{ResolvedOperationContract, SchemaId, SchemaKey};
+use core::any::Any;
+
+use crate::{ResolvedOperationContract, SchemaId, SchemaKey, SchemaTable, ShapeInstance, Value};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, string::String};
+use alloc::{boxed::Box, string::String, sync::Arc};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, string::String};
+use std::{boxed::Box, string::String, sync::Arc};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum ResidentValueKind {
     Bool,
     Index,
     F64,
+    String,
+    /// Canonical immutable value storage for schemas that do not have a
+    /// specialized dense resident lane.
+    Snapshot,
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -41,6 +47,7 @@ pub struct ResidentPortLayout {
 
 pub struct ResidentKernelBindRequest<'a> {
     pub contract: &'a ResolvedOperationContract,
+    pub schemas: &'a SchemaTable,
     pub inputs: &'a [ResidentPortLayout],
     pub output: ResidentPortLayout,
 }
@@ -67,6 +74,8 @@ pub enum ResidentValueRef<'a> {
     Bool(&'a [u8]),
     Index(&'a [u64]),
     F64(&'a [f64]),
+    String(&'a [String]),
+    Snapshot(&'a [Option<Value>]),
 }
 
 impl ResidentValueRef<'_> {
@@ -75,6 +84,8 @@ impl ResidentValueRef<'_> {
             Self::Bool(_) => ResidentValueKind::Bool,
             Self::Index(_) => ResidentValueKind::Index,
             Self::F64(_) => ResidentValueKind::F64,
+            Self::String(_) => ResidentValueKind::String,
+            Self::Snapshot(_) => ResidentValueKind::Snapshot,
         }
     }
 
@@ -83,6 +94,8 @@ impl ResidentValueRef<'_> {
             Self::Bool(values) => values.len(),
             Self::Index(values) => values.len(),
             Self::F64(values) => values.len(),
+            Self::String(values) => values.len(),
+            Self::Snapshot(values) => values.len(),
         }
     }
 
@@ -96,6 +109,8 @@ pub enum ResidentValueMut<'a> {
     Bool(&'a mut [u8]),
     Index(&'a mut [u64]),
     F64(&'a mut [f64]),
+    String(&'a mut [String]),
+    Snapshot(&'a mut [Option<Value>]),
 }
 
 impl ResidentValueMut<'_> {
@@ -104,6 +119,8 @@ impl ResidentValueMut<'_> {
             Self::Bool(_) => ResidentValueKind::Bool,
             Self::Index(_) => ResidentValueKind::Index,
             Self::F64(_) => ResidentValueKind::F64,
+            Self::String(_) => ResidentValueKind::String,
+            Self::Snapshot(_) => ResidentValueKind::Snapshot,
         }
     }
 
@@ -112,6 +129,8 @@ impl ResidentValueMut<'_> {
             Self::Bool(values) => values.len(),
             Self::Index(values) => values.len(),
             Self::F64(values) => values.len(),
+            Self::String(values) => values.len(),
+            Self::Snapshot(values) => values.len(),
         }
     }
 }
@@ -229,6 +248,17 @@ enum ResidentKernelDispatch {
 pub struct BoundResidentKernel {
     dispatch: ResidentKernelDispatch,
     parameters: Box<[u64]>,
+    snapshot_output: Option<ResidentSnapshotOutput>,
+    snapshot_schemas: Option<SchemaTable>,
+    retained_state: Option<Arc<dyn Any + Send + Sync>>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ResidentSnapshotOutput {
+    pub schema: SchemaId,
+    pub schema_key: SchemaKey,
+    pub shape: ShapeInstance,
+    pub cardinality: usize,
 }
 
 impl core::fmt::Debug for BoundResidentKernel {
@@ -237,6 +267,9 @@ impl core::fmt::Debug for BoundResidentKernel {
             .debug_struct("BoundResidentKernel")
             .field("dispatch", &"<prebound>")
             .field("parameters", &self.parameters)
+            .field("snapshot_output", &self.snapshot_output)
+            .field("snapshot_schemas", &self.snapshot_schemas.is_some())
+            .field("retained_state", &self.retained_state.is_some())
             .finish()
     }
 }
@@ -246,6 +279,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::Dynamic(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -253,6 +289,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64_1(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -260,6 +299,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64_2(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -267,6 +309,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64_3(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -274,6 +319,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64_4(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -284,6 +332,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64Output1(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -294,6 +345,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64Output2(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -304,6 +358,9 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64Output3(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
     }
 
@@ -314,7 +371,47 @@ impl BoundResidentKernel {
         Self {
             dispatch: ResidentKernelDispatch::F64Output4(executor),
             parameters,
+            snapshot_output: None,
+            snapshot_schemas: None,
+            retained_state: None,
         }
+    }
+
+    pub fn with_snapshot_output(mut self, output: ResidentSnapshotOutput) -> Self {
+        self.snapshot_output = Some(output);
+        self
+    }
+
+    pub fn snapshot_output(&self) -> Option<&ResidentSnapshotOutput> {
+        self.snapshot_output.as_ref()
+    }
+
+    pub fn with_snapshot_schemas(mut self, schemas: SchemaTable) -> Self {
+        self.snapshot_schemas = Some(schemas);
+        self
+    }
+
+    pub fn snapshot_schemas(&self) -> Option<&SchemaTable> {
+        self.snapshot_schemas.as_ref()
+    }
+
+    /// Retains operation-owned immutable state for the lifetime of an
+    /// activated kernel. Dynamic-module kernels use this to keep the loaded
+    /// library and validated ABI function together without a process-global
+    /// registry.
+    pub fn with_retained_state<T>(mut self, state: Arc<T>) -> Self
+    where
+        T: Any + Send + Sync,
+    {
+        self.retained_state = Some(state);
+        self
+    }
+
+    pub fn retained_state<T>(&self) -> Option<&T>
+    where
+        T: Any + Send + Sync,
+    {
+        self.retained_state.as_deref()?.downcast_ref()
     }
 
     pub const fn has_direct_f64_output(&self) -> bool {

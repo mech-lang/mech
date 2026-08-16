@@ -380,3 +380,29 @@ fn values_refuse_foreign_schema_tables_before_payload_interpretation() {
         Err(SnapshotValueError::SnapshotSchemaTableMismatch { .. })
     ));
 }
+
+#[test]
+fn resident_tokens_are_canonical_and_payload_sensitive() {
+    let schema = SchemaBody::Set {
+        element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+        cardinality: DimensionExpr::Constant(2),
+    };
+    let set = |values: [f64; 2]| {
+        finalize(
+            schema.clone(),
+            ValueDataDraft::Set(
+                values
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ),
+        )
+    };
+    let first = set([2.0, 1.0]);
+    let reordered = set([1.0, 2.0]);
+    let changed = set([1.0, 3.0]);
+    assert_eq!(first.resident_token(), first.clone().resident_token());
+    assert_eq!(first.resident_token(), reordered.resident_token());
+    assert_ne!(first.resident_token(), changed.resident_token());
+}

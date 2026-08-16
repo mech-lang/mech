@@ -39,8 +39,24 @@ source = [
   "mech-stats?/source",
   "mech-combinatorics?/source",
 ]
-compiler = [
+semantic-compiler = [
   "source",
+  "mech-engine/semantic-compiler",
+  "mech-math?/semantic-compiler",
+  "mech-compare?/semantic-compiler",
+  "mech-logic?/semantic-compiler",
+  "mech-range?/semantic-compiler",
+  "mech-matrix?/semantic-compiler",
+  "mech-set?/semantic-compiler",
+  "mech-string?/semantic-compiler",
+  "mech-stats?/semantic-compiler",
+  "mech-combinatorics?/semantic-compiler",
+]
+compiler = [
+  "semantic-compiler",
+  # Source compilation finalizes a resident ProgramArtifact immediately, so
+  # its catalog must include every concrete factory the compiler can emit.
+  "native-plan",
   "mech-engine/compiler",
   "mech-math?/compiler",
   "mech-compare?/compiler",
@@ -82,7 +98,7 @@ standard_source = ["standard_runtime", "source"]
 standard_compiler = ["standard_source", "compiler"]
 
 full_runtime = ["runtime", "full_values", "full_operations"]
-full_source = ["full_runtime", "source"]
+full_source = ["full_runtime", "semantic-compiler"]
 full_compiler = ["full_source", "compiler"]
 
 standard_values = [

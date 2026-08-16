@@ -1,6 +1,6 @@
 use super::captures::transaction_bool_state;
 use super::{ActivationPatternCapture, GuardFinalize, ReactiveBindingSink};
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, GenericError, MechError, MechFunctionCompiler, Register};
 use crate::{
     CompiledPattern, LegacyValue, MResult, MechFunctionImpl, PatternBindingSink,
@@ -199,7 +199,7 @@ impl MechFunctionImpl for Select {
         "ActivationPatternSelectArm".into()
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 macro_rules! interpreter_only {
     ($t:ty) => {
         impl MechFunctionCompiler for $t {
@@ -214,17 +214,17 @@ macro_rules! interpreter_only {
         }
     };
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 interpreter_only!(ScopePulse);
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 interpreter_only!(Matcher);
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 interpreter_only!(Finalize);
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 interpreter_only!(MatchGate);
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 interpreter_only!(UnmatchedFinalize);
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 interpreter_only!(GuardFinalize);
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 interpreter_only!(Select);

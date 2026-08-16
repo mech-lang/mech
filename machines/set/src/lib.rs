@@ -15,6 +15,43 @@ use paste::paste;
 
 use std::fmt::{Debug, Display};
 use std::marker::PhantomData;
+use std::sync::LazyLock;
+
+static PURE_SET_BINARY_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| set_full_write_contract(ChangeDetectionPolicy::AlwaysChanged));
+static PURE_SET_MEMBERSHIP_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| set_full_write_contract(ChangeDetectionPolicy::ExactScalar));
+
+fn set_full_write_contract(
+    change_detection: ChangeDetectionPolicy,
+) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
 
 #[cfg(feature = "runtime")]
 pub mod catalog;

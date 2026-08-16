@@ -415,6 +415,10 @@ mod tests {
             assert!(message.contains(operation), "got {message}");
             assert!(message.contains(path), "got {message}");
         }
+        let state = provider.state.lock().unwrap();
+        assert!(state.position.is_none());
+        assert!(state.gripper.is_none());
+        assert!(state.last_command.is_none());
     }
 
     #[test]
@@ -444,6 +448,10 @@ mod tests {
                 })
                 .is_err()
         );
+        let state = provider.state.lock().unwrap();
+        assert!(state.position.is_none());
+        assert!(state.gripper.is_none());
+        assert!(state.last_command.is_none());
     }
 
     #[test]

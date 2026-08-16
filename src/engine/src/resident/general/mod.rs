@@ -43,6 +43,7 @@ pub struct ResidentRegion {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResolvedSlot {
     pub artifact_id: CellSlotId,
+    pub role: SlotRole,
     pub physical_index: SlotIndex,
     pub schema: SchemaId,
     pub schema_key: SchemaKey,
@@ -211,6 +212,12 @@ pub struct ActivatedOutput {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct ActivatedOutputMaterialization {
+    target: CellSlotId,
+    source: ResidentReadLocation,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ActivatedConstraint {
     pub artifact_id: IntegrityConstraintId,
     pub predicate: ResidentReadLocation,
@@ -257,6 +264,7 @@ pub struct ActivatedPlan {
     pub topology: DependencyTopology,
     pub inputs: Box<[ActivatedInput]>,
     pub outputs: Box<[ActivatedOutput]>,
+    output_materializations: Box<[ActivatedOutputMaterialization]>,
     pub constraints: Box<[ActivatedConstraint]>,
     pub activation_nodes: Box<[NodeId]>,
     activation_steps: Box<[ActivatedOnceNode]>,
@@ -270,6 +278,10 @@ pub struct ActivatedPlan {
 }
 
 impl ActivatedPlan {
+    pub fn schemas(&self) -> &mech_core::SchemaTable {
+        &self.schemas
+    }
+
     pub fn execution_node_count(&self) -> usize {
         self.execution_node_order.len()
     }
@@ -296,6 +308,41 @@ impl ActivatedPlan {
             })
             .count()
     }
+
+    /// Replaces one activated kernel in every execution representation.
+    ///
+    /// This is intentionally hidden and exists for fault-injection contract
+    /// tests. Pure plans retain a flattened kernel cache for the hot path, so
+    /// mutating the diagnostic `steps` view alone would not inject a fault into
+    /// the executor that production actually uses.
+    #[doc(hidden)]
+    pub fn replace_kernel_for_test(
+        &mut self,
+        index: usize,
+        kernel: BoundResidentKernel,
+    ) -> BoundResidentKernel {
+        let ActivatedTurnStep::Kernel(node) = &mut self.steps[index] else {
+            panic!("activated step {index} is not a resident kernel")
+        };
+        let previous = core::mem::replace(&mut node.kernel, kernel.clone());
+        if let Some(nodes) = &mut self.pure_kernel_steps {
+            nodes[index].kernel = kernel;
+        }
+        previous
+    }
+
+    /// Changes one activated kernel's dirty-propagation policy in every
+    /// execution representation. See [`Self::replace_kernel_for_test`].
+    #[doc(hidden)]
+    pub fn set_change_detection_for_test(&mut self, index: usize, policy: ChangeDetectionPolicy) {
+        let ActivatedTurnStep::Kernel(node) = &mut self.steps[index] else {
+            panic!("activated step {index} is not a resident kernel")
+        };
+        node.change_detection = policy;
+        if let Some(nodes) = &mut self.pure_kernel_steps {
+            nodes[index].change_detection = policy;
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -312,6 +359,8 @@ pub struct ResidentArenaSizes {
     pub bools: usize,
     pub indexes: usize,
     pub f64s: usize,
+    pub strings: usize,
+    pub snapshots: usize,
 }
 
 impl ResidentArenaSizes {
@@ -320,6 +369,8 @@ impl ResidentArenaSizes {
             ResidentValueKind::Bool => &mut self.bools,
             ResidentValueKind::Index => &mut self.indexes,
             ResidentValueKind::F64 => &mut self.f64s,
+            ResidentValueKind::String => &mut self.strings,
+            ResidentValueKind::Snapshot => &mut self.snapshots,
         };
         let offset = *cursor;
         *cursor = cursor.checked_add(len)?;
@@ -332,6 +383,8 @@ pub struct TypedResidentArena {
     bools: Box<[u8]>,
     indexes: Box<[u64]>,
     f64s: Box<[f64]>,
+    strings: Box<[String]>,
+    snapshots: Box<[Option<Value>]>,
 }
 
 impl TypedResidentArena {
@@ -340,6 +393,8 @@ impl TypedResidentArena {
             bools: vec![0; sizes.bools].into_boxed_slice(),
             indexes: vec![0; sizes.indexes].into_boxed_slice(),
             f64s: vec![0.0; sizes.f64s].into_boxed_slice(),
+            strings: vec![String::new(); sizes.strings].into_boxed_slice(),
+            snapshots: vec![None; sizes.snapshots].into_boxed_slice(),
         }
     }
 
@@ -355,12 +410,22 @@ impl TypedResidentArena {
         &self.f64s
     }
 
+    pub fn string_storage(&self) -> &[String] {
+        &self.strings
+    }
+
+    pub fn snapshot_storage(&self) -> &[Option<Value>] {
+        &self.snapshots
+    }
+
     pub(crate) fn read(&self, region: ResidentRegion) -> ResidentValueRef<'_> {
         let range = region.offset..region.offset + region.len;
         match region.kind {
             ResidentValueKind::Bool => ResidentValueRef::Bool(&self.bools[range]),
             ResidentValueKind::Index => ResidentValueRef::Index(&self.indexes[range]),
             ResidentValueKind::F64 => ResidentValueRef::F64(&self.f64s[range]),
+            ResidentValueKind::String => ResidentValueRef::String(&self.strings[range]),
+            ResidentValueKind::Snapshot => ResidentValueRef::Snapshot(&self.snapshots[range]),
         }
     }
 
@@ -376,6 +441,8 @@ impl TypedResidentArena {
             ResidentValueKind::Bool => ResidentValueMut::Bool(&mut self.bools[range]),
             ResidentValueKind::Index => ResidentValueMut::Index(&mut self.indexes[range]),
             ResidentValueKind::F64 => ResidentValueMut::F64(&mut self.f64s[range]),
+            ResidentValueKind::String => ResidentValueMut::String(&mut self.strings[range]),
+            ResidentValueKind::Snapshot => ResidentValueMut::Snapshot(&mut self.snapshots[range]),
         }
     }
 
@@ -397,7 +464,32 @@ impl TypedResidentArena {
             (ResidentValueMut::F64(target), ResidentValueRef::F64(source)) => {
                 target.copy_from_slice(source)
             }
+            (ResidentValueMut::String(target), ResidentValueRef::String(source)) => {
+                target.clone_from_slice(source)
+            }
+            (ResidentValueMut::Snapshot(target), ResidentValueRef::Snapshot(source)) => {
+                target.clone_from_slice(source)
+            }
             _ => unreachable!("resident region kinds were checked"),
+        }
+    }
+
+    fn copy_region_within(&mut self, target: ResidentRegion, source: ResidentRegion) {
+        debug_assert_eq!(target.kind, source.kind);
+        debug_assert_eq!(target.len, source.len);
+        let source = source.offset..source.offset + source.len;
+        match target.kind {
+            ResidentValueKind::Bool => self.bools.copy_within(source, target.offset),
+            ResidentValueKind::Index => self.indexes.copy_within(source, target.offset),
+            ResidentValueKind::F64 => self.f64s.copy_within(source, target.offset),
+            ResidentValueKind::String => {
+                let values = self.strings[source].to_vec();
+                self.strings[target.offset..target.offset + target.len].clone_from_slice(&values);
+            }
+            ResidentValueKind::Snapshot => {
+                let values = self.snapshots[source].to_vec();
+                self.snapshots[target.offset..target.offset + target.len].clone_from_slice(&values);
+            }
         }
     }
 }
@@ -474,6 +566,8 @@ impl StateArena {
         self.buffers[0].bools.len()
             + self.buffers[0].indexes.len() * core::mem::size_of::<u64>()
             + self.buffers[0].f64s.len() * core::mem::size_of::<f64>()
+            + self.buffers[0].strings.len() * core::mem::size_of::<String>()
+            + self.buffers[0].snapshots.len() * core::mem::size_of::<Option<Value>>()
     }
 
     pub fn dual_payload_bytes(&self) -> usize {
@@ -494,6 +588,16 @@ impl StateArena {
         let region = self.version(slot).region;
         crate::resident_value_adapter::write_value(&mut self.buffers[0], region, value)?;
         Ok(())
+    }
+
+    fn initialize_from_arena(
+        &mut self,
+        slot: CellSlotId,
+        source: &TypedResidentArena,
+        source_region: ResidentRegion,
+    ) {
+        let target = self.version(slot).region;
+        self.buffers[0].copy_region_from(target, source, source_region);
     }
 
     fn install_migrated(
@@ -586,6 +690,14 @@ pub enum ResidentValueBorrow<'a> {
         shape: ResidentShape,
         values: &'a [f64],
     },
+    String {
+        shape: ResidentShape,
+        values: &'a [String],
+    },
+    Snapshot {
+        shape: ResidentShape,
+        values: &'a [Option<Value>],
+    },
 }
 
 impl ResidentValueBorrow<'_> {
@@ -594,6 +706,8 @@ impl ResidentValueBorrow<'_> {
             Self::Bool { values, .. } => values.len(),
             Self::Index { values, .. } => values.len(),
             Self::F64 { values, .. } => values.len(),
+            Self::String { values, .. } => values.len(),
+            Self::Snapshot { values, .. } => values.len(),
         }
     }
 
@@ -661,12 +775,20 @@ impl ReactiveInstance {
                 shape: output.region.shape,
                 values,
             },
+            ResidentValueRef::String(values) => ResidentValueBorrow::String {
+                shape: output.region.shape,
+                values,
+            },
+            ResidentValueRef::Snapshot(values) => ResidentValueBorrow::Snapshot {
+                shape: output.region.shape,
+                values,
+            },
         })
     }
 
     pub fn state_borrow(&self, slot: CellSlotId) -> Option<ResidentValueBorrow<'_>> {
         let resolved = self.plan.slots.get(slot.get() as usize)?;
-        if resolved.storage != ResidentStorageClass::State {
+        if resolved.role != SlotRole::State {
             return None;
         }
         let value = self.state.read_published(slot, self.published_epoch());
@@ -680,6 +802,14 @@ impl ReactiveInstance {
                 values,
             },
             ResidentValueRef::F64(values) => ResidentValueBorrow::F64 {
+                shape: resolved.region.shape,
+                values,
+            },
+            ResidentValueRef::String(values) => ResidentValueBorrow::String {
+                shape: resolved.region.shape,
+                values,
+            },
+            ResidentValueRef::Snapshot(values) => ResidentValueBorrow::Snapshot {
                 shape: resolved.region.shape,
                 values,
             },
@@ -744,7 +874,7 @@ impl ReactiveInstance {
                 .plan
                 .slots
                 .iter()
-                .filter(|slot| slot.storage == ResidentStorageClass::State)
+                .filter(|slot| slot.role == SlotRole::State)
             {
                 mappings.insert(slot.artifact_id, slot.artifact_id);
                 sources.insert(slot.artifact_id);
@@ -762,7 +892,7 @@ impl ReactiveInstance {
                 .plan
                 .slots
                 .get(target.get() as usize)
-                .is_none_or(|slot| slot.storage != ResidentStorageClass::State)
+                .is_none_or(|slot| slot.role != SlotRole::State)
             {
                 return Err(ResidentActivationError::InvalidStateMigration);
             }
@@ -771,14 +901,14 @@ impl ReactiveInstance {
             .plan
             .slots
             .iter()
-            .filter(|slot| slot.storage == ResidentStorageClass::State)
+            .filter(|slot| slot.role == SlotRole::State)
         {
             let compatible = mappings.get(&target.artifact_id).and_then(|source_id| {
                 self.plan
                     .slots
                     .get(source_id.get() as usize)
                     .filter(|source| {
-                        source.storage == ResidentStorageClass::State
+                        source.role == SlotRole::State
                             && source.schema_key == target.schema_key
                             && source.shape == target.shape
                     })
@@ -863,9 +993,6 @@ pub enum ResidentActivationError {
     },
     InvalidDependency {
         node: NodeId,
-    },
-    OutputMustBeStateBacked {
-        slot: CellSlotId,
     },
     UnknownOutput {
         output: usize,
@@ -993,7 +1120,7 @@ fn activate_internal(
     for slot in plan
         .slots
         .iter()
-        .filter(|slot| slot.storage == ResidentStorageClass::State)
+        .filter(|slot| slot.role == SlotRole::State)
     {
         let declaration = &artifact.slots()[slot.artifact_id.get() as usize];
         let Some(InitializerReference::Constant(constant)) = declaration.initializer else {
@@ -1007,6 +1134,11 @@ fn activate_internal(
             },
         )?;
         state.initialize(slot.artifact_id, value)?;
+    }
+    for materialization in plan.output_materializations.iter().copied() {
+        if let ResidentReadLocation::Constant(source) = materialization.source {
+            state.initialize_from_arena(materialization.target, &activation, source);
+        }
     }
     let workspace = TurnWorkspace::new(input_sizes, scratch_sizes, &plan);
     Ok(ReactiveInstance {
@@ -1276,6 +1408,7 @@ fn build_layout(
         let producer_class = match declaration.producer {
             ProducerReference::Input(_) => Some(NodeClass::Observation),
             ProducerReference::NodeOutput { node, .. } => Some(classes[node.get() as usize]),
+            ProducerReference::Output { .. } => None,
         };
         let storage = match declaration.role {
             SlotRole::Input => ResidentStorageClass::Input,
@@ -1287,6 +1420,7 @@ fn build_layout(
                 ResidentStorageClass::Constant
             }
             SlotRole::Derived => ResidentStorageClass::Scratch,
+            SlotRole::Output => ResidentStorageClass::State,
         };
         let shape = slot_shape(artifact, declaration.slot, facts)?;
         let (kind, resident_shape) = schema_layout(artifact, declaration.schema, &shape)?;
@@ -1300,6 +1434,7 @@ fn build_layout(
         let schema = artifact.schemas().entry(declaration.schema).unwrap();
         slots.push(ResolvedSlot {
             artifact_id: declaration.slot,
+            role: declaration.role,
             physical_index: SlotIndex::new(declaration.slot.get()),
             schema: declaration.schema,
             schema_key: schema.key(),
@@ -1328,6 +1463,14 @@ fn slot_shape(
     let declaration = &artifact.slots()[slot.get() as usize];
     if let Some(InitializerReference::Constant(constant)) = declaration.initializer {
         return Ok(artifact.constants().get(constant).unwrap().shape().clone());
+    }
+    if let ProducerReference::Output { source, .. } = declaration.producer {
+        return match source {
+            ArtifactSource::Constant(constant) => {
+                Ok(artifact.constants().get(constant).unwrap().shape().clone())
+            }
+            ArtifactSource::Slot(source) => slot_shape(artifact, source, facts),
+        };
     }
     if let Some(shape) = facts.slot_shapes.get(&slot) {
         let schema = artifact
@@ -1377,19 +1520,21 @@ fn schema_layout(
         SchemaBody::Bool => Some(ResidentValueKind::Bool),
         SchemaBody::Index => Some(ResidentValueKind::Index),
         SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => Some(ResidentValueKind::F64),
+        SchemaBody::String => Some(ResidentValueKind::String),
         _ => None,
     };
     match schema_entry.schema().body() {
         body @ (SchemaBody::Bool
         | SchemaBody::Index
+        | SchemaBody::String
         | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)) => {
             Ok((kind(body).unwrap(), ResidentShape::SCALAR))
         }
         SchemaBody::Matrix {
             element,
             dimensions,
-        } if dimensions.len() == 2 => {
-            let kind = kind(element).ok_or(ResidentActivationError::UnsupportedValue { schema })?;
+        } if dimensions.len() == 2 && kind(element).is_some() => {
+            let kind = kind(element).expect("guarded resident matrix element kind");
             let rows = evaluate_dimension(&dimensions[0], shape.parameter_values())?;
             let columns = evaluate_dimension(&dimensions[1], shape.parameter_values())?;
             Ok((
@@ -1402,7 +1547,7 @@ fn schema_layout(
                 },
             ))
         }
-        _ => Err(ResidentActivationError::UnsupportedValue { schema }),
+        _ => Ok((ResidentValueKind::Snapshot, ResidentShape::SCALAR)),
     }
 }
 
@@ -1536,14 +1681,31 @@ fn build_plan(
             .map(|source| source_port_layout(artifact, &layout, *source))
             .collect::<Result<Vec<_>, _>>()?;
         let output_layout = slot_port_layout(output);
-        let factory = catalog
-            .resident_factory(&node.operation.module_path, &node.operation.operation_name)
-            .ok_or(ResidentActivationError::MissingResidentFactory { node: node.node })?;
-        let kernel = (factory.factory)(&ResidentKernelBindRequest {
+        let bind_request = ResidentKernelBindRequest {
             contract: artifact.contracts().get(node.contract).unwrap(),
+            schemas: artifact.schemas(),
             inputs: &input_layouts,
             output: output_layout,
-        })
+        };
+        let kernel = if let Some(factory) =
+            catalog.resident_factory(&node.operation.module_path, &node.operation.operation_name)
+        {
+            (factory.factory)(&bind_request)
+        } else {
+            #[cfg(feature = "dynamic-modules")]
+            {
+                crate::function::bind_dynamic_resident_operation(
+                    &node.operation.module_path,
+                    &node.operation.operation_name,
+                    &bind_request,
+                )
+                .ok_or(ResidentActivationError::MissingResidentFactory { node: node.node })?
+            }
+            #[cfg(not(feature = "dynamic-modules"))]
+            {
+                return Err(ResidentActivationError::MissingResidentFactory { node: node.node });
+            }
+        }
         .map_err(|error| ResidentActivationError::KernelBind {
             node: node.node,
             error,
@@ -1629,20 +1791,32 @@ fn build_plan(
         .iter()
         .map(|output| {
             let slot = &layout.slots[output.source.get() as usize];
-            if slot.storage != ResidentStorageClass::State {
-                return Err(ResidentActivationError::OutputMustBeStateBacked {
-                    slot: output.source,
-                });
-            }
-            Ok(ActivatedOutput {
+            debug_assert_eq!(slot.storage, ResidentStorageClass::State);
+            ActivatedOutput {
                 slot: slot.physical_index,
                 schema: slot.schema,
                 schema_key: slot.schema_key,
                 shape: slot.shape.clone(),
                 region: slot.region,
-            })
+            }
         })
-        .collect::<Result<Vec<_>, _>>()?
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    let output_materializations = artifact
+        .slots()
+        .iter()
+        .filter_map(|slot| match (slot.role, slot.producer) {
+            (SlotRole::Output, ProducerReference::Output { source, .. }) => {
+                Some(resolve_read(artifact, &layout, source).map(|source| {
+                    ActivatedOutputMaterialization {
+                        target: slot.slot,
+                        source,
+                    }
+                }))
+            }
+            _ => None,
+        })
+        .collect::<Result<Vec<_>, ResidentActivationError>>()?
         .into_boxed_slice();
     let constraints = artifact
         .constraints()
@@ -1740,6 +1914,7 @@ fn build_plan(
         topology,
         inputs,
         outputs,
+        output_materializations,
         constraints,
         activation_nodes,
         activation_steps,
@@ -1968,6 +2143,8 @@ enum OwnedResidentValue {
     Bool(Box<[u8]>),
     Index(Box<[u64]>),
     F64(Box<[f64]>),
+    String(Box<[String]>),
+    Snapshot(Box<[Option<Value>]>),
 }
 
 impl OwnedResidentValue {
@@ -1976,6 +2153,8 @@ impl OwnedResidentValue {
             Self::Bool(values) => ResidentValueRef::Bool(values),
             Self::Index(values) => ResidentValueRef::Index(values),
             Self::F64(values) => ResidentValueRef::F64(values),
+            Self::String(values) => ResidentValueRef::String(values),
+            Self::Snapshot(values) => ResidentValueRef::Snapshot(values),
         }
     }
 }
@@ -2019,6 +2198,12 @@ fn owned_activation_input(
         ResidentValueRef::F64(values) => {
             OwnedResidentValue::F64(values.to_vec().into_boxed_slice())
         }
+        ResidentValueRef::String(values) => {
+            OwnedResidentValue::String(values.to_vec().into_boxed_slice())
+        }
+        ResidentValueRef::Snapshot(values) => {
+            OwnedResidentValue::Snapshot(values.to_vec().into_boxed_slice())
+        }
     })
 }
 
@@ -2030,6 +2215,7 @@ fn build_topology(
 ) -> Result<DependencyTopology, ResidentActivationError> {
     let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); steps.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
+    let mut direct_input_consumers = Vec::<ActivatedNodeIndex>::new();
     for node in artifact.nodes() {
         if !matches!(
             classes[node.node.get() as usize],
@@ -2043,6 +2229,16 @@ fn build_topology(
                 continue;
             };
             let slot = &artifact.slots()[slot_id.get() as usize];
+            let reads_turn_input = match slot.producer {
+                ProducerReference::Input(_) => true,
+                ProducerReference::NodeOutput { node, .. } => {
+                    classes[node.get() as usize] == NodeClass::Observation
+                }
+                ProducerReference::Output { .. } => false,
+            };
+            if reads_turn_input && !direct_input_consumers.contains(&current) {
+                direct_input_consumers.push(current);
+            }
             let parent = if slot.role == SlotRole::State {
                 latest_state_writer.get(&slot_id).copied()
             } else {
@@ -2051,6 +2247,7 @@ fn build_topology(
                         artifact_to_activated[node.get() as usize]
                     }
                     ProducerReference::Input(_) => None,
+                    ProducerReference::Output { .. } => None,
                 }
             };
             if let Some(parent) = parent {
@@ -2072,12 +2269,18 @@ fn build_topology(
             indegree[child.get() as usize] += 1;
         }
     }
-    let roots = indegree
+    let mut roots = indegree
         .iter()
         .enumerate()
         .filter(|(_, degree)| **degree == 0)
         .map(|(index, _)| ActivatedNodeIndex(index as u32))
         .collect::<Vec<_>>();
+    for consumer in direct_input_consumers {
+        if !roots.contains(&consumer) {
+            roots.push(consumer);
+        }
+    }
+    roots.sort_by_key(|node| node.get());
     let order_source = downstream
         .iter()
         .map(|children| {
@@ -2253,6 +2456,9 @@ fn activated_input_source(artifact: &ProgramArtifact, slot: CellSlotId) -> Activ
                 .requirement
                 .expect("validated observation has an application requirement");
             ActivatedInputSource::Observation { node, requirement }
+        }
+        ProducerReference::Output { .. } => {
+            unreachable!("published output slots are not resident inputs")
         }
     }
 }

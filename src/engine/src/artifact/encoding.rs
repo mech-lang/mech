@@ -112,6 +112,7 @@ pub(super) fn program_revision(
             SlotRole::Input => 0,
             SlotRole::State => 1,
             SlotRole::Derived => 2,
+            SlotRole::Output => 3,
         });
         match slot.producer {
             ProducerReference::Input(input) => {
@@ -125,6 +126,20 @@ pub(super) fn program_revision(
                 writer.u8(1);
                 writer.u32(node.get());
                 writer.u16(output_ordinal);
+            }
+            ProducerReference::Output { output, source } => {
+                writer.u8(2);
+                writer.u32(output.get());
+                match source {
+                    ArtifactSource::Constant(constant) => {
+                        writer.u8(0);
+                        writer.u32(constant.get());
+                    }
+                    ArtifactSource::Slot(slot) => {
+                        writer.u8(1);
+                        writer.u32(slot.get());
+                    }
+                }
             }
         }
         match slot.initializer {

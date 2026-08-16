@@ -2,6 +2,35 @@ use crate::*;
 
 use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
+use std::sync::LazyLock;
+
+static PURE_SET_REMOVE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 // Remove ------------------------------------------------------------------------
 
@@ -64,6 +93,9 @@ impl MechFunctionImpl for SetRemoveFxn {
     fn out(&self) -> LegacyValue {
         LegacyValue::Set(self.out.clone())
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_REMOVE_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -72,16 +104,13 @@ impl MechFunctionImpl for SetRemoveFxn {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetRemoveFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination = compile_register_brrw!(self.out, ctx);
         let set = compile_register_brrw!(self.arg1, ctx);
-        let element = compile_value_register(
-            &self.arg2,
-            core::ptr::from_ref(&self.arg2).addr(),
-            ctx,
-        )?;
+        let element =
+            compile_value_register(&self.arg2, core::ptr::from_ref(&self.arg2).addr(), ctx)?;
         ctx.emit_binop(hash_str("SetRemoveFxn"), destination, set, element);
         Ok(destination)
     }

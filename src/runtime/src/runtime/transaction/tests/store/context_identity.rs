@@ -1,6 +1,7 @@
 use super::new_runtime;
 use crate::{
-    ActorId, ActorRecord, CapabilityRequest, HostCall, ObjectId, ObjectRecord, TransactionId,
+    ActorId, ActorRecord, CapabilityRequest, HostCall, MessageId, MessageRecord, ObjectId,
+    ObjectRecord, RuntimeContext, TaskId, TransactionId,
 };
 
 #[test]
@@ -163,6 +164,43 @@ fn active_transaction_context_clone_is_rejected_before_transaction_consumption()
         .abort_runtime_transaction(&mut owner_context, "owner cleanup")
         .unwrap();
     assert!(!runtime.active_transactions.contains_key(&transaction_id));
+}
+
+#[test]
+fn transaction_context_identity_includes_task_actor_message_and_state() {
+    fn assert_mismatch(mutate: impl FnOnce(&mut RuntimeContext)) {
+        let mut runtime = new_runtime();
+        let mut owner = runtime.runtime_context().unwrap();
+        let transaction_id = runtime.begin_transaction(&mut owner).unwrap();
+        let mut mismatched = owner.clone();
+        mutate(&mut mismatched);
+
+        let error = runtime
+            .put_object_with_context(
+                &mut mismatched,
+                ObjectRecord::text(ObjectId(906), "note", "identity mismatch"),
+            )
+            .unwrap_err();
+
+        assert_eq!(error.kind_name(), "RuntimeTransactionContextMismatch");
+        assert!(runtime.get_object(ObjectId(906)).unwrap().is_none());
+        assert!(runtime.active_transactions.contains_key(&transaction_id));
+        runtime
+            .abort_runtime_transaction(&mut owner, "identity mismatch cleanup")
+            .unwrap();
+    }
+
+    assert_mismatch(|context| context.task = Some(TaskId(1)));
+    assert_mismatch(|context| context.actor = Some(ActorId(2)));
+    assert_mismatch(|context| {
+        context.actor_message = Some(MessageRecord::new(
+            MessageId(3),
+            ActorId(2),
+            "identity",
+            Vec::new(),
+        ));
+    });
+    assert_mismatch(|context| context.actor_state = Some(ObjectId(4)));
 }
 
 #[test]

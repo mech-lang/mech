@@ -1,34 +1,22 @@
 use super::builder::RuntimeBuilder;
-use super::external::ExternalRequirementCatalog;
-use super::live_state::{LiveRegistrationMode, RuntimeLiveContextTemplate};
-use super::resources::RuntimeResourceBinding;
-use super::transaction::{
-    ActiveRuntimeProgramOperation, RuntimeExecutionTransaction, RuntimeHealth,
-};
+use super::transaction::{ActiveRuntimeTransaction, RuntimeHealth};
 use crate::{
-    ActiveRuntimeEffectPhase, ActorBehaviorDriver, CapabilityKernel, HostCallPolicy,
-    HostInterfaceCatalog, HostRegistry, IdGenerator, MechStore, ModuleBuilder, RuntimeConfig,
-    RuntimeHostInputDriver, RuntimeHostInputQueue, RuntimeId, RuntimeLiveResourceBinding,
-    RuntimeResourceRegistry, Scheduler, SchedulerPolicy, SourceResolver, TransactionId,
+    ActiveRuntimeEffectPhase, CapabilityKernel, HostCallPolicy, HostInterfaceCatalog, HostRegistry,
+    IdGenerator, MechStore, ModuleBuilder, RuntimeConfig, RuntimeHostInputDriver,
+    RuntimeHostInputQueue, RuntimeId, RuntimeResourceRegistry, Scheduler, SchedulerPolicy,
+    SourceResolver, TransactionId,
 };
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog};
-use mech_engine::{MechProgram, MechProgramConfig};
 use std::cell::Cell;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::Arc;
 
 #[cfg(feature = "resident-routing")]
-use crate::runtime::resident_program::ResidentProductionProbe;
+use crate::runtime::program::ResidentProductionProbe;
 #[cfg(feature = "resident-routing")]
-use crate::runtime::resident_program::{ActiveProgramExecution, RuntimeProgramExecutionInfo};
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RuntimeExecutionMode {
-    Execute,
-    Plan,
-}
+use crate::runtime::program::{ActiveProgramExecution, RuntimeProgramExecutionInfo};
 
 pub(in crate::runtime) struct ScopedRuntimeState<T: Copy> {
     state: Rc<Cell<Option<T>>>,
@@ -53,9 +41,7 @@ pub struct MechRuntime {
     pub(super) id: RuntimeId,
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
-    pub(super) execution_mode: RuntimeExecutionMode,
     pub(super) function_catalog: Arc<FunctionCatalog>,
-    pub(super) program: MechProgram,
     #[cfg(feature = "resident-routing")]
     pub(super) active_program: ActiveProgramExecution,
     #[cfg(feature = "resident-routing")]
@@ -72,23 +58,14 @@ pub struct MechRuntime {
     pub(super) host_policy: Box<dyn HostCallPolicy>,
     pub(super) scheduler: Box<dyn Scheduler>,
     pub(super) scheduler_policy: SchedulerPolicy,
-    pub(super) active_transactions: HashMap<TransactionId, RuntimeExecutionTransaction>,
-    pub(super) program_transaction_owner: Option<TransactionId>,
-    pub(super) active_program_operation: Rc<Cell<Option<ActiveRuntimeProgramOperation>>>,
+    pub(super) active_transactions: HashMap<TransactionId, ActiveRuntimeTransaction>,
     pub(super) active_effect_phase: Rc<Cell<Option<ActiveRuntimeEffectPhase>>>,
     pub(super) health: RuntimeHealth,
-    pub(super) actor_behavior_driver: Box<dyn ActorBehaviorDriver>,
     pub(super) module_builder: ModuleBuilder,
     pub(super) resources: RuntimeResourceRegistry,
-    pub(super) resource_bindings: HashMap<String, RuntimeResourceBinding>,
-    pub(super) external_requirements: ExternalRequirementCatalog,
-    pub(super) live_registration_mode: LiveRegistrationMode,
-    pub(super) live_input_bindings:
-        BTreeMap<crate::RuntimeHostInputSource, Vec<RuntimeLiveResourceBinding>>,
     pub(super) host_input_queue: RuntimeHostInputQueue,
     pub(super) input_drivers: Vec<Box<dyn RuntimeHostInputDriver>>,
     pub(super) attached_input_driver_count: usize,
-    pub(super) live_context_template: Option<RuntimeLiveContextTemplate>,
     pub(super) input_driver_cleanup_armed: bool,
     pub(super) host_interfaces: HostInterfaceCatalog,
     pub(super) module_manifests: ModuleManifestCatalog,
@@ -100,9 +77,7 @@ impl std::fmt::Debug for MechRuntime {
             .field("id", &self.id)
             .field("event_sequence", &self.event_sequence)
             .field("config", &self.config)
-            .field("execution_mode", &self.execution_mode)
             .field("function_catalog", &"<FunctionCatalog>")
-            .field("program", &"<MechProgram>")
             .field("active_program", &self.program_route_for_debug())
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
@@ -114,13 +89,9 @@ impl std::fmt::Debug for MechRuntime {
             .field("scheduler_policy", &self.scheduler_policy)
             .field("active_transactions", &self.active_transactions.len())
             .field("active_effect_phase", &self.active_effect_phase.get())
-            .field("actor_behavior_driver", &"<dyn ActorBehaviorDriver>")
             .field("module_builder", &self.module_builder)
             .field("resources", &self.resources)
-            .field("resource_bindings", &self.resource_bindings)
-            .field("live_input_bindings", &self.live_input_bindings)
             .field("input_drivers", &self.input_drivers.len())
-            .field("live_context_template", &self.live_context_template)
             .field("host_interfaces", &self.host_interfaces)
             .field("module_manifests", &self.module_manifests)
             .finish()
@@ -142,30 +113,6 @@ impl MechRuntime {
 
     pub fn config(&self) -> &RuntimeConfig {
         &self.config
-    }
-
-    pub fn execution_mode(&self) -> RuntimeExecutionMode {
-        self.execution_mode
-    }
-
-    pub fn external_requirements(&self) -> &ExternalRequirementCatalog {
-        &self.external_requirements
-    }
-
-    pub(crate) fn program(&self) -> &MechProgram {
-        &self.program
-    }
-
-    /// Low-level manual escape hatch outside runtime-owned atomic execution.
-    ///
-    /// Callers must not use it while a transaction owns the retained program.
-    /// Runtime internals must not use it to bypass the program coordinator.
-    pub(crate) fn program_mut(&mut self) -> &mut MechProgram {
-        &mut self.program
-    }
-
-    pub(in crate::runtime) fn new_program(&self, config: MechProgramConfig) -> MechProgram {
-        MechProgram::with_function_catalog(config, Arc::clone(&self.function_catalog))
     }
 
     pub(crate) fn health(&self) -> &RuntimeHealth {

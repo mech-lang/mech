@@ -1,6 +1,5 @@
 use super::{event_count, new_runtime};
 use crate::runtime::test_support::effects::{EffectLifecycleLog, TransactionalEffectProbe};
-use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::runtime::test_support::stores::AppendEventFailureProbe;
 use crate::{MechRuntime, ObjectId, ObjectRecord, PreparedRuntimeEffect, RuntimeEventKind};
 
@@ -83,37 +82,10 @@ fn explicit_abort_reports_transaction_aborted_publication_failure() {
         .abort_runtime_transaction(&mut context, "publication failure")
         .unwrap_err();
 
-    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert_eq!(error.kind_name(), "RuntimeOperationRollbackFailed");
     assert!(error.full_chain_message().contains(&format!(
         "transaction-aborted event publication failed for transaction {transaction_id}",
     )));
-}
-
-#[test]
-fn failed_abort_marker_still_clears_transaction_ownership() {
-    let (store, probe) = AppendEventFailureProbe::new();
-    let mut runtime = test_runtime_builder().store(store).build().unwrap();
-    let mut context = runtime.runtime_context().unwrap();
-    let transaction_id = runtime.begin_transaction(&mut context).unwrap();
-    runtime
-        .run_string_with_context(&mut context, "abort-marker-owner := 1")
-        .unwrap();
-    assert_eq!(runtime.program_transaction_owner, Some(transaction_id));
-    probe.fail_next_transaction_aborted();
-
-    runtime
-        .abort_runtime_transaction(&mut context, "publication failure")
-        .unwrap_err();
-
-    assert!(!runtime.active_transactions.contains_key(&transaction_id));
-    assert_eq!(context.transaction, None);
-    assert_eq!(runtime.program_transaction_owner, None);
-    assert!(
-        runtime
-            .program
-            .root_symbol_value("abort-marker-owner")
-            .is_err()
-    );
 }
 
 #[test]
@@ -193,7 +165,7 @@ fn effect_aborted_publication_failure_is_reported() {
         .abort_runtime_transaction(&mut context, "effect publication failure")
         .unwrap_err();
 
-    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert_eq!(error.kind_name(), "RuntimeOperationRollbackFailed");
     assert!(error.full_chain_message().contains(&format!(
         "effect-aborted event publication failed for effect {effect_id}",
     )));

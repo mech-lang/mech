@@ -8,15 +8,13 @@ pub mod capabilities;
 pub mod commands;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;
-#[cfg(feature = "cli_core")]
-pub(crate) mod diagnostics;
 #[cfg(any(feature = "build", feature = "run"))]
 pub(crate) mod host_configuration;
 #[cfg(feature = "run")]
 pub mod host_factories;
-#[cfg(feature = "run")]
+#[cfg(any(feature = "build", feature = "run"))]
 pub mod host_grants;
-#[cfg(any(feature = "build", feature = "test"))]
+#[cfg(feature = "build")]
 pub(crate) mod module_execution;
 #[cfg(feature = "cli_core")]
 pub(crate) mod outcome;
@@ -44,7 +42,6 @@ pub(crate) fn rounds_per_step_value_parser() -> clap::builder::RangedU64ValuePar
         feature = "build",
         feature = "run",
         feature = "formatter",
-        feature = "repl",
     )
 ))]
 pub(crate) static CURRENT_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
@@ -57,7 +54,6 @@ pub(crate) static CURRENT_DIR_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new
         feature = "build",
         feature = "run",
         feature = "formatter",
-        feature = "repl",
     )
 ))]
 pub(crate) fn lock_current_dir() -> std::sync::MutexGuard<'static, ()> {

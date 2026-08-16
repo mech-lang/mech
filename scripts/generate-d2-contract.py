@@ -11,6 +11,11 @@ from pathlib import Path
 import subprocess
 import sys
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+from d2_historical_evidence import run_historical_d2_fixture
+
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests/fixtures/d2-contract-generator/Cargo.toml"
 SOURCE = ROOT / "tests/architecture/resident-activation/n-body-source-v1.mec"
@@ -53,6 +58,34 @@ def fixture_facts() -> dict[str, str]:
         raise RuntimeError(f"expected one D2_PROJECTION line, found {len(lines)}")
     facts: dict[str, str] = {}
     for item in lines[0].removeprefix("D2_PROJECTION ").split():
+        key, separator, value = item.partition("=")
+        if not separator or not key or key in facts:
+            raise RuntimeError(f"invalid D2 projection fact {item!r}")
+        facts[key] = value
+    historical_output = run_historical_d2_fixture()
+    historical_lines = [
+        line
+        for line in historical_output.splitlines()
+        if line.startswith("D2_PROJECTION ")
+    ]
+    if len(historical_lines) != 1:
+        raise RuntimeError(
+            "expected one historical D2_PROJECTION line, "
+            f"found {len(historical_lines)}"
+        )
+    historical = parse_projection_line(historical_lines[0])
+    if historical["trajectory"] != facts["trajectory"]:
+        raise RuntimeError(
+            "current resident trajectory differs from the live historical D2 executor: "
+            f"current={facts['trajectory']} historical={historical['trajectory']}"
+        )
+    facts["legacy_exact"] = "true"
+    return facts
+
+
+def parse_projection_line(line: str) -> dict[str, str]:
+    facts: dict[str, str] = {}
+    for item in line.removeprefix("D2_PROJECTION ").split():
         key, separator, value = item.partition("=")
         if not separator or not key or key in facts:
             raise RuntimeError(f"invalid D2 projection fact {item!r}")

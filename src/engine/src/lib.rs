@@ -73,23 +73,38 @@ use mech_core::{MResult, hash_str, nodes::Kind as NodeKind, nodes::Matrix as Mat
 use na::DMatrix;
 use std::time::Duration;
 
-#[cfg(all(feature = "source", feature = "functions", feature = "symbol_table"))]
+#[cfg(feature = "semantic-compiler")]
+pub use mech_core::{
+    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
+    CompiledNodeKind, CompiledSymbolDefinition,
+};
+
+#[cfg(all(
+    feature = "semantic-compiler",
+    feature = "functions",
+    feature = "symbol_table"
+))]
 pub mod activation;
 #[cfg(feature = "resident-ekf")]
 mod efficacy;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod expressions;
 #[cfg(feature = "functions")]
 pub mod function;
-#[cfg(all(feature = "program", feature = "invariant_define"))]
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 pub mod integrity;
-pub mod interpreter;
+#[cfg(feature = "semantic-compiler")]
+mod interpreter;
+#[cfg(feature = "semantic-compiler")]
+pub(crate) use interpreter::{
+    Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
+};
 pub mod intrinsics;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod literals;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod patterns;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
@@ -112,9 +127,9 @@ pub mod __gate_b_resident {
 #[cfg(feature = "resident-artifact")]
 #[doc(hidden)]
 pub mod __resident {
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub use crate::efficacy::ekf::catalog::frozen_ekf_compiler_catalog;
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     pub use crate::efficacy::ekf::closure::{
         FrozenEkfArtifactClosure, FrozenEkfArtifactClosureError, FrozenEkfCompilation,
         FrozenEkfCompilationServices, FrozenEkfConstantClosure, FrozenEkfConstraint,
@@ -136,13 +151,13 @@ pub mod __resident {
         activate_external, activate_with_options,
     };
 }
-#[cfg(all(feature = "source", feature = "state_machines"))]
+#[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
 pub mod state_machines;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod statements;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub mod structures;
-#[cfg(test)]
+#[cfg(all(test, feature = "functions"))]
 #[path = "../tests/support/mod.rs"]
 pub(crate) mod test_support;
 pub mod tracing;
@@ -178,31 +193,32 @@ pub mod __mech_native {
     pub use crate::intrinsics::define::install_variable_define_f64;
     #[cfg(feature = "matrix_horzcat")]
     pub use crate::intrinsics::horzcat::__mech_native::*;
+    #[cfg(feature = "table")]
+    pub use crate::intrinsics::table_ops::__mech_native::*;
     #[cfg(feature = "matrix_vertcat")]
     pub use crate::intrinsics::vertcat::__mech_native::*;
 }
 
 pub use mech_core::*;
 
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::expressions::*;
 #[cfg(feature = "functions")]
 pub use crate::function::*;
-#[cfg(all(feature = "program", feature = "invariant_define"))]
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 pub use crate::integrity::*;
-pub use crate::interpreter::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::literals::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::mechdown::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::patterns::*;
 pub use crate::program::*;
-#[cfg(all(feature = "source", feature = "state_machines"))]
+#[cfg(all(feature = "semantic-compiler", feature = "state_machines"))]
 pub use crate::state_machines::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::statements::*;
-#[cfg(feature = "source")]
+#[cfg(feature = "semantic-compiler")]
 pub use crate::structures::*;
 pub use crate::tracing::*;
 
@@ -319,5 +335,15 @@ macro_rules! print_plan {
     };
 }
 
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "semantic-compiler"
+))]
 pub mod artifact;
+#[cfg(any(
+    feature = "artifact-codec",
+    feature = "resident-artifact",
+    feature = "semantic-compiler"
+))]
 pub use crate::artifact::*;

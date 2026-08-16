@@ -20,26 +20,26 @@ fn rollback_retains_prefix_and_removes_suffix() {
 }
 
 #[test]
-fn program_operation_rollback_removes_later_module_work() {
+fn atomic_operation_rollback_removes_later_module_work() {
     let mut runtime = MechRuntime::new(RuntimeConfig::default()).unwrap();
     let mut context = runtime.runtime_context().unwrap();
     let transaction_id = runtime.begin_transaction(&mut context).unwrap();
     let earlier = module("memory://earlier.mec", "earlier");
     let later = module("memory://later.mec", "later");
     runtime
-        .active_execution_transaction_mut(transaction_id)
+        .active_runtime_transaction_mut(transaction_id)
         .unwrap()
         .modules
         .stage_module(earlier.clone())
         .unwrap();
 
     let error = runtime
-        .with_atomic_program_operation(
+        .with_atomic_module_operation(
             &mut context,
             "module_journal_savepoint_test",
             |runtime, _| {
                 runtime
-                    .active_execution_transaction_mut(transaction_id)?
+                    .active_runtime_transaction_mut(transaction_id)?
                     .modules
                     .stage_module(later.clone())?;
                 Err::<(), _>(MechError::new(
@@ -55,7 +55,7 @@ fn program_operation_rollback_removes_later_module_work() {
 
     assert!(error.kind_as::<RuntimeInvalidOperationError>().is_some());
     let journal = &runtime
-        .active_execution_transaction(transaction_id)
+        .active_runtime_transaction(transaction_id)
         .unwrap()
         .modules;
     assert_eq!(journal.get_module(earlier.id), Some(&earlier));

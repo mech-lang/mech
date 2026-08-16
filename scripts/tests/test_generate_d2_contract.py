@@ -3,7 +3,9 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location(
@@ -45,6 +47,43 @@ class D2ContractGeneratorTests(unittest.TestCase):
         self.assertEqual(
             projections["profile"]["integrity_modes"], ["Checked", "Unchecked"]
         )
+
+    def test_fixture_facts_require_the_live_historical_executor_trajectory(self):
+        current = "D2_PROJECTION platform=aarch64-macos trajectory=abc legacy_exact=true\n"
+        historical = "D2_PROJECTION platform=aarch64-macos trajectory=abc legacy_exact=true\n"
+        with mock.patch.object(
+            GENERATOR.subprocess,
+            "run",
+            return_value=SimpleNamespace(
+                returncode=0,
+                stdout=current,
+                stderr="",
+            ),
+        ), mock.patch.object(
+            GENERATOR,
+            "run_historical_d2_fixture",
+            return_value=historical,
+        ):
+            self.assertEqual(GENERATOR.fixture_facts()["legacy_exact"], "true")
+
+    def test_fixture_facts_reject_historical_executor_drift(self):
+        current = "D2_PROJECTION platform=aarch64-macos trajectory=current\n"
+        historical = "D2_PROJECTION platform=aarch64-macos trajectory=historical\n"
+        with mock.patch.object(
+            GENERATOR.subprocess,
+            "run",
+            return_value=SimpleNamespace(
+                returncode=0,
+                stdout=current,
+                stderr="",
+            ),
+        ), mock.patch.object(
+            GENERATOR,
+            "run_historical_d2_fixture",
+            return_value=historical,
+        ):
+            with self.assertRaisesRegex(RuntimeError, "live historical D2 executor"):
+                GENERATOR.fixture_facts()
 
 
 if __name__ == "__main__":

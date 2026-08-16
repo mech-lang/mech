@@ -3,7 +3,7 @@ use crate::{
     MResult, MechError, MechFunctionImpl, ReactiveCellId, ReactiveSolveStatus, Ref, SliceRef,
     Token,
 };
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, GenericError, MechFunctionCompiler, Register};
 
 use super::{
@@ -161,7 +161,7 @@ impl MechFunctionImpl for Gate {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for Gate {
     fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(

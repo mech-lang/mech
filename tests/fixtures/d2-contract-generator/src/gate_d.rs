@@ -30,7 +30,6 @@ pub(super) fn run() {
 
     for sample in 0..SAMPLES {
         raw_sample(sample, initial_x, initial_v, masses);
-        legacy_sample(sample, &catalog, &artifact);
         resident_kernel_sample(sample, "nbody-resident-kernel-source", &catalog, &artifact);
         resident_kernel_sample(sample, "nbody-resident-kernel-bytecode", &catalog, &decoded);
         resident_sample(sample, "nbody-resident-source", &catalog, &artifact, 0, 1);
@@ -116,34 +115,6 @@ fn raw_sample(sample: usize, x: [f64; 30], v: [f64; 30], masses: [f64; 10]) {
     let allocations = ALLOCATIONS.load(Ordering::SeqCst);
     black_box(state.x);
     print_sample("nbody-raw-rust", sample, elapsed, allocations, 0, 1);
-}
-
-fn legacy_sample(
-    sample: usize,
-    catalog: &std::sync::Arc<mech_core::FunctionCatalog>,
-    artifact: &ProgramArtifact,
-) {
-    let mut program =
-        MechProgram::with_function_catalog(MechProgramConfig::default(), catalog.clone());
-    program
-        .run_string(SOURCE)
-        .expect("prepare legacy n-body benchmark");
-    let steps = semantic_legacy_turn_steps(&program, artifact, catalog);
-    ALLOCATIONS.store(0, Ordering::SeqCst);
-    let started = Instant::now();
-    for _ in 0..TURNS {
-        let plan = program.interpreter().plan();
-        let plan = plan.0.borrow_mut();
-        for step in &steps {
-            plan[*step]
-                .solve_result()
-                .expect("legacy n-body benchmark turn");
-        }
-    }
-    let elapsed = started.elapsed().as_nanos();
-    let allocations = ALLOCATIONS.load(Ordering::SeqCst);
-    black_box(initial_legacy_axis(&program, "x"));
-    print_sample("nbody-legacy-mech", sample, elapsed, allocations, 0, 1);
 }
 
 fn resident_sample(

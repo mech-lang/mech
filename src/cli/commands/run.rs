@@ -47,11 +47,6 @@ pub(crate) fn command() -> Command {
       .long("debug")
       .help("Print debug info")
       .action(ArgAction::SetTrue))
-    .arg(Arg::new("time")
-      .short('t')
-      .long("time")
-      .help("Measure how long the program takes to execute.")
-      .action(ArgAction::SetTrue))
     .arg(Arg::new("rounds-per-step")
       .long("rounds-per-step")
       .value_name("ROUNDS")
@@ -72,14 +67,6 @@ pub(crate) fn command() -> Command {
       .value_parser(crate::cli::rounds_per_step_value_parser())
       .help("Stop after this many accepted live turns")
       .required(false));
-    #[cfg(feature = "repl")]
-    let command = command.arg(
-        Arg::new("repl")
-            .short('r')
-            .long("repl")
-            .help("Developer-only REPL flag; production inputs cannot be combined with a REPL")
-            .action(ArgAction::SetTrue),
-    );
     command
 }
 
@@ -87,8 +74,8 @@ pub(crate) fn add_cli_host_capability_args(command: Command) -> Command {
     command.args(crate::cli::run::cli_host_capability_args())
 }
 
-const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb", "mdoc", "mpkg", "m", "csv", "js"];
-const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖", "mdoc", "mpkg"];
+const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
+const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
 pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
@@ -251,16 +238,6 @@ fn print_value(value: &RuntimeValueSnapshot) {
 }
 
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
-    if plan.repl_requested && !plan.missing_run_options {
-        return Err(MechError::new(
-            mech_runtime::ResidentRouteFailure {
-                class: mech_runtime::ResidentRouteFailureClass::ReplUnsupported,
-                reason: "interactive REPL mutation cannot be combined with a resident production target; start the full developer REPL without a target instead".to_string(),
-            },
-            None,
-        ));
-    }
-
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
     let mut runtime = new_cli_runtime_with_source_resolver(
@@ -273,17 +250,10 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     )?;
 
     if plan.missing_run_options {
-        #[cfg(feature = "repl")]
-        return Ok(CliOutcome::EnterRepl(
-            crate::cli::commands::repl::ReplStartup {
-                runtime: Some(runtime),
-            },
-        ));
-        #[cfg(not(feature = "repl"))]
         return Err(MechError::new(
             mech_runtime::ResidentRouteFailure {
-                class: mech_runtime::ResidentRouteFailureClass::ReplUnsupported,
-                reason: "the production run command requires a resident program; interactive mutation is available only in the full developer distribution".to_string(),
+                class: mech_runtime::ResidentRouteFailureClass::SemanticUnsupported,
+                reason: "the production run command requires a resident program target".to_string(),
             },
             None,
         ));
@@ -291,7 +261,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
 
     let result: MResult<RuntimeValueSnapshot> = match &plan.input_mode {
         RunInputMode::InlineSource(source) => runtime
-            .load_production_source_program(source.trim(), plan.resident_durability)
+            .load_source_program(source.trim(), plan.resident_durability)
             .map(|outcome| outcome.initial_value),
         _ => {
             if plan.run_paths.is_empty() {
@@ -316,7 +286,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                     )
                 })?;
                 runtime
-                    .load_production_root_program(
+                    .load_root_program(
                         SourceRequest::from_filesystem_path(&canonical_target)?,
                         cli_module_options(),
                         plan.resident_durability,
@@ -413,7 +383,7 @@ fn live_drain_limit(max_live_turns: Option<usize>, completed_live_turns: usize) 
 fn successful_live_turn_count(outcomes: &[mech_runtime::RuntimeHostInputOutcome]) -> usize {
     outcomes
         .iter()
-        .filter(|outcome| outcome.turn.is_some() || outcome.resident_turn.is_some())
+        .filter(|outcome| outcome.resident_turn.is_some())
         .count()
 }
 
@@ -423,7 +393,6 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> serde_json::Value {
         mech_runtime::RuntimeProgramRoute::None => "none",
         mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
         mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
-        _ => "invalid-production-route",
     };
     let revision = info.program_revision.map(|revision| {
         revision
@@ -441,7 +410,6 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> serde_json::Value {
         "requirements": info.requirement_count,
         "observations": info.observation_count,
         "effects": info.effect_count,
-        "legacy_turns": info.legacy_turns,
         "resident_accepted_turns": info.resident_accepted_turns,
         "resident_rejected_turns": info.resident_rejected_turns,
         "coalesced_host_packets": info.coalesced_host_packets,
@@ -504,20 +472,22 @@ mod command_outcome_tests {
     }
 
     #[test]
-    fn live_turn_limit_counts_legacy_turn_outcomes() {
+    fn live_turn_limit_counts_resident_turn_outcomes() {
         let outcomes = [
             mech_runtime::RuntimeHostInputOutcome {
                 update_count: 1,
                 ignored_update_count: 0,
                 binding_count: 1,
-                turn: Some(Default::default()),
-                resident_turn: None,
+                resident_turn: Some(mech_runtime::ResidentExternalTurnOutcome::Accepted {
+                    turn: mech_runtime::TurnId::new(1).unwrap(),
+                    receipt_sequence: mech_runtime::LedgerSequence::new(1).unwrap(),
+                    delivery_failures: Vec::new().into_boxed_slice(),
+                }),
             },
             mech_runtime::RuntimeHostInputOutcome {
                 update_count: 1,
                 ignored_update_count: 1,
                 binding_count: 0,
-                turn: None,
                 resident_turn: None,
             },
         ];
@@ -587,8 +557,6 @@ mod command_outcome_tests {
             explicit_run_command: true,
             debug: false,
             trace: false,
-            time: false,
-            repl: false,
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,

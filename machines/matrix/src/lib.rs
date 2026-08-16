@@ -291,7 +291,7 @@ macro_rules! impl_checked_matrix_binop {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: RuntimeMatrixArithmetic,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType,
@@ -359,7 +359,7 @@ macro_rules! impl_checked_matrix_binop {
             }
         }
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: RuntimeMatrixArithmetic + ConstElem + CompileConst,

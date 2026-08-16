@@ -6,12 +6,12 @@ pub use host_call::*;
 pub use resource_read::*;
 pub use resource_write::*;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{
     BytecodeCompilerContext, LegacyValue, MResult, Register, ValRef, compile_value_register,
 };
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_external_output(
     output: &ValRef,
     context: &mut dyn BytecodeCompilerContext,
@@ -20,7 +20,7 @@ pub(super) fn compile_external_output(
     compile_external_value_with_fallback(&value, output.addr(), context)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_runtime_produced_external_output(
     output: &ValRef,
     context: &mut dyn BytecodeCompilerContext,
@@ -29,7 +29,7 @@ pub(super) fn compile_runtime_produced_external_output(
     mech_core::compile_runtime_produced_register(&value, output.addr(), context)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub(super) fn compile_external_value(
     value: &LegacyValue,
     context: &mut dyn BytecodeCompilerContext,
@@ -37,7 +37,7 @@ pub(super) fn compile_external_value(
     compile_external_value_with_fallback(value, std::ptr::from_ref(value).addr(), context)
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn compile_external_value_with_fallback(
     value: &LegacyValue,
     fallback: usize,
@@ -46,10 +46,10 @@ fn compile_external_value_with_fallback(
     compile_value_register(value, fallback, context)
 }
 
-#[cfg(all(test, feature = "compiler", feature = "f64"))]
+#[cfg(all(test, feature = "semantic-compiler", feature = "f64"))]
 mod tests {
     use super::*;
-    use mech_bytecode::{CompileCtx, CompiledBytecode};
+    use crate::{CompileCtx, CompiledBytecode};
     use mech_core::{
         BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError,
         InitialSolvePolicy, LegacyValue, MResult, MechError, MechExecutionServices,
@@ -505,42 +505,6 @@ mod tests {
         assert_eq!(first.program.constants.len(), 0);
         assert_eq!(second.program.constants.len(), 0);
         assert_eq!(first_bytes, second_bytes);
-    }
-
-    #[test]
-    fn resource_read_without_const_initializer_executes_after_decode() {
-        let (_compiled, bytes, destination) = compile_resource_read(
-            matrix(4, 1, vec![1.0, 2.0, 3.0, 4.0]),
-            ResourceDelivery::Live,
-        );
-        let parsed = mech_core::ParsedProgram::from_bytes(&bytes).unwrap();
-        assert!(parsed.instructions.iter().any(|instruction| matches!(
-            instruction,
-            BytecodeInstruction::ResourceRead { dst, .. } if *dst == destination
-        )));
-        assert!(!parsed.instructions.iter().any(|instruction| matches!(
-            instruction,
-            BytecodeInstruction::ConstLoad { dst, .. } if *dst == destination
-        )));
-
-        let planning_frame = vec![11.25, -0.375, 22.5, 0.125];
-        let runtime_frame = vec![1.0, 2.0, 3.0, 4.0];
-        let mut services = RecordingReadServices::new([matrix(4, 1, runtime_frame.clone())])
-            .with_planning_representative(matrix(4, 1, planning_frame.clone()));
-        let mut program = crate::MechProgram::new(crate::MechProgramConfig::default());
-        let output = program
-            .run_bytecode_with_services(&bytes, &mut services)
-            .unwrap();
-
-        assert_eq!(output.as_vecf64().unwrap(), runtime_frame);
-        assert_ne!(output.as_vecf64().unwrap(), planning_frame);
-        assert_eq!(services.planning_calls, 1);
-        assert_eq!(services.resource_reads, 1);
-        assert_eq!(services.live_bindings, 1);
-        assert_eq!(
-            services.bound_targets[0].borrow().as_vecf64().unwrap(),
-            vec![1.0, 2.0, 3.0, 4.0]
-        );
     }
 
     #[test]

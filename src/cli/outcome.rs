@@ -1,8 +1,6 @@
 pub(crate) enum CliOutcome {
     Success,
     Exit(i32),
-    #[cfg(feature = "repl")]
-    EnterRepl(crate::cli::commands::repl::ReplStartup),
 }
 
 impl CliOutcome {
@@ -19,7 +17,5 @@ impl CliOutcome {
 pub(crate) struct RootFlags {
     pub debug: bool,
     pub trace: bool,
-    pub time: bool,
-    pub repl: bool,
     pub rounds_per_step: Option<usize>,
 }

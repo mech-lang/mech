@@ -64,6 +64,14 @@
         "kind": "bool",
         "value": true
       }
+    },
+    {
+      "name": "strict_whole_set_comparison",
+      "source": "left := {1.0, 2.0}\nright := {1.0, 2.0}\nresult := left === right\nresult",
+      "expected": {
+        "kind": "bool",
+        "value": true
+      }
     }
   ],
   "native_modules": [

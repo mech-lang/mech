@@ -33,12 +33,17 @@ resident-artifact = [
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]
 source = ["runtime", "dep:mech-syntax"]
-compiler = [
+semantic-compiler = [
   "source",
   "artifact-codec",
+  "mech-core/semantic-compiler",
+  "mech-core/serde",
+  "mech-syntax/semantic-compiler",
+]
+compiler = [
+  "semantic-compiler",
   "dep:mech-bytecode",
   "mech-core/compiler",
-  "mech-core/serde",
   "mech-syntax/compiler",
 ]
 
@@ -82,7 +87,7 @@ source_default = [
 ]
 compiler_default = ["source_default", "compiler"]
 full_runtime = ["runtime_default"]
-full_source = ["source_default"]
+full_source = ["source_default", "semantic-compiler"]
 full_compiler = ["compiler_default"]
 default = []
 base = ["source_default"]
@@ -485,27 +490,37 @@ default-features = false
 features = ["libm"]
 optional = true
 
-[dev-dependencies]
-criterion = { version = "0.8.2", default-features = false, features = ["cargo_bench_support"] }
-
 [target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
 web-time = "1.1.0"
 
 [[test]]
-name = "bytecode_plan_topology"
+name = "native_linkage"
+required-features = ["native-link"]
+
+[[test]]
+name = "program"
+required-features = ["source"]
+
+[[test]]
+name = "program_artifact_contract"
 required-features = ["compiler"]
 
-[[bench]]
-name = "program_checkpoint"
-harness = false
-required-features = ["baselib", "program", "compiler"]
+[[test]]
+name = "resident_activation_contract"
+required-features = ["compiler"]
 
-[[bench]]
-name = "reactive_turn_rollback"
-harness = false
-required-features = ["baselib", "program", "compiler"]
+[[test]]
+name = "resident_ekf_artifact_closure"
+required-features = ["compiler", "resident-artifact"]
 
-[[bench]]
-name = "integrity_constraints"
-harness = false
-required-features = ["baselib", "program", "compiler", "invariant_define"]
+[[test]]
+name = "resident_ekf_contract"
+required-features = ["resident-ekf"]
+
+[[test]]
+name = "resident_ekf_program_activation"
+required-features = ["compiler", "resident-artifact"]
+
+[[test]]
+name = "resident_ekf_program_execution"
+required-features = ["compiler", "resident-artifact"]

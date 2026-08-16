@@ -31,8 +31,6 @@ use crate::id::{
     ActorId, CapabilityId, EventId, ModuleVersionId, ObjectId, RuntimeId, TaskId, TransactionId,
 };
 
-use crate::actor::ActorTurn;
-
 use crate::store::MessageRecord;
 
 use crate::{
@@ -698,13 +696,6 @@ impl RuntimeContext {
 
     pub fn emitted_event_ids(&self) -> Vec<EventId> {
         self.events.iter().map(|event| event.id).collect()
-    }
-
-    pub(crate) fn bind_actor_turn(&mut self, turn: &ActorTurn) {
-        self.actor = Some(turn.actor);
-        self.subject = turn.subject.clone();
-        self.actor_message = Some(turn.message.clone());
-        self.actor_state = turn.state;
     }
 
     pub fn actor_message(&self) -> Option<&MessageRecord> {

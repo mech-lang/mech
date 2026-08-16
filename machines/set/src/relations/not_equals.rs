@@ -66,7 +66,7 @@ impl MechFunctionImpl for SetNotEqualsFxn {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetNotEqualsFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = "SetNotEqualsFxn".to_string();

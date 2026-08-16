@@ -348,6 +348,8 @@ fn mech_format_unresolvable_standalone_dependencies_publish_nothing() {
             .arg("format")
             .arg(&main)
             .arg("--html")
+            .arg("--shim")
+            .arg(fixture_path("controller-literal-module.html"))
             .arg("--out")
             .arg(&output)
             .output()

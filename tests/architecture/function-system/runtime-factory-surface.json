@@ -43464,6 +43464,36 @@
       "owner": "mech-compare"
     },
     {
+      "name": "TableJoinFxn::FullOuter",
+      "id_hex": "00cda73b9729bbee",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "TableJoinFxn::Inner",
+      "id_hex": "00d60fae04b061ab",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "TableJoinFxn::LeftAnti",
+      "id_hex": "00cffe01d80daf6d",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "TableJoinFxn::LeftOuter",
+      "id_hex": "000ea4f17712b087",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "TableJoinFxn::LeftSemi",
+      "id_hex": "003a7805301d4eec",
+      "owner": "mech-engine::stdlib"
+    },
+    {
+      "name": "TableJoinFxn::RightOuter",
+      "id_hex": "00338c8c3adce3f5",
+      "owner": "mech-engine::stdlib"
+    },
+    {
       "name": "TableNeq",
       "id_hex": "00319d2b345b1ac3",
       "owner": "mech-compare"

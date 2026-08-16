@@ -1,15 +1,10 @@
-use std::sync::Arc;
-
 use mech_console::{ConsoleHostFactory, ConsoleResourceProvider, RecordingConsoleBackend};
 use mech_core::{
-    EffectContract, EffectDeliveryPolicy, ExternalInteraction, FunctionCatalog,
-    FunctionCatalogBuilder, IdempotencyRequirement, LegacyValue,
+    EffectContract, EffectDeliveryPolicy, ExternalInteraction, IdempotencyRequirement, LegacyValue,
 };
 use mech_runtime::{
-    ConfigValue, HostInstanceConfig, MechRuntime, PreparedRuntimeEffect, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeCapabilityOperation, RuntimeEventKind, RuntimeHealth,
-    RuntimeHostFactory, RuntimeResourceProvider, RuntimeResourceWriteIntent,
-    RuntimeResourceWriteRequest,
+    PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeResourceProvider,
+    RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
 };
 
 fn deliver(
@@ -124,111 +119,3 @@ fn non_default_console_provider_does_not_declare_legacy_alias() {
     );
     assert!(provider.equivalent_base_uri_groups().is_empty());
 }
-
-fn runtime_with_console_instance(
-    instance: &str,
-    backend: RecordingConsoleBackend,
-    grant: RunResourceGrantConfig,
-) -> MechRuntime {
-    RuntimeBuilder::new()
-        .function_catalog(intrinsic_source_catalog())
-        .host_factory(Box::new(ConsoleHostFactory::with_backend(backend).unwrap()))
-        .unwrap()
-        .host_instance(HostInstanceConfig {
-            name: instance.to_string(),
-            provider: "console".to_string(),
-            settings: ConfigValue::Map(Default::default()),
-        })
-        .run_resource_grant(grant)
-        .build()
-        .unwrap()
-}
-
-fn intrinsic_source_catalog() -> Arc<FunctionCatalog> {
-    let mut builder = FunctionCatalogBuilder::new();
-    mech_engine::install_intrinsic_runtime(&mut builder).unwrap();
-    mech_engine::install_intrinsic_source(&mut builder).unwrap();
-    Arc::new(builder.build().unwrap())
-}
-
-#[test]
-fn run_resource_grant_authorizes_console_output_legacy_alias() {
-    let backend = RecordingConsoleBackend::new();
-    let observed = backend.clone();
-    let mut runtime = runtime_with_console_instance(
-        "console",
-        backend,
-        RunResourceGrantConfig {
-            target: "console/output".to_string(),
-            operations: vec!["write".to_string()],
-            paths: vec!["line".to_string()],
-        },
-    );
-    let mut context = runtime.runtime_context().unwrap();
-    runtime.begin_transaction(&mut context).unwrap();
-
-    runtime
-        .run_string_with_context(
-            &mut context,
-            "@out := console://output{:write(line)}\n\
-       @out/line <- \"legacy console\"\n",
-        )
-        .unwrap();
-
-    assert!(observed.lines().is_empty());
-    assert!(
-        !context
-            .events()
-            .iter()
-            .any(|event| matches!(event.kind, RuntimeEventKind::CapabilityDenied { .. })),
-    );
-
-    runtime.commit_runtime_transaction(&mut context).unwrap();
-    assert_eq!(observed.lines(), vec!["legacy console".to_string()]);
-
-    let error = runtime
-        .run_string(
-            "@out := console://output{:write(text)}\n\
-       @out/text <- \"denied\"\n",
-        )
-        .unwrap_err();
-    assert!(
-        matches!(
-            error.kind_name().as_str(),
-            "RuntimeResourceCapabilityDenied" | "CapabilityDenied"
-        ),
-        "unexpected error: {error:?}",
-    );
-    assert_eq!(observed.lines(), vec!["legacy console".to_string()]);
-    assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
-}
-
-#[test]
-fn run_resource_grant_does_not_cross_console_instances() {
-    let backend = RecordingConsoleBackend::new();
-    let observed = backend.clone();
-    let mut runtime = runtime_with_console_instance(
-        "terminal",
-        backend,
-        RunResourceGrantConfig {
-            target: "terminal/output".to_string(),
-            operations: vec!["write".to_string()],
-            paths: vec!["line".to_string()],
-        },
-    );
-
-    let error = runtime
-        .run_string(
-            "@out := console://output{:write(line)}\n\
-       @out/line <- \"must fail\"\n",
-        )
-        .unwrap_err();
-
-    assert!(
-        format!("{error:?}").contains("console://output"),
-        "unexpected error: {error:?}",
-    );
-    assert!(observed.lines().is_empty());
-    assert_eq!(runtime.runtime_health(), RuntimeHealth::Healthy);
-}
-use mech_runtime::legacy_interpreter::LegacyInterpreterTestExt as _;

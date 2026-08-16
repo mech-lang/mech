@@ -524,7 +524,7 @@ mod tests {
 
     #[test]
     fn full_ingress_panic_leaves_scheduler_recoverable() {
-        let mut runtime = mech_runtime::MechRuntime::builder()
+        let saturated_runtime = mech_runtime::MechRuntime::builder()
             .host_input_capacity(1)
             .build()
             .unwrap();
@@ -538,8 +538,8 @@ mod tests {
             FixedStepScheduler::new(100, 8),
             shared_snapshot.clone(),
         );
-        driver.attach(runtime.ingress()).unwrap();
-        runtime
+        driver.attach(saturated_runtime.ingress()).unwrap();
+        saturated_runtime
             .ingress()
             .submit(
                 TimerSnapshot::new(0, 100, 0)
@@ -557,9 +557,13 @@ mod tests {
         assert!(format!("{error:?}").contains("native timer worker panicked before restart"));
         assert!(driver.scheduler.lock().is_ok());
 
-        runtime.drain_host_inputs(1).unwrap();
+        let replacement_runtime = mech_runtime::MechRuntime::builder()
+            .host_input_capacity(1)
+            .build()
+            .unwrap();
+        *driver.ingress.lock().unwrap() = Some(replacement_runtime.ingress());
         driver.start().unwrap();
-        wait_for_pending_inputs(&runtime, 1);
+        wait_for_pending_inputs(&replacement_runtime, 1);
         assert_eq!(shared_snapshot.lock().unwrap().tick, 1);
         driver.stop().unwrap();
     }

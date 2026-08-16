@@ -156,7 +156,7 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
     let used_steps_before = cleanup_context.budget.used_steps;
     let capability_uses_before = observed_kernel.successful_uses_for_test(CapabilityId(901));
     let overlay_uses_before = runtime
-        .active_execution_transaction(cleanup_transaction)
+        .active_runtime_transaction(cleanup_transaction)
         .unwrap()
         .capabilities
         .usage_deltas()
@@ -177,7 +177,7 @@ fn poisoned_runtime_owned_mutation_is_fail_closed() {
     );
     assert_eq!(
         runtime
-            .active_execution_transaction(cleanup_transaction)
+            .active_runtime_transaction(cleanup_transaction)
             .unwrap()
             .capabilities
             .usage_deltas()
@@ -400,7 +400,7 @@ fn explicit_abort_audit_failure_is_reported_and_poisons() {
         .abort_runtime_transaction(&mut context, "audit failure abort")
         .unwrap_err();
 
-    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert_eq!(error.kind_name(), "RuntimeOperationRollbackFailed");
     assert!(
         error
             .full_chain_message()
@@ -433,7 +433,7 @@ fn transactional_abort_panic_continues_cleanup_and_poisons_afterward() {
         .abort_runtime_transaction(&mut context, "panic cleanup")
         .unwrap_err();
 
-    assert_eq!(error.kind_name(), "RuntimeProgramRollbackFailed");
+    assert_eq!(error.kind_name(), "RuntimeOperationRollbackFailed");
     assert_eq!(*log.lock().unwrap(), vec!["second:abort", "first:abort"],);
     assert!(runtime.active_effect_phase.get().is_none());
     assert!(runtime.is_poisoned());

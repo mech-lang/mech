@@ -151,6 +151,7 @@ struct WireSlot {
 enum WireProducer {
     Input(u32),
     NodeOutput { node: u32, output_ordinal: u16 },
+    Output { output: u32, source: WireSource },
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -263,6 +264,7 @@ pub fn encode_program_artifact_sections(
                 SlotRole::Input => 1,
                 SlotRole::State => 2,
                 SlotRole::Derived => 3,
+                SlotRole::Output => 4,
             },
             initializer: slot.initializer.map(|initializer| match initializer {
                 InitializerReference::Constant(constant) => constant.get(),
@@ -280,6 +282,10 @@ pub fn encode_program_artifact_sections(
             } => WireProducer::NodeOutput {
                 node: node.get(),
                 output_ordinal,
+            },
+            ProducerReference::Output { output, source } => WireProducer::Output {
+                output: output.get(),
+                source: source_to_wire(source),
             },
         })
         .collect::<Vec<_>>();
@@ -503,6 +509,7 @@ fn decode_program_artifact_sections_with_requirements(
                         1 => SlotRole::Input,
                         2 => SlotRole::State,
                         3 => SlotRole::Derived,
+                        4 => SlotRole::Output,
                         tag => {
                             return Err(ArtifactBytecodeError::InvalidWireTag {
                                 section: "slots",
@@ -518,6 +525,10 @@ fn decode_program_artifact_sections_with_requirements(
                         } => ProducerReference::NodeOutput {
                             node: NodeId(node),
                             output_ordinal,
+                        },
+                        WireProducer::Output { output, source } => ProducerReference::Output {
+                            output: OutputId(output),
+                            source: source_from_wire(source),
                         },
                     },
                     initializer: slot
@@ -860,6 +871,13 @@ fn source_from_wire(source: WireSource) -> ArtifactSource {
     match source {
         WireSource::Constant(constant) => ArtifactSource::Constant(ConstantId::new(constant)),
         WireSource::Slot(slot) => ArtifactSource::Slot(CellSlotId(slot)),
+    }
+}
+
+fn source_to_wire(source: ArtifactSource) -> WireSource {
+    match source {
+        ArtifactSource::Constant(constant) => WireSource::Constant(constant.get()),
+        ArtifactSource::Slot(slot) => WireSource::Slot(slot.get()),
     }
 }
 

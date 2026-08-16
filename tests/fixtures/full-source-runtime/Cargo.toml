@@ -9,10 +9,10 @@ mech-core = {
   path = "../../../src/core",
   default-features = false,
 }
-mech-engine = {
-  path = "../../../src/engine",
+mech-runtime = {
+  path = "../../../src/runtime",
   default-features = false,
-  features = ["source"],
+  features = ["full_source", "resident-routing-source"],
 }
 mech-stdlib = {
   path = "../../../src/stdlib",
@@ -23,9 +23,11 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
 [patch.crates-io]
+mech-bytecode = { path = "../../../src/bytecode" }
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
 mech-engine = { path = "../../../src/engine" }
+mech-runtime = { path = "../../../src/runtime" }
 mech-stdlib = { path = "../../../src/stdlib" }
 mech-combinatorics = { path = "../../../machines/combinatorics" }
 mech-compare = { path = "../../../machines/compare" }

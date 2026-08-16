@@ -63,14 +63,14 @@ where
         + 'static
         + One
         + Add<Output = T>,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: AsNaKind,
     naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
     T: FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
     C1: Dim,
@@ -202,7 +202,7 @@ mod tests {
         assert_eq!(*out.borrow(), previous);
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for RangeInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where
     T: CompileConst + ConstElem + AsValueKind,

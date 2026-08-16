@@ -16,8 +16,7 @@ impl MechRuntime {
         reason: impl Into<String>,
     ) -> MResult<()> {
         self.reject_effect_reentrancy("abort_runtime_transaction")?;
-        self.reject_program_operation_reentrancy("abort_runtime_transaction")?;
-        self.abort_runtime_transaction_internal(context, reason.into(), true, Vec::new())
+        self.abort_runtime_transaction_internal(context, reason.into(), Vec::new())
     }
 
     pub(in crate::runtime) fn abort_runtime_transaction_with_recovered_events(
@@ -27,22 +26,19 @@ impl MechRuntime {
         recovered_events: Vec<RuntimeEventKind>,
     ) -> MResult<()> {
         self.reject_effect_reentrancy("abort_runtime_transaction")?;
-        self.reject_program_operation_reentrancy("abort_runtime_transaction")?;
-        self.abort_runtime_transaction_internal(context, reason.into(), true, recovered_events)
+        self.abort_runtime_transaction_internal(context, reason.into(), recovered_events)
     }
 
     pub(in crate::runtime) fn abort_runtime_transaction_internal(
         &mut self,
         context: &mut RuntimeContext,
         reason: String,
-        restore_program: bool,
         recovered_events: Vec<RuntimeEventKind>,
     ) -> MResult<()> {
         let (transaction_id, rollback_failures) = self
             .abort_runtime_transaction_cleanup_with_recovered_events(
                 context,
                 &reason,
-                restore_program,
                 recovered_events,
             )?;
 
@@ -50,7 +46,7 @@ impl MechRuntime {
             return Ok(());
         }
 
-        Err(self.poison_program_operation(
+        Err(self.poison_runtime_operation(
             "abort_runtime_transaction",
             Some(transaction_id),
             reason,
@@ -62,27 +58,19 @@ impl MechRuntime {
         &mut self,
         context: &mut RuntimeContext,
         reason: &str,
-        restore_program: bool,
     ) -> MResult<(TransactionId, Vec<String>)> {
-        self.abort_runtime_transaction_cleanup_with_recovered_events(
-            context,
-            reason,
-            restore_program,
-            Vec::new(),
-        )
+        self.abort_runtime_transaction_cleanup_with_recovered_events(context, reason, Vec::new())
     }
 
     fn abort_runtime_transaction_cleanup_with_recovered_events(
         &mut self,
         context: &mut RuntimeContext,
         reason: &str,
-        restore_program: bool,
         recovered_events: Vec<RuntimeEventKind>,
     ) -> MResult<(TransactionId, Vec<String>)> {
         self.validate_context_for_runtime(context)?;
 
         let transaction_id = Self::context_transaction_id(context)?;
-        let owns_program = self.program_transaction_owner == Some(transaction_id);
         let mut rollback_failures = Vec::new();
         let mut envelope = self
             .active_transactions
@@ -90,22 +78,6 @@ impl MechRuntime {
             .ok_or_else(|| {
                 MechError::new(RuntimeTransactionNotFoundError { transaction_id }, None)
             })?;
-
-        if owns_program && restore_program {
-            match &mut envelope.program {
-                Some(baseline) => {
-                    while let Some(predecessor) = baseline.replacement_predecessors.pop() {
-                        self.program = predecessor;
-                    }
-                    if let Err(error) = self.program.restore(baseline.program.clone()) {
-                        rollback_failures.push(format!("program restore failed: {:?}", error,));
-                    }
-                    self.restore_live_state(baseline.live.clone());
-                }
-                None => rollback_failures
-                    .push("program owner transaction has no retained-program baseline".to_string()),
-            }
-        }
 
         if let Err(error) = envelope
             .context_baseline
@@ -138,10 +110,6 @@ impl MechRuntime {
                 "staged store discard invariant failed: {:?}",
                 error,
             ));
-        }
-
-        if owns_program {
-            self.program_transaction_owner = None;
         }
 
         for event in recovered_events {
@@ -204,29 +172,12 @@ impl MechRuntime {
                 transaction_id,
             ));
         }
-        if self.program_transaction_owner == Some(transaction_id) {
-            failures.push(format!(
-                "program owner still references transaction {} after cleanup",
-                transaction_id,
-            ));
-        }
         if context.transaction == Some(transaction_id) {
             failures.push(format!(
                 "runtime context still references transaction {} after cleanup",
                 transaction_id,
             ));
         }
-        if self
-            .active_program_operation
-            .get()
-            .is_some_and(|active| active.transaction_id == transaction_id)
-        {
-            failures.push(format!(
-                "active program operation still references transaction {} after cleanup",
-                transaction_id,
-            ));
-        }
-
         failures
     }
 
@@ -253,9 +204,6 @@ impl MechRuntime {
                 ));
             }
         }
-        if self.program_transaction_owner == Some(transaction_id) {
-            self.program_transaction_owner = None;
-        }
         if context.transaction == Some(transaction_id) {
             context.transaction = None;
         }
@@ -267,14 +215,6 @@ impl MechRuntime {
                 ));
             }
         }
-        if self
-            .active_program_operation
-            .get()
-            .is_some_and(|active| active.transaction_id == transaction_id)
-        {
-            self.active_program_operation.set(None);
-        }
-
         failures
     }
 
@@ -287,10 +227,7 @@ impl MechRuntime {
     ) -> Vec<String> {
         let mut failures = Vec::new();
 
-        #[cfg(test)]
-        failures.extend(self.apply_program_transaction_test_fault(transaction_id));
-
-        match self.abort_runtime_transaction_cleanup(context, reason, false) {
+        match self.abort_runtime_transaction_cleanup(context, reason) {
             Ok((cleaned_transaction_id, cleanup_failures)) => {
                 failures.extend(cleanup_failures);
                 if cleaned_transaction_id != transaction_id {

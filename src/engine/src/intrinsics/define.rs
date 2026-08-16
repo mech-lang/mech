@@ -63,7 +63,7 @@ impl MechFunctionImpl for BytecodeIntegrityConstraintMarker {
     }
 }
 
-#[cfg(all(feature = "invariant_define", feature = "compiler"))]
+#[cfg(all(feature = "invariant_define", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for BytecodeIntegrityConstraintMarker {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination =
@@ -92,12 +92,12 @@ pub struct VariableDefineMatrix<T, MatA> {
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
 where
     T: Debug + Clone + Sync + Send + 'static + ConstElem + AsValueKind,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     for<'a> &'a MatA: IntoIterator<Item = &'a T>,
     for<'a> &'a mut MatA: IntoIterator<Item = &'a mut T>,
     MatA: Debug + Clone + ConstElem + AsNaKind + FunctionRuntimeType + 'static,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     MatA: CompileConst,
     Ref<MatA>: ToValue,
 {
@@ -155,7 +155,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T, MatA> MechFunctionCompiler for VariableDefineMatrix<T, MatA>
 where
     T: CompileConst + ConstElem + AsValueKind,
@@ -240,7 +240,7 @@ macro_rules! impl_variable_define_fxn {
           Ok(self.reactive_output_values())
         }
       }
-      #[cfg(feature = "compiler")]
+      #[cfg(feature = "semantic-compiler")]
       impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
       fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
           let variable_value = self.var.to_value();
@@ -631,7 +631,7 @@ impl MechFunctionImpl for VariableDefineEmpty {
         format!("{:#?}", self)
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let variable_value = self.var.borrow().clone();

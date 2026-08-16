@@ -1,4 +1,4 @@
-use crate::MechProgram;
+use crate::CompilerPlanningProgram;
 use crate::{Interpreter, InterpreterRef};
 use mech_core::*;
 
@@ -149,11 +149,11 @@ struct ResolvedIntegrityValue {
     formatted: String,
 }
 
-impl MechProgram {
+impl CompilerPlanningProgram {
     pub fn integrity_constraint_report(&self) -> MResult<IntegrityConstraintReport> {
         let mut evaluations = Vec::new();
         let mut visited = Vec::new();
-        collect_interpreter_constraints(self.interpreter(), None, &mut visited, &mut evaluations)?;
+        collect_interpreter_constraints(&self.interpreter, None, &mut visited, &mut evaluations)?;
         evaluations.sort_by_key(|evaluation| (evaluation.interpreter_id, evaluation.constraint_id));
         Ok(IntegrityConstraintReport::from_evaluations(evaluations))
     }
@@ -553,50 +553,27 @@ fn stable_value_kind(value: &LegacyValue) -> Result<ValueKind, ()> {
 #[cfg(all(test, feature = "source"))]
 mod tests {
     use super::*;
-    use crate::{MechProgramConfig, ProgramInputUpdate};
+    use crate::CompilerPlanningConfig;
     use mech_syntax::parser;
-    use std::{cell::Cell, rc::Rc};
 
-    fn program_with_constraint(source: &str) -> MechProgram {
-        let mut program = MechProgram::with_function_catalog(
-            MechProgramConfig::default(),
+    fn program_with_constraint(source: &str) -> CompilerPlanningProgram {
+        let mut program = CompilerPlanningProgram::with_function_catalog(
+            CompilerPlanningConfig::default(),
             crate::test_support::catalog::function_catalog(),
         );
-        program.run_string(source).unwrap();
+        program.plan_source_for_test(source).unwrap();
         program
     }
 
-    fn set_constraint_result(program: &MechProgram, name: &str, result: LegacyValue) {
+    fn set_constraint_result(program: &CompilerPlanningProgram, name: &str, result: LegacyValue) {
         program
-            .interpreter()
+            .interpreter
             .state
             .borrow_mut()
             .integrity_constraints
             .get_mut(&hash_str(name))
             .unwrap()
             .result = Ref::new(result);
-    }
-
-    fn install_constraint_result(program: &MechProgram, name: &str, result: Ref<bool>) {
-        let id = hash_str(name);
-        program
-            .interpreter()
-            .state
-            .borrow_mut()
-            .integrity_constraints
-            .insert(
-                id,
-                IntegrityConstraint {
-                    id,
-                    name: name.to_string(),
-                    expression: name.to_string(),
-                    result: Ref::new(LegacyValue::Bool(result)),
-                    lhs: None,
-                    operator: None,
-                    rhs: None,
-                    tokens: Vec::new(),
-                },
-            );
     }
 
     #[test]
@@ -713,7 +690,7 @@ mod tests {
     #[test]
     fn hierarchy_validation_is_complete_and_keyed_by_interpreter() {
         let mut program = program_with_constraint("shared! := false");
-        let root_id = program.interpreter().id;
+        let root_id = program.interpreter.id;
         let child_id = root_id.wrapping_add(101);
         let grandchild_id = root_id.wrapping_add(202);
         let mut child = Interpreter::with_function_catalog(
@@ -737,7 +714,7 @@ mod tests {
             .borrow_mut()
             .insert(grandchild_id, Ref::new(Box::new(grandchild)));
         program
-            .interpreter_mut()
+            .interpreter
             .sub_interpreters
             .borrow_mut()
             .insert(child_id, Ref::new(Box::new(child)));
@@ -767,16 +744,16 @@ mod tests {
 
     #[test]
     fn repeated_interpreter_handle_is_an_infrastructure_error() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
-        let child_id = program.interpreter().id.wrapping_add(1);
+        let mut program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
+        let child_id = program.interpreter.id.wrapping_add(1);
         let child = Ref::new(Box::new(Interpreter::new(child_id, 10_000)));
         program
-            .interpreter_mut()
+            .interpreter
             .sub_interpreters
             .borrow_mut()
             .insert(1, child.clone());
         program
-            .interpreter_mut()
+            .interpreter
             .sub_interpreters
             .borrow_mut()
             .insert(2, child);
@@ -791,7 +768,7 @@ mod tests {
     fn result_borrow_conflict_is_an_aggregated_constraint_failure() {
         let program = program_with_constraint("safe! := true");
         let result = program
-            .interpreter()
+            .interpreter
             .state
             .borrow()
             .integrity_constraints
@@ -817,7 +794,7 @@ mod tests {
         let program =
             program_with_constraint("target := 2.0\nmaximum := 1.0\nsafe! := target <= maximum");
         let lhs = program
-            .interpreter()
+            .interpreter
             .state
             .borrow()
             .integrity_constraints
@@ -842,10 +819,10 @@ mod tests {
     fn reporting_is_repeatable_and_does_not_change_program_state() {
         let program =
             program_with_constraint("target := 1.0\nmaximum := 2.0\nsafe! := target <= maximum");
-        let plan_handle = program.interpreter().plan().0.id();
-        let pending_before = program.interpreter().has_pending_reactive_registers();
+        let plan_handle = program.interpreter.plan().0.id();
+        let pending_before = program.interpreter.has_pending_reactive_registers();
         let state_len = program
-            .interpreter()
+            .interpreter
             .state
             .borrow()
             .integrity_constraints
@@ -871,224 +848,19 @@ mod tests {
                 .collect::<Vec<_>>()
         };
         assert_eq!(summary(&first), summary(&second));
-        assert_eq!(program.interpreter().plan().0.id(), plan_handle);
+        assert_eq!(program.interpreter.plan().0.id(), plan_handle);
         assert_eq!(
-            program.interpreter().has_pending_reactive_registers(),
+            program.interpreter.has_pending_reactive_registers(),
             pending_before,
         );
         assert_eq!(
             program
-                .interpreter()
+                .interpreter
                 .state
                 .borrow()
                 .integrity_constraints
                 .len(),
             state_len,
         );
-    }
-
-    struct IntegrityOperationFunction {
-        next_result: Rc<Cell<bool>>,
-        result: Ref<bool>,
-        output: Ref<usize>,
-        hidden: Ref<usize>,
-    }
-
-    impl MechFunctionImpl for IntegrityOperationFunction {
-        fn solve_result(&self) -> MResult<()> {
-            *self.result.borrow_mut() = self.next_result.get();
-            *self.output.borrow_mut() += 1;
-            *self.hidden.borrow_mut() += 1;
-            Ok(())
-        }
-
-        fn out(&self) -> LegacyValue {
-            LegacyValue::Bool(self.result.clone())
-        }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-            Ok(vec![
-                LegacyValue::Bool(self.result.clone()),
-                LegacyValue::Index(self.output.clone()),
-                LegacyValue::Index(self.hidden.clone()),
-            ])
-        }
-
-        fn to_string(&self) -> String {
-            "integrity-operation".to_string()
-        }
-    }
-
-    #[cfg(feature = "compiler")]
-    impl MechFunctionCompiler for IntegrityOperationFunction {
-        fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-            Ok(0)
-        }
-    }
-
-    fn integrity_operation_function(
-        next_result: Rc<Cell<bool>>,
-        result: Ref<bool>,
-        output: Ref<usize>,
-        hidden: Ref<usize>,
-    ) -> IntegrityOperationFunction {
-        IntegrityOperationFunction {
-            next_result,
-            result,
-            output,
-            hidden,
-        }
-    }
-
-    fn assert_step_integrity_rollback(step_id: u64) {
-        let mut program = MechProgram::new(MechProgramConfig::default());
-        let next_result = Rc::new(Cell::new(false));
-        let result = Ref::new(true);
-        let output = Ref::new(10usize);
-        let hidden = Ref::new(20usize);
-        program
-            .interpreter()
-            .plan()
-            .add_function(Box::new(integrity_operation_function(
-                next_result.clone(),
-                result.clone(),
-                output.clone(),
-                hidden.clone(),
-            )));
-        install_constraint_result(&program, "step-safe!", result.clone());
-
-        let error = program.step(step_id).unwrap_err();
-
-        assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
-        assert_eq!(
-            (*result.borrow(), *output.borrow(), *hidden.borrow()),
-            (true, 10, 20),
-        );
-        next_result.set(true);
-        program.step(step_id).unwrap();
-        assert_eq!(
-            (*result.borrow(), *output.borrow(), *hidden.borrow()),
-            (true, 11, 21),
-        );
-    }
-
-    #[test]
-    fn whole_plan_step_rolls_back_an_invalid_candidate() {
-        assert_step_integrity_rollback(0);
-    }
-
-    #[test]
-    fn selected_step_rolls_back_an_invalid_candidate() {
-        assert_step_integrity_rollback(1);
-    }
-
-    #[test]
-    fn advance_reactive_turn_rolls_back_an_invalid_candidate() {
-        let mut program = MechProgram::new(MechProgramConfig::default());
-        let interpreter_id = program.interpreter().id;
-        let trigger = Ref::new(0usize);
-        let next_result = Rc::new(Cell::new(false));
-        let result = Ref::new(true);
-        let output = Ref::new(10usize);
-        let hidden = Ref::new(20usize);
-        program
-            .interpreter()
-            .plan()
-            .0
-            .borrow_mut()
-            .register(
-                Box::new(integrity_operation_function(
-                    next_result.clone(),
-                    result.clone(),
-                    output.clone(),
-                    hidden.clone(),
-                )),
-                &[LegacyValue::Index(trigger.clone())],
-            )
-            .unwrap();
-        install_constraint_result(&program, "advance-safe!", result.clone());
-        let dirty_cells = LegacyValue::Index(trigger).reactive_root_cell_ids();
-
-        let error = program
-            .advance_reactive_turn(interpreter_id, &dirty_cells)
-            .unwrap_err();
-
-        assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
-        assert_eq!(
-            (*result.borrow(), *output.borrow(), *hidden.borrow()),
-            (true, 10, 20),
-        );
-        assert!(!program.interpreter().has_pending_reactive_registers());
-        next_result.set(true);
-        program
-            .advance_reactive_turn(interpreter_id, &dirty_cells)
-            .unwrap();
-        assert_eq!(
-            (*result.borrow(), *output.borrow(), *hidden.borrow()),
-            (true, 11, 21),
-        );
-    }
-
-    #[test]
-    fn invalid_reactive_candidate_rolls_back_and_later_valid_turn_succeeds() {
-        let mut program = MechProgram::with_function_catalog(
-            MechProgramConfig::default(),
-            crate::test_support::catalog::function_catalog(),
-        );
-        let interpreter_id = program.interpreter().id;
-        let input = program
-            .ensure_input(
-                interpreter_id,
-                hash_str("input"),
-                "input",
-                LegacyValue::F64(Ref::new(1.0)),
-            )
-            .unwrap();
-        program
-            .run_string("output := input * 2.0\nsafe! := output <= 10.0")
-            .unwrap();
-
-        let error = program
-            .update_inputs_and_advance_turn(&[ProgramInputUpdate {
-                input,
-                value: LegacyValue::F64(Ref::new(6.0)),
-            }])
-            .unwrap_err();
-        assert_eq!(error.kind_name(), "IntegrityConstraintViolationSet");
-        assert_eq!(
-            *program
-                .interpreter()
-                .symbols()
-                .borrow()
-                .get(hash_str("input"))
-                .unwrap()
-                .borrow()
-                .as_f64()
-                .unwrap()
-                .borrow(),
-            1.0,
-        );
-        assert_eq!(
-            *program
-                .interpreter()
-                .symbols()
-                .borrow()
-                .get(hash_str("output"))
-                .unwrap()
-                .borrow()
-                .as_f64()
-                .unwrap()
-                .borrow(),
-            2.0,
-        );
-        program.validate_integrity_constraints().unwrap();
-
-        program
-            .update_inputs_and_advance_turn(&[ProgramInputUpdate {
-                input,
-                value: LegacyValue::F64(Ref::new(4.0)),
-            }])
-            .unwrap();
-        program.validate_integrity_constraints().unwrap();
     }
 }

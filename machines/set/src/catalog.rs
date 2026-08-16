@@ -1,6 +1,6 @@
 use mech_core::{
-    function_shape_contract_violation, FunctionArgs, FunctionCatalogBuilder, MResult,
-    MechFunctionFactory, RuntimeFunctionContract, RuntimeOutputAliasPolicy, ValueKind,
+    FunctionArgs, FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
+    RuntimeOutputAliasPolicy, ValueKind, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
@@ -253,9 +253,8 @@ fn required_output_set_element_kind(
     args: &FunctionArgs,
     contract: &'static str,
 ) -> MResult<ValueKind> {
-    set_element_kind(args.output_value()).ok_or_else(|| {
-        function_shape_contract_violation(contract, "output must be a set")
-    })
+    set_element_kind(args.output_value())
+        .ok_or_else(|| function_shape_contract_violation(contract, "output must be a set"))
 }
 
 fn require_same_kind(
@@ -561,15 +560,10 @@ mod tests {
     }
 }
 
-#[cfg(all(
-    test,
-    feature = "u8",
-    feature = "bool",
-    feature = "cartesian_product"
-))]
+#[cfg(all(test, feature = "u8", feature = "bool", feature = "cartesian_product"))]
 mod runtime_schema_contract_tests {
     use super::*;
-    use mech_core::{set::MechSet, Ref, LegacyValue};
+    use mech_core::{LegacyValue, Ref, set::MechSet};
 
     fn set(kind: ValueKind) -> LegacyValue {
         LegacyValue::Set(Ref::new(MechSet::new(kind, 0)))
@@ -577,19 +571,13 @@ mod runtime_schema_contract_tests {
 
     #[test]
     fn typed_set_contracts_reject_erased_element_schema_mismatches() {
-        let same_set_args = FunctionArgs::Binary(
-            set(ValueKind::U8),
-            set(ValueKind::U8),
-            set(ValueKind::U8),
-        );
+        let same_set_args =
+            FunctionArgs::Binary(set(ValueKind::U8), set(ValueKind::U8), set(ValueKind::U8));
         validate_set_binary_output_contract(&same_set_args).unwrap();
         validate_set_binary_relation_contract(&same_set_args).unwrap();
 
-        let mismatched_sets = FunctionArgs::Binary(
-            set(ValueKind::U8),
-            set(ValueKind::U8),
-            set(ValueKind::Bool),
-        );
+        let mismatched_sets =
+            FunctionArgs::Binary(set(ValueKind::U8), set(ValueKind::U8), set(ValueKind::Bool));
         assert_eq!(
             validate_set_binary_output_contract(&mismatched_sets)
                 .unwrap_err()

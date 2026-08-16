@@ -1,6 +1,6 @@
 //! Runtime-owned effect journal and lifecycle mechanics.
 
-use super::transaction::{RuntimeExecutionTransactionState, RuntimeHealth, RuntimePoisonRecord};
+use super::transaction::{ActiveRuntimeTransactionState, RuntimeHealth, RuntimePoisonRecord};
 use crate::runtime::MechRuntime;
 use crate::runtime::extension::{catch_extension, invoke_extension};
 use crate::runtime::state::ScopedRuntimeState;
@@ -790,8 +790,8 @@ impl MechRuntime {
         self.validate_context_for_runtime(context)?;
 
         let transaction_id = Self::context_transaction_id(context)?;
-        if self.active_execution_transaction(transaction_id)?.state
-            != RuntimeExecutionTransactionState::Active
+        if self.active_runtime_transaction(transaction_id)?.state
+            != ActiveRuntimeTransactionState::Active
         {
             return Err(MechError::new(
                 RuntimeInvalidOperationError {
@@ -811,7 +811,7 @@ impl MechRuntime {
         let cost = metadata.cost;
         context.charge_bytes(cost.bytes)?;
         context.charge_items(cost.items)?;
-        let transaction = self.active_execution_transaction(transaction_id)?;
+        let transaction = self.active_runtime_transaction(transaction_id)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
             transaction.store.gate_a_staged_item_count(),
@@ -819,7 +819,7 @@ impl MechRuntime {
         let store_before = transaction.store.clone();
         let effect_mark = transaction.effects.mark();
         let effect_id = self
-            .active_execution_transaction_mut(transaction_id)?
+            .active_runtime_transaction_mut(transaction_id)?
             .effects
             .stage(transaction_id, effect);
 
@@ -838,7 +838,7 @@ impl MechRuntime {
                 ActiveRuntimeEffectPhase::Aborting,
             );
             let cleanup = {
-                let transaction = self.active_execution_transaction_mut(transaction_id)?;
+                let transaction = self.active_runtime_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 transaction.effects.rollback_to(effect_mark)
             };
@@ -869,8 +869,8 @@ impl MechRuntime {
         self.validate_context_for_runtime(context)?;
 
         let transaction_id = Self::context_transaction_id(context)?;
-        if self.active_execution_transaction(transaction_id)?.state
-            != RuntimeExecutionTransactionState::Active
+        if self.active_runtime_transaction(transaction_id)?.state
+            != ActiveRuntimeTransactionState::Active
         {
             return Err(MechError::new(
                 RuntimeInvalidOperationError {
@@ -890,7 +890,7 @@ impl MechRuntime {
         let cost = metadata.cost;
         context.charge_bytes(cost.bytes)?;
         context.charge_items(cost.items)?;
-        let transaction = self.active_execution_transaction(transaction_id)?;
+        let transaction = self.active_runtime_transaction(transaction_id)?;
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
             transaction.store.gate_a_staged_item_count(),
@@ -898,7 +898,7 @@ impl MechRuntime {
         let store_before = transaction.store.clone();
         let effect_mark = transaction.effects.mark();
         let effect_id = self
-            .active_execution_transaction_mut(transaction_id)?
+            .active_runtime_transaction_mut(transaction_id)?
             .effects
             .stage_resource_write(transaction_id, effect, resource_identity, path, value);
 
@@ -917,7 +917,7 @@ impl MechRuntime {
                 ActiveRuntimeEffectPhase::Aborting,
             );
             let cleanup = {
-                let transaction = self.active_execution_transaction_mut(transaction_id)?;
+                let transaction = self.active_runtime_transaction_mut(transaction_id)?;
                 transaction.store = store_before;
                 transaction.effects.rollback_to(effect_mark)
             };
@@ -933,69 +933,6 @@ impl MechRuntime {
             ));
         }
 
-        Ok(effect_id)
-    }
-
-    pub(in crate::runtime) fn execute_runtime_effect_immediately(
-        &mut self,
-        mut effect: PreparedRuntimeEffect,
-    ) -> MResult<RuntimeEffectId> {
-        self.ensure_runtime_mutation_allowed("execute_runtime_effect_immediately")?;
-
-        let effect_id = RuntimeEffectId {
-            transaction: self.next_transaction_id(),
-            sequence: 0,
-        };
-        match &mut effect {
-            PreparedRuntimeEffect::Transactional(effect) => {
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Preparing,
-                );
-                let prepare_result = effect.prepare();
-                drop(phase_guard);
-                prepare_result?;
-
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Committing,
-                );
-                let commit_result = effect.commit();
-                drop(phase_guard);
-                if let Err(error) = commit_result {
-                    return Err(self.poison_external_commit_indeterminate(
-                        effect_id.transaction,
-                        vec![RuntimeEffectFailure {
-                            effect_id,
-                            phase: RuntimeEffectFailurePhase::Commit,
-                            message: format!("{:?}", error),
-                        }],
-                        vec![format!(
-                            "immediate transactional effect {} commit failed: {:?}",
-                            effect_id, error,
-                        )],
-                    ));
-                }
-            }
-            PreparedRuntimeEffect::Compensatable(effect) => {
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Applying,
-                );
-                let result = effect.apply();
-                drop(phase_guard);
-                result?;
-            }
-            PreparedRuntimeEffect::AfterCommit(effect) => {
-                let phase_guard = ScopedRuntimeState::enter(
-                    &self.active_effect_phase,
-                    ActiveRuntimeEffectPhase::Delivering,
-                );
-                let result = effect.deliver();
-                drop(phase_guard);
-                result?;
-            }
-        }
         Ok(effect_id)
     }
 }

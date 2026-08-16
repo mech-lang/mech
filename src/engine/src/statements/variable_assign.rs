@@ -1,5 +1,5 @@
 #[cfg(feature = "variable_assign")]
-use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableError};
+use super::{NotMutableError, UndefinedVariableError};
 use crate::LegacyValue;
 #[cfg(all(feature = "subscript", feature = "assign", feature = "map"))]
 use crate::MapAssignScalar;
@@ -61,13 +61,11 @@ pub fn variable_assign(
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
-    let mut source = expression(&var_assgn.expression, env, p)?;
     let slc = &var_assgn.target;
     if slc.context.is_some() {
-        return Err(MechError::new(AddressedAssignmentUnsupported, None)
-            .with_compiler_loc()
-            .with_tokens(slc.tokens()));
+        return super::context_assign(var_assgn, env, p);
     }
+    let mut source = expression(&var_assgn.expression, env, p)?;
     let id = slc.name.hash();
     let sink = {
         let symbols = p.symbols();

@@ -4,29 +4,12 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use mech_core::*;
-#[cfg(feature = "test")]
-use mech_engine::IntegrityConstraintReport;
 #[cfg(feature = "build")]
 use mech_runtime::{
     ActorBootstrapConfig, ActorHostPlanningState, HostInstanceConfig, PlannedPureHostFunction,
-    RunResourceGrantConfig, RuntimeValueSnapshot,
+    ProgramCompiler, RunResourceGrantConfig, RuntimeValueSnapshot,
 };
-use mech_runtime::{
-    FileSourceResolver, MechRuntime, ModuleBuildOptions, RuntimeBuilder, RuntimeConfig,
-    SourceRequest,
-};
-
-#[cfg(feature = "test")]
-pub(crate) struct SourceModuleExecution {
-    pub(crate) runtime: MechRuntime,
-    pub(crate) integrity: IntegrityConstraintReport,
-}
-
-struct SourceModuleExecutionInternal {
-    runtime: MechRuntime,
-    #[cfg(feature = "test")]
-    integrity: IntegrityConstraintReport,
-}
+use mech_runtime::{FileSourceResolver, RuntimeBuilder, RuntimeConfig};
 
 #[derive(Debug, Clone)]
 struct RuntimeStepLimitConversionError {
@@ -71,14 +54,12 @@ pub(crate) fn module_runtime_config(
     name: String,
     debug_enabled: bool,
     trace_enabled: bool,
-    profile_enabled: bool,
     max_steps_per_turn: usize,
 ) -> MResult<RuntimeConfig> {
     let mut config = RuntimeConfig::default();
     config.name = name;
     config.diagnostics.debug_enabled = debug_enabled;
     config.diagnostics.trace_enabled = trace_enabled;
-    config.diagnostics.profile_enabled = profile_enabled;
     config.limits.max_steps_per_turn =
         Some(u64::try_from(max_steps_per_turn).map_err(|error| {
             MechError::new(
@@ -91,18 +72,13 @@ pub(crate) fn module_runtime_config(
             .with_compiler_loc()
         })?);
 
-    // Legacy `mech build` and `mech test` constrained interpreter rounds but
-    // imposed no wall-clock deadline. These commands execute trusted local
-    // project sources, so runtime-backed module resolution must preserve that
-    // behavior rather than inheriting RuntimeConfig's one-second default.
+    // Build planning compiles trusted local project sources and intentionally
+    // has no wall-clock deadline. Preserve that tool behavior rather than
+    // inheriting RuntimeConfig's one-second turn default.
     config.limits.max_turn_duration_ms = None;
 
     config.validate()?;
     Ok(config)
-}
-
-fn module_build_options() -> ModuleBuildOptions<'static> {
-    ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[])
 }
 
 fn canonical_source_roots(roots: &[PathBuf]) -> MResult<Vec<PathBuf>> {
@@ -144,40 +120,52 @@ fn resolver_roots(canonical_roots: &[PathBuf]) -> MResult<Vec<PathBuf>> {
     Ok(roots)
 }
 
-#[cfg(feature = "legacy-interpreter")]
-pub(crate) fn execute_source_module_roots(
-    config: RuntimeConfig,
-    roots: &[PathBuf],
-) -> MResult<MechRuntime> {
-    execute_source_module_roots_internal(config, roots).map(|execution| execution.runtime)
-}
-
-/// Compile trusted local roots in plan mode for the build command. This shares
-/// the resolver and module execution path with source commands, but installs
-/// only effect-free planning hosts and never starts input drivers.
+/// Construct the compiler owner for trusted local build roots. It shares the
+/// resolver and provider-planning environment with runtime source loading but
+/// never constructs a live runtime or attaches input drivers.
 #[cfg(feature = "build")]
-pub(crate) fn prepare_planning_source_module_runtime(
+pub(crate) fn prepare_source_program_compiler(
     config: RuntimeConfig,
+    cli_grants: &crate::cli::host_grants::EffectiveCliHostGrants,
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
     actor_bootstrap: Option<&ActorBootstrapConfig>,
     roots: &[PathBuf],
-) -> MResult<(MechRuntime, Vec<PathBuf>)> {
+) -> MResult<(ProgramCompiler, Vec<PathBuf>)> {
     let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
-    let mut builder = builder.planning();
-    let providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
+    let mut builder = builder;
+    let mut providers = crate::cli::host_configuration::configured_provider_names(configured_hosts);
+    providers.insert("cli".to_string());
     for provider in &providers {
         builder = builder.host_factory(mech_build::selected_planning_host_factory(provider)?)?;
     }
-    (builder, _) = crate::cli::host_configuration::materialize_host_configuration(
+    let (next_builder, mut registered_instances) =
+        crate::cli::host_configuration::materialize_host_configuration(
+            builder,
+            configured_hosts,
+            &[],
+            &providers,
+        )?;
+    builder = next_builder;
+    if !registered_instances.contains("cli") {
+        registered_instances.insert("cli".to_string());
+        builder = builder.host_instance(HostInstanceConfig {
+            name: "cli".to_string(),
+            provider: "cli".to_string(),
+            settings: mech_runtime::ConfigValue::Map(std::collections::BTreeMap::new()),
+        });
+    }
+    for grant in cli_grants.to_run_resource_grants() {
+        builder = builder.run_resource_grant(grant);
+    }
+    builder = crate::cli::host_configuration::materialize_run_grants(
         builder,
-        configured_hosts,
         run_grants,
-        &providers,
+        &registered_instances,
     )?;
     builder = install_actor_planning_functions(builder, actor_bootstrap.cloned())?;
 
-    Ok((builder.build()?, canonical_roots))
+    Ok((builder.build_compiler()?, canonical_roots))
 }
 
 #[cfg(feature = "build")]
@@ -261,47 +249,6 @@ fn install_actor_planning_functions(
     ))
 }
 
-#[cfg(feature = "test")]
-pub(crate) fn execute_source_module_roots_with_report(
-    config: RuntimeConfig,
-    roots: &[PathBuf],
-) -> MResult<SourceModuleExecution> {
-    execute_source_module_roots_internal(config, roots).map(|execution| SourceModuleExecution {
-        runtime: execution.runtime,
-        integrity: execution.integrity,
-    })
-}
-
-#[cfg(feature = "legacy-interpreter")]
-fn execute_source_module_roots_internal(
-    config: RuntimeConfig,
-    roots: &[PathBuf],
-) -> MResult<SourceModuleExecutionInternal> {
-    let (builder, canonical_roots) = source_module_runtime_builder(config, roots)?;
-    let mut runtime = builder.build()?;
-    #[cfg(feature = "test")]
-    let mut integrity_evaluations = Vec::new();
-    for root in canonical_roots {
-        let request = SourceRequest::from_filesystem_path(&root)?;
-        #[cfg(feature = "test")]
-        {
-            let report = runtime
-                .legacy_interpreter()
-                .resolve_and_run_root_module_report(request, module_build_options())?;
-            integrity_evaluations.extend(report.integrity.evaluations);
-        }
-        #[cfg(not(feature = "test"))]
-        runtime
-            .legacy_interpreter()
-            .resolve_and_run_root_module(request, module_build_options())?;
-    }
-    Ok(SourceModuleExecutionInternal {
-        runtime,
-        #[cfg(feature = "test")]
-        integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
-    })
-}
-
 fn source_module_runtime_builder(
     config: RuntimeConfig,
     roots: &[PathBuf],
@@ -319,10 +266,9 @@ fn source_module_runtime_builder(
     Ok((builder, canonical_roots))
 }
 
-#[cfg(all(test, feature = "legacy-interpreter"))]
+#[cfg(test)]
 mod tests {
     use super::*;
-    use mech_runtime::RuntimeValueSnapshot;
 
     fn temp_root(label: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!(
@@ -336,27 +282,10 @@ mod tests {
         root
     }
 
-    fn config() -> RuntimeConfig {
-        module_runtime_config(
-            "module-execution-test".to_string(),
-            false,
-            false,
-            false,
-            10_000,
-        )
-        .unwrap()
-    }
-
     #[test]
     fn module_runtime_config_preserves_unbounded_tool_duration() {
-        let config = module_runtime_config(
-            "tool-duration-test".to_string(),
-            false,
-            false,
-            false,
-            12_345,
-        )
-        .unwrap();
+        let config =
+            module_runtime_config("tool-duration-test".to_string(), false, false, 12_345).unwrap();
 
         assert_eq!(config.limits.max_steps_per_turn, Some(12_345));
         assert_eq!(config.limits.max_turn_duration_ms, None);
@@ -364,103 +293,6 @@ mod tests {
             config.limits.max_source_bytes,
             RuntimeConfig::default().limits.max_source_bytes,
         );
-    }
-
-    fn assert_f64(value: RuntimeValueSnapshot, expected: f64) {
-        match value.into_value() {
-            LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
-            LegacyValue::MutableReference(value) => match &*value.borrow() {
-                LegacyValue::F64(value) => assert_eq!(*value.borrow(), expected),
-                other => panic!("expected f64 value, got {other:?}"),
-            },
-            other => panic!("expected f64 value, got {other:?}"),
-        }
-    }
-
-    #[cfg(feature = "build")]
-    fn assert_string(value: RuntimeValueSnapshot, expected: &str) {
-        match value.into_value() {
-            LegacyValue::String(value) => assert_eq!(value.borrow().as_str(), expected),
-            LegacyValue::MutableReference(value) => match &*value.borrow() {
-                LegacyValue::String(value) => assert_eq!(value.borrow().as_str(), expected),
-                other => panic!("expected string value, got {other:?}"),
-            },
-            other => panic!("expected string value, got {other:?}"),
-        }
-    }
-
-    #[test]
-    fn resolves_sibling_relative_imports_from_absolute_roots() {
-        let root = temp_root("sibling");
-        let main = root.join("main.mec");
-        std::fs::write(&main, "+> ./dep.mec\nanswer := dep/value + 1\nanswer\n").unwrap();
-        std::fs::write(root.join("dep.mec"), "value := 41\n<+ value\n").unwrap();
-
-        let runtime = execute_source_module_roots(config(), &[main]).unwrap();
-
-        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn resolves_nested_relative_imports_from_importing_module() {
-        let root = temp_root("nested");
-        let main = root.join("main.mec");
-        let lib = root.join("lib");
-        std::fs::create_dir_all(&lib).unwrap();
-        std::fs::write(
-            &main,
-            "+> ./lib/first.mec\nanswer := first/value + 1\nanswer\n",
-        )
-        .unwrap();
-        std::fs::write(
-            lib.join("first.mec"),
-            "+> ./second.mec\nvalue := second/value + 1\n<+ value\n",
-        )
-        .unwrap();
-        std::fs::write(lib.join("second.mec"), "value := 40\n<+ value\n").unwrap();
-
-        let runtime = execute_source_module_roots(config(), &[main]).unwrap();
-
-        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn missing_dependencies_preserve_runtime_dependency_errors() {
-        let root = temp_root("missing");
-        let main = root.join("main.mec");
-        std::fs::write(&main, "+> ./missing.mec\nanswer := 1\n").unwrap();
-
-        let error = execute_source_module_roots(config(), &[main]).unwrap_err();
-
-        assert!(
-            error
-                .kind_as::<mech_runtime::RuntimeModuleDependencyMissingError>()
-                .is_some()
-        );
-        let chain = error.full_chain_message();
-        assert!(chain.contains("missing.mec"));
-        assert!(chain.contains("main.mec"));
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[test]
-    fn multiple_roots_execute_in_input_order() {
-        let root = temp_root("multiple-roots");
-        let first_dir = root.join("first");
-        let second_dir = root.join("second");
-        std::fs::create_dir_all(&first_dir).unwrap();
-        std::fs::create_dir_all(&second_dir).unwrap();
-        let first = first_dir.join("first.mec");
-        let second = second_dir.join("second.mec");
-        std::fs::write(&first, "marker := 1\n").unwrap();
-        std::fs::write(&second, "answer := marker + 1\n").unwrap();
-
-        let runtime = execute_source_module_roots(config(), &[first, second]).unwrap();
-
-        assert_f64(runtime.root_symbol_value("answer").unwrap(), 2.0);
-        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
@@ -493,46 +325,6 @@ mod tests {
         let message = error.full_chain_message();
         assert!(message.contains(&missing.display().to_string()));
         assert!(message.contains("canonicalize source root"));
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn build_module_execution_preserves_non_utf8_root_path() {
-        use std::ffi::OsString;
-        use std::os::unix::ffi::OsStringExt;
-
-        let root = temp_root("non-utf8-build");
-        let source = root.join(OsString::from_vec(b"build-\xFF.mec".to_vec()));
-        std::fs::write(&source, "answer := 42\nanswer\n").unwrap();
-
-        let runtime = execute_source_module_roots(config(), &[source]).unwrap();
-
-        assert_f64(runtime.root_symbol_value("answer").unwrap(), 42.0);
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[cfg(all(target_os = "linux", feature = "test"))]
-    #[test]
-    fn test_module_execution_preserves_non_utf8_root_path() {
-        use std::ffi::OsString;
-        use std::os::unix::ffi::OsStringExt;
-
-        let root = temp_root("non-utf8-test");
-        let source = root.join(OsString::from_vec(b"test-\xFF.mec".to_vec()));
-        std::fs::write(
-            &source,
-            "answer := 42\n\nnon-utf8-root-pass! := answer == 42\n\nanswer\n",
-        )
-        .unwrap();
-
-        let execution = execute_source_module_roots_with_report(config(), &[source]).unwrap();
-
-        assert_eq!(execution.integrity.evaluations.len(), 1);
-        let evaluation = &execution.integrity.evaluations[0];
-        assert!(evaluation.passed);
-        assert!(evaluation.name.contains("non-utf8-root-pass!"));
-        assert_f64(execution.runtime.root_symbol_value("answer").unwrap(), 42.0);
         std::fs::remove_dir_all(root).unwrap();
     }
 }

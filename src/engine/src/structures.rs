@@ -761,7 +761,7 @@ pub fn matrix_column(
     feature = "matrix_horzcat",
     feature = "matrix_vertcat",
     feature = "program",
-    feature = "compiler"
+    feature = "semantic-compiler"
 ))]
 mod matrix_dependency_tests {
     use super::*;
@@ -930,7 +930,7 @@ mod matrix_dependency_tests {
     feature = "f64",
     feature = "functions",
     feature = "program",
-    feature = "compiler"
+    feature = "semantic-compiler"
 ))]
 mod set_dependency_tests {
     use super::*;

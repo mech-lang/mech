@@ -136,10 +136,6 @@ impl MechRuntime {
         let max_events = usize::try_from(max_events).unwrap_or(usize::MAX);
         context.events.retain_last(max_events);
     }
-
-    pub(in crate::runtime) fn enforce_turn_duration(&self, started: Instant) -> MResult<()> {
-        enforce_turn_duration_limit(self.config.limits.max_turn_duration_ms, started)
-    }
 }
 
 pub(in crate::runtime) fn enforce_turn_duration_limit(

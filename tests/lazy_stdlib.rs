@@ -1,13 +1,13 @@
 #![cfg(feature = "full_source")]
 
-use mech::{MechProgram, MechProgramConfig};
+use mech::RuntimeBuilder;
 
 fn run(source: &str) -> bool {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech::stdlib::source_catalog(),
-    );
-    program.run_string(source).is_ok()
+    RuntimeBuilder::new()
+        .function_catalog(mech::stdlib::source_catalog())
+        .build_compiler()
+        .and_then(|mut compiler| compiler.compile_source(source))
+        .is_ok()
 }
 
 #[test]
@@ -98,16 +98,8 @@ fn grouped_item_import_does_not_import_other_items() {
     assert!(!run("+> math/{sin, cos, tan}\nx := round(1.23)"));
 }
 
-#[test]
-fn failed_grouped_item_import_rolls_back_earlier_items() {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech::stdlib::source_catalog(),
-    );
-
-    assert!(program.run_string("+> math/{sin, missing}").is_err());
-    assert!(program.run_string("x := sin(1.23)").is_err());
-}
+// Same-session grouped-import rollback is compiler-internal and remains
+// covered by function::module::tests::failed_group_import_rolls_back_every_earlier_binding.
 
 #[test]
 fn multiline_grouped_item_import_works() {

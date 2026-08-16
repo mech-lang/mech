@@ -16,29 +16,16 @@
 
 use super::{
     MechRuntime, RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
-    RuntimeModuleDependencyMissingError, RuntimeModuleImportEdgeInvalid,
-    RuntimeRootModuleSourceNotFound, extension,
+    RuntimeModuleDependencyMissingError, RuntimeModuleImportEdgeInvalid, extension,
 };
 use crate::{
     CapabilityRequest, ModuleBuildOptions, ModuleDependencyGraph, ModuleId, ModuleImportEdge,
     ModuleRecord, ModuleVersionId, ModuleVersionRecord, NonExecutableModuleSource, ResolvedSource,
-    RuntimeContext, RuntimeEventKind, RuntimeModuleJournalConflict, SourceImportAlias, SourceIndex,
-    SourceRequest, SourceScope, module_id,
+    RuntimeContext, RuntimeEventKind, RuntimeModuleJournalConflict, SourceDeclaration,
+    SourceImportAlias, SourceIndex, SourceRequest, SourceScope, module_id,
 };
 use mech_core::{MResult, MechError, MechSourceCode};
-#[cfg(feature = "invariant_define")]
-use mech_engine::IntegrityConstraintReport;
-use std::collections::{HashMap, HashSet};
-#[cfg(not(all(target_arch = "wasm32", target_os = "unknown")))]
-use std::time::Instant;
-#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
-use web_time::Instant;
-
-struct RootModuleExecution {
-    result: crate::RuntimeValueSnapshot,
-    #[cfg(feature = "invariant_define")]
-    integrity: IntegrityConstraintReport,
-}
+use std::collections::HashMap;
 
 pub(in crate::runtime) fn validate_module_import_edges(
     record: &ModuleVersionRecord,
@@ -87,6 +74,83 @@ fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
 }
 
 impl MechRuntime {
+    pub(crate) fn context_declarations_from_index_scope(
+        &self,
+        index: &SourceIndex,
+        scope: &SourceScope,
+    ) -> MResult<Vec<crate::SourceContextDeclaration>> {
+        let mut declarations = Vec::new();
+
+        for declaration in &index.declarations {
+            match declaration {
+                SourceDeclaration::Context(context) if &context.occurrence.scope == scope => {
+                    declarations.push(context.declaration.clone());
+                }
+                SourceDeclaration::Import(import) if &import.occurrence.scope == scope => {
+                    let Some(SourceImportAlias::Context(alias)) = &import.declaration.alias else {
+                        continue;
+                    };
+                    let module = import.declaration.module.as_deref().ok_or_else(|| {
+                        MechError::new(
+                            RuntimeInvalidOperationError {
+                                operation: "materialize_direct_manifest_context_imports",
+                                reason: format!(
+                                    "context import `{}` is missing module metadata",
+                                    import.declaration.specifier
+                                ),
+                            },
+                            None,
+                        )
+                    })?;
+                    let item = import.declaration.item.as_deref().ok_or_else(|| {
+                        MechError::new(
+                            RuntimeInvalidOperationError {
+                                operation: "materialize_direct_manifest_context_imports",
+                                reason: format!(
+                                    "context import `{}` is missing item metadata",
+                                    import.declaration.specifier
+                                ),
+                            },
+                            None,
+                        )
+                    })?;
+                    let target = format!("{module}/{item}");
+                    if let Some(context) = self.host_interfaces.resolve_optional(&target)? {
+                        declarations.push(crate::SourceContextDeclaration {
+                            name: alias.clone(),
+                            base: crate::SourceContextBase::ResourceUri(context.base_uri.clone()),
+                            capabilities: context
+                                .operations
+                                .iter()
+                                .map(|operation| crate::SourceContextCapability {
+                                    operation: operation.clone(),
+                                    scope: crate::SourceContextCapabilityScope::Wildcard,
+                                })
+                                .collect(),
+                        });
+                    } else {
+                        let export = self.module_manifests.context_export(module, item)?;
+                        declarations.push(crate::SourceContextDeclaration {
+                            name: alias.clone(),
+                            base: crate::SourceContextBase::ResourceUri(export.base_uri.clone()),
+                            capabilities: export
+                                .operations
+                                .iter()
+                                .map(|operation| crate::SourceContextCapability {
+                                    operation: operation.clone(),
+                                    scope: crate::SourceContextCapabilityScope::Wildcard,
+                                })
+                                .collect(),
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Ok(declarations)
+    }
+
     pub fn ensure_module(&mut self, name: &str, canonical_uri: &str) -> MResult<ModuleId> {
         self.ensure_runtime_mutation_allowed("ensure_module")?;
         if let Some(module) = self.store.find_module_by_name(canonical_uri)? {
@@ -126,7 +190,7 @@ impl MechRuntime {
         }
 
         let module = ModuleRecord::new(id, canonical_uri).with_description(name.to_string());
-        self.active_execution_transaction_mut(transaction_id)?
+        self.active_runtime_transaction_mut(transaction_id)?
             .modules
             .stage_module(module)?;
         Ok(id)
@@ -559,7 +623,7 @@ impl MechRuntime {
             }
 
             let staged = self
-                .active_execution_transaction_mut(transaction_id)?
+                .active_runtime_transaction_mut(transaction_id)?
                 .modules
                 .stage_version(version)?;
 
@@ -644,138 +708,6 @@ impl MechRuntime {
             options,
             &mut dependency_graph,
         )
-    }
-
-    pub(crate) fn resolve_and_run_root_module(
-        &mut self,
-        request: impl Into<SourceRequest>,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<crate::RuntimeValueSnapshot> {
-        self.ensure_runtime_mutation_allowed("resolve_and_run_root_module")?;
-        let mut context = self.runtime_context()?;
-        self.resolve_and_run_root_module_with_context(&mut context, request, options)
-    }
-
-    pub(crate) fn resolve_and_run_root_module_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        request: impl Into<SourceRequest>,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<crate::RuntimeValueSnapshot> {
-        self.resolve_and_run_root_module_execution_with_context(context, request, options)
-            .map(|execution| execution.result)
-    }
-
-    #[cfg(feature = "invariant_define")]
-    pub(crate) fn resolve_and_run_root_module_report(
-        &mut self,
-        request: impl Into<SourceRequest>,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
-        self.ensure_runtime_mutation_allowed("resolve_and_run_root_module_report")?;
-        let mut context = self.runtime_context()?;
-        self.resolve_and_run_root_module_report_with_context(&mut context, request, options)
-    }
-
-    #[cfg(feature = "invariant_define")]
-    pub(crate) fn resolve_and_run_root_module_report_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        request: impl Into<SourceRequest>,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<crate::RuntimeRootModuleExecutionReport> {
-        self.resolve_and_run_root_module_execution_with_context(context, request, options)
-            .map(|execution| crate::RuntimeRootModuleExecutionReport {
-                result: execution.result,
-                integrity: execution.integrity,
-            })
-    }
-
-    fn resolve_and_run_root_module_execution_with_context(
-        &mut self,
-        context: &mut RuntimeContext,
-        request: impl Into<SourceRequest>,
-        options: ModuleBuildOptions<'_>,
-    ) -> MResult<RootModuleExecution> {
-        let request = request.into();
-        request.validate()?;
-        let root_specifier = request.specifier.clone();
-        let turn_started = Instant::now();
-        let mut root_version_for_audit = None;
-
-        let result = self.with_atomic_program_operation(
-            context,
-            "resolve_and_run_root_module_with_context",
-            |runtime, context| {
-                let Some(root_version) =
-                    runtime.build_module_from_request_in_transaction(context, request, options)?
-                else {
-                    return Err(MechError::new(
-                        RuntimeRootModuleSourceNotFound {
-                            specifier: root_specifier.clone(),
-                        },
-                        None,
-                    ));
-                };
-
-                root_version_for_audit = Some(root_version);
-                context.module_version = Some(root_version);
-
-                let mut preflight_seen = HashSet::new();
-                runtime.preflight_module_graph_for_scope(
-                    context,
-                    root_version,
-                    &SourceScope::Program,
-                    &mut preflight_seen,
-                )?;
-
-                let mut seen = HashSet::new();
-                let mut module_instances = HashMap::new();
-                let mut integrity_evaluations =
-                    super::execution::IntegrityEvaluationCollector::default();
-                let result = runtime.execute_module_retained_root_for_scope(
-                    context,
-                    root_version,
-                    &SourceScope::Program,
-                    &mut seen,
-                    &mut module_instances,
-                    &mut integrity_evaluations,
-                    turn_started,
-                )?;
-                if runtime.has_live_input_bindings() {
-                    runtime.validate_live_context_candidate(context)?;
-                    runtime.commit_live_context_candidate(context);
-                }
-                let execution = RootModuleExecution {
-                    result: crate::RuntimeValueSnapshot::try_capture(&result)?,
-                    #[cfg(feature = "invariant_define")]
-                    integrity: IntegrityConstraintReport::from_evaluations(integrity_evaluations),
-                };
-                #[cfg(feature = "resident-routing")]
-                runtime.stage_legacy_program_owner(context)?;
-                Ok(execution)
-            },
-        );
-
-        if let Err(error) = &result {
-            let _ = self.emit_event_immediate_to_context(
-                context,
-                RuntimeEventKind::ProgramFailed {
-                    task_id: context.task,
-                    message: format!("{:?}", error),
-                },
-            );
-            if let Some(root_version) = root_version_for_audit {
-                let _ = self.emit_event_immediate_to_context(
-                    context,
-                    RuntimeEventKind::ModuleExecutionFailed {
-                        module_version: root_version,
-                        message: format!("{:?}", error),
-                    },
-                );
-            }
-        }
-        result
     }
 
     pub fn put_source_module(

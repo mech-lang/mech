@@ -67,7 +67,7 @@ impl MechFunctionFactory for ValueSet {
     }
 }
 
-#[cfg(all(feature = "set", feature = "compiler"))]
+#[cfg(all(feature = "set", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueSet {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         compile_nullop!("set/define", self.out, ctx);
@@ -138,10 +138,17 @@ impl MechFunctionFactory for ValueSetComprehension {
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
+            // Bytecode v1 uses RuntimeNullary for a variadic operation with
+            // zero inputs. Accept that canonical encoding as the empty
+            // argument list while retaining the checked set output lane.
+            FunctionArgs::Nullary(LegacyValue::Set(out)) => Ok(Box::new(ValueSetComprehension {
+                arguments: Vec::new(),
+                out,
+            })),
             FunctionArgs::Variadic(LegacyValue::Set(out), arguments) => {
                 Ok(Box::new(ValueSetComprehension { arguments, out }))
             }
-            FunctionArgs::Variadic(out, _) => Err(MechError::new(
+            FunctionArgs::Nullary(out) | FunctionArgs::Variadic(out, _) => Err(MechError::new(
                 SetComprehensionOutputKindMismatchError { found: out.kind() },
                 None,
             )
@@ -158,7 +165,7 @@ impl MechFunctionFactory for ValueSetComprehension {
     }
 }
 
-#[cfg(all(feature = "set_comprehensions", feature = "compiler"))]
+#[cfg(all(feature = "set_comprehensions", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueSetComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = LegacyValue::Set(self.out.clone());
@@ -242,7 +249,7 @@ impl MechFunctionFactory for ValueMatrixComprehension {
     }
 }
 
-#[cfg(all(feature = "matrix_comprehensions", feature = "compiler"))]
+#[cfg(all(feature = "matrix_comprehensions", feature = "semantic-compiler"))]
 impl MechFunctionCompiler for ValueMatrixComprehension {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = self.out.borrow().clone();

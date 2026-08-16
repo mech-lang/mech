@@ -170,7 +170,7 @@ impl MechFunctionImpl for SetPowersetFxn {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetPowersetFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("SetPowersetFxn");
@@ -217,7 +217,10 @@ mod tests {
         assert_eq!(initial_error.kind_name(), "SetPowersetLimitExceeded");
 
         let input = Ref::new(index_set(2));
-        let out = Ref::new(MechSet::new(ValueKind::Set(Box::new(ValueKind::Index), None), 1));
+        let out = Ref::new(MechSet::new(
+            ValueKind::Set(Box::new(ValueKind::Index), None),
+            1,
+        ));
         let function = SetPowersetFxn {
             input: input.clone(),
             out: out.clone(),

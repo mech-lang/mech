@@ -31,7 +31,7 @@ mod activation_scope;
     feature = "variable_define",
     feature = "f64",
     feature = "program",
-    feature = "compiler",
+    feature = "semantic-compiler",
 ))]
 mod context;
 
@@ -53,7 +53,7 @@ mod variable_define;
     feature = "assign",
     feature = "f64",
     feature = "program",
-    feature = "compiler",
+    feature = "semantic-compiler",
 ))]
 mod support;
 
@@ -66,7 +66,7 @@ mod support;
     feature = "assign",
     feature = "f64",
     feature = "program",
-    feature = "compiler",
+    feature = "semantic-compiler",
 ))]
 mod variable_assign;
 
@@ -79,6 +79,6 @@ mod variable_assign;
     feature = "assign",
     feature = "f64",
     feature = "program",
-    feature = "compiler",
+    feature = "semantic-compiler",
 ))]
 mod op_assign;

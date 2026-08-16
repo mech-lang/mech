@@ -33,7 +33,7 @@ where
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T> MechFunctionCompiler for MapAssign<T>
 where
     T: CompileConst + ConstElem + AsValueKind,

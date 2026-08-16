@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the D0 ProgramArtifact-to-resident activation boundary."""
+"""Enforce the permanent ProgramArtifact-to-resident activation boundary."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_DIR = ROOT / "tests/architecture/resident-activation"
 BOUNDARY_PATH = CONTRACT_DIR / "d0-boundary.json"
-PROJECTION_PATH = CONTRACT_DIR / "d0-migration-projection.json"
+ACTIVATION_CONTRACT_PATH = CONTRACT_DIR / "resident-activation-contract.json"
 GENERATOR_PATH = ROOT / "scripts/generate-resident-activation-contract.py"
 D0_C4_SEMANTIC_BASE = "33298522331d40960175427052ce363bb5e424df"
 D0_PR_BASE = "a9d06ee20ceb03d56c3ba465b726aa4a69427af8"
@@ -292,6 +292,55 @@ def validate_artifact_authority(sources: dict[str, str]) -> list[str]:
     return failures
 
 
+def validate_current_artifact_authority(sources: dict[str, str]) -> list[str]:
+    declarations = []
+    for path, source in sources.items():
+        for match in PROGRAM_ARTIFACT_DECLARATION.finditer(source):
+            declarations.append((path, (match.group("visibility") or "").strip()))
+    expected = [("src/engine/src/artifact/model.rs", "pub")]
+    if declarations == expected:
+        return []
+    return [
+        "current ProgramArtifact authority must be exactly the finalized public artifact; found "
+        + ", ".join(
+            f"{path} ({visibility or 'private'})" for path, visibility in declarations
+        )
+    ]
+
+
+def validate_activation_structure(root: Path, contract: dict) -> list[str]:
+    failures = []
+    generator = load_generator(root)
+    expected_ids = list(generator.PERMANENT_TARGET_IDS)
+    actual_ids = [target.get("id") for target in contract.get("semantic_targets", [])]
+    if actual_ids != expected_ids:
+        failures.append(
+            "resident activation semantic targets differ from the exact permanent target set"
+        )
+    forbidden_fields = {"occurrences", "occurrence_count", "implemented", "legacy_removed"}
+    encoded = json.dumps(contract, sort_keys=True)
+    for field in sorted(forbidden_fields):
+        if f'"{field}"' in encoded:
+            failures.append(f"resident activation contract contains migration field {field}")
+    for owner in contract.get("activation_owners", []):
+        relative = owner.get("path", "")
+        path = root / relative
+        if not path.is_file():
+            failures.append(f"required activation owner is missing: {relative}")
+            continue
+        source = path.read_text(encoding="utf-8")
+        for marker in owner.get("markers", []):
+            if marker not in source:
+                failures.append(
+                    f"required activation marker {marker!r} is missing from {relative}"
+                )
+    for relative in contract.get("obsolete_owners_absent", []):
+        if (root / relative).exists():
+            failures.append(f"obsolete activation owner is reachable: {relative}")
+    failures.extend(validate_current_artifact_authority(production_rust_sources(root)))
+    return failures
+
+
 def resident_sources(root: Path) -> dict[str, str]:
     directory = root / "src/engine/src/resident"
     return {
@@ -429,16 +478,6 @@ def validate_source_contract(source: str, workload: dict, root: Path = ROOT) -> 
     return load_generator(root).validate_source(source, workload)
 
 
-def validate_migration_status(projection: dict) -> list[str]:
-    failures = []
-    for target in projection.get("targets", []):
-        if target.get("implemented") is not False:
-            failures.append(f"D migration target {target.get('id')} is prematurely marked implemented")
-        if target.get("legacy_removed") is not False:
-            failures.append(f"D migration target {target.get('id')} is prematurely marked legacy_removed")
-    return failures
-
-
 def validate_gate_b_expected(expected: str) -> list[str]:
     if expected == D0_GATE_B_IMPLEMENTATION:
         return []
@@ -488,7 +527,14 @@ def run(root: Path = ROOT) -> list[str]:
     generator = command(
         [sys.executable, str(root / GENERATOR_PATH.relative_to(ROOT)), "--check"], root
     )
-    failures.extend(subprocess_failure("D0 generated contract", generator))
+    failures.extend(subprocess_failure("resident activation generated contract", generator))
+    try:
+        activation_contract = read_json(
+            root / ACTIVATION_CONTRACT_PATH.relative_to(ROOT)
+        )
+        failures.extend(validate_activation_structure(root, activation_contract))
+    except (json.JSONDecodeError, OSError) as error:
+        failures.append(f"unable to read permanent resident activation contract: {error}")
 
     try:
         gate_b = json.loads(
@@ -497,14 +543,6 @@ def run(root: Path = ROOT) -> list[str]:
         failures.extend(validate_gate_b_expected(gate_b.get("git_commit", "")))
     except json.JSONDecodeError as error:
         failures.append(f"unable to read frozen D0 Gate B evidence: {error}")
-    migration = json.loads(
-        git_source(
-            root,
-            D0_FINAL_COMMIT,
-            "tests/architecture/resident-activation/d0-migration-projection.json",
-        )
-    )
-    failures.extend(validate_migration_status(migration))
     return failures
 
 
@@ -512,9 +550,9 @@ def main() -> int:
     failures = run()
     if failures:
         for failure in failures:
-            print(f"D0 contract failure: {failure}", file=sys.stderr)
+            print(f"resident activation contract failure: {failure}", file=sys.stderr)
         return 1
-    print("D0 resident activation contract checks passed")
+    print("resident activation contract checks passed")
     return 0
 
 

@@ -77,7 +77,7 @@ macro_rules! impl_set_match_arms {
 
 #[macro_export]
 macro_rules! impl_set_all_fxn_s {
-    ($struct_name:ident, $op:ident, $ix:ty) => {
+    ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA, IxVec> {
             pub source: Ref<T>,
@@ -98,16 +98,16 @@ macro_rules! impl_set_all_fxn_s {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
             C1: Dim,
             S1: StorageMut<T, R1, C1> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -165,6 +165,11 @@ macro_rules! impl_set_all_fxn_s {
             fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some(&*$semantic_contract);)?
+                contract
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -173,7 +178,7 @@ macro_rules! impl_set_all_fxn_s {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, IxVec>
         where
@@ -189,7 +194,7 @@ macro_rules! impl_set_all_fxn_s {
                     naMatrix::<T, R1, C1, S1>::as_na_kind(),
                     IxVec::as_na_kind()
                 );
-                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
@@ -229,7 +234,7 @@ macro_rules! assign_1d_scalar_vb {
 
 #[macro_export]
 macro_rules! impl_assign_fxn_s {
-    ($struct_name:ident, $op:ident, $ix:ty) => {
+    ($struct_name:ident, $op:ident, $ix:ty $(, $semantic_contract:ident)?) => {
         #[derive(Debug)]
         pub struct $struct_name<T, MatA> {
             pub source: Ref<T>,
@@ -249,14 +254,14 @@ macro_rules! impl_assign_fxn_s {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
             naMatrix<T, R, C, S>: ConstElem + AsNaKind + FunctionRuntimeType,
             $ix: FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -312,6 +317,11 @@ macro_rules! impl_assign_fxn_s {
             fn out(&self) -> LegacyValue {
                 self.sink.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                let contract: Option<&'static OperationContractDeclaration> = None;
+                $(let contract = Some(&*$semantic_contract);)?
+                contract
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -320,7 +330,7 @@ macro_rules! impl_assign_fxn_s {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R, C, S> MechFunctionCompiler for $struct_name<T, naMatrix<T, R, C, S>>
         where
             T: CompileConst + ConstElem + AsValueKind,
@@ -333,14 +343,24 @@ macro_rules! impl_assign_fxn_s {
                     T::as_value_kind(),
                     naMatrix::<T, R, C, S>::as_na_kind()
                 );
-                compile_binop!(name, self.sink, self.ixes, self.source, ctx);
+                compile_binop!(name, self.sink, self.source, self.ixes, ctx);
             }
         }
     };
 }
 
-impl_assign_fxn_s!(Assign1DS, assign_1d_scalar, usize);
-impl_assign_fxn_s!(Assign1DB, assign_1d_scalar_b, bool);
+impl_assign_fxn_s!(
+    Assign1DS,
+    assign_1d_scalar,
+    usize,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_assign_fxn_s!(
+    Assign1DB,
+    assign_1d_scalar_b,
+    bool,
+    PURE_MATRIX_WHOLE_ASSIGNMENT_CONTRACT
+);
 impl_assign_scalar_fxn_v!(Assign1DVB, assign_1d_scalar_vb, bool);
 
 fn impl_assign_scalar_fxn(
@@ -482,10 +502,30 @@ macro_rules! set_1d_range_vec_b {
     };
 }
 
-impl_set_all_fxn_s!(Assign1DRS, set_1d_range, usize);
-impl_set_all_fxn_s!(Assign1DRB, set_1d_range_b, bool);
-impl_all_fxn_v!(Assign1DRV, set_1d_range_vec, usize);
-impl_all_fxn_v!(Assign1DRVB, set_1d_range_vec_b, bool);
+impl_set_all_fxn_s!(
+    Assign1DRS,
+    set_1d_range,
+    usize,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_set_all_fxn_s!(
+    Assign1DRB,
+    set_1d_range_b,
+    bool,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_all_fxn_v!(
+    Assign1DRV,
+    set_1d_range_vec,
+    usize,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
+impl_all_fxn_v!(
+    Assign1DRVB,
+    set_1d_range_vec_b,
+    bool,
+    PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT
+);
 
 fn impl_assign_range_fxn(
     sink: LegacyValue,
@@ -610,13 +650,13 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     R: Dim,
     C: Dim,
     S: StorageMut<T, R, C> + Debug + IsContiguous + 'static,
     naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R, C, S>: CompileConst,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::unary(
@@ -677,7 +717,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T, R, C, S> MechFunctionCompiler for Set1DAS<T, naMatrix<T, R, C, S>>
 where
     T: CompileConst + ConstElem + AsValueKind,
@@ -791,13 +831,13 @@ where
         + ConstElem
         + AsValueKind
         + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst,
     R1: Dim,
     C1: Dim,
     S1: StorageMut<T, R1, C1> + Clone + Debug,
     naMatrix<T, R1, C1, S1>: ConstElem + AsNaKind + FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst,
 {
     const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -865,7 +905,7 @@ where
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler for Assign2DSSS<T, naMatrix<T, R1, C1, S1>>
 where
     T: CompileConst + ConstElem + AsValueKind,
@@ -1051,7 +1091,7 @@ macro_rules! impl_assign_scalar_fxn_v {
                 + PartialOrd
                 + ConstElem
                 + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             R1: Dim,
             C1: Dim,
@@ -1060,11 +1100,11 @@ macro_rules! impl_assign_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
             naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
             $ix: FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
@@ -1132,7 +1172,7 @@ macro_rules! impl_assign_scalar_fxn_v {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, R2, C2, S2> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>>
         where
@@ -1405,16 +1445,16 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
             naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -1483,7 +1523,7 @@ macro_rules! impl_assign_range_scalar_fxn_s {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R, C, S, IxVec> MechFunctionCompiler
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
@@ -1538,10 +1578,10 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 + PartialOrd
                 + ConstElem
                 + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
             C1: Dim,
@@ -1550,10 +1590,10 @@ macro_rules! impl_assign_range_scalar_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
             naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -1626,7 +1666,7 @@ macro_rules! impl_assign_range_scalar_fxn_v {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
@@ -1895,16 +1935,16 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec: ConstElem + Debug + AsRef<[$ix]> + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
             naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -1973,7 +2013,7 @@ macro_rules! impl_assign_scalar_range_fxn_s {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R, C, S, IxVec> MechFunctionCompiler
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec>
         where
@@ -2028,10 +2068,10 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 + PartialOrd
                 + ConstElem
                 + AsValueKind,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]> + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec: CompileConst,
             R1: Dim,
             C1: Dim,
@@ -2040,10 +2080,10 @@ macro_rules! impl_assign_scalar_range_fxn_v {
             C2: Dim,
             S2: Storage<T, R2, C2> + Clone + Debug,
             naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R1, C1, S1>: CompileConst,
             naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R2, C2, S2>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -2116,7 +2156,7 @@ macro_rules! impl_assign_scalar_range_fxn_v {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler
             for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
         where
@@ -2462,19 +2502,19 @@ macro_rules! impl_assign_range_range_fxn_s {
                 + ConstElem
                 + AsValueKind
                 + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: CompileConst,
             IxVec1: ConstElem + Debug + AsRef<[$ix1]> + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec1: CompileConst,
             IxVec2: ConstElem + Debug + AsRef<[$ix2]> + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             IxVec2: CompileConst,
             R: Dim,
             C: Dim,
             S: StorageMut<T, R, C> + Clone + Debug,
             naMatrix<T, R, C, S>: ConstElem + Debug + AsNaKind + FunctionRuntimeType,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             naMatrix<T, R, C, S>: CompileConst,
         {
             const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
@@ -2545,7 +2585,7 @@ macro_rules! impl_assign_range_range_fxn_s {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T, R, C, S, IxVec1, IxVec2> MechFunctionCompiler
             for $struct_name<T, na::Matrix<T, R, C, S>, IxVec1, IxVec2>
         where
@@ -3064,3 +3104,69 @@ impl FunctionSpecializer for MatrixAssignRangeAll {
         }
     }
 }
+
+static PURE_MATRIX_AXIS_ZERO_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::IndexedAxis { axis: 0 },
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
+
+static PURE_MATRIX_WHOLE_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::ReadWrite,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::ReadModifyWrite {
+                base_input: 0,
+                regions: RegionPolicy::WholeValue,
+            },
+            alias: AliasPolicy::MayAlias { input: 0 },
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });

@@ -1,14 +1,13 @@
 use std::sync::{Arc, Mutex};
 
 use crate::runtime::test_support::capabilities::grant_host_call;
-use crate::runtime::test_support::providers::test_runtime_builder;
 use crate::{
     CapabilityId, HostCall, MechRuntime, PlannedStagedHostFunction, PreparedRuntimeEffect,
     RuntimeCallContext, RuntimePreparedHostCall, RuntimeValueSnapshot,
 };
 use mech_core::{LegacyValue, Ref};
 
-use super::support::{PreviewLifecycleEffect, RecordingHostEffect};
+use super::support::RecordingHostEffect;
 
 #[test]
 fn staged_host_call_returns_value_before_effect_delivery() {
@@ -53,39 +52,4 @@ fn staged_host_call_returns_value_before_effect_delivery() {
 
     runtime.commit_runtime_transaction(&mut context).unwrap();
     assert_eq!(log.lock().unwrap().as_slice(), &["delivered".to_string()],);
-}
-
-#[test]
-fn staged_planning_does_not_create_effects() {
-    let lifecycle = Arc::new(Mutex::new(Vec::new()));
-    let effect_log = lifecycle.clone();
-    let mut runtime = test_runtime_builder()
-        .planning()
-        .host_function(PlannedStagedHostFunction::new(
-            "demo/staged-lifecycle",
-            |_context: &RuntimeCallContext, _args: &[RuntimeValueSnapshot]| {
-                RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(1.0)))
-            },
-            move |_context: &RuntimeCallContext, _args: Vec<RuntimeValueSnapshot>| {
-                Ok(RuntimePreparedHostCall {
-                    value: RuntimeValueSnapshot::try_capture(&LegacyValue::F64(Ref::new(1.0)))?,
-                    effect: PreparedRuntimeEffect::Transactional(Box::new(
-                        PreviewLifecycleEffect {
-                            log: effect_log.clone(),
-                        },
-                    )),
-                })
-            },
-        ))
-        .unwrap()
-        .build()
-        .unwrap();
-    assert!(lifecycle.lock().unwrap().is_empty());
-    grant_host_call(&mut runtime, CapabilityId(700), "demo/staged-lifecycle");
-
-    runtime
-        .run_string("staged-lifecycle-result := demo/staged-lifecycle()")
-        .unwrap();
-
-    assert!(lifecycle.lock().unwrap().is_empty());
 }

@@ -162,7 +162,7 @@ impl MechFunctionImpl for AtomNeq {
     }
 }
 #[cfg(feature = "atom")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for AtomNeq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("AtomNeq");
@@ -227,7 +227,7 @@ impl MechFunctionImpl for TableNeq {
     }
 }
 #[cfg(feature = "table")]
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for TableNeq {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let name = format!("TableNeq");

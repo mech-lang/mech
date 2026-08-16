@@ -1,5 +1,5 @@
 use super::super::{register_expression_function_batch, register_initialized_expression_function};
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{
     InitialSolvePolicy, LegacyValue, MResult, MechError, MechErrorKind, MechFunction,
@@ -53,7 +53,7 @@ impl MechFunctionImpl for FailingInitialExpressionFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for FailingInitialExpressionFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         panic!("failing expression test function must not be compiled")
@@ -83,7 +83,7 @@ impl MechFunctionImpl for IndexedExpressionTestFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for IndexedExpressionTestFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)

@@ -2,8 +2,7 @@ use clap::{Arg, ArgAction};
 use mech_core::*;
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, ModuleBuildOptions, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeConfig, RuntimeEvent, RuntimeValueSnapshot, SourceRequest,
-    SourceResolver, parse_host_context_target,
+    RuntimeBuilder, RuntimeConfig, SourceResolver,
 };
 use std::ffi::OsStr;
 use std::path::Path;
@@ -129,339 +128,6 @@ fn mech_code_is_executable_run_source(code: &MechCode) -> bool {
     }
 }
 
-fn parses_as_context_addressed_source(input: &str) -> bool {
-    mech_syntax::parser::parse(input.trim())
-        .map(|program| program_contains_context_addressed_source(&program))
-        .unwrap_or(false)
-}
-
-fn program_contains_context_addressed_source(program: &Program) -> bool {
-    program.body.sections.iter().any(|section| {
-        section
-            .elements
-            .iter()
-            .any(section_element_contains_context_addressed_source)
-    })
-}
-
-fn section_element_contains_context_addressed_source(element: &SectionElement) -> bool {
-    match element {
-        SectionElement::MechCode(codes) => codes
-            .iter()
-            .any(|(code, _)| mech_code_contains_context_addressed_source(code)),
-        SectionElement::FencedMechCode(fenced) => fenced
-            .code
-            .iter()
-            .any(|(code, _)| mech_code_contains_context_addressed_source(code)),
-        _ => false,
-    }
-}
-
-fn mech_code_contains_context_addressed_source(code: &MechCode) -> bool {
-    match code {
-        MechCode::ActivationScope(scope) => {
-            expression_contains_context_addressed_source(&scope.trigger)
-                || activation_body_contains_context_addressed_source(&scope.body)
-        }
-        MechCode::Import(import) => matches!(import.alias, Some(ModuleImportAlias::Context(_))),
-        MechCode::Statement(statement) => statement_contains_context_addressed_source(statement),
-        MechCode::Expression(expression) => {
-            expression_contains_context_addressed_source(expression)
-        }
-        MechCode::FunctionDefine(function) => {
-            function
-                .statements
-                .iter()
-                .any(statement_contains_context_addressed_source)
-                || function.match_arms.iter().any(|arm| {
-                    pattern_contains_context_addressed_source(&arm.pattern)
-                        || expression_contains_context_addressed_source(&arm.expression)
-                })
-        }
-        MechCode::FsmImplementation(fsm) => fsm_contains_context_addressed_source(fsm),
-        _ => false,
-    }
-}
-
-fn activation_body_contains_context_addressed_source(body: &ActivationBody) -> bool {
-    match body {
-        ActivationBody::Block(codes) => codes
-            .iter()
-            .any(|(code, _)| mech_code_contains_context_addressed_source(code)),
-        ActivationBody::PatternArms(arms) => arms.iter().any(|arm| {
-            pattern_contains_context_addressed_source(&arm.pattern)
-                || arm
-                    .guard
-                    .as_ref()
-                    .map(expression_contains_context_addressed_source)
-                    .unwrap_or(false)
-                || match &arm.body {
-                    ActivationArmBody::Block(codes) => codes
-                        .iter()
-                        .any(|(code, _)| mech_code_contains_context_addressed_source(code)),
-                    ActivationArmBody::Expression(expression) => {
-                        expression_contains_context_addressed_source(expression)
-                    }
-                }
-        }),
-    }
-}
-
-fn fsm_contains_context_addressed_source(fsm: &FsmImplementation) -> bool {
-    pattern_contains_context_addressed_source(&fsm.start)
-        || fsm.arms.iter().any(|arm| match arm {
-            FsmArm::Guard(pattern, guards) => {
-                pattern_contains_context_addressed_source(pattern)
-                    || guards.iter().any(|guard| {
-                        pattern_contains_context_addressed_source(&guard.condition)
-                            || guard
-                                .transitions
-                                .iter()
-                                .any(transition_contains_context_addressed_source)
-                    })
-            }
-            FsmArm::Transition(pattern, transitions) => {
-                pattern_contains_context_addressed_source(pattern)
-                    || transitions
-                        .iter()
-                        .any(transition_contains_context_addressed_source)
-            }
-            FsmArm::Comment(_) => false,
-        })
-}
-
-fn transition_contains_context_addressed_source(transition: &Transition) -> bool {
-    match transition {
-        Transition::Async(pattern) | Transition::Next(pattern) | Transition::Output(pattern) => {
-            pattern_contains_context_addressed_source(pattern)
-        }
-        Transition::CodeBlock(codes) => codes
-            .iter()
-            .any(|(code, _)| mech_code_contains_context_addressed_source(code)),
-        Transition::Statement(statement) => statement_contains_context_addressed_source(statement),
-    }
-}
-
-fn statement_contains_context_addressed_source(statement: &Statement) -> bool {
-    match statement {
-        Statement::ContextDeclaration(_) | Statement::ContextSend(_) => true,
-        Statement::VariableDefine(var_def) => {
-            expression_contains_context_addressed_source(&var_def.expression)
-        }
-        Statement::VariableAssign(assign) => {
-            assign.target.context.is_some()
-                || assign
-                    .target
-                    .subscript
-                    .as_ref()
-                    .map(|subs| subs.iter().any(subscript_contains_context_addressed_source))
-                    .unwrap_or(false)
-                || expression_contains_context_addressed_source(&assign.expression)
-        }
-        Statement::OpAssign(assign) => {
-            assign.target.context.is_some()
-                || assign
-                    .target
-                    .subscript
-                    .as_ref()
-                    .map(|subs| subs.iter().any(subscript_contains_context_addressed_source))
-                    .unwrap_or(false)
-                || expression_contains_context_addressed_source(&assign.expression)
-        }
-        Statement::TupleDestructure(tuple) => {
-            expression_contains_context_addressed_source(&tuple.expression)
-        }
-        #[cfg(feature = "invariant_define")]
-        Statement::InvariantDefine(invariant) => {
-            expression_contains_context_addressed_source(&invariant.expression)
-        }
-        _ => false,
-    }
-}
-
-fn pattern_contains_context_addressed_source(pattern: &Pattern) -> bool {
-    match pattern {
-        Pattern::Expression(expression) => expression_contains_context_addressed_source(expression),
-        Pattern::TupleStruct(tuple_struct) => tuple_struct
-            .patterns
-            .iter()
-            .any(pattern_contains_context_addressed_source),
-        Pattern::Tuple(tuple) => tuple
-            .0
-            .iter()
-            .any(pattern_contains_context_addressed_source),
-        Pattern::Array(array) => {
-            array
-                .prefix
-                .iter()
-                .any(pattern_contains_context_addressed_source)
-                || array
-                    .spread
-                    .as_ref()
-                    .and_then(|spread| spread.binding.as_ref())
-                    .map(|binding| pattern_contains_context_addressed_source(binding))
-                    .unwrap_or(false)
-                || array
-                    .suffix
-                    .iter()
-                    .any(pattern_contains_context_addressed_source)
-        }
-        Pattern::Wildcard => false,
-    }
-}
-
-fn expression_contains_context_addressed_source(expression: &Expression) -> bool {
-    match expression {
-        Expression::Var(var) => var.context.is_some(),
-        Expression::Slice(slice) => {
-            slice.context.is_some()
-                || slice
-                    .subscript
-                    .iter()
-                    .any(subscript_contains_context_addressed_source)
-        }
-        Expression::Formula(factor) => factor_contains_context_addressed_source(factor),
-        Expression::FunctionCall(call) => call
-            .args
-            .iter()
-            .any(|(_, expression)| expression_contains_context_addressed_source(expression)),
-        Expression::FsmPipe(pipe) => {
-            pipe.start
-                .args
-                .as_ref()
-                .map(|args| {
-                    args.iter().any(|(_, expression)| {
-                        expression_contains_context_addressed_source(expression)
-                    })
-                })
-                .unwrap_or(false)
-                || pipe
-                    .transitions
-                    .iter()
-                    .any(transition_contains_context_addressed_source)
-        }
-        Expression::Match(match_expr) => {
-            expression_contains_context_addressed_source(&match_expr.source)
-                || match_expr.arms.iter().any(|arm| {
-                    pattern_contains_context_addressed_source(&arm.pattern)
-                        || arm
-                            .guard
-                            .as_ref()
-                            .map(expression_contains_context_addressed_source)
-                            .unwrap_or(false)
-                        || expression_contains_context_addressed_source(&arm.expression)
-                })
-        }
-        Expression::Range(range) => range_expression_contains_context_addressed_source(range),
-        Expression::Structure(structure) => structure_contains_context_addressed_source(structure),
-        Expression::SetComprehension(comp) => {
-            expression_contains_context_addressed_source(&comp.expression)
-                || comp
-                    .qualifiers
-                    .iter()
-                    .any(comprehension_qualifier_contains_context_addressed_source)
-        }
-        Expression::MatrixComprehension(comp) => {
-            expression_contains_context_addressed_source(&comp.expression)
-                || comp
-                    .qualifiers
-                    .iter()
-                    .any(comprehension_qualifier_contains_context_addressed_source)
-        }
-        Expression::Literal(_) => false,
-    }
-}
-
-fn factor_contains_context_addressed_source(factor: &Factor) -> bool {
-    match factor {
-        Factor::Expression(expression) => expression_contains_context_addressed_source(expression),
-        Factor::Negate(factor)
-        | Factor::Not(factor)
-        | Factor::Parenthetical(factor)
-        | Factor::Transpose(factor) => factor_contains_context_addressed_source(factor),
-        Factor::Term(term) => {
-            factor_contains_context_addressed_source(&term.lhs)
-                || term
-                    .rhs
-                    .iter()
-                    .any(|(_, factor)| factor_contains_context_addressed_source(factor))
-        }
-    }
-}
-
-fn structure_contains_context_addressed_source(structure: &Structure) -> bool {
-    match structure {
-        Structure::Map(map) => map.elements.iter().any(|mapping| {
-            expression_contains_context_addressed_source(&mapping.key)
-                || expression_contains_context_addressed_source(&mapping.value)
-        }),
-        Structure::Matrix(matrix) => matrix.rows.iter().any(|row| {
-            row.columns
-                .iter()
-                .any(|column| expression_contains_context_addressed_source(&column.element))
-        }),
-        Structure::Record(record) => record
-            .bindings
-            .iter()
-            .any(|binding| expression_contains_context_addressed_source(&binding.value)),
-        Structure::Set(set) => set
-            .elements
-            .iter()
-            .any(expression_contains_context_addressed_source),
-        Structure::Table(table) => table.rows.iter().any(|row| {
-            row.columns
-                .iter()
-                .any(|column| expression_contains_context_addressed_source(&column.element))
-        }),
-        Structure::Tuple(tuple) => tuple
-            .elements
-            .iter()
-            .any(expression_contains_context_addressed_source),
-        Structure::TupleStruct(tuple_struct) => {
-            expression_contains_context_addressed_source(&tuple_struct.value)
-        }
-        Structure::Empty => false,
-    }
-}
-
-fn subscript_contains_context_addressed_source(subscript: &Subscript) -> bool {
-    match subscript {
-        Subscript::Brace(subscripts) | Subscript::Bracket(subscripts) => subscripts
-            .iter()
-            .any(subscript_contains_context_addressed_source),
-        Subscript::Formula(factor) => factor_contains_context_addressed_source(factor),
-        Subscript::Range(range) => range_expression_contains_context_addressed_source(range),
-        _ => false,
-    }
-}
-
-fn range_expression_contains_context_addressed_source(range: &RangeExpression) -> bool {
-    factor_contains_context_addressed_source(&range.start)
-        || range
-            .increment
-            .as_ref()
-            .map(|(_, factor)| factor_contains_context_addressed_source(factor))
-            .unwrap_or(false)
-        || factor_contains_context_addressed_source(&range.terminal)
-}
-
-fn comprehension_qualifier_contains_context_addressed_source(
-    qualifier: &ComprehensionQualifier,
-) -> bool {
-    match qualifier {
-        ComprehensionQualifier::Generator((pattern, expression)) => {
-            pattern_contains_context_addressed_source(pattern)
-                || expression_contains_context_addressed_source(expression)
-        }
-        ComprehensionQualifier::Filter(expression) => {
-            expression_contains_context_addressed_source(expression)
-        }
-        ComprehensionQualifier::Let(var_def) => {
-            expression_contains_context_addressed_source(&var_def.expression)
-        }
-    }
-}
-
 pub fn new_cli_runtime(
     config: RuntimeConfig,
     cli_grants: &host_grants::EffectiveCliHostGrants,
@@ -513,7 +179,7 @@ fn cli_runtime_builder(
         });
     }
 
-    for grant in cli_grants_to_run_resource_grants(cli_grants) {
+    for grant in cli_grants.to_run_resource_grants() {
         builder = builder.run_resource_grant(grant);
     }
 
@@ -529,7 +195,6 @@ pub fn effective_run_runtime_config(
     name: String,
     debug_enabled: bool,
     trace_enabled: bool,
-    profile_enabled: bool,
     rounds_per_step: Option<usize>,
 ) -> MResult<RuntimeConfig> {
     let default_runtime_patch = mech_runtime::RuntimeConfigPatch::default();
@@ -552,10 +217,6 @@ pub fn effective_run_runtime_config(
         config.diagnostics.trace_enabled = true;
     }
 
-    if profile_enabled {
-        config.diagnostics.profile_enabled = true;
-    }
-
     if let Some(rounds_per_step) = rounds_per_step {
         config.limits.max_steps_per_turn = Some(rounds_per_step as u64);
     }
@@ -564,86 +225,8 @@ pub fn effective_run_runtime_config(
     Ok(config)
 }
 
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source_with_events(
-    runtime: &mut MechRuntime,
-    source: &str,
-) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
-    let mut context = runtime.runtime_context()?;
-    let result = runtime
-        .legacy_interpreter()
-        .run_string_with_context(&mut context, source)?;
-    Ok((result, context.events().to_vec()))
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source_code_with_events(
-    runtime: &mut MechRuntime,
-    source: &MechSourceCode,
-) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
-    let mut context = runtime.runtime_context()?;
-    let result = runtime
-        .legacy_interpreter()
-        .run_source_with_context(&mut context, source)?;
-    Ok((result, context.events().to_vec()))
-}
-
 pub fn cli_module_options() -> ModuleBuildOptions<'static> {
     ModuleBuildOptions::new(env!("CARGO_PKG_VERSION"), "v0.3", "native", &[], &[])
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_root_module_with_events(
-    runtime: &mut MechRuntime,
-    request: SourceRequest,
-    options: ModuleBuildOptions<'_>,
-) -> MResult<(RuntimeValueSnapshot, Vec<RuntimeEvent>)> {
-    let mut context = runtime.runtime_context()?;
-    let result = runtime
-        .legacy_interpreter()
-        .resolve_and_run_root_module_with_context(&mut context, request, options)?;
-    Ok((result, context.events().to_vec()))
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source(runtime: &mut MechRuntime, source: &str) -> MResult<RuntimeValueSnapshot> {
-    run_cli_source_with_events(runtime, source).map(|(value, _)| value)
-}
-
-#[cfg(feature = "legacy-interpreter")]
-pub fn run_cli_source_code(
-    runtime: &mut MechRuntime,
-    source: &MechSourceCode,
-) -> MResult<RuntimeValueSnapshot> {
-    run_cli_source_code_with_events(runtime, source).map(|(value, _)| value)
-}
-
-fn cli_grants_to_run_resource_grants(
-    grants: &host_grants::EffectiveCliHostGrants,
-) -> Vec<RunResourceGrantConfig> {
-    let mut out = Vec::new();
-    if !grants.env_read_paths.is_empty() {
-        out.push(RunResourceGrantConfig {
-            target: "cli/env".to_string(),
-            operations: vec!["read".to_string()],
-            paths: grants.env_read_paths.clone(),
-        });
-    }
-    if !grants.stdout_write_paths.is_empty() {
-        out.push(RunResourceGrantConfig {
-            target: "cli/stdout".to_string(),
-            operations: vec!["write".to_string()],
-            paths: grants.stdout_write_paths.clone(),
-        });
-    }
-    if !grants.stderr_write_paths.is_empty() {
-        out.push(RunResourceGrantConfig {
-            target: "cli/stderr".to_string(),
-            operations: vec!["write".to_string()],
-            paths: grants.stderr_write_paths.clone(),
-        });
-    }
-    out
 }
 
 pub fn cli_host_capability_args() -> Vec<Arg> {
@@ -687,7 +270,7 @@ pub fn cli_host_capability_selection(
     }
 }
 
-#[cfg(all(test, feature = "legacy-interpreter"))]
+#[cfg(test)]
 mod tests {
     use super::*;
     use mech_runtime::{ConfigProfileOptions, parse_config_document};
@@ -770,18 +353,13 @@ mod tests {
         )
         .unwrap();
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &host_grants::EffectiveCliHostGrants::default(),
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
     }
 
     #[test]
@@ -803,18 +381,13 @@ mod tests {
         )
         .unwrap();
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &host_grants::EffectiveCliHostGrants::default(),
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := term/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
     }
 
     #[test]
@@ -870,37 +443,15 @@ mod tests {
             host_grants::CliHostCapabilitySelection::default(),
         )
         .unwrap();
+        assert_eq!(cli_grants, host_grants::EffectiveCliHostGrants::empty(),);
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &cli_grants,
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @env := cli/env\nx := @env/HOME\n")
-                .is_err()
-        );
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @err := cli/stderr\n@err/line <- \"bad\"\n")
-                .is_err()
-        );
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @out := cli/stdout\n@out/text <- \"bad\"\n")
-                .is_err()
-        );
     }
 
     #[test]
@@ -924,32 +475,19 @@ mod tests {
             },
         )
         .unwrap();
+        assert!(cli_grants.env_read_paths.is_empty());
+        assert!(cli_grants.stdout_write_paths.is_empty());
+        assert_eq!(
+            cli_grants.stderr_write_paths,
+            vec!["text".to_string(), "line".to_string()],
+        );
         let run_grants = document.run.as_ref().unwrap().grants.as_slice();
-        let mut runtime = new_cli_runtime(
+        let _runtime = new_cli_runtime(
             RuntimeConfig::default(),
             &cli_grants,
             &document.hosts,
             run_grants,
         )
         .unwrap();
-
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @out := cli/stdout\n@out/line <- \"ok\"\n")
-            .unwrap();
-        runtime
-            .legacy_interpreter()
-            .run_string("+> @err := cli/stderr\n@err/line <- \"ok\"\n")
-            .unwrap();
-        assert!(
-            runtime
-                .legacy_interpreter()
-                .run_string("+> @env := cli/env\nx := @env/HOME\n")
-                .is_err()
-        );
     }
 }
-
-#[cfg(all(test, feature = "legacy-interpreter"))]
-#[path = "tests/resource_aliases.rs"]
-mod resource_alias_tests;

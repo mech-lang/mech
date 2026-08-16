@@ -18,6 +18,7 @@ pattern='^[[:space:]]*use[[:space:]]+(crate|super(::super)*)::\*;'
 matches=$(find "$runtime_root" \
   -type f \
   -name '*.rs' \
+  ! -name 'tests.rs' \
   ! -path '*/tests/*' \
   ! -path '*/input_tests/*' \
   ! -path '*/test_support/*' \

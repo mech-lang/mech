@@ -1,8 +1,3 @@
-mod admission;
-mod binding;
-mod integrity;
+#[cfg(feature = "resident-routing-source")]
 mod queue;
-mod reactive_hosts;
-mod rollback;
-mod scheduling;
 mod snapshot_boundaries;

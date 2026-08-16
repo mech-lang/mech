@@ -61,6 +61,9 @@ impl MechFunctionImpl for SetNotElementOfFxn {
     fn out(&self) -> LegacyValue {
         LegacyValue::Bool(self.out.clone())
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_SET_MEMBERSHIP_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -70,15 +73,12 @@ impl MechFunctionImpl for SetNotElementOfFxn {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SetNotElementOfFxn {
     fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination = compile_register_brrw!(self.out, ctx);
-        let element = compile_value_register(
-            &self.elem,
-            core::ptr::from_ref(&self.elem).addr(),
-            ctx,
-        )?;
+        let element =
+            compile_value_register(&self.elem, core::ptr::from_ref(&self.elem).addr(), ctx)?;
         let set = compile_register_brrw!(self.set, ctx);
         // Builtin operator ∉
         ctx.emit_binop(hash_str("SetNotElementOfFxn"), destination, element, set);

@@ -8,6 +8,42 @@ use nalgebra::{
 };
 use std::iter::Step;
 use std::marker::PhantomData;
+use std::sync::LazyLock;
+
+static PURE_INCLUSIVE_INCREMENT_RANGE_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["range".to_owned()].into_boxed_slice(),
+                    contract_name: "inclusive-increment-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 // Exclusive ------------------------------------------------------------------
 
@@ -32,14 +68,14 @@ where
         + 'static
         + One
         + Add<Output = T>,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     T: CompileConst + ConstElem,
     Ref<T>: ToValue,
     Ref<naMatrix<T, R1, C1, S1>>: ToValue,
     naMatrix<T, R1, C1, S1>: AsNaKind,
     naMatrix<T, R1, C1, S1>: FunctionRuntimeType,
     T: FunctionRuntimeType,
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     naMatrix<T, R1, C1, S1>: CompileConst + ConstElem,
     R1: Dim + 'static,
     C1: Dim,
@@ -122,6 +158,9 @@ where
     fn out(&self) -> LegacyValue {
         self.out.to_value()
     }
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_INCLUSIVE_INCREMENT_RANGE_CONTRACT)
+    }
     fn to_string(&self) -> String {
         format!("{:#?}", self)
     }
@@ -176,7 +215,7 @@ mod tests {
         assert_eq!(*out.borrow(), previous);
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl<T, R1, C1, S1> MechFunctionCompiler
     for RangeIncrementInclusiveScalar<T, naMatrix<T, R1, C1, S1>>
 where

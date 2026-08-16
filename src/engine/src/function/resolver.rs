@@ -147,7 +147,7 @@ fn extension_unavailable(id: ExtensionFunctionId, canonical_name: Option<&str>) 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     use mech_core::{
         FunctionCatalogBuilder, FunctionDefine, FunctionExport, FunctionExposure,
@@ -175,7 +175,7 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for TestFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)

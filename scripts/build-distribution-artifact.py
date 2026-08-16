@@ -125,7 +125,18 @@ def package(args: argparse.Namespace, executable: Path, target: str) -> Path:
         command.extend(["--date", args.date])
     elif args.date:
         raise RuntimeError("--date is only valid for nightly artifacts")
-    output = subprocess.check_output(command, cwd=ROOT, text=True).strip()
+    completed = subprocess.run(command, cwd=ROOT, text=True, capture_output=True)
+    if completed.returncode != 0:
+        diagnostic = "\n".join(
+            part.strip()
+            for part in (completed.stdout, completed.stderr)
+            if part.strip()
+        )
+        raise RuntimeError(
+            "distribution packager failed"
+            + (f":\n{diagnostic}" if diagnostic else " without a diagnostic")
+        )
+    output = completed.stdout.strip()
     archive = Path(output)
     if not archive.is_file():
         raise RuntimeError(f"distribution archive was not produced: {archive}")

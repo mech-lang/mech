@@ -57,6 +57,62 @@ use nalgebra::Vector4;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use paste::paste;
+use std::sync::LazyLock;
+
+static PURE_LOGIC_BINARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| logic_full_write_contract(2, ChangeDetectionPolicy::ExactScalar));
+static PURE_LOGIC_BINARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| logic_full_write_contract(2, ChangeDetectionPolicy::KernelReported));
+static PURE_LOGIC_UNARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| logic_full_write_contract(1, ChangeDetectionPolicy::ExactScalar));
+static PURE_LOGIC_UNARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| logic_full_write_contract(1, ChangeDetectionPolicy::KernelReported));
+
+fn logic_full_write_contract(
+    input_count: usize,
+    change_detection: ChangeDetectionPolicy,
+) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            (0..input_count)
+                .map(|_| InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+fn logic_binary_full_write_contract(
+    output: FunctionValueRepresentation,
+) -> &'static OperationContractDeclaration {
+    match output {
+        FunctionValueRepresentation::Matrix { .. } => &PURE_LOGIC_BINARY_KERNEL_REPORTED,
+        _ => &PURE_LOGIC_BINARY_EXACT_SCALAR,
+    }
+}
+
+fn logic_unary_full_write_contract(
+    output: FunctionValueRepresentation,
+) -> &'static OperationContractDeclaration {
+    match output {
+        FunctionValueRepresentation::Matrix { .. } => &PURE_LOGIC_UNARY_KERNEL_REPORTED,
+        _ => &PURE_LOGIC_UNARY_EXACT_SCALAR,
+    }
+}
 
 #[cfg(feature = "and")]
 pub mod and;
@@ -129,6 +185,11 @@ macro_rules! impl_logic_binop {
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some($crate::logic_binary_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -137,7 +198,7 @@ macro_rules! impl_logic_binop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 let name = format!("{}<bool>", stringify!($struct_name));

@@ -4,7 +4,11 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
 };
 
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
+    MechErrorKind, OperationContractDeclaration, Ref,
+};
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
@@ -12,6 +16,22 @@ use mech_runtime::{
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     RuntimeResourceWriteRequest, materialize_host_manifest,
 };
+
+static CLI_OUTPUT_EFFECT_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+    std::sync::LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
 
 pub trait CliBackend: std::fmt::Debug {
     fn env_var(&self, name: &str) -> MResult<Option<String>>;
@@ -97,6 +117,21 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             ]);
         }
         bases
+    }
+
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
+    fn observation_requires_input_driver(&self, request: &RuntimeResourceReadRequest) -> bool {
+        !self.matches_base(&request.base_uri, "env")
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send).then_some(&CLI_OUTPUT_EFFECT_CONTRACT)
     }
 
     fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
@@ -200,7 +235,13 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
             "line" => "\n",
             _ => unreachable!("cli stdout/stderr path validated by preflight_write"),
         };
-        let text = value_to_text(&request.value) + suffix;
+        let LegacyValue::String(value) = request.value else {
+            return Err(cli_error(
+                request.base_uri,
+                "stdout/stderr sends require a scalar string payload",
+            ));
+        };
+        let text = value.borrow().clone() + suffix;
         let stream = if self.matches_base(&request.base_uri, "stdout") {
             CliOutputStream::Stdout
         } else {
@@ -214,6 +255,23 @@ impl<B: CliBackend + 'static> RuntimeResourceProvider for CliResourceProvider<B>
                 resource: request.base_uri,
             },
         )))
+    }
+
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri.clone(),
+            path: request.path,
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })?;
+        if !matches!(request.value, LegacyValue::String(_)) {
+            return Err(cli_error(
+                request.base_uri,
+                "stdout/stderr sends require a scalar string payload",
+            ));
+        }
+        Ok(())
     }
 }
 
@@ -278,13 +336,6 @@ fn validate_env_key(key: &str) -> MResult<()> {
         ));
     }
     Ok(())
-}
-
-fn value_to_text(value: &LegacyValue) -> String {
-    match value {
-        LegacyValue::String(s) => s.borrow().clone(),
-        other => format!("{}", other),
-    }
 }
 
 fn cli_error(resource: String, reason: impl Into<String>) -> MechError {

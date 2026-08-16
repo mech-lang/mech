@@ -31,7 +31,7 @@ macro_rules! impl_binop_solve {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: Copy
                 + Debug
                 + Display
@@ -56,7 +56,7 @@ macro_rules! impl_binop_solve {
                 + ConstElem
                 + CompileConst
                 + AsValueKind,
-            #[cfg(not(feature = "compiler"))]
+            #[cfg(not(feature = "semantic-compiler"))]
             T: Copy
                 + Debug
                 + Display
@@ -153,7 +153,7 @@ macro_rules! impl_binop_solve {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind,

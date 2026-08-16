@@ -3,27 +3,27 @@ use super::*;
 use crate::structures::Matrix;
 use crate::*;
 
-#[cfg(all(feature = "compiler", feature = "no_std"))]
+#[cfg(all(feature = "semantic-compiler", feature = "no_std"))]
 use alloc::collections::BTreeSet;
-#[cfg(all(feature = "compiler", not(feature = "no_std")))]
+#[cfg(all(feature = "semantic-compiler", not(feature = "no_std")))]
 use std::collections::BTreeSet;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 const MAX_CONSTANT_NESTING: usize = 256;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 struct ConstantCodecContext {
     active_references: BTreeSet<usize>,
     depth: usize,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 enum AnnotatedChild {
     Concrete(EncodedConstant),
     AbsentOption { declared: RuntimeType },
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl ConstantCodecContext {
     fn new() -> Self {
         Self {
@@ -47,7 +47,7 @@ impl ConstantCodecContext {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn encode_annotated_child(
     value: &LegacyValue,
     declared: &RuntimeType,
@@ -100,7 +100,7 @@ fn encode_annotated_child(
     Ok(AnnotatedChild::Concrete(context.encode_child(value)?))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn encode_absent_option(runtime_type: RuntimeType) -> MResult<EncodedConstant> {
     if !matches!(runtime_type, RuntimeType::Option(_)) {
         return Err(unsupported_constant(
@@ -112,7 +112,7 @@ fn encode_absent_option(runtime_type: RuntimeType) -> MResult<EncodedConstant> {
     Ok(encoded_constant(runtime_type, 1, vec![0]))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn finalize_annotated_children(
     declared: &RuntimeType,
     children: Vec<AnnotatedChild>,
@@ -170,7 +170,7 @@ fn finalize_annotated_children(
     Ok((runtime_type, encoded))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn runtime_table_type_from_columns(columns: &[(String, ValueKind)]) -> MResult<RuntimeType> {
     Ok(RuntimeType::Table {
         columns: columns
@@ -181,7 +181,7 @@ fn runtime_table_type_from_columns(columns: &[(String, ValueKind)]) -> MResult<R
     })
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn runtime_type_from_value_kind(kind: &ValueKind) -> MResult<RuntimeType> {
     Ok(match kind {
         ValueKind::U8 => RuntimeType::U8,
@@ -281,7 +281,7 @@ fn runtime_type_from_value_kind(kind: &ValueKind) -> MResult<RuntimeType> {
     })
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn runtime_type_matches_annotation(actual: &RuntimeType, declared: &RuntimeType) -> bool {
     match (actual, declared) {
         (
@@ -371,7 +371,7 @@ fn runtime_type_matches_annotation(actual: &RuntimeType, declared: &RuntimeType)
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn unsupported_value_kind(kind: ValueKind, reason: &'static str) -> MResult<u32> {
     Err(unsupported_constant(
         runtime_type_from_value_kind(&kind)?,
@@ -380,7 +380,7 @@ fn unsupported_value_kind(kind: ValueKind, reason: &'static str) -> MResult<u32>
     ))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn semantic_kind_from_value_kind(kind: &ValueKind) -> MResult<crate::kind::Kind> {
     use crate::kind::Kind;
 
@@ -434,17 +434,17 @@ fn semantic_kind_from_value_kind(kind: &ValueKind) -> MResult<crate::kind::Kind>
 // CompileConst Trait
 // ----------------------------------------------------------------------------
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 pub trait CompileConst {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 struct CapturingConstantContext {
     constant: Option<EncodedConstant>,
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl BytecodeCompilerContext for CapturingConstantContext {
     fn register_for_ptr_with_initialization_status(&mut self, _pointer: usize) -> (Register, bool) {
         (0, false)
@@ -528,7 +528,7 @@ impl BytecodeCompilerContext for CapturingConstantContext {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn capture_constant<T: CompileConst + ?Sized>(value: &T) -> MResult<EncodedConstant> {
     let mut context = CapturingConstantContext { constant: None };
     value.compile_const(&mut context)?;
@@ -537,7 +537,7 @@ fn capture_constant<T: CompileConst + ?Sized>(value: &T) -> MResult<EncodedConst
         .ok_or_else(|| invalid::<()>("constant encoder did not intern a constant").unwrap_err())
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn encoded_constant(runtime_type: RuntimeType, alignment: u8, bytes: Vec<u8>) -> EncodedConstant {
     EncodedConstant {
         runtime_type,
@@ -546,7 +546,7 @@ fn encoded_constant(runtime_type: RuntimeType, alignment: u8, bytes: Vec<u8>) ->
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn encode_constant_value(
     value: &LegacyValue,
     context: &mut ConstantCodecContext,
@@ -755,7 +755,7 @@ fn encode_constant_value(
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn append_child_payload(payload: &mut Vec<u8>, child: &EncodedConstant) -> MResult<()> {
     let length = u32::try_from(child.bytes.len()).map_err(|_| {
         unsupported_constant(
@@ -769,7 +769,7 @@ fn append_child_payload(payload: &mut Vec<u8>, child: &EncodedConstant) -> MResu
     Ok(())
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn checked_count(
     count: usize,
     runtime_type: RuntimeType,
@@ -779,7 +779,7 @@ fn checked_count(
     u32::try_from(count).map_err(|_| unsupported_constant(runtime_type, kind, what))
 }
 
-#[cfg(all(feature = "tuple", feature = "compiler"))]
+#[cfg(all(feature = "tuple", feature = "semantic-compiler"))]
 fn encode_tuple_constant(
     value: &MechTuple,
     context: &mut ConstantCodecContext,
@@ -814,7 +814,7 @@ fn encode_tuple_constant(
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
 
-#[cfg(all(feature = "record", feature = "compiler"))]
+#[cfg(all(feature = "record", feature = "semantic-compiler"))]
 fn encode_record_constant(
     value: &MechRecord,
     context: &mut ConstantCodecContext,
@@ -871,7 +871,7 @@ fn encode_record_constant(
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
 
-#[cfg(all(feature = "map", feature = "compiler"))]
+#[cfg(all(feature = "map", feature = "semantic-compiler"))]
 fn encode_map_constant(
     value: &MechMap,
     context: &mut ConstantCodecContext,
@@ -934,7 +934,7 @@ fn encode_map_constant(
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
 
-#[cfg(all(feature = "set", feature = "compiler"))]
+#[cfg(all(feature = "set", feature = "semantic-compiler"))]
 fn encode_set_constant(
     value: &MechSet,
     context: &mut ConstantCodecContext,
@@ -997,7 +997,7 @@ fn encode_set_constant(
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
 
-#[cfg(all(feature = "table", feature = "compiler", feature = "vectord"))]
+#[cfg(all(feature = "table", feature = "semantic-compiler", feature = "vectord"))]
 fn encode_table_constant(
     value: &MechTable,
     context: &mut ConstantCodecContext,
@@ -1101,7 +1101,11 @@ fn encode_table_constant(
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
 
-#[cfg(all(feature = "table", feature = "compiler", not(feature = "vectord")))]
+#[cfg(all(
+    feature = "table",
+    feature = "semantic-compiler",
+    not(feature = "vectord")
+))]
 fn encode_table_constant(
     value: &MechTable,
     _context: &mut ConstantCodecContext,
@@ -1112,7 +1116,7 @@ fn encode_table_constant(
     )
 }
 
-#[cfg(all(feature = "atom", feature = "compiler"))]
+#[cfg(all(feature = "atom", feature = "semantic-compiler"))]
 fn encode_atom_constant(value: &MechAtom) -> MResult<EncodedConstant> {
     let id = value.id();
     let name = value.name();
@@ -1130,7 +1134,7 @@ fn encode_atom_constant(value: &MechAtom) -> MResult<EncodedConstant> {
     ))
 }
 
-#[cfg(all(feature = "enum", feature = "compiler"))]
+#[cfg(all(feature = "enum", feature = "semantic-compiler"))]
 fn encode_enum_constant(
     value: &MechEnum,
     context: &mut ConstantCodecContext,
@@ -1226,7 +1230,7 @@ fn encode_enum_constant(
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn encode_reference_constant(
     value: &MutableReference,
     context: &mut ConstantCodecContext,
@@ -1251,7 +1255,7 @@ fn encode_reference_constant(
     ))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn encode_empty_kind_constant(kind: &ValueKind) -> MResult<EncodedConstant> {
     match kind {
         ValueKind::Any => Ok(encoded_constant(RuntimeType::Any, 1, Vec::new())),
@@ -1269,7 +1273,7 @@ fn encode_empty_kind_constant(kind: &ValueKind) -> MResult<EncodedConstant> {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 fn encode_typed_constant(
     value: &LegacyValue,
     kind: &ValueKind,
@@ -1301,7 +1305,7 @@ fn encode_typed_constant(
     Ok(encoded_constant(runtime_type, 4, bytes))
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl CompileConst for LegacyValue {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         let mut codec = ConstantCodecContext::new();
@@ -1309,7 +1313,7 @@ impl CompileConst for LegacyValue {
     }
 }
 
-#[cfg(all(feature = "f64", feature = "compiler"))]
+#[cfg(all(feature = "f64", feature = "semantic-compiler"))]
 impl CompileConst for f64 {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         ctx.intern_constant(EncodedConstant {
@@ -1320,7 +1324,7 @@ impl CompileConst for f64 {
     }
 }
 
-#[cfg(all(feature = "f32", feature = "compiler"))]
+#[cfg(all(feature = "f32", feature = "semantic-compiler"))]
 impl CompileConst for f32 {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         ctx.intern_constant(EncodedConstant {
@@ -1331,7 +1335,7 @@ impl CompileConst for f32 {
     }
 }
 
-#[cfg(all(feature = "u8", feature = "compiler"))]
+#[cfg(all(feature = "u8", feature = "semantic-compiler"))]
 impl CompileConst for u8 {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         ctx.intern_constant(EncodedConstant {
@@ -1342,7 +1346,7 @@ impl CompileConst for u8 {
     }
 }
 
-#[cfg(all(feature = "i8", feature = "compiler"))]
+#[cfg(all(feature = "i8", feature = "semantic-compiler"))]
 impl CompileConst for i8 {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         ctx.intern_constant(EncodedConstant {
@@ -1353,7 +1357,7 @@ impl CompileConst for i8 {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl CompileConst for usize {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         let value = u64::try_from(*self).map_err(|_| {
@@ -1374,7 +1378,7 @@ impl CompileConst for usize {
 macro_rules! impl_compile_const {
     ($feature:literal, $t:tt, $runtime_type:ident, $alignment:literal) => {
         paste! {
-          #[cfg(all(feature = $feature, feature = "compiler"))]
+          #[cfg(all(feature = $feature, feature = "semantic-compiler"))]
           impl CompileConst for $t {
             fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
               ctx.intern_constant(EncodedConstant {
@@ -1406,7 +1410,7 @@ impl_compile_const!("i64", i64, I64, 8);
 impl_compile_const!("i128", i128, I128, 16);
 
 #[cfg(all(
-    feature = "compiler",
+    feature = "semantic-compiler",
     any(feature = "bool", feature = "variable_define")
 ))]
 impl CompileConst for bool {
@@ -1420,7 +1424,7 @@ impl CompileConst for bool {
 }
 
 #[cfg(all(
-    feature = "compiler",
+    feature = "semantic-compiler",
     any(feature = "string", feature = "variable_define")
 ))]
 impl CompileConst for String {
@@ -1433,7 +1437,7 @@ impl CompileConst for String {
     }
 }
 
-#[cfg(all(feature = "rational", feature = "compiler"))]
+#[cfg(all(feature = "rational", feature = "semantic-compiler"))]
 impl CompileConst for R64 {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         let numerator = *self.numer();
@@ -1446,7 +1450,7 @@ impl CompileConst for R64 {
     }
 }
 
-#[cfg(all(feature = "complex", feature = "compiler"))]
+#[cfg(all(feature = "complex", feature = "semantic-compiler"))]
 impl CompileConst for C64 {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         ctx.intern_constant(EncodedConstant {
@@ -1461,14 +1465,14 @@ impl CompileConst for C64 {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 trait MatrixConstantElement: AsValueKind + 'static {
     fn runtime_type() -> Option<RuntimeType>;
     fn alignment() -> u8;
     fn encode_matrix_element(&self, payload: &mut Vec<u8>) -> MResult<()>;
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 macro_rules! impl_matrix_constant_element {
     ($feature:literal, $type:ty, $runtime_type:ident, $alignment:literal) => {
         #[cfg(feature = $feature)]
@@ -1489,7 +1493,7 @@ macro_rules! impl_matrix_constant_element {
     };
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler", feature = "bool"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "bool"))]
 impl MatrixConstantElement for bool {
     fn runtime_type() -> Option<RuntimeType> {
         Some(RuntimeType::Bool)
@@ -1505,28 +1509,28 @@ impl MatrixConstantElement for bool {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("u8", u8, U8, 1);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("u16", u16, U16, 2);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("u32", u32, U32, 4);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("u64", u64, U64, 8);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("u128", u128, U128, 16);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("i8", i8, I8, 1);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("i16", i16, I16, 2);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("i32", i32, I32, 4);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("i64", i64, I64, 8);
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl_matrix_constant_element!("i128", i128, I128, 16);
 
-#[cfg(all(feature = "matrix", feature = "compiler", feature = "f32"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "f32"))]
 impl MatrixConstantElement for f32 {
     fn runtime_type() -> Option<RuntimeType> {
         Some(RuntimeType::F32)
@@ -1542,7 +1546,7 @@ impl MatrixConstantElement for f32 {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler", feature = "f64"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "f64"))]
 impl MatrixConstantElement for f64 {
     fn runtime_type() -> Option<RuntimeType> {
         Some(RuntimeType::F64)
@@ -1558,7 +1562,7 @@ impl MatrixConstantElement for f64 {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler", feature = "string"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "string"))]
 impl MatrixConstantElement for String {
     fn runtime_type() -> Option<RuntimeType> {
         Some(RuntimeType::String)
@@ -1582,7 +1586,11 @@ impl MatrixConstantElement for String {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler", feature = "rational"))]
+#[cfg(all(
+    feature = "matrix",
+    feature = "semantic-compiler",
+    feature = "rational"
+))]
 impl MatrixConstantElement for R64 {
     fn runtime_type() -> Option<RuntimeType> {
         Some(RuntimeType::R64)
@@ -1599,7 +1607,7 @@ impl MatrixConstantElement for R64 {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler", feature = "complex"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler", feature = "complex"))]
 impl MatrixConstantElement for C64 {
     fn runtime_type() -> Option<RuntimeType> {
         Some(RuntimeType::C64)
@@ -1616,7 +1624,7 @@ impl MatrixConstantElement for C64 {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl MatrixConstantElement for usize {
     fn runtime_type() -> Option<RuntimeType> {
         Some(RuntimeType::Index)
@@ -1639,7 +1647,7 @@ impl MatrixConstantElement for usize {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl MatrixConstantElement for LegacyValue {
     fn runtime_type() -> Option<RuntimeType> {
         None
@@ -1654,7 +1662,7 @@ impl MatrixConstantElement for LegacyValue {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 fn matrix_element_alignment(element_type: &RuntimeType) -> u8 {
     match element_type {
         RuntimeType::Bool | RuntimeType::U8 | RuntimeType::I8 => 1,
@@ -1671,7 +1679,7 @@ fn matrix_element_alignment(element_type: &RuntimeType) -> u8 {
     }
 }
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 fn encode_matrix_element<T: 'static>(
     element: &T,
     element_type: &RuntimeType,
@@ -1800,7 +1808,7 @@ fn encode_matrix_element<T: 'static>(
 
 macro_rules! impl_compile_const_matrix {
     ($matrix_type:ty, $storage:expr) => {
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> CompileConst for $matrix_type
         where
             T: ConstElem + AsValueKind + 'static,
@@ -1902,7 +1910,7 @@ impl_compile_const_matrix!(na::DVector<T>, MatrixStorage::VectorD);
 #[cfg(feature = "row_vectord")]
 impl_compile_const_matrix!(na::RowDVector<T>, MatrixStorage::RowVectorD);
 
-#[cfg(all(feature = "matrix", feature = "compiler"))]
+#[cfg(all(feature = "matrix", feature = "semantic-compiler"))]
 impl<T> CompileConst for Matrix<T>
 where
     T: CompileConst + ConstElem + AsValueKind + 'static,
@@ -1943,7 +1951,7 @@ where
     }
 }
 
-#[cfg(all(feature = "matrixd", feature = "compiler"))]
+#[cfg(all(feature = "matrixd", feature = "semantic-compiler"))]
 impl<T> CompileConst for Ref<DMatrix<T>>
 where
     T: CompileConst + ConstElem + AsValueKind + 'static,
@@ -1953,7 +1961,7 @@ where
     }
 }
 
-#[cfg(all(feature = "vectord", feature = "compiler"))]
+#[cfg(all(feature = "vectord", feature = "semantic-compiler"))]
 impl<T> CompileConst for Ref<DVector<T>>
 where
     T: CompileConst + ConstElem + AsValueKind + 'static,
@@ -1963,7 +1971,7 @@ where
     }
 }
 
-#[cfg(all(feature = "row_vectord", feature = "compiler"))]
+#[cfg(all(feature = "row_vectord", feature = "semantic-compiler"))]
 impl<T> CompileConst for Ref<RowDVector<T>>
 where
     T: CompileConst + ConstElem + AsValueKind + 'static,
@@ -1973,49 +1981,49 @@ where
     }
 }
 
-#[cfg(all(feature = "record", feature = "compiler"))]
+#[cfg(all(feature = "record", feature = "semantic-compiler"))]
 impl CompileConst for MechRecord {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         LegacyValue::Record(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
-#[cfg(all(feature = "enum", feature = "compiler"))]
+#[cfg(all(feature = "enum", feature = "semantic-compiler"))]
 impl CompileConst for MechEnum {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         LegacyValue::Enum(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
-#[cfg(all(feature = "atom", feature = "compiler"))]
+#[cfg(all(feature = "atom", feature = "semantic-compiler"))]
 impl CompileConst for MechAtom {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         LegacyValue::Atom(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
-#[cfg(all(feature = "set", feature = "compiler"))]
+#[cfg(all(feature = "set", feature = "semantic-compiler"))]
 impl CompileConst for MechSet {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         LegacyValue::Set(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
-#[cfg(all(feature = "tuple", feature = "compiler"))]
+#[cfg(all(feature = "tuple", feature = "semantic-compiler"))]
 impl CompileConst for MechTuple {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         LegacyValue::Tuple(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
-#[cfg(all(feature = "table", feature = "compiler"))]
+#[cfg(all(feature = "table", feature = "semantic-compiler"))]
 impl CompileConst for MechTable {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         LegacyValue::Table(Ref::new(self.clone())).compile_const(ctx)
     }
 }
 
-#[cfg(all(feature = "map", feature = "compiler"))]
+#[cfg(all(feature = "map", feature = "semantic-compiler"))]
 impl CompileConst for MechMap {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         LegacyValue::Map(Ref::new(self.clone())).compile_const(ctx)

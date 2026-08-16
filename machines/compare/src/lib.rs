@@ -48,6 +48,50 @@ use nalgebra::Vector3;
 use nalgebra::Vector4;
 
 use paste::paste;
+use std::sync::LazyLock;
+
+static PURE_COMPARE_SCALAR_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_compare_contract(ChangeDetectionPolicy::ExactScalar));
+static PURE_COMPARE_MATRIX_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| pure_compare_contract(ChangeDetectionPolicy::KernelReported));
+
+fn pure_compare_contract(change_detection: ChangeDetectionPolicy) -> OperationContractDeclaration {
+    OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+                InputPortPolicy {
+                    access: AccessMode::Read,
+                    delivery: DeliveryMode::Signal,
+                },
+            ]
+            .into_boxed_slice(),
+        ),
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::FullWrite {
+                shape: ShapeRule::Declared,
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    }
+}
+
+fn compare_full_write_contract(
+    output: FunctionValueRepresentation,
+) -> &'static OperationContractDeclaration {
+    match output {
+        FunctionValueRepresentation::Matrix { .. } => &PURE_COMPARE_MATRIX_CONTRACT,
+        _ => &PURE_COMPARE_SCALAR_CONTRACT,
+    }
+}
 
 #[cfg(feature = "runtime")]
 pub mod catalog;
@@ -112,7 +156,7 @@ macro_rules! impl_compare_binop {
         impl<T> MechFunctionFactory for $struct_name<T>
         where
             T: std::fmt::Debug + Clone + 'static + AsValueKind + PartialEq + PartialOrd,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType,
@@ -151,6 +195,7 @@ macro_rules! impl_compare_binop {
         where
             T: std::fmt::Debug + Clone + 'static + PartialEq + PartialOrd,
             Ref<$out_type>: ToValue,
+            $out_type: FunctionRuntimeType,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -162,6 +207,11 @@ macro_rules! impl_compare_binop {
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(compare_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -170,7 +220,7 @@ macro_rules! impl_compare_binop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind,

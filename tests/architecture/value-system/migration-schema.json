@@ -48,7 +48,7 @@
       "properties": {
         "count": { "minimum": 1, "type": "integer" },
         "fingerprint": { "pattern": "^[0-9a-f]{64}$", "type": "string" },
-        "gate": { "const": "D1A" },
+        "gate": { "enum": ["D1A", "E4"] },
         "identifier": {
           "enum": [
             "mutable-reference-alias",

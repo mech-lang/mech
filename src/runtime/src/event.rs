@@ -19,28 +19,6 @@ use crate::id::{
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum RuntimeIntegrityConstraintFailureReason {
-    EvaluatedFalse,
-    ExpectedBool,
-    BorrowConflict,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RuntimeIntegrityConstraintViolation {
-    pub interpreter_id: u64,
-    pub constraint_id: u64,
-    pub name: String,
-    pub expression: String,
-    pub reason: RuntimeIntegrityConstraintFailureReason,
-    pub evaluated_kind: Option<String>,
-    pub actual: Option<String>,
-    pub operator: Option<String>,
-    pub expected: Option<String>,
-}
-
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RuntimeEventKind {
     RuntimeCreated {
         runtime_id: RuntimeId,
@@ -80,20 +58,6 @@ pub enum RuntimeEventKind {
     ModuleActivated {
         module_version: ModuleVersionId,
     },
-    ModuleActivationFailed {
-        module_version: ModuleVersionId,
-        message: String,
-    },
-    ModuleExecutionStarted {
-        module_version: ModuleVersionId,
-    },
-    ModuleExecutionCompleted {
-        module_version: ModuleVersionId,
-    },
-    ModuleExecutionFailed {
-        module_version: ModuleVersionId,
-        message: String,
-    },
     ModuleImportLinked {
         importer: ModuleVersionId,
         dependency: ModuleVersionId,
@@ -105,31 +69,6 @@ pub enum RuntimeEventKind {
     },
     CapabilityRevoked {
         capability_id: CapabilityId,
-    },
-    CapabilityDenied {
-        subject: String,
-        operation: String,
-        resource: String,
-    },
-
-    ProgramStarted {
-        task_id: Option<TaskId>,
-    },
-    ProgramCompleted {
-        task_id: Option<TaskId>,
-    },
-    ProgramFailed {
-        task_id: Option<TaskId>,
-        message: String,
-    },
-    IntegrityConstraintViolated {
-        transaction_id: TransactionId,
-        task_id: Option<TaskId>,
-        violations: Vec<RuntimeIntegrityConstraintViolation>,
-    },
-    ProgramProfiled {
-        task_id: Option<TaskId>,
-        duration_ns: u128,
     },
 
     TaskCreated {
@@ -153,17 +92,6 @@ pub enum RuntimeEventKind {
         actor_id: ActorId,
         message_id: MessageId,
     },
-    ActorTurnStarted {
-        actor_id: ActorId,
-    },
-    ActorTurnCompleted {
-        actor_id: ActorId,
-    },
-    ActorTurnFailed {
-        actor_id: ActorId,
-        message: String,
-    },
-
     ObjectCreated {
         object_id: ObjectId,
     },
@@ -258,30 +186,15 @@ impl RuntimeEventKind {
             RuntimeEventKind::ModuleCompiled { .. } => ":module/compiled",
             RuntimeEventKind::ModuleCompileFailed { .. } => ":module/compile/failed",
             RuntimeEventKind::ModuleActivated { .. } => ":module/activated",
-            RuntimeEventKind::ModuleActivationFailed { .. } => ":module/activation/failed",
-            RuntimeEventKind::ModuleExecutionStarted { .. } => ":module/execution/started",
-            RuntimeEventKind::ModuleExecutionCompleted { .. } => ":module/execution/completed",
-            RuntimeEventKind::ModuleExecutionFailed { .. } => ":module/execution/failed",
             RuntimeEventKind::ModuleImportLinked { .. } => ":module/import/linked",
             RuntimeEventKind::CapabilityGranted { .. } => ":capability/granted",
             RuntimeEventKind::CapabilityRevoked { .. } => ":capability/revoked",
-            RuntimeEventKind::CapabilityDenied { .. } => ":capability/denied",
-            RuntimeEventKind::ProgramStarted { .. } => ":program/started",
-            RuntimeEventKind::ProgramCompleted { .. } => ":program/completed",
-            RuntimeEventKind::ProgramFailed { .. } => ":program/failed",
-            RuntimeEventKind::IntegrityConstraintViolated { .. } => {
-                ":program/integrity-constraint/violated"
-            }
-            RuntimeEventKind::ProgramProfiled { .. } => ":program/profiled",
             RuntimeEventKind::TaskCreated { .. } => ":task/created",
             RuntimeEventKind::TaskStarted { .. } => ":task/started",
             RuntimeEventKind::TaskCompleted { .. } => ":task/completed",
             RuntimeEventKind::TaskFailed { .. } => ":task/failed",
             RuntimeEventKind::ActorCreated { .. } => ":actor/created",
             RuntimeEventKind::ActorMessageSent { .. } => ":actor/message/sent",
-            RuntimeEventKind::ActorTurnStarted { .. } => ":actor/turn/started",
-            RuntimeEventKind::ActorTurnCompleted { .. } => ":actor/turn/completed",
-            RuntimeEventKind::ActorTurnFailed { .. } => ":actor/turn/failed",
             RuntimeEventKind::ObjectCreated { .. } => ":object/created",
             RuntimeEventKind::ObjectUpdated { .. } => ":object/updated",
             RuntimeEventKind::TransactionStarted { .. } => ":transaction/started",

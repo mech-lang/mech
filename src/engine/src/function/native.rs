@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeCompilerContext, MechError, MechFunctionCompiler, Register};
 use mech_core::{
     FunctionSpecializer, GuardFunctionSafety, LegacyValue, MResult, MechErrorKind, MechFunctionImpl,
@@ -66,7 +66,7 @@ impl MechFunctionImpl for ClosureNativeFunction {
     }
 }
 
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ClosureNativeFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Err(MechError::new(

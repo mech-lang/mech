@@ -128,6 +128,9 @@ pub enum ResidentExecutionError {
     InvalidWrite {
         node: NodeId,
     },
+    InvalidOutputMaterialization {
+        slot: CellSlotId,
+    },
     ExternalSummaryRequired,
     ExternalPublicationUnauthorized,
     EffectIntentCapacity,
@@ -689,6 +692,7 @@ impl ReactiveInstance {
         {
             self.workspace.all_outputs_initialized = true;
         }
+        self.materialize_outputs(before_epoch, working_epoch, false)?;
         self.validate_constraints(working_epoch)
     }
 
@@ -744,6 +748,7 @@ impl ReactiveInstance {
                 self.workspace.all_outputs_initialized = true;
             }
         }
+        self.materialize_outputs(before_epoch, working_epoch, true)?;
         self.validate_constraints(working_epoch)
     }
 
@@ -801,7 +806,79 @@ impl ReactiveInstance {
                 self.workspace.all_outputs_initialized = true;
             }
         }
+        self.materialize_outputs(before_epoch, working_epoch, true)?;
         self.validate_constraints(working_epoch)
+    }
+
+    fn materialize_outputs(
+        &mut self,
+        before_epoch: InstanceEpoch,
+        working_epoch: InstanceEpoch,
+        record_summary: bool,
+    ) -> Result<(), ResidentExecutionError> {
+        for index in 0..self.plan.output_materializations.len() {
+            let materialization = self.plan.output_materializations[index];
+            let target = materialization.target;
+            let target_region = self.plan.slots[target.get() as usize].region;
+            match materialization.source {
+                ResidentReadLocation::Constant(source) => {
+                    let candidate = self.state.candidate_buffer(target, before_epoch);
+                    copy_input(
+                        &mut self.state.buffers[candidate],
+                        target_region,
+                        self.activation.read(source),
+                    )
+                    .map_err(|_| {
+                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    })?;
+                    self.state.tag(target, candidate, working_epoch);
+                }
+                ResidentReadLocation::Input(source) => {
+                    let candidate = self.state.candidate_buffer(target, before_epoch);
+                    copy_input(
+                        &mut self.state.buffers[candidate],
+                        target_region,
+                        self.workspace.input.read(source),
+                    )
+                    .map_err(|_| {
+                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    })?;
+                    self.state.tag(target, candidate, working_epoch);
+                }
+                ResidentReadLocation::Scratch(source) => {
+                    let candidate = self.state.candidate_buffer(target, before_epoch);
+                    copy_input(
+                        &mut self.state.buffers[candidate],
+                        target_region,
+                        self.workspace.scratch.read(source),
+                    )
+                    .map_err(|_| {
+                        ResidentExecutionError::InvalidOutputMaterialization { slot: target }
+                    })?;
+                    self.state.tag(target, candidate, working_epoch);
+                }
+                ResidentReadLocation::State {
+                    slot: source_slot,
+                    region: source_region,
+                } => self.state.materialize_state_slot(
+                    target,
+                    target_region,
+                    source_slot,
+                    source_region,
+                    before_epoch,
+                    working_epoch,
+                ),
+            }
+            if record_summary {
+                let slot = SlotIndex::new(target.get());
+                self.workspace.touched_slots.push(slot);
+                let candidate = self.state.select_buffer(target, working_epoch);
+                if !self.state.same_at(target, candidate, before_epoch) {
+                    self.workspace.changed_slots.push(slot);
+                }
+            }
+        }
+        Ok(())
     }
 
     fn validate_constraints(
@@ -1211,25 +1288,33 @@ impl ReactiveInstance {
                         error,
                     })?
                 };
-                if matches!(node.construction, OutputConstruction::FullWrite { .. }) {
-                    self.state.tag(slot, candidate, working_epoch);
-                    if self.plan.f64_read_tape.is_some() {
-                        self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
-                            F64_STATE_ARENA_BASE + candidate as u8;
-                    }
-                    probe.candidate_materialized_bytes += region_bytes(node.write.region);
-                    self.workspace
-                        .touched_slots
-                        .push(SlotIndex::new(slot.get()));
-                    let changed = !self.state.same_at(slot, candidate, before_epoch);
-                    if changed {
+                let policy_changed =
+                    if matches!(node.construction, OutputConstruction::FullWrite { .. }) {
+                        self.state.tag(slot, candidate, working_epoch);
+                        if self.plan.f64_read_tape.is_some() {
+                            self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
+                                F64_STATE_ARENA_BASE + candidate as u8;
+                        }
+                        probe.candidate_materialized_bytes += region_bytes(node.write.region);
                         self.workspace
-                            .changed_slots
+                            .touched_slots
                             .push(SlotIndex::new(slot.get()));
-                    }
-                    Ok(changed)
+                        let changed = !self.state.same_at(slot, candidate, before_epoch);
+                        if changed {
+                            self.workspace
+                                .changed_slots
+                                .push(SlotIndex::new(slot.get()));
+                        }
+                        changed
+                    } else {
+                        changed
+                    };
+                if self.workspace.all_outputs_initialized {
+                    Ok(policy_changed)
                 } else {
-                    Ok(changed)
+                    let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
+                    set_bit(&mut self.workspace.initialized_output_bits, index);
+                    Ok(!initialized || policy_changed)
                 }
             }
             _ => Err(ResidentExecutionError::InvalidWrite {
@@ -1323,6 +1408,29 @@ impl StateArena {
         (candidate, true)
     }
 
+    fn materialize_state_slot(
+        &mut self,
+        target_slot: CellSlotId,
+        target_region: ResidentRegion,
+        source_slot: CellSlotId,
+        source_region: ResidentRegion,
+        before: InstanceEpoch,
+        working: InstanceEpoch,
+    ) {
+        let source_buffer = self.select_buffer(source_slot, working);
+        let target_buffer = self.candidate_buffer(target_slot, before);
+        if source_buffer == target_buffer {
+            self.buffers[target_buffer].copy_region_within(target_region, source_region);
+        } else if target_buffer == 0 {
+            let [target, source] = &mut self.buffers;
+            target.copy_region_from(target_region, source, source_region);
+        } else {
+            let [source, target] = &mut self.buffers;
+            target.copy_region_from(target_region, source, source_region);
+        }
+        self.tag(target_slot, target_buffer, working);
+    }
+
     fn tag(&mut self, slot: CellSlotId, buffer: usize, epoch: InstanceEpoch) {
         self.version_mut(slot).epochs[buffer] = Some(epoch);
     }
@@ -1349,7 +1457,6 @@ impl StateArena {
     }
 }
 
-#[derive(Clone, Copy)]
 enum SliceRead<'a, T> {
     Whole(&'a [T]),
     Split {
@@ -1358,6 +1465,14 @@ enum SliceRead<'a, T> {
         gap_start: usize,
         gap_end: usize,
     },
+}
+
+impl<T> Copy for SliceRead<'_, T> {}
+
+impl<T> Clone for SliceRead<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
 }
 
 impl<'a, T> SliceRead<'a, T> {
@@ -1386,6 +1501,8 @@ struct ArenaReadAccess<'a> {
     bools: SliceRead<'a, u8>,
     indexes: SliceRead<'a, u64>,
     f64s: SliceRead<'a, f64>,
+    strings: SliceRead<'a, String>,
+    snapshots: SliceRead<'a, Option<Value>>,
 }
 
 impl<'a> ArenaReadAccess<'a> {
@@ -1394,6 +1511,8 @@ impl<'a> ArenaReadAccess<'a> {
             bools: SliceRead::Whole(&arena.bools),
             indexes: SliceRead::Whole(&arena.indexes),
             f64s: SliceRead::Whole(&arena.f64s),
+            strings: SliceRead::Whole(&arena.strings),
+            snapshots: SliceRead::Whole(&arena.snapshots),
         }
     }
 
@@ -1403,6 +1522,10 @@ impl<'a> ArenaReadAccess<'a> {
             ResidentValueKind::Bool => self.bools.get(range).map(ResidentValueRef::Bool),
             ResidentValueKind::Index => self.indexes.get(range).map(ResidentValueRef::Index),
             ResidentValueKind::F64 => self.f64s.get(range).map(ResidentValueRef::F64),
+            ResidentValueKind::String => self.strings.get(range).map(ResidentValueRef::String),
+            ResidentValueKind::Snapshot => {
+                self.snapshots.get(range).map(ResidentValueRef::Snapshot)
+            }
         }
     }
 
@@ -1433,6 +1556,8 @@ impl TypedResidentArena {
                         },
                         indexes: SliceRead::Whole(&self.indexes),
                         f64s: SliceRead::Whole(&self.f64s),
+                        strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Whole(&self.snapshots),
                     },
                     ResidentValueMut::Bool(output),
                 )
@@ -1450,6 +1575,8 @@ impl TypedResidentArena {
                             gap_end,
                         },
                         f64s: SliceRead::Whole(&self.f64s),
+                        strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Whole(&self.snapshots),
                     },
                     ResidentValueMut::Index(output),
                 )
@@ -1467,8 +1594,48 @@ impl TypedResidentArena {
                             gap_start,
                             gap_end,
                         },
+                        strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Whole(&self.snapshots),
                     },
                     ResidentValueMut::F64(output),
+                )
+            }
+            ResidentValueKind::String => {
+                let (before, tail) = self.strings.split_at_mut(region.offset);
+                let (output, after) = tail.split_at_mut(region.len);
+                (
+                    ArenaReadAccess {
+                        bools: SliceRead::Whole(&self.bools),
+                        indexes: SliceRead::Whole(&self.indexes),
+                        f64s: SliceRead::Whole(&self.f64s),
+                        strings: SliceRead::Split {
+                            before,
+                            after,
+                            gap_start,
+                            gap_end,
+                        },
+                        snapshots: SliceRead::Whole(&self.snapshots),
+                    },
+                    ResidentValueMut::String(output),
+                )
+            }
+            ResidentValueKind::Snapshot => {
+                let (before, tail) = self.snapshots.split_at_mut(region.offset);
+                let (output, after) = tail.split_at_mut(region.len);
+                (
+                    ArenaReadAccess {
+                        bools: SliceRead::Whole(&self.bools),
+                        indexes: SliceRead::Whole(&self.indexes),
+                        f64s: SliceRead::Whole(&self.f64s),
+                        strings: SliceRead::Whole(&self.strings),
+                        snapshots: SliceRead::Split {
+                            before,
+                            after,
+                            gap_start,
+                            gap_end,
+                        },
+                    },
+                    ResidentValueMut::Snapshot(output),
                 )
             }
         }
@@ -1488,6 +1655,8 @@ impl TypedResidentArena {
                         bools: before,
                         indexes: &self.indexes,
                         f64s: &self.f64s,
+                        strings: &self.strings,
+                        snapshots: &self.snapshots,
                     },
                     ResidentValueMut::Bool(output),
                 )
@@ -1500,6 +1669,8 @@ impl TypedResidentArena {
                         bools: &self.bools,
                         indexes: before,
                         f64s: &self.f64s,
+                        strings: &self.strings,
+                        snapshots: &self.snapshots,
                     },
                     ResidentValueMut::Index(output),
                 )
@@ -1512,8 +1683,38 @@ impl TypedResidentArena {
                         bools: &self.bools,
                         indexes: &self.indexes,
                         f64s: before,
+                        strings: &self.strings,
+                        snapshots: &self.snapshots,
                     },
                     ResidentValueMut::F64(output),
+                )
+            }
+            ResidentValueKind::String => {
+                let (before, tail) = self.strings.split_at_mut(region.offset);
+                let (output, _) = tail.split_at_mut(region.len);
+                (
+                    ScratchArenaReadAccess {
+                        bools: &self.bools,
+                        indexes: &self.indexes,
+                        f64s: &self.f64s,
+                        strings: before,
+                        snapshots: &self.snapshots,
+                    },
+                    ResidentValueMut::String(output),
+                )
+            }
+            ResidentValueKind::Snapshot => {
+                let (before, tail) = self.snapshots.split_at_mut(region.offset);
+                let (output, _) = tail.split_at_mut(region.len);
+                (
+                    ScratchArenaReadAccess {
+                        bools: &self.bools,
+                        indexes: &self.indexes,
+                        f64s: &self.f64s,
+                        strings: &self.strings,
+                        snapshots: before,
+                    },
+                    ResidentValueMut::Snapshot(output),
                 )
             }
         }
@@ -1532,6 +1733,8 @@ impl TypedResidentArena {
                 bools: &self.bools,
                 indexes: &self.indexes,
                 f64s: before,
+                strings: &self.strings,
+                snapshots: &self.snapshots,
             },
             output,
         )
@@ -1543,6 +1746,8 @@ struct ScratchArenaReadAccess<'a> {
     bools: &'a [u8],
     indexes: &'a [u64],
     f64s: &'a [f64],
+    strings: &'a [String],
+    snapshots: &'a [Option<Value>],
 }
 
 impl<'a> ScratchArenaReadAccess<'a> {
@@ -1553,6 +1758,10 @@ impl<'a> ScratchArenaReadAccess<'a> {
             ResidentValueKind::Bool => self.bools.get(range).map(ResidentValueRef::Bool),
             ResidentValueKind::Index => self.indexes.get(range).map(ResidentValueRef::Index),
             ResidentValueKind::F64 => self.f64s.get(range).map(ResidentValueRef::F64),
+            ResidentValueKind::String => self.strings.get(range).map(ResidentValueRef::String),
+            ResidentValueKind::Snapshot => {
+                self.snapshots.get(range).map(ResidentValueRef::Snapshot)
+            }
         }
     }
 
@@ -1921,6 +2130,16 @@ fn copy_input(
         {
             target.copy_from_slice(source);
         }
+        (ResidentValueMut::String(target), ResidentValueRef::String(source))
+            if target.len() == source.len() =>
+        {
+            target.clone_from_slice(source);
+        }
+        (ResidentValueMut::Snapshot(target), ResidentValueRef::Snapshot(source))
+            if target.len() == source.len() =>
+        {
+            target.clone_from_slice(source);
+        }
         _ => return Err(()),
     }
     Ok(())
@@ -1939,6 +2158,10 @@ fn regions_equal(
             .iter()
             .zip(right)
             .all(|(left, right)| left.to_bits() == right.to_bits()),
+        (ResidentValueRef::String(left), ResidentValueRef::String(right)) => left == right,
+        // Composite producers currently declare AlwaysChanged. Keep this
+        // conservative until a schema-aware arena comparison is introduced.
+        (ResidentValueRef::Snapshot(_), ResidentValueRef::Snapshot(_)) => false,
         _ => false,
     }
 }
@@ -1948,6 +2171,8 @@ fn scalar_token(value: ResidentValueRef<'_>) -> Option<u64> {
         ResidentValueRef::Bool([value]) => Some(u64::from(*value)),
         ResidentValueRef::Index([value]) => Some(*value),
         ResidentValueRef::F64([value]) => Some(value.to_bits()),
+        ResidentValueRef::String([value]) => Some(hash_string(value)),
+        ResidentValueRef::Snapshot(_) => None,
         _ => None,
     }
 }
@@ -1957,6 +2182,8 @@ fn region_bytes(region: ResidentRegion) -> usize {
         * match region.kind {
             ResidentValueKind::Bool => 1,
             ResidentValueKind::Index | ResidentValueKind::F64 => 8,
+            ResidentValueKind::String => core::mem::size_of::<String>(),
+            ResidentValueKind::Snapshot => core::mem::size_of::<Option<Value>>(),
         }
 }
 
@@ -2001,6 +2228,17 @@ fn state_hash(instance: &ReactiveInstance, epoch: InstanceEpoch) -> u64 {
                     hash = hash_word(hash, value.to_bits());
                 }
             }
+            ResidentValueRef::String(values) => {
+                for value in values {
+                    hash = hash_word(hash, hash_string(value));
+                }
+            }
+            ResidentValueRef::Snapshot(values) => {
+                for value in values {
+                    let token = value.as_ref().map(Value::resident_token).unwrap_or(0);
+                    hash = hash_word(hash, token);
+                }
+            }
         }
     }
     hash
@@ -2009,6 +2247,15 @@ fn state_hash(instance: &ReactiveInstance, epoch: InstanceEpoch) -> u64 {
 #[inline(always)]
 fn hash_word(hash: u64, word: u64) -> u64 {
     (hash.rotate_left(17) ^ word).wrapping_mul(0xd6e8_feb8_6659_fd93)
+}
+
+fn hash_string(value: &str) -> u64 {
+    value
+        .as_bytes()
+        .iter()
+        .fold(0xcbf2_9ce4_8422_2325, |hash, byte| {
+            (hash ^ u64::from(*byte)).wrapping_mul(0x0000_0100_0000_01b3)
+        })
 }
 
 #[cfg(test)]

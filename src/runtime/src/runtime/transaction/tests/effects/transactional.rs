@@ -5,7 +5,7 @@ use crate::{
     RuntimeHealth,
 };
 
-use super::super::RuntimeExecutionTransactionState;
+use super::super::ActiveRuntimeTransactionState;
 use super::{
     PanicEffectPhase, PanickingAfterCommitEffect, PanickingTransactionalEffect, after_commit,
     transactional,
@@ -45,10 +45,10 @@ fn prepare_failure_aborts_prepared_participants_and_stays_retryable() {
     assert_eq!(context.transaction, Some(transaction_id));
     assert_eq!(
         runtime
-            .active_execution_transaction(transaction_id)
+            .active_runtime_transaction(transaction_id)
             .unwrap()
             .state,
-        RuntimeExecutionTransactionState::Active,
+        ActiveRuntimeTransactionState::Active,
     );
     assert!(!runtime.is_poisoned());
     assert!(

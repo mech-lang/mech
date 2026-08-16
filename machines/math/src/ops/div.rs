@@ -90,7 +90,7 @@ macro_rules! impl_checked_div_binop {
         }
         impl<T> MechFunctionFactory for $struct_name<T>
         where
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: Copy
                 + Debug
                 + Display
@@ -114,7 +114,7 @@ macro_rules! impl_checked_div_binop {
                 + Zero
                 + One
                 + RuntimeCheckedDiv,
-            #[cfg(not(feature = "compiler"))]
+            #[cfg(not(feature = "semantic-compiler"))]
             T: Copy
                 + Debug
                 + Display
@@ -192,6 +192,7 @@ macro_rules! impl_checked_div_binop {
                 + One
                 + RuntimeCheckedDiv,
             Ref<$out_type>: ToValue,
+            $out_type: FunctionRuntimeType,
         {
             fn solve_result(&self) -> MResult<()> {
                 let lhs_ptr = self.lhs.as_ptr();
@@ -203,6 +204,11 @@ macro_rules! impl_checked_div_binop {
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(super::arithmetic_full_write_contract(
+                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }
@@ -211,7 +217,7 @@ macro_rules! impl_checked_div_binop {
                 Ok(self.reactive_output_values())
             }
         }
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind + RuntimeCheckedDiv,

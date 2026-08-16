@@ -1,9 +1,6 @@
 config := {
   runtime: {
-    program-routing: {
-      resident-routing: "require-resident"
-      resident-durability: "volatile"
-    }
+    resident-durability: "volatile"
 
     limits: {
       max-turn-duration-ms: 2000

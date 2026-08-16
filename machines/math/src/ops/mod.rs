@@ -282,7 +282,7 @@ macro_rules! impl_checked_arithmetic_binop {
                 + Zero
                 + One
                 + RuntimeCheckedArithmetic,
-            #[cfg(feature = "compiler")]
+            #[cfg(feature = "semantic-compiler")]
             T: ConstElem + CompileConst,
             Ref<$out_type>: ToValue,
             $arg1_type: FunctionRuntimeType,
@@ -372,7 +372,7 @@ macro_rules! impl_checked_arithmetic_binop {
             }
         }
 
-        #[cfg(feature = "compiler")]
+        #[cfg(feature = "semantic-compiler")]
         impl<T> MechFunctionCompiler for $struct_name<T>
         where
             T: ConstElem + CompileConst + AsValueKind + RuntimeCheckedArithmetic,

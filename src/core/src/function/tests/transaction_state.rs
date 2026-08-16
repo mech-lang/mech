@@ -1,7 +1,7 @@
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use super::super::MechFunctionCompiler;
 use super::super::{MechFunctionImpl, Plan, TransactionStateUnsupportedError};
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
 use crate::{LegacyValue, MResult, MechError, Ref, ValRef};
 
@@ -26,7 +26,7 @@ impl MechFunctionImpl for UnsupportedStateFunction {
         "unsupported".to_string()
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for UnsupportedStateFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
@@ -51,7 +51,7 @@ impl MechFunctionImpl for MisleadingRuntimeHostNameFunction {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for MisleadingRuntimeHostNameFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)
@@ -79,7 +79,7 @@ impl MechFunctionImpl for UnschedulableOutputFunction {
         Ok(self.reactive_output_values())
     }
 }
-#[cfg(feature = "compiler")]
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for UnschedulableOutputFunction {
     fn compile(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         Ok(0)

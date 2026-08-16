@@ -14,13 +14,14 @@ FILES = [
     "Cargo.toml",
     "build-plan.json",
     "program.mecb",
+    "rust-toolchain.toml",
     "src/main.rs",
     "src/catalog.rs",
     "src/runtime.rs",
 ]
 EXPECTED_LAYOUT = set(FILES + ["Cargo.lock"])
 EXPECTED_ENTRIES = EXPECTED_LAYOUT | {"src"}
-EXPECTED_PROJECT_COUNT = 16
+EXPECTED_PROJECT_COUNT = 15
 
 
 def generate() -> dict[str, Path]:

@@ -2,14 +2,34 @@ use crate::{
     BROWSER_DOM_PROVIDER_URI, BrowserAuthority, BrowserDomManifestEntry, BrowserDomPath,
     BrowserHostConfig, BrowserHostRuntimeConfig, BrowserOperation, browser_capability_error,
 };
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
-use std::sync::{Arc, Mutex, MutexGuard};
+use mech_core::{
+    AccessMode, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
+    IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
+    MechErrorKind, OperationContractDeclaration, Ref,
+};
+use std::sync::{Arc, LazyLock, Mutex, MutexGuard};
 
 use mech_runtime::{
     PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeEffectCost, RuntimeEffectMetadata,
     RuntimeEffectSource, RuntimeResourceProvider, RuntimeResourceReadRequest,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
+
+static BROWSER_DOM_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Fixed(
+            vec![InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            }]
+            .into_boxed_slice(),
+        ),
+        outputs: Box::new([]),
+        interaction: ExternalInteraction::Effect(EffectContract {
+            delivery: EffectDeliveryPolicy::AtMostOnce,
+            idempotency: IdempotencyRequirement::NotRequired,
+        }),
+    });
 
 pub trait BrowserDomBackend: std::fmt::Debug {
     fn read_dom_string(
@@ -85,6 +105,32 @@ impl<B: BrowserDomBackend> BrowserResourceProvider<B> {
     fn dom_path(path: String) -> MResult<BrowserDomPath> {
         BrowserDomPath::new(path).map_err(browser_capability_error)
     }
+
+    fn validate_read(&self, base_uri: &str, path: String) -> MResult<BrowserDomPath> {
+        if !self.matches_dom_base(base_uri) {
+            return Err(browser_resource_provider_error(
+                base_uri,
+                "unsupported browser DOM base URI",
+            ));
+        }
+        let path = Self::dom_path(path)?;
+        let Some(entry) = self.authority.dom_entry_for_path(&path) else {
+            return Err(browser_resource_provider_error(
+                path.as_str(),
+                "no configured DOM manifest entry for path",
+            ));
+        };
+        if !entry.allows_operation(BrowserOperation::Read) {
+            return Err(browser_resource_provider_error(
+                path.as_str(),
+                "DOM manifest entry does not allow read",
+            ));
+        }
+        self.authority
+            .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
+            .map_err(browser_capability_error)?;
+        Ok(path)
+    }
 }
 
 impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResourceProvider<B> {
@@ -101,6 +147,21 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
         bases
     }
 
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(mech_runtime::resource_observation_contract())
+    }
+
+    fn observation_requires_input_driver(&self, _request: &RuntimeResourceReadRequest) -> bool {
+        false
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Assign).then_some(&BROWSER_DOM_EFFECT_CONTRACT)
+    }
+
     fn equivalent_base_uri_groups(&self) -> Vec<Vec<String>> {
         if self.instance != "browser" {
             return Vec::new();
@@ -114,28 +175,11 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
     }
 
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        if !self.matches_dom_base(&request.base_uri) {
-            return Err(browser_resource_provider_error(
-                &request.base_uri,
-                "unsupported browser DOM base URI",
-            ));
-        }
-        let path = Self::dom_path(request.path)?;
-        let Some(entry) = self.authority.dom_entry_for_path(&path) else {
-            return Err(browser_resource_provider_error(
-                path.as_str(),
-                "no configured DOM manifest entry for path",
-            ));
-        };
-        if !entry.allows_operation(BrowserOperation::Read) {
-            return Err(browser_resource_provider_error(
-                path.as_str(),
-                "DOM manifest entry does not allow read",
-            ));
-        }
-        self.authority
-            .allows_dom(entry.selector.selector.as_str(), BrowserOperation::Read)
-            .map_err(browser_capability_error)?;
+        let path = self.validate_read(&request.base_uri, request.path)?;
+        let entry = self
+            .authority
+            .dom_entry_for_path(&path)
+            .expect("validated browser DOM manifest entry");
         Ok(LegacyValue::String(Ref::new(
             self.backend
                 .lock()
@@ -147,6 +191,11 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
                 })?
                 .read_dom_string(entry, &path)?,
         )))
+    }
+
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        self.validate_read(&request.base_uri, request.path)?;
+        Ok(LegacyValue::String(Ref::new(String::new())))
     }
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
@@ -202,10 +251,13 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
                     "no configured DOM manifest entry for path",
                 )
             })?;
-        let value = match request.value {
-            LegacyValue::String(value) => value.borrow().as_str().to_string(),
-            value => value.format_value_inline(),
+        let LegacyValue::String(value) = request.value else {
+            return Err(browser_resource_provider_error(
+                "browser/dom",
+                "browser DOM assignments require a scalar string payload",
+            ));
         };
+        let value = value.borrow().as_str().to_string();
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             BrowserDomWriteEffect {
                 backend: self.backend.clone(),
@@ -215,6 +267,23 @@ impl<B: BrowserDomBackend + 'static> RuntimeResourceProvider for BrowserResource
                 resource: request.base_uri,
             },
         )))
+    }
+
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri,
+            path: request.path,
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })?;
+        if !matches!(request.value, LegacyValue::String(_)) {
+            return Err(browser_resource_provider_error(
+                "browser/dom",
+                "browser DOM assignments require a scalar string payload",
+            ));
+        }
+        Ok(())
     }
 }
 

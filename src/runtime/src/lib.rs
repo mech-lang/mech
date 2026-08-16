@@ -9,8 +9,6 @@ pub mod id;
 pub mod input;
 #[cfg(feature = "runtime")]
 mod ledger;
-#[cfg(feature = "legacy-interpreter")]
-pub mod legacy_interpreter;
 pub mod operation;
 #[cfg(feature = "runtime")]
 mod outbox;
@@ -23,8 +21,6 @@ mod snapshot;
 
 #[cfg(feature = "runtime")]
 pub mod actor;
-#[cfg(feature = "runtime")]
-pub mod actor_behavior;
 #[cfg(feature = "runtime")]
 pub mod capability;
 #[cfg(feature = "runtime")]
@@ -63,14 +59,13 @@ pub use self::operation::*;
 pub use self::resource::*;
 pub use self::resource_contract::*;
 #[cfg(feature = "resident-external")]
-pub use self::runtime::resident_external::*;
+#[cfg(feature = "resident-routing")]
+pub use self::runtime::program::external::*;
 #[cfg(feature = "runtime")]
 pub use self::snapshot::*;
 
 #[cfg(feature = "runtime")]
 pub use self::actor::*;
-#[cfg(feature = "runtime")]
-pub use self::actor_behavior::*;
 #[cfg(feature = "runtime")]
 pub use self::capability::*;
 #[cfg(feature = "runtime")]

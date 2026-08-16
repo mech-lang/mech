@@ -5,26 +5,21 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use mech_core::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
-    MechExecutionServices, ParsedProgram, ReactiveInstanceId, ValRef,
-};
+use mech_core::{LegacyValue, MResult, MechError, ParsedProgram, ReactiveInstanceId};
 use mech_engine::__resident::{
     ActivationFacts, CapturedValueInput, ResidentActivationOptions, ResidentExternalAdmission,
     ResidentIntegrityMode, activate_external, activate_with_options,
 };
-use mech_engine::{
-    MechProgram, MechProgramConfig, ProgramArtifact, decode_program_artifact_sections,
-};
-use mech_runtime::runtime::resident_external::test_provider::{
+use mech_engine::{ProgramArtifact, decode_program_artifact_sections};
+use mech_runtime::runtime::program::external::test_provider::{
     D3InputProvider, D3ProviderTrace, D3SceneProvider, D3TransactionalProvider,
     SharedD3ProviderTrace,
 };
 use mech_runtime::{
     CapturedInputBatch, ExactRequirementAuthority, ResidentDurabilityPolicy,
-    ResidentExternalContractResolver, ResidentExternalCoordinator, ResidentExternalLimits,
-    ResidentExternalTurnOutcome, ResidentTurnRecord, RuntimeResourceRegistry,
-    captured_value_from_legacy, resident_effect_ids_hash, resident_idempotency_keys_hash,
+    ResidentExternalCoordinator, ResidentExternalLimits, ResidentExternalTurnOutcome,
+    ResidentTurnRecord, RuntimeBuilder, RuntimeResourceRegistry, captured_value_from_legacy,
+    resident_effect_ids_hash, resident_idempotency_keys_hash,
 };
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -33,9 +28,9 @@ const TURNS: usize = 4_096;
 const SAMPLES: usize = 10;
 const HISTORY_SAMPLES: usize = 3;
 const EFFECT_SOURCE: &str =
-    include_str!("../../../tests/architecture/resident-external/d3-effect-source-v1.mec");
+    include_str!("../../../tests/fixtures/resident-external/effect-source.mec");
 const TRANSACTIONAL_SOURCE: &str =
-    include_str!("../../../tests/architecture/resident-external/d3-transactional-source-v1.mec");
+    include_str!("../../../tests/fixtures/resident-external/transactional-source.mec");
 
 struct CountingAllocator;
 
@@ -269,21 +264,20 @@ fn candidate_allocation_probe(
 
 fn compile_fixture(kind: FixtureKind) -> MResult<(ProgramArtifact, ProgramArtifact)> {
     let trace = Arc::new(Mutex::new(D3ProviderTrace::default()));
-    let providers = providers(kind, trace)?;
-    let resolver = ResidentExternalContractResolver::new(&providers);
-    let mut services = PlanningServices;
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_catalog(),
-    );
-    program.run_string_with_services(
-        match kind {
-            FixtureKind::Effect => EFFECT_SOURCE,
-            FixtureKind::Transactional => TRANSACTIONAL_SOURCE,
-        },
-        &mut services,
-    )?;
-    let product = program.compile_program_product_with_external_contracts(&resolver)?;
+    let builder = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .resource_provider(Box::new(D3InputProvider::new(0.25, trace.clone())));
+    let builder = match kind {
+        FixtureKind::Effect => builder.resource_provider(Box::new(D3SceneProvider::new(trace))),
+        FixtureKind::Transactional => {
+            builder.resource_provider(Box::new(D3TransactionalProvider::new(trace)))
+        }
+    };
+    let mut compiler = builder.build_compiler()?;
+    let product = compiler.compile_source(match kind {
+        FixtureKind::Effect => EFFECT_SOURCE,
+        FixtureKind::Transactional => TRANSACTIONAL_SOURCE,
+    })?;
     let parsed = ParsedProgram::from_bytes(product.bytecode())?;
     let decoded = decode_program_artifact_sections(&parsed.artifact)
         .map_err(|error| benchmark_error(&format!("decode D3 artifact: {error:?}")))?;
@@ -655,47 +649,6 @@ where
         .iter()
         .map(|byte| format!("{byte:02x}"))
         .collect()
-}
-
-#[derive(Debug)]
-struct PlanningServices;
-
-impl MechExecutionServices for PlanningServices {
-    fn invoke_host_function(
-        &mut self,
-        _request: &ExecutionHostFunctionRequest,
-        _arguments: &[LegacyValue],
-    ) -> MResult<LegacyValue> {
-        Err(benchmark_error("D3 fixture has no host call"))
-    }
-
-    fn plan_resource_read_output(
-        &mut self,
-        _request: &ExecutionResourceRequest,
-    ) -> MResult<LegacyValue> {
-        Ok(LegacyValue::F64(mech_core::Ref::new(0.25)))
-    }
-
-    fn read_resource(&mut self, _request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
-        Ok(LegacyValue::F64(mech_core::Ref::new(0.25)))
-    }
-
-    fn write_resource(
-        &mut self,
-        _request: &ExecutionResourceRequest,
-        _value: &LegacyValue,
-    ) -> MResult<()> {
-        Ok(())
-    }
-
-    fn bind_live_resource(
-        &mut self,
-        _interpreter_id: u64,
-        _request: &ExecutionResourceRequest,
-        _target: ValRef,
-    ) -> MResult<()> {
-        Ok(())
-    }
 }
 
 fn benchmark_error(message: &str) -> MechError {
