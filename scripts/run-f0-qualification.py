@@ -134,7 +134,7 @@ def run_preconditioning(
                 f"+{rust_channel}",
                 "build",
                 "--release",
-                "--locked",
+                "--offline",
                 "--manifest-path",
                 "tests/fixtures/d2-contract-generator/Cargo.toml",
             ],

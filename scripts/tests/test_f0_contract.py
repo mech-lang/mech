@@ -271,6 +271,9 @@ class CompactF0ContractTests(unittest.TestCase):
             [command["name"] for command in record["commands"]],
             ["gate-b", "gate-d2", "gate-d3"],
         )
+        gate_d2 = record["commands"][1]["arguments"]
+        self.assertIn("--offline", gate_d2)
+        self.assertNotIn("--locked", gate_d2)
         gate_d3 = record["commands"][2]["arguments"]
         self.assertIn(
             "source_default,resident-routing-source,runtime_bench_gate_d3",
