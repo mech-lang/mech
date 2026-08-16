@@ -90,7 +90,9 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_f0_controlled_dispatch_is_explicit_and_exact_head_bound(self):
         self.assertRegex(F0_CONTROLLED, r"(?ms)pull_request:\n\s+types:\n\s+- labeled")
         self.assertIn("github.event.label.name == 'f0-controlled'", F0_CONTROLLED)
-        self.assertIn("github.event.pull_request.head.sha || github.sha", F0_CONTROLLED)
+        exact_ref = "${{ github.event.pull_request.head.sha || github.sha }}"
+        self.assertEqual(F0_CONTROLLED.count(exact_ref), 3)
+        self.assertIn("workflow-context.txt", F0_CONTROLLED)
         self.assertIn('test "${F0_VALIDATION_BRANCH}" =', F0_CONTROLLED)
 
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):

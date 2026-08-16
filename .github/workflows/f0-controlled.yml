@@ -46,7 +46,18 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Initialize failure-retention context
+        shell: bash
+        run: |
+          evidence_root="target/f0-evidence/${F0_VALIDATION_REF}"
+          mkdir -p "${evidence_root}"
+          printf '%s\n' \
+            "workflow_run_id=${GITHUB_RUN_ID}" \
+            "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}" \
+            "validation_branch=${F0_VALIDATION_BRANCH}" \
+            "validation_ref=${F0_VALIDATION_REF}" \
+            >"${evidence_root}/workflow-context.txt"
       - name: Bind measurement to a clean exact-head branch
         shell: bash
         run: |
