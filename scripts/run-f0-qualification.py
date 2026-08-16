@@ -138,6 +138,8 @@ def run_preconditioning(
                 "--offline",
                 "--manifest-path",
                 "tests/fixtures/d2-contract-generator/Cargo.toml",
+                "--target-dir",
+                "target",
             ],
         ),
         (
