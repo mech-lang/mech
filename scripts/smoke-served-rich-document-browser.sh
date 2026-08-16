@@ -188,6 +188,11 @@ replacement = """+> ./support
 {included.mec}
 @clock := time://clock/clock{:read(second)}
 configured-answer := support/value + package/value + included-value + nested-included-value
+
+~~~mech
+configured-answer
+~~~
+
 ~answer := 41"""
 if source.count(original) != 1:
     raise SystemExit("configured rich fixture did not contain exactly one answer declaration")

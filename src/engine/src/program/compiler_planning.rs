@@ -286,6 +286,26 @@ impl CompilerPlanningProgram {
         values
     }
 
+    /// Resolves stable formatted-document output addresses inside the
+    /// short-lived compiler planner. Product runtimes only receive the
+    /// resulting artifact output ordinals; the planner map never escapes.
+    pub fn compiler_document_output_values(&self, output_ids: &[u64]) -> MResult<Vec<LegacyValue>> {
+        let outputs = self.interpreter.out_values.borrow();
+        output_ids
+            .iter()
+            .map(|output_id| {
+                outputs.get(output_id).cloned().ok_or_else(|| {
+                    MechError::new(
+                        ProgramOutputNotFound {
+                            name: format!("document output {output_id}"),
+                        },
+                        None,
+                    )
+                })
+            })
+            .collect()
+    }
+
     /// Retains the observable result of one explicitly requested source root.
     /// Dependency-only planning never calls this method, so multi-root
     /// products publish each requested root exactly once in caller order.

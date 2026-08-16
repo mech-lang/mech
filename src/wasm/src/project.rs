@@ -16,6 +16,7 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 #[cfg(feature = "browser_host_console")]
 use mech_console::BrowserConsoleHostFactory;
 use mech_core::{MechError, MechErrorKind, MechSourceCode, OutputId};
+use mech_engine::root_document_output_ids;
 use mech_runtime::{
     ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
     ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
@@ -353,26 +354,11 @@ struct ServedDocumentBootstrap {
 mod document {
     use super::*;
 
-    pub(super) fn direct_document_output_symbols(
-        tree: &mech_core::nodes::Program,
-    ) -> HashMap<u64, String> {
-        tree.body
-            .sections
-            .iter()
-            .flat_map(|section| &section.elements)
-            .filter_map(|element| match element {
-                mech_core::nodes::SectionElement::FencedMechCode(block) if block.config.output => {
-                    let (code, _) = block.code.last()?;
-                    let symbol = match code {
-                        mech_core::nodes::MechCode::Expression(
-                            mech_core::nodes::Expression::Var(var),
-                        ) if var.context.is_none() => var.name.to_string(),
-                        _ => return None,
-                    };
-                    Some((mech_core::hash_str(&format!("{code:?}")), symbol))
-                }
-                _ => None,
-            })
+    pub(super) fn document_output_ordinals(tree: &mech_core::nodes::Program) -> HashMap<u64, u64> {
+        root_document_output_ids(tree)
+            .into_iter()
+            .enumerate()
+            .map(|(ordinal, output_id)| (output_id, ordinal as u64))
             .collect()
     }
 
@@ -380,7 +366,7 @@ mod document {
     pub struct WasmDocument {
         pub(super) project: WasmProject,
         bootstrap: WasmDocumentBootstrap,
-        direct_output_symbols: HashMap<u64, String>,
+        document_output_ordinals: HashMap<u64, u64>,
     }
 
     fn load_resident_document_root(
@@ -403,7 +389,7 @@ mod document {
         #[wasm_bindgen(js_name = fromEncoded)]
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
             let tree = decode_document_tree(encoded)?;
-            let direct_output_symbols = direct_document_output_symbols(&tree);
+            let document_output_ordinals = document_output_ordinals(&tree);
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: "document.mec".to_string(),
                 source_map: HashMap::from([("document.mec".to_string(), String::new())]),
@@ -426,7 +412,7 @@ mod document {
                     scenes,
                 ),
                 bootstrap: WasmDocumentBootstrap::Detached,
-                direct_output_symbols,
+                document_output_ordinals,
             })
         }
 
@@ -468,7 +454,7 @@ mod document {
                 source_map,
                 resolutions,
             };
-            let direct_output_symbols = direct_document_output_symbols(&tree);
+            let document_output_ordinals = document_output_ordinals(&tree);
             #[cfg(feature = "browser_host_scene")]
             let scenes = BrowserSceneRegistry::new();
             let source_resolver = document_source_resolver(tree.clone(), &bootstrap)?;
@@ -487,7 +473,7 @@ mod document {
                     scenes,
                 ),
                 bootstrap: WasmDocumentBootstrap::SourceBacked(bootstrap),
-                direct_output_symbols,
+                document_output_ordinals,
             })
         }
 
@@ -554,7 +540,7 @@ mod document {
             resolutions: Vec<SourceResolutionEntry>,
             authority: BrowserRuntimeInjectionConfig,
         ) -> Result<WasmDocument, JsValue> {
-            let direct_output_symbols = direct_document_output_symbols(&tree);
+            let document_output_ordinals = document_output_ordinals(&tree);
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
@@ -584,14 +570,14 @@ mod document {
                     config_source: config_source.to_string(),
                     authority,
                 }),
-                direct_output_symbols,
+                document_output_ordinals,
             })
         }
 
         #[wasm_bindgen(js_name = renderedOutput)]
         pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
-            if let Some(symbol) = self.direct_output_symbols.get(&output_id) {
-                return self.project.rendered_symbol(symbol);
+            if let Some(output_ordinal) = self.document_output_ordinals.get(&output_id) {
+                return self.project.rendered_output(*output_ordinal);
             }
             self.project.rendered_output(output_id)
         }
@@ -633,7 +619,7 @@ mod document {
             self.project.stop()?;
             self.project = replacement.project;
             self.bootstrap = replacement.bootstrap;
-            self.direct_output_symbols = replacement.direct_output_symbols;
+            self.document_output_ordinals = replacement.document_output_ordinals;
             if was_started {
                 self.project.start()?;
             }
@@ -1529,14 +1515,25 @@ mod tests {
 }"#;
 
     #[test]
-    fn direct_document_output_hash_maps_to_the_resident_symbol() {
+    fn document_output_hashes_map_to_resident_output_ordinals() {
         let tree =
             mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
                 .unwrap();
-        let outputs = document::direct_document_output_symbols(&tree);
+        let outputs = document::document_output_ordinals(&tree);
+        assert_eq!(outputs.get(&29_884_140_763_677_669), Some(&0));
+
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
+                .unwrap();
+        let outputs = document::document_output_ordinals(&tree);
         assert_eq!(
-            outputs.get(&29_884_140_763_677_669).map(String::as_str),
-            Some("y"),
+            outputs.get(&mech_core::hash_str("inline-eval:0:0")),
+            Some(&0)
+        );
+        assert_eq!(
+            outputs.len(),
+            2,
+            "inline and fenced root outputs are mapped"
         );
     }
 

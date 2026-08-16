@@ -1288,25 +1288,33 @@ impl ReactiveInstance {
                         error,
                     })?
                 };
-                if matches!(node.construction, OutputConstruction::FullWrite { .. }) {
-                    self.state.tag(slot, candidate, working_epoch);
-                    if self.plan.f64_read_tape.is_some() {
-                        self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
-                            F64_STATE_ARENA_BASE + candidate as u8;
-                    }
-                    probe.candidate_materialized_bytes += region_bytes(node.write.region);
-                    self.workspace
-                        .touched_slots
-                        .push(SlotIndex::new(slot.get()));
-                    let changed = !self.state.same_at(slot, candidate, before_epoch);
-                    if changed {
+                let policy_changed =
+                    if matches!(node.construction, OutputConstruction::FullWrite { .. }) {
+                        self.state.tag(slot, candidate, working_epoch);
+                        if self.plan.f64_read_tape.is_some() {
+                            self.workspace.state_f64_arena_by_slot[slot.get() as usize] =
+                                F64_STATE_ARENA_BASE + candidate as u8;
+                        }
+                        probe.candidate_materialized_bytes += region_bytes(node.write.region);
                         self.workspace
-                            .changed_slots
+                            .touched_slots
                             .push(SlotIndex::new(slot.get()));
-                    }
-                    Ok(changed)
+                        let changed = !self.state.same_at(slot, candidate, before_epoch);
+                        if changed {
+                            self.workspace
+                                .changed_slots
+                                .push(SlotIndex::new(slot.get()));
+                        }
+                        changed
+                    } else {
+                        changed
+                    };
+                if self.workspace.all_outputs_initialized {
+                    Ok(policy_changed)
                 } else {
-                    Ok(changed)
+                    let initialized = bit_is_set(&self.workspace.initialized_output_bits, index);
+                    set_bit(&mut self.workspace.initialized_output_bits, index);
+                    Ok(!initialized || policy_changed)
                 }
             }
             _ => Err(ResidentExecutionError::InvalidWrite {

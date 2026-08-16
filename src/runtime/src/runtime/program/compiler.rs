@@ -17,7 +17,7 @@ use mech_core::{
 };
 use mech_engine::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
-    ProgramCompilationProduct,
+    ProgramCompilationProduct, root_document_output_ids,
 };
 
 use crate::{
@@ -217,7 +217,7 @@ impl<'a> ProgramCompilerView<'a> {
     pub(crate) fn compile_source(&self, source: &str) -> MResult<ProgramCompilationProduct> {
         let mut program = self.new_program();
         let tree = mech_syntax::parser::parse(source.trim())?;
-        let document_output_names = direct_document_output_symbol_names(&tree);
+        let document_output_ids = root_document_output_ids(&tree);
         let index = SourceIndex::from_program(&tree);
         index.validate_address_targets()?;
         let imports = index.all_imports();
@@ -233,7 +233,7 @@ impl<'a> ProgramCompilerView<'a> {
         let result = program
             .plan_tree_with_services(&sanitize_tree(tree)?, &mut services)
             .map_err(classify_source_planning)?;
-        publish_document_and_root_outputs(&mut program, &document_output_names, &result)?;
+        publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
         self.finalize(program, &operations)
     }
 
@@ -623,8 +623,8 @@ impl<'a> ProgramCompilerView<'a> {
         let result = program
             .plan_tree_with_services(&tree, &mut services)
             .map_err(classify_source_planning)?;
-        let document_output_names = direct_document_output_symbol_names(&tree);
-        let document_outputs = compiler_symbol_values(program, &document_output_names)?;
+        let document_output_ids = root_document_output_ids(&tree);
+        let document_outputs = program.compiler_document_output_values(&document_output_ids)?;
 
         let mut exports = HashMap::new();
         for export in source_exports(&module.source) {
@@ -707,46 +707,12 @@ fn explicit_root_plan_order(
     ordered
 }
 
-fn direct_document_output_symbol_names(tree: &mech_core::Program) -> Vec<String> {
-    let mut seen = HashSet::new();
-    tree.body
-        .sections
-        .iter()
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| match element {
-            mech_core::SectionElement::FencedMechCode(block) if block.config.output => {
-                let (code, _) = block.code.last()?;
-                match code {
-                    mech_core::MechCode::Expression(mech_core::Expression::Var(var))
-                        if var.context.is_none() =>
-                    {
-                        Some(var.name.to_string())
-                    }
-                    _ => None,
-                }
-            }
-            _ => None,
-        })
-        .filter(|name| seen.insert(name.clone()))
-        .collect()
-}
-
-fn compiler_symbol_values(
-    program: &CompilerPlanningProgram,
-    names: &[String],
-) -> MResult<Vec<LegacyValue>> {
-    let names = names.iter().map(String::as_str).collect::<Vec<_>>();
-    program
-        .compiler_root_symbol_values(&names)
-        .map(|values| values.into_iter().map(|(_, value)| value).collect())
-}
-
 fn publish_document_and_root_outputs(
     program: &mut CompilerPlanningProgram,
-    document_output_names: &[String],
+    document_output_ids: &[u64],
     root: &LegacyValue,
 ) -> MResult<()> {
-    for output in compiler_symbol_values(program, document_output_names)? {
+    for output in program.compiler_document_output_values(document_output_ids)? {
         program.publish_compiler_root_output(output);
     }
     program.publish_compiler_root_output(root.clone());

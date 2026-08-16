@@ -1,7 +1,7 @@
 # Gate E4 closeout
 
-Status: the post-CI exact-head correction is locally complete on draft PR
-#762; remote exact-head CI remains required. This is not a merge
+Status: the latest exact-head product correction is locally complete on draft
+PR #762; remote exact-head CI remains required. This is not a merge
 authorization.
 
 ## Boundary
@@ -51,27 +51,35 @@ AST-to-artifact compiler.
 9. `[self-address recorded in PR evidence]` — `docs(architecture): close E4 and hand off evidence-only F0 [E4I]`
 10. `32ac722ef3353a692f240c10adab0479a49daf53` — `fix(e4): close exact-head product regressions`
 11. `79b935247304443dd6f0830cd141b83abfba0e31` — `test(e4): reconcile deterministic generated artifacts and finalize closeout`
-12. `[self-address recorded in PR evidence]` — `fix(e4): publish formatted document outputs in resident artifacts`
+12. `9fc4979ddbbe09fac57738c3233c49b85e07c430` — `fix(e4): publish formatted document outputs in resident artifacts`
+13. `[self-address recorded in PR evidence]` — `fix(e4): complete resident document output initialization`
 
 ## Exact-head stabilization ledger
 
-Only failures reproduced by full validation run `31910896507` at exact head
-`62da5a762bb81a0211b2264fe55c97e616cc807b` remained active. Earlier E4
-failures are resolved or superseded by that run.
+Failures are active only when they reproduce on the latest exact head or are
+blocked behind another failure in a required serial job. Earlier E4 failures
+are resolved or superseded unless the ledger says otherwise.
 
 Selected validation was green at stabilization head
-`79b935247304443dd6f0830cd141b83abfba0e31`. Full validation run
-`31913281878` then exposed one additional exact-head failure in the WASM
-bytecode-v1 product: the formatted FizzBuzz document requested resident symbol
-`y`, but the artifact published only the root invariant
-`first-fifteen!`. This is the only active post-stabilization failure; the
-correction below does not reopen E4 semantics or bytecode format.
+`9fc4979ddbbe09fac57738c3233c49b85e07c430`. Full validation run
+`31915613206` proved the corrected WASM bytecode-v1 FizzBuzz route and then
+exposed the next serial Project browser failure: rich-document inline output
+rendered `0` instead of `42`. After that correction, the same complete browser
+workflow exposed a configured-case test that queried an intermediate binding
+which had never been published as a resident artifact output. Project native
+also stopped on the analog-clock smoke at its exact five-second deadline; the
+identical command passed locally, so it is recorded as nonreproducing pending
+the next exact-head remote run rather than as authority for a production
+change.
 
 | Current-head failure | Classification and permanent owner | Narrow correction and acceptance proof |
 | --- | --- | --- |
 | Runtime wildcard-import audit found `use super::*` in the resident string-output regression. | Test-boundary regression in `runtime::program::value`; no feature or production semantic change. | Import only `string_matrix_value`, `LegacyValue`, and `ResidentShape`. The complete runtime boundary audit and focused string-matrix materialization test pass. |
 | Bytecode-v1 determinism stopped on a committed `manifest.json` mismatch. | Deterministic generated-evidence drift. Two independent fresh corpora were byte-for-byte identical; all 20 `.mecb` files and source fixtures were unchanged, while 19 derived native-plan hashes reflected the frozen E4 plan. | The checker now compares fresh run A with fresh run B before comparing either run with the repository. The committed manifest and its frozen digest were refreshed only after A equaled B. The format contract passes for all 20 fixtures and the corrected checker passes across two fresh child processes. |
-| The served FizzBuzz document reached `ready` with an empty output block while the same WASM resident artifact proved `first-fifteen! == true`; the subsequent exact WASM bytecode-v1 job then reported that mapped symbol `y` was absent. | Formatted-document publication mismatch at the compiler/artifact boundary. HTML addresses an output by its stable 64-bit source-block hash and the adapter resolves that hash to direct root symbol `y`, but source/root compilation had only published the final program result. The modulo, comparison, string-matrix value, and resident execution results did not diverge. | `WasmDocument` retains the direct fenced-output hash-to-root-symbol mapping. `ProgramCompiler` now publishes each unique direct fenced-output root symbol followed by the existing root result, for inline source, rooted source, and bytecode-v1 artifacts. Focused source/root/decoded-bytecode parity passes with outputs `[y, first-fifteen!]`; the complete 587-test runtime owner and integration/compile-fail/doctest suites pass; the exact WASM feature profile and native adapter mapping pass. Remote exact-head WASM execution remains the final product proof. |
+| The served FizzBuzz document reached `ready` with an empty output block while the same WASM resident artifact proved `first-fifteen! == true`; the subsequent exact WASM bytecode-v1 job then reported that mapped symbol `y` was absent. | Formatted-document publication mismatch at the compiler/artifact boundary. HTML addresses an output by its stable 64-bit source-block hash and the adapter resolved that hash to direct root symbol `y`, but source/root compilation had only published the final program result. The modulo, comparison, string-matrix value, and resident execution results did not diverge. | The first narrow correction published direct fenced root symbols and made the exact WASM bytecode-v1 job green. The later rich-document failure below superseded that incomplete mapping with the general stable document-output-ID owner while preserving the proven FizzBuzz behavior. |
+| The full Project browser job rendered the rich document's `{answer + 1}` inline expression as `0` instead of `42`, although direct fenced FizzBuzz output was green. | Two exact resident publication defects were composed. The compiler published only direct fenced variable outputs, so inline and expression-valued document outputs had no artifact address. Once published, the initial hold-state node reported an unchanged initializer and failed to schedule the dependent add node on its first turn. | A shared semantic-compiler traversal resolves stable root-document output IDs and publishes their planner values before the root result; WASM maps those IDs directly to compact artifact-output ordinals. State-output nodes now use the existing initialized-output bitset, symmetrically with scratch outputs, so every output schedules dependents once before steady-state change policy applies. Focused source/decoded-bytecode tests prove the first inline output is `42`; the exact WASM mapping test, 285-test engine owner, complete 587-test runtime owner and tails, and full rich-document Chrome workflow pass. |
+| After the inline correction unblocked the configured browser case, `:whos configured-answer` rejected the name because it was only an intermediate planner binding. | Blocked test-boundary mismatch, not a missing runtime semantic. Retained browser symbol queries enumerate published resident artifact outputs; compiler-planning symbol tables are intentionally quarantined and do not escape into shipping execution. | The configured smoke fixture now explicitly publishes `configured-answer` in a root fenced output before querying it. The full browser workflow proves the imported value is `41` without broadening artifact outputs, bytecode v1, or runtime query authority. |
+| Project native analog-clock smoke stopped at its exact five-second deadline in run `31915613206`. | Current-head CI failure that did not reproduce locally with the identical command; no causal relationship to document output publication has been established. | No production or timeout change. The next exact-head remote run must establish whether the failure was transient; repeated exact-head reproduction is required before any correction. |
 | Native application graph validation expected 17 projects but generation and the independent determinism contract produced 15; after removing the two dead actors, the checker still expected pre-resident runtime feature graphs. | Deterministic generated-contract drift. The actor entries had no remaining producer or caller, while every surviving generated product now loads emitted bytecode through `mech-runtime/resident-routing`; the emitted 15-plan set is the frozen architecture source of truth. | Remove the two obsolete actor expectations and reconcile the exact package/declared-feature projections for all 15 surviving plans. A compact independent comparison reports 15 expected, 15 actual, and zero mismatches; the full checker passes all exact direct-package, declared-feature, resolved-graph, forbidden-package, and serialized-plan checks. |
 
 ## Work-item disposition
@@ -199,7 +207,12 @@ standalone interpreter product.
 
 ## Local validation
 
-All commands below passed on E4H `f6555296d83ceb4578235bc0d0f1e57013875a6a`:
+The latest document-initialization correction atop
+`9fc4979ddbbe09fac57738c3233c49b85e07c430` passed the complete runtime owner
+and tails (587 unit tests plus integration, compile-fail, D3 evidence, and
+doctests), the 285-test engine owner, the focused native WASM mapping test, and
+the complete rich-document Chrome workflow. The earlier E4 qualification
+commands below remain recorded at their exact tested heads:
 
 | Contract | Command/result |
 | --- | --- |

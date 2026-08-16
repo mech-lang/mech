@@ -689,6 +689,44 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         source_outputs,
         "rooted formatted documents must publish the same output symbols"
     );
+
+    let rich_source = include_str!("../../../../../tests/fixtures/shims/all-slots.mec");
+    let rich = compiler.compile_source(rich_source).unwrap();
+    let rich_outputs = rich
+        .artifact()
+        .outputs()
+        .iter()
+        .map(|output| output.name.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        rich_outputs.len(),
+        3,
+        "inline, fenced, and root outputs publish"
+    );
+    assert_eq!(
+        decode_program_artifact_bytecode_v1(rich.bytecode())
+            .unwrap()
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>(),
+        rich_outputs,
+        "rich document outputs must survive bytecode-v1 encoding"
+    );
+
+    let mut rich_runtime = runtime();
+    rich_runtime
+        .load_source_program(rich_source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let inline = rich_runtime
+        .output_value(mech_core::OutputId::new(0))
+        .unwrap()
+        .unwrap()
+        .into_value();
+    assert!(
+        matches!(inline, LegacyValue::F64(ref value) if *value.borrow() == 42.0),
+        "the first published output must retain the evaluated inline value: {inline:?}"
+    );
 }
 
 #[test]
