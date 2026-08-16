@@ -149,16 +149,16 @@ fn first_statement(src: &str) -> Statement {
 
 #[test]
 fn formatter_preserves_named_compute_region_metadata() {
-    let source = "particle update @ gpu\n-------------------------------------------------------------------------------\n\nx := 1\n";
+    let source = "particle update @gpu @required(:finite)\n-------------------------------------------------------------------------------\n\nx := 1\n";
     let program = mech_syntax::parser::parse(source).unwrap();
     let formatted = Formatter::new().format(&program);
 
-    assert!(formatted.contains("particle update @ gpu"));
+    assert!(formatted.contains("particle update @gpu @required(:finite)"));
     let reparsed = mech_syntax::parser::parse(&formatted).unwrap();
-    assert_eq!(
-        reparsed.body.sections[0].compute,
-        Some(ComputePlacement::Gpu),
-    );
+    let annotations = &reparsed.body.sections[0].annotations;
+    assert_eq!(annotations.len(), 2);
+    assert_eq!(annotations[0].name.as_ref(), "gpu");
+    assert_eq!(annotations[1].name.as_ref(), "required");
 }
 
 #[test]
@@ -200,7 +200,7 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
                         text: plain_paragraph(heading),
                         level: 2,
                     }),
-                    compute: None,
+                    annotations: Vec::new(),
                     elements: vec![SectionElement::Paragraph(plain_paragraph(content))],
                 })
                 .collect(),

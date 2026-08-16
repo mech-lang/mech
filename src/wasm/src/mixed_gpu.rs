@@ -308,7 +308,8 @@ fn compile_named_compute_region(
             "compute host selects region `{region}`, but the compiled section is `{section_name}`"
         )));
     }
-    let placement = section.compute.expect("filtered to a compute section");
+    let placement =
+        mech_engine::section_compute_placement(section)?.expect("filtered to a compute section");
     let backend = match requested {
         ComputeBackendRequest::Cpu => ComputeBackend::Cpu,
         ComputeBackendRequest::Gpu => ComputeBackend::Gpu,
@@ -484,7 +485,7 @@ fn configured_host_instance(document: &MechConfigDocument, provider: &str) -> MR
 }
 
 fn is_compute_owned(section: &Section) -> bool {
-    section.compute.is_some()
+    matches!(mech_engine::section_compute_placement(section), Ok(Some(_)))
 }
 
 fn cpu_projection_tree(tree: &Program) -> Program {
@@ -500,7 +501,7 @@ fn cpu_projection_tree(tree: &Program) -> Program {
     if !excluded_imports.is_empty() {
         sections.push(Section {
             subtitle: None,
-            compute: None,
+            annotations: Vec::new(),
             elements: excluded_imports,
         });
     }
@@ -543,7 +544,7 @@ fn isolated_region_tree(imports: &[SectionElement], section: &Section) -> Progra
     if !imports.is_empty() {
         sections.push(Section {
             subtitle: None,
-            compute: None,
+            annotations: Vec::new(),
             elements: imports.to_vec(),
         });
     }
@@ -1146,7 +1147,7 @@ dt := @pointer/delta-seconds
 @particles/input/dt <- dt
 @particles/turn <- pulse
 
-particle-field @ compute
+particle-field @compute
 -------------------------------------------------------------------------------
 particle-index := 1f32..=4f32
 particle-x := math/cos(particle-index)
@@ -1325,7 +1326,7 @@ positions = next-positions
         let document =
             parse_config_document("test.mcfg", CONFIG, ConfigProfileOptions::default()).unwrap();
 
-        let hard_gpu = SOURCE.replacen("@ compute", "@ gpu", 1);
+        let hard_gpu = SOURCE.replacen("@compute", "@gpu", 1);
         let tree = mech_syntax::parse(&hard_gpu).unwrap();
         let error = format!(
             "{:?}",
@@ -1333,7 +1334,7 @@ positions = next-positions
         );
         assert!(error.contains("requires GPU execution"), "{error}");
 
-        let hard_cpu = SOURCE.replacen("@ compute", "@ cpu", 1);
+        let hard_cpu = SOURCE.replacen("@compute", "@cpu", 1);
         let tree = mech_syntax::parse(&hard_cpu).unwrap();
         let error = format!(
             "{:?}",

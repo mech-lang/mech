@@ -12,7 +12,7 @@ compilation boundary. The application remains one `.mec` document:
 @mouse := window://mouse{:read(position)}
 mouse-position := @mouse/position
 
-particle update @ compute
+particle update @compute
 -------------------------------------------------------------------------------
 
 offset := positions - mouse-position
@@ -32,14 +32,14 @@ velocities = next-velocities
 The heading is structured source metadata:
 
 - `particle update` is the stable region name;
-- `@ compute` creates a backend-neutral boundary;
-- `@ cpu` requires the CPU executor;
-- `@ gpu` requires a GPU executor.
+- `@compute` creates a backend-neutral boundary;
+- `@cpu` requires the CPU executor;
+- `@gpu` requires a GPU executor.
 
 An unannotated Mechdown section remains documentation structure and does not
 create a compute boundary. It follows the ordinary CPU runtime path; no
-`@ cpu` annotation is required. Unknown placement names are rejected during
-parsing.
+`@cpu` annotation is required. Unknown annotations are rejected during
+semantic compilation.
 
 ## Compiler contract
 

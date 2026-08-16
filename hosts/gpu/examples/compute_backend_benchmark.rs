@@ -190,7 +190,7 @@ fn isolated_compute_tree(source: &str) -> Program {
         .body
         .sections
         .iter()
-        .find(|section| section.compute.is_some())
+        .find(|section| !section.annotations.is_empty())
         .expect("particle source must contain a compute region")
         .clone();
     Program {
@@ -199,7 +199,7 @@ fn isolated_compute_tree(source: &str) -> Program {
             sections: vec![
                 Section {
                     subtitle: None,
-                    compute: None,
+                    annotations: Vec::new(),
                     elements: imports,
                 },
                 region,

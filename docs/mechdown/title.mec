@@ -101,7 +101,7 @@ An underlined, unnumbered section can define an explicit compilation boundary
 by adding a placement after `@`:
 
 ```
-particle-update @ compute
+particle-update @compute
 -------------------------------------------------------------------------------
 
 velocity' := velocity + acceleration * dt

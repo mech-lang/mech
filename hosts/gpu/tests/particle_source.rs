@@ -92,7 +92,7 @@ fn isolated_gpu_tree(source: &str) -> Program {
         .body
         .sections
         .iter()
-        .find(|section| section.compute.is_some())
+        .find(|section| !section.annotations.is_empty())
         .expect("mixed source must contain a compute region")
         .clone();
     Program {
@@ -101,7 +101,7 @@ fn isolated_gpu_tree(source: &str) -> Program {
             sections: vec![
                 Section {
                     subtitle: None,
-                    compute: None,
+                    annotations: Vec::new(),
                     elements: imports,
                 },
                 region,
@@ -160,7 +160,7 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
             .body
             .sections
             .iter()
-            .any(|section| section.compute.is_none())
+            .any(|section| section.annotations.is_empty())
     );
     let product = compiler()
         .compile_tree(&isolated_gpu_tree(&source))
@@ -219,7 +219,7 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
 fn hard_cpu_region_is_not_silently_sent_to_gpu() {
     let source = SERVED_PARTICLE_SOURCE
         .replacen("1000000f32", "16f32", 1)
-        .replacen("@ compute", "@ cpu", 1);
+        .replacen("@compute", "@cpu", 1);
     let product = compiler()
         .compile_tree(&isolated_gpu_tree(&source))
         .unwrap();
@@ -245,7 +245,7 @@ fn hard_cpu_region_is_not_silently_sent_to_gpu() {
 fn hard_gpu_region_is_not_silently_sent_to_cpu() {
     let source = SERVED_PARTICLE_SOURCE
         .replacen("1000000f32", "16f32", 1)
-        .replacen("@ compute", "@ gpu", 1);
+        .replacen("@compute", "@gpu", 1);
     let product = compiler()
         .compile_tree(&isolated_gpu_tree(&source))
         .unwrap();
@@ -423,10 +423,13 @@ fn particle_example_is_one_mixed_mech_document() {
         .body
         .sections
         .iter()
-        .filter(|section| section.compute.is_some())
+        .filter(|section| !section.annotations.is_empty())
         .collect::<Vec<_>>();
     assert_eq!(regions.len(), 1);
-    assert_eq!(regions[0].compute, Some(ComputePlacement::Compute));
+    assert_eq!(
+        mech_engine::section_compute_placement(regions[0]).unwrap(),
+        Some(ComputePlacement::Compute)
+    );
     assert_eq!(
         regions[0].subtitle.as_ref().unwrap().to_string().trim(),
         "particle-field"

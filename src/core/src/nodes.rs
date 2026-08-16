@@ -481,10 +481,48 @@ impl ComputePlacement {
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum SectionAnnotationArgument {
+    Atom(Atom),
+}
+
+impl fmt::Display for SectionAnnotationArgument {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Atom(atom) => write!(formatter, ":{}", atom.name.to_string()),
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct SectionAnnotation {
+    pub name: Box<str>,
+    pub arguments: Box<[SectionAnnotationArgument]>,
+}
+
+impl fmt::Display for SectionAnnotation {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "@{}", self.name)?;
+        if !self.arguments.is_empty() {
+            write!(formatter, "(")?;
+            for (index, argument) in self.arguments.iter().enumerate() {
+                if index != 0 {
+                    write!(formatter, ", ")?;
+                }
+                write!(formatter, "{argument}")?;
+            }
+            write!(formatter, ")")?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Section {
     pub subtitle: Option<Subtitle>,
-    /// An explicit compilation boundary attached to this Mechdown section.
-    pub compute: Option<ComputePlacement>,
+    /// Ordered compiler metadata attached to this Mechdown section heading.
+    pub annotations: Vec<SectionAnnotation>,
     pub elements: Vec<SectionElement>,
 }
 
@@ -498,7 +536,7 @@ impl Section {
             .collect();
         Section {
             subtitle: self.subtitle.clone(),
-            compute: self.compute,
+            annotations: self.annotations.clone(),
             elements,
         }
     }

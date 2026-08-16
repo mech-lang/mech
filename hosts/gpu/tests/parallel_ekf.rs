@@ -59,7 +59,7 @@ fn projected_tree(tree: &Program, compute: bool) -> Program {
         .body
         .sections
         .iter()
-        .find(|section| section.compute.is_some() == compute)
+        .find(|section| (!section.annotations.is_empty()) == compute)
         .expect("EKF source must contain driver and compute sections")
         .clone();
     Program {
@@ -68,7 +68,7 @@ fn projected_tree(tree: &Program, compute: bool) -> Program {
             sections: vec![
                 Section {
                     subtitle: None,
-                    compute: None,
+                    annotations: Vec::new(),
                     elements: imports,
                 },
                 selected,
@@ -255,7 +255,7 @@ fn rectangular_matrix_literals_cross_the_artifact_layout_boundary_correctly() {
         r#"
 +> math
 
-rectangular projection @ compute
+rectangular projection @compute
 -------------------------------------------------------------------------------
 input := source-input
 projection := [1f32 2f32 3f32

@@ -1,7 +1,7 @@
 # Interactive selectable CPU/GPU particle field
 
 This example is one Mech application. `particles.mec` contains both the normal
-transactional CPU graph and the neutral `particle-field @ compute` numeric
+transactional CPU graph and the neutral `particle-field @compute` numeric
 region. The same Mech source can select a resident CPU or GPU executor.
 
 The browser is a host, not the application:
@@ -16,7 +16,7 @@ The browser is a host, not the application:
 
 There is no JavaScript particle simulation or handwritten particle kernel.
 The compute program is lowered from the ordinary matrix expressions in
-`particles.mec`. Hard `@ cpu` and `@ gpu` constraints conflict with the
+`particles.mec`. Hard `@cpu` and `@gpu` constraints conflict with the
 opposite command-line backend instead of silently changing placement.
 
 Select a backend without changing `particles.mec`:

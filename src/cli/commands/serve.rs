@@ -167,7 +167,7 @@ pub(crate) fn command() -> Command {
                 .long("backend")
                 .value_name("BACKEND")
                 .value_parser(["auto", "cpu", "gpu"])
-                .help("Selects the backend for neutral @ compute regions"),
+                .help("Selects the backend for neutral @compute regions"),
         )
         .arg(
             Arg::new("address")

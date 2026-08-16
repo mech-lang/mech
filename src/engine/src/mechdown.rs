@@ -1,6 +1,86 @@
 use crate::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SectionAnnotationSemanticError {
+    Unsupported { name: Box<str> },
+    DuplicatePlacement { name: Box<str> },
+    ConflictingPlacement { first: Box<str>, second: Box<str> },
+    PlacementArgumentsUnsupported { name: Box<str> },
+}
+
+impl MechErrorKind for SectionAnnotationSemanticError {
+    fn name(&self) -> &str {
+        match self {
+            Self::Unsupported { .. } => "UnsupportedSectionAnnotation",
+            Self::DuplicatePlacement { .. } => "DuplicateSectionPlacementAnnotation",
+            Self::ConflictingPlacement { .. } => "ConflictingSectionPlacementAnnotations",
+            Self::PlacementArgumentsUnsupported { .. } => {
+                "SectionPlacementAnnotationArgumentsUnsupported"
+            }
+        }
+    }
+
+    fn message(&self) -> String {
+        match self {
+            Self::Unsupported { name } => {
+                format!("section annotation `@{name}` is not supported")
+            }
+            Self::DuplicatePlacement { name } => {
+                format!("section placement annotation `@{name}` is duplicated")
+            }
+            Self::ConflictingPlacement { first, second } => {
+                format!("section placement annotations `@{first}` and `@{second}` conflict")
+            }
+            Self::PlacementArgumentsUnsupported { name } => {
+                format!("section placement annotation `@{name}` does not accept arguments")
+            }
+        }
+    }
+}
+
+pub fn section_compute_placement(section: &Section) -> MResult<Option<ComputePlacement>> {
+    let mut selected = None::<(&str, ComputePlacement)>;
+    for annotation in &section.annotations {
+        let placement = match annotation.name.as_ref() {
+            "compute" => ComputePlacement::Compute,
+            "cpu" => ComputePlacement::Cpu,
+            "gpu" => ComputePlacement::Gpu,
+            name => {
+                return Err(MechError::new(
+                    SectionAnnotationSemanticError::Unsupported { name: name.into() },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        };
+        if !annotation.arguments.is_empty() {
+            return Err(MechError::new(
+                SectionAnnotationSemanticError::PlacementArgumentsUnsupported {
+                    name: annotation.name.clone(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if let Some((previous_name, previous)) = selected {
+            let error = if previous == placement {
+                SectionAnnotationSemanticError::DuplicatePlacement {
+                    name: annotation.name.clone(),
+                }
+            } else {
+                SectionAnnotationSemanticError::ConflictingPlacement {
+                    first: previous_name.into(),
+                    second: annotation.name.clone(),
+                }
+            };
+            return Err(MechError::new(error, None).with_compiler_loc());
+        }
+        selected = Some((&annotation.name, placement));
+    }
+    Ok(selected.map(|(_, placement)| placement))
+}
+
 // Mechdown
 // ----------------------------------------------------------------------------
 
@@ -38,12 +118,13 @@ pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
 pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
     #[cfg(feature = "functions")]
     let plan_start = p.plan_len();
+    let compute = section_compute_placement(section)?;
     let mut result = Ok(LegacyValue::Empty);
     for el in &section.elements {
         result = Ok(section_element(&el, p)?);
     }
     #[cfg(feature = "functions")]
-    if let Some(placement) = section.compute {
+    if let Some(placement) = compute {
         let name = section
             .subtitle
             .as_ref()
@@ -216,6 +297,82 @@ pub fn section_element(
     };
     let hash = hasher.finish();
     Ok(LegacyValue::Id(hash))
+}
+
+#[cfg(test)]
+mod section_annotation_tests {
+    use super::*;
+
+    fn annotation(name: &str, with_argument: bool) -> SectionAnnotation {
+        let arguments = with_argument
+            .then(|| {
+                SectionAnnotationArgument::Atom(Atom {
+                    name: Identifier {
+                        name: Token::new(
+                            TokenKind::Identifier,
+                            SourceRange::default(),
+                            "finite".chars().collect(),
+                        ),
+                    },
+                })
+            })
+            .into_iter()
+            .collect();
+        SectionAnnotation {
+            name: name.into(),
+            arguments,
+        }
+    }
+
+    fn section(annotations: Vec<SectionAnnotation>) -> Section {
+        Section {
+            subtitle: None,
+            annotations,
+            elements: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn placement_annotations_normalize_to_semantic_placement() {
+        for (name, expected) in [
+            ("compute", ComputePlacement::Compute),
+            ("cpu", ComputePlacement::Cpu),
+            ("gpu", ComputePlacement::Gpu),
+        ] {
+            assert_eq!(
+                section_compute_placement(&section(vec![annotation(name, false)])).unwrap(),
+                Some(expected)
+            );
+        }
+    }
+
+    #[test]
+    fn unsupported_duplicate_conflicting_and_argument_placements_are_structured_errors() {
+        let cases = [
+            (
+                section(vec![annotation("required", true)]),
+                "UnsupportedSectionAnnotation",
+            ),
+            (
+                section(vec![annotation("gpu", false), annotation("gpu", false)]),
+                "DuplicateSectionPlacementAnnotation",
+            ),
+            (
+                section(vec![annotation("cpu", false), annotation("gpu", false)]),
+                "ConflictingSectionPlacementAnnotations",
+            ),
+            (
+                section(vec![annotation("gpu", true)]),
+                "SectionPlacementAnnotationArgumentsUnsupported",
+            ),
+        ];
+        for (section, expected) in cases {
+            assert_eq!(
+                section_compute_placement(&section).unwrap_err().kind_name(),
+                expected
+            );
+        }
+    }
 }
 
 #[cfg(feature = "functions")]

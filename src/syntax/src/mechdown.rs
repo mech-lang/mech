@@ -15,7 +15,7 @@ use nom::{
     IResult,
     branch::alt,
     bytes::complete::{take_until, take_while},
-    combinator::{eof, opt, peek},
+    combinator::{cut, eof, opt, peek},
     multi::{many_till, many0, many1, separated_list0, separated_list1},
     sequence::{pair, tuple as nom_tuple},
 };
@@ -240,39 +240,80 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
     Ok((input, Subtitle { text, level: 2 }))
 }
 
-// compute-subtitle := +(!"@", text), "@", ("compute" | "cpu" | "gpu"), newline, +dash, newline ;
-//
-// Unlike ordinary Mechdown section titles this form is intentionally
-// unnumbered. The `@` suffix is compiler metadata, not part of the displayed
-// title.
-pub fn compute_subtitle(input: ParseString) -> ParseResult<(Subtitle, ComputePlacement)> {
-    let (input, title_tokens) = many1(nom_tuple((is_not(at), text)))(input)?;
+// section-annotation := "@", identifier, ?("(", atom, *(comma, atom), ")") ;
+pub fn section_annotation(input: ParseString) -> ParseResult<SectionAnnotation> {
     let (input, _) = at(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, arguments) = opt(|input| {
+        let (input, _) = left_parenthesis(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, arguments) = separated_list1(
+            |input| {
+                let (input, _) = many0(space_tab)(input)?;
+                let (input, _) = comma(input)?;
+                many0(space_tab)(input)
+            },
+            |input| atom(input).map(|(input, atom)| (input, SectionAnnotationArgument::Atom(atom))),
+        )(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, _) = right_parenthesis(input)?;
+        Ok((input, arguments))
+    })(input)?;
+    Ok((
+        input,
+        SectionAnnotation {
+            name: name.to_string().into_boxed_str(),
+            arguments: arguments.unwrap_or_default().into_boxed_slice(),
+        },
+    ))
+}
+
+// annotated-subtitle := +(!"@", text), +space-tab, section-annotation,
+//                       *(+space-tab, section-annotation), newline, +dash, newline ;
+pub fn annotated_subtitle(input: ParseString) -> ParseResult<(Subtitle, Vec<SectionAnnotation>)> {
+    let rest = input.rest();
+    let is_annotated_heading = rest
+        .split_once('\n')
+        .and_then(|(_, after_title)| after_title.split_once('\n'))
+        .map(|(separator, _)| separator.trim_end_matches(['\r', ' ', '\t']))
+        .is_some_and(|separator| {
+            !separator.is_empty() && separator.bytes().all(|byte| byte == b'-')
+        });
+    if !is_annotated_heading {
+        return Err(nom::Err::Error(ParseError::new(
+            input,
+            "Expected an annotated section heading",
+        )));
+    }
+    let (input, title_tokens) = many1(nom_tuple((is_not(at), text)))(input)?;
+    if !title_tokens
+        .last()
+        .is_some_and(|(_, token)| matches!(token.kind, TokenKind::Space | TokenKind::Tab))
+    {
+        return if input.current() == Some("@") {
+            Err(nom::Err::Failure(ParseError::new(
+                input,
+                "Section annotations must be separated from the title by whitespace",
+            )))
+        } else {
+            Err(nom::Err::Error(ParseError::new(
+                input,
+                "Expected an annotated section heading",
+            )))
+        };
+    }
+    let (input, first) = cut(section_annotation)(input)?;
+    let (input, rest) = many0(|input| {
+        let (input, _) = many1(space_tab)(input)?;
+        section_annotation(input)
+    })(input)?;
     let (input, _) = many0(space_tab)(input)?;
-    let (input, placement_token) = many1(alpha_token)(input)?;
+    let (input, _) = cut(new_line)(input)?;
+    let (input, _) = cut(many1(dash))(input)?;
     let (input, _) = many0(space_tab)(input)?;
-    let (input, _) = new_line(input)?;
-    let (input, _) = many1(dash)(input)?;
-    let (input, _) = many0(space_tab)(input)?;
-    let (input, _) = new_line(input)?;
+    let (input, _) = cut(new_line)(input)?;
     let (input, _) = many0(space_tab)(input)?;
     let (input, _) = whitespace0(input)?;
-
-    let placement_text = placement_token
-        .iter()
-        .map(Token::to_string)
-        .collect::<String>();
-    let placement = match placement_text.as_str() {
-        "compute" => ComputePlacement::Compute,
-        "cpu" => ComputePlacement::Cpu,
-        "gpu" => ComputePlacement::Gpu,
-        _ => {
-            return Err(nom::Err::Failure(ParseError::new(
-                input,
-                "Expected compute placement: compute, cpu, or gpu",
-            )));
-        }
-    };
 
     let mut title_tokens = title_tokens
         .into_iter()
@@ -287,10 +328,13 @@ pub fn compute_subtitle(input: ParseString) -> ParseResult<(Subtitle, ComputePla
     if title_tokens.is_empty() {
         return Err(nom::Err::Failure(ParseError::new(
             input,
-            "Compute region name cannot be empty",
+            "Annotated section name cannot be empty",
         )));
     }
     let title = Paragraph::from_tokens(title_tokens);
+    let mut annotations = Vec::with_capacity(rest.len() + 1);
+    annotations.push(first);
+    annotations.extend(rest);
     Ok((
         input,
         (
@@ -298,7 +342,7 @@ pub fn compute_subtitle(input: ParseString) -> ParseResult<(Subtitle, ComputePla
                 text: title,
                 level: 2,
             },
-            placement,
+            annotations,
         ),
     ))
 }
@@ -1335,16 +1379,12 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 
 // section := ?ul-subtitle, +section-element ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
-    let (input, heading) = opt(alt((
-        |input| {
-            compute_subtitle(input)
-                .map(|(input, (title, placement))| (input, (title, Some(placement))))
-        },
-        |input| ul_subtitle(input).map(|(input, title)| (input, (title, None))),
-    )))(input)?;
-    let (subtitle, compute) = match heading {
-        Some((title, placement)) => (Some(title), placement),
-        None => (None, None),
+    let (input, heading) = opt(alt((annotated_subtitle, |input| {
+        ul_subtitle(input).map(|(input, title)| (input, (title, Vec::new())))
+    })))(input)?;
+    let (subtitle, annotations) = match heading {
+        Some((title, annotations)) => (Some(title), annotations),
+        None => (None, Vec::new()),
     };
 
     let mut elements = vec![];
@@ -1359,7 +1399,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         }
 
         // Stop if the next thing is a new section (peek, do not consume)
-        if compute_subtitle(new_input.clone()).is_ok() || ul_subtitle(new_input.clone()).is_ok() {
+        if annotated_subtitle(new_input.clone()).is_ok() || ul_subtitle(new_input.clone()).is_ok() {
             //println!("Next section detected, ending current section");
             break;
         }
@@ -1422,7 +1462,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         new_input,
         Section {
             subtitle,
-            compute,
+            annotations,
             elements,
         },
     ))

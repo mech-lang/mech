@@ -67,7 +67,7 @@ checks sampled resident output against the repeated recurrence, and reports
 compilation, one-shot execution, resident dispatch, and final readback
 separately.
 
-To compare the selectable backends using the exact `particle-field @ compute`
+To compare the selectable backends using the exact `particle-field @compute`
 region from the served example, run:
 
 ```text
@@ -100,7 +100,7 @@ does not submit a 100-turn batch.
 
 [`fixtures/ekf-kernel.mec`](fixtures/ekf-kernel.mec) is one Mech document. Its
 ordinary section constructs arrays of controls and observations, while its
-named `EKF step @ compute` region contains one extended Kalman filter update
+named `EKF step @compute` region contains one extended Kalman filter update
 written with ordinary matrix operations. The filter contains matrix
 construction, `**`, transpose, dot products, scalar broadcasting, `sin`,
 `cos`, and `atan2`, including the Joseph-form covariance update. It contains
@@ -249,5 +249,5 @@ Two contracts are still needed before arbitrary mixed applications can run:
 
 Those are artifact/executor design requirements, not particle-demo concerns.
 The executor is selected in `.mcfg`. Source may use backend-neutral
-`section @ compute` boundaries or hard `@ cpu`/`@ gpu` requirements, but never
+`section @compute` boundaries or hard `@cpu`/`@gpu` requirements, but never
 contains device buffers, pointers, upload operations, or Rust callbacks.

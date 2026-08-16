@@ -133,8 +133,10 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
 
 fn is_gpu_owned(section: &Section) -> bool {
     matches!(
-        section.compute,
-        Some(mech_core::ComputePlacement::Compute | mech_core::ComputePlacement::Gpu)
+        mech_engine::section_compute_placement(section),
+        Ok(Some(
+            mech_core::ComputePlacement::Compute | mech_core::ComputePlacement::Gpu
+        ))
     )
 }
 
@@ -161,7 +163,7 @@ fn cpu_projection_tree(tree: &Program) -> Program {
     if !excluded_imports.is_empty() {
         sections.push(Section {
             subtitle: None,
-            compute: None,
+            annotations: Vec::new(),
             elements: excluded_imports,
         });
     }
@@ -202,7 +204,7 @@ fn isolated_region_tree(imports: &[SectionElement], section: &Section) -> Progra
     if !imports.is_empty() {
         sections.push(Section {
             subtitle: None,
-            compute: None,
+            annotations: Vec::new(),
             elements: imports.to_vec(),
         });
     }

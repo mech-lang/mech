@@ -18,7 +18,7 @@ dt := @pointer/delta-seconds
 @particles/input/dt <- dt
 @particles/turn <- pulse
 
-particle-field @ compute
+particle-field @compute
 -------------------------------------------------------------------------------
 
 -- This is the portable compute boundary. The values, initialization, and

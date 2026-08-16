@@ -296,7 +296,7 @@ fn projected_tree(tree: &Program, compute: bool) -> Program {
         .body
         .sections
         .iter()
-        .find(|section| section.compute.is_some() == compute)
+        .find(|section| (!section.annotations.is_empty()) == compute)
         .unwrap_or_else(|| panic!("EKF source must contain the selected section"))
         .clone();
     Program {
@@ -305,7 +305,7 @@ fn projected_tree(tree: &Program, compute: bool) -> Program {
             sections: vec![
                 Section {
                     subtitle: None,
-                    compute: None,
+                    annotations: Vec::new(),
                     elements: imports,
                 },
                 selected,

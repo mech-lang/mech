@@ -730,20 +730,25 @@ impl Formatter {
     }
 
     pub fn section(&mut self, node: &Section) -> String {
-        let mut src = match (&node.subtitle, node.compute) {
-            (Some(title), Some(placement)) if !self.html => format!(
-                "{} @ {}\n-------------------------------------------------------------------------------\n",
+        let annotations = node
+            .annotations
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let mut src = match (&node.subtitle, node.annotations.is_empty()) {
+            (Some(title), false) if !self.html => format!(
+                "{} {}\n-------------------------------------------------------------------------------\n",
                 title.to_string(),
-                placement.as_str(),
+                annotations,
             ),
-            (Some(title), Some(placement)) => format!(
-                "<div class=\"mech-compute-region-heading\" data-mech-compute=\"{}\">{}</div>",
-                placement.as_str(),
+            (Some(title), false) => format!(
+                "<div class=\"mech-annotated-section-heading\" data-mech-annotations=\"{}\">{}</div>",
+                annotations,
                 self.subtitle(title),
             ),
-            (Some(title), None) => self.subtitle(title),
-            (None, None) => "".to_string(),
-            (None, Some(_)) => "".to_string(),
+            (Some(title), true) => self.subtitle(title),
+            (None, _) => "".to_string(),
         };
         for el in node.elements.iter() {
             let el_str = self.section_element(el);
