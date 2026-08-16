@@ -370,6 +370,14 @@ class GateBContractCheckerTests(unittest.TestCase):
     def test_valid_b0_report_passes(self):
         self.assertEqual(CHECKER.report_contract_errors(valid_report()), [])
 
+    def test_sample_protocol_is_exact_not_a_minimum(self):
+        report = valid_report()
+        report["sample_protocol"]["criterion_sample_size"] = 11
+        report["lanes"][0]["sample_count"] = 11
+        errors = CHECKER.report_contract_errors(report)
+        self.assertIn("Gate B report sample protocol changed", errors)
+        self.assertTrue(any("exactly 10 samples" in error for error in errors))
+
     def test_valid_b1_report_requires_resident_kernel_lanes(self):
         self.assertEqual(CHECKER.report_contract_errors(valid_b1_report()), [])
 

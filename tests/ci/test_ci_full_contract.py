@@ -76,6 +76,11 @@ class FullWorkflowContractTests(unittest.TestCase):
                     )
                 )
 
+    def test_value_system_contract_is_permanent_and_unwaived(self):
+        block = job_block(FULL, "architecture-contracts")
+        self.assertIn("scripts/check-value-system-contract.py", block)
+        self.assertNotIn("allow-only-c0-gate-b-evidence-stale", block)
+
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")
         install = "sudo apt-get install --yes ripgrep"

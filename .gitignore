@@ -5,6 +5,8 @@
 *.dll
 *.exe
 *.wasm
+*.py[cod]
+__pycache__/
 
 # Database files
 *.mdb
@@ -37,4 +39,3 @@ Cargo.lock
 # Mac Files
 .DS_Store
 /src/wasm/pkg
-

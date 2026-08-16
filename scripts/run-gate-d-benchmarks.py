@@ -33,6 +33,12 @@ THRESHOLDS = {
     "ekf_complete_d1_ratio_max": 1.20,
     "ekf_kernel_d1_ratio_max": 1.20,
 }
+GATE_D_SAMPLE_PROTOCOL = {
+    "samples": 10,
+    "turns_per_sample": TURNS,
+    "profile": "release",
+}
+HISTORICAL_REPLAY_MARKER = "GATE_D_HISTORICAL_REPLAY"
 
 
 def command(*args: str) -> str:
@@ -55,6 +61,85 @@ def summarize(values: list[float]) -> dict[str, float | int]:
     }
 
 
+def d2_protocol_rows(
+    raw: str,
+) -> tuple[dict[str, list[dict[str, str]]], dict[str, list[dict[str, str]]], int]:
+    lane_rows: dict[str, list[dict[str, str]]] = {}
+    cold_rows: dict[str, list[dict[str, str]]] = {}
+    structural_count = 0
+    for line in raw.splitlines():
+        if line.startswith("GATE_D_SAMPLE "):
+            fields = parse_fields(line)
+            lane_rows.setdefault(fields["lane"], []).append(fields)
+        elif line.startswith("GATE_D_COLD "):
+            fields = parse_fields(line)
+            cold_rows.setdefault(fields["phase"], []).append(fields)
+        elif line.startswith("GATE_D_STRUCTURAL "):
+            structural_count += 1
+    return lane_rows, cold_rows, structural_count
+
+
+def validate_d2_sample_protocol(fresh: str, historical: str) -> None:
+    fresh_lanes, fresh_cold, fresh_structural = d2_protocol_rows(fresh)
+    historical_lanes, historical_cold, historical_structural = d2_protocol_rows(
+        historical
+    )
+    required_fresh_lanes = {
+        "nbody-raw-rust",
+        "nbody-resident-source",
+        "nbody-resident-bytecode",
+        "nbody-resident-kernel-source",
+        "nbody-resident-kernel-bytecode",
+        "nbody-resident-source-history-1k",
+        "nbody-resident-source-history-100k",
+        "nbody-resident-source-high-epoch",
+    }
+    required_historical_lanes = required_fresh_lanes | {"nbody-legacy-mech"}
+    required_cold = {
+        "source-compilation-and-initial-encoding",
+        "bytecode-encoding",
+        "bytecode-decoding",
+        "artifact-admission-and-activation",
+    }
+    if set(fresh_lanes) != required_fresh_lanes or set(fresh_cold) != required_cold:
+        raise ValueError("fresh Gate D2 sample lane set changed")
+    if set(historical_lanes) != required_historical_lanes or set(
+        historical_cold
+    ) != required_cold:
+        raise ValueError("historical Gate D2 sample lane set changed")
+    if fresh_structural != 1 or historical_structural != 1:
+        raise ValueError("each Gate D2 replay must contain one structural record")
+    expected_samples = list(range(GATE_D_SAMPLE_PROTOCOL["samples"]))
+    for source, rows_by_lane in (
+        ("fresh", fresh_lanes),
+        ("historical", historical_lanes),
+    ):
+        for lane, rows in rows_by_lane.items():
+            if sorted(int(row["sample"]) for row in rows) != expected_samples:
+                raise ValueError(f"Gate D2 {source} {lane} sample identities changed")
+            if any(int(row["turns"]) != TURNS for row in rows):
+                raise ValueError(f"Gate D2 {source} {lane} turn count changed")
+    for source, rows_by_phase in (
+        ("fresh", fresh_cold),
+        ("historical", historical_cold),
+    ):
+        for phase, rows in rows_by_phase.items():
+            if sorted(int(row["sample"]) for row in rows) != expected_samples:
+                raise ValueError(
+                    f"Gate D2 {source} {phase} cold sample identities changed"
+                )
+
+
+def d2_measurement_raw(fresh: str, historical: str) -> str:
+    legacy = [
+        line
+        for line in historical.splitlines()
+        if line.startswith("GATE_D_SAMPLE ")
+        and parse_fields(line).get("lane") == "nbody-legacy-mech"
+    ]
+    return fresh.rstrip() + "\n" + "\n".join(legacy) + "\n"
+
+
 def load_raw(path: Path | None) -> str:
     if path is not None:
         return path.read_text(encoding="utf-8")
@@ -67,6 +152,8 @@ def load_raw(path: Path | None) -> str:
             "--offline",
             "--manifest-path",
             "tests/fixtures/d2-contract-generator/Cargo.toml",
+            "--target-dir",
+            "target/gate-d2-generator",
             "--",
             "--gate-d-benchmark",
         ],
@@ -92,7 +179,7 @@ def load_d3_raw(path: Path | None) -> str:
             "mech-runtime",
             "--no-default-features",
             "--features",
-            "source_default,resident-external,runtime_bench_gate_d3",
+            "source_default,resident-routing-source,runtime_bench_gate_d3",
             "--test",
             "resident_external_gate_d3",
             "--",
@@ -121,6 +208,36 @@ def exact_field(rows: list[dict], field: str):
     return rows[0][field]
 
 
+def exact_json_integer(value: object, label: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{label} must be an exact JSON integer")
+    return value
+
+
+def validate_d3_control_protocol(controls: list[dict]) -> None:
+    required_lanes = {"history-0", "history-1k", "history-100k", "high-epoch"}
+    if {row.get("lane") for row in controls} != required_lanes:
+        raise ValueError("D3 control lane set changed")
+    expected_samples = list(range(3))
+    for lane in sorted(required_lanes):
+        rows = [row for row in controls if row.get("lane") == lane]
+        try:
+            samples = sorted(
+                exact_json_integer(row["sample"], f"D3 {lane} sample")
+                for row in rows
+            )
+            turns = [
+                exact_json_integer(row["turns"], f"D3 {lane} turns")
+                for row in rows
+            ]
+        except KeyError as error:
+            raise ValueError(f"D3 {lane} control sample is malformed") from error
+        if samples != expected_samples:
+            raise ValueError(f"D3 {lane} control sample identities changed")
+        if any(turn != TURNS for turn in turns):
+            raise ValueError(f"D3 {lane} control turn count changed")
+
+
 def d3_report(raw: str, semantic_commit: str) -> dict:
     samples = parse_json_lines(raw, "GATE_D3_SAMPLE ")
     replays = parse_json_lines(raw, "GATE_D3_REPLAY ")
@@ -131,6 +248,7 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
             "incomplete D3 output: "
             f"samples={len(samples)} replays={len(replays)} controls={len(controls)}"
         )
+    validate_d3_control_protocol(controls)
     if len(structural_rows) != 1:
         raise ValueError(f"expected one D3 structural record, found {len(structural_rows)}")
     structural = structural_rows[0]
@@ -151,8 +269,37 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
             ]
             for artifact in ("source", "bytecode")
         }
-        if any(len(rows) != 10 for rows in artifact_rows.values()):
+        if any(
+            len(rows) != GATE_D_SAMPLE_PROTOCOL["samples"]
+            for rows in artifact_rows.values()
+        ):
             raise ValueError(f"D3 {fixture} does not have ten source/bytecode samples")
+        for artifact, rows in artifact_rows.items():
+            try:
+                samples_for_artifact = sorted(
+                    exact_json_integer(
+                        row["sample"], f"D3 {fixture}/{artifact} sample"
+                    )
+                    for row in rows
+                )
+                turns_for_artifact = [
+                    exact_json_integer(
+                        row["turns"], f"D3 {fixture}/{artifact} turns"
+                    )
+                    for row in rows
+                ]
+            except KeyError as error:
+                raise ValueError(
+                    f"D3 {fixture}/{artifact} sample is malformed"
+                ) from error
+            if samples_for_artifact != list(
+                range(GATE_D_SAMPLE_PROTOCOL["samples"])
+            ):
+                raise ValueError(
+                    f"D3 {fixture}/{artifact} sample identities changed"
+                )
+            if any(turn != TURNS for turn in turns_for_artifact):
+                raise ValueError(f"D3 {fixture}/{artifact} turn count changed")
         lanes = {}
         for artifact, rows in artifact_rows.items():
             lanes[artifact] = {
@@ -296,7 +443,7 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
             "architecture": platform.machine(),
             "processor": platform.processor(),
         },
-        "sample_protocol": {"samples": 10, "turns_per_sample": TURNS, "profile": "release"},
+        "sample_protocol": GATE_D_SAMPLE_PROTOCOL,
         "thresholds": thresholds,
         "d2_pure": {
             "frozen_semantic_head": D2_HEAD,
@@ -336,6 +483,7 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--raw-input", type=Path)
+    parser.add_argument("--raw-output", type=Path)
     parser.add_argument("--semantic-commit")
     args = parser.parse_args()
 
@@ -349,9 +497,36 @@ def main() -> int:
         display = output.relative_to(ROOT) if output.is_relative_to(ROOT) else output
         print(f"wrote {display}: {report['decision']}")
         return 0 if report["decision"] == "Pass" else 3
-    raw = load_raw(args.raw_input)
     if args.raw_input is None:
-        raw += "\n" + run_historical_d2_fixture("--gate-d-benchmark", release=True)
+        fresh_raw = load_raw(None)
+        historical_raw = run_historical_d2_fixture(
+            "--gate-d-benchmark", release=True
+        )
+        evidence_raw = (
+            fresh_raw.rstrip()
+            + f"\n{HISTORICAL_REPLAY_MARKER}\n"
+            + historical_raw.lstrip()
+        )
+    else:
+        evidence_raw = load_raw(args.raw_input)
+        try:
+            fresh_raw, historical_raw = evidence_raw.split(
+                f"\n{HISTORICAL_REPLAY_MARKER}\n", 1
+            )
+        except ValueError as error:
+            raise ValueError(
+                "Gate D2 raw input has no historical replay boundary"
+            ) from error
+    validate_d2_sample_protocol(fresh_raw, historical_raw)
+    raw = d2_measurement_raw(fresh_raw, historical_raw)
+    if args.raw_output is not None:
+        raw_output = (
+            args.raw_output
+            if args.raw_output.is_absolute()
+            else ROOT / args.raw_output
+        )
+        raw_output.parent.mkdir(parents=True, exist_ok=True)
+        raw_output.write_text(evidence_raw, encoding="utf-8")
     lane_samples: dict[str, list[float]] = {}
     lane_allocations: dict[str, set[int]] = {}
     cold_samples: dict[str, list[float]] = {}
@@ -491,7 +666,7 @@ def main() -> int:
             "architecture": platform.machine(),
             "processor": platform.processor(),
         },
-        "sample_protocol": {"samples": 10, "turns_per_sample": TURNS, "profile": "release"},
+        "sample_protocol": GATE_D_SAMPLE_PROTOCOL,
         "thresholds": THRESHOLDS,
         "nbody": {
             "lanes": lanes,

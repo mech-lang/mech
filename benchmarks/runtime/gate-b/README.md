@@ -104,6 +104,12 @@ state, episode length, integrity conditions, and tolerance. Correctness work
 may not occur inside only one timed lane, and input conversion may not move
 across only one timing boundary.
 
+The sampling protocol is exact rather than a lower bound: every Criterion lane
+retains 10 samples, every persistent-NumPy lane retains 10 samples, Criterion
+warms up for 1 second and measures for 3 seconds, and every sample contains
+4,096 turns. A report or raw evidence tree with any other count or duration is
+not Gate B evidence.
+
 ## Full-write control
 
 The full-write control owns two activation-sized 64-by-64 `f64` buffers and
