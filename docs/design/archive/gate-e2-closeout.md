@@ -1,6 +1,6 @@
 # Gate E2 closeout
 
-> Historical record. See `../gate-e3-closeout.md` for the authoritative Gate E
+> Historical record. See `gate-e3-closeout.md` for the authoritative Gate E
 > status and F0 handoff.
 
 This was the authoritative status source for PR #758,

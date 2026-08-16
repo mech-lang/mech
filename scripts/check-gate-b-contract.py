@@ -533,6 +533,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
         "time.perf_counter_ns()",
         'order="F"',
         "np.show_config()",
+        "sys.flags.isolated",
+        '"numpy_module_path"',
         '"type": "ready"',
         'command == "benchmark"',
     ):
@@ -541,6 +543,8 @@ def static_contract_errors(root: Path = ROOT) -> list[str]:
 
     runner = read_text(root / "scripts/run-gate-b-benchmarks.py")
     for frozen in (
+        '"-I"',
+        '"--expected-numpy-module"',
         "refusing to attribute Gate B benchmark results to a dirty worktree",
         "git\", \"rev-parse\", \"HEAD",
         "git\", \"merge-base",
@@ -656,6 +660,18 @@ def report_contract_errors(
         if report["thread_environment"].get(variable) != "1":
             errors.append(f"Gate B report did not fix {variable}=1")
     protocol = report["sample_protocol"]
+    expected_protocol = {
+        "criterion_sample_size": 10,
+        "numpy_sample_size": 10,
+        "warm_up_seconds": 1.0,
+        "measurement_seconds": 3.0,
+        "turns_per_sample": EPISODE_LENGTH,
+        "fixture_setup_included_in_timing": False,
+        "correctness_included_in_timing": False,
+        "profile": "release",
+    }
+    if protocol != expected_protocol:
+        errors.append("Gate B report sample protocol changed")
     if protocol.get("turns_per_sample") != EPISODE_LENGTH:
         errors.append("Gate B report sample protocol has the wrong turn count")
     if protocol.get("fixture_setup_included_in_timing") is not False:
@@ -690,8 +706,8 @@ def report_contract_errors(
             + ", ".join(str(key) for key in sorted(unexpected))
         )
     for key, lane in lanes.items():
-        if lane.get("sample_count", 0) < 10:
-            errors.append(f"Gate B lane {key[0]}/{key[1]} has fewer than 10 samples")
+        if lane.get("sample_count") != 10:
+            errors.append(f"Gate B lane {key[0]}/{key[1]} does not have exactly 10 samples")
         if lane.get("turns_per_sample") != EPISODE_LENGTH:
             errors.append(f"Gate B lane {key[0]}/{key[1]} has the wrong turn count")
         timing = lane.get("timing", {})

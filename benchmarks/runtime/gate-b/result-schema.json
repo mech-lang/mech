@@ -136,10 +136,10 @@
         "profile"
       ],
       "properties": {
-        "criterion_sample_size": { "type": "integer", "minimum": 10 },
-        "numpy_sample_size": { "type": "integer", "minimum": 10 },
-        "warm_up_seconds": { "type": "number", "exclusiveMinimum": 0 },
-        "measurement_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "criterion_sample_size": { "const": 10 },
+        "numpy_sample_size": { "const": 10 },
+        "warm_up_seconds": { "const": 1 },
+        "measurement_seconds": { "const": 3 },
         "turns_per_sample": { "const": 4096 },
         "fixture_setup_included_in_timing": { "const": false },
         "correctness_included_in_timing": { "const": false },

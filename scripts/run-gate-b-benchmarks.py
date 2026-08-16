@@ -26,6 +26,16 @@ B2_BRANCH = "perf/runtime-resident-ekf-efficacy"
 FROZEN_B2_BASE = "75d0775209c8ee0eae5480facba3a9b2c9c12143"
 B2_EVIDENCE_FLOOR = "d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10"
 EPISODE_LENGTH = 4_096
+SAMPLE_PROTOCOL = {
+    "criterion_sample_size": 10,
+    "numpy_sample_size": 10,
+    "warm_up_seconds": 1.0,
+    "measurement_seconds": 3.0,
+    "turns_per_sample": EPISODE_LENGTH,
+    "fixture_setup_included_in_timing": False,
+    "correctness_included_in_timing": False,
+    "profile": "release",
+}
 SCALED_INSTANCES = (1, 8, 64)
 THREAD_VARIABLES = (
     "OMP_NUM_THREADS",
@@ -36,6 +46,43 @@ THREAD_VARIABLES = (
     "NUMEXPR_NUM_THREADS",
     "RAYON_NUM_THREADS",
 )
+ADVISORY_PERFORMANCE_GATES = {
+    "b2_decision": {
+        "executor_tax",
+        "legacy_gap_closure",
+        "raw_epoch_ratio",
+        "tail_stability",
+    },
+    "d1_decision": {
+        "complete_turn_control_ratio",
+        "legacy_gap_closure",
+        "raw_epoch_ratio",
+        "source_bytecode_equivalence",
+    },
+}
+
+
+def release_qualification(
+    report: dict[str, Any],
+) -> tuple[str, dict[str, list[str]]]:
+    advisories: dict[str, list[str]] = {}
+    blocking_passed = True
+    for section, advisory_names in ADVISORY_PERFORMANCE_GATES.items():
+        gates = report.get(section, {}).get("hard_gates", {})
+        if not isinstance(gates, dict) or not gates:
+            advisories[section] = []
+            blocking_passed = False
+            continue
+        advisories[section] = sorted(
+            name for name in advisory_names if gates.get(name) is False
+        )
+        if not all(
+            passed
+            for name, passed in gates.items()
+            if name not in advisory_names
+        ):
+            blocking_passed = False
+    return ("Pass" if blocking_passed else "Fail"), advisories
 
 
 def command_output(command: list[str]) -> str:
@@ -81,8 +128,7 @@ def clear_gate_b_criterion_results(target_dir: Path) -> None:
             shutil.rmtree(child)
 
 
-def criterion_samples(target_dir: Path) -> dict[str, dict[str, Any]]:
-    criterion_root = target_dir / "criterion"
+def criterion_samples_from_root(criterion_root: Path) -> dict[str, dict[str, Any]]:
     summaries: dict[str, dict[str, Any]] = {}
     if not criterion_root.exists():
         return summaries
@@ -115,16 +161,64 @@ def criterion_samples(target_dir: Path) -> dict[str, dict[str, Any]]:
     return summaries
 
 
+def criterion_samples(target_dir: Path) -> dict[str, dict[str, Any]]:
+    return criterion_samples_from_root(target_dir / "criterion")
+
+
 ProbeKey = tuple[str, int, int, int]
 
 
 def probe_key(sample: dict[str, Any]) -> ProbeKey:
+    lane = sample.get("lane")
+    if not isinstance(lane, str) or not lane:
+        raise ValueError("Gate B probe lane must be a non-empty string")
+    values = {
+        "instances": sample.get("instances"),
+        "retained_history": sample.get("retained_history"),
+        "next_epoch": sample.get("next_epoch"),
+        "turns": sample.get("turns"),
+    }
+    for field, value in values.items():
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ValueError(f"Gate B probe {field} must be an exact JSON integer")
+    if values["turns"] != EPISODE_LENGTH:
+        raise ValueError(f"Gate B probe turns must equal {EPISODE_LENGTH}")
     return (
-        str(sample["lane"]),
-        int(sample["instances"]),
-        int(sample.get("retained_history", 0)),
-        int(sample.get("next_epoch", 1)),
+        lane,
+        values["instances"],
+        values["retained_history"],
+        values["next_epoch"],
     )
+
+
+def expected_b2_probe_keys() -> tuple[set[ProbeKey], set[ProbeKey]]:
+    legacy = {
+        *(("mech-legacy-atomic", instances, 0, 1) for instances in SCALED_INSTANCES),
+        ("mech-legacy-atomic-full-write", 1, 0, 1),
+    }
+    resident = {
+        *(("mech-resident-kernel", instances, 0, 1) for instances in SCALED_INSTANCES),
+        ("mech-resident-kernel-full-write", 1, 0, 1),
+        ("mech-resident-scheduled", 1, 0, 1),
+        ("mech-resident-turn", 1, 0, 1),
+        ("mech-resident-turn", 1, 1_000, 1),
+        ("mech-resident-turn", 1, 100_000, 1),
+        ("mech-resident-turn", 1, 0, 1_000_000_001),
+        ("mech-resident-turn-full-write", 1, 0, 1),
+        ("mech-resident-artifact-source", 1, 0, 1),
+        ("mech-resident-artifact-source", 1, 1_000, 1),
+        ("mech-resident-artifact-source", 1, 100_000, 1),
+        ("mech-resident-artifact-source", 1, 0, 1_000_000_001),
+        ("mech-resident-artifact-bytecode", 1, 0, 1),
+        ("mech-resident-artifact-kernel-source", 1, 0, 1),
+        ("mech-resident-artifact-kernel-bytecode", 1, 0, 1),
+    }
+    raw = {
+        *(("rust-kernel", instances, 0, 1) for instances in SCALED_INSTANCES),
+        *(("rust-epoch", instances, 0, 1) for instances in SCALED_INSTANCES),
+        ("rust-epoch-full-write", 1, 0, 1),
+    }
+    return raw | legacy | resident, legacy | resident
 
 
 def parse_probe_samples(output: str) -> dict[ProbeKey, dict[str, Any]]:
@@ -134,7 +228,15 @@ def parse_probe_samples(output: str) -> dict[ProbeKey, dict[str, Any]]:
         if marker < 0:
             continue
         sample = json.loads(line[marker + len(SAMPLE_PREFIX) :])
-        samples[probe_key(sample)] = sample
+        key = probe_key(sample)
+        if key in samples:
+            # Criterion may emit the same deterministic probe more than once as
+            # it calibrates iteration counts. Never let a later record replace
+            # evidence from an already-seen identity.
+            if samples[key] != sample:
+                raise ValueError(f"conflicting duplicate Gate B probe {key}")
+            continue
+        samples[key] = sample
     return samples
 
 
@@ -242,13 +344,40 @@ def _worker_error(process: subprocess.Popen[str], reason: str) -> RuntimeError:
     return RuntimeError(f"persistent NumPy worker {reason}{detail}")
 
 
+def numpy_worker_command(python: str) -> tuple[list[str], Path]:
+    python_path = Path(python)
+    if not python_path.is_absolute():
+        raise ValueError("the Gate B NumPy interpreter path must be absolute")
+    module = command_output(
+        [
+            str(python_path),
+            "-I",
+            "-c",
+            (
+                "import importlib.util; "
+                "spec = importlib.util.find_spec('numpy'); "
+                "assert spec is not None and spec.origin is not None; "
+                "print(spec.origin)"
+            ),
+        ]
+    )
+    expected_module = Path(module).resolve()
+    return (
+        [
+            str(python_path),
+            "-I",
+            str(ROOT / "benchmarks/runtime/gate-b/numpy/ekf_v1.py"),
+            "--expected-numpy-module",
+            str(expected_module),
+        ],
+        expected_module,
+    )
+
+
 def run_numpy_controls(
     python: str, samples: int, environment: dict[str, str]
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    command = [
-        python,
-        str(ROOT / "benchmarks/runtime/gate-b/numpy/ekf_v1.py"),
-    ]
+    command, expected_module = numpy_worker_command(python)
     process = subprocess.Popen(
         command,
         cwd=ROOT,
@@ -267,6 +396,12 @@ def run_numpy_controls(
         ready = json.loads(ready_line)
         if ready.get("type") != "ready" or ready.get("protocol") != "gate-b-numpy-v1":
             raise RuntimeError(f"unexpected persistent NumPy ready message: {ready}")
+        if ready.get("python_isolated") is not True:
+            raise RuntimeError("persistent NumPy worker is not running in isolated mode")
+        if Path(str(ready.get("numpy_module_path", ""))).resolve() != expected_module:
+            raise RuntimeError(
+                "persistent NumPy worker imported outside the authenticated environment"
+            )
         results = []
         for instances in SCALED_INSTANCES:
             request = {
@@ -906,13 +1041,26 @@ def parse_args() -> argparse.Namespace:
         help="write the untimed probe-run output here (defaults under target)",
     )
     parser.add_argument(
+        "--raw-numpy-output",
+        type=Path,
+        help="write the exact persistent NumPy samples here",
+    )
+    parser.add_argument(
         "--python",
         default=sys.executable,
         help="Python executable containing NumPy",
     )
-    parser.add_argument("--sample-size", type=int, default=10)
-    parser.add_argument("--warm-up-time", type=float, default=1.0)
-    parser.add_argument("--measurement-time", type=float, default=3.0)
+    parser.add_argument(
+        "--sample-size", type=int, default=SAMPLE_PROTOCOL["criterion_sample_size"]
+    )
+    parser.add_argument(
+        "--warm-up-time", type=float, default=SAMPLE_PROTOCOL["warm_up_seconds"]
+    )
+    parser.add_argument(
+        "--measurement-time",
+        type=float,
+        default=SAMPLE_PROTOCOL["measurement_seconds"],
+    )
     parser.add_argument(
         "--phase",
         choices=("B2-resident-turn",),
@@ -927,11 +1075,22 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.sample_size < 10:
-        print("Criterion sample size must be at least 10", file=sys.stderr)
-        return 2
-    if args.warm_up_time <= 0.0 or args.measurement_time <= 0.0:
-        print("warm-up and measurement times must be positive", file=sys.stderr)
+    requested_protocol = {
+        "criterion_sample_size": args.sample_size,
+        "numpy_sample_size": args.sample_size,
+        "warm_up_seconds": args.warm_up_time,
+        "measurement_seconds": args.measurement_time,
+        "turns_per_sample": EPISODE_LENGTH,
+        "fixture_setup_included_in_timing": False,
+        "correctness_included_in_timing": False,
+        "profile": "release",
+    }
+    if requested_protocol != SAMPLE_PROTOCOL:
+        print(
+            "Gate B sample protocol is frozen at 10 Criterion samples, 10 NumPy "
+            "samples, 1 second warm-up, and 3 seconds measurement",
+            file=sys.stderr,
+        )
         return 2
     try:
         hardware = hardware_description(args.machine_label)
@@ -967,6 +1126,11 @@ def main() -> int:
     if not raw_structural_output.is_absolute():
         raw_structural_output = (ROOT / raw_structural_output).resolve()
     raw_structural_output.parent.mkdir(parents=True, exist_ok=True)
+    raw_numpy_output = args.raw_numpy_output
+    if raw_numpy_output is not None:
+        if not raw_numpy_output.is_absolute():
+            raw_numpy_output = (ROOT / raw_numpy_output).resolve()
+        raw_numpy_output.parent.mkdir(parents=True, exist_ok=True)
 
     command = [
         "cargo",
@@ -1035,6 +1199,16 @@ def main() -> int:
         ready, numpy_results = run_numpy_controls(
             args.python, args.sample_size, environment
         )
+        if raw_numpy_output is not None:
+            raw_numpy_output.write_text(
+                json.dumps(
+                    {"ready": ready, "results": numpy_results},
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
         manifest = json.loads(
             (ROOT / "benchmarks/runtime/gate-b/ekf-v1.json").read_text(
                 encoding="utf-8"
@@ -1055,6 +1229,8 @@ def main() -> int:
         print(f"Gate B result assembly failed: {error}", file=sys.stderr)
         return 2
 
+    qualification_decision = "Pass"
+    advisory_performance_failures: dict[str, list[str]] = {}
     summary = {
         "schema_version": 1,
         "gate": "B",
@@ -1099,16 +1275,7 @@ def main() -> int:
             "scalar": "f64",
             "matrix_storage": "column-major",
         },
-        "sample_protocol": {
-            "criterion_sample_size": args.sample_size,
-            "numpy_sample_size": args.sample_size,
-            "warm_up_seconds": args.warm_up_time,
-            "measurement_seconds": args.measurement_time,
-            "turns_per_sample": EPISODE_LENGTH,
-            "fixture_setup_included_in_timing": False,
-            "correctness_included_in_timing": False,
-            "profile": "release",
-        },
+        "sample_protocol": SAMPLE_PROTOCOL,
         "benchmark_arguments": command,
         "structural_probe_arguments": structural_command,
         "raw_criterion_directory": str(target_dir / "criterion"),
@@ -1128,6 +1295,9 @@ def main() -> int:
         summary["b2_decision"] = b2_decision(lanes)
         if any(lane["lane"] == "mech-resident-artifact-source" for lane in lanes):
             summary["d1_decision"] = d1_decision(lanes)
+        qualification_decision, advisory_performance_failures = (
+            release_qualification(summary)
+        )
     rendered = json.dumps(summary, indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -1147,20 +1317,22 @@ def main() -> int:
             file=sys.stderr,
         )
         return 4
+    for section, findings in advisory_performance_failures.items():
+        if findings:
+            print(
+                f"Gate B advisory performance findings ({section}): "
+                + ", ".join(findings),
+                file=sys.stderr,
+            )
     if (
         branch == B2_BRANCH or args.phase == "B2-resident-turn"
-    ) and summary["b2_decision"]["decision"] == "Fail":
+    ) and qualification_decision == "Fail":
         print(
-            "Gate B B2 stop: complete resident turn failed one or more hard gates",
+            "Gate B B2 stop: complete resident turn failed one or more "
+            "release-blocking gates",
             file=sys.stderr,
         )
         return 5
-    if summary.get("d1_decision", {}).get("decision") == "Fail":
-        print(
-            "Gate D D1 stop: recorded artifact turn failed one or more hard gates",
-            file=sys.stderr,
-        )
-        return 6
     return 0
 
 

@@ -50,6 +50,17 @@ MEASUREMENT_COVARIANCE = np.array(
 IDENTITY = np.eye(3, dtype=np.float64, order="F")
 
 
+def authenticated_numpy_module(expected: Path) -> Path:
+    if sys.flags.isolated != 1:
+        raise RuntimeError("Gate B NumPy worker requires Python isolated mode")
+    actual = Path(np.__file__).resolve()
+    if actual != expected.resolve():
+        raise RuntimeError(
+            f"NumPy imported from {actual}, expected authenticated module {expected}"
+        )
+    return actual
+
+
 def _load_trace() -> np.ndarray:
     values = np.fromfile(TRACE_PATH, dtype="<f8")
     if values.size != EPISODE_LENGTH * 4:
@@ -370,7 +381,7 @@ def benchmark(instances: int, samples: int) -> dict[str, Any]:
     }
 
 
-def describe() -> dict[str, Any]:
+def describe(numpy_module: Path) -> dict[str, Any]:
     config_output = io.StringIO()
     with warnings.catch_warnings(), contextlib.redirect_stdout(config_output):
         warnings.simplefilter("ignore", UserWarning)
@@ -401,6 +412,8 @@ def describe() -> dict[str, Any]:
         "pid": os.getpid(),
         "python": platform.python_version(),
         "numpy": np.__version__,
+        "python_isolated": True,
+        "numpy_module_path": str(numpy_module),
         "numpy_config": numpy_config,
         "blas_lapack_provider": blas_lapack_provider,
         "trace_sha256": MANIFEST["trace"]["sha256"],
@@ -425,14 +438,14 @@ def emit(payload: dict[str, Any]) -> None:
     print(json.dumps(payload, sort_keys=True), flush=True)
 
 
-def serve() -> int:
-    emit(describe())
+def serve(numpy_module: Path) -> int:
+    emit(describe(numpy_module))
     for line in sys.stdin:
         try:
             request = json.loads(line)
             command = request.get("command")
             if command == "describe":
-                emit(describe())
+                emit(describe(numpy_module))
             elif command == "benchmark":
                 emit(
                     benchmark(
@@ -457,12 +470,14 @@ def serve() -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--expected-numpy-module", type=Path, required=True)
     parser.add_argument(
         "--self-test",
         action="store_true",
         help="validate one EKF outside the benchmark protocol",
     )
     args = parser.parse_args()
+    numpy_module = authenticated_numpy_module(args.expected_numpy_module)
     if args.self_test:
         emit(
             {
@@ -475,7 +490,7 @@ def main() -> int:
             }
         )
         return 0
-    return serve()
+    return serve(numpy_module)
 
 
 if __name__ == "__main__":
