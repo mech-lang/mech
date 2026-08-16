@@ -6,8 +6,8 @@ use mech_core::{
     FloatWidth, NodeId, OutputConstruction, ResolvedOperationContract, SchemaBody,
 };
 use mech_engine::{
-    ArtifactComputeRegion, ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
-    SlotRole,
+    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
+    ProgramArtifact, SlotRole,
 };
 
 use super::{GpuHost, display_operation, elementwise_operation, turn_required_nodes};
@@ -87,21 +87,13 @@ impl GpuHost {
     /// CPU/GPU boundaries are reported even though mixed-region execution is not
     /// yet enabled by this provider.
     pub fn plan(&self, artifact: &ProgramArtifact) -> HybridPlacementPlan {
-        plan_artifact(artifact, &[])
-    }
-
-    pub fn plan_with_regions(
-        &self,
-        artifact: &ProgramArtifact,
-        regions: &[ArtifactComputeRegion],
-    ) -> HybridPlacementPlan {
-        plan_artifact(artifact, regions)
+        plan_artifact(artifact, artifact.compute_regions())
     }
 }
 
 fn plan_artifact(
     artifact: &ProgramArtifact,
-    explicit_regions: &[ArtifactComputeRegion],
+    explicit_regions: &[ComputeRegionDeclaration],
 ) -> HybridPlacementPlan {
     let turn_nodes = turn_required_nodes(artifact);
     let mut nodes = artifact
@@ -132,7 +124,7 @@ fn plan_artifact(
     for (region_index, region) in explicit_regions.iter().enumerate() {
         if region.nodes.is_empty() {
             violations.push(PlacementViolation {
-                region: region.name.clone(),
+                region: region.name.to_string(),
                 node: None,
                 reason: "the named section produced no semantic artifact nodes".to_owned(),
             });
@@ -140,7 +132,7 @@ fn plan_artifact(
         for node in region.nodes.iter().copied() {
             let Some(placement) = nodes.get_mut(node.get() as usize) else {
                 violations.push(PlacementViolation {
-                    region: region.name.clone(),
+                    region: region.name.to_string(),
                     node: Some(node),
                     reason: "the region references a node outside the artifact".to_owned(),
                 });
@@ -148,7 +140,7 @@ fn plan_artifact(
             };
             if let Some(previous) = explicit_by_node.insert(node, region_index) {
                 violations.push(PlacementViolation {
-                    region: region.name.clone(),
+                    region: region.name.to_string(),
                     node: Some(node),
                     reason: format!(
                         "the node is already assigned to region `{}`",
@@ -173,7 +165,7 @@ fn plan_artifact(
                 ComputePlacement::Gpu => {
                     if placement.target == ExecutionTarget::Cpu {
                         violations.push(PlacementViolation {
-                            region: region.name.clone(),
+                            region: region.name.to_string(),
                             node: Some(node),
                             reason: placement.reason.clone(),
                         });
@@ -251,7 +243,7 @@ fn plan_artifact(
         );
         gpu_regions.push(GpuRegion {
             region,
-            name: Some(explicit.name.clone()),
+            name: Some(explicit.name.to_string()),
             requested: Some(explicit.placement),
             nodes: region_nodes,
         });

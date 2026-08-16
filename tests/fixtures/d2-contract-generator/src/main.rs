@@ -720,6 +720,7 @@ fn wrong_rmw_base_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("alternate RMW base remains structurally valid")
@@ -894,6 +895,7 @@ fn assert_activation_fact_reconfiguration(
         }]
         .into_boxed_slice(),
         constraints: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("build activation-dimension resident artifact");
@@ -1082,6 +1084,7 @@ fn assert_activation_fact_reconfiguration(
         bindings: zero_input.bindings().to_vec().into_boxed_slice(),
         outputs: zero_input.outputs().to_vec().into_boxed_slice(),
         constraints: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .unwrap();
@@ -1170,6 +1173,7 @@ fn replace_single_contract(
         bindings: artifact.bindings().to_vec().into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("replacement contract remains a structurally valid artifact")
@@ -1328,6 +1332,7 @@ fn wrong_dimension_artifact(
         }]
         .into_boxed_slice(),
         constraints: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("mismatched activation shapes remain structurally valid")
@@ -1428,6 +1433,7 @@ fn wrong_kind_artifact(
         }]
         .into_boxed_slice(),
         constraints: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("wrong-kind operation artifact remains structurally valid")
@@ -1493,6 +1499,7 @@ fn zero_input_state_artifact(artifact: &ProgramArtifact) -> ProgramArtifact {
         .into_boxed_slice(),
         outputs: vec![output].into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("zero-input state artifact is structurally valid")
@@ -1679,6 +1686,7 @@ fn dirty_propagation_artifact(
         .into_boxed_slice(),
         outputs: vec![output].into_boxed_slice(),
         constraints: Box::new([]),
+    compute_regions: Box::new([]),
     }
     .finalize()
     .expect("dirty-propagation artifact is structurally valid")
@@ -1881,6 +1889,7 @@ fn reorder_artifact(artifact: &ProgramArtifact, order: &[usize]) -> ProgramArtif
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+    compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("physically reordered acyclic artifact remains valid")

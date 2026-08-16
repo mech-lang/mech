@@ -1,18 +1,19 @@
 use core::ops::Range;
 
 use mech_core::{
-    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ConstantId,
-    ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction, InputId,
-    IntegrityConstraintId, LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId,
-    OperationContractDeclaration, OperationContractError, OperationContractId,
+    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
+    ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
+    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, LegacySnapshotError, MechError,
+    NodeId, OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
     ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
     SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct ArtifactComputeRegion {
-    pub name: String,
+pub struct ComputeRegionDeclaration {
+    pub id: ComputeRegionId,
+    pub name: Box<str>,
     pub placement: ComputePlacement,
     pub nodes: Box<[NodeId]>,
 }
@@ -148,6 +149,7 @@ pub struct ProgramArtifact {
     bindings: Box<[BindingDeclaration]>,
     outputs: Box<[OutputDeclaration]>,
     constraints: Box<[IntegrityConstraintDeclaration]>,
+    compute_regions: Box<[ComputeRegionDeclaration]>,
 }
 
 impl ProgramArtifact {
@@ -194,6 +196,30 @@ impl ProgramArtifact {
     pub const fn constraints(&self) -> &[IntegrityConstraintDeclaration] {
         &self.constraints
     }
+
+    pub const fn compute_regions(&self) -> &[ComputeRegionDeclaration] {
+        &self.compute_regions
+    }
+
+    pub(crate) fn with_compute_regions(
+        self,
+        compute_regions: Box<[ComputeRegionDeclaration]>,
+    ) -> Result<Self, ArtifactBuildError> {
+        ProgramArtifactDraft {
+            schemas: self.schemas,
+            constants: self.constants,
+            contracts: self.contracts,
+            requirements: self.requirements,
+            inputs: self.inputs,
+            slots: self.slots,
+            nodes: self.nodes,
+            bindings: self.bindings,
+            outputs: self.outputs,
+            constraints: self.constraints,
+            compute_regions,
+        }
+        .finalize()
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -208,6 +234,7 @@ pub struct ProgramArtifactDraft {
     pub bindings: Box<[BindingDeclaration]>,
     pub outputs: Box<[OutputDeclaration]>,
     pub constraints: Box<[IntegrityConstraintDeclaration]>,
+    pub compute_regions: Box<[ComputeRegionDeclaration]>,
 }
 
 impl ProgramArtifactDraft {
@@ -226,6 +253,7 @@ impl ProgramArtifactDraft {
             bindings: self.bindings,
             outputs: self.outputs,
             constraints: self.constraints,
+            compute_regions: self.compute_regions,
         })
     }
 }
@@ -481,6 +509,21 @@ pub enum ArtifactBuildError {
     InvalidInterfaceName {
         interface: &'static str,
         name: String,
+    },
+    InvalidComputeRegionName {
+        region: ComputeRegionId,
+    },
+    DuplicateComputeRegionName {
+        name: Box<str>,
+    },
+    EmptyComputeRegion {
+        region: ComputeRegionId,
+    },
+    NonCanonicalComputeRegionNodes {
+        region: ComputeRegionId,
+    },
+    DuplicateComputeRegionNode {
+        node: NodeId,
     },
     UnknownSchema {
         schema: SchemaId,

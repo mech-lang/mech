@@ -28,7 +28,7 @@ executors exchange matrices with arbitrary runtime regions.
 The returned `GpuProgram` includes generated WGSL, its binding layout, and CPU
 and GPU resident executors. Both are lowered from the same `ProgramArtifact`.
 `GpuHost::plan` reports every node target, GPU region, slot residence, and
-upload/readback boundary. `GpuHost::plan_with_regions` also honors named
+upload/readback boundary. `GpuHost::plan` also honors named
 Mechdown compute sections and preserves their boundaries. An unsupported node
 is assigned to CPU with a reason; mixed-region execution still fails closed
 until the runtime scheduler can coordinate those boundaries.
@@ -106,7 +106,7 @@ construction, `**`, transpose, dot products, scalar broadcasting, `sin`,
 `cos`, and `atan2`, including the Joseph-form covariance update. It contains
 no EKF-specific operation or precompiled EKF call.
 
-`GpuHost::compile_broadcast_with_regions` consumes the compiler's typed
+`GpuHost::compile_broadcast` consumes the compiler's typed
 `ProgramArtifact`, named-region metadata, and the actual Mech array values. It
 derives their common outer extent, rejects inconsistent extents, and never
 receives a filter count. For fixed `f32` inner shapes it scalarizes generic

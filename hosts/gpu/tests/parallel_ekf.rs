@@ -2,8 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
 use mech_engine::{
-    ArtifactComputeRegion, ProgramArtifact, decode_program_artifact_sections,
-    encode_program_artifact_sections,
+    ProgramArtifact, decode_program_artifact_sections, encode_program_artifact_sections,
 };
 use mech_gpu::{BatchedExecutionError, BatchedGpuProgram, GpuHost};
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
@@ -96,10 +95,7 @@ fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
         .collect()
 }
 
-fn compile_compute(
-    tree: &Program,
-    driver: &BTreeMap<String, Vec<f32>>,
-) -> (ProgramArtifact, Box<[ArtifactComputeRegion]>) {
+fn compile_compute(tree: &Program, driver: &BTreeMap<String, Vec<f32>>) -> ProgramArtifact {
     let scalar_inputs = driver
         .iter()
         .map(|(name, values)| {
@@ -119,7 +115,7 @@ fn compile_compute(
             &COMPUTE_INPUT_NAMES.into_iter().map(str::to_owned).collect(),
         )
         .expect("ordinary high-level EKF source must compile")
-        .into_parts()
+        .into_artifact()
 }
 
 fn source_inputs(
@@ -194,10 +190,10 @@ fn lowered_states_after_one_turn(
     tree: &Program,
     driver: &BTreeMap<String, Vec<f32>>,
 ) -> BTreeMap<usize, Vec<f32>> {
-    let (artifact, regions) = compile_compute(tree, driver);
+    let artifact = compile_compute(tree, driver);
     let inputs = source_inputs(driver, &artifact);
     let lowered = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .compile_broadcast(&artifact, &inputs)
         .expect("generic fixed-shape operations must lower");
     let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
     cpu.dispatch_turns(1).unwrap();
@@ -284,10 +280,10 @@ result
             &BTreeSet::from(["input".to_owned()]),
         )
         .unwrap();
-    let (artifact, regions) = product.into_parts();
+    let artifact = product.into_artifact();
     let activation_inputs = BTreeMap::from([("input".to_owned(), vec![1.0, 10.0, 100.0])]);
     let program = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &activation_inputs)
+        .compile_broadcast(&artifact, &activation_inputs)
         .unwrap();
     let mut cpu = program.prepare_cpu(&activation_inputs).unwrap();
     cpu.dispatch_turns(1).unwrap();
@@ -309,10 +305,10 @@ fn source_program_from(
 ) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
     let tree = source_tree_from(source, instances);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_compute(&tree, &driver);
+    let artifact = compile_compute(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
     let program = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .compile_broadcast(&artifact, &inputs)
         .expect("generic fixed-shape operations must lower");
     (program, inputs)
 }
@@ -321,7 +317,7 @@ fn source_program_from(
 fn high_level_ekf_source_evaluation_matches_generic_lowering() {
     let tree = source_tree(1);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_compute(&tree, &driver);
+    let artifact = compile_compute(&tree, &driver);
     assert_eq!(
         artifact
             .inputs()
@@ -381,7 +377,7 @@ fn high_level_ekf_source_evaluation_matches_generic_lowering() {
     );
 
     let lowered = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .compile_broadcast(&artifact, &inputs)
         .expect("generic fixed-shape operations must lower");
     assert!(lowered.wgsl().contains("@compute"));
     assert!(!lowered.wgsl().to_ascii_lowercase().contains("ekf"));
@@ -401,9 +397,10 @@ fn high_level_ekf_source_evaluation_matches_generic_lowering() {
 fn mech_arrays_define_the_broadcast_extent() {
     let tree = source_tree(7);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_compute(&tree, &driver);
+    let artifact = compile_compute(&tree, &driver);
+    let regions = artifact.compute_regions();
     assert_eq!(regions.len(), 1);
-    assert_eq!(regions[0].name, "EKF step");
+    assert_eq!(regions[0].name.as_ref(), "EKF step");
     assert_eq!(regions[0].placement, mech_core::ComputePlacement::Compute);
     let inputs = source_inputs(&driver, &artifact);
     assert_eq!(inputs["linear-velocity"].len(), 7);
@@ -411,9 +408,7 @@ fn mech_arrays_define_the_broadcast_extent() {
     assert_eq!(inputs["bearing"].len(), 7);
     assert_eq!(inputs["dt"].len(), 1);
 
-    let lowered = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
-        .unwrap();
+    let lowered = GpuHost.compile_broadcast(&artifact, &inputs).unwrap();
     assert_eq!(lowered.instances(), 7);
     assert_eq!(lowered.workgroup_count(), 1);
     assert_eq!(lowered.simd_lanes(), 4);
@@ -443,13 +438,11 @@ fn mech_arrays_define_the_broadcast_extent() {
 fn conflicting_mech_array_extents_are_rejected() {
     let tree = source_tree(7);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_compute(&tree, &driver);
+    let artifact = compile_compute(&tree, &driver);
     let mut inputs = source_inputs(&driver, &artifact);
     inputs.get_mut("bearing").unwrap().pop();
 
-    let error = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
-        .unwrap_err();
+    let error = GpuHost.compile_broadcast(&artifact, &inputs).unwrap_err();
     assert!(
         error
             .diagnostics()
@@ -462,13 +455,11 @@ fn conflicting_mech_array_extents_are_rejected() {
 fn empty_mech_array_is_rejected() {
     let tree = source_tree(7);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_compute(&tree, &driver);
+    let artifact = compile_compute(&tree, &driver);
     let mut inputs = source_inputs(&driver, &artifact);
     inputs.get_mut("bearing").unwrap().clear();
 
-    let error = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
-        .unwrap_err();
+    let error = GpuHost.compile_broadcast(&artifact, &inputs).unwrap_err();
     assert!(
         error
             .diagnostics()
@@ -481,7 +472,7 @@ fn empty_mech_array_is_rejected() {
 fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
     let tree = source_tree(2);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_compute(&tree, &driver);
+    let artifact = compile_compute(&tree, &driver);
     assert_eq!(artifact.constraints().len(), 3);
     assert_eq!(
         artifact
@@ -512,7 +503,7 @@ fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
     let renamed_source = SOURCE.replacen("finite-candidate! :=", "finite-estimate! :=", 1);
     let renamed_tree = source_tree_from(&renamed_source, 2);
     let renamed_driver = evaluate_driver(&renamed_tree);
-    let (renamed_artifact, _) = compile_compute(&renamed_tree, &renamed_driver);
+    let renamed_artifact = compile_compute(&renamed_tree, &renamed_driver);
     assert_ne!(artifact.revision(), renamed_artifact.revision());
     assert!(SOURCE.contains("finite-candidate! :="));
     assert!(SOURCE.contains("positive-covariance! :="));
@@ -520,7 +511,7 @@ fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
 
     let inputs = source_inputs(&driver, &artifact);
     let program = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .compile_broadcast(&artifact, &inputs)
         .expect("generic source constraints must lower with the numeric region");
     assert_eq!(
         program.integrity_constraints().collect::<Vec<_>>(),
@@ -620,11 +611,9 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
 fn source_driven_broadcast_matches_the_native_gpu() {
     let tree = source_tree(32);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_compute(&tree, &driver);
+    let artifact = compile_compute(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
-    let lowered = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
-        .unwrap();
+    let lowered = GpuHost.compile_broadcast(&artifact, &inputs).unwrap();
     let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
     cpu.dispatch_turns(4).unwrap();
     let expected = cpu.state().clone();

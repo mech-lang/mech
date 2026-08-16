@@ -235,7 +235,7 @@ This follow-up exposed four additional design requirements:
    special EKF intrinsic.
 2. **The outer parallel axis is an activation property.** The follow-up spike
    now receives actual arrays produced by the ordinary section of the same
-   Mech document. `compile_broadcast_with_regions` derives one common extent
+   Mech document. `compile_broadcast` derives one common extent
    from artifact inner shapes and activation lengths; singleton inputs
    broadcast, while missing, fractional, zero, and conflicting extents fail
    admission. No compiler API receives a filter count. A compact artifact form

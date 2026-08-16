@@ -201,8 +201,7 @@ fn compile_particle_artifact(
         .expect("source compiler must build")
         .compile_tree_artifact_with_inputs(&tree, &values, &external_input_names)
         .expect("source must compile")
-        .into_parts()
-        .0
+        .into_artifact()
 }
 
 fn millis(duration: std::time::Duration) -> f64 {

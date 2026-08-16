@@ -199,7 +199,7 @@ pub(crate) fn compile_program(
 
     let gpu_started = Instant::now();
     let program = GpuHost
-        .compile_with_regions(product.artifact(), product.compute_regions())
+        .compile(product.artifact())
         .map_err(|failure| format!("GPU host rejected the Mech program: {failure}"))?;
     let gpu_lowering = milliseconds(gpu_started);
 

@@ -105,20 +105,20 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
             &BTreeMap::new(),
             &external_input_names,
         )?;
-        if product.compute_regions().len() != 1 || product.compute_regions()[0].name != name {
+        if product.artifact().compute_regions().len() != 1
+            || product.artifact().compute_regions()[0].name.as_ref() != name
+        {
             return Err(executor_error(
                 "compile_gpu_host_regions",
                 format!("isolated section `{name}` did not produce exactly that compute region"),
             ));
         }
-        let program = GpuHost
-            .compile_with_regions(product.artifact(), product.compute_regions())
-            .map_err(|error| {
-                executor_error(
-                    "compile_gpu_host_regions",
-                    format!("GPU host rejected region `{name}`:\n{error}"),
-                )
-            })?;
+        let program = GpuHost.compile(product.artifact()).map_err(|error| {
+            executor_error(
+                "compile_gpu_host_regions",
+                format!("GPU host rejected region `{name}`:\n{error}"),
+            )
+        })?;
         programs.insert(
             name,
             GpuRegionProgram::from_initializers(program, &initial_inputs)?,
@@ -246,10 +246,10 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
     let artifact_elapsed = artifact_started.elapsed();
 
     let lower_started = Instant::now();
-    let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
+    let placement = GpuHost.plan(product.artifact());
     let program_result = match executor.provider.as_str() {
-        "cpu" => GpuHost.compile_cpu_with_regions(product.artifact(), product.compute_regions()),
-        "gpu" => GpuHost.compile_with_regions(product.artifact(), product.compute_regions()),
+        "cpu" => GpuHost.compile_cpu(product.artifact()),
+        "gpu" => GpuHost.compile(product.artifact()),
         _ => unreachable!("provider was validated above"),
     };
     let program = program_result.map_err(|error| {

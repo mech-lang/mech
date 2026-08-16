@@ -5,8 +5,8 @@ use mech_core::{
     snapshot::SequenceView,
 };
 use mech_engine::{
-    ArtifactComputeRegion, ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact,
-    SlotRole,
+    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
+    ProgramArtifact, SlotRole,
 };
 use wide::{CmpEq, CmpGe, CmpGt, CmpLe, CmpLt, CmpNe, f32x4};
 
@@ -732,19 +732,18 @@ impl super::GpuHost {
         artifact: &ProgramArtifact,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
-        let instances = infer_broadcast_instances(artifact, inputs)?;
-        BatchCompiler::new(artifact, instances).compile()
+        self.compile_broadcast_for_regions(artifact, artifact.compute_regions(), inputs)
     }
 
     /// Admits one named compute region and derives its outer extent from the
     /// region's activation arrays.
-    pub fn compile_broadcast_with_regions(
+    fn compile_broadcast_for_regions(
         &self,
         artifact: &ProgramArtifact,
-        regions: &[ArtifactComputeRegion],
+        regions: &[ComputeRegionDeclaration],
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
-        let plan = self.plan_with_regions(artifact, regions);
+        let plan = self.plan(artifact);
         let mut diagnostics = plan
             .violations
             .iter()

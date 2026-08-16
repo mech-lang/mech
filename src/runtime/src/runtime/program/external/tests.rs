@@ -660,6 +660,7 @@ fn artifact_with_duplicate_observation(artifact: &ProgramArtifact) -> ProgramArt
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("duplicate observation artifact")
@@ -707,6 +708,7 @@ fn artifact_with_duplicate_effect(
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("duplicate effect artifact")

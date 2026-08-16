@@ -34,10 +34,10 @@ use mech_core::{
 };
 
 use super::{
-    ApplicationRequirementTable, ArtifactBuildError, ArtifactComputeRegion, ArtifactSource,
-    BindingDeclaration, InitializerReference, InputDeclaration, IntegrityConstraintDeclaration,
-    NodeDeclaration, OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
-    ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
+    ComputeRegionDeclaration, InitializerReference, InputDeclaration,
+    IntegrityConstraintDeclaration, NodeDeclaration, OperationReference, OutputDeclaration,
+    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -441,6 +441,7 @@ pub fn compile_source_program_with_contracts(
         bindings: bindings.into_boxed_slice(),
         outputs: outputs.into_boxed_slice(),
         constraints: constraints.into_boxed_slice(),
+        compute_regions: Box::new([]),
     };
     if node_contracts.is_empty() {
         draft.attach_legacy_contracts()?.finalize()
@@ -533,8 +534,12 @@ pub fn compile_executable_program_artifact(
     compiled: &CompiledBytecode,
     catalog: &FunctionCatalog,
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
-    compile_executable_program_artifact_product_with_outputs(compiled, &[], catalog)
-        .map(|(artifact, _)| artifact)
+    compile_executable_program_artifact_with_outputs_and_external_inputs(
+        compiled,
+        &[],
+        catalog,
+        &BTreeSet::new(),
+    )
 }
 
 /// Compiles a source product while publishing every explicitly requested root
@@ -546,25 +551,7 @@ pub fn compile_executable_program_artifact_with_outputs(
     published_outputs: &[Register],
     catalog: &FunctionCatalog,
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
-    compile_executable_program_artifact_product_with_outputs(compiled, published_outputs, catalog)
-        .map(|(artifact, _)| artifact)
-}
-
-#[cfg(feature = "semantic-compiler")]
-pub fn compile_executable_program_artifact_product(
-    compiled: &CompiledBytecode,
-    catalog: &FunctionCatalog,
-) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBuildError> {
-    compile_executable_program_artifact_product_with_outputs(compiled, &[], catalog)
-}
-
-#[cfg(feature = "semantic-compiler")]
-pub fn compile_executable_program_artifact_product_with_outputs(
-    compiled: &CompiledBytecode,
-    published_outputs: &[Register],
-    catalog: &FunctionCatalog,
-) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBuildError> {
-    compile_executable_program_artifact_product_with_outputs_and_external_inputs(
+    compile_executable_program_artifact_with_outputs_and_external_inputs(
         compiled,
         published_outputs,
         catalog,
@@ -577,12 +564,12 @@ pub fn compile_executable_program_artifact_product_with_outputs(
 /// compute boundary explicitly supplies those values; ordinary source
 /// literals remain artifact constants.
 #[cfg(feature = "semantic-compiler")]
-pub fn compile_executable_program_artifact_product_with_outputs_and_external_inputs(
+pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
     compiled: &CompiledBytecode,
     published_outputs: &[Register],
     catalog: &FunctionCatalog,
     external_input_names: &BTreeSet<String>,
-) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBuildError> {
+) -> Result<ProgramArtifact, ArtifactBuildError> {
     validate_compiled_metadata_length(
         "instruction_roles",
         compiled.program.instructions.len(),
@@ -1435,8 +1422,10 @@ pub fn compile_executable_program_artifact_product_with_outputs_and_external_inp
     let compute_regions = compiled
         .compute_regions
         .iter()
-        .map(|region| ArtifactComputeRegion {
-            name: region.name.clone(),
+        .enumerate()
+        .map(|(region_index, region)| ComputeRegionDeclaration {
+            id: mech_core::ComputeRegionId::new(region_index as u32),
+            name: region.name.clone().into_boxed_str(),
             placement: region.placement,
             nodes: source_node_origins
                 .iter()
@@ -1451,7 +1440,7 @@ pub fn compile_executable_program_artifact_product_with_outputs_and_external_inp
         })
         .collect::<Vec<_>>()
         .into_boxed_slice();
-    Ok((artifact, compute_regions))
+    artifact.with_compute_regions(compute_regions)
 }
 
 #[cfg(feature = "semantic-compiler")]

@@ -4,7 +4,7 @@ use mech_core::{
     Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
     SectionElement,
 };
-use mech_engine::{SlotRole, decode_program_artifact_product_sections};
+use mech_engine::{SlotRole, decode_program_artifact_sections};
 use mech_gpu::{
     ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection,
 };
@@ -58,8 +58,7 @@ fn compile_source(
     compiler()
         .compile_tree_artifact_with_inputs(&tree, &inputs, &external_input_names)
         .expect("source must compile")
-        .into_parts()
-        .0
+        .into_artifact()
 }
 
 fn compiler() -> ProgramCompiler {
@@ -122,8 +121,7 @@ fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
             &external_input_names,
         )
         .expect("isolated GPU source must compile")
-        .into_parts()
-        .0
+        .into_artifact()
 }
 
 fn particle_inputs() -> Vec<(&'static str, RuntimeHostInputValue)> {
@@ -166,17 +164,19 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
         .compile_tree(&isolated_gpu_tree(&source))
         .expect("named source must compile");
 
-    assert_eq!(product.compute_regions().len(), 1);
-    let region = &product.compute_regions()[0];
-    assert_eq!(region.name, "particle-field");
+    assert_eq!(product.artifact().compute_regions().len(), 1);
+    let region = &product.artifact().compute_regions()[0];
+    assert_eq!(region.name.as_ref(), "particle-field");
     assert_eq!(region.placement, ComputePlacement::Compute);
     assert!(!region.nodes.is_empty());
     let bytecode = ParsedProgram::from_bytes(product.bytecode()).unwrap();
-    let (_, bytecode_regions) =
-        decode_program_artifact_product_sections(&bytecode.artifact).unwrap();
-    assert_eq!(bytecode_regions.as_ref(), product.compute_regions());
+    let bytecode_artifact = decode_program_artifact_sections(&bytecode.artifact).unwrap();
+    assert_eq!(
+        bytecode_artifact.compute_regions(),
+        product.artifact().compute_regions()
+    );
 
-    let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
+    let placement = GpuHost.plan(product.artifact());
     assert!(placement.violations.is_empty());
     assert_eq!(placement.gpu_regions.len(), 1);
     assert_eq!(
@@ -188,10 +188,10 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
         Some(ComputePlacement::Compute),
     );
     let lowered = GpuHost
-        .compile_with_regions(product.artifact(), product.compute_regions())
+        .compile(product.artifact())
         .expect("one named compute region must lower to one GPU program");
     let cpu_lowered = GpuHost
-        .compile_cpu_with_regions(product.artifact(), product.compute_regions())
+        .compile_cpu(product.artifact())
         .expect("the same neutral region must lower to the CPU executor");
     assert_eq!(cpu_lowered.wgsl(), lowered.wgsl());
     assert_eq!(cpu_lowered.bindings().len(), lowered.bindings().len());
@@ -223,21 +223,21 @@ fn hard_cpu_region_is_not_silently_sent_to_gpu() {
     let product = compiler()
         .compile_tree(&isolated_gpu_tree(&source))
         .unwrap();
-    let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
+    let placement = GpuHost.plan(product.artifact());
 
     assert!(
         placement
             .nodes
             .iter()
-            .filter(|node| product.compute_regions()[0].nodes.contains(&node.node))
+            .filter(|node| product.artifact().compute_regions()[0]
+                .nodes
+                .contains(&node.node))
             .all(|node| node.target != ExecutionTarget::Gpu)
     );
     GpuHost
-        .compile_cpu_with_regions(product.artifact(), product.compute_regions())
+        .compile_cpu(product.artifact())
         .expect("hard CPU region must run under the CPU executor");
-    let error = GpuHost
-        .compile_with_regions(product.artifact(), product.compute_regions())
-        .unwrap_err();
+    let error = GpuHost.compile(product.artifact()).unwrap_err();
     assert!(error.to_string().contains("requires CPU execution"));
 }
 
@@ -251,11 +251,9 @@ fn hard_gpu_region_is_not_silently_sent_to_cpu() {
         .unwrap();
 
     GpuHost
-        .compile_with_regions(product.artifact(), product.compute_regions())
+        .compile(product.artifact())
         .expect("hard GPU region must run under the GPU executor");
-    let error = GpuHost
-        .compile_cpu_with_regions(product.artifact(), product.compute_regions())
-        .unwrap_err();
+    let error = GpuHost.compile_cpu(product.artifact()).unwrap_err();
     assert!(error.to_string().contains("requires GPU execution"));
 }
 

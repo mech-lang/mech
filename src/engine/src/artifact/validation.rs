@@ -19,6 +19,7 @@ pub(super) fn validate(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuild
     validate_slots(draft)?;
     validate_nodes_and_bindings(draft)?;
     validate_outputs_and_constraints(draft)?;
+    validate_compute_regions(draft)?;
     validate_constants(draft)?;
     validate_combinational_graph(draft)
 }
@@ -88,6 +89,41 @@ fn validate_dense_identities(draft: &ProgramArtifactDraft) -> Result<(), Artifac
     }
     for (index, constraint) in draft.constraints.iter().enumerate() {
         expect_dense("IntegrityConstraintId", index, constraint.constraint.get())?;
+    }
+    for (index, region) in draft.compute_regions.iter().enumerate() {
+        expect_dense("ComputeRegionId", index, region.id.get())?;
+    }
+    Ok(())
+}
+
+fn validate_compute_regions(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuildError> {
+    let mut names = BTreeSet::new();
+    let mut assigned_nodes = BTreeSet::new();
+    for region in &draft.compute_regions {
+        if !canonical_name(&region.name) {
+            return Err(ArtifactBuildError::InvalidComputeRegionName { region: region.id });
+        }
+        if !names.insert(region.name.as_ref()) {
+            return Err(ArtifactBuildError::DuplicateComputeRegionName {
+                name: region.name.clone(),
+            });
+        }
+        if region.nodes.is_empty() {
+            return Err(ArtifactBuildError::EmptyComputeRegion { region: region.id });
+        }
+        let mut previous = None;
+        for node in &region.nodes {
+            require_node(draft, *node)?;
+            if previous.is_some_and(|previous| previous >= *node) {
+                return Err(ArtifactBuildError::NonCanonicalComputeRegionNodes {
+                    region: region.id,
+                });
+            }
+            if !assigned_nodes.insert(*node) {
+                return Err(ArtifactBuildError::DuplicateComputeRegionNode { node: *node });
+            }
+            previous = Some(*node);
+        }
     }
     Ok(())
 }

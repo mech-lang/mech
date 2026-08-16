@@ -16,15 +16,15 @@ fn main() {
 
     let compile_started = Instant::now();
     let tree = isolated_compute_tree(&source);
-    let (artifact, compute_regions) = RuntimeBuilder::new()
+    let artifact = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()
         .expect("source compiler must build")
         .compile_tree_artifact(&tree)
         .expect("the particle compute region must compile")
-        .into_parts();
+        .into_artifact();
     let program = GpuHost
-        .compile_with_regions(&artifact, &compute_regions)
+        .compile(&artifact)
         .expect("the neutral compute region must lower");
     let inputs = default_inputs(&program);
     let compile_elapsed = compile_started.elapsed();

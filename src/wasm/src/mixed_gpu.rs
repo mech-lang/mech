@@ -337,16 +337,16 @@ fn compile_named_compute_region(
     )?;
     let artifact_compilation = milliseconds(artifact_started);
     let artifact = product.artifact();
-    let compute_regions = product.compute_regions();
-    if compute_regions.len() != 1 || compute_regions[0].name != region {
+    let compute_regions = product.artifact().compute_regions();
+    if compute_regions.len() != 1 || compute_regions[0].name.as_ref() != region {
         return Err(mixed_error(format!(
             "isolated section `{region}` did not produce exactly that compute region"
         )));
     }
     let lowering_started = Instant::now();
     let program = match backend {
-        ComputeBackend::Cpu => GpuHost.compile_cpu_with_regions(artifact, compute_regions),
-        ComputeBackend::Gpu => GpuHost.compile_with_regions(artifact, compute_regions),
+        ComputeBackend::Cpu => GpuHost.compile_cpu(artifact),
+        ComputeBackend::Gpu => GpuHost.compile(artifact),
     }
     .map_err(|failure| {
         mixed_error(format!(

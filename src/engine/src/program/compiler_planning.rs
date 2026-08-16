@@ -49,7 +49,6 @@ impl Default for CompilerPlanningConfig {
 #[derive(Debug)]
 pub struct ProgramCompilationProduct {
     artifact: ProgramArtifact,
-    compute_regions: Box<[ArtifactComputeRegion]>,
     bytecode: Vec<u8>,
 }
 
@@ -59,7 +58,6 @@ pub struct ProgramCompilationProduct {
 #[derive(Debug)]
 pub struct ProgramArtifactCompilationProduct {
     artifact: ProgramArtifact,
-    compute_regions: Box<[ArtifactComputeRegion]>,
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -68,12 +66,8 @@ impl ProgramArtifactCompilationProduct {
         &self.artifact
     }
 
-    pub fn compute_regions(&self) -> &[ArtifactComputeRegion] {
-        &self.compute_regions
-    }
-
-    pub fn into_parts(self) -> (ProgramArtifact, Box<[ArtifactComputeRegion]>) {
-        (self.artifact, self.compute_regions)
+    pub fn into_artifact(self) -> ProgramArtifact {
+        self.artifact
     }
 }
 
@@ -96,10 +90,6 @@ impl ProgramCompilationProduct {
 
     pub fn bytecode(&self) -> &[u8] {
         &self.bytecode
-    }
-
-    pub fn compute_regions(&self) -> &[ArtifactComputeRegion] {
-        &self.compute_regions
     }
 
     pub fn into_parts(self) -> (ProgramArtifact, Vec<u8>) {
@@ -362,11 +352,9 @@ impl CompilerPlanningProgram {
     /// important for large initialized device state, which would otherwise be
     /// copied into both representations before execution begins.
     #[cfg(feature = "semantic-compiler")]
-    pub fn compile_program_artifact_with_regions(
-        &mut self,
-    ) -> MResult<(ProgramArtifact, Box<[ArtifactComputeRegion]>)> {
+    pub fn compile_program_artifact(&mut self) -> MResult<ProgramArtifact> {
         let compiled = compile_bytecode(self)?;
-        compile_executable_program_artifact_product_with_outputs(
+        compile_executable_program_artifact_with_outputs(
             &compiled.bytecode,
             &compiled.published_outputs,
             self.interpreter.function_catalog().as_ref(),
@@ -394,26 +382,22 @@ impl CompilerPlanningProgram {
         let mut compiled = compile_bytecode(self)?;
         preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        let (artifact, compute_regions) =
-            compile_executable_program_artifact_product_with_outputs_and_external_inputs(
-                &compiled.bytecode,
-                &compiled.published_outputs,
-                self.interpreter.function_catalog().as_ref(),
-                external_input_names,
+        let artifact = compile_executable_program_artifact_with_outputs_and_external_inputs(
+            &compiled.bytecode,
+            &compiled.published_outputs,
+            self.interpreter.function_catalog().as_ref(),
+            external_input_names,
+        )
+        .map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
+                },
+                None,
             )
-            .map_err(|error| {
-                MechError::new(
-                    ProgramArtifactCompilationError {
-                        reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
-            })?;
-        Ok(ProgramArtifactCompilationProduct {
-            artifact,
-            compute_regions,
-        })
+            .with_compiler_loc()
+        })?;
+        Ok(ProgramArtifactCompilationProduct { artifact })
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -453,7 +437,7 @@ impl CompilerPlanningProgram {
         &self,
         compiled: CompilerPlanningBytecode,
     ) -> MResult<ProgramCompilationProduct> {
-        let (artifact, compute_regions) = compile_executable_program_artifact_product_with_outputs(
+        let artifact = compile_executable_program_artifact_with_outputs(
             &compiled.bytecode,
             &compiled.published_outputs,
             self.interpreter.function_catalog().as_ref(),
@@ -467,8 +451,7 @@ impl CompilerPlanningProgram {
             )
             .with_compiler_loc()
         })?;
-        let sections = encode_program_artifact_sections_with_regions(&artifact, &compute_regions)
-            .map_err(|error| {
+        let sections = encode_program_artifact_sections(&artifact).map_err(|error| {
             MechError::new(
                 ProgramArtifactCompilationError {
                     reason: format!("unable to encode source ProgramArtifact: {error:?}"),
@@ -478,11 +461,7 @@ impl CompilerPlanningProgram {
             .with_compiler_loc()
         })?;
         let bytecode = write_bytecode_with_artifact(&compiled.bytecode.program, &sections)?;
-        Ok(ProgramCompilationProduct {
-            artifact,
-            compute_regions,
-            bytecode,
-        })
+        Ok(ProgramCompilationProduct { artifact, bytecode })
     }
 }
 

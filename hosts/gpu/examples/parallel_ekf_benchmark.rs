@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, env, time::Instant};
 
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
-use mech_engine::{ArtifactComputeRegion, ProgramArtifact};
+use mech_engine::ProgramArtifact;
 use mech_gpu::GpuHost;
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
@@ -26,10 +26,10 @@ fn main() {
     let compile_started = Instant::now();
     let tree = source_tree(requested_instances);
     let driver = evaluate_driver(&tree);
-    let (artifact, regions) = compile_artifact(&tree, &driver);
+    let artifact = compile_artifact(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
     let program = GpuHost
-        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .compile_broadcast(&artifact, &inputs)
         .unwrap_or_else(|error| panic!("generic EKF source must be admitted: {error}"));
     assert_eq!(
         program.integrity_constraints().count(),
@@ -225,10 +225,7 @@ fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
         .collect()
 }
 
-fn compile_artifact(
-    tree: &Program,
-    driver: &BTreeMap<String, Vec<f32>>,
-) -> (ProgramArtifact, Box<[ArtifactComputeRegion]>) {
+fn compile_artifact(tree: &Program, driver: &BTreeMap<String, Vec<f32>>) -> ProgramArtifact {
     let scalar_inputs = driver
         .iter()
         .map(|(name, values)| {
@@ -248,7 +245,7 @@ fn compile_artifact(
             &COMPUTE_INPUT_NAMES.into_iter().map(str::to_owned).collect(),
         )
         .expect("EKF source must compile to a typed artifact")
-        .into_parts()
+        .into_artifact()
 }
 
 fn source_inputs(

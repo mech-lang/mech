@@ -20,10 +20,10 @@ use serde::{
 
 use super::snapshot::data_draft;
 use super::{
-    ApplicationRequirementTable, ArtifactBuildError, ArtifactComputeRegion, ArtifactSource,
-    BindingDeclaration, InitializerReference, InputDeclaration, IntegrityConstraintDeclaration,
-    NodeDeclaration, OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
-    ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
+    ComputeRegionDeclaration, InitializerReference, InputDeclaration,
+    IntegrityConstraintDeclaration, NodeDeclaration, OperationReference, OutputDeclaration,
+    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
 };
 
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
@@ -262,13 +262,6 @@ pub fn encode_program_artifact_bytecode_v1(
 pub fn encode_program_artifact_sections(
     artifact: &ProgramArtifact,
 ) -> Result<BytecodeArtifactSections, ArtifactBytecodeError> {
-    encode_program_artifact_sections_with_regions(artifact, &[])
-}
-
-pub fn encode_program_artifact_sections_with_regions(
-    artifact: &ProgramArtifact,
-    compute_regions: &[ArtifactComputeRegion],
-) -> Result<BytecodeArtifactSections, ArtifactBytecodeError> {
     let schemas = schema_drafts(artifact.schemas());
     let constants = constant_drafts(artifact.constants(), artifact.schemas())?;
     let (operations, operation_ids) = operation_table(artifact);
@@ -385,14 +378,15 @@ pub fn encode_program_artifact_sections_with_regions(
             .canonical_bytes()
             .map_err(ArtifactBuildError::from)?
             .into_vec(),
-        compute_regions: if compute_regions.is_empty() {
+        compute_regions: if artifact.compute_regions().is_empty() {
             Vec::new()
         } else {
             encode(
-                &compute_regions
+                &artifact
+                    .compute_regions()
                     .iter()
                     .map(|region| WireComputeRegion {
-                        name: region.name.clone(),
+                        name: region.name.to_string(),
                         placement: match region.placement {
                             ComputePlacement::Compute => 1,
                             ComputePlacement::Cpu => 2,
@@ -435,28 +429,14 @@ fn decode_program_artifact_sections_with_requirements(
     requirements: Option<Vec<ApplicationRequirement>>,
     limits: ArtifactDecodeLimits,
 ) -> Result<ProgramArtifact, ArtifactBytecodeError> {
-    decode_program_artifact_product_sections_with_requirements(sections, requirements, limits)
-        .map(|(artifact, _)| artifact)
+    decode_program_artifact_sections_owned(sections, requirements, limits)
 }
 
-pub fn decode_program_artifact_product_sections(
-    sections: &BytecodeArtifactSections,
-) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBytecodeError> {
-    decode_program_artifact_product_sections_with_limits(sections, ArtifactDecodeLimits::default())
-}
-
-pub fn decode_program_artifact_product_sections_with_limits(
-    sections: &BytecodeArtifactSections,
-    limits: ArtifactDecodeLimits,
-) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBytecodeError> {
-    decode_program_artifact_product_sections_with_requirements(sections, None, limits)
-}
-
-fn decode_program_artifact_product_sections_with_requirements(
+fn decode_program_artifact_sections_owned(
     sections: &BytecodeArtifactSections,
     requirements: Option<Vec<ApplicationRequirement>>,
     limits: ArtifactDecodeLimits,
-) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBytecodeError> {
+) -> Result<ProgramArtifact, ArtifactBytecodeError> {
     if sections.is_empty() {
         return Err(ArtifactBytecodeError::MissingArtifactSections);
     }
@@ -542,7 +522,7 @@ fn decode_program_artifact_product_sections_with_requirements(
             })
             .ok_or(ArtifactBytecodeError::UnknownOperation { operation: id })
     };
-    let artifact = ProgramArtifactDraft {
+    let mut draft = ProgramArtifactDraft {
         schemas,
         constants,
         contracts,
@@ -645,9 +625,8 @@ fn decode_program_artifact_product_sections_with_requirements(
             })
             .collect::<Result<Vec<_>, ArtifactBytecodeError>>()?
             .into_boxed_slice(),
-    }
-    .finalize()
-    .map_err(ArtifactBytecodeError::from)?;
+        compute_regions: Box::new([]),
+    };
 
     let wire_regions: Vec<WireComputeRegion> = if sections.compute_regions.is_empty() {
         Vec::new()
@@ -661,7 +640,7 @@ fn decode_program_artifact_product_sections_with_requirements(
     let mut names = BTreeSet::new();
     let mut assigned_nodes = BTreeSet::new();
     let mut compute_regions = Vec::with_capacity(wire_regions.len());
-    for region in wire_regions {
+    for (region_index, region) in wire_regions.into_iter().enumerate() {
         if region.name.is_empty() || !names.insert(region.name.clone()) {
             return Err(ArtifactBytecodeError::InvalidWireTag {
                 section: "compute regions",
@@ -685,7 +664,7 @@ fn decode_program_artifact_product_sections_with_requirements(
             .into_vec()
             .into_iter()
             .map(|node| {
-                if node as usize >= artifact.nodes().len()
+                if node as usize >= draft.nodes.len()
                     || previous.is_some_and(|previous| previous >= node)
                     || !assigned_nodes.insert(node)
                 {
@@ -699,13 +678,15 @@ fn decode_program_artifact_product_sections_with_requirements(
             })
             .collect::<Result<Vec<_>, _>>()?
             .into_boxed_slice();
-        compute_regions.push(ArtifactComputeRegion {
-            name: region.name,
+        compute_regions.push(ComputeRegionDeclaration {
+            id: mech_core::ComputeRegionId::new(region_index as u32),
+            name: region.name.into_boxed_str(),
             placement,
             nodes,
         });
     }
-    Ok((artifact, compute_regions.into_boxed_slice()))
+    draft.compute_regions = compute_regions.into_boxed_slice();
+    draft.finalize().map_err(ArtifactBytecodeError::from)
 }
 
 fn validate_operation_table(

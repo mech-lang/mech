@@ -948,6 +948,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         bindings: Box::new([]),
         outputs: Box::new([]),
         constraints: Box::new([]),
+        compute_regions: Box::new([]),
     };
     assert!(matches!(
         missing_binding.finalize(),
@@ -1297,6 +1298,51 @@ fn program_revision_changes_with_semantic_graph_order() {
     reversed.nodes[0].inputs.swap(0, 1);
     let (reversed, _) = build_both(&data, reversed);
     assert_ne!(forward.revision(), reversed.revision());
+}
+
+#[test]
+fn compute_regions_are_intrinsic_revision_bearing_artifact_declarations() {
+    let data = fixture_data();
+    let (ordinary, _) = build_both(&data, scalar_add(&data));
+    let region = ComputeRegionDeclaration {
+        id: mech_core::ComputeRegionId::new(0),
+        name: "scalar-add".into(),
+        placement: mech_core::ComputePlacement::Compute,
+        nodes: ordinary
+            .nodes()
+            .iter()
+            .map(|node| node.node)
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+    };
+    let with_region = ProgramArtifactDraft {
+        schemas: ordinary.schemas().clone(),
+        constants: ordinary.constants().clone(),
+        contracts: ordinary.contracts().clone(),
+        requirements: ordinary.requirements().clone(),
+        inputs: ordinary.inputs().to_vec().into_boxed_slice(),
+        slots: ordinary.slots().to_vec().into_boxed_slice(),
+        nodes: ordinary.nodes().to_vec().into_boxed_slice(),
+        bindings: ordinary.bindings().to_vec().into_boxed_slice(),
+        outputs: ordinary.outputs().to_vec().into_boxed_slice(),
+        constraints: ordinary.constraints().to_vec().into_boxed_slice(),
+        compute_regions: vec![region].into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+
+    assert_ne!(ordinary.revision(), with_region.revision());
+    assert!(
+        encode_program_artifact_sections(&ordinary)
+            .unwrap()
+            .compute_regions
+            .is_empty()
+    );
+    let sections = encode_program_artifact_sections(&with_region).unwrap();
+    assert!(!sections.compute_regions.is_empty());
+    let decoded = decode_program_artifact_sections(&sections).unwrap();
+    assert_eq!(decoded.revision(), with_region.revision());
+    assert_eq!(decoded.compute_regions(), with_region.compute_regions());
 }
 
 #[test]
@@ -1651,6 +1697,7 @@ fn contract_insertion_order_does_not_change_program_revision() {
             bindings: base.bindings().to_vec().into_boxed_slice(),
             outputs: base.outputs().to_vec().into_boxed_slice(),
             constraints: base.constraints().to_vec().into_boxed_slice(),
+            compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
         }
     };
     let first_id = first.resolve(first_exact).unwrap();
@@ -1982,6 +2029,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
         bindings: Box::new([]),
         outputs: Box::new([]),
         constraints: Box::new([]),
+        compute_regions: Box::new([]),
     }
     .finalize()
     .unwrap();

@@ -13,7 +13,7 @@ use mech_core::{
     SchemaBody, SchemaId, ValueData,
 };
 use mech_engine::{
-    ArtifactComputeRegion, ArtifactSource, BindingDeclaration, OperationReference,
+    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, OperationReference,
     ProducerReference, ProgramArtifact, SlotRole,
 };
 
@@ -620,15 +620,15 @@ pub struct GpuHost;
 
 impl GpuHost {
     pub fn compile(&self, artifact: &ProgramArtifact) -> Result<GpuProgram, GpuAdmissionError> {
-        Compiler::new(artifact).compile()
+        self.compile_for_regions(artifact, artifact.compute_regions())
     }
 
-    pub fn compile_with_regions(
+    fn compile_for_regions(
         &self,
         artifact: &ProgramArtifact,
-        regions: &[ArtifactComputeRegion],
+        regions: &[ComputeRegionDeclaration],
     ) -> Result<GpuProgram, GpuAdmissionError> {
-        let plan = self.plan_with_regions(artifact, regions);
+        let plan = self.plan(artifact);
         let mut diagnostics = plan
             .violations
             .iter()
@@ -670,11 +670,8 @@ impl GpuHost {
         Compiler::new(artifact).compile()
     }
 
-    pub fn compile_cpu_with_regions(
-        &self,
-        artifact: &ProgramArtifact,
-        regions: &[ArtifactComputeRegion],
-    ) -> Result<GpuProgram, GpuAdmissionError> {
+    pub fn compile_cpu(&self, artifact: &ProgramArtifact) -> Result<GpuProgram, GpuAdmissionError> {
+        let regions = artifact.compute_regions();
         let diagnostics = regions
             .iter()
             .filter(|region| region.placement == mech_core::ComputePlacement::Gpu)
