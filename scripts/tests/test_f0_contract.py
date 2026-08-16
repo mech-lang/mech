@@ -277,6 +277,31 @@ class CompactF0ContractTests(unittest.TestCase):
             gate_d3,
         )
 
+    def test_controlled_session_unsets_empty_compiler_variables(self):
+        lock = {
+            "thread_environment": {"OMP_NUM_THREADS": "1"},
+            "compiler_environment": {
+                "CARGO_BUILD_TARGET": "",
+                "CARGO_INCREMENTAL": "0",
+                "PYTHONPATH": "",
+            },
+            "rust": {"channel": "nightly-test"},
+        }
+        environment = RUNNER.controlled_session_environment(
+            {
+                "PATH": "/bin",
+                "CARGO_BUILD_TARGET": "inherited-target",
+                "PYTHONPATH": "inherited-python-path",
+            },
+            lock,
+        )
+        self.assertNotIn("CARGO_BUILD_TARGET", environment)
+        self.assertNotIn("PYTHONPATH", environment)
+        self.assertEqual(environment["CARGO_INCREMENTAL"], "0")
+        self.assertEqual(environment["OMP_NUM_THREADS"], "1")
+        self.assertEqual(environment["RUSTUP_TOOLCHAIN"], "nightly-test")
+        self.assertEqual(environment["PATH"], "/bin")
+
     def test_label_dispatch_identity_is_exact_pr_head_bound(self):
         head = "1" * 40
         merge = "2" * 40

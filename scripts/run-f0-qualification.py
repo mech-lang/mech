@@ -92,6 +92,20 @@ def run_logged(
     return process.returncode
 
 
+def controlled_session_environment(
+    source: dict[str, str], lock: dict
+) -> dict[str, str]:
+    environment = dict(source)
+    environment.update(lock["thread_environment"])
+    for name, value in lock["compiler_environment"].items():
+        if value:
+            environment[name] = value
+        else:
+            environment.pop(name, None)
+    environment["RUSTUP_TOOLCHAIN"] = lock["rust"]["channel"]
+    return environment
+
+
 def run_preconditioning(
     session_root: Path, environment: dict[str, str], rust_channel: str
 ) -> dict:
@@ -631,20 +645,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     ledger_path = session_root / "session.json"
     write_json(ledger_path, ledger)
-    environment = dict(os.environ)
-    environment.update(lock["thread_environment"])
-    environment.update(lock["compiler_environment"])
-    for name in (
-        "CARGO_HOME",
-        "PYTHONHOME",
-        "PYTHONINSPECT",
-        "PYTHONNOUSERSITE",
-        "PYTHONPATH",
-        "PYTHONSTARTUP",
-        "PYTHONUSERBASE",
-    ):
-        environment.pop(name, None)
-    environment["RUSTUP_TOOLCHAIN"] = lock["rust"]["channel"]
+    environment = controlled_session_environment(os.environ, lock)
     environment_path = session_root / "qualification-environment.json"
     try:
         qualified = qualification_environment(toolchain_root, environment, environment_path)
