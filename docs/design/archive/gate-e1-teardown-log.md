@@ -2,7 +2,7 @@
 
 > Historical record. Dispositions below describe the state when each stop was
 > discovered. They are not the current E2/E3/F0 action list.
-> See `../gate-e3-closeout.md` for authoritative current status.
+> See `gate-e3-closeout.md` for authoritative current status.
 
 This is the working handoff log for the forward-only E1 teardown. It records
 what was removed, which retained v0.4 capability was checked before removal,
@@ -587,7 +587,7 @@ that should be removed.
 
 This section preserves the observations recorded during E1. It is not an
 active queue. Every item has a current disposition in
-`docs/design/gate-e3-closeout.md`; that file is authoritative.
+`docs/design/archive/gate-e3-closeout.md`; that file is authoritative.
 
 - Resident source/bytecode planning checks `max_source_bytes` before compilation
   or decoding but does not charge the artifact, compiler working set, or source
@@ -674,4 +674,4 @@ when E1 ended:
   `[C0-GATE-B-EVIDENCE-STALE]`, assigned to F0 evidence refresh.
 
 The authoritative remaining scope and final validation record are in
-`docs/design/gate-e3-closeout.md`.
+`docs/design/archive/gate-e3-closeout.md`.

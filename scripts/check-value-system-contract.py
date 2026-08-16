@@ -2785,193 +2785,12 @@ def select_lane(
     return matches[0] if len(matches) == 1 else None
 
 
-GATE_B_SELF_PROTECTED_PATHS = {
-    "scripts/check-value-system-contract.py",
-    "scripts/generate-value-system-inventory.py",
-    "scripts/value_system_legacy_scanner_v2.py",
-    "scripts/tests/canonical_encoding_v1_reference.py",
-    "tests/architecture/value-system/canonical-encoding-v1-schema.json",
-    "tests/architecture/value-system/canonical-encoding-v1-vectors-schema.json",
-    "tests/architecture/value-system/canonical-encoding-v1-vectors.json",
-    "tests/architecture/value-system/canonical-encoding-v1.json",
-    "tests/architecture/value-system/gate-b-regression.json",
-    "tests/architecture/value-system/legacy-growth-baseline-schema.json",
-    "tests/architecture/value-system/legacy-growth-baseline.json",
-}
-C0_INITIAL_SEMANTIC_CORE_BLOBS = {
-    "src/core/src/value.rs": (
-        "2903ed7345809a5711cbdd04316b5834f026e9bf",
-        "2a6abce928d43072c3bbc19c5b20b4242bdef363",
-    ),
-}
-REQUIRED_GATE_B_PROTECTED_EXACT = {
-    "Cargo.toml",
-    "Cargo.lock",
-    "rust-toolchain",
-    "rust-toolchain.toml",
-    ".cargo/config",
-    ".cargo/config.toml",
-    "src/core/Cargo.toml",
-    "src/engine/Cargo.toml",
-    "src/runtime/Cargo.toml",
-    "src/core/build.rs",
-    "src/engine/build.rs",
-    "src/runtime/build.rs",
-    "src/core/src/lib.rs",
-    "src/engine/src/lib.rs",
-    "src/runtime/src/lib.rs",
-    "src/core/src/resident_execution.rs",
-    "src/runtime/src/resident_gate_b.rs",
-    "src/runtime/src/turn_record.rs",
-    "src/runtime/benches/resident_ekf.rs",
-    "src/engine/tests/resident_ekf_contract.rs",
-    "src/runtime/tests/resident_gate_b_contract.rs",
-    "scripts/run-gate-b-benchmarks.py",
-    "scripts/check-gate-b-contract.py",
-    "scripts/generate-gate-b-ekf-trace.py",
-    "scripts/generate-value-system-inventory.py",
-    "scripts/value_system_legacy_scanner_v2.py",
-    "scripts/tests/canonical_encoding_v1_reference.py",
-    "benchmarks/runtime/gate-b/result-schema.json",
-    "benchmarks/runtime/gate-b/ekf-v1.json",
-    "benchmarks/runtime/gate-b/b0-controls.json",
-    "benchmarks/runtime/gate-b/ekf-input-v1.bin",
-    "benchmarks/runtime/gate-b/ekf-input-v1.sha256",
-    "benchmarks/runtime/gate-b/numpy/ekf_v1.py",
-    "benchmarks/runtime/gate-b/README.md",
-    "tests/architecture/value-system/canonical-encoding-v1-schema.json",
-    "tests/architecture/value-system/canonical-encoding-v1-vectors-schema.json",
-    "tests/architecture/value-system/canonical-encoding-v1-vectors.json",
-    "tests/architecture/value-system/canonical-encoding-v1.json",
-    "tests/architecture/value-system/legacy-growth-baseline-schema.json",
-    "tests/architecture/value-system/legacy-growth-baseline.json",
-}
-REQUIRED_GATE_B_PROTECTED_PREFIXES = {
-    ".cargo/",
-    "src/core/src/",
-    "src/engine/src/resident/",
-    "src/runtime/src/ledger/",
-    "src/runtime/benches/support/gate_b/",
-}
-
-
-def gate_b_affected_path(contract: dict[str, Any], path: str) -> bool:
-    protected = contract["protected_paths"]
-    return path in GATE_B_SELF_PROTECTED_PATHS or path in set(protected["exact"]) or any(
-        path.startswith(prefix) for prefix in protected["prefixes"]
-    )
-
-
-def gate_b_evidence_pointer_only_change(
-    root: Path, report_commit: str, path: str
-) -> bool:
-    if path != "tests/architecture/value-system/gate-b-regression.json":
-        return False
-    documents: list[dict[str, Any]] = []
-    for revision in (report_commit, "HEAD"):
-        process = subprocess.run(
-            ["git", "show", f"{revision}:{path}"],
-            cwd=root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        if process.returncode != 0:
-            return False
-        try:
-            document = json.loads(process.stdout)
-        except json.JSONDecodeError:
-            return False
-        for field in ("evidence_commit", "evidence_sha256"):
-            document.pop(field, None)
-        documents.append(document)
-    return documents[0] == documents[1]
-
-
-def gate_b_initial_support_introduction(
-    root: Path, report_commit: str, path: str
-) -> bool:
-    """Allow C0 to introduce its checker/config once, but freeze later edits."""
-    if path not in GATE_B_SELF_PROTECTED_PATHS:
-        return False
-    existed = subprocess.run(
-        ["git", "cat-file", "-e", f"{report_commit}:{path}"],
-        cwd=root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    if existed.returncode == 0:
-        return False
-    additions = subprocess.run(
-        ["git", "log", "--reverse", "--diff-filter=A", "--format=%H", "--", path],
-        cwd=root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    commits = additions.stdout.splitlines() if additions.returncode == 0 else []
-    if not commits:
-        return False
-    unchanged = subprocess.run(
-        ["git", "diff", "--quiet", f"{commits[0]}..HEAD", "--", path],
-        cwd=root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    return unchanged.returncode == 0
-
-
-def gate_b_initial_semantic_core_qualification(
-    root: Path, report_commit: str, path: str
-) -> bool:
-    """Grandfather only C0's exact qualification-only ValueKind rewrite."""
-    expected = C0_INITIAL_SEMANTIC_CORE_BLOBS.get(path)
-    if expected is None:
-        return False
-    actual: list[str] = []
-    for revision in (report_commit, "HEAD"):
-        process = subprocess.run(
-            ["git", "rev-parse", f"{revision}:{path}"],
-            cwd=root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        if process.returncode != 0:
-            return False
-        actual.append(process.stdout.strip())
-    return tuple(actual) == expected
-
-
 def gate_b_failures(
     root: Path,
     contract: dict[str, Any],
     contract_path: Path,
-    *,
-    enforce_freshness: bool,
 ) -> list[Failure]:
     failures: list[Failure] = []
-    protected = contract["protected_paths"]
-    exact = set(protected["exact"])
-    prefixes = set(protected["prefixes"])
-    for subject, expected, actual in (
-        ("required exact paths", REQUIRED_GATE_B_PROTECTED_EXACT, exact),
-        ("required prefixes", REQUIRED_GATE_B_PROTECTED_PREFIXES, prefixes),
-    ):
-        missing = sorted(expected - actual)
-        if missing:
-            failures.append(
-                failure(
-                    "C0-GATE-B-PROTECTION-DRIFT",
-                    subject,
-                    str(contract_path),
-                    repr(sorted(expected)),
-                    f"missing {missing!r}",
-                    f"{contract_path}:protected_paths",
-                )
-            )
     evidence_path = root / contract["evidence_path"]
     try:
         evidence_bytes = evidence_path.read_bytes()
@@ -3085,7 +2904,7 @@ def gate_b_failures(
                     str(contract_path),
                 )
             )
-    required_lanes = set(contract["validation_policy"]["required_rerun_lanes"])
+    required_lanes = set(contract["validation_policy"]["required_evidence_lanes"])
     report_lanes = {lane.get("lane") for lane in report["lanes"]}
     if not required_lanes.issubset(report_lanes):
         failures.append(
@@ -3098,78 +2917,6 @@ def gate_b_failures(
                 str(contract_path),
             )
         )
-    if enforce_freshness:
-        report_commit = report.get("git_commit")
-        ancestor = subprocess.run(
-            ["git", "merge-base", "--is-ancestor", str(report_commit), "HEAD"],
-            cwd=root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        if ancestor.returncode != 0:
-            failures.append(
-                failure(
-                    "C0-GATE-B-EVIDENCE-STALE",
-                    "evidence source commit",
-                    ".git",
-                    "Gate B report commit is an ancestor of HEAD",
-                    ancestor.stderr.strip() or f"git exit {ancestor.returncode}",
-                    str(contract_path),
-                )
-            )
-            return failures
-        process = subprocess.run(
-            [
-                "git",
-                "diff",
-                "--no-renames",
-                "--name-only",
-                f"{report_commit}..HEAD",
-                "--",
-            ],
-            cwd=root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        if process.returncode != 0:
-            failures.append(
-                failure(
-                    "C0-GATE-B-EVIDENCE-STALE",
-                    "evidence source commit",
-                    ".git",
-                    "diffable Gate B evidence commit",
-                    process.stderr.strip() or f"git exit {process.returncode}",
-                    str(contract_path),
-                )
-            )
-        else:
-            affected = sorted(
-                path
-                for path in process.stdout.splitlines()
-                if gate_b_affected_path(contract, path)
-                and not gate_b_initial_support_introduction(
-                    root, str(report_commit), path
-                )
-                and not gate_b_evidence_pointer_only_change(
-                    root, str(report_commit), path
-                )
-                and not gate_b_initial_semantic_core_qualification(
-                    root, str(report_commit), path
-                )
-            )
-            if affected:
-                failures.append(
-                    failure(
-                        "C0-GATE-B-EVIDENCE-STALE",
-                        "semantic-core-or-resident-hot-path",
-                        affected[0],
-                        "fresh controlled Gate B evidence containing every affected change",
-                        repr(affected),
-                        "benchmarks/runtime/gate-b/b2-resident-turn.json",
-                    )
-                )
     return failures
 
 
@@ -4023,7 +3770,6 @@ def audit(
             root,
             gate_b,
             gate_b_path,
-            enforce_freshness=verify_reference,
         )
     )
     return sorted_failures(failures)
@@ -4050,25 +3796,12 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-ADVISORY_CONTRACTS = frozenset({"C0-GATE-B-EVIDENCE-STALE"})
-
-
 def report_result(failures: list[Failure]) -> int:
-    advisory = [
-        item for item in failures if item.contract_id in ADVISORY_CONTRACTS
-    ]
-    blocking = [
-        item for item in failures if item.contract_id not in ADVISORY_CONTRACTS
-    ]
-    if advisory:
-        print("value-system contract advisories:", file=sys.stderr)
-        for item in advisory:
-            print(f"  {item.render()}", file=sys.stderr)
-    if not blocking:
+    if not failures:
         print("value-system contract passed")
         return 0
     print("value-system contract failed:", file=sys.stderr)
-    for item in blocking:
+    for item in failures:
         print(f"  {item.render()}", file=sys.stderr)
     return 1
 

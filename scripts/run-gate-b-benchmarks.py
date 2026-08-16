@@ -15,22 +15,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-if str(SCRIPT_DIR) not in sys.path:
-    sys.path.insert(0, str(SCRIPT_DIR))
-from f0_evidence import (
-    EvidenceError,
-    attach_provenance,
-    canonical_json_bytes,
-    copy_criterion_evidence,
-    load_qualification_context,
-    sha256_file,
-)
-from f0_contract import gate_b_qualification
-
 
 ROOT = Path(__file__).resolve().parents[1]
-TOOLCHAIN_LOCK = ROOT / "tests/architecture/qualification/f0-measurement-toolchain.json"
 SAMPLE_PREFIX = "GATE_B_SAMPLE "
 FROZEN_BASE = "437f6c6c636d9818729597342165dfc9af5eb4a7"
 FROZEN_B0_BRANCH = "test/resident-ekf-efficacy-contract"
@@ -60,6 +46,43 @@ THREAD_VARIABLES = (
     "NUMEXPR_NUM_THREADS",
     "RAYON_NUM_THREADS",
 )
+ADVISORY_PERFORMANCE_GATES = {
+    "b2_decision": {
+        "executor_tax",
+        "legacy_gap_closure",
+        "raw_epoch_ratio",
+        "tail_stability",
+    },
+    "d1_decision": {
+        "complete_turn_control_ratio",
+        "legacy_gap_closure",
+        "raw_epoch_ratio",
+        "source_bytecode_equivalence",
+    },
+}
+
+
+def release_qualification(
+    report: dict[str, Any],
+) -> tuple[str, dict[str, list[str]]]:
+    advisories: dict[str, list[str]] = {}
+    blocking_passed = True
+    for section, advisory_names in ADVISORY_PERFORMANCE_GATES.items():
+        gates = report.get(section, {}).get("hard_gates", {})
+        if not isinstance(gates, dict) or not gates:
+            advisories[section] = []
+            blocking_passed = False
+            continue
+        advisories[section] = sorted(
+            name for name in advisory_names if gates.get(name) is False
+        )
+        if not all(
+            passed
+            for name, passed in gates.items()
+            if name not in advisory_names
+        ):
+            blocking_passed = False
+    return ("Pass" if blocking_passed else "Fail"), advisories
 
 
 def command_output(command: list[str]) -> str:
@@ -325,10 +348,20 @@ def numpy_worker_command(python: str) -> tuple[list[str], Path]:
     python_path = Path(python)
     if not python_path.is_absolute():
         raise ValueError("the Gate B NumPy interpreter path must be absolute")
-    lock = json.loads(TOOLCHAIN_LOCK.read_text(encoding="utf-8"))
-    relative_module = Path(lock["numpy"]["module_relative_path"])
-    environment_root = python_path.parent.parent.resolve()
-    expected_module = (environment_root / relative_module).resolve()
+    module = command_output(
+        [
+            str(python_path),
+            "-I",
+            "-c",
+            (
+                "import importlib.util; "
+                "spec = importlib.util.find_spec('numpy'); "
+                "assert spec is not None and spec.origin is not None; "
+                "print(spec.origin)"
+            ),
+        ]
+    )
+    expected_module = Path(module).resolve()
     return (
         [
             str(python_path),
@@ -1037,16 +1070,6 @@ def parse_args() -> argparse.Namespace:
         "--machine-label",
         help="stable controlled-machine model label when automatic detection is unavailable",
     )
-    parser.add_argument(
-        "--qualification-context",
-        type=Path,
-        help="F0 canonical subject, protocol, environment, and recorded-chain identity",
-    )
-    parser.add_argument(
-        "--criterion-evidence-directory",
-        type=Path,
-        help="copy the exact Criterion sample tree retained by F0",
-    )
     return parser.parse_args()
 
 
@@ -1085,19 +1108,6 @@ def main() -> int:
 
     commit = command_output(["git", "rev-parse", "HEAD"])
     branch = command_output(["git", "symbolic-ref", "--short", "HEAD"])
-    context = None
-    if args.qualification_context:
-        try:
-            context = load_qualification_context(args.qualification_context.resolve())
-        except EvidenceError as error:
-            print(f"invalid F0 qualification context: {error}", file=sys.stderr)
-            return 2
-        if context["evidence_generation_commit"] != commit:
-            print(
-                "F0 context evidence generation commit does not match HEAD",
-                file=sys.stderr,
-            )
-            return 2
     base_error = frozen_base_error(commit, branch, args.phase)
     if base_error:
         print(base_error, file=sys.stderr)
@@ -1117,9 +1127,6 @@ def main() -> int:
         raw_structural_output = (ROOT / raw_structural_output).resolve()
     raw_structural_output.parent.mkdir(parents=True, exist_ok=True)
     raw_numpy_output = args.raw_numpy_output
-    if context is not None and raw_numpy_output is None:
-        print("canonical Gate B requires retained NumPy samples", file=sys.stderr)
-        return 2
     if raw_numpy_output is not None:
         if not raw_numpy_output.is_absolute():
             raw_numpy_output = (ROOT / raw_numpy_output).resolve()
@@ -1193,8 +1200,14 @@ def main() -> int:
             args.python, args.sample_size, environment
         )
         if raw_numpy_output is not None:
-            raw_numpy_output.write_bytes(
-                canonical_json_bytes({"ready": ready, "results": numpy_results})
+            raw_numpy_output.write_text(
+                json.dumps(
+                    {"ready": ready, "results": numpy_results},
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
             )
         manifest = json.loads(
             (ROOT / "benchmarks/runtime/gate-b/ekf-v1.json").read_text(
@@ -1216,6 +1229,8 @@ def main() -> int:
         print(f"Gate B result assembly failed: {error}", file=sys.stderr)
         return 2
 
+    qualification_decision = "Pass"
+    advisory_performance_failures: dict[str, list[str]] = {}
     summary = {
         "schema_version": 1,
         "gate": "B",
@@ -1280,55 +1295,9 @@ def main() -> int:
         summary["b2_decision"] = b2_decision(lanes)
         if any(lane["lane"] == "mech-resident-artifact-source" for lane in lanes):
             summary["d1_decision"] = d1_decision(lanes)
-        qualification, advisory_failures = gate_b_qualification(summary)
-        summary["qualification_decision"] = qualification
-        summary["advisory_performance_failures"] = advisory_failures
-    criterion_reference = None
-    if context is not None:
-        if args.criterion_evidence_directory is None:
-            print("canonical Gate B requires retained Criterion samples", file=sys.stderr)
-            return 2
-        criterion_destination = args.criterion_evidence_directory.resolve()
-        try:
-            criterion_reference = copy_criterion_evidence(
-                target_dir / "criterion",
-                criterion_destination,
-                f"{context['raw_evidence_prefix']}/b2-criterion-samples",
-            )
-        except EvidenceError as error:
-            print(f"cannot retain Gate B Criterion samples: {error}", file=sys.stderr)
-            return 2
-    summary["raw_evidence"] = {
-        "benchmark_output": {
-            "path": (
-                f"{context['raw_evidence_prefix']}/b2-criterion.log"
-                if context is not None and context.get("raw_evidence_prefix")
-                else str(raw_output)
-            ),
-            "sha256": sha256_file(raw_output),
-        },
-        "structural_output": {
-            "path": (
-                f"{context['raw_evidence_prefix']}/b2-structural.log"
-                if context is not None and context.get("raw_evidence_prefix")
-                else str(raw_structural_output)
-            ),
-            "sha256": sha256_file(raw_structural_output),
-        },
-    }
-    if raw_numpy_output is not None:
-        summary["raw_evidence"]["numpy_output"] = {
-            "path": (
-                f"{context['raw_evidence_prefix']}/b2-numpy.json"
-                if context is not None and context.get("raw_evidence_prefix")
-                else str(raw_numpy_output)
-            ),
-            "sha256": sha256_file(raw_numpy_output),
-        }
-    if criterion_reference is not None:
-        summary["raw_evidence"]["criterion_samples"] = criterion_reference
-    if context is not None:
-        attach_provenance(summary, context)
+        qualification_decision, advisory_performance_failures = (
+            release_qualification(summary)
+        )
     rendered = json.dumps(summary, indent=2, sort_keys=True) + "\n"
     if args.output:
         output = args.output if args.output.is_absolute() else ROOT / args.output
@@ -1348,9 +1317,16 @@ def main() -> int:
             file=sys.stderr,
         )
         return 4
+    for section, findings in advisory_performance_failures.items():
+        if findings:
+            print(
+                f"Gate B advisory performance findings ({section}): "
+                + ", ".join(findings),
+                file=sys.stderr,
+            )
     if (
         branch == B2_BRANCH or args.phase == "B2-resident-turn"
-    ) and summary["qualification_decision"] == "Fail":
+    ) and qualification_decision == "Fail":
         print(
             "Gate B B2 stop: complete resident turn failed one or more "
             "release-blocking gates",

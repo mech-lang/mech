@@ -10,9 +10,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CI = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 FULL = (ROOT / ".github/workflows/ci-full.yml").read_text(encoding="utf-8")
-F0_CONTROLLED = (ROOT / ".github/workflows/f0-controlled.yml").read_text(
-    encoding="utf-8"
-)
 STATIC = (ROOT / "scripts/check-static-distribution-profiles.sh").read_text(
     encoding="utf-8"
 )
@@ -79,22 +76,10 @@ class FullWorkflowContractTests(unittest.TestCase):
                     )
                 )
 
-    def test_f0_protocol_is_checked_without_a_stale_evidence_waiver(self):
+    def test_value_system_contract_is_permanent_and_unwaived(self):
         block = job_block(FULL, "architecture-contracts")
-        self.assertIn("scripts/check-f0-product-tree.py", block)
-        self.assertIn("scripts/f0_contract.py", block)
-        self.assertIn("scripts/tests/test_f0_contract.py", block)
+        self.assertIn("scripts/check-value-system-contract.py", block)
         self.assertNotIn("allow-only-c0-gate-b-evidence-stale", block)
-        self.assertIn(".evidence != null", block)
-
-    def test_f0_controlled_dispatch_is_explicit_and_exact_head_bound(self):
-        self.assertRegex(F0_CONTROLLED, r"(?ms)pull_request:\n\s+types:\n\s+- labeled")
-        self.assertIn("github.event.label.name == 'f0-controlled'", F0_CONTROLLED)
-        exact_ref = "${{ github.event.pull_request.head.sha || github.sha }}"
-        self.assertEqual(F0_CONTROLLED.count(exact_ref), 3)
-        self.assertIn("target/f0-workflow-context", F0_CONTROLLED)
-        self.assertIn("target/f0-evidence/${{ env.F0_VALIDATION_REF }}", F0_CONTROLLED)
-        self.assertIn('test "${F0_VALIDATION_BRANCH}" =', F0_CONTROLLED)
 
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")

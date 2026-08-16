@@ -346,19 +346,28 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
         with patch.dict(os.environ, {"MECH_GATE_B_SAMPLE_SIZE": "1"}):
             self.assertEqual(self.parse_args().sample_size, 10)
 
-    def test_numpy_worker_is_isolated_and_bound_to_locked_module(self):
-        python = RUNNER.ROOT / "target/f0-toolchain/python/bin/python"
-        command, expected = RUNNER.numpy_worker_command(str(python))
+    def test_numpy_worker_is_isolated_and_bound_to_selected_interpreter(self):
+        python = RUNNER.ROOT / "target/gate-b-python/bin/python"
+        module = RUNNER.ROOT / "target/gate-b-python/lib/python3.9/site-packages/numpy/__init__.py"
+        with patch.object(RUNNER, "command_output", return_value=str(module)) as discover:
+            command, expected = RUNNER.numpy_worker_command(str(python))
         self.assertEqual(command[0], str(python))
         self.assertEqual(command[1], "-I")
         self.assertEqual(command[3], "--expected-numpy-module")
         self.assertEqual(Path(command[4]), expected)
-        self.assertEqual(
-            expected,
-            (
-                python.parent.parent
-                / "lib/python3.9/site-packages/numpy/__init__.py"
-            ).resolve(),
+        self.assertEqual(expected, module.resolve())
+        discover.assert_called_once_with(
+            [
+                str(python),
+                "-I",
+                "-c",
+                (
+                    "import importlib.util; "
+                    "spec = importlib.util.find_spec('numpy'); "
+                    "assert spec is not None and spec.origin is not None; "
+                    "print(spec.origin)"
+                ),
+            ]
         )
 
     def test_numpy_worker_rejects_ambiguous_interpreter_path(self):
