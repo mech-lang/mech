@@ -1,0 +1,77 @@
+name: Controlled F0 evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f0-controlled-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  evidence:
+    name: Controlled F0 B2 to D2 to D3 evidence
+    if: github.ref == 'refs/heads/qualification/f0-final-evidence'
+    runs-on: [self-hosted, macOS, ARM64, f0-qualification]
+    timeout-minutes: 720
+    env:
+      BLIS_NUM_THREADS: "1"
+      CARGO_INCREMENTAL: "0"
+      MKL_NUM_THREADS: "1"
+      NUMEXPR_NUM_THREADS: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      PYTHONHOME: ""
+      PYTHONINSPECT: ""
+      PYTHONNOUSERSITE: ""
+      PYTHONPATH: ""
+      PYTHONSTARTUP: ""
+      PYTHONUSERBASE: ""
+      RAYON_NUM_THREADS: "1"
+      VECLIB_MAXIMUM_THREADS: "1"
+      F0_VALIDATION_REF: ${{ github.sha }}
+    steps:
+      - name: Checkout the exact trusted F0 head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Bind measurement to a clean exact-head branch
+        shell: bash
+        run: |
+          test "${GITHUB_REF}" = \
+            "refs/heads/qualification/f0-final-evidence"
+          test "$(git rev-parse HEAD)" = "${F0_VALIDATION_REF}"
+          git switch -C \
+            "qualification/f0-run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            "${F0_VALIDATION_REF}"
+      - name: Verify the reviewed protocol and frozen product tree
+        run: |
+          python3 scripts/check-f0-product-tree.py
+          python3 scripts/f0_contract.py \
+            --manifest tests/architecture/qualification/f0-qualification-manifest.json
+          python3 -B -m unittest \
+            scripts/tests/test_f0_contract.py \
+            scripts/tests/test_check_gate_d_contract.py \
+            scripts/tests/test_run_gate_b_benchmarks.py
+      - name: Install the measurement toolchain
+        run: >-
+          /Library/Developer/CommandLineTools/usr/bin/python3
+          scripts/install-f0-measurement-toolchain.py
+          --install-root target/f0-toolchain
+      - name: Run untimed preconditioning and three recorded chains
+        run: >-
+          /Library/Developer/CommandLineTools/usr/bin/python3
+          scripts/run-f0-qualification.py
+          --toolchain-root target/f0-toolchain
+          --output-directory target/f0-evidence/${F0_VALIDATION_REF}
+      - name: Retain every recorded chain, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          if-no-files-found: error
+          name: f0-evidence-${{ env.F0_VALIDATION_REF }}-${{ github.run_attempt }}
+          path: target/f0-evidence/${{ env.F0_VALIDATION_REF }}
+          retention-days: 90

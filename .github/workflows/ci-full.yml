@@ -68,8 +68,15 @@ jobs:
           python3 scripts/generate-value-system-inventory.py \
             --git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \
             --check-legacy-baseline
-          python3 scripts/check-value-system-contract.py \
-            --allow-only-c0-gate-b-evidence-stale
+          python3 scripts/check-f0-product-tree.py
+          python3 scripts/f0_contract.py \
+            --manifest tests/architecture/qualification/f0-qualification-manifest.json
+          if jq -e '.evidence != null' \
+            tests/architecture/qualification/f0-qualification-manifest.json \
+            >/dev/null
+          then
+            python3 scripts/check-value-system-contract.py
+          fi
           python3 scripts/check-program-artifact-contract.py
           python3 scripts/check-operation-contract.py
           python3 scripts/check-resident-activation-contract.py
@@ -95,6 +102,7 @@ jobs:
             scripts/tests/test_check_d1_contract.py \
             scripts/tests/test_generate_d2_contract.py \
             scripts/tests/test_check_d2_contract.py \
+            scripts/tests/test_f0_contract.py \
             scripts/tests/test_run_gate_a_benchmarks.py \
             scripts/tests/test_run_gate_b_benchmarks.py
 

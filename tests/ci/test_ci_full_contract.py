@@ -76,6 +76,14 @@ class FullWorkflowContractTests(unittest.TestCase):
                     )
                 )
 
+    def test_f0_protocol_is_checked_without_a_stale_evidence_waiver(self):
+        block = job_block(FULL, "architecture-contracts")
+        self.assertIn("scripts/check-f0-product-tree.py", block)
+        self.assertIn("scripts/f0_contract.py", block)
+        self.assertIn("scripts/tests/test_f0_contract.py", block)
+        self.assertNotIn("allow-only-c0-gate-b-evidence-stale", block)
+        self.assertIn(".evidence != null", block)
+
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):
         block = job_block(FULL, "function-system-contracts")
         install = "sudo apt-get install --yes ripgrep"

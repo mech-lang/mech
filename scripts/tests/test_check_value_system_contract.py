@@ -2286,66 +2286,26 @@ class BoundaryAndReportingTests(unittest.TestCase):
                     )
 
 
-class ControlledGateBEvidenceTests(unittest.TestCase):
-    def finding(self, code, subject="finding"):
-        return CHECKER.failure(
-            code,
-            subject,
+class FinalQualificationFindingTests(unittest.TestCase):
+    def test_zero_findings_succeeds(self):
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.assertEqual(CHECKER.report_result([]), 0)
+        self.assertIn("value-system contract passed", stdout.getvalue())
+
+    def test_any_finding_fails(self):
+        finding = CHECKER.failure(
+            "C0-GATE-B-EVIDENCE-STALE",
+            "finding",
             "contract.json",
             "expected",
             "actual",
             "update",
         )
-
-    def report(self, failures):
-        stdout = io.StringIO()
         stderr = io.StringIO()
-        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-            status = CHECKER.report_result(
-                failures, allow_only_c0_gate_b_evidence_stale=True
-            )
-        return status, stdout.getvalue(), stderr.getvalue()
-
-    def test_zero_findings_succeeds(self):
-        status, stdout, stderr = self.report([])
-        self.assertEqual(status, 0)
-        self.assertIn("value-system contract passed", stdout)
-        self.assertEqual(stderr, "")
-
-    def test_exactly_one_controlled_finding_succeeds_and_remains_visible(self):
-        status, _stdout, stderr = self.report(
-            [self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE)]
-        )
-        self.assertEqual(status, 0)
-        self.assertIn("controlled finding still present", stderr)
-        self.assertIn("[C0-GATE-B-EVIDENCE-STALE]", stderr)
-
-    def test_one_unapproved_finding_fails(self):
-        status, _stdout, stderr = self.report(
-            [self.finding("C0-INVENTORY-DRIFT")]
-        )
-        self.assertEqual(status, 1)
-        self.assertIn("value-system contract failed", stderr)
-
-    def test_controlled_plus_another_finding_fails(self):
-        status, _stdout, stderr = self.report(
-            [
-                self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE),
-                self.finding("C0-INVENTORY-DRIFT"),
-            ]
-        )
-        self.assertEqual(status, 1)
-        self.assertIn("C0-INVENTORY-DRIFT", stderr)
-
-    def test_multiple_controlled_findings_fail(self):
-        status, _stdout, stderr = self.report(
-            [
-                self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE, "first"),
-                self.finding(CHECKER.CONTROLLED_GATE_B_STALE_CODE, "second"),
-            ]
-        )
-        self.assertEqual(status, 1)
-        self.assertEqual(stderr.count("[C0-GATE-B-EVIDENCE-STALE]"), 2)
+        with contextlib.redirect_stderr(stderr):
+            self.assertEqual(CHECKER.report_result([finding]), 1)
+        self.assertIn("value-system contract failed", stderr.getvalue())
 
 
 if __name__ == "__main__":
