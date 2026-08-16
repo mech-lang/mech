@@ -228,7 +228,7 @@ fn composite_return_materialization_has_semantic_node_metadata() -> MResult<()> 
                 && node.operation.operation_name == "composite-pack"
         })
         .expect("direct tuple return must retain its composite-pack node");
-    assert_eq!(composite.input_bindings.len(), 2);
+    assert_eq!(composite.input_bindings.len(), 3);
     assert_eq!(composite.output_bindings.len(), 1);
     assert_eq!(artifact.outputs().len(), 1);
     assert_eq!(artifact.outputs(), decoded.outputs());
@@ -508,31 +508,17 @@ fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
 }
 
 #[test]
-fn state_reads_precede_the_first_commit_and_multiple_commits_remain_distinct() -> MResult<()> {
-    let (artifact, decoded) = compile_artifact_fixture(
+fn multiple_full_state_writers_fail_closed() -> MResult<()> {
+    let mut program = source_program();
+    program.plan_source_for_test(
         "~state := 1.0\nlimit := 2.0\nbefore := state < limit\nstate = limit\nstate = 3.0\nstate",
     )?;
-    assert_eq!(artifact.revision(), decoded.revision());
-    let states = artifact
-        .slots()
-        .iter()
-        .filter(|slot| slot.role == SlotRole::State)
-        .collect::<Vec<_>>();
-    assert_eq!(states.len(), 2);
 
-    let first_state = states[0].slot;
-    let first_consumer = artifact
-        .nodes()
-        .iter()
-        .find(|node| node.operation.operation_name == TEST_LESS_RUNTIME)
-        .expect("source contains a comparison before the first commit");
-    assert!(first_consumer.input_bindings.clone().any(|index| matches!(
-        artifact.bindings().get(index as usize),
-        Some(BindingDeclaration::Input {
-            source: ArtifactSource::Slot(slot),
-            ..
-        }) if *slot == first_state
-    )));
+    let error = program
+        .compile_program_product()
+        .expect_err("multiple full writers must not produce an ambiguous state artifact");
+    assert_eq!(error.kind_name(), "ProgramArtifactCompilationError");
+    assert!(error.kind_message().contains("InvalidStateWriterChain"));
     Ok(())
 }
 

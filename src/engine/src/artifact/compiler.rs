@@ -1158,8 +1158,11 @@ pub fn compile_executable_program_artifact_product_with_outputs_and_external_inp
                     continue;
                 }
                 if matches!(instruction, BytecodeInstruction::CompositePack { .. })
-                    && register_constant_roles.get(dst as usize).copied().flatten()
-                        == Some(CompilerConstantRole::StateInitializer)
+                    && register_state_indexes
+                        .get(dst as usize)
+                        .copied()
+                        .flatten()
+                        .is_some()
                 {
                     continue;
                 }
