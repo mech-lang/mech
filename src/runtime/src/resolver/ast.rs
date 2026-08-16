@@ -1,9 +1,13 @@
-use mech_core::Program;
+use std::collections::BTreeSet;
+
+use mech_core::{MResult, Program};
 
 use super::{
-    SourceContextDeclaration, SourceExportDeclaration, SourceImportDeclaration, SourceIndex,
-    SourceRequest, import_requires_source_dependency, source_request_for_import,
+    SourceContextBase, SourceContextCapabilityScope, SourceContextDeclaration,
+    SourceExportDeclaration, SourceImportDeclaration, SourceIndex, SourceRequest,
+    import_requires_source_dependency, source_request_for_import,
 };
+use crate::{RunResourceGrantConfig, run_resource_grant_path_allows};
 
 pub fn imports_from_program(tree: &Program) -> Vec<SourceImportDeclaration> {
     SourceIndex::from_program(tree).all_imports()
@@ -24,6 +28,52 @@ pub fn dependencies_from_program(tree: &Program, referrer: Option<&str>) -> Vec<
 
 pub fn contexts_from_program(tree: &Program) -> Vec<SourceContextDeclaration> {
     SourceIndex::from_program(tree).all_contexts()
+}
+
+/// Resolves the concrete source-declared paths that a configured run grant
+/// authorizes for one resource operation. Source declarations define the
+/// interface; configuration grants authorize that interface and never create
+/// new paths.
+pub fn granted_resource_paths_from_program(
+    tree: &Program,
+    base_uri: &str,
+    grant_target: &str,
+    operation: &str,
+    grants: &[RunResourceGrantConfig],
+) -> MResult<BTreeSet<String>> {
+    let declared = contexts_from_program(tree)
+        .into_iter()
+        .filter(|context| context.base == SourceContextBase::ResourceUri(base_uri.to_owned()))
+        .flat_map(|context| context.capabilities)
+        .filter(|capability| capability.operation == operation)
+        .filter_map(|capability| match capability.scope {
+            SourceContextCapabilityScope::Path(path) if !path.contains('*') => Some(path),
+            SourceContextCapabilityScope::Path(_) | SourceContextCapabilityScope::Wildcard => None,
+        })
+        .collect::<BTreeSet<_>>();
+
+    let mut granted = BTreeSet::new();
+    for path in declared {
+        let allowed = grants
+            .iter()
+            .filter(|grant| {
+                grant.target == grant_target
+                    && grant
+                        .operations
+                        .iter()
+                        .any(|candidate| candidate == operation)
+            })
+            .flat_map(|grant| &grant.paths)
+            .try_fold(false, |allowed, grant_path| {
+                Ok::<_, mech_core::MechError>(
+                    allowed || run_resource_grant_path_allows(grant_path, &path)?,
+                )
+            })?;
+        if allowed {
+            granted.insert(path);
+        }
+    }
+    Ok(granted)
 }
 
 #[cfg(all(test, feature = "source"))]
@@ -90,6 +140,38 @@ mod tests {
             contexts[0].capabilities[0].scope,
             SourceContextCapabilityScope::Wildcard
         );
+    }
+
+    #[test]
+    fn configured_wildcards_expand_only_to_concrete_source_declared_paths() {
+        let tree = parse_program(
+            "@compute := compute://particles/kernel{:write(input/x), :write(input/y), :write(turn)}\n",
+        );
+        for configured_path in ["*", "input/*"] {
+            let grants = [RunResourceGrantConfig {
+                target: "particles/kernel".to_owned(),
+                operations: vec!["write".to_owned()],
+                paths: vec![configured_path.to_owned()],
+            }];
+            let paths = granted_resource_paths_from_program(
+                &tree,
+                "compute://particles/kernel",
+                "particles/kernel",
+                "write",
+                &grants,
+            )
+            .unwrap();
+            let expected = if configured_path == "*" {
+                BTreeSet::from([
+                    "input/x".to_owned(),
+                    "input/y".to_owned(),
+                    "turn".to_owned(),
+                ])
+            } else {
+                BTreeSet::from(["input/x".to_owned(), "input/y".to_owned()])
+            };
+            assert_eq!(paths, expected);
+        }
     }
 
     #[test]

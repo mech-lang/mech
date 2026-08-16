@@ -117,18 +117,8 @@ impl GpuProgram {
             let info = adapter.get_info();
             format!("{} ({:?})", info.name, info.backend)
         };
-        let required_storage_buffers = self.bindings.len() as u32;
         let adapter_limits = adapter.limits();
-        if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
-            return Err(GpuExecutionError::DeviceRequest(format!(
-                "kernel needs {required_storage_buffers} storage buffers, adapter supports {}",
-                adapter_limits.max_storage_buffers_per_shader_stage
-            )));
-        }
-        let required_limits = wgpu::Limits {
-            max_storage_buffers_per_shader_stage: required_storage_buffers,
-            ..wgpu::Limits::downlevel_defaults()
-        };
+        let (required_limits, workgroups) = self.required_device_limits(&adapter_limits)?;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -251,7 +241,7 @@ impl GpuProgram {
             });
             pass.set_pipeline(&pipeline);
             pass.set_bind_group(0, &bind_group, &[]);
-            pass.dispatch_workgroups(self.workgroup_count(), 1, 1);
+            pass.dispatch_workgroups(workgroups, 1, 1);
         }
         for output in &self.outputs {
             let size = output.elements * std::mem::size_of::<f32>() as u64;
@@ -316,24 +306,7 @@ impl GpuProgram {
         let adapter_info = adapter.get_info();
         let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
         let adapter_limits = adapter.limits();
-        let required_storage_buffers = self.bindings.len() as u32;
-        if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
-            return Err(GpuExecutionError::DeviceRequest(format!(
-                "kernel needs {required_storage_buffers} storage buffers, adapter supports {}",
-                adapter_limits.max_storage_buffers_per_shader_stage
-            )));
-        }
-        let workgroups = self.workgroup_count();
-        if workgroups > adapter_limits.max_compute_workgroups_per_dimension {
-            return Err(GpuExecutionError::WorkgroupLimit {
-                required: workgroups,
-                supported: adapter_limits.max_compute_workgroups_per_dimension,
-            });
-        }
-        let required_limits = wgpu::Limits {
-            max_storage_buffers_per_shader_stage: required_storage_buffers,
-            ..wgpu::Limits::downlevel_defaults()
-        };
+        let (required_limits, workgroups) = self.required_device_limits(&adapter_limits)?;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -499,6 +472,33 @@ impl GpuProgram {
             last_output_group: None,
         })
     }
+
+    fn required_device_limits(
+        &self,
+        adapter_limits: &wgpu::Limits,
+    ) -> Result<(wgpu::Limits, u32), GpuExecutionError> {
+        let required_storage_buffers = self.bindings.len() as u32;
+        if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
+            return Err(GpuExecutionError::DeviceRequest(format!(
+                "kernel needs {required_storage_buffers} storage buffers, adapter supports {}",
+                adapter_limits.max_storage_buffers_per_shader_stage
+            )));
+        }
+        let workgroups = self.workgroup_count();
+        if workgroups > adapter_limits.max_compute_workgroups_per_dimension {
+            return Err(GpuExecutionError::WorkgroupLimit {
+                required: workgroups,
+                supported: adapter_limits.max_compute_workgroups_per_dimension,
+            });
+        }
+        Ok((
+            wgpu::Limits {
+                max_storage_buffers_per_shader_stage: required_storage_buffers,
+                ..wgpu::Limits::downlevel_defaults()
+            },
+            workgroups,
+        ))
+    }
 }
 
 impl ResidentGpuSession {
@@ -613,5 +613,34 @@ impl ResidentGpuSession {
             readback,
             outputs,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_gpu_execution_modes_reject_oversized_workgroup_counts() {
+        let program = GpuProgram {
+            wgsl: String::new(),
+            bindings: Vec::new(),
+            operations: Vec::new(),
+            outputs: Vec::new(),
+            states: Vec::new(),
+            input_slots: BTreeMap::new(),
+            constants: BTreeMap::new(),
+            dispatch_elements: u64::from(super::super::WORKGROUP_SIZE) * 2,
+        };
+        let mut limits = wgpu::Limits::downlevel_defaults();
+        limits.max_compute_workgroups_per_dimension = 1;
+
+        assert_eq!(
+            program.required_device_limits(&limits).unwrap_err(),
+            GpuExecutionError::WorkgroupLimit {
+                required: 2,
+                supported: 1,
+            }
+        );
     }
 }

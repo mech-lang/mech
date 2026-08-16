@@ -32,6 +32,31 @@ pub use placement::*;
 
 pub const WORKGROUP_SIZE: u32 = 64;
 
+/// Converts a Mech matrix snapshot into the row-major storage order consumed
+/// by generated GPU and fused CPU kernels.
+pub fn column_major_to_row_major<T: Copy + Default>(
+    rows: usize,
+    columns: usize,
+    values: &[T],
+) -> Result<Vec<T>, String> {
+    let elements = rows.checked_mul(columns).ok_or_else(|| {
+        format!("GPU input matrix shape {rows}x{columns} exceeds addressable memory")
+    })?;
+    if values.len() != elements {
+        return Err(format!(
+            "GPU input matrix shape {rows}x{columns} requires {elements} elements, found {}",
+            values.len()
+        ));
+    }
+    let mut row_major = vec![T::default(); elements];
+    for row in 0..rows {
+        for column in 0..columns {
+            row_major[row * columns + column] = values[column * rows + row];
+        }
+    }
+    Ok(row_major)
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GpuDiagnosticCode {
     IntegrityConstraintsUnsupported,

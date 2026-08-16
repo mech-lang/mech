@@ -70,7 +70,7 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
         .iter()
         .find(|host| host.provider == "gpu")
         .expect("GPU host presence was checked");
-    let external_input_names = configured_compute_inputs(plan, &gpu_host.name);
+    let external_input_names = configured_compute_inputs(plan, &tree, &gpu_host.name)?;
 
     for section in tree
         .body
@@ -100,7 +100,7 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
         let mut compiler = RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_native_plan_catalog())
             .build_compiler()?;
-        let product = compiler.compile_tree_artifact_with_inputs(
+        let (product, initial_inputs) = compiler.compile_tree_artifact_with_input_initializers(
             &region_tree,
             &BTreeMap::new(),
             &external_input_names,
@@ -119,8 +119,10 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
                     format!("GPU host rejected region `{name}`:\n{error}"),
                 )
             })?;
-        let inputs = default_input_values(&program);
-        programs.insert(name, GpuRegionProgram::new(program, inputs));
+        programs.insert(
+            name,
+            GpuRegionProgram::from_initializers(program, &initial_inputs)?,
+        );
     }
 
     Ok(Some(ConfiguredGpuHost {
@@ -340,15 +342,22 @@ fn default_input_values(program: &GpuProgram) -> BTreeMap<String, Vec<f32>> {
     inputs
 }
 
-fn configured_compute_inputs(plan: &RunExecutionPlan, instance: &str) -> BTreeSet<String> {
+fn configured_compute_inputs(
+    plan: &RunExecutionPlan,
+    tree: &Program,
+    instance: &str,
+) -> MResult<BTreeSet<String>> {
     let target = format!("{instance}/kernel");
-    plan.configured_run_grants
-        .iter()
-        .filter(|grant| grant.target == target && grant.operations.iter().any(|op| op == "write"))
-        .flat_map(|grant| &grant.paths)
-        .filter_map(|path| path.strip_prefix("input/"))
-        .map(str::to_owned)
-        .collect()
+    Ok(mech_runtime::granted_resource_paths_from_program(
+        tree,
+        &format!("gpu://{target}"),
+        &target,
+        "write",
+        &plan.configured_run_grants,
+    )?
+    .into_iter()
+    .filter_map(|path| path.strip_prefix("input/").map(str::to_owned))
+    .collect())
 }
 
 fn one_mech_source(plan: &RunExecutionPlan) -> MResult<PathBuf> {

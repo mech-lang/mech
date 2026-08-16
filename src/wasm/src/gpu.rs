@@ -1,7 +1,10 @@
 use std::collections::BTreeMap;
 
 use js_sys::{Array, Float32Array, Object, Reflect};
-use mech_gpu::{GpuBindingAccess, GpuBindingRole, GpuHost, GpuProgram, WORKGROUP_SIZE};
+use mech_gpu::{
+    GpuBindingAccess, GpuBindingRole, GpuHost, GpuProgram, WORKGROUP_SIZE,
+    column_major_to_row_major,
+};
 use mech_runtime::{
     ConfigProfileOptions, RuntimeBuilder, RuntimeHostInputValue, parse_config_document,
 };
@@ -258,29 +261,6 @@ pub(crate) fn compile_program(
             input_capture,
         },
     ))
-}
-
-pub(crate) fn column_major_to_row_major(
-    rows: usize,
-    columns: usize,
-    values: &[f32],
-) -> Result<Vec<f32>, String> {
-    let elements = rows.checked_mul(columns).ok_or_else(|| {
-        format!("GPU input matrix shape {rows}x{columns} exceeds addressable memory")
-    })?;
-    if values.len() != elements {
-        return Err(format!(
-            "GPU input matrix shape {rows}x{columns} requires {elements} elements, found {}",
-            values.len()
-        ));
-    }
-    let mut row_major = vec![0.0; elements];
-    for row in 0..rows {
-        for column in 0..columns {
-            row_major[row * columns + column] = values[column * rows + row];
-        }
-    }
-    Ok(row_major)
 }
 
 fn milliseconds(started: Instant) -> f64 {

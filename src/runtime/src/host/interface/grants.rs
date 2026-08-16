@@ -48,6 +48,20 @@ pub fn normalize_run_resource_grant_path(path: &str) -> MResult<String> {
     Ok(ResourcePathScope::from_config_path(path)?.config_path())
 }
 
+/// Applies the runtime's canonical exact, prefix, and wildcard grant semantics
+/// to one concrete resource path.
+#[cfg(feature = "runtime")]
+pub fn run_resource_grant_path_allows(grant_path: &str, requested_path: &str) -> MResult<bool> {
+    let scope = ResourcePathScope::from_config_path(grant_path)?;
+    let requested = ResourcePathScope::from_config_path(requested_path)?;
+    let ResourcePathScope::Exact(requested) = requested else {
+        return invalid(format!(
+            "requested resource path `{requested_path}` must be concrete"
+        ));
+    };
+    Ok(scope.matches(&requested))
+}
+
 fn invalid<T>(message: impl Into<String>) -> MResult<T> {
     Err(MechError::new(InvalidConfigField::new(message), None))
 }

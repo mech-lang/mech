@@ -18,7 +18,7 @@ use mech_runtime::{
     RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
-use crate::{GpuProgram, ResidentGpuSession};
+use crate::{GpuBindingRole, GpuProgram, ResidentGpuSession, column_major_to_row_major};
 
 static GPU_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
@@ -48,6 +48,33 @@ impl GpuRegionProgram {
             program: Arc::new(program),
             inputs: Arc::new(inputs),
         }
+    }
+
+    pub fn from_initializers(
+        program: GpuProgram,
+        initializers: &BTreeMap<String, RuntimeHostInputValue>,
+    ) -> MResult<Self> {
+        let input_elements = program
+            .bindings()
+            .iter()
+            .filter(|binding| binding.role() == GpuBindingRole::Input)
+            .map(|binding| (binding.name.clone(), binding.elements as usize))
+            .collect::<BTreeMap<_, _>>();
+        let mut inputs = BTreeMap::new();
+        for name in input_elements.keys() {
+            let initializer = initializers.get(name).ok_or_else(|| {
+                gpu_host_error(
+                    "GpuRegionHostInitialize",
+                    format!("GPU input `{name}` has no declaration-time value"),
+                )
+            })?;
+            let value = initializer.clone().into_mech_value()?;
+            inputs.insert(
+                name.clone(),
+                validated_gpu_input_values(name, value, &input_elements)?,
+            );
+        }
+        Ok(Self::new(program, inputs))
     }
 }
 
@@ -252,6 +279,24 @@ impl RuntimeResourceProvider for GpuRegionResourceProvider {
         Ok(())
     }
 
+    fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
+        self.preflight_write(RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri,
+            path: request.path.clone(),
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })?;
+        if let Some(name) = self.declared_input(&request.path) {
+            validated_gpu_input_values(
+                name,
+                request.value.try_deep_snapshot()?,
+                self.input_elements.as_ref(),
+            )?;
+        }
+        Ok(())
+    }
+
     fn prepare_write(
         &self,
         request: RuntimeResourceWriteRequest,
@@ -264,17 +309,11 @@ impl RuntimeResourceProvider for GpuRegionResourceProvider {
             intent: request.intent,
         })?;
         if let Some(name) = self.declared_input(&request.path).map(str::to_owned) {
-            let expected = self.input_elements[&name];
-            let values = gpu_input_values(request.value.try_deep_snapshot()?)?;
-            if values.len() != expected {
-                return Err(gpu_host_error(
-                    "GpuRegionHostWrite",
-                    format!(
-                        "GPU input `{name}` expects {expected} f32 values, found {}",
-                        values.len()
-                    ),
-                ));
-            }
+            let values = validated_gpu_input_values(
+                &name,
+                request.value.try_deep_snapshot()?,
+                self.input_elements.as_ref(),
+            )?;
             return Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
                 GpuRegionInputEffect {
                     resource: request.base_uri,
@@ -359,17 +398,15 @@ fn gpu_input_values(value: LegacyValue) -> MResult<Vec<f32>> {
         LegacyValue::Typed(value, _) => gpu_input_values(*value),
         LegacyValue::MutableReference(value) => gpu_input_values(value.borrow().clone()),
         LegacyValue::F32(value) => Ok(vec![*value.borrow()]),
+        LegacyValue::F64(value) => Ok(vec![*value.borrow() as f32]),
         LegacyValue::MatrixF32(matrix) => {
-            let rows = matrix.rows();
-            let columns = matrix.cols();
-            let column_major = matrix.as_vec();
-            let mut row_major = Vec::with_capacity(column_major.len());
-            for row in 0..rows {
-                for column in 0..columns {
-                    row_major.push(column_major[column * rows + row]);
-                }
-            }
-            Ok(row_major)
+            column_major_to_row_major(matrix.rows(), matrix.cols(), &matrix.as_vec())
+                .map_err(|reason| gpu_host_error("GpuRegionHostWrite", reason))
+        }
+        LegacyValue::MatrixF64(matrix) => {
+            column_major_to_row_major(matrix.rows(), matrix.cols(), &matrix.as_vec())
+                .map(|values| values.into_iter().map(|value| value as f32).collect())
+                .map_err(|reason| gpu_host_error("GpuRegionHostWrite", reason))
         }
         other => Err(gpu_host_error(
             "GpuRegionHostWrite",
@@ -379,6 +416,30 @@ fn gpu_input_values(value: LegacyValue) -> MResult<Vec<f32>> {
             ),
         )),
     }
+}
+
+fn validated_gpu_input_values(
+    name: &str,
+    value: LegacyValue,
+    input_elements: &BTreeMap<String, usize>,
+) -> MResult<Vec<f32>> {
+    let values = gpu_input_values(value)?;
+    let expected = input_elements.get(name).copied().ok_or_else(|| {
+        gpu_host_error(
+            "GpuRegionHostWrite",
+            format!("GPU region has no input named `{name}`"),
+        )
+    })?;
+    if values.len() != expected {
+        return Err(gpu_host_error(
+            "GpuRegionHostWrite",
+            format!(
+                "GPU input `{name}` expects {expected} f32 values, found {}",
+                values.len()
+            ),
+        ));
+    }
+    Ok(values)
 }
 
 #[derive(Debug)]
@@ -572,6 +633,8 @@ fn gpu_host_error(name: &'static str, message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{GpuBinding, GpuBindingAccess, GpuBindingKind};
+    use mech_core::CellSlotId;
 
     #[test]
     fn manifest_exposes_one_read_write_kernel_context() {
@@ -624,5 +687,54 @@ mod tests {
             gpu_input_values(value).unwrap(),
             vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         );
+    }
+
+    #[test]
+    fn region_program_preserves_source_initializers_in_kernel_layout() {
+        let program = GpuProgram {
+            wgsl: String::new(),
+            bindings: vec![GpuBinding {
+                binding: 0,
+                name: "matrix".to_owned(),
+                access: GpuBindingAccess::Read,
+                elements: 6,
+                kind: GpuBindingKind::Input(CellSlotId(0)),
+            }],
+            operations: Vec::new(),
+            outputs: Vec::new(),
+            states: Vec::new(),
+            input_slots: BTreeMap::new(),
+            constants: BTreeMap::new(),
+            dispatch_elements: 6,
+        };
+        let initializers = BTreeMap::from([(
+            "matrix".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 2,
+                columns: 3,
+                values: vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+            },
+        )]);
+
+        let prepared = GpuRegionProgram::from_initializers(program, &initializers).unwrap();
+        assert_eq!(
+            prepared.inputs["matrix"].as_slice(),
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        );
+    }
+
+    #[test]
+    fn gpu_input_planning_rejects_wrong_shapes_before_delivery() {
+        let inputs = BTreeMap::from([("matrix".to_owned(), 6)]);
+        let value = RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1.0, 3.0, 2.0, 4.0],
+        }
+        .into_mech_value()
+        .unwrap();
+
+        let error = validated_gpu_input_values("matrix", value, &inputs).unwrap_err();
+        assert!(format!("{error:?}").contains("expects 6 f32 values, found 4"));
     }
 }

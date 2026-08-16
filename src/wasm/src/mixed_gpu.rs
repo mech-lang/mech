@@ -7,7 +7,7 @@ use mech_core::{
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechCode,
     MechError, MechErrorKind, OperationContractDeclaration, Program, Ref, Section, SectionElement,
 };
-use mech_gpu::{GpuBindingRole, GpuHost, OwnedResidentCpuSession};
+use mech_gpu::{GpuBindingRole, GpuHost, OwnedResidentCpuSession, column_major_to_row_major};
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
     MechRuntime, PreparedRuntimeEffect, RuntimeAfterCommitEffect, RuntimeBuilder,
@@ -20,7 +20,7 @@ use mech_runtime::{
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
-use crate::gpu::{CompileTimings, column_major_to_row_major, gpu_program_manifest};
+use crate::gpu::{CompileTimings, gpu_program_manifest};
 
 const POINTER_PATHS: [&str; 5] = ["pulse", "x", "y", "pressed", "delta-seconds"];
 
@@ -327,7 +327,7 @@ fn compile_named_compute_region(
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .build_compiler()?;
     let catalog_setup = milliseconds(compiler_started);
-    let external_input_names = configured_compute_inputs(document, &configured.instance);
+    let external_input_names = configured_compute_inputs(document, tree, &configured.instance)?;
     let artifact_started = Instant::now();
     let (product, initial_inputs) = compiler.compile_tree_artifact_with_input_initializers(
         &isolated,
@@ -445,17 +445,27 @@ fn configured_compute_host(document: &MechConfigDocument) -> MResult<ConfiguredC
     })
 }
 
-fn configured_compute_inputs(document: &MechConfigDocument, instance: &str) -> BTreeSet<String> {
+fn configured_compute_inputs(
+    document: &MechConfigDocument,
+    tree: &Program,
+    instance: &str,
+) -> MResult<BTreeSet<String>> {
     let target = format!("{instance}/kernel");
-    document
+    let grants = document
         .run
-        .iter()
-        .flat_map(|run| &run.grants)
-        .filter(|grant| grant.target == target && grant.operations.iter().any(|op| op == "write"))
-        .flat_map(|grant| &grant.paths)
-        .filter_map(|path| path.strip_prefix("input/"))
-        .map(str::to_owned)
-        .collect()
+        .as_ref()
+        .map(|run| run.grants.as_slice())
+        .unwrap_or_default();
+    Ok(mech_runtime::granted_resource_paths_from_program(
+        tree,
+        &format!("compute://{target}"),
+        &target,
+        "write",
+        grants,
+    )?
+    .into_iter()
+    .filter_map(|path| path.strip_prefix("input/").map(str::to_owned))
+    .collect())
 }
 
 fn configured_host_instance(document: &MechConfigDocument, provider: &str) -> MResult<String> {
@@ -940,7 +950,11 @@ impl RuntimeResourceProvider for ComputeCommandResourceProvider {
             intent: request.intent,
         })?;
         if let Some(name) = request.path.strip_prefix("input/") {
-            validate_compute_input(name, &request.value, &self.handle.allowed_inputs)?;
+            validated_compute_input_values(
+                name,
+                request.value.try_deep_snapshot()?,
+                &self.handle.allowed_inputs,
+            )?;
         }
         Ok(())
     }
@@ -948,12 +962,23 @@ impl RuntimeResourceProvider for ComputeCommandResourceProvider {
         &self,
         request: RuntimeResourceWriteRequest,
     ) -> MResult<PreparedRuntimeEffect> {
-        self.plan_write(request.clone())?;
+        self.validate(&RuntimeResourceWritePreflightRequest {
+            base_uri: request.base_uri.clone(),
+            path: request.path.clone(),
+            context_name: request.context_name,
+            operation: request.operation,
+            intent: request.intent,
+        })?;
         let update = if request.path == "turn" {
             ComputeCommandUpdate::Dispatch
         } else {
             let name = request.path.trim_start_matches("input/").to_owned();
-            ComputeCommandUpdate::Input(name.clone(), compute_input_values(&request.value)?)
+            let values = validated_compute_input_values(
+                &name,
+                request.value.try_deep_snapshot()?,
+                &self.handle.allowed_inputs,
+            )?;
+            ComputeCommandUpdate::Input(name, values)
         };
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             ComputeCommandEffect {
@@ -965,30 +990,45 @@ impl RuntimeResourceProvider for ComputeCommandResourceProvider {
     }
 }
 
-fn validate_compute_input(
+fn validated_compute_input_values(
     name: &str,
-    value: &LegacyValue,
+    value: LegacyValue,
     allowed: &BTreeMap<String, usize>,
-) -> MResult<()> {
+) -> MResult<Vec<f32>> {
     let values = compute_input_values(value)?;
-    let expected = allowed[name];
+    let expected = allowed
+        .get(name)
+        .copied()
+        .ok_or_else(|| mixed_error(format!("compute region has no input named `{name}`")))?;
     if values.len() != expected {
         return Err(mixed_error(format!(
             "compute input `{name}` received {} values, expected {expected}",
             values.len()
         )));
     }
-    Ok(())
+    Ok(values)
 }
 
-fn compute_input_values(value: &LegacyValue) -> MResult<Vec<f32>> {
-    if let Ok(values) = value.as_vecf32() {
-        return Ok(values);
+fn compute_input_values(value: LegacyValue) -> MResult<Vec<f32>> {
+    match value {
+        LegacyValue::Typed(value, _) => compute_input_values(*value),
+        LegacyValue::MutableReference(value) => compute_input_values(value.borrow().clone()),
+        LegacyValue::F32(value) => Ok(vec![*value.borrow()]),
+        LegacyValue::F64(value) => Ok(vec![*value.borrow() as f32]),
+        LegacyValue::MatrixF32(matrix) => {
+            column_major_to_row_major(matrix.rows(), matrix.cols(), &matrix.as_vec())
+                .map_err(mixed_error)
+        }
+        LegacyValue::MatrixF64(matrix) => {
+            column_major_to_row_major(matrix.rows(), matrix.cols(), &matrix.as_vec())
+                .map(|values| values.into_iter().map(|value| value as f32).collect())
+                .map_err(mixed_error)
+        }
+        other => Err(mixed_error(format!(
+            "compute inputs must be f32/f64 scalars or matrices, found `{}`",
+            other.kind()
+        ))),
     }
-    value
-        .as_vecf64()
-        .map(|values| values.into_iter().map(|value| value as f32).collect())
-        .map_err(|failure| mixed_error(format!("compute inputs must be f32/f64 data: {failure:?}")))
 }
 
 #[derive(Debug)]
@@ -1138,6 +1178,45 @@ positions = next-positions
             column_major_to_row_major(2, 3, &[1.0, 4.0, 2.0, 5.0, 3.0, 6.0]).unwrap(),
             [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         );
+    }
+
+    #[test]
+    fn live_rectangular_compute_inputs_use_kernel_row_major_order() {
+        let value = RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 3,
+            values: vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+        }
+        .into_mech_value()
+        .unwrap();
+
+        assert_eq!(
+            compute_input_values(value).unwrap(),
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        );
+    }
+
+    #[test]
+    fn wildcard_config_grants_expand_to_source_declared_compute_inputs() {
+        let tree = mech_syntax::parse(SOURCE).unwrap();
+        for wildcard in ["*", "input/*"] {
+            let config = CONFIG.replace(
+                "[\"input/force-x\", \"input/force-y\", \"input/force-strength\", \"input/dt\", \"turn\"]",
+                &format!("[\"{wildcard}\"]"),
+            );
+            let document =
+                parse_config_document("test.mcfg", &config, ConfigProfileOptions::default())
+                    .unwrap();
+            assert_eq!(
+                configured_compute_inputs(&document, &tree, "particles").unwrap(),
+                BTreeSet::from([
+                    "dt".to_owned(),
+                    "force-strength".to_owned(),
+                    "force-x".to_owned(),
+                    "force-y".to_owned(),
+                ])
+            );
+        }
     }
 
     #[test]
