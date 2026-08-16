@@ -285,7 +285,10 @@ class CompactF0ContractTests(unittest.TestCase):
         gate_d2 = record["commands"][1]["arguments"]
         self.assertIn("--offline", gate_d2)
         self.assertNotIn("--locked", gate_d2)
-        self.assertEqual(gate_d2[gate_d2.index("--target-dir") + 1], "target")
+        self.assertEqual(
+            gate_d2[gate_d2.index("--target-dir") + 1],
+            "target/f0-d2-generator",
+        )
         gate_d3 = record["commands"][2]["arguments"]
         self.assertIn(
             "source_default,resident-routing-source,runtime_bench_gate_d3",
@@ -417,7 +420,10 @@ class CompactF0ContractTests(unittest.TestCase):
         ) as run:
             self.assertEqual(GATE_D.load_raw(None), completed.stdout)
         command = run.call_args.args[0]
-        self.assertEqual(command[command.index("--target-dir") + 1], "target")
+        self.assertEqual(
+            command[command.index("--target-dir") + 1],
+            "target/f0-d2-generator",
+        )
 
     def test_measurement_power_settings_select_only_the_active_source(self):
         output = """

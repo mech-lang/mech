@@ -155,7 +155,7 @@ def load_raw(path: Path | None) -> str:
             "--manifest-path",
             "tests/fixtures/d2-contract-generator/Cargo.toml",
             "--target-dir",
-            "target",
+            "target/f0-d2-generator",
             "--",
             "--gate-d-benchmark",
         ],
