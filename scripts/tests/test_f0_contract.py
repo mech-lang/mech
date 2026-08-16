@@ -135,6 +135,7 @@ class CompactF0ContractTests(unittest.TestCase):
                 "qualification_environment_id"
             ],
             "preconditioning": {"status": "Pass", "commands": []},
+            "cooldown": {"status": "Pass", "attempts": [{}]},
             "chains": chains,
         }
         return manifest, evidence, ledger
@@ -165,6 +166,16 @@ class CompactF0ContractTests(unittest.TestCase):
         self.assertTrue(
             any(
                 "became an evidence chain" in error
+                for error in CONTRACT.ledger_errors(ledger, evidence, manifest)
+            )
+        )
+
+    def test_failed_cooldown_cannot_be_hidden(self):
+        manifest, evidence, ledger = self.ledger()
+        ledger["cooldown"]["status"] = "Fail"
+        self.assertTrue(
+            any(
+                "cooldown did not pass" in error
                 for error in CONTRACT.ledger_errors(ledger, evidence, manifest)
             )
         )
@@ -304,6 +315,21 @@ class CompactF0ContractTests(unittest.TestCase):
         self.assertEqual(environment["OMP_NUM_THREADS"], "1")
         self.assertEqual(environment["RUSTUP_TOOLCHAIN"], "nightly-test")
         self.assertEqual(environment["PATH"], "/bin")
+
+    def test_pre_chain_cooldown_waits_until_conditions_are_nominal(self):
+        with mock.patch.object(
+            RUNNER, "conditions", side_effect=[{"thermal": "fair"}, {"thermal": "nominal"}]
+        ), mock.patch.object(
+            RUNNER,
+            "measurement_conditions_error",
+            side_effect=["thermal state is not nominal", None],
+        ), mock.patch.object(RUNNER.time, "sleep") as sleep:
+            record = RUNNER.wait_for_measurement_conditions(
+                {}, timeout_seconds=60, poll_seconds=10
+            )
+        self.assertEqual(record["status"], "Pass")
+        self.assertEqual(len(record["attempts"]), 2)
+        sleep.assert_called_once_with(10)
 
     def test_label_dispatch_identity_is_exact_pr_head_bound(self):
         head = "1" * 40

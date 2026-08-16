@@ -68,6 +68,10 @@ default branch, manual dispatch retains its exact branch/workflow SHA checks.
 The session ledger is created before environment verification and retained on
 success or failure. Untimed preparation may record commands and logs, but may
 not produce reports or masquerade as a fourth evidence chain.
+After untimed preparation, the runner performs a bounded pre-chain cooldown:
+it retains power and thermal snapshots every ten seconds for at most ten
+minutes, and starts Chain 1 only after the frozen measurement conditions are
+nominal. Cooldown attempts are not evidence chains; failure to cool is fatal.
 
 ## Lifecycle
 

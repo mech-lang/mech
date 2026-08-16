@@ -8,6 +8,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -182,6 +183,40 @@ def run_preconditioning(
             return record
     record.update({"status": "Pass", "finished_at_utc": now()})
     return record
+
+
+def wait_for_measurement_conditions(
+    policy: dict, *, timeout_seconds: int = 600, poll_seconds: int = 10
+) -> dict:
+    """Retain bounded pre-chain cooling checks without creating evidence chains."""
+    started = time.monotonic()
+    record = {
+        "status": "running",
+        "started_at_utc": now(),
+        "timeout_seconds": timeout_seconds,
+        "poll_seconds": poll_seconds,
+        "attempts": [],
+    }
+    while True:
+        snapshot = conditions()
+        error = measurement_conditions_error(snapshot, policy)
+        record["attempts"].append(
+            {"observed_at_utc": now(), "conditions": snapshot, "error": error}
+        )
+        if error is None:
+            record.update({"status": "Pass", "finished_at_utc": now()})
+            return record
+        elapsed = time.monotonic() - started
+        if elapsed >= timeout_seconds:
+            record.update(
+                {
+                    "status": "Fail",
+                    "error": f"measurement conditions did not become nominal: {error}",
+                    "finished_at_utc": now(),
+                }
+            )
+            return record
+        time.sleep(min(poll_seconds, max(0.0, timeout_seconds - elapsed)))
 
 
 def report_record(path: Path, phase: str, logical_path: str) -> dict:
@@ -679,6 +714,14 @@ def main(argv: list[str] | None = None) -> int:
             f"F0 preconditioning failed: {preconditioning.get('error')}",
             file=sys.stderr,
         )
+        return 3
+    cooldown = wait_for_measurement_conditions(lock["measurement_conditions"])
+    ledger["cooldown"] = cooldown
+    write_json(ledger_path, ledger)
+    if cooldown["status"] != "Pass":
+        ledger.update({"status": "Fail", "finished_at_utc": now()})
+        write_json(ledger_path, ledger)
+        print(f"F0 cooldown failed: {cooldown.get('error')}", file=sys.stderr)
         return 3
     for chain_id in RECORDED_CHAINS:
         context = context_for(

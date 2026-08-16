@@ -956,6 +956,16 @@ def ledger_errors(
         errors.append("F0 untimed preconditioning did not pass")
     elif "reports" in preconditioning or "chain_id" in preconditioning:
         errors.append("F0 preconditioning became an evidence chain")
+    cooldown = ledger.get("cooldown")
+    if not isinstance(cooldown, dict) or cooldown.get("status") != "Pass":
+        errors.append("F0 pre-chain cooldown did not pass")
+    elif (
+        not isinstance(cooldown.get("attempts"), list)
+        or not cooldown["attempts"]
+        or "reports" in cooldown
+        or "chain_id" in cooldown
+    ):
+        errors.append("F0 pre-chain cooldown evidence is malformed")
     chains = ledger.get("chains")
     if not isinstance(chains, list) or [row.get("chain_id") for row in chains] != list(
         RECORDED_CHAINS
