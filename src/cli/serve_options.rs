@@ -37,7 +37,11 @@ impl ServeCliArgs {
                 .collect(),
             shim: matches.get_one::<String>("shim").cloned(),
             wasm: matches.get_one::<String>("wasm").cloned(),
-            backend: matches.get_one::<String>("backend").cloned(),
+            backend: matches
+                .try_get_one::<String>("backend")
+                .ok()
+                .flatten()
+                .cloned(),
         }
     }
 }

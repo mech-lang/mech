@@ -43,13 +43,7 @@ fn executor_error(operation: &'static str, reason: impl Into<String>) -> MechErr
 }
 
 pub(crate) fn configured_executor(plan: &RunExecutionPlan) -> Option<&RunExecutorConfig> {
-    plan.loaded_config
-        .as_ref()?
-        .document
-        .run
-        .as_ref()?
-        .executor
-        .as_ref()
+    plan.configured_executor.as_ref()
 }
 
 pub(crate) struct ConfiguredGpuHost {

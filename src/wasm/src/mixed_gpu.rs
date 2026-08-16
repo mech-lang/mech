@@ -126,9 +126,9 @@ impl WasmMixedComputeProject {
             }
         }
         let mut runtime = builder.build().map_err(js_error)?;
-        let durability = runtime.config().program_routing.resident_durability;
+        let durability = runtime.config().resident_durability;
         runtime
-            .load_production_tree_program(&cpu_projection_tree(&tree), durability)
+            .load_tree_program(&cpu_projection_tree(&tree), durability)
             .map_err(js_error)?;
 
         Ok(Self {
@@ -1048,10 +1048,7 @@ mod tests {
     const CONFIG: &str = r#"
 config := {
   runtime: {
-    program-routing: {
-      resident-routing: "require-resident"
-      resident-durability: "volatile"
-    }
+    resident-durability: "volatile"
   }
   hosts: [
     { name: "cursor" provider: "pointer" settings: {} }
@@ -1182,9 +1179,9 @@ positions = next-positions
             builder = builder.run_resource_grant(grant.clone());
         }
         let mut runtime = builder.build().unwrap();
-        let durability = runtime.config().program_routing.resident_durability;
+        let durability = runtime.config().resident_durability;
         runtime
-            .load_production_tree_program(&cpu_projection_tree(&tree), durability)
+            .load_tree_program(&cpu_projection_tree(&tree), durability)
             .unwrap();
         runtime.start_input_drivers().unwrap();
         pointer.submit(0.25, -0.5, true, 1.0 / 60.0).unwrap();

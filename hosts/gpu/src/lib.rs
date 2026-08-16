@@ -760,6 +760,9 @@ impl<'a> Compiler<'a> {
             );
         }
         for slot in self.artifact.slots() {
+            if slot.role == SlotRole::Output {
+                continue;
+            }
             if self.is_composite_pack_slot(slot.slot) {
                 continue;
             }
@@ -782,7 +785,7 @@ impl<'a> Compiler<'a> {
                             }
                             Err((code, detail)) => self.reject(
                                 code,
-                                producer_node(slot.producer),
+                                producer_node(self.artifact, slot.producer),
                                 None,
                                 format!("state slot {}: {detail}", slot.slot.get()),
                             ),
@@ -791,7 +794,7 @@ impl<'a> Compiler<'a> {
                 }
                 Err((code, detail)) => self.reject(
                     code,
-                    producer_node(slot.producer),
+                    producer_node(self.artifact, slot.producer),
                     None,
                     format!("slot {}: {detail}", slot.slot.get()),
                 ),
@@ -818,7 +821,12 @@ impl<'a> Compiler<'a> {
                 }
             }
         }
-        required_slots.extend(self.artifact.outputs().iter().map(|output| output.source));
+        required_slots.extend(self.artifact.outputs().iter().filter_map(|output| {
+            match published_source(self.artifact, output.source) {
+                ArtifactSource::Constant(_) => None,
+                ArtifactSource::Slot(slot) => Some(slot),
+            }
+        }));
         for input in self.artifact.inputs() {
             if !required_slots.contains(&input.slot) {
                 continue;
@@ -1076,7 +1084,10 @@ impl<'a> Compiler<'a> {
             if self.state_slots[&slot].source.is_none() {
                 self.reject(
                     GpuDiagnosticCode::ArtifactMalformed,
-                    producer_node(self.artifact.slots()[slot.get() as usize].producer),
+                    producer_node(
+                        self.artifact,
+                        self.artifact.slots()[slot.get() as usize].producer,
+                    ),
                     None,
                     format!("state slot {} has no admitted producer", slot.get()),
                 );
@@ -1098,9 +1109,13 @@ impl<'a> Compiler<'a> {
     fn lower_outputs(&mut self) {
         let outputs = self.artifact.outputs().to_vec();
         for output in outputs {
+            let source = published_source(self.artifact, output.source);
             let physical = self
                 .composite_packs
-                .get(&output.source)
+                .get(&match source {
+                    ArtifactSource::Slot(slot) => slot,
+                    ArtifactSource::Constant(_) => output.source,
+                })
                 .map(|sources| {
                     sources
                         .iter()
@@ -1108,9 +1123,7 @@ impl<'a> Compiler<'a> {
                         .map(|(index, source)| (format!("{}.{index}", output.name), *source))
                         .collect::<Vec<_>>()
                 })
-                .unwrap_or_else(|| {
-                    vec![(output.name.clone(), ArtifactSource::Slot(output.source))]
-                });
+                .unwrap_or_else(|| vec![(output.name.clone(), source)]);
             for (name, source) in physical {
                 let ArtifactSource::Slot(source) = source else {
                     self.reject(
@@ -1617,15 +1630,34 @@ fn visit_turn_source(
     if declaration.role == SlotRole::State {
         return;
     }
-    if let ProducerReference::NodeOutput { node, .. } = declaration.producer {
-        visit_turn_node(artifact, node, required);
+    match declaration.producer {
+        ProducerReference::Input(_) => {}
+        ProducerReference::NodeOutput { node, .. } => visit_turn_node(artifact, node, required),
+        ProducerReference::Output { source, .. } => visit_turn_source(artifact, source, required),
     }
 }
 
-fn producer_node(producer: mech_engine::ProducerReference) -> Option<NodeId> {
+fn producer_node(
+    artifact: &ProgramArtifact,
+    producer: mech_engine::ProducerReference,
+) -> Option<NodeId> {
     match producer {
         mech_engine::ProducerReference::Input(_) => None,
         mech_engine::ProducerReference::NodeOutput { node, .. } => Some(node),
+        mech_engine::ProducerReference::Output { source, .. } => match source {
+            ArtifactSource::Constant(_) => None,
+            ArtifactSource::Slot(slot) => artifact
+                .slots()
+                .get(slot.get() as usize)
+                .and_then(|slot| producer_node(artifact, slot.producer)),
+        },
+    }
+}
+
+fn published_source(artifact: &ProgramArtifact, slot: CellSlotId) -> ArtifactSource {
+    match artifact.slots()[slot.get() as usize].producer {
+        ProducerReference::Output { source, .. } => source,
+        _ => ArtifactSource::Slot(slot),
     }
 }
 

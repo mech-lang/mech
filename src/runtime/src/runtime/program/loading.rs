@@ -106,9 +106,9 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
-    /// Plans and loads an already parsed Mech program through the production
-    /// resident route. This entry point never falls back to legacy execution.
-    pub fn load_production_tree_program(
+    /// Plans and loads an already parsed Mech program through the resident
+    /// route. This entry point never falls back to another executor.
+    pub fn load_tree_program(
         &mut self,
         tree: &mech_core::Program,
         durability: crate::ResidentDurabilityPolicy,
