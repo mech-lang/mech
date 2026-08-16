@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "protocol_version": "mech-v0.4-f0-qualification-v1",
+  "product_subject": {
+    "commit": "6c0923339e4b1a7d47f9b109135059487e6919ae",
+    "tree": "39125894b400e2960b6ecf188682d4289435e629",
+    "guard": "tests/architecture/qualification/f0-product-tree.json"
+  },
+  "protocol": {
+    "commit": null,
+    "tree": null,
+    "contract": "scripts/f0_contract.py"
+  },
+  "environment": {
+    "toolchain_lock": "tests/architecture/qualification/f0-measurement-toolchain.json",
+    "toolchain_lock_sha256": "3b8b2e1ef224d5cac378ce5fb57f10853224b42a9ccc1ee8e890f2a6e6b35cc6",
+    "qualification_environment_id": null
+  },
+  "replication_rule": {
+    "recorded_chains": [
+      "chain-1",
+      "chain-2",
+      "chain-3"
+    ],
+    "phase_order": [
+      "B2",
+      "D2",
+      "D3"
+    ],
+    "canonical_chain": "chain-1",
+    "retain_every_chain": true,
+    "replace_failed_chain": false
+  },
+  "evidence": null,
+  "closeout": null
+}
