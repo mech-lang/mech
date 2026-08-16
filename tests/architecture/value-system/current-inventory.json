@@ -419,6 +419,7 @@
     "src/engine/src/mechdown.rs",
     "src/engine/src/patterns.rs",
     "src/engine/src/program/compiler_planning.rs",
+    "src/engine/src/program/document_outputs.rs",
     "src/engine/src/program/mod.rs",
     "src/engine/src/program/state.rs",
     "src/engine/src/resident/activation.rs",
@@ -2439,6 +2440,7 @@
     "src/engine/src/program/bytecode_plan_topology_tests.rs",
     "src/engine/src/program/compiler_planning.rs",
     "src/engine/src/program/context_binding_tests.rs",
+    "src/engine/src/program/document_outputs.rs",
     "src/engine/src/program/mod.rs",
     "src/engine/src/program/state.rs",
     "src/engine/src/resident/activation.rs",
@@ -6684,17 +6686,17 @@
           {
             "column": 39,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 513
+            "line": 533
           },
           {
             "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 554
+            "line": 574
           },
           {
             "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 559
+            "line": 579
           }
         ]
       },
@@ -12814,17 +12816,17 @@
           {
             "column": 26,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 513
+            "line": 533
           },
           {
             "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 554
+            "line": 574
           },
           {
             "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 559
+            "line": 579
           }
         ]
       },
@@ -18455,7 +18457,7 @@
     {
       "column": 59,
       "enum": "LegacyValue",
-      "line": 577,
+      "line": 597,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Bool"
     },
@@ -19645,21 +19647,21 @@
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 549,
+      "line": 569,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Empty"
     },
     {
       "column": 28,
       "enum": "LegacyValue",
-      "line": 555,
+      "line": 575,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Empty"
     },
     {
       "column": 28,
       "enum": "LegacyValue",
-      "line": 560,
+      "line": 580,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Empty"
     },
@@ -46021,21 +46023,21 @@
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 513,
+      "line": 533,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "MutableReference"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 554,
+      "line": 574,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "MutableReference"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 559,
+      "line": 579,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "MutableReference"
     },
@@ -47939,56 +47941,56 @@
     {
       "column": 24,
       "enum": "LegacyValue",
-      "line": 516,
+      "line": 536,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 517,
+      "line": 537,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 520,
+      "line": 540,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 523,
+      "line": 543,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 526,
+      "line": 546,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 529,
+      "line": 549,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 532,
+      "line": 552,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 535,
+      "line": 555,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
@@ -60759,7 +60761,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 862
+      "rust_file_count": 863
     },
     {
       "directory": "hosts/browser",
@@ -60831,7 +60833,7 @@
       "directory": "src/engine",
       "manifest": "src/engine/Cargo.toml",
       "name": "mech-engine",
-      "rust_file_count": 155
+      "rust_file_count": 156
     },
     {
       "directory": "src/runtime",
