@@ -92,7 +92,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("github.event.label.name == 'f0-controlled'", F0_CONTROLLED)
         exact_ref = "${{ github.event.pull_request.head.sha || github.sha }}"
         self.assertEqual(F0_CONTROLLED.count(exact_ref), 3)
-        self.assertIn("workflow-context.txt", F0_CONTROLLED)
+        self.assertIn("target/f0-workflow-context", F0_CONTROLLED)
+        self.assertIn("target/f0-evidence/${{ env.F0_VALIDATION_REF }}", F0_CONTROLLED)
         self.assertIn('test "${F0_VALIDATION_BRANCH}" =', F0_CONTROLLED)
 
     def test_function_system_job_provisions_ripgrep_for_both_slices(self):

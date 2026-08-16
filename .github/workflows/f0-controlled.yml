@@ -50,14 +50,14 @@ jobs:
       - name: Initialize failure-retention context
         shell: bash
         run: |
-          evidence_root="target/f0-evidence/${F0_VALIDATION_REF}"
-          mkdir -p "${evidence_root}"
+          context_root="target/f0-workflow-context"
+          mkdir -p "${context_root}"
           printf '%s\n' \
             "workflow_run_id=${GITHUB_RUN_ID}" \
             "workflow_run_attempt=${GITHUB_RUN_ATTEMPT}" \
             "validation_branch=${F0_VALIDATION_BRANCH}" \
             "validation_ref=${F0_VALIDATION_REF}" \
-            >"${evidence_root}/workflow-context.txt"
+            >"${context_root}/${F0_VALIDATION_REF}.txt"
       - name: Bind measurement to a clean exact-head branch
         shell: bash
         run: |
@@ -93,5 +93,7 @@ jobs:
         with:
           if-no-files-found: error
           name: f0-evidence-${{ env.F0_VALIDATION_REF }}-${{ github.run_attempt }}
-          path: target/f0-evidence/${{ env.F0_VALIDATION_REF }}
+          path: |
+            target/f0-evidence/${{ env.F0_VALIDATION_REF }}
+            target/f0-workflow-context/${{ env.F0_VALIDATION_REF }}.txt
           retention-days: 90
