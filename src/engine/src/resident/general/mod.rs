@@ -2215,6 +2215,7 @@ fn build_topology(
 ) -> Result<DependencyTopology, ResidentActivationError> {
     let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); steps.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
+    let mut direct_input_consumers = Vec::<ActivatedNodeIndex>::new();
     for node in artifact.nodes() {
         if !matches!(
             classes[node.node.get() as usize],
@@ -2228,6 +2229,16 @@ fn build_topology(
                 continue;
             };
             let slot = &artifact.slots()[slot_id.get() as usize];
+            let reads_turn_input = match slot.producer {
+                ProducerReference::Input(_) => true,
+                ProducerReference::NodeOutput { node, .. } => {
+                    classes[node.get() as usize] == NodeClass::Observation
+                }
+                ProducerReference::Output { .. } => false,
+            };
+            if reads_turn_input && !direct_input_consumers.contains(&current) {
+                direct_input_consumers.push(current);
+            }
             let parent = if slot.role == SlotRole::State {
                 latest_state_writer.get(&slot_id).copied()
             } else {
@@ -2258,12 +2269,18 @@ fn build_topology(
             indegree[child.get() as usize] += 1;
         }
     }
-    let roots = indegree
+    let mut roots = indegree
         .iter()
         .enumerate()
         .filter(|(_, degree)| **degree == 0)
         .map(|(index, _)| ActivatedNodeIndex(index as u32))
         .collect::<Vec<_>>();
+    for consumer in direct_input_consumers {
+        if !roots.contains(&consumer) {
+            roots.push(consumer);
+        }
+    }
+    roots.sort_by_key(|node| node.get());
     let order_source = downstream
         .iter()
         .map(|children| {

@@ -2189,6 +2189,140 @@ mod tests {
         validate_served_authority(&document, &authority).unwrap();
     }
 
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    #[derive(Debug)]
+    struct TestManualTimeHostFactory {
+        manifest: mech_runtime::HostManifestConfig,
+        snapshot: mech_time::SharedTimeSnapshot,
+        driver: mech_time::ManualTimeInputDriver,
+    }
+
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    impl TestManualTimeHostFactory {
+        fn new() -> Self {
+            let snapshot = mech_time::new_shared_snapshot(mech_time::TimeSnapshot::default());
+            Self {
+                manifest: mech_time::time_host_manifest().unwrap(),
+                driver: mech_time::ManualTimeInputDriver::new("clock", snapshot.clone()),
+                snapshot,
+            }
+        }
+    }
+
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    impl mech_runtime::RuntimeHostFactory for TestManualTimeHostFactory {
+        fn provider_name(&self) -> &str {
+            "time"
+        }
+
+        fn manifest(&self) -> &mech_runtime::HostManifestConfig {
+            &self.manifest
+        }
+
+        fn validate_settings(
+            &self,
+            _instance_name: &str,
+            settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<()> {
+            mech_time::time_settings_from_config(settings).map(|_| ())
+        }
+
+        fn instantiate(
+            &self,
+            instance_name: &str,
+            _settings: &mech_runtime::ConfigValue,
+        ) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
+            assert_eq!(instance_name, "clock");
+            Ok(mech_runtime::RuntimeHostInstallation {
+                interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
+                resource_providers: vec![Box::new(mech_time::TimeResourceProvider::new(
+                    instance_name,
+                    self.snapshot.clone(),
+                ))],
+                input_drivers: vec![Box::new(self.driver.clone())],
+            })
+        }
+    }
+
+    #[cfg(all(
+        feature = "browser_host_time",
+        feature = "browser_host_console",
+        feature = "browser_host_scene"
+    ))]
+    #[test]
+    fn analog_clock_scene_advances_on_every_resident_time_packet() {
+        let document = parse_config_document(
+            "examples/analog-clock/mech.mcfg",
+            include_str!("../../../examples/analog-clock/mech.mcfg"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let source = include_str!("../../../examples/analog-clock/clock.mec").to_string();
+        let sources = HashMap::from([("clock.mec".to_string(), source)]);
+        let time_factory = TestManualTimeHostFactory::new();
+        let time_driver = time_factory.driver.clone();
+        let scene_backend = mech_scene::RecordingSceneBackend::new();
+        let mut builder = browser_runtime_builder()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .host_input_capacity(16)
+            .host_factory(Box::new(time_factory))
+            .unwrap()
+            .host_factory(Box::new(
+                mech_console::ConsoleHostFactory::with_backend(
+                    mech_console::RecordingConsoleBackend::new(),
+                )
+                .unwrap(),
+            ))
+            .unwrap()
+            .host_factory(Box::new(
+                mech_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap(),
+            ))
+            .unwrap();
+        for host in &document.hosts {
+            builder = builder.host_instance(host.clone());
+        }
+        for grant in &document.run.as_ref().unwrap().grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+        let mut runtime = builder.build().unwrap();
+        run_project_sources(&mut runtime, &document).unwrap();
+        runtime.start_input_drivers().unwrap();
+
+        let rotation = |snapshot: &mech_scene::SceneSnapshot| {
+            snapshot
+                .lines
+                .iter()
+                .find(|line| line.id == "clock-second-hand")
+                .unwrap()
+                .rotation
+        };
+        for second in 1..=3 {
+            time_driver
+                .publish(mech_time::TimeSnapshot {
+                    second: f64::from(second),
+                    ..Default::default()
+                })
+                .unwrap();
+            runtime.drain_host_inputs(1).unwrap();
+            let scene = scene_backend.latest().unwrap();
+            assert_eq!(rotation(&scene), f64::from(second) * 6.0);
+        }
+        assert_eq!(runtime.program_execution_info().resident_accepted_turns, 3);
+        assert_eq!(scene_backend.generation(), 3);
+    }
+
     #[test]
     fn unsupported_generic_table_project_fails_closed_without_legacy_execution() {
         let document = parse_config_document(
