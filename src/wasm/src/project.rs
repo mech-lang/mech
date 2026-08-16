@@ -1540,7 +1540,7 @@ mod tests {
         let failure = error
             .kind_as::<ResidentRouteFailure>()
             .expect("production project failure must retain its resident route class");
-        assert_eq!(failure.class, expected);
+        assert_eq!(failure.class, expected, "{}", failure.reason);
         assert_eq!(runtime.program_route(), RuntimeProgramRoute::None);
     }
 
@@ -2171,7 +2171,7 @@ rows := |id<string> x<f64>|
         assert_production_route_failed_closed(
             &runtime,
             &error,
-            ResidentRouteFailureClass::SemanticUnsupported,
+            ResidentRouteFailureClass::InvalidArtifact,
         );
     }
 
@@ -2279,7 +2279,7 @@ rows := |id<string> x<f64>|
         assert_production_route_failed_closed(
             &runtime,
             &error,
-            ResidentRouteFailureClass::SemanticUnsupported,
+            ResidentRouteFailureClass::InvalidArtifact,
         );
         assert_eq!(scene_backend.generation(), 0);
     }

@@ -242,13 +242,7 @@ fn print_value(value: &RuntimeValueSnapshot) {
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
-    if plan
-        .loaded_config
-        .as_ref()
-        .and_then(|config| config.document.run.as_ref())
-        .and_then(|run| run.executor.as_ref())
-        .is_some()
-    {
+    if plan.configured_executor.is_some() {
         #[cfg(feature = "gpu_executor_native")]
         return crate::cli::executor::run(&plan);
         #[cfg(not(feature = "gpu_executor_native"))]
@@ -323,7 +317,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
                 enforce_production_resident_target_shape(&targets)?;
                 if let Some(cpu_tree) = gpu_cpu_tree.as_ref() {
                     runtime
-                        .load_production_tree_program(cpu_tree, plan.resident_durability)
+                        .load_tree_program(cpu_tree, plan.resident_durability)
                         .map(|outcome| outcome.initial_value)
                 } else {
                     let canonical_target = targets[0].canonicalize().map_err(|error| {

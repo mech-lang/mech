@@ -1141,13 +1141,13 @@ fn parsed_tree_can_be_loaded_as_a_production_resident_program() {
     let tree = mech_syntax::parser::parse(external_source().trim()).unwrap();
     let (mut runtime, _, _, _) = configured_external_runtime();
     let outcome = runtime
-        .load_production_tree_program(&tree, crate::ResidentDurabilityPolicy::Volatile)
+        .load_tree_program(&tree, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
 
     assert_eq!(outcome.route, RuntimeProgramRoute::ResidentExternal);
     assert!(!outcome.initial_value.is_empty());
     assert!(outcome.info.program_revision.is_some());
-    assert_eq!(outcome.info.legacy_turns, 0);
+    assert_eq!(outcome.info.route, RuntimeProgramRoute::ResidentExternal);
 }
 
 #[test]

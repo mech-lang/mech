@@ -547,6 +547,10 @@ fn producer_target(
     match artifact.slots()[slot.get() as usize].producer {
         ProducerReference::Input(_) => ExecutionTarget::Cpu,
         ProducerReference::NodeOutput { node, .. } => placements[node.get() as usize].target,
+        ProducerReference::Output { source, .. } => match source {
+            ArtifactSource::Constant(_) => ExecutionTarget::Cpu,
+            ArtifactSource::Slot(source) => producer_target(artifact, placements, source),
+        },
     }
 }
 
@@ -566,9 +570,17 @@ fn slot_consumers(artifact: &ProgramArtifact) -> BTreeMap<CellSlotId, Vec<NodeId
 }
 
 fn physical_output_sources(artifact: &ProgramArtifact, slot: CellSlotId) -> Vec<CellSlotId> {
-    let ProducerReference::NodeOutput { node, .. } = artifact.slots()[slot.get() as usize].producer
-    else {
-        return vec![slot];
+    let node = match artifact.slots()[slot.get() as usize].producer {
+        ProducerReference::Output {
+            source: ArtifactSource::Slot(source),
+            ..
+        } => return physical_output_sources(artifact, source),
+        ProducerReference::Output {
+            source: ArtifactSource::Constant(_),
+            ..
+        }
+        | ProducerReference::Input(_) => return vec![slot],
+        ProducerReference::NodeOutput { node, .. } => node,
     };
     let producer = &artifact.nodes()[node.get() as usize];
     if producer.operation.module_path.as_ref() != ["core"]

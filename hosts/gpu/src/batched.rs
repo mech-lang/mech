@@ -1419,6 +1419,12 @@ impl<'a> BatchCompiler<'a> {
 
     fn collect_slots(&mut self) {
         for slot in self.artifact.slots() {
+            // E3 gives public outputs dedicated publication slots. Batched
+            // kernels operate on the underlying numeric graph and persistent
+            // state, so the output aliases are not registers of their own.
+            if slot.role == SlotRole::Output {
+                continue;
+            }
             if let ProducerReference::NodeOutput { node, .. } = slot.producer {
                 let producer = &self.artifact.nodes()[node.get() as usize].operation;
                 if producer.module_path.as_ref() == ["core"]

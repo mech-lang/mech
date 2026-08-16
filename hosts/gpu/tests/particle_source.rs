@@ -698,7 +698,7 @@ fn resident_cpu_advances_artifact_state_without_host_feedback() {
 #[test]
 fn unsupported_program_reports_why_instead_of_falling_back() {
     let artifact = compile_source(
-        "answer := left / right",
+        "answer := left ^ right",
         [
             ("left", LegacyValue::F32(Ref::new(1.0))),
             ("right", LegacyValue::F32(Ref::new(2.0))),
@@ -706,7 +706,7 @@ fn unsupported_program_reports_why_instead_of_falling_back() {
     );
     let error = GpuHost
         .compile(&artifact)
-        .expect_err("division is outside the first GPU capability set");
+        .expect_err("power is outside the first GPU capability set");
 
     assert!(error.diagnostics().iter().any(|diagnostic| {
         matches!(
@@ -718,21 +718,18 @@ fn unsupported_program_reports_why_instead_of_falling_back() {
     let placement = GpuHost.plan(&artifact);
     assert!(!placement.fully_accelerated);
     assert!(placement.nodes.iter().any(|node| {
-        node.target == ExecutionTarget::Cpu
-            && node
-                .reason
-                .contains("contract does not prove pure full-write execution")
+        node.target == ExecutionTarget::Cpu && node.reason.contains("has no GPU lowering")
     }));
 }
 
 #[test]
 fn mixed_graph_reports_gpu_regions_and_cpu_transfer_boundaries() {
     let artifact = compile_source(
-        "sum := left + right\nquotient := sum / divisor\nresult := quotient * scale\nresult",
+        "sum := left + right\npowered := sum ^ exponent\nresult := powered * scale\nresult",
         [
             ("left", LegacyValue::F32(Ref::new(1.0))),
             ("right", LegacyValue::F32(Ref::new(2.0))),
-            ("divisor", LegacyValue::F32(Ref::new(3.0))),
+            ("exponent", LegacyValue::F32(Ref::new(3.0))),
             ("scale", LegacyValue::F32(Ref::new(4.0))),
         ],
     );
