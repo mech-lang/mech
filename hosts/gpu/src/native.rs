@@ -15,6 +15,7 @@ pub enum GpuExecutionError {
     AdapterUnavailable,
     DeviceRequest(String),
     MissingInput(String),
+    UnknownInput(String),
     InputLength {
         name: String,
         expected: u64,
@@ -54,6 +55,7 @@ pub struct ResidentGpuSession {
     queue: wgpu::Queue,
     pipeline: wgpu::ComputePipeline,
     bind_groups: [wgpu::BindGroup; 2],
+    input_buffers: BTreeMap<String, (Arc<wgpu::Buffer>, u64)>,
     output_buffers: [BTreeMap<String, Arc<wgpu::Buffer>>; 2],
     output_elements: BTreeMap<String, u64>,
     workgroups: u32,
@@ -346,6 +348,7 @@ impl GpuProgram {
 
         let mut state_buffers = BTreeMap::new();
         let mut fixed_buffers = BTreeMap::new();
+        let mut input_buffers = BTreeMap::new();
         for state in &self.states {
             let initial = Arc::new(
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -376,16 +379,15 @@ impl GpuProgram {
                     actual: values.len(),
                 });
             }
-            fixed_buffers.insert(
-                binding.binding,
-                Arc::new(
-                    device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                        label: Some(&binding.name),
-                        contents: bytemuck::cast_slice(values),
-                        usage: wgpu::BufferUsages::STORAGE,
-                    }),
-                ),
+            let buffer = Arc::new(
+                device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some(&binding.name),
+                    contents: bytemuck::cast_slice(values),
+                    usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+                }),
             );
+            fixed_buffers.insert(binding.binding, buffer.clone());
+            input_buffers.insert(binding.name.clone(), (buffer, binding.elements));
         }
 
         let mut group_buffers: [Vec<Arc<wgpu::Buffer>>; 2] = [Vec::new(), Vec::new()];
@@ -489,6 +491,7 @@ impl GpuProgram {
             queue,
             pipeline,
             bind_groups,
+            input_buffers,
             output_buffers,
             output_elements,
             workgroups,
@@ -501,6 +504,26 @@ impl GpuProgram {
 impl ResidentGpuSession {
     pub fn adapter(&self) -> &str {
         &self.adapter
+    }
+
+    /// Replaces one declared resident input without rebuilding the pipeline or
+    /// resetting feedback state. Queue ordering makes the upload visible to the
+    /// next dispatch submitted through this session.
+    pub fn update_input(&self, name: &str, values: &[f32]) -> Result<(), GpuExecutionError> {
+        let (buffer, expected) = self
+            .input_buffers
+            .get(name)
+            .ok_or_else(|| GpuExecutionError::UnknownInput(name.to_owned()))?;
+        if values.len() != *expected as usize {
+            return Err(GpuExecutionError::InputLength {
+                name: name.to_owned(),
+                expected: *expected,
+                actual: values.len(),
+            });
+        }
+        self.queue
+            .write_buffer(buffer, 0, bytemuck::cast_slice(values));
+        Ok(())
     }
 
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<Duration, GpuExecutionError> {

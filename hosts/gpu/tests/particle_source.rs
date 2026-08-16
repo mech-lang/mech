@@ -671,6 +671,54 @@ fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
     assert_close(&gpu.outputs["result.1"], &expected["result.1"]);
 }
 
+#[cfg(feature = "native")]
+#[test]
+fn resident_gpu_accepts_new_inputs_without_resetting_state() {
+    let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
+    let artifact = compile_isolated_gpu_source(&source);
+    let program = GpuHost
+        .compile(&artifact)
+        .expect("served particle source must be admitted");
+    let initial = BTreeMap::from([
+        ("force-x".to_owned(), vec![0.0]),
+        ("force-y".to_owned(), vec![0.0]),
+        ("force-strength".to_owned(), vec![0.0]),
+        ("dt".to_owned(), vec![0.016]),
+    ]);
+    let changed = BTreeMap::from([
+        ("force-x".to_owned(), vec![0.7]),
+        ("force-y".to_owned(), vec![0.6]),
+        ("force-strength".to_owned(), vec![1.25]),
+    ]);
+
+    let mut cpu = program
+        .prepare_cpu(&initial)
+        .expect("CPU reference must prepare");
+    cpu.dispatch_turns(30).expect("initial CPU turns must run");
+    cpu.update_inputs(&changed)
+        .expect("CPU inputs must update in place");
+    cpu.dispatch_turns(30).expect("updated CPU turns must run");
+    let expected = cpu.outputs().expect("CPU outputs must read");
+
+    let mut resident = match program.prepare_resident(&initial) {
+        Ok(resident) => resident,
+        Err(mech_gpu::GpuExecutionError::AdapterUnavailable) => return,
+        Err(error) => panic!("resident GPU preparation failed: {error}"),
+    };
+    resident
+        .dispatch_turns(30)
+        .expect("initial GPU turns must run");
+    for (name, values) in &changed {
+        resident
+            .update_input(name, values)
+            .expect("resident GPU input must update in place");
+    }
+    let actual = resident.run_turns(30).expect("updated GPU turns must run");
+
+    assert_close(&actual.outputs["result.0"], &expected["result.0"]);
+    assert_close(&actual.outputs["result.1"], &expected["result.1"]);
+}
+
 #[test]
 fn resident_cpu_advances_artifact_state_without_host_feedback() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());

@@ -115,6 +115,13 @@ impl RuntimeHostFactory for GpuRegionHostFactory {
             dispatch_ms: Ref::new(0.0),
             session,
         };
+        let input_elements = Arc::new(
+            prepared
+                .inputs
+                .iter()
+                .map(|(name, values)| (name.clone(), values.len()))
+                .collect(),
+        );
         let telemetry = Arc::new(Mutex::new(None));
         let live = Arc::new(AtomicBool::new(false));
         Ok(RuntimeHostInstallation {
@@ -123,6 +130,7 @@ impl RuntimeHostFactory for GpuRegionHostFactory {
                 instance: instance_name.to_owned(),
                 region,
                 state: Arc::new(Mutex::new(state)),
+                input_elements,
                 telemetry: telemetry.clone(),
             })],
             input_drivers: vec![Box::new(GpuTelemetryDriver {
@@ -147,6 +155,7 @@ pub struct GpuRegionResourceProvider {
     instance: String,
     region: String,
     state: Arc<Mutex<GpuRegionState>>,
+    input_elements: Arc<BTreeMap<String, usize>>,
     telemetry: Arc<Mutex<Option<RuntimeIngress>>>,
 }
 
@@ -234,7 +243,7 @@ impl RuntimeResourceProvider for GpuRegionResourceProvider {
                 "GPU dispatch is an effect; use <-",
             ));
         }
-        if request.path != "turn" {
+        if request.path != "turn" && self.declared_input(&request.path).is_none() {
             return Err(gpu_host_error(
                 "GpuRegionHostWrite",
                 format!("unknown GPU input path `{}`", request.path),
@@ -254,6 +263,28 @@ impl RuntimeResourceProvider for GpuRegionResourceProvider {
             operation: request.operation,
             intent: request.intent,
         })?;
+        if let Some(name) = self.declared_input(&request.path).map(str::to_owned) {
+            let expected = self.input_elements[&name];
+            let values = gpu_input_values(request.value.try_deep_snapshot()?)?;
+            if values.len() != expected {
+                return Err(gpu_host_error(
+                    "GpuRegionHostWrite",
+                    format!(
+                        "GPU input `{name}` expects {expected} f32 values, found {}",
+                        values.len()
+                    ),
+                ));
+            }
+            return Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
+                GpuRegionInputEffect {
+                    resource: request.base_uri,
+                    region: self.region.clone(),
+                    name,
+                    values,
+                    state: self.state.clone(),
+                },
+            )));
+        }
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             GpuRegionDispatchEffect {
                 resource: request.base_uri,
@@ -262,6 +293,91 @@ impl RuntimeResourceProvider for GpuRegionResourceProvider {
                 telemetry: self.telemetry.clone(),
             },
         )))
+    }
+}
+
+impl GpuRegionResourceProvider {
+    fn declared_input<'a>(&self, path: &'a str) -> Option<&'a str> {
+        declared_gpu_input(self.input_elements.as_ref(), path)
+    }
+}
+
+fn declared_gpu_input<'a>(
+    input_elements: &BTreeMap<String, usize>,
+    path: &'a str,
+) -> Option<&'a str> {
+    let name = path.strip_prefix("input/")?;
+    (!name.is_empty() && input_elements.contains_key(name)).then_some(name)
+}
+
+#[derive(Debug)]
+struct GpuRegionInputEffect {
+    resource: String,
+    region: String,
+    name: String,
+    values: Vec<f32>,
+    state: Arc<Mutex<GpuRegionState>>,
+}
+
+impl RuntimeAfterCommitEffect for GpuRegionInputEffect {
+    fn metadata(&self) -> RuntimeEffectMetadata {
+        let items = u64::try_from(self.values.len()).unwrap_or(u64::MAX);
+        RuntimeEffectMetadata::new(
+            RuntimeEffectSource::ResourceProvider {
+                scheme: "gpu".to_owned(),
+            },
+            format!("input:{}:{}", self.region, self.name),
+        )
+        .with_resource(self.resource.clone())
+        .with_cost(RuntimeEffectCost {
+            bytes: items.saturating_mul(std::mem::size_of::<f32>() as u64),
+            items,
+        })
+    }
+
+    fn deliver(&mut self) -> MResult<()> {
+        let state = self.state.lock().map_err(|_| {
+            gpu_host_error("GpuRegionHostWrite", "GPU region state lock is poisoned")
+        })?;
+        state
+            .session
+            .update_input(&self.name, &self.values)
+            .map_err(|error| {
+                gpu_host_error(
+                    "GpuRegionHostWrite",
+                    format!(
+                        "input `{}` for region `{}` failed: {error}",
+                        self.name, self.region
+                    ),
+                )
+            })
+    }
+}
+
+fn gpu_input_values(value: LegacyValue) -> MResult<Vec<f32>> {
+    match value {
+        LegacyValue::Typed(value, _) => gpu_input_values(*value),
+        LegacyValue::MutableReference(value) => gpu_input_values(value.borrow().clone()),
+        LegacyValue::F32(value) => Ok(vec![*value.borrow()]),
+        LegacyValue::MatrixF32(matrix) => {
+            let rows = matrix.rows();
+            let columns = matrix.cols();
+            let column_major = matrix.as_vec();
+            let mut row_major = Vec::with_capacity(column_major.len());
+            for row in 0..rows {
+                for column in 0..columns {
+                    row_major.push(column_major[column * rows + row]);
+                }
+            }
+            Ok(row_major)
+        }
+        other => Err(gpu_host_error(
+            "GpuRegionHostWrite",
+            format!(
+                "GPU inputs must be f32 scalars or matrices, found `{}`",
+                other.kind()
+            ),
+        )),
     }
 }
 
@@ -483,5 +599,30 @@ mod tests {
             ConfigValue::String("magic.mec".to_owned()),
         )]));
         assert!(configured_region(&bad).is_err());
+    }
+
+    #[test]
+    fn only_declared_input_paths_are_writable() {
+        let inputs = BTreeMap::from([("matrix".to_owned(), 6)]);
+        assert_eq!(declared_gpu_input(&inputs, "input/matrix"), Some("matrix"));
+        assert_eq!(declared_gpu_input(&inputs, "input/missing"), None);
+        assert_eq!(declared_gpu_input(&inputs, "input/"), None);
+        assert_eq!(declared_gpu_input(&inputs, "matrix"), None);
+    }
+
+    #[test]
+    fn mech_column_major_matrix_inputs_cross_to_gpu_row_major_order() {
+        let value = RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 3,
+            values: vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+        }
+        .into_mech_value()
+        .unwrap();
+
+        assert_eq!(
+            gpu_input_values(value).unwrap(),
+            vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        );
     }
 }

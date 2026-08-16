@@ -69,7 +69,24 @@ fn encode_bytecode(
         dictionary_bytes,
         requirement_bytes,
     ];
-    contents.extend(artifact.ordered().into_iter().map(<[u8]>::to_vec));
+    let has_compute_regions = !artifact.compute_regions.is_empty();
+    let section_count = if has_compute_regions {
+        BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS
+    } else {
+        BYTECODE_SECTION_COUNT
+    };
+    let content_offset = if has_compute_regions {
+        BYTECODE_CONTENT_OFFSET_WITH_COMPUTE_REGIONS
+    } else {
+        BYTECODE_CONTENT_OFFSET
+    };
+    contents.extend(
+        artifact
+            .ordered()
+            .into_iter()
+            .take(section_count - 7)
+            .map(<[u8]>::to_vec),
+    );
     let mut counts = vec![
         count_u32(types.len(), "runtime types")?,
         count_u32(program.constants.len(), "constants")?,
@@ -82,13 +99,16 @@ fn encode_bytecode(
     counts.extend(
         artifact
             .ordered()
+            .into_iter()
+            .take(section_count - 7)
             .map(|section| if section.is_empty() { 0 } else { 1 }),
     );
 
-    let mut sections = Vec::with_capacity(BYTECODE_SECTION_COUNT);
-    let mut offset = BYTECODE_CONTENT_OFFSET;
-    for ((kind, bytes), item_count) in BytecodeSectionKind::ALL
+    let mut sections = Vec::with_capacity(section_count);
+    let mut offset = content_offset;
+    for ((kind, bytes), item_count) in BytecodeSectionKind::ALL_WITH_COMPUTE_REGIONS
         .into_iter()
+        .take(section_count)
         .zip(&contents)
         .zip(counts)
     {
@@ -126,7 +146,7 @@ fn encode_bytecode(
             .len()
             .try_into()
             .map_err(|_| invalid::<()>("too many bytecode instructions").unwrap_err())?,
-        section_count: BYTECODE_SECTION_COUNT as u16,
+        section_count: section_count as u16,
         reserved0: 0,
         section_table_offset: BYTECODE_SECTION_TABLE_OFFSET,
         file_len,

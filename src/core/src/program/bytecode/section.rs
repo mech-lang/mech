@@ -4,9 +4,13 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 pub const BYTECODE_SECTION_ENTRY_SIZE: usize = 32;
-pub const BYTECODE_SECTION_COUNT: usize = 19;
+// The frozen v1 layout remains the default. Compute-region metadata is an
+// optional trailing extension so existing 18-section artifacts stay readable.
+pub const BYTECODE_SECTION_COUNT: usize = 18;
+pub const BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS: usize = 19;
 pub const BYTECODE_SECTION_TABLE_OFFSET: u64 = 64;
-pub const BYTECODE_CONTENT_OFFSET: u64 = 672;
+pub const BYTECODE_CONTENT_OFFSET: u64 = 640;
+pub const BYTECODE_CONTENT_OFFSET_WITH_COMPUTE_REGIONS: u64 = 672;
 
 #[repr(u16)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -52,11 +56,34 @@ impl BytecodeSectionKind {
         Self::ArtifactIntegrityConstraints,
         Self::ArtifactOperations,
         Self::ArtifactOperationContracts,
+    ];
+
+    pub const ALL_WITH_COMPUTE_REGIONS: [Self; BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS] = [
+        Self::Types,
+        Self::ConstantTable,
+        Self::ConstantBlob,
+        Self::Symbols,
+        Self::Instructions,
+        Self::Dictionary,
+        Self::ApplicationRequirements,
+        Self::ArtifactSchemas,
+        Self::ArtifactConstants,
+        Self::ArtifactInputs,
+        Self::ArtifactSlots,
+        Self::ArtifactProducers,
+        Self::ArtifactNodes,
+        Self::ArtifactBindings,
+        Self::ArtifactOutputs,
+        Self::ArtifactIntegrityConstraints,
+        Self::ArtifactOperations,
+        Self::ArtifactOperationContracts,
         Self::ArtifactComputeRegions,
     ];
 
     pub fn from_u16(value: u16) -> Option<Self> {
-        Self::ALL.into_iter().find(|kind| *kind as u16 == value)
+        Self::ALL_WITH_COMPUTE_REGIONS
+            .into_iter()
+            .find(|kind| *kind as u16 == value)
     }
 }
 

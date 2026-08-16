@@ -385,20 +385,24 @@ pub fn encode_program_artifact_sections_with_regions(
             .canonical_bytes()
             .map_err(ArtifactBuildError::from)?
             .into_vec(),
-        compute_regions: encode(
-            &compute_regions
-                .iter()
-                .map(|region| WireComputeRegion {
-                    name: region.name.clone(),
-                    placement: match region.placement {
-                        ComputePlacement::Compute => 1,
-                        ComputePlacement::Cpu => 2,
-                        ComputePlacement::Gpu => 3,
-                    },
-                    nodes: region.nodes.iter().map(|node| node.get()).collect(),
-                })
-                .collect::<Vec<_>>(),
-        )?,
+        compute_regions: if compute_regions.is_empty() {
+            Vec::new()
+        } else {
+            encode(
+                &compute_regions
+                    .iter()
+                    .map(|region| WireComputeRegion {
+                        name: region.name.clone(),
+                        placement: match region.placement {
+                            ComputePlacement::Compute => 1,
+                            ComputePlacement::Cpu => 2,
+                            ComputePlacement::Gpu => 3,
+                        },
+                        nodes: region.nodes.iter().map(|node| node.get()).collect(),
+                    })
+                    .collect::<Vec<_>>(),
+            )?
+        },
     })
 }
 
@@ -645,11 +649,15 @@ fn decode_program_artifact_product_sections_with_requirements(
     .finalize()
     .map_err(ArtifactBytecodeError::from)?;
 
-    let wire_regions: Vec<WireComputeRegion> = decode_vec(
-        "compute regions",
-        &sections.compute_regions,
-        limits.max_compute_regions,
-    )?;
+    let wire_regions: Vec<WireComputeRegion> = if sections.compute_regions.is_empty() {
+        Vec::new()
+    } else {
+        decode_vec(
+            "compute regions",
+            &sections.compute_regions,
+            limits.max_compute_regions,
+        )?
+    };
     let mut names = BTreeSet::new();
     let mut assigned_nodes = BTreeSet::new();
     let mut compute_regions = Vec::with_capacity(wire_regions.len());
