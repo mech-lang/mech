@@ -25,6 +25,7 @@ from f0_evidence import (
     sha256_file,
     uncontrolled_build_environment,
 )
+from f0_contract import d2_qualification, d3_qualification, gate_b_qualification
 
 
 RECORDED_CHAINS = ("chain-1", "chain-2", "chain-3")
@@ -136,7 +137,7 @@ def run_preconditioning(
                 "mech-runtime",
                 "--no-default-features",
                 "--features",
-                "source_default,resident-external,runtime_bench_gate_d3",
+                "source_default,resident-routing-source,runtime_bench_gate_d3",
                 "--test",
                 "resident_external_gate_d3",
                 "--no-run",
@@ -171,16 +172,25 @@ def run_preconditioning(
 
 def report_record(path: Path, phase: str, logical_path: str) -> dict:
     report = load_json(path)
-    decision = (
+    measurement_decision = (
         report.get("b2_decision", {}).get("decision")
         if phase == "B2"
         else report.get("decision")
     )
+    if phase == "B2":
+        qualification_decision = gate_b_qualification(report)[0]
+    elif phase == "D2":
+        qualification_decision = d2_qualification(report)[0]
+    elif phase == "D3":
+        qualification_decision = d3_qualification(report)[0]
+    else:
+        qualification_decision = measurement_decision
     return {
         "path": logical_path,
         "sha256": sha256_file(path),
         "phase": phase,
-        "decision": decision,
+        "decision": qualification_decision,
+        "measurement_decision": measurement_decision,
     }
 
 

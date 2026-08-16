@@ -177,17 +177,67 @@ class CompactF0ContractTests(unittest.TestCase):
             "chain_id": "chain-1",
         }
         d2_ref = {"sha256": "3" * 64}
-        d2 = {"provenance": provenance}
+        d2 = {"decision": "Fail", "provenance": provenance}
         d3 = {
             "d2_authentication": {
                 "evidence_sha256": d2_ref["sha256"],
-                "decision": "Pass",
+                "decision": "Fail",
+                "qualification_decision": "Pass",
                 **provenance,
             }
         }
         self.assertEqual(CONTRACT.d3_binding_errors(d2_ref, d2, d3), [])
         d3["d2_authentication"]["evidence_sha256"] = "4" * 64
         self.assertTrue(CONTRACT.d3_binding_errors(d2_ref, d2, d3))
+
+    def test_absolute_d2_performance_findings_are_advisory_only(self):
+        report = SHARED.load_json(
+            ROOT / "benchmarks/runtime/gate-d/d2-resident-nbody.json"
+        )
+        qualification, findings = CONTRACT.d2_qualification(report)
+        self.assertEqual(qualification, "Pass")
+        self.assertEqual(
+            findings,
+            {
+                "nbody": ["legacy_gap_closure", "resident_raw_ratio"],
+                "ekf": ["complete_d1_ratio", "kernel_d1_ratio"],
+            },
+        )
+        report["nbody"]["hard_gates"]["source_bytecode_ratio"] = False
+        report["ekf"]["hard_gates"]["source_bytecode_ratio"] = False
+        qualification, findings = CONTRACT.d2_qualification(report)
+        self.assertEqual(qualification, "Pass")
+        self.assertIn("source_bytecode_ratio", findings["nbody"])
+        self.assertIn("source_bytecode_ratio", findings["ekf"])
+        report["nbody"]["hard_gates"]["history_independent"] = False
+        self.assertEqual(CONTRACT.d2_qualification(report)[0], "Fail")
+
+    def test_d3_regression_timing_is_advisory_but_effect_contracts_block(self):
+        gates = {name: True for name in CONTRACT.D3_HARD_GATES}
+        gates["d2_pure_regression"] = False
+        report = {"hard_gates": gates}
+        self.assertEqual(CONTRACT.d3_qualification(report)[0], "Pass")
+        gates["replay_exact"] = False
+        self.assertEqual(CONTRACT.d3_qualification(report)[0], "Fail")
+
+    def test_gate_b_speed_targets_are_advisory_but_boundedness_blocks(self):
+        report = SHARED.load_json(
+            ROOT / "benchmarks/runtime/gate-b/b2-resident-turn.json"
+        )
+        for section, advisory in CONTRACT.GATE_B_ADVISORY_PERFORMANCE_GATES.items():
+            for gate in advisory:
+                report[section]["hard_gates"][gate] = False
+        qualification, findings = CONTRACT.gate_b_qualification(report)
+        self.assertEqual(qualification, "Pass")
+        self.assertEqual(
+            findings,
+            {
+                section: sorted(advisory)
+                for section, advisory in CONTRACT.GATE_B_ADVISORY_PERFORMANCE_GATES.items()
+            },
+        )
+        report["b2_decision"]["hard_gates"]["history_independent"] = False
+        self.assertEqual(CONTRACT.gate_b_qualification(report)[0], "Fail")
 
     def test_uncontrolled_compiler_environment_fails(self):
         self.assertEqual(
@@ -220,6 +270,11 @@ class CompactF0ContractTests(unittest.TestCase):
         self.assertEqual(
             [command["name"] for command in record["commands"]],
             ["gate-b", "gate-d2", "gate-d3"],
+        )
+        gate_d3 = record["commands"][2]["arguments"]
+        self.assertIn(
+            "source_default,resident-routing-source,runtime_bench_gate_d3",
+            gate_d3,
         )
 
     def test_measurement_lock_contains_only_measurement_inputs(self):

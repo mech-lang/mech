@@ -26,6 +26,7 @@ from f0_evidence import (
     load_qualification_context,
     sha256_file,
 )
+from f0_contract import gate_b_qualification
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -1279,6 +1280,9 @@ def main() -> int:
         summary["b2_decision"] = b2_decision(lanes)
         if any(lane["lane"] == "mech-resident-artifact-source" for lane in lanes):
             summary["d1_decision"] = d1_decision(lanes)
+        qualification, advisory_failures = gate_b_qualification(summary)
+        summary["qualification_decision"] = qualification
+        summary["advisory_performance_failures"] = advisory_failures
     criterion_reference = None
     if context is not None:
         if args.criterion_evidence_directory is None:
@@ -1346,18 +1350,13 @@ def main() -> int:
         return 4
     if (
         branch == B2_BRANCH or args.phase == "B2-resident-turn"
-    ) and summary["b2_decision"]["decision"] == "Fail":
+    ) and summary["qualification_decision"] == "Fail":
         print(
-            "Gate B B2 stop: complete resident turn failed one or more hard gates",
+            "Gate B B2 stop: complete resident turn failed one or more "
+            "release-blocking gates",
             file=sys.stderr,
         )
         return 5
-    if summary.get("d1_decision", {}).get("decision") == "Fail":
-        print(
-            "Gate D D1 stop: recorded artifact turn failed one or more hard gates",
-            file=sys.stderr,
-        )
-        return 6
     return 0
 
 

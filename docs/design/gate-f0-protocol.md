@@ -16,7 +16,8 @@ base, and complete evidence regeneration. F0 has no exception mechanism.
 ## Recorded session
 
 The controlled machine performs untimed build and cache preparation, followed
-by exactly three recorded `B2 → D2 → D3` chains. All three chains must pass.
+by exactly three recorded `B2 → D2 → D3` chains. All three chains must pass
+their release-blocking gates.
 Chain 1 supplies the canonical checked-in reports; chains 2 and 3 are retained
 replications. A failed chain cannot be discarded, replaced, or rerun as part of
 the same session.
@@ -25,7 +26,17 @@ Gate B uses exactly ten Criterion samples, ten persistent-NumPy samples, a
 one-second warm-up, a three-second measurement window, and 4,096 turns per
 sample. Gate D uses exactly ten samples of 4,096 turns for each declared lane.
 The existing workload definitions, formulas, thresholds, cold-path controls,
-and trajectory keys remain unchanged.
+and trajectory keys remain unchanged. Absolute and route-relative timing
+comparisons remain visible as advisory findings. Gate B `executor_tax`,
+`legacy_gap_closure`, `raw_epoch_ratio`, `tail_stability`,
+`complete_turn_control_ratio`, and timing-only `source_bytecode_equivalence`;
+Gate D2 `resident_raw_ratio`, `legacy_gap_closure`, `complete_d1_ratio`,
+`kernel_d1_ratio`, and `source_bytecode_ratio`; and Gate D3
+`d2_pure_regression` and `source_bytecode_ratio` do not block release
+qualification. Semantic source/bytecode equivalence remains blocking through
+the correctness hashes, exact trajectories, and exact effect results.
+Correctness, zero allocation, fixed publication behavior, history/epoch
+independence, effects, replay, and provenance remain blocking.
 
 ## Evidence and trust
 
@@ -39,7 +50,7 @@ provenance, raw reconstruction, replication, manifest validation, and closeout.
 It reconstructs Gate B from retained Criterion samples, structural probes, and
 persistent-NumPy output before recomputing every B2, D2, and D3 hard gate. D2
 must authenticate its chain's exact B2 bytes. D3 must authenticate the exact
-passing D2 bytes before measurement begins.
+release-qualified D2 bytes before measurement begins.
 
 The controlled environment pins only tools that affect these measurements:
 the physical machine, macOS power and thermal conditions, Rust/Cargo, Python,

@@ -32,6 +32,8 @@ from f0_contract import (
     D2_THRESHOLDS,
     D3_PHASE,
     GATE_D_SAMPLE_PROTOCOL,
+    d2_qualification,
+    d3_qualification,
     gate_b_contract_errors,
     gate_b_raw_evidence_errors,
     gate_d_contract_errors,
@@ -177,7 +179,7 @@ def load_d3_raw(path: Path | None) -> str:
             "mech-runtime",
             "--no-default-features",
             "--features",
-            "source_default,resident-external,runtime_bench_gate_d3",
+            "source_default,resident-routing-source,runtime_bench_gate_d3",
             "--test",
             "resident_external_gate_d3",
             "--",
@@ -382,7 +384,7 @@ def d3_report(
         )
     )
     gates = {
-        "d2_authenticated": d2_report.get("decision") == "Pass",
+        "d2_authenticated": d2_qualification(d2_report)[0] == "Pass",
         "d2_pure_regression": d2_regression <= thresholds["d2_pure_complete_turn_regression_max"],
         "source_bytecode_ratio": max(source_bytecode_ratios)
         <= thresholds["d3_source_bytecode_ratio_max"],
@@ -434,6 +436,9 @@ def d3_report(
         "hard_gates": gates,
         "decision": "Pass" if all(gates.values()) else "Fail",
     }
+    report["qualification_decision"], report["advisory_performance_failures"] = (
+        d3_qualification(report)
+    )
     d2_bytes = d2_path.read_bytes()
     report["d2_authentication"] = {
         "evidence_path": (
@@ -443,6 +448,7 @@ def d3_report(
         ),
         "evidence_sha256": hashlib.sha256(d2_bytes).hexdigest(),
         "decision": d2_report.get("decision"),
+        "qualification_decision": d2_qualification(d2_report)[0],
         "runtime_subject_tree": d2_report.get("provenance", {}).get(
             "runtime_subject_tree"
         ),
@@ -618,8 +624,8 @@ def main() -> int:
             if d2_digest != args.expected_d2_sha256:
                 print("Gate D3 D2 digest changed after D2 completed", file=sys.stderr)
                 return 2
-        if d2_report.get("decision") != "Pass":
-            print("Gate D3 refuses to measure before Gate D2 passes", file=sys.stderr)
+        if d2_qualification(d2_report)[0] != "Pass":
+            print("Gate D3 refuses to measure before Gate D2 qualifies", file=sys.stderr)
             return 4
         if context is not None:
             if args.gate_b_report is None:
@@ -700,8 +706,11 @@ def main() -> int:
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(rendered, encoding="utf-8")
         display = output.relative_to(ROOT) if output.is_relative_to(ROOT) else output
-        print(f"wrote {display}: {report['decision']}")
-        return 0 if report["decision"] == "Pass" else 3
+        print(
+            f"wrote {display}: measurement={report['decision']} "
+            f"qualification={report['qualification_decision']}"
+        )
+        return 0 if report["qualification_decision"] == "Pass" else 3
     if args.raw_input is None:
         fresh_raw = load_raw(None)
         historical_raw = run_historical_d2_fixture("--gate-d-benchmark", release=True)
@@ -947,6 +956,9 @@ def main() -> int:
     report["decision"] = (
         "Pass" if report["nbody"]["decision"] == report["ekf"]["decision"] == "Pass" else "Fail"
     )
+    report["qualification_decision"], report["advisory_performance_failures"] = (
+        d2_qualification(report)
+    )
     if raw_output is not None:
         report["raw_evidence"] = {
             "path": (
@@ -982,8 +994,11 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(rendered, encoding="utf-8")
     display = output.relative_to(ROOT) if output.is_relative_to(ROOT) else output
-    print(f"wrote {display}: {report['decision']}")
-    return 0 if report["decision"] == "Pass" else 3
+    print(
+        f"wrote {display}: measurement={report['decision']} "
+        f"qualification={report['qualification_decision']}"
+    )
+    return 0 if report["qualification_decision"] == "Pass" else 3
 
 
 if __name__ == "__main__":

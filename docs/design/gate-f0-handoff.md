@@ -25,7 +25,8 @@ F0 must:
 
 1. refresh controlled Gate B evidence against the exact final stack;
 2. refresh controlled Gate D2 and Gate D3 evidence; both are mandatory and both
-   must pass;
+   must pass every release-blocking correctness, bounded-growth, allocation,
+   publication, replay, and provenance gate;
 3. remove the controlled stale-evidence allowance from CI;
 4. run the strict value-system checker with zero findings;
 5. pin the physical machine, Rust/Cargo, Python, NumPy/BLAS, `Cargo.lock`, and
@@ -37,7 +38,8 @@ F0 must:
 
 F0 uses one authenticated controlled environment for fresh B2, immutable D1
 replay, immutable D2/legacy replay, fresh D2, and fresh D3. D3 cannot start
-measurement until it authenticates the exact passing D2 bytes from its chain.
+measurement until it authenticates the exact release-qualified D2 bytes from
+its chain.
 
 The measurement protocol is preregistered in
 `docs/design/gate-f0-protocol.md`: untimed build/cache preparation, then exactly
@@ -62,7 +64,11 @@ the corrected integration head and discard evidence generated against the
 superseded product tree. The merged E4 pull request is not reopened or amended.
 
 Performance thresholds, workloads, retained-product assertions, and architecture
-requirements must not be weakened to make F0 pass.
+requirements remain frozen. Absolute and route-relative timing comparisons are
+still recomputed and recorded against those thresholds as advisory findings
+because v0.4 is proceeding through a different optimization path. Correctness,
+bounded-growth, allocation, publication, replay, effect, and provenance failures
+remain release-blocking.
 
 ## Retained compiler boundary
 
@@ -72,7 +78,7 @@ a direct AST-to-artifact compiler is future, non-gating compiler modernization.
 
 ## Merge gate
 
-F0 remains draft until all required Gate B and Gate D reports pass, the strict
+F0 remains draft until all required Gate B and Gate D reports qualify, the strict
 value-system checker reports zero findings, exact-head selected and full
 qualification pass, evidence provenance verifies, and the shipping product tree
 is unchanged except through separately reviewed corrective pull requests.

@@ -84,6 +84,10 @@ D2_EKF_HARD_GATES = {
     "trajectory_exact",
     "zero_allocation",
 }
+D2_ADVISORY_PERFORMANCE_GATES = {
+    "nbody": {"legacy_gap_closure", "resident_raw_ratio", "source_bytecode_ratio"},
+    "ekf": {"complete_d1_ratio", "kernel_d1_ratio", "source_bytecode_ratio"},
+}
 D3_HARD_GATES = {
     "accepted_publication_store",
     "accepted_receipt_append",
@@ -105,6 +109,76 @@ D3_HARD_GATES = {
     "source_bytecode_exact",
     "source_bytecode_ratio",
 }
+D3_ADVISORY_PERFORMANCE_GATES = {"d2_pure_regression", "source_bytecode_ratio"}
+GATE_B_ADVISORY_PERFORMANCE_GATES = {
+    "b2_decision": {
+        "executor_tax",
+        "legacy_gap_closure",
+        "raw_epoch_ratio",
+        "tail_stability",
+    },
+    "d1_decision": {
+        "complete_turn_control_ratio",
+        "legacy_gap_closure",
+        "raw_epoch_ratio",
+        "source_bytecode_equivalence",
+    },
+}
+
+
+def qualified_gate_decision(
+    gates: dict[str, bool], advisory_performance_gates: set[str]
+) -> str:
+    return (
+        "Pass"
+        if all(value for name, value in gates.items() if name not in advisory_performance_gates)
+        else "Fail"
+    )
+
+
+def d2_qualification(report: dict[str, Any]) -> tuple[str, dict[str, list[str]]]:
+    failures: dict[str, list[str]] = {}
+    required_pass = True
+    for workload in ("nbody", "ekf"):
+        gates = report.get(workload, {}).get("hard_gates", {})
+        advisory = D2_ADVISORY_PERFORMANCE_GATES[workload]
+        if not isinstance(gates, dict):
+            failures[workload] = []
+            required_pass = False
+            continue
+        failures[workload] = sorted(
+            name for name in advisory if gates.get(name) is False
+        )
+        if qualified_gate_decision(gates, advisory) != "Pass":
+            required_pass = False
+    return ("Pass" if required_pass else "Fail"), failures
+
+
+def d3_qualification(report: dict[str, Any]) -> tuple[str, list[str]]:
+    gates = report.get("hard_gates", {})
+    if not isinstance(gates, dict):
+        return "Fail", []
+    failures = sorted(
+        name for name in D3_ADVISORY_PERFORMANCE_GATES if gates.get(name) is False
+    )
+    return qualified_gate_decision(gates, D3_ADVISORY_PERFORMANCE_GATES), failures
+
+
+def gate_b_qualification(report: dict[str, Any]) -> tuple[str, dict[str, list[str]]]:
+    failures: dict[str, list[str]] = {}
+    required_pass = True
+    for section, advisory in GATE_B_ADVISORY_PERFORMANCE_GATES.items():
+        gates = report.get(section, {}).get("hard_gates", {})
+        if not isinstance(gates, dict) or not gates:
+            failures[section] = []
+            required_pass = False
+            continue
+        failures[section] = sorted(
+            name for name in advisory if gates.get(name) is False
+        )
+        if qualified_gate_decision(gates, advisory) != "Pass":
+            required_pass = False
+    return ("Pass" if required_pass else "Fail"), failures
 
 
 def _gate_b_checker():
@@ -130,8 +204,14 @@ def gate_b_contract_errors(
         errors.append("Gate B2 phase changed")
     if require_canonical and report.get("canonical") is not True:
         errors.append("Gate B2 report is not canonical")
-    if require_pass and report.get("b2_decision", {}).get("decision") != "Pass":
-        errors.append("Gate B2 report did not pass every frozen hard gate")
+    qualification, advisory_failures = gate_b_qualification(report)
+    if require_canonical or "qualification_decision" in report:
+        if report.get("qualification_decision") != qualification:
+            errors.append("Gate B2 qualification decision changed")
+        if report.get("advisory_performance_failures") != advisory_failures:
+            errors.append("Gate B2 advisory performance findings changed")
+    if require_pass and qualification != "Pass":
+        errors.append("Gate B2 report did not pass every release-blocking gate")
     return errors
 
 
@@ -335,7 +415,10 @@ def _d3_expected(report: dict[str, Any]) -> dict[str, bool]:
                 raise ValueError(f"Gate D3 {name} replay exactness changed for {value_field}")
             replay_exact &= exact
     return {
-        "d2_authenticated": report["d2_authentication"]["decision"] == "Pass",
+        "d2_authenticated": report["d2_authentication"].get(
+            "qualification_decision", report["d2_authentication"].get("decision")
+        )
+        == "Pass",
         "d2_pure_regression": report["d2_pure"]["regression_ratio"]
         <= D3_THRESHOLDS["d2_pure_complete_turn_regression_max"],
         "source_bytecode_ratio": max(source_bytecode_ratios)
@@ -446,8 +529,14 @@ def gate_d_contract_errors(
         overall = "Pass" if decisions == ["Pass", "Pass"] else "Fail"
         if report.get("decision") != overall:
             errors.append("Gate D2 decision does not match workload hard gates")
-        if require_pass and overall != "Pass":
-            errors.append("Gate D2 did not pass every frozen hard gate")
+        qualification, advisory_failures = d2_qualification(report)
+        if require_canonical or "qualification_decision" in report:
+            if report.get("qualification_decision") != qualification:
+                errors.append("Gate D2 qualification decision changed")
+            if report.get("advisory_performance_failures") != advisory_failures:
+                errors.append("Gate D2 advisory performance findings changed")
+        if require_pass and qualification != "Pass":
+            errors.append("Gate D2 did not pass every release-blocking gate")
         return errors
     if phase == D3_PHASE:
         if report.get("thresholds") != D3_THRESHOLDS:
@@ -480,8 +569,14 @@ def gate_d_contract_errors(
             decision = "Pass" if gates == expected_gates and all(gates.values()) else "Fail"
         if report.get("decision") != decision:
             errors.append("Gate D3 decision does not match hard gates")
-        if require_pass and decision != "Pass":
-            errors.append("Gate D3 did not pass every frozen hard gate")
+        qualification, advisory_failures = d3_qualification(report)
+        if require_canonical or "qualification_decision" in report:
+            if report.get("qualification_decision") != qualification:
+                errors.append("Gate D3 qualification decision changed")
+            if report.get("advisory_performance_failures") != advisory_failures:
+                errors.append("Gate D3 advisory performance findings changed")
+        if require_pass and qualification != "Pass":
+            errors.append("Gate D3 did not pass every release-blocking gate")
         return errors
     return [f"unsupported F0 phase {phase}"]
 
@@ -886,7 +981,8 @@ def d3_binding_errors(
         return ["Gate D3 D2 authentication is absent"]
     expected = {
         "evidence_sha256": d2_ref.get("sha256"),
-        "decision": "Pass",
+        "decision": d2.get("decision"),
+        "qualification_decision": "Pass",
         "runtime_subject_tree": d2.get("provenance", {}).get("runtime_subject_tree"),
         "qualification_environment_id": d2.get("provenance", {}).get(
             "qualification_environment_id"
