@@ -66,13 +66,18 @@ not produce reports or masquerade as a fourth evidence chain.
 ## Lifecycle
 
 1. Review the protocol commit and immutable product-tree guard.
-2. Apply the `f0-controlled` label to dispatch
+2. During protocol-only preparation, apply `ci:f0-focused` to run selected CI
+   without the exhaustive matrix. The classifier accepts that deferral only
+   while every changed path is in the registered F0 protocol and evidence
+   surface; product or unrelated contract changes still force full CI.
+3. Apply the `f0-controlled` label to dispatch
    `.github/workflows/f0-controlled.yml` on the exact reviewed PR head. Manual
    dispatch remains available after the workflow is registered on the default
    branch.
-3. Commit the three retained chains and the evidence manifest.
-4. Run selected and full CI on that exact evidence head.
-5. Record run IDs, attempts, conclusions, URLs, and the exact head in the
+4. Commit the three retained chains and the evidence manifest, remove
+   `ci:f0-focused`, and apply `ci:full`.
+5. Run selected and full CI on that exact evidence head.
+6. Record run IDs, attempts, conclusions, URLs, and the exact head in the
    closeout record or release tag.
 
 The opening baseline Full CI run is

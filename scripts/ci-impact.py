@@ -14,6 +14,42 @@ from typing import Any, Dict, Iterable
 from ci_owners import DEFAULT_OWNER_CONFIG, load_owners, matching_owners
 
 
+F0_FOCUSED_PATHS = frozenset(
+    {
+        ".github/workflows/ci-full.yml",
+        ".github/workflows/f0-controlled.yml",
+        ".gitignore",
+        "benchmarks/runtime/gate-b/README.md",
+        "benchmarks/runtime/gate-b/numpy/ekf_v1.py",
+        "benchmarks/runtime/gate-b/result-schema.json",
+        "docs/design/gate-f0-handoff.md",
+        "docs/design/gate-f0-protocol.md",
+        "scripts/check-f0-product-tree.py",
+        "scripts/check-gate-b-contract.py",
+        "scripts/check-value-system-contract.py",
+        "scripts/ci-impact.py",
+        "scripts/f0_contract.py",
+        "scripts/f0_evidence.py",
+        "scripts/historical_gate_b_evidence.py",
+        "scripts/install-f0-measurement-toolchain.py",
+        "scripts/run-f0-qualification.py",
+        "scripts/run-gate-b-benchmarks.py",
+        "scripts/run-gate-d-benchmarks.py",
+        "scripts/tests/test_check_gate_b_contract.py",
+        "scripts/tests/test_check_value_system_contract.py",
+        "scripts/tests/test_f0_contract.py",
+        "scripts/tests/test_run_gate_b_benchmarks.py",
+        "tests/ci/test_ci_full_contract.py",
+        "tests/ci/test_ci_impact.py",
+    }
+)
+F0_FOCUSED_PREFIXES = ("tests/architecture/qualification/",)
+
+
+def is_f0_focused_path(path: str) -> bool:
+    return path in F0_FOCUSED_PATHS or path.startswith(F0_FOCUSED_PREFIXES)
+
+
 def changed_paths(base: str, head: str) -> list[str]:
     result = subprocess.run(
         ["git", "diff", "--name-only", "--diff-filter=ACDMRTUXB", f"{base}...{head}"],
@@ -91,6 +127,12 @@ def classify(
 
     runnable_names = sorted(runnable)
     code_changed = bool(paths) and not docs_only
+    f0_focused = (
+        "ci:f0-focused" in labels
+        and bool(paths)
+        and all(is_f0_focused_path(path) for path in paths)
+    )
+    f0_focus_violation = "ci:f0-focused" in labels and not f0_focused
     return {
         "paths": paths,
         "matched_owners": sorted(matched_names),
@@ -104,7 +146,9 @@ def classify(
         "browser_canary_required": code_changed and (browser or cross_cutting),
         "cross_cutting_standard_suite_required": code_changed and cross_cutting,
         "full_validation_required": (
-            "ci:full" in labels or "architecture-contracts" in matched_names
+            "ci:full" in labels
+            or f0_focus_violation
+            or ("architecture-contracts" in matched_names and not f0_focused)
         ),
     }
 

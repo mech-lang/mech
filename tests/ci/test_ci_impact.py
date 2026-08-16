@@ -96,6 +96,34 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertTrue(result["cross_cutting_standard_suite_required"])
                 self.assertTrue(result["browser_canary_required"])
 
+    def test_f0_focused_label_defers_full_validation_for_registered_protocol_paths(self):
+        paths = [
+            "scripts/f0_contract.py",
+            "scripts/run-gate-b-benchmarks.py",
+            "tests/architecture/qualification/f0-product-tree.json",
+        ]
+        result = self.classify(paths, ["ci:f0-focused"])
+        self.assertFalse(result["full_validation_required"])
+        self.assertTrue(result["static_contracts_required"])
+        self.assertTrue(result["standard_canaries_required"])
+
+    def test_f0_focused_label_cannot_hide_product_or_unrelated_contract_changes(self):
+        for path in (
+            "src/runtime/src/lib.rs",
+            "scripts/check-operation-contract.py",
+        ):
+            with self.subTest(path=path):
+                result = self.classify(
+                    ["scripts/f0_contract.py", path], ["ci:f0-focused"]
+                )
+                self.assertTrue(result["full_validation_required"])
+
+    def test_full_label_overrides_f0_focused_label(self):
+        result = self.classify(
+            ["scripts/f0_contract.py"], ["ci:f0-focused", "ci:full"]
+        )
+        self.assertTrue(result["full_validation_required"])
+
     def test_docs_only_change_can_still_request_full_validation(self):
         result = self.classify(["README.md"], ["ci:full"])
         self.assertTrue(result["docs_only"])
