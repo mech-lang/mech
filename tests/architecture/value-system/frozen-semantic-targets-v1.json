@@ -2494,7 +2494,7 @@
       "sites": [
         {
           "column": 59,
-          "line": 577
+          "line": 597
         }
       ],
       "target": "bool-snapshot",
@@ -3686,15 +3686,15 @@
       "sites": [
         {
           "column": 25,
-          "line": 549
+          "line": 569
         },
         {
           "column": 28,
-          "line": 555
+          "line": 575
         },
         {
           "column": 28,
-          "line": 560
+          "line": 580
         }
       ],
       "target": "option-absence",
@@ -24686,15 +24686,15 @@
       "sites": [
         {
           "column": 26,
-          "line": 513
+          "line": 533
         },
         {
           "column": 30,
-          "line": 554
+          "line": 574
         },
         {
           "column": 30,
-          "line": 559
+          "line": 579
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -26606,35 +26606,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 516
+          "line": 536
         },
         {
           "column": 30,
-          "line": 517
+          "line": 537
         },
         {
           "column": 21,
-          "line": 520
+          "line": 540
         },
         {
           "column": 21,
-          "line": 523
+          "line": 543
         },
         {
           "column": 21,
-          "line": 526
+          "line": 546
         },
         {
           "column": 21,
-          "line": 529
+          "line": 549
         },
         {
           "column": 21,
-          "line": 532
+          "line": 552
         },
         {
           "column": 21,
-          "line": 535
+          "line": 555
         }
       ],
       "target": "string-snapshot",
