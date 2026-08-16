@@ -304,13 +304,59 @@ def context_for(
     }
 
 
-def trusted_workflow_ref(value: object) -> bool:
+def trusted_dispatch_workflow_ref(value: object) -> bool:
     return value in {
         "mech-lang/mech/.github/workflows/ci-full.yml@"
         "refs/heads/qualification/f0-final-evidence",
         "mech-lang/mech/.github/workflows/f0-controlled.yml@"
         "refs/heads/qualification/f0-final-evidence",
     }
+
+
+def trusted_pull_request_provider(
+    provider: dict[str, object], validation_commit: str, event: object
+) -> bool:
+    if not isinstance(event, dict):
+        return False
+    pull_request = event.get("pull_request")
+    repository = event.get("repository")
+    label = event.get("label")
+    if not all(isinstance(value, dict) for value in (pull_request, repository, label)):
+        return False
+    head = pull_request.get("head")
+    if not isinstance(head, dict):
+        return False
+    head_repository = head.get("repo")
+    number = pull_request.get("number")
+    if not isinstance(head_repository, dict) or not isinstance(number, int):
+        return False
+    expected_workflow_ref = (
+        "mech-lang/mech/.github/workflows/f0-controlled.yml@"
+        f"refs/pull/{number}/merge"
+    )
+    return (
+        event.get("action") == "labeled"
+        and label.get("name") == "f0-controlled"
+        and repository.get("full_name") == "mech-lang/mech"
+        and head_repository.get("full_name") == "mech-lang/mech"
+        and head.get("ref") == "qualification/f0-final-evidence"
+        and head.get("sha") == validation_commit
+        and pull_request.get("merge_commit_sha") == provider.get("workflow_sha")
+        and provider.get("workflow_ref") == expected_workflow_ref
+    )
+
+
+def trusted_provider_identity(
+    provider: dict[str, object], validation_commit: str, event: object
+) -> bool:
+    if provider.get("event_name") == "workflow_dispatch":
+        return (
+            trusted_dispatch_workflow_ref(provider.get("workflow_ref"))
+            and provider.get("workflow_sha") == validation_commit
+        )
+    if provider.get("event_name") == "pull_request":
+        return trusted_pull_request_provider(provider, validation_commit, event)
+    return False
 
 
 def run_chain(
@@ -533,14 +579,18 @@ def main(argv: list[str] | None = None) -> int:
         "workflow_ref": os.environ.get("GITHUB_WORKFLOW_REF"),
         "workflow_sha": os.environ.get("GITHUB_WORKFLOW_SHA"),
     }
+    try:
+        event_payload = load_json(Path(os.environ["GITHUB_EVENT_PATH"]))
+    except (KeyError, OSError, EvidenceError):
+        event_payload = None
     if (
         required_provider["repository"] != "mech-lang/mech"
         or required_provider["validation_ref"] != identity["commit"]
         or not str(required_provider["run_id"] or "").isdigit()
         or not str(required_provider["run_attempt"] or "").isdigit()
-        or required_provider["event_name"] != "workflow_dispatch"
-        or not trusted_workflow_ref(required_provider["workflow_ref"])
-        or required_provider["workflow_sha"] != identity["commit"]
+        or not trusted_provider_identity(
+            required_provider, identity["commit"], event_payload
+        )
     ):
         print("F0 qualification requires a complete exact-head GitHub run identity", file=sys.stderr)
         return 2

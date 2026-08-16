@@ -59,6 +59,12 @@ NumPy is installed from an authenticated wheel into a fresh environment and its
 installed files are verified against the wheel RECORD. Chrome, ChromeDriver,
 Node, npm, and wasm-pack remain owned by their normal CI jobs.
 
+Before the workflow exists on the default branch, the `f0-controlled` PR-label
+route is authenticated from GitHub's event payload. The runner requires the
+exact repository, label action, PR number, head repository, head branch, head
+SHA, merge-workflow ref, and merge-workflow SHA. After registration on the
+default branch, manual dispatch retains its exact branch/workflow SHA checks.
+
 The session ledger is created before environment verification and retained on
 success or failure. Untimed preparation may record commands and logs, but may
 not produce reports or masquerade as a fourth evidence chain.

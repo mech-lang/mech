@@ -277,6 +277,46 @@ class CompactF0ContractTests(unittest.TestCase):
             gate_d3,
         )
 
+    def test_label_dispatch_identity_is_exact_pr_head_bound(self):
+        head = "1" * 40
+        merge = "2" * 40
+        provider = {
+            "event_name": "pull_request",
+            "workflow_ref": (
+                "mech-lang/mech/.github/workflows/f0-controlled.yml@"
+                "refs/pull/764/merge"
+            ),
+            "workflow_sha": merge,
+        }
+        event = {
+            "action": "labeled",
+            "label": {"name": "f0-controlled"},
+            "repository": {"full_name": "mech-lang/mech"},
+            "pull_request": {
+                "number": 764,
+                "merge_commit_sha": merge,
+                "head": {
+                    "ref": "qualification/f0-final-evidence",
+                    "sha": head,
+                    "repo": {"full_name": "mech-lang/mech"},
+                },
+            },
+        }
+        self.assertTrue(RUNNER.trusted_provider_identity(provider, head, event))
+        for mutation in (
+            lambda value: value["label"].update(name="not-f0"),
+            lambda value: value["pull_request"]["head"].update(sha="3" * 40),
+            lambda value: value["pull_request"].update(merge_commit_sha="4" * 40),
+            lambda value: value["pull_request"]["head"]["repo"].update(
+                full_name="fork/mech"
+            ),
+        ):
+            changed = copy.deepcopy(event)
+            mutation(changed)
+            self.assertFalse(
+                RUNNER.trusted_provider_identity(provider, head, changed)
+            )
+
     def test_measurement_lock_contains_only_measurement_inputs(self):
         lock = SHARED.load_json(
             ROOT
@@ -330,17 +370,17 @@ AC Power:
     def test_controlled_runner_accepts_only_fixed_branch_workflows(self):
         for workflow in ("ci-full.yml", "f0-controlled.yml"):
             self.assertTrue(
-                RUNNER.trusted_workflow_ref(
+                RUNNER.trusted_dispatch_workflow_ref(
                     f"mech-lang/mech/.github/workflows/{workflow}@"
                     "refs/heads/qualification/f0-final-evidence"
                 )
             )
         self.assertFalse(
-            RUNNER.trusted_workflow_ref(
+            RUNNER.trusted_dispatch_workflow_ref(
                 "mech-lang/mech/.github/workflows/f0-controlled.yml@refs/heads/attacker"
             )
         )
-        self.assertFalse(RUNNER.trusted_workflow_ref(None))
+        self.assertFalse(RUNNER.trusted_dispatch_workflow_ref(None))
 
 
 if __name__ == "__main__":
