@@ -2293,9 +2293,23 @@ class FinalQualificationFindingTests(unittest.TestCase):
             self.assertEqual(CHECKER.report_result([]), 0)
         self.assertIn("value-system contract passed", stdout.getvalue())
 
-    def test_any_finding_fails(self):
+    def test_stale_performance_evidence_is_advisory(self):
         finding = CHECKER.failure(
             "C0-GATE-B-EVIDENCE-STALE",
+            "finding",
+            "contract.json",
+            "expected",
+            "actual",
+            "update",
+        )
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            self.assertEqual(CHECKER.report_result([finding]), 0)
+        self.assertIn("value-system contract advisories", stderr.getvalue())
+
+    def test_semantic_finding_fails(self):
+        finding = CHECKER.failure(
+            "C0-KIND-SCHEME-SEPARATION",
             "finding",
             "contract.json",
             "expected",

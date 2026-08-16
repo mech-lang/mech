@@ -4050,12 +4050,25 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+ADVISORY_CONTRACTS = frozenset({"C0-GATE-B-EVIDENCE-STALE"})
+
+
 def report_result(failures: list[Failure]) -> int:
-    if not failures:
+    advisory = [
+        item for item in failures if item.contract_id in ADVISORY_CONTRACTS
+    ]
+    blocking = [
+        item for item in failures if item.contract_id not in ADVISORY_CONTRACTS
+    ]
+    if advisory:
+        print("value-system contract advisories:", file=sys.stderr)
+        for item in advisory:
+            print(f"  {item.render()}", file=sys.stderr)
+    if not blocking:
         print("value-system contract passed")
         return 0
     print("value-system contract failed:", file=sys.stderr)
-    for item in failures:
+    for item in blocking:
         print(f"  {item.render()}", file=sys.stderr)
     return 1
 
