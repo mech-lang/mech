@@ -27,12 +27,32 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(arguments.warm_up_time, 1.0)
         self.assertEqual(arguments.measurement_time, 3.0)
         self.assertIsNone(arguments.phase)
+        self.assertEqual(
+            RUNNER.SAMPLE_PROTOCOL,
+            {
+                "criterion_sample_size": 10,
+                "numpy_sample_size": 10,
+                "warm_up_seconds": 1.0,
+                "measurement_seconds": 3.0,
+                "turns_per_sample": 4096,
+                "fixture_setup_included_in_timing": False,
+                "correctness_included_in_timing": False,
+                "profile": "release",
+            },
+        )
 
     def test_only_b2_has_an_explicit_evidence_refresh_phase(self):
         arguments = self.parse_args("--phase", "B2-resident-turn")
         self.assertEqual(arguments.phase, "B2-resident-turn")
         with self.assertRaises(SystemExit):
             self.parse_args("--phase", "B1-resident-kernel")
+
+    def test_runner_rejects_noncanonical_sample_protocol_before_measurement(self):
+        with patch.object(sys, "argv", [str(SCRIPT), "--sample-size", "11"]), patch.object(
+            RUNNER, "hardware_description"
+        ) as hardware:
+            self.assertEqual(RUNNER.main(), 2)
+        hardware.assert_not_called()
 
     def test_controlled_environment_forces_one_thread(self):
         environment = RUNNER.controlled_environment(
@@ -81,11 +101,57 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
             "lane": "rust-epoch",
             "instances": 8,
             "turns": 4096,
+            "retained_history": 0,
+            "next_epoch": 1,
         }
         output = "prefix\nGATE_B_SAMPLE " + json.dumps(payload) + "\n"
         self.assertEqual(
             RUNNER.parse_probe_samples(output)[("rust-epoch", 8, 0, 1)], payload
         )
+
+    def test_probe_parser_rejects_lossy_or_conflicting_identities(self):
+        fractional = {
+            "lane": "rust-epoch",
+            "instances": 1.75,
+            "turns": 4096,
+            "retained_history": 0,
+            "next_epoch": 1,
+        }
+        with self.assertRaisesRegex(ValueError, "exact JSON integer"):
+            RUNNER.parse_probe_samples(RUNNER.SAMPLE_PREFIX + json.dumps(fractional))
+        first = {
+            "lane": "rust-epoch",
+            "instances": 1,
+            "turns": 4096,
+            "retained_history": 0,
+            "next_epoch": 1,
+            "allocation_count": 0,
+        }
+        conflicting = {**first, "allocation_count": 1}
+        output = "\n".join(
+            RUNNER.SAMPLE_PREFIX + json.dumps(row) for row in (first, conflicting)
+        )
+        with self.assertRaisesRegex(ValueError, "conflicting duplicate"):
+            RUNNER.parse_probe_samples(output)
+        missing = first.copy()
+        del missing["retained_history"]
+        with self.assertRaisesRegex(ValueError, "exact JSON integer"):
+            RUNNER.parse_probe_samples(
+                RUNNER.SAMPLE_PREFIX + json.dumps(missing)
+            )
+        fractional_turns = {**first, "turns": 4096.75}
+        with self.assertRaisesRegex(ValueError, "exact JSON integer"):
+            RUNNER.parse_probe_samples(
+                RUNNER.SAMPLE_PREFIX + json.dumps(fractional_turns)
+            )
+
+    def test_b2_raw_probe_sets_are_frozen(self):
+        timed, structural = RUNNER.expected_b2_probe_keys()
+        self.assertEqual(len(timed), 28)
+        self.assertEqual(len(structural), 21)
+        self.assertIn(("rust-kernel", 64, 0, 1), timed)
+        self.assertNotIn(("rust-kernel", 64, 0, 1), structural)
+        self.assertIn(("mech-resident-turn", 1, 100_000, 1), structural)
 
     def test_untimed_probe_merge_preserves_timed_allocation(self):
         timed = {}
@@ -279,6 +345,25 @@ class GateBBenchmarkRunnerTests(unittest.TestCase):
     def test_environment_does_not_change_cli_sample_size(self):
         with patch.dict(os.environ, {"MECH_GATE_B_SAMPLE_SIZE": "1"}):
             self.assertEqual(self.parse_args().sample_size, 10)
+
+    def test_numpy_worker_is_isolated_and_bound_to_locked_module(self):
+        python = RUNNER.ROOT / "target/f0-toolchain/python/bin/python"
+        command, expected = RUNNER.numpy_worker_command(str(python))
+        self.assertEqual(command[0], str(python))
+        self.assertEqual(command[1], "-I")
+        self.assertEqual(command[3], "--expected-numpy-module")
+        self.assertEqual(Path(command[4]), expected)
+        self.assertEqual(
+            expected,
+            (
+                python.parent.parent
+                / "lib/python3.9/site-packages/numpy/__init__.py"
+            ).resolve(),
+        )
+
+    def test_numpy_worker_rejects_ambiguous_interpreter_path(self):
+        with self.assertRaisesRegex(ValueError, "must be absolute"):
+            RUNNER.numpy_worker_command("python3")
 
 
 if __name__ == "__main__":

@@ -136,10 +136,10 @@
         "profile"
       ],
       "properties": {
-        "criterion_sample_size": { "type": "integer", "minimum": 10 },
-        "numpy_sample_size": { "type": "integer", "minimum": 10 },
-        "warm_up_seconds": { "type": "number", "exclusiveMinimum": 0 },
-        "measurement_seconds": { "type": "number", "exclusiveMinimum": 0 },
+        "criterion_sample_size": { "const": 10 },
+        "numpy_sample_size": { "const": 10 },
+        "warm_up_seconds": { "const": 1 },
+        "measurement_seconds": { "const": 3 },
         "turns_per_sample": { "const": 4096 },
         "fixture_setup_included_in_timing": { "const": false },
         "correctness_included_in_timing": { "const": false },
@@ -220,6 +220,46 @@
     "resident_breakdown": { "type": "object" },
     "decision": { "type": "object" },
     "b2_decision": { "type": "object" },
+    "canonical": { "type": "boolean" },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol_version",
+        "runtime_subject_commit",
+        "runtime_subject_tree",
+        "qualification_protocol_commit",
+        "evidence_generation_commit",
+        "qualification_environment_id",
+        "chain_id",
+        "session_id",
+        "workflow_run_id",
+        "workflow_run_attempt"
+      ],
+      "properties": {
+        "protocol_version": { "const": "mech-v0.4-f0-qualification-v1" },
+        "runtime_subject_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "runtime_subject_tree": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "qualification_protocol_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "evidence_generation_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "qualification_environment_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "chain_id": { "enum": ["chain-1", "chain-2", "chain-3"] },
+        "session_id": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "workflow_run_id": { "type": "integer", "minimum": 1 },
+        "workflow_run_attempt": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "raw_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmark_output", "criterion_samples", "numpy_output", "structural_output"],
+      "properties": {
+        "benchmark_output": { "$ref": "#/$defs/rawEvidence" },
+        "criterion_samples": { "$ref": "#/$defs/treeEvidence" },
+        "numpy_output": { "$ref": "#/$defs/rawEvidence" },
+        "structural_output": { "$ref": "#/$defs/rawEvidence" }
+      }
+    },
     "d1_decision": {
       "type": "object",
       "additionalProperties": true,
@@ -244,6 +284,15 @@
     }
   },
   "$defs": {
+    "rawEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
     "lane": {
       "type": "object",
       "additionalProperties": false,
@@ -328,6 +377,28 @@
             "abort_output_hash": {
               "type": ["string", "null"],
               "pattern": "^[0-9a-f]{64}$"
+            }
+          }
+        }
+      }
+    },
+    "treeEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "tree_sha256", "files"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "tree_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
             }
           }
         }
