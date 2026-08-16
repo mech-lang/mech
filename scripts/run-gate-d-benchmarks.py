@@ -7,7 +7,6 @@ import argparse
 import hashlib
 import json
 import math
-import platform
 import statistics
 import subprocess
 import sys
@@ -18,21 +17,33 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 from d2_historical_evidence import D2_HEAD, run_historical_d2_fixture
+from f0_evidence import (
+    EvidenceError,
+    attach_provenance,
+    git_identity,
+    load_json,
+    load_qualification_context,
+    physical_machine,
+    same_provenance,
+    sha256_file,
+)
+from f0_contract import (
+    D2_PHASE,
+    D2_THRESHOLDS,
+    D3_PHASE,
+    GATE_D_SAMPLE_PROTOCOL,
+    gate_b_contract_errors,
+    gate_b_raw_evidence_errors,
+    gate_d_contract_errors,
+)
+from historical_gate_b_evidence import replay_historical_gate_b
 
 
 ROOT = Path(__file__).resolve().parents[1]
 D1_HEAD = "7ff20887ea2d267b790917608c4bc8826b031762"
 TURNS = 4_096
-THRESHOLDS = {
-    "nbody_source_bytecode_ratio_max": 1.03,
-    "nbody_resident_raw_ratio_max": 1.50,
-    "nbody_legacy_gap_closure_min": 0.75,
-    "nbody_history_ratio_max": 1.05,
-    "nbody_high_epoch_ratio_max": 1.05,
-    "ekf_source_bytecode_ratio_max": 1.03,
-    "ekf_complete_d1_ratio_max": 1.20,
-    "ekf_kernel_d1_ratio_max": 1.20,
-}
+THRESHOLDS = D2_THRESHOLDS
+HISTORICAL_REPLAY_MARKER = "GATE_D_HISTORICAL_REPLAY"
 
 
 def command(*args: str) -> str:
@@ -53,6 +64,80 @@ def summarize(values: list[float]) -> dict[str, float | int]:
         "min_ns": ordered[0],
         "max_ns": ordered[-1],
     }
+
+
+def d2_protocol_rows(raw: str) -> tuple[dict[str, list[dict]], dict[str, list[dict]], int]:
+    lane_rows: dict[str, list[dict[str, str]]] = {}
+    cold_rows: dict[str, list[dict[str, str]]] = {}
+    structural_count = 0
+    for line in raw.splitlines():
+        if line.startswith("GATE_D_SAMPLE "):
+            fields = parse_fields(line)
+            lane_rows.setdefault(fields["lane"], []).append(fields)
+        elif line.startswith("GATE_D_COLD "):
+            fields = parse_fields(line)
+            cold_rows.setdefault(fields["phase"], []).append(fields)
+        elif line.startswith("GATE_D_STRUCTURAL "):
+            structural_count += 1
+    return lane_rows, cold_rows, structural_count
+
+
+def validate_d2_sample_protocol(fresh: str, historical: str) -> None:
+    fresh_lanes, fresh_cold, fresh_structural = d2_protocol_rows(fresh)
+    historical_lanes, historical_cold, historical_structural = d2_protocol_rows(
+        historical
+    )
+    required_fresh_lanes = {
+        "nbody-raw-rust",
+        "nbody-resident-source",
+        "nbody-resident-bytecode",
+        "nbody-resident-kernel-source",
+        "nbody-resident-kernel-bytecode",
+        "nbody-resident-source-history-1k",
+        "nbody-resident-source-history-100k",
+        "nbody-resident-source-high-epoch",
+    }
+    required_historical_lanes = required_fresh_lanes | {"nbody-legacy-mech"}
+    required_cold = {
+        "source-compilation-and-initial-encoding",
+        "bytecode-encoding",
+        "bytecode-decoding",
+        "artifact-admission-and-activation",
+    }
+    if set(fresh_lanes) != required_fresh_lanes or set(fresh_cold) != required_cold:
+        raise ValueError("fresh Gate D2 sample lane set changed")
+    if set(historical_lanes) != required_historical_lanes or set(
+        historical_cold
+    ) != required_cold:
+        raise ValueError("historical Gate D2 sample lane set changed")
+    if fresh_structural != 1 or historical_structural != 1:
+        raise ValueError("each Gate D2 replay must contain one structural record")
+    expected_samples = list(range(GATE_D_SAMPLE_PROTOCOL["samples"]))
+    for source, rows_by_lane in (
+        ("fresh", fresh_lanes),
+        ("historical", historical_lanes),
+    ):
+        for lane, rows in rows_by_lane.items():
+            if sorted(int(row["sample"]) for row in rows) != expected_samples:
+                raise ValueError(f"Gate D2 {source} {lane} sample identities changed")
+            if any(int(row["turns"]) != TURNS for row in rows):
+                raise ValueError(f"Gate D2 {source} {lane} turn count changed")
+    for source, rows_by_phase in (("fresh", fresh_cold), ("historical", historical_cold)):
+        for phase, rows in rows_by_phase.items():
+            if sorted(int(row["sample"]) for row in rows) != expected_samples:
+                raise ValueError(
+                    f"Gate D2 {source} {phase} cold sample identities changed"
+                )
+
+
+def d2_measurement_raw(fresh: str, historical: str) -> str:
+    legacy = [
+        line
+        for line in historical.splitlines()
+        if line.startswith("GATE_D_SAMPLE ")
+        and parse_fields(line).get("lane") == "nbody-legacy-mech"
+    ]
+    return fresh.rstrip() + "\n" + "\n".join(legacy) + "\n"
 
 
 def load_raw(path: Path | None) -> str:
@@ -121,7 +206,46 @@ def exact_field(rows: list[dict], field: str):
     return rows[0][field]
 
 
-def d3_report(raw: str, semantic_commit: str) -> dict:
+def exact_json_integer(value: object, label: str) -> int:
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise ValueError(f"{label} must be an exact JSON integer")
+    return value
+
+
+def validate_d3_control_protocol(controls: list[dict]) -> None:
+    """Require every frozen growth control lane to carry the exact sample set."""
+    required_lanes = {"history-0", "history-1k", "history-100k", "high-epoch"}
+    lanes = {row.get("lane") for row in controls}
+    if lanes != required_lanes:
+        raise ValueError("D3 control lane set changed")
+    expected_samples = list(range(3))
+    for lane in sorted(required_lanes):
+        rows = [row for row in controls if row.get("lane") == lane]
+        try:
+            samples = sorted(
+                exact_json_integer(row["sample"], f"D3 {lane} sample")
+                for row in rows
+            )
+            turns = [
+                exact_json_integer(row["turns"], f"D3 {lane} turns")
+                for row in rows
+            ]
+        except KeyError as error:
+            raise ValueError(f"D3 {lane} control sample is malformed") from error
+        if samples != expected_samples:
+            raise ValueError(f"D3 {lane} control sample identities changed")
+        if any(turn != TURNS for turn in turns):
+            raise ValueError(f"D3 {lane} control turn count changed")
+
+
+def d3_report(
+    raw: str,
+    semantic_commit: str,
+    d2_report: dict,
+    d2_path: Path,
+    context: dict | None,
+    raw_path: Path | None,
+) -> dict:
     samples = parse_json_lines(raw, "GATE_D3_SAMPLE ")
     replays = parse_json_lines(raw, "GATE_D3_REPLAY ")
     controls = parse_json_lines(raw, "GATE_D3_CONTROL ")
@@ -131,6 +255,7 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
             "incomplete D3 output: "
             f"samples={len(samples)} replays={len(replays)} controls={len(controls)}"
         )
+    validate_d3_control_protocol(controls)
     if len(structural_rows) != 1:
         raise ValueError(f"expected one D3 structural record, found {len(structural_rows)}")
     structural = structural_rows[0]
@@ -151,8 +276,18 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
             ]
             for artifact in ("source", "bytecode")
         }
-        if any(len(rows) != 10 for rows in artifact_rows.values()):
+        if any(
+            len(rows) != GATE_D_SAMPLE_PROTOCOL["samples"]
+            for rows in artifact_rows.values()
+        ):
             raise ValueError(f"D3 {fixture} does not have ten source/bytecode samples")
+        for artifact, rows in artifact_rows.items():
+            if sorted(row.get("sample") for row in rows) != list(
+                range(GATE_D_SAMPLE_PROTOCOL["samples"])
+            ):
+                raise ValueError(f"D3 {fixture}/{artifact} sample identities changed")
+            if any(row.get("turns") != TURNS for row in rows):
+                raise ValueError(f"D3 {fixture}/{artifact} turn count changed")
         lanes = {}
         for artifact, rows in artifact_rows.items():
             lanes[artifact] = {
@@ -225,18 +360,10 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
         "high_epoch": control_timings["high-epoch"]["median_ns"] / control_base,
     }
 
-    d2_frozen = json.loads(
-        command("git", "show", f"{D2_HEAD}:benchmarks/runtime/gate-b/b2-resident-turn.json")
-    )
-    d2_current = json.loads(
-        (ROOT / "benchmarks/runtime/gate-b/b2-resident-turn.json").read_text(encoding="utf-8")
-    )
-    d2_frozen_source = select_lane(d2_frozen, "mech-resident-artifact-source")
-    d2_current_source = select_lane(d2_current, "mech-resident-artifact-source")
-    d2_regression = (
-        d2_current_source["timing"]["median_ns_per_turn"]
-        / d2_frozen_source["timing"]["median_ns_per_turn"]
-    )
+    try:
+        d2_regression = float(d2_report["ekf"]["ratios"]["fresh_over_historical_d2"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("D2 lacks same-machine historical D2 replay evidence") from error
     thresholds = {
         "d2_pure_complete_turn_regression_max": 1.05,
         "d3_source_bytecode_ratio_max": 1.03,
@@ -255,6 +382,7 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
         )
     )
     gates = {
+        "d2_authenticated": d2_report.get("decision") == "Pass",
         "d2_pure_regression": d2_regression <= thresholds["d2_pure_complete_turn_regression_max"],
         "source_bytecode_ratio": max(source_bytecode_ratios)
         <= thresholds["d3_source_bytecode_ratio_max"],
@@ -285,25 +413,20 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
         ]
         == 0,
     }
-    return {
-        "schema_version": 1,
+    report = {
+        "schema_version": 2,
         "gate": "D",
         "phase": "D3-resident-external",
         "semantic_commit": semantic_commit,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "machine": {
-            "platform": platform.platform(),
-            "architecture": platform.machine(),
-            "processor": platform.processor(),
-        },
-        "sample_protocol": {"samples": 10, "turns_per_sample": TURNS, "profile": "release"},
+        "machine": physical_machine(),
+        "sample_protocol": GATE_D_SAMPLE_PROTOCOL,
         "thresholds": thresholds,
         "d2_pure": {
             "frozen_semantic_head": D2_HEAD,
-            "frozen_ns_per_turn": d2_frozen_source["timing"]["median_ns_per_turn"],
-            "current_ns_per_turn": d2_current_source["timing"]["median_ns_per_turn"],
+            "frozen_ns_per_turn": d2_report["ekf"]["lanes"]["historical_d2_source"],
+            "current_ns_per_turn": d2_report["ekf"]["lanes"]["fresh_source"],
             "regression_ratio": d2_regression,
-            "nbody_report": "benchmarks/runtime/gate-d/d2-resident-nbody.json",
         },
         "fixtures": fixtures,
         "controls": {"timings": control_timings, "ratios": control_ratios},
@@ -311,6 +434,38 @@ def d3_report(raw: str, semantic_commit: str) -> dict:
         "hard_gates": gates,
         "decision": "Pass" if all(gates.values()) else "Fail",
     }
+    d2_bytes = d2_path.read_bytes()
+    report["d2_authentication"] = {
+        "evidence_path": (
+            context.get("d2_evidence_path", str(d2_path))
+            if context is not None
+            else str(d2_path)
+        ),
+        "evidence_sha256": hashlib.sha256(d2_bytes).hexdigest(),
+        "decision": d2_report.get("decision"),
+        "runtime_subject_tree": d2_report.get("provenance", {}).get(
+            "runtime_subject_tree"
+        ),
+        "qualification_environment_id": d2_report.get("provenance", {}).get(
+            "qualification_environment_id"
+        ),
+        "protocol_version": d2_report.get("provenance", {}).get("protocol_version"),
+        "chain_id": d2_report.get("provenance", {}).get("chain_id"),
+    }
+    if raw_path is not None:
+        report["raw_evidence"] = {
+            "path": (
+                f"{context['raw_evidence_prefix']}/d3-raw.log"
+                if context is not None and context.get("raw_evidence_prefix")
+                else str(raw_path)
+            ),
+            "sha256": sha256_file(raw_path),
+        }
+    if context is not None:
+        attach_provenance(report, context)
+    else:
+        report["canonical"] = False
+    return report
 
 
 def select_lane(report: dict, name: str) -> dict:
@@ -327,6 +482,30 @@ def select_lane(report: dict, name: str) -> dict:
     return matches[0]
 
 
+def report_provenance_errors(report: dict, context: dict) -> list[str]:
+    expected = {"provenance": context}
+    return same_provenance(
+        report,
+        expected,
+        (
+            "protocol_version",
+            "runtime_subject_commit",
+            "runtime_subject_tree",
+            "qualification_protocol_commit",
+            "evidence_generation_commit",
+            "qualification_environment_id",
+            "chain_id",
+            "session_id",
+            "workflow_run_id",
+            "workflow_run_attempt",
+        ),
+    )
+
+
+def gate_b_decision(report: dict) -> str | None:
+    return report.get("b2_decision", {}).get("decision")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -336,12 +515,186 @@ def main() -> int:
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--raw-input", type=Path)
+    parser.add_argument("--raw-output", type=Path)
     parser.add_argument("--semantic-commit")
+    parser.add_argument("--qualification-context", type=Path)
+    parser.add_argument("--gate-b-report", type=Path)
+    parser.add_argument("--expected-gate-b-sha256")
+    parser.add_argument("--gate-b-evidence-root", type=Path)
+    parser.add_argument("--d2-report", type=Path)
+    parser.add_argument("--expected-d2-sha256")
+    parser.add_argument("--historical-output-directory", type=Path)
+    parser.add_argument("--python", type=Path, default=Path(sys.executable))
     args = parser.parse_args()
 
-    semantic_commit = args.semantic_commit or command("git", "rev-parse", "HEAD")
+    try:
+        identity = git_identity()
+        context = (
+            load_qualification_context(args.qualification_context.resolve())
+            if args.qualification_context
+            else None
+        )
+    except EvidenceError as error:
+        print(f"Gate D qualification preflight failed: {error}", file=sys.stderr)
+        return 2
+    if context is not None:
+        if not identity["clean"]:
+            print("canonical Gate D refuses a dirty worktree", file=sys.stderr)
+            return 2
+        if identity["branch"] is None:
+            print("canonical Gate D refuses a detached HEAD", file=sys.stderr)
+            return 2
+        if context["evidence_generation_commit"] != identity["commit"]:
+            print("Gate D evidence generation commit does not match HEAD", file=sys.stderr)
+            return 2
+        if args.raw_input is not None:
+            print("caller-supplied raw input is always noncanonical", file=sys.stderr)
+            return 2
+        if args.raw_output is None:
+            print("canonical Gate D requires an authenticated raw-output path", file=sys.stderr)
+            return 2
+        if args.semantic_commit and args.semantic_commit != context["runtime_subject_commit"]:
+            print("caller-supplied semantic commit differs from the F0 subject", file=sys.stderr)
+            return 2
+        semantic_commit = context["runtime_subject_commit"]
+    else:
+        semantic_commit = args.semantic_commit or identity["commit"]
+
+    raw_output = None
+    if args.raw_output:
+        raw_output = args.raw_output if args.raw_output.is_absolute() else ROOT / args.raw_output
+        raw_output.parent.mkdir(parents=True, exist_ok=True)
+
+    gate_b_path = args.gate_b_report or ROOT / "benchmarks/runtime/gate-b/b2-resident-turn.json"
+    gate_b_path = gate_b_path if gate_b_path.is_absolute() else ROOT / gate_b_path
+    gate_b_report = None
+    gate_b_digest = None
+    if args.phase == "D2-resident-nbody":
+        try:
+            gate_b_report = load_json(gate_b_path)
+            gate_b_digest = sha256_file(gate_b_path)
+        except (OSError, EvidenceError) as error:
+            print(f"Gate D2 cannot authenticate Gate B: {error}", file=sys.stderr)
+            return 2
+        if context is not None:
+            if not args.expected_gate_b_sha256:
+                print("canonical Gate D2 requires the recorded Gate B digest", file=sys.stderr)
+                return 2
+            if args.gate_b_evidence_root is None:
+                print("canonical Gate D2 requires the retained Gate B raw root", file=sys.stderr)
+                return 2
+            require_canonical = True
+            preflight_errors = gate_b_contract_errors(
+                gate_b_report, require_canonical=require_canonical
+            )
+            if gate_b_digest != args.expected_gate_b_sha256:
+                preflight_errors.append("fresh Gate B digest changed before D2 measurement")
+            preflight_errors.extend(report_provenance_errors(gate_b_report, context))
+            preflight_errors.extend(
+                gate_b_raw_evidence_errors(
+                    gate_b_report,
+                    args.gate_b_evidence_root.resolve(),
+                    context["raw_evidence_prefix"],
+                )
+            )
+            if preflight_errors:
+                print("Gate D2 Gate B preflight failed:", file=sys.stderr)
+                print(*preflight_errors, sep="\n", file=sys.stderr)
+                return 4
+
     if args.phase in {"D3-resident-external", "D3-external-turn"}:
-        report = d3_report(load_d3_raw(args.raw_input), semantic_commit)
+        d2_path = args.d2_report or ROOT / "benchmarks/runtime/gate-d/d2-resident-nbody.json"
+        d2_path = d2_path if d2_path.is_absolute() else ROOT / d2_path
+        try:
+            d2_digest = sha256_file(d2_path)
+            d2_report = load_json(d2_path)
+        except (OSError, EvidenceError) as error:
+            print(f"Gate D3 cannot authenticate D2: {error}", file=sys.stderr)
+            return 2
+        if context is not None:
+            if not args.expected_d2_sha256:
+                print("canonical Gate D3 requires the recorded D2 digest", file=sys.stderr)
+                return 2
+            if d2_digest != args.expected_d2_sha256:
+                print("Gate D3 D2 digest changed after D2 completed", file=sys.stderr)
+                return 2
+        if d2_report.get("decision") != "Pass":
+            print("Gate D3 refuses to measure before Gate D2 passes", file=sys.stderr)
+            return 4
+        if context is not None:
+            if args.gate_b_report is None:
+                print("canonical Gate D3 requires the recorded Gate B report", file=sys.stderr)
+                return 2
+            gate_b_path = (
+                args.gate_b_report
+                if args.gate_b_report.is_absolute()
+                else ROOT / args.gate_b_report
+            )
+            try:
+                gate_b_report = load_json(gate_b_path)
+                gate_b_digest = sha256_file(gate_b_path)
+            except (OSError, EvidenceError) as error:
+                print(f"Gate D3 cannot authenticate Gate B: {error}", file=sys.stderr)
+                return 2
+            if args.gate_b_evidence_root is None:
+                print("canonical Gate D3 requires the retained Gate B raw root", file=sys.stderr)
+                return 2
+            require_canonical = True
+            gate_b_errors = gate_b_contract_errors(
+                gate_b_report, require_canonical=require_canonical
+            )
+            gate_b_errors.extend(
+                gate_b_raw_evidence_errors(
+                    gate_b_report,
+                    args.gate_b_evidence_root.resolve(),
+                    context["raw_evidence_prefix"],
+                )
+            )
+            gate_b_evidence = d2_report.get("ekf", {}).get("evidence", {})
+            if gate_b_digest != gate_b_evidence.get("fresh_gate_b_report_sha256"):
+                gate_b_errors.append("Gate D2 fresh Gate B digest changed")
+            if gate_b_evidence.get("fresh_gate_b_report_path") != context.get(
+                "b2_evidence_path"
+            ):
+                gate_b_errors.append("Gate D2 fresh Gate B path changed")
+            gate_b_errors.extend(report_provenance_errors(gate_b_report, context))
+            if gate_b_errors:
+                print("Gate D3 Gate B contract failed:", file=sys.stderr)
+                print(*gate_b_errors, sep="\n", file=sys.stderr)
+                return 4
+            contract_errors = gate_d_contract_errors(
+                d2_report,
+                D2_PHASE,
+                gate_b_report=gate_b_report,
+                require_canonical=require_canonical,
+            )
+            if contract_errors:
+                print("Gate D3 D2 contract failed:", file=sys.stderr)
+                print(*contract_errors, sep="\n", file=sys.stderr)
+                return 4
+            errors = report_provenance_errors(d2_report, context)
+            if errors:
+                print("Gate D3 D2 provenance failed:", file=sys.stderr)
+                print(*errors, sep="\n", file=sys.stderr)
+                return 2
+        raw = load_d3_raw(args.raw_input)
+        if raw_output is not None:
+            raw_output.write_text(raw, encoding="utf-8")
+        report = d3_report(
+            raw, semantic_commit, d2_report, d2_path, context, raw_output
+        )
+        contract_errors = gate_d_contract_errors(
+            report,
+            D3_PHASE,
+            require_canonical=(
+                context is not None
+            ),
+            require_pass=False,
+        )
+        if contract_errors:
+            print("generated Gate D3 contract failed:", file=sys.stderr)
+            print(*contract_errors, sep="\n", file=sys.stderr)
+            return 2
         rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
         output = args.output if args.output.is_absolute() else ROOT / args.output
         output.parent.mkdir(parents=True, exist_ok=True)
@@ -349,9 +702,26 @@ def main() -> int:
         display = output.relative_to(ROOT) if output.is_relative_to(ROOT) else output
         print(f"wrote {display}: {report['decision']}")
         return 0 if report["decision"] == "Pass" else 3
-    raw = load_raw(args.raw_input)
     if args.raw_input is None:
-        raw += "\n" + run_historical_d2_fixture("--gate-d-benchmark", release=True)
+        fresh_raw = load_raw(None)
+        historical_raw = run_historical_d2_fixture("--gate-d-benchmark", release=True)
+        evidence_raw = (
+            fresh_raw.rstrip()
+            + f"\n{HISTORICAL_REPLAY_MARKER}\n"
+            + historical_raw.lstrip()
+        )
+    else:
+        evidence_raw = load_raw(args.raw_input)
+        try:
+            fresh_raw, historical_raw = evidence_raw.split(
+                f"\n{HISTORICAL_REPLAY_MARKER}\n", 1
+            )
+        except ValueError as error:
+            raise ValueError("Gate D2 raw input has no historical replay boundary") from error
+    validate_d2_sample_protocol(fresh_raw, historical_raw)
+    raw = d2_measurement_raw(fresh_raw, historical_raw)
+    if raw_output is not None:
+        raw_output.write_text(evidence_raw, encoding="utf-8")
     lane_samples: dict[str, list[float]] = {}
     lane_allocations: dict[str, set[int]] = {}
     cold_samples: dict[str, list[float]] = {}
@@ -452,12 +822,41 @@ def main() -> int:
         "no_legacy_journal": integer_structural["legacy_journal_capture_count"] == 0,
     }
 
-    d1_report = json.loads(
-        command("git", "show", f"{D1_HEAD}:benchmarks/runtime/gate-b/b2-resident-turn.json")
-    )
-    d2_report = json.loads(
-        (ROOT / "benchmarks/runtime/gate-b/b2-resident-turn.json").read_text()
-    )
+    d2_report = gate_b_report or load_json(gate_b_path)
+    if gate_b_decision(d2_report) != "Pass":
+        raise ValueError("fresh Gate B report must pass before Gate D2")
+    if context is not None:
+        provenance_errors = report_provenance_errors(d2_report, context)
+        if provenance_errors:
+            raise ValueError("fresh Gate B provenance failed: " + "; ".join(provenance_errors))
+        if args.historical_output_directory is None:
+            raise ValueError("canonical Gate D2 requires historical replay output directory")
+        historical_root = (
+            args.historical_output_directory
+            if args.historical_output_directory.is_absolute()
+            else ROOT / args.historical_output_directory
+        )
+        d1_report = replay_historical_gate_b(
+            D1_HEAD,
+            context,
+            historical_root / "d1",
+            Path(sys.executable).resolve(),
+            args.python.resolve(),
+        )
+        historical_d2_report = replay_historical_gate_b(
+            D2_HEAD,
+            context,
+            historical_root / "d2",
+            Path(sys.executable).resolve(),
+            args.python.resolve(),
+        )
+    else:
+        d1_report = json.loads(
+            command("git", "show", f"{D1_HEAD}:benchmarks/runtime/gate-b/b2-resident-turn.json")
+        )
+        historical_d2_report = json.loads(
+            command("git", "show", f"{D2_HEAD}:benchmarks/runtime/gate-b/b2-resident-turn.json")
+        )
     d1_complete = select_lane(d1_report, "mech-resident-artifact-source")["timing"]["median_ns_per_turn"]
     d1_kernel = select_lane(d1_report, "mech-resident-artifact-kernel-source")["timing"]["median_ns_per_turn"]
     d2_source = select_lane(d2_report, "mech-resident-artifact-source")["timing"]["median_ns_per_turn"]
@@ -465,6 +864,9 @@ def main() -> int:
     d2_kernel_source = select_lane(d2_report, "mech-resident-artifact-kernel-source")["timing"]["median_ns_per_turn"]
     d2_kernel_bytecode = select_lane(d2_report, "mech-resident-artifact-kernel-bytecode")["timing"]["median_ns_per_turn"]
     gate_b_control = select_lane(d2_report, "mech-resident-turn")["timing"]["median_ns_per_turn"]
+    historical_d2_source = select_lane(
+        historical_d2_report, "mech-resident-artifact-source"
+    )["timing"]["median_ns_per_turn"]
     ekf_source_bytecode_ratio = max(d2_source, d2_bytecode) / min(d2_source, d2_bytecode)
     ekf_complete_d1_ratio = d2_source / d1_complete
     ekf_kernel_d1_ratio = d2_kernel_source / d1_kernel
@@ -481,17 +883,13 @@ def main() -> int:
     }
 
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "gate": "D",
         "phase": "D2-resident-nbody",
         "semantic_commit": semantic_commit,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "machine": {
-            "platform": platform.platform(),
-            "architecture": platform.machine(),
-            "processor": platform.processor(),
-        },
-        "sample_protocol": {"samples": 10, "turns_per_sample": TURNS, "profile": "release"},
+        "machine": physical_machine(),
+        "sample_protocol": GATE_D_SAMPLE_PROTOCOL,
         "thresholds": THRESHOLDS,
         "nbody": {
             "lanes": lanes,
@@ -514,7 +912,15 @@ def main() -> int:
             "evidence": {
                 "d1_head": D1_HEAD,
                 "d1_report_commit": d1_report["git_commit"],
-                "d2_report_commit": d2_report["git_commit"],
+                "historical_d2_head": D2_HEAD,
+                "historical_d2_report_commit": historical_d2_report["git_commit"],
+                "fresh_gate_b_report_commit": d2_report["git_commit"],
+                "fresh_gate_b_report_path": (
+                    context.get("b2_evidence_path")
+                    if context is not None
+                    else str(gate_b_path)
+                ),
+                "fresh_gate_b_report_sha256": sha256_file(gate_b_path),
             },
             "lanes": {
                 "d1_complete": d1_complete,
@@ -524,11 +930,14 @@ def main() -> int:
                 "d2_kernel_source": d2_kernel_source,
                 "d2_kernel_bytecode": d2_kernel_bytecode,
                 "gate_b_control": gate_b_control,
+                "fresh_source": d2_source,
+                "historical_d2_source": historical_d2_source,
             },
             "ratios": {
                 "source_bytecode": ekf_source_bytecode_ratio,
                 "complete_d1": ekf_complete_d1_ratio,
                 "kernel_d1": ekf_kernel_d1_ratio,
+                "fresh_over_historical_d2": d2_source / historical_d2_source,
             },
             "hard_gates": ekf_gates,
             "decision": "Pass" if all(ekf_gates.values()) else "Fail",
@@ -538,11 +947,42 @@ def main() -> int:
     report["decision"] = (
         "Pass" if report["nbody"]["decision"] == report["ekf"]["decision"] == "Pass" else "Fail"
     )
+    if raw_output is not None:
+        report["raw_evidence"] = {
+            "path": (
+                f"{context['raw_evidence_prefix']}/d2-raw.log"
+                if context is not None and context.get("raw_evidence_prefix")
+                else str(raw_output)
+            ),
+            "sha256": sha256_file(raw_output),
+        }
+    if context is not None:
+        attach_provenance(report, context)
+        report["historical_replays"] = {
+            "d1": d1_report["historical_replay"],
+            "d2": historical_d2_report["historical_replay"],
+        }
+    else:
+        report["canonical"] = False
+    contract_errors = gate_d_contract_errors(
+        report,
+        D2_PHASE,
+        gate_b_report=d2_report,
+        require_canonical=(
+            context is not None
+        ),
+        require_pass=False,
+    )
+    if contract_errors:
+        print("generated Gate D2 contract failed:", file=sys.stderr)
+        print(*contract_errors, sep="\n", file=sys.stderr)
+        return 2
     rendered = json.dumps(report, indent=2, sort_keys=True) + "\n"
     output = args.output if args.output.is_absolute() else ROOT / args.output
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(rendered, encoding="utf-8")
-    print(f"wrote {output.relative_to(ROOT)}: {report['decision']}")
+    display = output.relative_to(ROOT) if output.is_relative_to(ROOT) else output
+    print(f"wrote {display}: {report['decision']}")
     return 0 if report["decision"] == "Pass" else 3
 
 
