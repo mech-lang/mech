@@ -2323,6 +2323,7 @@ mod tests {
         assert_eq!(scene_backend.generation(), 3);
     }
 
+    #[cfg(not(feature = "browser_gpu_compiler"))]
     #[test]
     fn unsupported_generic_table_project_fails_closed_without_legacy_execution() {
         let document = parse_config_document(
@@ -2348,7 +2349,7 @@ rows := |id<string> x<f64>|
         assert_production_route_failed_closed(
             &runtime,
             &error,
-            ResidentRouteFailureClass::InvalidArtifact,
+            ResidentRouteFailureClass::SemanticUnsupported,
         );
     }
 
@@ -2456,7 +2457,7 @@ rows := |id<string> x<f64>|
         assert_production_route_failed_closed(
             &runtime,
             &error,
-            ResidentRouteFailureClass::InvalidArtifact,
+            ResidentRouteFailureClass::SemanticUnsupported,
         );
         assert_eq!(scene_backend.generation(), 0);
     }

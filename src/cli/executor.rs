@@ -1,15 +1,15 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
 use mech_core::{
-    Body, MResult, MechCode, MechError, MechErrorKind, MechSourceCode, NoMechExecutionServices,
-    Program, Section, SectionElement, hash_str,
+    Body, MResult, MechCode, MechError, MechErrorKind, MechSourceCode, Program, Section,
+    SectionElement,
 };
-use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingRole, GpuHost, GpuProgram, GpuRegionHostFactory, GpuRegionProgram};
 use mech_runtime::{
-    FS_READ, MECH_TOOL_SUBJECT, RunExecutorConfig, RuntimeHostFactory, check_fs_capability,
+    FS_READ, MECH_TOOL_SUBJECT, RunExecutorConfig, RuntimeBuilder, RuntimeHostFactory,
+    check_fs_capability,
 };
 
 use crate::cli::outcome::CliOutcome;
@@ -65,6 +65,12 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
     let tree = mech_syntax::parse(source.trim())?;
     let imports = import_prelude(&tree);
     let mut programs = BTreeMap::new();
+    let gpu_host = plan
+        .configured_hosts
+        .iter()
+        .find(|host| host.provider == "gpu")
+        .expect("GPU host presence was checked");
+    let external_input_names = configured_compute_inputs(plan, &gpu_host.name);
 
     for section in tree
         .body
@@ -91,12 +97,14 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
         }
 
         let region_tree = isolated_region_tree(&imports, section);
-        let mut source_program = MechProgram::with_function_catalog(
-            MechProgramConfig::default(),
-            mech_stdlib::source_native_plan_catalog(),
-        );
-        source_program.run_tree_with_services(&region_tree, &mut NoMechExecutionServices)?;
-        let product = source_program.compile_program_product()?;
+        let mut compiler = RuntimeBuilder::new()
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
+            .build_compiler()?;
+        let product = compiler.compile_tree_artifact_with_inputs(
+            &region_tree,
+            &BTreeMap::new(),
+            &external_input_names,
+        )?;
         if product.compute_regions().len() != 1 || product.compute_regions()[0].name != name {
             return Err(executor_error(
                 "compile_gpu_host_regions",
@@ -111,7 +119,7 @@ pub(crate) fn configured_gpu_host(plan: &RunExecutionPlan) -> MResult<Option<Con
                     format!("GPU host rejected region `{name}`:\n{error}"),
                 )
             })?;
-        let inputs = source_input_values(&source_program, &program)?;
+        let inputs = default_input_values(&program);
         programs.insert(name, GpuRegionProgram::new(program, inputs));
     }
 
@@ -220,22 +228,17 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
     println!("[Mech Run] Compiling {}", source_path.display());
 
     let compile_started = Instant::now();
-    let mut source_program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()?;
     let catalog_elapsed = compile_started.elapsed();
 
     let parse_started = Instant::now();
     let tree = mech_syntax::parse(source.trim())?;
     let parse_elapsed = parse_started.elapsed();
 
-    let source_started = Instant::now();
-    source_program.run_tree_with_services(&tree, &mut NoMechExecutionServices)?;
-    let source_elapsed = source_started.elapsed();
-
     let artifact_started = Instant::now();
-    let product = source_program.compile_program_product()?;
+    let product = compiler.compile_tree_artifact(&tree)?;
     let artifact_elapsed = artifact_started.elapsed();
 
     let lower_started = Instant::now();
@@ -273,16 +276,15 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
         milliseconds(compile_elapsed),
     );
     println!(
-        "[Mech Run] Compile phases: catalog {:.3} ms, parse {:.3} ms, source execution + initialization {:.3} ms, artifact {:.3} ms, GPU lowering {:.3} ms",
+        "[Mech Run] Compile phases: catalog {:.3} ms, parse {:.3} ms, source-to-artifact {:.3} ms, GPU lowering {:.3} ms",
         milliseconds(catalog_elapsed),
         milliseconds(parse_elapsed),
-        milliseconds(source_elapsed),
         milliseconds(artifact_elapsed),
         milliseconds(lower_elapsed),
     );
 
     let inputs_started = Instant::now();
-    let inputs = source_input_values(&source_program, &program)?;
+    let inputs = default_input_values(&program);
     println!(
         "[Mech Run] Captured executor inputs in {:.3} ms",
         milliseconds(inputs_started.elapsed())
@@ -326,44 +328,27 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
     Ok(CliOutcome::exit(0))
 }
 
-fn source_input_values(
-    source_program: &MechProgram,
-    program: &GpuProgram,
-) -> MResult<BTreeMap<String, Vec<f32>>> {
-    let symbols = source_program.interpreter().symbols();
-    let symbols = symbols.borrow();
+fn default_input_values(program: &GpuProgram) -> BTreeMap<String, Vec<f32>> {
     let mut inputs = BTreeMap::new();
     for binding in program
         .bindings()
         .iter()
         .filter(|binding| binding.role() == GpuBindingRole::Input)
     {
-        let cell = symbols.get(hash_str(&binding.name)).ok_or_else(|| {
-            executor_error(
-                "prepare_executor_inputs",
-                format!("GPU input `{}` has no source value", binding.name),
-            )
-        })?;
-        let values = cell.borrow().as_vecf32().map_err(|failure| {
-            executor_error(
-                "prepare_executor_inputs",
-                format!("GPU input `{}` is not f32 data: {failure:?}", binding.name),
-            )
-        })?;
-        if values.len() != binding.elements as usize {
-            return Err(executor_error(
-                "prepare_executor_inputs",
-                format!(
-                    "GPU input `{}` has {} source value(s), expected {}",
-                    binding.name,
-                    values.len(),
-                    binding.elements,
-                ),
-            ));
-        }
-        inputs.insert(binding.name.clone(), values);
+        inputs.insert(binding.name.clone(), vec![0.0; binding.elements as usize]);
     }
-    Ok(inputs)
+    inputs
+}
+
+fn configured_compute_inputs(plan: &RunExecutionPlan, instance: &str) -> BTreeSet<String> {
+    let target = format!("{instance}/kernel");
+    plan.configured_run_grants
+        .iter()
+        .filter(|grant| grant.target == target && grant.operations.iter().any(|op| op == "write"))
+        .flat_map(|grant| &grant.paths)
+        .filter_map(|path| path.strip_prefix("input/"))
+        .map(str::to_owned)
+        .collect()
 }
 
 fn one_mech_source(plan: &RunExecutionPlan) -> MResult<PathBuf> {

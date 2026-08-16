@@ -235,6 +235,24 @@ fn composite_return_materialization_has_semantic_node_metadata() -> MResult<()> 
     Ok(())
 }
 
+#[test]
+fn immutable_composite_definitions_remain_reactive_packs() -> MResult<()> {
+    let (artifact, _) =
+        compile_artifact_fixture("first := 1.0\nsecond := 2.0\npair := (first, second)\npair")?;
+    let composite = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack"
+        })
+        .expect("an immutable composite definition must not be frozen as a startup constant");
+    assert!(composite.input_bindings.len() >= 2);
+    assert_eq!(composite.output_bindings.len(), 1);
+    assert_eq!(artifact.outputs().len(), 1);
+    Ok(())
+}
+
 fn assert_f64_schema(artifact: &ProgramArtifact, schema: mech_core::SchemaId) {
     let body = artifact.schemas().get(schema).unwrap().body();
     assert!(

@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, CellSlotId, ComputePlacement, DeliveryMode, DimensionExpr, ExternalInteraction,
     FloatWidth, NodeId, OutputConstruction, ResolvedOperationContract, SchemaBody,
@@ -468,13 +469,17 @@ fn classify_node(
             BindingDeclaration::Input {
                 source: ArtifactSource::Constant(constant),
                 ..
-            } => matches!(
-                artifact
-                    .constants()
-                    .get(*constant)
-                    .map(|value| value.data()),
-                Some(mech_core::ValueData::F32(_))
-            ),
+            } => match artifact
+                .constants()
+                .get(*constant)
+                .map(|value| value.data())
+            {
+                Some(mech_core::ValueData::F32(_)) => true,
+                Some(mech_core::ValueData::Matrix(matrix)) => {
+                    matches!(matrix.elements(), SequenceView::F32(_))
+                }
+                _ => false,
+            },
             BindingDeclaration::Output { target, .. } => {
                 schema_elements(artifact, artifact.slots()[target.get() as usize].schema).is_some()
             }

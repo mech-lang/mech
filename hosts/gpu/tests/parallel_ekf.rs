@@ -1,24 +1,32 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use mech_core::{Body, LegacyValue, MechCode, Program, Ref, Section, SectionElement, hash_str};
+use mech_core::{Body, MechCode, Program, Section, SectionElement};
 use mech_engine::{
-    ArtifactComputeRegion, MechProgram, MechProgramConfig, ProgramArtifact,
-    decode_program_artifact_sections, encode_program_artifact_sections,
+    ArtifactComputeRegion, ProgramArtifact, decode_program_artifact_sections,
+    encode_program_artifact_sections,
 };
 use mech_gpu::{BatchedExecutionError, BatchedGpuProgram, GpuHost};
+use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
-fn symbol_f32_values(program: &MechProgram, name: &str) -> Vec<f32> {
-    program
-        .interpreter()
-        .symbols()
-        .borrow()
-        .get(hash_str(name))
-        .unwrap_or_else(|| panic!("{name} must exist"))
-        .borrow()
-        .as_vecf32()
-        .unwrap_or_else(|error| panic!("{name} must contain f32 values: {error:?}"))
-}
+const DRIVER_INPUT_NAMES: [&str; 7] = [
+    "lane-dt",
+    "lane-linear-velocity",
+    "lane-angular-velocity",
+    "lane-bearing",
+    "lane-measurement-noise",
+    "finite-limit",
+    "covariance-symmetry-tolerance",
+];
+const COMPUTE_INPUT_NAMES: [&str; 7] = [
+    "dt",
+    "linear-velocity",
+    "angular-velocity",
+    "bearing",
+    "measurement-noise",
+    "finite-limit",
+    "covariance-symmetry-tolerance",
+];
 
 fn source_tree(instances: usize) -> Program {
     source_tree_from(SOURCE, instances)
@@ -69,98 +77,226 @@ fn projected_tree(tree: &Program, compute: bool) -> Program {
     }
 }
 
-fn evaluate_driver(tree: &Program) -> MechProgram {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    program
-        .run_tree(&projected_tree(tree, false))
-        .expect("Mech EKF arrays must evaluate");
-    program
-}
-
-fn seed_lane_inputs(target: &MechProgram, driver: &MechProgram, tree: &Program) {
-    let compute_definitions = tree
-        .body
-        .sections
-        .iter()
-        .filter(|section| section.compute.is_some())
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| match element {
-            SectionElement::MechCode(code) => Some(code),
-            _ => None,
+fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
+        .evaluate_static_tree_symbols(&projected_tree(tree, false), &DRIVER_INPUT_NAMES)
+        .expect("Mech EKF arrays must evaluate")
+        .into_iter()
+        .map(|(name, value)| {
+            let values = match value {
+                RuntimeHostInputValue::F32(value) => vec![value],
+                RuntimeHostInputValue::F32Matrix { values, .. } => values,
+                value => panic!("{name} must contain f32 values, found {value:?}"),
+            };
+            (name, values)
         })
-        .flatten()
-        .filter_map(|(code, _)| match code {
-            MechCode::Statement(mech_core::Statement::VariableDefine(definition)) => {
-                Some(definition.var.name.hash())
-            }
-            _ => None,
-        })
-        .collect::<BTreeSet<_>>();
-    let driver_symbols = driver.interpreter().symbols();
-    let lane_values = {
-        let symbols = driver_symbols.borrow();
-        let dictionary = symbols.dictionary.borrow();
-        symbols
-            .symbols
-            .iter()
-            .filter(|(id, _)| !compute_definitions.contains(id))
-            .filter_map(|(id, cell)| {
-                let values = cell.borrow().as_vecf32().ok()?;
-                Some((*id, dictionary.get(id)?.clone(), *values.first()?))
-            })
-            .collect::<Vec<_>>()
-    };
-    let target_symbols = target.interpreter().symbols();
-    for (id, name, value) in lane_values {
-        target_symbols
-            .borrow_mut()
-            .insert(id, LegacyValue::F32(Ref::new(value)), false);
-        target_symbols
-            .borrow()
-            .dictionary
-            .borrow_mut()
-            .insert(id, name);
-    }
+        .collect()
 }
 
 fn compile_compute(
     tree: &Program,
-    driver: &MechProgram,
-) -> (MechProgram, ProgramArtifact, Box<[ArtifactComputeRegion]>) {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    seed_lane_inputs(&program, driver, tree);
-    program
-        .run_tree(&projected_tree(tree, true))
-        .expect("ordinary high-level EKF compute region must run");
-    let (artifact, regions) = program
-        .compile_program_artifact_with_regions()
-        .expect("ordinary high-level EKF source must compile");
-    (program, artifact, regions)
+    driver: &BTreeMap<String, Vec<f32>>,
+) -> (ProgramArtifact, Box<[ArtifactComputeRegion]>) {
+    let scalar_inputs = driver
+        .iter()
+        .map(|(name, values)| {
+            (
+                name.clone(),
+                RuntimeHostInputValue::F32(*values.first().expect("driver input is non-empty")),
+            )
+        })
+        .collect();
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
+        .compile_tree_artifact_with_inputs(
+            &projected_tree(tree, true),
+            &scalar_inputs,
+            &COMPUTE_INPUT_NAMES.into_iter().map(str::to_owned).collect(),
+        )
+        .expect("ordinary high-level EKF source must compile")
+        .into_parts()
 }
 
-fn source_inputs(program: &MechProgram, artifact: &ProgramArtifact) -> BTreeMap<String, Vec<f32>> {
-    let symbols = program.interpreter().symbols();
-    let symbols = symbols.borrow();
+fn source_inputs(
+    driver: &BTreeMap<String, Vec<f32>>,
+    artifact: &ProgramArtifact,
+) -> BTreeMap<String, Vec<f32>> {
     artifact
         .inputs()
         .iter()
         .filter_map(|input| {
-            symbols.get(hash_str(&input.name)).map(|cell| {
-                (
-                    input.name.clone(),
-                    cell.borrow()
-                        .as_vecf32()
-                        .unwrap_or_else(|error| panic!("{}: {error:?}", input.name)),
-                )
-            })
+            let driver_name = match input.name.as_str() {
+                "dt" => "lane-dt",
+                "linear-velocity" => "lane-linear-velocity",
+                "angular-velocity" => "lane-angular-velocity",
+                "bearing" => "lane-bearing",
+                "measurement-noise" => "lane-measurement-noise",
+                name => name,
+            };
+            driver
+                .get(driver_name)
+                .map(|values| (input.name.clone(), values.clone()))
         })
         .collect()
+}
+
+fn source_evaluated_outputs(
+    tree: &Program,
+    driver: &BTreeMap<String, Vec<f32>>,
+) -> (Vec<f32>, Vec<f32>) {
+    let outputs =
+        source_evaluated_values(tree, driver, &["corrected-state", "corrected-covariance"]);
+    (
+        outputs["corrected-state"].clone(),
+        outputs["corrected-covariance"].clone(),
+    )
+}
+
+fn source_evaluated_values(
+    tree: &Program,
+    driver: &BTreeMap<String, Vec<f32>>,
+    names: &[&str],
+) -> BTreeMap<String, Vec<f32>> {
+    let inputs = driver
+        .iter()
+        .map(|(name, values)| {
+            (
+                name.clone(),
+                RuntimeHostInputValue::F32(*values.first().expect("driver input is non-empty")),
+            )
+        })
+        .collect();
+    let outputs = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
+        .evaluate_static_tree_symbols_with_inputs(&projected_tree(tree, true), &inputs, names)
+        .expect("ordinary high-level EKF source must evaluate");
+    outputs
+        .into_iter()
+        .map(|(name, value)| {
+            let values = match value {
+                RuntimeHostInputValue::F32(value) => vec![value],
+                RuntimeHostInputValue::F32Matrix { values, .. } => values,
+                value => panic!("{name} must contain f32 values, found {value:?}"),
+            };
+            (name, values)
+        })
+        .collect()
+}
+
+fn lowered_states_after_one_turn(
+    tree: &Program,
+    driver: &BTreeMap<String, Vec<f32>>,
+) -> BTreeMap<usize, Vec<f32>> {
+    let (artifact, regions) = compile_compute(tree, driver);
+    let inputs = source_inputs(driver, &artifact);
+    let lowered = GpuHost
+        .compile_broadcast_with_regions(&artifact, &regions, &inputs)
+        .expect("generic fixed-shape operations must lower");
+    let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
+    cpu.dispatch_turns(1).unwrap();
+    lowered
+        .state_layout()
+        .map(|(slot, elements)| (elements, cpu.state()[&slot].clone()))
+        .collect()
+}
+
+#[test]
+fn generic_lowering_matches_source_at_prediction_boundary() {
+    let source = SOURCE
+        .replacen("state = corrected-state", "state = predicted-state", 1)
+        .replacen(
+            "covariance = corrected-covariance",
+            "covariance = predicted-covariance",
+            1,
+        );
+    let tree = source_tree_from(&source, 1);
+    let driver = evaluate_driver(&tree);
+    let predicted =
+        source_evaluated_values(&tree, &driver, &["predicted-state", "predicted-covariance"]);
+    let lowered = lowered_states_after_one_turn(&tree, &driver);
+    assert_close(&predicted["predicted-state"], &lowered[&3], 2.0e-5);
+    assert_close(&predicted["predicted-covariance"], &lowered[&9], 2.0e-4);
+}
+
+#[test]
+fn generic_lowering_matches_source_gain() {
+    let source = SOURCE.replacen("state = corrected-state", "state = gain", 1);
+    let tree = source_tree_from(&source, 1);
+    let driver = evaluate_driver(&tree);
+    let expected = source_evaluated_values(&tree, &driver, &["gain"]);
+    let lowered = lowered_states_after_one_turn(&tree, &driver);
+    assert_close(&expected["gain"], &lowered[&3], 2.0e-5);
+}
+
+#[test]
+fn generic_lowering_matches_source_landmark_delta() {
+    let source = SOURCE.replacen(
+        "state = corrected-state",
+        "landmark-diagnostic := [delta-x; delta-y; squared-range]\nstate = landmark-diagnostic",
+        1,
+    );
+    let tree = source_tree_from(&source, 1);
+    let driver = evaluate_driver(&tree);
+    let expected = source_evaluated_values(&tree, &driver, &["landmark-diagnostic"]);
+    let lowered = lowered_states_after_one_turn(&tree, &driver);
+    assert_close(&expected["landmark-diagnostic"], &lowered[&3], 2.0e-5);
+}
+
+#[test]
+fn rectangular_matrix_literals_cross_the_artifact_layout_boundary_correctly() {
+    let tree = mech_syntax::parse(
+        r#"
++> math
+
+rectangular projection @ compute
+-------------------------------------------------------------------------------
+input := source-input
+projection := [1f32 2f32 3f32
+               4f32 5f32 6f32]
+~result := [0f32; 0f32]
+result = projection ** input
+result
+"#,
+    )
+    .unwrap();
+    let planning_inputs = BTreeMap::from([(
+        "source-input".to_owned(),
+        RuntimeHostInputValue::F32Matrix {
+            rows: 3,
+            columns: 1,
+            values: vec![1.0, 10.0, 100.0],
+        },
+    )]);
+    let product = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap()
+        .compile_tree_artifact_with_inputs(
+            &tree,
+            &planning_inputs,
+            &BTreeSet::from(["input".to_owned()]),
+        )
+        .unwrap();
+    let (artifact, regions) = product.into_parts();
+    let activation_inputs = BTreeMap::from([("input".to_owned(), vec![1.0, 10.0, 100.0])]);
+    let program = GpuHost
+        .compile_broadcast_with_regions(&artifact, &regions, &activation_inputs)
+        .unwrap();
+    let mut cpu = program.prepare_cpu(&activation_inputs).unwrap();
+    cpu.dispatch_turns(1).unwrap();
+
+    let result = program
+        .state_layout()
+        .find_map(|(slot, elements)| (elements == 2).then(|| &cpu.state()[&slot]))
+        .expect("the result state must be present");
+    assert_close(result, &[321.0, 654.0], 1.0e-6);
 }
 
 fn source_program(instances: usize) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
@@ -173,7 +309,7 @@ fn source_program_from(
 ) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
     let tree = source_tree_from(source, instances);
     let driver = evaluate_driver(&tree);
-    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    let (artifact, regions) = compile_compute(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
     let program = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
@@ -182,12 +318,33 @@ fn source_program_from(
 }
 
 #[test]
-fn high_level_ekf_source_matches_ordinary_mech_after_generic_lowering() {
+fn high_level_ekf_source_evaluation_matches_generic_lowering() {
     let tree = source_tree(1);
     let driver = evaluate_driver(&tree);
-    let (source_program, artifact, regions) = compile_compute(&tree, &driver);
-    let expected_state = symbol_f32_values(&source_program, "state");
-    let expected_covariance = symbol_f32_values(&source_program, "covariance");
+    let (artifact, regions) = compile_compute(&tree, &driver);
+    assert_eq!(
+        artifact
+            .inputs()
+            .iter()
+            .map(|input| input.name.as_str())
+            .collect::<BTreeSet<_>>(),
+        [
+            "dt",
+            "linear-velocity",
+            "angular-velocity",
+            "bearing",
+            "measurement-noise",
+        ]
+        .into_iter()
+        .collect(),
+    );
+    let inputs = source_inputs(&driver, &artifact);
+    assert_close(&inputs["dt"], &[0.1], 1.0e-7);
+    assert_close(&inputs["linear-velocity"], &[1.0], 1.0e-7);
+    assert_close(&inputs["angular-velocity"], &[0.015], 1.0e-7);
+    assert_close(&inputs["bearing"], &[-0.55], 1.0e-7);
+    assert_close(&inputs["measurement-noise"], &[0.25], 1.0e-7);
+    let (expected_state, expected_covariance) = source_evaluated_outputs(&tree, &driver);
 
     let operation_names = artifact
         .nodes()
@@ -223,7 +380,6 @@ fn high_level_ekf_source_matches_ordinary_mech_after_generic_lowering() {
         "the artifact must not contain an EKF-specific operation"
     );
 
-    let inputs = source_inputs(&driver, &artifact);
     let lowered = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)
         .expect("generic fixed-shape operations must lower");
@@ -245,7 +401,7 @@ fn high_level_ekf_source_matches_ordinary_mech_after_generic_lowering() {
 fn mech_arrays_define_the_broadcast_extent() {
     let tree = source_tree(7);
     let driver = evaluate_driver(&tree);
-    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    let (artifact, regions) = compile_compute(&tree, &driver);
     assert_eq!(regions.len(), 1);
     assert_eq!(regions[0].name, "EKF step");
     assert_eq!(regions[0].placement, mech_core::ComputePlacement::Compute);
@@ -287,7 +443,7 @@ fn mech_arrays_define_the_broadcast_extent() {
 fn conflicting_mech_array_extents_are_rejected() {
     let tree = source_tree(7);
     let driver = evaluate_driver(&tree);
-    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    let (artifact, regions) = compile_compute(&tree, &driver);
     let mut inputs = source_inputs(&driver, &artifact);
     inputs.get_mut("bearing").unwrap().pop();
 
@@ -306,7 +462,7 @@ fn conflicting_mech_array_extents_are_rejected() {
 fn empty_mech_array_is_rejected() {
     let tree = source_tree(7);
     let driver = evaluate_driver(&tree);
-    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    let (artifact, regions) = compile_compute(&tree, &driver);
     let mut inputs = source_inputs(&driver, &artifact);
     inputs.get_mut("bearing").unwrap().clear();
 
@@ -325,7 +481,7 @@ fn empty_mech_array_is_rejected() {
 fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
     let tree = source_tree(2);
     let driver = evaluate_driver(&tree);
-    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    let (artifact, regions) = compile_compute(&tree, &driver);
     assert_eq!(artifact.constraints().len(), 3);
     assert_eq!(
         artifact
@@ -356,7 +512,7 @@ fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
     let renamed_source = SOURCE.replacen("finite-candidate! :=", "finite-estimate! :=", 1);
     let renamed_tree = source_tree_from(&renamed_source, 2);
     let renamed_driver = evaluate_driver(&renamed_tree);
-    let (_, renamed_artifact, _) = compile_compute(&renamed_tree, &renamed_driver);
+    let (renamed_artifact, _) = compile_compute(&renamed_tree, &renamed_driver);
     assert_ne!(artifact.revision(), renamed_artifact.revision());
     assert!(SOURCE.contains("finite-candidate! :="));
     assert!(SOURCE.contains("positive-covariance! :="));
@@ -464,7 +620,7 @@ fn checked_cpu_backends_reject_candidate_and_keep_published_estimate() {
 fn source_driven_broadcast_matches_the_native_gpu() {
     let tree = source_tree(32);
     let driver = evaluate_driver(&tree);
-    let (_, artifact, regions) = compile_compute(&tree, &driver);
+    let (artifact, regions) = compile_compute(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
     let lowered = GpuHost
         .compile_broadcast_with_regions(&artifact, &regions, &inputs)

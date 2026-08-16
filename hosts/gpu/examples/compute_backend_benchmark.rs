@@ -1,8 +1,8 @@
 use std::{collections::BTreeMap, env, fs, hint::black_box, time::Duration, time::Instant};
 
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
-use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingRole, GpuHost};
+use mech_runtime::RuntimeBuilder;
 
 const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
 
@@ -16,20 +16,17 @@ fn main() {
 
     let compile_started = Instant::now();
     let tree = isolated_compute_tree(&source);
-    let mut source_program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    source_program
-        .run_tree(&tree)
-        .expect("the particle compute region must initialize");
-    let (artifact, compute_regions) = source_program
-        .compile_program_artifact_with_regions()
-        .expect("the particle compute region must compile");
+    let (artifact, compute_regions) = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
+        .compile_tree_artifact(&tree)
+        .expect("the particle compute region must compile")
+        .into_parts();
     let program = GpuHost
         .compile_with_regions(&artifact, &compute_regions)
         .expect("the neutral compute region must lower");
-    let inputs = capture_inputs(&source_program, &program);
+    let inputs = default_inputs(&program);
     let compile_elapsed = compile_started.elapsed();
 
     let mut cpu_validation = program
@@ -211,26 +208,12 @@ fn isolated_compute_tree(source: &str) -> Program {
     }
 }
 
-fn capture_inputs(
-    source_program: &MechProgram,
-    program: &mech_gpu::GpuProgram,
-) -> BTreeMap<String, Vec<f32>> {
-    let symbols = source_program.interpreter().symbols();
-    let symbols = symbols.borrow();
+fn default_inputs(program: &mech_gpu::GpuProgram) -> BTreeMap<String, Vec<f32>> {
     program
         .bindings()
         .iter()
         .filter(|binding| binding.role() == GpuBindingRole::Input)
-        .map(|binding| {
-            let cell = symbols
-                .get(mech_core::hash_str(&binding.name))
-                .unwrap_or_else(|| panic!("compute input `{}` must exist", binding.name));
-            let values = cell
-                .borrow()
-                .as_vecf32()
-                .unwrap_or_else(|error| panic!("compute input `{}`: {error:?}", binding.name));
-            (binding.name.clone(), values)
-        })
+        .map(|binding| (binding.name.clone(), vec![0.0; binding.elements as usize]))
         .collect()
 }
 

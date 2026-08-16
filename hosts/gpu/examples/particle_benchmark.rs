@@ -1,8 +1,7 @@
 use std::{collections::BTreeMap, env, time::Instant};
 
-use mech_core::{LegacyValue, Ref, hash_str, matrix::Matrix};
-use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::GpuHost;
+use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
 const PARTICLE_SOURCE: &str = include_str!("../fixtures/particle-kernel.mec");
 
@@ -163,40 +162,47 @@ fn compile_particle_artifact(
     positions: &[f32],
     zeros: &[f32],
 ) -> mech_engine::ProgramArtifact {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    let values = [
+    let values = BTreeMap::from([
         (
-            "host-positions",
-            LegacyValue::MatrixF32(Matrix::from_vec(positions.to_vec(), particles, 2)),
+            "host-positions".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: particles,
+                columns: 2,
+                values: positions.to_vec(),
+            },
         ),
         (
-            "host-velocities",
-            LegacyValue::MatrixF32(Matrix::from_vec(zeros.to_vec(), particles, 2)),
+            "host-velocities".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: particles,
+                columns: 2,
+                values: zeros.to_vec(),
+            },
         ),
-        ("host-origin", LegacyValue::F32(Ref::new(0.0))),
-        ("host-attraction", LegacyValue::F32(Ref::new(0.5))),
-        ("host-drag", LegacyValue::F32(Ref::new(0.999))),
-        ("host-dt", LegacyValue::F32(Ref::new(1.0 / 120.0))),
-    ];
-    let symbols = program.interpreter().symbols();
-    for (name, value) in values {
-        let id = hash_str(name);
-        symbols.borrow_mut().insert(id, value, false);
-        symbols
-            .borrow()
-            .dictionary
-            .borrow_mut()
-            .insert(id, name.to_owned());
-    }
-    program
-        .run_string(PARTICLE_SOURCE)
-        .expect("source must run");
-    program
-        .compile_program_artifact()
+        ("host-origin".to_owned(), RuntimeHostInputValue::F32(0.0)),
+        (
+            "host-attraction".to_owned(),
+            RuntimeHostInputValue::F32(0.5),
+        ),
+        ("host-drag".to_owned(), RuntimeHostInputValue::F32(0.999)),
+        (
+            "host-dt".to_owned(),
+            RuntimeHostInputValue::F32(1.0 / 120.0),
+        ),
+    ]);
+    let external_input_names = values
+        .keys()
+        .map(|name| name.strip_prefix("host-").unwrap_or(name).to_owned())
+        .collect();
+    let tree = mech_syntax::parse(PARTICLE_SOURCE).expect("source must parse");
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
+        .compile_tree_artifact_with_inputs(&tree, &values, &external_input_names)
         .expect("source must compile")
+        .into_parts()
+        .0
 }
 
 fn millis(duration: std::time::Duration) -> f64 {

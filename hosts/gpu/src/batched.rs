@@ -724,6 +724,9 @@ impl super::GpuHost {
     /// Every required input contains either one source value (broadcast to all
     /// lanes) or one value per lane. Non-singleton extents must agree. The
     /// artifact remains one EKF-sized graph regardless of the number of lanes.
+    /// Fixed-shape matrix components use Mech's column-major runtime order;
+    /// artifact matrix constants are converted from canonical row-major order
+    /// once during lowering, never in the steady-state turn loop.
     pub fn compile_broadcast(
         &self,
         artifact: &ProgramArtifact,
@@ -2099,7 +2102,24 @@ fn artifact_constant_values(
     match value.data() {
         ValueData::F32(value) => Ok(vec![value.to_f32()]),
         ValueData::Matrix(matrix) => match matrix.elements() {
-            SequenceView::F32(values) => Ok(values.iter().map(|value| value.to_f32()).collect()),
+            SequenceView::F32(values) => {
+                let shape = fixed_shape(artifact, value.schema())?;
+                // ProgramArtifact snapshots are canonical row-major values;
+                // the fixed-matrix register program follows Mech's
+                // column-major runtime matrix contract.
+                let row_major = values
+                    .iter()
+                    .map(|value| value.to_f32())
+                    .collect::<Vec<_>>();
+                let mut column_major = vec![0.0; row_major.len()];
+                for row in 0..shape.rows {
+                    for column in 0..shape.columns {
+                        column_major[shape.index(row, column)] =
+                            row_major[row * shape.columns + column];
+                    }
+                }
+                Ok(column_major)
+            }
             _ => Err("matrix constant is not f32".to_owned()),
         },
         _ => Err("constant is not f32 numeric data".to_owned()),

@@ -53,6 +53,30 @@ pub struct ProgramCompilationProduct {
     bytecode: Vec<u8>,
 }
 
+/// Immutable source-compilation product for hosts that immediately activate
+/// an artifact and do not need a second durable bytecode representation.
+#[cfg(feature = "semantic-compiler")]
+#[derive(Debug)]
+pub struct ProgramArtifactCompilationProduct {
+    artifact: ProgramArtifact,
+    compute_regions: Box<[ArtifactComputeRegion]>,
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl ProgramArtifactCompilationProduct {
+    pub const fn artifact(&self) -> &ProgramArtifact {
+        &self.artifact
+    }
+
+    pub fn compute_regions(&self) -> &[ArtifactComputeRegion] {
+        &self.compute_regions
+    }
+
+    pub fn into_parts(self) -> (ProgramArtifact, Box<[ArtifactComputeRegion]>) {
+        (self.artifact, self.compute_regions)
+    }
+}
+
 /// Compiler-only instruction for preserving a source-declared custom send
 /// operation in the canonical application requirement. It does not grant
 /// authority or change interpreter execution.
@@ -358,6 +382,40 @@ impl CompilerPlanningProgram {
         })
     }
 
+    /// Finalizes an activation-only artifact while preserving configured
+    /// external contracts and explicit compute-boundary input declarations.
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_program_artifact_product_with_resource_send_operations(
+        &mut self,
+        resolver: &dyn ExternalRequirementContractResolver,
+        operations: &[CompiledResourceSendOperation],
+        external_input_names: &BTreeSet<String>,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let mut compiled = compile_bytecode(self)?;
+        preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
+        resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
+        let (artifact, compute_regions) =
+            compile_executable_program_artifact_product_with_outputs_and_external_inputs(
+                &compiled.bytecode,
+                &compiled.published_outputs,
+                self.interpreter.function_catalog().as_ref(),
+                external_input_names,
+            )
+            .map_err(|error| {
+                MechError::new(
+                    ProgramArtifactCompilationError {
+                        reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+        Ok(ProgramArtifactCompilationProduct {
+            artifact,
+            compute_regions,
+        })
+    }
+
     #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
@@ -395,8 +453,7 @@ impl CompilerPlanningProgram {
         &self,
         compiled: CompilerPlanningBytecode,
     ) -> MResult<ProgramCompilationProduct> {
-        let (artifact, compute_regions) =
-            compile_executable_program_artifact_product_with_outputs(
+        let (artifact, compute_regions) = compile_executable_program_artifact_product_with_outputs(
             &compiled.bytecode,
             &compiled.published_outputs,
             self.interpreter.function_catalog().as_ref(),

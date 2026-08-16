@@ -162,7 +162,9 @@ where
     MatA: CompileConst + ConstElem + AsNaKind,
 {
     fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
-        let _ = compile_register_initial!(self.var, self.initial, ctx);
+        if *self.mutable.borrow() {
+            let _ = compile_register_initial!(self.var, self.initial, ctx);
+        }
         Ok(())
     }
 
@@ -251,7 +253,9 @@ macro_rules! impl_variable_define_fxn {
           &self,
           ctx: &mut dyn BytecodeCompilerContext,
       ) -> MResult<()> {
-          let _ = compile_register_initial!(self.var, self.initial, ctx);
+          if *self.mutable.borrow() {
+            let _ = compile_register_initial!(self.var, self.initial, ctx);
+          }
           Ok(())
         }
 
@@ -647,7 +651,9 @@ impl MechFunctionImpl for VariableDefineEmpty {
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for VariableDefineEmpty {
     fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
-        let _ = compile_register_initial!(self.var, self.initial, ctx);
+        if *self.mutable.borrow() {
+            let _ = compile_register_initial!(self.var, self.initial, ctx);
+        }
         Ok(())
     }
 

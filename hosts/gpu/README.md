@@ -4,13 +4,26 @@
 `ProgramArtifact` and lowers the admitted graph to WGSL. The host, rather than
 the source program, owns the capability policy.
 
-The first slice supports fused, element-wise `f32` addition, subtraction, and
-multiplication over fixed-size matrices with scalar broadcasting. Operations
-must be pure signal operations with full-write, no-alias outputs. Dynamic
-shapes, effects, integrity constraints, opaque operation contracts, and unknown
-kernels are rejected with structured diagnostics. Whole-value Mech registers
-are admitted as state: their initializers are uploaded once and their buffers
-remain resident between turns.
+The element-wise executor supports fused `f32` arithmetic over fixed-size
+matrices with scalar broadcasting. The generic fixed-shape batch executor also
+lowers matrix construction, multiply, transpose, dot, access, comparison,
+Boolean, and trigonometric operations. Operations must belong to the audited
+capability set; dynamic shapes, effects, opaque unknown operations, and invalid
+placement requirements are rejected with structured diagnostics. Whole-value
+Mech registers are admitted as state: their initializers are uploaded once and
+their buffers remain resident between turns. The batch executor also preserves
+named integrity constraints and rejects invalid candidates before publication.
+
+`ProgramArtifact` matrix snapshots are canonical row-major values. Mech runtime
+matrices and fixed-matrix numeric kernels are column-major, so the batch
+lowerer performs an explicit conversion when admitting constants and state
+initializers. That conversion happens once before resident execution. The
+element-wise particle executor retains artifact-linearized row-major buffers
+because it never applies matrix indexing or matrix algebra. Tests cover both
+physical layouts, including a non-symmetric rectangular matrix product that
+cannot pass accidentally under the wrong convention. A future general
+physical-plan descriptor should carry layout metadata per buffer before these
+executors exchange matrices with arbitrary runtime regions.
 
 The returned `GpuProgram` includes generated WGSL, its binding layout, and CPU
 and GPU resident executors. Both are lowered from the same `ProgramArtifact`.

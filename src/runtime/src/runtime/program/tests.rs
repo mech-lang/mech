@@ -1,3 +1,4 @@
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{
     Arc, LazyLock, Mutex,
     atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
@@ -20,10 +21,10 @@ use crate::{
     BasicCapability, BasicConstraints, Capability, CapabilityDecision, CapabilityId,
     CapabilityRequest, InMemorySourceResolver, ModuleBuildOptions, PreparedRuntimeEffect,
     RuntimeAfterCommitEffect, RuntimeBuilder, RuntimeEffectCost, RuntimeEffectMetadata,
-    RuntimeEffectSource, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeIngress,
-    RuntimeResidentResourceWriteRequest, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    SourceRequest,
+    RuntimeEffectSource, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputValue,
+    RuntimeIngress, RuntimeResidentResourceWriteRequest, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, SourceRequest,
 };
 
 use super::*;
@@ -736,6 +737,114 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
     assert!(
         matches!(inline, LegacyValue::F64(ref value) if *value.borrow() == 42.0),
         "the first published output must retain the evaluated inline value: {inline:?}"
+    );
+}
+
+#[test]
+fn activation_only_compilation_preserves_the_artifact_without_retaining_bytecode() {
+    const SOURCE: &str = "answer := 40f32 + 2f32\nanswer";
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let activation = compiler.compile_source_artifact(SOURCE).unwrap();
+    let durable = compiler.compile_source(SOURCE).unwrap();
+
+    assert_eq!(
+        activation
+            .artifact()
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>(),
+        durable
+            .artifact()
+            .outputs()
+            .iter()
+            .map(|output| output.name.as_str())
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        activation.artifact().nodes().len(),
+        durable.artifact().nodes().len()
+    );
+    assert_eq!(activation.compute_regions(), durable.compute_regions());
+}
+
+#[test]
+fn static_initialization_returns_detached_column_major_matrix_values() {
+    let tree = mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]").unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mut first = compiler
+        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .unwrap();
+    assert_eq!(
+        first.remove("matrix"),
+        Some(RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1.0, 3.0, 2.0, 4.0],
+        })
+    );
+
+    let second = compiler
+        .evaluate_static_tree_symbols(&tree, &["matrix"])
+        .unwrap();
+    assert_eq!(
+        second["matrix"],
+        RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1.0, 3.0, 2.0, 4.0],
+        }
+    );
+}
+
+#[test]
+fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
+    let tree =
+        mech_syntax::parse("supplied-port := supplied\nvalue := supplied-port + 2f32\nvalue")
+            .unwrap();
+    let inputs = BTreeMap::from([("supplied".to_owned(), RuntimeHostInputValue::F32(40.0))]);
+    let external = BTreeSet::from(["supplied-port".to_owned()]);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let (product, initial_inputs) = compiler
+        .compile_tree_artifact_with_input_initializers(&tree, &inputs, &external)
+        .unwrap();
+
+    assert_eq!(
+        product
+            .artifact()
+            .inputs()
+            .iter()
+            .map(|input| input.name.as_str())
+            .collect::<Vec<_>>(),
+        ["supplied-port"]
+    );
+    assert_eq!(
+        initial_inputs["supplied-port"],
+        RuntimeHostInputValue::F32(40.0)
+    );
+    assert!(
+        (0..product.artifact().constants().len()).any(|index| {
+            product
+                .artifact()
+                .constants()
+                .get(mech_core::ConstantId::new(index as u32))
+                .is_some_and(
+                    |value| matches!(value.data(), ValueData::F32(value) if value.to_f32() == 2.0),
+                )
+        }),
+        "the source literal must remain an embedded artifact constant"
     );
 }
 

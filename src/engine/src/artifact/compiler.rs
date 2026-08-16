@@ -4,7 +4,7 @@
 //! and its decoder reconstructs and validates the same artifact; it does not
 //! feed a separate compatibility graph back into this compiler.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 #[cfg(feature = "semantic-compiler")]
 use std::sync::LazyLock;
 
@@ -564,6 +564,25 @@ pub fn compile_executable_program_artifact_product_with_outputs(
     published_outputs: &[Register],
     catalog: &FunctionCatalog,
 ) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBuildError> {
+    compile_executable_program_artifact_product_with_outputs_and_external_inputs(
+        compiled,
+        published_outputs,
+        catalog,
+        &BTreeSet::new(),
+    )
+}
+
+/// Compiles an executable source product while treating the named immutable
+/// declarations as activation inputs. This is used only when an enclosing
+/// compute boundary explicitly supplies those values; ordinary source
+/// literals remain artifact constants.
+#[cfg(feature = "semantic-compiler")]
+pub fn compile_executable_program_artifact_product_with_outputs_and_external_inputs(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    catalog: &FunctionCatalog,
+    external_input_names: &BTreeSet<String>,
+) -> Result<(ProgramArtifact, Box<[ArtifactComputeRegion]>), ArtifactBuildError> {
     validate_compiled_metadata_length(
         "instruction_roles",
         compiled.program.instructions.len(),
@@ -715,12 +734,16 @@ pub fn compile_executable_program_artifact_product_with_outputs(
                     if *dst == register
             )
         });
+        let explicitly_external = definitions
+            .iter()
+            .any(|definition| external_input_names.contains(&definition.name));
         register_constant_roles[register_index] = Some(if has_mutable {
             CompilerConstantRole::StateInitializer
-        } else if pending_schema.contains_reference
-            && has_immutable
-            && !computed_registers[register_index]
-            && !has_constant_seed
+        } else if explicitly_external
+            || (pending_schema.contains_reference
+                && has_immutable
+                && !computed_registers[register_index]
+                && !has_constant_seed)
         {
             CompilerConstantRole::ExternalInput
         } else {

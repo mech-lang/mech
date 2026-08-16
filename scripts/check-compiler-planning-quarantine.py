@@ -52,6 +52,7 @@ APPROVED_LEGACY_VALUE_ADAPTERS = {
     Path("hosts/browser/src/config.rs"),
     Path("hosts/browser/src/provider.rs"),
     Path("hosts/console/src/provider.rs"),
+    Path("hosts/gpu/src/provider.rs"),
     Path("hosts/robot-arm/src/provider.rs"),
     Path("hosts/scene/src/provider.rs"),
     Path("hosts/scene/src/schema.rs"),

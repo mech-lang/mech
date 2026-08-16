@@ -287,14 +287,12 @@ class BrowserComputeProject {
       this.setText(
         '[data-mech-gpu-compile-time]',
         `${timings.parsing.toFixed(0)} ms parse / ` +
-        `${timings.sourceExecution.toFixed(0)} ms init / ` +
-        `${(timings.artifactCompilation / 1000).toFixed(1)} s artifact`,
+        `${(timings.artifactCompilation / 1000).toFixed(1)} s source-to-artifact`,
       );
       console.table({
         'catalog setup': timings.catalogSetup,
         'source parsing': timings.parsing,
-        'source execution + initialization': timings.sourceExecution,
-        'artifact compilation': timings.artifactCompilation,
+        'source-to-artifact compilation': timings.artifactCompilation,
         'compute lowering': timings.gpuLowering,
         'input capture': timings.inputCapture,
         'manifest encoding': timings.manifestEncoding,

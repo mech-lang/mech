@@ -276,7 +276,7 @@ pub struct GpuProgram {
     outputs: Vec<KernelOutput>,
     states: Vec<KernelState>,
     input_slots: BTreeMap<CellSlotId, (String, u64, u32)>,
-    constants: BTreeMap<mech_core::ConstantId, f32>,
+    constants: BTreeMap<mech_core::ConstantId, Vec<f32>>,
     dispatch_elements: u64,
 }
 
@@ -675,7 +675,7 @@ struct Compiler<'a> {
     diagnostics: Vec<GpuDiagnostic>,
     slot_elements: BTreeMap<CellSlotId, u64>,
     input_slots: BTreeMap<CellSlotId, (String, u64, u32)>,
-    constants: BTreeMap<mech_core::ConstantId, f32>,
+    constants: BTreeMap<mech_core::ConstantId, Vec<f32>>,
     operations: Vec<KernelOperation>,
     outputs: Vec<KernelOutput>,
     state_slots: BTreeMap<CellSlotId, PendingState>,
@@ -878,7 +878,7 @@ impl<'a> Compiler<'a> {
             if node.operation.module_path.as_ref() == ["core"]
                 && node.operation.operation_name == "composite-pack"
             {
-                let inputs = node
+                let mut inputs = node
                     .input_bindings
                     .clone()
                     .filter_map(|index| match self.artifact.bindings().get(index as usize) {
@@ -892,6 +892,20 @@ impl<'a> Compiler<'a> {
                         Some(_) | None => None,
                     }
                 });
+                if let Some(output) = output {
+                    let output_schema = self.artifact.slots()[output.get() as usize].schema;
+                    let has_template = inputs.first().is_some_and(|source| match source {
+                        ArtifactSource::Constant(constant) => self
+                            .artifact
+                            .constants()
+                            .get(*constant)
+                            .is_some_and(|value| value.schema() == output_schema),
+                        ArtifactSource::Slot(_) => false,
+                    });
+                    if has_template {
+                        inputs.remove(0);
+                    }
+                }
                 if let Some(output) = output.filter(|_| !inputs.is_empty()) {
                     self.composite_packs.insert(output, inputs);
                 } else {
@@ -1382,7 +1396,11 @@ impl<'a> Compiler<'a> {
         let Some(declaration) = self.artifact.slots().get(slot.get() as usize) else {
             return Vec::new();
         };
-        let Some(schema) = self.artifact.schemas().get(declaration.schema) else {
+        self.schema_dimensions(declaration.schema)
+    }
+
+    fn schema_dimensions(&self, schema: SchemaId) -> Vec<u64> {
+        let Some(schema) = self.artifact.schemas().get(schema) else {
             return Vec::new();
         };
         match schema.body() {
@@ -1400,7 +1418,11 @@ impl<'a> Compiler<'a> {
     fn source_dimensions(&self, source: ArtifactSource) -> Option<Vec<u64>> {
         match source {
             ArtifactSource::Slot(slot) => Some(self.slot_dimensions(slot)),
-            ArtifactSource::Constant(_) => Some(Vec::new()),
+            ArtifactSource::Constant(constant) => self
+                .artifact
+                .constants()
+                .get(constant)
+                .map(|value| self.schema_dimensions(value.schema())),
         }
     }
 
@@ -1432,25 +1454,25 @@ impl<'a> Compiler<'a> {
                 };
                 match value.data() {
                     ValueData::F32(value) => {
-                        self.constants.insert(constant, value.to_f32());
+                        self.constants.insert(constant, vec![value.to_f32()]);
                         Some(1)
                     }
                     ValueData::Matrix(matrix) => match matrix.elements() {
-                        SequenceView::F32(_) => {
-                            self.reject(
-                                GpuDiagnosticCode::ConstantUnsupported,
-                                Some(node),
-                                Some(operation.to_owned()),
-                                "matrix constants are not embedded by this GPU slice; expose the matrix as a host input",
-                            );
-                            None
+                        SequenceView::F32(values) => {
+                            let values = values
+                                .iter()
+                                .map(|value| value.to_f32())
+                                .collect::<Vec<_>>();
+                            let elements = values.len() as u64;
+                            self.constants.insert(constant, values);
+                            Some(elements)
                         }
                         _ => {
                             self.reject(
                                 GpuDiagnosticCode::ConstantUnsupported,
                                 Some(node),
                                 Some(operation.to_owned()),
-                                "only scalar f32 constants can be embedded",
+                                "only scalar and matrix f32 constants can be embedded",
                             );
                             None
                         }
@@ -1542,7 +1564,22 @@ impl<'a> Compiler<'a> {
     fn wgsl_source(&self, source: ArtifactSource, consumer_elements: u64) -> String {
         match source {
             ArtifactSource::Slot(slot) => self.wgsl_slot(slot, consumer_elements),
-            ArtifactSource::Constant(constant) => format_wgsl_f32(self.constants[&constant]),
+            ArtifactSource::Constant(constant) => {
+                let values = &self.constants[&constant];
+                if values.len() == 1 {
+                    format_wgsl_f32(values[0])
+                } else {
+                    let elements = values.len() as u64;
+                    let rendered = values
+                        .iter()
+                        .copied()
+                        .map(format_wgsl_f32)
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    let index = wgsl_broadcast_index(elements, consumer_elements);
+                    format!("array<f32, {elements}>({rendered})[{index}]")
+                }
+            }
         }
     }
 
@@ -1777,30 +1814,40 @@ fn cpu_source_value(
     index: usize,
     consumer_elements: usize,
     slots: &BTreeMap<CellSlotId, Vec<f32>>,
-    constants: &BTreeMap<mech_core::ConstantId, f32>,
+    constants: &BTreeMap<mech_core::ConstantId, Vec<f32>>,
 ) -> Result<f32, CpuExecutionError> {
     match source {
-        ArtifactSource::Constant(constant) => constants
-            .get(&constant)
-            .copied()
-            .ok_or(CpuExecutionError::MissingConstant { constant }),
+        ArtifactSource::Constant(constant) => {
+            let values = constants
+                .get(&constant)
+                .ok_or(CpuExecutionError::MissingConstant { constant })?;
+            let source_index = broadcast_index(values.len(), index, consumer_elements);
+            values
+                .get(source_index)
+                .copied()
+                .ok_or(CpuExecutionError::MissingConstant { constant })
+        }
         ArtifactSource::Slot(slot) => {
             let values = slots
                 .get(&slot)
                 .ok_or(CpuExecutionError::MissingSlot { slot })?;
-            let source_index = if values.len() == 1 {
-                0
-            } else if values.len() == consumer_elements {
-                index
-            } else if consumer_elements % values.len() == 0 {
-                index / (consumer_elements / values.len())
-            } else {
-                index
-            };
+            let source_index = broadcast_index(values.len(), index, consumer_elements);
             values
                 .get(source_index)
                 .copied()
                 .ok_or(CpuExecutionError::IndexOutOfBounds { slot, index })
         }
+    }
+}
+
+fn broadcast_index(source_elements: usize, index: usize, consumer_elements: usize) -> usize {
+    if source_elements == 1 {
+        0
+    } else if source_elements == consumer_elements {
+        index
+    } else if consumer_elements % source_elements == 0 {
+        index / (consumer_elements / source_elements)
+    } else {
+        index
     }
 }

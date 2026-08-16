@@ -2,11 +2,12 @@
 //!
 //! `CompilerPlanningProgram` and `LegacyValue` are private compilation
 //! coordinates. They never become runtime owners: each planning program is
-//! local to one compilation and is dropped after finalization. Only
-//! `ProgramCompilationProduct` escapes this module.
+//! local to one compilation and is dropped after finalization. Only immutable
+//! compilation products and detached typed initialization values
+//! escape this module.
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet},
     sync::Arc,
 };
 
@@ -17,13 +18,13 @@ use mech_core::{
 };
 use mech_engine::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
-    ProgramCompilationProduct, root_document_output_ids,
+    ProgramArtifactCompilationProduct, ProgramCompilationProduct, root_document_output_ids,
 };
 
 use crate::{
     CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder, ModuleVersionId,
     ResidentExternalContractResolver, ResolvedSource, RuntimeCapabilityOperation,
-    RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
+    RuntimeHostInputValue, RuntimeInvalidOperationError, RuntimeModuleDependencyCycleError,
     RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
     RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
     RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
@@ -86,6 +87,92 @@ impl ProgramCompiler {
 
     pub fn compile_source(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
         self.view().compile_source(source)
+    }
+
+    pub fn compile_tree(
+        &mut self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_tree(tree)
+    }
+
+    /// Compiles source for immediate artifact activation without returning or
+    /// retaining a duplicate durable bytecode container.
+    pub fn compile_source_artifact(
+        &mut self,
+        source: &str,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.compile_tree_artifact(&tree)
+    }
+
+    pub fn compile_tree_artifact(
+        &mut self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.view()
+            .compile_tree_artifact_with_inputs(tree, &BTreeMap::new(), &BTreeSet::new())
+    }
+
+    /// Compiles one parsed tree with detached planning values and live input
+    /// declarations supplied by the enclosing compute boundary.
+    ///
+    /// Planning values let the compiler specialize types and shapes; they do
+    /// not implicitly become live ports. Only names in `external_input_names`
+    /// remain replaceable at activation. This keeps initialization data and
+    /// the live host interface separate and explicit.
+    pub fn compile_tree_artifact_with_inputs(
+        &mut self,
+        tree: &mech_core::Program,
+        inputs: &BTreeMap<String, RuntimeHostInputValue>,
+        external_input_names: &BTreeSet<String>,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.view()
+            .compile_tree_artifact_with_inputs(tree, inputs, external_input_names)
+    }
+
+    /// Compiles one parsed tree and captures the declaration-time values of
+    /// its explicitly live inputs during the same short-lived planning pass.
+    ///
+    /// The returned values are detached snapshots. Compiler cells and the
+    /// planning graph are dropped before this method returns.
+    pub fn compile_tree_artifact_with_input_initializers(
+        &mut self,
+        tree: &mech_core::Program,
+        inputs: &BTreeMap<String, RuntimeHostInputValue>,
+        external_input_names: &BTreeSet<String>,
+    ) -> MResult<(
+        ProgramArtifactCompilationProduct,
+        BTreeMap<String, RuntimeHostInputValue>,
+    )> {
+        self.view().compile_tree_artifact_with_input_initializers(
+            tree,
+            inputs,
+            external_input_names,
+        )
+    }
+
+    /// Evaluates source-defined activation values in the short-lived compiler
+    /// and returns detached typed snapshots for the requested names.
+    ///
+    /// This is initialization, not resident execution: no planner object,
+    /// reactive cell, transaction, or live reference escapes the call.
+    pub fn evaluate_static_tree_symbols(
+        &mut self,
+        tree: &mech_core::Program,
+        names: &[&str],
+    ) -> MResult<BTreeMap<String, RuntimeHostInputValue>> {
+        self.evaluate_static_tree_symbols_with_inputs(tree, &BTreeMap::new(), names)
+    }
+
+    pub fn evaluate_static_tree_symbols_with_inputs(
+        &mut self,
+        tree: &mech_core::Program,
+        inputs: &BTreeMap<String, RuntimeHostInputValue>,
+        names: &[&str],
+    ) -> MResult<BTreeMap<String, RuntimeHostInputValue>> {
+        self.view()
+            .evaluate_static_tree_symbols(tree, inputs, names)
     }
 
     pub fn compile_root(
@@ -238,10 +325,111 @@ impl<'a> ProgramCompilerView<'a> {
             resource_send_operations: &operations,
         };
         let result = program
-            .plan_tree_with_services(&sanitize_tree(tree)?, &mut services)
+            .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
             .map_err(classify_source_planning)?;
         publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
         self.finalize(program, &operations)
+    }
+
+    fn compile_tree_artifact_with_inputs(
+        &self,
+        tree: &mech_core::Program,
+        inputs: &BTreeMap<String, RuntimeHostInputValue>,
+        external_input_names: &BTreeSet<String>,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        self.compile_tree_artifact_with_input_initializers(tree, inputs, external_input_names)
+            .map(|(product, _)| product)
+    }
+
+    fn compile_tree_artifact_with_input_initializers(
+        &self,
+        tree: &mech_core::Program,
+        inputs: &BTreeMap<String, RuntimeHostInputValue>,
+        external_input_names: &BTreeSet<String>,
+    ) -> MResult<(
+        ProgramArtifactCompilationProduct,
+        BTreeMap<String, RuntimeHostInputValue>,
+    )> {
+        let mut program = self.new_program();
+        for (name, value) in inputs {
+            program.install_compiler_symbol(name, Ref::new(value.clone().into_mech_value()?))?;
+        }
+        let document_output_ids = root_document_output_ids(tree);
+        let index = SourceIndex::from_program(tree);
+        index.validate_address_targets()?;
+        let imports = index.all_imports();
+        let mut contexts = index.all_contexts();
+        self.materialize_inline_context_imports(&imports, &mut contexts)?;
+        install_function_imports(&mut program, &imports, &[])?;
+        install_context_imports(&mut program, &imports, &contexts)?;
+        let operations = compiled_resource_send_operations(&contexts);
+        let mut services = CompilerPlanningServices {
+            providers: self.resources,
+            resource_send_operations: &operations,
+        };
+        let result = program
+            .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
+            .map_err(classify_source_planning)?;
+        publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
+        let input_names = external_input_names
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>();
+        let initial_inputs = program
+            .compiler_root_symbol_values(&input_names)?
+            .into_iter()
+            .map(|(name, value)| {
+                RuntimeHostInputValue::from_compiler_value(&value).map(|value| (name, value))
+            })
+            .collect::<MResult<BTreeMap<_, _>>>()?;
+        let resolver = ResidentExternalContractResolver::new(self.resources);
+        let product = program
+            .compile_program_artifact_product_with_resource_send_operations(
+                &resolver,
+                &operations,
+                external_input_names,
+            )
+            .map_err(|error| {
+                route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    format!("resident ProgramArtifact finalization failed: {error:?}"),
+                )
+            })?;
+        Ok((product, initial_inputs))
+    }
+
+    fn evaluate_static_tree_symbols(
+        &self,
+        tree: &mech_core::Program,
+        inputs: &BTreeMap<String, RuntimeHostInputValue>,
+        names: &[&str],
+    ) -> MResult<BTreeMap<String, RuntimeHostInputValue>> {
+        let mut program = self.new_program();
+        for (name, value) in inputs {
+            program.install_compiler_symbol(name, Ref::new(value.clone().into_mech_value()?))?;
+        }
+        let index = SourceIndex::from_program(tree);
+        index.validate_address_targets()?;
+        let imports = index.all_imports();
+        let mut contexts = index.all_contexts();
+        self.materialize_inline_context_imports(&imports, &mut contexts)?;
+        install_function_imports(&mut program, &imports, &[])?;
+        install_context_imports(&mut program, &imports, &contexts)?;
+        let operations = compiled_resource_send_operations(&contexts);
+        let mut services = CompilerPlanningServices {
+            providers: self.resources,
+            resource_send_operations: &operations,
+        };
+        program
+            .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
+            .map_err(classify_source_planning)?;
+        program
+            .compiler_root_symbol_values(names)?
+            .into_iter()
+            .map(|(name, value)| {
+                RuntimeHostInputValue::from_compiler_value(&value).map(|value| (name, value))
+            })
+            .collect()
     }
 
     /// Resolve context imports for inline source through the same configured

@@ -5,10 +5,8 @@ use js_sys::{Array, Float32Array, Object, Reflect};
 use mech_core::{
     AccessMode, Body, DeliveryMode, EffectContract, EffectDeliveryPolicy, ExternalInteraction,
     IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechCode,
-    MechError, MechErrorKind, NoMechExecutionServices, OperationContractDeclaration, Program, Ref,
-    Section, SectionElement,
+    MechError, MechErrorKind, OperationContractDeclaration, Program, Ref, Section, SectionElement,
 };
-use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingRole, GpuHost, OwnedResidentCpuSession};
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
@@ -22,7 +20,7 @@ use mech_runtime::{
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
-use crate::gpu::{CompileTimings, gpu_program_manifest};
+use crate::gpu::{CompileTimings, column_major_to_row_major, gpu_program_manifest};
 
 const POINTER_PATHS: [&str; 5] = ["pulse", "x", "y", "pressed", "delta-seconds"];
 
@@ -259,6 +257,7 @@ impl ComputeBackendRequest {
 }
 
 struct ConfiguredComputeHost {
+    instance: String,
     region: String,
     backend: ComputeBackendRequest,
 }
@@ -280,7 +279,7 @@ fn compile_named_compute_region(
     gpu_available: bool,
 ) -> MResult<PreparedComputeRegion> {
     let configured = configured_compute_host(document)?;
-    let region = configured.region;
+    let region = configured.region.clone();
     let requested = if backend_override.is_empty() {
         configured.backend
     } else {
@@ -323,18 +322,21 @@ fn compile_named_compute_region(
     let imports = import_prelude(tree);
     let isolated = isolated_region_tree(&imports, section);
 
-    let catalog_started = Instant::now();
-    let mut source_program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    let catalog_setup = milliseconds(catalog_started);
-    let source_started = Instant::now();
-    source_program.run_tree_with_services(&isolated, &mut NoMechExecutionServices)?;
-    let source_execution = milliseconds(source_started);
+    let compiler_started = Instant::now();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()?;
+    let catalog_setup = milliseconds(compiler_started);
+    let external_input_names = configured_compute_inputs(document, &configured.instance);
     let artifact_started = Instant::now();
-    let (artifact, compute_regions) = source_program.compile_program_artifact_with_regions()?;
+    let (product, initial_inputs) = compiler.compile_tree_artifact_with_input_initializers(
+        &isolated,
+        &BTreeMap::new(),
+        &external_input_names,
+    )?;
     let artifact_compilation = milliseconds(artifact_started);
+    let artifact = product.artifact();
+    let compute_regions = product.compute_regions();
     if compute_regions.len() != 1 || compute_regions[0].name != region {
         return Err(mixed_error(format!(
             "isolated section `{region}` did not produce exactly that compute region"
@@ -342,8 +344,8 @@ fn compile_named_compute_region(
     }
     let lowering_started = Instant::now();
     let program = match backend {
-        ComputeBackend::Cpu => GpuHost.compile_cpu_with_regions(&artifact, &compute_regions),
-        ComputeBackend::Gpu => GpuHost.compile_with_regions(&artifact, &compute_regions),
+        ComputeBackend::Cpu => GpuHost.compile_cpu_with_regions(artifact, compute_regions),
+        ComputeBackend::Gpu => GpuHost.compile_with_regions(artifact, compute_regions),
     }
     .map_err(|failure| {
         mixed_error(format!(
@@ -353,28 +355,40 @@ fn compile_named_compute_region(
     })?;
     let gpu_lowering = milliseconds(lowering_started);
     let input_started = Instant::now();
-    let symbols = source_program.interpreter().symbols();
-    let symbols = symbols.borrow();
     let mut inputs = BTreeMap::new();
     for binding in program
         .bindings()
         .iter()
         .filter(|binding| binding.role() == GpuBindingRole::Input)
     {
-        let cell = symbols
-            .get(mech_core::hash_str(&binding.name))
-            .ok_or_else(|| {
-                mixed_error(format!(
-                    "compute input `{}` has no source value",
-                    binding.name
-                ))
-            })?;
-        let values = cell.borrow().as_vecf32().map_err(|failure| {
+        let initial = initial_inputs.get(&binding.name).ok_or_else(|| {
             mixed_error(format!(
-                "compute input `{}` is not f32 data: {failure:?}",
+                "compute input `{}` has no declaration-time value",
                 binding.name
             ))
         })?;
+        let values = match initial {
+            RuntimeHostInputValue::F32(value) => vec![*value],
+            RuntimeHostInputValue::F32Matrix {
+                rows,
+                columns,
+                values,
+            } => column_major_to_row_major(*rows, *columns, values).map_err(mixed_error)?,
+            other => {
+                return Err(mixed_error(format!(
+                    "compute input `{}` must be f32 data, found {other:?}",
+                    binding.name
+                )));
+            }
+        };
+        if values.len() != binding.elements as usize {
+            return Err(mixed_error(format!(
+                "compute input `{}` initializer has {} elements, expected {}",
+                binding.name,
+                values.len(),
+                binding.elements,
+            )));
+        }
         inputs.insert(binding.name.clone(), values);
     }
     let input_capture = milliseconds(input_started);
@@ -386,7 +400,6 @@ fn compile_named_compute_region(
         timings: CompileTimings {
             catalog_setup,
             parsing,
-            source_execution,
             artifact_compilation,
             gpu_lowering,
             input_capture,
@@ -426,9 +439,23 @@ fn configured_compute_host(document: &MechConfigDocument) -> MResult<ConfiguredC
         }
     };
     Ok(ConfiguredComputeHost {
+        instance: hosts[0].name.clone(),
         region: region.clone(),
         backend,
     })
+}
+
+fn configured_compute_inputs(document: &MechConfigDocument, instance: &str) -> BTreeSet<String> {
+    let target = format!("{instance}/kernel");
+    document
+        .run
+        .iter()
+        .flat_map(|run| &run.grants)
+        .filter(|grant| grant.target == target && grant.operations.iter().any(|op| op == "write"))
+        .flat_map(|grant| &grant.paths)
+        .filter_map(|path| path.strip_prefix("input/"))
+        .map(str::to_owned)
+        .collect()
 }
 
 fn configured_host_instance(document: &MechConfigDocument, provider: &str) -> MResult<String> {
@@ -1104,6 +1131,14 @@ positions = next-positions
 
     const SERVED_CONFIG: &str = include_str!("../../../examples/gpu-particles/mech.mcfg");
     const SERVED_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
+
+    #[test]
+    fn compute_input_initializers_cross_the_matrix_layout_boundary_once() {
+        assert_eq!(
+            column_major_to_row_major(2, 3, &[1.0, 4.0, 2.0, 5.0, 3.0, 6.0]).unwrap(),
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+        );
+    }
 
     #[test]
     #[ignore = "million-particle browser compiler acceptance test"]

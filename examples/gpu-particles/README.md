@@ -120,10 +120,10 @@ keep rendering from obscuring compute throughput. The full one million particle
 position and velocity matrices are always updated by the selected executor.
 
 The particle count is the `particle-count` value in `particles.mec`. Startup is
-reported as parsing, source initialization, artifact compilation, and compute
-lowering. The current eager source initializer materializes the million-element
-matrices while constructing the artifact; GPU-side initializer lowering is the
-intended fix for that startup cost.
+reported as parsing, source-to-artifact compilation, and compute lowering. The
+source-to-artifact phase includes eager source initialization: today it
+materializes the million-element matrices while constructing the artifact.
+GPU-side initializer lowering is the intended fix for that startup cost.
 
 ## Current spike boundary
 

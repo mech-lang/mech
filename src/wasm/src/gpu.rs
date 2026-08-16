@@ -1,10 +1,10 @@
 use std::collections::BTreeMap;
 
 use js_sys::{Array, Float32Array, Object, Reflect};
-use mech_core::{NoMechExecutionServices, hash_str};
-use mech_engine::{MechProgram, MechProgramConfig};
 use mech_gpu::{GpuBindingAccess, GpuBindingRole, GpuHost, GpuProgram, WORKGROUP_SIZE};
-use mech_runtime::{ConfigProfileOptions, parse_config_document};
+use mech_runtime::{
+    ConfigProfileOptions, RuntimeBuilder, RuntimeHostInputValue, parse_config_document,
+};
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
@@ -12,7 +12,6 @@ use web_time::Instant;
 pub(crate) struct CompileTimings {
     pub(crate) catalog_setup: f64,
     pub(crate) parsing: f64,
-    pub(crate) source_execution: f64,
     pub(crate) artifact_compilation: f64,
     pub(crate) gpu_lowering: f64,
     pub(crate) input_capture: f64,
@@ -160,11 +159,6 @@ pub(crate) fn gpu_program_manifest(
     set(&compile_timings, "parsing", timings.parsing)?;
     set(
         &compile_timings,
-        "sourceExecution",
-        timings.source_execution,
-    )?;
-    set(
-        &compile_timings,
         "artifactCompilation",
         timings.artifact_compilation,
     )?;
@@ -183,10 +177,10 @@ pub(crate) fn compile_program(
     source: &str,
 ) -> Result<(GpuProgram, BTreeMap<String, Vec<f32>>, CompileTimings), String> {
     let catalog_started = Instant::now();
-    let mut source_program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .map_err(|failure| format!("Mech compiler initialization failed: {failure:?}"))?;
     let catalog_setup = milliseconds(catalog_started);
 
     let parse_started = Instant::now();
@@ -194,16 +188,10 @@ pub(crate) fn compile_program(
         .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
     let parsing = milliseconds(parse_started);
 
-    let source_started = Instant::now();
-    source_program
-        .run_tree_with_services(&tree, &mut NoMechExecutionServices)
-        .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
-    let source_execution = milliseconds(source_started);
-
     let artifact_started = Instant::now();
-    let product = source_program
-        .compile_program_product()
-        .map_err(|failure| format!("Mech artifact compilation failed: {failure:?}"))?;
+    let product = compiler
+        .compile_tree_artifact(&tree)
+        .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
     let artifact_compilation = milliseconds(artifact_started);
 
     let gpu_started = Instant::now();
@@ -213,23 +201,44 @@ pub(crate) fn compile_program(
     let gpu_lowering = milliseconds(gpu_started);
 
     let input_started = Instant::now();
-    let symbols = source_program.interpreter().symbols();
-    let symbols = symbols.borrow();
+    let input_names = program
+        .bindings()
+        .iter()
+        .filter(|binding| binding.role() == GpuBindingRole::Input)
+        .map(|binding| binding.name.as_str())
+        .collect::<Vec<_>>();
+    let initial_inputs = compiler
+        .evaluate_static_tree_symbols(&tree, &input_names)
+        .map_err(|failure| format!("Mech input initialization failed: {failure:?}"))?;
     let mut input_values = BTreeMap::new();
     for binding in program
         .bindings()
         .iter()
         .filter(|binding| binding.role() == GpuBindingRole::Input)
     {
-        let cell = symbols
-            .get(hash_str(&binding.name))
-            .ok_or_else(|| format!("GPU input `{}` has no source value", binding.name))?;
-        let values = cell.borrow().as_vecf32().map_err(|failure| {
-            format!("GPU input `{}` is not f32 data: {failure:?}", binding.name)
+        let initial = initial_inputs.get(&binding.name).ok_or_else(|| {
+            format!(
+                "GPU input `{}` has no declaration-time source value",
+                binding.name
+            )
         })?;
+        let values = match initial {
+            RuntimeHostInputValue::F32(value) => vec![*value],
+            RuntimeHostInputValue::F32Matrix {
+                rows,
+                columns,
+                values,
+            } => column_major_to_row_major(*rows, *columns, values)?,
+            other => {
+                return Err(format!(
+                    "GPU input `{}` must be f32 data, found {other:?}",
+                    binding.name
+                ));
+            }
+        };
         if values.len() != binding.elements as usize {
             return Err(format!(
-                "GPU input `{}` has {} source value(s), expected {}",
+                "GPU input `{}` initializer has {} elements, expected {}",
                 binding.name,
                 values.len(),
                 binding.elements,
@@ -244,12 +253,34 @@ pub(crate) fn compile_program(
         CompileTimings {
             catalog_setup,
             parsing,
-            source_execution,
             artifact_compilation,
             gpu_lowering,
             input_capture,
         },
     ))
+}
+
+pub(crate) fn column_major_to_row_major(
+    rows: usize,
+    columns: usize,
+    values: &[f32],
+) -> Result<Vec<f32>, String> {
+    let elements = rows.checked_mul(columns).ok_or_else(|| {
+        format!("GPU input matrix shape {rows}x{columns} exceeds addressable memory")
+    })?;
+    if values.len() != elements {
+        return Err(format!(
+            "GPU input matrix shape {rows}x{columns} requires {elements} elements, found {}",
+            values.len()
+        ));
+    }
+    let mut row_major = vec![0.0; elements];
+    for row in 0..rows {
+        for column in 0..columns {
+            row_major[row * columns + column] = values[column * rows + row];
+        }
+    }
+    Ok(row_major)
 }
 
 fn milliseconds(started: Instant) -> f64 {

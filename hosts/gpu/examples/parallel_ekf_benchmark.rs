@@ -1,14 +1,20 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    env,
-    time::Instant,
-};
+use std::{collections::BTreeMap, env, time::Instant};
 
-use mech_core::{Body, LegacyValue, MechCode, Program, Ref, Section, SectionElement, hash_str};
-use mech_engine::{ArtifactComputeRegion, MechProgram, MechProgramConfig, ProgramArtifact};
+use mech_core::{Body, MechCode, Program, Section, SectionElement};
+use mech_engine::{ArtifactComputeRegion, ProgramArtifact};
 use mech_gpu::GpuHost;
+use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
+const COMPUTE_INPUT_NAMES: [&str; 7] = [
+    "dt",
+    "linear-velocity",
+    "angular-velocity",
+    "bearing",
+    "measurement-noise",
+    "finite-limit",
+    "covariance-symmetry-tolerance",
+];
 
 fn main() {
     let requested_instances = argument(1, 100_000_usize).max(1);
@@ -191,93 +197,79 @@ fn source_tree(instances: usize) -> Program {
     mech_syntax::parse(&source).expect("EKF array source must parse")
 }
 
-fn evaluate_driver(tree: &Program) -> MechProgram {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    program
-        .run_tree(&projected_tree(tree, false))
-        .expect("Mech EKF array inputs must evaluate");
-    program
+fn evaluate_driver(tree: &Program) -> BTreeMap<String, Vec<f32>> {
+    const INPUTS: [&str; 7] = [
+        "lane-dt",
+        "lane-linear-velocity",
+        "lane-angular-velocity",
+        "lane-bearing",
+        "lane-measurement-noise",
+        "finite-limit",
+        "covariance-symmetry-tolerance",
+    ];
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
+        .evaluate_static_tree_symbols(&projected_tree(tree, false), &INPUTS)
+        .expect("Mech EKF array inputs must evaluate")
+        .into_iter()
+        .map(|(name, value)| {
+            let values = match value {
+                RuntimeHostInputValue::F32(value) => vec![value],
+                RuntimeHostInputValue::F32Matrix { values, .. } => values,
+                value => panic!("{name} must contain f32 values, found {value:?}"),
+            };
+            (name, values)
+        })
+        .collect()
 }
 
 fn compile_artifact(
     tree: &Program,
-    driver: &MechProgram,
+    driver: &BTreeMap<String, Vec<f32>>,
 ) -> (ProgramArtifact, Box<[ArtifactComputeRegion]>) {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    seed_lane_inputs(&program, driver, tree);
-    program
-        .run_tree(&projected_tree(tree, true))
-        .expect("single-EKF compute region must run");
-    program
-        .compile_program_artifact_with_regions()
-        .expect("EKF source must compile to a typed artifact")
-}
-
-fn seed_lane_inputs(target: &MechProgram, driver: &MechProgram, tree: &Program) {
-    let compute_definitions = tree
-        .body
-        .sections
+    let scalar_inputs = driver
         .iter()
-        .filter(|section| section.compute.is_some())
-        .flat_map(|section| &section.elements)
-        .filter_map(|element| match element {
-            SectionElement::MechCode(code) => Some(code),
-            _ => None,
+        .map(|(name, values)| {
+            (
+                name.clone(),
+                RuntimeHostInputValue::F32(*values.first().expect("driver input is non-empty")),
+            )
         })
-        .flatten()
-        .filter_map(|(code, _)| match code {
-            MechCode::Statement(mech_core::Statement::VariableDefine(definition)) => {
-                Some(definition.var.name.hash())
-            }
-            _ => None,
-        })
-        .collect::<BTreeSet<_>>();
-    let driver_symbols = driver.interpreter().symbols();
-    let lane_values = {
-        let symbols = driver_symbols.borrow();
-        let dictionary = symbols.dictionary.borrow();
-        symbols
-            .symbols
-            .iter()
-            .filter(|(id, _)| !compute_definitions.contains(id))
-            .filter_map(|(id, cell)| {
-                let values = cell.borrow().as_vecf32().ok()?;
-                Some((*id, dictionary.get(id)?.clone(), *values.first()?))
-            })
-            .collect::<Vec<_>>()
-    };
-    let target_symbols = target.interpreter().symbols();
-    for (id, name, value) in lane_values {
-        target_symbols
-            .borrow_mut()
-            .insert(id, LegacyValue::F32(Ref::new(value)), false);
-        target_symbols
-            .borrow()
-            .dictionary
-            .borrow_mut()
-            .insert(id, name);
-    }
+        .collect();
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
+        .compile_tree_artifact_with_inputs(
+            &projected_tree(tree, true),
+            &scalar_inputs,
+            &COMPUTE_INPUT_NAMES.into_iter().map(str::to_owned).collect(),
+        )
+        .expect("EKF source must compile to a typed artifact")
+        .into_parts()
 }
 
-fn source_inputs(program: &MechProgram, artifact: &ProgramArtifact) -> BTreeMap<String, Vec<f32>> {
-    let symbols = program.interpreter().symbols();
-    let symbols = symbols.borrow();
+fn source_inputs(
+    driver: &BTreeMap<String, Vec<f32>>,
+    artifact: &ProgramArtifact,
+) -> BTreeMap<String, Vec<f32>> {
     artifact
         .inputs()
         .iter()
         .filter_map(|input| {
-            symbols.get(hash_str(&input.name)).map(|cell| {
-                let values = cell.borrow().as_vecf32().unwrap_or_else(|error| {
-                    panic!("Mech array input `{}` must be f32: {error:?}", input.name)
-                });
-                (input.name.clone(), values)
-            })
+            let driver_name = match input.name.as_str() {
+                "dt" => "lane-dt",
+                "linear-velocity" => "lane-linear-velocity",
+                "angular-velocity" => "lane-angular-velocity",
+                "bearing" => "lane-bearing",
+                "measurement-noise" => "lane-measurement-noise",
+                name => name,
+            };
+            driver
+                .get(driver_name)
+                .map(|values| (input.name.clone(), values.clone()))
         })
         .collect()
 }

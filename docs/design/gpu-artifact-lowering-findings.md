@@ -86,14 +86,16 @@ runtime operation resolution.
 
 ### 6. Input authority needs an explicit host-ingress contract
 
-Values inserted into the interpreter symbol table are captured as constants
-unless a source declaration establishes an input cell. The example currently
-uses typed host values followed by ordinary source declarations to obtain
-correct `InputDeclaration`s.
+The v0.4 runtime compiler now accepts detached typed planning values separately
+from an explicit set of live input names. Planning values establish types and
+shapes; they do not silently become ports. In the mixed browser project, the
+configured `compute://` write grants are the authority that selects live input
+declarations. The compiler returns their declaration-time values as detached
+snapshots and drops all compiler cells before activation.
 
-Recommended change: D1 activation should accept explicit host input bindings
-with schema and shape authority. Whether a value is a constant or live input
-should not depend on incidental symbol-table provenance.
+This is sufficient for the one-region proof. A general activation plan should
+carry the same input schema, shape, and capability authority directly rather
+than reconstructing it in each compute host.
 
 ### 7. Semantic operation contracts need complete coverage
 
@@ -116,20 +118,40 @@ markers, and compacts constants to the IDs actually referenced by the semantic
 graph. The two-million-particle artifact has no constants and compiles without
 raising bytecode read limits.
 
-Large live ingress is still evaluated by the legacy interpreter before artifact
-construction. That makes artifact plus WGSL compilation take 20.47 seconds at
-two million particles on the measured Apple M1. Live ingress should contribute
-schema, shape, and binding identity directly to compilation; payload allocation
-and initialization belong in activation input buffers. This remaining issue is
-compile-time work, not resident GPU execution.
+The runtime compiler no longer exposes or retains a legacy program to do this.
+It creates one short-lived planning graph, captures explicitly live input
+initializers as detached typed values, finalizes the immutable artifact, and
+drops the graph. Artifact construction also avoids a bytecode serialization
+round trip.
 
-The browser proof makes the same limitation visible at the API boundary. Its
-compiler export currently allocates two zero-filled `2 x 2,000,000` matrices
-solely to establish input schemas and state initializers before producing the
-GPU manifest. The generated program and resident execution are representative,
-but this compile-time payload construction is not a desirable bytecode or
-executor contract. A shape-only external initializer would remove the browser
-pause and avoid transient copies without changing Mech source semantics.
+The remaining browser startup cost is the eager evaluation of the particle
+program's source-defined million-element state initializers. That work is
+reported once as source-to-artifact compilation and is separate from resident
+turn throughput. A shape-aware or GPU-side initializer plan would remove the
+pause and transient CPU buffers without changing Mech source semantics.
+
+### 9. Snapshot and executor matrix layouts require an explicit boundary
+
+Mech runtime matrices and numeric kernels use column-major component order.
+Canonical `ProgramArtifact` matrix snapshots are serialized in row-major order.
+The generic fixed-matrix lowerer initially consumed snapshot elements as though
+they were already runtime buffers. A rectangular projection matrix therefore
+lost its second row, and every accelerated EKF backend agreed on the same wrong
+measurement update.
+
+The fixed-matrix executor now converts constants and state initializers to
+column-major order once during admission. Source evaluation, scalar lowering,
+SIMD, Cranelift, and native GPU results are compared independently, and a
+rectangular matrix regression prevents symmetric covariance matrices from
+hiding future layout errors. No conversion occurs in the steady-state turn
+loop. The element-wise particle executor deliberately retains
+artifact-linearized row-major buffers because it performs no matrix algebra.
+Detached runtime matrix input initializers cross the inverse boundary once
+when the browser compute host creates artifact-linearized GPU input buffers.
+
+Recommended follow-up: activated physical plans should describe matrix layout
+per buffer. Cross-region transfers must not infer layout from the selected
+backend or from an untyped `Vec<f32>`.
 
 ## Executor and physical-plan findings
 
@@ -199,11 +221,11 @@ single invocation-local register program. One invocation executes one complete
 filter, and the physical executor maps that program over an independent outer
 batch.
 
-An independent test evaluates the high-level source through the ordinary Mech
-interpreter, executes one turn through the scalarized CPU IR, and compares the
-state vector and covariance matrix. The native benchmark then compares that
-same scalar IR with generated WGSL over four turns. No operation name in the
-artifact or WGSL contains `ekf`.
+An independent test evaluates the high-level source in a short-lived compiler
+planning session, executes one turn through the scalarized CPU IR, and compares
+the state vector and covariance matrix. The native benchmark then compares
+that same scalar IR with generated WGSL over four turns. No operation name in
+the artifact or WGSL contains `ekf`.
 
 This follow-up exposed four additional design requirements:
 

@@ -1,15 +1,14 @@
 use std::collections::BTreeMap;
 
 use mech_core::{
-    Body, ComputePlacement, LegacyValue, MechCode, ParsedProgram, Program, Ref,
-    ResolvedOperationContract, Section, SectionElement, hash_str, matrix::Matrix,
+    Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
+    SectionElement,
 };
-use mech_engine::{
-    MechProgram, MechProgramConfig, SlotRole, decode_program_artifact_product_sections,
-};
+use mech_engine::{SlotRole, decode_program_artifact_product_sections};
 use mech_gpu::{
     ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection,
 };
+use mech_runtime::{ProgramCompiler, RuntimeBuilder, RuntimeHostInputValue};
 
 const PARTICLE_SOURCE: &str = r#"
 ~positions := host-positions
@@ -45,26 +44,29 @@ const SERVED_PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particl
 
 fn compile_source(
     source: &str,
-    inputs: impl IntoIterator<Item = (&'static str, LegacyValue)>,
+    inputs: impl IntoIterator<Item = (&'static str, RuntimeHostInputValue)>,
 ) -> mech_engine::ProgramArtifact {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    let symbols = program.interpreter().symbols();
-    for (name, value) in inputs {
-        let id = hash_str(name);
-        symbols.borrow_mut().insert(id, value, false);
-        symbols
-            .borrow()
-            .dictionary
-            .borrow_mut()
-            .insert(id, name.to_owned());
-    }
-    program.run_string(source).expect("source must run");
-    program
-        .compile_program_artifact()
+    let tree = mech_syntax::parse(source).expect("source must parse");
+    let inputs = inputs
+        .into_iter()
+        .map(|(name, value)| (name.to_owned(), value))
+        .collect::<BTreeMap<_, _>>();
+    let external_input_names = inputs
+        .keys()
+        .map(|name| name.strip_prefix("host-").unwrap_or(name).to_owned())
+        .collect();
+    compiler()
+        .compile_tree_artifact_with_inputs(&tree, &inputs, &external_input_names)
         .expect("source must compile")
+        .into_parts()
+        .0
+}
+
+fn compiler() -> ProgramCompiler {
+    RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .expect("source compiler must build")
 }
 
 fn isolated_gpu_tree(source: &str) -> Program {
@@ -109,36 +111,43 @@ fn isolated_gpu_tree(source: &str) -> Program {
 }
 
 fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    program
-        .run_tree(&isolated_gpu_tree(source))
-        .expect("isolated GPU source must run");
-    program
-        .compile_program_artifact()
+    let external_input_names = ["force-x", "force-y", "force-strength", "dt"]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
+    compiler()
+        .compile_tree_artifact_with_inputs(
+            &isolated_gpu_tree(source),
+            &Default::default(),
+            &external_input_names,
+        )
         .expect("isolated GPU source must compile")
+        .into_parts()
+        .0
 }
 
-fn particle_inputs() -> Vec<(&'static str, LegacyValue)> {
+fn particle_inputs() -> Vec<(&'static str, RuntimeHostInputValue)> {
     vec![
         (
             "host-positions",
-            LegacyValue::MatrixF32(Matrix::from_vec(
-                vec![1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 4.0, -4.0],
-                4,
-                2,
-            )),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 4,
+                columns: 2,
+                values: vec![1.0, -1.0, 2.0, -2.0, 0.5, -0.5, 4.0, -4.0],
+            },
         ),
         (
             "host-velocities",
-            LegacyValue::MatrixF32(Matrix::from_vec(vec![0.0; 8], 4, 2)),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 4,
+                columns: 2,
+                values: vec![0.0; 8],
+            },
         ),
-        ("host-origin", LegacyValue::F32(Ref::new(0.0))),
-        ("host-attraction", LegacyValue::F32(Ref::new(0.5))),
-        ("host-drag", LegacyValue::F32(Ref::new(0.9))),
-        ("host-dt", LegacyValue::F32(Ref::new(0.1))),
+        ("host-origin", RuntimeHostInputValue::F32(0.0)),
+        ("host-attraction", RuntimeHostInputValue::F32(0.5)),
+        ("host-drag", RuntimeHostInputValue::F32(0.9)),
+        ("host-dt", RuntimeHostInputValue::F32(0.1)),
     ]
 }
 
@@ -153,15 +162,8 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
             .iter()
             .any(|section| section.compute.is_none())
     );
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    program
-        .run_tree(&isolated_gpu_tree(&source))
-        .expect("source must run");
-    let product = program
-        .compile_program_product()
+    let product = compiler()
+        .compile_tree(&isolated_gpu_tree(&source))
         .expect("named source must compile");
 
     assert_eq!(product.compute_regions().len(), 1);
@@ -218,14 +220,9 @@ fn hard_cpu_region_is_not_silently_sent_to_gpu() {
     let source = SERVED_PARTICLE_SOURCE
         .replacen("1000000f32", "16f32", 1)
         .replacen("@ compute", "@ cpu", 1);
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    program
-        .run_tree(&isolated_gpu_tree(&source))
-        .expect("source must run");
-    let product = program.compile_program_product().unwrap();
+    let product = compiler()
+        .compile_tree(&isolated_gpu_tree(&source))
+        .unwrap();
     let placement = GpuHost.plan_with_regions(product.artifact(), product.compute_regions());
 
     assert!(
@@ -249,14 +246,9 @@ fn hard_gpu_region_is_not_silently_sent_to_cpu() {
     let source = SERVED_PARTICLE_SOURCE
         .replacen("1000000f32", "16f32", 1)
         .replacen("@ compute", "@ gpu", 1);
-    let mut program = MechProgram::with_function_catalog(
-        MechProgramConfig::default(),
-        mech_stdlib::source_native_plan_catalog(),
-    );
-    program
-        .run_tree(&isolated_gpu_tree(&source))
-        .expect("source must run");
-    let product = program.compile_program_product().unwrap();
+    let product = compiler()
+        .compile_tree(&isolated_gpu_tree(&source))
+        .unwrap();
 
     GpuHost
         .compile_with_regions(product.artifact(), product.compute_regions())
@@ -278,10 +270,20 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
             .count(),
         2
     );
-    assert_eq!(
-        artifact.constants().len(),
-        2,
-        "state initializers are retained"
+    let state_initializers = artifact
+        .slots()
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+        .filter_map(|slot| slot.initializer)
+        .collect::<Vec<_>>();
+    assert_eq!(state_initializers.len(), 2);
+    assert!(
+        state_initializers
+            .iter()
+            .all(|initializer| match initializer {
+                mech_engine::InitializerReference::Constant(constant) =>
+                    artifact.constants().get(*constant).is_some(),
+            })
     );
     let placement = GpuHost.plan(&artifact);
     assert!(
@@ -700,8 +702,8 @@ fn unsupported_program_reports_why_instead_of_falling_back() {
     let artifact = compile_source(
         "answer := left ^ right",
         [
-            ("left", LegacyValue::F32(Ref::new(1.0))),
-            ("right", LegacyValue::F32(Ref::new(2.0))),
+            ("left", RuntimeHostInputValue::F32(1.0)),
+            ("right", RuntimeHostInputValue::F32(2.0)),
         ],
     );
     let error = GpuHost
@@ -727,10 +729,10 @@ fn mixed_graph_reports_gpu_regions_and_cpu_transfer_boundaries() {
     let artifact = compile_source(
         "sum := left + right\npowered := sum ^ exponent\nresult := powered * scale\nresult",
         [
-            ("left", LegacyValue::F32(Ref::new(1.0))),
-            ("right", LegacyValue::F32(Ref::new(2.0))),
-            ("exponent", LegacyValue::F32(Ref::new(3.0))),
-            ("scale", LegacyValue::F32(Ref::new(4.0))),
+            ("left", RuntimeHostInputValue::F32(1.0)),
+            ("right", RuntimeHostInputValue::F32(2.0)),
+            ("exponent", RuntimeHostInputValue::F32(3.0)),
+            ("scale", RuntimeHostInputValue::F32(4.0)),
         ],
     );
     let placement = GpuHost.plan(&artifact);

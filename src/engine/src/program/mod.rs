@@ -11,7 +11,7 @@ mod compiler_planning;
 #[cfg(feature = "semantic-compiler")]
 pub use compiler_planning::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningLimits,
-    CompilerPlanningProgram, ProgramCompilationProduct,
+    CompilerPlanningProgram, ProgramArtifactCompilationProduct, ProgramCompilationProduct,
 };
 
 #[cfg(all(test, feature = "semantic-compiler"))]
