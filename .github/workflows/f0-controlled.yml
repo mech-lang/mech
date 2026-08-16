@@ -2,18 +2,26 @@ name: Controlled F0 evidence
 
 on:
   workflow_dispatch:
+  pull_request:
+    types:
+      - labeled
 
 permissions:
   contents: read
 
 concurrency:
-  group: f0-controlled-${{ github.sha }}
+  group: f0-controlled-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: false
 
 jobs:
   evidence:
     name: Controlled F0 B2 to D2 to D3 evidence
-    if: github.ref == 'refs/heads/qualification/f0-final-evidence'
+    if: >-
+      (github.event_name == 'workflow_dispatch' &&
+       github.ref == 'refs/heads/qualification/f0-final-evidence') ||
+      (github.event_name == 'pull_request' &&
+       github.event.label.name == 'f0-controlled' &&
+       github.event.pull_request.head.ref == 'qualification/f0-final-evidence')
     runs-on: [self-hosted, macOS, ARM64, f0-qualification]
     timeout-minutes: 720
     env:
@@ -31,7 +39,8 @@ jobs:
       PYTHONUSERBASE: ""
       RAYON_NUM_THREADS: "1"
       VECLIB_MAXIMUM_THREADS: "1"
-      F0_VALIDATION_REF: ${{ github.sha }}
+      F0_VALIDATION_BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      F0_VALIDATION_REF: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - name: Checkout the exact trusted F0 head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -41,8 +50,8 @@ jobs:
       - name: Bind measurement to a clean exact-head branch
         shell: bash
         run: |
-          test "${GITHUB_REF}" = \
-            "refs/heads/qualification/f0-final-evidence"
+          test "${F0_VALIDATION_BRANCH}" = \
+            "qualification/f0-final-evidence"
           test "$(git rev-parse HEAD)" = "${F0_VALIDATION_REF}"
           git switch -C \
             "qualification/f0-run-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \

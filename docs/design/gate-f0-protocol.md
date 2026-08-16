@@ -55,7 +55,10 @@ not produce reports or masquerade as a fourth evidence chain.
 ## Lifecycle
 
 1. Review the protocol commit and immutable product-tree guard.
-2. Dispatch `.github/workflows/f0-controlled.yml` on the exact reviewed head.
+2. Apply the `f0-controlled` label to dispatch
+   `.github/workflows/f0-controlled.yml` on the exact reviewed PR head. Manual
+   dispatch remains available after the workflow is registered on the default
+   branch.
 3. Commit the three retained chains and the evidence manifest.
 4. Run selected and full CI on that exact evidence head.
 5. Record run IDs, attempts, conclusions, URLs, and the exact head in the
