@@ -6,6 +6,16 @@ use std::{
     fmt,
 };
 
+use mech_compute::{
+    BinaryOperation, ElementwiseInstruction, ElementwiseOperation, UnaryOperation,
+    display_operation, elementwise_operation, plan_compute_artifact, turn_required_nodes,
+};
+pub use mech_compute::{
+    ComputeAdmissionError as GpuAdmissionError, ComputeDiagnostic as GpuDiagnostic,
+    ComputeDiagnosticCode as GpuDiagnosticCode, ComputeExecutionTarget as ExecutionTarget,
+    ComputePhysicalPlan as HybridPlacementPlan, NodePlacement, PlacementViolation, SlotPlacement,
+    SlotResidence, TransferBoundary, TransferDirection,
+};
 use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, DeliveryMode, DimensionExpr,
@@ -13,8 +23,8 @@ use mech_core::{
     SchemaBody, SchemaId, ValueData,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, OperationReference,
-    ProducerReference, ProgramArtifact, SlotRole,
+    ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
+    ProgramArtifact, SlotRole,
 };
 
 mod batched;
@@ -27,9 +37,6 @@ pub use native::*;
 mod provider;
 #[cfg(feature = "native")]
 pub use provider::*;
-mod placement;
-pub use placement::*;
-
 pub const WORKGROUP_SIZE: u32 = 64;
 
 /// Converts a Mech matrix snapshot into the row-major storage order consumed
@@ -56,70 +63,6 @@ pub fn column_major_to_row_major<T: Copy + Default>(
     }
     Ok(row_major)
 }
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum GpuDiagnosticCode {
-    IntegrityConstraintsUnsupported,
-    StateUnsupported,
-    OpaqueOperationContract,
-    ExternalInteractionUnsupported,
-    PortContractUnsupported,
-    SchemaUnsupported,
-    DynamicShapeUnsupported,
-    OperationUnsupported,
-    ArityUnsupported,
-    ShapeMismatch,
-    ConstantUnsupported,
-    ArtifactMalformed,
-    PlacementConstraintUnsatisfied,
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GpuDiagnostic {
-    pub code: GpuDiagnosticCode,
-    pub node: Option<NodeId>,
-    pub operation: Option<String>,
-    pub detail: String,
-}
-
-impl fmt::Display for GpuDiagnostic {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(node) = self.node {
-            write!(formatter, "node {}: ", node.get())?;
-        }
-        if let Some(operation) = &self.operation {
-            write!(formatter, "{operation}: ")?;
-        }
-        write!(formatter, "{}", self.detail)
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GpuAdmissionError {
-    diagnostics: Vec<GpuDiagnostic>,
-}
-
-impl GpuAdmissionError {
-    pub fn diagnostics(&self) -> &[GpuDiagnostic] {
-        &self.diagnostics
-    }
-}
-
-impl fmt::Display for GpuAdmissionError {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            formatter,
-            "GPU host rejected the program with {} diagnostic(s)",
-            self.diagnostics.len()
-        )?;
-        for diagnostic in &self.diagnostics {
-            write!(formatter, "\n- {diagnostic}")?;
-        }
-        Ok(())
-    }
-}
-
-impl Error for GpuAdmissionError {}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GpuBindingAccess {
@@ -172,109 +115,6 @@ enum GpuBindingKind {
     Output(CellSlotId),
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum BinaryOperation {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-}
-
-impl BinaryOperation {
-    const fn wgsl(self) -> &'static str {
-        match self {
-            Self::Add => "+",
-            Self::Subtract => "-",
-            Self::Multiply => "*",
-            Self::Divide => "/",
-        }
-    }
-
-    fn apply(self, left: f32, right: f32) -> f32 {
-        match self {
-            Self::Add => left + right,
-            Self::Subtract => left - right,
-            Self::Multiply => left * right,
-            Self::Divide => left / right,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum UnaryOperation {
-    Sin,
-    Cos,
-}
-
-impl UnaryOperation {
-    const fn wgsl(self) -> &'static str {
-        match self {
-            Self::Sin => "sin",
-            Self::Cos => "cos",
-        }
-    }
-
-    fn apply(self, input: f32) -> f32 {
-        match self {
-            Self::Sin => input.sin(),
-            Self::Cos => input.cos(),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ElementwiseOperation {
-    Binary(BinaryOperation),
-    Unary(UnaryOperation),
-    Atan2,
-    Identity,
-    Pack2,
-}
-
-impl ElementwiseOperation {
-    const fn arity(self) -> usize {
-        match self {
-            Self::Unary(_) | Self::Identity => 1,
-            Self::Binary(_) | Self::Atan2 | Self::Pack2 => 2,
-        }
-    }
-
-    fn apply(self, inputs: &[f32], index: usize, output_elements: usize) -> f32 {
-        match self {
-            Self::Binary(operation) => operation.apply(inputs[0], inputs[1]),
-            Self::Unary(operation) => operation.apply(inputs[0]),
-            Self::Atan2 => inputs[0].atan2(inputs[1]),
-            Self::Identity => inputs[0],
-            Self::Pack2 => inputs[usize::from(index >= output_elements.div_ceil(2))],
-        }
-    }
-
-    fn wgsl_expression(self, inputs: &[String], dispatch_elements: u64) -> String {
-        match self {
-            Self::Binary(operation) => {
-                format!("{} {} {}", inputs[0], operation.wgsl(), inputs[1])
-            }
-            Self::Unary(operation) => format!("{}({})", operation.wgsl(), inputs[0]),
-            Self::Atan2 => format!("atan2({}, {})", inputs[0], inputs[1]),
-            Self::Identity => inputs[0].clone(),
-            Self::Pack2 => format!(
-                "select({}, {}, index >= {}u)",
-                inputs[0],
-                inputs[1],
-                dispatch_elements.div_ceil(2)
-            ),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-struct KernelOperation {
-    operation: ElementwiseOperation,
-    inputs: Vec<ArtifactSource>,
-    output: CellSlotId,
-    elements: u64,
-}
-
 #[derive(Clone, Debug)]
 struct KernelOutput {
     name: String,
@@ -297,7 +137,7 @@ struct KernelState {
 pub struct GpuProgram {
     wgsl: String,
     bindings: Vec<GpuBinding>,
-    operations: Vec<KernelOperation>,
+    operations: Vec<ElementwiseInstruction>,
     outputs: Vec<KernelOutput>,
     states: Vec<KernelState>,
     input_slots: BTreeMap<CellSlotId, (String, u64, u32)>,
@@ -619,6 +459,11 @@ impl Error for CpuExecutionError {}
 pub struct GpuHost;
 
 impl GpuHost {
+    /// Explains placement and transfer boundaries without selecting a backend.
+    pub fn plan(&self, artifact: &ProgramArtifact) -> HybridPlacementPlan {
+        plan_compute_artifact(artifact, artifact.compute_regions())
+    }
+
     pub fn compile(&self, artifact: &ProgramArtifact) -> Result<GpuProgram, GpuAdmissionError> {
         self.compile_for_regions(artifact, artifact.compute_regions())
     }
@@ -653,14 +498,14 @@ impl GpuHost {
                 ),
             });
         }
-        if plan.gpu_regions.len() > 1 {
+        if plan.regions.len() > 1 {
             diagnostics.push(GpuDiagnostic {
                 code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
                 node: None,
                 operation: None,
                 detail: format!(
                     "{} GPU regions require a mixed multi-kernel executor; the current executor accepts one region",
-                    plan.gpu_regions.len(),
+                    plan.regions.len(),
                 ),
             });
         }
@@ -698,7 +543,7 @@ struct Compiler<'a> {
     slot_elements: BTreeMap<CellSlotId, u64>,
     input_slots: BTreeMap<CellSlotId, (String, u64, u32)>,
     constants: BTreeMap<mech_core::ConstantId, Vec<f32>>,
-    operations: Vec<KernelOperation>,
+    operations: Vec<ElementwiseInstruction>,
     outputs: Vec<KernelOutput>,
     state_slots: BTreeMap<CellSlotId, PendingState>,
     composite_packs: BTreeMap<CellSlotId, Vec<ArtifactSource>>,
@@ -1039,9 +884,9 @@ impl<'a> Compiler<'a> {
                 );
                 continue;
             }
-            self.operations.push(KernelOperation {
+            self.operations.push(ElementwiseInstruction {
                 operation,
-                inputs,
+                inputs: inputs.into_boxed_slice(),
                 output: outputs[0],
                 elements: output_elements,
             });
@@ -1533,9 +1378,7 @@ impl<'a> Compiler<'a> {
             shader.push_str(&format!(
                 "  let slot_{} = {};\n",
                 operation.output.get(),
-                operation
-                    .operation
-                    .wgsl_expression(&inputs, dispatch_elements)
+                wgsl_elementwise_expression(operation.operation, &inputs, dispatch_elements)
             ));
         }
         for state in &self.state_slots {
@@ -1626,68 +1469,6 @@ impl<'a> Compiler<'a> {
     }
 }
 
-fn turn_required_nodes(artifact: &ProgramArtifact) -> BTreeSet<NodeId> {
-    let mut required = BTreeSet::new();
-    for node in artifact.nodes() {
-        let writes_state = node.output_bindings.clone().any(|index| {
-            matches!(
-                artifact.bindings().get(index as usize),
-                Some(BindingDeclaration::Output { target, .. })
-                    if artifact.slots()[target.get() as usize].role == SlotRole::State
-            )
-        });
-        if writes_state {
-            visit_turn_node(artifact, node.node, &mut required);
-        }
-    }
-    for output in artifact.outputs() {
-        visit_turn_source(artifact, ArtifactSource::Slot(output.source), &mut required);
-    }
-    for constraint in artifact.constraints() {
-        for source in &constraint.inputs {
-            visit_turn_source(artifact, *source, &mut required);
-        }
-    }
-    required
-}
-
-fn visit_turn_node(artifact: &ProgramArtifact, node: NodeId, required: &mut BTreeSet<NodeId>) {
-    if !required.insert(node) {
-        return;
-    }
-    let Some(declaration) = artifact.nodes().get(node.get() as usize) else {
-        return;
-    };
-    for binding in declaration.input_bindings.clone() {
-        if let Some(BindingDeclaration::Input { source, .. }) =
-            artifact.bindings().get(binding as usize)
-        {
-            visit_turn_source(artifact, *source, required);
-        }
-    }
-}
-
-fn visit_turn_source(
-    artifact: &ProgramArtifact,
-    source: ArtifactSource,
-    required: &mut BTreeSet<NodeId>,
-) {
-    let ArtifactSource::Slot(slot) = source else {
-        return;
-    };
-    let Some(declaration) = artifact.slots().get(slot.get() as usize) else {
-        return;
-    };
-    if declaration.role == SlotRole::State {
-        return;
-    }
-    match declaration.producer {
-        ProducerReference::Input(_) => {}
-        ProducerReference::NodeOutput { node, .. } => visit_turn_node(artifact, node, required),
-        ProducerReference::Output { source, .. } => visit_turn_source(artifact, source, required),
-    }
-}
-
 fn producer_node(
     artifact: &ProgramArtifact,
     producer: mech_engine::ProducerReference,
@@ -1724,6 +1505,39 @@ fn wgsl_broadcast_index(elements: u64, consumer_elements: u64) -> String {
     }
 }
 
+fn wgsl_elementwise_expression(
+    operation: ElementwiseOperation,
+    inputs: &[String],
+    dispatch_elements: u64,
+) -> String {
+    match operation {
+        ElementwiseOperation::Binary(operation) => {
+            let operator = match operation {
+                BinaryOperation::Add => "+",
+                BinaryOperation::Subtract => "-",
+                BinaryOperation::Multiply => "*",
+                BinaryOperation::Divide => "/",
+            };
+            format!("{} {operator} {}", inputs[0], inputs[1])
+        }
+        ElementwiseOperation::Unary(operation) => {
+            let function = match operation {
+                UnaryOperation::Sin => "sin",
+                UnaryOperation::Cos => "cos",
+            };
+            format!("{function}({})", inputs[0])
+        }
+        ElementwiseOperation::Atan2 => format!("atan2({}, {})", inputs[0], inputs[1]),
+        ElementwiseOperation::Identity => inputs[0].clone(),
+        ElementwiseOperation::Pack2 => format!(
+            "select({}, {}, index >= {}u)",
+            inputs[0],
+            inputs[1],
+            dispatch_elements.div_ceil(2)
+        ),
+    }
+}
+
 fn block_broadcast_dimensions(input: &[u64], output: &[u64]) -> bool {
     if input.len() != output.len() {
         return false;
@@ -1741,32 +1555,6 @@ fn block_broadcast_dimensions(input: &[u64], output: &[u64]) -> bool {
         }
     }
     expanded
-}
-
-fn display_operation(operation: &OperationReference) -> String {
-    operation
-        .module_path
-        .iter()
-        .chain(std::iter::once(&operation.operation_name))
-        .map(String::as_str)
-        .collect::<Vec<_>>()
-        .join("/")
-}
-
-fn elementwise_operation(operation: &OperationReference) -> Option<ElementwiseOperation> {
-    let canonical = display_operation(operation);
-    match canonical.as_str() {
-        "math/add" => Some(ElementwiseOperation::Binary(BinaryOperation::Add)),
-        "math/sub" => Some(ElementwiseOperation::Binary(BinaryOperation::Subtract)),
-        "math/mul" => Some(ElementwiseOperation::Binary(BinaryOperation::Multiply)),
-        "math/div" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
-        "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
-        "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
-        "math/atan2" => Some(ElementwiseOperation::Atan2),
-        "matrix/horzcat" => Some(ElementwiseOperation::Identity),
-        "matrix/vertcat" => Some(ElementwiseOperation::Pack2),
-        _ => None,
-    }
 }
 
 fn format_wgsl_f32(value: f32) -> String {

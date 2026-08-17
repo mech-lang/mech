@@ -246,7 +246,7 @@ impl NativeKernel {
                 cos: cos_ref,
                 atan2: atan2_ref,
             };
-            let mut registers = vec![None; program.register_count];
+            let mut registers = vec![None; program.ir.register_count];
             for (index, input) in program.inputs.iter().enumerate() {
                 let offset = program.register_offsets[&input.slot];
                 for component in 0..input.shape.elements() {
@@ -273,7 +273,7 @@ impl NativeKernel {
                     )));
                 }
             }
-            for instruction in &program.instructions {
+            for instruction in &program.ir.instructions {
                 let value = lower_computation(
                     &mut builder,
                     &instruction.computation,

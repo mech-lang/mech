@@ -178,13 +178,10 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
 
     let placement = GpuHost.plan(product.artifact());
     assert!(placement.violations.is_empty());
-    assert_eq!(placement.gpu_regions.len(), 1);
+    assert_eq!(placement.regions.len(), 1);
+    assert_eq!(placement.regions[0].name.as_deref(), Some("particle-field"),);
     assert_eq!(
-        placement.gpu_regions[0].name.as_deref(),
-        Some("particle-field"),
-    );
-    assert_eq!(
-        placement.gpu_regions[0].requested,
+        placement.regions[0].requested,
         Some(ComputePlacement::Compute),
     );
     let lowered = GpuHost
@@ -289,7 +286,7 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
         "unexpected CPU placement: {:#?}",
         placement.nodes
     );
-    assert_eq!(placement.gpu_regions.len(), 1);
+    assert_eq!(placement.regions.len(), 1);
     assert_eq!(
         placement
             .slots
@@ -787,7 +784,7 @@ fn mixed_graph_reports_gpu_regions_and_cpu_transfer_boundaries() {
     let placement = GpuHost.plan(&artifact);
 
     assert!(!placement.fully_accelerated);
-    assert_eq!(placement.gpu_regions.len(), 2);
+    assert_eq!(placement.regions.len(), 2);
     assert_eq!(
         placement
             .nodes

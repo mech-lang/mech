@@ -266,7 +266,7 @@ pub(crate) fn run(plan: &RunExecutionPlan) -> MResult<CliOutcome> {
 
     println!(
         "[Mech Run] Placement: {} GPU region(s), {} device state slot(s), {} transfer boundary/boundaries",
-        placement.gpu_regions.len(),
+        placement.regions.len(),
         placement
             .slots
             .iter()

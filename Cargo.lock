@@ -2593,6 +2593,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "mech-compute"
+version = "0.3.5"
+dependencies = [
+ "mech-core",
+ "mech-engine",
+]
+
+[[package]]
 name = "mech-console"
 version = "0.3.5"
 dependencies = [
@@ -2661,6 +2669,7 @@ dependencies = [
  "cranelift-frontend",
  "cranelift-jit",
  "cranelift-module",
+ "mech-compute",
  "mech-core",
  "mech-engine",
  "mech-runtime",

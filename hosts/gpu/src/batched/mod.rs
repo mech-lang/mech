@@ -1,5 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use mech_compute::{
+    ComparisonOperation, FixedShape, FixedShapeIr, LogicOperation, ScalarComputation,
+    ScalarInstruction, ScalarOperand, ScalarPredicate,
+};
 use mech_core::{
     CellSlotId, DimensionExpr, FloatWidth, IntegrityConstraintId, NodeId, SchemaBody, ValueData,
     snapshot::SequenceView,
@@ -22,483 +26,250 @@ pub use jit::*;
 
 const SIMD_LANES: usize = 4;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct FixedShape {
-    rows: usize,
-    columns: usize,
+fn evaluate_operand_simd(operand: ScalarOperand, registers: &[f32x4]) -> f32x4 {
+    match operand {
+        ScalarOperand::Register(register) => registers[register],
+        ScalarOperand::Constant(value) => f32x4::splat(value),
+    }
 }
 
-impl FixedShape {
-    const fn scalar() -> Self {
-        Self {
-            rows: 1,
-            columns: 1,
+fn comparison_mask_simd(operation: ComparisonOperation, left: f32x4, right: f32x4) -> f32x4 {
+    match operation {
+        ComparisonOperation::Equal => left.cmp_eq(right),
+        ComparisonOperation::NotEqual => left.cmp_ne(right),
+        ComparisonOperation::Less => left.cmp_lt(right),
+        ComparisonOperation::Greater => left.cmp_gt(right),
+        ComparisonOperation::LessEqual => left.cmp_le(right),
+        ComparisonOperation::GreaterEqual => left.cmp_ge(right),
+    }
+}
+
+fn evaluate_scalar_computation_simd(computation: &ScalarComputation, registers: &[f32x4]) -> f32x4 {
+    match computation {
+        ScalarComputation::Copy(input) => evaluate_operand_simd(*input, registers),
+        ScalarComputation::Negate(input) => -evaluate_operand_simd(*input, registers),
+        ScalarComputation::Absolute(input) => evaluate_operand_simd(*input, registers).abs(),
+        ScalarComputation::IsFinite(input) => evaluate_operand_simd(*input, registers)
+            .is_finite()
+            .blend(f32x4::ONE, f32x4::ZERO),
+        ScalarComputation::Compare {
+            operation,
+            left,
+            right,
+        } => comparison_mask_simd(
+            *operation,
+            evaluate_operand_simd(*left, registers),
+            evaluate_operand_simd(*right, registers),
+        )
+        .blend(f32x4::ONE, f32x4::ZERO),
+        ScalarComputation::Logic { operation, inputs } => {
+            let left = evaluate_operand_simd(inputs[0], registers).cmp_ne(f32x4::ZERO);
+            let right = inputs
+                .get(1)
+                .map(|input| evaluate_operand_simd(*input, registers).cmp_ne(f32x4::ZERO));
+            let mask = match operation {
+                LogicOperation::And => left & right.unwrap(),
+                LogicOperation::Or => left | right.unwrap(),
+                LogicOperation::Xor => left ^ right.unwrap(),
+                LogicOperation::Not => !left,
+            };
+            mask.blend(f32x4::ONE, f32x4::ZERO)
         }
-    }
-
-    const fn elements(self) -> usize {
-        self.rows * self.columns
-    }
-
-    const fn index(self, row: usize, column: usize) -> usize {
-        row + column * self.rows
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-enum ScalarOperand {
-    Register(usize),
-    Constant(f32),
-}
-
-impl ScalarOperand {
-    fn evaluate(self, registers: &[f32]) -> f32 {
-        match self {
-            Self::Register(register) => registers[register],
-            Self::Constant(value) => value,
-        }
-    }
-
-    fn wgsl(self) -> String {
-        match self {
-            Self::Register(register) => format!("r{register}"),
-            Self::Constant(value) => super::format_wgsl_f32(value),
-        }
-    }
-
-    fn evaluate_simd(self, registers: &[f32x4]) -> f32x4 {
-        match self {
-            Self::Register(register) => registers[register],
-            Self::Constant(value) => f32x4::splat(value),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ComparisonOperation {
-    Equal,
-    NotEqual,
-    Less,
-    Greater,
-    LessEqual,
-    GreaterEqual,
-}
-
-impl ComparisonOperation {
-    fn apply(self, left: f32, right: f32) -> bool {
-        match self {
-            Self::Equal => left == right,
-            Self::NotEqual => left != right,
-            Self::Less => left < right,
-            Self::Greater => left > right,
-            Self::LessEqual => left <= right,
-            Self::GreaterEqual => left >= right,
-        }
-    }
-
-    fn apply_simd(self, left: f32x4, right: f32x4) -> f32x4 {
-        self.mask_simd(left, right).blend(f32x4::ONE, f32x4::ZERO)
-    }
-
-    fn mask_simd(self, left: f32x4, right: f32x4) -> f32x4 {
-        match self {
-            Self::Equal => left.cmp_eq(right),
-            Self::NotEqual => left.cmp_ne(right),
-            Self::Less => left.cmp_lt(right),
-            Self::Greater => left.cmp_gt(right),
-            Self::LessEqual => left.cmp_le(right),
-            Self::GreaterEqual => left.cmp_ge(right),
-        }
-    }
-
-    const fn wgsl(self) -> &'static str {
-        match self {
-            Self::Equal => "==",
-            Self::NotEqual => "!=",
-            Self::Less => "<",
-            Self::Greater => ">",
-            Self::LessEqual => "<=",
-            Self::GreaterEqual => ">=",
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum LogicOperation {
-    And,
-    Or,
-    Xor,
-    Not,
-}
-
-impl LogicOperation {
-    fn apply(self, left: bool, right: Option<bool>) -> bool {
-        match self {
-            Self::And => left && right.expect("binary logic operation has a right operand"),
-            Self::Or => left || right.expect("binary logic operation has a right operand"),
-            Self::Xor => left ^ right.expect("binary logic operation has a right operand"),
-            Self::Not => !left,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-enum ScalarComputation {
-    Copy(ScalarOperand),
-    Negate(ScalarOperand),
-    Absolute(ScalarOperand),
-    IsFinite(ScalarOperand),
-    Compare {
-        operation: ComparisonOperation,
-        left: ScalarOperand,
-        right: ScalarOperand,
-    },
-    Logic {
-        operation: LogicOperation,
-        inputs: Vec<ScalarOperand>,
-    },
-    Elementwise {
-        operation: ElementwiseOperation,
-        inputs: Vec<ScalarOperand>,
-    },
-    SumProducts(Vec<(ScalarOperand, ScalarOperand)>),
-}
-
-#[derive(Clone, Debug)]
-enum ScalarPredicate {
-    Value(ScalarOperand),
-    IsFinite(ScalarOperand),
-    AbsoluteDifferenceWithin {
-        left: ScalarOperand,
-        right: ScalarOperand,
-        tolerance: ScalarOperand,
-    },
-    Compare {
-        operation: ComparisonOperation,
-        left: ScalarOperand,
-        right: ScalarOperand,
-    },
-    All(Vec<ScalarPredicate>),
-    Logic {
-        operation: LogicOperation,
-        inputs: Vec<ScalarPredicate>,
-    },
-}
-
-impl ScalarPredicate {
-    fn evaluate(&self, registers: &[f32]) -> bool {
-        match self {
-            Self::Value(value) => value.evaluate(registers) != 0.0,
-            Self::IsFinite(value) => value.evaluate(registers).is_finite(),
-            Self::AbsoluteDifferenceWithin {
-                left,
-                right,
-                tolerance,
-            } => {
-                (left.evaluate(registers) - right.evaluate(registers)).abs()
-                    <= tolerance.evaluate(registers)
+        ScalarComputation::Elementwise { operation, inputs } => {
+            let mut values = [f32x4::ZERO; 2];
+            for (index, input) in inputs.iter().enumerate() {
+                values[index] = evaluate_operand_simd(*input, registers);
             }
-            Self::Compare {
-                operation,
-                left,
-                right,
-            } => operation.apply(left.evaluate(registers), right.evaluate(registers)),
-            Self::All(inputs) => inputs.iter().all(|input| input.evaluate(registers)),
-            Self::Logic { operation, inputs } => {
-                let left = inputs[0].evaluate(registers);
-                let right = inputs.get(1).map(|input| input.evaluate(registers));
-                operation.apply(left, right)
-            }
-        }
-    }
-
-    fn evaluate_simd_mask(&self, registers: &[f32x4]) -> f32x4 {
-        match self {
-            Self::Value(value) => value.evaluate_simd(registers).cmp_ne(f32x4::ZERO),
-            Self::IsFinite(value) => value.evaluate_simd(registers).is_finite(),
-            Self::AbsoluteDifferenceWithin {
-                left,
-                right,
-                tolerance,
-            } => (left.evaluate_simd(registers) - right.evaluate_simd(registers))
-                .abs()
-                .cmp_le(tolerance.evaluate_simd(registers)),
-            Self::Compare {
-                operation,
-                left,
-                right,
-            } => operation.mask_simd(
-                left.evaluate_simd(registers),
-                right.evaluate_simd(registers),
-            ),
-            Self::All(inputs) => inputs.iter().fold(!f32x4::ZERO, |mask, input| {
-                mask & input.evaluate_simd_mask(registers)
-            }),
-            Self::Logic { operation, inputs } => {
-                let left = inputs[0].evaluate_simd_mask(registers);
-                let right = inputs
-                    .get(1)
-                    .map(|input| input.evaluate_simd_mask(registers));
-                match operation {
-                    LogicOperation::And => left & right.unwrap(),
-                    LogicOperation::Or => left | right.unwrap(),
-                    LogicOperation::Xor => left ^ right.unwrap(),
-                    LogicOperation::Not => !left,
+            match operation {
+                ElementwiseOperation::Binary(operation) => match operation {
+                    BinaryOperation::Add => values[0] + values[1],
+                    BinaryOperation::Subtract => values[0] - values[1],
+                    BinaryOperation::Multiply => values[0] * values[1],
+                    BinaryOperation::Divide => values[0] / values[1],
+                },
+                ElementwiseOperation::Unary(operation) => match operation {
+                    UnaryOperation::Sin => values[0].sin(),
+                    UnaryOperation::Cos => values[0].cos(),
+                },
+                ElementwiseOperation::Atan2 => values[0].atan2(values[1]),
+                ElementwiseOperation::Identity => values[0],
+                ElementwiseOperation::Pack2 => {
+                    unreachable!("pack2 is not admitted by the fixed-shape scalarizer")
                 }
             }
         }
-    }
-
-    fn wgsl(&self) -> String {
-        match self {
-            Self::Value(value) => format!("({} != 0.0)", value.wgsl()),
-            Self::IsFinite(value) => {
-                format!("(abs({}) <= 3.402823466e38)", value.wgsl())
-            }
-            Self::AbsoluteDifferenceWithin {
-                left,
-                right,
-                tolerance,
-            } => format!(
-                "(abs(({}) - ({})) <= ({}))",
-                left.wgsl(),
-                right.wgsl(),
-                tolerance.wgsl()
-            ),
-            Self::Compare {
-                operation,
-                left,
-                right,
-            } => format!(
-                "(({}) {} ({}))",
-                left.wgsl(),
-                operation.wgsl(),
-                right.wgsl()
-            ),
-            Self::All(inputs) => format!(
-                "({})",
-                inputs
-                    .iter()
-                    .map(ScalarPredicate::wgsl)
-                    .collect::<Vec<_>>()
-                    .join(" && ")
-            ),
-            Self::Logic { operation, inputs } => {
-                let left = inputs[0].wgsl();
-                match operation {
-                    LogicOperation::And => format!("({left} && {})", inputs[1].wgsl()),
-                    LogicOperation::Or => format!("({left} || {})", inputs[1].wgsl()),
-                    LogicOperation::Xor => format!("({left} != {})", inputs[1].wgsl()),
-                    LogicOperation::Not => format!("(!{left})"),
-                }
-            }
+        ScalarComputation::SumProducts(terms) => {
+            terms.iter().fold(f32x4::ZERO, |sum, (left, right)| {
+                evaluate_operand_simd(*left, registers)
+                    .mul_add(evaluate_operand_simd(*right, registers), sum)
+            })
         }
     }
+}
 
-    fn collect_registers(&self, registers: &mut BTreeSet<usize>) {
-        match self {
-            Self::Value(value) | Self::IsFinite(value) => {
-                collect_operand_register(*value, registers);
-            }
-            Self::AbsoluteDifferenceWithin {
-                left,
-                right,
-                tolerance,
-            } => {
-                collect_operand_register(*left, registers);
-                collect_operand_register(*right, registers);
-                collect_operand_register(*tolerance, registers);
-            }
-            Self::Compare { left, right, .. } => {
-                collect_operand_register(*left, registers);
-                collect_operand_register(*right, registers);
-            }
-            Self::All(inputs) | Self::Logic { inputs, .. } => {
-                for input in inputs {
-                    input.collect_registers(registers);
-                }
+fn evaluate_predicate_simd_mask(predicate: &ScalarPredicate, registers: &[f32x4]) -> f32x4 {
+    match predicate {
+        ScalarPredicate::Value(value) => {
+            evaluate_operand_simd(*value, registers).cmp_ne(f32x4::ZERO)
+        }
+        ScalarPredicate::IsFinite(value) => evaluate_operand_simd(*value, registers).is_finite(),
+        ScalarPredicate::AbsoluteDifferenceWithin {
+            left,
+            right,
+            tolerance,
+        } => (evaluate_operand_simd(*left, registers) - evaluate_operand_simd(*right, registers))
+            .abs()
+            .cmp_le(evaluate_operand_simd(*tolerance, registers)),
+        ScalarPredicate::Compare {
+            operation,
+            left,
+            right,
+        } => comparison_mask_simd(
+            *operation,
+            evaluate_operand_simd(*left, registers),
+            evaluate_operand_simd(*right, registers),
+        ),
+        ScalarPredicate::All(inputs) => inputs.iter().fold(!f32x4::ZERO, |mask, input| {
+            mask & evaluate_predicate_simd_mask(input, registers)
+        }),
+        ScalarPredicate::Logic { operation, inputs } => {
+            let left = evaluate_predicate_simd_mask(&inputs[0], registers);
+            let right = inputs
+                .get(1)
+                .map(|input| evaluate_predicate_simd_mask(input, registers));
+            match operation {
+                LogicOperation::And => left & right.unwrap(),
+                LogicOperation::Or => left | right.unwrap(),
+                LogicOperation::Xor => left ^ right.unwrap(),
+                LogicOperation::Not => !left,
             }
         }
     }
 }
 
-impl ScalarComputation {
-    fn evaluate(&self, registers: &[f32]) -> f32 {
-        match self {
-            Self::Copy(input) => input.evaluate(registers),
-            Self::Negate(input) => -input.evaluate(registers),
-            Self::Absolute(input) => input.evaluate(registers).abs(),
-            Self::IsFinite(input) => {
-                if input.evaluate(registers).is_finite() {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-            Self::Compare {
-                operation,
-                left,
-                right,
-            } => {
-                if operation.apply(left.evaluate(registers), right.evaluate(registers)) {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-            Self::Logic { operation, inputs } => {
-                let left = inputs[0].evaluate(registers) != 0.0;
-                let right = inputs.get(1).map(|input| input.evaluate(registers) != 0.0);
-                if operation.apply(left, right) {
-                    1.0
-                } else {
-                    0.0
-                }
-            }
-            Self::Elementwise { operation, inputs } => {
-                let mut values = [0.0_f32; 2];
-                for (index, input) in inputs.iter().enumerate() {
-                    values[index] = input.evaluate(registers);
-                }
-                operation.apply(&values[..inputs.len()], 0, 1)
-            }
-            Self::SumProducts(terms) => terms.iter().fold(0.0, |sum, (left, right)| {
-                left.evaluate(registers)
-                    .mul_add(right.evaluate(registers), sum)
-            }),
-        }
+fn scalar_operand_wgsl(operand: ScalarOperand) -> String {
+    match operand {
+        ScalarOperand::Register(register) => format!("r{register}"),
+        ScalarOperand::Constant(value) => super::format_wgsl_f32(value),
     }
+}
 
-    fn wgsl(&self) -> String {
-        match self {
-            Self::Copy(input) => input.wgsl(),
-            Self::Negate(input) => format!("-({})", input.wgsl()),
-            Self::Absolute(input) => format!("abs({})", input.wgsl()),
-            Self::IsFinite(input) => {
-                format!("select(0.0, 1.0, abs({}) <= 3.402823466e38)", input.wgsl())
-            }
-            Self::Compare {
-                operation,
-                left,
-                right,
-            } => format!(
-                "select(0.0, 1.0, ({}) {} ({}))",
-                left.wgsl(),
-                operation.wgsl(),
-                right.wgsl()
-            ),
-            Self::Logic { operation, inputs } => {
-                let left = format!("({} != 0.0)", inputs[0].wgsl());
-                let condition = match operation {
-                    LogicOperation::And => {
-                        format!("{left} && ({} != 0.0)", inputs[1].wgsl())
-                    }
-                    LogicOperation::Or => {
-                        format!("{left} || ({} != 0.0)", inputs[1].wgsl())
-                    }
-                    LogicOperation::Xor => {
-                        format!("{left} != ({} != 0.0)", inputs[1].wgsl())
-                    }
-                    LogicOperation::Not => format!("!{left}"),
-                };
-                format!("select(0.0, 1.0, {condition})")
-            }
-            Self::Elementwise { operation, inputs } => {
-                let inputs = inputs.iter().map(|input| input.wgsl()).collect::<Vec<_>>();
-                operation.wgsl_expression(&inputs, 1)
-            }
-            Self::SumProducts(terms) => terms
+fn comparison_wgsl(operation: ComparisonOperation) -> &'static str {
+    match operation {
+        ComparisonOperation::Equal => "==",
+        ComparisonOperation::NotEqual => "!=",
+        ComparisonOperation::Less => "<",
+        ComparisonOperation::Greater => ">",
+        ComparisonOperation::LessEqual => "<=",
+        ComparisonOperation::GreaterEqual => ">=",
+    }
+}
+
+fn scalar_predicate_wgsl(predicate: &ScalarPredicate) -> String {
+    match predicate {
+        ScalarPredicate::Value(value) => format!("({} != 0.0)", scalar_operand_wgsl(*value)),
+        ScalarPredicate::IsFinite(value) => {
+            format!("(abs({}) <= 3.402823466e38)", scalar_operand_wgsl(*value))
+        }
+        ScalarPredicate::AbsoluteDifferenceWithin {
+            left,
+            right,
+            tolerance,
+        } => format!(
+            "(abs(({}) - ({})) <= ({}))",
+            scalar_operand_wgsl(*left),
+            scalar_operand_wgsl(*right),
+            scalar_operand_wgsl(*tolerance)
+        ),
+        ScalarPredicate::Compare {
+            operation,
+            left,
+            right,
+        } => format!(
+            "(({}) {} ({}))",
+            scalar_operand_wgsl(*left),
+            comparison_wgsl(*operation),
+            scalar_operand_wgsl(*right)
+        ),
+        ScalarPredicate::All(inputs) => format!(
+            "({})",
+            inputs
                 .iter()
-                .map(|(left, right)| format!("({} * {})", left.wgsl(), right.wgsl()))
+                .map(scalar_predicate_wgsl)
                 .collect::<Vec<_>>()
-                .join(" + "),
+                .join(" && ")
+        ),
+        ScalarPredicate::Logic { operation, inputs } => {
+            let left = scalar_predicate_wgsl(&inputs[0]);
+            match operation {
+                LogicOperation::And => {
+                    format!("({left} && {})", scalar_predicate_wgsl(&inputs[1]))
+                }
+                LogicOperation::Or => {
+                    format!("({left} || {})", scalar_predicate_wgsl(&inputs[1]))
+                }
+                LogicOperation::Xor => {
+                    format!("({left} != {})", scalar_predicate_wgsl(&inputs[1]))
+                }
+                LogicOperation::Not => format!("(!{left})"),
+            }
         }
     }
+}
 
-    fn evaluate_simd(&self, registers: &[f32x4]) -> f32x4 {
-        match self {
-            Self::Copy(input) => input.evaluate_simd(registers),
-            Self::Negate(input) => -input.evaluate_simd(registers),
-            Self::Absolute(input) => input.evaluate_simd(registers).abs(),
-            Self::IsFinite(input) => input
-                .evaluate_simd(registers)
-                .is_finite()
-                .blend(f32x4::ONE, f32x4::ZERO),
-            Self::Compare {
-                operation,
-                left,
-                right,
-            } => operation.apply_simd(
-                left.evaluate_simd(registers),
-                right.evaluate_simd(registers),
-            ),
-            Self::Logic { operation, inputs } => {
-                let left = inputs[0].evaluate_simd(registers).cmp_ne(f32x4::ZERO);
-                let right = inputs
-                    .get(1)
-                    .map(|input| input.evaluate_simd(registers).cmp_ne(f32x4::ZERO));
-                let mask = match operation {
-                    LogicOperation::And => left & right.unwrap(),
-                    LogicOperation::Or => left | right.unwrap(),
-                    LogicOperation::Xor => left ^ right.unwrap(),
-                    LogicOperation::Not => !left,
-                };
-                mask.blend(f32x4::ONE, f32x4::ZERO)
-            }
-            Self::Elementwise { operation, inputs } => {
-                let mut values = [f32x4::ZERO; 2];
-                for (index, input) in inputs.iter().enumerate() {
-                    values[index] = input.evaluate_simd(registers);
+fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
+    match computation {
+        ScalarComputation::Copy(input) => scalar_operand_wgsl(*input),
+        ScalarComputation::Negate(input) => format!("-({})", scalar_operand_wgsl(*input)),
+        ScalarComputation::Absolute(input) => format!("abs({})", scalar_operand_wgsl(*input)),
+        ScalarComputation::IsFinite(input) => format!(
+            "select(0.0, 1.0, abs({}) <= 3.402823466e38)",
+            scalar_operand_wgsl(*input)
+        ),
+        ScalarComputation::Compare {
+            operation,
+            left,
+            right,
+        } => format!(
+            "select(0.0, 1.0, ({}) {} ({}))",
+            scalar_operand_wgsl(*left),
+            comparison_wgsl(*operation),
+            scalar_operand_wgsl(*right)
+        ),
+        ScalarComputation::Logic { operation, inputs } => {
+            let left = format!("({} != 0.0)", scalar_operand_wgsl(inputs[0]));
+            let condition = match operation {
+                LogicOperation::And => {
+                    format!("{left} && ({} != 0.0)", scalar_operand_wgsl(inputs[1]))
                 }
-                match operation {
-                    ElementwiseOperation::Binary(operation) => match operation {
-                        BinaryOperation::Add => values[0] + values[1],
-                        BinaryOperation::Subtract => values[0] - values[1],
-                        BinaryOperation::Multiply => values[0] * values[1],
-                        BinaryOperation::Divide => values[0] / values[1],
-                    },
-                    ElementwiseOperation::Unary(operation) => match operation {
-                        UnaryOperation::Sin => values[0].sin(),
-                        UnaryOperation::Cos => values[0].cos(),
-                    },
-                    ElementwiseOperation::Atan2 => values[0].atan2(values[1]),
-                    ElementwiseOperation::Identity => values[0],
-                    ElementwiseOperation::Pack2 => {
-                        unreachable!("pack2 is not admitted by the fixed-shape scalarizer")
-                    }
+                LogicOperation::Or => {
+                    format!("{left} || ({} != 0.0)", scalar_operand_wgsl(inputs[1]))
                 }
-            }
-            Self::SumProducts(terms) => terms.iter().fold(f32x4::ZERO, |sum, (left, right)| {
-                left.evaluate_simd(registers)
-                    .mul_add(right.evaluate_simd(registers), sum)
-            }),
+                LogicOperation::Xor => {
+                    format!("{left} != ({} != 0.0)", scalar_operand_wgsl(inputs[1]))
+                }
+                LogicOperation::Not => format!("!{left}"),
+            };
+            format!("select(0.0, 1.0, {condition})")
         }
-    }
-
-    fn collect_registers(&self, registers: &mut BTreeSet<usize>) {
-        match self {
-            Self::Copy(input)
-            | Self::Negate(input)
-            | Self::Absolute(input)
-            | Self::IsFinite(input) => {
-                collect_operand_register(*input, registers);
-            }
-            Self::Compare { left, right, .. } => {
-                collect_operand_register(*left, registers);
-                collect_operand_register(*right, registers);
-            }
-            Self::Logic { inputs, .. } | Self::Elementwise { inputs, .. } => {
-                for input in inputs {
-                    collect_operand_register(*input, registers);
-                }
-            }
-            Self::SumProducts(terms) => {
-                for (left, right) in terms {
-                    collect_operand_register(*left, registers);
-                    collect_operand_register(*right, registers);
-                }
-            }
+        ScalarComputation::Elementwise { operation, inputs } => {
+            let inputs = inputs
+                .iter()
+                .map(|input| scalar_operand_wgsl(*input))
+                .collect::<Vec<_>>();
+            super::wgsl_elementwise_expression(*operation, &inputs, 1)
         }
+        ScalarComputation::SumProducts(terms) => terms
+            .iter()
+            .map(|(left, right)| {
+                format!(
+                    "({} * {})",
+                    scalar_operand_wgsl(*left),
+                    scalar_operand_wgsl(*right)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" + "),
     }
 }
 
@@ -609,12 +380,6 @@ fn prune_dead_instructions(
 }
 
 #[derive(Clone, Debug)]
-struct ScalarInstruction {
-    output: usize,
-    computation: ScalarComputation,
-}
-
-#[derive(Clone, Debug)]
 struct BatchedInput {
     slot: CellSlotId,
     name: String,
@@ -644,9 +409,8 @@ struct BatchedConstraint {
 #[derive(Clone, Debug)]
 pub struct BatchedGpuProgram {
     instances: u32,
-    register_count: usize,
+    ir: FixedShapeIr,
     register_offsets: BTreeMap<CellSlotId, usize>,
-    instructions: Vec<ScalarInstruction>,
     inputs: Vec<BatchedInput>,
     states: Vec<BatchedState>,
     constraints: Vec<BatchedConstraint>,
@@ -838,7 +602,7 @@ impl BatchedGpuProgram {
             inputs,
             state,
             next_state,
-            registers: vec![0.0; self.register_count],
+            registers: vec![0.0; self.ir.register_count],
             faults: BatchedFaultRecorder::default(),
         })
     }
@@ -860,7 +624,7 @@ impl BatchedGpuProgram {
             inputs,
             state,
             next_state,
-            registers: vec![f32x4::ZERO; self.register_count],
+            registers: vec![f32x4::ZERO; self.ir.register_count],
             faults: BatchedFaultRecorder::default(),
         })
     }
@@ -975,7 +739,7 @@ impl BatchedCpuSession<'_> {
                     self.registers[offset..offset + elements]
                         .copy_from_slice(&values[instance * elements..(instance + 1) * elements]);
                 }
-                for instruction in &self.program.instructions {
+                for instruction in &self.program.ir.instructions {
                     self.registers[instruction.output] =
                         instruction.computation.evaluate(&self.registers);
                 }
@@ -1039,12 +803,13 @@ impl BatchedSimdCpuSession<'_> {
                             gather_simd(values, first_instance, instances, elements, component);
                     }
                 }
-                for instruction in &self.program.instructions {
+                for instruction in &self.program.ir.instructions {
                     self.registers[instruction.output] =
-                        instruction.computation.evaluate_simd(&self.registers);
+                        evaluate_scalar_computation_simd(&instruction.computation, &self.registers);
                 }
                 for constraint in &self.program.constraints {
-                    let valid_mask = constraint.predicate.evaluate_simd_mask(&self.registers);
+                    let valid_mask =
+                        evaluate_predicate_simd_mask(&constraint.predicate, &self.registers);
                     let active_lanes = (instances - first_instance).min(SIMD_LANES);
                     let active_mask = (1_u32 << active_lanes) - 1;
                     let failed_lanes = (!valid_mask).move_mask() as u32 & active_mask;
@@ -1062,7 +827,7 @@ impl BatchedSimdCpuSession<'_> {
                     let elements = state.shape.elements();
                     let destination = self.next_state.get_mut(&state.slot).unwrap();
                     for (component, source) in state.update.iter().enumerate() {
-                        let lanes = source.evaluate_simd(&self.registers).to_array();
+                        let lanes = evaluate_operand_simd(*source, &self.registers).to_array();
                         for (lane, value) in lanes.into_iter().enumerate() {
                             let instance = first_instance + lane;
                             if instance < instances {
@@ -1409,9 +1174,11 @@ impl<'a> BatchCompiler<'a> {
         );
         Ok(BatchedGpuProgram {
             instances: self.instances,
-            register_count: self.register_count,
+            ir: FixedShapeIr {
+                register_count: self.register_count,
+                instructions: self.instructions.into_boxed_slice(),
+            },
             register_offsets: self.register_offsets,
-            instructions: self.instructions,
             inputs,
             states,
             constraints,
@@ -2185,7 +1952,7 @@ fn generate_wgsl(
         shader.push_str(&format!(
             "  let r{} = {};\n",
             instruction.output,
-            instruction.computation.wgsl()
+            scalar_computation_wgsl(&instruction.computation)
         ));
     }
     if !constraints.is_empty() {
@@ -2194,7 +1961,7 @@ fn generate_wgsl(
             let code = index + 1;
             shader.push_str(&format!(
                 "  if (integrity_code == 0u && !{}) {{ integrity_code = {code}u; }}\n",
-                constraint.predicate.wgsl()
+                scalar_predicate_wgsl(&constraint.predicate)
             ));
         }
         shader.push_str(
@@ -2208,7 +1975,7 @@ fn generate_wgsl(
                 state.slot.get(),
                 state.shape.elements(),
                 component,
-                source.wgsl()
+                scalar_operand_wgsl(*source)
             ));
         }
     }

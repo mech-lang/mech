@@ -22,6 +22,7 @@ jit = [
 ]
 
 [dependencies]
+mech-compute = { version = "0.3.5", path = "../../src/compute" }
 mech-core = { version = "0.3.5", default-features = false }
 mech-engine = { version = "0.3.5", default-features = false, features = ["resident-artifact"] }
 mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "string", "f64"], optional = true }

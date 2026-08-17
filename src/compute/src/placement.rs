@@ -10,10 +10,10 @@ use mech_engine::{
     ProgramArtifact, SlotRole,
 };
 
-use super::{GpuHost, display_operation, elementwise_operation, turn_required_nodes};
+use crate::{ElementwiseOperation, display_operation, elementwise_operation, turn_required_nodes};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ExecutionTarget {
+pub enum ComputeExecutionTarget {
     Structural,
     Cpu,
     Gpu,
@@ -23,7 +23,7 @@ pub enum ExecutionTarget {
 pub struct NodePlacement {
     pub node: NodeId,
     pub operation: String,
-    pub target: ExecutionTarget,
+    pub target: ComputeExecutionTarget,
     pub reason: String,
     pub region: Option<u32>,
 }
@@ -58,7 +58,7 @@ pub struct TransferBoundary {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct GpuRegion {
+pub struct ComputeRegionPlan {
     pub region: u32,
     pub name: Option<String>,
     pub requested: Option<ComputePlacement>,
@@ -73,28 +73,21 @@ pub struct PlacementViolation {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct HybridPlacementPlan {
+pub struct ComputePhysicalPlan {
     pub nodes: Vec<NodePlacement>,
     pub slots: Vec<SlotPlacement>,
     pub transfers: Vec<TransferBoundary>,
-    pub gpu_regions: Vec<GpuRegion>,
+    pub regions: Vec<ComputeRegionPlan>,
     pub violations: Vec<PlacementViolation>,
     pub fully_accelerated: bool,
 }
 
-impl GpuHost {
-    /// Explains automatic placement without silently changing program semantics.
-    /// CPU/GPU boundaries are reported even though mixed-region execution is not
-    /// yet enabled by this provider.
-    pub fn plan(&self, artifact: &ProgramArtifact) -> HybridPlacementPlan {
-        plan_artifact(artifact, artifact.compute_regions())
-    }
-}
-
-fn plan_artifact(
+/// Plans CPU/device residence and explicit transfer boundaries without
+/// selecting or invoking a physical backend.
+pub fn plan_compute_artifact(
     artifact: &ProgramArtifact,
     explicit_regions: &[ComputeRegionDeclaration],
-) -> HybridPlacementPlan {
+) -> ComputePhysicalPlan {
     let turn_nodes = turn_required_nodes(artifact);
     let mut nodes = artifact
         .nodes()
@@ -105,7 +98,7 @@ fn plan_artifact(
                 classify_node(artifact, node)
             } else {
                 (
-                    ExecutionTarget::Structural,
+                    ComputeExecutionTarget::Structural,
                     "initialization only; captured in the typed artifact".to_owned(),
                 )
             };
@@ -157,13 +150,13 @@ fn plan_artifact(
                     );
                 }
                 ComputePlacement::Cpu => {
-                    if placement.target != ExecutionTarget::Structural {
-                        placement.target = ExecutionTarget::Cpu;
+                    if placement.target != ComputeExecutionTarget::Structural {
+                        placement.target = ComputeExecutionTarget::Cpu;
                     }
                     placement.reason = format!("region `{}` requires CPU execution", region.name);
                 }
                 ComputePlacement::Gpu => {
-                    if placement.target == ExecutionTarget::Cpu {
+                    if placement.target == ComputeExecutionTarget::Cpu {
                         violations.push(PlacementViolation {
                             region: region.name.to_string(),
                             node: Some(node),
@@ -186,7 +179,7 @@ fn plan_artifact(
 
     let mut parent = (0..nodes.len()).collect::<Vec<_>>();
     for node in artifact.nodes() {
-        if nodes[node.node.get() as usize].target != ExecutionTarget::Gpu {
+        if nodes[node.node.get() as usize].target != ComputeExecutionTarget::Gpu {
             continue;
         }
         if explicit_by_node.contains_key(&node.node) {
@@ -205,7 +198,7 @@ fn plan_artifact(
             else {
                 continue;
             };
-            if nodes[producer.get() as usize].target == ExecutionTarget::Gpu
+            if nodes[producer.get() as usize].target == ComputeExecutionTarget::Gpu
                 && !explicit_by_node.contains_key(&producer)
             {
                 union(
@@ -217,7 +210,7 @@ fn plan_artifact(
         }
     }
 
-    let mut gpu_regions = Vec::<GpuRegion>::new();
+    let mut regions = Vec::<ComputeRegionPlan>::new();
     for (region_index, explicit) in explicit_regions.iter().enumerate() {
         let region_nodes = explicit
             .nodes
@@ -226,13 +219,13 @@ fn plan_artifact(
             .filter(|node| {
                 nodes
                     .get(node.get() as usize)
-                    .is_some_and(|placement| placement.target == ExecutionTarget::Gpu)
+                    .is_some_and(|placement| placement.target == ComputeExecutionTarget::Gpu)
             })
             .collect::<Vec<_>>();
         if region_nodes.is_empty() {
             continue;
         }
-        let region = gpu_regions.len() as u32;
+        let region = regions.len() as u32;
         for node in &region_nodes {
             nodes[node.get() as usize].region = Some(region);
         }
@@ -241,7 +234,7 @@ fn plan_artifact(
                 .iter()
                 .all(|node| explicit_by_node.get(node) == Some(&region_index))
         );
-        gpu_regions.push(GpuRegion {
+        regions.push(ComputeRegionPlan {
             region,
             name: Some(explicit.name.to_string()),
             requested: Some(explicit.placement),
@@ -251,13 +244,13 @@ fn plan_artifact(
 
     let mut roots = BTreeMap::<usize, u32>::new();
     for placement in &mut nodes {
-        if placement.target != ExecutionTarget::Gpu || placement.region.is_some() {
+        if placement.target != ComputeExecutionTarget::Gpu || placement.region.is_some() {
             continue;
         }
         let root = find(&mut parent, placement.node.get() as usize);
         let region = *roots.entry(root).or_insert_with(|| {
-            let region = gpu_regions.len() as u32;
-            gpu_regions.push(GpuRegion {
+            let region = regions.len() as u32;
+            regions.push(ComputeRegionPlan {
                 region,
                 name: None,
                 requested: None,
@@ -266,7 +259,7 @@ fn plan_artifact(
             region
         });
         placement.region = Some(region);
-        gpu_regions[region as usize].nodes.push(placement.node);
+        regions[region as usize].nodes.push(placement.node);
     }
 
     let consumers = slot_consumers(artifact);
@@ -301,7 +294,10 @@ fn plan_artifact(
             };
             let producer_target = producer_target(artifact, &nodes, *slot);
             match (producer_target, consumer_target) {
-                (ExecutionTarget::Cpu | ExecutionTarget::Structural, ExecutionTarget::Gpu) => {
+                (
+                    ComputeExecutionTarget::Cpu | ComputeExecutionTarget::Structural,
+                    ComputeExecutionTarget::Gpu,
+                ) => {
                     transfers.insert(TransferBoundary {
                         direction: TransferDirection::Upload,
                         slot: *slot,
@@ -313,7 +309,7 @@ fn plan_artifact(
                             .map(|input| input.name.clone()),
                     });
                 }
-                (ExecutionTarget::Gpu, ExecutionTarget::Cpu) => {
+                (ComputeExecutionTarget::Gpu, ComputeExecutionTarget::Cpu) => {
                     transfers.insert(TransferBoundary {
                         direction: TransferDirection::Readback,
                         slot: *slot,
@@ -328,7 +324,7 @@ fn plan_artifact(
     for output in artifact.outputs() {
         let sources = physical_output_sources(artifact, output.source);
         for (index, source) in sources.iter().enumerate() {
-            if producer_target(artifact, &nodes, *source) == ExecutionTarget::Gpu {
+            if producer_target(artifact, &nodes, *source) == ComputeExecutionTarget::Gpu {
                 transfers.insert(TransferBoundary {
                     direction: TransferDirection::Readback,
                     slot: *source,
@@ -348,12 +344,12 @@ fn plan_artifact(
         .iter()
         .map(|slot| {
             let produced_on_gpu =
-                producer_target(artifact, &nodes, slot.slot) == ExecutionTarget::Gpu;
+                producer_target(artifact, &nodes, slot.slot) == ComputeExecutionTarget::Gpu;
             let consumed_only_on_gpu =
                 consumers.get(&slot.slot).into_iter().flatten().all(|node| {
                     matches!(
                         nodes[node.get() as usize].target,
-                        ExecutionTarget::Gpu | ExecutionTarget::Structural
+                        ComputeExecutionTarget::Gpu | ComputeExecutionTarget::Structural
                     )
                 });
             let residence =
@@ -378,12 +374,14 @@ fn plan_artifact(
 
     let fully_accelerated = violations.is_empty()
         && artifact.constraints().is_empty()
-        && nodes.iter().all(|node| node.target != ExecutionTarget::Cpu);
-    HybridPlacementPlan {
+        && nodes
+            .iter()
+            .all(|node| node.target != ComputeExecutionTarget::Cpu);
+    ComputePhysicalPlan {
         nodes,
         slots,
         transfers: transfers.into_iter().collect(),
-        gpu_regions,
+        regions,
         violations,
         fully_accelerated,
     }
@@ -392,12 +390,12 @@ fn plan_artifact(
 fn classify_node(
     artifact: &ProgramArtifact,
     node: &mech_engine::NodeDeclaration,
-) -> (ExecutionTarget, String) {
+) -> (ComputeExecutionTarget, String) {
     if node.operation.module_path.as_ref() == ["core"]
         && node.operation.operation_name == "composite-pack"
     {
         return (
-            ExecutionTarget::Structural,
+            ComputeExecutionTarget::Structural,
             "output shape only; no device kernel".to_owned(),
         );
     }
@@ -415,29 +413,29 @@ fn classify_node(
             && contract_supported(artifact, node, true)
         {
             return (
-                ExecutionTarget::Gpu,
+                ComputeExecutionTarget::Gpu,
                 "whole-value state commit remains device resident".to_owned(),
             );
         }
         return (
-            ExecutionTarget::Cpu,
+            ComputeExecutionTarget::Cpu,
             "state update is not an admitted whole-value Assign".to_owned(),
         );
     }
     let lowered_operation = elementwise_operation(&node.operation);
     if lowered_operation.is_none() {
         return (
-            ExecutionTarget::Cpu,
+            ComputeExecutionTarget::Cpu,
             format!("{operation} has no GPU lowering"),
         );
     }
     let host_proven_concatenation = matches!(
         lowered_operation,
-        Some(super::ElementwiseOperation::Identity | super::ElementwiseOperation::Pack2)
+        Some(ElementwiseOperation::Identity | ElementwiseOperation::Pack2)
     );
     if !host_proven_concatenation && !contract_supported(artifact, node, false) {
         return (
-            ExecutionTarget::Cpu,
+            ComputeExecutionTarget::Cpu,
             "operation contract does not prove pure full-write execution".to_owned(),
         );
     }
@@ -470,12 +468,12 @@ fn classify_node(
         });
     if !schemas_supported {
         return (
-            ExecutionTarget::Cpu,
+            ComputeExecutionTarget::Cpu,
             "value schema or constant representation is not admitted".to_owned(),
         );
     }
     (
-        ExecutionTarget::Gpu,
+        ComputeExecutionTarget::Gpu,
         "pure element-wise f32 operation".to_owned(),
     )
 }
@@ -532,12 +530,12 @@ fn producer_target(
     artifact: &ProgramArtifact,
     placements: &[NodePlacement],
     slot: CellSlotId,
-) -> ExecutionTarget {
+) -> ComputeExecutionTarget {
     match artifact.slots()[slot.get() as usize].producer {
-        ProducerReference::Input(_) => ExecutionTarget::Cpu,
+        ProducerReference::Input(_) => ComputeExecutionTarget::Cpu,
         ProducerReference::NodeOutput { node, .. } => placements[node.get() as usize].target,
         ProducerReference::Output { source, .. } => match source {
-            ArtifactSource::Constant(_) => ExecutionTarget::Cpu,
+            ArtifactSource::Constant(_) => ComputeExecutionTarget::Cpu,
             ArtifactSource::Slot(source) => producer_target(artifact, placements, source),
         },
     }

@@ -471,6 +471,7 @@ members = [
   "src/abi",
   "src/bytecode",
   "src/build",
+  "src/compute",
   "src/core",
   "src/syntax",
   "src/engine",
@@ -498,6 +499,7 @@ LegalCopyright = "Copyright © 2026"
 [patch.crates-io]
 mech-bytecode = { path = 'src/bytecode' }
 mech-build = { path = 'src/build' }
+mech-compute = { path = 'src/compute' }
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-engine = { path = 'src/engine'}
