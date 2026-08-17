@@ -22,7 +22,7 @@ runtime_bench_probes = ["mech-engine/runtime_bench_probes"]
 runtime_bench_gate_b = ["compiler", "mech-engine/resident-artifact"]
 resident-external = ["runtime", "string", "mech-engine/resident-artifact"]
 resident-routing = ["resident-external"]
-resident-routing-source = ["resident-routing", "semantic-compiler"]
+resident-routing-source = ["resident-routing", "semantic-compiler", "dep:mech-compute"]
 runtime_bench_gate_d = ["runtime_bench_gate_b", "runtime_default"]
 runtime_bench_gate_d3 = ["resident-external", "runtime_bench_gate_d"]
 native-link = ["runtime", "string"]
@@ -215,6 +215,7 @@ trybuild = "1.0.118"
 blake3 = "1.8.5"
 mech-engine = { version = "0.3.5", default-features = false }
 mech-core = { version = "0.3.5", default-features = false }
+mech-compute = { version = "0.3.5", path = "../compute", optional = true }
 mech-syntax = { version = "0.3.5", default-features = false, optional = true }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }

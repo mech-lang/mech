@@ -891,6 +891,200 @@ fn matrix_declaration_defaults_become_typed_live_inputs() {
     }));
 }
 
+const MIXED_COMPUTE_SOURCE: &str = r#"
+@compute := compute://worker/kernel{:write(input/x), :write(turn)}
+@compute/input/x <- 2f32
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 1f32
+result := x + 2f32
+result
+"#;
+
+#[derive(Debug)]
+struct MixedComputePlanningProvider;
+
+impl RuntimeResourceProvider for MixedComputePlanningProvider {
+    fn scheme(&self) -> &str {
+        "compute"
+    }
+
+    fn base_uris(&self) -> Vec<String> {
+        vec!["compute://worker/kernel".to_owned()]
+    }
+
+    fn semantic_write_contract(
+        &self,
+        intent: RuntimeResourceWriteIntent,
+    ) -> Option<&'static OperationContractDeclaration> {
+        (intent == RuntimeResourceWriteIntent::Send)
+            .then_some(crate::provider_defined_effect_contract())
+    }
+
+    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        panic!("compute command resource is write-only: {request:?}")
+    }
+
+    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
+        assert_eq!(request.base_uri, "compute://worker/kernel");
+        assert!(request.path == "turn" || request.path.starts_with("input/"));
+        assert_eq!(request.intent, RuntimeResourceWriteIntent::Send);
+        Ok(())
+    }
+}
+
+#[test]
+fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
+    let tree = mech_syntax::parse(MIXED_COMPUTE_SOURCE).unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(MixedComputePlanningProvider))
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+
+    assert!(mixed.coordinator.artifact().compute_regions().is_empty());
+    assert_eq!(mixed.compute.declaration.name.as_ref(), "calculation");
+    assert_eq!(mixed.compute.interface.inputs.len(), 1);
+    let input = &mixed.compute.interface.inputs[0];
+    assert_eq!(input.name.as_ref(), "x");
+    assert!(input.dimensions.is_empty());
+    assert_eq!(
+        mixed.compute.initializers.get(input.id),
+        Some(&mech_compute::ComputeValue::ScalarF32(1.0))
+    );
+}
+
+#[test]
+fn mixed_tree_normalizes_matrix_initializers_to_canonical_row_major_layout() {
+    let tree = mech_syntax::parse(
+        r#"
+@compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
+@compute/input/matrix <- [0f32 0f32; 0f32 0f32]
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+matrix := [1f32 2f32; 3f32 4f32]
+result := matrix + 1f32
+result
+"#,
+    )
+    .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .resource_provider(Box::new(MixedComputePlanningProvider))
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let input = mixed.compute.interface.input_named("matrix").unwrap();
+
+    assert_eq!(input.dimensions.as_ref(), [2, 2]);
+    assert_eq!(
+        mixed.compute.initializers.get(input.id),
+        Some(&mech_compute::ComputeValue::TensorF32 {
+            dimensions: vec![2, 2].into_boxed_slice(),
+            layout: mech_compute::TensorLayout::RowMajor,
+            values: Arc::from([1.0, 2.0, 3.0, 4.0]),
+        })
+    );
+}
+
+#[test]
+fn mixed_root_preserves_imports_in_coordinator_and_compute_products() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "main.mec",
+            r#"
++> ./dep.mec
++> math
+@compute := compute://worker/kernel{:write(input/x), :write(turn)}
+coordinator-value := math/sin(dep/value) + 1f32
+@compute/input/x <- coordinator-value
+@compute/turn <- 1
+coordinator-value
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 1f32
+result := math/cos(x) + dep/value
+result
+"#,
+        )
+        .unwrap();
+    resolver
+        .insert_string("dep.mec", "value := 2f32\n<+ value\nvalue\n")
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .resource_provider(Box::new(MixedComputePlanningProvider))
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler
+        .compile_mixed_root(
+            SourceRequest::new("main.mec"),
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+
+    assert!(
+        mixed
+            .coordinator
+            .artifact()
+            .outputs()
+            .iter()
+            .any(|output| output.name == "coordinator-value")
+    );
+    assert!(
+        mixed
+            .compute
+            .artifact
+            .outputs()
+            .iter()
+            .any(|output| output.name == "result")
+    );
+    let input = mixed.compute.interface.input_named("x").unwrap();
+    assert_eq!(
+        mixed.compute.initializers.get(input.id),
+        Some(&mech_compute::ComputeValue::ScalarF32(1.0))
+    );
+}
+
+#[test]
+fn mixed_compilation_rejects_multiple_compute_regions_for_v04() {
+    let tree = mech_syntax::parse(
+        r#"
+first @compute
+-------------------------------------------------------------------------------
+a := 1f32 + 1f32
+
+second @cpu
+-------------------------------------------------------------------------------
+b := 2f32 + 2f32
+"#,
+    )
+    .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+
+    assert!(
+        error
+            .kind_message()
+            .contains("exactly one executable compute region")
+    );
+}
+
 #[test]
 fn variable_definition_metadata_and_state_survive_resident_bytecode_admission() {
     const SOURCE: &str = "input := 1.0\n~state := 2.0\nstate";

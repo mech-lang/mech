@@ -11,14 +11,19 @@ use std::{
     sync::Arc,
 };
 
+use mech_compute::{
+    ComputeInitializerSet, ComputeRegionInterface, ComputeValue, TensorLayout,
+    build_compute_region_interface,
+};
 use mech_core::{
-    ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
-    MechErrorKind, MechExecutionServices, MechSourceCode, ModuleManifestCatalog, Ref,
-    ResourceIntent,
+    Body, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechCode,
+    MechError, MechErrorKind, MechExecutionServices, MechSourceCode, ModuleManifestCatalog,
+    Program, Ref, ResourceIntent, Section, SectionElement,
 };
 use mech_engine::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
-    ProgramArtifactCompilationProduct, ProgramCompilationProduct, root_document_output_ids,
+    ComputeRegionDeclaration, ProgramArtifact, ProgramArtifactCompilationProduct,
+    ProgramCompilationProduct, root_document_output_ids,
 };
 
 use crate::{
@@ -28,9 +33,10 @@ use crate::{
     RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
     RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
     RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
-    SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind,
-    SourceIndex, SourceRequest, SourceResolver, import_may_resolve_source_dependency,
-    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
+    SourceContextBase, SourceContextCapabilityScope, SourceExportDeclaration, SourceImportAlias,
+    SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
+    import_may_resolve_source_dependency, import_requires_source_dependency,
+    module_namespace_for_import, source_request_for_import,
 };
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route};
@@ -48,6 +54,20 @@ pub struct ProgramCompiler {
     host_interfaces: HostInterfaceCatalog,
     module_manifests: ModuleManifestCatalog,
     program_config: CompilerPlanningConfig,
+}
+
+#[derive(Debug)]
+pub struct MixedProgramCompilation {
+    pub coordinator: ProgramArtifactCompilationProduct,
+    pub compute: ComputeRegionCompilation,
+}
+
+#[derive(Debug)]
+pub struct ComputeRegionCompilation {
+    pub declaration: ComputeRegionDeclaration,
+    pub artifact: ProgramArtifact,
+    pub interface: ComputeRegionInterface,
+    pub initializers: ComputeInitializerSet,
 }
 
 impl std::fmt::Debug for ProgramCompiler {
@@ -192,6 +212,22 @@ impl ProgramCompiler {
         options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
         self.view().compile_roots(requests, options)
+    }
+
+    /// Compiles an inline one-document application into its ordinary resident
+    /// coordinator and one backend-neutral compute region.
+    pub fn compile_mixed_tree(&mut self, tree: &Program) -> MResult<MixedProgramCompilation> {
+        self.view().compile_mixed_tree(tree)
+    }
+
+    /// Resolves a rooted application once, then compiles both mixed-program
+    /// products from that same resolver-owned module graph.
+    pub fn compile_mixed_root(
+        &mut self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        self.view().compile_mixed_root(request, options)
     }
 
     fn view(&self) -> ProgramCompilerView<'_> {
@@ -384,6 +420,118 @@ impl<'a> ProgramCompilerView<'a> {
             .collect::<MResult<BTreeMap<_, _>>>()?;
         let resolver = ResidentExternalContractResolver::new(self.resources);
         let product = program
+            .compile_program_artifact_product_with_resource_send_operations(
+                &resolver,
+                &operations,
+                external_input_names,
+            )
+            .map_err(|error| {
+                route_failure(
+                    ResidentRouteFailureClass::InvalidArtifact,
+                    format!("resident ProgramArtifact finalization failed: {error:?}"),
+                )
+            })?;
+        Ok((product, initial_inputs))
+    }
+
+    fn compile_mixed_tree(&self, tree: &Program) -> MResult<MixedProgramCompilation> {
+        let partition = partition_mixed_program(tree)?;
+        let external_input_names = source_declared_compute_inputs(tree)?;
+        let coordinator = self.compile_tree_artifact_with_inputs(
+            &partition.coordinator,
+            &BTreeMap::new(),
+            &BTreeSet::new(),
+        )?;
+        let (compute, initial_inputs) = self.compile_tree_artifact_with_input_initializers(
+            &partition.compute,
+            &BTreeMap::new(),
+            &external_input_names,
+        )?;
+        assemble_mixed_compilation(coordinator, compute, initial_inputs, &partition.name)
+    }
+
+    fn compile_mixed_root(
+        &self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<MixedProgramCompilation> {
+        request.validate()?;
+        let mut modules = HashMap::new();
+        let mut stack = Vec::new();
+        let root = self.resolve_module(request, options, &mut modules, &mut stack)?;
+        let tree = declaration_tree(&modules[&root].source.source)?;
+        let partition = partition_mixed_program(&tree)?;
+        let external_input_names = source_declared_compute_inputs(&tree)?;
+        let (coordinator, _) = self.compile_resolved_tree_artifact(
+            &root,
+            &modules,
+            partition.coordinator,
+            &BTreeSet::new(),
+        )?;
+        let (compute, initial_inputs) = self.compile_resolved_tree_artifact(
+            &root,
+            &modules,
+            partition.compute,
+            &external_input_names,
+        )?;
+        assemble_mixed_compilation(coordinator, compute, initial_inputs, &partition.name)
+    }
+
+    fn compile_resolved_tree_artifact(
+        &self,
+        root: &str,
+        resolved_modules: &HashMap<String, CompilerModule>,
+        tree: Program,
+        external_input_names: &BTreeSet<String>,
+    ) -> MResult<(
+        ProgramArtifactCompilationProduct,
+        BTreeMap<String, RuntimeHostInputValue>,
+    )> {
+        let mut modules = resolved_modules.clone();
+        replace_root_tree(
+            modules
+                .get_mut(root)
+                .expect("resolved root is retained by the compiler session"),
+            tree,
+        )?;
+
+        let mut instances = HashMap::new();
+        let mut active = Vec::new();
+        let mut root_program = Some(self.new_program());
+        self.execute_module(
+            root,
+            &modules,
+            &mut instances,
+            &mut active,
+            Some(&mut root_program),
+        )?;
+        let program = root_program
+            .as_mut()
+            .expect("root compiler program is retained until finalization");
+        publish_module_outputs(
+            program,
+            instances
+                .get(root)
+                .expect("the requested root was executed"),
+        );
+        let input_names = external_input_names
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>();
+        let initial_inputs = program
+            .compiler_root_symbol_values(&input_names)?
+            .into_iter()
+            .map(|(name, value)| {
+                RuntimeHostInputValue::from_compiler_value(&value).map(|value| (name, value))
+            })
+            .collect::<MResult<BTreeMap<_, _>>>()?;
+        let operations = modules
+            .values()
+            .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))
+            .collect::<Vec<_>>();
+        let resolver = ResidentExternalContractResolver::new(self.resources);
+        let product = root_program
+            .expect("root compiler program is retained until finalization")
             .compile_program_artifact_product_with_resource_send_operations(
                 &resolver,
                 &operations,
@@ -865,6 +1013,277 @@ impl<'a> ProgramCompilerView<'a> {
     }
 }
 
+struct MixedProgramPartition {
+    name: String,
+    coordinator: Program,
+    compute: Program,
+}
+
+fn partition_mixed_program(tree: &Program) -> MResult<MixedProgramPartition> {
+    let mut regions = Vec::new();
+    for (index, section) in tree.body.sections.iter().enumerate() {
+        if mech_engine::section_compute_placement(section)?.is_some() {
+            regions.push(index);
+        }
+    }
+    if regions.len() != 1 {
+        return Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "compile_mixed_program",
+                reason: format!(
+                    "v0.4 mixed programs require exactly one executable compute region, found {}",
+                    regions.len(),
+                ),
+            },
+            None,
+        ));
+    }
+    let region_index = regions[0];
+    let region = &tree.body.sections[region_index];
+    let name = region
+        .subtitle
+        .as_ref()
+        .map(|subtitle| subtitle.to_string().trim().to_owned())
+        .unwrap_or_default();
+    if name.is_empty() {
+        return Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "compile_mixed_program",
+                reason: "the executable compute region must have a nonempty section name"
+                    .to_owned(),
+            },
+            None,
+        ));
+    }
+
+    let excluded_imports = region
+        .elements
+        .iter()
+        .filter_map(import_element)
+        .collect::<Vec<_>>();
+    let mut coordinator_sections = Vec::with_capacity(tree.body.sections.len());
+    if !excluded_imports.is_empty() {
+        coordinator_sections.push(Section {
+            subtitle: None,
+            annotations: Vec::new(),
+            elements: excluded_imports,
+        });
+    }
+    coordinator_sections.extend(
+        tree.body
+            .sections
+            .iter()
+            .enumerate()
+            .filter(|(index, _)| *index != region_index)
+            .map(|(_, section)| section)
+            .cloned(),
+    );
+    let imports = import_prelude(tree);
+    let mut compute_sections = Vec::with_capacity(2);
+    if !imports.is_empty() {
+        compute_sections.push(Section {
+            subtitle: None,
+            annotations: Vec::new(),
+            elements: imports,
+        });
+    }
+    compute_sections.push(region.clone());
+
+    Ok(MixedProgramPartition {
+        name,
+        coordinator: Program {
+            title: tree.title.clone(),
+            body: Body {
+                sections: coordinator_sections,
+            },
+        },
+        compute: Program {
+            title: None,
+            body: Body {
+                sections: compute_sections,
+            },
+        },
+    })
+}
+
+fn import_prelude(tree: &Program) -> Vec<SectionElement> {
+    tree.body
+        .sections
+        .iter()
+        .flat_map(|section| &section.elements)
+        .filter_map(import_element)
+        .collect()
+}
+
+fn import_element(element: &SectionElement) -> Option<SectionElement> {
+    let SectionElement::MechCode(code) = element else {
+        return None;
+    };
+    let imports = code
+        .iter()
+        .filter(|(code, _)| matches!(code, MechCode::Import(_)))
+        .cloned()
+        .collect::<Vec<_>>();
+    (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
+}
+
+fn source_declared_compute_inputs(tree: &Program) -> MResult<BTreeSet<String>> {
+    let index = SourceIndex::from_program(tree);
+    index.validate_address_targets()?;
+    Ok(index
+        .all_contexts()
+        .into_iter()
+        .filter(|context| {
+            matches!(
+                &context.base,
+                SourceContextBase::ResourceUri(uri)
+                    if uri.starts_with("compute://") && uri.ends_with("/kernel")
+            )
+        })
+        .flat_map(|context| context.capabilities)
+        .filter(|capability| capability.operation == "write")
+        .filter_map(|capability| match capability.scope {
+            SourceContextCapabilityScope::Path(path) => (!path.contains('*'))
+                .then(|| path.strip_prefix("input/").map(str::to_owned))
+                .flatten(),
+            SourceContextCapabilityScope::Wildcard => None,
+        })
+        .collect())
+}
+
+fn replace_root_tree(module: &mut CompilerModule, tree: Program) -> MResult<()> {
+    let inherited_contexts = module.source.contexts.clone();
+    module.source.source = MechSourceCode::Tree(tree);
+    module.source.imports.clear();
+    module.source.exports.clear();
+    module.source.contexts.clear();
+    module.source.address_references.clear();
+    module.source.scopes.clear();
+    index_source(&mut module.source)?;
+    for context in inherited_contexts {
+        if !module
+            .source
+            .contexts
+            .iter()
+            .any(|candidate| candidate.name == context.name)
+        {
+            module.source.contexts.push(context);
+        }
+    }
+    Ok(())
+}
+
+fn assemble_mixed_compilation(
+    coordinator: ProgramArtifactCompilationProduct,
+    compute: ProgramArtifactCompilationProduct,
+    initial_inputs: BTreeMap<String, RuntimeHostInputValue>,
+    expected_region_name: &str,
+) -> MResult<MixedProgramCompilation> {
+    let artifact = compute.into_artifact();
+    if artifact.compute_regions().len() != 1
+        || artifact.compute_regions()[0].name.as_ref() != expected_region_name
+    {
+        return Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "compile_mixed_program",
+                reason: format!(
+                    "isolated section `{expected_region_name}` did not produce exactly that compute region"
+                ),
+            },
+            None,
+        ));
+    }
+    let declaration = artifact.compute_regions()[0].clone();
+    let interface =
+        build_compute_region_interface(&artifact, Some(&declaration)).map_err(|error| {
+            MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "compile_mixed_program",
+                    reason: format!("compute interface construction failed: {error}"),
+                },
+                None,
+            )
+        })?;
+    let initializers = compute_initializers(&interface, initial_inputs)?;
+    Ok(MixedProgramCompilation {
+        coordinator,
+        compute: ComputeRegionCompilation {
+            declaration,
+            artifact,
+            interface,
+            initializers,
+        },
+    })
+}
+
+fn compute_initializers(
+    interface: &ComputeRegionInterface,
+    mut values: BTreeMap<String, RuntimeHostInputValue>,
+) -> MResult<ComputeInitializerSet> {
+    let mut initializers = BTreeMap::new();
+    for port in &interface.inputs {
+        let value = values.remove(port.name.as_ref()).ok_or_else(|| {
+            MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "compile_mixed_program",
+                    reason: format!(
+                        "compute input `{}` has no declaration-time initializer",
+                        port.name
+                    ),
+                },
+                None,
+            )
+        })?;
+        let value = match value {
+            RuntimeHostInputValue::F32(value) => ComputeValue::ScalarF32(value),
+            RuntimeHostInputValue::F32Matrix {
+                rows,
+                columns,
+                values,
+            } => ComputeValue::TensorF32 {
+                dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
+                layout: TensorLayout::ColumnMajor,
+                values: Arc::from(values),
+            },
+            value => {
+                return Err(MechError::new(
+                    RuntimeInvalidOperationError {
+                        operation: "compile_mixed_program",
+                        reason: format!(
+                            "compute input `{}` must be fixed-shape f32 data, found {value:?}",
+                            port.name
+                        ),
+                    },
+                    None,
+                ));
+            }
+        };
+        let normalized = port.normalize_value(value).map_err(|error| {
+            MechError::new(
+                RuntimeInvalidOperationError {
+                    operation: "compile_mixed_program",
+                    reason: format!("compute input `{}` is invalid: {error}", port.name),
+                },
+                None,
+            )
+        })?;
+        initializers.insert(port.id, normalized);
+    }
+    if !values.is_empty() {
+        return Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "compile_mixed_program",
+                reason: format!(
+                    "source declares compute inputs that are not connected to the region interface: {}",
+                    values.keys().cloned().collect::<Vec<_>>().join(", ")
+                ),
+            },
+            None,
+        ));
+    }
+    Ok(ComputeInitializerSet::new(initializers))
+}
+
 /// Preserve caller order for independent roots while promoting any requested
 /// dependency ahead of its consumer. That lets an explicit dependency execute
 /// exactly once in the shared program. Caller-visible outputs are published
@@ -1043,6 +1462,29 @@ fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {
         MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Ok(None),
         MechSourceCode::Image(_, _) => Err(unsupported_route(
             "image source cannot be compiled as a resident program",
+        )),
+    }
+}
+
+fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
+    match source {
+        MechSourceCode::String(source) => mech_syntax::parser::parse(source.trim()),
+        MechSourceCode::Tree(tree) => Ok(tree.clone()),
+        MechSourceCode::Program(sources) => {
+            let mut sections = Vec::new();
+            for source in sources {
+                sections.extend(declaration_tree(source)?.body.sections);
+            }
+            Ok(Program {
+                title: None,
+                body: Body { sections },
+            })
+        }
+        MechSourceCode::ByteCode(_) | MechSourceCode::Html(_) => Err(unsupported_route(
+            "root bytecode and HTML cannot be partitioned as a mixed source program",
+        )),
+        MechSourceCode::Image(_, _) => Err(unsupported_route(
+            "image source cannot be partitioned as a mixed source program",
         )),
     }
 }

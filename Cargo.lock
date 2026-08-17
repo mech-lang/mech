@@ -2745,6 +2745,7 @@ dependencies = [
  "criterion",
  "ed25519-dalek",
  "ignore",
+ "mech-compute",
  "mech-core",
  "mech-engine",
  "mech-native-live-host-fixture",
