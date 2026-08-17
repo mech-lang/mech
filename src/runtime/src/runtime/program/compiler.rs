@@ -11,21 +11,24 @@ use std::{
     sync::Arc,
 };
 
+#[cfg(feature = "compute")]
 use mech_compute::{
     ComputeInitializerSet, ComputeRegionInterface, ComputeValue, TensorLayout,
     build_compute_region_interface,
 };
 use mech_core::{
     ApplicationRequirement, Body, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-    LegacyValue, MResult, MechCode, MechError, MechErrorKind, MechExecutionServices,
-    MechSourceCode, ModuleManifestCatalog, OperationContractDeclaration, Program, Ref,
-    ResourceIntent, Section, SectionElement,
+    LegacyValue, MResult, MechError, MechErrorKind, MechExecutionServices, MechSourceCode,
+    ModuleManifestCatalog, OperationContractDeclaration, Program, Ref, ResourceIntent,
 };
+#[cfg(feature = "compute")]
+use mech_core::{MechCode, Section, SectionElement};
 use mech_engine::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
-    ComputeRegionDeclaration, ProgramArtifact, ProgramArtifactCompilationProduct,
-    ProgramCompilationProduct, root_document_output_ids,
+    ProgramArtifactCompilationProduct, ProgramCompilationProduct, root_document_output_ids,
 };
+#[cfg(feature = "compute")]
+use mech_engine::{ComputeRegionDeclaration, ProgramArtifact};
 
 use crate::{
     CapabilityRequest, HostInterfaceCatalog, ModuleBuildOptions, ModuleBuilder, ModuleVersionId,
@@ -34,13 +37,23 @@ use crate::{
     RuntimeModuleDependencyMissingError, RuntimeModuleExportNotFound, RuntimeModuleImportConflict,
     RuntimeResourceKey, RuntimeResourceProviderNotFound, RuntimeResourceReadRequest,
     RuntimeResourceRegistry, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
-    SourceContextBase, SourceContextCapabilityScope, SourceExportDeclaration, SourceImportAlias,
-    SourceImportDeclaration, SourceImportKind, SourceIndex, SourceRequest, SourceResolver,
-    import_may_resolve_source_dependency, import_requires_source_dependency,
-    module_namespace_for_import, source_request_for_import,
+    SourceExportDeclaration, SourceImportAlias, SourceImportDeclaration, SourceImportKind,
+    SourceIndex, SourceRequest, SourceResolver, import_may_resolve_source_dependency,
+    import_requires_source_dependency, module_namespace_for_import, source_request_for_import,
 };
+#[cfg(feature = "compute")]
+use crate::{SourceContextBase, SourceContextCapabilityScope};
 
 use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsupported_route};
+
+#[cfg(not(feature = "compute"))]
+type ComputeRegionInterface = ();
+
+#[derive(Clone, Copy)]
+enum ProgramBytecodeEncoding {
+    Semantic,
+    FrozenV1ImplementationIdentities,
+}
 
 /// The sole owner of source-to-resident-artifact compilation.
 ///
@@ -57,12 +70,14 @@ pub struct ProgramCompiler {
     program_config: CompilerPlanningConfig,
 }
 
+#[cfg(feature = "compute")]
 #[derive(Debug)]
 pub struct MixedProgramCompilation {
     pub coordinator: ProgramArtifactCompilationProduct,
     pub compute: ComputeRegionCompilation,
 }
 
+#[cfg(feature = "compute")]
 #[derive(Debug)]
 pub struct ComputeRegionCompilation {
     pub declaration: ComputeRegionDeclaration,
@@ -108,6 +123,13 @@ impl ProgramCompiler {
 
     pub fn compile_source(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
         self.view().compile_source(source)
+    }
+
+    /// Reproduces the checked-in bytecode-v1 compatibility corpus. Runtime
+    /// products must otherwise use [`Self::compile_source`].
+    #[doc(hidden)]
+    pub fn compile_source_frozen_v1(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_source_frozen_v1(source)
     }
 
     pub fn compile_tree(
@@ -217,12 +239,14 @@ impl ProgramCompiler {
 
     /// Compiles an inline one-document application into its ordinary resident
     /// coordinator and one backend-neutral compute region.
+    #[cfg(feature = "compute")]
     pub fn compile_mixed_tree(&mut self, tree: &Program) -> MResult<MixedProgramCompilation> {
         self.view().compile_mixed_tree(tree)
     }
 
     /// Resolves a rooted application once, then compiles both mixed-program
     /// products from that same resolver-owned module graph.
+    #[cfg(feature = "compute")]
     pub fn compile_mixed_root(
         &mut self,
         request: SourceRequest,
@@ -343,9 +367,25 @@ impl<'a> ProgramCompilerView<'a> {
         self.compile_tree(&tree)
     }
 
+    fn compile_source_frozen_v1(&self, source: &str) -> MResult<ProgramCompilationProduct> {
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.compile_tree_with_bytecode_encoding(
+            &tree,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
+        )
+    }
+
     pub(crate) fn compile_tree(
         &self,
         tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compile_tree_with_bytecode_encoding(tree, ProgramBytecodeEncoding::Semantic)
+    }
+
+    fn compile_tree_with_bytecode_encoding(
+        &self,
+        tree: &mech_core::Program,
+        bytecode_encoding: ProgramBytecodeEncoding,
     ) -> MResult<ProgramCompilationProduct> {
         let mut program = self.new_program();
         let document_output_ids = root_document_output_ids(tree);
@@ -366,7 +406,7 @@ impl<'a> ProgramCompilerView<'a> {
             .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
             .map_err(classify_source_planning)?;
         publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
-        self.finalize(program, &operations)
+        self.finalize(program, &operations, bytecode_encoding)
     }
 
     fn compile_tree_artifact_with_inputs(
@@ -436,7 +476,7 @@ impl<'a> ProgramCompilerView<'a> {
             .compiler_root_symbol_values(&input_names)?
             .into_iter()
             .map(|(name, value)| {
-                RuntimeHostInputValue::from_compiler_value(&value).map(|value| (name, value))
+                RuntimeHostInputValue::from_numeric_mech_value(&value).map(|value| (name, value))
             })
             .collect::<MResult<BTreeMap<_, _>>>()?;
         let resolver = CompilerExternalContractResolver {
@@ -458,6 +498,7 @@ impl<'a> ProgramCompilerView<'a> {
         Ok((product, initial_inputs))
     }
 
+    #[cfg(feature = "compute")]
     fn compile_mixed_tree(&self, tree: &Program) -> MResult<MixedProgramCompilation> {
         let partition = partition_mixed_program(tree)?;
         let external_input_names = source_declared_compute_inputs(tree)?;
@@ -481,6 +522,7 @@ impl<'a> ProgramCompilerView<'a> {
         })
     }
 
+    #[cfg(feature = "compute")]
     fn compile_mixed_root(
         &self,
         request: SourceRequest,
@@ -561,7 +603,7 @@ impl<'a> ProgramCompilerView<'a> {
             .compiler_root_symbol_values(&input_names)?
             .into_iter()
             .map(|(name, value)| {
-                RuntimeHostInputValue::from_compiler_value(&value).map(|value| (name, value))
+                RuntimeHostInputValue::from_numeric_mech_value(&value).map(|value| (name, value))
             })
             .collect::<MResult<BTreeMap<_, _>>>()?;
         let operations = modules
@@ -618,7 +660,7 @@ impl<'a> ProgramCompilerView<'a> {
             .compiler_root_symbol_values(names)?
             .into_iter()
             .map(|(name, value)| {
-                RuntimeHostInputValue::from_compiler_value(&value).map(|value| (name, value))
+                RuntimeHostInputValue::from_numeric_mech_value(&value).map(|value| (name, value))
             })
             .collect()
     }
@@ -713,6 +755,7 @@ impl<'a> ProgramCompilerView<'a> {
         self.finalize(
             root_program.expect("root compiler program is retained until finalization"),
             &operations,
+            ProgramBytecodeEncoding::Semantic,
         )
     }
 
@@ -766,6 +809,7 @@ impl<'a> ProgramCompilerView<'a> {
         self.finalize(
             root_program.expect("root compiler program is retained until finalization"),
             &operations,
+            ProgramBytecodeEncoding::Semantic,
         )
     }
 
@@ -780,16 +824,24 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         mut program: CompilerPlanningProgram,
         operations: &[CompiledResourceSendOperation],
+        bytecode_encoding: ProgramBytecodeEncoding,
     ) -> MResult<ProgramCompilationProduct> {
         let resolver = ResidentExternalContractResolver::new(self.resources);
-        program
-            .compile_program_product_with_resource_send_operations(&resolver, operations)
-            .map_err(|error| {
-                route_failure(
-                    ResidentRouteFailureClass::InvalidArtifact,
-                    format!("resident ProgramArtifact finalization failed: {error:?}"),
-                )
-            })
+        let product = match bytecode_encoding {
+            ProgramBytecodeEncoding::Semantic => {
+                program.compile_program_product_with_resource_send_operations(&resolver, operations)
+            }
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities => program
+                .compile_frozen_v1_program_product_with_resource_send_operations(
+                    &resolver, operations,
+                ),
+        };
+        product.map_err(|error| {
+            route_failure(
+                ResidentRouteFailureClass::InvalidArtifact,
+                format!("resident ProgramArtifact finalization failed: {error:?}"),
+            )
+        })
     }
 
     fn resolve_module(
@@ -1067,12 +1119,14 @@ impl<'a> ProgramCompilerView<'a> {
     }
 }
 
+#[cfg(feature = "compute")]
 struct MixedProgramPartition {
     name: String,
     coordinator: Program,
     compute: Program,
 }
 
+#[cfg(feature = "compute")]
 fn partition_mixed_program(tree: &Program) -> MResult<MixedProgramPartition> {
     let mut regions = Vec::new();
     for (index, section) in tree.body.sections.iter().enumerate() {
@@ -1160,6 +1214,7 @@ fn partition_mixed_program(tree: &Program) -> MResult<MixedProgramPartition> {
     })
 }
 
+#[cfg(feature = "compute")]
 fn import_prelude(tree: &Program) -> Vec<SectionElement> {
     tree.body
         .sections
@@ -1169,6 +1224,7 @@ fn import_prelude(tree: &Program) -> Vec<SectionElement> {
         .collect()
 }
 
+#[cfg(feature = "compute")]
 fn import_element(element: &SectionElement) -> Option<SectionElement> {
     let SectionElement::MechCode(code) = element else {
         return None;
@@ -1181,6 +1237,7 @@ fn import_element(element: &SectionElement) -> Option<SectionElement> {
     (!imports.is_empty()).then_some(SectionElement::MechCode(imports))
 }
 
+#[cfg(feature = "compute")]
 fn source_declared_compute_inputs(tree: &Program) -> MResult<BTreeSet<String>> {
     let index = SourceIndex::from_program(tree);
     index.validate_address_targets()?;
@@ -1227,6 +1284,7 @@ fn replace_root_tree(module: &mut CompilerModule, tree: Program) -> MResult<()> 
     Ok(())
 }
 
+#[cfg(feature = "compute")]
 fn assemble_compute_region(
     compute: ProgramArtifactCompilationProduct,
     initial_inputs: BTreeMap<String, RuntimeHostInputValue>,
@@ -1266,6 +1324,7 @@ fn assemble_compute_region(
     })
 }
 
+#[cfg(feature = "compute")]
 fn compute_initializers(
     interface: &ComputeRegionInterface,
     mut values: BTreeMap<String, RuntimeHostInputValue>,
@@ -1810,6 +1869,7 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
         } else {
             &request.operation
         };
+        #[cfg(feature = "compute")]
         if let Some(interface) = self
             .compute_interface
             .filter(|_| is_compute_kernel_base(&key.base_uri))
@@ -1839,6 +1899,7 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
 impl CompilerPlanningServices<'_> {
     fn plan_read(&self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
+        #[cfg(feature = "compute")]
         if self
             .compute_interface
             .is_some_and(|_| is_compute_kernel_base(&key.base_uri))
@@ -1871,6 +1932,7 @@ fn plan_compute_read(key: &RuntimeResourceKey) -> MResult<LegacyValue> {
     }
 }
 
+#[cfg(feature = "compute")]
 fn plan_compute_write(
     interface: &ComputeRegionInterface,
     key: &RuntimeResourceKey,
@@ -1892,7 +1954,7 @@ fn plan_compute_write(
         compute_planning_error(format!("unknown compute input path `{}`", key.path))
     })?;
     let value =
-        RuntimeHostInputValue::from_compiler_value(value).and_then(|value| match value {
+        RuntimeHostInputValue::from_numeric_mech_value(value).and_then(|value| match value {
             RuntimeHostInputValue::F32(value) => Ok(ComputeValue::ScalarF32(value)),
             RuntimeHostInputValue::F32Matrix {
                 rows,

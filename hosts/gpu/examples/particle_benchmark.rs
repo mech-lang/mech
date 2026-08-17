@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, env, time::Instant};
 
-use mech_gpu::GpuHost;
+use mech_gpu::ComputeLowerer;
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
 const PARTICLE_SOURCE: &str = include_str!("../fixtures/particle-kernel.mec");
@@ -54,7 +54,7 @@ fn main() {
 
     let compile_started = Instant::now();
     let artifact = compile_particle_artifact(particles, &positions, &zeros);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("particle source must be admitted: {error}"));
     let compile_time = compile_started.elapsed();

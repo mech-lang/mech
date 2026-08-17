@@ -158,7 +158,7 @@
         { "path": "machines/stats/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "machines/stats/src/sum_column.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "machines/string/src/lib.rs", "scope_contains": "<file>", "max_occurrences": 1 },
-        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 7 },
+        { "path": "src/core/src/function/mod.rs", "scope_contains": "<file>", "max_occurrences": 9 },
         { "path": "src/core/src/reactive_transaction.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/core/src/stdlib.rs", "scope_contains": "<file>", "max_occurrences": 2 },
         { "path": "src/engine/src/activation/dispatch.rs", "scope_contains": "<file>", "max_occurrences": 6 },

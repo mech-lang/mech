@@ -53,10 +53,10 @@ pub enum RuntimeHostInputValue {
 }
 
 impl RuntimeHostInputValue {
-    pub(crate) fn from_compiler_value(value: &LegacyValue) -> MResult<Self> {
+    pub fn from_numeric_mech_value(value: &LegacyValue) -> MResult<Self> {
+        let value =
+            crate::host_arg_resolved("runtime compiler input", std::slice::from_ref(value), 0)?;
         match value {
-            LegacyValue::Typed(value, _) => Self::from_compiler_value(value),
-            LegacyValue::MutableReference(value) => Self::from_compiler_value(&value.borrow()),
             #[cfg(feature = "f32")]
             LegacyValue::F32(value) => Ok(Self::F32(*value.borrow())),
             #[cfg(feature = "f64")]
@@ -74,7 +74,7 @@ impl RuntimeHostInputValue {
                 values: value.as_vec(),
             }),
             _ => Err(input_error(
-                "RuntimeCompilerValueUnsupported",
+                "RuntimeNumericValueUnsupported",
                 format!(
                     "compiler value kind `{}` cannot become a detached runtime input",
                     value.kind()

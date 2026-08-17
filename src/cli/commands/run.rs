@@ -72,6 +72,7 @@ pub(crate) fn command() -> Command {
     .arg(Arg::new("backend")
       .long("backend")
       .value_name("BACKEND")
+      .value_parser(crate::cli::STABLE_COMPUTE_BACKEND_SELECTORS)
       .help("Override the configured compute-host backend")
       .required(false));
     command
@@ -563,6 +564,14 @@ mod command_outcome_tests {
             matches.get_one::<String>("backend").map(String::as_str),
             Some("cpu-scalar")
         );
+    }
+
+    #[test]
+    fn run_command_rejects_experimental_compute_backend_override() {
+        let error = command()
+            .try_get_matches_from(["run", "--backend", "cpu-jit", "program.mec"])
+            .expect_err("shipping run command must reject experimental backends");
+        assert_eq!(error.kind(), clap::error::ErrorKind::InvalidValue);
     }
 
     #[test]

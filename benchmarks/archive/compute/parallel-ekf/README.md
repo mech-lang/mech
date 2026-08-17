@@ -21,10 +21,10 @@ git switch --track origin/codex/mech-program-gpu
 | Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
 | Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
 | Optimized Rust control | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
-| NumPy control | `hosts/gpu/benchmarks/parallel-ekf/numpy_scalar.py` |
-| Julia control | `hosts/gpu/benchmarks/parallel-ekf/julia_scalar.jl` |
-| LuaJIT control | `hosts/gpu/benchmarks/parallel-ekf/luajit_scalar.lua` |
-| Controlled runner | `hosts/gpu/benchmarks/parallel-ekf/run.py` |
+| NumPy control | `benchmarks/archive/compute/parallel-ekf/numpy_scalar.py` |
+| Julia control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
+| LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
+| Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
 | Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
 
 ## Mech physical backends
@@ -182,7 +182,7 @@ Build the native Mech benchmark, then run the complete comparison:
 
 ```text
 cargo build -p mech-gpu --release --features native,jit --example parallel_ekf_benchmark
-python3 hosts/gpu/benchmarks/parallel-ekf/run.py --python /path/to/python-with-numpy
+python3 benchmarks/archive/compute/parallel-ekf/run.py --python /path/to/python-with-numpy
 ```
 
 Add `--evidence-output /path/to/results.json` to record the exact Git commit,

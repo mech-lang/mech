@@ -177,8 +177,12 @@ class ChromeCdp:
         threading.Thread(target=self._read, daemon=True).start()
 
     def _read(self) -> None:
-        while self.process.poll() is None:
-            self.messages.put(json.loads(self.websocket.receive_text()))
+        try:
+            while self.process.poll() is None:
+                self.messages.put(json.loads(self.websocket.receive_text()))
+        except (OSError, RuntimeError, json.JSONDecodeError):
+            # The debugging socket closes as part of normal browser teardown.
+            return
 
     def call(
         self,

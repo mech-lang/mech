@@ -8,7 +8,7 @@ use std::{
 
 use wgpu::util::DeviceExt;
 
-use super::{GpuBindingAccess, GpuBindingKind, GpuProgram};
+use super::{ElementwiseKernel, GpuBindingAccess, GpuBindingKind};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GpuExecutionError {
@@ -72,7 +72,7 @@ pub struct ResidentDispatchProfile {
     pub outputs: BTreeMap<String, Vec<f32>>,
 }
 
-impl GpuProgram {
+impl ElementwiseKernel {
     /// Dispatches the generated kernel through wgpu. The same path works over
     /// Metal, Vulkan, Direct3D 12, and WebGPU-capable native backends.
     pub fn run_gpu(
@@ -625,7 +625,7 @@ mod tests {
 
     #[test]
     fn all_gpu_execution_modes_reject_oversized_workgroup_counts() {
-        let program = GpuProgram {
+        let program = ElementwiseKernel {
             compute: super::super::empty_compute_program(),
             wgsl: String::new(),
             bindings: Vec::new(),
@@ -649,7 +649,7 @@ mod tests {
 
     #[test]
     fn all_gpu_execution_modes_request_the_validated_limits() {
-        let program = GpuProgram {
+        let program = ElementwiseKernel {
             compute: super::super::empty_compute_program(),
             wgsl: String::new(),
             bindings: vec![GpuBinding {

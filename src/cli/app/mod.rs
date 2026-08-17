@@ -44,6 +44,12 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::Append),
         )
         .arg(
+            Arg::new("repl")
+                .long("repl")
+                .help("Start the interactive Mech REPL")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("debug")
                 .short('d')
                 .long("debug")
@@ -142,8 +148,14 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
         return crate::cli::commands::format::run(options).await;
     }
 
-    // Historical CLI behavior treats unmatched root arguments as run inputs. When the run feature
-    // is enabled, dispatch falls through to the run command before considering bare REPL startup.
+    // A targetless invocation is the interactive resident REPL. It must be
+    // recognized before root arguments fall through to the production run command.
+    #[cfg(feature = "run")]
+    if is_repl_invocation(&cli_matches) {
+        return crate::cli::commands::repl::run();
+    }
+
+    // Historical CLI behavior treats unmatched root arguments as run inputs.
     #[cfg(feature = "run")]
     {
         let args = crate::cli::run_options::RunCliArgs::from_matches(
@@ -163,6 +175,12 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     }
 
     Ok(CliOutcome::success())
+}
+
+#[cfg(feature = "run")]
+fn is_repl_invocation(cli_matches: &ArgMatches) -> bool {
+    cli_matches.subcommand_name().is_none()
+        && cli_matches.get_many::<String>("mech_paths").is_none()
 }
 
 #[cfg(any(feature = "serve", feature = "run"))]

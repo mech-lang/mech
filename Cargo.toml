@@ -118,7 +118,8 @@ full-hosts = [
       "mech-build?/full-hosts",
       ]
 compute_backends_native = [
-      "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native",
+      "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
+      "mech-runtime/compute",
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
       "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
       "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
@@ -423,9 +424,6 @@ tempfile = "3.26.0"
 # smaller value surface. Keep that additional closure test-owned.
 mech-stdlib = { version = "0.3.5", default-features = false, features = ["u8", "u64"] }
 
-[target.'cfg(unix)'.dev-dependencies]
-libc = "0.2"
-
 [target.'cfg(windows)'.dev-dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
 
@@ -449,6 +447,7 @@ ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
 colored = "3.1.1"
+chrono = { version = "0.4.44", default-features = false, features = ["clock"] }
 serde = "1.0.228"
 serde_derive = "1.0.228"
 crossbeam-channel = "0.5.15"

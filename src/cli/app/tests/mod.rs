@@ -760,6 +760,18 @@ fn root_command_parses_available_subcommands() {
         .unwrap_err();
 }
 
+#[cfg(feature = "run")]
+#[test]
+fn targetless_root_invocation_selects_the_resident_repl() {
+    let matches = super::build_cli().try_get_matches_from(["mech"]).unwrap();
+    assert!(super::is_repl_invocation(&matches));
+
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "run", "program.mec"])
+        .unwrap();
+    assert!(!super::is_repl_invocation(&matches));
+}
+
 #[test]
 fn root_help_does_not_advertise_parse_tree() {
     let mut command = super::build_cli();

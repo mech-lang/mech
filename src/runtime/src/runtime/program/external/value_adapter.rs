@@ -48,6 +48,7 @@ pub fn provider_value_from_canonical(value: &Value, schemas: &SchemaTable) -> MR
             ));
         };
         return match element.as_ref() {
+            #[cfg(feature = "f32")]
             SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
                 let values = matrix
                     .as_vec()

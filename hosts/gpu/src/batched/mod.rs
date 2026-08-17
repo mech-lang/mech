@@ -1,8 +1,12 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 use mech_compute::{
-    ComparisonOperation, ComputeKernel, ComputeProgram, FixedShape, FixedShapeIr, LogicOperation,
-    ScalarComputation, ScalarInstruction, ScalarOperand, ScalarPredicate,
+    ComparisonOperation, ComputeKernel, ComputeProgram, FixedShape, FixedShapeConstraint,
+    FixedShapeInputStorage, FixedShapeIr, FixedShapeStateStorage, FixedShapeStoragePlan,
+    LogicOperation, ScalarComputation, ScalarInstruction, ScalarOperand, ScalarPredicate,
     build_compute_region_interface, plan_compute_artifact,
 };
 use mech_core::{
@@ -405,7 +409,7 @@ struct BatchedConstraint {
 /// A generic fixed-shape numeric artifact scalarized once and mapped over an
 /// outer batch. Each GPU invocation executes one complete source program.
 #[derive(Clone, Debug)]
-pub struct BatchedGpuProgram {
+pub struct FixedShapeKernel {
     instances: u32,
     compute: ComputeProgram,
     register_offsets: BTreeMap<CellSlotId, usize>,
@@ -443,11 +447,15 @@ impl BatchedFaultRecorder {
         self.last_fault = Some(fault.clone());
         BatchedExecutionError::Integrity(fault)
     }
+
+    const fn attempted_turns(&self) -> u64 {
+        self.attempted_turns
+    }
 }
 
 #[derive(Debug)]
-pub struct BatchedCpuSession<'a> {
-    program: &'a BatchedGpuProgram,
+pub struct BatchedCpuSession {
+    program: Arc<FixedShapeKernel>,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
@@ -456,8 +464,8 @@ pub struct BatchedCpuSession<'a> {
 }
 
 #[derive(Debug)]
-pub struct BatchedSimdCpuSession<'a> {
-    program: &'a BatchedGpuProgram,
+pub struct BatchedSimdCpuSession {
+    program: Arc<FixedShapeKernel>,
     inputs: BTreeMap<CellSlotId, Vec<f32>>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
@@ -465,7 +473,7 @@ pub struct BatchedSimdCpuSession<'a> {
     faults: BatchedFaultRecorder,
 }
 
-impl super::GpuHost {
+impl super::ComputeLowerer {
     /// Scalarizes generic fixed-shape f32 math and matrix operations, then maps
     /// the resulting kernel over `instances` independent program states.
     ///
@@ -476,7 +484,7 @@ impl super::GpuHost {
         &self,
         artifact: &ProgramArtifact,
         instances: u32,
-    ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
+    ) -> Result<FixedShapeKernel, GpuAdmissionError> {
         BatchCompiler::new(artifact, instances).compile()
     }
 
@@ -493,7 +501,7 @@ impl super::GpuHost {
         &self,
         artifact: &ProgramArtifact,
         inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
+    ) -> Result<FixedShapeKernel, GpuAdmissionError> {
         self.compile_broadcast_for_regions(artifact, artifact.compute_regions(), inputs)
     }
 
@@ -504,7 +512,7 @@ impl super::GpuHost {
         artifact: &ProgramArtifact,
         regions: &[ComputeRegionDeclaration],
         inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedGpuProgram, GpuAdmissionError> {
+    ) -> Result<FixedShapeKernel, GpuAdmissionError> {
         let plan = self.plan(artifact);
         let mut diagnostics = plan
             .violations
@@ -516,20 +524,6 @@ impl super::GpuHost {
                 detail: format!("region `{}`: {}", violation.region, violation.reason),
             })
             .collect::<Vec<_>>();
-        for region in regions
-            .iter()
-            .filter(|region| region.placement == mech_core::ComputePlacement::Cpu)
-        {
-            diagnostics.push(GpuDiagnostic {
-                code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
-                node: region.nodes.first().copied(),
-                operation: None,
-                detail: format!(
-                    "region `{}` requires CPU execution and cannot be lowered for GPU broadcast",
-                    region.name
-                ),
-            });
-        }
         if regions.len() != 1 {
             diagnostics.push(GpuDiagnostic {
                 code: GpuDiagnosticCode::PlacementConstraintUnsatisfied,
@@ -544,11 +538,86 @@ impl super::GpuHost {
         if !diagnostics.is_empty() {
             return Err(GpuAdmissionError { diagnostics });
         }
-        self.compile_broadcast(artifact, inputs)
+        let instances = infer_broadcast_instances(artifact, inputs)?;
+        BatchCompiler::new(artifact, instances).compile()
     }
 }
 
-impl BatchedGpuProgram {
+impl FixedShapeKernel {
+    pub fn from_compute_program(program: &ComputeProgram) -> Result<Self, GpuAdmissionError> {
+        let Some(storage) = program.fixed_shape_storage() else {
+            return Err(fixed_shape_program_error(
+                "fixed-shape program has no resident storage plan",
+            ));
+        };
+        if !matches!(program.kernel(), ComputeKernel::FixedShape(_)) {
+            return Err(fixed_shape_program_error(
+                "resident fixed-shape storage requires a fixed-shape kernel",
+            ));
+        }
+
+        let mut binding = 0_u32;
+        let inputs = storage
+            .inputs
+            .iter()
+            .map(|input| {
+                let physical = BatchedInput {
+                    slot: input.slot,
+                    name: input.name.to_string(),
+                    shape: input.shape,
+                    binding,
+                };
+                binding += 1;
+                physical
+            })
+            .collect::<Vec<_>>();
+        let states = storage
+            .states
+            .iter()
+            .map(|state| {
+                let physical = BatchedState {
+                    slot: state.slot,
+                    shape: state.shape,
+                    initializer: state.initializer.to_vec(),
+                    update: state.update.to_vec(),
+                    read_binding: binding,
+                    write_binding: binding + 1,
+                };
+                binding += 2;
+                physical
+            })
+            .collect::<Vec<_>>();
+        let constraints = storage
+            .constraints
+            .iter()
+            .map(|constraint| BatchedConstraint {
+                id: constraint.id,
+                name: constraint.name.clone(),
+                predicate: constraint.predicate.clone(),
+            })
+            .collect::<Vec<_>>();
+        let ComputeKernel::FixedShape(ir) = program.kernel() else {
+            unreachable!("kernel kind was checked above")
+        };
+        let wgsl = generate_wgsl(
+            storage.instances,
+            &storage.register_offsets,
+            &ir.instructions,
+            &inputs,
+            &states,
+            &constraints,
+        );
+        Ok(Self {
+            instances: storage.instances,
+            compute: program.clone(),
+            register_offsets: storage.register_offsets.clone(),
+            inputs,
+            states,
+            constraints,
+            wgsl,
+        })
+    }
+
     pub fn compute_program(&self) -> &ComputeProgram {
         &self.compute
     }
@@ -599,7 +668,7 @@ impl BatchedGpuProgram {
     pub fn prepare_cpu(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedCpuSession<'_>, BatchedExecutionError> {
+    ) -> Result<BatchedCpuSession, BatchedExecutionError> {
         let inputs = self.expand_inputs(inputs)?;
         let state = self.initial_state();
         let next_state = state
@@ -607,7 +676,7 @@ impl BatchedGpuProgram {
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
         Ok(BatchedCpuSession {
-            program: self,
+            program: Arc::new(self.clone()),
             inputs,
             state,
             next_state,
@@ -621,7 +690,7 @@ impl BatchedGpuProgram {
     pub fn prepare_simd_cpu(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedSimdCpuSession<'_>, BatchedExecutionError> {
+    ) -> Result<BatchedSimdCpuSession, BatchedExecutionError> {
         let inputs = self.expand_inputs(inputs)?;
         let state = self.initial_state();
         let next_state = state
@@ -629,7 +698,7 @@ impl BatchedGpuProgram {
             .map(|(slot, values)| (*slot, vec![0.0; values.len()]))
             .collect();
         Ok(BatchedSimdCpuSession {
-            program: self,
+            program: Arc::new(self.clone()),
             inputs,
             state,
             next_state,
@@ -652,28 +721,36 @@ impl BatchedGpuProgram {
                 let values = provided
                     .get(&input.name)
                     .ok_or_else(|| BatchedExecutionError::MissingInput(input.name.clone()))?;
-                let elements = input.shape.elements();
-                let batch_elements = elements * self.instances as usize;
-                let expanded = if values.len() == elements {
-                    values
-                        .iter()
-                        .copied()
-                        .cycle()
-                        .take(batch_elements)
-                        .collect()
-                } else if values.len() == batch_elements {
-                    values.clone()
-                } else {
-                    return Err(BatchedExecutionError::InputLength {
-                        name: input.name.clone(),
-                        expected_single: elements,
-                        expected_batch: batch_elements,
-                        actual: values.len(),
-                    });
-                };
+                let expanded = self.expand_input(input, values)?;
                 Ok((input.slot, expanded))
             })
             .collect()
+    }
+
+    fn expand_input(
+        &self,
+        input: &BatchedInput,
+        values: &[f32],
+    ) -> Result<Vec<f32>, BatchedExecutionError> {
+        let elements = input.shape.elements();
+        let batch_elements = elements * self.instances as usize;
+        if values.len() == elements {
+            Ok(values
+                .iter()
+                .copied()
+                .cycle()
+                .take(batch_elements)
+                .collect())
+        } else if values.len() == batch_elements {
+            Ok(values.to_vec())
+        } else {
+            Err(BatchedExecutionError::InputLength {
+                name: input.name.clone(),
+                expected_single: elements,
+                expected_batch: batch_elements,
+                actual: values.len(),
+            })
+        }
     }
 
     fn initial_state(&self) -> BTreeMap<CellSlotId, Vec<f32>> {
@@ -726,7 +803,24 @@ impl BatchedGpuProgram {
     }
 }
 
-impl BatchedCpuSession<'_> {
+impl BatchedCpuSession {
+    pub fn update_inputs(
+        &mut self,
+        updates: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), BatchedExecutionError> {
+        for (name, values) in updates {
+            let input = self
+                .program
+                .inputs
+                .iter()
+                .find(|input| input.name == *name)
+                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+            self.inputs
+                .insert(input.slot, self.program.expand_input(input, values)?);
+        }
+        Ok(())
+    }
+
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), BatchedExecutionError> {
         if turns == 0 {
             return Err(BatchedExecutionError::ZeroTurns);
@@ -780,12 +874,33 @@ impl BatchedCpuSession<'_> {
         self.faults.fault_count
     }
 
+    pub const fn attempted_turns(&self) -> u64 {
+        self.faults.attempted_turns()
+    }
+
     pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
         self.faults.last_fault.as_ref()
     }
 }
 
-impl BatchedSimdCpuSession<'_> {
+impl BatchedSimdCpuSession {
+    pub fn update_inputs(
+        &mut self,
+        updates: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), BatchedExecutionError> {
+        for (name, values) in updates {
+            let input = self
+                .program
+                .inputs
+                .iter()
+                .find(|input| input.name == *name)
+                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+            self.inputs
+                .insert(input.slot, self.program.expand_input(input, values)?);
+        }
+        Ok(())
+    }
+
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), BatchedExecutionError> {
         if turns == 0 {
             return Err(BatchedExecutionError::ZeroTurns);
@@ -857,6 +972,10 @@ impl BatchedSimdCpuSession<'_> {
 
     pub const fn fault_count(&self) -> u64 {
         self.faults.fault_count
+    }
+
+    pub const fn attempted_turns(&self) -> u64 {
+        self.faults.attempted_turns()
     }
 
     pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
@@ -1055,7 +1174,7 @@ impl<'a> BatchCompiler<'a> {
         }
     }
 
-    fn compile(mut self) -> Result<BatchedGpuProgram, GpuAdmissionError> {
+    fn compile(mut self) -> Result<FixedShapeKernel, GpuAdmissionError> {
         if self.instances == 0 {
             self.reject(
                 None,
@@ -1173,14 +1292,6 @@ impl<'a> BatchCompiler<'a> {
                 }
             })
             .collect::<Vec<_>>();
-        let wgsl = generate_wgsl(
-            self.instances,
-            &self.register_offsets,
-            &self.instructions,
-            &inputs,
-            &states,
-            &constraints,
-        );
         let interface =
             build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
@@ -1188,15 +1299,38 @@ impl<'a> BatchCompiler<'a> {
             register_count: self.register_count,
             instructions: self.instructions.into_boxed_slice(),
         });
-        Ok(BatchedGpuProgram {
+        let storage = FixedShapeStoragePlan {
             instances: self.instances,
-            compute: ComputeProgram::new(interface, plan, kernel),
             register_offsets: self.register_offsets,
-            inputs,
-            states,
-            constraints,
-            wgsl,
-        })
+            inputs: inputs
+                .iter()
+                .map(|input| FixedShapeInputStorage {
+                    slot: input.slot,
+                    name: input.name.clone().into_boxed_str(),
+                    shape: input.shape,
+                })
+                .collect(),
+            states: states
+                .iter()
+                .map(|state| FixedShapeStateStorage {
+                    slot: state.slot,
+                    shape: state.shape,
+                    initializer: state.initializer.clone().into(),
+                    update: state.update.clone().into_boxed_slice(),
+                })
+                .collect(),
+            constraints: constraints
+                .iter()
+                .map(|constraint| FixedShapeConstraint {
+                    id: constraint.id,
+                    name: constraint.name.clone(),
+                    predicate: constraint.predicate.clone(),
+                })
+                .collect(),
+        };
+        let program =
+            ComputeProgram::new(interface, plan, kernel).with_fixed_shape_storage(storage);
+        FixedShapeKernel::from_compute_program(&program)
     }
 
     fn collect_slots(&mut self) {
@@ -1785,6 +1919,17 @@ fn scalar_operation(name: &str) -> Option<ElementwiseOperation> {
     }
 }
 
+fn fixed_shape_program_error(detail: impl Into<String>) -> GpuAdmissionError {
+    GpuAdmissionError {
+        diagnostics: vec![GpuDiagnostic {
+            code: GpuDiagnosticCode::OperationUnsupported,
+            node: None,
+            operation: None,
+            detail: detail.into(),
+        }],
+    }
+}
+
 fn comparison_operation(name: &str) -> Option<ComparisonOperation> {
     match name {
         "compare/eq" => Some(ComparisonOperation::Equal),
@@ -2008,7 +2153,7 @@ mod native {
     use wgpu::util::DeviceExt;
 
     use super::{
-        BatchedExecutionError, BatchedFaultRecorder, BatchedGpuProgram, BatchedIntegrityFault,
+        BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, FixedShapeKernel,
     };
 
     const GPU_FAULT_WORDS: usize = 2;
@@ -2020,6 +2165,7 @@ mod native {
         queue: wgpu::Queue,
         pipeline: wgpu::ComputePipeline,
         bind_groups: [wgpu::BindGroup; 2],
+        input_buffers: BTreeMap<CellSlotId, Arc<wgpu::Buffer>>,
         output_buffers: [BTreeMap<CellSlotId, Arc<wgpu::Buffer>>; 2],
         output_elements: BTreeMap<CellSlotId, usize>,
         constraints: Box<[super::BatchedConstraint]>,
@@ -2040,7 +2186,7 @@ mod native {
         pub state: BTreeMap<CellSlotId, Vec<f32>>,
     }
 
-    impl BatchedGpuProgram {
+    impl FixedShapeKernel {
         pub fn prepare_resident(
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
@@ -2114,7 +2260,7 @@ mod native {
                         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                             label: Some(&input.name),
                             contents: bytemuck::cast_slice(&expanded_inputs[&input.slot]),
-                            usage: wgpu::BufferUsages::STORAGE,
+                            usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
                         }),
                     ),
                 );
@@ -2260,6 +2406,7 @@ mod native {
                 queue,
                 pipeline,
                 bind_groups,
+                input_buffers,
                 output_buffers,
                 output_elements,
                 constraints: self.constraints.clone().into_boxed_slice(),
@@ -2276,6 +2423,27 @@ mod native {
     impl BatchedResidentGpuSession {
         pub fn adapter(&self) -> &str {
             &self.adapter
+        }
+
+        pub fn update_inputs(
+            &mut self,
+            program: &FixedShapeKernel,
+            updates: &BTreeMap<String, Vec<f32>>,
+        ) -> Result<(), BatchedExecutionError> {
+            for (name, values) in updates {
+                let input = program
+                    .inputs
+                    .iter()
+                    .find(|input| input.name == *name)
+                    .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+                let values = program.expand_input(input, values)?;
+                self.queue.write_buffer(
+                    &self.input_buffers[&input.slot],
+                    0,
+                    bytemuck::cast_slice(&values),
+                );
+            }
+            Ok(())
         }
 
         pub fn dispatch_turns(&mut self, turns: u32) -> Result<Duration, BatchedExecutionError> {
@@ -2404,6 +2572,10 @@ mod native {
 
         pub const fn fault_count(&self) -> u64 {
             self.faults.fault_count
+        }
+
+        pub const fn attempted_turns(&self) -> u64 {
+            self.faults.attempted_turns()
         }
 
         pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {

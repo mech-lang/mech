@@ -24,10 +24,10 @@ use mech_runtime::{
     RuntimeResourceWriteRequest, materialize_host_manifest,
 };
 
-/// Installs one compiler-produced compute region behind the ordinary resident
+/// Installs one already-lowered compute program behind the ordinary resident
 /// runtime host boundary. Backend selection and compilation are intentionally
-/// contained here; the resource adapter only translates runtime values into
-/// the typed compute interface.
+/// contained here; compiler partitioning and artifact-to-program lowering
+/// happen before this factory is constructed.
 pub struct ComputeHostFactory {
     region: Box<str>,
     placement: ComputePlacement,
@@ -270,8 +270,12 @@ impl ComputeResourceProvider {
     fn telemetry_value(&self, path: &str, planning: bool) -> MResult<LegacyValue> {
         if planning {
             return match path {
-                "backend" | "last-fault" => Ok(LegacyValue::String(Ref::new(String::new()))),
-                "turns" | "dispatch-ms" | "fault-count" => Ok(LegacyValue::F64(Ref::new(0.0))),
+                "backend" | "last-fault" => {
+                    RuntimeHostInputValue::String(String::new()).into_mech_value()
+                }
+                "turns" | "dispatch-ms" | "fault-count" => {
+                    RuntimeHostInputValue::F64(0.0).into_mech_value()
+                }
                 other => Err(compute_host_error(
                     "ComputeHostRead",
                     format!("unknown compute telemetry path `{other}`"),
@@ -282,11 +286,17 @@ impl ComputeResourceProvider {
             compute_host_error("ComputeHostRead", "compute host state lock is poisoned")
         })?;
         match path {
-            "backend" => Ok(LegacyValue::String(Ref::new(state.backend.clone()))),
-            "turns" => Ok(LegacyValue::F64(state.turns.clone())),
-            "dispatch-ms" => Ok(LegacyValue::F64(state.dispatch_ms.clone())),
-            "fault-count" => Ok(LegacyValue::F64(state.fault_count.clone())),
-            "last-fault" => Ok(LegacyValue::String(state.last_fault.clone())),
+            "backend" => RuntimeHostInputValue::String(state.backend.clone()).into_mech_value(),
+            "turns" => RuntimeHostInputValue::F64(*state.turns.borrow()).into_mech_value(),
+            "dispatch-ms" => {
+                RuntimeHostInputValue::F64(*state.dispatch_ms.borrow()).into_mech_value()
+            }
+            "fault-count" => {
+                RuntimeHostInputValue::F64(*state.fault_count.borrow()).into_mech_value()
+            }
+            "last-fault" => {
+                RuntimeHostInputValue::String(state.last_fault.borrow().clone()).into_mech_value()
+            }
             other => Err(compute_host_error(
                 "ComputeHostRead",
                 format!("unknown compute telemetry path `{other}`"),
@@ -672,24 +682,24 @@ fn configured_compute_settings(settings: &ConfigValue) -> MResult<ConfiguredComp
 }
 
 fn compute_input_update(port: &ComputePort, value: LegacyValue) -> MResult<ComputeInputUpdate> {
-    let value = match value {
-        LegacyValue::Typed(value, _) => return compute_input_update(port, *value),
-        LegacyValue::MutableReference(value) => {
-            return compute_input_update(port, value.borrow().clone());
-        }
-        LegacyValue::F32(value) => ComputeValue::ScalarF32(*value.borrow()),
-        LegacyValue::MatrixF32(matrix) => ComputeValue::TensorF32 {
-            dimensions: vec![matrix.rows() as u64, matrix.cols() as u64].into_boxed_slice(),
+    let detached = RuntimeHostInputValue::from_numeric_mech_value(&value)?;
+    let value = match detached {
+        RuntimeHostInputValue::F32(value) => ComputeValue::ScalarF32(value),
+        RuntimeHostInputValue::F32Matrix {
+            rows,
+            columns,
+            values,
+        } => ComputeValue::TensorF32 {
+            dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
             layout: TensorLayout::ColumnMajor,
-            values: Arc::from(matrix.as_vec()),
+            values: Arc::from(values),
         },
         other => {
             return Err(compute_host_error(
                 "ComputeHostWrite",
                 format!(
-                    "compute input `{}` requires fixed-shape f32 data, found `{}`",
-                    port.name,
-                    other.kind()
+                    "compute input `{}` requires fixed-shape f32 data, found `{:?}`",
+                    port.name, other
                 ),
             ));
         }
@@ -746,13 +756,24 @@ mod tests {
 
     use mech_compute::{
         BackendClass, ComputeBackendCapabilities, ComputeBackendDescriptor, ComputeBackendError,
-        ComputeBackendFactory, ComputeBackendRejection, ComputeExecutable, ComputeKernel,
-        ComputePhysicalPlan, ComputeRegionInterface, ElementwiseIr,
+        ComputeBackendFactory, ComputeBackendRejection, ComputeExecutable, ComputeFaultEvidence,
+        ComputeKernel, ComputePhysicalPlan, ComputeRegionInterface, ElementwiseIr,
     };
     use mech_core::{CellSlotId, SchemaId};
+    use mech_runtime::{
+        HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder, RuntimeCapabilityOperation,
+    };
+
+    #[derive(Clone, Debug, PartialEq)]
+    enum FakeCall {
+        Update(ComputeInputUpdate),
+        Dispatch(u32),
+    }
 
     struct FakeBackend {
         descriptor: ComputeBackendDescriptor,
+        calls: Arc<Mutex<Vec<FakeCall>>>,
+        report: ComputeDispatchReport,
     }
 
     impl ComputeBackendFactory for FakeBackend {
@@ -770,12 +791,16 @@ mod tests {
         ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError> {
             Ok(Box::new(FakeExecutable {
                 backend: self.descriptor.id.clone(),
+                calls: Arc::clone(&self.calls),
+                report: self.report.clone(),
             }))
         }
     }
 
     struct FakeExecutable {
         backend: mech_compute::BackendId,
+        calls: Arc<Mutex<Vec<FakeCall>>>,
+        report: ComputeDispatchReport,
     }
 
     impl ComputeExecutable for FakeExecutable {
@@ -785,19 +810,27 @@ mod tests {
         ) -> Result<Box<dyn ComputeSession>, ComputeBackendError> {
             Ok(Box::new(FakeSession {
                 backend: self.backend.clone(),
+                calls: Arc::clone(&self.calls),
+                report: self.report.clone(),
             }))
         }
     }
 
     struct FakeSession {
         backend: mech_compute::BackendId,
+        calls: Arc<Mutex<Vec<FakeCall>>>,
+        report: ComputeDispatchReport,
     }
 
     impl ComputeSession for FakeSession {
         fn update_inputs(
             &mut self,
-            _updates: &[ComputeInputUpdate],
+            updates: &[ComputeInputUpdate],
         ) -> Result<(), mech_compute::ComputeExecutionError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .extend(updates.iter().cloned().map(FakeCall::Update));
             Ok(())
         }
 
@@ -805,10 +838,11 @@ mod tests {
             &mut self,
             turns: NonZeroU32,
         ) -> Result<ComputeDispatchReport, mech_compute::ComputeExecutionError> {
-            Ok(ComputeDispatchReport {
-                completed_turns: turns.get(),
-                ..Default::default()
-            })
+            self.calls
+                .lock()
+                .unwrap()
+                .push(FakeCall::Dispatch(turns.get()));
+            Ok(self.report.clone())
         }
 
         fn read_outputs(
@@ -840,7 +874,10 @@ mod tests {
         )
     }
 
-    fn registry() -> Arc<ComputeBackendRegistry> {
+    fn registry_with_observer(
+        calls: Arc<Mutex<Vec<FakeCall>>>,
+        report: ComputeDispatchReport,
+    ) -> Arc<ComputeBackendRegistry> {
         let mut registry = ComputeBackendRegistry::default();
         registry
             .register(Arc::new(FakeBackend {
@@ -854,9 +891,21 @@ mod tests {
                         ..Default::default()
                     },
                 },
+                calls,
+                report,
             }))
             .unwrap();
         Arc::new(registry)
+    }
+
+    fn registry() -> Arc<ComputeBackendRegistry> {
+        registry_with_observer(
+            Arc::new(Mutex::new(Vec::new())),
+            ComputeDispatchReport {
+                completed_turns: 1,
+                ..Default::default()
+            },
+        )
     }
 
     fn settings() -> ConfigValue {
@@ -867,6 +916,68 @@ mod tests {
             ),
             ("backend".to_owned(), ConfigValue::String("cpu".to_owned())),
         ]))
+    }
+
+    fn runtime_with_fake_backend(
+        grant_access: bool,
+        calls: Arc<Mutex<Vec<FakeCall>>>,
+        report: ComputeDispatchReport,
+    ) -> mech_runtime::MechRuntime {
+        let factory = ComputeHostFactory::new(
+            "particle-field",
+            ComputePlacement::Compute,
+            program(),
+            ComputeInitializerSet::default(),
+            registry_with_observer(calls, report),
+            ComputePlatform::Native,
+        )
+        .unwrap();
+        let builder = RuntimeBuilder::new()
+            .host_factory(Box::new(factory))
+            .unwrap()
+            .host_instance(HostInstanceConfig {
+                name: "particles".to_owned(),
+                provider: "compute".to_owned(),
+                settings: settings(),
+            });
+        let builder = if grant_access {
+            builder.run_resource_grant(RunResourceGrantConfig {
+                target: "particles/kernel".to_owned(),
+                operations: vec!["read".to_owned(), "write".to_owned()],
+                paths: vec!["*".to_owned()],
+            })
+        } else {
+            builder
+        };
+        builder.build().unwrap()
+    }
+
+    fn input_write(values: Vec<f32>) -> RuntimeResourceWriteRequest {
+        RuntimeResourceWriteRequest {
+            base_uri: "compute://particles/kernel".to_owned(),
+            path: "input/matrix".to_owned(),
+            context_name: "particles".to_owned(),
+            operation: RuntimeCapabilityOperation::Write,
+            value: RuntimeHostInputValue::F32Matrix {
+                rows: 2,
+                columns: 3,
+                values,
+            }
+            .into_mech_value()
+            .unwrap(),
+            intent: RuntimeResourceWriteIntent::Send,
+        }
+    }
+
+    fn turn_write() -> RuntimeResourceWriteRequest {
+        RuntimeResourceWriteRequest {
+            base_uri: "compute://particles/kernel".to_owned(),
+            path: "turn".to_owned(),
+            context_name: "particles".to_owned(),
+            operation: RuntimeCapabilityOperation::Write,
+            value: LegacyValue::from(1.0_f32),
+            intent: RuntimeResourceWriteIntent::Send,
+        }
     }
 
     #[test]
@@ -938,5 +1049,80 @@ mod tests {
             mech_compute::BackendId::new("wgpu").unwrap(),
         ));
         assert!(factory.validate_settings("particles", &settings()).is_err());
+    }
+
+    #[test]
+    fn runtime_delivers_committed_inputs_before_exactly_one_dispatch_and_ingests_telemetry() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let report = ComputeDispatchReport {
+            completed_turns: 1,
+            dispatch_milliseconds: 2.5,
+            fault_count: 3,
+            last_fault: Some(ComputeFaultEvidence {
+                attempted_turn: 4,
+                constraint: "finite".into(),
+                detail: "candidate rejected".into(),
+            }),
+        };
+        let mut runtime = runtime_with_fake_backend(true, Arc::clone(&calls), report);
+        let mut context = runtime.runtime_context().unwrap();
+        runtime.begin_transaction(&mut context).unwrap();
+        runtime
+            .write_resource_with_context(
+                &mut context,
+                input_write(vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0]),
+            )
+            .unwrap();
+        runtime
+            .write_resource_with_context(&mut context, turn_write())
+            .unwrap();
+
+        assert!(calls.lock().unwrap().is_empty());
+        runtime
+            .commit_runtime_transaction_detailed(&mut context)
+            .unwrap();
+
+        let observed = calls.lock().unwrap().clone();
+        assert_eq!(observed.len(), 2);
+        let FakeCall::Update(update) = &observed[0] else {
+            panic!("input must be delivered before dispatch")
+        };
+        let ComputeValue::TensorF32 { layout, values, .. } = &update.value else {
+            panic!("matrix input must remain a matrix")
+        };
+        assert_eq!(*layout, TensorLayout::RowMajor);
+        assert_eq!(values.as_ref(), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        assert_eq!(observed[1], FakeCall::Dispatch(1));
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    }
+
+    #[test]
+    fn capability_denial_happens_before_the_compute_backend_is_touched() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut runtime =
+            runtime_with_fake_backend(false, Arc::clone(&calls), ComputeDispatchReport::default());
+
+        assert!(runtime.write_resource(turn_write()).is_err());
+        assert!(calls.lock().unwrap().is_empty());
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+    }
+
+    #[test]
+    fn rejected_runtime_candidate_produces_no_compute_dispatch() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut runtime =
+            runtime_with_fake_backend(true, Arc::clone(&calls), ComputeDispatchReport::default());
+        let mut context = runtime.runtime_context().unwrap();
+        runtime.begin_transaction(&mut context).unwrap();
+        runtime
+            .write_resource_with_context(&mut context, turn_write())
+            .unwrap();
+
+        runtime
+            .abort_runtime_transaction(&mut context, "candidate rejected")
+            .unwrap();
+
+        assert!(calls.lock().unwrap().is_empty());
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
     }
 }

@@ -2486,6 +2486,7 @@ version = "0.3.6"
 dependencies = [
  "base64 0.22.1",
  "bincode",
+ "chrono",
  "clap",
  "colored",
  "crossbeam-channel",
@@ -2495,7 +2496,6 @@ dependencies = [
  "include_dir",
  "indexmap",
  "indicatif",
- "libc",
  "mech-browser",
  "mech-build",
  "mech-compute",
@@ -2677,6 +2677,7 @@ dependencies = [
  "mech-stdlib",
  "mech-syntax",
  "pollster",
+ "web-time",
  "wgpu",
  "wide",
 ]

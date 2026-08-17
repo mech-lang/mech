@@ -4,6 +4,11 @@ This example is one Mech application. `particles.mec` contains both the normal
 transactional CPU graph and the neutral `particle-field @compute` numeric
 region. The same Mech source can select a resident CPU or GPU executor.
 
+Mixed compute applications are source products in v0.4. This example is not a
+claim that the coordinator and compute region can already be packaged and
+activated from one root `.mecb`; compute-region artifact metadata does round
+trip through bytecode independently.
+
 The browser is a host, not the application:
 
 - pointer events enter Mech through `pointer://pointer/frame`;
@@ -44,15 +49,14 @@ the GPU-capable JavaScript/WASM pair together and prevents `mech serve` from
 falling back to a differently profiled WASM module embedded in an older native
 executable.
 
-## macOS
+## macOS and Linux
 
-Install `wasm-pack` once if it is not already available, then build the browser
-runtime before building and starting the server:
+Install `wasm-pack` once if it is not already available, then use the canonical
+product build before starting the server:
 
 ```text
 cargo install wasm-pack --locked
-./scripts/build-mech-gpu-browser.sh
-cargo build --release --features compute_backends_native
+./scripts/build-mech.sh
 ./target/release/mech serve examples/gpu-particles --backend gpu
 ```
 
@@ -67,14 +71,18 @@ Mech source are unchanged:
 
 ```text
 cargo install wasm-pack --locked
-powershell -ExecutionPolicy Bypass -File scripts\build-mech-gpu-browser.ps1
-cargo build --release --features compute_backends_native
+powershell -ExecutionPolicy Bypass -File scripts\build-mech.ps1
 .\target\release\mech.exe serve examples\gpu-particles --backend gpu
 ```
 
 Open the printed local URL in Edge or Chrome. WebGPU availability, adapter
 limits, WGSL compilation, and every CPU-to-compute binding are checked before
 the simulation starts; failures are shown in the page instead of falling back.
+
+The product scripts build the native CLI/runtime and the mixed CPU/WebGPU WASM
+package only. For a component-specific browser rebuild, use
+`scripts/build-mech-gpu-browser.sh` on macOS/Linux or
+`scripts\build-mech-gpu-browser.ps1` on Windows.
 
 ## Browser acceptance
 
@@ -97,6 +105,8 @@ py scripts\smoke-gpu-particles-browser.py --backend cpu
 The command exits unsuccessfully on a profile mismatch, startup exception,
 missing WebGPU adapter, wrong particle count, stalled frames, or broken pointer
 transaction. Failure artifacts are retained in the printed temporary folder.
+This acceptance command builds and runs the application; it is separate from
+the canonical product-only `build-mech` scripts above.
 
 ## Full-size acceptance
 
@@ -130,6 +140,9 @@ GPU-side initializer lowering is the intended fix for that startup cost.
 This proves one ordinary CPU graph, one named portable compute region, explicit
 host I/O, transaction-ordered dispatch, selectable persistent CPU/GPU state,
 hard placement conflicts, and rendering through the cross-platform WebGPU
-browser API. Multiple compute regions, general GPU-to-CPU graph edges,
-cost-based automatic placement, and GPU-side initialization remain separate
-compiler and scheduler work.
+browser API. Stable product backends are `cpu-scalar` and `wgpu`. SIMD, JIT,
+and fixed-shape wgpu remain backend-library experiments until the common
+product compiler emits their kernel form. Mixed `.mecb` packaging, multiple
+compute regions, general GPU-to-CPU graph edges, cost-based automatic
+placement, and GPU-side initialization remain separate compiler and scheduler
+work.

@@ -23,7 +23,7 @@ use mech_core::{
     ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState,
     Ref, Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
     RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
-    SchemaBody, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
+    SchemaBody, SchemaId, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -148,6 +148,50 @@ fn source_program() -> CompilerPlanningProgram {
     )
 }
 
+fn assert_frozen_v1_topology_parity(artifact_a: &ProgramArtifact, artifact_b: &ProgramArtifact) {
+    let artifact = artifact_a;
+    assert_eq!(artifact.contracts(), artifact_b.contracts());
+    assert_eq!(artifact.inputs(), artifact_b.inputs());
+    assert_eq!(artifact.slots(), artifact_b.slots());
+    assert_eq!(artifact.bindings(), artifact_b.bindings());
+    assert_eq!(artifact.outputs(), artifact_b.outputs());
+    assert_eq!(artifact.constraints(), artifact_b.constraints());
+    assert_eq!(artifact.schemas().len(), artifact_b.schemas().len());
+    for index in 0..artifact.schemas().len() {
+        let schema = SchemaId::new(index as u32);
+        assert_eq!(
+            artifact.schemas().entry(schema).unwrap().canonical_bytes(),
+            artifact_b
+                .schemas()
+                .entry(schema)
+                .unwrap()
+                .canonical_bytes(),
+        );
+    }
+    assert_eq!(artifact.constants().len(), artifact_b.constants().len());
+    assert_eq!(artifact.nodes().len(), artifact_b.nodes().len());
+
+    let mut projected_implementation = false;
+    for (source, bytecode) in artifact.nodes().iter().zip(artifact_b.nodes()) {
+        assert_eq!(source.node, bytecode.node);
+        assert_eq!(source.contract, bytecode.contract);
+        assert_eq!(source.requirement, bytecode.requirement);
+        assert_eq!(source.input_bindings, bytecode.input_bindings);
+        assert_eq!(source.output_bindings, bytecode.output_bindings);
+        if source.operation != bytecode.operation {
+            projected_implementation = true;
+            assert_ne!(source.operation.module_path.as_ref(), ["runtime"]);
+            assert_eq!(bytecode.operation.module_path.as_ref(), ["runtime"]);
+        }
+    }
+
+    if projected_implementation {
+        assert_ne!(artifact_a.revision(), artifact_b.revision());
+    } else {
+        assert_eq!(artifact_a.revision(), artifact_b.revision());
+    }
+}
+
 #[test]
 fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> MResult<()> {
     for source in [
@@ -183,15 +227,9 @@ fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> M
         );
         let artifact_b = decode_program_artifact_sections(&parsed.artifact)
             .expect("normal bytecode-v1 artifact sections must decode");
+        assert_frozen_v1_topology_parity(artifact_a, &artifact_b);
         assert_eq!(artifact_a.revision(), artifact_b.revision());
-        assert_eq!(artifact_a.contracts(), artifact_b.contracts());
-        assert_eq!(artifact_a.inputs(), artifact_b.inputs());
-        assert_eq!(artifact_a.slots(), artifact_b.slots());
-        assert_eq!(artifact_a.nodes(), artifact_b.nodes());
-        assert_eq!(artifact_a.bindings(), artifact_b.bindings());
-        assert_eq!(artifact_a.outputs(), artifact_b.outputs());
         assert!(!artifact_a.schemas().is_empty());
-        assert_eq!(artifact_a.constants().len(), artifact_b.constants().len());
     }
     Ok(())
 }
@@ -203,18 +241,27 @@ fn compile_artifact_fixture(source: &str) -> MResult<(ProgramArtifact, ProgramAr
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     let bytecode_artifact = decode_program_artifact_sections(&parsed.artifact)
         .expect("fixture bytecode artifact sections must decode");
+    assert_frozen_v1_topology_parity(&source_artifact, &bytecode_artifact);
     assert_eq!(source_artifact.revision(), bytecode_artifact.revision());
-    assert_eq!(source_artifact.contracts(), bytecode_artifact.contracts());
-    assert_eq!(source_artifact.inputs(), bytecode_artifact.inputs());
-    assert_eq!(source_artifact.slots(), bytecode_artifact.slots());
-    assert_eq!(source_artifact.nodes(), bytecode_artifact.nodes());
-    assert_eq!(source_artifact.bindings(), bytecode_artifact.bindings());
-    assert_eq!(source_artifact.outputs(), bytecode_artifact.outputs());
-    assert_eq!(
-        source_artifact.constraints(),
-        bytecode_artifact.constraints()
-    );
     Ok((source_artifact, bytecode_artifact))
+}
+
+#[test]
+fn frozen_v1_compatibility_product_preserves_implementation_operation_ids() -> MResult<()> {
+    let mut program = source_program();
+    program.plan_source_for_test("lhs := 1.0\nrhs := 2.0\nlhs < rhs")?;
+    let (artifact, bytecode) = program.compile_frozen_v1_program_product()?.into_parts();
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let decoded = decode_program_artifact_sections(&parsed.artifact)
+        .expect("frozen-v1 compatibility artifact sections must decode");
+
+    assert_frozen_v1_topology_parity(&artifact, &decoded);
+    assert_ne!(artifact.revision(), decoded.revision());
+    assert!(decoded.nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["runtime"]
+            && node.operation.operation_name == TEST_LESS_RUNTIME
+    }));
+    Ok(())
 }
 
 #[test]
@@ -480,7 +527,7 @@ fn mutable_matrix_state_retains_its_declaration_time_initializer() -> MResult<()
 fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
     let (artifact, decoded) =
         compile_artifact_fixture("input := 1.0\n~state := 1.0\nstate = input\noutput := state")?;
-    assert_eq!(artifact.revision(), decoded.revision());
+    assert_frozen_v1_topology_parity(&artifact, &decoded);
     assert!(
         artifact.inputs().is_empty(),
         "the immutable local constant must not become a host observation input"

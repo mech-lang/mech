@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
 use std::num::NonZeroU32;
 use std::sync::{Arc, Mutex};
 
@@ -11,10 +11,11 @@ use mech_compute::{
     ComputeOutputSnapshot, ComputePlatform, ComputeProgram, ComputeSession, ComputeValue,
     WGPU_BACKEND,
 };
-use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program, Ref};
+use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
-    ComputeHostFactory, CpuScalarBackendFactory, GpuProgram, lower_elementwise_compute_program,
+    ComputeHostFactory, CpuScalarBackendFactory, ElementwiseKernel,
+    lower_elementwise_compute_program,
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
@@ -180,6 +181,16 @@ impl WasmMixedComputeProject {
         compute_command_value(&self.compute.region, command)
     }
 
+    #[wasm_bindgen(js_name = acknowledgeComputeCommand)]
+    pub fn acknowledge_compute_command(&self, dispatch_id: u32) -> Result<(), JsValue> {
+        self.compute.acknowledge(dispatch_id)
+    }
+
+    #[wasm_bindgen(js_name = rejectComputeCommand)]
+    pub fn reject_compute_command(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
+        self.compute.reject(dispatch_id, reason)
+    }
+
     #[wasm_bindgen(js_name = cpuOutput)]
     pub fn cpu_output(&self, name: &str) -> Result<Float32Array, JsValue> {
         let values = self.outputs.output(name).map_err(js_error)?;
@@ -204,7 +215,7 @@ struct PreparedComputeRegion {
     coordinator: ProgramArtifact,
     program: ComputeProgram,
     initializers: ComputeInitializerSet,
-    render_program: GpuProgram,
+    render_program: ElementwiseKernel,
     timings: CompileTimings,
 }
 
@@ -238,7 +249,7 @@ fn compile_named_compute_region(
     let lowering_started = Instant::now();
     let program = lower_elementwise_compute_program(&mixed.compute.artifact)
         .map_err(|failure| mixed_error(format!("compute lowering failed: {failure}")))?;
-    let render_program = GpuProgram::from_compute_program(&program)
+    let render_program = ElementwiseKernel::from_compute_program(&program)
         .map_err(|failure| mixed_error(format!("render lowering failed: {failure}")))?;
     let gpu_lowering = milliseconds(lowering_started);
     let input_started = Instant::now();
@@ -451,9 +462,9 @@ impl PointerResourceProvider {
             }
             .into_mech_value()
         } else if request.path == "pulse" {
-            Ok(LegacyValue::F64(Ref::new(0.0)))
+            RuntimeHostInputValue::F64(0.0).into_mech_value()
         } else {
-            Ok(LegacyValue::F32(Ref::new(0.0)))
+            RuntimeHostInputValue::F32(0.0).into_mech_value()
         }
     }
 }
@@ -522,7 +533,24 @@ struct ComputeCommandHandle {
 #[derive(Debug, Default)]
 struct ComputeCommandState {
     changed_inputs: BTreeMap<String, Vec<f32>>,
-    dispatch: bool,
+    queued: Option<QueuedComputeCommand>,
+    next_dispatch_id: u32,
+    in_flight: BTreeSet<u32>,
+    acknowledged: u32,
+    rejected: VecDeque<(u32, String)>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct QueuedComputeCommand {
+    dispatch_id: Option<u32>,
+    acknowledgement_required: bool,
+}
+
+#[derive(Debug)]
+struct ComputeCommandData {
+    changed_inputs: BTreeMap<String, Vec<f32>>,
+    dispatch_id: Option<u32>,
+    acknowledgement_required: bool,
 }
 
 impl ComputeCommandHandle {
@@ -533,26 +561,136 @@ impl ComputeCommandHandle {
         }
     }
 
-    fn take_command_data(&self) -> Result<Option<ComputeCommandState>, JsValue> {
+    fn take_command_data(&self) -> Result<Option<ComputeCommandData>, JsValue> {
         let mut state = self
             .state
             .lock()
             .map_err(|_| error("compute command state lock is poisoned"))?;
-        if !state.dispatch {
+        let Some(command) = state.queued.take() else {
             return Ok(None);
+        };
+        if command.acknowledgement_required {
+            let dispatch_id = command
+                .dispatch_id
+                .expect("acknowledged commands have a dispatch ID");
+            state.in_flight.insert(dispatch_id);
         }
-        state.dispatch = false;
-        Ok(Some(ComputeCommandState {
+        Ok(Some(ComputeCommandData {
             changed_inputs: std::mem::take(&mut state.changed_inputs),
-            dispatch: true,
+            dispatch_id: command.dispatch_id,
+            acknowledgement_required: command.acknowledgement_required,
         }))
+    }
+
+    fn queue_cpu(
+        &self,
+        changed_inputs: &mut BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), ComputeExecutionError> {
+        let mut state = self.state.lock().map_err(|_| {
+            browser_execution_error(CPU_SCALAR_BACKEND, "dispatch", "command lock is poisoned")
+        })?;
+        ensure_command_slot_available(&state, CPU_SCALAR_BACKEND)?;
+        state.changed_inputs.append(changed_inputs);
+        state.queued = Some(QueuedComputeCommand {
+            dispatch_id: None,
+            acknowledgement_required: false,
+        });
+        Ok(())
+    }
+
+    fn queue_wgpu(
+        &self,
+        changed_inputs: &mut BTreeMap<String, Vec<f32>>,
+    ) -> Result<u32, ComputeExecutionError> {
+        let mut state = self.state.lock().map_err(|_| {
+            browser_execution_error(WGPU_BACKEND, "dispatch", "command lock is poisoned")
+        })?;
+        if let Some((dispatch_id, reason)) = state.rejected.pop_front() {
+            return Err(browser_execution_error(
+                WGPU_BACKEND,
+                "complete dispatch",
+                format!("browser bridge rejected dispatch {dispatch_id}: {reason}"),
+            ));
+        }
+        ensure_command_slot_available(&state, WGPU_BACKEND)?;
+        let dispatch_id = state.next_dispatch_id.checked_add(1).ok_or_else(|| {
+            browser_execution_error(WGPU_BACKEND, "dispatch", "dispatch ID space exhausted")
+        })?;
+        state.next_dispatch_id = dispatch_id;
+        let completed_turns = std::mem::take(&mut state.acknowledged);
+        state.changed_inputs.append(changed_inputs);
+        state.queued = Some(QueuedComputeCommand {
+            dispatch_id: Some(dispatch_id),
+            acknowledgement_required: true,
+        });
+        Ok(completed_turns)
+    }
+
+    fn acknowledge(&self, dispatch_id: u32) -> Result<(), JsValue> {
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| error("compute command state lock is poisoned"))?;
+        if !state.in_flight.remove(&dispatch_id) {
+            return Err(error(format!(
+                "compute dispatch {dispatch_id} is not awaiting acknowledgement"
+            )));
+        }
+        state.acknowledged = state
+            .acknowledged
+            .checked_add(1)
+            .ok_or_else(|| error("compute acknowledgement count overflow"))?;
+        Ok(())
+    }
+
+    fn reject(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| error("compute command state lock is poisoned"))?;
+        if !state.in_flight.remove(&dispatch_id) {
+            return Err(error(format!(
+                "compute dispatch {dispatch_id} is not awaiting acknowledgement"
+            )));
+        }
+        state.rejected.push_back((
+            dispatch_id,
+            if reason.trim().is_empty() {
+                "WebGPU completion failed".to_owned()
+            } else {
+                reason.to_owned()
+            },
+        ));
+        Ok(())
     }
 }
 
-fn compute_command_value(region: &str, command: ComputeCommandState) -> Result<JsValue, JsValue> {
+fn ensure_command_slot_available(
+    state: &ComputeCommandState,
+    backend: &str,
+) -> Result<(), ComputeExecutionError> {
+    if state.queued.is_some() {
+        return Err(browser_execution_error(
+            backend,
+            "dispatch",
+            "the previous browser command has not been consumed",
+        ));
+    }
+    Ok(())
+}
+
+fn compute_command_value(region: &str, command: ComputeCommandData) -> Result<JsValue, JsValue> {
     let value = Object::new();
     set(&value, "region", region)?;
-    set(&value, "dispatch", command.dispatch)?;
+    set(&value, "dispatch", true)?;
+    set(
+        &value,
+        "acknowledgementRequired",
+        command.acknowledgement_required,
+    )?;
+    if let Some(dispatch_id) = command.dispatch_id {
+        set(&value, "dispatchId", dispatch_id)?;
+    }
     let inputs = Array::new();
     for (name, values) in command.changed_inputs {
         let input = Object::new();
@@ -731,11 +869,7 @@ impl ComputeSession for BrowserCpuSession {
         let report = self.inner.dispatch(turns)?;
         let snapshot = self.inner.read_outputs(&ComputeOutputSelection::All)?;
         self.outputs.publish(&self.program, &snapshot)?;
-        let mut state = self.command.state.lock().map_err(|_| {
-            browser_execution_error(CPU_SCALAR_BACKEND, "dispatch", "command lock is poisoned")
-        })?;
-        state.changed_inputs.append(&mut self.changed_inputs);
-        state.dispatch = true;
+        self.command.queue_cpu(&mut self.changed_inputs)?;
         Ok(report)
     }
 
@@ -799,10 +933,12 @@ impl ComputeBackendFactory for BrowserWgpuBackendFactory {
         &self,
         program: &ComputeProgram,
     ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError> {
-        GpuProgram::from_compute_program(program).map_err(|failure| ComputeBackendError {
-            backend: self.descriptor.id.clone(),
-            operation: "compile",
-            detail: format!("{failure:?}").into(),
+        ElementwiseKernel::from_compute_program(program).map_err(|failure| {
+            ComputeBackendError {
+                backend: self.descriptor.id.clone(),
+                operation: "compile",
+                detail: format!("{failure:?}").into(),
+            }
         })?;
         Ok(Box::new(BrowserWgpuExecutable {
             backend: self.descriptor.id.clone(),
@@ -882,13 +1018,9 @@ impl ComputeSession for BrowserWgpuSession {
                 "the browser render bridge accepts one resident turn per frame",
             ));
         }
-        let mut state = self.command.state.lock().map_err(|_| {
-            browser_execution_error(WGPU_BACKEND, "dispatch", "command lock is poisoned")
-        })?;
-        state.changed_inputs.append(&mut self.changed_inputs);
-        state.dispatch = true;
+        let completed_turns = self.command.queue_wgpu(&mut self.changed_inputs)?;
         Ok(ComputeDispatchReport {
-            completed_turns: 1,
+            completed_turns,
             ..Default::default()
         })
     }
@@ -1135,10 +1267,14 @@ positions = next-positions
         assert_eq!(backend, WGPU_BACKEND);
         pointer.submit(0.25, -0.5, true, 1.0 / 60.0).unwrap();
         runtime.drain_host_inputs(1).unwrap();
-        let state = compute.state.lock().unwrap();
-        assert!(state.dispatch);
-        assert_eq!(state.changed_inputs["force-point"], vec![0.25, -0.5]);
-        assert_eq!(state.changed_inputs["force-strength"], vec![1.0]);
+        let command = compute.take_command_data().unwrap().unwrap();
+        assert!(command.acknowledgement_required);
+        assert_eq!(command.changed_inputs["force-point"], vec![0.25, -0.5]);
+        assert_eq!(command.changed_inputs["force-strength"], vec![1.0]);
+        let dispatch_id = command.dispatch_id.unwrap();
+        assert_eq!(compute.state.lock().unwrap().acknowledged, 0);
+        compute.acknowledge(dispatch_id).unwrap();
+        assert_eq!(compute.state.lock().unwrap().acknowledged, 1);
     }
 
     #[test]
@@ -1162,12 +1298,43 @@ positions = next-positions
         runtime.drain_host_inputs(1).unwrap();
 
         let state = compute.take_command_data().unwrap().unwrap();
-        assert!(state.dispatch);
+        assert!(!state.acknowledgement_required);
+        assert_eq!(state.dispatch_id, None);
         assert_eq!(state.changed_inputs["force-point"], vec![0.25, -0.5]);
         assert_eq!(state.changed_inputs["force-strength"], vec![1.0]);
         let positions = outputs.output("result.0").unwrap();
         assert_eq!(positions.len(), 8);
         assert!(positions.iter().all(|value| value.is_finite()));
+    }
+
+    #[test]
+    fn wgpu_reports_completion_only_after_the_bridge_acknowledges_it() {
+        let compute = ComputeCommandHandle::new("test".to_owned());
+        let mut first_inputs = BTreeMap::from([("x".to_owned(), vec![1.0])]);
+        assert_eq!(compute.queue_wgpu(&mut first_inputs).unwrap(), 0);
+
+        let first = compute.take_command_data().unwrap().unwrap();
+        assert!(first.acknowledgement_required);
+        let dispatch_id = first.dispatch_id.unwrap();
+        compute.acknowledge(dispatch_id).unwrap();
+
+        let mut second_inputs = BTreeMap::new();
+        assert_eq!(compute.queue_wgpu(&mut second_inputs).unwrap(), 1);
+    }
+
+    #[test]
+    fn wgpu_bridge_rejection_is_returned_to_the_next_dispatch() {
+        let compute = ComputeCommandHandle::new("test".to_owned());
+        let mut inputs = BTreeMap::new();
+        compute.queue_wgpu(&mut inputs).unwrap();
+        let command = compute.take_command_data().unwrap().unwrap();
+        compute
+            .reject(command.dispatch_id.unwrap(), "device lost")
+            .unwrap();
+
+        let error = compute.queue_wgpu(&mut inputs).unwrap_err();
+        assert_eq!(error.operation, "complete dispatch");
+        assert!(error.detail.contains("device lost"));
     }
 
     #[test]

@@ -53,6 +53,13 @@ state. The `ArtifactComputeRegions` section stores each region's name,
 placement, and sorted semantic node IDs. Decoding validates names, placement
 tags, node bounds, ordering, deduplication, and non-overlap.
 
+That round trip applies to compute-region artifact metadata. A mixed
+application is a compound product containing the ordinary coordinator,
+compute-region artifact, typed interface, detached initializers, and placement
+metadata. v0.4 loads that product from source. It does not yet package or
+activate the compound product from one root `.mecb` file. Ordinary resident
+applications remain loadable from source or bytecode.
+
 The executor derives live inputs, outputs, residence, and transfer boundaries
 from graph dependencies. Mech source never contains buffer handles, pointers,
 bind groups, or explicit upload/readback operations.
@@ -69,29 +76,46 @@ boundaries, but executing several CPU/GPU regions in one reactive turn still
 requires the mixed multi-kernel scheduler. The provider rejects that case
 instead of fusing across explicit boundaries.
 
+The stable v0.4 product backends are `cpu-scalar` and `wgpu`. `auto`, `cpu`,
+`gpu`, `cpu-scalar`, and `wgpu` are stable application selectors. The backend
+library also contains `cpu-simd`, `cpu-jit`, and fixed-shape wgpu prototypes,
+but the mixed-application compiler does not yet produce their fixed-shape
+kernel form. Those implementations are experimental library and benchmark
+paths, not generally selectable v0.4 application backends.
+
 ## Mixed runtime integration
 
 `examples/gpu-particles/particles.mec` exercises a narrow end-to-end boundary:
 
 1. the ordinary unannotated graph reads the configured pointer host;
-2. the compiler projects the selected named compute section and preserves its
-   placement and dependency metadata in an immutable `ProgramArtifact`;
+2. `ProgramCompiler` performs mixed semantic compilation, partitions the
+   selected named compute section, and preserves its placement and dependency
+   metadata in immutable `ProgramArtifact`s;
 3. the v0.4 runtime compiler returns an activation-only artifact product, so
    browser and native hosts do not retain a duplicate bytecode container;
-4. configuration grants define the live compute input interface independently
-   from detached values used to establish types and shapes during planning;
-5. the selected CPU or GPU executor keeps compute state resident;
-6. committed writes to `compute://particles/kernel` dispatch only after the
+4. the native or browser product integration passes the compiler-owned compute
+   artifact to `mech_gpu::lower_elementwise_compute_program`, the current
+   elementwise artifact-to-program adapter;
+5. `mech-compute` owns the resulting typed interface, neutral compute IR,
+   placement contracts, and backend registry contracts;
+6. the concrete backend bundle implements CPU and wgpu compilation and keeps
+   compute state resident behind a `ComputeSession`;
+7. `ComputeHostFactory` adapts that session to the resident runtime, while
+   configuration grants define live inputs independently from detached values
+   used to establish types and shapes during planning;
+8. committed writes to `compute://particles/kernel` dispatch only after the
    ordinary CPU transaction commits; and
-7. pointer input, compute telemetry, and rendering remain host-owned I/O rather
+9. pointer input, compute telemetry, and rendering remain host-owned I/O rather
    than handwritten simulation code.
 
-The GPU provider does not own compiler planning state or public
-`LegacyValue`s. Short-lived compiler planning is confined behind
+Concrete backends do not own compiler planning state or public `LegacyValue`s.
+Short-lived compiler planning and source partitioning are confined behind
 `ProgramCompiler`; only immutable artifact products and detached typed
-initialization values cross into host code. Source projection and physical GPU
-lowering remain owned by the compute host, while the runtime owns transaction
-ordering and the ordinary graph.
+initialization values cross into product lowering. The current elementwise
+lowerer is in the concrete backend bundle, `mech-compute` defines its neutral
+output contract, concrete backends own physical CPU/wgpu execution, and the
+resident runtime retains transaction ordering, capabilities, effects, and
+publication.
 
 This remains section-level source projection, not yet general dependency-graph
 partitioning. Live host-dependent CPU regions also require complete resident

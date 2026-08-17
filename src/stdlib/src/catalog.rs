@@ -157,6 +157,10 @@ pub fn build_source_catalog() -> MResult<FunctionCatalog> {
 pub fn build_source_native_plan_catalog() -> MResult<FunctionCatalog> {
     let mut builder = FunctionCatalogBuilder::new();
     install_native_plan(&mut builder)?;
+    // Source compilation immediately activates the semantic artifact it
+    // emits, so this catalog needs the same resident binders as the ordinary
+    // source catalog in addition to native-plan linkage.
+    mech_engine::install_intrinsic_resident(&mut builder)?;
     install_source(&mut builder)?;
     builder.build()
 }

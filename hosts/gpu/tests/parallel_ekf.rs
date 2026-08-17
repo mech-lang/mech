@@ -1,10 +1,20 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    num::NonZeroU32,
+    sync::Arc,
+};
 
-use mech_core::{Body, MechCode, Program, Section, SectionElement};
+use mech_compute::{
+    BackendRequest, ComputeInitializerSet, ComputeInputUpdate, ComputeOutputSelection,
+    ComputePlatform, ComputeValue, TensorLayout,
+};
+use mech_core::{Body, ComputePlacement, MechCode, Program, Section, SectionElement};
 use mech_engine::{
     ProgramArtifact, decode_program_artifact_sections, encode_program_artifact_sections,
 };
-use mech_gpu::{BatchedExecutionError, BatchedGpuProgram, GpuHost};
+use mech_gpu::{
+    BatchedExecutionError, ComputeLowerer, FixedShapeKernel, native_compute_backend_registry,
+};
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
@@ -192,7 +202,7 @@ fn lowered_states_after_one_turn(
 ) -> BTreeMap<usize, Vec<f32>> {
     let artifact = compile_compute(tree, driver);
     let inputs = source_inputs(driver, &artifact);
-    let lowered = GpuHost
+    let lowered = ComputeLowerer
         .compile_broadcast(&artifact, &inputs)
         .expect("generic fixed-shape operations must lower");
     let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
@@ -282,35 +292,216 @@ result
         .unwrap();
     let artifact = product.into_artifact();
     let activation_inputs = BTreeMap::from([("input".to_owned(), vec![1.0, 10.0, 100.0])]);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile_broadcast(&artifact, &activation_inputs)
         .unwrap();
-    let mut cpu = program.prepare_cpu(&activation_inputs).unwrap();
-    cpu.dispatch_turns(1).unwrap();
+    let initializers = compute_initializers(&program, &activation_inputs);
+    let input_port = program
+        .compute_program()
+        .interface()
+        .input_named("input")
+        .unwrap()
+        .id;
+    let registry = native_compute_backend_registry();
 
-    let result = program
-        .state_layout()
-        .find_map(|(slot, elements)| (elements == 2).then(|| &cpu.state()[&slot]))
-        .expect("the result state must be present");
-    assert_close(result, &[321.0, 654.0], 1.0e-6);
+    for backend in ["cpu-scalar", "cpu-simd", "cpu-jit", "wgpu"] {
+        let request = BackendRequest::parse(backend).unwrap();
+        let factory = match registry.resolve(
+            &request,
+            ComputePlatform::Native,
+            ComputePlacement::Compute,
+            program.compute_program(),
+        ) {
+            Ok(factory) => factory,
+            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => continue,
+            Err(error) => panic!("{backend} rejected the rectangular program: {error}"),
+        };
+        let executable = factory.compile(program.compute_program()).unwrap();
+        let mut session = executable.create_session(&initializers).unwrap();
+        session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+        let initial =
+            flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
+        assert!(
+            initial.values().any(|values| {
+                values.len() == 2
+                    && (values[0] - 321.0).abs() < 1.0e-6
+                    && (values[1] - 654.0).abs() < 1.0e-6
+            }),
+            "{backend} did not publish the expected rectangular result: {initial:?}",
+        );
+
+        session
+            .update_inputs(&[ComputeInputUpdate {
+                port: input_port,
+                value: ComputeValue::TensorF32 {
+                    dimensions: vec![3, 1].into_boxed_slice(),
+                    layout: TensorLayout::RowMajor,
+                    values: Arc::from([2.0, 20.0, 200.0]),
+                },
+            }])
+            .unwrap();
+        session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+        let updated =
+            flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
+        assert!(
+            updated.values().any(|values| {
+                values.len() == 2
+                    && (values[0] - 642.0).abs() < 1.0e-6
+                    && (values[1] - 1308.0).abs() < 1.0e-6
+            }),
+            "{backend} did not preserve state across the rectangular live update: {updated:?}",
+        );
+    }
 }
 
-fn source_program(instances: usize) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
+fn source_program(instances: usize) -> (FixedShapeKernel, BTreeMap<String, Vec<f32>>) {
     source_program_from(SOURCE, instances)
 }
 
 fn source_program_from(
     source: &str,
     instances: usize,
-) -> (BatchedGpuProgram, BTreeMap<String, Vec<f32>>) {
+) -> (FixedShapeKernel, BTreeMap<String, Vec<f32>>) {
     let tree = source_tree_from(source, instances);
     let driver = evaluate_driver(&tree);
     let artifact = compile_compute(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile_broadcast(&artifact, &inputs)
         .expect("generic fixed-shape operations must lower");
     (program, inputs)
+}
+
+fn compute_initializers(
+    program: &FixedShapeKernel,
+    inputs: &BTreeMap<String, Vec<f32>>,
+) -> ComputeInitializerSet {
+    ComputeInitializerSet::new(
+        program
+            .compute_program()
+            .interface()
+            .inputs
+            .iter()
+            .map(|port| {
+                let values = &inputs[port.name.as_ref()];
+                let value = if port.dimensions.is_empty() {
+                    ComputeValue::ScalarF32(values[0])
+                } else {
+                    ComputeValue::TensorF32 {
+                        dimensions: port.dimensions.clone(),
+                        layout: TensorLayout::RowMajor,
+                        values: Arc::from(values.clone()),
+                    }
+                };
+                (port.id, value)
+            })
+            .collect(),
+    )
+}
+
+fn flattened_outputs(
+    outputs: &mech_compute::ComputeOutputSnapshot,
+) -> BTreeMap<mech_compute::ComputePortId, Vec<f32>> {
+    outputs
+        .values
+        .iter()
+        .map(|(port, value)| {
+            let values = match value {
+                ComputeValue::ScalarF32(value) => vec![*value],
+                ComputeValue::TensorF32 { values, .. } => values.to_vec(),
+            };
+            (*port, values)
+        })
+        .collect()
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn registered_backends_share_one_fixed_shape_conformance_contract() {
+    let (program, inputs) = source_program(1);
+    let initializers = compute_initializers(&program, &inputs);
+    let registry = native_compute_backend_registry();
+    let bearing = program
+        .compute_program()
+        .interface()
+        .input_named("bearing")
+        .expect("EKF must expose bearing")
+        .id;
+    let mut accepted = BTreeMap::new();
+
+    for backend in ["cpu-scalar", "cpu-simd", "cpu-jit", "wgpu"] {
+        let request = BackendRequest::parse(backend).unwrap();
+        let factory = match registry.resolve(
+            &request,
+            ComputePlatform::Native,
+            ComputePlacement::Compute,
+            program.compute_program(),
+        ) {
+            Ok(factory) => factory,
+            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => continue,
+            Err(error) => panic!("{backend} rejected the conformance program: {error}"),
+        };
+        assert_eq!(factory.descriptor().id.as_str(), backend);
+        let executable = factory.compile(program.compute_program()).unwrap();
+        let mut session = executable.create_session(&initializers).unwrap();
+
+        let first = session
+            .dispatch(NonZeroU32::new(1).unwrap())
+            .expect("the declaration initializer turn must run");
+        assert_eq!(first.completed_turns, 1);
+        assert_eq!(first.fault_count, 0);
+
+        session
+            .update_inputs(&[ComputeInputUpdate {
+                port: bearing,
+                value: ComputeValue::ScalarF32(-0.4),
+            }])
+            .expect("the live scalar update must preserve the session");
+        let second = session
+            .dispatch(NonZeroU32::new(1).unwrap())
+            .expect("the updated turn must run");
+        assert_eq!(second.completed_turns, 1);
+        let published = session
+            .read_outputs(&ComputeOutputSelection::All)
+            .expect("published outputs must be readable");
+        assert!(!published.values.is_empty());
+
+        session
+            .update_inputs(&[ComputeInputUpdate {
+                port: bearing,
+                value: ComputeValue::ScalarF32(f32::NAN),
+            }])
+            .unwrap();
+        let rejected = session
+            .dispatch(NonZeroU32::new(1).unwrap())
+            .expect("integrity rejection is a bounded compute result");
+        assert_eq!(rejected.completed_turns, 0);
+        assert_eq!(rejected.fault_count, 1);
+        assert_eq!(
+            rejected.last_fault.as_ref().unwrap().constraint.as_ref(),
+            "finite-candidate!"
+        );
+        let retained = session
+            .read_outputs(&ComputeOutputSelection::All)
+            .expect("the previous published estimate must remain readable");
+        assert_eq!(flattened_outputs(&retained), flattened_outputs(&published));
+        accepted.insert(backend, flattened_outputs(&published));
+    }
+
+    let scalar = &accepted["cpu-scalar"];
+    for (backend, outputs) in accepted
+        .iter()
+        .filter(|(backend, _)| **backend != "cpu-scalar")
+    {
+        assert_eq!(
+            outputs.keys().collect::<Vec<_>>(),
+            scalar.keys().collect::<Vec<_>>()
+        );
+        for (port, expected) in scalar {
+            assert_close(expected, &outputs[port], 1.0e-4);
+        }
+        assert!(!backend.is_empty());
+    }
 }
 
 #[test]
@@ -380,7 +571,7 @@ fn high_level_ekf_source_evaluation_matches_generic_lowering() {
         "the artifact must not contain an EKF-specific operation"
     );
 
-    let lowered = GpuHost
+    let lowered = ComputeLowerer
         .compile_broadcast(&artifact, &inputs)
         .expect("generic fixed-shape operations must lower");
     assert!(lowered.wgsl().contains("@compute"));
@@ -412,7 +603,9 @@ fn mech_arrays_define_the_broadcast_extent() {
     assert_eq!(inputs["bearing"].len(), 7);
     assert_eq!(inputs["dt"].len(), 1);
 
-    let lowered = GpuHost.compile_broadcast(&artifact, &inputs).unwrap();
+    let lowered = ComputeLowerer
+        .compile_broadcast(&artifact, &inputs)
+        .unwrap();
     assert_eq!(lowered.instances(), 7);
     assert_eq!(lowered.workgroup_count(), 1);
     assert_eq!(lowered.simd_lanes(), 4);
@@ -446,7 +639,9 @@ fn conflicting_mech_array_extents_are_rejected() {
     let mut inputs = source_inputs(&driver, &artifact);
     inputs.get_mut("bearing").unwrap().pop();
 
-    let error = GpuHost.compile_broadcast(&artifact, &inputs).unwrap_err();
+    let error = ComputeLowerer
+        .compile_broadcast(&artifact, &inputs)
+        .unwrap_err();
     assert!(
         error
             .diagnostics()
@@ -463,7 +658,9 @@ fn empty_mech_array_is_rejected() {
     let mut inputs = source_inputs(&driver, &artifact);
     inputs.get_mut("bearing").unwrap().clear();
 
-    let error = GpuHost.compile_broadcast(&artifact, &inputs).unwrap_err();
+    let error = ComputeLowerer
+        .compile_broadcast(&artifact, &inputs)
+        .unwrap_err();
     assert!(
         error
             .diagnostics()
@@ -514,7 +711,7 @@ fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
     assert!(SOURCE.contains("symmetric-covariance! :="));
 
     let inputs = source_inputs(&driver, &artifact);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile_broadcast(&artifact, &inputs)
         .expect("generic source constraints must lower with the numeric region");
     assert_eq!(
@@ -526,6 +723,33 @@ fn source_integrity_constraints_survive_artifact_and_batch_lowering() {
             .collect::<Vec<_>>()
     );
     assert!(program.wgsl().contains("integrity_code"));
+}
+
+#[test]
+fn fixed_shape_source_and_bytecode_lower_to_the_same_resident_program() {
+    let tree = source_tree(3);
+    let driver = evaluate_driver(&tree);
+    let artifact = compile_compute(&tree, &driver);
+    let inputs = source_inputs(&driver, &artifact);
+    let encoded = encode_program_artifact_sections(&artifact).unwrap();
+    let decoded = decode_program_artifact_sections(&encoded).unwrap();
+    let source = ComputeLowerer
+        .compile_broadcast(&artifact, &inputs)
+        .unwrap();
+    let bytecode = ComputeLowerer.compile_broadcast(&decoded, &inputs).unwrap();
+
+    assert_eq!(source.wgsl(), bytecode.wgsl());
+    assert_eq!(
+        source.compute_program().interface(),
+        bytecode.compute_program().interface()
+    );
+    let mut source_session = source.prepare_cpu(&inputs).unwrap();
+    let mut bytecode_session = bytecode.prepare_cpu(&inputs).unwrap();
+    source_session.dispatch_turns(2).unwrap();
+    bytecode_session.dispatch_turns(2).unwrap();
+    for (slot, expected) in source_session.state() {
+        assert_close(expected, &bytecode_session.state()[slot], 0.0);
+    }
 }
 
 #[test]
@@ -617,7 +841,9 @@ fn source_driven_broadcast_matches_the_native_gpu() {
     let driver = evaluate_driver(&tree);
     let artifact = compile_compute(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
-    let lowered = GpuHost.compile_broadcast(&artifact, &inputs).unwrap();
+    let lowered = ComputeLowerer
+        .compile_broadcast(&artifact, &inputs)
+        .unwrap();
     let mut cpu = lowered.prepare_cpu(&inputs).unwrap();
     cpu.dispatch_turns(4).unwrap();
     let expected = cpu.state().clone();

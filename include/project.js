@@ -153,6 +153,27 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
 }
 `;
 
+export function requiredWgpuLimits(manifest, adapterLimits) {
+  const requiredLimits = {
+    maxStorageBuffersPerShaderStage: manifest.bindings.length,
+    maxComputeWorkgroupsPerDimension: Math.ceil(
+      manifest.dispatchElements / manifest.workgroupSize,
+    ),
+  };
+  for (const [limit, required] of Object.entries(requiredLimits)) {
+    const available = adapterLimits[limit];
+    if (!Number.isInteger(required) || required <= 0) {
+      throw new Error(`Mech generated invalid WebGPU limit ${limit}: ${required}`);
+    }
+    if (required > available) {
+      throw new Error(
+        `Mech requires ${required} for ${limit}, but this adapter supports ${available}`,
+      );
+    }
+  }
+  return requiredLimits;
+}
+
 class BrowserComputeProject {
   static async fromSources(config, sourceEntries, sources) {
     if (typeof mech.WasmMixedComputeProject?.fromSource !== 'function') {
@@ -210,6 +231,7 @@ class BrowserComputeProject {
     this.lastFrameTime = 0;
     this.lastInputs = {};
     this.totalDispatches = 0;
+    this.bridgeFailure = null;
   }
 
   async start() {
@@ -240,24 +262,11 @@ class BrowserComputeProject {
     this.renderItemCount = Math.ceil(this.itemCount / this.sampleStride);
     this.setStatus(`Preparing ${this.backend.toUpperCase()} compute`, '');
 
-    const storageBindings = this.manifest.bindings.length;
-    if (this.backend === 'wgpu') {
-      if (storageBindings > this.adapter.limits.maxStorageBuffersPerShaderStage) {
-        throw new Error(
-          `Mech generated ${storageBindings} storage bindings, but this adapter supports ` +
-          `${this.adapter.limits.maxStorageBuffersPerShaderStage}`,
-        );
-      }
-      const workgroups = Math.ceil(this.manifest.dispatchElements / this.manifest.workgroupSize);
-      if (workgroups > this.adapter.limits.maxComputeWorkgroupsPerDimension) {
-        throw new Error(
-          `Mech needs ${workgroups} workgroups, but this adapter supports ` +
-          `${this.adapter.limits.maxComputeWorkgroupsPerDimension}`,
-        );
-      }
-    }
+    const requiredLimits = this.backend === 'wgpu'
+      ? requiredWgpuLimits(this.manifest, this.adapter.limits)
+      : null;
     this.device = await this.adapter.requestDevice(this.backend === 'wgpu'
-      ? { requiredLimits: { maxStorageBuffersPerShaderStage: storageBindings } }
+      ? { requiredLimits }
       : {});
     this.device.lost.then((info) => {
       this.stopped = true;
@@ -272,6 +281,13 @@ class BrowserComputeProject {
     this.createBuffers();
     this.resize();
     this.installPointerInput();
+    if (
+      this.backend === 'wgpu' &&
+      (typeof this.controller.acknowledgeComputeCommand !== 'function' ||
+        typeof this.controller.rejectComputeCommand !== 'function')
+    ) {
+      throw new Error('WASM build-profile mismatch: the WebGPU command acknowledgement API is unavailable');
+    }
     this.controller.start();
     await this.device.queue.onSubmittedWorkDone();
     this.message.textContent = '';
@@ -511,22 +527,7 @@ class BrowserComputeProject {
     this.device.queue.writeBuffer(this.outputBuffer(0), 0, positions);
   }
 
-  frame(timestamp = performance.now()) {
-    if (this.stopped) {
-      return;
-    }
-    const deltaSeconds = this.lastFrameTime === 0
-      ? 1 / 60
-      : Math.max(0.001, Math.min(0.05, (timestamp - this.lastFrameTime) / 1000));
-    this.lastFrameTime = timestamp;
-    const command = this.controller.frame(
-      this.pointer.x,
-      this.pointer.y,
-      this.pointer.pressed,
-      deltaSeconds,
-      maxInputsPerFrame,
-    );
-    const dispatch = command?.dispatch === true;
+  submitFrame(command, dispatch) {
     if (dispatch && this.backend === 'wgpu') {
       this.applyGpuCommand(command);
     }
@@ -562,8 +563,87 @@ class BrowserComputeProject {
     render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
+    return renderedBuffer;
+  }
+
+  rejectWgpuCommand(dispatchId, error) {
+    const failure = error instanceof Error ? error : new Error(String(error));
+    try {
+      this.controller.rejectComputeCommand(dispatchId, failure.message);
+    } catch (rejectionError) {
+      const detail = rejectionError instanceof Error
+        ? rejectionError.message
+        : String(rejectionError);
+      return new Error(`${failure.message}; rejecting dispatch ${dispatchId} also failed: ${detail}`);
+    }
+    return failure;
+  }
+
+  trackWgpuCompletion(dispatchId) {
+    let completion;
+    try {
+      completion = this.device.queue.onSubmittedWorkDone();
+    } catch (error) {
+      throw this.rejectWgpuCommand(dispatchId, error);
+    }
+    completion.then(
+      () => {
+        try {
+          this.controller.acknowledgeComputeCommand(dispatchId);
+        } catch (error) {
+          this.bridgeFailure = error instanceof Error ? error : new Error(String(error));
+        }
+      },
+      (error) => {
+        this.bridgeFailure = this.rejectWgpuCommand(dispatchId, error);
+      },
+    );
+  }
+
+  frame(timestamp = performance.now()) {
+    if (this.stopped) {
+      return;
+    }
+    if (this.bridgeFailure) {
+      const failure = this.bridgeFailure;
+      this.bridgeFailure = null;
+      throw failure;
+    }
+    const deltaSeconds = this.lastFrameTime === 0
+      ? 1 / 60
+      : Math.max(0.001, Math.min(0.05, (timestamp - this.lastFrameTime) / 1000));
+    this.lastFrameTime = timestamp;
+    const command = this.controller.frame(
+      this.pointer.x,
+      this.pointer.y,
+      this.pointer.pressed,
+      deltaSeconds,
+      maxInputsPerFrame,
+    );
+    const dispatch = command?.dispatch === true;
+    let wgpuDispatchId = null;
     if (dispatch && this.backend === 'wgpu') {
+      if (
+        command.acknowledgementRequired !== true ||
+        !Number.isSafeInteger(command.dispatchId) ||
+        command.dispatchId <= 0
+      ) {
+        throw new Error('the WebGPU bridge received a command without a valid acknowledgement identity');
+      }
+      wgpuDispatchId = command.dispatchId;
+    }
+    let renderedBuffer;
+    try {
+      renderedBuffer = this.submitFrame(command, dispatch);
+    } catch (error) {
+      if (wgpuDispatchId !== null) {
+        throw this.rejectWgpuCommand(wgpuDispatchId, error);
+      }
+      throw error;
+    }
+    if (wgpuDispatchId !== null) {
       this.activeBuffer = renderedBuffer;
+      this.trackWgpuCompletion(wgpuDispatchId);
     }
     if (dispatch) {
       this.totalDispatches += 1;
@@ -655,9 +735,10 @@ function installComputeSmokeTest(target) {
         return;
       }
       const strength = state.lastInputs?.['force-strength']?.[0];
-      const forceX = state.lastInputs?.['force-x']?.[0];
-      const forceY = state.lastInputs?.['force-y']?.[0];
-      if (Math.abs(strength - 1.25) > 1e-6 || forceX < 0.45 || forceY < 0.45) {
+      const forcePoint = state.lastInputs?.['force-point'];
+      const forceX = forcePoint?.[0];
+      const forceY = forcePoint?.[1];
+      if (Math.abs(strength - 1) > 1e-6 || forceX < 0.45 || forceY < 0.45) {
         fail(`pointer transaction did not reach compute inputs: ${JSON.stringify(state.lastInputs)}`);
         return;
       }
@@ -760,8 +841,15 @@ function frame(timestamp) {
   } catch (error) {
     running = false;
     project.setStatus('Runtime failed', 'error');
+    const detail = error instanceof Error
+      ? (error.stack || error.message)
+      : String(error);
     if (project.message) {
-      project.message.textContent = error instanceof Error ? error.message : String(error);
+      project.message.textContent = detail;
+    }
+    if (new URLSearchParams(window.location.search).has('mech-gpu-smoke')) {
+      document.documentElement.dataset.mechGpuSmoke = 'failed';
+      document.documentElement.dataset.mechGpuSmokeError = detail;
     }
     try {
       project.stop();

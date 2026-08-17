@@ -25,8 +25,8 @@ EVIDENCE = "benchmarks/runtime/gate-b/b2-resident-turn.json"
 GATE_B_REGRESSION = "tests/architecture/value-system/gate-b-regression.json"
 PROJECTION_DIR = Path("tests/architecture/resident-activation")
 PROJECTION_SHA256 = {
-    "d1-artifact-v1.json": "55381f9b834738818eb512c955aac7f240e6fa3a649ced0b8bafcedb1593421c",
-    "d1-activation-v1.json": "be4d35393b6dbebf3bccc79aa32db31b903c958ab8be71f8796308f0fd9321e2",
+    "d1-artifact-v1.json": "8bba3ee55ecc7a5324853b8181a544bd3a37543383d975702d41fb0c284b9e24",
+    "d1-activation-v1.json": "8e8f4c9260ae4b7e8fbfc5bde0998def7daf49fc7ff85da1810dc834cec64bda",
     "d1-execution-v1.json": "9f2dede0a0893af64b90e08432beb7bde9944f48338a51d9ecaba0f98ec13d2a",
 }
 D1_ALLOWED_CHANGES = (

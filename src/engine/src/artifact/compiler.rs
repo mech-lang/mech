@@ -570,6 +570,42 @@ pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
     catalog: &FunctionCatalog,
     external_input_names: &BTreeSet<String>,
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_executable_program_artifact_with_identity(
+        compiled,
+        published_outputs,
+        catalog,
+        external_input_names,
+        RuntimeOperationIdentity::Semantic,
+    )
+}
+
+/// Produces the frozen ordinary-bytecode projection used before semantic
+/// operation identities were introduced. The source product remains the
+/// canonical semantic artifact; this projection exists only so existing v1
+/// files retain their byte-for-byte encoding.
+#[cfg(feature = "semantic-compiler")]
+pub(crate) fn compile_legacy_bytecode_program_artifact_with_outputs(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    catalog: &FunctionCatalog,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_executable_program_artifact_with_identity(
+        compiled,
+        published_outputs,
+        catalog,
+        &BTreeSet::new(),
+        RuntimeOperationIdentity::Implementation,
+    )
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn compile_executable_program_artifact_with_identity(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    catalog: &FunctionCatalog,
+    external_input_names: &BTreeSet<String>,
+    operation_identity: RuntimeOperationIdentity,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
     validate_compiled_metadata_length(
         "instruction_roles",
         compiled.program.instructions.len(),
@@ -1119,6 +1155,7 @@ pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
                     instruction_id,
                     instruction,
                     compiled.instruction_operations[instruction_id as usize].as_deref(),
+                    operation_identity,
                     catalog,
                     &compiled.runtime_function_names,
                     &compiled.program.requirements,
@@ -1585,6 +1622,8 @@ fn is_literal_constructor_operation(operation: &OperationReference) -> bool {
             .operation_name
             .starts_with("HorizontalConcatenate")
             || operation.operation_name.starts_with("VerticalConcatenate")))
+        || (operation.module_path.as_ref() == ["matrix"]
+            && matches!(operation.operation_name.as_str(), "horzcat" | "vertcat"))
         || (operation.module_path.as_ref() == ["set"] && operation.operation_name == "define")
 }
 
@@ -1881,6 +1920,7 @@ fn validate_compiled_instruction_roles(
                         instruction_id,
                         instruction,
                         compiled.instruction_operations[index].as_deref(),
+                        RuntimeOperationIdentity::Semantic,
                         catalog,
                         &compiled.runtime_function_names,
                         &compiled.program.requirements,
@@ -2036,6 +2076,13 @@ fn operation_reference_from_name(
 }
 
 #[cfg(feature = "semantic-compiler")]
+#[derive(Clone, Copy)]
+enum RuntimeOperationIdentity {
+    Semantic,
+    Implementation,
+}
+
+#[cfg(feature = "semantic-compiler")]
 fn semantic_operation_reference(
     canonical_name: &str,
 ) -> Result<OperationReference, ArtifactBuildError> {
@@ -2078,6 +2125,7 @@ fn instruction_semantics(
     instruction_id: u32,
     instruction: &BytecodeInstruction,
     semantic_operation: Option<&str>,
+    operation_identity: RuntimeOperationIdentity,
     catalog: &FunctionCatalog,
     runtime_function_names: &BTreeMap<u64, String>,
     requirements: &[ApplicationRequirement],
@@ -2088,12 +2136,17 @@ fn instruction_semantics(
             .map(|entry| entry.name.as_str())
             .or_else(|| runtime_function_names.get(&function).map(String::as_str))
             .ok_or(ArtifactBuildError::UnknownRuntimeFunction { function })?;
-        semantic_operation
-            .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
-                instruction: instruction_id,
-                implementation: implementation.to_owned(),
-            })
-            .and_then(semantic_operation_reference)
+        match operation_identity {
+            RuntimeOperationIdentity::Semantic => semantic_operation
+                .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
+                    instruction: instruction_id,
+                    implementation: implementation.to_owned(),
+                })
+                .and_then(semantic_operation_reference),
+            RuntimeOperationIdentity::Implementation => {
+                operation_reference_from_name("runtime", implementation)
+            }
+        }
     };
     let semantics = match instruction {
         BytecodeInstruction::ConstLoad { .. } | BytecodeInstruction::Return { .. } => {

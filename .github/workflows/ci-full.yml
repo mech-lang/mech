@@ -1018,7 +1018,7 @@ jobs:
           cargo test \
             -p mech-wasm \
             --no-default-features \
-            --features browser_project_core
+            --features browser_project
 
       - name: Check CLI clock
         run: |

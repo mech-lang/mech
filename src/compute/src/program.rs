@@ -5,7 +5,7 @@ use mech_engine::ArtifactSource;
 
 use crate::{
     ComputeInputError, ComputeInputUpdate, ComputeKernel, ComputePhysicalPlan,
-    ComputeRegionInterface,
+    ComputeRegionInterface, FixedShapeStoragePlan,
 };
 
 /// Backend-neutral storage information needed to materialize an elementwise
@@ -33,6 +33,7 @@ pub struct ComputeProgram {
     plan: ComputePhysicalPlan,
     kernel: ComputeKernel,
     elementwise_storage: Option<ElementwiseStoragePlan>,
+    fixed_shape_storage: Option<FixedShapeStoragePlan>,
 }
 
 impl ComputeProgram {
@@ -46,11 +47,17 @@ impl ComputeProgram {
             plan,
             kernel,
             elementwise_storage: None,
+            fixed_shape_storage: None,
         }
     }
 
     pub fn with_elementwise_storage(mut self, storage: ElementwiseStoragePlan) -> Self {
         self.elementwise_storage = Some(storage);
+        self
+    }
+
+    pub fn with_fixed_shape_storage(mut self, storage: FixedShapeStoragePlan) -> Self {
+        self.fixed_shape_storage = Some(storage);
         self
     }
 
@@ -68,6 +75,10 @@ impl ComputeProgram {
 
     pub fn elementwise_storage(&self) -> Option<&ElementwiseStoragePlan> {
         self.elementwise_storage.as_ref()
+    }
+
+    pub fn fixed_shape_storage(&self) -> Option<&FixedShapeStoragePlan> {
+        self.fixed_shape_storage.as_ref()
     }
 
     /// Validates an input update against the compiled interface and converts

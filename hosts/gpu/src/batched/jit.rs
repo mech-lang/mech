@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::mem;
+use std::{mem, sync::Arc};
 
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, MemFlags, UserFuncName, Value,
@@ -12,8 +12,8 @@ use cranelift_module::{Linkage, Module, default_libcall_names};
 use mech_core::CellSlotId;
 
 use super::{
-    BatchedExecutionError, BatchedFaultRecorder, BatchedGpuProgram, BatchedIntegrityFault,
-    BinaryOperation, ComparisonOperation, ElementwiseOperation, LogicOperation, ScalarComputation,
+    BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, BinaryOperation,
+    ComparisonOperation, ElementwiseOperation, FixedShapeKernel, LogicOperation, ScalarComputation,
     ScalarOperand, ScalarPredicate, UnaryOperation,
 };
 
@@ -29,10 +29,10 @@ struct NativeKernel {
     turn: NativeTurn,
 }
 
-pub struct BatchedJitCpuSession<'a> {
-    program: &'a BatchedGpuProgram,
+pub struct BatchedJitCpuSession {
+    program: Arc<FixedShapeKernel>,
     kernel: NativeKernel,
-    _inputs: BTreeMap<CellSlotId, Vec<f32>>,
+    inputs: BTreeMap<CellSlotId, Vec<f32>>,
     state: BTreeMap<CellSlotId, Vec<f32>>,
     next_state: BTreeMap<CellSlotId, Vec<f32>>,
     input_pointers: Vec<*const f32>,
@@ -41,11 +41,11 @@ pub struct BatchedJitCpuSession<'a> {
     faults: BatchedFaultRecorder,
 }
 
-impl BatchedGpuProgram {
+impl FixedShapeKernel {
     pub fn prepare_jit_cpu(
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
-    ) -> Result<BatchedJitCpuSession<'_>, BatchedExecutionError> {
+    ) -> Result<BatchedJitCpuSession, BatchedExecutionError> {
         let inputs = self.expand_inputs(inputs)?;
         let state = self.initial_state();
         let next_state = state
@@ -59,9 +59,9 @@ impl BatchedGpuProgram {
             .map(|input| inputs[&input.slot].as_ptr())
             .collect();
         let mut session = BatchedJitCpuSession {
-            program: self,
+            program: Arc::new(self.clone()),
             kernel,
-            _inputs: inputs,
+            inputs,
             state,
             next_state,
             input_pointers,
@@ -74,7 +74,30 @@ impl BatchedGpuProgram {
     }
 }
 
-impl BatchedJitCpuSession<'_> {
+impl BatchedJitCpuSession {
+    pub fn update_inputs(
+        &mut self,
+        updates: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), BatchedExecutionError> {
+        for (name, values) in updates {
+            let input = self
+                .program
+                .inputs
+                .iter()
+                .find(|input| input.name == *name)
+                .ok_or_else(|| BatchedExecutionError::MissingInput(name.clone()))?;
+            self.inputs
+                .insert(input.slot, self.program.expand_input(input, values)?);
+        }
+        self.input_pointers = self
+            .program
+            .inputs
+            .iter()
+            .map(|input| self.inputs[&input.slot].as_ptr())
+            .collect();
+        Ok(())
+    }
+
     pub fn dispatch_turns(&mut self, turns: u32) -> Result<(), BatchedExecutionError> {
         if turns == 0 {
             return Err(BatchedExecutionError::ZeroTurns);
@@ -113,6 +136,10 @@ impl BatchedJitCpuSession<'_> {
         self.faults.fault_count
     }
 
+    pub const fn attempted_turns(&self) -> u64 {
+        self.faults.attempted_turns()
+    }
+
     pub fn last_fault(&self) -> Option<&BatchedIntegrityFault> {
         self.faults.last_fault.as_ref()
     }
@@ -129,7 +156,7 @@ impl BatchedJitCpuSession<'_> {
 }
 
 impl NativeKernel {
-    fn compile(program: &BatchedGpuProgram) -> Result<Self, BatchedExecutionError> {
+    fn compile(program: &FixedShapeKernel) -> Result<Self, BatchedExecutionError> {
         let mut jit_builder =
             JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
                 .map_err(native_error)?;

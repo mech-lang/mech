@@ -665,10 +665,6 @@ impl MechFunctionImpl for SemanticMechFunction {
         self.function.transaction_state_values()
     }
 
-    fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
-        self.function.reactive_output_cell_ids()
-    }
-
     fn reactive_node_kind(&self) -> ReactiveNodeKind {
         self.function.reactive_node_kind()
     }

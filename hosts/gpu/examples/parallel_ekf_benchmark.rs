@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, env, time::Instant};
 
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
 use mech_engine::ProgramArtifact;
-use mech_gpu::GpuHost;
+use mech_gpu::ComputeLowerer;
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
 const SOURCE: &str = include_str!("../fixtures/ekf-kernel.mec");
@@ -28,7 +28,7 @@ fn main() {
     let driver = evaluate_driver(&tree);
     let artifact = compile_artifact(&tree, &driver);
     let inputs = source_inputs(&driver, &artifact);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile_broadcast(&artifact, &inputs)
         .unwrap_or_else(|error| panic!("generic EKF source must be admitted: {error}"));
     assert_eq!(

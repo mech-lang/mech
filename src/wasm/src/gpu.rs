@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use js_sys::{Array, Float32Array, Object, Reflect};
-use mech_gpu::{GpuBindingAccess, GpuBindingRole, GpuProgram, WORKGROUP_SIZE};
+use mech_gpu::{ElementwiseKernel, GpuBindingAccess, GpuBindingRole, WORKGROUP_SIZE};
 use wasm_bindgen::JsValue;
 use web_time::Instant;
 
@@ -15,7 +15,7 @@ pub(crate) struct CompileTimings {
 }
 
 pub(crate) fn gpu_program_manifest(
-    program: &GpuProgram,
+    program: &ElementwiseKernel,
     input_values: &BTreeMap<String, Vec<f32>>,
     timings: CompileTimings,
 ) -> Result<JsValue, JsValue> {

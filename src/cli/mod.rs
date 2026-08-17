@@ -36,6 +36,14 @@ pub(crate) fn rounds_per_step_value_parser() -> clap::builder::RangedU64ValuePar
     clap::builder::RangedU64ValueParser::<usize>::new().range(1..)
 }
 
+/// Stable compute selectors accepted by shipping CLI products.
+///
+/// Experimental backend IDs remain available to library and benchmark callers,
+/// but `run` and `serve` share this product-facing admission policy.
+#[cfg(feature = "cli_core")]
+pub(crate) const STABLE_COMPUTE_BACKEND_SELECTORS: [&str; 5] =
+    ["auto", "cpu", "gpu", "cpu-scalar", "wgpu"];
+
 #[cfg(all(
     test,
     any(

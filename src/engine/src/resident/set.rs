@@ -10,6 +10,13 @@ use mech_core::{
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    builder.insert_resident_factory(["set"], "union", bind_union)?;
+    builder.insert_resident_factory(["set"], "element-of", bind_element_of)?;
+    builder.insert_resident_factory(["set"], "not-element-of", bind_not_element_of)?;
+    builder.insert_resident_factory(["set"], "insert", bind_insert)?;
+    builder.insert_resident_factory(["set"], "remove", bind_remove)?;
+
+    // Frozen bytecode may still refer to the selected implementation identity.
     builder.insert_resident_factory(["runtime"], "SetUnionFxn", bind_union)?;
     builder.insert_resident_factory(["runtime"], "SetElementOfFxn", bind_element_of)?;
     builder.insert_resident_factory(["runtime"], "SetNotElementOfFxn", bind_not_element_of)?;

@@ -1,6 +1,10 @@
-use std::collections::BTreeSet;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 use crate::ElementwiseOperation;
+use mech_core::{CellSlotId, IntegrityConstraintId};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct FixedShape {
@@ -267,6 +271,40 @@ pub struct ScalarInstruction {
 pub struct FixedShapeIr {
     pub register_count: usize,
     pub instructions: Box<[ScalarInstruction]>,
+}
+
+/// Backend-neutral resident storage for a scalarized fixed-shape region.
+/// Physical backends may assign bindings or convert layouts once when they
+/// compile this plan, but they do not consult the source artifact again.
+#[derive(Clone, Debug, Default)]
+pub struct FixedShapeStoragePlan {
+    pub instances: u32,
+    pub register_offsets: BTreeMap<CellSlotId, usize>,
+    pub inputs: Box<[FixedShapeInputStorage]>,
+    pub states: Box<[FixedShapeStateStorage]>,
+    pub constraints: Box<[FixedShapeConstraint]>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FixedShapeInputStorage {
+    pub slot: CellSlotId,
+    pub name: Box<str>,
+    pub shape: FixedShape,
+}
+
+#[derive(Clone, Debug)]
+pub struct FixedShapeStateStorage {
+    pub slot: CellSlotId,
+    pub shape: FixedShape,
+    pub initializer: Arc<[f32]>,
+    pub update: Box<[ScalarOperand]>,
+}
+
+#[derive(Clone, Debug)]
+pub struct FixedShapeConstraint {
+    pub id: IntegrityConstraintId,
+    pub name: Box<str>,
+    pub predicate: ScalarPredicate,
 }
 
 #[cfg(test)]

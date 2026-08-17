@@ -133,7 +133,7 @@ struct KernelState {
 }
 
 #[derive(Clone, Debug)]
-pub struct GpuProgram {
+pub struct ElementwiseKernel {
     compute: ComputeProgram,
     wgsl: String,
     bindings: Vec<GpuBinding>,
@@ -145,16 +145,16 @@ pub struct GpuProgram {
 }
 
 pub struct ResidentCpuSession<'a> {
-    program: &'a GpuProgram,
+    program: &'a ElementwiseKernel,
     slots: BTreeMap<CellSlotId, Vec<f32>>,
 }
 
 pub struct OwnedResidentCpuSession {
-    program: GpuProgram,
+    program: ElementwiseKernel,
     slots: BTreeMap<CellSlotId, Vec<f32>>,
 }
 
-impl GpuProgram {
+impl ElementwiseKernel {
     /// Materializes backend-private bindings and shader text from the
     /// self-contained backend-neutral program. No compiler artifact is needed
     /// after this boundary.
@@ -723,7 +723,7 @@ impl ResidentCpuSession<'_> {
 }
 
 impl OwnedResidentCpuSession {
-    pub(crate) fn program_ref(&self) -> &GpuProgram {
+    pub(crate) fn program_ref(&self) -> &ElementwiseKernel {
         &self.program
     }
 
@@ -791,7 +791,7 @@ impl fmt::Display for CpuExecutionError {
 impl Error for CpuExecutionError {}
 
 #[derive(Clone, Debug, Default)]
-pub struct GpuHost;
+pub struct ComputeLowerer;
 
 /// Lowers one compiler-owned elementwise region into the backend-neutral
 /// compute program consumed by the backend registry.
@@ -803,13 +803,16 @@ pub fn lower_elementwise_compute_program(
         .map(|program| program.compute_program().clone())
 }
 
-impl GpuHost {
+impl ComputeLowerer {
     /// Explains placement and transfer boundaries without selecting a backend.
     pub fn plan(&self, artifact: &ProgramArtifact) -> HybridPlacementPlan {
         plan_compute_artifact(artifact, artifact.compute_regions())
     }
 
-    pub fn compile(&self, artifact: &ProgramArtifact) -> Result<GpuProgram, GpuAdmissionError> {
+    pub fn compile(
+        &self,
+        artifact: &ProgramArtifact,
+    ) -> Result<ElementwiseKernel, GpuAdmissionError> {
         self.compile_for_regions(artifact, artifact.compute_regions())
     }
 
@@ -817,7 +820,7 @@ impl GpuHost {
         &self,
         artifact: &ProgramArtifact,
         regions: &[ComputeRegionDeclaration],
-    ) -> Result<GpuProgram, GpuAdmissionError> {
+    ) -> Result<ElementwiseKernel, GpuAdmissionError> {
         let plan = self.plan(artifact);
         let mut diagnostics = plan
             .violations
@@ -860,7 +863,10 @@ impl GpuHost {
         Compiler::new(artifact).compile()
     }
 
-    pub fn compile_cpu(&self, artifact: &ProgramArtifact) -> Result<GpuProgram, GpuAdmissionError> {
+    pub fn compile_cpu(
+        &self,
+        artifact: &ProgramArtifact,
+    ) -> Result<ElementwiseKernel, GpuAdmissionError> {
         let regions = artifact.compute_regions();
         let diagnostics = regions
             .iter()
@@ -920,7 +926,7 @@ impl<'a> Compiler<'a> {
         }
     }
 
-    fn compile(mut self) -> Result<GpuProgram, GpuAdmissionError> {
+    fn compile(mut self) -> Result<ElementwiseKernel, GpuAdmissionError> {
         self.validate_program_surface();
         self.lower_inputs();
         self.lower_nodes();
@@ -977,7 +983,7 @@ impl<'a> Compiler<'a> {
                 dispatch_elements,
             },
         );
-        let mut program = GpuProgram {
+        let mut program = ElementwiseKernel {
             compute,
             wgsl: String::new(),
             bindings: self.bindings,
@@ -1940,7 +1946,7 @@ mod tests {
     use super::*;
     use mech_core::ConstantId;
 
-    fn concat_program(left: &[f32], right: &[f32]) -> GpuProgram {
+    fn concat_program(left: &[f32], right: &[f32]) -> ElementwiseKernel {
         let left_constant = ConstantId::new(0);
         let right_constant = ConstantId::new(1);
         let output = CellSlotId::new(0);
@@ -1966,7 +1972,7 @@ mod tests {
             (right_constant, right.to_vec()),
         ]);
 
-        GpuProgram {
+        ElementwiseKernel {
             compute,
             wgsl: String::new(),
             bindings: Vec::new(),

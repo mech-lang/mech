@@ -8,6 +8,61 @@ use mech_core::{
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     let runtime = ["runtime"];
+
+    // ProgramArtifact nodes carry semantic identities. These factories select
+    // the resident implementation from the resolved contract and layouts.
+    register(builder, &["math"], "add", bind_add)?;
+    register(builder, &["math"], "add-assign", bind_semantic_add_assign)?;
+    register(
+        builder,
+        &["math", "add-assign"],
+        "range-all",
+        bind_add_indexed_rows,
+    )?;
+    register(
+        builder,
+        &["math", "sub-assign"],
+        "range-all",
+        bind_sub_indexed_rows,
+    )?;
+    register(builder, &["math"], "sub", bind_sub)?;
+    register(builder, &["math"], "mul", bind_semantic_mul)?;
+    register(builder, &["math"], "div", bind_div)?;
+    register(builder, &["math"], "mod", bind_remainder)?;
+    register(builder, &["math"], "neg", bind_negate)?;
+    register(builder, &["math"], "pow", bind_pow)?;
+    register(builder, &["math"], "cos", bind_cos)?;
+    register(builder, &["math"], "sin", bind_sin)?;
+    register(builder, &["logic"], "and", bind_semantic_bool_and)?;
+    register(builder, &["logic"], "or", bind_bool_or)?;
+    register(builder, &["logic"], "xor", bind_bool_xor)?;
+    register(builder, &["logic"], "not", bind_bool_not)?;
+    register(builder, &["compare"], "eq", bind_semantic_equal)?;
+    register(builder, &["compare"], "neq", bind_f64_not_equal)?;
+    register(builder, &["compare"], "lt", bind_f64_less)?;
+    register(builder, &["compare"], "lte", bind_f64_less_equal)?;
+    register(builder, &["compare"], "gt", bind_f64_greater)?;
+    register(builder, &["compare"], "gte", bind_f64_greater_equal)?;
+    register(builder, &["compare"], "seq", bind_strict_equal)?;
+    register(builder, &["compare"], "sneq", bind_strict_not_equal)?;
+    register(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
+    register(builder, &["access"], "range", bind_semantic_range_access)?;
+    register(builder, &["matrix"], "horzcat", bind_horizontal)?;
+    register(builder, &["matrix"], "vertcat", bind_vertical)?;
+    register(builder, &["matrix"], "multiply", bind_matmul)?;
+    register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
+    register(builder, &["core"], "assign", bind_semantic_assign)?;
+    register(builder, &["range"], "inclusive", bind_range_inclusive)?;
+    register(
+        builder,
+        &["range"],
+        "inclusive-increment",
+        bind_range_increment_inclusive,
+    )?;
+    register(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
+    register(builder, &["stats", "sum"], "column", bind_sum_columns)?;
+
+    // Frozen bytecode may still refer to the selected implementation identity.
     register(builder, &runtime, "Access1DSRD<f64>", bind_scalar_access_1d)?;
     register(builder, &runtime, "Access1DSVD<f64>", bind_scalar_access_1d)?;
     register(builder, &runtime, "Access1DSMD<f64>", bind_scalar_access_1d)?;
@@ -166,8 +221,6 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "TransposeMD<f64>", bind_transpose)?;
     register(builder, &runtime, "TransposeRD<f64>", bind_transpose)?;
     register(builder, &runtime, "XorSS<bool>", bind_bool_xor)?;
-    register(builder, &["compare"], "seq", bind_strict_equal)?;
-    register(builder, &["compare"], "sneq", bind_strict_not_equal)?;
     register(
         builder,
         &runtime,
@@ -702,7 +755,14 @@ fn bind_assign(
     if request.inputs[0].shape != request.output.shape {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(assign, Vec::<u64>::new().into_boxed_slice())
+    bind_hold_state(request)
+}
+
+fn bind_semantic_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    // The semantic operation is contract-dispatched; frozen runtime IDs remain type-specific.
+    bind_hold_state(request).or_else(|_| super::text::bind_semantic_string_assign(request))
 }
 
 fn bind_hold_state(
@@ -787,6 +847,12 @@ fn bind_mul(
     bind_binary(request, multiply)
 }
 
+fn bind_semantic_mul(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_mul(request).or_else(|_| bind_mul_rows(request))
+}
+
 fn bind_div(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -829,6 +895,14 @@ fn bind_f64_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_comparison(request, f64_equal)
+}
+
+fn bind_semantic_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_equal(request)
+        .or_else(|_| bind_f64_vector_equal(request))
+        .or_else(|_| super::text::bind_string_equal(request))
 }
 
 fn bind_f64_vector_equal(
@@ -921,6 +995,12 @@ fn bind_bool_and(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_bool_binary(request, bool_and)
+}
+
+fn bind_semantic_bool_and(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_bool_and(request).or_else(|_| bind_bool_vector_and(request))
 }
 
 fn bind_bool_vector_and(
@@ -1137,6 +1217,12 @@ fn bind_add_assign(
     bound(add_assign, Vec::<u64>::new().into_boxed_slice())
 }
 
+fn bind_semantic_add_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_add_assign(request).or_else(|_| bind_add_indexed_rows(request))
+}
+
 fn bind_transpose(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -1159,6 +1245,12 @@ fn bind_transpose(
         transpose,
         vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
     )
+}
+
+fn bind_semantic_transpose(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_transpose(request).or_else(|_| super::text::bind_string_transpose(request))
 }
 
 fn bind_sum_columns(
@@ -1305,6 +1397,24 @@ fn bind_range_increment_inclusive(
 fn bind_n_choose_k(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if matches!(
+        request.contract,
+        ResolvedOperationContract::Declared(contract)
+            if matches!(
+                contract.outputs.first().map(|output| &output.construction),
+                Some(OutputConstruction::FullWrite { .. })
+            )
+    ) {
+        validate_full_write(
+            request,
+            2,
+            ShapeRule::Declared,
+            ChangeDetectionPolicy::ExactScalar,
+        )?;
+        require_f64_lengths(request, &[1, 1], 1)?;
+        return bound(n_choose_k_scalar, Vec::<u64>::new().into_boxed_slice());
+    }
+
     validate_build(request, 2, &["combinatorics"], "n-choose-k-matrix-output")?;
     require_kind(
         request,
@@ -1389,6 +1499,24 @@ fn bind_scalar_access_1d(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     bound(scalar_access_1d, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_semantic_scalar_access(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_scalar_access_1d(request)
+        .or_else(|_| bind_all_rows_column(request))
+        .or_else(|_| bind_row_all_columns(request))
+        .or_else(|_| super::text::bind_string_scalar_access(request))
+}
+
+fn bind_semantic_range_access(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_gather_1d(request)
+        .or_else(|_| bind_all_rows_columns(request))
+        .or_else(|_| bind_rows_all_columns(request))
+        .or_else(|_| super::text::bind_string_gather(request))
 }
 
 fn bind_matmul(
@@ -1693,27 +1821,6 @@ fn write_bool(output: ResidentValueMut<'_>, next: bool) -> Result<bool, Resident
     let next = u8::from(next);
     let changed = *output != next;
     *output = next;
-    Ok(changed)
-}
-
-fn assign(
-    _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    if inputs.len() != 1 {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let source = f64_input(inputs, 0)?;
-    let output = f64_output(output)?;
-    if source.len() != output.len() {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    let changed = output
-        .iter()
-        .zip(source)
-        .any(|(left, right)| left.to_bits() != right.to_bits());
-    output.copy_from_slice(source);
     Ok(changed)
 }
 
@@ -2700,6 +2807,47 @@ fn n_choose_k(
         return Err(ResidentKernelError::IncompleteOutput);
     }
     Ok(previous != output)
+}
+
+fn n_choose_k_scalar(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let [n] = f64_input(inputs, 0)? else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let [k] = f64_input(inputs, 1)? else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    if !n.is_finite()
+        || !k.is_finite()
+        || *n < 0.0
+        || *k < 0.0
+        || n.fract() != 0.0
+        || k.fract() != 0.0
+        || *n > u128::MAX as f64
+        || *k > u128::MAX as f64
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    if *k > *n {
+        return write_f64_array(f64_output(output)?, [0.0]);
+    }
+    let iterations = k.min(*n - *k);
+    if iterations > 1_000_000.0 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let mut result = 1.0;
+    let mut index = 0.0;
+    while index < iterations {
+        result = result * (*n - index) / (index + 1.0);
+        index += 1.0;
+    }
+    write_f64_array(f64_output(output)?, [result])
 }
 
 fn gather_1d(

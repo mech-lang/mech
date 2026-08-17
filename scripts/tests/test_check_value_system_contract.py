@@ -239,12 +239,16 @@ class ReviewedContractsTests(unittest.TestCase):
             "homogeneous-matrix-snapshot",
         )
         self.assertEqual(
-            sites[("src/runtime/src/runtime/program/external/value_adapter.rs", 45, 13)],
+            sites[("src/runtime/src/runtime/program/external/value_adapter.rs", 41, 13)],
+            "legacy-matrix-value-adapter",
+        )
+        self.assertEqual(
+            sites[("src/runtime/src/runtime/program/external/value_adapter.rs", 72, 21)],
             "legacy-matrix-value-adapter",
         )
         self.assertEqual(
             sum(target == "legacy-matrix-value-adapter" for target in sites.values()),
-            9,
+            10,
         )
 
     def test_targets_are_unambiguous_and_have_frozen_status(self):

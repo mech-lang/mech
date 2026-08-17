@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, env, fs, hint::black_box, time::Duration, time::Instant};
 
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
-use mech_gpu::{GpuBindingRole, GpuHost};
+use mech_gpu::{ComputeLowerer, GpuBindingRole};
 use mech_runtime::RuntimeBuilder;
 
 const PARTICLE_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
@@ -23,7 +23,7 @@ fn main() {
         .compile_tree_artifact(&tree)
         .expect("the particle compute region must compile")
         .into_artifact();
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("the neutral compute region must lower");
     let inputs = default_inputs(&program);
@@ -208,7 +208,7 @@ fn isolated_compute_tree(source: &str) -> Program {
     }
 }
 
-fn default_inputs(program: &mech_gpu::GpuProgram) -> BTreeMap<String, Vec<f32>> {
+fn default_inputs(program: &mech_gpu::ElementwiseKernel) -> BTreeMap<String, Vec<f32>> {
     program
         .bindings()
         .iter()
@@ -245,7 +245,7 @@ fn print_samples(label: &str, particles: usize, samples: &mut [Duration]) {
 }
 
 fn write_timeline(
-    program: &mech_gpu::GpuProgram,
+    program: &mech_gpu::ElementwiseKernel,
     inputs: &BTreeMap<String, Vec<f32>>,
     particles: usize,
     duration: Duration,

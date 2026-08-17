@@ -2,16 +2,16 @@ use std::collections::BTreeMap;
 
 use mech_compute::{
     BackendRequest, ComputeElementType, ComputeInitializerSet, ComputeOutputSelection,
-    ComputePlatform, TensorLayout,
+    ComputePlatform, ComputeValue, TensorLayout,
 };
 use mech_core::{
     Body, ComputePlacement, LegacyValue, MechCode, ParsedProgram, Program,
     ResolvedOperationContract, Section, SectionElement,
 };
-use mech_engine::{SlotRole, decode_program_artifact_sections};
+use mech_engine::{SlotRole, decode_program_artifact_sections, encode_program_artifact_sections};
 use mech_gpu::{
-    ComputeHostFactory, ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, GpuProgram,
-    SlotResidence, TransferDirection, native_compute_backend_registry,
+    ComputeHostFactory, ComputeLowerer, ElementwiseKernel, ExecutionTarget, GpuBindingRole,
+    GpuDiagnosticCode, SlotResidence, TransferDirection, native_compute_backend_registry,
 };
 use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, ProgramCompiler, RuntimeBuilder,
@@ -182,7 +182,7 @@ fn lowered_program_exposes_exact_typed_region_ports() {
             ),
         ],
     );
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("particle source must lower");
     let interface = program.compute_program().interface();
@@ -199,10 +199,10 @@ fn lowered_program_exposes_exact_typed_region_ports() {
 #[test]
 fn compiler_product_runs_through_the_backend_neutral_cpu_session() {
     let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
-    let lowered = GpuHost
+    let lowered = ComputeLowerer
         .compile(&artifact)
         .expect("standalone particle source must lower");
-    let reconstructed = GpuProgram::from_compute_program(lowered.compute_program())
+    let reconstructed = ElementwiseKernel::from_compute_program(lowered.compute_program())
         .expect("the compute program must be self-contained");
     assert_eq!(reconstructed.wgsl(), lowered.wgsl());
 
@@ -232,10 +232,65 @@ fn compiler_product_runs_through_the_backend_neutral_cpu_session() {
     assert!(!outputs.values.is_empty());
 }
 
+#[cfg(feature = "native")]
+#[test]
+fn particle_source_and_bytecode_share_cpu_and_wgpu_results() {
+    let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
+    let encoded = encode_program_artifact_sections(&artifact).unwrap();
+    let decoded = decode_program_artifact_sections(&encoded).unwrap();
+    let source = ComputeLowerer.compile(&artifact).unwrap();
+    let bytecode = ComputeLowerer.compile(&decoded).unwrap();
+    assert_eq!(source.wgsl(), bytecode.wgsl());
+
+    let registry = native_compute_backend_registry();
+    for backend in ["cpu-scalar", "wgpu"] {
+        let request = BackendRequest::parse(backend).unwrap();
+        let run = |program: &mech_compute::ComputeProgram| {
+            let factory = match registry.resolve(
+                &request,
+                ComputePlatform::Native,
+                ComputePlacement::Compute,
+                program,
+            ) {
+                Ok(factory) => factory,
+                Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => {
+                    return None;
+                }
+                Err(error) => panic!("{backend} rejected particle bytecode: {error}"),
+            };
+            let executable = factory.compile(program).unwrap();
+            let mut session = executable
+                .create_session(&ComputeInitializerSet::default())
+                .unwrap();
+            session.dispatch(NonZeroU32::new(2).unwrap()).unwrap();
+            Some(session.read_outputs(&ComputeOutputSelection::All).unwrap())
+        };
+        let Some(source_outputs) = run(source.compute_program()) else {
+            continue;
+        };
+        let bytecode_outputs = run(bytecode.compute_program()).unwrap();
+        assert_eq!(
+            source_outputs.values.keys().collect::<Vec<_>>(),
+            bytecode_outputs.values.keys().collect::<Vec<_>>()
+        );
+        for (port, source_value) in source_outputs.values {
+            let source_values = match source_value {
+                ComputeValue::ScalarF32(value) => vec![value],
+                ComputeValue::TensorF32 { values, .. } => values.to_vec(),
+            };
+            let bytecode_values = match &bytecode_outputs.values[&port] {
+                ComputeValue::ScalarF32(value) => vec![*value],
+                ComputeValue::TensorF32 { values, .. } => values.to_vec(),
+            };
+            assert_close_with_tolerance(&source_values, &bytecode_values, 1.0e-5);
+        }
+    }
+}
+
 #[test]
 fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
     let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
-    let lowered = GpuHost
+    let lowered = ComputeLowerer
         .compile(&artifact)
         .expect("standalone particle source must lower");
     let factory = ComputeHostFactory::new(
@@ -312,7 +367,7 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
     );
 
     let lowering_artifact = compile_isolated_gpu_source(&source);
-    let placement = GpuHost.plan(&lowering_artifact);
+    let placement = ComputeLowerer.plan(&lowering_artifact);
     assert!(placement.violations.is_empty());
     assert_eq!(placement.regions.len(), 1);
     assert_eq!(placement.regions[0].name.as_deref(), Some("particle-field"),);
@@ -320,10 +375,10 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
         placement.regions[0].requested,
         Some(ComputePlacement::Compute),
     );
-    let lowered = GpuHost
+    let lowered = ComputeLowerer
         .compile(&lowering_artifact)
         .expect("one named compute region must lower to one GPU program");
-    let cpu_lowered = GpuHost
+    let cpu_lowered = ComputeLowerer
         .compile_cpu(&lowering_artifact)
         .expect("the same neutral region must lower to the CPU executor");
     assert_eq!(cpu_lowered.wgsl(), lowered.wgsl());
@@ -354,7 +409,7 @@ fn hard_cpu_region_is_not_silently_sent_to_gpu() {
         .replacen("1000000f32", "16f32", 1)
         .replacen("@compute", "@cpu", 1);
     let artifact = compile_isolated_gpu_source(&source);
-    let placement = GpuHost.plan(&artifact);
+    let placement = ComputeLowerer.plan(&artifact);
 
     assert!(
         placement
@@ -363,10 +418,10 @@ fn hard_cpu_region_is_not_silently_sent_to_gpu() {
             .filter(|node| artifact.compute_regions()[0].nodes.contains(&node.node))
             .all(|node| node.target != ExecutionTarget::Gpu)
     );
-    GpuHost
+    ComputeLowerer
         .compile_cpu(&artifact)
         .expect("hard CPU region must run under the CPU executor");
-    let error = GpuHost.compile(&artifact).unwrap_err();
+    let error = ComputeLowerer.compile(&artifact).unwrap_err();
     assert!(error.to_string().contains("requires CPU execution"));
 }
 
@@ -377,10 +432,10 @@ fn hard_gpu_region_is_not_silently_sent_to_cpu() {
         .replacen("@compute", "@gpu", 1);
     let artifact = compile_isolated_gpu_source(&source);
 
-    GpuHost
+    ComputeLowerer
         .compile(&artifact)
         .expect("hard GPU region must run under the GPU executor");
-    let error = GpuHost.compile_cpu(&artifact).unwrap_err();
+    let error = ComputeLowerer.compile_cpu(&artifact).unwrap_err();
     assert!(error.to_string().contains("requires GPU execution"));
 }
 
@@ -410,7 +465,7 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
                     artifact.constants().get(*constant).is_some(),
             })
     );
-    let placement = GpuHost.plan(&artifact);
+    let placement = ComputeLowerer.plan(&artifact);
     assert!(
         placement.fully_accelerated,
         "unexpected CPU placement: {:#?}",
@@ -439,7 +494,7 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
             .count(),
         2
     );
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("particle source must be admitted: {error}"));
 
@@ -498,7 +553,7 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
 #[test]
 fn standalone_particle_program_needs_no_host_inputs() {
     let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("standalone particle source must be admitted: {error}"));
     assert!(
@@ -552,7 +607,7 @@ result
 "#,
         [],
     );
-    let error = GpuHost
+    let error = ComputeLowerer
         .compile(&artifact)
         .expect_err("a derived block broadcast must not use thread-local remapping");
     assert!(error.diagnostics.iter().any(|diagnostic| {
@@ -589,7 +644,7 @@ fn particle_example_is_one_mixed_mech_document() {
 fn served_particle_field_stays_bounded() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
     let artifact = compile_isolated_gpu_source(&source);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .unwrap_or_else(|error| panic!("served particle source must be admitted: {error}"));
 
@@ -627,7 +682,7 @@ fn served_particle_field_stays_bounded() {
 fn served_pointer_press_materially_changes_the_particle_trajectory() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
     let artifact = compile_isolated_gpu_source(&source);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("served particle source must be admitted");
     let inputs = |strength| {
@@ -666,7 +721,7 @@ fn served_pointer_press_materially_changes_the_particle_trajectory() {
 fn owned_cpu_session_accepts_new_inputs_without_resetting_state() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
     let artifact = compile_isolated_gpu_source(&source);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("served particle source must be admitted");
     let initial = BTreeMap::from([
@@ -707,7 +762,7 @@ fn root_mean_square_radius(positions: &[f32]) -> f32 {
 #[test]
 fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("particle source must be admitted");
     let inputs = BTreeMap::from([
@@ -740,7 +795,7 @@ fn native_gpu_matches_the_cpu_backend_when_an_adapter_is_available() {
 #[test]
 fn served_particle_shader_matches_cpu_with_pointer_force() {
     let artifact = compile_isolated_gpu_source(SERVED_PARTICLE_SOURCE);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("served particle source must lower");
     let inputs = BTreeMap::from([
@@ -774,7 +829,7 @@ fn served_particle_shader_matches_cpu_with_pointer_force() {
 #[test]
 fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("particle source must be admitted");
     let inputs = BTreeMap::from([
@@ -818,7 +873,7 @@ fn resident_gpu_feeds_particle_outputs_into_the_next_turn() {
 fn resident_gpu_accepts_new_inputs_without_resetting_state() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "512f32", 1);
     let artifact = compile_isolated_gpu_source(&source);
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("served particle source must be admitted");
     let initial = BTreeMap::from([
@@ -862,7 +917,7 @@ fn resident_gpu_accepts_new_inputs_without_resetting_state() {
 #[test]
 fn resident_cpu_advances_artifact_state_without_host_feedback() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
-    let program = GpuHost
+    let program = ComputeLowerer
         .compile(&artifact)
         .expect("particle source must be admitted");
     let inputs = BTreeMap::from([
@@ -894,7 +949,7 @@ fn unsupported_program_reports_why_instead_of_falling_back() {
             ("right", RuntimeHostInputValue::F32(2.0)),
         ],
     );
-    let error = GpuHost
+    let error = ComputeLowerer
         .compile(&artifact)
         .expect_err("power is outside the first GPU capability set");
 
@@ -905,7 +960,7 @@ fn unsupported_program_reports_why_instead_of_falling_back() {
         ) && diagnostic.node.is_some()
             && diagnostic.operation.is_some()
     }));
-    let placement = GpuHost.plan(&artifact);
+    let placement = ComputeLowerer.plan(&artifact);
     assert!(!placement.fully_accelerated);
     assert!(placement.nodes.iter().any(|node| {
         node.target == ExecutionTarget::Cpu && node.reason.contains("has no GPU lowering")
@@ -923,7 +978,7 @@ fn mixed_graph_reports_gpu_regions_and_cpu_transfer_boundaries() {
             ("scale", RuntimeHostInputValue::F32(4.0)),
         ],
     );
-    let placement = GpuHost.plan(&artifact);
+    let placement = ComputeLowerer.plan(&artifact);
 
     assert!(!placement.fully_accelerated);
     assert_eq!(placement.regions.len(), 2);

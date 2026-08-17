@@ -666,6 +666,23 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .collect::<Vec<_>>();
 
     assert_eq!(source_outputs, ["y", "first-fifteen!"]);
+    let mut source_runtime = runtime();
+    let source_loaded = source_runtime
+        .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(source_loaded.route, RuntimeProgramRoute::ResidentPure);
+    let mut bytecode_runtime = runtime();
+    let bytecode_loaded = bytecode_runtime
+        .load_bytecode_program(
+            product.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(bytecode_loaded.route, RuntimeProgramRoute::ResidentPure);
+    assert_eq!(
+        source_loaded.info.program_revision,
+        bytecode_loaded.info.program_revision
+    );
     let decoded = decode_program_artifact_bytecode_v1(product.bytecode()).unwrap();
     assert_eq!(
         decoded
@@ -891,6 +908,7 @@ fn matrix_declaration_defaults_become_typed_live_inputs() {
     }));
 }
 
+#[cfg(feature = "compute")]
 const MIXED_COMPUTE_SOURCE: &str = r#"
 @compute := compute://worker/kernel{:write(input/x), :write(turn)}
 @compute/input/x <- 2f32
@@ -903,6 +921,7 @@ result := x + 2f32
 result
 "#;
 
+#[cfg(feature = "compute")]
 #[test]
 fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
     let tree = mech_syntax::parse(MIXED_COMPUTE_SOURCE).unwrap();
@@ -927,6 +946,7 @@ fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
     );
 }
 
+#[cfg(feature = "compute")]
 #[test]
 fn mixed_tree_normalizes_matrix_initializers_to_canonical_row_major_layout() {
     let tree = mech_syntax::parse(
@@ -962,6 +982,7 @@ result
     );
 }
 
+#[cfg(feature = "compute")]
 #[test]
 fn mixed_tree_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
     let tree = mech_syntax::parse(
@@ -989,6 +1010,7 @@ result
     assert!(rendered.contains("DimensionMismatch"));
 }
 
+#[cfg(feature = "compute")]
 #[test]
 fn mixed_root_preserves_imports_in_coordinator_and_compute_products() {
     let mut resolver = InMemorySourceResolver::new();
@@ -1051,6 +1073,7 @@ result
     );
 }
 
+#[cfg(feature = "compute")]
 #[test]
 fn mixed_compilation_rejects_multiple_compute_regions_for_v04() {
     let tree = mech_syntax::parse(

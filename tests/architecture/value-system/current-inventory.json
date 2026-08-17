@@ -12,6 +12,12 @@
     "hosts/console/src/module.rs",
     "hosts/console/src/native.rs",
     "hosts/console/src/provider.rs",
+    "hosts/gpu/src/batched/jit.rs",
+    "hosts/gpu/src/batched/mod.rs",
+    "hosts/gpu/src/compute_backends.rs",
+    "hosts/gpu/src/compute_provider.rs",
+    "hosts/gpu/src/lib.rs",
+    "hosts/gpu/src/native.rs",
     "hosts/robot-arm/src/lib.rs",
     "hosts/robot-arm/src/module.rs",
     "hosts/robot-arm/src/provider.rs",
@@ -236,8 +242,10 @@
     "src/cli/commands/format/mod.rs",
     "src/cli/commands/format/publication/mod.rs",
     "src/cli/commands/mod.rs",
+    "src/cli/commands/repl.rs",
     "src/cli/commands/run.rs",
     "src/cli/commands/serve.rs",
+    "src/cli/compute.rs",
     "src/cli/config.rs",
     "src/cli/host_configuration.rs",
     "src/cli/host_factories.rs",
@@ -250,6 +258,14 @@
     "src/cli/run_options.rs",
     "src/cli/runtime_plan.rs",
     "src/cli/serve_options.rs",
+    "src/compute/src/diagnostic.rs",
+    "src/compute/src/fixed_shape.rs",
+    "src/compute/src/ir.rs",
+    "src/compute/src/lib.rs",
+    "src/compute/src/placement.rs",
+    "src/compute/src/port.rs",
+    "src/compute/src/program.rs",
+    "src/compute/src/registry.rs",
     "src/core/src/dimension.rs",
     "src/core/src/element.rs",
     "src/core/src/error.rs",
@@ -609,12 +625,14 @@
     "src/syntax/src/state_machines.rs",
     "src/syntax/src/statements.rs",
     "src/syntax/src/structures.rs",
+    "src/wasm/src/gpu.rs",
     "src/wasm/src/host/authority.rs",
     "src/wasm/src/host/browser_host.rs",
     "src/wasm/src/host/error.rs",
     "src/wasm/src/host/mod.rs",
     "src/wasm/src/host/resource.rs",
     "src/wasm/src/lib.rs",
+    "src/wasm/src/mixed_compute.rs",
     "src/wasm/src/project.rs",
     "src/wasm/src/websocket.rs",
     "src/web_host.rs"
@@ -749,6 +767,26 @@
           "kinds": [
             "test"
           ],
+          "name": "mech_repl",
+          "reachable_rust_files": [
+            "tests/mech_repl.rs"
+          ],
+          "root": "tests/mech_repl.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
+          "name": "mech_repl_ctrlc",
+          "reachable_rust_files": [
+            "tests/mech_repl_ctrlc.rs"
+          ],
+          "root": "tests/mech_repl_ctrlc.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
           "name": "mech_serve",
           "reachable_rust_files": [
             "tests/mech_serve.rs",
@@ -797,6 +835,72 @@
             "hosts/console/tests/provider.rs"
           ],
           "root": "hosts/console/tests/provider.rs"
+        }
+      ]
+    },
+    {
+      "manifest": "hosts/gpu/Cargo.toml",
+      "package": "mech-gpu",
+      "targets": [
+        {
+          "kinds": [
+            "example"
+          ],
+          "name": "compute_backend_benchmark",
+          "reachable_rust_files": [
+            "hosts/gpu/examples/compute_backend_benchmark.rs"
+          ],
+          "root": "hosts/gpu/examples/compute_backend_benchmark.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
+          "name": "parallel_ekf",
+          "reachable_rust_files": [
+            "hosts/gpu/tests/parallel_ekf.rs"
+          ],
+          "root": "hosts/gpu/tests/parallel_ekf.rs"
+        },
+        {
+          "kinds": [
+            "example"
+          ],
+          "name": "parallel_ekf_benchmark",
+          "reachable_rust_files": [
+            "hosts/gpu/examples/parallel_ekf_benchmark.rs"
+          ],
+          "root": "hosts/gpu/examples/parallel_ekf_benchmark.rs"
+        },
+        {
+          "kinds": [
+            "example"
+          ],
+          "name": "parallel_ekf_rust_scalar",
+          "reachable_rust_files": [
+            "hosts/gpu/examples/parallel_ekf_rust_scalar.rs"
+          ],
+          "root": "hosts/gpu/examples/parallel_ekf_rust_scalar.rs"
+        },
+        {
+          "kinds": [
+            "example"
+          ],
+          "name": "particle_benchmark",
+          "reachable_rust_files": [
+            "hosts/gpu/examples/particle_benchmark.rs"
+          ],
+          "root": "hosts/gpu/examples/particle_benchmark.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
+          "name": "particle_source",
+          "reachable_rust_files": [
+            "hosts/gpu/tests/particle_source.rs"
+          ],
+          "root": "hosts/gpu/tests/particle_source.rs"
         }
       ]
     },
@@ -1574,6 +1678,16 @@
           "kinds": [
             "test"
           ],
+          "name": "compute_regions",
+          "reachable_rust_files": [
+            "src/syntax/tests/compute_regions.rs"
+          ],
+          "root": "src/syntax/tests/compute_regions.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
           "name": "context_parser",
           "reachable_rust_files": [
             "src/syntax/tests/context_parser.rs"
@@ -1956,6 +2070,18 @@
     "hosts/console/src/native.rs",
     "hosts/console/src/provider.rs",
     "hosts/console/tests/provider.rs",
+    "hosts/gpu/examples/compute_backend_benchmark.rs",
+    "hosts/gpu/examples/parallel_ekf_benchmark.rs",
+    "hosts/gpu/examples/parallel_ekf_rust_scalar.rs",
+    "hosts/gpu/examples/particle_benchmark.rs",
+    "hosts/gpu/src/batched/jit.rs",
+    "hosts/gpu/src/batched/mod.rs",
+    "hosts/gpu/src/compute_backends.rs",
+    "hosts/gpu/src/compute_provider.rs",
+    "hosts/gpu/src/lib.rs",
+    "hosts/gpu/src/native.rs",
+    "hosts/gpu/tests/parallel_ekf.rs",
+    "hosts/gpu/tests/particle_source.rs",
     "hosts/robot-arm/src/lib.rs",
     "hosts/robot-arm/src/module.rs",
     "hosts/robot-arm/src/provider.rs",
@@ -2203,8 +2329,10 @@
     "src/cli/commands/format/publication/tests.rs",
     "src/cli/commands/format/tests.rs",
     "src/cli/commands/mod.rs",
+    "src/cli/commands/repl.rs",
     "src/cli/commands/run.rs",
     "src/cli/commands/serve.rs",
+    "src/cli/compute.rs",
     "src/cli/config.rs",
     "src/cli/host_configuration.rs",
     "src/cli/host_factories.rs",
@@ -2217,6 +2345,14 @@
     "src/cli/run_options.rs",
     "src/cli/runtime_plan.rs",
     "src/cli/serve_options.rs",
+    "src/compute/src/diagnostic.rs",
+    "src/compute/src/fixed_shape.rs",
+    "src/compute/src/ir.rs",
+    "src/compute/src/lib.rs",
+    "src/compute/src/placement.rs",
+    "src/compute/src/port.rs",
+    "src/compute/src/program.rs",
+    "src/compute/src/registry.rs",
     "src/core/benches/solve_result_overhead.rs",
     "src/core/benches/value_state_journal.rs",
     "src/core/src/dimension.rs",
@@ -2760,15 +2896,18 @@
     "src/syntax/src/state_machines.rs",
     "src/syntax/src/statements.rs",
     "src/syntax/src/structures.rs",
+    "src/syntax/tests/compute_regions.rs",
     "src/syntax/tests/context_parser.rs",
     "src/syntax/tests/formatter.rs",
     "src/syntax/tests/module_imports.rs",
+    "src/wasm/src/gpu.rs",
     "src/wasm/src/host/authority.rs",
     "src/wasm/src/host/browser_host.rs",
     "src/wasm/src/host/error.rs",
     "src/wasm/src/host/mod.rs",
     "src/wasm/src/host/resource.rs",
     "src/wasm/src/lib.rs",
+    "src/wasm/src/mixed_compute.rs",
     "src/wasm/src/project.rs",
     "src/wasm/src/websocket.rs",
     "src/wasm/tests/bytecode_v1.rs",
@@ -2798,6 +2937,8 @@
     "tests/mech_build.rs",
     "tests/mech_cli_host.rs",
     "tests/mech_format_shims.rs",
+    "tests/mech_repl.rs",
+    "tests/mech_repl_ctrlc.rs",
     "tests/mech_serve.rs",
     "tests/support/bytecode/catalog.rs",
     "tests/support/bytecode/dynamic_matrix_factory.rs",
@@ -5387,12 +5528,12 @@
           {
             "column": 44,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 729
+            "line": 849
           },
           {
             "column": 42,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 748
+            "line": 868
           }
         ]
       },
@@ -5435,7 +5576,7 @@
           {
             "column": 21,
             "fingerprint": "8d1667e96ba3fd611f35d9b0a9cdbdfc26d21887adb48d29de7b3a80e0eec8c8",
-            "line": 1021
+            "line": 1035
           }
         ]
       },
@@ -6498,17 +6639,17 @@
           {
             "column": 37,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 785
+            "line": 794
           },
           {
             "column": 38,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 795
+            "line": 804
           },
           {
             "column": 34,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 805
+            "line": 814
           }
         ]
       },
@@ -6530,12 +6671,12 @@
           {
             "column": 30,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 628
+            "line": 645
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1049
+            "line": 1073
           }
         ]
       },
@@ -6664,7 +6805,7 @@
           {
             "column": 22,
             "fingerprint": "890eb217a3ab79d0f13b3b4d1faf927cb3a71b9ec85ee2f8c711c11d417a5c42",
-            "line": 10
+            "line": 90
           }
         ]
       },
@@ -6686,17 +6827,17 @@
           {
             "column": 39,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 533
+            "line": 718
           },
           {
             "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 574
+            "line": 759
           },
           {
             "column": 43,
             "fingerprint": "65b4b58cb20e5223130687830656c33e29ae47e12817fb17e5df776819218be2",
-            "line": 579
+            "line": 764
           }
         ]
       },
@@ -6853,282 +6994,282 @@
           {
             "column": 33,
             "fingerprint": "a2c47e623d0950a07ba37b298643a902d709088f4946f5608c1a32a091adb66b",
-            "line": 475
+            "line": 480
           },
           {
             "column": 23,
             "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-            "line": 482
+            "line": 487
           },
           {
             "column": 57,
             "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-            "line": 486
+            "line": 491
           },
           {
             "column": 33,
             "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-            "line": 498
+            "line": 503
           },
           {
             "column": 23,
             "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-            "line": 516
+            "line": 521
           },
           {
             "column": 27,
             "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-            "line": 522
+            "line": 527
           },
           {
             "column": 33,
             "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-            "line": 534
+            "line": 539
           },
           {
             "column": 23,
             "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-            "line": 546
+            "line": 551
           },
           {
             "column": 34,
             "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-            "line": 549
+            "line": 554
           },
           {
             "column": 33,
             "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-            "line": 555
+            "line": 560
           },
           {
             "column": 21,
             "fingerprint": "20799a9c414ec42fbd941873a396c5bfa8062297a6ec6ba6cfee4a1fd41afcbe",
-            "line": 791
+            "line": 911
           },
           {
             "column": 15,
             "fingerprint": "95ad659912976e5de46221cab9754c4b078c9bf117526ded8a04cbc033ef5cd1",
-            "line": 814
+            "line": 934
           },
           {
             "column": 26,
             "fingerprint": "819ca25b7387d6f4adb252e92cd05324962792e1e1692195eac1f5c24c4bcfba",
-            "line": 855
+            "line": 975
           },
           {
             "column": 28,
             "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-            "line": 877
+            "line": 997
           },
           {
             "column": 40,
             "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-            "line": 878
+            "line": 998
           },
           {
             "column": 15,
             "fingerprint": "2a2660ba89e59fa354b9be1aa56f77811212a6e5e2f48c27aff5870a9196a075",
-            "line": 883
+            "line": 1003
           },
           {
             "column": 22,
             "fingerprint": "ade4e5ec50dc0e790c9713c74dff78ae214c84f907e811555ec4be4ae7be8364",
-            "line": 924
+            "line": 1044
           },
           {
             "column": 37,
             "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-            "line": 930
+            "line": 1050
           },
           {
             "column": 36,
             "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-            "line": 931
+            "line": 1051
           },
           {
             "column": 39,
             "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-            "line": 933
+            "line": 1053
           },
           {
             "column": 15,
             "fingerprint": "caef8a5105027e8eccc034058ec8522386aadcf9367b7d8fa59468d20645ac0c",
-            "line": 979
+            "line": 1099
           },
           {
             "column": 15,
             "fingerprint": "225bd9a58d5ee8643c62637e6f173fde2ba197c2cf27a9d8c066243091521f5f",
-            "line": 1027
+            "line": 1147
           },
           {
             "column": 23,
             "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-            "line": 1045
+            "line": 1165
           },
           {
             "column": 20,
             "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-            "line": 1046
+            "line": 1166
           },
           {
             "column": 18,
             "fingerprint": "cb83dea1380f273071c7cb9c33aef765258ff680f7ccd0311c3a953024bf5d1f",
-            "line": 1078
+            "line": 1198
           },
           {
             "column": 39,
             "fingerprint": "4248a05882d9a3161ff4f705bf7379207cb93032069a67b01f62ae5a43cd4486",
-            "line": 1087
+            "line": 1207
           },
           {
             "column": 45,
             "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-            "line": 1296
+            "line": 1416
           },
           {
             "column": 44,
             "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-            "line": 1297
+            "line": 1417
           },
           {
             "column": 15,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1684
+            "line": 1802
           },
           {
             "column": 15,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1714
+            "line": 1832
           },
           {
             "column": 48,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1737
+            "line": 1855
           },
           {
             "column": 47,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1744
+            "line": 1862
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1753
+            "line": 1871
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1761
+            "line": 1879
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1771
+            "line": 1889
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1780
+            "line": 1898
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1796
+            "line": 1914
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1805
+            "line": 1923
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1820
+            "line": 1938
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1830
+            "line": 1948
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1987
+            "line": 2105
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 1996
+            "line": 2114
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 2031
+            "line": 2149
           },
           {
             "column": 24,
             "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-            "line": 2046
+            "line": 2164
           },
           {
             "column": 73,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2251
+            "line": 2369
           },
           {
             "column": 28,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2256
+            "line": 2374
           },
           {
             "column": 28,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2257
+            "line": 2375
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2307
+            "line": 2425
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2313
+            "line": 2431
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2323
+            "line": 2441
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2332
+            "line": 2450
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2359
+            "line": 2477
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2368
+            "line": 2486
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2378
+            "line": 2496
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2388
+            "line": 2506
           },
           {
             "column": 24,
             "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-            "line": 2400
+            "line": 2518
           }
         ]
       },
@@ -7498,17 +7639,17 @@
           {
             "column": 24,
             "fingerprint": "440c30eb9e1327c3d671c04f729449899a476d3484d77015ebb3018c3b755e46",
-            "line": 1584
+            "line": 1594
           },
           {
             "column": 24,
             "fingerprint": "440c30eb9e1327c3d671c04f729449899a476d3484d77015ebb3018c3b755e46",
-            "line": 1593
+            "line": 1603
           },
           {
             "column": 24,
             "fingerprint": "440c30eb9e1327c3d671c04f729449899a476d3484d77015ebb3018c3b755e46",
-            "line": 1620
+            "line": 1630
           }
         ]
       },
@@ -7519,22 +7660,22 @@
           {
             "column": 18,
             "fingerprint": "0e06e49cf3b52fe24c362ece1f7405704832481c7217f869c33db600cba0e55a",
-            "line": 588
+            "line": 756
           },
           {
             "column": 18,
             "fingerprint": "2a2ac725863b0346c451a949cd04320b5ad0c3d3552f69533dd81f92ff3ce991",
-            "line": 609
+            "line": 777
           },
           {
             "column": 24,
             "fingerprint": "96401447f3f8bdec4e5b223c8d7c4e05a4b249e77f773122190931b2e9cb60f2",
-            "line": 617
+            "line": 785
           },
           {
             "column": 25,
             "fingerprint": "ad6c92bc9095c7e2f7a1b5d031f5e7b919b47ee8f82dc31802a59ad7a9b235ee",
-            "line": 677
+            "line": 845
           }
         ]
       }
@@ -7547,72 +7688,72 @@
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1772
-          },
-          {
-            "column": 23,
-            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1781
-          },
-          {
-            "column": 23,
-            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1807
-          },
-          {
-            "column": 23,
-            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1822
-          },
-          {
-            "column": 34,
-            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1832
-          },
-          {
-            "column": 23,
-            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
             "line": 1890
           },
           {
+            "column": 23,
+            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+            "line": 1899
+          },
+          {
+            "column": 23,
+            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+            "line": 1925
+          },
+          {
+            "column": 23,
+            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+            "line": 1940
+          },
+          {
             "column": 34,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 1898
+            "line": 1950
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 2032
+            "line": 2008
+          },
+          {
+            "column": 34,
+            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+            "line": 2016
           },
           {
             "column": 23,
             "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-            "line": 2047
+            "line": 2150
+          },
+          {
+            "column": 23,
+            "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+            "line": 2165
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2324
+            "line": 2442
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2333
+            "line": 2451
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2350
+            "line": 2468
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2379
+            "line": 2497
           },
           {
             "column": 23,
             "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-            "line": 2389
+            "line": 2507
           }
         ]
       },
@@ -7696,7 +7837,7 @@
           {
             "column": 49,
             "fingerprint": "3602d18e3d350b4e79858b57d8b98b02eab48d74b804e6e4ebe59f3ecc33ff68",
-            "line": 1042
+            "line": 1036
           }
         ]
       }
@@ -8395,7 +8536,7 @@
         ]
       },
       {
-        "count": 7,
+        "count": 9,
         "path": "src/core/src/function/mod.rs",
         "sites": [
           {
@@ -8405,33 +8546,43 @@
           },
           {
             "column": 8,
+            "fingerprint": "c60d65f881b6dbf1ecd2532f3ef57bc148f730d5caded88f34193c32e3d037e8",
+            "line": 664
+          },
+          {
+            "column": 23,
+            "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
+            "line": 665
+          },
+          {
+            "column": 8,
             "fingerprint": "679ffbc4ee068e5bc0805a0c5a7c6a19ea407d8ba9207fb5bb4f9b3f7663ecb8",
-            "line": 728
+            "line": 848
           },
           {
             "column": 37,
             "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-            "line": 752
+            "line": 872
           },
           {
             "column": 12,
             "fingerprint": "474cfa7f83bfc0cf9f4aeaab1c869bea6487401834d5f542ad542464864b5c91",
-            "line": 1481
+            "line": 1601
           },
           {
             "column": 53,
             "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-            "line": 1484
+            "line": 1604
           },
           {
             "column": 12,
             "fingerprint": "d793a45b648a050b1db6882b1395596b4595e3315babc55c1acbc8b21254a64b",
-            "line": 2220
+            "line": 2338
           },
           {
             "column": 18,
             "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-            "line": 2225
+            "line": 2343
           }
         ]
       },
@@ -8628,12 +8779,12 @@
           {
             "column": 37,
             "fingerprint": "8eb1014081d90b151d1324e55d9c2a27c47e61a3d5d43bdbe96bcb852855e933",
-            "line": 522
+            "line": 524
           },
           {
             "column": 27,
             "fingerprint": "8eb1014081d90b151d1324e55d9c2a27c47e61a3d5d43bdbe96bcb852855e933",
-            "line": 531
+            "line": 533
           }
         ]
       },
@@ -8991,12 +9142,12 @@
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 239
+            "line": 246
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 627
+            "line": 644
           }
         ]
       },
@@ -9409,12 +9560,12 @@
           {
             "column": 43,
             "fingerprint": "ae9d410aed935f72c1ef211953646ad7ceab0b0d5f28e7e165b0d372233b2cb4",
-            "line": 701
+            "line": 821
           },
           {
             "column": 26,
             "fingerprint": "ae9d410aed935f72c1ef211953646ad7ceab0b0d5f28e7e165b0d372233b2cb4",
-            "line": 709
+            "line": 829
           }
         ]
       },
@@ -9597,12 +9748,12 @@
           {
             "column": 17,
             "fingerprint": "a7221dd462aa67377c700321125d1bd78d3cf8b6f107c83663c668268c184c38",
-            "line": 926
+            "line": 920
           },
           {
             "column": 17,
             "fingerprint": "117d07c93f8bf93d2cde47e7d6cf3393e834efce33b352b93fe2eae17b26e001",
-            "line": 1034
+            "line": 1028
           }
         ]
       },
@@ -9714,17 +9865,17 @@
           {
             "column": 57,
             "fingerprint": "7a18ad3437a39de4ab4216e3471457a402dfcb4f004584c7ba108891faee4134",
-            "line": 122
+            "line": 170
           },
           {
             "column": 92,
             "fingerprint": "7a18ad3437a39de4ab4216e3471457a402dfcb4f004584c7ba108891faee4134",
-            "line": 172
+            "line": 220
           },
           {
             "column": 10,
             "fingerprint": "7a18ad3437a39de4ab4216e3471457a402dfcb4f004584c7ba108891faee4134",
-            "line": 187
+            "line": 235
           }
         ]
       },
@@ -11578,12 +11729,12 @@
           {
             "column": 31,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 729
+            "line": 849
           },
           {
             "column": 29,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 748
+            "line": 868
           }
         ]
       },
@@ -11626,7 +11777,7 @@
           {
             "column": 8,
             "fingerprint": "539a0175df8e8aaf575c532a2215f291bd11189ea93305893559bdc8911e0465",
-            "line": 1021
+            "line": 1035
           }
         ]
       },
@@ -12628,17 +12779,17 @@
           {
             "column": 24,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 785
+            "line": 794
           },
           {
             "column": 25,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 795
+            "line": 804
           },
           {
             "column": 21,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 805
+            "line": 814
           }
         ]
       },
@@ -12660,12 +12811,12 @@
           {
             "column": 17,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 628
+            "line": 645
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1049
+            "line": 1073
           }
         ]
       },
@@ -12794,7 +12945,7 @@
           {
             "column": 9,
             "fingerprint": "14a176b255327fc84b4407ed2e5754472ae120364c6038b2d628c48e98e0a008",
-            "line": 10
+            "line": 90
           }
         ]
       },
@@ -12816,17 +12967,17 @@
           {
             "column": 26,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 533
+            "line": 718
           },
           {
             "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 574
+            "line": 759
           },
           {
             "column": 30,
             "fingerprint": "4cb42bb02f42a32ae6aef73e6cc41820e96d404232c9abd326437c2683d29e1d",
-            "line": 579
+            "line": 764
           }
         ]
       },
@@ -12993,22 +13144,22 @@
           {
             "column": 23,
             "fingerprint": "243d86031fb6ee9553865ebea08aba9c6e7bb0ac6cd87b4d3da93b178fcb9333",
-            "line": 496
+            "line": 498
           },
           {
             "column": 23,
             "fingerprint": "63575b48514dc00d856fdd01e77a0e0346c9a3ee2b9d0dd63cd0696b322e385a",
-            "line": 721
+            "line": 728
           },
           {
             "column": 14,
             "fingerprint": "76f0e1a7fd8fbad0758de8bc19af95cc16db407aa52eda4950aafa44f152b6c9",
-            "line": 987
+            "line": 994
           },
           {
             "column": 27,
             "fingerprint": "2aeb9ac0ac4446b086a2f1628dc1935e3d30f17ae31e09028f2d4839a2fc7966",
-            "line": 1303
+            "line": 1310
           }
         ]
       }
@@ -13090,7 +13241,7 @@
           {
             "column": 13,
             "fingerprint": "a7064e15b43e5a137c42bbf1c2e15d79f83f595bbfc64c3ef4706c68a583cca7",
-            "line": 1036
+            "line": 1050
           }
         ]
       },
@@ -13419,12 +13570,12 @@
           {
             "column": 10,
             "fingerprint": "99781254eea7c0b8c0b43555c26cb7e1b588aec2873d524c1124c8db7353fc13",
-            "line": 783
+            "line": 807
           },
           {
             "column": 27,
             "fingerprint": "99781254eea7c0b8c0b43555c26cb7e1b588aec2873d524c1124c8db7353fc13",
-            "line": 784
+            "line": 808
           }
         ]
       },
@@ -13516,282 +13667,282 @@
             {
               "column": 33,
               "fingerprint": "a2c47e623d0950a07ba37b298643a902d709088f4946f5608c1a32a091adb66b",
-              "line": 475
+              "line": 480
             },
             {
               "column": 23,
               "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-              "line": 482
+              "line": 487
             },
             {
               "column": 57,
               "fingerprint": "6cef3b4e01e15034cd12465b6b7d223bd7b5093269f43e44f2303f4184bf05c7",
-              "line": 486
+              "line": 491
             },
             {
               "column": 33,
               "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-              "line": 498
+              "line": 503
             },
             {
               "column": 23,
               "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-              "line": 516
+              "line": 521
             },
             {
               "column": 27,
               "fingerprint": "5133b1fa2b8a3d87e0a48e6e946403a46ce37756f4cfeaf0cb5b0b63d224b74d",
-              "line": 522
+              "line": 527
             },
             {
               "column": 33,
               "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-              "line": 534
+              "line": 539
             },
             {
               "column": 23,
               "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-              "line": 546
+              "line": 551
             },
             {
               "column": 34,
               "fingerprint": "fe5fd0f96597b0115276e0ea9851f9cee10e45a265fea95bec85bcd454df3c4c",
-              "line": 549
+              "line": 554
             },
             {
               "column": 33,
               "fingerprint": "08082e2959d27dd25f4f0ce6b1367bba894876d7d78ac274a7b1d27c811fbd4d",
-              "line": 555
+              "line": 560
             },
             {
               "column": 21,
               "fingerprint": "20799a9c414ec42fbd941873a396c5bfa8062297a6ec6ba6cfee4a1fd41afcbe",
-              "line": 791
+              "line": 911
             },
             {
               "column": 15,
               "fingerprint": "95ad659912976e5de46221cab9754c4b078c9bf117526ded8a04cbc033ef5cd1",
-              "line": 814
+              "line": 934
             },
             {
               "column": 26,
               "fingerprint": "819ca25b7387d6f4adb252e92cd05324962792e1e1692195eac1f5c24c4bcfba",
-              "line": 855
+              "line": 975
             },
             {
               "column": 28,
               "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-              "line": 877
+              "line": 997
             },
             {
               "column": 40,
               "fingerprint": "050336a774734149052eba642b47c5c697068a5261346177e93330d3707db007",
-              "line": 878
+              "line": 998
             },
             {
               "column": 15,
               "fingerprint": "2a2660ba89e59fa354b9be1aa56f77811212a6e5e2f48c27aff5870a9196a075",
-              "line": 883
+              "line": 1003
             },
             {
               "column": 22,
               "fingerprint": "ade4e5ec50dc0e790c9713c74dff78ae214c84f907e811555ec4be4ae7be8364",
-              "line": 924
+              "line": 1044
             },
             {
               "column": 37,
               "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-              "line": 930
+              "line": 1050
             },
             {
               "column": 36,
               "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-              "line": 931
+              "line": 1051
             },
             {
               "column": 39,
               "fingerprint": "122227e64ff9a9af15a8697df48589e47f48cd014e76ae35c842fb1782f4f0d2",
-              "line": 933
+              "line": 1053
             },
             {
               "column": 15,
               "fingerprint": "caef8a5105027e8eccc034058ec8522386aadcf9367b7d8fa59468d20645ac0c",
-              "line": 979
+              "line": 1099
             },
             {
               "column": 15,
               "fingerprint": "225bd9a58d5ee8643c62637e6f173fde2ba197c2cf27a9d8c066243091521f5f",
-              "line": 1027
+              "line": 1147
             },
             {
               "column": 23,
               "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-              "line": 1045
+              "line": 1165
             },
             {
               "column": 20,
               "fingerprint": "6c5a4b106d3bee8d29154ffd07eb43fb22bfe26855ac2d2d65904f907f575ff4",
-              "line": 1046
+              "line": 1166
             },
             {
               "column": 18,
               "fingerprint": "cb83dea1380f273071c7cb9c33aef765258ff680f7ccd0311c3a953024bf5d1f",
-              "line": 1078
+              "line": 1198
             },
             {
               "column": 39,
               "fingerprint": "4248a05882d9a3161ff4f705bf7379207cb93032069a67b01f62ae5a43cd4486",
-              "line": 1087
+              "line": 1207
             },
             {
               "column": 45,
               "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-              "line": 1296
+              "line": 1416
             },
             {
               "column": 44,
               "fingerprint": "5b4ea13ad7bc850a8fca9c963abe490b0f3d38c7227ac94544905bfca6005c06",
-              "line": 1297
+              "line": 1417
             },
             {
               "column": 15,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1684
+              "line": 1802
             },
             {
               "column": 15,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1714
+              "line": 1832
             },
             {
               "column": 48,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1737
+              "line": 1855
             },
             {
               "column": 47,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1744
+              "line": 1862
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1753
+              "line": 1871
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1761
+              "line": 1879
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1771
+              "line": 1889
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1780
+              "line": 1898
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1796
+              "line": 1914
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1805
+              "line": 1923
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1820
+              "line": 1938
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1830
+              "line": 1948
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1987
+              "line": 2105
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 1996
+              "line": 2114
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 2031
+              "line": 2149
             },
             {
               "column": 24,
               "fingerprint": "5efae39e984dc35004794f0a9b73269804fd19e80f1b6f185d8c2406f94d8efb",
-              "line": 2046
+              "line": 2164
             },
             {
               "column": 73,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2251
+              "line": 2369
             },
             {
               "column": 28,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2256
+              "line": 2374
             },
             {
               "column": 28,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2257
+              "line": 2375
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2307
+              "line": 2425
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2313
+              "line": 2431
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2323
+              "line": 2441
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2332
+              "line": 2450
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2359
+              "line": 2477
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2368
+              "line": 2486
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2378
+              "line": 2496
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2388
+              "line": 2506
             },
             {
               "column": 24,
               "fingerprint": "bfca3ad78ce00c580b4032fdd643d3c544fbf237ce5976e5abff050057b5b45a",
-              "line": 2400
+              "line": 2518
             }
           ]
         },
@@ -14161,17 +14312,17 @@
             {
               "column": 24,
               "fingerprint": "440c30eb9e1327c3d671c04f729449899a476d3484d77015ebb3018c3b755e46",
-              "line": 1584
+              "line": 1594
             },
             {
               "column": 24,
               "fingerprint": "440c30eb9e1327c3d671c04f729449899a476d3484d77015ebb3018c3b755e46",
-              "line": 1593
+              "line": 1603
             },
             {
               "column": 24,
               "fingerprint": "440c30eb9e1327c3d671c04f729449899a476d3484d77015ebb3018c3b755e46",
-              "line": 1620
+              "line": 1630
             }
           ]
         },
@@ -14182,22 +14333,22 @@
             {
               "column": 18,
               "fingerprint": "0e06e49cf3b52fe24c362ece1f7405704832481c7217f869c33db600cba0e55a",
-              "line": 588
+              "line": 756
             },
             {
               "column": 18,
               "fingerprint": "2a2ac725863b0346c451a949cd04320b5ad0c3d3552f69533dd81f92ff3ce991",
-              "line": 609
+              "line": 777
             },
             {
               "column": 24,
               "fingerprint": "96401447f3f8bdec4e5b223c8d7c4e05a4b249e77f773122190931b2e9cb60f2",
-              "line": 617
+              "line": 785
             },
             {
               "column": 25,
               "fingerprint": "ad6c92bc9095c7e2f7a1b5d031f5e7b919b47ee8f82dc31802a59ad7a9b235ee",
-              "line": 677
+              "line": 845
             }
           ]
         }
@@ -14341,7 +14492,7 @@
             {
               "column": 49,
               "fingerprint": "3602d18e3d350b4e79858b57d8b98b02eab48d74b804e6e4ebe59f3ecc33ff68",
-              "line": 1042
+              "line": 1036
             }
           ]
         }
@@ -14429,22 +14580,22 @@
             {
               "column": 23,
               "fingerprint": "243d86031fb6ee9553865ebea08aba9c6e7bb0ac6cd87b4d3da93b178fcb9333",
-              "line": 496
+              "line": 498
             },
             {
               "column": 23,
               "fingerprint": "63575b48514dc00d856fdd01e77a0e0346c9a3ee2b9d0dd63cd0696b322e385a",
-              "line": 721
+              "line": 728
             },
             {
               "column": 14,
               "fingerprint": "76f0e1a7fd8fbad0758de8bc19af95cc16db407aa52eda4950aafa44f152b6c9",
-              "line": 987
+              "line": 994
             },
             {
               "column": 27,
               "fingerprint": "2aeb9ac0ac4446b086a2f1628dc1935e3d30f17ae31e09028f2d4839a2fc7966",
-              "line": 1303
+              "line": 1310
             }
           ]
         }
@@ -14461,72 +14612,72 @@
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1772
-            },
-            {
-              "column": 23,
-              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1781
-            },
-            {
-              "column": 23,
-              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1807
-            },
-            {
-              "column": 23,
-              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1822
-            },
-            {
-              "column": 34,
-              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1832
-            },
-            {
-              "column": 23,
-              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
               "line": 1890
             },
             {
+              "column": 23,
+              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+              "line": 1899
+            },
+            {
+              "column": 23,
+              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+              "line": 1925
+            },
+            {
+              "column": 23,
+              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+              "line": 1940
+            },
+            {
               "column": 34,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 1898
+              "line": 1950
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 2032
+              "line": 2008
+            },
+            {
+              "column": 34,
+              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+              "line": 2016
             },
             {
               "column": 23,
               "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
-              "line": 2047
+              "line": 2150
+            },
+            {
+              "column": 23,
+              "fingerprint": "96a29d21ff7f56a850c8494e47c0c57efc4f8bcd01c0910e0f81876c39ce0736",
+              "line": 2165
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2324
+              "line": 2442
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2333
+              "line": 2451
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2350
+              "line": 2468
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2379
+              "line": 2497
             },
             {
               "column": 23,
               "fingerprint": "7fd365a3a403a1278aa80a12e1fbff32547b01b66fda7284223391dcdeaef294",
-              "line": 2389
+              "line": 2507
             }
           ]
         },
@@ -15184,7 +15335,7 @@
           ]
         },
         {
-          "count": 7,
+          "count": 9,
           "path": "src/core/src/function/mod.rs",
           "sites": [
             {
@@ -15194,33 +15345,43 @@
             },
             {
               "column": 8,
+              "fingerprint": "c60d65f881b6dbf1ecd2532f3ef57bc148f730d5caded88f34193c32e3d037e8",
+              "line": 664
+            },
+            {
+              "column": 23,
+              "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
+              "line": 665
+            },
+            {
+              "column": 8,
               "fingerprint": "679ffbc4ee068e5bc0805a0c5a7c6a19ea407d8ba9207fb5bb4f9b3f7663ecb8",
-              "line": 728
+              "line": 848
             },
             {
               "column": 37,
               "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-              "line": 752
+              "line": 872
             },
             {
               "column": 12,
               "fingerprint": "474cfa7f83bfc0cf9f4aeaab1c869bea6487401834d5f542ad542464864b5c91",
-              "line": 1481
+              "line": 1601
             },
             {
               "column": 53,
               "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-              "line": 1484
+              "line": 1604
             },
             {
               "column": 12,
               "fingerprint": "d793a45b648a050b1db6882b1395596b4595e3315babc55c1acbc8b21254a64b",
-              "line": 2220
+              "line": 2338
             },
             {
               "column": 18,
               "fingerprint": "18f7797a88a273cebe586cbd7efa3821844d1c6265e9ca3199325c866214123d",
-              "line": 2225
+              "line": 2343
             }
           ]
         },
@@ -15417,12 +15578,12 @@
             {
               "column": 37,
               "fingerprint": "8eb1014081d90b151d1324e55d9c2a27c47e61a3d5d43bdbe96bcb852855e933",
-              "line": 522
+              "line": 524
             },
             {
               "column": 27,
               "fingerprint": "8eb1014081d90b151d1324e55d9c2a27c47e61a3d5d43bdbe96bcb852855e933",
-              "line": 531
+              "line": 533
             }
           ]
         },
@@ -15780,12 +15941,12 @@
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 239
+              "line": 246
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 627
+              "line": 644
             }
           ]
         },
@@ -17617,7 +17778,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 1054,
+      "line": 1068,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Atom"
     },
@@ -17883,28 +18044,28 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 809,
+      "line": 818,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "Atom"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 865,
+      "line": 889,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Atom"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 149,
+      "line": 148,
       "path": "src/engine/src/literals.rs",
       "variant": "Atom"
     },
     {
       "column": 23,
       "enum": "LegacyValue",
-      "line": 193,
+      "line": 285,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Atom"
     },
@@ -18450,14 +18611,14 @@
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 331,
+      "line": 330,
       "path": "src/engine/src/literals.rs",
       "variant": "Bool"
     },
     {
       "column": 59,
       "enum": "LegacyValue",
-      "line": 597,
+      "line": 782,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Bool"
     },
@@ -18520,14 +18681,14 @@
     {
       "column": 54,
       "enum": "LegacyValue",
-      "line": 50,
+      "line": 90,
       "path": "src/runtime/src/input.rs",
       "variant": "Bool"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 186,
+      "line": 231,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "Bool"
     },
@@ -18870,14 +19031,14 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 173,
+      "line": 172,
       "path": "src/engine/src/literals.rs",
       "variant": "C64"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 175,
+      "line": 174,
       "path": "src/engine/src/literals.rs",
       "variant": "C64"
     },
@@ -18926,7 +19087,7 @@
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 695,
+      "line": 815,
       "path": "src/core/src/function/mod.rs",
       "variant": "Empty"
     },
@@ -19269,14 +19430,14 @@
     {
       "column": 33,
       "enum": "LegacyValue",
-      "line": 1358,
+      "line": 1365,
       "path": "src/engine/src/interpreter/mod.rs",
       "variant": "Empty"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1390,
+      "line": 1397,
       "path": "src/engine/src/interpreter/mod.rs",
       "variant": "Empty"
     },
@@ -19381,21 +19542,21 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 774,
+      "line": 798,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 776,
+      "line": 800,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 777,
+      "line": 801,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
@@ -19507,133 +19668,133 @@
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 321,
+      "line": 320,
       "path": "src/engine/src/literals.rs",
       "variant": "Empty"
     },
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 31,
+      "line": 111,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 39,
+      "line": 122,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 19,
       "enum": "LegacyValue",
-      "line": 51,
+      "line": 143,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 84,
+      "line": 176,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 23,
       "enum": "LegacyValue",
-      "line": 126,
+      "line": 218,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 23,
       "enum": "LegacyValue",
-      "line": 155,
+      "line": 247,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 19,
       "enum": "LegacyValue",
-      "line": 216,
+      "line": 384,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 272,
+      "line": 440,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 295,
+      "line": 463,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 337,
+      "line": 505,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 367,
+      "line": 535,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 395,
+      "line": 563,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 421,
+      "line": 589,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 440,
+      "line": 608,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 45,
       "enum": "LegacyValue",
-      "line": 443,
+      "line": 611,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 447,
+      "line": 615,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 452,
+      "line": 620,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
     {
       "column": 20,
       "enum": "LegacyValue",
-      "line": 635,
+      "line": 803,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Empty"
     },
@@ -19647,21 +19808,21 @@
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 569,
+      "line": 754,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Empty"
     },
     {
       "column": 28,
       "enum": "LegacyValue",
-      "line": 575,
+      "line": 760,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Empty"
     },
     {
       "column": 28,
       "enum": "LegacyValue",
-      "line": 580,
+      "line": 765,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "Empty"
     },
@@ -19787,7 +19948,7 @@
     {
       "column": 48,
       "enum": "LegacyValue",
-      "line": 48,
+      "line": 88,
       "path": "src/runtime/src/input.rs",
       "variant": "Empty"
     },
@@ -19850,21 +20011,21 @@
     {
       "column": 20,
       "enum": "LegacyValue",
-      "line": 646,
+      "line": 660,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "EmptyKind"
     },
     {
       "column": 20,
       "enum": "LegacyValue",
-      "line": 653,
+      "line": 667,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "EmptyKind"
     },
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1032,
+      "line": 1046,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "EmptyKind"
     },
@@ -20088,14 +20249,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 793,
+      "line": 817,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "EmptyKind"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 794,
+      "line": 818,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "EmptyKind"
     },
@@ -20172,7 +20333,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 1115,
+      "line": 1129,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Enum"
     },
@@ -20438,7 +20599,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 875,
+      "line": 899,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Enum"
     },
@@ -21103,14 +21264,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 227,
+      "line": 226,
       "path": "src/engine/src/literals.rs",
       "variant": "F32"
     },
     {
       "column": 34,
       "enum": "LegacyValue",
-      "line": 227,
+      "line": 226,
       "path": "src/engine/src/literals.rs",
       "variant": "F32"
     },
@@ -21122,10 +21283,24 @@
       "variant": "F32"
     },
     {
+      "column": 13,
+      "enum": "LegacyValue",
+      "line": 61,
+      "path": "src/runtime/src/input.rs",
+      "variant": "F32"
+    },
+    {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 134,
+      "line": 174,
       "path": "src/runtime/src/input.rs",
+      "variant": "F32"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 162,
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "F32"
     },
     {
@@ -21873,35 +22048,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 225,
+      "line": 224,
       "path": "src/engine/src/literals.rs",
       "variant": "F64"
     },
     {
       "column": 34,
       "enum": "LegacyValue",
-      "line": 225,
+      "line": 224,
       "path": "src/engine/src/literals.rs",
       "variant": "F64"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 297,
+      "line": 296,
       "path": "src/engine/src/literals.rs",
       "variant": "F64"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 305,
+      "line": 304,
       "path": "src/engine/src/literals.rs",
       "variant": "F64"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 311,
+      "line": 310,
       "path": "src/engine/src/literals.rs",
       "variant": "F64"
     },
@@ -21941,9 +22116,16 @@
       "variant": "F64"
     },
     {
+      "column": 13,
+      "enum": "LegacyValue",
+      "line": 63,
+      "path": "src/runtime/src/input.rs",
+      "variant": "F64"
+    },
+    {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 141,
+      "line": 181,
       "path": "src/runtime/src/input.rs",
       "variant": "F64"
     },
@@ -21971,7 +22153,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 211,
+      "line": 256,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "F64"
     },
@@ -22461,14 +22643,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 223,
+      "line": 222,
       "path": "src/engine/src/literals.rs",
       "variant": "I128"
     },
     {
       "column": 35,
       "enum": "LegacyValue",
-      "line": 223,
+      "line": 222,
       "path": "src/engine/src/literals.rs",
       "variant": "I128"
     },
@@ -22482,7 +22664,7 @@
     {
       "column": 54,
       "enum": "LegacyValue",
-      "line": 127,
+      "line": 167,
       "path": "src/runtime/src/input.rs",
       "variant": "I128"
     },
@@ -22958,14 +23140,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 217,
+      "line": 216,
       "path": "src/engine/src/literals.rs",
       "variant": "I16"
     },
     {
       "column": 34,
       "enum": "LegacyValue",
-      "line": 217,
+      "line": 216,
       "path": "src/engine/src/literals.rs",
       "variant": "I16"
     },
@@ -22979,7 +23161,7 @@
     {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 106,
+      "line": 146,
       "path": "src/runtime/src/input.rs",
       "variant": "I16"
     },
@@ -23462,14 +23644,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 219,
+      "line": 218,
       "path": "src/engine/src/literals.rs",
       "variant": "I32"
     },
     {
       "column": 34,
       "enum": "LegacyValue",
-      "line": 219,
+      "line": 218,
       "path": "src/engine/src/literals.rs",
       "variant": "I32"
     },
@@ -23483,7 +23665,7 @@
     {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 113,
+      "line": 153,
       "path": "src/runtime/src/input.rs",
       "variant": "I32"
     },
@@ -23987,42 +24169,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 221,
+      "line": 220,
       "path": "src/engine/src/literals.rs",
       "variant": "I64"
     },
     {
       "column": 34,
       "enum": "LegacyValue",
-      "line": 221,
+      "line": 220,
       "path": "src/engine/src/literals.rs",
       "variant": "I64"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 257,
+      "line": 256,
       "path": "src/engine/src/literals.rs",
       "variant": "I64"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 264,
+      "line": 263,
       "path": "src/engine/src/literals.rs",
       "variant": "I64"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 271,
+      "line": 270,
       "path": "src/engine/src/literals.rs",
       "variant": "I64"
     },
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 278,
+      "line": 277,
       "path": "src/engine/src/literals.rs",
       "variant": "I64"
     },
@@ -24050,7 +24232,7 @@
     {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 120,
+      "line": 160,
       "path": "src/runtime/src/input.rs",
       "variant": "I64"
     },
@@ -24526,14 +24708,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 215,
+      "line": 214,
       "path": "src/engine/src/literals.rs",
       "variant": "I8"
     },
     {
       "column": 33,
       "enum": "LegacyValue",
-      "line": 215,
+      "line": 214,
       "path": "src/engine/src/literals.rs",
       "variant": "I8"
     },
@@ -24547,7 +24729,7 @@
     {
       "column": 52,
       "enum": "LegacyValue",
-      "line": 99,
+      "line": 139,
       "path": "src/runtime/src/input.rs",
       "variant": "I8"
     },
@@ -24785,7 +24967,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 207,
+      "line": 299,
       "path": "src/engine/src/mechdown.rs",
       "variant": "Id"
     },
@@ -26871,14 +27053,14 @@
     {
       "column": 55,
       "enum": "LegacyValue",
-      "line": 147,
+      "line": 187,
       "path": "src/runtime/src/input.rs",
       "variant": "Index"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 223,
+      "line": 268,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "Index"
     },
@@ -28754,7 +28936,7 @@
     {
       "column": 20,
       "enum": "LegacyValue",
-      "line": 637,
+      "line": 651,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Kind"
     },
@@ -29055,21 +29237,21 @@
     {
       "column": 43,
       "enum": "LegacyValue",
-      "line": 793,
+      "line": 802,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "Kind"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 764,
+      "line": 788,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Kind"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 765,
+      "line": 789,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Kind"
     },
@@ -29251,7 +29433,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 871,
+      "line": 885,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Map"
     },
@@ -29531,7 +29713,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 855,
+      "line": 879,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Map"
     },
@@ -29580,7 +29762,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1186,
+      "line": 1200,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixBool"
     },
@@ -31638,7 +31820,7 @@
     {
       "column": 20,
       "enum": "LegacyValue",
-      "line": 155,
+      "line": 195,
       "path": "src/runtime/src/input.rs",
       "variant": "MatrixBool"
     },
@@ -31680,7 +31862,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1309,
+      "line": 1323,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixC64"
     },
@@ -33633,7 +33815,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1271,
+      "line": 1285,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixF32"
     },
@@ -33864,7 +34046,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 853,
+      "line": 862,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixF32"
     },
@@ -33894,6 +34076,27 @@
       "enum": "LegacyValue",
       "line": 709,
       "path": "src/runtime/src/host/arg.rs",
+      "variant": "MatrixF32"
+    },
+    {
+      "column": 13,
+      "enum": "LegacyValue",
+      "line": 65,
+      "path": "src/runtime/src/input.rs",
+      "variant": "MatrixF32"
+    },
+    {
+      "column": 20,
+      "enum": "LegacyValue",
+      "line": 238,
+      "path": "src/runtime/src/input.rs",
+      "variant": "MatrixF32"
+    },
+    {
+      "column": 20,
+      "enum": "LegacyValue",
+      "line": 58,
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "MatrixF32"
     },
     {
@@ -35642,7 +35845,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1276,
+      "line": 1290,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixF64"
     },
@@ -36006,7 +36209,7 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 956,
+      "line": 950,
       "path": "src/engine/src/efficacy/ekf/closure.rs",
       "variant": "MatrixF64"
     },
@@ -36083,7 +36286,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 857,
+      "line": 866,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixF64"
     },
@@ -36116,16 +36319,23 @@
       "variant": "MatrixF64"
     },
     {
-      "column": 20,
+      "column": 13,
       "enum": "LegacyValue",
-      "line": 187,
+      "line": 71,
       "path": "src/runtime/src/input.rs",
       "variant": "MatrixF64"
     },
     {
-      "column": 19,
+      "column": 20,
       "enum": "LegacyValue",
-      "line": 59,
+      "line": 227,
+      "path": "src/runtime/src/input.rs",
+      "variant": "MatrixF64"
+    },
+    {
+      "column": 20,
+      "enum": "LegacyValue",
+      "line": 68,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "MatrixF64"
     },
@@ -36167,7 +36377,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1266,
+      "line": 1280,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI128"
     },
@@ -36398,7 +36608,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 849,
+      "line": 858,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixI128"
     },
@@ -36461,7 +36671,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1236,
+      "line": 1250,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI16"
     },
@@ -36692,7 +36902,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 837,
+      "line": 846,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixI16"
     },
@@ -36755,7 +36965,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1246,
+      "line": 1260,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI32"
     },
@@ -36986,7 +37196,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 841,
+      "line": 850,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixI32"
     },
@@ -37049,7 +37259,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1256,
+      "line": 1270,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI64"
     },
@@ -37280,7 +37490,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 845,
+      "line": 854,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixI64"
     },
@@ -37343,7 +37553,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1226,
+      "line": 1240,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI8"
     },
@@ -37574,7 +37784,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 833,
+      "line": 842,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixI8"
     },
@@ -37644,7 +37854,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1315,
+      "line": 1329,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixIndex"
     },
@@ -40395,7 +40605,7 @@
     {
       "column": 20,
       "enum": "LegacyValue",
-      "line": 171,
+      "line": 211,
       "path": "src/runtime/src/input.rs",
       "variant": "MatrixIndex"
     },
@@ -40437,7 +40647,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1300,
+      "line": 1314,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixR64"
     },
@@ -40703,7 +40913,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1285,
+      "line": 1299,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixString"
     },
@@ -41004,7 +41214,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1216,
+      "line": 1230,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU128"
     },
@@ -41235,7 +41445,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 829,
+      "line": 838,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixU128"
     },
@@ -41298,7 +41508,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1196,
+      "line": 1210,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU16"
     },
@@ -41529,7 +41739,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 817,
+      "line": 826,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixU16"
     },
@@ -41592,7 +41802,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1201,
+      "line": 1215,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU32"
     },
@@ -41823,7 +42033,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 821,
+      "line": 830,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixU32"
     },
@@ -41886,7 +42096,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1206,
+      "line": 1220,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU64"
     },
@@ -42117,7 +42327,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 825,
+      "line": 834,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixU64"
     },
@@ -42187,7 +42397,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1191,
+      "line": 1205,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU8"
     },
@@ -42418,7 +42628,7 @@
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 813,
+      "line": 822,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MatrixU8"
     },
@@ -42831,14 +43041,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 804,
+      "line": 828,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MatrixValue"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 805,
+      "line": 829,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MatrixValue"
     },
@@ -42936,7 +43146,14 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 45,
+      "line": 41,
+      "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
+      "variant": "MatrixValue"
+    },
+    {
+      "column": 21,
+      "enum": "LegacyValue",
+      "line": 72,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "MatrixValue"
     },
@@ -44693,14 +44910,14 @@
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 729,
+      "line": 849,
       "path": "src/core/src/function/mod.rs",
       "variant": "MutableReference"
     },
     {
       "column": 29,
       "enum": "LegacyValue",
-      "line": 748,
+      "line": 868,
       "path": "src/core/src/function/mod.rs",
       "variant": "MutableReference"
     },
@@ -44735,7 +44952,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 1021,
+      "line": 1035,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MutableReference"
     },
@@ -45827,21 +46044,21 @@
     {
       "column": 24,
       "enum": "LegacyValue",
-      "line": 785,
+      "line": 794,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MutableReference"
     },
     {
       "column": 25,
       "enum": "LegacyValue",
-      "line": 795,
+      "line": 804,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MutableReference"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 805,
+      "line": 814,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "MutableReference"
     },
@@ -45855,14 +46072,14 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 628,
+      "line": 645,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1049,
+      "line": 1073,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MutableReference"
     },
@@ -46009,7 +46226,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 10,
+      "line": 90,
       "path": "src/engine/src/mechdown.rs",
       "variant": "MutableReference"
     },
@@ -46023,21 +46240,21 @@
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 533,
+      "line": 718,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "MutableReference"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 574,
+      "line": 759,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "MutableReference"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 579,
+      "line": 764,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "MutableReference"
     },
@@ -46436,7 +46653,7 @@
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 250,
+      "line": 249,
       "path": "src/engine/src/literals.rs",
       "variant": "R64"
     },
@@ -46506,7 +46723,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 827,
+      "line": 841,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Record"
     },
@@ -46814,7 +47031,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 845,
+      "line": 869,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Record"
     },
@@ -47192,7 +47409,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 922,
+      "line": 936,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Set"
     },
@@ -47465,7 +47682,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 825,
+      "line": 849,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Set"
     },
@@ -47920,77 +48137,77 @@
     {
       "column": 5,
       "enum": "LegacyValue",
-      "line": 317,
+      "line": 316,
       "path": "src/engine/src/literals.rs",
       "variant": "String"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 223,
+      "line": 391,
       "path": "src/engine/src/mechdown.rs",
       "variant": "String"
     },
     {
       "column": 35,
       "enum": "LegacyValue",
-      "line": 234,
+      "line": 402,
       "path": "src/engine/src/mechdown.rs",
       "variant": "String"
     },
     {
       "column": 24,
       "enum": "LegacyValue",
-      "line": 536,
+      "line": 721,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 537,
+      "line": 722,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 540,
+      "line": 725,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 543,
+      "line": 728,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 546,
+      "line": 731,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 549,
+      "line": 734,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 552,
+      "line": 737,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 555,
+      "line": 740,
       "path": "src/engine/src/program/compiler_planning.rs",
       "variant": "String"
     },
@@ -48130,14 +48347,14 @@
     {
       "column": 56,
       "enum": "LegacyValue",
-      "line": 57,
+      "line": 97,
       "path": "src/runtime/src/input.rs",
       "variant": "String"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 231,
+      "line": 276,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "String"
     },
@@ -48235,7 +48452,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 993,
+      "line": 1007,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Table"
     },
@@ -48648,7 +48865,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 815,
+      "line": 839,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Table"
     },
@@ -48774,7 +48991,7 @@
     {
       "column": 8,
       "enum": "LegacyValue",
-      "line": 785,
+      "line": 799,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Tuple"
     },
@@ -49124,7 +49341,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 835,
+      "line": 859,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Tuple"
     },
@@ -49299,7 +49516,7 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 1036,
+      "line": 1050,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Typed"
     },
@@ -49642,14 +49859,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 783,
+      "line": 807,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Typed"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 784,
+      "line": 808,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Typed"
     },
@@ -50160,7 +50377,7 @@
     {
       "column": 54,
       "enum": "LegacyValue",
-      "line": 92,
+      "line": 132,
       "path": "src/runtime/src/input.rs",
       "variant": "U128"
     },
@@ -50643,7 +50860,7 @@
     {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 71,
+      "line": 111,
       "path": "src/runtime/src/input.rs",
       "variant": "U16"
     },
@@ -51126,7 +51343,7 @@
     {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 78,
+      "line": 118,
       "path": "src/runtime/src/input.rs",
       "variant": "U32"
     },
@@ -51658,7 +51875,7 @@
     {
       "column": 53,
       "enum": "LegacyValue",
-      "line": 85,
+      "line": 125,
       "path": "src/runtime/src/input.rs",
       "variant": "U64"
     },
@@ -52148,7 +52365,7 @@
     {
       "column": 52,
       "enum": "LegacyValue",
-      "line": 64,
+      "line": 104,
       "path": "src/runtime/src/input.rs",
       "variant": "U8"
     },
@@ -52197,14 +52414,14 @@
     {
       "column": 50,
       "enum": "ValueKind",
-      "line": 646,
+      "line": 660,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Any"
     },
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 691,
+      "line": 705,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Any"
     },
@@ -52295,7 +52512,7 @@
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 1647,
+      "line": 1776,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Any"
     },
@@ -52428,7 +52645,7 @@
     {
       "column": 43,
       "enum": "ValueKind",
-      "line": 718,
+      "line": 732,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Atom"
     },
@@ -52554,7 +52771,7 @@
     {
       "column": 30,
       "enum": "ValueKind",
-      "line": 687,
+      "line": 701,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Bool"
     },
@@ -52729,7 +52946,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 684,
+      "line": 698,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "C64"
     },
@@ -52918,7 +53135,7 @@
     {
       "column": 31,
       "enum": "ValueKind",
-      "line": 690,
+      "line": 704,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Empty"
     },
@@ -53002,7 +53219,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1647,
+      "line": 1776,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Empty"
     },
@@ -53198,7 +53415,7 @@
     {
       "column": 43,
       "enum": "ValueKind",
-      "line": 707,
+      "line": 721,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Enum"
     },
@@ -53443,7 +53660,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 682,
+      "line": 696,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "F32"
     },
@@ -53835,7 +54052,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 683,
+      "line": 697,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "F64"
     },
@@ -54248,7 +54465,7 @@
     {
       "column": 30,
       "enum": "ValueKind",
-      "line": 681,
+      "line": 695,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "I128"
     },
@@ -54563,7 +54780,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 678,
+      "line": 692,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "I16"
     },
@@ -54878,7 +55095,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 679,
+      "line": 693,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "I32"
     },
@@ -55193,7 +55410,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 680,
+      "line": 694,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "I64"
     },
@@ -55508,7 +55725,7 @@
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 677,
+      "line": 691,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "I8"
     },
@@ -55830,7 +56047,7 @@
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 688,
+      "line": 702,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Id"
     },
@@ -55928,7 +56145,7 @@
     {
       "column": 31,
       "enum": "ValueKind",
-      "line": 689,
+      "line": 703,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Index"
     },
@@ -56243,7 +56460,7 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 752,
+      "line": 766,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Kind"
     },
@@ -56278,14 +56495,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1636,
+      "line": 1765,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Kind"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1638,
+      "line": 1767,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Kind"
     },
@@ -56355,7 +56572,7 @@
     {
       "column": 44,
       "enum": "ValueKind",
-      "line": 714,
+      "line": 728,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Map"
     },
@@ -56418,21 +56635,21 @@
     {
       "column": 36,
       "enum": "ValueKind",
-      "line": 473,
+      "line": 476,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Map"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1593,
+      "line": 1722,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Map"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1597,
+      "line": 1726,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Map"
     },
@@ -56537,7 +56754,7 @@
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 698,
+      "line": 712,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Matrix"
     },
@@ -56817,21 +57034,21 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 471,
+      "line": 474,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Matrix"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1574,
+      "line": 1703,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Matrix"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1577,
+      "line": 1706,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Matrix"
     },
@@ -57062,14 +57279,14 @@
     {
       "column": 61,
       "enum": "ValueKind",
-      "line": 793,
+      "line": 802,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "Matrix"
     },
     {
       "column": 46,
       "enum": "ValueKind",
-      "line": 798,
+      "line": 807,
       "path": "src/engine/src/intrinsics/convert/scalar.rs",
       "variant": "Matrix"
     },
@@ -57174,14 +57391,14 @@
     {
       "column": 50,
       "enum": "ValueKind",
-      "line": 653,
+      "line": 667,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "None"
     },
     {
       "column": 30,
       "enum": "ValueKind",
-      "line": 692,
+      "line": 706,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "None"
     },
@@ -57223,7 +57440,7 @@
     {
       "column": 45,
       "enum": "ValueKind",
-      "line": 1647,
+      "line": 1776,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "None"
     },
@@ -57300,14 +57517,14 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 749,
+      "line": 763,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Option"
     },
     {
       "column": 23,
       "enum": "ValueKind",
-      "line": 1030,
+      "line": 1044,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Option"
     },
@@ -57440,14 +57657,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1632,
+      "line": 1761,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Option"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1634,
+      "line": 1763,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Option"
     },
@@ -57692,7 +57909,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 685,
+      "line": 699,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "R64"
     },
@@ -57867,7 +58084,7 @@
     {
       "column": 40,
       "enum": "ValueKind",
-      "line": 708,
+      "line": 722,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Record"
     },
@@ -57930,14 +58147,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1581,
+      "line": 1710,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Record"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1591,
+      "line": 1720,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Record"
     },
@@ -58049,7 +58266,7 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 737,
+      "line": 751,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Reference"
     },
@@ -58070,28 +58287,28 @@
     {
       "column": 32,
       "enum": "ValueKind",
-      "line": 207,
+      "line": 226,
       "path": "src/core/src/program/compiler/context.rs",
       "variant": "Reference"
     },
     {
       "column": 22,
       "enum": "ValueKind",
-      "line": 210,
+      "line": 229,
       "path": "src/core/src/program/compiler/context.rs",
       "variant": "Reference"
     },
     {
       "column": 32,
       "enum": "ValueKind",
-      "line": 719,
+      "line": 811,
       "path": "src/core/src/program/compiler/context.rs",
       "variant": "Reference"
     },
     {
       "column": 39,
       "enum": "ValueKind",
-      "line": 721,
+      "line": 813,
       "path": "src/core/src/program/compiler/context.rs",
       "variant": "Reference"
     },
@@ -58147,14 +58364,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1570,
+      "line": 1699,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Reference"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1648,
+      "line": 1777,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Reference"
     },
@@ -58315,7 +58532,7 @@
     {
       "column": 50,
       "enum": "ValueKind",
-      "line": 739,
+      "line": 753,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Set"
     },
@@ -58385,21 +58602,21 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 473,
+      "line": 476,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Set"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1625,
+      "line": 1754,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Set"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1628,
+      "line": 1757,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Set"
     },
@@ -58483,7 +58700,7 @@
     {
       "column": 32,
       "enum": "ValueKind",
-      "line": 686,
+      "line": 700,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "String"
     },
@@ -58728,7 +58945,7 @@
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 722,
+      "line": 736,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Table"
     },
@@ -58756,14 +58973,14 @@
     {
       "column": 25,
       "enum": "ValueKind",
-      "line": 213,
+      "line": 232,
       "path": "src/core/src/program/compiler/context.rs",
       "variant": "Table"
     },
     {
       "column": 25,
       "enum": "ValueKind",
-      "line": 214,
+      "line": 233,
       "path": "src/core/src/program/compiler/context.rs",
       "variant": "Table"
     },
@@ -58819,21 +59036,21 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 472,
+      "line": 475,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Table"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1601,
+      "line": 1730,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Table"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1611,
+      "line": 1740,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Table"
     },
@@ -59001,7 +59218,7 @@
     {
       "column": 38,
       "enum": "ValueKind",
-      "line": 730,
+      "line": 744,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "Tuple"
     },
@@ -59071,14 +59288,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1613,
+      "line": 1742,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Tuple"
     },
     {
       "column": 14,
       "enum": "ValueKind",
-      "line": 1623,
+      "line": 1752,
       "path": "src/engine/src/artifact/compiler.rs",
       "variant": "Tuple"
     },
@@ -59190,7 +59407,7 @@
     {
       "column": 30,
       "enum": "ValueKind",
-      "line": 676,
+      "line": 690,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "U128"
     },
@@ -59512,7 +59729,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 673,
+      "line": 687,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "U16"
     },
@@ -59834,7 +60051,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 674,
+      "line": 688,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "U32"
     },
@@ -60156,7 +60373,7 @@
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 675,
+      "line": 689,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "U64"
     },
@@ -60478,7 +60695,7 @@
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 672,
+      "line": 686,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "U8"
     },
@@ -60761,7 +60978,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 863
+      "rust_file_count": 890
     },
     {
       "directory": "hosts/browser",
@@ -60774,6 +60991,12 @@
       "manifest": "hosts/console/Cargo.toml",
       "name": "mech-console",
       "rust_file_count": 6
+    },
+    {
+      "directory": "hosts/gpu",
+      "manifest": "hosts/gpu/Cargo.toml",
+      "name": "mech-gpu",
+      "rust_file_count": 12
     },
     {
       "directory": "hosts/robot-arm",
@@ -60824,6 +61047,12 @@
       "rust_file_count": 1
     },
     {
+      "directory": "src/compute",
+      "manifest": "src/compute/Cargo.toml",
+      "name": "mech-compute",
+      "rust_file_count": 8
+    },
+    {
       "directory": "src/core",
       "manifest": "src/core/Cargo.toml",
       "name": "mech-core",
@@ -60851,13 +61080,13 @@
       "directory": "src/syntax",
       "manifest": "src/syntax/Cargo.toml",
       "name": "mech-syntax",
-      "rust_file_count": 19
+      "rust_file_count": 20
     },
     {
       "directory": "src/wasm",
       "manifest": "src/wasm/Cargo.toml",
       "name": "mech-wasm",
-      "rust_file_count": 10
+      "rust_file_count": 12
     },
     {
       "directory": "tests/fixtures/native-live-host",

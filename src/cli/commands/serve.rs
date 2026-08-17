@@ -166,7 +166,7 @@ pub(crate) fn command() -> Command {
             Arg::new("backend")
                 .long("backend")
                 .value_name("BACKEND")
-                .value_parser(["auto", "cpu", "gpu"])
+                .value_parser(crate::cli::STABLE_COMPUTE_BACKEND_SELECTORS)
                 .help("Selects the backend for neutral @compute regions"),
         )
         .arg(
@@ -840,5 +840,21 @@ mod tests {
         let javascript = project_javascript_with_backend("export {};", Some("cpu"));
         assert!(javascript.contains("__MECH_COMPUTE_BACKEND_OVERRIDE = 'cpu'"));
         assert!(javascript.ends_with("export {};"));
+    }
+
+    #[test]
+    fn serve_command_uses_the_stable_compute_selector_policy() {
+        let matches = command()
+            .try_get_matches_from(["serve", "--backend", "wgpu"])
+            .unwrap();
+        assert_eq!(
+            matches.get_one::<String>("backend").map(String::as_str),
+            Some("wgpu")
+        );
+
+        let error = command()
+            .try_get_matches_from(["serve", "--backend", "cpu-simd"])
+            .expect_err("shipping serve command must reject experimental backends");
+        assert_eq!(error.kind(), clap::error::ErrorKind::InvalidValue);
     }
 }

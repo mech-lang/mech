@@ -104,6 +104,13 @@ pub struct ProgramArtifactCompilationError {
 }
 
 #[cfg(feature = "semantic-compiler")]
+#[derive(Clone, Copy)]
+enum ProgramBytecodeEncoding {
+    Semantic,
+    FrozenV1ImplementationIdentities,
+}
+
+#[cfg(feature = "semantic-compiler")]
 impl MechErrorKind for ProgramArtifactCompilationError {
     fn name(&self) -> &str {
         "ProgramArtifactCompilationError"
@@ -403,7 +410,20 @@ impl CompilerPlanningProgram {
     #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
-        self.finalize_program_product(compiled)
+        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
+    }
+
+    /// Reproduces the pre-semantic-operation bytecode-v1 encoding for the
+    /// checked-in compatibility corpus. Product compilation must otherwise
+    /// use [`Self::compile_program_product`].
+    #[doc(hidden)]
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_frozen_v1_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
+        let compiled = compile_bytecode(self)?;
+        self.finalize_program_product(
+            compiled,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
+        )
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -413,7 +433,7 @@ impl CompilerPlanningProgram {
     ) -> MResult<ProgramCompilationProduct> {
         let mut compiled = compile_bytecode(self)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        self.finalize_program_product(compiled)
+        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
     }
 
     /// Finalizes a source compiler product after replacing generic send names
@@ -429,13 +449,32 @@ impl CompilerPlanningProgram {
         let mut compiled = compile_bytecode(self)?;
         preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        self.finalize_program_product(compiled)
+        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
+    }
+
+    /// Compatibility-corpus counterpart to
+    /// [`Self::compile_program_product_with_resource_send_operations`].
+    #[doc(hidden)]
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_frozen_v1_program_product_with_resource_send_operations(
+        &mut self,
+        resolver: &dyn ExternalRequirementContractResolver,
+        operations: &[CompiledResourceSendOperation],
+    ) -> MResult<ProgramCompilationProduct> {
+        let mut compiled = compile_bytecode(self)?;
+        preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
+        resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
+        self.finalize_program_product(
+            compiled,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
+        )
     }
 
     #[cfg(feature = "semantic-compiler")]
     fn finalize_program_product(
         &self,
         compiled: CompilerPlanningBytecode,
+        bytecode_encoding: ProgramBytecodeEncoding,
     ) -> MResult<ProgramCompilationProduct> {
         let artifact = compile_executable_program_artifact_with_outputs(
             &compiled.bytecode,
@@ -451,15 +490,53 @@ impl CompilerPlanningProgram {
             )
             .with_compiler_loc()
         })?;
-        let sections = encode_program_artifact_sections(&artifact).map_err(|error| {
-            MechError::new(
+        if matches!(
+            bytecode_encoding,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities
+        ) && !artifact.compute_regions().is_empty()
+        {
+            return Err(MechError::new(
                 ProgramArtifactCompilationError {
-                    reason: format!("unable to encode source ProgramArtifact: {error:?}"),
+                    reason:
+                        "frozen bytecode-v1 compatibility encoding does not support compute regions"
+                            .to_owned(),
                 },
                 None,
             )
-            .with_compiler_loc()
-        })?;
+            .with_compiler_loc());
+        }
+        let bytecode_artifact = match bytecode_encoding {
+            ProgramBytecodeEncoding::Semantic => None,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities => Some(
+                compile_legacy_bytecode_program_artifact_with_outputs(
+                    &compiled.bytecode,
+                    &compiled.published_outputs,
+                    self.interpreter.function_catalog().as_ref(),
+                )
+                .map_err(|error| {
+                    MechError::new(
+                        ProgramArtifactCompilationError {
+                            reason: format!(
+                                "unable to finalize frozen v1 bytecode projection: {error:?}"
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+            ),
+        };
+        let sections =
+            encode_program_artifact_sections(bytecode_artifact.as_ref().unwrap_or(&artifact))
+                .map_err(|error| {
+                    MechError::new(
+                        ProgramArtifactCompilationError {
+                            reason: format!("unable to encode source ProgramArtifact: {error:?}"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
         let bytecode = write_bytecode_with_artifact(&compiled.bytecode.program, &sections)?;
         Ok(ProgramCompilationProduct { artifact, bytecode })
     }
