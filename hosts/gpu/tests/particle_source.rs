@@ -1,15 +1,24 @@
 use std::collections::BTreeMap;
 
-use mech_compute::{ComputeElementType, TensorLayout};
+use mech_compute::{
+    BackendRequest, ComputeElementType, ComputeInitializerSet, ComputeOutputSelection,
+    ComputePlatform, TensorLayout,
+};
 use mech_core::{
-    Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
-    SectionElement,
+    Body, ComputePlacement, LegacyValue, MechCode, ParsedProgram, Program,
+    ResolvedOperationContract, Section, SectionElement,
 };
 use mech_engine::{SlotRole, decode_program_artifact_sections};
 use mech_gpu::{
-    ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, SlotResidence, TransferDirection,
+    ComputeHostFactory, ExecutionTarget, GpuBindingRole, GpuDiagnosticCode, GpuHost, GpuProgram,
+    SlotResidence, TransferDirection, native_compute_backend_registry,
 };
-use mech_runtime::{ProgramCompiler, RuntimeBuilder, RuntimeHostInputValue};
+use mech_runtime::{
+    ConfigValue, PreparedRuntimeEffect, ProgramCompiler, RuntimeBuilder,
+    RuntimeCapabilityOperation, RuntimeHostFactory, RuntimeHostInputValue,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWriteRequest,
+};
+use std::num::NonZeroU32;
 
 const PARTICLE_SOURCE: &str = r#"
 ~positions := host-positions
@@ -188,6 +197,94 @@ fn lowered_program_exposes_exact_typed_region_ports() {
 }
 
 #[test]
+fn compiler_product_runs_through_the_backend_neutral_cpu_session() {
+    let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
+    let lowered = GpuHost
+        .compile(&artifact)
+        .expect("standalone particle source must lower");
+    let reconstructed = GpuProgram::from_compute_program(lowered.compute_program())
+        .expect("the compute program must be self-contained");
+    assert_eq!(reconstructed.wgsl(), lowered.wgsl());
+
+    let registry = native_compute_backend_registry();
+    let backend = registry
+        .resolve(
+            &BackendRequest::Cpu,
+            ComputePlatform::Native,
+            ComputePlacement::Compute,
+            reconstructed.compute_program(),
+        )
+        .expect("the scalar CPU backend must accept the compiler product");
+    assert_eq!(backend.descriptor().id.as_str(), "cpu-scalar");
+    let executable = backend
+        .compile(reconstructed.compute_program())
+        .expect("the scalar CPU backend must compile the compute program");
+    let mut session = executable
+        .create_session(&ComputeInitializerSet::default())
+        .expect("static particle source needs no live-input initializers");
+    let report = session
+        .dispatch(NonZeroU32::new(2).unwrap())
+        .expect("resident CPU turns must execute");
+    assert_eq!(report.completed_turns, 2);
+    let outputs = session
+        .read_outputs(&ComputeOutputSelection::All)
+        .expect("resident outputs must be readable on request");
+    assert!(!outputs.values.is_empty());
+}
+
+#[test]
+fn ordinary_compute_host_dispatches_the_compiler_product_after_commit() {
+    let artifact = compile_source(STANDALONE_PARTICLE_SOURCE, []);
+    let lowered = GpuHost
+        .compile(&artifact)
+        .expect("standalone particle source must lower");
+    let factory = ComputeHostFactory::new(
+        "particle-field",
+        ComputePlacement::Compute,
+        lowered.compute_program().clone(),
+        ComputeInitializerSet::default(),
+        native_compute_backend_registry(),
+        ComputePlatform::Native,
+    )
+    .unwrap();
+    let settings = ConfigValue::Map(BTreeMap::from([
+        (
+            "region".to_owned(),
+            ConfigValue::String("particle-field".to_owned()),
+        ),
+        ("backend".to_owned(), ConfigValue::String("cpu".to_owned())),
+    ]));
+    let installation = factory.instantiate("particles", &settings).unwrap();
+    let provider = &installation.resource_providers[0];
+    let effect = provider
+        .prepare_write(RuntimeResourceWriteRequest {
+            base_uri: "compute://particles/kernel".to_owned(),
+            path: "turn".to_owned(),
+            context_name: "particles".to_owned(),
+            operation: RuntimeCapabilityOperation::Write,
+            value: LegacyValue::from(1.0_f32),
+            intent: RuntimeResourceWriteIntent::Send,
+        })
+        .unwrap();
+    let PreparedRuntimeEffect::AfterCommit(mut effect) = effect else {
+        panic!("compute dispatch must be deferred until transaction commit")
+    };
+    effect.deliver().unwrap();
+
+    let turns = provider
+        .read(RuntimeResourceReadRequest {
+            base_uri: "compute://particles/kernel".to_owned(),
+            path: "turns".to_owned(),
+            context_name: "particles".to_owned(),
+        })
+        .unwrap();
+    let LegacyValue::F64(turns) = turns else {
+        panic!("turn telemetry must be f64")
+    };
+    assert_eq!(*turns.borrow(), 1.0);
+}
+
+#[test]
 fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
     let source = SERVED_PARTICLE_SOURCE.replacen("1000000f32", "64f32", 1);
     let complete = mech_syntax::parse(&source).expect("complete source must parse");
@@ -349,7 +446,7 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     assert!(
         program
             .wgsl()
-            .contains("// Generated from a typed Mech ProgramArtifact.")
+            .contains("// Generated from a typed Mech ComputeProgram.")
     );
     assert!(program.wgsl().contains("@compute @workgroup_size(64)"));
     assert!(!program.wgsl().contains("gravity"));

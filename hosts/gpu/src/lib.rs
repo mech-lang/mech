@@ -8,8 +8,9 @@ use std::{
 
 use mech_compute::{
     BinaryOperation, ComputeKernel, ComputeProgram, ElementwiseInstruction, ElementwiseIr,
-    ElementwiseLowering, ElementwiseOperation, UnaryOperation, build_compute_region_interface,
-    display_operation, elementwise_lowering, plan_compute_artifact, turn_required_nodes,
+    ElementwiseLowering, ElementwiseOperation, ElementwiseStateStorage, ElementwiseStoragePlan,
+    UnaryOperation, build_compute_region_interface, display_operation, elementwise_lowering,
+    plan_compute_artifact, turn_required_nodes,
 };
 pub use mech_compute::{
     ComputeAdmissionError as GpuAdmissionError, ComputeDiagnostic as GpuDiagnostic,
@@ -38,6 +39,14 @@ pub use native::*;
 mod provider;
 #[cfg(feature = "native")]
 pub use provider::*;
+#[cfg(feature = "native")]
+mod compute_provider;
+#[cfg(feature = "native")]
+pub use compute_provider::*;
+#[cfg(feature = "native")]
+mod compute_backends;
+#[cfg(feature = "native")]
+pub use compute_backends::*;
 pub const WORKGROUP_SIZE: u32 = 64;
 
 #[cfg(test)]
@@ -152,6 +161,135 @@ pub struct OwnedResidentCpuSession {
 }
 
 impl GpuProgram {
+    /// Materializes backend-private bindings and shader text from the
+    /// self-contained backend-neutral program. No compiler artifact is needed
+    /// after this boundary.
+    pub fn from_compute_program(compute: &ComputeProgram) -> Result<Self, GpuAdmissionError> {
+        if !matches!(compute.kernel(), ComputeKernel::Elementwise(_)) {
+            return Err(compute_program_rejection(
+                GpuDiagnosticCode::OperationUnsupported,
+                "the elementwise backend cannot compile a fixed-shape kernel",
+            ));
+        }
+        let storage = compute.elementwise_storage().ok_or_else(|| {
+            compute_program_rejection(
+                GpuDiagnosticCode::ArtifactMalformed,
+                "the compute program has no elementwise storage plan",
+            )
+        })?;
+        let mut bindings = Vec::new();
+        let mut input_slots = BTreeMap::new();
+        for input in &compute.interface().inputs {
+            let elements = u64::try_from(input.elements().map_err(|error| {
+                compute_program_rejection(
+                    GpuDiagnosticCode::ShapeMismatch,
+                    format!("input `{}` has an invalid shape: {error}", input.name),
+                )
+            })?)
+            .map_err(|_| {
+                compute_program_rejection(
+                    GpuDiagnosticCode::ShapeMismatch,
+                    format!("input `{}` element count exceeds u64", input.name),
+                )
+            })?;
+            let binding = bindings.len() as u32;
+            bindings.push(GpuBinding {
+                binding,
+                name: input.name.to_string(),
+                access: GpuBindingAccess::Read,
+                elements,
+                kind: GpuBindingKind::Input(input.slot),
+            });
+            input_slots.insert(input.slot, (input.name.to_string(), elements, binding));
+        }
+
+        let states = storage
+            .states
+            .iter()
+            .map(|state| KernelState {
+                slot: state.slot,
+                source: state.source,
+                elements: state.elements,
+                initializer: state.initializer.to_vec(),
+            })
+            .collect::<Vec<_>>();
+        let mut state_write_bindings = BTreeMap::new();
+        for state in &states {
+            let binding = bindings.len() as u32;
+            bindings.push(GpuBinding {
+                binding,
+                name: format!("state.{}.read", state.slot.get()),
+                access: GpuBindingAccess::Read,
+                elements: state.elements,
+                kind: GpuBindingKind::StateRead(state.slot),
+            });
+        }
+        for state in &states {
+            let binding = bindings.len() as u32;
+            bindings.push(GpuBinding {
+                binding,
+                name: format!("state.{}.write", state.slot.get()),
+                access: GpuBindingAccess::ReadWrite,
+                elements: state.elements,
+                kind: GpuBindingKind::StateWrite(state.slot),
+            });
+            state_write_bindings.insert(state.slot, binding);
+        }
+
+        let mut outputs = Vec::new();
+        for output in &compute.interface().outputs {
+            let elements = u64::try_from(output.elements().map_err(|error| {
+                compute_program_rejection(
+                    GpuDiagnosticCode::ShapeMismatch,
+                    format!("output `{}` has an invalid shape: {error}", output.name),
+                )
+            })?)
+            .map_err(|_| {
+                compute_program_rejection(
+                    GpuDiagnosticCode::ShapeMismatch,
+                    format!("output `{}` element count exceeds u64", output.name),
+                )
+            })?;
+            let binding = if let Some(binding) = state_write_bindings.get(&output.slot) {
+                *binding
+            } else {
+                let binding = bindings.len() as u32;
+                bindings.push(GpuBinding {
+                    binding,
+                    name: output.name.to_string(),
+                    access: GpuBindingAccess::ReadWrite,
+                    elements,
+                    kind: GpuBindingKind::Output(output.slot),
+                });
+                binding
+            };
+            outputs.push(KernelOutput {
+                name: output.name.to_string(),
+                source: output.slot,
+                elements,
+                dimensions: output.dimensions.to_vec(),
+                binding,
+            });
+        }
+
+        let mut program = Self {
+            compute: compute.clone(),
+            wgsl: String::new(),
+            bindings,
+            outputs,
+            states,
+            input_slots,
+            constants: storage
+                .constants
+                .iter()
+                .map(|(id, values)| (*id, values.to_vec()))
+                .collect(),
+            dispatch_elements: storage.dispatch_elements,
+        };
+        program.wgsl = program.generate_wgsl();
+        Ok(program)
+    }
+
     pub fn compute_program(&self) -> &ComputeProgram {
         &self.compute
     }
@@ -189,6 +327,155 @@ impl GpuProgram {
 
     pub fn workgroup_count(&self) -> u32 {
         self.dispatch_elements.div_ceil(u64::from(WORKGROUP_SIZE)) as u32
+    }
+
+    fn generate_wgsl(&self) -> String {
+        let mut shader = String::from("// Generated from a typed Mech ComputeProgram.\n");
+        for binding in &self.bindings {
+            let (name, access) = match binding.kind {
+                GpuBindingKind::Input(slot) => (format!("input_{}", slot.get()), "read"),
+                GpuBindingKind::StateRead(slot) => (format!("state_read_{}", slot.get()), "read"),
+                GpuBindingKind::StateWrite(slot) => {
+                    (format!("state_write_{}", slot.get()), "read_write")
+                }
+                GpuBindingKind::Output(slot) => (format!("output_{}", slot.get()), "read_write"),
+            };
+            shader.push_str(&format!(
+                "@group(0) @binding({}) var<storage, {access}> {name}: array<f32>;\n",
+                binding.binding
+            ));
+        }
+        shader.push_str(&format!(
+            "\n@compute @workgroup_size({WORKGROUP_SIZE})\nfn main(@builtin(global_invocation_id) gid: vec3<u32>) {{\n  let index = gid.x;\n  if (index >= {}u) {{ return; }}\n",
+            self.dispatch_elements
+        ));
+        let ComputeKernel::Elementwise(ir) = self.compute.kernel() else {
+            unreachable!("elementwise GPU program contains a fixed-shape kernel")
+        };
+        for instruction in &ir.instructions {
+            match instruction {
+                ElementwiseInstruction::Apply {
+                    operation,
+                    inputs,
+                    output,
+                    elements,
+                } => {
+                    let inputs = inputs
+                        .iter()
+                        .map(|source| self.wgsl_source(*source, *elements))
+                        .collect::<Vec<_>>();
+                    shader.push_str(&format!(
+                        "  var slot_{} = 0.0;\n  if (index < {elements}u) {{ slot_{} = {}; }}\n",
+                        output.get(),
+                        output.get(),
+                        wgsl_elementwise_expression(*operation, &inputs)
+                    ));
+                }
+                ElementwiseInstruction::Concat2 {
+                    left,
+                    right,
+                    output,
+                    left_elements,
+                    right_elements,
+                } => {
+                    let elements = instruction.elements();
+                    let left = self.wgsl_source_at(*left, *left_elements, "index");
+                    let local_index = format!("concat_index_{}", output.get());
+                    let right = self.wgsl_source_at(*right, *right_elements, &local_index);
+                    shader.push_str(&wgsl_concat2_instruction(
+                        *output,
+                        *left_elements,
+                        elements,
+                        &left,
+                        &right,
+                    ));
+                }
+            }
+        }
+        for state in &self.states {
+            let source = self.wgsl_source(state.source, state.elements);
+            shader.push_str(&format!(
+                "  if (index < {}u) {{ state_write_{}[index] = {source}; }}\n",
+                state.elements,
+                state.slot.get()
+            ));
+        }
+        for output in &self.outputs {
+            if self.states.iter().any(|state| state.slot == output.source) {
+                continue;
+            }
+            let source = if self.input_slots.contains_key(&output.source) {
+                self.wgsl_slot(output.source, output.elements)
+            } else {
+                format!("slot_{}", output.source.get())
+            };
+            if output.elements == self.dispatch_elements {
+                shader.push_str(&format!(
+                    "  output_{}[index] = {source};\n",
+                    output.source.get()
+                ));
+            } else {
+                shader.push_str(&format!(
+                    "  if (index < {}u) {{ output_{}[index] = {source}; }}\n",
+                    output.elements,
+                    output.source.get()
+                ));
+            }
+        }
+        shader.push_str("}\n");
+        shader
+    }
+
+    fn wgsl_source(&self, source: ArtifactSource, consumer_elements: u64) -> String {
+        self.wgsl_source_at(source, consumer_elements, "index")
+    }
+
+    fn wgsl_source_at(
+        &self,
+        source: ArtifactSource,
+        consumer_elements: u64,
+        index: &str,
+    ) -> String {
+        match source {
+            ArtifactSource::Slot(slot) => self.wgsl_slot_at(slot, consumer_elements, index),
+            ArtifactSource::Constant(constant) => {
+                let values = &self.constants[&constant];
+                if values.len() == 1 {
+                    format_wgsl_f32(values[0])
+                } else {
+                    let elements = values.len() as u64;
+                    let rendered = values
+                        .iter()
+                        .copied()
+                        .map(format_wgsl_f32)
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    let index = wgsl_broadcast_index(elements, consumer_elements, index);
+                    format!("array<f32, {elements}>({rendered})[{index}]")
+                }
+            }
+        }
+    }
+
+    fn wgsl_slot(&self, slot: CellSlotId, consumer_elements: u64) -> String {
+        self.wgsl_slot_at(slot, consumer_elements, "index")
+    }
+
+    fn wgsl_slot_at(&self, slot: CellSlotId, consumer_elements: u64, index: &str) -> String {
+        let elements = self
+            .compute
+            .elementwise_storage()
+            .expect("elementwise GPU program has storage")
+            .slot_elements[&slot];
+        if self.input_slots.contains_key(&slot) {
+            let index = wgsl_broadcast_index(elements, consumer_elements, index);
+            format!("input_{}[{index}]", slot.get())
+        } else if self.states.iter().any(|state| state.slot == slot) {
+            let index = wgsl_broadcast_index(elements, consumer_elements, index);
+            format!("state_read_{}[{index}]", slot.get())
+        } else {
+            format!("slot_{}", slot.get())
+        }
     }
 
     /// Executes the admitted fused graph without transactional runtime machinery.
@@ -400,6 +687,20 @@ impl GpuProgram {
     }
 }
 
+fn compute_program_rejection(
+    code: GpuDiagnosticCode,
+    detail: impl Into<String>,
+) -> GpuAdmissionError {
+    GpuAdmissionError {
+        diagnostics: vec![GpuDiagnostic {
+            code,
+            node: None,
+            operation: None,
+            detail: detail.into(),
+        }],
+    }
+}
+
 impl ResidentCpuSession<'_> {
     pub fn update_inputs(
         &mut self,
@@ -428,6 +729,10 @@ impl ResidentCpuSession<'_> {
 }
 
 impl OwnedResidentCpuSession {
+    pub(crate) fn program_ref(&self) -> &GpuProgram {
+        &self.program
+    }
+
     pub fn update_inputs(
         &mut self,
         inputs: &BTreeMap<String, Vec<f32>>,
@@ -630,33 +935,56 @@ impl<'a> Compiler<'a> {
             .chain(self.state_slots.values().map(|state| state.elements))
             .max()
             .unwrap_or(1);
-        let wgsl = self.generate_wgsl(dispatch_elements);
         let states = self
             .state_slots
-            .into_iter()
+            .iter()
             .map(|(slot, state)| KernelState {
+                slot: *slot,
+                source: state.source.expect("validated state has a producer source"),
+                elements: state.elements,
+                initializer: state.initializer.clone(),
+            })
+            .collect::<Vec<_>>();
+        let storage_states = self
+            .state_slots
+            .into_iter()
+            .map(|(slot, state)| ElementwiseStateStorage {
                 slot,
                 source: state.source.expect("validated state has a producer source"),
                 elements: state.elements,
-                initializer: state.initializer,
+                initializer: state.initializer.into(),
             })
-            .collect();
+            .collect::<Vec<_>>();
         let interface =
             build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
         let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
         let kernel = ComputeKernel::Elementwise(ElementwiseIr {
             instructions: self.operations.into_boxed_slice(),
         });
-        Ok(GpuProgram {
-            compute: ComputeProgram::new(interface, plan, kernel),
-            wgsl,
+        let compute = ComputeProgram::new(interface, plan, kernel).with_elementwise_storage(
+            ElementwiseStoragePlan {
+                slot_elements: self.slot_elements.clone(),
+                constants: self
+                    .constants
+                    .iter()
+                    .map(|(id, values)| (*id, values.clone().into()))
+                    .collect(),
+                states: storage_states.into_boxed_slice(),
+                dispatch_elements,
+            },
+        );
+        let mut program = GpuProgram {
+            compute,
+            wgsl: String::new(),
             bindings: self.bindings,
             outputs: self.outputs,
             states,
             input_slots: self.input_slots,
             constants: self.constants,
             dispatch_elements,
-        })
+        };
+        program.wgsl = program.generate_wgsl();
+        Ok(program)
     }
 
     fn validate_program_surface(&mut self) {
@@ -1431,150 +1759,6 @@ impl<'a> Compiler<'a> {
                     }
                 }
             }
-        }
-    }
-
-    fn generate_wgsl(&self, dispatch_elements: u64) -> String {
-        let mut shader = String::from("// Generated from a typed Mech ProgramArtifact.\n");
-        for binding in &self.bindings {
-            let (name, access) = match binding.kind {
-                GpuBindingKind::Input(slot) => (format!("input_{}", slot.get()), "read"),
-                GpuBindingKind::StateRead(slot) => (format!("state_read_{}", slot.get()), "read"),
-                GpuBindingKind::StateWrite(slot) => {
-                    (format!("state_write_{}", slot.get()), "read_write")
-                }
-                GpuBindingKind::Output(slot) => (format!("output_{}", slot.get()), "read_write"),
-            };
-            shader.push_str(&format!(
-                "@group(0) @binding({}) var<storage, {access}> {name}: array<f32>;\n",
-                binding.binding
-            ));
-        }
-        shader.push_str(&format!(
-            "\n@compute @workgroup_size({WORKGROUP_SIZE})\nfn main(@builtin(global_invocation_id) gid: vec3<u32>) {{\n  let index = gid.x;\n  if (index >= {dispatch_elements}u) {{ return; }}\n"
-        ));
-        for instruction in &self.operations {
-            match instruction {
-                ElementwiseInstruction::Apply {
-                    operation,
-                    inputs,
-                    output,
-                    elements,
-                } => {
-                    let inputs = inputs
-                        .iter()
-                        .map(|source| self.wgsl_source(*source, *elements))
-                        .collect::<Vec<_>>();
-                    shader.push_str(&format!(
-                        "  var slot_{} = 0.0;\n  if (index < {elements}u) {{ slot_{} = {}; }}\n",
-                        output.get(),
-                        output.get(),
-                        wgsl_elementwise_expression(*operation, &inputs)
-                    ));
-                }
-                ElementwiseInstruction::Concat2 {
-                    left,
-                    right,
-                    output,
-                    left_elements,
-                    right_elements,
-                } => {
-                    let elements = instruction.elements();
-                    let left = self.wgsl_source_at(*left, *left_elements, "index");
-                    let local_index = format!("concat_index_{}", output.get());
-                    let right = self.wgsl_source_at(*right, *right_elements, &local_index);
-                    shader.push_str(&wgsl_concat2_instruction(
-                        *output,
-                        *left_elements,
-                        elements,
-                        &left,
-                        &right,
-                    ));
-                }
-            }
-        }
-        for state in &self.state_slots {
-            let source = self.wgsl_source(
-                state.1.source.expect("validated state source"),
-                state.1.elements,
-            );
-            shader.push_str(&format!(
-                "  if (index < {}u) {{ state_write_{}[index] = {source}; }}\n",
-                state.1.elements,
-                state.0.get()
-            ));
-        }
-        for output in &self.outputs {
-            if self.state_slots.contains_key(&output.source) {
-                continue;
-            }
-            let source = if self.input_slots.contains_key(&output.source) {
-                self.wgsl_slot(output.source, output.elements)
-            } else {
-                format!("slot_{}", output.source.get())
-            };
-            if output.elements == dispatch_elements {
-                shader.push_str(&format!(
-                    "  output_{}[index] = {source};\n",
-                    output.source.get()
-                ));
-            } else {
-                shader.push_str(&format!(
-                    "  if (index < {}u) {{ output_{}[index] = {source}; }}\n",
-                    output.elements,
-                    output.source.get()
-                ));
-            }
-        }
-        shader.push_str("}\n");
-        shader
-    }
-
-    fn wgsl_source(&self, source: ArtifactSource, consumer_elements: u64) -> String {
-        self.wgsl_source_at(source, consumer_elements, "index")
-    }
-
-    fn wgsl_source_at(
-        &self,
-        source: ArtifactSource,
-        consumer_elements: u64,
-        index: &str,
-    ) -> String {
-        match source {
-            ArtifactSource::Slot(slot) => self.wgsl_slot_at(slot, consumer_elements, index),
-            ArtifactSource::Constant(constant) => {
-                let values = &self.constants[&constant];
-                if values.len() == 1 {
-                    format_wgsl_f32(values[0])
-                } else {
-                    let elements = values.len() as u64;
-                    let rendered = values
-                        .iter()
-                        .copied()
-                        .map(format_wgsl_f32)
-                        .collect::<Vec<_>>()
-                        .join(", ");
-                    let index = wgsl_broadcast_index(elements, consumer_elements, index);
-                    format!("array<f32, {elements}>({rendered})[{index}]")
-                }
-            }
-        }
-    }
-
-    fn wgsl_slot(&self, slot: CellSlotId, consumer_elements: u64) -> String {
-        self.wgsl_slot_at(slot, consumer_elements, "index")
-    }
-
-    fn wgsl_slot_at(&self, slot: CellSlotId, consumer_elements: u64, index: &str) -> String {
-        let elements = self.slot_elements[&slot];
-        if let Some((_, _, _)) = self.input_slots.get(&slot) {
-            let index = wgsl_broadcast_index(elements, consumer_elements, index);
-            format!("input_{}[{index}]", slot.get())
-        } else if self.state_slots.contains_key(&slot) {
-            let index = wgsl_broadcast_index(elements, consumer_elements, index);
-            format!("state_read_{}[{index}]", slot.get())
-        } else {
-            format!("slot_{}", slot.get())
         }
     }
 
