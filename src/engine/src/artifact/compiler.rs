@@ -1128,7 +1128,6 @@ pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
                     role: "node",
                 })?;
                 let dst = semantics.destination;
-                let prior = register(&registers, dst)?;
                 let schema = register_schemas.get(dst as usize).copied().flatten();
                 let pseudo_destination = compiled
                     .register_kinds
@@ -1141,6 +1140,27 @@ pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
                         register: dst,
                     });
                 }
+                if register_constant_roles[dst as usize]
+                    == Some(CompilerConstantRole::ExternalInput)
+                {
+                    let input = input_indexes[dst as usize].ok_or(
+                        ArtifactBuildError::MissingRegisterSource {
+                            instruction: instruction_id,
+                            register: dst,
+                            role: "external input",
+                        },
+                    )?;
+                    set_register(
+                        &mut registers,
+                        dst,
+                        Some(RegisterSemantic {
+                            source: SourceValue::Input(input),
+                            schema: schema.expect("external input has a validated schema"),
+                        }),
+                    )?;
+                    continue;
+                }
+                let prior = register(&registers, dst)?;
                 if is_variable_definition_instruction(instruction, catalog) {
                     if prior.is_none() && !pseudo_destination {
                         return Err(ArtifactBuildError::MissingRegisterSource {

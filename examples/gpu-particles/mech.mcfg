@@ -31,13 +31,13 @@ config := {
       {
         target: "pointer/frame"
         operations: ["read"]
-        paths: ["pulse", "x", "y", "pressed", "delta-seconds"]
+        paths: ["pulse", "position", "pressed", "delta-seconds"]
       }
 
       {
         target: "particles/kernel"
         operations: ["write"]
-        paths: ["input/force-x", "input/force-y", "input/force-strength", "input/dt", "turn"]
+        paths: ["input/force-point", "input/force-strength", "input/dt", "turn"]
       }
     ]
   }

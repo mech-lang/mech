@@ -111,7 +111,7 @@ fn isolated_gpu_tree(source: &str) -> Program {
 }
 
 fn compile_isolated_gpu_source(source: &str) -> mech_engine::ProgramArtifact {
-    let external_input_names = ["force-x", "force-y", "force-strength", "dt"]
+    let external_input_names = ["force-point", "force-strength", "dt"]
         .into_iter()
         .map(str::to_owned)
         .collect();
@@ -214,7 +214,8 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
         product.artifact().compute_regions()
     );
 
-    let placement = GpuHost.plan(product.artifact());
+    let lowering_artifact = compile_isolated_gpu_source(&source);
+    let placement = GpuHost.plan(&lowering_artifact);
     assert!(placement.violations.is_empty());
     assert_eq!(placement.regions.len(), 1);
     assert_eq!(placement.regions[0].name.as_deref(), Some("particle-field"),);
@@ -223,10 +224,10 @@ fn named_mechdown_region_reaches_neutral_compute_placement_and_gpu_lowering() {
         Some(ComputePlacement::Compute),
     );
     let lowered = GpuHost
-        .compile(product.artifact())
+        .compile(&lowering_artifact)
         .expect("one named compute region must lower to one GPU program");
     let cpu_lowered = GpuHost
-        .compile_cpu(product.artifact())
+        .compile_cpu(&lowering_artifact)
         .expect("the same neutral region must lower to the CPU executor");
     assert_eq!(cpu_lowered.wgsl(), lowered.wgsl());
     assert_eq!(cpu_lowered.bindings().len(), lowered.bindings().len());
@@ -255,24 +256,20 @@ fn hard_cpu_region_is_not_silently_sent_to_gpu() {
     let source = SERVED_PARTICLE_SOURCE
         .replacen("1000000f32", "16f32", 1)
         .replacen("@compute", "@cpu", 1);
-    let product = compiler()
-        .compile_tree(&isolated_gpu_tree(&source))
-        .unwrap();
-    let placement = GpuHost.plan(product.artifact());
+    let artifact = compile_isolated_gpu_source(&source);
+    let placement = GpuHost.plan(&artifact);
 
     assert!(
         placement
             .nodes
             .iter()
-            .filter(|node| product.artifact().compute_regions()[0]
-                .nodes
-                .contains(&node.node))
+            .filter(|node| artifact.compute_regions()[0].nodes.contains(&node.node))
             .all(|node| node.target != ExecutionTarget::Gpu)
     );
     GpuHost
-        .compile_cpu(product.artifact())
+        .compile_cpu(&artifact)
         .expect("hard CPU region must run under the CPU executor");
-    let error = GpuHost.compile(product.artifact()).unwrap_err();
+    let error = GpuHost.compile(&artifact).unwrap_err();
     assert!(error.to_string().contains("requires CPU execution"));
 }
 
@@ -281,14 +278,12 @@ fn hard_gpu_region_is_not_silently_sent_to_cpu() {
     let source = SERVED_PARTICLE_SOURCE
         .replacen("1000000f32", "16f32", 1)
         .replacen("@compute", "@gpu", 1);
-    let product = compiler()
-        .compile_tree(&isolated_gpu_tree(&source))
-        .unwrap();
+    let artifact = compile_isolated_gpu_source(&source);
 
     GpuHost
-        .compile(product.artifact())
+        .compile(&artifact)
         .expect("hard GPU region must run under the GPU executor");
-    let error = GpuHost.compile_cpu(product.artifact()).unwrap_err();
+    let error = GpuHost.compile_cpu(&artifact).unwrap_err();
     assert!(error.to_string().contains("requires GPU execution"));
 }
 
@@ -450,6 +445,25 @@ fn standalone_particle_program_needs_no_host_inputs() {
 }
 
 #[test]
+fn derived_block_broadcast_requires_materialization() {
+    let artifact = compile_source(
+        r#"
+column := [1f32; 2f32] + 1f32
+matrix := [1f32 2f32 3f32; 4f32 5f32 6f32]
+result := matrix + column
+result
+"#,
+        [],
+    );
+    let error = GpuHost
+        .compile(&artifact)
+        .expect_err("a derived block broadcast must not use thread-local remapping");
+    assert!(error.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == GpuDiagnosticCode::DerivedBroadcastRequiresMaterialization
+    }));
+}
+
+#[test]
 fn particle_example_is_one_mixed_mech_document() {
     let tree = mech_syntax::parse(SERVED_PARTICLE_SOURCE).expect("complete source must parse");
     let regions = tree
@@ -469,7 +483,7 @@ fn particle_example_is_one_mixed_mech_document() {
     );
     assert!(SERVED_PARTICLE_SOURCE.contains("pointer://pointer/frame"));
     assert!(SERVED_PARTICLE_SOURCE.contains("compute://particles/kernel"));
-    assert!(SERVED_PARTICLE_SOURCE.contains("@particles/input/force-x <- force-x"));
+    assert!(SERVED_PARTICLE_SOURCE.contains("@particles/input/force-point <- force-point"));
     assert!(SERVED_PARTICLE_SOURCE.contains("@particles/turn <- pulse"));
     assert!(!SERVED_PARTICLE_SOURCE.contains("host-positions"));
 }
@@ -487,8 +501,7 @@ fn served_particle_field_stays_bounded() {
     assert!(!program.wgsl().contains("%"));
 
     let inputs = BTreeMap::from([
-        ("force-x".to_owned(), vec![0.0]),
-        ("force-y".to_owned(), vec![0.0]),
+        ("force-point".to_owned(), vec![0.0, 0.0]),
         ("force-strength".to_owned(), vec![0.0]),
         ("dt".to_owned(), vec![0.016]),
     ]);
@@ -522,8 +535,7 @@ fn served_pointer_press_materially_changes_the_particle_trajectory() {
         .expect("served particle source must be admitted");
     let inputs = |strength| {
         BTreeMap::from([
-            ("force-x".to_owned(), vec![0.7]),
-            ("force-y".to_owned(), vec![0.6]),
+            ("force-point".to_owned(), vec![0.7, 0.6]),
             ("force-strength".to_owned(), vec![strength]),
             ("dt".to_owned(), vec![0.016]),
         ])
@@ -561,8 +573,7 @@ fn owned_cpu_session_accepts_new_inputs_without_resetting_state() {
         .compile(&artifact)
         .expect("served particle source must be admitted");
     let initial = BTreeMap::from([
-        ("force-x".to_owned(), vec![0.0]),
-        ("force-y".to_owned(), vec![0.0]),
+        ("force-point".to_owned(), vec![0.0, 0.0]),
         ("force-strength".to_owned(), vec![0.0]),
         ("dt".to_owned(), vec![0.016]),
     ]);
@@ -573,8 +584,7 @@ fn owned_cpu_session_accepts_new_inputs_without_resetting_state() {
     let before = session.output("result.0").expect("positions must read");
     session
         .update_inputs(&BTreeMap::from([
-            ("force-x".to_owned(), vec![0.7]),
-            ("force-y".to_owned(), vec![0.6]),
+            ("force-point".to_owned(), vec![0.7, 0.6]),
             ("force-strength".to_owned(), vec![1.25]),
         ]))
         .expect("changed scalar inputs must update");
@@ -637,8 +647,7 @@ fn served_particle_shader_matches_cpu_with_pointer_force() {
         .compile(&artifact)
         .expect("served particle source must lower");
     let inputs = BTreeMap::from([
-        ("force-x".to_owned(), vec![0.3]),
-        ("force-y".to_owned(), vec![-0.2]),
+        ("force-point".to_owned(), vec![0.3, -0.2]),
         ("force-strength".to_owned(), vec![1.25]),
         ("dt".to_owned(), vec![0.016]),
     ]);
@@ -716,14 +725,12 @@ fn resident_gpu_accepts_new_inputs_without_resetting_state() {
         .compile(&artifact)
         .expect("served particle source must be admitted");
     let initial = BTreeMap::from([
-        ("force-x".to_owned(), vec![0.0]),
-        ("force-y".to_owned(), vec![0.0]),
+        ("force-point".to_owned(), vec![0.0, 0.0]),
         ("force-strength".to_owned(), vec![0.0]),
         ("dt".to_owned(), vec![0.016]),
     ]);
     let changed = BTreeMap::from([
-        ("force-x".to_owned(), vec![0.7]),
-        ("force-y".to_owned(), vec![0.6]),
+        ("force-point".to_owned(), vec![0.7, 0.6]),
         ("force-strength".to_owned(), vec![1.25]),
     ]);
 

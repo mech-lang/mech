@@ -8,8 +8,8 @@ use std::{
 
 use mech_compute::{
     BinaryOperation, ComputeKernel, ComputeProgram, ElementwiseInstruction, ElementwiseIr,
-    ElementwiseOperation, UnaryOperation, build_compute_region_interface, display_operation,
-    elementwise_operation, plan_compute_artifact, turn_required_nodes,
+    ElementwiseLowering, ElementwiseOperation, UnaryOperation, build_compute_region_interface,
+    display_operation, elementwise_lowering, plan_compute_artifact, turn_required_nodes,
 };
 pub use mech_compute::{
     ComputeAdmissionError as GpuAdmissionError, ComputeDiagnostic as GpuDiagnostic,
@@ -280,29 +280,62 @@ impl GpuProgram {
         let ComputeKernel::Elementwise(ir) = self.compute.kernel() else {
             unreachable!("elementwise GPU program contains a fixed-shape kernel")
         };
-        for operation in &ir.instructions {
-            let mut output = Vec::with_capacity(operation.elements as usize);
-            for index in 0..operation.elements as usize {
-                let inputs = operation
-                    .inputs
-                    .iter()
-                    .map(|source| {
-                        cpu_source_value(
-                            *source,
+        for instruction in &ir.instructions {
+            let (output_slot, output) = match instruction {
+                ElementwiseInstruction::Apply {
+                    operation,
+                    inputs,
+                    output,
+                    elements,
+                } => {
+                    let mut values = Vec::with_capacity(*elements as usize);
+                    for index in 0..*elements as usize {
+                        let inputs = inputs
+                            .iter()
+                            .map(|source| {
+                                cpu_source_value(
+                                    *source,
+                                    index,
+                                    *elements as usize,
+                                    slots,
+                                    &self.constants,
+                                )
+                            })
+                            .collect::<Result<Vec<_>, _>>()?;
+                        values.push(operation.apply(&inputs));
+                    }
+                    (*output, values)
+                }
+                ElementwiseInstruction::Concat2 {
+                    left,
+                    right,
+                    output,
+                    left_elements,
+                    right_elements,
+                } => {
+                    let mut values = Vec::with_capacity(instruction.elements() as usize);
+                    for index in 0..*left_elements as usize {
+                        values.push(cpu_source_value(
+                            *left,
                             index,
-                            operation.elements as usize,
+                            *left_elements as usize,
                             slots,
                             &self.constants,
-                        )
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-                output.push(
-                    operation
-                        .operation
-                        .apply(&inputs, index, operation.elements as usize),
-                );
-            }
-            slots.insert(operation.output, output);
+                        )?);
+                    }
+                    for index in 0..*right_elements as usize {
+                        values.push(cpu_source_value(
+                            *right,
+                            index,
+                            *right_elements as usize,
+                            slots,
+                            &self.constants,
+                        )?);
+                    }
+                    (*output, values)
+                }
+            };
+            slots.insert(output_slot, output);
         }
         let next_states = self
             .states
@@ -802,7 +835,7 @@ impl<'a> Compiler<'a> {
                 self.lower_state_commit(node, &operation_name, &state_targets);
                 continue;
             }
-            let Some(operation) = elementwise_operation(&node.operation) else {
+            let Some(lowering) = elementwise_lowering(&node.operation) else {
                 self.reject(
                     GpuDiagnosticCode::OperationUnsupported,
                     Some(node.node),
@@ -812,8 +845,9 @@ impl<'a> Compiler<'a> {
                 continue;
             };
             let host_proven_concatenation = matches!(
-                operation,
-                ElementwiseOperation::Identity | ElementwiseOperation::Pack2
+                lowering,
+                ElementwiseLowering::Apply(ElementwiseOperation::Identity)
+                    | ElementwiseLowering::Concat2
             );
             if !host_proven_concatenation
                 && !self.admit_contract(node.node, &operation_name, node.contract)
@@ -836,14 +870,14 @@ impl<'a> Compiler<'a> {
                     Some(_) | None => None,
                 })
                 .collect::<Vec<_>>();
-            if inputs.len() != operation.arity() || outputs.len() != 1 {
+            if inputs.len() != lowering.arity() || outputs.len() != 1 {
                 self.reject(
                     GpuDiagnosticCode::ArityUnsupported,
                     Some(node.node),
                     Some(operation_name),
                     format!(
                         "expected {} inputs and one output, found {} inputs and {} outputs",
-                        operation.arity(),
+                        lowering.arity(),
                         inputs.len(),
                         outputs.len()
                     ),
@@ -865,11 +899,10 @@ impl<'a> Compiler<'a> {
                 continue;
             }
             let output_dimensions = self.slot_dimensions(outputs[0]);
-            let shapes_compatible = match operation {
-                ElementwiseOperation::Pack2 => {
+            let shapes_compatible = match lowering {
+                ElementwiseLowering::Concat2 => {
                     input_elements.len() == 2
-                        && input_elements[0] == input_elements[1]
-                        && input_elements[0].checked_mul(2) == Some(output_elements)
+                        && input_elements[0].checked_add(input_elements[1]) == Some(output_elements)
                 }
                 _ => inputs
                     .iter()
@@ -893,12 +926,37 @@ impl<'a> Compiler<'a> {
                 );
                 continue;
             }
-            self.operations.push(ElementwiseInstruction {
-                operation,
-                inputs: inputs.into_boxed_slice(),
-                output: outputs[0],
-                elements: output_elements,
-            });
+            if lowering != ElementwiseLowering::Concat2 {
+                if let Some(source) = inputs.iter().find(|source| {
+                    self.derived_broadcast_requires_materialization(**source, output_elements)
+                }) {
+                    self.reject(
+                        GpuDiagnosticCode::DerivedBroadcastRequiresMaterialization,
+                        Some(node.node),
+                        Some(operation_name),
+                        format!(
+                            "derived source {source:?} must be materialized before remapped broadcasting"
+                        ),
+                    );
+                    continue;
+                }
+            }
+            let instruction = match lowering {
+                ElementwiseLowering::Concat2 => ElementwiseInstruction::Concat2 {
+                    left: inputs[0],
+                    right: inputs[1],
+                    output: outputs[0],
+                    left_elements: input_elements[0],
+                    right_elements: input_elements[1],
+                },
+                ElementwiseLowering::Apply(operation) => ElementwiseInstruction::Apply {
+                    operation,
+                    inputs: inputs.into_boxed_slice(),
+                    output: outputs[0],
+                    elements: output_elements,
+                },
+            };
+            self.operations.push(instruction);
         }
     }
 
@@ -1294,6 +1352,23 @@ impl<'a> Compiler<'a> {
         }
     }
 
+    fn derived_broadcast_requires_materialization(
+        &self,
+        source: ArtifactSource,
+        consumer_elements: u64,
+    ) -> bool {
+        let ArtifactSource::Slot(slot) = source else {
+            return false;
+        };
+        if self.slot_elements.get(&slot) == Some(&consumer_elements) {
+            return false;
+        }
+        self.artifact
+            .slots()
+            .get(slot.get() as usize)
+            .is_some_and(|slot| slot.role == SlotRole::Derived)
+    }
+
     fn source_elements(
         &mut self,
         source: ArtifactSource,
@@ -1378,17 +1453,45 @@ impl<'a> Compiler<'a> {
         shader.push_str(&format!(
             "\n@compute @workgroup_size({WORKGROUP_SIZE})\nfn main(@builtin(global_invocation_id) gid: vec3<u32>) {{\n  let index = gid.x;\n  if (index >= {dispatch_elements}u) {{ return; }}\n"
         ));
-        for operation in &self.operations {
-            let inputs = operation
-                .inputs
-                .iter()
-                .map(|source| self.wgsl_source(*source, operation.elements))
-                .collect::<Vec<_>>();
-            shader.push_str(&format!(
-                "  let slot_{} = {};\n",
-                operation.output.get(),
-                wgsl_elementwise_expression(operation.operation, &inputs, dispatch_elements)
-            ));
+        for instruction in &self.operations {
+            match instruction {
+                ElementwiseInstruction::Apply {
+                    operation,
+                    inputs,
+                    output,
+                    elements,
+                } => {
+                    let inputs = inputs
+                        .iter()
+                        .map(|source| self.wgsl_source(*source, *elements))
+                        .collect::<Vec<_>>();
+                    shader.push_str(&format!(
+                        "  var slot_{} = 0.0;\n  if (index < {elements}u) {{ slot_{} = {}; }}\n",
+                        output.get(),
+                        output.get(),
+                        wgsl_elementwise_expression(*operation, &inputs)
+                    ));
+                }
+                ElementwiseInstruction::Concat2 {
+                    left,
+                    right,
+                    output,
+                    left_elements,
+                    right_elements,
+                } => {
+                    let elements = instruction.elements();
+                    let left = self.wgsl_source_at(*left, *left_elements, "index");
+                    let local_index = format!("concat_index_{}", output.get());
+                    let right = self.wgsl_source_at(*right, *right_elements, &local_index);
+                    shader.push_str(&wgsl_concat2_instruction(
+                        *output,
+                        *left_elements,
+                        elements,
+                        &left,
+                        &right,
+                    ));
+                }
+            }
         }
         for state in &self.state_slots {
             let source = self.wgsl_source(
@@ -1428,8 +1531,17 @@ impl<'a> Compiler<'a> {
     }
 
     fn wgsl_source(&self, source: ArtifactSource, consumer_elements: u64) -> String {
+        self.wgsl_source_at(source, consumer_elements, "index")
+    }
+
+    fn wgsl_source_at(
+        &self,
+        source: ArtifactSource,
+        consumer_elements: u64,
+        index: &str,
+    ) -> String {
         match source {
-            ArtifactSource::Slot(slot) => self.wgsl_slot(slot, consumer_elements),
+            ArtifactSource::Slot(slot) => self.wgsl_slot_at(slot, consumer_elements, index),
             ArtifactSource::Constant(constant) => {
                 let values = &self.constants[&constant];
                 if values.len() == 1 {
@@ -1442,7 +1554,7 @@ impl<'a> Compiler<'a> {
                         .map(format_wgsl_f32)
                         .collect::<Vec<_>>()
                         .join(", ");
-                    let index = wgsl_broadcast_index(elements, consumer_elements);
+                    let index = wgsl_broadcast_index(elements, consumer_elements, index);
                     format!("array<f32, {elements}>({rendered})[{index}]")
                 }
             }
@@ -1450,12 +1562,16 @@ impl<'a> Compiler<'a> {
     }
 
     fn wgsl_slot(&self, slot: CellSlotId, consumer_elements: u64) -> String {
+        self.wgsl_slot_at(slot, consumer_elements, "index")
+    }
+
+    fn wgsl_slot_at(&self, slot: CellSlotId, consumer_elements: u64, index: &str) -> String {
         let elements = self.slot_elements[&slot];
         if let Some((_, _, _)) = self.input_slots.get(&slot) {
-            let index = wgsl_broadcast_index(elements, consumer_elements);
+            let index = wgsl_broadcast_index(elements, consumer_elements, index);
             format!("input_{}[{index}]", slot.get())
         } else if self.state_slots.contains_key(&slot) {
-            let index = wgsl_broadcast_index(elements, consumer_elements);
+            let index = wgsl_broadcast_index(elements, consumer_elements, index);
             format!("state_read_{}[{index}]", slot.get())
         } else {
             format!("slot_{}", slot.get())
@@ -1502,23 +1618,19 @@ fn published_source(artifact: &ProgramArtifact, slot: CellSlotId) -> ArtifactSou
     }
 }
 
-fn wgsl_broadcast_index(elements: u64, consumer_elements: u64) -> String {
+fn wgsl_broadcast_index(elements: u64, consumer_elements: u64, index: &str) -> String {
     if elements == 1 {
         "0u".to_owned()
     } else if elements == consumer_elements {
-        "index".to_owned()
+        index.to_owned()
     } else if consumer_elements % elements == 0 {
-        format!("index / {}u", consumer_elements / elements)
+        format!("({index}) / {}u", consumer_elements / elements)
     } else {
-        "index".to_owned()
+        index.to_owned()
     }
 }
 
-fn wgsl_elementwise_expression(
-    operation: ElementwiseOperation,
-    inputs: &[String],
-    dispatch_elements: u64,
-) -> String {
+fn wgsl_elementwise_expression(operation: ElementwiseOperation, inputs: &[String]) -> String {
     match operation {
         ElementwiseOperation::Binary(operation) => {
             let operator = match operation {
@@ -1538,13 +1650,21 @@ fn wgsl_elementwise_expression(
         }
         ElementwiseOperation::Atan2 => format!("atan2({}, {})", inputs[0], inputs[1]),
         ElementwiseOperation::Identity => inputs[0].clone(),
-        ElementwiseOperation::Pack2 => format!(
-            "select({}, {}, index >= {}u)",
-            inputs[0],
-            inputs[1],
-            dispatch_elements.div_ceil(2)
-        ),
     }
+}
+
+fn wgsl_concat2_instruction(
+    output: CellSlotId,
+    left_elements: u64,
+    elements: u64,
+    left: &str,
+    right: &str,
+) -> String {
+    let output = output.get();
+    let local_index = format!("concat_index_{output}");
+    format!(
+        "  var slot_{output} = 0.0;\n  if (index < {left_elements}u) {{\n    slot_{output} = {left};\n  }} else if (index < {elements}u) {{\n    let {local_index} = index - {left_elements}u;\n    slot_{output} = {right};\n  }}\n"
+    )
 }
 
 fn block_broadcast_dimensions(input: &[u64], output: &[u64]) -> bool {
@@ -1624,5 +1744,88 @@ fn broadcast_index(source_elements: usize, index: usize, consumer_elements: usiz
         index / (consumer_elements / source_elements)
     } else {
         index
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mech_core::ConstantId;
+
+    fn concat_program(left: &[f32], right: &[f32]) -> GpuProgram {
+        let left_constant = ConstantId::new(0);
+        let right_constant = ConstantId::new(1);
+        let output = CellSlotId::new(0);
+        let left_elements = left.len() as u64;
+        let right_elements = right.len() as u64;
+        let elements = left_elements.checked_add(right_elements).unwrap();
+        let instruction = ElementwiseInstruction::Concat2 {
+            left: ArtifactSource::Constant(left_constant),
+            right: ArtifactSource::Constant(right_constant),
+            output,
+            left_elements,
+            right_elements,
+        };
+        let compute = ComputeProgram::new(
+            Default::default(),
+            Default::default(),
+            ComputeKernel::Elementwise(ElementwiseIr {
+                instructions: vec![instruction].into_boxed_slice(),
+            }),
+        );
+        let constants = BTreeMap::from([
+            (left_constant, left.to_vec()),
+            (right_constant, right.to_vec()),
+        ]);
+
+        GpuProgram {
+            compute,
+            wgsl: String::new(),
+            bindings: Vec::new(),
+            outputs: vec![KernelOutput {
+                name: "result".to_owned(),
+                source: output,
+                elements,
+                dimensions: vec![elements],
+                binding: 0,
+            }],
+            states: Vec::new(),
+            input_slots: BTreeMap::new(),
+            constants,
+            dispatch_elements: elements,
+        }
+    }
+
+    fn assert_concat_cpu_wgsl_parity(left: &[f32], right: &[f32]) {
+        let program = concat_program(left, right);
+        let expected = left.iter().chain(right).copied().collect::<Vec<_>>();
+        assert_eq!(
+            program.run_cpu(&BTreeMap::new()).unwrap()["result"],
+            expected
+        );
+
+        let left_elements = left.len() as u64;
+        let elements = expected.len() as u64;
+        let wgsl = wgsl_concat2_instruction(
+            CellSlotId::new(0),
+            left_elements,
+            elements,
+            "left[index]",
+            "right[concat_index_0]",
+        );
+        assert!(wgsl.contains(&format!("if (index < {left_elements}u)")));
+        assert!(wgsl.contains(&format!("let concat_index_0 = index - {left_elements}u")));
+        assert!(wgsl.contains(&format!("else if (index < {elements}u)")));
+        assert!(wgsl.contains("right[concat_index_0]"));
+    }
+
+    #[test]
+    fn unequal_concatenation_has_cpu_wgsl_indexing_parity() {
+        assert_concat_cpu_wgsl_parity(&[1.0, 2.0], &[3.0, 4.0, 5.0]);
+    }
+
+    #[test]
+    fn equal_concatenation_has_cpu_wgsl_indexing_parity() {
+        assert_concat_cpu_wgsl_parity(&[1.0, 2.0], &[3.0, 4.0]);
     }
 }

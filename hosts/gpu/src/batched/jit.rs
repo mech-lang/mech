@@ -442,11 +442,6 @@ fn lower_computation(
                 },
                 ElementwiseOperation::Atan2 => call_math(builder, functions.atan2, &values),
                 ElementwiseOperation::Identity => values[0],
-                ElementwiseOperation::Pack2 => {
-                    return Err(BatchedExecutionError::Native(
-                        "pack2 reached the native fixed-shape backend".to_owned(),
-                    ));
-                }
             })
         }
         ScalarComputation::SumProducts(terms) => {

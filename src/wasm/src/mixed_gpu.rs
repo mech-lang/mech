@@ -22,7 +22,7 @@ use web_time::Instant;
 
 use crate::gpu::{CompileTimings, gpu_program_manifest};
 
-const POINTER_PATHS: [&str; 5] = ["pulse", "x", "y", "pressed", "delta-seconds"];
+const POINTER_PATHS: [&str; 4] = ["pulse", "position", "pressed", "delta-seconds"];
 
 static COMPUTE_COMMAND_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
@@ -105,7 +105,7 @@ impl WasmMixedComputeProject {
             None
         };
         let mut builder = RuntimeBuilder::new()
-            .function_catalog(mech_stdlib::source_catalog())
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
             .config(
                 mech_runtime::RuntimeConfig::default()
                     .apply_patch(&document.runtime)
@@ -597,8 +597,15 @@ impl PointerInputHandle {
                 "pulse",
                 RuntimeHostInputValue::F64(pulse as f64),
             )?,
-            pointer_update(&self.base_uri, "x", RuntimeHostInputValue::F64(x))?,
-            pointer_update(&self.base_uri, "y", RuntimeHostInputValue::F64(y))?,
+            pointer_update(
+                &self.base_uri,
+                "position",
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![x, y],
+                },
+            )?,
             pointer_update(
                 &self.base_uri,
                 "pressed",
@@ -694,7 +701,16 @@ impl PointerResourceProvider {
                 request.base_uri, request.path
             )));
         }
-        Ok(LegacyValue::F64(Ref::new(0.0)))
+        if request.path == "position" {
+            RuntimeHostInputValue::F64Matrix {
+                rows: 2,
+                columns: 1,
+                values: vec![0.0, 0.0],
+            }
+            .into_mech_value()
+        } else {
+            Ok(LegacyValue::F64(Ref::new(0.0)))
+        }
     }
 }
 
@@ -1125,8 +1141,8 @@ config := {
   run: {
     paths: ["particles.mec"]
     grants: [
-      { target: "cursor/frame" operations: ["read"] paths: ["pulse", "x", "y", "pressed", "delta-seconds"] }
-      { target: "particles/kernel" operations: ["write"] paths: ["input/force-x", "input/force-y", "input/force-strength", "input/dt", "turn"] }
+      { target: "cursor/frame" operations: ["read"] paths: ["pulse", "position", "pressed", "delta-seconds"] }
+      { target: "particles/kernel" operations: ["write"] paths: ["input/force-point", "input/force-strength", "input/dt", "turn"] }
     ]
   }
 }
@@ -1134,15 +1150,13 @@ config := {
 
     const SOURCE: &str = r#"
 +> math
-@pointer := pointer://cursor/frame{:read(pulse), :read(x), :read(y), :read(pressed), :read(delta-seconds)}
-@particles := compute://particles/kernel{:write(input/force-x), :write(input/force-y), :write(input/force-strength), :write(input/dt), :write(turn)}
+@pointer := pointer://cursor/frame{:read(pulse), :read(position), :read(pressed), :read(delta-seconds)}
+@particles := compute://particles/kernel{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}
 pulse := @pointer/pulse
-force-x := @pointer/x
-force-y := @pointer/y
-force-strength := @pointer/pressed * 1.25
+force-point := @pointer/position
+force-strength := @pointer/pressed
 dt := @pointer/delta-seconds
-@particles/input/force-x <- force-x
-@particles/input/force-y <- force-y
+@particles/input/force-point <- force-point
 @particles/input/force-strength <- force-strength
 @particles/input/dt <- dt
 @particles/turn <- pulse
@@ -1154,11 +1168,9 @@ particle-x := math/cos(particle-index)
 particle-y := math/sin(particle-index)
 ~positions := [particle-x; particle-y]
 ~velocities := [(0f32 - particle-y); particle-x]
-force-x := 0f32
-force-y := 0f32
+force-point := [0f32; 0f32]
 force-strength := 0f32
 dt := 0.016666667<f32>
-force-point := [force-x; force-y]
 offset := force-point - positions
 distance-square := offset * offset + 0.018<f32>
 pointer-pull := force-strength * (1f32 - distance-square * 0.18<f32>)
@@ -1202,7 +1214,7 @@ positions = next-positions
         let tree = mech_syntax::parse(SOURCE).unwrap();
         for wildcard in ["*", "input/*"] {
             let config = CONFIG.replace(
-                "[\"input/force-x\", \"input/force-y\", \"input/force-strength\", \"input/dt\", \"turn\"]",
+                "[\"input/force-point\", \"input/force-strength\", \"input/dt\", \"turn\"]",
                 &format!("[\"{wildcard}\"]"),
             );
             let document =
@@ -1212,9 +1224,8 @@ positions = next-positions
                 configured_compute_inputs(&document, &tree, "particles").unwrap(),
                 BTreeSet::from([
                     "dt".to_owned(),
+                    "force-point".to_owned(),
                     "force-strength".to_owned(),
-                    "force-x".to_owned(),
-                    "force-y".to_owned(),
                 ])
             );
         }
@@ -1241,8 +1252,7 @@ positions = next-positions
 
         assert_eq!(prepared.region, "particle-field");
         assert_eq!(prepared.program.dispatch_elements(), 2_000_000);
-        assert_eq!(prepared.inputs["force-x"], vec![0.0]);
-        assert_eq!(prepared.inputs["force-y"], vec![0.0]);
+        assert_eq!(prepared.inputs["force-point"], vec![0.0, 0.0]);
         assert_eq!(prepared.inputs["force-strength"], vec![0.0]);
         assert_eq!(prepared.inputs["dt"], vec![0.016666667]);
     }
@@ -1260,8 +1270,7 @@ positions = next-positions
             .filter(|binding| binding.role() == GpuBindingRole::Input)
             .map(|binding| binding.name.as_str())
             .collect::<BTreeSet<_>>();
-        assert!(input_names.contains("force-x"));
-        assert!(input_names.contains("force-y"));
+        assert!(input_names.contains("force-point"));
         assert!(input_names.contains("force-strength"));
         assert!(input_names.contains("dt"));
 
@@ -1277,7 +1286,7 @@ positions = next-positions
                 .map(|binding| (binding.name.clone(), binding.elements as usize)),
         );
         let mut builder = RuntimeBuilder::new()
-            .function_catalog(mech_stdlib::source_catalog())
+            .function_catalog(mech_stdlib::source_native_plan_catalog())
             .config(
                 mech_runtime::RuntimeConfig::default()
                     .apply_patch(&document.runtime)
@@ -1303,9 +1312,8 @@ positions = next-positions
         runtime.drain_host_inputs(1).unwrap();
         let state = compute.state.lock().unwrap();
         assert!(state.dispatch);
-        assert_eq!(state.changed_inputs["force-x"], vec![0.25]);
-        assert_eq!(state.changed_inputs["force-y"], vec![-0.5]);
-        assert_eq!(state.changed_inputs["force-strength"], vec![1.25]);
+        assert_eq!(state.changed_inputs["force-point"], vec![0.25, -0.5]);
+        assert_eq!(state.changed_inputs["force-strength"], vec![1.0]);
     }
 
     #[test]

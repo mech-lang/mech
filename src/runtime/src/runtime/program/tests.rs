@@ -12,8 +12,8 @@ use mech_core::{
     OperationContractDeclaration, ParsedProgram, Ref, ValueData, hash_str,
 };
 use mech_engine::{
-    SlotRole, decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
-    resident::ResidentValueBorrow,
+    ArtifactSource, BindingDeclaration, SlotRole, decode_program_artifact_bytecode_v1,
+    encode_program_artifact_bytecode_v1, resident::ResidentValueBorrow,
 };
 use sha2::{Digest, Sha256};
 
@@ -769,7 +769,10 @@ fn activation_only_compilation_preserves_the_artifact_without_retaining_bytecode
         activation.artifact().nodes().len(),
         durable.artifact().nodes().len()
     );
-    assert_eq!(activation.compute_regions(), durable.compute_regions());
+    assert_eq!(
+        activation.artifact().compute_regions(),
+        durable.artifact().compute_regions()
+    );
 }
 
 #[test]
@@ -846,6 +849,46 @@ fn planning_values_seed_explicit_live_inputs_while_literals_remain_constants() {
         }),
         "the source literal must remain an embedded artifact constant"
     );
+}
+
+#[test]
+fn matrix_declaration_defaults_become_typed_live_inputs() {
+    let tree =
+        mech_syntax::parse("matrix := [1f32 2f32; 3f32 4f32]\nresult := matrix + 1f32\nresult")
+            .unwrap();
+    let external = BTreeSet::from(["matrix".to_owned()]);
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let (product, initial_inputs) = compiler
+        .compile_tree_artifact_with_input_initializers(&tree, &BTreeMap::new(), &external)
+        .unwrap();
+
+    let input = product
+        .artifact()
+        .inputs()
+        .iter()
+        .find(|input| input.name == "matrix")
+        .expect("the matrix declaration must become an artifact input");
+    assert_eq!(
+        initial_inputs["matrix"],
+        RuntimeHostInputValue::F32Matrix {
+            rows: 2,
+            columns: 2,
+            values: vec![1.0, 3.0, 2.0, 4.0],
+        }
+    );
+    assert!(product.artifact().bindings().iter().any(|binding| {
+        matches!(
+            binding,
+            BindingDeclaration::Input {
+                source: ArtifactSource::Slot(slot),
+                ..
+            } if *slot == input.slot
+        )
+    }));
 }
 
 #[test]

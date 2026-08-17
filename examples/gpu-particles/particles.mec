@@ -3,17 +3,15 @@
 -- The unannotated section is the ordinary transactional CPU graph. Browser
 -- pointer data enters through a host resource. The graph decides which values
 -- cross the compute boundary, and dispatch occurs only after the turn commits.
-@pointer := pointer://pointer/frame{:read(pulse), :read(x), :read(y), :read(pressed), :read(delta-seconds)}
-@particles := compute://particles/kernel{:write(input/force-x), :write(input/force-y), :write(input/force-strength), :write(input/dt), :write(turn)}
+@pointer := pointer://pointer/frame{:read(pulse), :read(position), :read(pressed), :read(delta-seconds)}
+@particles := compute://particles/kernel{:write(input/force-point), :write(input/force-strength), :write(input/dt), :write(turn)}
 
 pulse := @pointer/pulse
-force-x := @pointer/x
-force-y := @pointer/y
-force-strength := @pointer/pressed * 1.25
+force-point := @pointer/position
+force-strength := @pointer/pressed
 dt := @pointer/delta-seconds
 
-@particles/input/force-x <- force-x
-@particles/input/force-y <- force-y
+@particles/input/force-point <- force-point
 @particles/input/force-strength <- force-strength
 @particles/input/dt <- dt
 @particles/turn <- pulse
@@ -37,12 +35,10 @@ particle-y := math/sin(angle) * radius
 
 -- These defaults establish the compute input types. The CPU graph replaces them
 -- every frame through the explicit compute:// resource paths above.
-force-x := 0f32
-force-y := 0f32
+force-point := [0f32; 0f32]
 force-strength := 0f32
 dt := 0.016666667<f32>
 
-force-point := [force-x; force-y]
 offset := force-point - positions
 distance-square := offset * offset + 0.018<f32>
 pointer-pull := force-strength * (1f32 - distance-square * 0.18<f32>)

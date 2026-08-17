@@ -94,9 +94,6 @@ fn evaluate_scalar_computation_simd(computation: &ScalarComputation, registers: 
                 },
                 ElementwiseOperation::Atan2 => values[0].atan2(values[1]),
                 ElementwiseOperation::Identity => values[0],
-                ElementwiseOperation::Pack2 => {
-                    unreachable!("pack2 is not admitted by the fixed-shape scalarizer")
-                }
             }
         }
         ScalarComputation::SumProducts(terms) => {
@@ -258,7 +255,7 @@ fn scalar_computation_wgsl(computation: &ScalarComputation) -> String {
                 .iter()
                 .map(|input| scalar_operand_wgsl(*input))
                 .collect::<Vec<_>>();
-            super::wgsl_elementwise_expression(*operation, &inputs, 1)
+            super::wgsl_elementwise_expression(*operation, &inputs)
         }
         ScalarComputation::SumProducts(terms) => terms
             .iter()
@@ -2093,6 +2090,7 @@ mod native {
             }
             let required_limits = wgpu::Limits {
                 max_storage_buffers_per_shader_stage: required_storage_buffers,
+                max_compute_workgroups_per_dimension: self.workgroup_count(),
                 ..wgpu::Limits::downlevel_defaults()
             };
             let (device, queue) = adapter

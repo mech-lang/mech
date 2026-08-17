@@ -494,6 +494,7 @@ impl GpuProgram {
         Ok((
             wgpu::Limits {
                 max_storage_buffers_per_shader_stage: required_storage_buffers,
+                max_compute_workgroups_per_dimension: workgroups,
                 ..wgpu::Limits::downlevel_defaults()
             },
             workgroups,
@@ -619,6 +620,8 @@ impl ResidentGpuSession {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::GpuBinding;
+    use mech_core::CellSlotId;
 
     #[test]
     fn all_gpu_execution_modes_reject_oversized_workgroup_counts() {
@@ -642,5 +645,35 @@ mod tests {
                 supported: 1,
             }
         );
+    }
+
+    #[test]
+    fn all_gpu_execution_modes_request_the_validated_limits() {
+        let program = GpuProgram {
+            compute: super::super::empty_compute_program(),
+            wgsl: String::new(),
+            bindings: vec![GpuBinding {
+                binding: 0,
+                name: "output".to_owned(),
+                access: GpuBindingAccess::ReadWrite,
+                elements: u64::from(super::super::WORKGROUP_SIZE) * 2,
+                kind: GpuBindingKind::Output(CellSlotId::new(0)),
+            }],
+            outputs: Vec::new(),
+            states: Vec::new(),
+            input_slots: BTreeMap::new(),
+            constants: BTreeMap::new(),
+            dispatch_elements: u64::from(super::super::WORKGROUP_SIZE) * 2,
+        };
+        let limits = wgpu::Limits {
+            max_storage_buffers_per_shader_stage: 8,
+            max_compute_workgroups_per_dimension: 8,
+            ..wgpu::Limits::downlevel_defaults()
+        };
+
+        let (requested, workgroups) = program.required_device_limits(&limits).unwrap();
+        assert_eq!(workgroups, 2);
+        assert_eq!(requested.max_storage_buffers_per_shader_stage, 1);
+        assert_eq!(requested.max_compute_workgroups_per_dimension, 2);
     }
 }

@@ -10,7 +10,10 @@ use mech_engine::{
     ProgramArtifact, SlotRole,
 };
 
-use crate::{ElementwiseOperation, display_operation, elementwise_operation, turn_required_nodes};
+use crate::{
+    ElementwiseLowering, ElementwiseOperation, display_operation, elementwise_lowering,
+    turn_required_nodes,
+};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ComputeExecutionTarget {
@@ -422,7 +425,7 @@ fn classify_node(
             "state update is not an admitted whole-value Assign".to_owned(),
         );
     }
-    let lowered_operation = elementwise_operation(&node.operation);
+    let lowered_operation = elementwise_lowering(&node.operation);
     if lowered_operation.is_none() {
         return (
             ComputeExecutionTarget::Cpu,
@@ -431,7 +434,10 @@ fn classify_node(
     }
     let host_proven_concatenation = matches!(
         lowered_operation,
-        Some(ElementwiseOperation::Identity | ElementwiseOperation::Pack2)
+        Some(
+            ElementwiseLowering::Apply(ElementwiseOperation::Identity)
+                | ElementwiseLowering::Concat2
+        )
     );
     if !host_proven_concatenation && !contract_supported(artifact, node, false) {
         return (

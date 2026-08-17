@@ -142,7 +142,7 @@ impl ScalarComputation {
                 for (index, input) in inputs.iter().enumerate() {
                     values[index] = input.evaluate(registers);
                 }
-                operation.apply(&values[..inputs.len()], 0, 1)
+                operation.apply(&values[..inputs.len()])
             }
             Self::SumProducts(terms) => terms.iter().fold(0.0, |sum, (left, right)| {
                 left.evaluate(registers)
