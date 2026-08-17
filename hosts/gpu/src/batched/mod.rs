@@ -1498,8 +1498,8 @@ impl<'a> BatchCompiler<'a> {
             if !required.contains(&node.node) {
                 continue;
             }
-            let name = node.operation.operation_name.as_str();
-            if node.operation.module_path.as_ref() == ["core"] && name == "composite-pack" {
+            let operation = display_operation(&node.operation);
+            if operation == "core/composite-pack" {
                 continue;
             }
             let inputs = node
@@ -1522,17 +1522,8 @@ impl<'a> BatchCompiler<'a> {
                     },
                 )
                 .collect::<Vec<_>>();
-            let runtime_operation = node.operation.module_path.as_ref() == ["runtime"];
             if outputs.iter().any(|slot| self.states.contains_key(slot)) {
-                if runtime_operation {
-                    self.lower_state(node.node, name, &inputs, &outputs);
-                } else {
-                    self.reject(
-                        Some(node.node),
-                        Some(display_operation(&node.operation)),
-                        "batch state updates must use a compiler-selected runtime operation",
-                    );
-                }
+                self.lower_state(node.node, &operation, &inputs, &outputs);
                 continue;
             }
             if outputs.len() != 1 {
@@ -1544,31 +1535,31 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             let output = outputs[0];
-            let result = if runtime_operation && name.starts_with("Access2DSS") {
+            let result = if operation == "access/scalar" {
                 self.lower_access_2d(output, &inputs)
-            } else if runtime_operation && name.starts_with("HorizontalConcatenate") {
+            } else if operation == "matrix/horzcat" {
                 self.lower_concatenate(output, &inputs, true)
-            } else if runtime_operation && name.starts_with("VerticalConcatenate") {
+            } else if operation == "matrix/vertcat" {
                 self.lower_concatenate(output, &inputs, false)
-            } else if runtime_operation && name.starts_with("Transpose") {
+            } else if operation == "matrix/transpose" {
                 self.lower_transpose(output, &inputs)
-            } else if runtime_operation && name.starts_with("MatMul") {
+            } else if operation == "matrix/multiply" {
                 self.lower_matmul(output, &inputs)
-            } else if runtime_operation && name.starts_with("Dot") {
+            } else if operation == "matrix/dot" {
                 self.lower_dot(output, &inputs)
-            } else if runtime_operation && name.starts_with("Negate") {
+            } else if operation == "math/neg" {
                 self.lower_negate(output, &inputs)
-            } else if runtime_operation && name.starts_with("MathAbs") {
+            } else if operation == "math/abs" {
                 self.lower_absolute(output, &inputs)
-            } else if runtime_operation && let Some(operation) = comparison_operation(name) {
-                self.lower_compare(output, &inputs, operation)
-            } else if runtime_operation && let Some(operation) = logic_operation(name) {
-                self.lower_logic(output, &inputs, operation)
-            } else if runtime_operation && let Some(operation) = scalar_operation(name) {
-                self.lower_elementwise(output, &inputs, operation)
+            } else if let Some(comparison) = comparison_operation(&operation) {
+                self.lower_compare(output, &inputs, comparison)
+            } else if let Some(logic) = logic_operation(&operation) {
+                self.lower_logic(output, &inputs, logic)
+            } else if let Some(elementwise) = scalar_operation(&operation) {
+                self.lower_elementwise(output, &inputs, elementwise)
             } else {
                 Err(format!(
-                    "generic fixed-shape lowering does not support {name}"
+                    "generic fixed-shape lowering does not support {operation}"
                 ))
             };
             if let Err(detail) = result {
@@ -1588,7 +1579,7 @@ impl<'a> BatchCompiler<'a> {
         inputs: &[ArtifactSource],
         outputs: &[CellSlotId],
     ) {
-        if !name.starts_with("Assign") || inputs.len() != 1 || outputs.len() != 1 {
+        if name != "core/assign" || inputs.len() != 1 || outputs.len() != 1 {
             self.reject(
                 Some(node),
                 Some(name.to_owned()),
@@ -1755,9 +1746,7 @@ impl<'a> BatchCompiler<'a> {
             return None;
         };
         let node = self.artifact.nodes().get(node.get() as usize)?;
-        if node.operation.module_path.as_ref() != ["runtime"]
-            || !node.operation.operation_name.starts_with("MathAbs")
-        {
+        if display_operation(&node.operation) != "math/abs" {
             return None;
         }
         node.input_bindings.clone().find_map(|binding| {
@@ -2004,54 +1993,37 @@ impl<'a> BatchCompiler<'a> {
 fn scalar_operation(name: &str) -> Option<ElementwiseOperation> {
     use super::{BinaryOperation, UnaryOperation};
 
-    if name.starts_with("Add") {
-        Some(ElementwiseOperation::Binary(BinaryOperation::Add))
-    } else if name.starts_with("Sub") {
-        Some(ElementwiseOperation::Binary(BinaryOperation::Subtract))
-    } else if name.starts_with("Mul") {
-        Some(ElementwiseOperation::Binary(BinaryOperation::Multiply))
-    } else if name.starts_with("Div") {
-        Some(ElementwiseOperation::Binary(BinaryOperation::Divide))
-    } else if name.starts_with("MathSin") {
-        Some(ElementwiseOperation::Unary(UnaryOperation::Sin))
-    } else if name.starts_with("MathCos") {
-        Some(ElementwiseOperation::Unary(UnaryOperation::Cos))
-    } else if name.starts_with("Atan2") {
-        Some(ElementwiseOperation::Atan2)
-    } else {
-        None
+    match name {
+        "math/add" => Some(ElementwiseOperation::Binary(BinaryOperation::Add)),
+        "math/sub" => Some(ElementwiseOperation::Binary(BinaryOperation::Subtract)),
+        "math/mul" => Some(ElementwiseOperation::Binary(BinaryOperation::Multiply)),
+        "math/div" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
+        "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
+        "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
+        "math/atan2" => Some(ElementwiseOperation::Atan2),
+        _ => None,
     }
 }
 
 fn comparison_operation(name: &str) -> Option<ComparisonOperation> {
-    if name.starts_with("EQ") {
-        Some(ComparisonOperation::Equal)
-    } else if name.starts_with("NEQ") {
-        Some(ComparisonOperation::NotEqual)
-    } else if name.starts_with("LTE") {
-        Some(ComparisonOperation::LessEqual)
-    } else if name.starts_with("LT") {
-        Some(ComparisonOperation::Less)
-    } else if name.starts_with("GTE") {
-        Some(ComparisonOperation::GreaterEqual)
-    } else if name.starts_with("GT") {
-        Some(ComparisonOperation::Greater)
-    } else {
-        None
+    match name {
+        "compare/eq" => Some(ComparisonOperation::Equal),
+        "compare/neq" => Some(ComparisonOperation::NotEqual),
+        "compare/lte" => Some(ComparisonOperation::LessEqual),
+        "compare/lt" => Some(ComparisonOperation::Less),
+        "compare/gte" => Some(ComparisonOperation::GreaterEqual),
+        "compare/gt" => Some(ComparisonOperation::Greater),
+        _ => None,
     }
 }
 
 fn logic_operation(name: &str) -> Option<LogicOperation> {
-    if name.starts_with("And") {
-        Some(LogicOperation::And)
-    } else if name.starts_with("Or") {
-        Some(LogicOperation::Or)
-    } else if name.starts_with("Xor") {
-        Some(LogicOperation::Xor)
-    } else if name.starts_with("Not") {
-        Some(LogicOperation::Not)
-    } else {
-        None
+    match name {
+        "logic/and" => Some(LogicOperation::And),
+        "logic/or" => Some(LogicOperation::Or),
+        "logic/xor" => Some(LogicOperation::Xor),
+        "logic/not" => Some(LogicOperation::Not),
+        _ => None,
     }
 }
 

@@ -462,6 +462,11 @@ pub trait MechFunctionImpl {
     fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
         None
     }
+    /// Canonical source-level operation represented by this specialized
+    /// function. Concrete runtime factory names are deliberately excluded.
+    fn semantic_operation_name(&self) -> Option<&str> {
+        None
+    }
     fn to_string(&self) -> String;
 }
 
@@ -578,6 +583,119 @@ impl<T> MechFunction for T where T: MechFunctionImpl + MechFunctionCompiler {}
 pub trait MechFunction: MechFunctionImpl {}
 #[cfg(not(feature = "semantic-compiler"))]
 impl<T> MechFunction for T where T: MechFunctionImpl {}
+
+/// Attaches portable semantic identity to a selected runtime implementation.
+///
+/// Specialization is allowed to choose implementation-specific factory names,
+/// but semantic artifacts and compute backends must continue to see the
+/// source-level operation that was selected.
+pub fn with_semantic_operation(
+    operation: impl Into<Box<str>>,
+    function: Box<dyn MechFunction>,
+) -> Box<dyn MechFunction> {
+    Box::new(SemanticMechFunction {
+        operation: operation.into(),
+        function,
+    })
+}
+
+struct SemanticMechFunction {
+    operation: Box<str>,
+    function: Box<dyn MechFunction>,
+}
+
+impl MechFunctionImpl for SemanticMechFunction {
+    fn solve_result(&self) -> MResult<()> {
+        self.function.solve_result()
+    }
+
+    fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
+        self.function.solve_result_with(services)
+    }
+
+    fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
+        self.function.solve_reactive()
+    }
+
+    fn solve_reactive_with(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<ReactiveSolveStatus> {
+        self.function.solve_reactive_with(services)
+    }
+
+    fn initial_solve_policy(&self) -> InitialSolvePolicy {
+        self.function.initial_solve_policy()
+    }
+
+    fn initialize_preserved_output_with(
+        &self,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<()> {
+        self.function.initialize_preserved_output_with(services)
+    }
+
+    fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
+        self.function.stage_register()
+    }
+
+    fn out(&self) -> LegacyValue {
+        self.function.out()
+    }
+
+    fn reactive_dependency_kinds(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyKind>> {
+        self.function.reactive_dependency_kinds(argument_count)
+    }
+
+    fn reactive_dependency_scopes(
+        &self,
+        argument_count: usize,
+    ) -> Option<Vec<ReactiveDependencyScope>> {
+        self.function.reactive_dependency_scopes(argument_count)
+    }
+
+    fn reactive_output_values(&self) -> Vec<LegacyValue> {
+        self.function.reactive_output_values()
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        self.function.transaction_state_values()
+    }
+
+    fn reactive_output_cell_ids(&self) -> Vec<ReactiveCellId> {
+        self.function.reactive_output_cell_ids()
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        self.function.reactive_node_kind()
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        self.function.semantic_operation_contract()
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some(&self.operation)
+    }
+
+    fn to_string(&self) -> String {
+        self.function.to_string()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for SemanticMechFunction {
+    fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
+        self.function.reserve_bytecode_registers(ctx)
+    }
+
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        self.function.compile(ctx)
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuardFunctionSafety {

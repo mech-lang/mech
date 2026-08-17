@@ -345,30 +345,34 @@ fn high_level_ekf_source_evaluation_matches_generic_lowering() {
     let operation_names = artifact
         .nodes()
         .iter()
-        .map(|node| node.operation.operation_name.as_str())
+        .map(|node| {
+            node.operation
+                .module_path
+                .iter()
+                .chain(std::iter::once(&node.operation.operation_name))
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join("/")
+        })
         .collect::<Vec<_>>();
+    for expected in [
+        "matrix/multiply",
+        "matrix/transpose",
+        "matrix/dot",
+        "math/sin",
+        "math/cos",
+        "math/atan2",
+    ] {
+        assert!(
+            operation_names.iter().any(|name| name == expected),
+            "missing canonical semantic operation {expected}: {operation_names:?}",
+        );
+    }
     assert!(
         operation_names
             .iter()
-            .any(|name| name.starts_with("MatMul"))
+            .all(|name| !name.starts_with("runtime/"))
     );
-    assert!(
-        operation_names
-            .iter()
-            .any(|name| name.starts_with("Transpose"))
-    );
-    assert!(operation_names.iter().any(|name| name.starts_with("Dot")));
-    assert!(
-        operation_names
-            .iter()
-            .any(|name| name.starts_with("MathSin"))
-    );
-    assert!(
-        operation_names
-            .iter()
-            .any(|name| name.starts_with("MathCos"))
-    );
-    assert!(operation_names.iter().any(|name| name.starts_with("Atan2")));
     assert!(
         operation_names
             .iter()

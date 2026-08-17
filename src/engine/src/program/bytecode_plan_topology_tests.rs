@@ -399,29 +399,16 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
     for schema in comparison_input_schemas {
         assert_f64_schema(&comparison, schema);
     }
-    let catalog = source_catalog();
-    for node in comparison.nodes() {
-        let exact_name = if node.operation.module_path.as_ref() == ["runtime"] {
-            node.operation.operation_name.clone()
-        } else {
-            node.operation
-                .module_path
-                .iter()
-                .chain(std::iter::once(&node.operation.operation_name))
-                .cloned()
-                .collect::<Vec<_>>()
-                .join("/")
-        };
-        assert!(
-            catalog
-                .runtime_entries()
-                .any(|entry| entry.name == exact_name),
-            "artifact operation {exact_name:?} must preserve an installed runtime entry name"
-        );
-        assert!(!exact_name.starts_with("runtime-"));
-        assert!(!exact_name.starts_with("host-"));
-        assert!(!exact_name.starts_with("resource-"));
-    }
+    assert!(comparison.nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["compare"] && node.operation.operation_name == "lt"
+    }));
+    assert!(
+        comparison
+            .nodes()
+            .iter()
+            .all(|node| node.operation.module_path.as_ref() != ["runtime"]),
+        "artifact nodes must name semantic operations, not runtime implementations"
+    );
 
     let (integrity, decoded_integrity) = compile_artifact_fixture(include_str!(
         "../../tests/fixtures/program-artifact/integrity-constraint.mec"
@@ -673,6 +660,23 @@ fn compiled_fixture(
     requirements: Vec<ApplicationRequirement>,
     return_register: Register,
 ) -> CompiledBytecode {
+    let instruction_operations = instructions
+        .iter()
+        .zip(&instruction_roles)
+        .map(|(instruction, role)| {
+            (matches!(role, Some(CompiledInstructionRole::Node(_)))
+                && matches!(
+                    instruction,
+                    BytecodeInstruction::RuntimeNullary { .. }
+                        | BytecodeInstruction::RuntimeUnary { .. }
+                        | BytecodeInstruction::RuntimeBinary { .. }
+                        | BytecodeInstruction::RuntimeTernary { .. }
+                        | BytecodeInstruction::RuntimeQuaternary { .. }
+                        | BytecodeInstruction::RuntimeVariadic { .. }
+                ))
+            .then(|| "compare/lt".to_owned())
+        })
+        .collect();
     CompiledBytecode {
         program: BytecodeProgram {
             register_count: register_kinds.len() as u32,
@@ -685,6 +689,7 @@ fn compiled_fixture(
         },
         runtime_function_names: BTreeMap::new(),
         instruction_contracts: vec![None; instruction_roles.len()],
+        instruction_operations,
         instruction_source_nodes: vec![None; instruction_roles.len()],
         instruction_roles,
         register_collection_cardinalities: vec![None; register_kinds.len()],
@@ -819,6 +824,16 @@ fn catalog_contract_fills_an_empty_specialized_function_sidecar() {
 #[test]
 fn malformed_compiled_sidecars_fail_closed() {
     let catalog = source_catalog();
+
+    let mut missing_operation = valid_compiled_fixture();
+    missing_operation.instruction_operations[2] = None;
+    assert!(matches!(
+        crate::compile_executable_program_artifact(&missing_operation, &catalog),
+        Err(crate::ArtifactBuildError::MissingSemanticOperation {
+            instruction: 2,
+            implementation,
+        }) if implementation == TEST_LESS_RUNTIME
+    ));
 
     let mut missing_role = valid_compiled_fixture();
     missing_role.instruction_roles[2] = None;

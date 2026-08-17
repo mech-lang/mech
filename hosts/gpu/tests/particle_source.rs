@@ -809,19 +809,52 @@ fn particle_arithmetic_reaches_artifact_with_declared_contracts() {
     let artifact = compile_source(PARTICLE_SOURCE, particle_inputs());
     assert!(!artifact.nodes().is_empty());
     for node in artifact.nodes() {
-        if node.operation.operation_name.starts_with("VariableDefine") {
-            continue;
-        }
-        if node.operation.module_path.as_ref() == ["core"]
-            && node.operation.operation_name == "composite-pack"
-        {
-            continue;
-        }
+        assert_ne!(node.operation.module_path.as_ref(), ["runtime"]);
         assert!(matches!(
             artifact.contracts().get(node.contract),
             Some(ResolvedOperationContract::Declared(_))
         ));
     }
+}
+
+#[test]
+fn specialized_matrix_factories_do_not_leak_into_artifact_operations() {
+    let artifact = compile_source(
+        r#"
++> math
+input := host-input
+projection := [1f32 2f32 3f32
+               4f32 5f32 6f32]
+~result := [0f32; 0f32]
+result = projection ** input
+result
+"#,
+        [(
+            "host-input",
+            RuntimeHostInputValue::F32Matrix {
+                rows: 3,
+                columns: 1,
+                values: vec![1.0, 10.0, 100.0],
+            },
+        )],
+    );
+    let operations = artifact
+        .nodes()
+        .iter()
+        .map(|node| {
+            node.operation
+                .module_path
+                .iter()
+                .chain(std::iter::once(&node.operation.operation_name))
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+                .join("/")
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+
+    assert!(operations.contains("matrix/multiply"));
+    assert!(operations.contains("core/assign"));
+    assert!(operations.iter().all(|name| !name.starts_with("runtime/")));
 }
 
 fn assert_close(actual: &[f32], expected: &[f32]) {

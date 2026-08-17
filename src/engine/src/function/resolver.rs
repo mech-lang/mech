@@ -117,7 +117,9 @@ impl<'a> FunctionResolver<'a> {
 
         self.environment
             .require_operation_enabled(operation, Some(&entry.canonical_name))?;
-        entry.specializer.specialize(arguments)
+        entry.specializer.specialize(arguments).map(|function| {
+            mech_core::with_semantic_operation(entry.canonical_name.clone(), function)
+        })
     }
 
     pub fn specialize_named_extension(
@@ -129,7 +131,9 @@ impl<'a> FunctionResolver<'a> {
             .extensions
             .entry(extension)
             .ok_or_else(|| extension_unavailable(extension, None))?;
-        entry.specializer.specialize(arguments)
+        entry.specializer.specialize(arguments).map(|function| {
+            mech_core::with_semantic_operation(entry.canonical_name.clone(), function)
+        })
     }
 }
 

@@ -889,14 +889,6 @@ impl<'a> Compiler<'a> {
                 continue;
             }
             let operation_name = display_operation(&node.operation);
-            // Definitions establish source-level names and input/output identity.
-            // The compiler keeps them as bytecode markers, but downstream slots
-            // already refer to the value they name, so they are not GPU work.
-            if node.operation.module_path.as_ref() == ["runtime"]
-                && node.operation.operation_name.starts_with("VariableDefine")
-            {
-                continue;
-            }
             if node.operation.module_path.as_ref() == ["core"]
                 && node.operation.operation_name == "composite-pack"
             {
@@ -1063,8 +1055,8 @@ impl<'a> Compiler<'a> {
         state_targets: &[CellSlotId],
     ) {
         if state_targets.len() != 1
-            || node.operation.module_path.as_ref() != ["runtime"]
-            || !node.operation.operation_name.starts_with("Assign")
+            || node.operation.module_path.as_ref() != ["core"]
+            || node.operation.operation_name != "assign"
         {
             self.reject(
                 GpuDiagnosticCode::StateUnsupported,
@@ -1765,50 +1757,14 @@ fn elementwise_operation(operation: &OperationReference) -> Option<ElementwiseOp
     let canonical = display_operation(operation);
     match canonical.as_str() {
         "math/add" => Some(ElementwiseOperation::Binary(BinaryOperation::Add)),
-        "math/sub" | "math/subtract" => {
-            Some(ElementwiseOperation::Binary(BinaryOperation::Subtract))
-        }
-        "math/mul" | "math/multiply" => {
-            Some(ElementwiseOperation::Binary(BinaryOperation::Multiply))
-        }
-        "math/div" | "math/divide" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
+        "math/sub" => Some(ElementwiseOperation::Binary(BinaryOperation::Subtract)),
+        "math/mul" => Some(ElementwiseOperation::Binary(BinaryOperation::Multiply)),
+        "math/div" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
         "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
         "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
         "math/atan2" => Some(ElementwiseOperation::Atan2),
-        _ if operation.module_path.as_ref() == ["runtime"]
-            && operation
-                .operation_name
-                .starts_with("HorizontalConcatenateS1D") =>
-        {
-            Some(ElementwiseOperation::Identity)
-        }
-        _ if operation.module_path.as_ref() == ["runtime"]
-            && operation
-                .operation_name
-                .starts_with("VerticalConcatenateVD2") =>
-        {
-            Some(ElementwiseOperation::Pack2)
-        }
-        _ if operation.module_path.as_ref() == ["runtime"]
-            && operation.operation_name.starts_with("Add") =>
-        {
-            Some(ElementwiseOperation::Binary(BinaryOperation::Add))
-        }
-        _ if operation.module_path.as_ref() == ["runtime"]
-            && operation.operation_name.starts_with("Sub") =>
-        {
-            Some(ElementwiseOperation::Binary(BinaryOperation::Subtract))
-        }
-        _ if operation.module_path.as_ref() == ["runtime"]
-            && operation.operation_name.starts_with("Mul") =>
-        {
-            Some(ElementwiseOperation::Binary(BinaryOperation::Multiply))
-        }
-        _ if operation.module_path.as_ref() == ["runtime"]
-            && operation.operation_name.starts_with("Div") =>
-        {
-            Some(ElementwiseOperation::Binary(BinaryOperation::Divide))
-        }
+        "matrix/horzcat" => Some(ElementwiseOperation::Identity),
+        "matrix/vertcat" => Some(ElementwiseOperation::Pack2),
         _ => None,
     }
 }

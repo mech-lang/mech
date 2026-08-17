@@ -88,7 +88,10 @@ pub fn function_call(
                     ),
                 )
             );
-            let function = entry.specializer.specialize(&input_arg_values)?;
+            let function = mech_core::with_semantic_operation(
+                entry.canonical_name,
+                entry.specializer.specialize(&input_arg_values)?,
+            );
             execute_specialized_function(function, &input_arg_values, p)
         }
         OwnedResolvedNamedFunction::Extension(entry) => {
@@ -104,7 +107,10 @@ pub fn function_call(
                     ),
                 )
             );
-            let function = entry.specializer.specialize(&input_arg_values)?;
+            let function = mech_core::with_semantic_operation(
+                entry.canonical_name,
+                entry.specializer.specialize(&input_arg_values)?,
+            );
             execute_specialized_function(function, &input_arg_values, p)
         }
     }

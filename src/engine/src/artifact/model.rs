@@ -441,6 +441,10 @@ pub enum ArtifactBuildError {
     UnknownRuntimeFunction {
         function: u64,
     },
+    MissingSemanticOperation {
+        instruction: u32,
+        implementation: String,
+    },
     UnknownApplicationRequirement {
         requirement: u32,
     },

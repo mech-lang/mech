@@ -581,6 +581,11 @@ pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
         compiled.instruction_contracts.len(),
     )?;
     validate_compiled_metadata_length(
+        "instruction_operations",
+        compiled.program.instructions.len(),
+        compiled.instruction_operations.len(),
+    )?;
+    validate_compiled_metadata_length(
         "instruction_source_nodes",
         compiled.program.instructions.len(),
         compiled.instruction_source_nodes.len(),
@@ -1111,7 +1116,9 @@ pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
                     }
                 };
                 let semantics = instruction_semantics(
+                    instruction_id,
                     instruction,
+                    compiled.instruction_operations[instruction_id as usize].as_deref(),
                     catalog,
                     &compiled.runtime_function_names,
                     &compiled.program.requirements,
@@ -1851,7 +1858,9 @@ fn validate_compiled_instruction_roles(
             _ => match role {
                 Some(CompiledInstructionRole::Node(_)) => {
                     instruction_semantics(
+                        instruction_id,
                         instruction,
+                        compiled.instruction_operations[index].as_deref(),
                         catalog,
                         &compiled.runtime_function_names,
                         &compiled.program.requirements,
@@ -2007,6 +2016,18 @@ fn operation_reference_from_name(
 }
 
 #[cfg(feature = "semantic-compiler")]
+fn semantic_operation_reference(
+    canonical_name: &str,
+) -> Result<OperationReference, ArtifactBuildError> {
+    let canonical_name = match canonical_name {
+        "matrix/matmul" => "matrix/multiply",
+        "assign" => "core/assign",
+        name => name,
+    };
+    operation_reference_from_name("core", canonical_name)
+}
+
+#[cfg(feature = "semantic-compiler")]
 fn resource_operation_reference(
     requirement: u32,
     requirements: &[ApplicationRequirement],
@@ -2034,19 +2055,25 @@ fn resource_operation_reference(
 
 #[cfg(feature = "semantic-compiler")]
 fn instruction_semantics(
+    instruction_id: u32,
     instruction: &BytecodeInstruction,
+    semantic_operation: Option<&str>,
     catalog: &FunctionCatalog,
     runtime_function_names: &BTreeMap<u64, String>,
     requirements: &[ApplicationRequirement],
 ) -> Result<Option<CompiledInstructionSemantics>, ArtifactBuildError> {
     let runtime = |function: u64| {
-        if let Some(entry) = catalog.runtime_entry_by_raw(function) {
-            return operation_reference_from_name("runtime", &entry.name);
-        }
-        let name = runtime_function_names
-            .get(&function)
+        let implementation = catalog
+            .runtime_entry_by_raw(function)
+            .map(|entry| entry.name.as_str())
+            .or_else(|| runtime_function_names.get(&function).map(String::as_str))
             .ok_or(ArtifactBuildError::UnknownRuntimeFunction { function })?;
-        operation_reference_from_name("runtime", name)
+        semantic_operation
+            .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
+                instruction: instruction_id,
+                implementation: implementation.to_owned(),
+            })
+            .and_then(semantic_operation_reference)
     };
     let semantics = match instruction {
         BytecodeInstruction::ConstLoad { .. } | BytecodeInstruction::Return { .. } => {

@@ -595,11 +595,12 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     }
 
     for step in plan.iter() {
-        context.begin_plan_node_with_contract(
+        context.begin_plan_node_with_semantics(
             match step.reactive_node_kind() {
                 ReactiveNodeKind::Combinational => CompiledNodeKind::Combinational,
                 ReactiveNodeKind::Register => CompiledNodeKind::Register,
             },
+            step.semantic_operation_name(),
             step.semantic_operation_contract(),
         )?;
         let compile_result = step.compile(&mut context);

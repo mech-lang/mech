@@ -393,14 +393,6 @@ fn classify_node(
     artifact: &ProgramArtifact,
     node: &mech_engine::NodeDeclaration,
 ) -> (ExecutionTarget, String) {
-    if node.operation.module_path.as_ref() == ["runtime"]
-        && node.operation.operation_name.starts_with("VariableDefine")
-    {
-        return (
-            ExecutionTarget::Structural,
-            "source name only; no runtime work".to_owned(),
-        );
-    }
     if node.operation.module_path.as_ref() == ["core"]
         && node.operation.operation_name == "composite-pack"
     {
@@ -418,8 +410,8 @@ fn classify_node(
         )
     });
     if state_output {
-        if node.operation.module_path.as_ref() == ["runtime"]
-            && node.operation.operation_name.starts_with("Assign")
+        if node.operation.module_path.as_ref() == ["core"]
+            && node.operation.operation_name == "assign"
             && contract_supported(artifact, node, true)
         {
             return (
