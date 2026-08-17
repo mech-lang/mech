@@ -1,8 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_compute::{
-    ComparisonOperation, FixedShape, FixedShapeIr, LogicOperation, ScalarComputation,
-    ScalarInstruction, ScalarOperand, ScalarPredicate,
+    ComparisonOperation, ComputeKernel, ComputeProgram, FixedShape, FixedShapeIr, LogicOperation,
+    ScalarComputation, ScalarInstruction, ScalarOperand, ScalarPredicate,
+    build_compute_region_interface, plan_compute_artifact,
 };
 use mech_core::{
     CellSlotId, DimensionExpr, FloatWidth, IntegrityConstraintId, NodeId, SchemaBody, ValueData,
@@ -409,7 +410,7 @@ struct BatchedConstraint {
 #[derive(Clone, Debug)]
 pub struct BatchedGpuProgram {
     instances: u32,
-    ir: FixedShapeIr,
+    compute: ComputeProgram,
     register_offsets: BTreeMap<CellSlotId, usize>,
     inputs: Vec<BatchedInput>,
     states: Vec<BatchedState>,
@@ -551,6 +552,17 @@ impl super::GpuHost {
 }
 
 impl BatchedGpuProgram {
+    pub fn compute_program(&self) -> &ComputeProgram {
+        &self.compute
+    }
+
+    fn fixed_ir(&self) -> &FixedShapeIr {
+        let ComputeKernel::FixedShape(ir) = self.compute.kernel() else {
+            unreachable!("fixed-shape batch contains an elementwise kernel")
+        };
+        ir
+    }
+
     pub const fn instances(&self) -> u32 {
         self.instances
     }
@@ -602,7 +614,7 @@ impl BatchedGpuProgram {
             inputs,
             state,
             next_state,
-            registers: vec![0.0; self.ir.register_count],
+            registers: vec![0.0; self.fixed_ir().register_count],
             faults: BatchedFaultRecorder::default(),
         })
     }
@@ -624,7 +636,7 @@ impl BatchedGpuProgram {
             inputs,
             state,
             next_state,
-            registers: vec![f32x4::ZERO; self.ir.register_count],
+            registers: vec![f32x4::ZERO; self.fixed_ir().register_count],
             faults: BatchedFaultRecorder::default(),
         })
     }
@@ -739,7 +751,7 @@ impl BatchedCpuSession<'_> {
                     self.registers[offset..offset + elements]
                         .copy_from_slice(&values[instance * elements..(instance + 1) * elements]);
                 }
-                for instruction in &self.program.ir.instructions {
+                for instruction in &self.program.fixed_ir().instructions {
                     self.registers[instruction.output] =
                         instruction.computation.evaluate(&self.registers);
                 }
@@ -803,7 +815,7 @@ impl BatchedSimdCpuSession<'_> {
                             gather_simd(values, first_instance, instances, elements, component);
                     }
                 }
-                for instruction in &self.program.ir.instructions {
+                for instruction in &self.program.fixed_ir().instructions {
                     self.registers[instruction.output] =
                         evaluate_scalar_computation_simd(&instruction.computation, &self.registers);
                 }
@@ -1172,12 +1184,16 @@ impl<'a> BatchCompiler<'a> {
             &states,
             &constraints,
         );
+        let interface =
+            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
+        let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
+        let kernel = ComputeKernel::FixedShape(FixedShapeIr {
+            register_count: self.register_count,
+            instructions: self.instructions.into_boxed_slice(),
+        });
         Ok(BatchedGpuProgram {
             instances: self.instances,
-            ir: FixedShapeIr {
-                register_count: self.register_count,
-                instructions: self.instructions.into_boxed_slice(),
-            },
+            compute: ComputeProgram::new(interface, plan, kernel),
             register_offsets: self.register_offsets,
             inputs,
             states,

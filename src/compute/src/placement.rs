@@ -72,7 +72,7 @@ pub struct PlacementViolation {
     pub reason: String,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct ComputePhysicalPlan {
     pub nodes: Vec<NodePlacement>,
     pub slots: Vec<SlotPlacement>,

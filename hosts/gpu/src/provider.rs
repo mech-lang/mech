@@ -692,6 +692,7 @@ mod tests {
     #[test]
     fn region_program_preserves_source_initializers_in_kernel_layout() {
         let program = GpuProgram {
+            compute: super::super::empty_compute_program(),
             wgsl: String::new(),
             bindings: vec![GpuBinding {
                 binding: 0,
@@ -700,7 +701,6 @@ mod tests {
                 elements: 6,
                 kind: GpuBindingKind::Input(CellSlotId(0)),
             }],
-            operations: Vec::new(),
             outputs: Vec::new(),
             states: Vec::new(),
             input_slots: BTreeMap::new(),

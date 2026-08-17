@@ -623,9 +623,9 @@ mod tests {
     #[test]
     fn all_gpu_execution_modes_reject_oversized_workgroup_counts() {
         let program = GpuProgram {
+            compute: super::super::empty_compute_program(),
             wgsl: String::new(),
             bindings: Vec::new(),
-            operations: Vec::new(),
             outputs: Vec::new(),
             states: Vec::new(),
             input_slots: BTreeMap::new(),

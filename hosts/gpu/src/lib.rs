@@ -7,8 +7,9 @@ use std::{
 };
 
 use mech_compute::{
-    BinaryOperation, ElementwiseInstruction, ElementwiseOperation, UnaryOperation,
-    display_operation, elementwise_operation, plan_compute_artifact, turn_required_nodes,
+    BinaryOperation, ComputeKernel, ComputeProgram, ElementwiseInstruction, ElementwiseIr,
+    ElementwiseOperation, UnaryOperation, build_compute_region_interface, display_operation,
+    elementwise_operation, plan_compute_artifact, turn_required_nodes,
 };
 pub use mech_compute::{
     ComputeAdmissionError as GpuAdmissionError, ComputeDiagnostic as GpuDiagnostic,
@@ -39,6 +40,15 @@ mod provider;
 pub use provider::*;
 pub const WORKGROUP_SIZE: u32 = 64;
 
+#[cfg(test)]
+fn empty_compute_program() -> ComputeProgram {
+    ComputeProgram::new(
+        Default::default(),
+        Default::default(),
+        ComputeKernel::Elementwise(Default::default()),
+    )
+}
+
 /// Converts a Mech matrix snapshot into the row-major storage order consumed
 /// by generated GPU and fused CPU kernels.
 pub fn column_major_to_row_major<T: Copy + Default>(
@@ -46,22 +56,8 @@ pub fn column_major_to_row_major<T: Copy + Default>(
     columns: usize,
     values: &[T],
 ) -> Result<Vec<T>, String> {
-    let elements = rows.checked_mul(columns).ok_or_else(|| {
-        format!("GPU input matrix shape {rows}x{columns} exceeds addressable memory")
-    })?;
-    if values.len() != elements {
-        return Err(format!(
-            "GPU input matrix shape {rows}x{columns} requires {elements} elements, found {}",
-            values.len()
-        ));
-    }
-    let mut row_major = vec![T::default(); elements];
-    for row in 0..rows {
-        for column in 0..columns {
-            row_major[row * columns + column] = values[column * rows + row];
-        }
-    }
-    Ok(row_major)
+    mech_compute::column_major_to_row_major(&[rows as u64, columns as u64], values)
+        .map_err(|error| error.to_string())
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -135,9 +131,9 @@ struct KernelState {
 
 #[derive(Clone, Debug)]
 pub struct GpuProgram {
+    compute: ComputeProgram,
     wgsl: String,
     bindings: Vec<GpuBinding>,
-    operations: Vec<ElementwiseInstruction>,
     outputs: Vec<KernelOutput>,
     states: Vec<KernelState>,
     input_slots: BTreeMap<CellSlotId, (String, u64, u32)>,
@@ -156,6 +152,10 @@ pub struct OwnedResidentCpuSession {
 }
 
 impl GpuProgram {
+    pub fn compute_program(&self) -> &ComputeProgram {
+        &self.compute
+    }
+
     pub fn wgsl(&self) -> &str {
         &self.wgsl
     }
@@ -277,7 +277,10 @@ impl GpuProgram {
         &self,
         slots: &mut BTreeMap<CellSlotId, Vec<f32>>,
     ) -> Result<(), CpuExecutionError> {
-        for operation in &self.operations {
+        let ComputeKernel::Elementwise(ir) = self.compute.kernel() else {
+            unreachable!("elementwise GPU program contains a fixed-shape kernel")
+        };
+        for operation in &ir.instructions {
             let mut output = Vec::with_capacity(operation.elements as usize);
             for index in 0..operation.elements as usize {
                 let inputs = operation
@@ -605,10 +608,16 @@ impl<'a> Compiler<'a> {
                 initializer: state.initializer,
             })
             .collect();
+        let interface =
+            build_compute_region_interface(self.artifact, self.artifact.compute_regions().first())?;
+        let plan = plan_compute_artifact(self.artifact, self.artifact.compute_regions());
+        let kernel = ComputeKernel::Elementwise(ElementwiseIr {
+            instructions: self.operations.into_boxed_slice(),
+        });
         Ok(GpuProgram {
+            compute: ComputeProgram::new(interface, plan, kernel),
             wgsl,
             bindings: self.bindings,
-            operations: self.operations,
             outputs: self.outputs,
             states,
             input_slots: self.input_slots,

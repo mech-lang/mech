@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use mech_compute::{ComputeElementType, TensorLayout};
 use mech_core::{
     Body, ComputePlacement, MechCode, ParsedProgram, Program, ResolvedOperationContract, Section,
     SectionElement,
@@ -147,6 +148,43 @@ fn particle_inputs() -> Vec<(&'static str, RuntimeHostInputValue)> {
         ("host-drag", RuntimeHostInputValue::F32(0.9)),
         ("host-dt", RuntimeHostInputValue::F32(0.1)),
     ]
+}
+
+#[test]
+fn lowered_program_exposes_exact_typed_region_ports() {
+    let artifact = compile_source(
+        "left := host-left\nright := host-right\nresult := left + right\nresult",
+        [
+            (
+                "host-left",
+                RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 3,
+                    values: vec![1.0; 6],
+                },
+            ),
+            (
+                "host-right",
+                RuntimeHostInputValue::F32Matrix {
+                    rows: 2,
+                    columns: 3,
+                    values: vec![2.0; 6],
+                },
+            ),
+        ],
+    );
+    let program = GpuHost
+        .compile(&artifact)
+        .expect("particle source must lower");
+    let interface = program.compute_program().interface();
+    let left = interface
+        .input_named("left")
+        .expect("left must be a live region input");
+
+    assert_eq!(left.element, ComputeElementType::F32);
+    assert_eq!(left.dimensions.as_ref(), [2, 3]);
+    assert_eq!(left.layout(), TensorLayout::RowMajor);
+    assert_eq!(interface.outputs[0].dimensions.as_ref(), [2, 3]);
 }
 
 #[test]
