@@ -6,10 +6,10 @@ pub mod bundle_web;
 pub mod capabilities;
 #[cfg(feature = "cli_core")]
 pub mod commands;
+#[cfg(feature = "gpu_executor_native")]
+pub(crate) mod compute;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;
-#[cfg(feature = "gpu_executor_native")]
-pub(crate) mod executor;
 #[cfg(any(feature = "build", feature = "run"))]
 pub(crate) mod host_configuration;
 #[cfg(feature = "run")]

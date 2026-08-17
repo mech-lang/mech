@@ -41,23 +41,6 @@ pub fn required_gpu_paths(config_source: &str) -> Result<Array, JsValue> {
     Ok(paths)
 }
 
-#[wasm_bindgen(js_name = configuredExecutor)]
-pub fn configured_executor(config_source: &str) -> Result<JsValue, JsValue> {
-    let document = parse_config_document(
-        "browser-project/mech.mcfg",
-        config_source,
-        ConfigProfileOptions::default(),
-    )
-    .map_err(|failure| error(format!("Mech config rejected: {failure:?}")))?;
-    let Some(executor) = document.run.and_then(|run| run.executor) else {
-        return Ok(JsValue::NULL);
-    };
-    let value = Object::new();
-    set(&value, "provider", executor.provider)?;
-    set(&value, "turns", executor.turns)?;
-    Ok(value.into())
-}
-
 #[wasm_bindgen(js_name = compileGpuProgram)]
 pub fn compile_gpu_program(source: &str) -> Result<JsValue, JsValue> {
     let (program, input_values, timings) = compile_program(source).map_err(error)?;

@@ -38,6 +38,13 @@ static PROVIDER_DEFINED_EFFECT: LazyLock<OperationContractDeclaration> = LazyLoc
     }))
 });
 
+static COMPUTE_EFFECT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
+    resource_write_contract(ExternalInteraction::Effect(EffectContract {
+        delivery: EffectDeliveryPolicy::AtMostOnce,
+        idempotency: IdempotencyRequirement::NotRequired,
+    }))
+});
+
 static PREPARE_COMMIT_COMPENSATE: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
     resource_write_contract(ExternalInteraction::TransactionalExternal(
         TransactionalExternalContract {
@@ -66,6 +73,14 @@ pub fn resource_observation_contract() -> &'static OperationContractDeclaration 
 
 pub fn provider_defined_effect_contract() -> &'static OperationContractDeclaration {
     &PROVIDER_DEFINED_EFFECT
+}
+
+/// Contract for compute input updates and turn dispatches.
+///
+/// Compute effects are delivered only after the coordinator transaction
+/// commits and are never retried by the runtime.
+pub fn compute_effect_contract() -> &'static OperationContractDeclaration {
+    &COMPUTE_EFFECT
 }
 
 pub fn prepare_commit_compensate_contract() -> &'static OperationContractDeclaration {
@@ -106,6 +121,17 @@ mod tests {
             transactional.interaction,
             ExternalInteraction::TransactionalExternal(TransactionalExternalContract {
                 protocol: TransactionalEffectProtocol::PrepareCommitCompensate,
+            })
+        ));
+
+        let compute = compute_effect_contract();
+        assert!(compute.inputs.resolve(1).is_ok());
+        assert!(compute.outputs.is_empty());
+        assert!(matches!(
+            compute.interaction,
+            ExternalInteraction::Effect(EffectContract {
+                delivery: EffectDeliveryPolicy::AtMostOnce,
+                idempotency: IdempotencyRequirement::NotRequired,
             })
         ));
     }

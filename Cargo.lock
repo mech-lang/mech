@@ -2498,6 +2498,7 @@ dependencies = [
  "libc",
  "mech-browser",
  "mech-build",
+ "mech-compute",
  "mech-console",
  "mech-core",
  "mech-engine",

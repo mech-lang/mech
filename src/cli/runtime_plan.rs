@@ -1,5 +1,5 @@
 use mech_core::*;
-use mech_runtime::{HostInstanceConfig, RunExecutorConfig, RunResourceGrantConfig, RuntimeConfig};
+use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig};
 
 use crate::cli::host_grants;
 use crate::cli::run::{RunInputMode, effective_run_runtime_config};
@@ -17,7 +17,7 @@ pub(crate) struct RunExecutionPlan {
     pub cli_grants: crate::cli::host_grants::EffectiveCliHostGrants,
     pub configured_hosts: Vec<HostInstanceConfig>,
     pub configured_run_grants: Vec<RunResourceGrantConfig>,
-    pub configured_executor: Option<RunExecutorConfig>,
+    pub backend_override: Option<String>,
     pub filesystem_access: crate::cli::capabilities::FilesystemRuntimeAccess,
     pub config_event: crate::cli::config::ConfigLoadEvent,
 }
@@ -46,11 +46,6 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         .and_then(|loaded| loaded.document.run.as_ref())
         .map(|run| run.grants.clone())
         .unwrap_or_default();
-    let configured_executor = loaded_config
-        .as_ref()
-        .and_then(|loaded| loaded.document.run.as_ref())
-        .and_then(|run| run.executor.clone());
-
     let mut filesystem_access = options.filesystem_access;
     let config_event = options.config_event;
 
@@ -89,7 +84,7 @@ pub(crate) fn build_run_execution_plan(options: PreparedRunOptions) -> MResult<R
         cli_grants,
         configured_hosts,
         configured_run_grants,
-        configured_executor,
+        backend_override: options.backend_override,
         filesystem_access,
         config_event,
     })
@@ -167,6 +162,7 @@ mod tests {
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,
+            backend_override: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),
@@ -197,6 +193,7 @@ mod tests {
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,
+            backend_override: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),

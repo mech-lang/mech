@@ -168,7 +168,7 @@ pub fn new_cli_runtime_with_source_resolver_and_host_factories(
     .build()
 }
 
-fn cli_runtime_builder(
+pub(crate) fn cli_runtime_builder(
     config: RuntimeConfig,
     cli_grants: &host_grants::EffectiveCliHostGrants,
     configured_hosts: &[HostInstanceConfig],

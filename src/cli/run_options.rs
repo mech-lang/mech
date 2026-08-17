@@ -15,6 +15,7 @@ pub(crate) struct RunCliArgs {
     pub rounds_per_step: Option<usize>,
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
+    pub backend_override: Option<String>,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
 }
 
@@ -46,6 +47,8 @@ impl RunCliArgs {
                 .unwrap_or(false),
             max_live_turns: run_matches
                 .and_then(|matches| matches.get_one::<usize>("max-live-turns").copied()),
+            backend_override: run_matches
+                .and_then(|matches| matches.get_one::<String>("backend").cloned()),
             cli_capability_selection: cli_host_capability_selection(root_matches, run_matches),
         })
     }
@@ -59,6 +62,7 @@ pub(crate) struct PreparedRunOptions {
     pub rounds_per_step: Option<usize>,
     pub runtime_info: bool,
     pub max_live_turns: Option<usize>,
+    pub backend_override: Option<String>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub config_event: config::ConfigLoadEvent,
     pub cli_capability_selection: host_grants::CliHostCapabilitySelection,
@@ -86,6 +90,7 @@ pub(crate) fn prepare_run_options(
         rounds_per_step: args.rounds_per_step,
         runtime_info: args.runtime_info,
         max_live_turns: args.max_live_turns,
+        backend_override: args.backend_override,
         loaded_config,
         config_event: loaded.event,
         cli_capability_selection: args.cli_capability_selection,

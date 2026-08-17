@@ -118,7 +118,8 @@ full-hosts = [
       "mech-build?/full-hosts",
       ]
 gpu_executor_native = [
-      "dep:mech-gpu", "mech-gpu/native",
+      "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native",
+      "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
       "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
       "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
       "mech-stdlib/native-plan",
@@ -442,6 +443,7 @@ mech-console = { version = "0.3.5", path = "hosts/console", default-features = f
 mech-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
 mech-robot-arm = { version = "0.3.5", default-features = false, optional = true }
+mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
 mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 

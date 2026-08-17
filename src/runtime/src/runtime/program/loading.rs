@@ -105,6 +105,21 @@ impl MechRuntime {
         self.load_production_with(durability, |runtime| runtime.decode_artifact(bytecode))
     }
 
+    /// Activates an immutable compiler product through the same resident
+    /// validation, authority, transaction, and publication path as source and
+    /// bytecode loading.
+    ///
+    /// This is used when an application compiler must first install a host
+    /// derived from a sibling artifact, such as a resident compute region.
+    #[cfg(feature = "resident-routing")]
+    pub fn load_compiled_program(
+        &mut self,
+        artifact: ProgramArtifact,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with(durability, |_| Ok(Arc::new(artifact)))
+    }
+
     #[cfg(feature = "resident-routing-source")]
     /// Plans and loads an already parsed Mech program through the resident
     /// route. This entry point never falls back to another executor.
@@ -200,6 +215,11 @@ impl MechRuntime {
         artifact: Arc<ProgramArtifact>,
         durability: crate::ResidentDurabilityPolicy,
     ) -> MResult<RuntimeProgramLoadOutcome> {
+        if !artifact.compute_regions().is_empty() {
+            return Err(super::unsupported_route(
+                "a program with a compute region must be compiled as a mixed application and installed with a configured compute host",
+            ));
+        }
         let external = !artifact.requirements().is_empty();
         let activation_options = ResidentActivationOptions {
             integrity: ResidentIntegrityMode::Checked,

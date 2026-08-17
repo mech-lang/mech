@@ -36,10 +36,6 @@ mod native;
 #[cfg(feature = "native")]
 pub use native::*;
 #[cfg(feature = "native")]
-mod provider;
-#[cfg(feature = "native")]
-pub use provider::*;
-#[cfg(feature = "native")]
 mod compute_provider;
 #[cfg(feature = "native")]
 pub use compute_provider::*;

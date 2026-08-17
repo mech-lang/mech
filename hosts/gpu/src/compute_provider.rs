@@ -1,7 +1,7 @@
 use std::{
     num::NonZeroU32,
     sync::{
-        Arc, LazyLock, Mutex,
+        Arc, Mutex,
         atomic::{AtomicBool, Ordering},
     },
 };
@@ -12,9 +12,8 @@ use mech_compute::{
     TensorLayout,
 };
 use mech_core::{
-    AccessMode, ComputePlacement, DeliveryMode, EffectContract, EffectDeliveryPolicy,
-    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue,
-    MResult, MechError, MechErrorKind, OperationContractDeclaration, Ref,
+    ComputePlacement, LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration,
+    Ref,
 };
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
@@ -24,22 +23,6 @@ use mech_runtime::{
     RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
     RuntimeResourceWriteRequest, materialize_host_manifest,
 };
-
-static COMPUTE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
-    LazyLock::new(|| OperationContractDeclaration {
-        inputs: InputPortLayout::Fixed(
-            vec![InputPortPolicy {
-                access: AccessMode::Read,
-                delivery: DeliveryMode::Signal,
-            }]
-            .into_boxed_slice(),
-        ),
-        outputs: Box::new([]),
-        interaction: ExternalInteraction::Effect(EffectContract {
-            delivery: EffectDeliveryPolicy::AtMostOnce,
-            idempotency: IdempotencyRequirement::NotRequired,
-        }),
-    });
 
 /// Installs one compiler-produced compute region behind the ordinary resident
 /// runtime host boundary. Backend selection and compilation are intentionally
@@ -313,7 +296,8 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
         &self,
         intent: RuntimeResourceWriteIntent,
     ) -> Option<&'static OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send).then_some(&COMPUTE_EFFECT_CONTRACT)
+        (intent == RuntimeResourceWriteIntent::Send)
+            .then_some(mech_runtime::compute_effect_contract())
     }
 
     fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {

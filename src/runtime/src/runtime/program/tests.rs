@@ -903,44 +903,11 @@ result := x + 2f32
 result
 "#;
 
-#[derive(Debug)]
-struct MixedComputePlanningProvider;
-
-impl RuntimeResourceProvider for MixedComputePlanningProvider {
-    fn scheme(&self) -> &str {
-        "compute"
-    }
-
-    fn base_uris(&self) -> Vec<String> {
-        vec!["compute://worker/kernel".to_owned()]
-    }
-
-    fn semantic_write_contract(
-        &self,
-        intent: RuntimeResourceWriteIntent,
-    ) -> Option<&'static OperationContractDeclaration> {
-        (intent == RuntimeResourceWriteIntent::Send)
-            .then_some(crate::provider_defined_effect_contract())
-    }
-
-    fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        panic!("compute command resource is write-only: {request:?}")
-    }
-
-    fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
-        assert_eq!(request.base_uri, "compute://worker/kernel");
-        assert!(request.path == "turn" || request.path.starts_with("input/"));
-        assert_eq!(request.intent, RuntimeResourceWriteIntent::Send);
-        Ok(())
-    }
-}
-
 #[test]
 fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
     let tree = mech_syntax::parse(MIXED_COMPUTE_SOURCE).unwrap();
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .resource_provider(Box::new(MixedComputePlanningProvider))
         .build_compiler()
         .unwrap();
 
@@ -976,7 +943,6 @@ result
     .unwrap();
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .resource_provider(Box::new(MixedComputePlanningProvider))
         .build_compiler()
         .unwrap();
 
@@ -992,6 +958,33 @@ result
             values: Arc::from([1.0, 2.0, 3.0, 4.0]),
         })
     );
+}
+
+#[test]
+fn mixed_tree_rejects_coordinator_input_with_the_wrong_shape_without_a_provider() {
+    let tree = mech_syntax::parse(
+        r#"
+@compute := compute://worker/kernel{:write(input/matrix), :write(turn)}
+@compute/input/matrix <- [1f32; 2f32]
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+matrix := [1f32 2f32; 3f32 4f32]
+result := matrix + 1f32
+result
+"#,
+    )
+    .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let error = compiler.compile_mixed_tree(&tree).unwrap_err();
+    let rendered = format!("{error:?}");
+    assert!(rendered.contains("compute boundary planning failed"));
+    assert!(rendered.contains("DimensionMismatch"));
 }
 
 #[test]
@@ -1023,7 +1016,6 @@ result
     let mut compiler = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_native_plan_catalog())
         .source_resolver(resolver)
-        .resource_provider(Box::new(MixedComputePlanningProvider))
         .build_compiler()
         .unwrap();
 

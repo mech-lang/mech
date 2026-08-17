@@ -17,8 +17,8 @@ use self::ir::{ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram}
 use self::lower::ConfigLowerer;
 pub use self::lower::{
     ActorBootstrapConfig, BuildHostConfig, ConfigCapabilityGrant, ConfigCapabilityKind,
-    DiagnosticsConfigPatch, MechConfigDocument, RunExecutorConfig, RunHostConfig,
-    RuntimeConfigPatch, RuntimeLimitsPatch, ServeHostConfig,
+    DiagnosticsConfigPatch, MechConfigDocument, RunHostConfig, RuntimeConfigPatch,
+    RuntimeLimitsPatch, ServeHostConfig,
 };
 
 use mech_core::MResult;
