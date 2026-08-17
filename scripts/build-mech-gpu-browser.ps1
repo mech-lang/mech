@@ -14,7 +14,7 @@ try {
     --target web `
     --out-dir pkg `
     --no-default-features `
-    --features browser_project,browser_gpu_compiler
+    --features browser_project,browser_compute
   if ($LASTEXITCODE -ne 0) {
     throw "Failed to build the Mech GPU browser compiler."
   }

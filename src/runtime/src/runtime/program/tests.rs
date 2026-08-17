@@ -916,6 +916,8 @@ fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
     assert!(mixed.coordinator.artifact().compute_regions().is_empty());
     assert_eq!(mixed.compute.declaration.name.as_ref(), "calculation");
     assert_eq!(mixed.compute.interface.inputs.len(), 1);
+    assert_eq!(mixed.compute.interface.outputs.len(), 1);
+    assert_eq!(mixed.compute.interface.outputs[0].name.as_ref(), "result");
     let input = &mixed.compute.interface.inputs[0];
     assert_eq!(input.name.as_ref(), "x");
     assert!(input.dimensions.is_empty());

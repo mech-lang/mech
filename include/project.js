@@ -1,4 +1,4 @@
-import init, * as mech from '/_mech/pkg/mech_wasm.js?profile=mixed-gpu-v1';
+import init, * as mech from '/_mech/pkg/mech_wasm.js?profile=mixed-compute-v1';
 
 const { WasmProject } = mech;
 
@@ -241,7 +241,7 @@ class BrowserComputeProject {
     this.setStatus(`Preparing ${this.backend.toUpperCase()} compute`, '');
 
     const storageBindings = this.manifest.bindings.length;
-    if (this.backend === 'gpu') {
+    if (this.backend === 'wgpu') {
       if (storageBindings > this.adapter.limits.maxStorageBuffersPerShaderStage) {
         throw new Error(
           `Mech generated ${storageBindings} storage bindings, but this adapter supports ` +
@@ -256,7 +256,7 @@ class BrowserComputeProject {
         );
       }
     }
-    this.device = await this.adapter.requestDevice(this.backend === 'gpu'
+    this.device = await this.adapter.requestDevice(this.backend === 'wgpu'
       ? { requiredLimits: { maxStorageBuffersPerShaderStage: storageBindings } }
       : {});
     this.device.lost.then((info) => {
@@ -300,7 +300,7 @@ class BrowserComputeProject {
     }
     const residentBytes = [...this.stateBuffers.values()]
       .reduce((total, buffers) => total + buffers[0].size + buffers[1].size, 0);
-    const stateBytes = this.backend === 'gpu'
+    const stateBytes = this.backend === 'wgpu'
       ? residentBytes
       : this.manifest.states.reduce(
           (total, state) => total + state.elements * Float32Array.BYTES_PER_ELEMENT,
@@ -343,7 +343,7 @@ class BrowserComputeProject {
   }
 
   async createPipelines() {
-    if (this.backend === 'gpu') {
+    if (this.backend === 'wgpu') {
       const computeModule = this.device.createShaderModule({ code: this.manifest.wgsl });
       const compilation = await computeModule.getCompilationInfo();
       const errors = compilation.messages.filter((message) => message.type === 'error');
@@ -382,7 +382,7 @@ class BrowserComputeProject {
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       }));
       this.device.queue.writeBuffer(buffers[0], 0, state.initialValues);
-      if (this.backend === 'gpu') {
+      if (this.backend === 'wgpu') {
         state.initialValues = null;
       }
       this.stateBuffers.set(state.slot, buffers);
@@ -398,7 +398,7 @@ class BrowserComputeProject {
         size: Math.max(4, binding.elements * Float32Array.BYTES_PER_ELEMENT),
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       });
-      if (binding.initialValues && this.backend === 'gpu') {
+      if (binding.initialValues && this.backend === 'wgpu') {
         this.device.queue.writeBuffer(buffer, 0, binding.initialValues);
         binding.initialValues = null;
       }
@@ -408,7 +408,7 @@ class BrowserComputeProject {
       }
     }
 
-    this.computeBindGroups = this.backend === 'gpu'
+    this.computeBindGroups = this.backend === 'wgpu'
       ? [0, 1].map((sourceIndex) => this.device.createBindGroup({
         layout: this.computePipeline.getBindGroupLayout(0),
         entries: this.manifest.bindings.map((binding) => ({
@@ -527,10 +527,10 @@ class BrowserComputeProject {
       maxInputsPerFrame,
     );
     const dispatch = command?.dispatch === true;
-    if (dispatch && this.backend === 'gpu') {
+    if (dispatch && this.backend === 'wgpu') {
       this.applyGpuCommand(command);
     }
-    if (dispatch && this.backend === 'cpu') {
+    if (dispatch && this.backend.startsWith('cpu-')) {
       this.lastInputs = Object.fromEntries(
         command.inputs.map((input) => [input.name, Array.from(input.values)]),
       );
@@ -539,7 +539,7 @@ class BrowserComputeProject {
     this.resize();
     const encoder = this.device.createCommandEncoder();
     let renderedBuffer = this.activeBuffer;
-    if (dispatch && this.backend === 'gpu') {
+    if (dispatch && this.backend === 'wgpu') {
       const compute = encoder.beginComputePass();
       compute.setPipeline(this.computePipeline);
       compute.setBindGroup(0, this.computeBindGroups[this.activeBuffer]);
@@ -562,7 +562,7 @@ class BrowserComputeProject {
     render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
-    if (dispatch && this.backend === 'gpu') {
+    if (dispatch && this.backend === 'wgpu') {
       this.activeBuffer = renderedBuffer;
     }
     if (dispatch) {
@@ -686,9 +686,7 @@ async function main() {
   const manifest =
     await readProjectSourceManifest(import.meta.url);
 
-  const requiredPaths = typeof WasmProject?.requiredPaths === 'function'
-    ? WasmProject.requiredPaths(config)
-    : mech.requiredGpuPaths(config);
+  const requiredPaths = WasmProject.requiredPaths(config);
   const sourceEntries =
     manifest?.sources ??
     Array.from(requiredPaths, path => ({

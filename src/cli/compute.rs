@@ -1,7 +1,9 @@
 use mech_compute::{BackendRequest, ComputePlatform};
-use mech_core::{ComputePlacement, MResult, MechError, MechErrorKind};
+use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::ProgramArtifact;
-use mech_gpu::{ComputeHostFactory, GpuHost, native_compute_backend_registry};
+use mech_gpu::{
+    ComputeHostFactory, lower_elementwise_compute_program, native_compute_backend_registry,
+};
 use mech_runtime::{FileSourceResolver, RuntimeHostFactory, SourceRequest};
 
 use crate::cli::run::{cli_module_options, cli_runtime_builder};
@@ -95,13 +97,7 @@ fn compile_compute_application(
     .build_compiler()?;
     let mixed = compile(&mut compiler)?;
 
-    let lowered = match mixed.compute.declaration.placement {
-        ComputePlacement::Cpu => GpuHost.compile_cpu(&mixed.compute.artifact),
-        ComputePlacement::Compute | ComputePlacement::Gpu => {
-            GpuHost.compile(&mixed.compute.artifact)
-        }
-    }
-    .map_err(|error| {
+    let program = lower_elementwise_compute_program(&mixed.compute.artifact).map_err(|error| {
         compute_cli_error(
             "lower_compute_region",
             format!(
@@ -113,7 +109,7 @@ fn compile_compute_application(
     let mut factory = ComputeHostFactory::new(
         mixed.compute.declaration.name.clone(),
         mixed.compute.declaration.placement,
-        lowered.compute_program().clone(),
+        program,
         mixed.compute.initializers,
         native_compute_backend_registry(),
         ComputePlatform::Native,

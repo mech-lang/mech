@@ -87,6 +87,22 @@ impl ComputeHostFactory {
         self
     }
 
+    pub fn resolved_backend_id(&self, settings: &ConfigValue) -> MResult<mech_compute::BackendId> {
+        let request = self.configured_request(settings)?;
+        self.registry
+            .resolve(&request, self.platform, self.placement, &self.program)
+            .map(|backend| backend.descriptor().id.clone())
+            .map_err(|error| {
+                compute_host_error(
+                    "ComputeBackendSelection",
+                    format!(
+                        "region `{}` has no compatible backend: {error}",
+                        self.region
+                    ),
+                )
+            })
+    }
+
     fn configured_request(&self, settings: &ConfigValue) -> MResult<BackendRequest> {
         let configured = configured_compute_settings(settings)?;
         if configured.region != self.region.as_ref() {

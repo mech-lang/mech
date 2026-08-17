@@ -52,7 +52,7 @@ runtime before building and starting the server:
 ```text
 cargo install wasm-pack --locked
 ./scripts/build-mech-gpu-browser.sh
-cargo build --release
+cargo build --release --features compute_backends_native
 ./target/release/mech serve examples/gpu-particles --backend gpu
 ```
 
@@ -68,7 +68,7 @@ Mech source are unchanged:
 ```text
 cargo install wasm-pack --locked
 powershell -ExecutionPolicy Bypass -File scripts\build-mech-gpu-browser.ps1
-cargo build --release
+cargo build --release --features compute_backends_native
 .\target\release\mech.exe serve examples\gpu-particles --backend gpu
 ```
 
@@ -104,7 +104,7 @@ These tests compile the unchanged one-million-particle source. They do not
 replace the particle count with a smaller fixture:
 
 ```text
-cargo test -p mech-wasm --features browser_project,browser_gpu_compiler served_million_particle_source_compiles_without_bytecode_serialization -- --ignored --nocapture
+cargo test -p mech-wasm --features browser_project,browser_compute served_million_particle_source_compiles_without_bytecode_serialization -- --ignored --nocapture
 cargo test -p mech-gpu --release --features native --test particle_source served_particle_shader_matches_cpu_with_pointer_force -- --nocapture
 ```
 

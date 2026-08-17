@@ -2882,6 +2882,7 @@ dependencies = [
  "gloo-net",
  "js-sys",
  "mech-browser",
+ "mech-compute",
  "mech-console",
  "mech-core",
  "mech-engine",

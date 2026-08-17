@@ -6,7 +6,7 @@ pub mod bundle_web;
 pub mod capabilities;
 #[cfg(feature = "cli_core")]
 pub mod commands;
-#[cfg(feature = "gpu_executor_native")]
+#[cfg(feature = "compute_backends_native")]
 pub(crate) mod compute;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;

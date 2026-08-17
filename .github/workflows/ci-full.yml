@@ -1018,7 +1018,7 @@ jobs:
           cargo test \
             -p mech-wasm \
             --no-default-features \
-            --features browser_project
+            --features browser_project_core
 
       - name: Check CLI clock
         run: |
@@ -1108,12 +1108,12 @@ jobs:
             -p mech-wasm \
             --target wasm32-unknown-unknown \
             --no-default-features \
-            --features browser_project_runner
+            --features browser_project
           cargo check \
             -p mech-wasm \
             --target wasm32-unknown-unknown \
             --no-default-features \
-            --features "browser_project_runner,browser_host_dom,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string_default,record,tuple,table,atom,enum,variables"
+            --features "browser_project,browser_host_dom,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string_default,record,tuple,table,atom,enum,variables"
 
       - name: Build browser project package
         run: bash scripts/build-mech-browser.sh

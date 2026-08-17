@@ -2323,7 +2323,7 @@ mod tests {
         assert_eq!(scene_backend.generation(), 3);
     }
 
-    #[cfg(not(feature = "browser_gpu_compiler"))]
+    #[cfg(not(feature = "browser_compute"))]
     #[test]
     fn unsupported_generic_table_project_fails_closed_without_legacy_execution() {
         let document = parse_config_document(

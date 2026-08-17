@@ -12,7 +12,8 @@ rust-version = "1.92"
 
 [features]
 default = []
-native = ["dep:bytemuck", "dep:pollster", "dep:wgpu", "dep:mech-runtime"]
+runtime-host = ["dep:mech-runtime"]
+native = ["runtime-host", "dep:bytemuck", "dep:pollster", "dep:wgpu"]
 jit = [
   "mech-engine/runtime",
   "dep:cranelift-codegen",

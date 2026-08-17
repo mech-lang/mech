@@ -1,14 +1,8 @@
 use std::collections::BTreeMap;
 
 use js_sys::{Array, Float32Array, Object, Reflect};
-use mech_gpu::{
-    GpuBindingAccess, GpuBindingRole, GpuHost, GpuProgram, WORKGROUP_SIZE,
-    column_major_to_row_major,
-};
-use mech_runtime::{
-    ConfigProfileOptions, RuntimeBuilder, RuntimeHostInputValue, parse_config_document,
-};
-use wasm_bindgen::prelude::*;
+use mech_gpu::{GpuBindingAccess, GpuBindingRole, GpuProgram, WORKGROUP_SIZE};
+use wasm_bindgen::JsValue;
 use web_time::Instant;
 
 #[derive(Clone, Copy, Debug, Default)]
@@ -18,33 +12,6 @@ pub(crate) struct CompileTimings {
     pub(crate) artifact_compilation: f64,
     pub(crate) gpu_lowering: f64,
     pub(crate) input_capture: f64,
-}
-
-#[wasm_bindgen(js_name = requiredGpuPaths)]
-pub fn required_gpu_paths(config_source: &str) -> Result<Array, JsValue> {
-    let document = parse_config_document(
-        "browser-project/mech.mcfg",
-        config_source,
-        ConfigProfileOptions::default(),
-    )
-    .map_err(|failure| error(format!("Mech config rejected: {failure:?}")))?;
-    let run = document
-        .run
-        .ok_or_else(|| error("GPU project config must contain run settings"))?;
-    if run.paths.is_empty() {
-        return Err(error("GPU project config must contain one run path"));
-    }
-    let paths = Array::new();
-    for path in run.paths {
-        paths.push(&JsValue::from_str(&path.to_string_lossy()));
-    }
-    Ok(paths)
-}
-
-#[wasm_bindgen(js_name = compileGpuProgram)]
-pub fn compile_gpu_program(source: &str) -> Result<JsValue, JsValue> {
-    let (program, input_values, timings) = compile_program(source).map_err(error)?;
-    gpu_program_manifest(&program, &input_values, timings)
 }
 
 pub(crate) fn gpu_program_manifest(
@@ -159,93 +126,6 @@ pub(crate) fn gpu_program_manifest(
     Ok(manifest.into())
 }
 
-pub(crate) fn compile_program(
-    source: &str,
-) -> Result<(GpuProgram, BTreeMap<String, Vec<f32>>, CompileTimings), String> {
-    let catalog_started = Instant::now();
-    let mut compiler = RuntimeBuilder::new()
-        .function_catalog(mech_stdlib::source_native_plan_catalog())
-        .build_compiler()
-        .map_err(|failure| format!("Mech compiler initialization failed: {failure:?}"))?;
-    let catalog_setup = milliseconds(catalog_started);
-
-    let parse_started = Instant::now();
-    let tree = mech_syntax::parse(source.trim())
-        .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
-    let parsing = milliseconds(parse_started);
-
-    let artifact_started = Instant::now();
-    let product = compiler
-        .compile_tree_artifact(&tree)
-        .map_err(|failure| format!("Mech source rejected: {failure:?}"))?;
-    let artifact_compilation = milliseconds(artifact_started);
-
-    let gpu_started = Instant::now();
-    let program = GpuHost
-        .compile(product.artifact())
-        .map_err(|failure| format!("GPU host rejected the Mech program: {failure}"))?;
-    let gpu_lowering = milliseconds(gpu_started);
-
-    let input_started = Instant::now();
-    let input_names = program
-        .bindings()
-        .iter()
-        .filter(|binding| binding.role() == GpuBindingRole::Input)
-        .map(|binding| binding.name.as_str())
-        .collect::<Vec<_>>();
-    let initial_inputs = compiler
-        .evaluate_static_tree_symbols(&tree, &input_names)
-        .map_err(|failure| format!("Mech input initialization failed: {failure:?}"))?;
-    let mut input_values = BTreeMap::new();
-    for binding in program
-        .bindings()
-        .iter()
-        .filter(|binding| binding.role() == GpuBindingRole::Input)
-    {
-        let initial = initial_inputs.get(&binding.name).ok_or_else(|| {
-            format!(
-                "GPU input `{}` has no declaration-time source value",
-                binding.name
-            )
-        })?;
-        let values = match initial {
-            RuntimeHostInputValue::F32(value) => vec![*value],
-            RuntimeHostInputValue::F32Matrix {
-                rows,
-                columns,
-                values,
-            } => column_major_to_row_major(*rows, *columns, values)?,
-            other => {
-                return Err(format!(
-                    "GPU input `{}` must be f32 data, found {other:?}",
-                    binding.name
-                ));
-            }
-        };
-        if values.len() != binding.elements as usize {
-            return Err(format!(
-                "GPU input `{}` initializer has {} elements, expected {}",
-                binding.name,
-                values.len(),
-                binding.elements,
-            ));
-        }
-        input_values.insert(binding.name.clone(), values);
-    }
-    let input_capture = milliseconds(input_started);
-    Ok((
-        program,
-        input_values,
-        CompileTimings {
-            catalog_setup,
-            parsing,
-            artifact_compilation,
-            gpu_lowering,
-            input_capture,
-        },
-    ))
-}
-
 fn milliseconds(started: Instant) -> f64 {
     started.elapsed().as_secs_f64() * 1_000.0
 }
@@ -256,43 +136,4 @@ fn set(target: &Object, name: &str, value: impl Into<JsValue>) -> Result<(), JsV
 
 fn error(message: impl AsRef<str>) -> JsValue {
     js_sys::Error::new(message.as_ref()).into()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const PARTICLE_SOURCE: &str = r#"
-~positions := [0f32 0f32; 1f32 1f32]
-~velocities := [0f32 0f32; 0f32 0f32]
-acceleration := (0f32 - positions) * 0.34<f32>
-next-velocities := (velocities + acceleration * 0.008333333<f32>) * 0.997<f32>
-next-positions := positions + next-velocities * 0.008333333<f32>
-velocities = next-velocities
-positions = next-positions
-(positions, velocities)
-"#;
-
-    #[test]
-    fn selected_browser_features_compile_complete_particle_source_to_gpu_program() {
-        let (program, inputs, _) =
-            compile_program(PARTICLE_SOURCE).expect("browser compiler must admit the source");
-        assert_eq!(program.dispatch_elements(), 4);
-        assert!(
-            program
-                .wgsl()
-                .starts_with("// Generated from a typed Mech ProgramArtifact.")
-        );
-        assert!(program.wgsl().contains("@compute @workgroup_size(64)"));
-        assert!(inputs.values().all(|values| !values.is_empty()));
-        assert_eq!(
-            program
-                .bindings()
-                .iter()
-                .filter(|binding| binding.role() == GpuBindingRole::StateRead)
-                .count(),
-            2
-        );
-        assert_eq!(program.outputs().count(), 2);
-    }
 }

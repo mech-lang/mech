@@ -276,7 +276,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         .with_compiler_loc());
     }
 
-    #[cfg(feature = "gpu_executor_native")]
+    #[cfg(feature = "compute_backends_native")]
     let compiled_compute = if crate::cli::compute::configured_compute_host(&plan)?.is_some() {
         Some(match &plan.input_mode {
             RunInputMode::InlineSource(source) => {
@@ -322,7 +322,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     } else {
         None
     };
-    #[cfg(not(feature = "gpu_executor_native"))]
+    #[cfg(not(feature = "compute_backends_native"))]
     let compiled_compute: Option<mech_engine::ProgramArtifact> = {
         if configured_compute_hosts != 0
             || plan
@@ -333,7 +333,7 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
             return Err(MechError::new(
                 CliRunError {
                     operation: "initialize_compute_host".to_owned(),
-                    reason: "this project configures a compute host; rebuild Mech with `--features gpu_executor_native`".to_owned(),
+                    reason: "this project configures a compute host; rebuild Mech with `--features compute_backends_native`".to_owned(),
                 },
                 None,
             )
@@ -342,12 +342,12 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         None
     };
 
-    #[cfg(feature = "gpu_executor_native")]
+    #[cfg(feature = "compute_backends_native")]
     let (host_factories, coordinator) = match compiled_compute {
         Some(compiled) => (vec![compiled.factory], Some(compiled.coordinator)),
         None => (Vec::new(), None),
     };
-    #[cfg(not(feature = "gpu_executor_native"))]
+    #[cfg(not(feature = "compute_backends_native"))]
     let (host_factories, coordinator) = (Vec::new(), compiled_compute);
     let mut runtime = new_cli_runtime_with_source_resolver_and_host_factories(
         plan.runtime_config.clone(),

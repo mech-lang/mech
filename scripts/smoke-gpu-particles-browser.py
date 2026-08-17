@@ -81,7 +81,11 @@ def build() -> None:
         ], cwd=ROOT, check=True)
     else:
         subprocess.run([str(ROOT / "scripts/build-mech-gpu-browser.sh")], cwd=ROOT, check=True)
-    subprocess.run(["cargo", "build", "--release"], cwd=ROOT, check=True)
+    subprocess.run(
+        ["cargo", "build", "--release", "--features", "compute_backends_native"],
+        cwd=ROOT,
+        check=True,
+    )
 
 
 def verify_package() -> None:
@@ -341,8 +345,8 @@ def main() -> None:
                 fail(f"{detail}; artifacts: {work}")
             if "1,000,000" not in dom:
                 fail(f"page did not report one million particles; artifacts: {work}")
-            expected_backend = "GPU" if args.backend == "auto" else args.backend.upper()
-            if f'data-mech-compute-backend="{expected_backend.lower()}"' not in dom:
+            expected_backend = "wgpu" if args.backend in ("auto", "gpu") else "cpu-scalar"
+            if f'data-mech-compute-backend="{expected_backend}"' not in dom:
                 fail(f"page did not select {expected_backend} compute; artifacts: {work}")
             print("Compute particle browser smoke passed")
             print(f"browser: {browser}")

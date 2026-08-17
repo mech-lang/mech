@@ -1,21 +1,22 @@
-use std::{
-    collections::BTreeMap,
-    num::NonZeroU32,
-    sync::{Arc, OnceLock},
-    time::Instant,
-};
+#[cfg(feature = "native")]
+use std::sync::OnceLock;
+use std::{collections::BTreeMap, num::NonZeroU32, sync::Arc, time::Instant};
 
 use mech_compute::{
     BackendClass, BackendId, CPU_SCALAR_BACKEND, ComputeBackendCapabilities,
-    ComputeBackendDescriptor, ComputeBackendError, ComputeBackendFactory, ComputeBackendRegistry,
-    ComputeBackendRejection, ComputeDispatchReport, ComputeExecutable, ComputeExecutionError,
-    ComputeInitializerSet, ComputeInputUpdate, ComputeKernel, ComputeOutputSelection,
-    ComputeOutputSnapshot, ComputePort, ComputeProgram, ComputeSession, ComputeValue, TensorLayout,
-    WGPU_BACKEND,
+    ComputeBackendDescriptor, ComputeBackendError, ComputeBackendFactory, ComputeBackendRejection,
+    ComputeDispatchReport, ComputeExecutable, ComputeExecutionError, ComputeInitializerSet,
+    ComputeInputUpdate, ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePort,
+    ComputeProgram, ComputeSession, ComputeValue, TensorLayout,
 };
+#[cfg(feature = "native")]
+use mech_compute::{ComputeBackendRegistry, WGPU_BACKEND};
 
-use crate::{GpuProgram, OwnedResidentCpuSession, ResidentGpuSession};
+#[cfg(feature = "native")]
+use crate::ResidentGpuSession;
+use crate::{GpuProgram, OwnedResidentCpuSession};
 
+#[cfg(feature = "native")]
 pub fn native_compute_backend_registry() -> Arc<ComputeBackendRegistry> {
     let mut registry = ComputeBackendRegistry::default();
     registry
@@ -35,7 +36,7 @@ pub struct CpuScalarBackendFactory {
 impl CpuScalarBackendFactory {
     pub fn new() -> Self {
         Self {
-            descriptor: descriptor(CPU_SCALAR_BACKEND, BackendClass::Cpu, 100, true),
+            descriptor: descriptor(CPU_SCALAR_BACKEND, BackendClass::Cpu, 100, true, true),
         }
     }
 }
@@ -139,11 +140,13 @@ impl ComputeSession for CpuScalarSession {
     }
 }
 
+#[cfg(feature = "native")]
 pub struct WgpuBackendFactory {
     descriptor: ComputeBackendDescriptor,
     availability: OnceLock<Result<(), Box<str>>>,
 }
 
+#[cfg(feature = "native")]
 impl std::fmt::Debug for WgpuBackendFactory {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -154,10 +157,11 @@ impl std::fmt::Debug for WgpuBackendFactory {
     }
 }
 
+#[cfg(feature = "native")]
 impl WgpuBackendFactory {
     pub fn new() -> Self {
         Self {
-            descriptor: descriptor(WGPU_BACKEND, BackendClass::Gpu, 400, true),
+            descriptor: descriptor(WGPU_BACKEND, BackendClass::Gpu, 400, true, false),
             availability: OnceLock::new(),
         }
     }
@@ -178,12 +182,14 @@ impl WgpuBackendFactory {
     }
 }
 
+#[cfg(feature = "native")]
 impl Default for WgpuBackendFactory {
     fn default() -> Self {
         Self::new()
     }
 }
 
+#[cfg(feature = "native")]
 impl ComputeBackendFactory for WgpuBackendFactory {
     fn descriptor(&self) -> &ComputeBackendDescriptor {
         &self.descriptor
@@ -215,11 +221,13 @@ impl ComputeBackendFactory for WgpuBackendFactory {
     }
 }
 
+#[cfg(feature = "native")]
 struct WgpuExecutable {
     backend: BackendId,
     program: GpuProgram,
 }
 
+#[cfg(feature = "native")]
 impl ComputeExecutable for WgpuExecutable {
     fn create_session(
         &self,
@@ -238,12 +246,14 @@ impl ComputeExecutable for WgpuExecutable {
     }
 }
 
+#[cfg(feature = "native")]
 struct WgpuSession {
     backend: BackendId,
     program: GpuProgram,
     session: ResidentGpuSession,
 }
 
+#[cfg(feature = "native")]
 impl ComputeSession for WgpuSession {
     fn update_inputs(
         &mut self,
@@ -291,6 +301,7 @@ fn descriptor(
     class: BackendClass,
     priority: u16,
     native: bool,
+    browser: bool,
 ) -> ComputeBackendDescriptor {
     ComputeBackendDescriptor {
         id: BackendId::new(id).expect("static backend ID is valid"),
@@ -301,7 +312,7 @@ fn descriptor(
             fixed_shape: false,
             integrity_rejection: false,
             native,
-            browser: false,
+            browser,
         },
     }
 }
@@ -449,7 +460,7 @@ fn execution_error(
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "native"))]
 mod tests {
     use super::*;
     use mech_compute::{BackendRequest, ComputePlatform};

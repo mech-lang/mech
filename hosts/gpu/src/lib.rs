@@ -35,13 +35,11 @@ pub use batched::*;
 mod native;
 #[cfg(feature = "native")]
 pub use native::*;
-#[cfg(feature = "native")]
+#[cfg(feature = "runtime-host")]
 mod compute_provider;
-#[cfg(feature = "native")]
+#[cfg(feature = "runtime-host")]
 pub use compute_provider::*;
-#[cfg(feature = "native")]
 mod compute_backends;
-#[cfg(feature = "native")]
 pub use compute_backends::*;
 pub const WORKGROUP_SIZE: u32 = 64;
 
@@ -794,6 +792,16 @@ impl Error for CpuExecutionError {}
 
 #[derive(Clone, Debug, Default)]
 pub struct GpuHost;
+
+/// Lowers one compiler-owned elementwise region into the backend-neutral
+/// compute program consumed by the backend registry.
+pub fn lower_elementwise_compute_program(
+    artifact: &ProgramArtifact,
+) -> Result<ComputeProgram, GpuAdmissionError> {
+    Compiler::new(artifact)
+        .compile()
+        .map(|program| program.compute_program().clone())
+}
 
 impl GpuHost {
     /// Explains placement and transfer boundaries without selecting a backend.

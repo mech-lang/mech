@@ -117,7 +117,7 @@ full-hosts = [
       "dep:mech-robot-arm", "mech-robot-arm/provider",
       "mech-build?/full-hosts",
       ]
-gpu_executor_native = [
+compute_backends_native = [
       "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native",
       "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
       "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",

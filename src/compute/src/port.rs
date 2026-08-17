@@ -350,11 +350,7 @@ pub fn build_compute_region_interface(
         })
         .collect::<Vec<_>>();
     let mut output_sources = Vec::new();
-    for output in artifact
-        .outputs()
-        .iter()
-        .filter(|output| slot_produced_by_nodes(artifact, output.source, &nodes))
-    {
+    for output in artifact.outputs() {
         expand_output_source(
             artifact,
             output.name.clone(),
@@ -365,6 +361,9 @@ pub fn build_compute_region_interface(
     }
     let outputs = output_sources
         .into_iter()
+        .filter(|(_, slot)| {
+            state_slots.contains(slot) || slot_produced_by_nodes(artifact, *slot, &nodes)
+        })
         .filter_map(|(name, slot)| {
             let schema = artifact.slots()[slot.get() as usize].schema;
             let port = port_from_schema(
