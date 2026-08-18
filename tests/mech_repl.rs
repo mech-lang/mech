@@ -7,6 +7,36 @@ fn resident_repl_starts_without_arguments_and_with_the_compatibility_flag() {
     assert_repl_session(&["--repl"]);
 }
 
+#[test]
+fn resident_repl_multiplies_dynamic_f64_matrices() {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_mech"))
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("start the Mech CLI");
+
+    child
+        .stdin
+        .as_mut()
+        .expect("child stdin")
+        .write_all(b"[1 2 3] ** [4 5 6]'\n:quit\n")
+        .expect("multiply matrices and exit REPL");
+
+    let output = child.wait_with_output().expect("wait for Mech CLI");
+    assert!(output.status.success(), "stderr: {:?}", output.stderr);
+
+    let stdout = String::from_utf8(output.stdout).expect("UTF-8 REPL output");
+    assert!(
+        stdout.contains("32"),
+        "missing matrix product from REPL output: {stdout}"
+    );
+    assert!(
+        !stdout.contains("ResidentRouteFailure"),
+        "matrix multiplication failed resident routing: {stdout}"
+    );
+}
+
 fn assert_repl_session(arguments: &[&str]) {
     let mut child = Command::new(env!("CARGO_BIN_EXE_mech"))
         .args(arguments)
