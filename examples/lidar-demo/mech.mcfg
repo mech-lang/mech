@@ -7,7 +7,7 @@ config := {
         port: "/dev/ttyUSB0"
         baud: 115200
         interval-ms: 100
-        points-per-scan: 100
+        points-per-scan: 50
       }
     }
     {

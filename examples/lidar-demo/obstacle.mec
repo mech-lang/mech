@@ -9,4 +9,4 @@ nearest-mm := @scan/nearest-mm
 nearest-angle := @scan/nearest-angle
 point-count := @scan/count
 
-@out/line <- nearest-mm
+@out/line <- nearest-angle

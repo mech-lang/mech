@@ -36,7 +36,7 @@ fn open_device(settings: &LidarHostSettings) -> MResult<SharedDevice> {
     std::thread::sleep(Duration::from_millis(500));
 
     // Set working timeout
-    serial.set_timeout(Duration::from_millis(3000)).ok();
+    serial.set_timeout(Duration::from_millis(500)).ok();
 
     // Start motor via DTR
     serial.write_data_terminal_ready(true).ok();
