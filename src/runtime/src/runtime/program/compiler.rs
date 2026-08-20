@@ -55,6 +55,12 @@ enum ProgramBytecodeEncoding {
     FrozenV1ImplementationIdentities,
 }
 
+#[derive(Clone, Copy)]
+enum RootOutputProjection {
+    ObservableResults,
+    ObservableResultsAndSymbols,
+}
+
 /// The sole owner of source-to-resident-artifact compilation.
 ///
 /// Deliberately absent: input drivers, a live runtime store, runtime
@@ -367,11 +373,24 @@ impl<'a> ProgramCompilerView<'a> {
         self.compile_tree(&tree)
     }
 
+    pub(crate) fn compile_interactive_source(
+        &self,
+        source: &str,
+    ) -> MResult<ProgramCompilationProduct> {
+        let tree = mech_syntax::parser::parse(source.trim())?;
+        self.compile_tree_with_bytecode_encoding(
+            &tree,
+            ProgramBytecodeEncoding::Semantic,
+            RootOutputProjection::ObservableResultsAndSymbols,
+        )
+    }
+
     fn compile_source_frozen_v1(&self, source: &str) -> MResult<ProgramCompilationProduct> {
         let tree = mech_syntax::parser::parse(source.trim())?;
         self.compile_tree_with_bytecode_encoding(
             &tree,
             ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
+            RootOutputProjection::ObservableResults,
         )
     }
 
@@ -379,13 +398,18 @@ impl<'a> ProgramCompilerView<'a> {
         &self,
         tree: &mech_core::Program,
     ) -> MResult<ProgramCompilationProduct> {
-        self.compile_tree_with_bytecode_encoding(tree, ProgramBytecodeEncoding::Semantic)
+        self.compile_tree_with_bytecode_encoding(
+            tree,
+            ProgramBytecodeEncoding::Semantic,
+            RootOutputProjection::ObservableResults,
+        )
     }
 
     fn compile_tree_with_bytecode_encoding(
         &self,
         tree: &mech_core::Program,
         bytecode_encoding: ProgramBytecodeEncoding,
+        output_projection: RootOutputProjection,
     ) -> MResult<ProgramCompilationProduct> {
         let mut program = self.new_program();
         let document_output_ids = root_document_output_ids(tree);
@@ -406,6 +430,12 @@ impl<'a> ProgramCompilerView<'a> {
             .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
             .map_err(classify_source_planning)?;
         publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
+        if matches!(
+            output_projection,
+            RootOutputProjection::ObservableResultsAndSymbols
+        ) {
+            program.publish_compiler_root_symbols();
+        }
         self.finalize(program, &operations, bytecode_encoding)
     }
 
@@ -1436,7 +1466,7 @@ fn publish_document_and_root_outputs(
     root: &LegacyValue,
 ) -> MResult<()> {
     for output in program.compiler_document_output_values(document_output_ids)? {
-        program.publish_compiler_root_output(output);
+        program.publish_compiler_document_output(output);
     }
     program.publish_compiler_root_output(root.clone());
     Ok(())
@@ -1447,7 +1477,7 @@ fn publish_module_outputs(
     instance: &CompilerModuleInstance,
 ) {
     for output in &instance.document_outputs {
-        program.publish_compiler_root_output(output.clone());
+        program.publish_compiler_document_output(output.clone());
     }
     program.publish_compiler_root_output(instance.result.clone());
 }

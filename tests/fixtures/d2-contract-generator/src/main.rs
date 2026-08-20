@@ -890,6 +890,7 @@ fn assert_activation_fact_reconfiguration(
         outputs: vec![OutputDeclaration {
             output: OutputId::new(0),
             name: "state".to_owned(),
+            interactive_binding: None,
             source: state_slot,
             schema: fixed,
         }]
@@ -1327,6 +1328,7 @@ fn wrong_dimension_artifact(
         outputs: vec![OutputDeclaration {
             output: OutputId::new(0),
             name: "state".to_owned(),
+            interactive_binding: None,
             source: state,
             schema: dynamic,
         }]
@@ -1428,6 +1430,7 @@ fn wrong_kind_artifact(
         outputs: vec![OutputDeclaration {
             output: OutputId::new(0),
             name: "state".to_owned(),
+            interactive_binding: None,
             source: state,
             schema: bool_,
         }]

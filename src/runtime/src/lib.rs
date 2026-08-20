@@ -1,6 +1,9 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
 #![deny(unsafe_code)]
 
+#[cfg(feature = "no_std")]
+extern crate alloc;
+
 pub mod config;
 pub mod effect;
 mod extension;
@@ -12,6 +15,7 @@ mod ledger;
 pub mod operation;
 #[cfg(feature = "runtime")]
 mod outbox;
+pub mod protocol;
 #[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
 mod resident_recording;
 mod resource;
@@ -30,8 +34,14 @@ mod context_events;
 #[cfg(feature = "runtime")]
 pub mod event;
 pub mod host;
+#[cfg(feature = "resident-routing-source")]
+mod interactive;
 #[cfg(feature = "runtime")]
 pub mod module;
+#[cfg(feature = "resident-routing-source")]
+mod repl_command;
+#[cfg(feature = "resident-routing-source")]
+mod repl_dispatch;
 #[cfg(feature = "runtime")]
 pub mod resolver;
 #[cfg(feature = "runtime")]
@@ -56,6 +66,7 @@ pub use self::id::*;
 #[cfg(feature = "runtime")]
 pub use self::input::*;
 pub use self::operation::*;
+pub use self::protocol::*;
 pub use self::resource::*;
 pub use self::resource_contract::*;
 #[cfg(feature = "resident-external")]
@@ -73,8 +84,14 @@ pub use self::context::*;
 #[cfg(feature = "runtime")]
 pub use self::event::*;
 pub use self::host::*;
+#[cfg(feature = "resident-routing-source")]
+pub use self::interactive::*;
 #[cfg(feature = "runtime")]
 pub use self::module::*;
+#[cfg(feature = "resident-routing-source")]
+pub use self::repl_command::*;
+#[cfg(feature = "resident-routing-source")]
+pub use self::repl_dispatch::*;
 #[cfg(feature = "runtime")]
 pub use self::resolver::*;
 #[cfg(feature = "runtime")]

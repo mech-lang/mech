@@ -36,8 +36,9 @@ use mech_core::{
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
     ComputeRegionDeclaration, InitializerReference, InputDeclaration,
-    IntegrityConstraintDeclaration, NodeDeclaration, OperationReference, OutputDeclaration,
-    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    IntegrityConstraintDeclaration, InteractiveSymbolBinding, NodeDeclaration, OperationReference,
+    OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
+    SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -102,6 +103,7 @@ static COMPILER_STATE_HOLD_CONTRACT: LazyLock<OperationContractDeclaration> =
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceOutput {
     pub name: String,
+    pub interactive_symbol: Option<String>,
     pub source: SourceValue,
     pub schema: SchemaId,
 }
@@ -346,15 +348,20 @@ pub fn compile_source_program_with_contracts(
         });
     }
 
-    let mut published_sources = BTreeMap::<CellSlotId, CellSlotId>::new();
+    // Output aliases are identified by their semantic source, not by the
+    // source's storage class. Constants, transient slots, and input slots all
+    // publish through one materialized output slot; state/output slots are
+    // already persistent and can be addressed directly.
+    let mut published_sources = BTreeMap::<ArtifactSource, CellSlotId>::new();
     let outputs = graph
         .outputs
         .iter()
         .enumerate()
         .map(|(index, output)| {
             let output_id = OutputId(checked_u32(index, "OutputId")?);
-            let source = resolve_source(output.source, &input_slots, &state_slots, &output_slots)?;
-            let persistent = match source {
+            let artifact_source =
+                resolve_source(output.source, &input_slots, &state_slots, &output_slots)?;
+            let persistent = match artifact_source {
                 ArtifactSource::Slot(source) => matches!(
                     slots[source.get() as usize].role,
                     SlotRole::State | SlotRole::Output
@@ -362,15 +369,9 @@ pub fn compile_source_program_with_contracts(
                 .then_some(source),
                 ArtifactSource::Constant(_) => None,
             };
-            let source_slot = match source {
-                ArtifactSource::Slot(source) => Some(source),
-                ArtifactSource::Constant(_) => None,
-            };
             let source = if let Some(source) = persistent {
                 source
-            } else if let Some(target) =
-                source_slot.and_then(|source| published_sources.get(&source).copied())
-            {
+            } else if let Some(target) = published_sources.get(&artifact_source).copied() {
                 target
             } else {
                 let target = CellSlotId(next_slot);
@@ -385,23 +386,29 @@ pub fn compile_source_program_with_contracts(
                     role: SlotRole::Output,
                     producer: ProducerReference::Output {
                         output: output_id,
-                        source,
+                        source: artifact_source,
                     },
-                    initializer: match source {
+                    initializer: match artifact_source {
                         ArtifactSource::Constant(constant) => {
                             Some(InitializerReference::Constant(constant))
                         }
                         ArtifactSource::Slot(_) => None,
                     },
                 });
-                if let Some(source) = source_slot {
-                    published_sources.insert(source, target);
-                }
+                published_sources.insert(artifact_source, target);
                 target
             };
             Ok(OutputDeclaration {
                 output: output_id,
                 name: output.name.clone(),
+                interactive_binding: output.interactive_symbol.clone().map(|lexical_name| {
+                    InteractiveSymbolBinding {
+                        lexical_name,
+                        artifact_source,
+                        storage: source,
+                        output: output_id,
+                    }
+                }),
                 source,
                 schema: output.schema,
             })
@@ -573,6 +580,72 @@ pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
     compile_executable_program_artifact_with_identity(
         compiled,
         published_outputs,
+        &[],
+        catalog,
+        external_input_names,
+        RuntimeOperationIdentity::Semantic,
+    )
+}
+
+/// Namespace used to carry an interactive lexical symbol through the durable
+/// artifact interface without weakening canonical interface-name validation.
+pub const INTERACTIVE_SYMBOL_OUTPUT_PREFIX: &str = "mech-repl-symbol-";
+
+/// Encode an arbitrary UTF-8 lexical symbol as one canonical artifact output
+/// name. Encoding every interactive name (rather than only invalid names)
+/// makes the mapping injective and keeps query identity independent from the
+/// artifact interface grammar.
+pub fn encode_interactive_symbol_output_name(name: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
+    let mut encoded =
+        String::with_capacity(INTERACTIVE_SYMBOL_OUTPUT_PREFIX.len() + name.len() * 2);
+    encoded.push_str(INTERACTIVE_SYMBOL_OUTPUT_PREFIX);
+    for byte in name.bytes() {
+        encoded.push(HEX[(byte >> 4) as usize] as char);
+        encoded.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    encoded
+}
+
+/// Decode an interactive artifact output name back to its lexical query name.
+pub fn decode_interactive_symbol_output_name(name: &str) -> Option<String> {
+    let encoded = name.strip_prefix(INTERACTIVE_SYMBOL_OUTPUT_PREFIX)?;
+    if encoded.len() % 2 != 0 {
+        return None;
+    }
+    let bytes = encoded
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            let high = (pair[0] as char).to_digit(16)? as u8;
+            let low = (pair[1] as char).to_digit(16)? as u8;
+            Some((high << 4) | low)
+        })
+        .collect::<Option<Vec<_>>>()?;
+    String::from_utf8(bytes).ok()
+}
+
+/// Compiles explicitly named source outputs. Multiple names may intentionally
+/// address the same register; the artifact retains each alias while resident
+/// activation continues to share the underlying cell slot.
+#[cfg(feature = "semantic-compiler")]
+pub fn compile_executable_program_artifact_with_named_outputs_and_external_inputs(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    published_output_names: &[Option<String>],
+    catalog: &FunctionCatalog,
+    external_input_names: &BTreeSet<String>,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    validate_compiled_metadata_length(
+        "published_output_names",
+        published_outputs.len(),
+        published_output_names.len(),
+    )?;
+    compile_executable_program_artifact_with_identity(
+        compiled,
+        published_outputs,
+        published_output_names,
         catalog,
         external_input_names,
         RuntimeOperationIdentity::Semantic,
@@ -592,6 +665,7 @@ pub(crate) fn compile_legacy_bytecode_program_artifact_with_outputs(
     compile_executable_program_artifact_with_identity(
         compiled,
         published_outputs,
+        &[],
         catalog,
         &BTreeSet::new(),
         RuntimeOperationIdentity::Implementation,
@@ -602,6 +676,7 @@ pub(crate) fn compile_legacy_bytecode_program_artifact_with_outputs(
 fn compile_executable_program_artifact_with_identity(
     compiled: &CompiledBytecode,
     published_outputs: &[Register],
+    published_output_names: &[Option<String>],
     catalog: &FunctionCatalog,
     external_input_names: &BTreeSet<String>,
     operation_identity: RuntimeOperationIdentity,
@@ -1383,6 +1458,14 @@ fn compile_executable_program_artifact_with_identity(
     } else {
         published_outputs.to_vec()
     };
+    let encoded_output_names = published_output_names
+        .iter()
+        .map(|name| name.as_deref().map(encode_interactive_symbol_output_name))
+        .collect::<Vec<_>>();
+    let explicit_output_names = encoded_output_names
+        .iter()
+        .filter_map(Clone::clone)
+        .collect::<BTreeSet<_>>();
     let mut output_names = BTreeMap::<String, usize>::new();
     let mut outputs = Vec::with_capacity(output_registers.len());
     for (ordinal, output_register) in output_registers.into_iter().enumerate() {
@@ -1401,17 +1484,33 @@ fn compile_executable_program_artifact_with_identity(
                 role: "published root output",
             });
         };
-        let base_name = definitions_by_register[output_register as usize]
-            .iter()
-            .max_by_key(|definition| definition.ordinal)
-            .map(|definition| definition.name.clone())
-            .unwrap_or_else(|| {
-                if ordinal == 0 {
-                    "result".to_owned()
-                } else {
-                    format!("result-{}", ordinal + 1)
+        let explicit_name = encoded_output_names.get(ordinal).and_then(Clone::clone);
+        let mut base_name = explicit_name.clone().unwrap_or_else(|| {
+            definitions_by_register[output_register as usize]
+                .iter()
+                .max_by_key(|definition| definition.ordinal)
+                .map(|definition| definition.name.clone())
+                .unwrap_or_else(|| {
+                    if ordinal == 0 {
+                        "result".to_owned()
+                    } else {
+                        format!("result-{}", ordinal + 1)
+                    }
+                })
+        });
+        if explicit_name.is_none() && explicit_output_names.contains(&base_name) {
+            let mut suffix = 2;
+            loop {
+                let candidate = format!("{base_name}-{suffix}");
+                if !explicit_output_names.contains(&candidate)
+                    && !output_names.contains_key(&candidate)
+                {
+                    base_name = candidate;
+                    break;
                 }
-            });
+                suffix += 1;
+            }
+        }
         let occurrence = output_names.entry(base_name.clone()).or_default();
         *occurrence += 1;
         let name = if *occurrence == 1 {
@@ -1421,6 +1520,7 @@ fn compile_executable_program_artifact_with_identity(
         };
         outputs.push(SourceOutput {
             name,
+            interactive_symbol: published_output_names.get(ordinal).and_then(Clone::clone),
             source: returned.source,
             schema: returned.schema,
         });

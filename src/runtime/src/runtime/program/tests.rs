@@ -12,8 +12,9 @@ use mech_core::{
     OperationContractDeclaration, ParsedProgram, Ref, ValueData, hash_str,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, SlotRole, decode_program_artifact_bytecode_v1,
-    encode_program_artifact_bytecode_v1, resident::ResidentValueBorrow,
+    ArtifactSource, BindingDeclaration, ProgramArtifactDraft, SlotRole,
+    decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
+    resident::ResidentValueBorrow,
 };
 use sha2::{Digest, Sha256};
 
@@ -622,7 +623,13 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
         .expect("the resident fixture must expose an output");
     assert_eq!(
         source_runtime.output_name(output.output),
-        Some(output.name.clone())
+        Some(
+            output
+                .interactive_binding
+                .as_ref()
+                .map(|binding| binding.lexical_name.clone())
+                .unwrap_or_else(|| output.name.clone())
+        )
     );
     assert!(
         source_runtime
@@ -647,6 +654,57 @@ fn pure_source_and_bytecode_choose_resident_with_equivalent_identity_and_output(
     assert_eq!(
         source.info.layout_generation,
         bytecode.info.layout_generation
+    );
+}
+
+#[test]
+fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let product = compiler
+        .compile_source(include_str!("../../../../../examples/working/fizzbuzz.mec"))
+        .unwrap();
+    let compiled = product.artifact();
+    let mut outputs = compiled.outputs().to_vec();
+    outputs[0].name = "mech-repl-symbol-61".to_owned();
+    outputs[0].interactive_binding = None;
+    outputs[1].name = "ordinary-output".to_owned();
+    outputs[1].interactive_binding = None;
+    let ordinary = ProgramArtifactDraft {
+        schemas: compiled.schemas().clone(),
+        constants: compiled.constants().clone(),
+        contracts: compiled.contracts().clone(),
+        requirements: compiled.requirements().clone(),
+        inputs: compiled.inputs().to_vec().into_boxed_slice(),
+        slots: compiled.slots().to_vec().into_boxed_slice(),
+        nodes: compiled.nodes().to_vec().into_boxed_slice(),
+        bindings: compiled.bindings().to_vec().into_boxed_slice(),
+        outputs: outputs.into_boxed_slice(),
+        constraints: compiled.constraints().to_vec().into_boxed_slice(),
+        compute_regions: compiled.compute_regions().to_vec().into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+    let first_id = ordinary.outputs()[0].output;
+
+    let mut runtime = runtime();
+    runtime
+        .load_compiled_program(ordinary, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(
+        runtime.output_name(first_id).as_deref(),
+        Some("mech-repl-symbol-61")
+    );
+    assert_eq!(
+        runtime
+            .root_symbol_values_all()
+            .unwrap()
+            .into_iter()
+            .map(|(name, _)| name)
+            .collect::<Vec<_>>(),
+        ["mech-repl-symbol-61", "ordinary-output"]
     );
 }
 

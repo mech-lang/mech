@@ -223,6 +223,28 @@ pub(super) fn program_revision(
     }
 
     // Preserve revision identity for ordinary bytecode-v1 artifacts while
+    // making explicit interactive query identity part of artifacts that use
+    // the optional extension.
+    let interactive_output_count = draft
+        .outputs
+        .iter()
+        .filter(|output| output.interactive_binding.is_some())
+        .count();
+    if interactive_output_count != 0 {
+        writer.bytes(b"interactive-output-symbols-v1");
+        writer.u32(interactive_output_count as u32);
+        for output in &draft.outputs {
+            if let Some(binding) = &output.interactive_binding {
+                writer.u32(output.output.get());
+                writer.string(&binding.lexical_name);
+                writer.source(binding.artifact_source);
+                writer.u32(binding.storage.get());
+                writer.u32(binding.output.get());
+            }
+        }
+    }
+
+    // Preserve revision identity for ordinary bytecode-v1 artifacts while
     // making the optional compute extension part of region-bearing identity.
     if !draft.compute_regions.is_empty() {
         writer.bytes(b"compute-regions-v1");

@@ -64,6 +64,7 @@ pub mod patterns;
 pub mod state_machines;
 pub mod statements;
 pub mod structures;
+pub mod submission;
 
 pub use crate::imports::*;
 pub use crate::parser::*;
@@ -83,6 +84,7 @@ pub use crate::patterns::*;
 pub use crate::state_machines::*;
 pub use crate::statements::*;
 pub use crate::structures::*;
+pub use crate::submission::*;
 
 /// Unicode grapheme group utilities.
 /// Current implementation does not guarantee correct behavior for

@@ -59,7 +59,7 @@ pub struct SlotDeclaration {
     pub initializer: Option<InitializerReference>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum ArtifactSource {
     Constant(ConstantId),
     Slot(CellSlotId),
@@ -123,8 +123,26 @@ pub struct InputDeclaration {
 pub struct OutputDeclaration {
     pub output: OutputId,
     pub name: String,
+    /// Explicit interactive identity and storage mapping. Ordinary artifact
+    /// interfaces leave this unset, even when their canonical name happens to
+    /// resemble the compiler's collision-safe transport encoding.
+    pub interactive_binding: Option<InteractiveSymbolBinding>,
     pub source: CellSlotId,
     pub schema: SchemaId,
+}
+
+/// First-class identity for a lexical symbol exported to an interactive host.
+///
+/// `lexical_name` is never constrained by artifact-interface syntax.
+/// `artifact_source` identifies the semantic producer, while `storage` is the
+/// live resident cell used to inspect it. Several lexical names may therefore
+/// share the same source and storage without sharing an interface name.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InteractiveSymbolBinding {
+    pub lexical_name: String,
+    pub artifact_source: ArtifactSource,
+    pub storage: CellSlotId,
+    pub output: OutputId,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -191,6 +209,12 @@ impl ProgramArtifact {
 
     pub const fn outputs(&self) -> &[OutputDeclaration] {
         &self.outputs
+    }
+
+    pub fn interactive_symbol_bindings(&self) -> impl Iterator<Item = &InteractiveSymbolBinding> {
+        self.outputs
+            .iter()
+            .filter_map(|output| output.interactive_binding.as_ref())
     }
 
     pub const fn constraints(&self) -> &[IntegrityConstraintDeclaration] {
@@ -512,6 +536,9 @@ pub enum ArtifactBuildError {
     },
     InvalidInterfaceName {
         interface: &'static str,
+        name: String,
+    },
+    InvalidInteractiveBinding {
         name: String,
     },
     InvalidComputeRegionName {

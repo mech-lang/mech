@@ -49,6 +49,27 @@ impl MechRuntime {
         })
     }
 
+    /// Compile and activate source with every named root symbol retained as a
+    /// live resident output. Interactive hosts use this projection so symbol
+    /// inspection reads the active instance instead of reconstructing a
+    /// planning-time candidate.
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_interactive_source_program(
+        &mut self,
+        source: &str,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        self.load_production_with(durability, |runtime| {
+            Ok(Arc::new(
+                runtime
+                    .plan_interactive_source_product(source)?
+                    .into_parts()
+                    .0,
+            ))
+        })
+    }
+
     #[cfg(feature = "resident-routing-source")]
     pub fn load_root_program(
         &mut self,
@@ -163,6 +184,14 @@ impl MechRuntime {
     #[cfg(feature = "resident-routing-source")]
     fn plan_source_product(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?.compile_source(source)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_interactive_source_product(
+        &mut self,
+        source: &str,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_interactive_source(source)
     }
 
     #[cfg(feature = "resident-routing-source")]

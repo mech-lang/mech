@@ -124,7 +124,12 @@ impl MechErrorKind for ProgramArtifactCompilationError {
 pub struct CompilerPlanningProgram {
     pub config: CompilerPlanningConfig,
     pub(crate) interpreter: Interpreter,
-    published_outputs: Vec<LegacyValue>,
+    published_outputs: Vec<PublishedPlanningOutput>,
+}
+
+struct PublishedPlanningOutput {
+    name: Option<String>,
+    value: LegacyValue,
 }
 
 impl CompilerPlanningProgram {
@@ -336,7 +341,30 @@ impl CompilerPlanningProgram {
     /// Dependency-only planning never calls this method, so multi-root
     /// products publish each requested root exactly once in caller order.
     pub fn publish_compiler_root_output(&mut self, value: LegacyValue) {
-        self.published_outputs.push(value);
+        self.published_outputs
+            .push(PublishedPlanningOutput { name: None, value });
+    }
+
+    /// Retain a document-addressed output whose ordinal is part of the host
+    /// rendering contract, even when its register aliases a named symbol.
+    pub fn publish_compiler_document_output(&mut self, value: LegacyValue) {
+        self.published_outputs
+            .push(PublishedPlanningOutput { name: None, value });
+    }
+
+    /// Retain every named root symbol as a live artifact output for an
+    /// interactive host. The ordinary result remains first, while explicit
+    /// names may alias one shared register without losing lexical identity.
+    pub fn publish_compiler_root_symbols(&mut self) {
+        self.published_outputs
+            .extend(
+                self.compiler_root_symbol_values_all()
+                    .into_iter()
+                    .map(|(name, value)| PublishedPlanningOutput {
+                        name: Some(name),
+                        value,
+                    }),
+            );
     }
 
     /// Installs one compiler-resolved source import in the ephemeral planning
@@ -361,10 +389,12 @@ impl CompilerPlanningProgram {
     #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_artifact(&mut self) -> MResult<ProgramArtifact> {
         let compiled = compile_bytecode(self)?;
-        compile_executable_program_artifact_with_outputs(
+        compile_executable_program_artifact_with_named_outputs_and_external_inputs(
             &compiled.bytecode,
             &compiled.published_outputs,
+            &compiled.published_output_names,
             self.interpreter.function_catalog().as_ref(),
+            &BTreeSet::new(),
         )
         .map_err(|error| {
             MechError::new(
@@ -389,9 +419,10 @@ impl CompilerPlanningProgram {
         let mut compiled = compile_bytecode(self)?;
         preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        let artifact = compile_executable_program_artifact_with_outputs_and_external_inputs(
+        let artifact = compile_executable_program_artifact_with_named_outputs_and_external_inputs(
             &compiled.bytecode,
             &compiled.published_outputs,
+            &compiled.published_output_names,
             self.interpreter.function_catalog().as_ref(),
             external_input_names,
         )
@@ -476,10 +507,12 @@ impl CompilerPlanningProgram {
         compiled: CompilerPlanningBytecode,
         bytecode_encoding: ProgramBytecodeEncoding,
     ) -> MResult<ProgramCompilationProduct> {
-        let artifact = compile_executable_program_artifact_with_outputs(
+        let artifact = compile_executable_program_artifact_with_named_outputs_and_external_inputs(
             &compiled.bytecode,
             &compiled.published_outputs,
+            &compiled.published_output_names,
             self.interpreter.function_catalog().as_ref(),
+            &BTreeSet::new(),
         )
         .map_err(|error| {
             MechError::new(
@@ -657,6 +690,7 @@ struct RetainedIntegrityMarkerMetadata {
 struct CompilerPlanningBytecode {
     bytecode: CompiledBytecode,
     published_outputs: Box<[Register]>,
+    published_output_names: Box<[Option<String>]>,
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -801,12 +835,21 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
         }
     }
 
-    let published_outputs = program
-        .published_outputs
-        .iter()
-        .map(|value| context.resolve_value_register(value))
-        .collect::<MResult<Vec<_>>>()?
-        .into_boxed_slice();
+    let mut resolved_outputs = Vec::with_capacity(program.published_outputs.len());
+    for output in &program.published_outputs {
+        resolved_outputs.push((
+            output.name.clone(),
+            context.resolve_value_register(&output.value)?,
+        ));
+    }
+    let mut published_outputs = Vec::with_capacity(resolved_outputs.len());
+    let mut published_output_names = Vec::with_capacity(resolved_outputs.len());
+    for (name, register) in &resolved_outputs {
+        published_outputs.push(*register);
+        published_output_names.push(name.clone());
+    }
+    let published_outputs = published_outputs.into_boxed_slice();
+    let published_output_names = published_output_names.into_boxed_slice();
     // Materializing a composite return can emit CompositePack. Give any such
     // instruction normal source-node metadata instead of leaving it outside
     // the compiler's semantic plan boundary.
@@ -825,6 +868,7 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     Ok(CompilerPlanningBytecode {
         bytecode,
         published_outputs,
+        published_output_names,
     })
 }
 

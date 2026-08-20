@@ -232,6 +232,7 @@ fn single_node_fixture(
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "result".to_owned(),
+            interactive_symbol: None,
             source: SourceValue::NodeOutput {
                 node: 0,
                 output_ordinal: 0,
@@ -295,6 +296,7 @@ fn stateful_register(data: &FixtureData) -> SourceProgram {
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "state".to_owned(),
+            interactive_symbol: None,
             source: SourceValue::State(0),
             schema: data.schema.f64_,
         }]
@@ -436,11 +438,13 @@ fn ekf(data: &FixtureData) -> SourceProgram {
         outputs: vec![
             SourceOutput {
                 name: "state".to_owned(),
+                interactive_symbol: None,
                 source: SourceValue::State(0),
                 schema: data.schema.vector3,
             },
             SourceOutput {
                 name: "covariance".to_owned(),
+                interactive_symbol: None,
                 source: SourceValue::State(1),
                 schema: data.schema.matrix3,
             },
@@ -458,6 +462,109 @@ fn build_both(data: &FixtureData, graph: SourceProgram) -> (ProgramArtifact, Pro
     assert!(!parsed.artifact.is_empty());
     let bytecode = decode_program_artifact_sections(&parsed.artifact).unwrap();
     (source, bytecode)
+}
+
+#[test]
+fn output_aliases_share_one_materialized_source_slot() {
+    let data = fixture_data();
+    let graph = SourceProgram {
+        outputs: vec![
+            SourceOutput {
+                name: "first".to_owned(),
+                interactive_symbol: None,
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+            SourceOutput {
+                name: "second".to_owned(),
+                interactive_symbol: None,
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+
+    let (source, bytecode) = build_both(&data, graph);
+    for artifact in [&source, &bytecode] {
+        assert_eq!(artifact.outputs()[0].source, artifact.outputs()[1].source);
+        assert_eq!(
+            artifact
+                .slots()
+                .iter()
+                .filter(|slot| slot.role == SlotRole::Output)
+                .count(),
+            1,
+            "one semantic source must materialize through one output slot"
+        );
+    }
+}
+
+#[test]
+fn interactive_symbol_interface_encoding_is_canonical_and_reversible() {
+    for lexical in ["odd/name", r"odd\name", "café", "mech-repl-symbol-61"] {
+        let encoded = encode_interactive_symbol_output_name(lexical);
+        assert!(!encoded.contains(['/', '\\']));
+        assert_eq!(
+            decode_interactive_symbol_output_name(&encoded).as_deref(),
+            Some(lexical)
+        );
+    }
+}
+
+#[test]
+fn interactive_symbol_identity_is_explicit_and_survives_bytecode() {
+    let data = fixture_data();
+    let lexical = "odd/name";
+    let graph = SourceProgram {
+        outputs: vec![
+            SourceOutput {
+                name: "query-1".to_owned(),
+                interactive_symbol: Some(lexical.to_owned()),
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+            SourceOutput {
+                name: "query-2".to_owned(),
+                interactive_symbol: Some(r"odd\name".to_owned()),
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+            SourceOutput {
+                name: "mech-repl-symbol-61".to_owned(),
+                interactive_symbol: None,
+                source: SourceValue::Constant(data.constant.two),
+                schema: data.schema.f64_,
+            },
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+
+    let (source, bytecode) = build_both(&data, graph);
+    for artifact in [&source, &bytecode] {
+        assert_eq!(
+            artifact.outputs()[0]
+                .interactive_binding
+                .as_ref()
+                .map(|binding| binding.lexical_name.as_str()),
+            Some(lexical)
+        );
+        assert_eq!(artifact.outputs()[2].name, "mech-repl-symbol-61");
+        assert_eq!(artifact.outputs()[2].interactive_binding, None);
+        let bindings = artifact.interactive_symbol_bindings().collect::<Vec<_>>();
+        assert_eq!(bindings.len(), 2);
+        assert_eq!(bindings[0].output, artifact.outputs()[0].output);
+        assert_eq!(bindings[0].storage, artifact.outputs()[0].source);
+        assert_eq!(
+            bindings[0].artifact_source,
+            ArtifactSource::Constant(data.constant.one)
+        );
+        assert_eq!(bindings[1].lexical_name, r"odd\name");
+        assert_eq!(bindings[1].artifact_source, bindings[0].artifact_source);
+        assert_eq!(bindings[1].storage, bindings[0].storage);
+    }
 }
 
 fn pure_full_write_contract(
@@ -1393,6 +1500,7 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "output".to_owned(),
+            interactive_symbol: None,
             source: SourceValue::NodeOutput {
                 node: 0,
                 output_ordinal: 0,

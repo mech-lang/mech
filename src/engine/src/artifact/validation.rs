@@ -234,6 +234,7 @@ fn validate_interfaces(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuild
         }
     }
     let mut output_names = BTreeSet::new();
+    let mut interactive_symbols = BTreeSet::new();
     for output in &draft.outputs {
         require_schema(draft, output.schema)?;
         if !canonical_name(&output.name) {
@@ -247,6 +248,30 @@ fn validate_interfaces(draft: &ProgramArtifactDraft) -> Result<(), ArtifactBuild
                 interface: "output",
                 name: output.name.clone(),
             });
+        }
+        if let Some(binding) = &output.interactive_binding {
+            if binding.output != output.output || binding.storage != output.source {
+                return Err(ArtifactBuildError::InvalidInteractiveBinding {
+                    name: binding.lexical_name.clone(),
+                });
+            }
+            validate_source(draft, binding.artifact_source)?;
+            let storage = require_slot(draft, binding.storage)?;
+            let source_matches = match storage.producer {
+                ProducerReference::Output { source, .. } => source == binding.artifact_source,
+                _ => binding.artifact_source == ArtifactSource::Slot(binding.storage),
+            };
+            if !source_matches {
+                return Err(ArtifactBuildError::InvalidInteractiveBinding {
+                    name: binding.lexical_name.clone(),
+                });
+            }
+            if !interactive_symbols.insert(binding.lexical_name.clone()) {
+                return Err(ArtifactBuildError::DuplicateInterfaceName {
+                    interface: "interactive output",
+                    name: binding.lexical_name.clone(),
+                });
+            }
         }
     }
     Ok(())

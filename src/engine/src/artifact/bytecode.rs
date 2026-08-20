@@ -22,8 +22,9 @@ use super::snapshot::data_draft;
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
     ComputeRegionDeclaration, InitializerReference, InputDeclaration,
-    IntegrityConstraintDeclaration, NodeDeclaration, OperationReference, OutputDeclaration,
-    ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    IntegrityConstraintDeclaration, InteractiveSymbolBinding, NodeDeclaration, OperationReference,
+    OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
+    SlotRole,
 };
 
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
@@ -214,6 +215,18 @@ struct WireOutput {
     name: String,
     source: u32,
     schema: u32,
+    // Keep optional extensions at the end so ordinary JSON output declarations
+    // retain their canonical field order; the default admits older artifacts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    interactive_binding: Option<WireInteractiveSymbolBinding>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireInteractiveSymbolBinding {
+    lexical_name: String,
+    artifact_source: WireSource,
+    storage: u32,
+    output: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -354,6 +367,14 @@ pub fn encode_program_artifact_sections(
                 .map(|output| WireOutput {
                     output: output.output.get(),
                     name: output.name.clone(),
+                    interactive_binding: output.interactive_binding.as_ref().map(|binding| {
+                        WireInteractiveSymbolBinding {
+                            lexical_name: binding.lexical_name.clone(),
+                            artifact_source: wire_source(binding.artifact_source),
+                            storage: binding.storage.get(),
+                            output: binding.output.get(),
+                        }
+                    }),
                     source: output.source.get(),
                     schema: output.schema.get(),
                 })
@@ -601,6 +622,14 @@ fn decode_program_artifact_sections_owned(
             .map(|output| OutputDeclaration {
                 output: OutputId(output.output),
                 name: output.name,
+                interactive_binding: output.interactive_binding.map(|binding| {
+                    InteractiveSymbolBinding {
+                        lexical_name: binding.lexical_name,
+                        artifact_source: source_from_wire(binding.artifact_source),
+                        storage: CellSlotId(binding.storage),
+                        output: OutputId(binding.output),
+                    }
+                }),
                 source: CellSlotId(output.source),
                 schema: SchemaId::new(output.schema),
             })

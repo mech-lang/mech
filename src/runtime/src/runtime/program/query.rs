@@ -34,7 +34,13 @@ impl MechRuntime {
                 .outputs()
                 .iter()
                 .find(|output| output.output == output_id)
-                .map(|output| output.name.clone());
+                .map(|output| {
+                    output
+                        .interactive_binding
+                        .as_ref()
+                        .map(|binding| binding.lexical_name.clone())
+                        .unwrap_or_else(|| output.name.clone())
+                });
         }
         let _ = output_id;
         None
@@ -88,6 +94,19 @@ impl MechRuntime {
     pub fn root_symbol_values_all(&self) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
         if let Some((artifact, _)) = self.resident_artifact_and_instance() {
+            let lexical_names = artifact
+                .outputs()
+                .iter()
+                .filter_map(|output| {
+                    output
+                        .interactive_binding
+                        .as_ref()
+                        .map(|binding| binding.lexical_name.clone())
+                })
+                .collect::<Vec<_>>();
+            if !lexical_names.is_empty() {
+                return self.resident_symbol_values(lexical_names.iter().map(String::as_str));
+            }
             return self.resident_symbol_values(
                 artifact.outputs().iter().map(|output| output.name.as_str()),
             );
@@ -127,7 +146,18 @@ impl MechRuntime {
             let Some(index) = artifact
                 .outputs()
                 .iter()
-                .position(|output| output.name == name)
+                .position(|output| {
+                    output
+                        .interactive_binding
+                        .as_ref()
+                        .is_some_and(|binding| binding.lexical_name == name)
+                })
+                .or_else(|| {
+                    artifact
+                        .outputs()
+                        .iter()
+                        .position(|output| output.name == name)
+                })
             else {
                 return Err(MechError::new(
                     RuntimeInvalidOperationError {
