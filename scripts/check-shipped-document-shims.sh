@@ -95,9 +95,10 @@ if grep -Ein -- '</script' include/document.js; then
 fi
 
 for contract in \
-  'input.dataset.mechInteractiveEvaluation = "unavailable"' \
-  'interactive source evaluation is unavailable in standard resident documents' \
-  'Mech document command input'; do
+  'input.dataset.mechInteractiveEvaluation = "resident"' \
+  'state.repl.submit(source)' \
+  'Mech resident REPL input' \
+  'console://repl/output'; do
   require_literal include/document.js "$contract"
 done
 

@@ -14,6 +14,11 @@ Be sure to follow our [blog](https://mech-lang.org/blog/)([RSS](https://mech-lan
 
 A web assembly wrapper for Mech core and syntax. Allows Mech to be embedded in the browser.
 
+Browser REPL editors should pass keyboard events to `replInputAction`. The
+portable binding contract returns `submit` for Enter and `insert_line_break`
+for Ctrl+Enter. A submit operation sends the editor's complete value, including
+any embedded newlines, as one source entry. Non-Enter keys are left to the host.
+
 ## Project Status
 
 Mech is currently in the **beta** stage of development. This means that the language is at a suitable stage for a wider audience. While most language feature implementations are started, none are finished, and some new features may, while others could be removed. Backwards and forwards compatibility of Mech programs is not guaranteed at this time. 

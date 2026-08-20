@@ -694,7 +694,7 @@ def submit(command):
 
 
 def assert_console_contract():
-    command_only = evaluate_json("""
+    resident = evaluate_json("""
 (() => {
   const input = document.querySelector('.repl-input');
   if (!input) return null;
@@ -705,43 +705,253 @@ def assert_console_contract():
   };
 })()
 """)
-    if command_only != {
-        "capability": "unavailable",
-        "label": "Mech document command input",
-        "placeholder": "Document commands only (:help)",
+    if resident != {
+        "capability": "resident",
+        "label": "Mech resident REPL input",
+        "placeholder": "Enter submits · Ctrl+Enter adds a line",
     }:
-        fail(f"the standard document console advertised developer evaluation: {command_only!r}")
+        fail(f"the standard document console did not advertise resident evaluation: {resident!r}")
 
-    if label == "configured":
-        # This value is deliberately distinct from the mutable `answer`
-        # fixture. It proves the configured page resolved its sibling module
-        # while the document bootstrap independently proves that its granted
-        # live clock host can be validated and installed.
-        submit(":whos configured-answer")
-        wait_for(
-            "[...document.querySelectorAll('.mech-repl-symbols')].some((table) => "
-            "/configured-answer/.test(table.textContent) && /41/.test(table.textContent))",
-            "the configured document's imported value",
-        )
-    submit("answer + 1")
+    multiline = evaluate_json("""
+(() => {
+  const input = document.querySelector('.repl-input');
+  const transcript = document.querySelector('.mech-repl-transcript');
+  if (!input || !transcript) return null;
+  const rowsBefore = transcript.children.length;
+  input.value = ':whos answer';
+  input.setSelectionRange(5, 5);
+  input.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Enter', ctrlKey: true, bubbles: true, cancelable: true,
+  }));
+  const result = {
+    value: input.value,
+    caret: input.selectionStart,
+    transcriptUnchanged: transcript.children.length === rowsBefore,
+  };
+  input.value = '';
+  return result;
+})()
+""")
+    if multiline != {
+        "value": ":whos\n answer",
+        "caret": 6,
+        "transcriptUnchanged": True,
+    }:
+        fail(f"Ctrl+Enter did not insert a multiline browser REPL draft: {multiline!r}")
+
+    submit("answer := 1\nanswer + 1")
     wait_for(
-        "[...document.querySelectorAll('.mech-repl-error')].some((row) => "
-        "/interactive source evaluation is unavailable/.test(row.textContent)) && "
-        "document.querySelectorAll('.mech-repl-result').length === 0",
-        "the standard console rejecting developer source evaluation",
+        "[...document.querySelectorAll('.mech-repl-result')].some((row) => "
+        "/2/.test(row.textContent))",
+        "the resident console evaluating multiline Mech source",
+    )
+    result_count = evaluate_json(
+        "document.querySelectorAll('.mech-repl-result').length"
+    )
+    submit("answer + 2; -- suppress this browser value")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-source')].some((row) => "
+        "row.textContent.trim() === 'answer + 2; -- suppress this browser value')",
+        "the semicolon-terminated browser source echo",
+    )
+    suppressed_count = evaluate_json(
+        "document.querySelectorAll('.mech-repl-result').length"
+    )
+    if suppressed_count != result_count:
+        fail(
+            "semicolon-terminated browser input rendered an automatic value: "
+            f"before={result_count!r}, after={suppressed_count!r}"
+        )
+    evaluate("""
+(() => {
+  const panel = document.querySelector('#mech-document-errors');
+  if (!panel) return false;
+  let region = panel.querySelector('[data-mech-error-region=document]');
+  if (!region) {
+    region = document.createElement('div');
+    region.dataset.mechErrorRegion = 'document';
+    panel.append(region);
+  }
+  const marker = document.createElement('div');
+  marker.dataset.mechDocumentErrorSmoke = 'true';
+  marker.textContent = 'persistent document failure';
+  region.append(marker);
+  return true;
+})()
+""")
+    submit(":step 1000001")
+    wait_for(
+        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => "
+        "/step count must be between 1 and 1000000/.test(row.textContent))",
+        "the portable resident step ceiling in the Errors pane",
+    )
+    submit(":clear errors")
+    wait_for(
+        "Boolean(document.querySelector('[data-mech-document-error-smoke=true]')) && "
+        "(document.querySelector('[data-mech-error-region=repl]')?.children.length || 0) === 0",
+        "scoped resident diagnostic clearing",
     )
     submit(":whos answer")
     wait_for(
-        "[...document.querySelectorAll('.mech-repl-symbols')].some((table) => /answer/.test(table.textContent))",
+        "[...document.querySelectorAll('.mech-repl-symbols')].some((table) => /answer/.test(table.textContent)) && "
+        "[...document.querySelectorAll('.mech-repl-source')].some((row) => row.textContent.trim() === ':whos answer')",
         "the answer row from :whos",
     )
+    submit(":step 256")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-info')].some((row) => "
+        "/Advanced 256 resident step/.test(row.textContent))",
+        "cooperative browser stepping completing across bounded animation-frame chunks",
+    )
     submit(":help")
-    wait_for("Boolean(document.querySelector('.mech-repl-help'))", "the browser console help table")
+    wait_for(
+        "Boolean(document.querySelector('.mech-repl-help')) && "
+        "/:load/.test(document.querySelector('.mech-repl-help')?.textContent || '') && "
+        "/unavailable: this host did not provide a readable resource provider/.test(document.querySelector('.mech-repl-help')?.textContent || '')",
+        "the full shared command registry and browser availability table",
+    )
     submit(":clear")
     wait_for(
-        "[...document.querySelectorAll('.mech-repl-info')].some((row) => /Document reset/.test(row.textContent)) && "
+        "[...document.querySelectorAll('.mech-repl-info')].some((row) => /Resident REPL state cleared/.test(row.textContent)) && "
         "/41/.test(document.querySelector('#mech-smoke-var')?.textContent || '')",
-        "the reset browser document state",
+        "the independent resident REPL reset",
+    )
+    submit('@out := console://repl/output{:write(line)}\n@out/line <- "browser-output"\n@out/line <- "continued"')
+    wait_for(
+        "/browser-output\\s*continued/.test(document.querySelector('[data-mech-output-region=repl]')?.textContent || '') && "
+        "document.querySelectorAll('[data-mech-output-region=repl] .mech-repl-output-entry').length === 1 && "
+        "document.querySelector('#output-tab')?.classList.contains('active')",
+        "framed program output targeted at one browser REPL stream surface",
+    )
+    display_id = evaluate_json(
+        "document.querySelector('[data-mech-output-region=repl] [data-mech-display-id]')?.dataset.mechDisplayId || null"
+    )
+    if not display_id:
+        fail("resident program output did not expose its stable display id")
+    evaluate("""
+(() => {
+  const panel = document.querySelector('#mech-document-output');
+  if (!panel?.parentElement) return false;
+  window.__MECH_DETACHED_OUTPUT_PANEL__ = {
+    panel,
+    parent: panel.parentElement,
+    next: panel.nextSibling,
+  };
+  panel.remove();
+  return true;
+})()
+""")
+    submit('@out/line <- "while-absent"')
+    evaluate("""
+(() => {
+  const saved = window.__MECH_DETACHED_OUTPUT_PANEL__;
+  if (!saved) return false;
+  saved.parent.insertBefore(saved.panel, saved.next);
+  delete window.__MECH_DETACHED_OUTPUT_PANEL__;
+  return true;
+})()
+""")
+    submit(f":output {display_id}")
+    wait_for(
+        f"document.querySelector('#output-tab')?.classList.contains('active') && "
+        f"/browser-output[\\s\\S]*continued[\\s\\S]*while-absent/.test(document.querySelector('[data-mech-display-id=\"{display_id}\"]')?.textContent || '')",
+        "focus reconstruction for retained output published while its pane was absent",
+    )
+    evaluate("""
+(() => {
+  const scene = JSON.stringify({
+    width: 120,
+    height: 80,
+    background: '#080b12',
+    circles: [
+      { id: 'body-0', x: 40, y: 40, radius: 8, fill: '#ffd166', stroke: 'none', stroke_width: 0, opacity: 1 },
+      { id: 'body-1', x: 80, y: 40, radius: 4, fill: '#4cc9f0', stroke: 'none', stroke_width: 0, opacity: 1 },
+    ],
+    lines: [],
+  });
+  window.dispatchEvent(new CustomEvent('mech:output', {
+    detail: {
+      source: { host: { name: 'scene://browser-smoke/frame', span: null } },
+      stream: 'stdout',
+      display_id: 'scene-browser-smoke',
+      operation: 'create',
+      content: {
+        kind: 'scene',
+        data: { representations: { representations: [
+          { media_type: 'application/vnd.mech.scene+json', data: { encoding: 'text', value: scene } },
+          { media_type: 'text/plain', data: { encoding: 'text', value: 'scene 120×80 (2 circles, 0 lines)' } },
+        ] } },
+      },
+    },
+  }));
+  return true;
+})()
+""")
+    wait_for(
+        "document.querySelectorAll('[data-mech-display-id=scene-browser-smoke] [data-mech-rich-scene=true] circle').length === 2",
+        "portable rich Scene output rendering as SVG in the Output pane",
+    )
+    evaluate("""
+(() => {
+  const send = (stream, operation, text) => window.dispatchEvent(new CustomEvent('mech:output', {
+    detail: {
+      source: { host: { name: 'browser-smoke', span: null } },
+      stream,
+      display_id: 'cross-stream-smoke',
+      operation,
+      content: { kind: 'text', data: { text } },
+    },
+  }));
+  send('stdout', 'create', 'stdout owner');
+  send('stderr', 'replace', 'stderr owner');
+  return true;
+})()
+""")
+    wait_for(
+        "document.querySelectorAll('[data-mech-display-id=cross-stream-smoke]').length === 1 && "
+        "Boolean(document.querySelector('[data-mech-error-region=program] [data-mech-display-id=cross-stream-smoke]')) && "
+        "!document.querySelector('[data-mech-output-region=repl] [data-mech-display-id=cross-stream-smoke]')",
+        "global display identity moving from stdout to stderr",
+    )
+    evaluate("""
+(() => {
+  const panel = document.querySelector('#mech-document-errors');
+  const parent = panel?.parentElement;
+  const next = panel?.nextSibling;
+  panel?.remove();
+  window.dispatchEvent(new CustomEvent('mech:output', {
+    detail: {
+      source: { host: { name: 'browser-smoke', span: null } },
+      stream: 'stderr',
+      display_id: 'cross-stream-smoke',
+      operation: 'remove',
+      content: { kind: 'text', data: { text: '' } },
+    },
+  }));
+  if (parent && panel) parent.insertBefore(panel, next);
+  return true;
+})()
+""")
+    wait_for(
+        "!document.querySelector('[data-mech-display-id=cross-stream-smoke]')",
+        "display removal while the event's destination pane is absent",
+    )
+    evaluate("""
+(() => {
+  const region = document.querySelector('[data-mech-error-region=program]');
+  if (!region) return false;
+  const marker = document.createElement('article');
+  marker.dataset.mechProgramStderrSmoke = 'true';
+  marker.textContent = 'program stderr lifecycle marker';
+  region.append(marker);
+  return true;
+})()
+""")
+    submit(":clear output")
+    wait_for(
+        "(document.querySelector('[data-mech-output-region=repl]')?.children.length || 0) === 0 && "
+        "(document.querySelector('[data-mech-error-region=program]')?.children.length || 0) === 0",
+        "global program stdout and stderr lifecycle clearing",
     )
     evaluate("document.querySelector('#output-tab')?.click()")
     wait_for(
@@ -755,6 +965,26 @@ def assert_console_contract():
         "document.querySelector('.mech-repl-transcript')?.children.length === 0",
         "the cleared browser console transcript",
     )
+    toggled = evaluate_json("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  if (!root) return null;
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '`', bubbles: true, cancelable: true,
+  }));
+  const closed = root.dataset.mechConsoleOpen;
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '`', bubbles: true, cancelable: true,
+  }));
+  return {
+    closed,
+    reopened: root.dataset.mechConsoleOpen,
+    consoleActive: document.querySelector('#console-tab')?.classList.contains('active'),
+  };
+})()
+""")
+    if toggled != {"closed": "false", "reopened": "true", "consoleActive": True}:
+        fail(f"backtick did not close and reopen the browser REPL: {toggled!r}")
 
 
 def assert_console_tab_isolation():
@@ -881,7 +1111,6 @@ def assert_mobile_contract():
         fail(f"mobile content or console control is not reachable: {mobile!r}")
     if mobile["scrollWidth"] > mobile["viewportWidth"] + 1:
         fail(f"mobile page overflows horizontally: {mobile!r}")
-
     def toggle_mobile_console():
         return evaluate("""
 (() => {
@@ -921,6 +1150,110 @@ def assert_mobile_contract():
             fail(f"mobile console did not reopen through its visible control: {reopened!r}")
     if not evaluate(visible_expression(".console-pane")):
         fail("mobile console was marked open but is not visible")
+
+
+def assert_repl_termination():
+    submit(":quit")
+    wait_for(
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'terminated' && "
+        "document.querySelector('.repl-input')?.disabled === true && "
+        "[...document.querySelectorAll('.mech-repl-info')].some((row) => /REPL session terminated/.test(row.textContent))",
+        "browser REPL termination disabling further input",
+    )
+    evaluate("""
+(() => {
+  const input = document.querySelector('.repl-input');
+  if (!input) return false;
+  input.disabled = false;
+  input.value = '1 + 1';
+  input.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Enter', bubbles: true, cancelable: true,
+  }));
+  return true;
+})()
+""")
+    wait_for(
+        "document.querySelector('.repl-input')?.disabled === true && "
+        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /Create a new session/.test(row.textContent))",
+        "terminated browser session rejecting a forced follow-up request",
+    )
+    direct_exports = evaluate("""
+(async () => {
+  const { WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
+  const busyRepl = new WasmRepl();
+  busyRepl.submit('~counter := 0\\ncounter += 1\\n');
+  const sourceBeforeStep = busyRepl.source();
+  const started = busyRepl.step(1000n);
+  const blockedSubmit = busyRepl.submit('other := 1\\n');
+  const sourceAfterSubmit = busyRepl.source();
+  const blockedStep = busyRepl.step(2n);
+  const sourceAfterStep = busyRepl.source();
+  const busy = (response) =>
+    response?.pending === true &&
+    response?.remaining === 1000 &&
+    response?.terminated === false &&
+    (response.events || []).some((envelope) =>
+      envelope.event?.channel === 'diagnostic' &&
+      envelope.event?.event?.code === 'ReplBusy');
+  const interrupted = busyRepl.interrupt();
+  const accepted = busyRepl.submit('other := 1\\n');
+  const sourceAfterInterrupt = busyRepl.source();
+  const restarted = busyRepl.step(2n);
+  const stopped = busyRepl.shutdown();
+
+  const repl = new WasmRepl();
+  const quit = repl.invoke(':quit');
+  const responses = {
+    invoke: repl.invoke('1 + 1'),
+    submit: repl.submit('1 + 1'),
+    setQuiet: repl.setQuiet(true),
+    reset: repl.reset(),
+    step: repl.step(1n),
+    continueStep: repl.continueStep(1),
+    interrupt: repl.interrupt(),
+    clearOutputs: repl.clearOutputs(),
+    clearDiagnostics: repl.clearDiagnostics(),
+    shutdown: repl.shutdown(),
+  };
+  const rejected = (response) =>
+    response?.terminated === true &&
+    (response.events || []).some((envelope) =>
+      envelope.event?.channel === 'diagnostic' &&
+      envelope.event?.event?.code === 'ReplTerminated');
+  return {
+    busyState: {
+      started: started?.pending === true && started?.remaining === 1000,
+      blockedSubmit: busy(blockedSubmit),
+      blockedStep: busy(blockedStep),
+      sourcePreserved:
+        sourceAfterSubmit === sourceBeforeStep &&
+        sourceAfterStep === sourceBeforeStep,
+      interrupted: interrupted?.pending === false,
+      accepted:
+        accepted?.pending === false &&
+        sourceAfterInterrupt.includes('other := 1'),
+      shutdownDuringStep:
+        restarted?.pending === true &&
+        stopped?.pending === false &&
+        stopped?.terminated === true,
+    },
+    quitTerminated: quit?.terminated === true,
+    rejected: Object.fromEntries(
+      Object.entries(responses).map(([name, response]) => [name, rejected(response)]),
+    ),
+  };
+})()
+""")
+    busy_state = direct_exports.get("busyState", {}) if direct_exports else {}
+    failed_busy_checks = sorted(name for name, value in busy_state.items() if not value)
+    if failed_busy_checks or len(busy_state) != 7:
+        fail(f"direct WASM REPL bypassed cooperative busy state: {direct_exports!r}")
+    if not direct_exports or not direct_exports.get("quitTerminated"):
+        fail(f"direct WASM REPL did not enter terminal state: {direct_exports!r}")
+    rejected = direct_exports.get("rejected", {})
+    missed = sorted(name for name, value in rejected.items() if not value)
+    if missed or len(rejected) != 10:
+        fail(f"mutating WASM exports bypassed terminal guard: {direct_exports!r}")
 
 
 try:
@@ -1046,6 +1379,7 @@ try:
     assert_right_console_resize_direction()
     assert_console_contract()
     assert_mobile_contract()
+    assert_repl_termination()
     capture_artifacts()
 except Exception as error:
     capture_artifacts()

@@ -4,6 +4,7 @@ use mech_core::{LegacyValue, MResult, MechRecord, MechTable, hash_str};
 
 use crate::scene_error;
 
+#[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct CircleElement {
     pub id: String,
@@ -16,6 +17,7 @@ pub struct CircleElement {
     pub opacity: f64,
 }
 
+#[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct LineElement {
     pub id: String,
@@ -32,6 +34,7 @@ pub struct LineElement {
     pub origin_y: f64,
 }
 
+#[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
 pub struct SceneSnapshot {
     pub width: f64,

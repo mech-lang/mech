@@ -2,6 +2,10 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use mech_core::MResult;
+use mech_runtime::{
+    DisplayId, DisplayOperation, OutputContent, OutputEvent, OutputSource, OutputStream,
+    Representation, RichOutput, SceneOutput,
+};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{CanvasRenderingContext2d, Element, HtmlCanvasElement, SvgsvgElement};
 
@@ -19,6 +23,7 @@ struct BrowserSceneTarget {
     latest: Option<SceneSnapshot>,
     generation: u64,
     rendered_generation: u64,
+    published_generation: u64,
 }
 
 #[derive(Clone, Debug)]
@@ -50,6 +55,7 @@ impl BrowserSceneRegistry {
                     latest: None,
                     generation: 0,
                     rendered_generation: 0,
+                    published_generation: 0,
                 },
             );
         Ok(())
@@ -109,6 +115,61 @@ impl BrowserSceneRegistry {
             }
         }
         Ok(rendered)
+    }
+
+    /// Drain the latest changed scene for each host instance into the portable
+    /// output protocol. The registry retains only the newest snapshot, so a
+    /// slow frontend cannot accumulate an unbounded animation queue.
+    pub fn drain_output_events(&self) -> MResult<Vec<OutputEvent>> {
+        let mut guard = self
+            .targets
+            .lock()
+            .map_err(|_| scene_error("BrowserSceneRegistry", "scene registry lock is poisoned"))?;
+        let mut events = Vec::new();
+        for (instance, target) in guard.iter_mut() {
+            let Some(scene) = target.latest.as_ref() else {
+                continue;
+            };
+            if target.published_generation == target.generation {
+                continue;
+            }
+            let operation = if target.published_generation == 0 {
+                DisplayOperation::Create
+            } else {
+                DisplayOperation::Update
+            };
+            let json = serde_json::to_string(scene).map_err(|error| {
+                scene_error(
+                    "BrowserSceneRegistry",
+                    format!("failed to encode scene output: {error}"),
+                )
+            })?;
+            let fallback = format!(
+                "scene {}×{} ({} circles, {} lines)",
+                scene.width,
+                scene.height,
+                scene.circles.len(),
+                scene.lines.len(),
+            );
+            events.push(OutputEvent {
+                source: OutputSource::Host {
+                    name: format!("scene://{instance}/frame"),
+                    span: None,
+                },
+                stream: OutputStream::Stdout,
+                display_id: Some(DisplayId::new(format!("scene-{instance}"))),
+                operation,
+                content: OutputContent::Scene(SceneOutput {
+                    representations: RichOutput::new(vec![
+                        Representation::text("application/vnd.mech.scene+json", json),
+                        Representation::text("text/plain", fallback),
+                    ]),
+                }),
+            });
+            target.published_generation = target.generation;
+        }
+        events.sort_by(|left, right| left.display_id.cmp(&right.display_id));
+        Ok(events)
     }
     pub fn target_count(&self) -> usize {
         self.targets.lock().map(|g| g.len()).unwrap_or(0)
@@ -436,4 +497,56 @@ fn set_attr(el: &Element, name: &str, value: &str) -> MResult<()> {
             format!("failed to set svg attribute `{name}`"),
         )
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn snapshot(x: f64) -> SceneSnapshot {
+        SceneSnapshot {
+            width: 640.0,
+            height: 480.0,
+            background: "black".to_string(),
+            circles: vec![crate::CircleElement {
+                id: "body-0".to_string(),
+                x,
+                y: 12.0,
+                radius: 4.0,
+                fill: "amber".to_string(),
+                stroke: "none".to_string(),
+                stroke_width: 0.0,
+                opacity: 1.0,
+            }],
+            lines: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn changed_scenes_publish_one_stable_create_then_update_artifact() {
+        let registry = BrowserSceneRegistry::new();
+        registry
+            .register(
+                "orbit",
+                SceneHostSettings::new("#solar-system", SceneRendererKind::Svg),
+            )
+            .unwrap();
+        registry.replace_scene("orbit", snapshot(10.0)).unwrap();
+
+        let created = registry.drain_output_events().unwrap();
+        assert_eq!(created.len(), 1);
+        assert_eq!(
+            created[0].display_id.as_ref().unwrap().as_str(),
+            "scene-orbit"
+        );
+        assert_eq!(created[0].operation, DisplayOperation::Create);
+        assert!(matches!(created[0].content, OutputContent::Scene(_)));
+        assert!(registry.drain_output_events().unwrap().is_empty());
+
+        registry.replace_scene("orbit", snapshot(20.0)).unwrap();
+        let updated = registry.drain_output_events().unwrap();
+        assert_eq!(updated.len(), 1);
+        assert_eq!(updated[0].display_id, created[0].display_id);
+        assert_eq!(updated[0].operation, DisplayOperation::Update);
+    }
 }

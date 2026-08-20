@@ -18,10 +18,11 @@ use mech_console::BrowserConsoleHostFactory;
 use mech_core::{MechError, MechErrorKind, MechSourceCode, OutputId};
 use mech_engine::root_document_output_ids;
 use mech_runtime::{
-    ConfigProfileOptions, InMemorySourceResolver, MechConfigDocument, MechRuntime,
-    ModuleBuildOptions, ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource,
-    RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramRoute, SourceKind, SourceRequest,
-    SourceResolutionEntry, parse_config_document, validate_source_resolution_entries,
+    ConfigProfileOptions, InMemorySourceResolver, MAX_RESIDENT_STEP_COUNT, MechConfigDocument,
+    MechEvent, MechEventBus, MechRuntime, ModuleBuildOptions, ResidentRouteFailure,
+    ResidentRouteFailureClass, ResolvedSource, RuntimeBuilder, RuntimeProgramExecutionInfo,
+    RuntimeProgramRoute, SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
+    validate_resident_step_count, validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
 use mech_runtime::{
@@ -43,6 +44,7 @@ use crate::host::WasmBrowserDomBackend;
 #[wasm_bindgen]
 pub struct WasmProject {
     runtime: MechRuntime,
+    events: MechEventBus,
     #[cfg(feature = "browser_host_scene")]
     scenes: BrowserSceneRegistry,
     started: bool,
@@ -180,6 +182,7 @@ impl WasmProject {
     ) -> Self {
         Self {
             runtime,
+            events: MechEventBus::default(),
             #[cfg(feature = "browser_host_scene")]
             scenes,
             started: false,
@@ -255,6 +258,14 @@ impl WasmProject {
         let rendered = self.scenes.render_frame().map_err(to_js_error)?;
         #[cfg(not(feature = "browser_host_scene"))]
         let rendered = 0;
+        #[cfg(feature = "browser_host_scene")]
+        self.events.publish_all(
+            self.scenes
+                .drain_output_events()
+                .map_err(to_js_error)?
+                .into_iter()
+                .map(MechEvent::Output),
+        );
         let out = Object::new();
         Reflect::set(
             &out,
@@ -270,6 +281,11 @@ impl WasmProject {
             &out,
             &JsValue::from_str("rendered"),
             &JsValue::from_f64(rendered as f64),
+        )?;
+        Reflect::set(
+            &out,
+            &JsValue::from_str("events"),
+            &serde_wasm_bindgen::to_value(&self.events.drain())?,
         )?;
         let info = self.runtime.program_execution_info();
         Reflect::set(
@@ -628,9 +644,7 @@ mod document {
 
         #[wasm_bindgen(js_name = step)]
         pub fn step(&mut self, count: u64) -> Result<(), JsValue> {
-            if count == 0 {
-                return Err(js_error("count must be greater than zero"));
-            }
+            validate_resident_step_count(count).map_err(to_js_error)?;
             #[cfg(feature = "functions")]
             {
                 for _ in 0..count {
@@ -779,7 +793,7 @@ fn required_path_strings(source: &str) -> mech_core::MResult<Vec<String>> {
     }
     Ok(paths)
 }
-fn browser_runtime_builder() -> RuntimeBuilder {
+pub(super) fn browser_runtime_builder() -> RuntimeBuilder {
     RuntimeBuilder::new().function_catalog(mech_stdlib::source_catalog())
 }
 
@@ -1401,7 +1415,9 @@ fn runtime_info_value(info: &RuntimeProgramExecutionInfo) -> Result<JsValue, JsV
     Ok(out.into())
 }
 
-fn rendered_value(snapshot: mech_runtime::RuntimeValueSnapshot) -> Result<JsValue, JsValue> {
+pub(super) fn rendered_value(
+    snapshot: mech_runtime::RuntimeValueSnapshot,
+) -> Result<JsValue, JsValue> {
     let value = snapshot.into_value();
     let rendered = Object::new();
     Reflect::set(
@@ -1417,12 +1433,16 @@ fn rendered_value(snapshot: mech_runtime::RuntimeValueSnapshot) -> Result<JsValu
     Reflect::set(
         &rendered,
         &JsValue::from_str("inlineHtml"),
-        &JsValue::from_str(&mech_core::escape_html_text(&value.format_value_inline())),
+        &JsValue::from_str(&mech_core::escape_html_text(
+            &value.format_canonical_inline(),
+        )),
     )?;
     Ok(rendered.into())
 }
 
-fn rendered_symbol_names_from_js(names: JsValue) -> Result<Option<Vec<String>>, JsValue> {
+pub(super) fn rendered_symbol_names_from_js(
+    names: JsValue,
+) -> Result<Option<Vec<String>>, JsValue> {
     if names.is_null() || names.is_undefined() {
         return Ok(None);
     }
@@ -1441,7 +1461,7 @@ fn rendered_symbol_names_from_js(names: JsValue) -> Result<Option<Vec<String>>, 
         .map(Some)
 }
 
-fn rendered_symbol_row(
+pub(super) fn rendered_symbol_row(
     name: &str,
     snapshot: mech_runtime::RuntimeValueSnapshot,
 ) -> Result<JsValue, JsValue> {
@@ -2751,6 +2771,22 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
+    fn wasm_inline_values_use_html_escaped_canonical_mech_strings() {
+        let value = mech_core::LegacyValue::String(mech_core::Ref::new(
+            "a\"b\\c\nα\u{2028}line\u{2029}paragraph".to_string(),
+        ));
+        let snapshot = mech_runtime::RuntimeValueSnapshot::try_from(value).unwrap();
+        let rendered = rendered_value(snapshot).unwrap();
+        assert_eq!(
+            Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("&quot;a\\&quot;b\\\\c\\nα\\u{2028}line\\u{2029}paragraph&quot;"),
+        );
+    }
+
+    #[wasm_bindgen_test]
     fn encoded_inline_document_executes_in_the_resident_browser_product() {
         let encoded =
             encoded_document("The document evaluates {answer + 1} inline.\n\nanswer := 41");
@@ -2791,10 +2827,11 @@ mod browser_tests {
     }
 
     #[wasm_bindgen_test]
-    fn wasm_document_step_rejects_zero() {
+    fn wasm_document_step_rejects_counts_outside_the_shared_resident_limit() {
         let encoded = encoded_document("~answer := 0\nanswer += 1\nanswer");
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         assert!(document.step(0).is_err());
+        assert!(document.step(MAX_RESIDENT_STEP_COUNT + 1).is_err());
     }
 
     #[wasm_bindgen_test]

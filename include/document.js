@@ -7,12 +7,32 @@ const state = {
   document: null,
   initialEncoded: "",
   root: null,
+  repl: null,
   running: false,
   animationFrame: null,
   history: [],
   historyIndex: 0,
   console: null,
+  replInputAction: null,
+  replStepLimit: null,
+  replQuiet: false,
+  replBusy: false,
+  replTerminated: false,
+  programDisplays: new Map(),
 };
+
+function truthySetting(value) {
+  return typeof value === "string" &&
+    !["", "0", "false", "no", "off"].includes(value.trim().toLowerCase());
+}
+
+function requestedReplQuiet() {
+  return [
+    state.controllerElement?.dataset.mechReplQuiet,
+    state.root?.dataset.mechReplQuiet,
+    document.documentElement?.dataset.mechReplQuiet,
+  ].some(truthySetting);
+}
 
 function documentRoot() {
   return document.querySelector(".mech-root, .mech-document");
@@ -55,6 +75,21 @@ function errorPanel() {
   );
 }
 
+function errorRegion(kind) {
+  const panel = errorPanel();
+  if (!panel) {
+    return null;
+  }
+  let region = panel.querySelector(`[data-mech-error-region="${kind}"]`);
+  if (!region) {
+    region = document.createElement("div");
+    region.dataset.mechErrorRegion = kind;
+    region.className = `mech-error-region mech-error-region-${kind}`;
+    panel.append(region);
+  }
+  return region;
+}
+
 function outputPanel() {
   return state.root?.querySelector(
     "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]",
@@ -63,9 +98,24 @@ function outputPanel() {
   );
 }
 
-function appendError(error) {
+function outputRegion(kind) {
+  const panel = outputPanel();
+  if (!panel) {
+    return null;
+  }
+  let region = panel.querySelector(`[data-mech-output-region="${kind}"]`);
+  if (!region) {
+    region = document.createElement("div");
+    region.dataset.mechOutputRegion = kind;
+    region.className = `mech-output-region mech-output-region-${kind}`;
+    panel.append(region);
+  }
+  return region;
+}
+
+function appendError(error, owner = "document") {
   const message = errorMessage(error);
-  const panel = errorPanel();
+  const panel = errorRegion(owner) || errorPanel();
   if (panel) {
     const row = document.createElement("div");
     row.className = "mech-console-error";
@@ -85,6 +135,32 @@ function appendError(error) {
   }
   alert.textContent = `Mech document failed to run: ${message}`;
   return message;
+}
+
+function appendDiagnostic(diagnostic) {
+  const panel = errorRegion("repl");
+  if (!panel) {
+    return;
+  }
+  const row = document.createElement("article");
+  row.className = "mech-console-error mech-repl-diagnostic";
+  row.dataset.mechDiagnosticId = diagnostic.id || "";
+  row.dataset.mechDiagnosticSeverity = diagnostic.severity || "error";
+  const heading = document.createElement("header");
+  heading.textContent = [diagnostic.severity, diagnostic.code]
+    .filter(Boolean)
+    .join(" ");
+  const message = document.createElement("div");
+  message.textContent = diagnostic.message || "Unknown REPL diagnostic";
+  row.append(heading, message);
+  for (const note of diagnostic.notes || []) {
+    const detail = document.createElement("div");
+    detail.className = "mech-repl-diagnostic-note";
+    detail.textContent = `note: ${note.message}`;
+    row.append(detail);
+  }
+  panel.append(row);
+  activateConsolePanel("errors");
 }
 
 function cancelFrame() {
@@ -436,7 +512,7 @@ function createOutputEntry(address, rendered) {
 }
 
 function refreshOutputPanel(entries) {
-  const panel = outputPanel();
+  const panel = outputRegion("document");
   if (!panel) {
     return;
   }
@@ -444,6 +520,218 @@ function refreshOutputPanel(entries) {
   for (const entry of entries) {
     panel.append(createOutputEntry(entry.address, entry.rendered));
   }
+}
+
+function outputContentElement(content) {
+  const body = document.createElement("div");
+  body.className = `mech-repl-output-content mech-repl-output-${content?.kind || "unknown"}`;
+  const data = content?.data || {};
+  if (content?.kind === "fragments") {
+    for (const fragment of Array.isArray(data) ? data : []) {
+      body.append(outputContentElement(fragment));
+    }
+    return body;
+  }
+  if (content?.kind === "text") {
+    body.textContent = data.text || "";
+    return body;
+  }
+  if (content?.kind === "value") {
+    body.textContent = data.text || data.inline_text || "_";
+    return body;
+  }
+  if (content?.kind === "table") {
+    const table = document.createElement("table");
+    table.className = "mech-repl-output-table";
+    const head = document.createElement("thead");
+    const headRow = document.createElement("tr");
+    for (const column of data.columns || []) {
+      const cell = document.createElement("th");
+      cell.textContent = column;
+      headRow.append(cell);
+    }
+    head.append(headRow);
+    const tableBody = document.createElement("tbody");
+    const mutedRows = new Set(data.muted_rows || []);
+    for (const [rowIndex, values] of (data.rows || []).entries()) {
+      const row = document.createElement("tr");
+      if (mutedRows.has(rowIndex)) {
+        row.classList.add("mech-repl-row-muted");
+      }
+      for (const value of values) {
+        const cell = document.createElement("td");
+        cell.textContent = value;
+        row.append(cell);
+      }
+      tableBody.append(row);
+    }
+    table.append(head, tableBody);
+    body.append(table);
+    return body;
+  }
+  if (content?.kind === "matrix") {
+    const rows = [];
+    const width = Math.max(1, data.columns || 0);
+    for (let index = 0; index < (data.cells || []).length; index += width) {
+      rows.push(data.cells.slice(index, index + width).join(" "));
+    }
+    body.textContent = `[${rows.join("; ")}]`;
+    return body;
+  }
+  const representations = data.representations?.representations || data.representations || [];
+  if (content?.kind === "scene") {
+    const sceneRepresentation = representations.find(
+      entry => entry.media_type === "application/vnd.mech.scene+json",
+    );
+    const encoded = sceneRepresentation?.data?.value;
+    if (typeof encoded === "string") {
+      try {
+        const scene = JSON.parse(encoded);
+        const namespace = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(namespace, "svg");
+        svg.classList.add("mech-repl-scene");
+        svg.dataset.mechRichScene = "true";
+        svg.setAttribute("viewBox", `0 0 ${scene.width} ${scene.height}`);
+        svg.setAttribute("width", String(scene.width));
+        svg.setAttribute("height", String(scene.height));
+        svg.setAttribute("role", "img");
+        const background = document.createElementNS(namespace, "rect");
+        background.setAttribute("x", "0");
+        background.setAttribute("y", "0");
+        background.setAttribute("width", String(scene.width));
+        background.setAttribute("height", String(scene.height));
+        background.setAttribute("fill", scene.background || "transparent");
+        svg.append(background);
+        for (const circle of scene.circles || []) {
+          const element = document.createElementNS(namespace, "circle");
+          element.dataset.mechSceneId = circle.id;
+          for (const [name, value] of [
+            ["cx", circle.x], ["cy", circle.y], ["r", circle.radius],
+            ["fill", circle.fill], ["stroke", circle.stroke],
+            ["stroke-width", circle.stroke_width], ["opacity", circle.opacity],
+          ]) {
+            element.setAttribute(name, String(value));
+          }
+          svg.append(element);
+        }
+        for (const line of scene.lines || []) {
+          const element = document.createElementNS(namespace, "line");
+          element.dataset.mechSceneId = line.id;
+          for (const [name, value] of [
+            ["x1", line.x1], ["y1", line.y1], ["x2", line.x2], ["y2", line.y2],
+            ["stroke", line.stroke], ["stroke-width", line.stroke_width],
+            ["stroke-linecap", line.line_cap], ["opacity", line.opacity],
+          ]) {
+            element.setAttribute(name, String(value));
+          }
+          element.setAttribute(
+            "transform",
+            `rotate(${line.rotation} ${line.origin_x} ${line.origin_y})`,
+          );
+          svg.append(element);
+        }
+        body.append(svg);
+        return body;
+      } catch (error) {
+        console.error("failed to render Mech scene output", error);
+      }
+    }
+  }
+  const fallback = representations.find(entry => entry.media_type === "text/plain");
+  body.textContent = fallback?.data?.value || data.alt_text || `${content?.kind || "rich"} output`;
+  return body;
+}
+
+function appendProgramOutput(output) {
+  if (output.operation === "clear" && !output.display_id) {
+    for (const entry of state.programDisplays.values()) {
+      entry.element.remove();
+    }
+    state.programDisplays.clear();
+    outputRegion("repl")?.replaceChildren();
+    errorRegion("program")?.replaceChildren();
+    return;
+  }
+  const stderr = output.stream === "stderr";
+  const target = stderr ? errorRegion("program") : outputRegion("repl");
+  const displayId = typeof output.display_id === "string"
+    ? output.display_id
+    : output.display_id?.[0] || null;
+  let entry = displayId ? state.programDisplays.get(displayId) || null : null;
+  if (output.operation === "remove" && displayId) {
+    entry?.element.remove();
+    state.programDisplays.delete(displayId);
+    return;
+  }
+  if (!target) {
+    entry?.element.remove();
+    if (displayId) {
+      state.programDisplays.delete(displayId);
+    }
+    return;
+  }
+  let row = entry?.element || null;
+  if (!row) {
+    row = document.createElement("article");
+    if (displayId) {
+      row.dataset.mechDisplayId = displayId;
+      entry = { element: row, currentStream: output.stream, currentRegion: target };
+      state.programDisplays.set(displayId, entry);
+    }
+  }
+  row.className = stderr
+    ? "mech-repl-output-entry mech-console-error mech-program-stderr"
+    : "mech-repl-output-entry";
+  row.dataset.mechDisplayOperation = output.operation;
+  if (output.operation === "update") {
+    row.dataset.mechDisplayUpdates = String(
+      Number(row.dataset.mechDisplayUpdates || "0") + 1,
+    );
+  }
+  if (row.parentElement !== target) {
+    target.append(row);
+  }
+  if (entry) {
+    entry.currentStream = output.stream;
+    entry.currentRegion = target;
+  }
+  if (output.operation === "append" && row.firstElementChild) {
+    const next = outputContentElement(output.content);
+    const existing = row.firstElementChild;
+    if (
+      output.content?.kind === "text" &&
+      existing?.classList.contains("mech-repl-output-text")
+    ) {
+      existing.textContent += output.content.data?.text || "";
+    } else {
+      row.append(next);
+    }
+    target.scrollTop = target.scrollHeight;
+    activateConsolePanel(stderr ? "errors" : "output");
+    return;
+  }
+  row.replaceChildren(outputContentElement(output.content));
+  target.scrollTop = target.scrollHeight;
+  activateConsolePanel(stderr ? "errors" : "output");
+}
+
+function focusProgramDisplay(payload) {
+  const displayId = typeof payload?.display_id === "string"
+    ? payload.display_id
+    : payload?.display_id?.[0] || null;
+  let entry = displayId ? state.programDisplays.get(displayId) || null : null;
+  const stream = entry?.currentStream || payload?.stream || "stdout";
+  if (!entry && displayId && payload?.content) {
+    appendProgramOutput({
+      stream,
+      display_id: displayId,
+      operation: "replace",
+      content: payload.content,
+    });
+    entry = state.programDisplays.get(displayId) || null;
+  }
+  activateConsolePanel((entry?.currentStream || stream) === "stderr" ? "errors" : "output");
+  entry?.element.scrollIntoView({ block: "nearest" });
 }
 
 function renderValues() {
@@ -492,6 +780,25 @@ function transcript() {
   return state.console?.transcript || null;
 }
 
+function appendRenderedResult(rendered) {
+  const target = transcript();
+  if (!target || !rendered) {
+    return;
+  }
+  const row = document.createElement("div");
+  row.className = "mech-repl-entry mech-repl-result";
+  row.dataset.mechResultKind = rendered.kind;
+  const kind = document.createElement("span");
+  kind.className = "mech-repl-result-kind";
+  kind.textContent = rendered.kind;
+  const value = document.createElement("span");
+  value.className = "mech-repl-result-value";
+  value.innerHTML = rendered.inlineHtml;
+  row.append(kind, value);
+  target.append(row);
+  target.scrollTop = target.scrollHeight;
+}
+
 function appendTranscriptRow(className, text) {
   const target = transcript();
   if (!target) {
@@ -507,82 +814,106 @@ function appendTranscriptRow(className, text) {
 
 function appendConsoleError(error) {
   appendTranscriptRow("mech-repl-error", errorMessage(error));
-  appendError(error);
+  appendError(error, "repl");
 }
 
-function appendHelp() {
-  const target = transcript();
-  if (!target) {
-    return;
-  }
-  const table = document.createElement("table");
-  table.className = "mech-repl-help";
-  const body = document.createElement("tbody");
-  for (const [command, description] of [
-    [":help", "Show browser console commands."],
-    [":clc", "Clear the console transcript."],
-    [":clear", "Restore the original document program."],
-    [":whos [names...]", "Render root symbols."],
-    [":step [count]", "Advance the document program."],
-  ]) {
-    const row = document.createElement("tr");
-    const name = document.createElement("th");
-    name.scope = "row";
-    name.textContent = command;
-    const detail = document.createElement("td");
-    detail.textContent = description;
-    row.append(name, detail);
-    body.append(row);
-  }
-  table.append(body);
-  target.append(table);
-  target.scrollTop = target.scrollHeight;
-}
-
-function appendSymbolRows(rows) {
-  const target = transcript();
-  if (!target) {
-    return;
-  }
-  const table = document.createElement("table");
-  table.className = "mech-repl-symbols";
-  const body = document.createElement("tbody");
-  for (const rendered of rows) {
-    const row = document.createElement("tr");
-    row.dataset.mechSymbolName = rendered.name;
-    row.dataset.mechResultKind = rendered.kind;
-    const name = document.createElement("th");
-    name.scope = "row";
-    name.textContent = rendered.name;
-    const kind = document.createElement("td");
-    kind.textContent = rendered.kind;
-    const value = document.createElement("td");
-    value.innerHTML = rendered.inlineHtml;
-    row.append(name, kind, value);
-    body.append(row);
-  }
-  table.append(body);
-  target.append(table);
-  target.scrollTop = target.scrollHeight;
+function clearReplDiagnostics() {
+  errorRegion("repl")?.replaceChildren();
 }
 
 function clearTranscript() {
   transcript()?.replaceChildren();
 }
 
-function parseStepCount(argumentsList) {
-  if (argumentsList.length > 1) {
-    throw new Error(":step accepts at most one count");
+function consumeReplResponse(response) {
+  for (const envelope of response?.events || []) {
+    const event = envelope.event || {};
+    if (event.channel === "output") {
+      appendProgramOutput(event.event);
+      continue;
+    }
+    if (event.channel === "diagnostic") {
+      appendDiagnostic(event.event);
+      continue;
+    }
+    if (event.channel !== "repl") {
+      continue;
+    }
+    const repl = event.event || {};
+    if (repl.kind === "source_echo") {
+      appendTranscriptRow("mech-repl-source", repl.payload?.source || "");
+      continue;
+    }
+    if (repl.kind === "clear") {
+      if (repl.payload === "interaction") {
+        clearTranscript();
+      }
+      if (repl.payload === "diagnostics") {
+        clearReplDiagnostics();
+      }
+      continue;
+    }
+    if (repl.kind === "focus_display") {
+      focusProgramDisplay(repl.payload);
+      continue;
+    }
+    if (repl.kind !== "response") {
+      continue;
+    }
+    const content = repl.payload?.content;
+    if (content) {
+      const row = document.createElement("div");
+      row.className = `mech-repl-entry mech-repl-response mech-repl-${repl.payload?.status || "neutral"}`;
+      if (repl.payload?.kind === "value_inspection") {
+        row.classList.add("mech-repl-result");
+      } else if (content.kind === "text") {
+        row.classList.add("mech-repl-info");
+      }
+      if (repl.payload?.title) {
+        const heading = document.createElement("strong");
+        heading.className = "mech-repl-response-title";
+        heading.textContent = repl.payload.title;
+        row.append(heading);
+      }
+      const rendered = outputContentElement(content);
+      if (repl.payload?.kind === "help") {
+        rendered.querySelector("table")?.classList.add("mech-repl-help");
+      }
+      if (repl.payload?.kind === "symbol_inspection") {
+        rendered.querySelector("table")?.classList.add("mech-repl-symbols");
+      }
+      row.append(rendered);
+      transcript()?.append(row);
+      if (transcript()) {
+        transcript().scrollTop = transcript().scrollHeight;
+      }
+    }
   }
-  const raw = argumentsList[0] || "1";
-  if (!/^\d+$/.test(raw)) {
-    throw new Error(":step count must be a positive integer");
+  appendRenderedResult(response?.result);
+}
+
+function nextBrowserTurn() {
+  return new Promise(resolve => requestAnimationFrame(() => resolve()));
+}
+
+async function consumeCooperativeResponse(response) {
+  consumeReplResponse(response);
+  state.replTerminated = Boolean(response?.terminated);
+  if (state.replTerminated && state.console?.input) {
+    state.console.input.disabled = true;
+    setConsoleStatus("terminated");
   }
-  const count = BigInt(raw);
-  if (count === 0n) {
-    throw new Error(":step count must be greater than zero");
+  state.replBusy = Boolean(response?.pending);
+  try {
+    while (response?.pending) {
+      await nextBrowserTurn();
+      response = state.repl.continueStep(128);
+      consumeReplResponse(response);
+      state.replTerminated = Boolean(response?.terminated);
+    }
+  } finally {
+    state.replBusy = false;
   }
-  return count;
 }
 
 function runConsoleCommand(source) {
@@ -590,41 +921,7 @@ function runConsoleCommand(source) {
   if (!input) {
     return;
   }
-  if (!input.startsWith(":")) {
-    throw new Error(
-      "interactive source evaluation is unavailable in standard resident documents; use :help for document commands",
-    );
-  }
-
-  const [command, ...argumentsList] = input.split(/\s+/);
-  switch (command.toLowerCase()) {
-    case ":help":
-      appendHelp();
-      return;
-    case ":clc":
-      clearTranscript();
-      return;
-    case ":clear":
-      state.document.reset(state.initialEncoded);
-      prepareVarPlaceholders();
-      renderValues();
-      appendTranscriptRow("mech-repl-info", "Document reset.");
-      return;
-    case ":whos": {
-      const names = argumentsList.length === 0 ? null : argumentsList;
-      appendSymbolRows(state.document.renderedSymbols(names));
-      return;
-    }
-    case ":step": {
-      const count = parseStepCount(argumentsList);
-      state.document.step(count);
-      appendTranscriptRow("mech-repl-info", `Advanced ${count} step${count === 1n ? "" : "s"}.`);
-      renderValues();
-      return;
-    }
-    default:
-      throw new Error(`unsupported browser command \`${command}\``);
-  }
+  return consumeCooperativeResponse(state.repl.invoke(source));
 }
 
 function submitConsoleInput(value) {
@@ -632,7 +929,6 @@ function submitConsoleInput(value) {
   if (!source) {
     return;
   }
-  appendTranscriptRow("mech-repl-source", source);
   state.history.push(source);
   state.historyIndex = state.history.length;
   try {
@@ -643,6 +939,29 @@ function submitConsoleInput(value) {
   } catch (error) {
     appendConsoleError(error);
   }
+}
+
+function resolveReplInput(event) {
+  if (state.replInputAction) {
+    return state.replInputAction(
+      event.key,
+      event.ctrlKey,
+      event.altKey,
+      event.shiftKey,
+      event.metaKey,
+    );
+  }
+  if (event.key !== "Enter") {
+    return null;
+  }
+  return event.ctrlKey ? "insert_line_break" : "submit";
+}
+
+function insertLineBreak(input) {
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? start;
+  input.setRangeText("\n", start, end, "end");
+  input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
 function attachConsole() {
@@ -659,14 +978,28 @@ function attachConsole() {
   inputRow.className = "mech-repl-input-row";
   const prompt = document.createElement("span");
   prompt.className = "repl-prompt";
-  prompt.textContent = ":";
+  prompt.textContent = ">:";
   const input = document.createElement("textarea");
   input.className = "repl-input";
-  input.dataset.mechInteractiveEvaluation = "unavailable";
-  input.setAttribute("aria-label", "Mech document command input");
-  input.placeholder = "Document commands only (:help)";
+  input.dataset.mechInteractiveEvaluation = "resident";
+  input.setAttribute("aria-label", "Mech resident REPL input");
+  input.placeholder = "Enter submits · Ctrl+Enter adds a line";
   input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (event.isComposing) {
+      return;
+    }
+    if (state.replBusy && event.ctrlKey && event.key.toLowerCase() === "c") {
+      event.preventDefault();
+      consumeReplResponse(state.repl.interrupt());
+      return;
+    }
+    const action = resolveReplInput(event);
+    if (action === "insert_line_break") {
+      event.preventDefault();
+      insertLineBreak(input);
+      return;
+    }
+    if (action === "submit") {
       event.preventDefault();
       const source = input.value;
       input.value = "";
@@ -822,6 +1155,29 @@ function initializeConsoleToggle() {
       setConsoleOpen(!isOpen);
     });
   }
+}
+
+function initializeConsoleKeyboardToggle() {
+  document.addEventListener("keydown", event => {
+    if (
+      event.isComposing ||
+      event.key !== "`" ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.shiftKey ||
+      event.metaKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
+    setConsoleOpen(!isOpen);
+    if (isOpen) {
+      return;
+    }
+    activateConsolePanel("console");
+    requestAnimationFrame(() => state.console?.input?.focus());
+  });
 }
 
 function initializeResizeHandles() {
@@ -1001,9 +1357,15 @@ function initializeOptionalRenderers() {
 }
 
 function initializeLayout() {
+  window.addEventListener("mech:output", event => {
+    if (event instanceof CustomEvent && event.detail) {
+      appendProgramOutput(event.detail);
+    }
+  });
   initializeConsoleState();
   initializeConsoleTabs();
   initializeConsoleToggle();
+  initializeConsoleKeyboardToggle();
   initializeResizeHandles();
   initializeFullscreen();
   initializeBreadcrumb();
@@ -1018,6 +1380,9 @@ function frame() {
   }
   try {
     const result = state.document.frame(8);
+    if (result.events?.length) {
+      consumeReplResponse(result);
+    }
     if (result.processed > 0) {
       renderValues();
     }
@@ -1036,8 +1401,25 @@ async function main() {
   const embeddedDocumentSources = loadEmbeddedDocumentSourceBundle();
   const wasmModule =
     state.controllerElement?.dataset.mechWasmModule || "/_mech/pkg/mech_wasm.js";
-  const { default: initializeWasm, WasmDocument } = await import(wasmModule);
+  const wasmBindings = await import(wasmModule);
+  const { default: initializeWasm, WasmDocument, WasmRepl } = wasmBindings;
   await initializeWasm();
+  state.replInputAction = typeof wasmBindings.replInputAction === "function"
+    ? wasmBindings.replInputAction
+    : null;
+  state.replStepLimit = typeof wasmBindings.replStepLimit === "function"
+    ? wasmBindings.replStepLimit()
+    : null;
+  if (typeof WasmRepl !== "function") {
+    throw new Error(
+      "the browser WASM build does not include the resident REPL host",
+    );
+  }
+  state.repl = new WasmRepl();
+  state.replQuiet = requestedReplQuiet();
+  if (typeof state.repl.setQuiet === "function") {
+    consumeReplResponse(state.repl.setQuiet(state.replQuiet));
+  }
   state.initialEncoded = await loadEncodedDocument();
   const documentSources =
     embeddedDocumentSources || await loadDocumentSourceMap();
@@ -1111,6 +1493,11 @@ async function main() {
 
 window.addEventListener("beforeunload", () => {
   stopRuntime();
+  try {
+    state.repl?.shutdown();
+  } catch (error) {
+    console.error(error);
+  }
   if (document.documentElement.dataset.mechDocumentStatus !== "error") {
     setDocumentStatus("stopped");
   }

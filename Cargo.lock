@@ -2773,6 +2773,8 @@ dependencies = [
  "js-sys",
  "mech-core",
  "mech-runtime",
+ "serde",
+ "serde_json",
  "wasm-bindgen",
  "web-sys",
 ]

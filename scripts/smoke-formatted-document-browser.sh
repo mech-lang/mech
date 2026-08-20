@@ -334,12 +334,15 @@ try:
             fail(f"could not submit browser REPL command: {command}")
 
     exact_answer = "(() => { const tables = [...document.querySelectorAll('.mech-repl-symbols')]; return tables.at(-1)?.textContent.includes('answer') && tables.at(-1)?.textContent.includes('58'); })()"
+    submit("answer := 58")
+    wait_for("[...document.querySelectorAll('.mech-repl-result')].some(row => /58/.test(row.textContent))", "the resident source value")
     submit(":whos answer")
-    wait_for(exact_answer, "the imported source value")
+    wait_for(exact_answer, "the resident symbol value")
     submit(":clear")
-    wait_for("[...document.querySelectorAll('.mech-repl-info')].some(row => /Document reset/.test(row.textContent))", "the static document reset")
+    wait_for("[...document.querySelectorAll('.mech-repl-info')].some(row => /Resident REPL state cleared/.test(row.textContent))", "the resident REPL reset")
+    submit("answer := 58")
     submit(":whos answer")
-    wait_for(exact_answer, "the imported source value after reset")
+    wait_for(exact_answer, "the resident symbol value after reset")
 finally:
     if websocket is not None:
         websocket.close()

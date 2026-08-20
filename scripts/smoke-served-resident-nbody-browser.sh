@@ -81,12 +81,35 @@ harness = '''<script>
     let firstX;
     let firstY;
     let firstRadius;
+    let richCreated = false;
+    let richUpdates = 0;
+    let richSceneCircles = 0;
     const deadline = Date.now() + 20000;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
       const frame = globalThis.__MECH_LAST_FRAME__;
       if (frame) renderedUpdates += Number(frame.rendered || 0);
+      for (const envelope of frame?.events || []) {
+        const output = envelope?.event?.channel === "output"
+          ? envelope.event.event
+          : null;
+        if (
+          output?.display_id !== "scene-orbit" ||
+          output?.content?.kind !== "scene"
+        ) {
+          continue;
+        }
+        richCreated ||= output.operation === "create";
+        if (output.operation === "update") richUpdates += 1;
+        const representations = output.content.data?.representations?.representations || [];
+        const encoded = representations.find(
+          (entry) => entry.media_type === "application/vnd.mech.scene+json"
+        )?.data?.value;
+        if (typeof encoded === "string") {
+          richSceneCircles = JSON.parse(encoded).circles?.length || 0;
+        }
+      }
       const info = globalThis.__MECH_RUNTIME_INFO__?.();
       const sun = document.querySelector('[data-mech-scene-id="body-0"]');
       const body = document.querySelector('[data-mech-scene-id="body-1"]');
@@ -101,7 +124,10 @@ harness = '''<script>
       if (info) {
         root.dataset.mechObservedAccepted = String(info.resident_accepted_turns);
         root.dataset.mechObservedRendered = String(renderedUpdates);
-        if (sun && body && info.resident_accepted_turns >= 60) {
+        if (
+          sun && body && richCreated && richUpdates > 0 &&
+          richSceneCircles === 10 && info.resident_accepted_turns >= 60
+        ) {
           const circles = document.querySelectorAll('[data-mech-scene-id^="body-"]');
           const finalRadius = Math.hypot(
             Number(body.getAttribute("cx")) - Number(sun.getAttribute("cx")),
@@ -120,6 +146,10 @@ harness = '''<script>
             sun.getAttribute("cx") === "300" && sun.getAttribute("cy") === "300"
           );
           root.dataset.mechOrbitStable = String(Math.abs(finalRadius - firstRadius) <= 1e-8);
+          root.dataset.mechRichScene = "true";
+          root.dataset.mechRichDisplayOperation = "update";
+          root.dataset.mechRichDisplayUpdates = String(richUpdates);
+          root.dataset.mechRichCircles = String(richSceneCircles);
           globalThis.__MECH_STOP__?.();
         }
       }
@@ -216,6 +246,10 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-body-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-sun-fixed="true"' "$dom_file" \
   || ! grep -q 'data-mech-orbit-stable="true"' "$dom_file" \
+  || ! grep -q 'data-mech-rich-scene="true"' "$dom_file" \
+  || ! grep -q 'data-mech-rich-display-operation="update"' "$dom_file" \
+  || ! grep -q 'data-mech-rich-display-updates="[1-9][0-9]*"' "$dom_file" \
+  || ! grep -q 'data-mech-rich-circles="10"' "$dom_file" \
   || [[ -z "$accepted" || "$accepted" -lt 60 ]] \
   || [[ -z "$rendered" || "$rendered" -lt 60 ]] \
   || grep -qE 'data-mech-console-error|data-mech-page-error|data-mech-timed-out' "$dom_file"; then
@@ -229,4 +263,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'D4_BROWSER route=resident-external accepted=%s rejected=0 rendered=%s circles=10 moved=true sun_fixed=true orbit_stable=true console_errors=0 page_errors=0\n' "$accepted" "$rendered"
+printf 'D4_BROWSER route=resident-external accepted=%s rejected=0 rendered=%s circles=10 rich_scene=true rich_operation=update moved=true sun_fixed=true orbit_stable=true console_errors=0 page_errors=0\n' "$accepted" "$rendered"
