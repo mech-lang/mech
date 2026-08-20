@@ -52,6 +52,13 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["matrix"], "multiply", bind_matmul)?;
     register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
     register(builder, &["core"], "assign", bind_semantic_assign)?;
+    register(builder, &["range"], "exclusive", bind_range_exclusive)?;
+    register(
+        builder,
+        &["range"],
+        "exclusive-increment",
+        bind_range_increment_exclusive,
+    )?;
     register(builder, &["range"], "inclusive", bind_range_inclusive)?;
     register(
         builder,
@@ -197,16 +204,28 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "PowMDS<f64>", bind_pow)?;
     register(builder, &runtime, "PowSS<f64>", bind_pow)?;
     register(builder, &runtime, "PowVDS<f64>", bind_pow)?;
-    register(
+    register_range_implementations(
         builder,
         &runtime,
-        "RangeInclusiveScalar<f64RowDVector>",
+        "RangeExclusiveScalar",
+        bind_range_exclusive,
+    )?;
+    register_range_implementations(
+        builder,
+        &runtime,
+        "RangeIncrementExclusiveScalar",
+        bind_range_increment_exclusive,
+    )?;
+    register_range_implementations(
+        builder,
+        &runtime,
+        "RangeInclusiveScalar",
         bind_range_inclusive,
     )?;
-    register(
+    register_range_implementations(
         builder,
         &runtime,
-        "RangeIncrementInclusiveScalar<f64RowDVector>",
+        "RangeIncrementInclusiveScalar",
         bind_range_increment_inclusive,
     )?;
     register(builder, &runtime, "StatsSumColumnMD<f64>", bind_sum_columns)?;
@@ -322,6 +341,28 @@ fn register(
     factory: mech_core::ResidentKernelFactory,
 ) -> MResult<()> {
     builder.insert_resident_factory(module.iter().copied(), operation, factory)
+}
+
+fn register_range_implementations(
+    builder: &mut FunctionCatalogBuilder,
+    module: &[&str],
+    family: &str,
+    factory: mech_core::ResidentKernelFactory,
+) -> MResult<()> {
+    // The source range factories select fixed or dynamic matrix identities by
+    // cardinality. Frozen artifacts must be able to resolve every identity the
+    // compiler can emit, independent of the feature closure doing the load.
+    for shape in [
+        "Matrix1",
+        "DMatrix",
+        "RowVector2",
+        "RowVector3",
+        "RowVector4",
+        "RowDVector",
+    ] {
+        register(builder, module, &format!("{family}<f64{shape}>"), factory)?;
+    }
+    Ok(())
 }
 
 fn bound(
@@ -1358,14 +1399,21 @@ fn bind_range_inclusive(
         &[ResidentValueKind::F64, ResidentValueKind::F64],
         ResidentValueKind::F64,
     )?;
-    if request
-        .inputs
-        .iter()
-        .any(|input| input.shape != ResidentShape::SCALAR)
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    require_f64_scalar_range_layout(request)?;
     bound(range_inclusive, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_range_exclusive(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_build(request, 2, &["range"], "exclusive-output")?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    require_f64_scalar_range_layout(request)?;
+    bound(range_exclusive, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_range_increment_inclusive(
@@ -1381,17 +1429,58 @@ fn bind_range_increment_inclusive(
         ],
         ResidentValueKind::F64,
     )?;
-    if request
-        .inputs
-        .iter()
-        .any(|input| input.shape != ResidentShape::SCALAR)
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    require_f64_scalar_range_layout(request)?;
     bound(
         range_increment_inclusive,
         Vec::<u64>::new().into_boxed_slice(),
     )
+}
+
+fn bind_range_increment_exclusive(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_build(request, 3, &["range"], "exclusive-increment-output")?;
+    require_kind(
+        request,
+        &[
+            ResidentValueKind::F64,
+            ResidentValueKind::F64,
+            ResidentValueKind::F64,
+        ],
+        ResidentValueKind::F64,
+    )?;
+    require_f64_scalar_range_layout(request)?;
+    bound(
+        range_increment_exclusive,
+        Vec::<u64>::new().into_boxed_slice(),
+    )
+}
+
+fn require_f64_scalar_range_layout(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<(), ResidentKernelBindError> {
+    let scalar = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    let inputs_are_scalars = request.inputs.iter().all(|input| {
+        input.shape == ResidentShape::SCALAR
+            && request
+                .schemas
+                .get(input.schema_id)
+                .is_some_and(|schema| schema.body() == &scalar)
+    });
+    let output_is_matrix = request
+        .schemas
+        .get(request.output.schema_id)
+        .is_some_and(|schema| {
+            matches!(
+                schema.body(),
+                SchemaBody::Matrix { element, dimensions }
+                    if dimensions.len() == 2 && element.as_ref() == &scalar
+            )
+        });
+    if !inputs_are_scalars || !output_is_matrix || request.output.shape.rows != 1 {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(())
 }
 
 fn bind_n_choose_k(
@@ -2702,7 +2791,29 @@ fn range_inclusive(
     if output.len() != expected_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    Ok(replace_f64(output, |index| start + index as f64))
+    Ok(replace_f64_range(output, start, 1.0))
+}
+
+fn range_exclusive(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let start = *f64_input(inputs, 0)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let end = *f64_input(inputs, 1)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let output = f64_output(output)?;
+    let expected_len = exclusive_range_len(start, 1.0, end)?;
+    if output.len() != expected_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64_range(output, start, 1.0))
 }
 
 fn range_increment_inclusive(
@@ -2745,7 +2856,59 @@ fn range_increment_inclusive(
     if output.len() != expected_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    Ok(replace_f64(output, |index| start + step * index as f64))
+    Ok(replace_f64_range(output, start, step))
+}
+
+fn range_increment_exclusive(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 3 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let start = *f64_input(inputs, 0)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let step = *f64_input(inputs, 1)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let end = *f64_input(inputs, 2)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let output = f64_output(output)?;
+    let expected_len = exclusive_range_len(start, step, end)?;
+    if output.len() != expected_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64_range(output, start, step))
+}
+
+fn replace_f64_range(output: &mut [f64], start: f64, step: f64) -> bool {
+    let mut current = start;
+    let last = output.len().saturating_sub(1);
+    replace_f64(output, |index| {
+        let value = current;
+        if index < last {
+            current += step;
+        }
+        value
+    })
+}
+
+fn exclusive_range_len(start: f64, step: f64, end: f64) -> Result<usize, ResidentKernelError> {
+    if !start.is_finite() || !step.is_finite() || !end.is_finite() || step == 0.0 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let difference = end - start;
+    if difference == 0.0 || (difference > 0.0 && step < 0.0) || (difference < 0.0 && step > 0.0) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let length = (difference / step).ceil();
+    if !length.is_finite() || length <= 0.0 || length >= usize::MAX as f64 {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(length as usize)
 }
 
 fn n_choose_k(
@@ -3078,6 +3241,188 @@ mod tests {
 
         fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
             self.0.get(index).copied()
+        }
+    }
+
+    #[test]
+    fn frozen_range_catalog_resolves_every_compiler_output_identity() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let runtime = vec!["runtime".to_owned()];
+
+        for family in [
+            "RangeExclusiveScalar",
+            "RangeIncrementExclusiveScalar",
+            "RangeInclusiveScalar",
+            "RangeIncrementInclusiveScalar",
+        ] {
+            for shape in [
+                "Matrix1",
+                "DMatrix",
+                "RowVector2",
+                "RowVector3",
+                "RowVector4",
+                "RowDVector",
+            ] {
+                let identity = format!("{family}<f64{shape}>");
+                assert!(
+                    catalog.resident_factory(&runtime, &identity).is_some(),
+                    "missing frozen range identity {identity}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn range_binders_require_scalar_f64_inputs_and_row_matrix_f64_outputs() {
+        fn schema(body: SchemaBody) -> mech_core::Schema {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        }
+
+        fn contract(
+            inputs: &[mech_core::SchemaId],
+            output: mech_core::SchemaId,
+            postcondition: &str,
+        ) -> ResolvedOperationContract {
+            ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+                inputs: inputs
+                    .iter()
+                    .map(|schema| mech_core::ResolvedInputPort {
+                        schema: *schema,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                outputs: vec![mech_core::ResolvedOutputPort {
+                    schema: output,
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::Build {
+                        postcondition: ShapeContractReference {
+                            module_path: vec!["range".to_owned()].into_boxed_slice(),
+                            contract_name: postcondition.to_owned(),
+                        },
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::KernelReported,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            })
+        }
+
+        let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+        let matrix = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(f64_body.clone()),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let scalar_handle = builder.insert(schema(f64_body.clone())).unwrap();
+        let matrix_one_handle = builder.insert(schema(matrix(1, 1))).unwrap();
+        let row_handle = builder.insert(schema(matrix(1, 4))).unwrap();
+        let non_row_handle = builder.insert(schema(matrix(2, 2))).unwrap();
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar_handle).unwrap();
+        let matrix_one = build.resolve(matrix_one_handle).unwrap();
+        let row = build.resolve(row_handle).unwrap();
+        let non_row = build.resolve(non_row_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let port = |schema_id, shape| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind: ResidentValueKind::F64,
+            shape,
+        };
+        let row_shape = ResidentShape {
+            rows: 1,
+            columns: 4,
+        };
+        let non_row_shape = ResidentShape {
+            rows: 2,
+            columns: 2,
+        };
+
+        let families: [(mech_core::ResidentKernelFactory, usize, &str); 4] = [
+            (bind_range_exclusive, 2, "exclusive-output"),
+            (
+                bind_range_increment_exclusive,
+                3,
+                "exclusive-increment-output",
+            ),
+            (bind_range_inclusive, 2, "inclusive-output"),
+            (
+                bind_range_increment_inclusive,
+                3,
+                "inclusive-increment-output",
+            ),
+        ];
+        for (binder, arity, postcondition) in families {
+            let valid_inputs = vec![port(scalar, ResidentShape::SCALAR); arity];
+            let valid_contract = contract(&vec![scalar; arity], row, postcondition);
+            assert!(
+                binder(&ResidentKernelBindRequest {
+                    contract: &valid_contract,
+                    schemas: &schemas,
+                    inputs: &valid_inputs,
+                    output: port(row, row_shape),
+                })
+                .is_ok(),
+                "valid {postcondition} layout was rejected"
+            );
+
+            let invalid_inputs = vec![port(matrix_one, ResidentShape::SCALAR); arity];
+            let invalid_contract = contract(&vec![matrix_one; arity], row, postcondition);
+            assert!(
+                matches!(
+                    binder(&ResidentKernelBindRequest {
+                        contract: &invalid_contract,
+                        schemas: &schemas,
+                        inputs: &invalid_inputs,
+                        output: port(row, row_shape),
+                    }),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ),
+                "matrix schemas were accepted as scalar range inputs"
+            );
+
+            let invalid_contract = contract(&vec![scalar; arity], scalar, postcondition);
+            assert!(
+                matches!(
+                    binder(&ResidentKernelBindRequest {
+                        contract: &invalid_contract,
+                        schemas: &schemas,
+                        inputs: &valid_inputs,
+                        output: port(scalar, row_shape),
+                    }),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ),
+                "a scalar schema was accepted as a range matrix output"
+            );
+
+            let invalid_contract = contract(&vec![scalar; arity], non_row, postcondition);
+            assert!(
+                matches!(
+                    binder(&ResidentKernelBindRequest {
+                        contract: &invalid_contract,
+                        schemas: &schemas,
+                        inputs: &valid_inputs,
+                        output: port(non_row, non_row_shape),
+                    }),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ),
+                "a non-row matrix was accepted as a range output"
+            );
         }
     }
 
@@ -3432,6 +3777,106 @@ mod tests {
             Err(ResidentKernelError::InvalidInput)
         );
         assert_eq!(output, previous);
+    }
+
+    #[test]
+    fn exclusive_range_fills_the_declared_resident_output() {
+        let start = [1.0];
+        let end = [5.0];
+        let inputs = [ResidentValueRef::F64(&start), ResidentValueRef::F64(&end)];
+        let mut output = [0.0; 4];
+        let kernel = BoundResidentKernel::new(range_exclusive, Box::new([]));
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1.0, 2.0, 3.0, 4.0]);
+
+        let mut wrong_shape = [11.0; 3];
+        let previous = wrong_shape;
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut wrong_shape)),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(wrong_shape, previous);
+    }
+
+    #[test]
+    fn exclusive_increment_range_stops_before_the_terminal_value() {
+        let start = [1.0];
+        let step = [2.0];
+        let end = [6.0];
+        let inputs = [
+            ResidentValueRef::F64(&start),
+            ResidentValueRef::F64(&step),
+            ResidentValueRef::F64(&end),
+        ];
+        let mut output = [0.0; 3];
+        let kernel = BoundResidentKernel::new(range_increment_exclusive, Box::new([]));
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1.0, 3.0, 5.0]);
+    }
+
+    #[test]
+    fn resident_increment_ranges_match_machine_repeated_addition_bits() {
+        let start = [0.0_f64];
+        let step = [0.1_f64];
+        let end = [1.0_f64];
+        let inputs = [
+            ResidentValueRef::F64(&start),
+            ResidentValueRef::F64(&step),
+            ResidentValueRef::F64(&end),
+        ];
+        let mut expected = Vec::with_capacity(11);
+        let mut current = start[0];
+        for _ in 0..11 {
+            expected.push(current);
+            current += step[0];
+        }
+        assert_ne!(
+            expected[6].to_bits(),
+            (start[0] + step[0] * 6.0).to_bits(),
+            "test values must distinguish recurrence from index multiplication"
+        );
+
+        let mut exclusive = vec![0.0; 10];
+        let kernel = BoundResidentKernel::new(range_increment_exclusive, Box::new([]));
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut exclusive)),
+            Ok(true)
+        );
+        assert_eq!(
+            exclusive
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            expected[..10]
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>()
+        );
+
+        let mut inclusive = vec![0.0; 11];
+        let kernel = BoundResidentKernel::new(range_increment_inclusive, Box::new([]));
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut inclusive)),
+            Ok(true)
+        );
+        assert_eq!(
+            inclusive
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            expected
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>()
+        );
     }
 
     #[test]
