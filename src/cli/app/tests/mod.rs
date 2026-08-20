@@ -770,6 +770,18 @@ fn targetless_root_invocation_selects_the_resident_repl() {
         .try_get_matches_from(["mech", "run", "program.mec"])
         .unwrap();
     assert!(!super::is_repl_invocation(&matches));
+
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "--nofun"])
+        .unwrap();
+    assert!(super::is_repl_invocation(&matches));
+    assert!(matches.get_flag("nofun"));
+
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "--quiet"])
+        .unwrap();
+    assert!(super::is_repl_invocation(&matches));
+    assert!(matches.get_flag("quiet"));
 }
 
 #[test]

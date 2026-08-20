@@ -50,6 +50,24 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::SetTrue),
         )
         .arg(
+            Arg::new("nofun")
+                .long("nofun")
+                .help("Use a plain inline REPL (also MECH_NOFUN=1 or MECH_REPL_STYLE=plain)")
+                .long_help(
+                    "Use a bare inline REPL without colors, decorative formatting, animations, Mika, or the Mech logo. Also selected by MECH_NOFUN=1, MECH_REPL_STYLE=plain, or TERM=dumb. Rich mode respects NO_COLOR, CLICOLOR=0, and CI.",
+                )
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("quiet")
+                .long("quiet")
+                .help("Suppress automatic REPL source and value echo")
+                .long_help(
+                    "Suppress automatic REPL source and value echo for every entry. Explicit commands, program output, and diagnostics remain visible. Also selected by MECH_REPL_QUIET=1 or MECH_QUIET=1. A trailing semicolon suppresses one entry without enabling quiet mode.",
+                )
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("debug")
                 .short('d')
                 .long("debug")
@@ -152,7 +170,10 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     // recognized before root arguments fall through to the production run command.
     #[cfg(feature = "run")]
     if is_repl_invocation(&cli_matches) {
-        return crate::cli::commands::repl::run();
+        return crate::cli::commands::repl::run(
+            cli_matches.get_flag("nofun"),
+            cli_matches.get_flag("quiet"),
+        );
     }
 
     // Historical CLI behavior treats unmatched root arguments as run inputs.

@@ -13,12 +13,19 @@ use mech_time::NativeTimeHostFactory;
 use mech_timer::NativeTimerHostFactory;
 
 pub fn register_cli_host_factories(
-    mut builder: RuntimeBuilder,
+    builder: RuntimeBuilder,
 ) -> MResult<(RuntimeBuilder, BTreeSet<String>)> {
     let cli_factory = CliHostFactory::new()?;
+    register_cli_host_factories_with_cli_factory(builder, Box::new(cli_factory))
+}
+
+pub fn register_cli_host_factories_with_cli_factory(
+    mut builder: RuntimeBuilder,
+    cli_factory: Box<dyn RuntimeHostFactory>,
+) -> MResult<(RuntimeBuilder, BTreeSet<String>)> {
     let mut providers = BTreeSet::new();
     providers.insert(cli_factory.provider_name().to_string());
-    builder = builder.host_factory(Box::new(cli_factory))?;
+    builder = builder.host_factory(cli_factory)?;
 
     #[cfg(feature = "time_host_native")]
     {
