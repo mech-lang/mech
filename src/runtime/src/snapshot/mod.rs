@@ -49,6 +49,12 @@ impl RuntimeValueSnapshot {
         self.value.kind()
     }
 
+    /// Returns the portable, single-line Mech representation used by value
+    /// events in every interactive host.
+    pub fn format_canonical_inline(&self) -> String {
+        self.value.format_canonical_inline()
+    }
+
     pub fn to_value(&self) -> LegacyValue {
         self.value
             .try_deep_snapshot()
