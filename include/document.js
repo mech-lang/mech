@@ -24,7 +24,7 @@ const state = {
   cooperativeOperationSequence: 0,
   documentationFragmentSequence: 0,
   programDisplays: new Map(),
-  inlinePopupDismiss: null,
+  inlineInspector: null,
 };
 
 function truthySetting(value) {
@@ -766,8 +766,12 @@ function consoleIsOpen() {
   return state.root?.dataset.mechConsoleOpen !== "false";
 }
 
-function showInlinePopup(title, rendered, anchor) {
-  state.inlinePopupDismiss?.();
+function dismissInlineInspector(options = {}) {
+  state.inlineInspector?.dismiss(options);
+}
+
+function showInlineInspector(title, rendered, anchor, error = null) {
+  dismissInlineInspector({ restoreFocus: false });
   const popup = document.createElement("aside");
   popup.className = "mech-inline-popup";
   popup.dataset.mechReplPopup = "true";
@@ -787,10 +791,15 @@ function showInlinePopup(title, rendered, anchor) {
   content.className = "mech-inline-popup__content";
   const kind = document.createElement("div");
   kind.className = "mech-output-kind";
-  kind.textContent = rendered?.kind || "";
+  kind.textContent = error === null ? rendered?.kind || "" : "Error";
   const value = document.createElement("div");
   value.className = "mech-output-value";
-  value.innerHTML = rendered?.blockHtml || rendered?.inlineHtml || "";
+  if (error === null) {
+    value.innerHTML = rendered?.blockHtml || rendered?.inlineHtml || "";
+  } else {
+    value.textContent = errorMessage(error);
+    popup.classList.add("mech-inline-popup--error");
+  }
   content.append(kind, value);
   header.append(heading, close);
   popup.append(header, content);
@@ -800,26 +809,59 @@ function showInlinePopup(title, rendered, anchor) {
   let dragOffsetX = 0;
   let dragOffsetY = 0;
   const viewportPadding = 12;
+  const viewport = () => {
+    const visual = window.visualViewport;
+    const left = visual?.offsetLeft || 0;
+    const top = visual?.offsetTop || 0;
+    return {
+      left,
+      top,
+      right: left + (visual?.width || window.innerWidth),
+      bottom: top + (visual?.height || window.innerHeight),
+    };
+  };
   const clampPosition = (left, top) => ({
     left: Math.max(
-      viewportPadding,
-      Math.min(left, Math.max(viewportPadding, window.innerWidth - popup.offsetWidth - viewportPadding)),
+      viewport().left + viewportPadding,
+      Math.min(
+        left,
+        Math.max(
+          viewport().left + viewportPadding,
+          viewport().right - popup.offsetWidth - viewportPadding,
+        ),
+      ),
     ),
     top: Math.max(
-      viewportPadding,
-      Math.min(top, Math.max(viewportPadding, window.innerHeight - popup.offsetHeight - viewportPadding)),
+      viewport().top + viewportPadding,
+      Math.min(
+        top,
+        Math.max(
+          viewport().top + viewportPadding,
+          viewport().bottom - popup.offsetHeight - viewportPadding,
+        ),
+      ),
     ),
   });
+  const applyPosition = (left, top) => {
+    const position = clampPosition(left, top);
+    popup.style.left = `${position.left}px`;
+    popup.style.top = `${position.top}px`;
+  };
+  const reclamp = () => {
+    if (!popup.isConnected) {
+      return;
+    }
+    const rect = popup.getBoundingClientRect();
+    applyPosition(rect.left, rect.top);
+  };
   const move = event => {
     if (!dragging || !popup.isConnected) {
       return;
     }
-    const position = clampPosition(
+    applyPosition(
       event.clientX - dragOffsetX,
       event.clientY - dragOffsetY,
     );
-    popup.style.left = `${position.left}px`;
-    popup.style.top = `${position.top}px`;
   };
   const stopDragging = () => {
     dragging = false;
@@ -832,17 +874,28 @@ function showInlinePopup(title, rendered, anchor) {
       dismiss();
     }
   };
-  const dismiss = () => {
+  const dismiss = ({ restoreFocus = true } = {}) => {
     stopDragging();
     document.removeEventListener("keydown", closeOnEscape);
+    window.removeEventListener("resize", reclamp);
+    window.removeEventListener("orientationchange", reclamp);
+    window.visualViewport?.removeEventListener("resize", reclamp);
+    window.visualViewport?.removeEventListener("scroll", reclamp);
     popup.remove();
-    if (state.inlinePopupDismiss === dismiss) {
-      state.inlinePopupDismiss = null;
+    if (state.inlineInspector?.dismiss === dismiss) {
+      state.inlineInspector = null;
+    }
+    if (restoreFocus && anchor?.isConnected) {
+      anchor.focus({ preventScroll: true });
     }
   };
-  state.inlinePopupDismiss = dismiss;
+  state.inlineInspector = { popup, anchor, dismiss, reclamp };
   close.addEventListener("click", dismiss);
   document.addEventListener("keydown", closeOnEscape);
+  window.addEventListener("resize", reclamp);
+  window.addEventListener("orientationchange", reclamp);
+  window.visualViewport?.addEventListener("resize", reclamp);
+  window.visualViewport?.addEventListener("scroll", reclamp);
   header.addEventListener("pointerdown", event => {
     if (event.button !== 0 || event.target.closest("button")) {
       return;
@@ -859,24 +912,36 @@ function showInlinePopup(title, rendered, anchor) {
 
   const anchorRect = anchor?.getBoundingClientRect();
   const popupRect = popup.getBoundingClientRect();
-  let left = anchorRect ? anchorRect.right + viewportPadding : 24;
-  if (anchorRect && left + popupRect.width > window.innerWidth - viewportPadding) {
+  let left = anchorRect ? anchorRect.right + viewportPadding : viewport().left + 24;
+  if (anchorRect && left + popupRect.width > viewport().right - viewportPadding) {
     left = anchorRect.left - popupRect.width - viewportPadding;
   }
-  const position = clampPosition(left, anchorRect?.top ?? 96);
-  popup.style.left = `${position.left}px`;
-  popup.style.top = `${position.top}px`;
+  applyPosition(left, anchorRect?.top ?? viewport().top + 96);
+  close.focus({ preventScroll: true });
+}
+
+function replResponseHasDiagnostics(response) {
+  return (response?.events || []).some(
+    envelope => envelope.event?.channel === "diagnostic",
+  );
 }
 
 function consumeSelection(selection, title, anchor, open) {
-  if (open || !selection?.rendered) {
-    consumeReplResponse(selection?.response);
-  }
   if (open) {
+    consumeReplResponse(selection?.response);
     activateConsolePanel("console");
     state.console?.input?.focus();
   } else if (selection?.rendered) {
-    showInlinePopup(title, selection.rendered, anchor);
+    showInlineInspector(title, selection.rendered, anchor);
+  } else if (replResponseHasDiagnostics(selection?.response)) {
+    consumeReplResponse(selection.response);
+  }
+}
+
+function handleSelectionFailure(error, title, anchor, open) {
+  appendConsoleError(error);
+  if (!open) {
+    showInlineInspector(title, null, anchor, error);
   }
 }
 
@@ -903,7 +968,7 @@ function bindSymbolClick(element, name) {
       const open = consoleIsOpen();
       consumeSelection(state.repl.selectSymbol(name, !open), name, element, open);
     } catch (error) {
-      appendConsoleError(error);
+      handleSelectionFailure(error, name, element, consoleIsOpen());
     }
   };
   element.addEventListener("click", select);
@@ -938,7 +1003,7 @@ function bindOutputClick(element, address) {
         open,
       );
     } catch (error) {
-      appendConsoleError(error);
+      handleSelectionFailure(error, "ans", element, consoleIsOpen());
     }
   };
   element.addEventListener("click", select);
@@ -1576,6 +1641,9 @@ function documentConsoleFullscreenControls() {
 }
 
 function setConsoleOpen(open) {
+  if (open) {
+    dismissInlineInspector({ restoreFocus: false });
+  }
   const pane = documentConsolePane();
   if (pane) {
     pane.hidden = !open;

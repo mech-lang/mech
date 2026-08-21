@@ -970,6 +970,7 @@ def assert_console_contract():
     }));
   }
   const movedRect = popup?.getBoundingClientRect();
+  const closeButton = popup?.querySelector('.mech-inline-popup__close');
   const result = {
     elapsedMs,
     rerenderedDocument:
@@ -984,11 +985,30 @@ def assert_console_contract():
       Boolean(popupRect && movedRect) &&
       (Math.abs(movedRect.left - popupRect.left) > 10 ||
         Math.abs(movedRect.top - popupRect.top) > 10),
+    focusMoved: document.activeElement === closeButton,
   };
-  popup?.querySelector('.mech-inline-popup__close')?.click();
+  if (popup) {
+    popup.style.left = '100000px';
+    popup.style.top = '100000px';
+    window.dispatchEvent(new Event('resize'));
+    const clampedRect = popup.getBoundingClientRect();
+    result.reclamped =
+      clampedRect.left >= 0 && clampedRect.top >= 0 &&
+      clampedRect.right <= window.innerWidth &&
+      clampedRect.bottom <= window.innerHeight;
+  }
+  closeButton?.click();
   result.dismissed = !document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
+  result.focusRestored = document.activeElement === value;
+
+  value.click();
+  result.reopenPopupCreated = Boolean(
+    document.querySelector('.mech-inline-popup[data-mech-repl-popup]')
+  );
   toggle.click();
-  result.reopened = root.dataset.mechConsoleOpen === 'true' && !pane.hidden;
+  result.reopened =
+    root.dataset.mechConsoleOpen === 'true' && !pane.hidden &&
+    !document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
   return result;
 })()
 """)
@@ -1001,12 +1021,87 @@ def assert_console_contract():
         not popup_performance["transcriptClean"] or
         not popup_performance["positionedByValue"] or
         not popup_performance["draggable"] or
+        not popup_performance["focusMoved"] or
+        not popup_performance["reclamped"] or
         not popup_performance["dismissed"] or
+        not popup_performance["focusRestored"] or
+        not popup_performance["reopenPopupCreated"] or
         not popup_performance["reopened"]
     ):
         fail(
             "closed-console selection did not open a clean, anchored, draggable value popup: "
             f"{popup_performance!r}"
+        )
+    evaluate("document.querySelector('#toggle-repl, [data-mech-console-toggle]')?.click()")
+    evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  window.__MECH_ORIGINAL_SELECT_SYMBOL__ = WasmDocument.prototype.replSelectSymbol;
+  WasmDocument.prototype.replSelectSymbol = function() {
+    return {
+      response: { events: [{ event: {
+        channel: 'repl',
+        event: { kind: 'source_echo', payload: { source: 'qq' } },
+      } }] },
+      rendered: null,
+    };
+  };
+})()
+""")
+    quiet_selection = evaluate_json("""
+(() => {
+  const value = document.querySelector('#mech-smoke-large-var .mech-var-placeholder');
+  const transcript = document.querySelector('.mech-repl-transcript');
+  if (!value || !transcript) return null;
+  const before = transcript.children.length;
+  value.click();
+  return {
+    transcriptClean: transcript.children.length === before,
+    popupAbsent: !document.querySelector('.mech-inline-popup[data-mech-repl-popup]'),
+  };
+})()
+""")
+    evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  WasmDocument.prototype.replSelectSymbol = function() {
+    throw new Error('synthetic closed selection failure');
+  };
+})()
+""")
+    closed_failure = evaluate_json("""
+(() => {
+  const value = document.querySelector('#mech-smoke-large-var .mech-var-placeholder');
+  value?.click();
+  const popup = document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
+  return {
+    visible: /synthetic closed selection failure/.test(popup?.textContent || ''),
+    focused: document.activeElement === popup?.querySelector('.mech-inline-popup__close'),
+  };
+})()
+""")
+    evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  if (window.__MECH_ORIGINAL_SELECT_SYMBOL__) {
+    WasmDocument.prototype.replSelectSymbol = window.__MECH_ORIGINAL_SELECT_SYMBOL__;
+    delete window.__MECH_ORIGINAL_SELECT_SYMBOL__;
+  }
+  document.querySelector('.mech-inline-popup__close')?.click();
+  document.querySelector('#toggle-repl, [data-mech-console-toggle]')?.click();
+})()
+""")
+    if (
+        quiet_selection is None or
+        not quiet_selection["transcriptClean"] or
+        not quiet_selection["popupAbsent"] or
+        closed_failure is None or
+        not closed_failure["visible"] or
+        not closed_failure["focused"]
+    ):
+        fail(
+            "closed-console quiet or failure selection lifecycle regressed: "
+            f"quiet={quiet_selection!r}, failure={closed_failure!r}"
         )
     submit(":whos ans")
     wait_for(
