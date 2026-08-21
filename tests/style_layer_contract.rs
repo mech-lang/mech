@@ -85,9 +85,9 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     let css = include("mechdown.css");
     for contract in [
         "counter-reset: mechdown-section",
-        ".mech-program-section > h2::before",
+        ".mechdown-section > h2::before",
         "content: \"section \" counter(mechdown-section, decimal)",
-        ".mech-program-section > h3::before",
+        ".mechdown-section > h3::before",
         "counter(mechdown-subsection, decimal)",
         ".mech-abstract {",
         "border: 1px solid var(--mechdown-accent)",

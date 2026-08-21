@@ -878,7 +878,7 @@ impl Formatter {
         let id = hash_str(&format!("section-{}{}", self.h2_num + 1, toc));
         if self.html {
             format!(
-                "<section id=\"{}\" section=\"{}\" class=\"mech-program-section {}\">{}</section>",
+                "<section id=\"{}\" section=\"{}\" class=\"mechdown-section {}\">{}</section>",
                 id, section_id, toc, src
             )
         } else {

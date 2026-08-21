@@ -67,7 +67,7 @@
  * scoped to semantic Mechdown so it travels with a document independently of
  * whichever page shell embeds it.
  */
-[data-mechdown] .mech-program-section {
+[data-mechdown] .mechdown-section {
   counter-reset: mechdown-subsection mechdown-subsubsection mechdown-h5 mechdown-h6;
   max-width: 100%;
   min-width: 0;
@@ -75,8 +75,8 @@
   width: 100%;
 }
 
-[data-mechdown] .mech-program-section > h2,
-[data-mechdown] .mech-program-section > h3 {
+[data-mechdown] .mechdown-section > h2,
+[data-mechdown] .mechdown-section > h3 {
   align-items: flex-start;
   border-bottom: 0;
   display: flex;
@@ -85,9 +85,9 @@
   padding-bottom: 10px;
 }
 
-[data-mechdown] .mech-program-section > h4,
-[data-mechdown] .mech-program-section > h5,
-[data-mechdown] .mech-program-section > h6 {
+[data-mechdown] .mechdown-section > h4,
+[data-mechdown] .mechdown-section > h5,
+[data-mechdown] .mechdown-section > h6 {
   align-items: baseline;
   border-bottom: 0;
   display: flex;
@@ -96,41 +96,41 @@
   padding-bottom: 0;
 }
 
-[data-mechdown] .mech-program-section > h2 {
+[data-mechdown] .mechdown-section > h2 {
   counter-increment: mechdown-section;
   font-size: 34px;
   letter-spacing: 0.01em;
   margin: 0 0 14px -20px;
 }
 
-[data-mechdown] .mech-program-section > h3 {
+[data-mechdown] .mechdown-section > h3 {
   counter-increment: mechdown-subsection;
   counter-reset: mechdown-subsubsection mechdown-h5 mechdown-h6;
   font-size: 24px;
   margin: 30px 0 12px;
 }
 
-[data-mechdown] .mech-program-section > h4 {
+[data-mechdown] .mechdown-section > h4 {
   counter-increment: mechdown-subsubsection;
   counter-reset: mechdown-h5 mechdown-h6;
 }
 
-[data-mechdown] .mech-program-section > h5 {
+[data-mechdown] .mechdown-section > h5 {
   color: var(--accent-soft, var(--mechdown-text));
   counter-increment: mechdown-h5;
   counter-reset: mechdown-h6;
 }
 
-[data-mechdown] .mech-program-section > h6 {
+[data-mechdown] .mechdown-section > h6 {
   color: var(--accent-soft, var(--mechdown-text));
   counter-increment: mechdown-h6;
 }
 
-[data-mechdown] .mech-program-section > h2::before,
-[data-mechdown] .mech-program-section > h3::before,
-[data-mechdown] .mech-program-section > h4::before,
-[data-mechdown] .mech-program-section > h5::before,
-[data-mechdown] .mech-program-section > h6::before {
+[data-mechdown] .mechdown-section > h2::before,
+[data-mechdown] .mechdown-section > h3::before,
+[data-mechdown] .mechdown-section > h4::before,
+[data-mechdown] .mechdown-section > h5::before,
+[data-mechdown] .mechdown-section > h6::before {
   color: var(--mechdown-accent);
   flex-shrink: 0;
   font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -141,29 +141,29 @@
   text-transform: uppercase;
 }
 
-[data-mechdown] .mech-program-section > h2::before {
+[data-mechdown] .mechdown-section > h2::before {
   content: "section " counter(mechdown-section, decimal);
   display: block;
 }
 
-[data-mechdown] .mech-program-section > h3::before {
+[data-mechdown] .mechdown-section > h3::before {
   content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal);
   display: block;
   font-size: 12px;
 }
 
-[data-mechdown] .mech-program-section > h4::before {
+[data-mechdown] .mechdown-section > h4::before {
   content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal);
   font-size: 10px;
 }
 
-[data-mechdown] .mech-program-section > h5::before {
+[data-mechdown] .mechdown-section > h5::before {
   content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal);
   display: none;
   font-size: 10px;
 }
 
-[data-mechdown] .mech-program-section > h6::before {
+[data-mechdown] .mechdown-section > h6::before {
   content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal) "." counter(mechdown-h6, decimal);
   font-size: 10px;
 }
@@ -519,11 +519,11 @@
 }
 
 @media (max-width: 760px) {
-  [data-mechdown] .mech-program-section {
+  [data-mechdown] .mechdown-section {
     padding-inline: 0;
   }
 
-  [data-mechdown] .mech-program-section > h2 {
+  [data-mechdown] .mechdown-section > h2 {
     margin-left: 0;
   }
 

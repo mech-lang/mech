@@ -284,7 +284,7 @@ fn html_shim_omits_an_empty_table_of_contents() {
 }
 
 #[test]
-fn html_style_layers_are_independent_with_legacy_shim_fallback() {
+fn html_style_layers_are_independent_with_compatibility_shim() {
     let tree = html_fixture(&[("Fixture section", "Fixture content")]);
     let styles = HtmlStyleSheets {
         source: "/* source */".to_string(),
