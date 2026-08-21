@@ -83,6 +83,19 @@ pub trait ResidentReplRuntimeFactory {
         };
         Ok((runtime, outcome))
     }
+
+    /// Prepare a successfully activated candidate for commit while the
+    /// currently accepted runtime is still available for rollback.
+    fn prepare_commit(&self, _runtime: &mut MechRuntime) -> MResult<()> {
+        Ok(())
+    }
+
+    /// Publish factory-owned state associated with the accepted candidate.
+    /// Preparation must make this operation infallible.
+    fn commit(&self) {}
+
+    /// Discard factory-owned state associated with a rejected candidate.
+    fn abort(&self) {}
 }
 
 /// Durable, renderer-neutral REPL state shared by terminal, WASM, and native
@@ -92,10 +105,11 @@ pub trait ResidentReplRuntimeFactory {
 /// entry therefore leaves the accepted source and live runtime unchanged.
 pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     factory: F,
-    initial_source: String,
+    initial_source: Option<String>,
     source: String,
     runtime: Option<MechRuntime>,
     program_events: Option<MechEventBuffer>,
+    pending_selection: Option<RuntimeValueSnapshot>,
     events: MechEventJournal,
     quiet: bool,
 }
@@ -108,10 +122,11 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     pub fn with_quiet(factory: F, quiet: bool) -> Self {
         Self {
             factory,
-            initial_source: String::new(),
+            initial_source: None,
             source: String::new(),
             runtime: None,
             program_events: None,
+            pending_selection: None,
             events: MechEventJournal::default(),
             quiet,
         }
@@ -122,10 +137,11 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     pub fn from_source(factory: F, source: String) -> MResult<Self> {
         let mut session = Self {
             factory,
-            initial_source: source.clone(),
+            initial_source: Some(source.clone()),
             source: String::new(),
             runtime: None,
             program_events: None,
+            pending_selection: None,
             events: MechEventJournal::default(),
             quiet: false,
         };
@@ -176,6 +192,27 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.submit_without_source_echo(entry, false)
     }
 
+    /// Inspect an already resident value without recompiling the active
+    /// document. The canonical expression is folded into the next ordinary
+    /// submission so subsequent source can consume the selected `ans`.
+    pub fn select_value(&mut self, source_echo: &str, value: RuntimeValueSnapshot) {
+        self.emit_source_echo(source_echo);
+        let visible_value = if !self.quiet && !value.is_empty() {
+            Some((value.kind().to_string(), value.format_canonical_inline()))
+        } else {
+            None
+        };
+        self.pending_selection = Some(value);
+        if let Some((kind, canonical)) = visible_value {
+            self.emit(MechEvent::Repl(ReplEvent::Response(ReplResponse::new(
+                ReplResponseKind::ValueInspection,
+                ReplResponseStatus::Neutral,
+                None,
+                OutputContent::Value(ValueOutput::new(kind, canonical)),
+            ))));
+        }
+    }
+
     fn submit_without_source_echo(
         &mut self,
         entry: &str,
@@ -183,6 +220,15 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     ) -> MResult<RuntimeValueSnapshot> {
         let (entry, suppress_value) = executable_submission(entry);
         let mut candidate_source = self.source.clone();
+        if let Some(selection) = &self.pending_selection {
+            if !candidate_source.is_empty() && !candidate_source.ends_with('\n') {
+                candidate_source.push('\n');
+            }
+            candidate_source.push_str(&selection.format_canonical_inline());
+            if !candidate_source.ends_with('\n') {
+                candidate_source.push('\n');
+            }
+        }
         if !candidate_source.is_empty() && !candidate_source.ends_with('\n') {
             candidate_source.push('\n');
         }
@@ -217,7 +263,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
 
     pub fn replace_source(&mut self, candidate_source: String) -> MResult<RuntimeValueSnapshot> {
         let candidate_events = MechEventBuffer::default();
-        let (candidate, outcome) = match self
+        let (mut candidate, outcome) = match self
             .factory
             .activate(candidate_events.clone(), &candidate_source)
         {
@@ -227,19 +273,37 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             }
         };
 
-        if let Some(mut previous) = self.runtime.take() {
-            previous.shutdown()?;
-            self.collect_program_events()?;
+        if let Err(error) = self.factory.prepare_commit(&mut candidate) {
+            let _ = candidate.shutdown();
+            self.factory.abort();
+            return Err(error);
         }
+
+        if let Some(mut previous) = self.runtime.take() {
+            if let Err(error) = previous.shutdown() {
+                let _ = candidate.shutdown();
+                self.factory.abort();
+                self.runtime = Some(previous);
+                return Err(error);
+            }
+            if let Err(error) = self.collect_program_events() {
+                let _ = candidate.shutdown();
+                self.factory.abort();
+                self.runtime = Some(previous);
+                return Err(error);
+            }
+        }
+        self.factory.commit();
         self.runtime = Some(candidate);
         self.program_events = Some(candidate_events);
         self.source = candidate_source;
+        self.pending_selection = None;
         Ok(outcome.initial_value)
     }
 
     pub fn reset(&mut self) -> MResult<()> {
-        if !self.initial_source.is_empty() {
-            self.replace_source(self.initial_source.clone())?;
+        if let Some(initial_source) = self.initial_source.clone() {
+            self.replace_source(initial_source)?;
             return Ok(());
         }
         if let Some(mut runtime) = self.runtime.take() {
@@ -248,6 +312,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         }
         self.program_events = None;
         self.source.clear();
+        self.pending_selection = None;
         Ok(())
     }
 
@@ -281,11 +346,23 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         Ok(count)
     }
 
-    pub fn symbols(&mut self, names: &[String]) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
+    pub fn symbol(&self, name: &str) -> MResult<Option<RuntimeValueSnapshot>> {
+        if name == "ans"
+            && let Some(value) = &self.pending_selection
+        {
+            return Ok(Some(value.clone()));
+        }
+        let Some(runtime) = self.runtime.as_ref() else {
+            return Ok(None);
+        };
+        runtime.root_symbol_value(name).map(Some)
+    }
+
+    pub fn symbols(&self, names: &[String]) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         if self.runtime.is_none() {
             return Ok(Vec::new());
         }
-        if names.is_empty() {
+        let mut values = if names.is_empty() {
             self.runtime
                 .as_ref()
                 .expect("resident session was checked above")
@@ -296,7 +373,18 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 .as_ref()
                 .expect("resident session was checked above")
                 .root_symbol_values(&names)
+        }?;
+        if let Some(selected) = &self.pending_selection
+            && (names.is_empty() || names.iter().any(|name| name == "ans"))
+        {
+            if let Some((_, value)) = values.iter_mut().find(|(name, _)| name == "ans") {
+                *value = selected.clone();
+            } else {
+                values.push(("ans".to_string(), selected.clone()));
+                values.sort_by(|left, right| left.0.cmp(&right.0));
+            }
         }
+        Ok(values)
     }
 
     pub fn step(&mut self, count: u64) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
@@ -373,6 +461,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             self.collect_program_events()?;
         }
         self.program_events = None;
+        self.pending_selection = None;
         Ok(())
     }
 

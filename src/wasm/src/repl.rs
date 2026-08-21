@@ -6,7 +6,7 @@ use js_sys::{Array, Object, Reflect};
 #[cfg(feature = "browser_project_core")]
 use mech_console::{ConsoleBackend, ConsoleHostFactory};
 #[cfg(feature = "browser_project_core")]
-use mech_core::MResult;
+use mech_core::{GenericError, MResult, MechError};
 #[cfg(feature = "browser_project_core")]
 use mech_runtime::{
     ConfigValue, DiagnosticPhase, HostInstanceConfig, MechEvent, MechEventBuffer, MechRuntime,
@@ -125,6 +125,25 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
             Self::Document(bootstrap) => {
                 crate::project::activate_document_repl_runtime(bootstrap, events, source)
             }
+        }
+    }
+
+    fn prepare_commit(&self, runtime: &mut MechRuntime) -> MResult<()> {
+        match self {
+            Self::Standalone => Ok(()),
+            Self::Document(bootstrap) => bootstrap.prepare_commit(runtime),
+        }
+    }
+
+    fn commit(&self) {
+        if let Self::Document(bootstrap) = self {
+            bootstrap.commit();
+        }
+    }
+
+    fn abort(&self) {
+        if let Self::Document(bootstrap) = self {
+            bootstrap.abort();
         }
     }
 }
@@ -580,14 +599,25 @@ impl WasmRepl {
 
 #[cfg(feature = "browser_project_core")]
 impl WasmRepl {
-    pub(crate) fn from_document(
-        bootstrap: crate::project::WasmDocumentBootstrap,
-        source: String,
-    ) -> MResult<Self> {
+    pub(crate) fn step_immediate(&mut self, count: u64) -> MResult<()> {
+        if !matches!(self.state, WasmReplState::Ready) {
+            return Err(MechError::new(
+                GenericError {
+                    msg: "cannot run a synchronous document step while the REPL is busy or terminated"
+                        .to_string(),
+                },
+                None,
+            ));
+        }
+        mech_runtime::validate_resident_step_count(count)?;
+        self.session.step_chunk(count)
+    }
+
+    pub(crate) fn from_document(bootstrap: crate::project::WasmDocumentBootstrap) -> MResult<Self> {
         Ok(Self {
             session: ResidentReplSession::from_source(
                 WasmReplRuntimeFactory::Document(bootstrap),
-                source,
+                String::new(),
             )?,
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,
@@ -598,18 +628,12 @@ impl WasmRepl {
     pub(crate) fn submit_selection(
         &mut self,
         source_echo: &str,
-        value_source: &str,
+        value: mech_runtime::RuntimeValueSnapshot,
     ) -> Result<JsValue, JsValue> {
         if self.transition(WasmReplTransition::Submit) == WasmReplTransitionResult::Rejected {
             return self.response(None);
         }
-        if let Err(error) = self
-            .session
-            .submit_with_source_echo(value_source, source_echo)
-        {
-            self.session
-                .emit_error(&error, DiagnosticPhase::Compile, Some("<repl>"));
-        }
+        self.session.select_value(source_echo, value);
         self.response(None)
     }
 }
@@ -909,6 +933,27 @@ mod tests {
             WasmReplTransitionResult::Allowed
         );
         assert_eq!(repl.state, WasmReplState::Terminated);
+    }
+
+    #[cfg(feature = "browser_project_core")]
+    #[test]
+    fn immediate_document_step_obeys_the_cooperative_state_guard() {
+        let mut repl = WasmRepl::new();
+        repl.session
+            .submit("~counter := 0\ncounter += 1\n")
+            .unwrap();
+
+        repl.state = WasmReplState::Stepping {
+            remaining: 1_000,
+            total: 1_000,
+        };
+        assert!(repl.step_immediate(1).is_err());
+
+        repl.state = WasmReplState::Ready;
+        assert!(repl.step_immediate(1).is_ok());
+
+        repl.state = WasmReplState::Terminated;
+        assert!(repl.step_immediate(1).is_err());
     }
 
     #[cfg(all(feature = "browser_project_core", target_arch = "wasm32"))]

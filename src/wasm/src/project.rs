@@ -1,6 +1,8 @@
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, HashMap};
 #[cfg(feature = "served_project_authority")]
 use std::path::Path;
+use std::rc::Rc;
 
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
@@ -16,7 +18,7 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
-use mech_engine::root_document_output_ids;
+use mech_engine::{root_document_inline_eval_count, root_document_output_ids};
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
     MAX_RESIDENT_STEP_COUNT, MechConfigDocument, MechEvent, MechEventBuffer, MechEventBus,
@@ -358,7 +360,6 @@ pub(crate) enum WasmDocumentBootstrap {
 #[derive(Clone)]
 struct DetachedDocumentBootstrap {
     source: SourceBackedDocumentBootstrap,
-    tree: mech_core::nodes::Program,
 }
 
 #[derive(Clone)]
@@ -366,8 +367,50 @@ struct SourceBackedDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
     resolutions: Vec<SourceResolutionEntry>,
+    tree: mech_core::nodes::Program,
+    console_instance: String,
+    lifecycle: DocumentRuntimeLifecycle,
+}
+
+#[derive(Clone, Default)]
+struct DocumentRuntimeLifecycle {
+    drivers_started: Rc<Cell<bool>>,
     #[cfg(feature = "browser_host_scene")]
-    scenes: BrowserSceneRegistry,
+    scenes: Rc<RefCell<BrowserSceneRegistry>>,
+    #[cfg(feature = "browser_host_scene")]
+    pending_scenes: Rc<RefCell<Option<BrowserSceneRegistry>>>,
+}
+
+impl DocumentRuntimeLifecycle {
+    fn drivers_started(&self) -> bool {
+        self.drivers_started.get()
+    }
+
+    fn set_drivers_started(&self, started: bool) {
+        self.drivers_started.set(started);
+    }
+
+    #[cfg(feature = "browser_host_scene")]
+    fn scenes(&self) -> BrowserSceneRegistry {
+        self.scenes.borrow().clone()
+    }
+
+    #[cfg(feature = "browser_host_scene")]
+    fn stage_scenes(&self, scenes: BrowserSceneRegistry) {
+        *self.pending_scenes.borrow_mut() = Some(scenes);
+    }
+
+    #[cfg(feature = "browser_host_scene")]
+    fn commit_scenes(&self) {
+        if let Some(scenes) = self.pending_scenes.borrow_mut().take() {
+            *self.scenes.borrow_mut() = scenes;
+        }
+    }
+
+    #[cfg(feature = "browser_host_scene")]
+    fn abort_scenes(&self) {
+        self.pending_scenes.borrow_mut().take();
+    }
 }
 
 #[cfg(feature = "served_project_authority")]
@@ -387,18 +430,35 @@ impl WasmDocumentBootstrap {
             Self::Served(served) => &served.source,
         }
     }
+
+    fn interactive_tree(&self, candidate_source: &str) -> MResult<mech_core::nodes::Program> {
+        document_interactive_tree(&self.source().tree, candidate_source)
+    }
+
+    pub(crate) fn prepare_commit(&self, runtime: &mut MechRuntime) -> MResult<()> {
+        if self.source().lifecycle.drivers_started() {
+            runtime.start_input_drivers()?;
+        }
+        Ok(())
+    }
+
+    pub(crate) fn commit(&self) {
+        #[cfg(feature = "browser_host_scene")]
+        self.source().lifecycle.commit_scenes();
+    }
+
+    pub(crate) fn abort(&self) {
+        #[cfg(feature = "browser_host_scene")]
+        self.source().lifecycle.abort_scenes();
+    }
 }
 
 pub(crate) fn build_document_repl_runtime(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
 ) -> MResult<MechRuntime> {
-    let source = bootstrap.source();
-    let baseline = source
-        .source_map
-        .get(&source.root_specifier)
-        .ok_or_else(|| document_runtime_error("document root source is missing"))?;
-    build_document_repl_runtime_for_source(bootstrap, events, baseline)
+    let tree = bootstrap.interactive_tree("")?;
+    build_document_repl_runtime_for_tree(bootstrap, events, tree).map(|candidate| candidate.runtime)
 }
 
 pub(crate) fn activate_document_repl_runtime(
@@ -406,36 +466,29 @@ pub(crate) fn activate_document_repl_runtime(
     events: MechEventBuffer,
     source: &str,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
-    let mut runtime = build_document_repl_runtime_for_source(bootstrap, events, source)?;
+    let tree = bootstrap.interactive_tree(source)?;
+    let mut candidate = build_document_repl_runtime_for_tree(bootstrap, events, tree)?;
+    let runtime = &mut candidate.runtime;
     let durability = runtime.config().resident_durability;
-    let activation = match bootstrap {
-        WasmDocumentBootstrap::Detached(detached) => {
-            let tree = detached_interactive_tree(&detached.tree, source)?;
-            runtime.load_interactive_tree_program(&tree, durability)
-        }
-        WasmDocumentBootstrap::SourceBacked(_) => runtime.load_interactive_root_program(
-            SourceRequest::new(&bootstrap.source().root_specifier),
-            browser_module_options(),
-            durability,
-        ),
-        #[cfg(feature = "served_project_authority")]
-        WasmDocumentBootstrap::Served(_) => runtime.load_interactive_root_program(
-            SourceRequest::new(&bootstrap.source().root_specifier),
-            browser_module_options(),
-            durability,
-        ),
-    };
+    let activation = runtime.load_interactive_root_program(
+        SourceRequest::new(&bootstrap.source().root_specifier),
+        browser_module_options(),
+        durability,
+    );
     let outcome = match activation {
         Ok(outcome) => outcome,
         Err(error) => {
-            let _ = runtime.shutdown();
+            let _ = candidate.runtime.shutdown();
+            bootstrap.abort();
             return Err(error);
         }
     };
-    Ok((runtime, outcome))
+    #[cfg(feature = "browser_host_scene")]
+    bootstrap.source().lifecycle.stage_scenes(candidate.scenes);
+    Ok((candidate.runtime, outcome))
 }
 
-fn detached_interactive_tree(
+fn document_interactive_tree(
     baseline: &mech_core::nodes::Program,
     candidate_source: &str,
 ) -> MResult<mech_core::nodes::Program> {
@@ -447,17 +500,25 @@ fn detached_interactive_tree(
     Ok(tree)
 }
 
-fn build_document_repl_runtime_for_source(
+struct DocumentRuntimeCandidate {
+    runtime: MechRuntime,
+    #[cfg(feature = "browser_host_scene")]
+    scenes: BrowserSceneRegistry,
+}
+
+fn build_document_repl_runtime_for_tree(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
-    candidate_source: &str,
-) -> MResult<MechRuntime> {
+    candidate_tree: mech_core::nodes::Program,
+) -> MResult<DocumentRuntimeCandidate> {
     let source = bootstrap.source();
-    let resolver = document_source_resolver_for_candidate(source, candidate_source)?;
+    let resolver = document_source_resolver(candidate_tree, source)?;
+    #[cfg(feature = "browser_host_scene")]
+    let candidate_scenes = BrowserSceneRegistry::new();
     let mut builder = runtime_builder_with_factories(
         Some(events),
         #[cfg(feature = "browser_host_scene")]
-        source.scenes.clone(),
+        candidate_scenes.clone(),
     )
     .map_err(js_value_to_mech_error)?;
 
@@ -492,18 +553,23 @@ fn build_document_repl_runtime_for_source(
         }
     }
 
-    builder
+    let runtime = builder
         .host_instance(HostInstanceConfig {
-            name: "repl".to_string(),
+            name: source.console_instance.clone(),
             provider: "console".to_string(),
             settings: ConfigValue::Map(Default::default()),
         })
         .run_resource_grant(RunResourceGrantConfig {
-            target: "repl/output".to_string(),
+            target: format!("{}/output", source.console_instance),
             operations: vec!["write".to_string()],
             paths: vec!["line".to_string()],
         })
-        .build()
+        .build()?;
+    Ok(DocumentRuntimeCandidate {
+        runtime,
+        #[cfg(feature = "browser_host_scene")]
+        scenes: candidate_scenes,
+    })
 }
 
 fn document_runtime_error(message: impl Into<String>) -> MechError {
@@ -523,6 +589,18 @@ fn js_value_to_mech_error(error: JsValue) -> MechError {
     )
 }
 
+fn internal_repl_console_instance(hosts: &[HostInstanceConfig]) -> String {
+    for candidate in std::iter::once("repl".to_string()).chain(
+        std::iter::once("repl-console".to_string())
+            .chain((2_u64..).map(|index| format!("repl-console-{index}"))),
+    ) {
+        if hosts.iter().all(|host| host.name != candidate) {
+            return candidate;
+        }
+    }
+    unreachable!("the generated REPL console namespace is unbounded")
+}
+
 mod document {
     use super::*;
 
@@ -537,7 +615,7 @@ mod document {
     #[wasm_bindgen]
     pub struct WasmDocument {
         pub(super) repl: crate::repl::WasmRepl,
-        bootstrap: WasmDocumentBootstrap,
+        pub(super) bootstrap: WasmDocumentBootstrap,
         document_output_ordinals: HashMap<u64, u64>,
         started: bool,
         stopped: bool,
@@ -549,19 +627,17 @@ mod document {
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
             let tree = decode_document_tree(encoded)?;
             let document_output_ordinals = document_output_ordinals(&tree);
-            #[cfg(feature = "browser_host_scene")]
-            let scenes = BrowserSceneRegistry::new();
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: "document.mec".to_string(),
                 source_map: HashMap::from([("document.mec".to_string(), String::new())]),
                 resolutions: Vec::new(),
-                #[cfg(feature = "browser_host_scene")]
-                scenes,
+                tree,
+                console_instance: "repl".to_string(),
+                lifecycle: DocumentRuntimeLifecycle::default(),
             };
-            let bootstrap =
-                WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source, tree });
-            let repl = crate::repl::WasmRepl::from_document(bootstrap.clone(), String::new())
-                .map_err(to_js_error)?;
+            let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
+            let repl =
+                crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -608,18 +684,14 @@ mod document {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
-                #[cfg(feature = "browser_host_scene")]
-                scenes: BrowserSceneRegistry::new(),
+                tree,
+                console_instance: "repl".to_string(),
+                lifecycle: DocumentRuntimeLifecycle::default(),
             };
-            let document_output_ordinals = document_output_ordinals(&tree);
-            let source_text = bootstrap
-                .source_map
-                .get(&bootstrap.root_specifier)
-                .cloned()
-                .ok_or_else(|| js_error("document root is missing from the source map"))?;
+            let document_output_ordinals = document_output_ordinals(&bootstrap.tree);
             let bootstrap = WasmDocumentBootstrap::SourceBacked(bootstrap);
-            let repl = crate::repl::WasmRepl::from_document(bootstrap.clone(), source_text)
-                .map_err(to_js_error)?;
+            let repl =
+                crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -683,7 +755,7 @@ mod document {
         }
 
         #[cfg(feature = "served_project_authority")]
-        fn from_served_tree(
+        pub(super) fn from_served_tree(
             tree: mech_core::nodes::Program,
             root_specifier: &str,
             document: MechConfigDocument,
@@ -693,29 +765,23 @@ mod document {
             authority: BrowserRuntimeInjectionConfig,
         ) -> Result<WasmDocument, JsValue> {
             let document_output_ordinals = document_output_ordinals(&tree);
-            #[cfg(feature = "browser_host_scene")]
-            let scenes = BrowserSceneRegistry::new();
             let source = SourceBackedDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
-                #[cfg(feature = "browser_host_scene")]
-                scenes,
+                tree,
+                console_instance: internal_repl_console_instance(&document.hosts),
+                lifecycle: DocumentRuntimeLifecycle::default(),
             };
             validate_served_authority(&document, &authority).map_err(to_js_error)?;
             validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
-            let source_text = source
-                .source_map
-                .get(&source.root_specifier)
-                .cloned()
-                .ok_or_else(|| js_error("document root is missing from the source map"))?;
             let bootstrap = WasmDocumentBootstrap::Served(ServedDocumentBootstrap {
                 source,
                 config_source: config_source.to_string(),
                 authority,
             });
-            let repl = crate::repl::WasmRepl::from_document(bootstrap.clone(), source_text)
-                .map_err(to_js_error)?;
+            let repl =
+                crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -745,9 +811,11 @@ mod document {
         #[wasm_bindgen(js_name = renderedSymbol)]
         pub fn rendered_symbol(&self, name: &str) -> Result<JsValue, JsValue> {
             let snapshot = self
-                .runtime()?
-                .root_symbol_value(name)
-                .map_err(to_js_error)?;
+                .repl
+                .session
+                .symbol(name)
+                .map_err(to_js_error)?
+                .ok_or_else(|| js_error(format!("document symbol `{name}` is not resident")))?;
             rendered_value(snapshot)
         }
 
@@ -759,15 +827,10 @@ mod document {
                 WasmDocumentBootstrap::Detached(_) => Self::from_encoded(encoded)?,
                 WasmDocumentBootstrap::SourceBacked(bootstrap) => {
                     let tree = decode_document_tree(encoded)?;
-                    let mut source_map = bootstrap.source_map.clone();
-                    source_map.insert(
-                        bootstrap.root_specifier.clone(),
-                        mech_syntax::formatter::Formatter::new().program(&tree),
-                    );
                     Self::from_tree_with_sources(
                         tree,
                         &bootstrap.root_specifier,
-                        source_map,
+                        bootstrap.source_map.clone(),
                         bootstrap.resolutions.clone(),
                     )?
                 }
@@ -775,17 +838,12 @@ mod document {
                 WasmDocumentBootstrap::Served(bootstrap) => {
                     let tree = decode_document_tree(encoded)?;
                     let document = parse_project_config(&bootstrap.config_source)?;
-                    let mut source_map = bootstrap.source.source_map.clone();
-                    source_map.insert(
-                        bootstrap.source.root_specifier.clone(),
-                        mech_syntax::formatter::Formatter::new().program(&tree),
-                    );
                     Self::from_served_tree(
                         tree,
                         &bootstrap.source.root_specifier,
                         document,
                         &bootstrap.config_source,
-                        source_map,
+                        bootstrap.source.source_map.clone(),
                         bootstrap.source.resolutions.clone(),
                         bootstrap.authority.clone(),
                     )?
@@ -807,27 +865,15 @@ mod document {
 
         #[wasm_bindgen(js_name = step)]
         pub fn step(&mut self, count: u64) -> Result<(), JsValue> {
-            self.repl
-                .session
-                .step(count)
-                .map(|_| ())
-                .map_err(to_js_error)
+            self.repl.step_immediate(count).map_err(to_js_error)
         }
 
         #[wasm_bindgen(js_name = renderedSymbols)]
         pub fn rendered_symbols(&self, names: JsValue) -> Result<JsValue, JsValue> {
             let names = rendered_symbol_names_from_js(names)?;
             let values = match names {
-                Some(names) => {
-                    let names = names.iter().map(String::as_str).collect::<Vec<_>>();
-                    self.runtime()?
-                        .root_symbol_values(&names)
-                        .map_err(to_js_error)?
-                }
-                None => self
-                    .runtime()?
-                    .root_symbol_values_all()
-                    .map_err(to_js_error)?,
+                Some(names) => self.repl.session.symbols(&names).map_err(to_js_error)?,
+                None => self.repl.session.symbols(&[]).map_err(to_js_error)?,
             };
             let rows = Array::new();
             for (name, value) in values {
@@ -841,6 +887,7 @@ mod document {
                 .session
                 .start_input_drivers()
                 .map_err(to_js_error)?;
+            self.bootstrap.source().lifecycle.set_drivers_started(true);
             self.started = true;
             self.stopped = false;
             Ok(())
@@ -867,7 +914,8 @@ mod document {
             let rendered = self
                 .bootstrap
                 .source()
-                .scenes
+                .lifecycle
+                .scenes()
                 .render_frame()
                 .map_err(to_js_error)?;
             #[cfg(not(feature = "browser_host_scene"))]
@@ -876,7 +924,8 @@ mod document {
             for output in self
                 .bootstrap
                 .source()
-                .scenes
+                .lifecycle
+                .scenes()
                 .drain_output_events()
                 .map_err(to_js_error)?
             {
@@ -919,6 +968,7 @@ mod document {
             if self.stopped {
                 return Ok(());
             }
+            self.bootstrap.source().lifecycle.set_drivers_started(false);
             self.repl.session.shutdown().map_err(to_js_error)?;
             self.started = false;
             self.stopped = true;
@@ -927,7 +977,13 @@ mod document {
 
         #[wasm_bindgen(js_name = replInvoke)]
         pub fn repl_invoke(&mut self, source: &str) -> Result<JsValue, JsValue> {
-            self.repl.invoke(source)
+            let accepted_before = self.repl.session.source().to_string();
+            let response = self.repl.invoke(source)?;
+            if self.repl.session.source() != accepted_before {
+                self.refresh_document_output_ordinals()
+                    .map_err(to_js_error)?;
+            }
+            Ok(response)
         }
 
         #[wasm_bindgen(js_name = replContinueStep)]
@@ -948,11 +1004,12 @@ mod document {
         #[wasm_bindgen(js_name = replSelectSymbol)]
         pub fn repl_select_symbol(&mut self, name: &str) -> Result<JsValue, JsValue> {
             let source = self
-                .runtime()?
-                .root_symbol_value(name)
+                .repl
+                .session
+                .symbol(name)
                 .map_err(to_js_error)?
-                .format_canonical_inline();
-            self.repl.submit_selection(name, &source)
+                .ok_or_else(|| js_error(format!("document symbol `{name}` is not resident")))?;
+            self.repl.submit_selection(name, source)
         }
 
         #[wasm_bindgen(js_name = replSelectOutput)]
@@ -969,8 +1026,7 @@ mod document {
             let source_echo = display_name
                 .or_else(|| runtime.output_name(runtime_output_id))
                 .unwrap_or_else(|| "ans".to_string());
-            let source = snapshot.format_canonical_inline();
-            self.repl.submit_selection(&source_echo, &source)
+            self.repl.submit_selection(&source_echo, snapshot)
         }
 
         #[wasm_bindgen(js_name = replLoadDocumentation)]
@@ -980,23 +1036,17 @@ mod document {
             source: &str,
         ) -> Result<JsValue, JsValue> {
             let tree = mech_syntax::parser::parse(source).map_err(to_js_error)?;
+            let inline_offset = root_document_inline_eval_count(
+                &self.current_interactive_tree().map_err(to_js_error)?,
+            );
             let mut formatter = mech_syntax::formatter::Formatter::new();
             formatter.html = true;
+            formatter.set_root_inline_eval_offset(inline_offset);
             let html = formatter.program(&tree);
             match self.repl.session.submit_host_source(source) {
                 Ok(_) => {
-                    let first_ordinal = self
-                        .document_output_ordinals
-                        .values()
-                        .copied()
-                        .max()
-                        .map_or(0, |ordinal| ordinal.saturating_add(1));
-                    for (offset, output_id) in
-                        root_document_output_ids(&tree).into_iter().enumerate()
-                    {
-                        self.document_output_ordinals
-                            .insert(output_id, first_ordinal.saturating_add(offset as u64));
-                    }
+                    self.refresh_document_output_ordinals()
+                        .map_err(to_js_error)?;
                 }
                 Err(error) => {
                     self.repl.session.emit_error(
@@ -1032,6 +1082,16 @@ mod document {
                 .session
                 .runtime()
                 .ok_or_else(|| js_error("document runtime is not active"))
+        }
+
+        fn current_interactive_tree(&self) -> MResult<mech_core::nodes::Program> {
+            self.bootstrap.interactive_tree(self.repl.session.source())
+        }
+
+        fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
+            self.document_output_ordinals =
+                document_output_ordinals(&self.current_interactive_tree()?);
+            Ok(())
         }
 
         fn runtime_output_id(&self, output_id: u64) -> Option<OutputId> {
@@ -1628,40 +1688,6 @@ fn project_source_resolver_with_resolutions(
 fn document_source_resolver(
     tree: mech_core::nodes::Program,
     source: &SourceBackedDocumentBootstrap,
-) -> Result<InMemorySourceResolver, JsValue> {
-    if source.root_specifier.trim().is_empty() {
-        return Err(js_error("document root specifier must not be empty"));
-    }
-    if !source.source_map.contains_key(&source.root_specifier) {
-        return Err(js_error(format!(
-            "document root `{}` is missing from the source map",
-            source.root_specifier,
-        )));
-    }
-
-    let mut resolver = project_source_resolver(&source.source_map).map_err(to_js_error)?;
-    for resolution in &source.resolutions {
-        resolver
-            .insert_resolution_entry(resolution)
-            .map_err(to_js_error)?;
-    }
-    resolver
-        .insert_source(
-            &source.root_specifier,
-            ResolvedSource::new(
-                &source.root_specifier,
-                format!("memory:{}", source.root_specifier),
-                MechSourceCode::Tree(tree),
-            )
-            .with_kind(SourceKind::Mech),
-        )
-        .map_err(to_js_error)?;
-    Ok(resolver)
-}
-
-fn document_source_resolver_for_candidate(
-    source: &SourceBackedDocumentBootstrap,
-    candidate_source: &str,
 ) -> MResult<InMemorySourceResolver> {
     if source.root_specifier.trim().is_empty() {
         return Err(document_runtime_error(
@@ -1675,9 +1701,20 @@ fn document_source_resolver_for_candidate(
         )));
     }
 
-    let mut source_map = source.source_map.clone();
-    source_map.insert(source.root_specifier.clone(), candidate_source.to_string());
-    project_source_resolver_with_resolutions(&source_map, &source.resolutions)
+    let mut resolver = project_source_resolver(&source.source_map)?;
+    for resolution in &source.resolutions {
+        resolver.insert_resolution_entry(resolution)?;
+    }
+    resolver.insert_source(
+        &source.root_specifier,
+        ResolvedSource::new(
+            &source.root_specifier,
+            format!("memory:{}", source.root_specifier),
+            MechSourceCode::Tree(tree),
+        )
+        .with_kind(SourceKind::Mech),
+    )?;
+    Ok(resolver)
 }
 
 fn browser_module_options() -> ModuleBuildOptions<'static> {
@@ -2332,25 +2369,87 @@ mod tests {
             "43",
             "console mutations must drive the runtime rendered by the document",
         );
-        document
+        let answer = document
             .repl
             .session
-            .submit_with_source_echo("43", "answer")
-            .unwrap();
+            .symbol("answer")
+            .unwrap()
+            .expect("answer must be resident");
+        document.repl.session.select_value("answer", answer);
         assert_eq!(
             document.repl.session.submit("ans + 1").unwrap().to_string(),
             "44",
             "a clicked value must become the next interactive ans",
         );
-        document
-            .repl
-            .session
-            .submit_with_source_echo("7", "another-output")
-            .unwrap();
+        document.repl.session.select_value(
+            "another-output",
+            mech_runtime::RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(
+                mech_core::Ref::new(7.0),
+            ))
+            .unwrap(),
+        );
         assert_eq!(
             document.repl.session.submit("ans").unwrap().to_string(),
             "7",
             "subsequent clicks must replace ans without duplicate declarations",
+        );
+    }
+
+    #[test]
+    fn selecting_a_large_document_value_is_runtime_local_until_ans_is_consumed() {
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../examples/working/fizzbuzz.mec"))
+                .unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        let accepted_source = document.repl.session.source().to_string();
+        let revision = document
+            .runtime()
+            .unwrap()
+            .program_execution_info()
+            .program_revision;
+        let selected = document
+            .repl
+            .session
+            .symbol("x")
+            .unwrap()
+            .expect("FizzBuzz x must be resident");
+
+        document.repl.session.select_value("x", selected.clone());
+
+        assert_eq!(document.repl.session.source(), accepted_source);
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .program_execution_info()
+                .program_revision,
+            revision,
+            "selecting a document value must not compile or reactivate the program",
+        );
+        assert_eq!(
+            document.repl.session.symbol("ans").unwrap(),
+            Some(selected),
+            "the selected snapshot must be immediately visible as ans",
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .submit("ans[100]")
+                .unwrap()
+                .to_string(),
+            "100",
+            "the deferred ans expression must materialize on the next source submission",
+        );
+        assert_ne!(
+            document
+                .runtime()
+                .unwrap()
+                .program_execution_info()
+                .program_revision,
+            revision,
+            "ordinary source submission must still compile the accepted overlay",
         );
     }
 
@@ -2426,6 +2525,35 @@ mod tests {
     }
 
     #[test]
+    fn source_backed_document_keeps_the_decoded_tree_authoritative() {
+        let decoded_source = "+> ./math.mec\nanswer := math/value + 1\nanswer\n";
+        let tree = mech_syntax::parser::parse(decoded_source).unwrap();
+        let source_map = HashMap::from([
+            (
+                "docs/main.mec".to_string(),
+                "answer := 999\nanswer\n".to_string(),
+            ),
+            (
+                "docs/math.mec".to_string(),
+                "value := 41\n<+ value\n".to_string(),
+            ),
+        ]);
+
+        let document =
+            WasmDocument::from_tree_with_sources(tree, "docs/main.mec", source_map, Vec::new())
+                .unwrap();
+
+        assert_f64(
+            document
+                .runtime()
+                .unwrap()
+                .root_symbol_value("answer")
+                .unwrap(),
+            42.0,
+        );
+    }
+
+    #[test]
     fn source_backed_document_preserves_explicit_resolution_edges_across_reset() {
         let source = "+> ./math.mec\n~answer := 0\nanswer += math/value + 1\nanswer\n";
         let tree = mech_syntax::parser::parse(source).unwrap();
@@ -2468,6 +2596,76 @@ mod tests {
                 .unwrap(),
             42.0,
         );
+    }
+
+    #[test]
+    fn detached_session_reset_reactivates_its_empty_overlay_baseline() {
+        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        document.repl.session.submit("answer += 1\nanswer").unwrap();
+        assert_f64(
+            document.repl.session.symbol("answer").unwrap().unwrap(),
+            43.0,
+        );
+
+        document.repl.session.reset().unwrap();
+
+        assert_eq!(document.repl.session.source(), "");
+        assert_f64(
+            document.repl.session.symbol("answer").unwrap().unwrap(),
+            42.0,
+        );
+        assert_eq!(
+            document.runtime().unwrap().program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+    }
+
+    #[test]
+    fn appended_document_fragments_continue_the_root_inline_output_namespace() {
+        let baseline = mech_syntax::parser::parse("Baseline {1}.").unwrap();
+        let fragment = mech_syntax::parser::parse("Documentation {2}.").unwrap();
+        let offset = root_document_inline_eval_count(&baseline);
+        assert_eq!(offset, 1);
+
+        let mut formatter = mech_syntax::formatter::Formatter::new();
+        formatter.html = true;
+        formatter.set_root_inline_eval_offset(offset);
+        let html = formatter.program(&fragment);
+        let fragment_id = mech_core::hash_str("inline-eval:0:1");
+        assert!(html.contains(&format!("id=\"{fragment_id}:0\"")), "{html}");
+
+        let mut combined = baseline;
+        combined.body.sections.extend(fragment.body.sections);
+        assert_eq!(
+            root_document_output_ids(&combined),
+            vec![
+                mech_core::hash_str("inline-eval:0:0"),
+                mech_core::hash_str("inline-eval:0:1"),
+            ],
+        );
+        assert_eq!(
+            document::document_output_ordinals(&combined).get(&fragment_id),
+            Some(&1),
+        );
+    }
+
+    #[test]
+    fn internal_repl_console_avoids_every_configured_host_namespace() {
+        let hosts = vec![
+            HostInstanceConfig {
+                name: "repl".to_string(),
+                provider: "console".to_string(),
+                settings: ConfigValue::Map(Default::default()),
+            },
+            HostInstanceConfig {
+                name: "repl-console".to_string(),
+                provider: "scene".to_string(),
+                settings: ConfigValue::Map(Default::default()),
+            },
+        ];
+        assert_eq!(internal_repl_console_instance(&hosts), "repl-console-2");
     }
 
     #[test]
@@ -2659,6 +2857,69 @@ mod tests {
         );
 
         validate_served_authority(&document, &authority).unwrap();
+    }
+
+    #[cfg(all(feature = "served_project_authority", feature = "browser_host_scene"))]
+    #[test]
+    fn rejected_document_candidate_cannot_mutate_the_active_scene_registry() {
+        let config_source = r##"config := {
+  hosts: [{
+    name: "view"
+    provider: "scene"
+    settings: { selector: "#view" renderer: "svg" }
+  }]
+  run: {
+    paths: ["main.mec"]
+    grants: [{ target: "view/frame" operations: ["write"] paths: ["replace"] }]
+  }
+}"##;
+        let source = r##"@view := scene://view/frame{:write(replace)}
+scene := {
+  width: 10
+  height: 10
+  background: "#000"
+  circles: ()
+  lines: ()
+}
+@view/replace <- scene
+"##;
+        let config = parse_config_document(
+            "scene-registry/mech.mcfg",
+            config_source,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let authority = authority_config(
+            config.hosts.clone(),
+            config.run.as_ref().unwrap().grants.clone(),
+        );
+        let mut document = WasmDocument::from_served_tree(
+            tree,
+            "main.mec",
+            config,
+            config_source,
+            HashMap::from([("main.mec".to_string(), source.to_string())]),
+            Vec::new(),
+            authority,
+        )
+        .unwrap();
+        let active = document.bootstrap.source().lifecycle.scenes();
+        let accepted_scene = active
+            .latest("view")
+            .expect("the accepted program must publish its initial scene");
+
+        assert!(
+            document
+                .repl
+                .session
+                .submit("broken := missing + 1")
+                .is_err()
+        );
+
+        let retained = document.bootstrap.source().lifecycle.scenes();
+        assert_eq!(retained.target_count(), 1);
+        assert_eq!(retained.latest("view"), Some(accepted_scene));
     }
 
     #[cfg(all(

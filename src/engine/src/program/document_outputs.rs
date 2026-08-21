@@ -21,6 +21,20 @@ pub fn root_document_output_ids(program: &Program) -> Vec<u64> {
     output_ids
 }
 
+/// Counts root-presentation inline evaluations using the same traversal as
+/// [`root_document_output_ids`]. Browser hosts use this to append separately
+/// formatted document fragments without restarting their address namespace.
+pub fn root_document_inline_eval_count(program: &Program) -> u64 {
+    let mut output_ids = Vec::new();
+    let mut inline_index = 0_u64;
+    for section in &program.body.sections {
+        for element in &section.elements {
+            collect_section_output_ids(element, &mut inline_index, &mut output_ids);
+        }
+    }
+    inline_index
+}
+
 fn collect_section_output_ids(
     element: &SectionElement,
     inline_index: &mut u64,

@@ -4,7 +4,7 @@ pub use state::*;
 #[cfg(feature = "semantic-compiler")]
 mod document_outputs;
 #[cfg(feature = "semantic-compiler")]
-pub use document_outputs::root_document_output_ids;
+pub use document_outputs::{root_document_inline_eval_count, root_document_output_ids};
 
 #[cfg(feature = "semantic-compiler")]
 mod compiler_planning;

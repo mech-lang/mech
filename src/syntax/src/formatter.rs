@@ -247,6 +247,12 @@ impl Formatter {
         }
     }
 
+    /// Continue the root document's inline-evaluation address sequence when
+    /// formatting a fragment that will be appended to an existing document.
+    pub fn set_root_inline_eval_offset(&mut self, offset: u64) {
+        self.inline_eval_counters.insert(0, offset);
+    }
+
     pub fn format(&mut self, tree: &Program) -> String {
         self.html = false;
         self.inline_eval_counters.clear();
