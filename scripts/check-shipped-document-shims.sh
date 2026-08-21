@@ -19,7 +19,7 @@ require_literal() {
   grep -Fq -- "$literal" "$file" || fail "$file is missing required contract: $literal"
 }
 
-for file in include/index.html include/blog.html include/docs.html include/document.js; do
+for file in include/index.html include/blog.html include/docs.html include/document.js src/wasm/src/repl.rs; do
   require_file "$file"
 done
 
@@ -96,11 +96,13 @@ fi
 
 for contract in \
   'input.dataset.mechInteractiveEvaluation = "resident"' \
-  'state.repl.submit(source)' \
-  'Mech resident REPL input' \
-  'console://repl/output'; do
+  'state.repl.invoke(source)' \
+  'Mech resident REPL input'; do
   require_literal include/document.js "$contract"
 done
+
+require_literal src/wasm/src/repl.rs \
+  'console_output_context: "console://repl/output".to_string()'
 
 if grep -Fq -- 'state.document.evaluate' include/document.js || \
   grep -Fq -- 'supportsInteractiveEvaluation' include/document.js; then

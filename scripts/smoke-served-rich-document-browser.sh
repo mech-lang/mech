@@ -898,7 +898,8 @@ def assert_console_contract():
   value.className = 'mech-var-placeholder';
   value.dataset.mechVarName = 'qq';
   marker.append(value);
-  root.append(marker);
+  const surface = root.querySelector('.mech-document-content, #left-pane, .content-shell, .main-content') || root;
+  surface.append(marker);
   return true;
 })()
 """)
@@ -938,21 +939,56 @@ def assert_console_contract():
 (() => {
   const root = document.querySelector('.mech-root');
   const value = document.querySelector('#mech-smoke-large-var .mech-var-placeholder');
-  if (!root || !value) return null;
-  root.dataset.mechConsoleOpen = 'false';
+  const pane = document.querySelector('#mech-console, .console-pane');
+  const toggle = document.querySelector('#toggle-repl, [data-mech-console-toggle]');
+  const transcript = document.querySelector('.mech-repl-transcript');
+  if (!root || !value || !pane || !toggle || !transcript) return null;
+  toggle.click();
+  value.scrollIntoView({ block: 'center' });
+  const transcriptEntries = transcript.children.length;
   const rendersBefore = Number(window.__MECH_DOCUMENT_RENDERS__ || 0);
   const started = performance.now();
   value.click();
   const elapsedMs = performance.now() - started;
   const popup = document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
+  const popupRect = popup?.getBoundingClientRect();
+  const valueRect = value.getBoundingClientRect();
+  const header = popup?.querySelector('.mech-inline-popup__header');
+  if (header && popupRect) {
+    const pointerId = 91;
+    header.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, pointerId, button: 0,
+      clientX: popupRect.left + 8, clientY: popupRect.top + 8,
+    }));
+    window.dispatchEvent(new PointerEvent('pointermove', {
+      bubbles: true, pointerId,
+      clientX: popupRect.left + 48, clientY: popupRect.top + 38,
+    }));
+    window.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, pointerId,
+      clientX: popupRect.left + 48, clientY: popupRect.top + 38,
+    }));
+  }
+  const movedRect = popup?.getBoundingClientRect();
   const result = {
     elapsedMs,
     rerenderedDocument:
       Number(window.__MECH_DOCUMENT_RENDERS__ || 0) !== rendersBefore,
     rendered: /999/.test(popup?.textContent || ''),
+    closedThroughControl:
+      root.dataset.mechConsoleOpen === 'false' && pane.hidden,
+    transcriptClean: transcript.children.length === transcriptEntries,
+    positionedByValue:
+      Boolean(popupRect) && Math.abs(popupRect.top - valueRect.top) < 80,
+    draggable:
+      Boolean(popupRect && movedRect) &&
+      (Math.abs(movedRect.left - popupRect.left) > 10 ||
+        Math.abs(movedRect.top - popupRect.top) > 10),
   };
-  root.dataset.mechConsoleOpen = 'true';
-  popup?.remove();
+  popup?.querySelector('.mech-inline-popup__close')?.click();
+  result.dismissed = !document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
+  toggle.click();
+  result.reopened = root.dataset.mechConsoleOpen === 'true' && !pane.hidden;
   return result;
 })()
 """)
@@ -960,10 +996,16 @@ def assert_console_contract():
         popup_performance is None or
         popup_performance["elapsedMs"] >= 200 or
         popup_performance["rerenderedDocument"] or
-        not popup_performance["rendered"]
+        not popup_performance["rendered"] or
+        not popup_performance["closedThroughControl"] or
+        not popup_performance["transcriptClean"] or
+        not popup_performance["positionedByValue"] or
+        not popup_performance["draggable"] or
+        not popup_performance["dismissed"] or
+        not popup_performance["reopened"]
     ):
         fail(
-            "closed-console selection duplicated work, rerendered, or exceeded the 200ms UI budget: "
+            "closed-console selection did not open a clean, anchored, draggable value popup: "
             f"{popup_performance!r}"
         )
     submit(":whos ans")

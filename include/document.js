@@ -24,6 +24,7 @@ const state = {
   cooperativeOperationSequence: 0,
   documentationFragmentSequence: 0,
   programDisplays: new Map(),
+  inlinePopupDismiss: null,
 };
 
 function truthySetting(value) {
@@ -765,11 +766,13 @@ function consoleIsOpen() {
   return state.root?.dataset.mechConsoleOpen !== "false";
 }
 
-function showInlinePopup(title, rendered) {
-  document.querySelector(".mech-inline-popup[data-mech-repl-popup]")?.remove();
+function showInlinePopup(title, rendered, anchor) {
+  state.inlinePopupDismiss?.();
   const popup = document.createElement("aside");
   popup.className = "mech-inline-popup";
   popup.dataset.mechReplPopup = "true";
+  popup.setAttribute("role", "dialog");
+  popup.setAttribute("aria-label", `${title || "ans"} value inspector`);
   const header = document.createElement("header");
   header.className = "mech-inline-popup__header";
   const heading = document.createElement("strong");
@@ -780,7 +783,6 @@ function showInlinePopup(title, rendered) {
   close.type = "button";
   close.setAttribute("aria-label", "Close value inspector");
   close.textContent = "×";
-  close.addEventListener("click", () => popup.remove());
   const content = document.createElement("div");
   content.className = "mech-inline-popup__content";
   const kind = document.createElement("div");
@@ -793,15 +795,88 @@ function showInlinePopup(title, rendered) {
   header.append(heading, close);
   popup.append(header, content);
   document.body.append(popup);
+
+  let dragging = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+  const viewportPadding = 12;
+  const clampPosition = (left, top) => ({
+    left: Math.max(
+      viewportPadding,
+      Math.min(left, Math.max(viewportPadding, window.innerWidth - popup.offsetWidth - viewportPadding)),
+    ),
+    top: Math.max(
+      viewportPadding,
+      Math.min(top, Math.max(viewportPadding, window.innerHeight - popup.offsetHeight - viewportPadding)),
+    ),
+  });
+  const move = event => {
+    if (!dragging || !popup.isConnected) {
+      return;
+    }
+    const position = clampPosition(
+      event.clientX - dragOffsetX,
+      event.clientY - dragOffsetY,
+    );
+    popup.style.left = `${position.left}px`;
+    popup.style.top = `${position.top}px`;
+  };
+  const stopDragging = () => {
+    dragging = false;
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", stopDragging);
+    window.removeEventListener("pointercancel", stopDragging);
+  };
+  const closeOnEscape = event => {
+    if (event.key === "Escape") {
+      dismiss();
+    }
+  };
+  const dismiss = () => {
+    stopDragging();
+    document.removeEventListener("keydown", closeOnEscape);
+    popup.remove();
+    if (state.inlinePopupDismiss === dismiss) {
+      state.inlinePopupDismiss = null;
+    }
+  };
+  state.inlinePopupDismiss = dismiss;
+  close.addEventListener("click", dismiss);
+  document.addEventListener("keydown", closeOnEscape);
+  header.addEventListener("pointerdown", event => {
+    if (event.button !== 0 || event.target.closest("button")) {
+      return;
+    }
+    const rect = popup.getBoundingClientRect();
+    dragging = true;
+    dragOffsetX = event.clientX - rect.left;
+    dragOffsetY = event.clientY - rect.top;
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", stopDragging, { once: true });
+    window.addEventListener("pointercancel", stopDragging, { once: true });
+    event.preventDefault();
+  });
+
+  const anchorRect = anchor?.getBoundingClientRect();
+  const popupRect = popup.getBoundingClientRect();
+  let left = anchorRect ? anchorRect.right + viewportPadding : 24;
+  if (anchorRect && left + popupRect.width > window.innerWidth - viewportPadding) {
+    left = anchorRect.left - popupRect.width - viewportPadding;
+  }
+  const position = clampPosition(left, anchorRect?.top ?? 96);
+  popup.style.left = `${position.left}px`;
+  popup.style.top = `${position.top}px`;
 }
 
-function consumeSelection(selection, title) {
-  consumeReplResponse(selection?.response);
-  if (consoleIsOpen()) {
+function consumeSelection(selection, title, anchor, open) {
+  if (open || !selection?.rendered) {
+    consumeReplResponse(selection?.response);
+  }
+  if (open) {
     activateConsolePanel("console");
     state.console?.input?.focus();
-  } else {
-    showInlinePopup(title, selection?.rendered);
+  } else if (selection?.rendered) {
+    showInlinePopup(title, selection.rendered, anchor);
   }
 }
 
@@ -825,8 +900,8 @@ function bindSymbolClick(element, name) {
       return;
     }
     try {
-      const renderPopup = !consoleIsOpen();
-      consumeSelection(state.repl.selectSymbol(name, renderPopup), name);
+      const open = consoleIsOpen();
+      consumeSelection(state.repl.selectSymbol(name, !open), name, element, open);
     } catch (error) {
       appendConsoleError(error);
     }
@@ -854,9 +929,14 @@ function bindOutputClick(element, address) {
       return;
     }
     try {
-      const renderPopup = !consoleIsOpen();
-      const selection = state.repl.selectOutput(address.outputId, renderPopup);
-      consumeSelection(selection, selection?.rendered?.name || "ans");
+      const open = consoleIsOpen();
+      const selection = state.repl.selectOutput(address.outputId, !open);
+      consumeSelection(
+        selection,
+        selection?.rendered?.name || "ans",
+        element,
+        open,
+      );
     } catch (error) {
       appendConsoleError(error);
     }

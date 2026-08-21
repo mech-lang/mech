@@ -344,6 +344,64 @@ try:
     submit("answer = 58")
     submit(":whos answer")
     wait_for(exact_answer, "the resident symbol value after reset")
+    popup_state = evaluate("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  const pane = document.querySelector('#mech-console, .console-pane');
+  const toggle = document.querySelector('#toggle-repl, [data-mech-console-toggle]');
+  const transcript = document.querySelector('.mech-repl-transcript');
+  const value = [...document.querySelectorAll('.mech-var-name')].find(element =>
+    !element.closest('#mech-console, .console-pane') &&
+    (element.dataset.mechVarName || element.textContent.trim()) === 'answer');
+  if (!root || !pane || !toggle || !transcript || !value) return null;
+  toggle.click();
+  const transcriptEntries = transcript.children.length;
+  value.click();
+  const popup = document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
+  if (!popup) return null;
+  const style = getComputedStyle(popup);
+  const rect = popup.getBoundingClientRect();
+  const valueRect = value.getBoundingClientRect();
+  const result = {
+    consoleClosed: root.dataset.mechConsoleOpen === 'false' && pane.hidden,
+    rendered: /58/.test(popup.textContent || ''),
+    role: popup.getAttribute('role'),
+    styled:
+      style.position === 'fixed' && style.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
+      rect.width >= 200 && rect.height > 40,
+    contained:
+      rect.left >= 0 && rect.top >= 0 && rect.right <= innerWidth && rect.bottom <= innerHeight,
+    anchored: Math.abs(rect.top - valueRect.top) < 80,
+    transcriptClean: transcript.children.length === transcriptEntries,
+  };
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Escape', bubbles: true, cancelable: true,
+  }));
+  result.dismissed = !document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
+  toggle.click();
+  result.reopened = root.dataset.mechConsoleOpen === 'true' && !pane.hidden;
+  return result;
+})()
+""")
+    if (
+        popup_state is None or
+        not popup_state["consoleClosed"] or
+        not popup_state["rendered"] or
+        popup_state["role"] != "dialog" or
+        not popup_state["styled"] or
+        not popup_state["contained"] or
+        not popup_state["anchored"] or
+        not popup_state["transcriptClean"] or
+        not popup_state["dismissed"] or
+        not popup_state["reopened"]
+    ):
+        fail(f"closed standalone console did not show a styled value popup: {popup_state!r}")
+    submit(":whos ans")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-symbols')].at(-1)?.textContent.includes('ans') && "
+        "[...document.querySelectorAll('.mech-repl-symbols')].at(-1)?.textContent.includes('58')",
+        "the popup selection becoming ans",
+    )
 finally:
     if websocket is not None:
         websocket.close()
