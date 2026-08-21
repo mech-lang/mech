@@ -858,10 +858,15 @@ def assert_desktop_console_controls():
 def assert_fullscreen_accessibility():
     evaluate("""
 (() => {
-  for (const name of ['output', 'errors']) {
-    const tab = document.querySelector(`#${name}-tab`);
-    if (tab) tab.dataset.mechConsoleUnread = 'true';
-  }
+  const publish = detail => window.dispatchEvent(new CustomEvent('mech:output', { detail }));
+  publish({
+    stream: 'stdout', operation: 'create', display_id: 'unread-output',
+    content: { kind: 'text', data: { text: 'new output activity' } },
+  });
+  publish({
+    stream: 'stderr', operation: 'create', display_id: 'unread-error',
+    content: { kind: 'text', data: { text: 'new error activity' } },
+  });
 })()
 """)
     initial = evaluate_json("""
@@ -871,6 +876,12 @@ def assert_fullscreen_accessibility():
   return {
     pressed: toggle?.getAttribute("aria-pressed"),
     label: toggle?.getAttribute("aria-label"),
+    unreadCreated: ['output', 'errors'].every(name => {
+      const tab = document.querySelector(`#${name}-tab`);
+      return tab?.dataset.mechConsoleUnread === 'true' &&
+        /new activity/.test(tab.getAttribute('aria-label') || '') &&
+        'mechConsoleBaseLabel' in tab.dataset;
+    }),
     resizersInitialized: resizers.length === 2 && resizers.every(handle =>
       handle.hasAttribute('aria-valuemin') && handle.hasAttribute('aria-valuemax') &&
       handle.hasAttribute('aria-valuenow')),
@@ -880,6 +891,7 @@ def assert_fullscreen_accessibility():
     if (
         initial["pressed"] != "false" or
         initial["label"] != "Enter fullscreen workspace" or
+        not initial["unreadCreated"] or
         not initial["resizersInitialized"]
     ):
         fail(f"fullscreen control did not begin with a collapsed accessible state: {initial!r}")
@@ -890,6 +902,19 @@ def assert_fullscreen_accessibility():
         "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-label') === 'Minimize console workspace'",
         "the fullscreen control entering an accessible active state",
     )
+    if evaluate("document.fullscreenElement === document.querySelector('[data-mech-console-pane]')"):
+        evaluate("document.exitFullscreen()")
+        wait_for(
+            "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-pressed') === 'false' && "
+            "!document.querySelector('[data-mech-console-pane]')?.classList.contains('is-fullscreen')",
+            "native fullscreen Escape/browser exit clearing button ownership",
+        )
+        evaluate("document.querySelector('#consoleFullscreenToggle')?.click()")
+        wait_for(
+            "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-pressed') === 'true' && "
+            "document.querySelector('[data-mech-console-pane]')?.classList.contains('is-fullscreen')",
+            "one click re-entering fullscreen after a native exit",
+        )
 
     workspace = evaluate_json("""
 (() => {
@@ -950,6 +975,12 @@ def assert_fullscreen_accessibility():
       handle.tabIndex === 0 && handle.hasAttribute('aria-valuemin') &&
       handle.hasAttribute('aria-valuemax') && handle.hasAttribute('aria-valuenow')),
     unreadCleared: !document.querySelector('[data-mech-console-unread]'),
+    unreadLabelsRestored: ['output', 'errors'].every(name => {
+      const tab = document.querySelector(`#${name}-tab`);
+      const base = tab?.dataset.mechConsoleBaseLabel || '';
+      return tab && !tab.dataset.mechConsoleUnread &&
+        (base ? tab.getAttribute('aria-label') === base : !tab.hasAttribute('aria-label'));
+    }),
     responsiveUnits: [
       pane.style.getPropertyValue('--mech-console-workspace-left'),
       pane.style.getPropertyValue('--mech-console-workspace-top'),
@@ -976,9 +1007,16 @@ def assert_fullscreen_accessibility():
     if workspace is None or not all(workspace.values()):
         fail(f"fullscreen workspace did not expose or resize its three-pane layout: {workspace!r}")
 
+    evaluate("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  pane?.style.setProperty('--mech-console-workspace-left', '99%');
+  pane?.style.setProperty('--mech-console-workspace-top', '99%');
+})()
+""")
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
-        {"width": 900, "height": 620, "deviceScaleFactor": 1, "mobile": False},
+        {"width": 700, "height": 460, "deviceScaleFactor": 1, "mobile": False},
         session_id,
     )
     time.sleep(0.15)
@@ -987,15 +1025,31 @@ def assert_fullscreen_accessibility():
   const pane = document.querySelector('[data-mech-console-pane]');
   const panels = [...document.querySelectorAll('[data-mech-console-panel]')];
   const bounds = pane?.getBoundingClientRect();
+  const workspace = pane?.querySelector(':scope > .console-panels');
+  const workspaceBounds = workspace?.getBoundingClientRect();
+  const consolePanel = document.querySelector('[data-mech-console-panel="console"]');
+  const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
+  const separators = [...document.querySelectorAll('[data-mech-console-workspace-resizer]')];
+  const ariaMatchesGeometry = Boolean(workspaceBounds) && separators.every(handle => {
+    const column = handle.dataset.mechConsoleWorkspaceResizer === 'column';
+    const total = column ? workspaceBounds.width : workspaceBounds.height;
+    const minimumPixels = Math.min(column ? 180 : 120, Math.max(0, total / 2 - 4));
+    const maximumPixels = Math.max(minimumPixels, total - minimumPixels - 8);
+    const size = column
+      ? consolePanel?.getBoundingClientRect().width || 0
+      : outputPanel?.getBoundingClientRect().height || 0;
+    const percentage = value => Math.round((value / total) * 100);
+    return Number(handle.getAttribute('aria-valuemin')) === percentage(minimumPixels) &&
+      Number(handle.getAttribute('aria-valuemax')) === percentage(maximumPixels) &&
+      Number(handle.getAttribute('aria-valuenow')) === percentage(size);
+  });
   return {
     contained: Boolean(bounds) && panels.every(panel => {
       const rect = panel.getBoundingClientRect();
       return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 &&
         rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1;
     }),
-    ariaCurrent: [...document.querySelectorAll('[data-mech-console-workspace-resizer]')]
-      .every(handle => Number(handle.getAttribute('aria-valuenow')) >= 0 &&
-        Number(handle.getAttribute('aria-valuenow')) <= 100),
+    ariaMatchesGeometry,
   };
 })()
 """)
@@ -1005,7 +1059,7 @@ def assert_fullscreen_accessibility():
         session_id,
     )
     time.sleep(0.15)
-    if not responsive["contained"] or not responsive["ariaCurrent"]:
+    if not responsive["contained"] or not responsive["ariaMatchesGeometry"]:
         fail(f"fullscreen workspace splits did not adapt to viewport pressure: {responsive!r}")
 
     evaluate("document.querySelector('#consoleFullscreenToggle')?.click()")
@@ -1082,6 +1136,20 @@ def assert_empty_toc_is_removed_and_content_is_centered():
   toc.innerHTML = original;
   toc.hidden = false;
   window.dispatchEvent(new CustomEvent('mech:document-layout-refresh'));
+  window.dispatchEvent(new CustomEvent('mech:document-layout-refresh'));
+  window.dispatchEvent(new CustomEvent('mech:document-layout-refresh'));
+  const link = toc.querySelector('a[href^="#"]');
+  const target = link && document.getElementById(link.getAttribute('href').slice(1));
+  let activations = 0;
+  const originalScrollIntoView = target?.scrollIntoView;
+  if (target) {
+    target.scrollIntoView = () => { activations += 1; };
+  }
+  link?.click();
+  if (target && originalScrollIntoView) {
+    target.scrollIntoView = originalScrollIntoView;
+  }
+  result.singleActivationAfterRefresh = activations === 1;
   return result;
 })()
 """)
@@ -1152,7 +1220,7 @@ def assert_console_contract():
   return {
     entryCount: panel.querySelectorAll('.mech-document-output-entry').length,
     nameAbsent: name === null,
-    outputId: entry.dataset.mechOutputId,
+    selectionToken: entry.dataset.mechSelectionToken,
     bodyText: body.textContent.trim(),
     kind: kind.textContent.trim(),
     kindColor: getComputedStyle(kind).color,
@@ -1169,6 +1237,7 @@ def assert_console_contract():
         metadata is None or
         metadata["entryCount"] != 1 or
         not metadata["nameAbsent"] or
+        not metadata["selectionToken"] or
         metadata["kind"] != "f64" or
         metadata["kindColor"] != metadata["expectedKindColor"] or
         not metadata["contained"] or
@@ -1198,6 +1267,35 @@ def assert_console_contract():
   const style = getComputedStyle(input);
   result.grewForFourLines = input.getBoundingClientRect().height >= parseFloat(style.lineHeight) * 3.5;
   result.manualResizeHidden = style.resize === 'none';
+  result.inputNeverScrolls = style.overflowY === 'hidden' &&
+    input.scrollHeight <= input.clientHeight + 1;
+  const spacer = document.createElement('div');
+  spacer.style.cssText = `height:${Math.max(600, transcript.clientHeight * 2)}px;flex:none`;
+  transcript.insertBefore(spacer, input.closest('.mech-repl-input-row'));
+  transcript.scrollTop = transcript.scrollHeight;
+  const bottom = transcript.scrollTop;
+  const pageUp = new KeyboardEvent('keydown', {
+    key: 'PageUp', bubbles: true, cancelable: true,
+  });
+  input.dispatchEvent(pageUp);
+  result.pageUpScrollsTranscript = pageUp.defaultPrevented && transcript.scrollTop < bottom;
+  const home = new KeyboardEvent('keydown', {
+    key: 'Home', bubbles: true, cancelable: true,
+  });
+  input.dispatchEvent(home);
+  result.homeScrollsTranscript = home.defaultPrevented && transcript.scrollTop === 0;
+  const end = new KeyboardEvent('keydown', {
+    key: 'End', bubbles: true, cancelable: true,
+  });
+  input.dispatchEvent(end);
+  result.endScrollsTranscript = end.defaultPrevented && transcript.scrollTop > 0;
+  transcript.scrollTop = 0;
+  const pageDown = new KeyboardEvent('keydown', {
+    key: 'PageDown', bubbles: true, cancelable: true,
+  });
+  input.dispatchEvent(pageDown);
+  result.pageDownScrollsTranscript = pageDown.defaultPrevented && transcript.scrollTop > 0;
+  spacer.remove();
   input.value = '';
   input.dispatchEvent(new Event('input', { bubbles: true }));
   return result;
@@ -1209,6 +1307,11 @@ def assert_console_contract():
         "transcriptUnchanged": True,
         "grewForFourLines": True,
         "manualResizeHidden": True,
+        "inputNeverScrolls": True,
+        "pageUpScrollsTranscript": True,
+        "homeScrollsTranscript": True,
+        "endScrollsTranscript": True,
+        "pageDownScrollsTranscript": True,
     }:
         fail(f"Ctrl+Enter did not insert a multiline browser REPL draft: {multiline!r}")
 
@@ -1224,14 +1327,14 @@ def assert_console_contract():
   const entry = document.querySelector('#mech-document-output .mech-document-output-entry');
   const body = entry?.querySelector('.mech-document-output-html');
   return entry && body ? {
-    outputId: entry.dataset.mechOutputId,
+    selectionToken: entry.dataset.mechSelectionToken,
     bodyText: body.textContent.trim(),
     nameAbsent: !entry.querySelector('.mech-document-output-name'),
   } : null;
 })()
 """)
     if fixed_output != {
-        "outputId": metadata["outputId"],
+        "selectionToken": metadata["selectionToken"],
         "bodyText": metadata["bodyText"],
         "nameAbsent": True,
     }:
@@ -1239,6 +1342,38 @@ def assert_console_contract():
             "REPL evaluation replaced or renamed the fixed document Output pane: "
             f"before={metadata!r}, after={fixed_output!r}"
         )
+    directed_lifecycle = evaluate_json("""
+(() => {
+  const publish = detail => window.dispatchEvent(new CustomEvent('mech:output', { detail }));
+  const original = document.querySelector('#mech-document-output .mech-document-output-entry');
+  const originalToken = original?.dataset.mechSelectionToken;
+  const originalText = original?.querySelector('.mech-document-output-html')?.textContent.trim();
+  publish({
+    source: { name: 'document-directed', span: null },
+    stream: 'stdout', operation: 'create', display_id: 'directed-smoke',
+    content: { kind: 'text', data: { text: 'directed output' } },
+  });
+  const documentRegion = document.querySelector('[data-mech-output-region="document"]');
+  const replRegion = document.querySelector('[data-mech-output-region="repl"]');
+  const directed = {
+    implicitHidden: !documentRegion?.querySelector('.mech-document-output-entry'),
+    directedVisible: /directed output/.test(replRegion?.textContent || ''),
+  };
+  publish({
+    stream: 'stdout', operation: 'clear', display_id: null,
+    content: { kind: 'text', data: { text: '' } },
+  });
+  const restored = documentRegion?.querySelector('.mech-document-output-entry');
+  return {
+    ...directed,
+    directedCleared: !/directed output/.test(replRegion?.textContent || ''),
+    implicitRestored: restored?.dataset.mechSelectionToken === originalToken &&
+      restored?.querySelector('.mech-document-output-html')?.textContent.trim() === originalText,
+  };
+})()
+""")
+    if directed_lifecycle is None or not all(directed_lifecycle.values()):
+        fail(f"directed output did not yield back to implicit program output: {directed_lifecycle!r}")
     presentation = evaluate_json("""
 (() => {
   const result = [...document.querySelectorAll('.mech-repl-result')]
@@ -1834,6 +1969,36 @@ def assert_console_contract():
         "[...document.querySelectorAll('.mech-repl-symbols tbody tr')].some((row) => "
         "/ans/.test(row.firstElementChild?.textContent || '') && /999|…/.test(row.lastElementChild?.textContent || ''))",
         "explicit pending ans inspection before source materialization",
+    )
+    historical_ans = evaluate_json("""
+(() => {
+  const rows = [...document.querySelectorAll('.mech-repl-symbols tbody tr')];
+  const row = rows.findLast(candidate =>
+    candidate.firstElementChild?.textContent.trim() === 'ans');
+  const answer = document.querySelector('#mech-smoke-var .mech-var-placeholder');
+  if (!row || !answer) return null;
+  row.dataset.mechSmokeHistoricalAns = 'true';
+  const token = row.dataset.mechSelectionToken;
+  answer.click();
+  const before = document.querySelectorAll('.mech-repl-result').length;
+  row.firstElementChild.click();
+  return {
+    token: Boolean(token),
+    boundToToken: row.firstElementChild.dataset.mechReplBound === 'true',
+    resultCountBefore: before,
+  };
+})()
+""")
+    if historical_ans is None or not historical_ans["token"] or not historical_ans["boundToToken"]:
+        fail(f"historical :whos ans row did not retain a selection token: {historical_ans!r}")
+    wait_for(
+        f"document.querySelectorAll('.mech-repl-result').length > {historical_ans['resultCountBefore']}",
+        "the historical ans row restoring its captured value after ans changed",
+    )
+    submit("ans[100]")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-result')].at(-1)?.textContent.includes('100')",
+        "the historical :whos row selecting its captured array rather than current ans",
     )
     submit(":whos qq")
     wait_for(
@@ -2464,8 +2629,8 @@ def assert_console_contract():
     wait_for(
         "document.querySelector('#output-tab')?.classList.contains('active') && "
         "document.querySelector('#output-panel')?.classList.contains('is-active') && "
-        "document.querySelector('#mech-document-output')?.textContent.trim().length === 0",
-        "the cleared Output console tab",
+        "Boolean(document.querySelector('#mech-document-output [data-mech-selection-token]'))",
+        "the Output console tab restoring the fixed implicit program result after stream clearing",
     )
     submit(":clc")
     wait_for(
@@ -2616,11 +2781,28 @@ def assert_right_console_resize_direction():
         fullscreen: pane.classList.contains('is-fullscreen'),
         fallback: pane.dataset.mechFullscreenFallback,
         mode: pane.dataset.mechFullscreenMode,
-        handleVisible: getComputedStyle(handle).display !== 'none' &&
-          handle.getBoundingClientRect().width > 0,
+        handleVisible: (() => {
+          const rect = handle.getBoundingClientRect();
+          return getComputedStyle(handle).display !== 'none' &&
+            rect.width > 0 && rect.right > 0 && rect.left < innerWidth;
+        })(),
         fillsViewport: (() => {
           const paneRect = pane.getBoundingClientRect();
-          return paneRect.left <= 1 && paneRect.right >= innerWidth - 1;
+          return paneRect.left <= 1 && paneRect.top <= 1 &&
+            paneRect.right >= innerWidth - 1 && paneRect.bottom >= innerHeight - 1;
+        })(),
+        fallbackWorkspaceComplete: (() => {
+          const paneRect = pane.getBoundingClientRect();
+          const panels = [...pane.querySelectorAll('[data-mech-console-panel]')];
+          return panels.length === 3 && panels.every(panel => {
+            const rect = panel.getBoundingClientRect();
+            return !panel.hidden && getComputedStyle(panel).display !== 'none' &&
+              rect.width > 0 && rect.height > 0 &&
+              rect.left >= paneRect.left - 1 && rect.right <= paneRect.right + 1 &&
+              rect.top >= paneRect.top - 1 && rect.bottom <= paneRect.bottom + 1 &&
+              getComputedStyle(panel, '::before').content.replaceAll('"', '') ===
+                panel.dataset.mechConsoleLabel;
+          });
         })(),
       });
     }
@@ -2676,7 +2858,8 @@ def assert_right_console_resize_direction():
     entered?.fallback === 'true' &&
     entered?.mode === 'drag' &&
     entered?.handleVisible === true &&
-    entered?.fillsViewport === true;
+    entered?.fillsViewport === true &&
+    entered?.fallbackWorkspaceComplete === true;
   const returned =
     exited?.fullscreen === false &&
     exited?.fallback !== 'true' &&
@@ -2712,19 +2895,26 @@ def assert_layout_persistence():
   const rect = handle.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
+  const initialWidth = pane.getBoundingClientRect().width;
+  const maximumWidth = Math.floor(root.getBoundingClientRect().width * 0.8);
+  const targetWidth = Math.max(initialWidth, maximumWidth - 16);
   handle.dispatchEvent(new PointerEvent('pointerdown', {
     bubbles: true, cancelable: true, pointerId: 811, button: 0, clientX: x, clientY: y,
   }));
   window.dispatchEvent(new PointerEvent('pointermove', {
-    bubbles: true, pointerId: 811, clientX: x - 32, clientY: y,
+    bubbles: true, pointerId: 811, clientX: x - (targetWidth - initialWidth), clientY: y,
   }));
   window.dispatchEvent(new PointerEvent('pointerup', {
-    bubbles: true, pointerId: 811, clientX: x - 32, clientY: y,
+    bubbles: true, pointerId: 811, clientX: x - (targetWidth - initialWidth), clientY: y,
   }));
+  const spacer = document.createElement('div');
+  spacer.id = 'mech-late-layout-spacer';
+  spacer.style.height = '900px';
+  document.body.append(spacer);
   const maximumScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
   const scrollBehavior = document.documentElement.style.scrollBehavior;
   document.documentElement.style.scrollBehavior = 'auto';
-  window.scrollTo(0, Math.min(260, maximumScroll));
+  window.scrollTo(0, maximumScroll);
   document.documentElement.style.scrollBehavior = scrollBehavior;
   return {
     width: pane.getBoundingClientRect().width,
@@ -2735,7 +2925,27 @@ def assert_layout_persistence():
 """)
     if expected is None or expected["width"] <= 0 or expected["maximumScroll"] <= 0:
         fail(f"could not establish a persistent REPL size and page position: {expected!r}")
-    time.sleep(0.2)
+    late_layout_script = devtools.call(
+        "Page.addScriptToEvaluateOnNewDocument",
+        {"source": f"""
+for (const [key, value] of Object.entries(localStorage)) {{
+  if (!key.startsWith('mech:document-layout:v1:')) continue;
+  const layout = JSON.parse(value);
+  layout.page = {{ x: 0, y: {expected['scrollY']} }};
+  localStorage.setItem(key, JSON.stringify(layout));
+}}
+document.addEventListener('DOMContentLoaded', () => {{
+  setTimeout(() => {{
+    if (document.getElementById('mech-late-layout-spacer')) return;
+    const spacer = document.createElement('div');
+    spacer.id = 'mech-late-layout-spacer';
+    spacer.style.height = '900px';
+    document.body.append(spacer);
+  }}, 450);
+}}, {{ once: true }});
+"""},
+        session_id,
+    ).get("identifier")
     devtools.call("Page.navigate", {"url": page_url}, session_id)
     wait_for(
         "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
@@ -2743,11 +2953,46 @@ def assert_layout_persistence():
         "the document reloading for layout persistence coverage",
         timeout=45,
     )
-    wait_for(
-        f"Math.abs((document.querySelector('[data-mech-console-pane]')?.getBoundingClientRect().width || 0) - {expected['width']}) <= 2 && "
-        f"Math.abs(window.scrollY - {expected['scrollY']}) <= 2",
-        "the saved REPL opening size and page position restoring after refresh",
+    try:
+        wait_for(
+            f"Math.abs((document.querySelector('[data-mech-console-pane]')?.getBoundingClientRect().width || 0) - {expected['width']}) <= 2 && "
+            f"Math.abs(window.scrollY - {expected['scrollY']}) <= 2",
+            "the saved REPL opening size and page position restoring after refresh",
+        )
+    except AssertionError:
+        restored = evaluate_json("""
+(() => ({
+  width: document.querySelector('[data-mech-console-pane]')?.getBoundingClientRect().width || 0,
+  scrollY: window.scrollY,
+  maximumScroll: Math.max(0, document.documentElement.scrollHeight - innerHeight),
+  persisted: Object.entries(localStorage).find(([key]) =>
+    key.startsWith('mech:document-layout:v1:')) || null,
+}))()
+""")
+        fail(f"layout persistence mismatch: expected={expected!r}, restored={restored!r}")
+    if late_layout_script:
+        devtools.call(
+            "Page.removeScriptToEvaluateOnNewDocument",
+            {"identifier": late_layout_script},
+            session_id,
+        )
+    devtools.call(
+        "Emulation.setDeviceMetricsOverride",
+        {"width": 1100, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+        session_id,
     )
+    wait_for(
+        "(document.querySelector('[data-mech-console-pane]')?.getBoundingClientRect().width || Infinity) <= "
+        "(document.querySelector('[data-mech-repl-host]')?.getBoundingClientRect().width || 0) * 0.8 + 2",
+        "the restored console size re-clamping after viewport narrowing",
+    )
+    devtools.call(
+        "Emulation.setDeviceMetricsOverride",
+        {"width": 1680, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+        session_id,
+    )
+    time.sleep(0.15)
+    evaluate("document.querySelector('#mech-late-layout-spacer')?.remove()")
     evaluate("window.scrollTo(0, 0)")
     time.sleep(0.1)
 
@@ -2945,16 +3190,32 @@ def assert_mobile_contract():
   const pane = document.querySelector('[data-mech-console-pane]');
   if (!pane) return null;
   const rect = pane.getBoundingClientRect();
+  const rules = [];
+  const collect = list => {
+    for (const rule of list || []) {
+      if (rule.cssRules) collect(rule.cssRules);
+      if (rule.selectorText?.includes('[data-mech-console-pane].is-fullscreen')) {
+        rules.push(rule);
+      }
+    }
+  };
+  for (const sheet of document.styleSheets) {
+    try { collect(sheet.cssRules); } catch (_error) {}
+  }
   return {
     width: rect.width,
     right: rect.right,
     viewportWidth: innerWidth,
     expectedMaximum: Math.min(innerWidth * 0.94, 520),
+    dynamicHeightImportant: rules.some(rule =>
+      rule.style.getPropertyValue('height') === '100dvh' &&
+      rule.style.getPropertyPriority('height') === 'important'),
   };
 })()
 """)
     if (
         pane_geometry is None or
+        not pane_geometry["dynamicHeightImportant"] or
         pane_geometry["width"] > pane_geometry["expectedMaximum"] + 1 or
         pane_geometry["right"] > pane_geometry["viewportWidth"] + 1
     ):

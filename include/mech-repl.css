@@ -146,7 +146,7 @@
 [data-mech-repl-host][data-mech-console-fullscreen="drag"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
   display: block;
   height: 100dvh;
-  left: -8px;
+  left: 0;
   min-width: 8px;
   position: fixed;
   top: 0;
@@ -467,8 +467,59 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   font: 14px/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   overflow: auto;
   padding: 24px;
-  scrollbar-color: var(--mech-repl-accent-soft) transparent;
+  scrollbar-color: var(--mech-repl-accent) transparent;
   scrollbar-width: thin;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+) {
+  scrollbar-color: var(--mech-repl-accent) transparent;
+  scrollbar-width: thin;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar-thumb {
+  background: var(--mech-repl-accent);
+  background-clip: content-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+
+:is(
+  [data-mech-console-pane] .console-scroll,
+  [data-mech-repl] .mech-repl-transcript,
+  [data-mech-repl] .mech-repl-logo,
+  [data-mech-repl-popup] .mech-inline-popup__content
+)::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--mech-repl-accent) 82%, white);
+  background-clip: content-box;
 }
 
 [data-mech-repl] {
@@ -536,11 +587,10 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   color: inherit;
   flex: 1;
   font: inherit;
-  max-height: min(40vh, 320px);
   min-height: 1.5rem;
   min-width: 0;
   outline: 0;
-  overflow-y: auto;
+  overflow: hidden;
   resize: none;
 }
 
@@ -563,12 +613,12 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   color: var(--mech-repl-text-muted);
 }
 
-:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-repl-symbols {
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) :is(.mech-repl-symbols, .mech-repl-constraints) {
   table-layout: fixed;
   width: 100%;
 }
 
-:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) .mech-repl-symbols td:last-child {
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-errors-panel], [data-mech-repl-popup]) :is(.mech-repl-symbols, .mech-repl-constraints) td:last-child {
   max-width: 22rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -801,7 +851,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   [data-mech-repl-host][data-mech-console-open="true"] [data-mech-console-pane].is-fullscreen,
   body.console-fullscreen [data-mech-repl-host] [data-mech-console-pane] {
     bottom: 0;
-    height: 100dvh;
+    height: 100dvh !important;
     max-width: none;
     right: 0;
     top: 0;

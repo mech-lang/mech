@@ -36,6 +36,11 @@ const state = {
   consolePointerSession: null,
   persistedLayout: undefined,
   pagePositionSaveTimer: null,
+  pendingPagePosition: null,
+  pagePositionRestore: null,
+  consoleSizeObserver: null,
+  tocObserver: null,
+  tocLinkHandlers: new Map(),
 };
 
 const ERROR_PANEL_SELECTOR =
@@ -82,26 +87,52 @@ function saveConsoleOpeningSize(axis, size) {
   });
 }
 
-function savePagePosition() {
+function currentPagePosition() {
+  return {
+    x: Math.max(0, Math.round(window.scrollX)),
+    y: Math.max(0, Math.round(window.scrollY)),
+  };
+}
+
+function savePagePosition(position = currentPagePosition()) {
+  if (state.pagePositionRestore) {
+    return;
+  }
+  if (state.pagePositionSaveTimer !== null) {
+    clearTimeout(state.pagePositionSaveTimer);
+    state.pagePositionSaveTimer = null;
+  }
+  state.pendingPagePosition = null;
   updatePersistedDocumentLayout({
-    page: {
-      x: Math.max(0, Math.round(window.scrollX)),
-      y: Math.max(0, Math.round(window.scrollY)),
-    },
+    page: position,
   });
 }
 
 function schedulePagePositionSave() {
+  if (state.pagePositionRestore) {
+    return;
+  }
+  state.pendingPagePosition = currentPagePosition();
   if (state.pagePositionSaveTimer !== null) {
     return;
   }
   state.pagePositionSaveTimer = setTimeout(() => {
     state.pagePositionSaveTimer = null;
-    savePagePosition();
+    const pending = state.pendingPagePosition;
+    if (pending) {
+      savePagePosition(pending);
+    }
   }, 120);
 }
 
-function restoreConsoleOpeningSize() {
+function flushPagePositionSave() {
+  const pending = state.pendingPagePosition;
+  if (pending) {
+    savePagePosition(pending);
+  }
+}
+
+function applyPersistedConsoleOpeningSize() {
   const pane = documentConsolePane();
   const saved = persistedDocumentLayout().console;
   if (!pane || !state.root || !saved || !["width", "height"].includes(saved.axis)) {
@@ -121,6 +152,45 @@ function restoreConsoleOpeningSize() {
   pane.style[saved.axis] = `${size}px`;
 }
 
+function restoreConsoleOpeningSize() {
+  applyPersistedConsoleOpeningSize();
+  const refresh = () => {
+    if (!documentConsolePane()?.classList.contains("is-fullscreen")) {
+      applyPersistedConsoleOpeningSize();
+    }
+  };
+  window.addEventListener("resize", refresh);
+  window.visualViewport?.addEventListener("resize", refresh);
+  if (typeof ResizeObserver === "function" && state.root) {
+    state.consoleSizeObserver?.disconnect();
+    state.consoleSizeObserver = new ResizeObserver(refresh);
+    state.consoleSizeObserver.observe(state.root);
+  }
+}
+
+function finishPagePositionRestore({ preserveSaved = true } = {}) {
+  const restore = state.pagePositionRestore;
+  if (!restore) {
+    return;
+  }
+  clearTimeout(restore.timer);
+  restore.observer?.disconnect();
+  for (const [target, type, listener] of restore.cancellations) {
+    target.removeEventListener(type, listener);
+  }
+  state.pagePositionRestore = null;
+  if (!preserveSaved) {
+    savePagePosition();
+  }
+}
+
+function scrollToImmediately(x, y) {
+  const scrollBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = "auto";
+  window.scrollTo(x, y);
+  document.documentElement.style.scrollBehavior = scrollBehavior;
+}
+
 function restorePagePosition() {
   const saved = persistedDocumentLayout().page;
   const x = Number(saved?.x);
@@ -128,12 +198,61 @@ function restorePagePosition() {
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     return;
   }
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const scrollBehavior = document.documentElement.style.scrollBehavior;
-    document.documentElement.style.scrollBehavior = "auto";
-    window.scrollTo(Math.max(0, x), Math.max(0, y));
-    document.documentElement.style.scrollBehavior = scrollBehavior;
-  }));
+  finishPagePositionRestore();
+  const requestedX = Math.max(0, x);
+  const requestedY = Math.max(0, y);
+  const restore = {
+    x: requestedX,
+    y: requestedY,
+    deadline: performance.now() + 15_000,
+    timer: null,
+    observer: null,
+    cancellations: [],
+  };
+  state.pagePositionRestore = restore;
+  const cancel = () => finishPagePositionRestore({ preserveSaved: false });
+  for (const [target, type] of [
+    [window, "wheel"],
+    [window, "touchstart"],
+    [window, "pointerdown"],
+    [window, "keydown"],
+  ]) {
+    target.addEventListener(type, cancel, { passive: true });
+    restore.cancellations.push([target, type, cancel]);
+  }
+  const attempt = () => {
+    if (state.pagePositionRestore !== restore) {
+      return;
+    }
+    scrollToImmediately(restore.x, restore.y);
+    const reached = Math.abs(window.scrollX - restore.x) <= 1 &&
+      Math.abs(window.scrollY - restore.y) <= 1;
+    if (reached) {
+      finishPagePositionRestore();
+      return;
+    }
+    if (performance.now() >= restore.deadline) {
+      finishPagePositionRestore({ preserveSaved: false });
+      return;
+    }
+    clearTimeout(restore.timer);
+    restore.timer = setTimeout(attempt, 120);
+  };
+  if (typeof ResizeObserver === "function") {
+    restore.observer = new ResizeObserver(attempt);
+    restore.observer.observe(document.documentElement);
+    if (document.body) {
+      restore.observer.observe(document.body);
+    }
+  }
+  for (const image of document.images) {
+    if (!image.complete) {
+      image.addEventListener("load", attempt, { once: true });
+      image.addEventListener("error", attempt, { once: true });
+    }
+  }
+  window.addEventListener("load", attempt, { once: true });
+  requestAnimationFrame(() => requestAnimationFrame(attempt));
 }
 
 function initializeDocumentLayoutPersistence() {
@@ -142,7 +261,7 @@ function initializeDocumentLayoutPersistence() {
   }
   restoreConsoleOpeningSize();
   window.addEventListener("scroll", schedulePagePositionSave, { passive: true });
-  window.addEventListener("pagehide", savePagePosition);
+  window.addEventListener("pagehide", flushPagePositionSave);
 }
 
 function truthySetting(value) {
@@ -684,7 +803,12 @@ function prepareVarPlaceholders() {
 function createOutputEntry(address, rendered) {
   const row = document.createElement("article");
   row.className = "mech-document-output-entry";
-  row.dataset.mechOutputId = address.outputId.toString();
+  if (address.outputId !== undefined) {
+    row.dataset.mechOutputId = address.outputId.toString();
+  }
+  if (address.selectionToken) {
+    row.dataset.mechSelectionToken = address.selectionToken;
+  }
   row.dataset.mechRenderedKind = rendered.kind;
 
   const heading = document.createElement("header");
@@ -717,8 +841,17 @@ function refreshOutputPanel(entries) {
     return;
   }
   for (const entry of entries) {
-    panel.append(createOutputEntry(entry.address, entry.rendered));
+    const element = createOutputEntry(entry.address, entry.rendered);
+    panel.append(element);
+    bindOutputClick(element, entry.address);
   }
+}
+
+function restoreImplicitProgramOutput() {
+  const programOutput = state.document?.renderedProgramOutput?.() || null;
+  refreshOutputPanel(programOutput
+    ? [{ address: { selectionToken: programOutput.selectionToken }, rendered: programOutput }]
+    : []);
 }
 
 function formattedMechInline(value) {
@@ -837,6 +970,10 @@ function outputContentElement(content) {
     const mutedRows = new Set(data.muted_rows || []);
     for (const [rowIndex, values] of (data.rows || []).entries()) {
       const row = document.createElement("tr");
+      const selectionToken = data.row_selection_tokens?.[rowIndex] || null;
+      if (selectionToken) {
+        row.dataset.mechSelectionToken = selectionToken;
+      }
       if (mutedRows.has(rowIndex)) {
         row.classList.add("mech-repl-row-muted");
       }
@@ -949,6 +1086,8 @@ function appendProgramOutput(output) {
     state.programDisplays.clear();
     outputRegion("repl")?.replaceChildren();
     errorRegion("program")?.replaceChildren();
+    state.directedProgramOutput = false;
+    restoreImplicitProgramOutput();
     return;
   }
   const stderr = output.stream === "stderr";
@@ -964,6 +1103,10 @@ function appendProgramOutput(output) {
   if (output.operation === "remove" && displayId) {
     entry?.element.remove();
     state.programDisplays.delete(displayId);
+    if (entry?.directed && ![...state.programDisplays.values()].some(value => value.directed)) {
+      state.directedProgramOutput = false;
+      restoreImplicitProgramOutput();
+    }
     return;
   }
   if (!target) {
@@ -978,7 +1121,12 @@ function appendProgramOutput(output) {
     row = document.createElement("article");
     if (displayId) {
       row.dataset.mechDisplayId = displayId;
-      entry = { element: row, currentStream: output.stream, currentRegion: target };
+      entry = {
+        element: row,
+        currentStream: output.stream,
+        currentRegion: target,
+        directed: Boolean(output.source),
+      };
       state.programDisplays.set(displayId, entry);
     }
   }
@@ -997,6 +1145,7 @@ function appendProgramOutput(output) {
   if (entry) {
     entry.currentStream = output.stream;
     entry.currentRegion = target;
+    entry.directed ||= Boolean(output.source);
   }
   if (output.operation === "append" && row.firstElementChild) {
     const next = outputContentElement(output.content);
@@ -1291,7 +1440,7 @@ function reflectiveSelectionAllowed() {
   return !state.replBusy && !state.replTerminated;
 }
 
-function bindSymbolClick(element, name) {
+function bindSymbolClick(element, name, selectionToken = null) {
   if (!name || element.dataset.mechReplBound === "true") {
     return;
   }
@@ -1310,7 +1459,9 @@ function bindSymbolClick(element, name) {
     try {
       const open = consoleIsOpen();
       consumeSelection(
-        state.repl.selectSymbol(name, !open),
+        selectionToken
+          ? state.repl.selectRetained(selectionToken, !open)
+          : state.repl.selectSymbol(name, !open),
         name,
         element,
         open,
@@ -1345,7 +1496,9 @@ function bindOutputClick(element, address) {
     }
     try {
       const open = consoleIsOpen();
-      const selection = state.repl.selectOutput(address.outputId, !open);
+      const selection = address.selectionToken
+        ? state.repl.selectRetained(address.selectionToken, !open)
+        : state.repl.selectOutput(address.outputId, !open);
       consumeSelection(
         selection,
         selection?.rendered?.name || "ans",
@@ -1388,6 +1541,9 @@ function renderInlineValue(output, address, rendered) {
 
 function bindReflectiveValues() {
   for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
+    if (placeholder.dataset.mechConstraint === "true") {
+      continue;
+    }
     bindSymbolClick(placeholder, placeholder.dataset.mechVarName);
   }
   for (const variable of state.root?.querySelectorAll(".mech-var-name") || []) {
@@ -1439,10 +1595,13 @@ function renderValues() {
   }
   for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
     try {
-      const rendered = state.document.renderedSymbol(placeholder.dataset.mechVarName);
+      const rendered = state.document.renderedDocumentValue(
+        placeholder.dataset.mechVarName,
+      );
       if (rendered !== null) {
         placeholder.dataset.mechSource = "";
         placeholder.innerHTML = rendered.inlineHtml;
+        placeholder.dataset.mechConstraint = String(rendered.interactive === false);
       }
     } catch (error) {
       appendError(error);
@@ -1450,7 +1609,7 @@ function renderValues() {
   }
   const programOutput = state.document.renderedProgramOutput?.() || null;
   refreshOutputPanel(programOutput
-    ? [{ address: { outputId: BigInt(programOutput.outputId) }, rendered: programOutput }]
+    ? [{ address: { selectionToken: programOutput.selectionToken }, rendered: programOutput }]
     : []);
   bindReflectiveValues();
   dispatch("mech:document-rendered");
@@ -1600,9 +1759,15 @@ function consumeReplResponse(response) {
           const nameCell = symbolRow.cells[0];
           const name = nameCell?.textContent.trim();
           if (nameCell && name) {
-            bindSymbolClick(nameCell, name);
+            bindSymbolClick(
+              nameCell,
+              name,
+              symbolRow.dataset.mechSelectionToken || null,
+            );
           }
         }
+      } else if (repl.payload?.kind === "integrity_constraint_inspection") {
+        rendered.querySelector("table")?.classList.add("mech-repl-constraints");
       }
       row.append(rendered);
       appendToTranscript(row);
@@ -1905,6 +2070,30 @@ function resizeConsoleInput(input) {
   input.style.height = `${input.scrollHeight}px`;
 }
 
+function scrollConsoleTranscript(key) {
+  const target = transcript();
+  if (!target) {
+    return false;
+  }
+  const page = Math.max(1, Math.floor(target.clientHeight * 0.85));
+  switch (key) {
+    case "PageUp":
+      target.scrollTop -= page;
+      return true;
+    case "PageDown":
+      target.scrollTop += page;
+      return true;
+    case "Home":
+      target.scrollTop = 0;
+      return true;
+    case "End":
+      target.scrollTop = target.scrollHeight;
+      return true;
+    default:
+      return false;
+  }
+}
+
 function appendActivePrompt() {
   const target = transcript();
   if (!target || !state.console) {
@@ -1950,6 +2139,13 @@ function appendActivePrompt() {
       } catch (error) {
         appendConsoleError(error);
       }
+      return;
+    }
+    if (
+      !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey &&
+      scrollConsoleTranscript(event.key)
+    ) {
+      event.preventDefault();
       return;
     }
     const action = resolveReplInput(event);
@@ -2455,7 +2651,11 @@ function workspaceSizeMetrics(pane, resizer) {
   if (total <= 0) {
     return null;
   }
-  const minimum = Math.min(axis === "column" ? 240 : 120, Math.max(0, total / 2 - 4));
+  const columnMinimum = window.matchMedia("(max-width: 900px)").matches ? 180 : 240;
+  const minimum = Math.min(
+    axis === "column" ? columnMinimum : 120,
+    Math.max(0, total / 2 - 4),
+  );
   const maximum = Math.max(minimum, total - minimum - 8);
   return { axis, total, minimum, maximum };
 }
@@ -2577,11 +2777,23 @@ function initializeFullscreen() {
   if (!pane || !toggle) {
     return;
   }
-  let buttonFullscreenRequested = false;
+  let buttonFullscreenState = "idle";
 
   const synchronize = () => {
-    const nativeFullscreen = document.fullscreenElement === pane && buttonFullscreenRequested;
-    const fallbackFullscreen = pane.dataset.mechFullscreenFallback === "true";
+    const nativeFullscreen = document.fullscreenElement === pane;
+    if (nativeFullscreen) {
+      buttonFullscreenState = "native";
+      delete pane.dataset.mechFullscreenFallback;
+    } else if (buttonFullscreenState === "native") {
+      // Escape and browser-chrome exits are authoritative. Once an established
+      // native session ends, the next button press must start a fresh entry.
+      buttonFullscreenState = "idle";
+      delete pane.dataset.mechFullscreenFallback;
+      delete pane.dataset.mechFullscreenMode;
+    }
+    const fallbackFullscreen =
+      ["requesting", "fallback"].includes(buttonFullscreenState) &&
+      pane.dataset.mechFullscreenFallback === "true";
     const active = nativeFullscreen || fallbackFullscreen;
     const mode = nativeFullscreen
       ? "button"
@@ -2595,10 +2807,10 @@ function initializeFullscreen() {
   synchronize();
   toggle.addEventListener("click", async () => {
     if (
-      buttonFullscreenRequested ||
+      buttonFullscreenState !== "idle" ||
       pane.dataset.mechFullscreenMode === "button"
     ) {
-      buttonFullscreenRequested = false;
+      buttonFullscreenState = "idle";
       delete pane.dataset.mechFullscreenFallback;
       delete pane.dataset.mechFullscreenMode;
       synchronize();
@@ -2613,22 +2825,28 @@ function initializeFullscreen() {
       return;
     }
 
-    buttonFullscreenRequested = true;
+    buttonFullscreenState = "requesting";
     pane.dataset.mechFullscreenFallback = "true";
     pane.dataset.mechFullscreenMode = "button";
     synchronize();
     if (pane.requestFullscreen) {
       try {
         await pane.requestFullscreen();
-        if (!buttonFullscreenRequested) {
+        if (buttonFullscreenState === "idle") {
           if (document.fullscreenElement === pane) {
             await document.exitFullscreen();
           }
           return;
         }
-        delete pane.dataset.mechFullscreenFallback;
+        if (document.fullscreenElement === pane) {
+          buttonFullscreenState = "native";
+          delete pane.dataset.mechFullscreenFallback;
+        } else {
+          buttonFullscreenState = "fallback";
+        }
       } catch (error) {
-        if (buttonFullscreenRequested) {
+        if (buttonFullscreenState !== "idle") {
+          buttonFullscreenState = "fallback";
           pane.dataset.mechFullscreenFallback = "true";
           appendError(error);
         }
@@ -2648,6 +2866,12 @@ function initializeBreadcrumb() {
 }
 
 function initializeToc() {
+  state.tocObserver?.disconnect();
+  state.tocObserver = null;
+  for (const [link, handler] of state.tocLinkHandlers) {
+    link.removeEventListener("click", handler);
+  }
+  state.tocLinkHandlers.clear();
   for (const layout of document.querySelectorAll(".article-layout, .docs-layout")) {
     const toc = layout.querySelector(".mech-toc, [data-mech-toc], .toc");
     const empty = !toc || !toc.querySelector("a[href^='#']");
@@ -2670,15 +2894,17 @@ function initializeToc() {
     }))
     .filter(({ target }) => target);
   for (const { link, target } of sections) {
-    link.addEventListener("click", (event) => {
+    const handler = (event) => {
       event.preventDefault();
       target.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
+    };
+    state.tocLinkHandlers.set(link, handler);
+    link.addEventListener("click", handler);
   }
   if (!("IntersectionObserver" in window)) {
     return;
   }
-  const observer = new IntersectionObserver((entries) => {
+  state.tocObserver = new IntersectionObserver((entries) => {
     const visible = entries.find((entry) => entry.isIntersecting);
     if (!visible) {
       return;
@@ -2688,7 +2914,7 @@ function initializeToc() {
     }
   }, { rootMargin: "-20% 0px -70% 0px" });
   for (const { target } of sections) {
-    observer.observe(target);
+    state.tocObserver.observe(target);
   }
 }
 
@@ -2908,6 +3134,8 @@ async function main() {
     finishHostRequest: requestId => state.document.replFinishHostRequest(requestId),
     selectSymbol: (name, renderPopup) =>
       state.document.replSelectSymbol(name, renderPopup),
+    selectRetained: (selectionToken, renderPopup) =>
+      state.document.replSelectRetained(selectionToken, renderPopup),
     selectOutput: (outputId, renderPopup) =>
       state.document.replSelectOutput(outputId, renderPopup),
   };
@@ -2926,7 +3154,7 @@ async function main() {
 }
 
 window.addEventListener("beforeunload", () => {
-  savePagePosition();
+  flushPagePositionSave();
   stopRuntime();
   if (document.documentElement.dataset.mechDocumentStatus !== "error") {
     setDocumentStatus("stopped");
