@@ -729,6 +729,14 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
     assert_eq!(source_loaded.route, RuntimeProgramRoute::ResidentPure);
+    let mut interactive_runtime = runtime();
+    let interactive_loaded = interactive_runtime
+        .load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert!(
+        matches!(interactive_loaded.initial_value.to_value(), LegacyValue::Bool(value) if *value.borrow()),
+        "interactive loading must select the root result after formatted-document outputs"
+    );
     let mut bytecode_runtime = runtime();
     let bytecode_loaded = bytecode_runtime
         .load_bytecode_program(
@@ -1598,6 +1606,45 @@ fn resident_root_plans_the_resolved_source_import_closure_before_route_selection
     assert_eq!(decoded.route, RuntimeProgramRoute::ResidentExternal);
     assert_eq!(outcome.info.program_revision, decoded.info.program_revision);
     assert_eq!(outcome.initial_value, decoded.initial_value);
+}
+
+#[test]
+fn interactive_root_loader_retains_document_symbols_and_reports_the_root_result() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "document.mec",
+            "source := 41\nanswer := source + 1\nanswer\n",
+        )
+        .unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .source_resolver(resolver)
+        .build()
+        .unwrap();
+
+    let outcome = runtime
+        .load_interactive_root_program(
+            "document.mec".into(),
+            ModuleBuildOptions::new("test", "v0.3", "native", &[], &[]),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+
+    assert_eq!(outcome.initial_value.to_string(), "42");
+    assert_eq!(
+        runtime
+            .root_symbol_values_all()
+            .unwrap()
+            .into_iter()
+            .map(|(name, value)| (name, value.to_string()))
+            .collect::<Vec<_>>(),
+        [
+            ("ans".to_string(), "42".to_string()),
+            ("answer".to_string(), "42".to_string()),
+            ("source".to_string(), "41".to_string()),
+        ],
+    );
 }
 
 #[test]

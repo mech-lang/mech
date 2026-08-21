@@ -9,7 +9,8 @@ use crate::{
     DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticPhase, MechEvent, MechEventBus,
     MechEventEnvelope, MechRuntime, OutputArtifact, OutputContent, OutputSource, ReplEvent,
     ReplResponse, ReplResponseKind, ReplResponseStatus, ResidentDurabilityPolicy,
-    RuntimeValueSnapshot, Severity, SourcePosition, SourceSpan, ValueOutput,
+    RuntimeProgramLoadOutcome, RuntimeValueSnapshot, Severity, SourcePosition, SourceSpan,
+    ValueOutput,
 };
 
 /// Shared upper bound for one synchronous resident-REPL step request.
@@ -58,6 +59,30 @@ impl MechEventBuffer {
 /// Platform construction boundary for an interactive resident runtime.
 pub trait ResidentReplRuntimeFactory {
     fn build(&self, events: MechEventBuffer) -> MResult<MechRuntime>;
+
+    /// Build and activate one complete candidate source.
+    ///
+    /// Standalone hosts use the default interactive source loader. Document
+    /// hosts may override this boundary to retain their source resolver,
+    /// configured hosts, and root-program identity while preserving the same
+    /// transactional session semantics.
+    fn activate(
+        &self,
+        events: MechEventBuffer,
+        source: &str,
+    ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+        let mut runtime = self.build(events)?;
+        let outcome = match runtime
+            .load_interactive_source_program(source, ResidentDurabilityPolicy::Volatile)
+        {
+            Ok(outcome) => outcome,
+            Err(error) => {
+                let _ = runtime.shutdown();
+                return Err(error);
+            }
+        };
+        Ok((runtime, outcome))
+    }
 }
 
 /// Durable, renderer-neutral REPL state shared by terminal, WASM, and native
@@ -67,6 +92,7 @@ pub trait ResidentReplRuntimeFactory {
 /// entry therefore leaves the accepted source and live runtime unchanged.
 pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     factory: F,
+    initial_source: String,
     source: String,
     runtime: Option<MechRuntime>,
     program_events: Option<MechEventBuffer>,
@@ -82,12 +108,29 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     pub fn with_quiet(factory: F, quiet: bool) -> Self {
         Self {
             factory,
+            initial_source: String::new(),
             source: String::new(),
             runtime: None,
             program_events: None,
             events: MechEventJournal::default(),
             quiet,
         }
+    }
+
+    /// Construct a session whose reset point is an already loaded source
+    /// document rather than an empty prompt.
+    pub fn from_source(factory: F, source: String) -> MResult<Self> {
+        let mut session = Self {
+            factory,
+            initial_source: source.clone(),
+            source: String::new(),
+            runtime: None,
+            program_events: None,
+            events: MechEventJournal::default(),
+            quiet: false,
+        };
+        session.replace_source(source)?;
+        Ok(session)
     }
 
     pub fn set_quiet(&mut self, quiet: bool) {
@@ -106,6 +149,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.runtime.as_ref()
     }
 
+    pub fn runtime_mut(&mut self) -> Option<&mut MechRuntime> {
+        self.runtime.as_mut()
+    }
+
     pub fn submit(&mut self, entry: &str) -> MResult<RuntimeValueSnapshot> {
         self.submit_with_source_echo(entry, entry)
     }
@@ -119,14 +166,32 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         source_echo: &str,
     ) -> MResult<RuntimeValueSnapshot> {
         self.emit_source_echo(source_echo);
+        self.submit_without_source_echo(entry, true)
+    }
+
+    /// Append a host-supplied source document without fabricating a second
+    /// user prompt. This is used after a typed host request (for example,
+    /// browser documentation loading) already emitted its causal source echo.
+    pub fn submit_host_source(&mut self, entry: &str) -> MResult<RuntimeValueSnapshot> {
+        self.submit_without_source_echo(entry, false)
+    }
+
+    fn submit_without_source_echo(
+        &mut self,
+        entry: &str,
+        emit_value_response: bool,
+    ) -> MResult<RuntimeValueSnapshot> {
         let (entry, suppress_value) = executable_submission(entry);
         let mut candidate_source = self.source.clone();
+        if !candidate_source.is_empty() && !candidate_source.ends_with('\n') {
+            candidate_source.push('\n');
+        }
         candidate_source.push_str(&entry);
         if !candidate_source.ends_with('\n') {
             candidate_source.push('\n');
         }
         let value = self.replace_source(candidate_source)?;
-        if !self.quiet && !suppress_value && !value.is_empty() {
+        if emit_value_response && !self.quiet && !suppress_value && !value.is_empty() {
             let canonical = value.format_canonical_inline();
             self.emit(MechEvent::Repl(ReplEvent::Response(ReplResponse::new(
                 ReplResponseKind::ValueInspection,
@@ -152,13 +217,12 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
 
     pub fn replace_source(&mut self, candidate_source: String) -> MResult<RuntimeValueSnapshot> {
         let candidate_events = MechEventBuffer::default();
-        let mut candidate = self.factory.build(candidate_events.clone())?;
-        let outcome = match candidate
-            .load_interactive_source_program(&candidate_source, ResidentDurabilityPolicy::Volatile)
+        let (candidate, outcome) = match self
+            .factory
+            .activate(candidate_events.clone(), &candidate_source)
         {
-            Ok(outcome) => outcome,
+            Ok(candidate) => candidate,
             Err(error) => {
-                let _ = candidate.shutdown();
                 return Err(error);
             }
         };
@@ -174,6 +238,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 
     pub fn reset(&mut self) -> MResult<()> {
+        if !self.initial_source.is_empty() {
+            self.replace_source(self.initial_source.clone())?;
+            return Ok(());
+        }
         if let Some(mut runtime) = self.runtime.take() {
             runtime.shutdown()?;
             self.collect_program_events()?;

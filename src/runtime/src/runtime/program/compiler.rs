@@ -145,6 +145,15 @@ impl ProgramCompiler {
         self.view().compile_tree(tree)
     }
 
+    /// Compiles an already parsed interactive document without requiring a
+    /// formatter round-trip through source text.
+    pub fn compile_interactive_tree(
+        &mut self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_interactive_tree(tree)
+    }
+
     /// Compiles source for immediate artifact activation without returning or
     /// retaining a duplicate durable bytecode container.
     pub fn compile_source_artifact(
@@ -230,6 +239,16 @@ impl ProgramCompiler {
         options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
         self.view().compile_root(request, options)
+    }
+
+    /// Compile a rooted source graph while retaining every live root symbol
+    /// needed by an interactive document host.
+    pub fn compile_interactive_root(
+        &mut self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.view().compile_interactive_root(request, options)
     }
 
     /// Compiles ordered build roots into one resident artifact. Roots share
@@ -402,6 +421,17 @@ impl<'a> ProgramCompilerView<'a> {
             tree,
             ProgramBytecodeEncoding::Semantic,
             RootOutputProjection::ObservableResults,
+        )
+    }
+
+    pub(crate) fn compile_interactive_tree(
+        &self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compile_tree_with_bytecode_encoding(
+            tree,
+            ProgramBytecodeEncoding::Semantic,
+            RootOutputProjection::ObservableResultsAndSymbols,
         )
     }
 
@@ -756,6 +786,27 @@ impl<'a> ProgramCompilerView<'a> {
         request: SourceRequest,
         options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
+        self.compile_root_with_projection(request, options, RootOutputProjection::ObservableResults)
+    }
+
+    pub(crate) fn compile_interactive_root(
+        &self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compile_root_with_projection(
+            request,
+            options,
+            RootOutputProjection::ObservableResultsAndSymbols,
+        )
+    }
+
+    fn compile_root_with_projection(
+        &self,
+        request: SourceRequest,
+        options: ModuleBuildOptions<'_>,
+        output_projection: RootOutputProjection,
+    ) -> MResult<ProgramCompilationProduct> {
         request.validate()?;
         let mut modules = HashMap::new();
         let mut stack = Vec::new();
@@ -778,6 +829,12 @@ impl<'a> ProgramCompilerView<'a> {
             .get(&root)
             .expect("the requested root was executed");
         publish_module_outputs(program, instance);
+        if matches!(
+            output_projection,
+            RootOutputProjection::ObservableResultsAndSymbols
+        ) {
+            program.publish_compiler_root_symbols();
+        }
         let operations = modules
             .values()
             .flat_map(|module| compiled_resource_send_operations(&module.source.contexts))

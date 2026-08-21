@@ -335,6 +335,25 @@ fn filesystem_commands_support_quoted_paths_and_transactional_load_save() {
 }
 
 #[test]
+fn code_command_reports_its_own_result_after_loading_a_rich_document() {
+    let output = run_repl(
+        &["--nofun"],
+        Some(std::path::Path::new(env!("CARGO_MANIFEST_DIR"))),
+        concat!(
+            ":load examples/working/fizzbuzz.mec\n",
+            ":code 1 + 1\n",
+            ":code [1 2 3]\n",
+            ":quit\n",
+        ),
+    );
+
+    assert!(
+        output.contains("> 2\n> [1 2 3]\n> REPL session terminated."),
+        "`:code` selected an older document output instead of the submitted result: {output}"
+    );
+}
+
+#[test]
 fn command_errors_do_not_terminate_the_repl() {
     let (output, errors) = run_repl_streams(
         &[],

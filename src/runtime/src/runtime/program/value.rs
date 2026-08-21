@@ -3,8 +3,15 @@ use mech_engine::resident::{ReactiveInstance, ResidentValueBorrow};
 
 use crate::RuntimeValueSnapshot;
 
-pub(crate) fn initial_value(instance: &ReactiveInstance) -> MResult<RuntimeValueSnapshot> {
-    output_value(instance, 0).map(|value| value.unwrap_or_else(RuntimeValueSnapshot::empty))
+pub(crate) fn initial_value(
+    instance: &ReactiveInstance,
+    output_index: Option<usize>,
+) -> MResult<RuntimeValueSnapshot> {
+    let Some(output_index) = output_index else {
+        return Ok(RuntimeValueSnapshot::empty());
+    };
+    output_value(instance, output_index)
+        .map(|value| value.unwrap_or_else(RuntimeValueSnapshot::empty))
 }
 
 pub(crate) fn output_value(
