@@ -198,6 +198,7 @@ enum WasmReplTransitionResult {
     ContinueStep { remaining: u64 },
     StepCompleted { total: u64 },
     Interrupted { was_stepping: bool },
+    HostRequestInterrupted,
 }
 
 #[cfg(feature = "browser_project_core")]
@@ -208,6 +209,8 @@ pub struct WasmRepl {
     availability: ReplHostAvailability,
     pub(crate) state: WasmReplState,
     pending_host_request: Option<ReplHostRequest>,
+    host_request_generation: u32,
+    active_host_request_id: Option<u32>,
     console_output_context: String,
 }
 
@@ -221,6 +224,8 @@ impl WasmRepl {
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,
             pending_host_request: None,
+            host_request_generation: 0,
+            active_host_request_id: None,
             console_output_context: "console://repl/output".to_string(),
         }
     }
@@ -367,6 +372,14 @@ impl WasmRepl {
     pub fn interrupt(&mut self) -> Result<JsValue, JsValue> {
         match self.transition(WasmReplTransition::Interrupt) {
             WasmReplTransitionResult::Rejected => return self.response(None),
+            WasmReplTransitionResult::HostRequestInterrupted => {
+                self.session.emit_message_diagnostic(
+                    mech_runtime::Severity::Info,
+                    DiagnosticPhase::Host,
+                    "Interrupted",
+                    "Browser documentation request interrupted.",
+                );
+            }
             WasmReplTransitionResult::Interrupted { was_stepping: true } => {
                 self.session.emit_message_diagnostic(
                     mech_runtime::Severity::Info,
@@ -429,10 +442,7 @@ impl WasmRepl {
     }
 
     pub fn shutdown(&mut self) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::Shutdown) == WasmReplTransitionResult::Rejected {
-            return self.response(None);
-        }
-        self.session.shutdown().map_err(to_js_error)?;
+        self.terminate_session().map_err(to_js_error)?;
         self.response(None)
     }
 
@@ -479,6 +489,14 @@ impl WasmRepl {
             &JsValue::from_str("hostPending"),
             &JsValue::from_bool(matches!(self.state, WasmReplState::AwaitingHost)),
         )?;
+        Reflect::set(
+            &response,
+            &JsValue::from_str("hostRequestId"),
+            &self
+                .active_host_request_id
+                .map(|id| JsValue::from_f64(f64::from(id)))
+                .unwrap_or(JsValue::NULL),
+        )?;
         Ok(response.into())
     }
 
@@ -518,6 +536,8 @@ impl WasmRepl {
                 )),
             ),
             request @ ReplHostRequest::Documentation { .. } => {
+                self.host_request_generation = self.host_request_generation.wrapping_add(1).max(1);
+                self.active_host_request_id = Some(self.host_request_generation);
                 self.state = WasmReplState::AwaitingHost;
                 self.pending_host_request = Some(request);
             }
@@ -531,6 +551,7 @@ impl WasmRepl {
         use WasmReplTransitionResult as TransitionResult;
 
         match (self.state, transition) {
+            (Terminated, Transition::FinishHostRequest) => TransitionResult::Allowed,
             (Terminated, _) => {
                 self.session.emit_message_diagnostic(
                     mech_runtime::Severity::Error,
@@ -541,12 +562,21 @@ impl WasmRepl {
                 TransitionResult::Rejected
             }
             (AwaitingHost, Transition::FinishHostRequest) => {
+                self.active_host_request_id = None;
                 self.state = Ready;
                 TransitionResult::Allowed
             }
             (AwaitingHost, Transition::Shutdown) => {
+                self.pending_host_request = None;
+                self.active_host_request_id = None;
                 self.state = Terminated;
                 TransitionResult::Allowed
+            }
+            (AwaitingHost, Transition::Interrupt) => {
+                self.pending_host_request = None;
+                self.active_host_request_id = None;
+                self.state = Ready;
+                TransitionResult::HostRequestInterrupted
             }
             (AwaitingHost, _) => {
                 self.session.emit_message_diagnostic(
@@ -650,14 +680,24 @@ impl WasmRepl {
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,
             pending_host_request: None,
+            host_request_generation: 0,
+            active_host_request_id: None,
             console_output_context,
         })
     }
 
-    pub(crate) fn finish_host_request(&mut self) -> Result<JsValue, JsValue> {
+    pub(crate) fn finish_host_request(&mut self, request_id: u32) -> Result<JsValue, JsValue> {
+        self.finish_host_request_transition(request_id);
+        self.response(None)
+    }
+
+    fn finish_host_request_transition(&mut self, request_id: u32) -> bool {
+        if self.active_host_request_id != Some(request_id) {
+            return false;
+        }
         self.pending_host_request = None;
         self.transition(WasmReplTransition::FinishHostRequest);
-        self.response(None)
+        true
     }
 
     pub(crate) fn begin_selection(&mut self) -> Result<Option<JsValue>, JsValue> {
@@ -676,8 +716,18 @@ impl WasmRepl {
         self.response(None).map(|response| (response, presentation))
     }
 
-    pub(crate) fn host_request_pending(&self) -> bool {
+    pub(crate) fn host_request_pending(&self, request_id: u32) -> bool {
         matches!(self.state, WasmReplState::AwaitingHost)
+            && self.active_host_request_id == Some(request_id)
+    }
+
+    pub(crate) fn terminate_session(&mut self) -> MResult<()> {
+        self.pending_host_request = None;
+        self.active_host_request_id = None;
+        if self.transition(WasmReplTransition::Shutdown) == WasmReplTransitionResult::Rejected {
+            return Ok(());
+        }
+        self.session.shutdown()
     }
 }
 
@@ -996,6 +1046,7 @@ mod tests {
         repl.handle_host_request(ReplHostRequest::Documentation {
             topic: Some("browser/value".to_string()),
         });
+        let first_request = repl.active_host_request_id.unwrap();
         assert_eq!(repl.state, WasmReplState::AwaitingHost);
         assert_eq!(
             repl.transition(WasmReplTransition::Submit),
@@ -1003,10 +1054,31 @@ mod tests {
         );
         assert_eq!(repl.state, WasmReplState::AwaitingHost);
         assert_eq!(
-            repl.transition(WasmReplTransition::FinishHostRequest),
-            WasmReplTransitionResult::Allowed,
+            repl.transition(WasmReplTransition::Interrupt),
+            WasmReplTransitionResult::HostRequestInterrupted,
         );
         assert_eq!(repl.state, WasmReplState::Ready);
+        assert_eq!(repl.active_host_request_id, None);
+
+        repl.handle_host_request(ReplHostRequest::Documentation {
+            topic: Some("browser/next".to_string()),
+        });
+        let second_request = repl.active_host_request_id.unwrap();
+        assert_ne!(first_request, second_request);
+        assert!(!repl.host_request_pending(first_request));
+        assert!(repl.host_request_pending(second_request));
+        assert!(!repl.finish_host_request_transition(first_request));
+        assert_eq!(repl.state, WasmReplState::AwaitingHost);
+        assert_eq!(repl.active_host_request_id, Some(second_request));
+        assert!(repl.finish_host_request_transition(second_request));
+        assert_eq!(repl.state, WasmReplState::Ready);
+
+        repl.handle_host_request(ReplHostRequest::Documentation {
+            topic: Some("browser/stopping".to_string()),
+        });
+        repl.terminate_session().unwrap();
+        assert_eq!(repl.state, WasmReplState::Terminated);
+        assert_eq!(repl.active_host_request_id, None);
     }
 
     #[cfg(feature = "browser_project_core")]

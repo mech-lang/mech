@@ -1081,12 +1081,37 @@ def assert_console_contract():
         busy_selection["resultRowsAfter"] != busy_selection["resultRows"]
     ):
         fail(f"a reflective click mutated the REPL during documentation loading: {busy_selection!r}")
+    evaluate("""
+(() => {
+  const input = document.querySelector('.repl-input');
+  input?.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'c', ctrlKey: true, bubbles: true, cancelable: true,
+  }));
+})()
+""")
     wait_for(
-        "Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/latency\"]')) && "
+        "document.querySelector('.repl-input')?.readOnly === false && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
+        "!document.querySelector('.mech-root')?.dataset.mechHostRequestId && "
+        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /documentation request interrupted/i.test(row.textContent))",
+        "Ctrl+C canceling an awaiting documentation request",
+    )
+    submit(":docs browser-smoke/latency-next")
+    wait_for(
+        "document.querySelector('.repl-input')?.readOnly === true && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy' && "
+        "window.__MECH_DOCUMENTATION_RELEASES__?.has('latency-next')",
+        "the replacement documentation request taking host ownership",
+    )
+    evaluate("window.__MECH_DOCUMENTATION_RELEASES__.get('latency-next')?.()")
+    wait_for(
+        "Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/latency-next\"]')) && "
         "document.querySelector('.repl-input')?.readOnly === false && "
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready'",
-        "browser documentation loading into the output panel",
+        "a newer documentation request surviving the canceled request's stale completion",
     )
+    if evaluate("Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/latency\"]'))"):
+        fail("a canceled documentation response was accepted by a newer host request")
     submit(":docs browser-smoke/rejected")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
@@ -1101,12 +1126,34 @@ def assert_console_contract():
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready'",
         "accepted documentation reusing only the uncommitted runtime namespace",
     )
-    documentation_ids = evaluate_json("""
-[...document.querySelectorAll('.mech-repl-documentation .mech-inline-mech-code[id]')]
-  .map(element => element.id)
+    documentation_namespace = evaluate_json("""
+(() => {
+  const rows = [...document.querySelectorAll('.mech-repl-documentation')];
+  const ids = rows.flatMap(row => [...row.querySelectorAll('[id]')].map(element => element.id));
+  const brokenReferences = rows.flatMap(row =>
+    [...row.querySelectorAll('[href^="#"]')]
+      .map(link => link.getAttribute('href').slice(1))
+      .filter(id => !row.querySelector(`#${CSS.escape(id)}`)));
+  return {
+    ids,
+    brokenReferences,
+    globallyUnique: ids.every(id => document.querySelectorAll(`#${CSS.escape(id)}`).length === 1),
+    outputAddressesPreserved: [...document.querySelectorAll(
+      '.mech-repl-documentation .mech-inline-mech-code[id], ' +
+      '.mech-repl-documentation .mech-block-output[id]'
+    )].every(element => /^\\d+:\\d+$/.test(element.dataset.mechOutputAddress || '')),
+  };
+})()
 """)
-    if len(documentation_ids) != len(set(documentation_ids)):
-        fail(f"accepted documentation contains duplicate DOM IDs: {documentation_ids!r}")
+    if (
+        documentation_namespace is None or
+        not documentation_namespace["ids"] or
+        len(documentation_namespace["ids"]) != len(set(documentation_namespace["ids"])) or
+        not documentation_namespace["globallyUnique"] or
+        documentation_namespace["brokenReferences"] or
+        not documentation_namespace["outputAddressesPreserved"]
+    ):
+        fail(f"accepted documentation did not receive a complete local DOM namespace: {documentation_namespace!r}")
     submit(":help")
     wait_for(
         "Boolean(document.querySelector('.mech-repl-help')) && "
@@ -1729,6 +1776,7 @@ try:
     return nativeRequestAnimationFrame(callback);
   };
   window.__MECH_DOCUMENT_RENDERS__ = 0;
+  window.__MECH_DOCUMENTATION_RELEASES__ = new Map();
   window.addEventListener('mech:document-rendered', () => {
     window.__MECH_DOCUMENT_RENDERS__ += 1;
   });
@@ -1736,10 +1784,30 @@ try:
   window.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input?.url || String(input);
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency.mec')) {
-      return new Promise(resolve => setTimeout(() => resolve(new Response(
-        'Browser smoke documentation evaluates {answer}.',
-        { status: 200, headers: { 'content-type': 'text/plain' } },
-      )), 300));
+      return new Promise((resolve, reject) => {
+        window.__MECH_DOCUMENTATION_RELEASES__.set('latency', () => resolve(new Response(
+          'Browser smoke documentation evaluates {answer}.',
+          { status: 200, headers: { 'content-type': 'text/plain' } },
+        )));
+        init?.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('documentation fetch aborted', 'AbortError')),
+          { once: true },
+        );
+      });
+    }
+    if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency-next.mec')) {
+      return new Promise((resolve, reject) => {
+        window.__MECH_DOCUMENTATION_RELEASES__.set('latency-next', () => resolve(new Response(
+          'Accepted Documentation\\n----------------------\\nAccepted documentation evaluates {answer}.\\n\\n',
+          { status: 200, headers: { 'content-type': 'text/plain' } },
+        )));
+        init?.signal?.addEventListener(
+          'abort',
+          () => reject(new DOMException('documentation fetch aborted', 'AbortError')),
+          { once: true },
+        );
+      });
     }
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/rejected.mec')) {
       return Promise.resolve(new Response(

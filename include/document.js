@@ -18,6 +18,11 @@ const state = {
   replQuiet: false,
   replBusy: false,
   replTerminated: false,
+  activeHostRequest: null,
+  hostRequestSequence: 0,
+  activeCooperativeOperation: null,
+  cooperativeOperationSequence: 0,
+  documentationFragmentSequence: 0,
   programDisplays: new Map(),
 };
 
@@ -173,9 +178,13 @@ function cancelFrame() {
 function stopRuntime() {
   state.running = false;
   cancelFrame();
+  state.activeHostRequest?.controller.abort();
   if (!state.document) {
     return;
   }
+  state.replTerminated = true;
+  state.replBusy = false;
+  syncConsoleInputState();
   try {
     state.document.stop();
   } catch (error) {
@@ -450,12 +459,13 @@ function loadEmbeddedDocumentSourceBundle() {
 }
 
 function outputAddress(element) {
-  const separator = element.id.lastIndexOf(":");
-  if (separator <= 0 || separator === element.id.length - 1) {
-    throw new Error(`invalid Mech output address \`${element.id}\``);
+  const address = element.dataset.mechOutputAddress || element.id;
+  const separator = address.lastIndexOf(":");
+  if (separator <= 0 || separator === address.length - 1) {
+    throw new Error(`invalid Mech output address \`${address}\``);
   }
   return {
-    outputId: BigInt(element.id.slice(0, separator)),
+    outputId: BigInt(address.slice(0, separator)),
   };
 }
 
@@ -1084,7 +1094,74 @@ function nextBrowserTurn() {
   return new Promise(resolve => requestAnimationFrame(() => resolve()));
 }
 
-async function fulfillReplHostRequest(request) {
+function nextDocumentationFragmentNamespace() {
+  state.documentationFragmentSequence += 1;
+  return `mech-repl-documentation-${state.documentationFragmentSequence}`;
+}
+
+function namespaceDocumentationFragment(fragment, namespace) {
+  const idMap = new Map();
+  for (const element of fragment.querySelectorAll("[id]")) {
+    const localId = element.id;
+    const namespacedId = `${namespace}--${localId}`;
+    if (
+      element.matches(".mech-inline-mech-code, .mech-block-output") &&
+      !element.dataset.mechOutputAddress
+    ) {
+      element.dataset.mechOutputAddress = localId;
+    }
+    idMap.set(localId, namespacedId);
+    element.id = namespacedId;
+  }
+
+  const singleIdReferences = new Set(["for", "form", "list", "section"]);
+  const idReferenceLists = new Set([
+    "aria-activedescendant",
+    "aria-controls",
+    "aria-describedby",
+    "aria-details",
+    "aria-errormessage",
+    "aria-flowto",
+    "aria-labelledby",
+    "aria-owns",
+    "headers",
+  ]);
+  for (const element of fragment.querySelectorAll("*")) {
+    for (const attribute of [...element.attributes]) {
+      const name = attribute.name.toLowerCase();
+      let value = attribute.value;
+      if ((name === "href" || name === "xlink:href") && value.startsWith("#")) {
+        const target = idMap.get(value.slice(1));
+        if (target) {
+          element.setAttribute(attribute.name, `#${target}`);
+        }
+        continue;
+      }
+      if (singleIdReferences.has(name)) {
+        const target = idMap.get(value);
+        if (target) {
+          element.setAttribute(attribute.name, target);
+        }
+        continue;
+      }
+      if (idReferenceLists.has(name)) {
+        value = value
+          .split(/\s+/)
+          .map(id => idMap.get(id) || id)
+          .join(" ");
+      }
+      value = value.replace(/url\(#([^)]+)\)/g, (match, id) => {
+        const target = idMap.get(id);
+        return target ? `url(#${target})` : match;
+      });
+      if (value !== attribute.value) {
+        element.setAttribute(attribute.name, value);
+      }
+    }
+  }
+}
+
+async function fulfillReplHostRequest(requestId, request, signal) {
   if (request?.kind !== "documentation") {
     throw new Error(`unsupported browser REPL host request: ${request?.kind || "unknown"}`);
   }
@@ -1097,13 +1174,17 @@ async function fulfillReplHostRequest(request) {
   const url =
     `https://raw.githubusercontent.com/mech-machines/${encodeURIComponent(machine)}` +
     `/main/docs/${encodeURIComponent(documentName)}.mec`;
-  const fetched = await fetch(url);
+  const fetched = await fetch(url, { signal });
   if (!fetched.ok) {
     throw new Error(
       `failed to load documentation \`${topic}\`: ${fetched.status} ${fetched.statusText}`,
     );
   }
-  const loaded = state.document.replLoadDocumentation(topic, await fetched.text());
+  const loaded = state.document.replLoadDocumentation(
+    requestId,
+    topic,
+    await fetched.text(),
+  );
   consumeReplResponse(loaded.response);
   const panel = outputRegion("repl");
   if (panel && loaded.accepted && loaded.html) {
@@ -1111,6 +1192,7 @@ async function fulfillReplHostRequest(request) {
     row.className = "mech-repl-output-entry mech-repl-documentation";
     row.dataset.mechDocumentationTopic = topic;
     row.innerHTML = loaded.html;
+    namespaceDocumentationFragment(row, nextDocumentationFragmentNamespace());
     panel.append(row);
     activateConsolePanel("output");
     panel.scrollTop = panel.scrollHeight;
@@ -1119,14 +1201,32 @@ async function fulfillReplHostRequest(request) {
 }
 
 async function consumeCooperativeResponse(response) {
+  const operation = ++state.cooperativeOperationSequence;
+  state.activeCooperativeOperation = operation;
   consumeReplResponse(response);
   const ownsHostRequest = Boolean(response?.hostRequest);
+  const hostRequest = ownsHostRequest
+    ? {
+        controller: new AbortController(),
+        id: response.hostRequestId,
+        sequence: ++state.hostRequestSequence,
+      }
+    : null;
+  if (hostRequest) {
+    state.activeHostRequest = hostRequest;
+  } else if (!response?.hostPending) {
+    state.activeHostRequest = null;
+  }
   state.replTerminated = Boolean(response?.terminated);
-  state.replBusy = Boolean(response?.pending || response?.hostRequest);
+  state.replBusy = Boolean(response?.pending || response?.hostPending || response?.hostRequest);
   syncConsoleInputState();
   try {
     if (response?.hostRequest) {
-      await fulfillReplHostRequest(response.hostRequest);
+      await fulfillReplHostRequest(
+        hostRequest.id,
+        response.hostRequest,
+        hostRequest.controller.signal,
+      );
     }
     while (response?.pending) {
       await nextBrowserTurn();
@@ -1134,18 +1234,33 @@ async function consumeCooperativeResponse(response) {
       consumeReplResponse(response);
       state.replTerminated = Boolean(response?.terminated);
     }
-  } finally {
-    if (ownsHostRequest) {
-      consumeReplResponse(state.repl.finishHostRequest());
+  } catch (error) {
+    if (!hostRequest?.controller.signal.aborted) {
+      throw error;
     }
-    state.replBusy = false;
-    syncConsoleInputState();
-    if (state.replTerminated) {
-      stopRuntime();
-      setDocumentStatus("stopped");
-      dispatch("mech:document-stopped");
-    } else {
-      renderValues();
+  } finally {
+    const releasesActiveOperation = state.activeCooperativeOperation === operation;
+    const releasesActiveRequest =
+      !hostRequest || state.activeHostRequest?.sequence === hostRequest.sequence;
+    if (ownsHostRequest) {
+      const finished = state.repl.finishHostRequest(hostRequest.id);
+      consumeReplResponse(finished);
+      state.replTerminated ||= Boolean(finished?.terminated);
+      if (releasesActiveRequest) {
+        state.activeHostRequest = null;
+      }
+    }
+    if (releasesActiveOperation && releasesActiveRequest) {
+      state.activeCooperativeOperation = null;
+      state.replBusy = false;
+      syncConsoleInputState();
+      if (state.replTerminated) {
+        stopRuntime();
+        setDocumentStatus("stopped");
+        dispatch("mech:document-stopped");
+      } else {
+        renderValues();
+      }
     }
   }
 }
@@ -1230,7 +1345,12 @@ function appendActivePrompt() {
     }
     if (state.replBusy && event.ctrlKey && event.key.toLowerCase() === "c") {
       event.preventDefault();
-      consumeReplResponse(state.repl.interrupt());
+      const response = state.repl.interrupt();
+      state.activeHostRequest?.controller.abort();
+      consumeReplResponse(response);
+      state.replTerminated = Boolean(response?.terminated);
+      state.replBusy = Boolean(response?.pending || response?.hostPending);
+      syncConsoleInputState();
       return;
     }
     const action = resolveReplInput(event);
@@ -1273,6 +1393,13 @@ function syncConsoleInputState() {
   input.disabled = state.replTerminated;
   input.readOnly = state.replBusy && !state.replTerminated;
   input.setAttribute("aria-busy", String(state.replBusy));
+  for (const target of statusTargets()) {
+    if (state.activeHostRequest) {
+      target.dataset.mechHostRequestId = String(state.activeHostRequest.id);
+    } else {
+      delete target.dataset.mechHostRequestId;
+    }
+  }
   setConsoleStatus(
     state.replTerminated ? "terminated" : state.replBusy ? "busy" : "ready",
   );
@@ -1777,7 +1904,7 @@ async function main() {
     continueStep: count => state.document.replContinueStep(count),
     interrupt: () => state.document.replInterrupt(),
     setQuiet: quiet => state.document.replSetQuiet(quiet),
-    finishHostRequest: () => state.document.replFinishHostRequest(),
+    finishHostRequest: requestId => state.document.replFinishHostRequest(requestId),
     selectSymbol: (name, renderPopup) =>
       state.document.replSelectSymbol(name, renderPopup),
     selectOutput: (outputId, renderPopup) =>

@@ -894,12 +894,28 @@ mod document {
             };
             let was_started = self.started && !self.stopped;
 
-            self.stop()?;
+            // Constructing the candidate is the rollback-safe phase. Once
+            // retirement starts, shutdown may already have closed ingress or
+            // stopped some drivers before reporting an error, so the old
+            // document can no longer be restored. Commit the viable candidate
+            // and publish retirement failure on its event stream instead.
+            let retirement_failure = self.retire_runtime().err();
             self.repl = replacement.repl;
             self.bootstrap = replacement.bootstrap;
             self.document_output_ordinals = replacement.document_output_ordinals;
             self.started = false;
             self.stopped = false;
+            if let Some(error) = retirement_failure {
+                self.repl.session.emit_message_diagnostic(
+                    mech_runtime::Severity::Warning,
+                    mech_runtime::DiagnosticPhase::Host,
+                    "PreviousDocumentShutdown",
+                    format!(
+                        "The replacement document was accepted, but retired document cleanup reported: {}",
+                        error.display_message(),
+                    ),
+                );
+            }
             if was_started {
                 self.start()?;
             }
@@ -1011,11 +1027,14 @@ mod document {
             if self.stopped {
                 return Ok(());
             }
+            self.retire_runtime().map_err(to_js_error)
+        }
+
+        fn retire_runtime(&mut self) -> MResult<()> {
             self.bootstrap.source().lifecycle.set_drivers_started(false);
-            self.repl.session.shutdown().map_err(to_js_error)?;
             self.started = false;
             self.stopped = true;
-            Ok(())
+            self.repl.terminate_session()
         }
 
         #[wasm_bindgen(js_name = replInvoke)]
@@ -1045,8 +1064,8 @@ mod document {
         }
 
         #[wasm_bindgen(js_name = replFinishHostRequest)]
-        pub fn repl_finish_host_request(&mut self) -> Result<JsValue, JsValue> {
-            self.repl.finish_host_request()
+        pub fn repl_finish_host_request(&mut self, request_id: u32) -> Result<JsValue, JsValue> {
+            self.repl.finish_host_request(request_id)
         }
 
         #[wasm_bindgen(js_name = replSelectSymbol)]
@@ -1100,12 +1119,13 @@ mod document {
         #[wasm_bindgen(js_name = replLoadDocumentation)]
         pub fn repl_load_documentation(
             &mut self,
+            request_id: u32,
             topic: &str,
             source: &str,
         ) -> Result<JsValue, JsValue> {
-            if !self.repl.host_request_pending() {
+            if !self.repl.host_request_pending(request_id) {
                 return Err(js_error(
-                    "documentation may only be loaded for the pending REPL host request",
+                    "documentation response does not match the active REPL host request",
                 ));
             }
             let tree = mech_syntax::parser::parse(source).map_err(to_js_error)?;
