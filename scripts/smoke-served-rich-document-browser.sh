@@ -2030,6 +2030,7 @@ def assert_stop_invalidates_pending_ownership():
     shutdown_inspector = evaluate_json("""
 (() => {
   const value = document.querySelector('#mech-smoke-var .mech-var-placeholder');
+  window.__MECH_SHUTDOWN_INSPECTOR_ANCHOR__ = value;
   value?.click();
   const popup = document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
   return {
@@ -2049,7 +2050,8 @@ def assert_stop_invalidates_pending_ownership():
     submit(":docs browser-smoke/latency")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy' && "
-        "Boolean(document.querySelector('.mech-root')?.dataset.mechHostRequestId)",
+        "Boolean(document.querySelector('.mech-root')?.dataset.mechHostRequestId) && "
+        "window.__MECH_DOCUMENTATION_RELEASES__?.has('latency')",
         "documentation ownership before document stop",
     )
     stopped = evaluate_json("""
@@ -2062,7 +2064,13 @@ def assert_stop_invalidates_pending_ownership():
 })()
 """)
     evaluate("""
-new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+(() => {
+  window.__MECH_DOCUMENTATION_RELEASES__.get('latency')?.();
+  return new Promise(resolve => setTimeout(
+    () => requestAnimationFrame(() => requestAnimationFrame(resolve)),
+    0,
+  ));
+})()
 """)
     stopped_after = evaluate_json("""
 (() => ({
@@ -2077,6 +2085,8 @@ new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve
   inspectorPresent: Boolean(document.querySelector(
     '.mech-inline-popup[data-mech-repl-popup]'
   )),
+  anchorFocused:
+    document.activeElement === window.__MECH_SHUTDOWN_INSPECTOR_ANCHOR__,
 }))()
 """)
     if (
@@ -2086,7 +2096,8 @@ new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve
         stopped_after["hostRequestId"] is not None or
         stopped_after["renders"] != stopped["renders"] or
         stopped_after["appended"] or
-        stopped_after["inspectorPresent"]
+        stopped_after["inspectorPresent"] or
+        stopped_after["anchorFocused"]
     ):
         fail(f"stale async ownership changed a stopped/fatal document: {stopped_after!r}")
 
