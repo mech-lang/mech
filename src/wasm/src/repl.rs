@@ -337,12 +337,13 @@ impl WasmRepl {
         self.response(None)
     }
 
-    /// Execute one bounded piece of a pending step request. Browser adapters
-    /// yield to the event loop between calls so a legal large request cannot
-    /// monopolize the UI thread.
+    /// Execute one bounded piece of the matching pending step request. Browser
+    /// adapters yield to the event loop between calls so a legal large request
+    /// cannot monopolize the UI thread. A retired request is rejected before
+    /// transition or event consumption, including after termination.
     #[wasm_bindgen(js_name = continueStep)]
     pub fn continue_step(&mut self, max_steps: u32, request_id: &str) -> Result<JsValue, JsValue> {
-        if !self.state.terminated() && !self.step_request_pending(request_id) {
+        if !self.step_request_pending(request_id) {
             return Err(JsValue::from_str(
                 "cooperative step response does not match the active request",
             ));
@@ -1350,7 +1351,24 @@ mod tests {
             Some(true)
         );
 
-        assert_terminated_response(repl.clear_outputs().unwrap());
+        repl.session.emit_message_diagnostic(
+            mech_runtime::Severity::Info,
+            DiagnosticPhase::Host,
+            "RetainedAfterTermination",
+            "must survive a stale continuation",
+        );
+        assert!(repl.continue_step(1, "retired-request").is_err());
+        let clear_outputs = repl.clear_outputs().unwrap();
+        let events: Vec<mech_runtime::MechEventEnvelope> = serde_wasm_bindgen::from_value(
+            Reflect::get(&clear_outputs, &JsValue::from_str("events")).unwrap(),
+        )
+        .unwrap();
+        assert!(events.iter().any(|event| matches!(
+            &event.event,
+            MechEvent::Diagnostic(diagnostic)
+                if diagnostic.code.as_deref() == Some("RetainedAfterTermination")
+        )));
+        assert_terminated_response(clear_outputs);
         assert_eq!(
             repl.session.outputs().len(),
             1,

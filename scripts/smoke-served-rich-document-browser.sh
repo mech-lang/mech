@@ -1802,13 +1802,18 @@ def assert_repl_termination():
 
   const repl = new WasmRepl();
   const quit = repl.invoke(':quit');
+  let staleTerminatedContinuationRejected = false;
+  try {
+    repl.continueStep(1, 'retired-request');
+  } catch (_) {
+    staleTerminatedContinuationRejected = true;
+  }
   const responses = {
     invoke: repl.invoke('1 + 1'),
     submit: repl.submit('1 + 1'),
     setQuiet: repl.setQuiet(true),
     reset: repl.reset(),
     step: repl.step(1n),
-    continueStep: repl.continueStep(1, ''),
     interrupt: repl.interrupt(),
     clearOutputs: repl.clearOutputs(),
     clearDiagnostics: repl.clearDiagnostics(),
@@ -1838,6 +1843,7 @@ def assert_repl_termination():
     },
     resetOwnership,
     quitTerminated: quit?.terminated === true,
+    staleTerminatedContinuationRejected,
     rejected: Object.fromEntries(
       Object.entries(responses).map(([name, response]) => [name, rejected(response)]),
     ),
@@ -1859,9 +1865,11 @@ def assert_repl_termination():
             fail(f"direct WASM document reused stale operation ownership: {direct_exports!r}")
     if not direct_exports or not direct_exports.get("quitTerminated"):
         fail(f"direct WASM REPL did not enter terminal state: {direct_exports!r}")
+    if not direct_exports.get("staleTerminatedContinuationRejected"):
+        fail(f"terminated WASM REPL accepted a retired continuation: {direct_exports!r}")
     rejected = direct_exports.get("rejected", {})
     missed = sorted(name for name, value in rejected.items() if not value)
-    if missed or len(rejected) != 10:
+    if missed or len(rejected) != 9:
         fail(f"mutating WASM exports bypassed terminal guard: {direct_exports!r}")
 
 
