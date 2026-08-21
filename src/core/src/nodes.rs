@@ -396,6 +396,11 @@ impl PrettyPrint for Program {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
     pub text: Token,
+    /// Module imports written in the title's front-matter block. They are
+    /// executable declarations, but remain presentation-neutral metadata in
+    /// rendered Mechdown documents.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub imports: Vec<(ModuleImport, Option<Comment>)>,
     pub author: Option<Paragraph>,
     pub date: Option<Paragraph>,
     pub hero: Option<SectionElement>,

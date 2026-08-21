@@ -99,6 +99,17 @@ impl SourceIndex {
         let mut fenced_interpreters = std::collections::HashMap::new();
         index.push_scope(SourceScope::Program);
 
+        if let Some(title) = &program.title {
+            for (import, _) in &title.imports {
+                index_mech_code_address_references(
+                    &mut index,
+                    &SourceScope::Program,
+                    &mut order,
+                    &MechCode::Import(import.clone()),
+                );
+            }
+        }
+
         for section in &program.body.sections {
             for element in &section.elements {
                 match element {
@@ -952,6 +963,20 @@ mod tests {
         assert_eq!(index.imports.len(), 1);
         assert_eq!(index.imports[0].occurrence.scope, SourceScope::Program);
         assert!(index.interpreter_scopes().is_empty());
+    }
+
+    #[test]
+    fn source_index_collects_title_front_matter_imports_in_program_scope() {
+        let tree = mech_syntax::parser::parse(
+            "N-Body Simulation\n===============================================================================\nsection: Examples\n+> combinatorics\n+> stats\n===============================================================================\n",
+        )
+        .unwrap();
+
+        let index = SourceIndex::from_program(&tree);
+
+        assert_eq!(index.program_imports().len(), 2);
+        assert_eq!(index.program_imports()[0].specifier, "combinatorics");
+        assert_eq!(index.program_imports()[1].specifier, "stats");
     }
 
     #[test]

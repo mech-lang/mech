@@ -13,6 +13,7 @@ Mechdown supports hierarchical titles:
 It also supports optional **front matter** directly beneath the document title. Front matter ends with a second `===` separator and can include:
 
 - optional K:V front matter fields (`author`, `date`, `hero`, `kicker`, `summary`, `next`, `previous`)
+- optional module imports using the ordinary `+>` syntax
 - optional hero media (`![caption](src)` or a `| ... |` figures row/table)
 - optional summary paragraph
 
@@ -61,6 +62,23 @@ Foo Bar January 1 2026
 This is my blog and it's good.
 ===============================================================================
 ```
+
+Imports can live in the same front-matter block. They keep their usual program
+semantics without becoming visible document chrome:
+
+```
+N-Body Simulation
+===============================================================================
+section: Examples
++> combinatorics
++> stats
+===============================================================================
+```
+
+This form began as an AI-generated mistake in an example. The grouping proved
+useful and readable, so it became an intentional part of Mechdown's design: a
+small case of AI output influencing the language rather than merely adapting to
+it.
 
 `%%` abstract blocks and unsectioned introduction content can appear before the first numbered section. The generated **contents** begin at the first numbered section (for example, `1. Section`), while pre-section material can be rendered separately via template placeholders.
 

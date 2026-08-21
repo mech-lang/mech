@@ -710,10 +710,46 @@ impl Formatter {
         if self.html {
             format!("<h1 class=\"mech-program-title\">{}</h1>", title)
         } else {
-            format!(
+            let mut front_matter = Vec::new();
+            for (name, value) in [
+                ("author", &node.author),
+                ("date", &node.date),
+                ("kicker", &node.kicker),
+                ("section", &node.section),
+                ("summary", &node.summary),
+                ("next", &node.next),
+                ("previous", &node.previous),
+            ] {
+                if let Some(value) = value {
+                    front_matter.push(format!("{name}: {}", value.to_string()));
+                }
+            }
+            if let Some(hero) = &node.hero {
+                front_matter.push(format!("hero: {}", self.section_element(hero).trim()));
+            }
+            if !node.imports.is_empty() {
+                let imports = node
+                    .imports
+                    .iter()
+                    .cloned()
+                    .map(|(import, comment)| (MechCode::Import(import), comment))
+                    .collect::<Vec<_>>();
+                front_matter.push(self.mech_code(&imports).trim_end().to_string());
+            }
+
+            let opening = format!(
                 "{}\n===============================================================================\n",
                 title
-            )
+            );
+            if front_matter.is_empty() {
+                opening
+            } else {
+                format!(
+                    "{}{}\n===============================================================================\n",
+                    opening,
+                    front_matter.join("\n")
+                )
+            }
         }
     }
 

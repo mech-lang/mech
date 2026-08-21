@@ -104,6 +104,14 @@ fn update_ans_symbol(value: &LegacyValue, p: &InterpreterExecution<'_>) {
 }
 
 pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    if let Some(title) = &program.title {
+        for (import, comment) in &title.imports {
+            module_import_runtime(import, p)?;
+            if let Some(comment) = comment {
+                self::comment(comment, p)?;
+            }
+        }
+    }
     body(&program.body, p)
 }
 
@@ -506,13 +514,7 @@ pub fn module_import_runtime(
         }
         ModuleImportKind::Item => {
             let item = import.item.as_ref().ok_or_else(|| {
-                MechError::new(
-                    MissingFunctionError {
-                        function_id: hash_str(&module),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
+                MechError::new(MissingFunctionError::named(&module), None).with_compiler_loc()
             })?;
             let item = module_import_item_path(item);
             match &import.alias {
@@ -564,13 +566,7 @@ pub fn module_import_runtime(
         }
         ModuleImportKind::Group => {
             let group_items = import.group_items.as_ref().ok_or_else(|| {
-                MechError::new(
-                    MissingFunctionError {
-                        function_id: hash_str(&module),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
+                MechError::new(MissingFunctionError::named(&module), None).with_compiler_loc()
             })?;
 
             let items = group_items

@@ -183,6 +183,7 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
     Program {
         title: Some(Title {
             text: token(TokenKind::Title, "Slot Fixture"),
+            imports: Vec::new(),
             author: Some(plain_paragraph("Fixture Author")),
             date: Some(plain_paragraph("Fixture Date")),
             hero: None,

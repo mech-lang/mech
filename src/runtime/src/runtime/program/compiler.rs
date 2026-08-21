@@ -1303,11 +1303,28 @@ fn partition_mixed_program(tree: &Program) -> MResult<MixedProgramPartition> {
 
 #[cfg(feature = "compute")]
 fn import_prelude(tree: &Program) -> Vec<SectionElement> {
-    tree.body
-        .sections
-        .iter()
-        .flat_map(|section| &section.elements)
-        .filter_map(import_element)
+    let title_imports = tree
+        .title
+        .as_ref()
+        .map(|title| {
+            title
+                .imports
+                .iter()
+                .cloned()
+                .map(|(import, comment)| (MechCode::Import(import), comment))
+                .collect::<Vec<_>>()
+        })
+        .filter(|imports| !imports.is_empty())
+        .map(SectionElement::MechCode);
+    title_imports
+        .into_iter()
+        .chain(
+            tree.body
+                .sections
+                .iter()
+                .flat_map(|section| &section.elements)
+                .filter_map(import_element),
+        )
         .collect()
 }
 
@@ -1709,6 +1726,9 @@ fn executable_tree(source: &MechSourceCode) -> MResult<mech_core::Program> {
 }
 
 fn sanitize_tree(mut tree: mech_core::Program) -> MResult<mech_core::Program> {
+    if let Some(title) = &mut tree.title {
+        title.imports.clear();
+    }
     for section in &mut tree.body.sections {
         for element in &mut section.elements {
             let mech_core::SectionElement::MechCode(codes) = element else {

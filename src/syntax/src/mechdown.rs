@@ -27,6 +27,7 @@ use crate::*;
 
 #[derive(Default)]
 pub struct TitleFrontMatter {
+    pub imports: Vec<(ModuleImport, Option<Comment>)>,
     pub author: Option<Paragraph>,
     pub date: Option<Paragraph>,
     pub hero: Option<SectionElement>,
@@ -54,6 +55,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
         input,
         Title {
             text: title,
+            imports: front_matter.imports,
             author: front_matter.author,
             date: front_matter.date,
             hero: front_matter.hero,
@@ -71,6 +73,13 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
     let mut front_matter = TitleFrontMatter::default();
 
     while many1(equal)(input.clone()).is_err() {
+        if let Ok((next_input, import)) = module_import(input.clone()) {
+            let (next_input, comment) = code_terminal(next_input)?;
+            front_matter.imports.push((import, comment));
+            input = next_input;
+            continue;
+        }
+
         let (next_input, key) = identifier(input.clone())?;
         let (next_input, _) = many0(space_tab)(next_input)?;
         let (next_input, _) = colon(next_input)?;
@@ -1537,6 +1546,24 @@ mod tests {
         assert!(html.contains(env!("CARGO_PKG_VERSION")));
         assert!(!html.contains("{{SECTION}}"));
         assert!(!html.contains("{{VERSION}}"));
+    }
+
+    #[test]
+    fn title_front_matter_accepts_module_imports() {
+        let src = "N-Body Simulation\n===============================================================================\nsection: Examples\n+> combinatorics\n+> stats\n===============================================================================\n\nanswer := combinatorics/n-choose-k(5, 2)\n";
+        let tree = parser::parse(src).unwrap();
+        let title = tree.title.as_ref().unwrap();
+
+        assert_eq!(title.imports.len(), 2);
+        assert_eq!(title.imports[0].0.module.to_string(), "combinatorics");
+        assert_eq!(title.imports[1].0.module.to_string(), "stats");
+
+        let formatted = Formatter::new().format(&tree);
+        assert!(formatted.contains("section: Examples"));
+        assert!(formatted.contains("+> combinatorics"));
+        assert!(formatted.contains("+> stats"));
+        let reparsed = parser::parse(&formatted).unwrap();
+        assert_eq!(reparsed.title.unwrap().imports.len(), 2);
     }
 
     #[test]
