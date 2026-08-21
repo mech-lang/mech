@@ -51,8 +51,15 @@ pub fn repl_step_limit() -> u64 {
 
 #[cfg(feature = "browser_project_core")]
 #[derive(Clone, Debug)]
-struct ReplConsoleBackend {
+pub(crate) struct ReplConsoleBackend {
     events: MechEventBuffer,
+}
+
+#[cfg(feature = "browser_project_core")]
+impl ReplConsoleBackend {
+    pub(crate) fn new(events: MechEventBuffer) -> Self {
+        Self { events }
+    }
 }
 
 #[cfg(feature = "browser_project_core")]
@@ -64,27 +71,61 @@ impl ConsoleBackend for ReplConsoleBackend {
 }
 
 #[cfg(feature = "browser_project_core")]
-struct WasmReplRuntimeFactory;
+pub(crate) enum WasmReplRuntimeFactory {
+    Standalone,
+    Document(crate::project::WasmDocumentBootstrap),
+}
 
 #[cfg(feature = "browser_project_core")]
 impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
     fn build(&self, events: MechEventBuffer) -> MResult<MechRuntime> {
-        browser_runtime_builder()
-            .config(RuntimeConfig::new("wasm-repl"))
-            .host_factory(Box::new(ConsoleHostFactory::with_backend(
-                ReplConsoleBackend { events },
-            )?))?
-            .host_instance(HostInstanceConfig {
-                name: "repl".to_string(),
-                provider: "console".to_string(),
-                settings: ConfigValue::Map(Default::default()),
-            })
-            .run_resource_grant(RunResourceGrantConfig {
-                target: "repl/output".to_string(),
-                operations: vec!["write".to_string()],
-                paths: vec!["line".to_string()],
-            })
-            .build()
+        match self {
+            Self::Standalone => browser_runtime_builder()
+                .config(RuntimeConfig::new("wasm-repl"))
+                .host_factory(Box::new(ConsoleHostFactory::with_backend(
+                    ReplConsoleBackend::new(events),
+                )?))?
+                .host_instance(HostInstanceConfig {
+                    name: "repl".to_string(),
+                    provider: "console".to_string(),
+                    settings: ConfigValue::Map(Default::default()),
+                })
+                .run_resource_grant(RunResourceGrantConfig {
+                    target: "repl/output".to_string(),
+                    operations: vec!["write".to_string()],
+                    paths: vec!["line".to_string()],
+                })
+                .build(),
+            Self::Document(bootstrap) => {
+                crate::project::build_document_repl_runtime(bootstrap, events)
+            }
+        }
+    }
+
+    fn activate(
+        &self,
+        events: MechEventBuffer,
+        source: &str,
+    ) -> MResult<(MechRuntime, mech_runtime::RuntimeProgramLoadOutcome)> {
+        match self {
+            Self::Standalone => {
+                let mut runtime = self.build(events)?;
+                let outcome = match runtime.load_interactive_source_program(
+                    source,
+                    mech_runtime::ResidentDurabilityPolicy::Volatile,
+                ) {
+                    Ok(outcome) => outcome,
+                    Err(error) => {
+                        let _ = runtime.shutdown();
+                        return Err(error);
+                    }
+                };
+                Ok((runtime, outcome))
+            }
+            Self::Document(bootstrap) => {
+                crate::project::activate_document_repl_runtime(bootstrap, events, source)
+            }
+        }
     }
 }
 
@@ -142,9 +183,10 @@ enum WasmReplTransitionResult {
 #[wasm_bindgen]
 /// Resident browser REPL used by the relocatable `{{REPL}}` document panel.
 pub struct WasmRepl {
-    session: ResidentReplSession<WasmReplRuntimeFactory>,
+    pub(crate) session: ResidentReplSession<WasmReplRuntimeFactory>,
     availability: ReplHostAvailability,
-    state: WasmReplState,
+    pub(crate) state: WasmReplState,
+    pending_host_request: Option<ReplHostRequest>,
 }
 
 #[cfg(feature = "browser_project_core")]
@@ -153,9 +195,10 @@ impl WasmRepl {
     #[wasm_bindgen(constructor)]
     pub fn new() -> WasmRepl {
         Self {
-            session: ResidentReplSession::new(WasmReplRuntimeFactory),
+            session: ResidentReplSession::new(WasmReplRuntimeFactory::Standalone),
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,
+            pending_host_request: None,
         }
     }
 
@@ -370,7 +413,7 @@ impl WasmRepl {
         self.response(None)
     }
 
-    fn response(&mut self, result: Option<JsValue>) -> Result<JsValue, JsValue> {
+    pub(crate) fn response(&mut self, result: Option<JsValue>) -> Result<JsValue, JsValue> {
         let response = Object::new();
         let events = self.session.drain_events().map_err(to_js_error)?;
         Reflect::set(
@@ -397,6 +440,16 @@ impl WasmRepl {
             &response,
             &JsValue::from_str("terminated"),
             &JsValue::from_bool(self.state.terminated()),
+        )?;
+        Reflect::set(
+            &response,
+            &JsValue::from_str("hostRequest"),
+            &self
+                .pending_host_request
+                .take()
+                .map(|request| serde_wasm_bindgen::to_value(&request))
+                .transpose()?
+                .unwrap_or(JsValue::NULL),
         )?;
         Ok(response.into())
     }
@@ -436,6 +489,9 @@ impl WasmRepl {
                     ],
                 )),
             ),
+            request @ ReplHostRequest::Documentation { .. } => {
+                self.pending_host_request = Some(request);
+            }
             _ => unreachable!("unavailable browser host requests are rejected before dispatch"),
         }
     }
@@ -523,12 +579,44 @@ impl WasmRepl {
 }
 
 #[cfg(feature = "browser_project_core")]
+impl WasmRepl {
+    pub(crate) fn from_document(
+        bootstrap: crate::project::WasmDocumentBootstrap,
+        source: String,
+    ) -> MResult<Self> {
+        Ok(Self {
+            session: ResidentReplSession::from_source(
+                WasmReplRuntimeFactory::Document(bootstrap),
+                source,
+            )?,
+            availability: browser_repl_availability(),
+            state: WasmReplState::Ready,
+            pending_host_request: None,
+        })
+    }
+
+    pub(crate) fn submit_selection(
+        &mut self,
+        source_echo: &str,
+        value_source: &str,
+    ) -> Result<JsValue, JsValue> {
+        if self.transition(WasmReplTransition::Submit) == WasmReplTransitionResult::Rejected {
+            return self.response(None);
+        }
+        if let Err(error) = self
+            .session
+            .submit_with_source_echo(value_source, source_echo)
+        {
+            self.session
+                .emit_error(&error, DiagnosticPhase::Compile, Some("<repl>"));
+        }
+        self.response(None)
+    }
+}
+
+#[cfg(feature = "browser_project_core")]
 fn browser_repl_availability() -> ReplHostAvailability {
     ReplHostAvailability::all_available()
-        .deny(
-            ReplHostRequirement::Documentation,
-            "this host did not install an embedded documentation provider",
-        )
         .deny(
             ReplHostRequirement::ReadableResources,
             "this host did not provide a readable resource provider",
@@ -623,7 +711,7 @@ mod tests {
     #[cfg(feature = "browser_project_core")]
     #[test]
     fn browser_repl_is_transactional_and_routes_program_output_to_its_event_bus() {
-        let mut semicolon = ResidentReplSession::new(WasmReplRuntimeFactory);
+        let mut semicolon = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
         semicolon.submit("1 + 1;\n").unwrap();
         assert!(!semicolon.source().contains(';'));
         let events = semicolon.drain_events().unwrap();
@@ -641,12 +729,12 @@ mod tests {
         )));
         semicolon.shutdown().unwrap();
 
-        let mut quiet = ResidentReplSession::with_quiet(WasmReplRuntimeFactory, true);
+        let mut quiet = ResidentReplSession::with_quiet(WasmReplRuntimeFactory::Standalone, true);
         quiet.submit("1 + 1\n").unwrap();
         assert!(quiet.drain_events().unwrap().is_empty());
         quiet.shutdown().unwrap();
 
-        let mut live = ResidentReplSession::new(WasmReplRuntimeFactory);
+        let mut live = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
         live.submit("~counter := 0\ncounter += 1\nanswer := 42\nanswer\n")
             .unwrap();
         assert_eq!(
@@ -665,7 +753,7 @@ mod tests {
         );
         live.shutdown().unwrap();
 
-        let mut aliases = ResidentReplSession::new(WasmReplRuntimeFactory);
+        let mut aliases = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
         aliases.submit("a := 1\nb := a\n").unwrap();
         let alias_values = aliases
             .symbols(&["a".to_string(), "b".to_string()])
@@ -680,7 +768,7 @@ mod tests {
         );
         aliases.shutdown().unwrap();
 
-        let mut lexical_names = ResidentReplSession::new(WasmReplRuntimeFactory);
+        let mut lexical_names = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
         lexical_names
             .submit("odd/name := 1\nodd\\name := 2\nsafe := odd/name + odd\\name\n")
             .unwrap();
@@ -715,7 +803,34 @@ mod tests {
         );
         lexical_names.shutdown().unwrap();
 
-        let mut repl = ResidentReplSession::new(WasmReplRuntimeFactory);
+        let mut rich_document = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
+        rich_document
+            .replace_source(include_str!("../../../examples/working/fizzbuzz.mec").to_string())
+            .unwrap();
+        dispatch_repl_request(
+            &mut rich_document,
+            parse_repl_request(":code 1 + 1").unwrap(),
+            &browser_repl_availability(),
+            ReplStepMode::Cooperative,
+        )
+        .unwrap();
+        let submitted_value = rich_document
+            .drain_events()
+            .unwrap()
+            .into_iter()
+            .find_map(|event| match event.event {
+                MechEvent::Repl(ReplEvent::Response(ReplResponse {
+                    kind: ReplResponseKind::ValueInspection,
+                    content: OutputContent::Value(value),
+                    ..
+                })) => Some(value.text),
+                _ => None,
+            })
+            .expect("`:code` value response after a rich document load");
+        assert_eq!(submitted_value, "2");
+        rich_document.shutdown().unwrap();
+
+        let mut repl = ResidentReplSession::new(WasmReplRuntimeFactory::Standalone);
         repl.submit("answer := 1\n").unwrap();
         assert_eq!(repl.symbols(&["answer".to_string()]).unwrap().len(), 1);
         assert!(repl.submit("broken := (\n").is_err());

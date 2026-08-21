@@ -76,7 +76,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # Every document controller exports both WasmDocument and WasmRepl. Keep the
 # console provider in this smallest document closure so reduced, base, full,
 # and compiler-inferred builds all satisfy the same controller contract.
-browser_project_core = ["resident-routing-source", "program", "pretty_print", "serde", "browser_host_console"]
+browser_project_core = ["resident-routing-source", "program", "pretty_print", "formatter", "serde", "browser_host_console"]
 browser_project = ["browser_project_core", "source", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_scene", "baselib", "mika", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
 browser_compute = [
   "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
