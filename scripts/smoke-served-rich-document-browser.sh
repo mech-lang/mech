@@ -648,18 +648,37 @@ def assert_style_layer_contract():
   const consoleHeight = consolePane.getBoundingClientRect().height;
   const consoleWidth = consolePane.getBoundingClientRect().width;
   const promptColor = getComputedStyle(prompt).color;
+  const initialScrollY = window.scrollY;
+  const initialInlineScrollBehavior = document.documentElement.style.scrollBehavior;
 
   styles.page.disabled = true;
+  window.dispatchEvent(new Event('resize'));
+  document.documentElement.style.scrollBehavior = 'auto';
+  const headerHeight = header.getBoundingClientRect().height;
+  window.scrollTo(0, Math.min(
+    headerHeight + 64,
+    Math.max(0, document.documentElement.scrollHeight - innerHeight),
+  ));
+  const consoleRect = consolePane.getBoundingClientRect();
   const pageOff = {
     headerPosition: getComputedStyle(header).position,
+    headerBottom: header.getBoundingClientRect().bottom,
     sourceColor: getComputedStyle(token).color,
     consoleDisplay: getComputedStyle(consolePane).display,
     consolePosition: getComputedStyle(consolePane).position,
-    consoleHeight: consolePane.getBoundingClientRect().height,
-    consoleWidth: consolePane.getBoundingClientRect().width,
+    consoleTop: consoleRect.top,
+    consoleRight: consoleRect.right,
+    consoleHeight: consoleRect.height,
+    consoleWidth: consoleRect.width,
+    viewportWidth: innerWidth,
+    consoleBoxSizing: getComputedStyle(consolePane).boxSizing,
+    consoleTopStyle: getComputedStyle(consolePane).top,
     promptColor: getComputedStyle(prompt).color,
   };
   styles.page.disabled = false;
+  window.dispatchEvent(new Event('resize'));
+  window.scrollTo(0, initialScrollY);
+  document.documentElement.style.scrollBehavior = initialInlineScrollBehavior;
 
   styles.mechdown.disabled = true;
   const mechdownOff = {
@@ -710,7 +729,12 @@ def assert_style_layer_contract():
         layers["pageOff"]["sourceColor"] != layers["sourceColor"] or
         layers["pageOff"]["consoleDisplay"] != layers["consoleDisplay"] or
         layers["pageOff"]["consolePosition"] != layers["consolePosition"] or
-        abs(layers["pageOff"]["consoleHeight"] - layers["consoleHeight"]) > 1 or
+        layers["pageOff"]["headerBottom"] > 1 or
+        abs(layers["pageOff"]["consoleTop"]) > 1 or
+        layers["pageOff"]["consoleTopStyle"] != "0px" or
+        layers["pageOff"]["consoleBoxSizing"] != "border-box" or
+        layers["pageOff"]["consoleRight"] > layers["pageOff"]["viewportWidth"] + 1 or
+        layers["pageOff"]["consoleHeight"] <= layers["consoleHeight"] or
         abs(layers["pageOff"]["consoleWidth"] - layers["consoleWidth"]) > 1 or
         layers["pageOff"]["promptColor"] != layers["promptColor"] or
         layers["mechdownOff"]["headingDisplay"] != "block" or
@@ -1739,6 +1763,9 @@ def assert_console_tab_isolation():
     consoleSize: root.style.getPropertyValue('--mech-console-size'),
     consoleOpen: root.dataset.mechConsoleOpen,
     outputAria: outputTab.getAttribute('aria-selected'),
+    foreignPanelDisplay: getComputedStyle(foreignPanel).display,
+    foreignResizePosition: getComputedStyle(foreignResize).position,
+    foreignResizeCursor: getComputedStyle(foreignResize).cursor,
   };
   const rect = foreignResize.getBoundingClientRect();
   const startX = rect.left + Math.max(1, rect.width / 2);
@@ -1765,6 +1792,9 @@ def assert_console_tab_isolation():
     consoleOpenUnchanged: root.dataset.mechConsoleOpen === before.consoleOpen,
     consoleTabAriaUnchanged: outputTab.getAttribute('aria-selected') === before.outputAria,
     outputActive: document.querySelector('#output-panel')?.classList.contains('is-active'),
+    foreignPanelDisplay: before.foreignPanelDisplay,
+    foreignResizePosition: before.foreignResizePosition,
+    foreignResizeCursor: before.foreignResizeCursor,
   };
 })()
 """)
@@ -1777,6 +1807,9 @@ def assert_console_tab_isolation():
         state["foreignAria"] != "true" or
         state["foreignPointerEvents"] != 1 or
         state["foreignButtonEvents"] != 1 or
+        state["foreignPanelDisplay"] != "block" or
+        state["foreignResizePosition"] != "static" or
+        state["foreignResizeCursor"] == "ew-resize" or
         not state["consoleSizeUnchanged"] or
         not state["consoleOpenUnchanged"] or
         not state["consoleTabAriaUnchanged"]
@@ -1858,6 +1891,14 @@ def assert_right_console_resize_direction():
 
 
 def assert_mobile_contract():
+    evaluate("""
+(() => {
+  const root = document.querySelector('[data-mech-repl-host]');
+  const pane = document.querySelector('[data-mech-console-pane]');
+  if (root) root.style.setProperty('--mech-console-size', '1200px');
+  if (pane) pane.style.width = '1200px';
+})()
+""")
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
         {"width": 800, "height": 900, "deviceScaleFactor": 1, "mobile": False},
@@ -1928,6 +1969,25 @@ def assert_mobile_contract():
             fail(f"mobile console did not reopen through its visible control: {reopened!r}")
     if not evaluate(visible_expression(".console-pane")):
         fail("mobile console was marked open but is not visible")
+    pane_geometry = evaluate_json("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  if (!pane) return null;
+  const rect = pane.getBoundingClientRect();
+  return {
+    width: rect.width,
+    right: rect.right,
+    viewportWidth: innerWidth,
+    expectedMaximum: Math.min(innerWidth * 0.94, 520),
+  };
+})()
+""")
+    if (
+        pane_geometry is None or
+        pane_geometry["width"] > pane_geometry["expectedMaximum"] + 1 or
+        pane_geometry["right"] > pane_geometry["viewportWidth"] + 1
+    ):
+        fail(f"mobile console retained an overflowing desktop width: {pane_geometry!r}")
 
 
 def assert_repl_termination():

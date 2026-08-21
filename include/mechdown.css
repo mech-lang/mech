@@ -341,10 +341,21 @@
 }
 
 [data-mechdown] .mech-backmatter-heading {
-  color: var(--mechdown-accent);
-  font: 650 0.8rem/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  border-bottom: 0;
+  color: var(--mechdown-text);
+  column-span: all;
+  counter-increment: none;
+  counter-reset: none;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: 30px 0 12px;
+  padding: 0;
+  text-transform: none;
+}
+
+[data-mechdown] .mech-backmatter-heading::before {
+  content: none !important;
 }
 
 [data-mechdown] .mech-footnote,

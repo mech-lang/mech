@@ -424,24 +424,8 @@ impl Formatter {
   aria-live="polite">
 </div>"#;
 
-        let has_layer_slots = [
-            "{{MECH_SOURCE_STYLESHEET}}",
-            "{{MECHDOWN_STYLESHEET}}",
-            "{{PAGE_STYLESHEET}}",
-            "{{MECH_REPL_STYLESHEET}}",
-        ]
-        .into_iter()
-        .any(|slot| shim.contains(slot));
-
         let mut slots = BTreeMap::new();
-        slots.insert(
-            "STYLESHEET".to_string(),
-            if has_layer_slots {
-                styles.page.clone()
-            } else {
-                styles.bundle()
-            },
-        );
+        slots.insert("STYLESHEET".to_string(), styles.bundle());
         slots.insert("MECH_SOURCE_STYLESHEET".to_string(), styles.source);
         slots.insert("MECHDOWN_STYLESHEET".to_string(), styles.mechdown);
         slots.insert("PAGE_STYLESHEET".to_string(), styles.page);
@@ -1068,7 +1052,7 @@ impl Formatter {
                 if self.html {
                     let element_id = format!("{}:{}", code_id, self.interpreter_id);
                     format!(
-                        "<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>",
+                        "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
                         element_id, result
                     )
                 } else {

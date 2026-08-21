@@ -121,7 +121,7 @@ fn formatter_uses_the_stable_root_namespace_for_inline_output_addresses() {
             .unwrap();
     let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
     let expected = format!(
-        "id=\"{}:0\" class=\"mech-inline-mech-code\"",
+        "id=\"{}:0\" class=\"mech-inline-mech-code\" data-mech-source",
         hash_str("inline-eval:0:0"),
     );
 
@@ -290,6 +290,25 @@ fn html_style_layers_are_independent_with_legacy_shim_fallback() {
     assert_eq!(
         legacy.html,
         "/* source */\n/* mechdown */\n/* page */\n/* repl */"
+    );
+
+    let partially_migrated_shim = "{{STYLESHEET}}|{{MECH_SOURCE_STYLESHEET}}".to_string();
+    let partial_styles = HtmlStyleSheets {
+        source: "/* source */".to_string(),
+        mechdown: "/* mechdown */".to_string(),
+        page: "/* page */".to_string(),
+        repl: "/* repl */".to_string(),
+    };
+    let mut partial_formatter = Formatter::new();
+    let partial = partial_formatter.format_html_with_style_sheets_and_slots(
+        &tree,
+        partial_styles,
+        partially_migrated_shim,
+        &HtmlShimExtraSlots::default(),
+    );
+    assert_eq!(
+        partial.html,
+        "/* source */\n/* mechdown */\n/* page */\n/* repl */|/* source */"
     );
 }
 

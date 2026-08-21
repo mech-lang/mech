@@ -25,7 +25,7 @@ pub(crate) static SHIMHTML: &str = "No Embedded Shim";
 #[cfg(has_file_stylesheet)]
 pub(crate) static STYLESHEET: &str = include_str!("../../include/style.css");
 #[cfg(not(has_file_stylesheet))]
-pub(crate) static STYLESHEET: &str = "No Embedded Stylesheet";
+pub(crate) static STYLESHEET: &str = "";
 
 #[cfg(has_file_stylesheet)]
 pub(crate) static MECH_SOURCE_STYLESHEET: &str = include_str!("../../include/mech-source.css");
@@ -328,16 +328,21 @@ pub(crate) async fn load_stylesheets(
         combined.push_str(&stylesheet_str);
         events.push(event);
     }
-    let css = if combined.is_empty() {
-        STYLESHEET.to_string()
-    } else {
-        format!("{}\n{}", STYLESHEET, combined)
-    };
+    let css = compose_stylesheets(STYLESHEET, &combined);
     Ok(LoadedStylesheets {
         css,
         events,
         local_paths,
     })
+}
+
+fn compose_stylesheets(embedded: &str, custom: &str) -> String {
+    match (embedded.is_empty(), custom.is_empty()) {
+        (true, true) => String::new(),
+        (true, false) => custom.to_string(),
+        (false, true) => embedded.to_string(),
+        (false, false) => format!("{embedded}\n{custom}"),
+    }
 }
 
 #[cfg(test)]
@@ -471,6 +476,17 @@ mod tests {
         assert!(loaded.css.ends_with("body{}"));
         assert_eq!(loaded.local_paths, vec![css.canonicalize().unwrap()]);
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn stylesheet_composition_handles_absent_embedded_assets_without_invalid_css() {
+        assert_eq!(compose_stylesheets("", "custom{}"), "custom{}");
+        assert_eq!(compose_stylesheets("embedded{}", ""), "embedded{}");
+        assert_eq!(
+            compose_stylesheets("embedded{}", "custom{}"),
+            "embedded{}\ncustom{}"
+        );
+        assert_eq!(compose_stylesheets("", ""), "");
     }
 
     #[test]

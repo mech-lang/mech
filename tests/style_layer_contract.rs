@@ -87,12 +87,25 @@ fn mechdown_and_repl_layers_are_standalone_components() {
     for selector in [
         "[data-mech-repl-host]",
         "[data-mech-repl]",
-        ".console-pane",
+        "[data-mech-console-pane]",
         ".mech-repl-transcript",
-        ".mech-inline-popup",
+        "[data-mech-repl-popup]",
     ] {
         assert!(repl.contains(selector), "REPL layer lost {selector}");
     }
+    for leaked_selector in [
+        "\n.console-pane {",
+        "\n.console-tab {",
+        "\n.resize-handle,",
+        "\n.repl-input {",
+        "\n.mech-inline-popup {",
+    ] {
+        assert!(
+            !repl.contains(leaked_selector),
+            "REPL layer leaked unowned selector {leaked_selector}",
+        );
+    }
+    assert!(repl.contains("box-sizing: border-box;"));
     assert!(repl.contains("border: 0;"));
     assert!(repl.contains("text-overflow: ellipsis;"));
     assert!(!repl.contains(".site-header"));

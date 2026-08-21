@@ -25,6 +25,7 @@ const state = {
   documentationFragmentSequence: 0,
   programDisplays: new Map(),
   inlineInspector: null,
+  replHostOffsetObserver: null,
 };
 
 function truthySetting(value) {
@@ -1648,6 +1649,51 @@ function documentConsoleFullscreenControls() {
   ])];
 }
 
+function normalizeReplComponentContract() {
+  if (!state.root) {
+    return;
+  }
+  state.root.dataset.mechReplHost = "";
+  const pane = documentConsolePane();
+  if (pane) {
+    pane.dataset.mechConsolePane = "";
+    for (const tab of pane.querySelectorAll(
+      "[data-mech-console-tab], .console-tab[data-tab]",
+    )) {
+      tab.dataset.mechConsoleTab ||= tab.dataset.tab || "";
+    }
+    for (const panel of pane.querySelectorAll(
+      "[data-mech-console-panel], .console-panel[data-panel]",
+    )) {
+      panel.dataset.mechConsolePanel ||= panel.dataset.panel || "";
+    }
+  }
+  for (const resizer of documentConsoleResizers()) {
+    resizer.dataset.mechConsoleResizer = "";
+    if (resizer.id === "edgeHandle" || resizer.classList.contains("edge-handle")) {
+      resizer.dataset.mechConsoleEdgeHandle = "";
+    }
+  }
+  for (const toggle of documentConsoleToggles()) {
+    toggle.dataset.mechConsoleToggle = "";
+  }
+  for (const control of documentConsoleFullscreenControls()) {
+    control.dataset.mechConsoleFullscreen = "";
+  }
+  const mount = state.root.querySelector("#mech-output");
+  if (mount) {
+    mount.dataset.mechRepl = "";
+  }
+  const output = state.root.querySelector("#mech-document-output");
+  if (output) {
+    output.dataset.mechOutputPanel = "";
+  }
+  const errors = state.root.querySelector("#mech-document-errors");
+  if (errors) {
+    errors.dataset.mechErrorsPanel = "";
+  }
+}
+
 function setConsoleOpen(open) {
   if (open) {
     dismissInlineInspector({ restoreFocus: false });
@@ -1963,7 +2009,11 @@ function initializeOptionalRenderers() {
 
 function syncReplHostOffset() {
   const header = document.querySelector(".site-header, #header");
-  const offset = header ? Math.max(0, header.getBoundingClientRect().height) : 0;
+  const position = header ? getComputedStyle(header).position : "";
+  const overlaysViewport = position === "fixed" || position === "sticky";
+  const offset = overlaysViewport
+    ? Math.max(0, header.getBoundingClientRect().height)
+    : 0;
   for (const host of document.querySelectorAll("[data-mech-repl-host]")) {
     host.style.setProperty("--mech-repl-top-offset", `${offset}px`);
   }
@@ -1977,6 +2027,12 @@ function initializeLayout() {
   });
   syncReplHostOffset();
   window.addEventListener("resize", syncReplHostOffset);
+  const header = document.querySelector(".site-header, #header");
+  if (header && typeof ResizeObserver === "function") {
+    state.replHostOffsetObserver?.disconnect();
+    state.replHostOffsetObserver = new ResizeObserver(syncReplHostOffset);
+    state.replHostOffsetObserver.observe(header);
+  }
   initializeConsoleState();
   initializeConsoleTabs();
   initializeConsoleToggle();
@@ -2012,6 +2068,7 @@ async function main() {
   if (!state.root) {
     throw new Error("the document controller requires a .mech-root element");
   }
+  normalizeReplComponentContract();
   setDocumentStatus("loading");
   const embeddedDocumentSources = loadEmbeddedDocumentSourceBundle();
   const wasmModule =
