@@ -348,13 +348,14 @@ try:
 (() => {
   const root = document.querySelector('.mech-root');
   const pane = document.querySelector('#mech-console, .console-pane');
-  const toggle = document.querySelector('#toggle-repl, [data-mech-console-toggle]');
   const transcript = document.querySelector('.mech-repl-transcript');
   const value = [...document.querySelectorAll('.mech-var-name')].find(element =>
     !element.closest('#mech-console, .console-pane') &&
     (element.dataset.mechVarName || element.textContent.trim()) === 'answer');
-  if (!root || !pane || !toggle || !transcript || !value) return null;
-  toggle.click();
+  if (!root || !pane || !transcript || !value) return null;
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '`', bubbles: true, cancelable: true,
+  }));
   const transcriptEntries = transcript.children.length;
   value.click();
   const popup = document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
@@ -378,7 +379,9 @@ try:
     key: 'Escape', bubbles: true, cancelable: true,
   }));
   result.dismissed = !document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
-  toggle.click();
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '`', bubbles: true, cancelable: true,
+  }));
   result.reopened = root.dataset.mechConsoleOpen === 'true' && !pane.hidden;
   return result;
 })()

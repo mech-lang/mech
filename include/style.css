@@ -16,7 +16,7 @@
   --mech-page-style-signal: 1px;
 
   /* ── Layout ── */
-  --header-height: 52px;
+  --header-height: 0px;
   --toc-width: 260px;
   --content-max-width: 1200px;
 
@@ -94,6 +94,10 @@
   --grip-notch-width:  2px;
   --grip-notch-height: 24px;
 
+}
+
+:root:has(.site-header) {
+  --header-height: 52px;
 }
 
 * { box-sizing: border-box; }
@@ -461,13 +465,13 @@ a { color: inherit; text-decoration: none; }
 /* ── Article layout ── */
 .article-layout {
   min-width: 0;
-  display: grid;
-  grid-template-columns: var(--toc-width) minmax(0, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 48px;
   align-items: start;
 }
 
-.article-layout.hide-toc { grid-template-columns: 1fr; }
+.article-layout.hide-toc { display: block; }
 
 .article-layout.hide-toc .toc { display: none; }
 
@@ -497,6 +501,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ── TOC ── */
 .toc {
+  flex: 0 0 min(100%, var(--toc-width));
   position: sticky;
   top: 0px;
   align-self: start;
@@ -564,8 +569,9 @@ a { color: inherit; text-decoration: none; }
 
 /* ── Main content ── */
 .main-content {
+  flex: 1 1 360px;
   width: 100%;
-  min-width: 0;
+  min-width: min(100%, 400px);
   max-width: 100%;
   counter-reset: section-index;
 }
@@ -847,11 +853,18 @@ a { color: inherit; text-decoration: none; }
 
 @media (max-width: 900px) {
   .article-layout {
-    grid-template-columns: minmax(0, 1fr);
+    flex-direction: column;
+    gap: 24px;
   }
 
   .toc {
-    display: none;
+    border-bottom: 1px dotted var(--toc-border);
+    display: block;
+    max-height: min(34vh, 18rem);
+    overflow: auto;
+    padding: 0 0 18px;
+    position: relative;
+    width: 100%;
   }
 
   .content-shell {
@@ -924,8 +937,26 @@ a { color: inherit; text-decoration: none; }
   }
 }
 
+@container (max-width: 680px) {
+  .article-layout,
+  .docs-layout {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .toc {
+    border-bottom: 1px dotted var(--toc-border);
+    display: block;
+    max-height: min(34vh, 18rem);
+    overflow: auto;
+    padding: 0 0 18px;
+    position: relative;
+    width: 100%;
+  }
+}
+
 @media (max-width: 700px) {
-  :root {
+  :root:has(.site-header) {
     --header-height: 118px;
   }
 

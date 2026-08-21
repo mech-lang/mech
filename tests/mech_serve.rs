@@ -632,16 +632,12 @@ fn mech_serve_default_shim_restores_rich_shell() {
     assert_served_rich_shell(
         &mut server,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "main-content",
-            "id=\"github\"",
             "id=\"resizer\"",
-            "id=\"toggle-repl\"",
             "console-pane",
-            "footer",
         ],
     );
 }
@@ -663,13 +659,11 @@ fn mech_serve_blog_shim_restores_rich_shell() {
     assert_served_rich_shell(
         &mut server,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "hero-panel",
             "console-pane",
-            "footer",
         ],
     );
 }
@@ -691,13 +685,11 @@ fn mech_serve_docs_shim_restores_rich_shell() {
     assert_served_rich_shell(
         &mut server,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "docs-content",
             "console-pane",
-            "footer",
         ],
     );
 }
@@ -720,15 +712,7 @@ fn assert_formatted_rich_page_is_served(shim: &str, stylesheet: &str) {
     );
     let root = server.assert_route("/", 200, "text/html");
     let html = String::from_utf8_lossy(&root.body);
-    shim_contract::assert_rich_shell(
-        &html,
-        &[
-            "site-header",
-            "contentShell",
-            "articleLayout",
-            "console-pane",
-        ],
-    );
+    shim_contract::assert_rich_shell(&html, &["contentShell", "articleLayout", "console-pane"]);
     assert!(
         html.contains("data-mech-source-url-key=\"\""),
         "formatted static root should use its embedded document code"

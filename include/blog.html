@@ -8,32 +8,12 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
   <style data-mech-style-layer="source">{{MECH_SOURCE_STYLESHEET}}</style>
   <style data-mech-style-layer="mechdown">{{MECHDOWN_STYLESHEET}}</style>
   <style data-mech-style-layer="page">{{PAGE_STYLESHEET}}</style>
   <style data-mech-style-layer="repl">{{MECH_REPL_STYLESHEET}}</style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="header-inner">
-      <a class="brand" href="https://mech-lang.org" aria-label="Mech home">
-        <img src="https://mech-lang.org/img/logo.png" alt="Mech">
-      </a>
-      <nav class="top-nav" aria-label="Primary">
-        <a href="https://mech-lang.org">Home</a>
-        <a href="https://mech-lang.org/blog" class="active" aria-current="page">Blog</a>
-        <a href="https://docs.mech-lang.org">Docs</a>
-        <a href="https://try.mech-lang.org">Explore</a>
-      </nav>
-      <div class="header-actions">
-        <div id="github">
-          <a class="github-button" href="https://github.com/mech-lang/mech" data-size="large" data-show-count="true" aria-label="Star mech-lang/mech on GitHub">Star</a>
-        </div>
-      </div>
-    </div>
-  </header>
-
   <main
     class="workspace mech-root"
     id="workspace"
@@ -96,67 +76,10 @@
           </div>
         </nav>
 
-        <footer class="footer">
-          <div class="footer-inner">
-            <div class="footer-main">
-              <div class="footer-robot">
-                <a href="https://mech-lang.org" aria-label="Mech home">
-                  <img src="https://gitlab.com/mech-lang/assets/-/raw/main/images/mika/mika-pose-point.png?ref_type=heads" alt="Mika the Mech" onerror="this.hidden = true">
-                  <div class="mika-glyph" aria-hidden="true">
-                    <div class="mika-glyph-art-wrap">
-                      <pre class="mika-glyph-art mika-glyph-art--mini">╭(˙◯˙)─</pre>
-                      <pre class="mika-glyph-art mika-glyph-art--micro">╭⦿─</pre>
-                    </div>
-                  </div>
-                </a>
-              </div>
-              <div class="footer-links">
-                <div class="footer-group">
-                  <div class="footer-heading">Platform</div>
-                  <a href="https://mech-lang.org">Language</a>
-                  <a href="https://try.mech-lang.org">Explore</a>
-                </div>
-                <div class="footer-group">
-                  <div class="footer-heading">Community</div>
-                  <a href="https://mech-lang.org/community">Community</a>
-                  <a href="https://github.com/mech-lang/mech">GitHub</a>
-                </div>
-                <div class="footer-group">
-                  <div class="footer-heading">Resources</div>
-                  <a href="https://docs.mech-lang.org">Docs</a>
-                  <a href="https://mech-lang.org/blog">Blog</a>
-                </div>
-              </div>
-              <div class="footer-release">
-                <div class="release-ack">Built with Mech</div>
-                <div class="release-grid-row">
-                  <div class="release-grid-label">Version:</div>
-                  <div class="release-grid-value">{{VERSION}}</div>
-                </div>
-                <div class="release-grid-row">
-                  <div class="release-grid-label">License:</div>
-                  <div class="release-grid-value"><a href="https://github.com/mech-lang/mech?tab=Apache-2.0-1-ov-file#readme">Apache 2.0</a></div>
-                </div>
-              </div>
-            </div>
-            <div class="footer-meta">
-              <span>Mech Language</span>
-              <span class="footer-pride" aria-label="Pride">♥</span>
-            </div>
-          </div>
-        </footer>
       </div>
     </section>
 
     <div class="resize-handle" id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize console" data-mech-console-resizer></div>
-    <button
-      class="document-console-toggle"
-      id="toggle-repl"
-      type="button"
-      aria-controls="mech-console"
-      aria-expanded="true"
-      aria-label="Toggle document console"
-      data-mech-console-toggle>Console</button>
     <div class="edge-handle" id="edgeHandle" aria-hidden="true" data-mech-console-edge-handle data-mech-console-resizer></div>
 
     <aside class="console-pane" id="mech-console" aria-label="Document console" data-mech-console-pane>
@@ -166,7 +89,7 @@
           <button class="console-tab" id="output-tab" type="button" role="tab" aria-selected="false" aria-controls="output-panel" data-tab="output" data-mech-console-tab="output">Output</button>
           <button class="console-tab" id="errors-tab" type="button" role="tab" aria-selected="false" aria-controls="errors-panel" data-tab="errors" data-mech-console-tab="errors">Errors</button>
         </div>
-        <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen" data-mech-console-fullscreen>
+        <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen workspace" data-mech-console-fullscreen>
           <span aria-hidden="true">⛶</span>
         </button>
       </div>

@@ -19,6 +19,14 @@ require_literal() {
   grep -Fq -- "$literal" "$file" || fail "$file is missing required contract: $literal"
 }
 
+reject_literal() {
+  local file="$1"
+  local literal="$2"
+  if grep -Fq -- "$literal" "$file"; then
+    fail "$file contains app-specific chrome: $literal"
+  fi
+}
+
 for file in include/index.html include/blog.html include/docs.html include/document.js src/wasm/src/repl.rs; do
   require_file "$file"
 done
@@ -26,9 +34,6 @@ done
 command -v grep >/dev/null 2>&1 || fail "grep is required to scan shipped document shims"
 
 for selector in \
-  'site-header' \
-  'header-inner' \
-  'id="github"' \
   'mech-root' \
   'contentShell' \
   'content-column' \
@@ -38,7 +43,6 @@ for selector in \
   'article-backmatter' \
   'post-pagination' \
   'id="resizer"' \
-  'id="toggle-repl"' \
   'console-pane' \
   'console-tabs' \
   'console-tab' \
@@ -49,8 +53,6 @@ for selector in \
 done
 
 for selector in \
-  'site-header' \
-  'header-inner' \
   'contentShell' \
   'content-column' \
   'articleIntro' \
@@ -63,7 +65,6 @@ for selector in \
 done
 
 for selector in \
-  'site-header' \
   'contentShell' \
   'docs-layout' \
   'docs-header' \
@@ -76,6 +77,9 @@ for selector in \
 done
 
 for file in include/index.html include/blog.html include/docs.html; do
+  reject_literal "$file" '<header class="site-header">'
+  reject_literal "$file" '<footer class="footer">'
+  reject_literal "$file" 'data-mech-console-toggle'
   for slot in \
     '{{DOCUMENT_SCRIPT}}' \
     '{{DOCUMENT_SOURCES}}' \

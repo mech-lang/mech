@@ -12,6 +12,7 @@ const state = {
   animationFrame: null,
   history: [],
   historyIndex: 0,
+  historyDraft: "",
   console: null,
   replInputAction: null,
   replStepLimit: null,
@@ -28,6 +29,7 @@ const state = {
   replHostOffsetObserver: null,
   replPageStyleProbe: null,
   replStyleObserver: null,
+  consolePointerSession: null,
 };
 
 const ERROR_PANEL_SELECTOR =
@@ -149,6 +151,36 @@ function appendError(error, owner = "document") {
   return message;
 }
 
+function selectedConsolePanel(pane = documentConsolePane()) {
+  if (!pane) {
+    return "";
+  }
+  return pane.dataset.mechConsoleActivePanel ||
+    pane.querySelector("[data-mech-console-tab][aria-selected='true'], .console-tab[aria-selected='true']")
+      ?.dataset.mechConsoleTab ||
+    pane.querySelector(".console-tab[aria-selected='true']")?.dataset.tab ||
+    "";
+}
+
+function markConsolePanelActivity(name) {
+  const pane = documentConsolePane();
+  if (!pane || pane.classList.contains("is-fullscreen") || selectedConsolePanel(pane) === name) {
+    return;
+  }
+  const tab = [...pane.querySelectorAll(
+    ".console-tab, [data-mech-console-tab], [data-tab]",
+  )].find(candidate =>
+    (candidate.dataset.mechConsoleTab || candidate.dataset.tab) === name
+  );
+  if (tab) {
+    if (!("mechConsoleBaseLabel" in tab.dataset)) {
+      tab.dataset.mechConsoleBaseLabel = tab.getAttribute("aria-label") || "";
+    }
+    tab.dataset.mechConsoleUnread = "true";
+    tab.setAttribute("aria-label", `${tab.textContent.trim()} (new activity)`);
+  }
+}
+
 function appendDiagnostic(diagnostic) {
   const interaction = diagnostic.owner === "interaction";
   const target = interaction ? transcript() : errorRegion("program-diagnostics");
@@ -184,7 +216,7 @@ function appendDiagnostic(diagnostic) {
     appendToTranscript(row);
   } else {
     target.append(row);
-    activateConsolePanel("errors");
+    markConsolePanelActivity("errors");
   }
 }
 
@@ -227,6 +259,10 @@ function stopRuntime() {
 function showFatalError(error) {
   stopRuntime();
   const message = appendError(error);
+  if (documentConsolePane()) {
+    setConsoleOpen(true);
+    activateConsolePanel("errors");
+  }
   setDocumentStatus("error", message);
   console.error(error);
 }
@@ -571,6 +607,89 @@ function refreshOutputPanel(entries) {
   }
 }
 
+function formattedMechInline(value) {
+  const source = String(value ?? "_");
+  const fragment = document.createDocumentFragment();
+  const append = (text, className = "") => {
+    const node = className ? document.createElement("span") : document.createTextNode(text);
+    if (className) {
+      node.className = className;
+      node.textContent = text;
+    }
+    fragment.append(node);
+  };
+  let cursor = 0;
+  while (cursor < source.length) {
+    const rest = source.slice(cursor);
+    if (rest[0] === '"') {
+      let end = 1;
+      let escaped = false;
+      while (end < rest.length) {
+        const character = rest[end];
+        end += 1;
+        if (!escaped && character === '"') {
+          break;
+        }
+        if (!escaped && character === "\\") {
+          escaped = true;
+        } else {
+          escaped = false;
+        }
+      }
+      append(rest.slice(0, end), "mech-string");
+      cursor += end;
+      continue;
+    }
+    if (rest[0] === "<") {
+      const close = rest.indexOf(">");
+      if (close >= 0) {
+        append(rest.slice(0, close + 1), "mech-kind-annotation");
+        cursor += close + 1;
+        continue;
+      }
+    }
+    const atom = rest.match(/^:[A-Za-z_][A-Za-z0-9_./-]*/)?.[0];
+    if (atom) {
+      append(atom, "mech-atom");
+      cursor += atom.length;
+      continue;
+    }
+    const number = rest.match(/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?/)?.[0];
+    if (number) {
+      append(number, "mech-number");
+      cursor += number.length;
+      continue;
+    }
+    const boolean = rest.match(/^(?:true|false|none)(?![A-Za-z0-9_])/)?.[0];
+    if (boolean) {
+      append(boolean, "mech-boolean");
+      cursor += boolean.length;
+      continue;
+    }
+    const plain = rest.match(/^[^"<:+\-.\d]+/)?.[0] || rest[0];
+    append(plain);
+    cursor += plain.length;
+  }
+  return fragment;
+}
+
+function formattedValueElement(kind, value) {
+  const rendered = document.createElement("span");
+  rendered.className = "mech-repl-formatted-value";
+  rendered.dataset.mechSource = "";
+  if (kind) {
+    const kindElement = document.createElement("span");
+    kindElement.className = "mech-repl-result-kind mech-kind-annotation";
+    kindElement.textContent = kind;
+    rendered.append(kindElement);
+  }
+  const valueElement = document.createElement("span");
+  valueElement.className = "mech-repl-result-value";
+  valueElement.append(formattedMechInline(value));
+  rendered.append(valueElement);
+  return rendered;
+}
+
 function outputContentElement(content) {
   const body = document.createElement("div");
   body.className = `mech-repl-output-content mech-repl-output-${content?.kind || "unknown"}`;
@@ -586,7 +705,7 @@ function outputContentElement(content) {
     return body;
   }
   if (content?.kind === "value") {
-    body.textContent = data.text || data.inline_text || "_";
+    body.append(formattedValueElement(data.kind || "", data.text || data.inline_text || "_"));
     return body;
   }
   if (content?.kind === "table") {
@@ -607,9 +726,18 @@ function outputContentElement(content) {
       if (mutedRows.has(rowIndex)) {
         row.classList.add("mech-repl-row-muted");
       }
-      for (const value of values) {
+      for (const [columnIndex, value] of values.entries()) {
         const cell = document.createElement("td");
-        cell.textContent = value;
+        const column = String((data.columns || [])[columnIndex] || "").toLowerCase();
+        if (column === "value") {
+          cell.dataset.mechSource = "";
+          cell.append(formattedMechInline(value));
+        } else if (column === "type" || column === "kind") {
+          cell.className = "mech-repl-result-kind";
+          cell.textContent = value;
+        } else {
+          cell.textContent = value;
+        }
         row.append(cell);
       }
       tableBody.append(row);
@@ -619,12 +747,16 @@ function outputContentElement(content) {
     return body;
   }
   if (content?.kind === "matrix") {
-    const rows = [];
+    body.dataset.mechSource = "";
+    body.append("[");
     const width = Math.max(1, data.columns || 0);
-    for (let index = 0; index < (data.cells || []).length; index += width) {
-      rows.push(data.cells.slice(index, index + width).join(" "));
+    for (const [index, cell] of (data.cells || []).entries()) {
+      if (index > 0) {
+        body.append(index % width === 0 ? "; " : " ");
+      }
+      body.append(formattedMechInline(cell));
     }
-    body.textContent = `[${rows.join("; ")}]`;
+    body.append("]");
     return body;
   }
   const representations = data.representations?.representations || data.representations || [];
@@ -703,6 +835,10 @@ function appendProgramOutput(output) {
   }
   const stderr = output.stream === "stderr";
   const target = stderr ? errorRegion("program") : outputRegion("repl");
+  const scroller = target?.closest(".console-scroll") || target;
+  const keepAtBottom = scroller
+    ? scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= 24
+    : false;
   const displayId = typeof output.display_id === "string"
     ? output.display_id
     : output.display_id?.[0] || null;
@@ -755,13 +891,17 @@ function appendProgramOutput(output) {
     } else {
       row.append(next);
     }
-    target.scrollTop = target.scrollHeight;
-    activateConsolePanel(stderr ? "errors" : "output");
+    if (keepAtBottom) {
+      scroller.scrollTop = scroller.scrollHeight;
+    }
+    markConsolePanelActivity(stderr ? "errors" : "output");
     return;
   }
   row.replaceChildren(outputContentElement(output.content));
-  target.scrollTop = target.scrollHeight;
-  activateConsolePanel(stderr ? "errors" : "output");
+  if (keepAtBottom) {
+    scroller.scrollTop = scroller.scrollHeight;
+  }
+  markConsolePanelActivity(stderr ? "errors" : "output");
 }
 
 function focusProgramDisplay(payload) {
@@ -1148,14 +1288,9 @@ function appendRenderedResult(rendered) {
   const row = document.createElement("div");
   row.className = "mech-repl-entry mech-repl-result";
   row.dataset.mechResultKind = rendered.kind;
-  const kind = document.createElement("span");
-  kind.className = "mech-repl-result-kind";
-  kind.textContent = rendered.kind;
-  const value = document.createElement("span");
-  value.className = "mech-repl-result-value";
-  value.dataset.mechSource = "";
-  value.innerHTML = rendered.inlineHtml;
-  row.append(kind, value);
+  const decoded = document.createElement("span");
+  decoded.innerHTML = rendered.inlineHtml || "_";
+  row.append(formattedValueElement(rendered.kind, decoded.textContent));
   appendToTranscript(row);
 }
 
@@ -1483,6 +1618,7 @@ function submitConsoleInput(value, row, input) {
   }
   state.history.push(source);
   state.historyIndex = state.history.length;
+  state.historyDraft = "";
   const code = document.createElement("span");
   code.className = "repl-code";
   code.textContent = value;
@@ -1528,6 +1664,46 @@ function insertLineBreak(input) {
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
+function caretIsOnFirstLine(input) {
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? start;
+  if (start !== end) {
+    return false;
+  }
+  return !input.value.slice(0, start).includes("\n");
+}
+
+function recallConsoleHistory(input, direction) {
+  if (!state.history.length) {
+    return false;
+  }
+  if (!caretIsOnFirstLine(input)) {
+    return false;
+  }
+  if (direction < 0 && state.historyIndex === state.history.length) {
+    state.historyDraft = input.value;
+  }
+  const nextIndex = Math.max(
+    0,
+    Math.min(state.history.length, state.historyIndex + direction),
+  );
+  if (nextIndex === state.historyIndex) {
+    return false;
+  }
+  state.historyIndex = nextIndex;
+  input.value = nextIndex === state.history.length
+    ? state.historyDraft
+    : state.history[nextIndex];
+  input.setSelectionRange(0, 0);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  return true;
+}
+
+function resizeConsoleInput(input) {
+  input.style.height = "0";
+  input.style.height = `${input.scrollHeight}px`;
+}
+
 function appendActivePrompt() {
   const target = transcript();
   if (!target || !state.console) {
@@ -1557,6 +1733,7 @@ function appendActivePrompt() {
   input.dataset.mechInteractiveEvaluation = "resident";
   input.setAttribute("aria-label", "Mech resident REPL input");
   input.placeholder = "Enter submits · Ctrl+Enter adds a line";
+  input.addEventListener("input", () => resizeConsoleInput(input));
   input.addEventListener("keydown", (event) => {
     if (event.isComposing) {
       return;
@@ -1586,16 +1763,12 @@ function appendActivePrompt() {
       submitConsoleInput(input.value, inputRow, input);
       return;
     }
-    if (event.key === "ArrowUp" && state.history.length) {
+    if (event.key === "ArrowUp" && recallConsoleHistory(input, -1)) {
       event.preventDefault();
-      state.historyIndex = Math.max(0, state.historyIndex - 1);
-      input.value = state.history[state.historyIndex];
       return;
     }
-    if (event.key === "ArrowDown" && state.history.length) {
+    if (event.key === "ArrowDown" && recallConsoleHistory(input, 1)) {
       event.preventDefault();
-      state.historyIndex = Math.min(state.history.length, state.historyIndex + 1);
-      input.value = state.history[state.historyIndex] || "";
     }
   });
   inputRow.append(prompt, input);
@@ -1603,6 +1776,7 @@ function appendActivePrompt() {
   state.console.inputRow = inputRow;
   state.console.input = input;
   syncConsoleInputState();
+  resizeConsoleInput(input);
   target.scrollTop = target.scrollHeight;
   input.focus();
 }
@@ -1645,6 +1819,15 @@ function attachConsole() {
     inputRow: null,
     pendingSubmission: null,
   };
+  mount.addEventListener("click", event => {
+    if (
+      event.target.closest("button, a, input, textarea, select, [contenteditable='true']") ||
+      !window.getSelection()?.isCollapsed
+    ) {
+      return;
+    }
+    state.console?.input?.focus({ preventScroll: true });
+  });
   appendActivePrompt();
   setConsoleStatus("ready");
   dispatch("mech:console-ready");
@@ -1665,10 +1848,35 @@ function documentConsoleResizers() {
     return [];
   }
   return [...new Set([
-    ...root.querySelectorAll("[data-mech-console-resizer]"),
-    ...root.querySelectorAll("#resizer, #edgeHandle"),
-    ...(pane ? pane.querySelectorAll(".resize-handle") : []),
+    ...root.querySelectorAll(":scope > [data-mech-console-resizer]"),
+    ...root.querySelectorAll(":scope > #resizer, :scope > #edgeHandle"),
+    ...(pane ? pane.querySelectorAll(":scope > [data-mech-console-resizer]") : []),
   ])];
+}
+
+function ensureConsoleWorkspaceResizers(pane = documentConsolePane()) {
+  const panels = pane?.querySelector(":scope > .console-panels");
+  if (!panels) {
+    return [];
+  }
+  const specifications = [
+    ["column", "vertical", "Resize Console and Output panels"],
+    ["row", "horizontal", "Resize Output and Errors panels"],
+  ];
+  for (const [name, orientation, label] of specifications) {
+    if (panels.querySelector(`[data-mech-console-workspace-resizer="${name}"]`)) {
+      continue;
+    }
+    const resizer = document.createElement("div");
+    resizer.dataset.mechConsoleWorkspaceResizer = name;
+    resizer.className = `console-workspace-resizer console-workspace-resizer-${name}`;
+    resizer.setAttribute("role", "separator");
+    resizer.setAttribute("aria-orientation", orientation);
+    resizer.setAttribute("aria-label", label);
+    resizer.tabIndex = 0;
+    panels.append(resizer);
+  }
+  return [...panels.querySelectorAll("[data-mech-console-workspace-resizer]")];
 }
 
 function documentConsoleToggles() {
@@ -1676,7 +1884,7 @@ function documentConsoleToggles() {
     return [];
   }
   return [...new Set(state.root.querySelectorAll(
-    "[data-mech-console-toggle], #toggle-repl",
+    ":scope > [data-mech-console-toggle], :scope > #toggle-repl",
   ))];
 }
 
@@ -1686,10 +1894,11 @@ function documentConsoleFullscreenControls() {
   if (!root) {
     return [];
   }
-  return [...new Set([
-    ...root.querySelectorAll("[data-mech-console-fullscreen], #consoleFullscreenToggle"),
-    ...(pane ? pane.querySelectorAll("[data-mech-console-fullscreen]") : []),
-  ])];
+  return pane
+    ? [...new Set(pane.querySelectorAll(
+        "[data-mech-console-fullscreen], #consoleFullscreenToggle",
+      ))]
+    : [];
 }
 
 function normalizeReplComponentContract() {
@@ -1710,6 +1919,7 @@ function normalizeReplComponentContract() {
     )) {
       panel.dataset.mechConsolePanel ||= panel.dataset.panel || "";
     }
+    ensureConsoleWorkspaceResizers(pane);
   }
   for (const resizer of documentConsoleResizers()) {
     resizer.dataset.mechConsoleResizer = "";
@@ -1787,11 +1997,13 @@ function activateConsolePanel(name, pane = documentConsolePane()) {
   if (!pane || !panel) {
     return;
   }
+  pane.dataset.mechConsoleActivePanel = name;
+  const workspace = pane.classList.contains("is-fullscreen");
   for (const candidate of pane.querySelectorAll(
     ".console-panel, [data-mech-console-panel], [data-panel]",
   )) {
     const selected = candidate === panel;
-    candidate.hidden = !selected;
+    candidate.hidden = workspace ? false : !selected;
     candidate.classList.toggle("active", selected);
     candidate.classList.toggle("is-active", selected);
   }
@@ -1801,6 +2013,17 @@ function activateConsolePanel(name, pane = documentConsolePane()) {
     const selected = (tab.dataset.mechConsoleTab || tab.dataset.tab) === name;
     tab.classList.toggle("active", selected);
     tab.setAttribute("aria-selected", String(selected));
+    if (selected) {
+      delete tab.dataset.mechConsoleUnread;
+      if ("mechConsoleBaseLabel" in tab.dataset) {
+        const baseLabel = tab.dataset.mechConsoleBaseLabel;
+        if (baseLabel) {
+          tab.setAttribute("aria-label", baseLabel);
+        } else {
+          tab.removeAttribute("aria-label");
+        }
+      }
+    }
   }
 }
 
@@ -1819,6 +2042,7 @@ function initializeConsoleTabs() {
       }
     });
   }
+  activateConsolePanel(selectedConsolePanel(pane) || "console", pane);
 }
 
 function initializeConsoleToggle() {
@@ -1857,6 +2081,64 @@ function initializeConsoleKeyboardToggle() {
   });
 }
 
+function beginConsolePointerSession(event, handle, axis, onMove, onFinish) {
+  if (event.pointerType === "mouse" && event.button !== 0) {
+    return;
+  }
+  event.preventDefault();
+  state.consolePointerSession?.cancel();
+  const pointerId = event.pointerId;
+  let finished = false;
+  let moved = false;
+  const startX = event.clientX;
+  const startY = event.clientY;
+  const session = {
+    cancel: () => finish(event, true),
+  };
+  const move = (moveEvent) => {
+    if (moveEvent.pointerId !== pointerId) {
+      return;
+    }
+    moved ||= Math.abs(moveEvent.clientX - startX) > 1 ||
+      Math.abs(moveEvent.clientY - startY) > 1;
+    onMove(moveEvent);
+  };
+  const finish = (finishEvent, cancelled = false) => {
+    if (finished || finishEvent.pointerId !== pointerId) {
+      return;
+    }
+    finished = true;
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", complete);
+    window.removeEventListener("pointercancel", cancel);
+    handle.removeEventListener("lostpointercapture", cancel);
+    if (handle.hasPointerCapture?.(pointerId)) {
+      handle.releasePointerCapture(pointerId);
+    }
+    if (state.consolePointerSession === session) {
+      state.consolePointerSession = null;
+    }
+    document.body.classList.remove("is-resizing");
+    delete document.body.dataset.mechResizeAxis;
+    onFinish({ cancelled, moved });
+  };
+  const complete = finishEvent => finish(finishEvent, false);
+  const cancel = finishEvent => finish(finishEvent, true);
+  state.consolePointerSession = session;
+  document.body.classList.add("is-resizing");
+  document.body.dataset.mechResizeAxis = axis;
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", complete);
+  window.addEventListener("pointercancel", cancel);
+  handle.addEventListener("lostpointercapture", cancel);
+  try {
+    handle.setPointerCapture?.(pointerId);
+  } catch (_error) {
+    // Synthetic browser tests and older engines can reject pointer capture;
+    // the window-owned session still provides complete cleanup.
+  }
+}
+
 function initializeResizeHandles() {
   const pane = documentConsolePane();
   if (!pane || !state.root) {
@@ -1864,8 +2146,6 @@ function initializeResizeHandles() {
   }
   for (const handle of documentConsoleResizers()) {
     handle.addEventListener("pointerdown", (event) => {
-      event.preventDefault();
-      let moved = false;
       const rect = pane.getBoundingClientRect();
       const horizontal = handle.dataset.mechConsoleResizeAxis === "width" ||
         pane.dataset.mechConsoleResizeAxis === "width" ||
@@ -1873,8 +2153,7 @@ function initializeResizeHandles() {
         handle.id === "edgeHandle";
       const start = horizontal ? event.clientX : event.clientY;
       const initial = horizontal ? rect.width : rect.height;
-      const move = (moveEvent) => {
-        moved = true;
+      beginConsolePointerSession(event, handle, horizontal ? "width" : "height", (moveEvent) => {
         const delta = (horizontal ? moveEvent.clientX : moveEvent.clientY) - start;
         const requested = initial + (horizontal ? -delta : delta);
         const minimum = horizontal ? Math.min(370, window.innerWidth) : 160;
@@ -1884,7 +2163,15 @@ function initializeResizeHandles() {
         const overdrag = 48;
         if (horizontal && requested < minimum - overdrag) {
           delete pane.dataset.mechFullscreenFallback;
-          pane.classList.remove("is-fullscreen");
+          const controls = documentConsoleFullscreenControls();
+          if (controls.length) {
+            for (const toggle of controls) {
+              setFullscreenState(pane, toggle, false);
+            }
+          } else {
+            pane.classList.remove("is-fullscreen");
+            document.body.classList.remove("console-fullscreen");
+          }
           setConsoleOpen(false);
           return;
         }
@@ -1907,28 +2194,89 @@ function initializeResizeHandles() {
         const size = Math.max(minimum, Math.min(maximum, requested));
         state.root.style.setProperty("--mech-console-size", `${size}px`);
         pane.style[horizontal ? "width" : "height"] = `${size}px`;
-      };
-      const finish = () => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", finish);
-        if (handle.id === "edgeHandle" && !moved) {
+      }, ({ cancelled, moved }) => {
+        if (handle.id === "edgeHandle" && !cancelled && !moved) {
           const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
           setConsoleOpen(!isOpen);
         }
-      };
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", finish, { once: true });
+      });
+    });
+  }
+}
+
+function setWorkspaceSize(pane, resizer, requested) {
+  const panels = pane.querySelector(":scope > .console-panels");
+  if (!panels) {
+    return;
+  }
+  const rect = panels.getBoundingClientRect();
+  const axis = resizer.dataset.mechConsoleWorkspaceResizer;
+  const total = axis === "column" ? rect.width : rect.height;
+  const minimum = Math.min(axis === "column" ? 240 : 120, Math.max(0, total / 2 - 4));
+  const maximum = Math.max(minimum, total - minimum - 8);
+  const size = Math.max(minimum, Math.min(maximum, requested));
+  pane.style.setProperty(
+    axis === "column" ? "--mech-console-workspace-left" : "--mech-console-workspace-top",
+    `${size}px`,
+  );
+  resizer.setAttribute("aria-valuemin", String(Math.round(minimum)));
+  resizer.setAttribute("aria-valuemax", String(Math.round(maximum)));
+  resizer.setAttribute("aria-valuenow", String(Math.round(size)));
+}
+
+function initializeWorkspaceResizers() {
+  const pane = documentConsolePane();
+  if (!pane) {
+    return;
+  }
+  for (const resizer of ensureConsoleWorkspaceResizers(pane)) {
+    const axis = resizer.dataset.mechConsoleWorkspaceResizer;
+    resizer.addEventListener("pointerdown", event => {
+      if (!pane.classList.contains("is-fullscreen")) {
+        return;
+      }
+      const panels = pane.querySelector(":scope > .console-panels");
+      const rect = panels?.getBoundingClientRect();
+      if (!rect) {
+        return;
+      }
+      beginConsolePointerSession(event, resizer, axis, moveEvent => {
+        setWorkspaceSize(
+          pane,
+          resizer,
+          axis === "column"
+            ? moveEvent.clientX - rect.left
+            : moveEvent.clientY - rect.top,
+        );
+      }, () => {});
+    });
+    resizer.addEventListener("keydown", event => {
+      if (!pane.classList.contains("is-fullscreen")) {
+        return;
+      }
+      const backwards = axis === "column" ? event.key === "ArrowLeft" : event.key === "ArrowUp";
+      const forwards = axis === "column" ? event.key === "ArrowRight" : event.key === "ArrowDown";
+      if (!backwards && !forwards) {
+        return;
+      }
+      event.preventDefault();
+      const current = axis === "column"
+        ? panelFor("console", pane)?.getBoundingClientRect().width || 0
+        : panelFor("output", pane)?.getBoundingClientRect().height || 0;
+      setWorkspaceSize(pane, resizer, current + (forwards ? 24 : -24));
     });
   }
 }
 
 function setFullscreenState(pane, toggle, active) {
   pane.classList.toggle("is-fullscreen", active);
+  document.body.classList.toggle("console-fullscreen", active);
   toggle.setAttribute("aria-pressed", String(active));
   toggle.setAttribute(
     "aria-label",
-    active ? "Exit fullscreen" : "Enter fullscreen",
+    active ? "Minimize console workspace" : "Enter fullscreen workspace",
   );
+  activateConsolePanel(selectedConsolePanel(pane) || "console", pane);
 }
 
 function initializeFullscreen() {
@@ -2119,6 +2467,7 @@ function initializeLayout() {
   initializeConsoleToggle();
   initializeConsoleKeyboardToggle();
   initializeResizeHandles();
+  initializeWorkspaceResizers();
   initializeFullscreen();
   initializeBreadcrumb();
   initializeToc();

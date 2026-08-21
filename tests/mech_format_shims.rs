@@ -174,16 +174,12 @@ fn mech_format_default_shim_restores_rich_shell() {
     shim_contract::assert_rich_shell(
         &html,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "main-content",
-            "id=\"github\"",
             "id=\"resizer\"",
-            "id=\"toggle-repl\"",
             "console-pane",
-            "footer",
         ],
     );
     for layer in ["source", "mechdown", "page", "repl"] {
@@ -214,12 +210,10 @@ fn mech_format_blog_shim_restores_rich_shell() {
     shim_contract::assert_rich_shell(
         &html,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "console-pane",
-            "footer",
         ],
     );
 }
@@ -236,12 +230,10 @@ fn mech_format_docs_shim_restores_rich_shell() {
     shim_contract::assert_rich_shell(
         &html,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "console-pane",
-            "footer",
         ],
     );
 }

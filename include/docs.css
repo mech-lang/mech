@@ -4,14 +4,6 @@
   --mech-page-style-signal: 1px;
 }
 
-.docs-layout {
-  align-items: start;
-  display: grid;
-  gap: 48px;
-  grid-template-columns: var(--toc-width) minmax(0, 1fr);
-  min-width: 0;
-}
-
 .docs-header {
   border-bottom: 1px dotted var(--border);
   margin: 0 0 32px;
@@ -67,13 +59,4 @@
 .toc li.expanded > .toc-sub,
 .toc li.active-path > .toc-sub {
   display: block;
-}
-
-@media (max-width: 900px) {
-  .docs-layout {
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 100%;
-    min-width: 0;
-    width: 100%;
-  }
 }
