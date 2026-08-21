@@ -49,7 +49,6 @@ pub(crate) const TEXT_LOGO: &str = r#"
   └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#;
 
 const PROMPT: &str = ">: ";
-const PLAIN_PROMPT: &str = "> ";
 const INPUT_POLL: Duration = Duration::from_millis(10);
 const MAX_HOST_INPUTS_PER_TURN: usize = 64;
 
@@ -572,7 +571,7 @@ fn print_banner(output: &mut dyn Write) -> io::Result<()> {
 
 fn print_prompt(output: &mut dyn Write, ui: ReplUi) -> io::Result<()> {
     if ui.is_plain() {
-        write!(output, "{PLAIN_PROMPT}")?;
+        write!(output, "{PROMPT}")?;
         return output.flush();
     }
     write!(
@@ -714,7 +713,7 @@ mod tests {
     }
 
     #[test]
-    fn nofun_repl_is_a_bare_inline_session() {
+    fn nofun_repl_keeps_the_prompt_and_typed_value_without_decoration() {
         let mut output = Vec::new();
         let outcome =
             run_with_io_and_ui(Cursor::new("1 + 1\n:quit\n"), &mut output, ReplUi::plain())
@@ -722,12 +721,12 @@ mod tests {
 
         assert!(matches!(outcome, CliOutcome::Exit(0)));
         let output = String::from_utf8(output).unwrap();
-        assert!(output.starts_with("> "));
+        assert!(output.starts_with(">: "));
         assert!(!output.contains("www.mech-lang.org"));
         assert!(!output.contains("╭◉╮"));
         assert!(!output.contains("Okay cya!"));
         assert!(!output.contains("\u{1b}["));
-        assert!(output.contains("> 2\n> "));
+        assert!(output.contains(">: f64\n2\n>: "));
     }
 
     #[test]

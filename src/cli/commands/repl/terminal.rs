@@ -147,7 +147,7 @@ fn render_content(
             } else {
                 &value.inline_text
             };
-            writeln!(output, "{inline}")
+            writeln!(output, "{}\n{inline}", value.kind)
         }
         OutputContent::Value(value) => writeln!(
             output,
@@ -343,6 +343,18 @@ mod tests {
             String::from_utf8(output).unwrap(),
             "|foo<*> bar<*>| 1 2 | 3 4 |\n[1 2 3; 4 5 6]\n"
         );
+    }
+
+    #[test]
+    fn plain_values_keep_unstyled_kind_and_value_on_separate_lines() {
+        let value = OutputContent::Value(
+            mech_runtime::ValueOutput::new("[f64]:1,3", "[1 2 3]").with_inline_text("[1 2 3]"),
+        );
+        let mut output = Vec::new();
+
+        render_content(&mut output, &value, ReplRenderMode::Plain).unwrap();
+
+        assert_eq!(String::from_utf8(output).unwrap(), "[f64]:1,3\n[1 2 3]\n");
     }
 }
 

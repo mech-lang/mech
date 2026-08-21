@@ -113,7 +113,7 @@ fn canonical_inline_string_values_round_trip_through_the_mech_parser() {
 }
 
 #[test]
-fn nofun_flag_and_environment_select_a_bare_inline_repl() {
+fn nofun_flag_and_environment_select_a_decoration_free_typed_repl() {
     for (arguments, environment) in [
         (vec!["--nofun"], Vec::new()),
         (Vec::new(), vec![("MECH_NOFUN", "1")]),
@@ -123,7 +123,7 @@ fn nofun_flag_and_environment_select_a_bare_inline_repl() {
         let output =
             run_repl_with_environment(&arguments, &environment, ":help\n[1 2 3; 4 5 6]\n:quit\n");
 
-        assert!(output.starts_with("> "), "missing bare prompt: {output:?}");
+        assert!(output.starts_with(">: "), "missing REPL prompt: {output:?}");
         assert!(!output.contains("www.mech-lang.org"), "banner: {output}");
         assert!(!output.contains("╭◉╮"), "Mika: {output}");
         assert!(!output.contains("Okay cya!"), "farewell: {output}");
@@ -139,6 +139,10 @@ fn nofun_flag_and_environment_select_a_bare_inline_repl() {
         assert!(
             output.contains("[1 2 3; 4 5 6]"),
             "matrix was not inline: {output}"
+        );
+        assert!(
+            output.contains("[f64]:2,3\n[1 2 3; 4 5 6]\n"),
+            "nofun mode dropped the kind/value contract: {output}"
         );
     }
 }
@@ -156,7 +160,7 @@ fn quiet_mode_and_trailing_semicolons_suppress_automatic_values() {
             "explicit commands must remain visible in quiet mode: {output}"
         );
         assert!(
-            !output.contains("> 2\n"),
+            !output.contains("f64\n2\n"),
             "quiet mode leaked an automatic value: {output}"
         );
     }
@@ -167,11 +171,11 @@ fn quiet_mode_and_trailing_semicolons_suppress_automatic_values() {
         "1 + 1;\n1 + 1; -- suppress this value\n1 + 1; // suppress this value too\n2 + 2-- comment semicolon ;\n2 + 3// comment semicolon ;\n1 + 2\n:quit\n",
     );
     assert!(
-        !output.contains("> 2\n"),
+        !output.contains("f64\n2\n"),
         "semicolon-terminated entry leaked an automatic value: {output}"
     );
     assert!(
-        output.contains("> 4\n") && output.contains("> 5\n") && output.contains("> 3\n"),
+        output.contains("f64\n4\n") && output.contains("f64\n5\n") && output.contains("f64\n3\n"),
         "unsuppressed values before adjacent comments did not render: {output}"
     );
 }
@@ -377,7 +381,7 @@ fn code_command_reports_its_own_result_after_loading_a_rich_document() {
     );
 
     assert!(
-        output.contains("> 2\n> [1 2 3]\n> REPL session terminated."),
+        output.contains("f64\n2\n>: [f64]:1,3\n[1 2 3]\n>: REPL session terminated."),
         "`:code` selected an older document output instead of the submitted result: {output}"
     );
 }
