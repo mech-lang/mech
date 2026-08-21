@@ -899,6 +899,9 @@ mod document {
             replacement
                 .repl
                 .inherit_host_request_generation(self.repl.host_request_generation());
+            replacement
+                .repl
+                .inherit_step_request_generation(self.repl.step_request_generation());
             let was_started = self.started && !self.stopped;
 
             // Constructing the candidate is the rollback-safe phase. Once
@@ -1056,8 +1059,12 @@ mod document {
         }
 
         #[wasm_bindgen(js_name = replContinueStep)]
-        pub fn repl_continue_step(&mut self, max_steps: u32) -> Result<JsValue, JsValue> {
-            self.repl.continue_step(max_steps)
+        pub fn repl_continue_step(
+            &mut self,
+            max_steps: u32,
+            request_id: &str,
+        ) -> Result<JsValue, JsValue> {
+            self.repl.continue_step(max_steps, request_id)
         }
 
         #[wasm_bindgen(js_name = replInterrupt)]
@@ -2696,6 +2703,7 @@ mod tests {
         )
         .unwrap();
         document.repl.inherit_host_request_generation(41);
+        document.repl.inherit_step_request_generation(73);
         assert_f64(
             document
                 .runtime()
@@ -2707,6 +2715,7 @@ mod tests {
 
         document.reset(&encoded).unwrap();
         assert_eq!(document.repl.host_request_generation(), 41);
+        assert_eq!(document.repl.step_request_generation(), 73);
         assert_f64(
             document
                 .runtime()
@@ -3656,6 +3665,89 @@ mod browser_tests {
                 .as_deref(),
             Some("7"),
         );
+    }
+
+    #[wasm_bindgen_test]
+    fn wasm_document_reset_retires_old_step_and_host_request_ownership() {
+        let initial = encoded_document("~counter := 0\ncounter += 1\ncounter");
+        let replacement = encoded_document("~counter := 0\ncounter += 7\ncounter");
+        let mut document = WasmDocument::from_encoded(&initial).unwrap();
+
+        let old_step = document.repl_invoke(":step 2").unwrap();
+        let old_step_id = Reflect::get(&old_step, &JsValue::from_str("stepRequestId"))
+            .unwrap()
+            .as_string()
+            .expect("pending cooperative step must expose its request id");
+        document.reset(&replacement).unwrap();
+        let new_step = document.repl_invoke(":step 2").unwrap();
+        let new_step_id = Reflect::get(&new_step, &JsValue::from_str("stepRequestId"))
+            .unwrap()
+            .as_string()
+            .expect("replacement cooperative step must expose its request id");
+        assert_ne!(old_step_id, new_step_id);
+        document.repl.session.emit_message_diagnostic(
+            mech_runtime::Severity::Info,
+            mech_runtime::DiagnosticPhase::Host,
+            "CurrentStepOwnerMarker",
+            "owned by the current step request",
+        );
+        assert!(document.repl_continue_step(1, &old_step_id).is_err());
+        let still_pending = document.repl_invoke(":step 1").unwrap();
+        assert_eq!(
+            Reflect::get(&still_pending, &JsValue::from_str("remaining"))
+                .unwrap()
+                .as_f64(),
+            Some(2.0),
+            "a stale continuation must not advance the replacement request",
+        );
+        let still_pending_events: Vec<mech_runtime::MechEventEnvelope> =
+            serde_wasm_bindgen::from_value(
+                Reflect::get(&still_pending, &JsValue::from_str("events")).unwrap(),
+            )
+            .unwrap();
+        assert!(still_pending_events.iter().any(|event| matches!(
+            &event.event,
+            mech_runtime::MechEvent::Diagnostic(diagnostic)
+                if diagnostic.code.as_deref() == Some("CurrentStepOwnerMarker")
+        )));
+        let continued = document.repl_continue_step(1, &new_step_id).unwrap();
+        assert_eq!(
+            Reflect::get(&continued, &JsValue::from_str("remaining"))
+                .unwrap()
+                .as_f64(),
+            Some(1.0),
+        );
+
+        document.repl_interrupt().unwrap();
+        let old_host = document.repl_invoke(":docs browser/old").unwrap();
+        let old_host_id = Reflect::get(&old_host, &JsValue::from_str("hostRequestId"))
+            .unwrap()
+            .as_string()
+            .expect("pending host request must expose its request id");
+        document.repl_interrupt().unwrap();
+        let new_host = document.repl_invoke(":docs browser/new").unwrap();
+        let new_host_id = Reflect::get(&new_host, &JsValue::from_str("hostRequestId"))
+            .unwrap()
+            .as_string()
+            .expect("replacement host request must expose its request id");
+        document.repl.session.emit_message_diagnostic(
+            mech_runtime::Severity::Info,
+            mech_runtime::DiagnosticPhase::Host,
+            "CurrentOwnerMarker",
+            "owned by the current request",
+        );
+        assert!(document.repl_finish_host_request(&old_host_id).is_err());
+        assert!(document.repl.host_request_pending(&new_host_id));
+        let finished = document.repl_finish_host_request(&new_host_id).unwrap();
+        let events: Vec<mech_runtime::MechEventEnvelope> = serde_wasm_bindgen::from_value(
+            Reflect::get(&finished, &JsValue::from_str("events")).unwrap(),
+        )
+        .unwrap();
+        assert!(events.iter().any(|event| matches!(
+            &event.event,
+            mech_runtime::MechEvent::Diagnostic(diagnostic)
+                if diagnostic.code.as_deref() == Some("CurrentOwnerMarker")
+        )));
     }
 
     #[wasm_bindgen_test]

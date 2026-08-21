@@ -211,6 +211,8 @@ pub struct WasmRepl {
     pending_host_request: Option<ReplHostRequest>,
     host_request_generation: u64,
     active_host_request_id: Option<u64>,
+    step_request_generation: u64,
+    active_step_request_id: Option<u64>,
     console_output_context: String,
 }
 
@@ -226,6 +228,8 @@ impl WasmRepl {
             pending_host_request: None,
             host_request_generation: 0,
             active_host_request_id: None,
+            step_request_generation: 0,
+            active_step_request_id: None,
             console_output_context: "console://repl/output".to_string(),
         }
     }
@@ -337,7 +341,12 @@ impl WasmRepl {
     /// yield to the event loop between calls so a legal large request cannot
     /// monopolize the UI thread.
     #[wasm_bindgen(js_name = continueStep)]
-    pub fn continue_step(&mut self, max_steps: u32) -> Result<JsValue, JsValue> {
+    pub fn continue_step(&mut self, max_steps: u32, request_id: &str) -> Result<JsValue, JsValue> {
+        if !self.state.terminated() && !self.step_request_pending(request_id) {
+            return Err(JsValue::from_str(
+                "cooperative step response does not match the active request",
+            ));
+        }
         let remaining = match self.transition(WasmReplTransition::ContinueStep) {
             WasmReplTransitionResult::Rejected => return self.response(None),
             WasmReplTransitionResult::ContinueStep { remaining } => remaining,
@@ -497,6 +506,14 @@ impl WasmRepl {
                 .map(|id| JsValue::from_str(&id.to_string()))
                 .unwrap_or(JsValue::NULL),
         )?;
+        Reflect::set(
+            &response,
+            &JsValue::from_str("stepRequestId"),
+            &self
+                .active_step_request_id
+                .map(|id| JsValue::from_str(&id.to_string()))
+                .unwrap_or(JsValue::NULL),
+        )?;
         Ok(response.into())
     }
 
@@ -607,6 +624,7 @@ impl WasmRepl {
                     .expect("a cooperative step chunk cannot exceed the pending request");
                 if remaining == 0 {
                     self.state = Ready;
+                    self.active_step_request_id = None;
                     TransitionResult::StepCompleted { total }
                 } else {
                     self.state = Stepping { remaining, total };
@@ -615,14 +633,17 @@ impl WasmRepl {
             }
             (Stepping { .. }, Transition::StepChunkFailed) => {
                 self.state = Ready;
+                self.active_step_request_id = None;
                 TransitionResult::Allowed
             }
             (Stepping { .. }, Transition::Interrupt) => {
                 self.state = Ready;
+                self.active_step_request_id = None;
                 TransitionResult::Interrupted { was_stepping: true }
             }
             (Stepping { .. }, Transition::Shutdown) => {
                 self.state = Terminated;
+                self.active_step_request_id = None;
                 TransitionResult::Allowed
             }
             (Stepping { .. }, _) => {
@@ -639,12 +660,22 @@ impl WasmRepl {
                     self.session
                         .emit_error(&error, DiagnosticPhase::Execute, Some("<repl>"));
                     TransitionResult::Rejected
-                } else {
+                } else if let Some(next_generation) = self.step_request_generation.checked_add(1) {
+                    self.step_request_generation = next_generation;
+                    self.active_step_request_id = Some(next_generation);
                     self.state = Stepping {
                         remaining: count,
                         total: count,
                     };
                     TransitionResult::Allowed
+                } else {
+                    self.session.emit_message_diagnostic(
+                        mech_runtime::Severity::Error,
+                        DiagnosticPhase::Host,
+                        "StepRequestGenerationExhausted",
+                        "The cooperative step-request generation is exhausted; create a new document session.",
+                    );
+                    TransitionResult::Rejected
                 }
             }
             (Ready, Transition::ContinueStep) => TransitionResult::ContinueStep { remaining: 0 },
@@ -653,6 +684,7 @@ impl WasmRepl {
             },
             (Ready, Transition::Shutdown) => {
                 self.state = Terminated;
+                self.active_step_request_id = None;
                 TransitionResult::Allowed
             }
             (Ready, Transition::StepChunkSucceeded { .. } | Transition::StepChunkFailed) => {
@@ -691,12 +723,18 @@ impl WasmRepl {
             pending_host_request: None,
             host_request_generation: 0,
             active_host_request_id: None,
+            step_request_generation: 0,
+            active_step_request_id: None,
             console_output_context,
         })
     }
 
     pub(crate) fn finish_host_request(&mut self, request_id: &str) -> Result<JsValue, JsValue> {
-        self.finish_host_request_transition(request_id);
+        if !self.finish_host_request_transition(request_id) {
+            return Err(JsValue::from_str(
+                "documentation response does not match the active REPL host request",
+            ));
+        }
         self.response(None)
     }
 
@@ -740,9 +778,25 @@ impl WasmRepl {
         self.host_request_generation
     }
 
+    pub(crate) fn step_request_pending(&self, request_id: &str) -> bool {
+        matches!(self.state, WasmReplState::Stepping { .. })
+            && self
+                .active_step_request_id
+                .is_some_and(|active| active.to_string() == request_id)
+    }
+
+    pub(crate) fn inherit_step_request_generation(&mut self, generation: u64) {
+        self.step_request_generation = self.step_request_generation.max(generation);
+    }
+
+    pub(crate) fn step_request_generation(&self) -> u64 {
+        self.step_request_generation
+    }
+
     pub(crate) fn terminate_session(&mut self) -> MResult<()> {
         self.pending_host_request = None;
         self.active_host_request_id = None;
+        self.active_step_request_id = None;
         if self.transition(WasmReplTransition::Shutdown) == WasmReplTransitionResult::Rejected {
             return Ok(());
         }
@@ -999,6 +1053,8 @@ mod tests {
             repl.transition(WasmReplTransition::StartStep { count: 1_000 }),
             WasmReplTransitionResult::Allowed
         );
+        let first_step_request = repl.active_step_request_id.unwrap();
+        assert!(repl.step_request_pending(&first_step_request.to_string()));
         let pending = repl.state;
 
         for operation in [
@@ -1035,16 +1091,19 @@ mod tests {
             WasmReplTransitionResult::Interrupted { was_stepping: true }
         );
         assert_eq!(repl.state, WasmReplState::Ready);
+        assert_eq!(repl.active_step_request_id, None);
 
         assert_eq!(
             repl.transition(WasmReplTransition::StartStep { count: 2 }),
             WasmReplTransitionResult::Allowed
         );
+        assert!(repl.active_step_request_id.unwrap() > first_step_request);
         assert_eq!(
             repl.transition(WasmReplTransition::Shutdown),
             WasmReplTransitionResult::Allowed
         );
         assert_eq!(repl.state, WasmReplState::Terminated);
+        assert_eq!(repl.active_step_request_id, None);
     }
 
     #[cfg(feature = "browser_project_core")]
@@ -1120,6 +1179,30 @@ mod tests {
                     )
                 })
         );
+
+        let mut exhausted_step = WasmRepl::new();
+        exhausted_step.step_request_generation = u64::MAX;
+        assert_eq!(
+            exhausted_step.transition(WasmReplTransition::StartStep { count: 1 }),
+            WasmReplTransitionResult::Rejected,
+        );
+        assert_eq!(exhausted_step.state, WasmReplState::Ready);
+        assert_eq!(exhausted_step.active_step_request_id, None);
+        assert!(
+            exhausted_step
+                .session
+                .drain_events()
+                .unwrap()
+                .iter()
+                .any(|event| {
+                    matches!(
+                        &event.event,
+                        MechEvent::Diagnostic(diagnostic)
+                            if diagnostic.code.as_deref()
+                                == Some("StepRequestGenerationExhausted")
+                    )
+                })
+        );
     }
 
     #[cfg(feature = "browser_project_core")]
@@ -1163,6 +1246,10 @@ mod tests {
                 .as_f64(),
             Some(1_000.0)
         );
+        let step_request_id = Reflect::get(&started, &JsValue::from_str("stepRequestId"))
+            .unwrap()
+            .as_string()
+            .expect("pending step response must carry its request id");
 
         assert_busy_response(repl.invoke("other := 1\n").unwrap(), 1_000);
         assert_eq!(repl.source(), source);
@@ -1201,7 +1288,7 @@ mod tests {
             }
         );
 
-        let continued = repl.continue_step(1).unwrap();
+        let continued = repl.continue_step(1, &step_request_id).unwrap();
         assert_eq!(
             Reflect::get(&continued, &JsValue::from_str("remaining"))
                 .unwrap()

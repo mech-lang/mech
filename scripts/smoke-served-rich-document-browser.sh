@@ -1053,6 +1053,57 @@ def assert_console_contract():
         "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /request interrupted/.test(row.textContent))",
         "Ctrl+C interrupting a cooperative browser step",
     )
+    submit(":step 1000000")
+    wait_for(
+        "document.querySelector('.repl-input')?.readOnly === true && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy'",
+        "cooperative ownership before a fallible interrupt response",
+    )
+    evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  const original = WasmDocument.prototype.replInterrupt;
+  WasmDocument.prototype.replInterrupt = function(...args) {
+    original.apply(this, args);
+    WasmDocument.prototype.replInterrupt = original;
+    throw new Error('synthetic interrupt response failure');
+  };
+  const input = document.querySelector('.repl-input');
+  input?.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'c', ctrlKey: true, bubbles: true, cancelable: true,
+  }));
+})()
+""")
+    wait_for(
+        "document.querySelector('.repl-input')?.readOnly === false && "
+        "document.querySelector('.repl-input')?.disabled === false && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-error')].some((row) => "
+        "/synthetic interrupt response failure/.test(row.textContent))",
+        "ownership revocation surviving a fallible WASM interrupt response",
+    )
+    ownership_probe = evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  const original = WasmDocument.prototype.replFinishHostRequest;
+  if (typeof original !== 'function') return null;
+  window.__MECH_HOST_FINISH_CALLS__ = [];
+  window.__MECH_THROW_NEXT_HOST_FINISH__ = true;
+  window.__MECH_ORIGINAL_FINISH_HOST_REQUEST__ = original;
+  WasmDocument.prototype.replFinishHostRequest = function(requestId) {
+    window.__MECH_HOST_FINISH_CALLS__.push(requestId);
+    const response = original.call(this, requestId);
+    if (window.__MECH_THROW_NEXT_HOST_FINISH__) {
+      window.__MECH_THROW_NEXT_HOST_FINISH__ = false;
+      throw new Error('synthetic host finalization response failure');
+    }
+    return response;
+  };
+  return { installed: true };
+})()
+""")
+    if ownership_probe != {"installed": True}:
+        fail(f"could not instrument browser host finalization ownership: {ownership_probe!r}")
     submit(":docs browser-smoke/latency")
     wait_for(
         "document.querySelector('.repl-input')?.readOnly === true && "
@@ -1060,6 +1111,11 @@ def assert_console_contract():
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy'",
         "documentation fetch marking the REPL busy without disabling Ctrl+C",
     )
+    stale_host_request_id = evaluate_json(
+        "document.querySelector('.mech-root')?.dataset.mechHostRequestId || null"
+    )
+    if not stale_host_request_id:
+        fail("pending documentation request did not expose its ownership id")
     busy_selection = evaluate_json("""
 (() => {
   const value = document.querySelector('#mech-smoke-var .mech-var-placeholder');
@@ -1107,11 +1163,44 @@ def assert_console_contract():
     wait_for(
         "Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/latency-next\"]')) && "
         "document.querySelector('.repl-input')?.readOnly === false && "
-        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready'",
-        "a newer documentation request surviving the canceled request's stale completion",
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-error')].some((row) => "
+        "/synthetic host finalization response failure/.test(row.textContent))",
+        "a newer documentation request releasing ownership before fallible finalization",
     )
     if evaluate("Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/latency\"]'))"):
         fail("a canceled documentation response was accepted by a newer host request")
+    evaluate("window.__MECH_DOCUMENTATION_RELEASES__.get('latency')?.()")
+    evaluate("new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))")
+    stale_finalizer = evaluate_json("""
+(() => ({
+  calls: [...(window.__MECH_HOST_FINISH_CALLS__ || [])],
+  staleAppended: Boolean(document.querySelector(
+    '[data-mech-documentation-topic="browser-smoke/latency"]'
+  )),
+  ready: document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready',
+}))()
+""")
+    if (
+        stale_finalizer is None or
+        stale_host_request_id in stale_finalizer["calls"] or
+        stale_finalizer["staleAppended"] or
+        not stale_finalizer["ready"]
+    ):
+        fail(
+            "a revoked documentation finalizer entered the current host response path: "
+            f"request={stale_host_request_id!r}, state={stale_finalizer!r}"
+        )
+    evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  if (window.__MECH_ORIGINAL_FINISH_HOST_REQUEST__) {
+    WasmDocument.prototype.replFinishHostRequest =
+      window.__MECH_ORIGINAL_FINISH_HOST_REQUEST__;
+    delete window.__MECH_ORIGINAL_FINISH_HOST_REQUEST__;
+  }
+})()
+""")
     submit(":docs browser-smoke/rejected")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
@@ -1637,7 +1726,7 @@ def assert_repl_termination():
         )
     direct_exports = evaluate("""
 (async () => {
-  const { WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
+  const { WasmDocument, WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
   const busyRepl = new WasmRepl();
   busyRepl.submit('~counter := 0\\ncounter += 1\\n');
   const sourceBeforeStep = busyRepl.source();
@@ -1659,6 +1748,58 @@ def assert_repl_termination():
   const restarted = busyRepl.step(2n);
   const stopped = busyRepl.shutdown();
 
+  let resetOwnership = null;
+  const configuredDocument = Boolean(document.querySelector(
+    '[data-mech-var-name="configured-answer"]'
+  ));
+  if (!configuredDocument) {
+    const sourceKey =
+      document.querySelector('.mech-root')?.dataset.mechSourceUrlKey ||
+      document.documentElement.dataset.mechSourceUrlKey || '';
+    const encoded = sourceKey
+      ? await (await fetch(`/code/${sourceKey}`)).text()
+      : document.querySelector('[data-mech-document-code]')?.textContent?.trim();
+    if (!encoded) throw new Error('direct reset smoke could not locate the encoded document');
+    const resetDocument = WasmDocument.fromEncoded(encoded);
+    const oldStep = resetDocument.replInvoke(':step 1000');
+    resetDocument.reset(encoded);
+    const newStep = resetDocument.replInvoke(':step 1000');
+    let staleStepRejected = false;
+    try {
+      resetDocument.replContinueStep(1, oldStep.stepRequestId);
+    } catch (_) {
+      staleStepRejected = true;
+    }
+    const currentStep = resetDocument.replContinueStep(1, newStep.stepRequestId);
+    resetDocument.replInterrupt();
+    const oldHost = resetDocument.replInvoke(':docs browser-smoke/old-owner');
+    resetDocument.replInterrupt();
+    const newHost = resetDocument.replInvoke(':docs browser-smoke/new-owner');
+    let staleHostRejected = false;
+    try {
+      resetDocument.replFinishHostRequest(oldHost.hostRequestId);
+    } catch (_) {
+      staleHostRejected = true;
+    }
+    const currentHost = resetDocument.replFinishHostRequest(newHost.hostRequestId);
+    resetDocument.stop();
+    resetOwnership = {
+      distinctStepIds:
+        typeof oldStep?.stepRequestId === 'string' &&
+        typeof newStep?.stepRequestId === 'string' &&
+        oldStep.stepRequestId !== newStep.stepRequestId,
+      staleStepRejected,
+      currentStepAdvanced:
+        currentStep?.pending === true && currentStep?.remaining === 999,
+      distinctHostIds:
+        typeof oldHost?.hostRequestId === 'string' &&
+        typeof newHost?.hostRequestId === 'string' &&
+        oldHost.hostRequestId !== newHost.hostRequestId,
+      staleHostRejected,
+      currentHostFinished: currentHost?.hostPending === false,
+    };
+  }
+
   const repl = new WasmRepl();
   const quit = repl.invoke(':quit');
   const responses = {
@@ -1667,7 +1808,7 @@ def assert_repl_termination():
     setQuiet: repl.setQuiet(true),
     reset: repl.reset(),
     step: repl.step(1n),
-    continueStep: repl.continueStep(1),
+    continueStep: repl.continueStep(1, ''),
     interrupt: repl.interrupt(),
     clearOutputs: repl.clearOutputs(),
     clearDiagnostics: repl.clearDiagnostics(),
@@ -1695,6 +1836,7 @@ def assert_repl_termination():
         stopped?.pending === false &&
         stopped?.terminated === true,
     },
+    resetOwnership,
     quitTerminated: quit?.terminated === true,
     rejected: Object.fromEntries(
       Object.entries(responses).map(([name, response]) => [name, rejected(response)]),
@@ -1706,6 +1848,15 @@ def assert_repl_termination():
     failed_busy_checks = sorted(name for name, value in busy_state.items() if not value)
     if failed_busy_checks or len(busy_state) != 7:
         fail(f"direct WASM REPL bypassed cooperative busy state: {direct_exports!r}")
+    reset_ownership = direct_exports.get("resetOwnership") if direct_exports else None
+    if label == "configured":
+        if reset_ownership is not None:
+            fail(f"configured direct reset coverage was unexpectedly detached: {direct_exports!r}")
+    else:
+        reset_ownership = reset_ownership or {}
+        failed_reset_checks = sorted(name for name, value in reset_ownership.items() if not value)
+        if failed_reset_checks or len(reset_ownership) != 6:
+            fail(f"direct WASM document reused stale operation ownership: {direct_exports!r}")
     if not direct_exports or not direct_exports.get("quitTerminated"):
         fail(f"direct WASM REPL did not enter terminal state: {direct_exports!r}")
     rejected = direct_exports.get("rejected", {})
@@ -1834,16 +1985,11 @@ try:
   window.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input?.url || String(input);
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency.mec')) {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         window.__MECH_DOCUMENTATION_RELEASES__.set('latency', () => resolve(new Response(
           'Browser smoke documentation evaluates {answer}.',
           { status: 200, headers: { 'content-type': 'text/plain' } },
         )));
-        init?.signal?.addEventListener(
-          'abort',
-          () => reject(new DOMException('documentation fetch aborted', 'AbortError')),
-          { once: true },
-        );
       });
     }
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency-next.mec')) {

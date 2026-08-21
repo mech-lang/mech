@@ -182,6 +182,8 @@ function invalidateCooperativeOwnership() {
   state.hostRequestSequence += 1;
   state.activeHostRequest = null;
   activeHostRequest?.controller.abort();
+  state.replBusy = false;
+  syncConsoleInputState();
 }
 
 function stopRuntime() {
@@ -1213,6 +1215,7 @@ async function consumeCooperativeResponse(response) {
   const operation = ++state.cooperativeOperationSequence;
   state.activeCooperativeOperation = operation;
   consumeReplResponse(response);
+  const stepRequestId = response?.pending ? response?.stepRequestId : null;
   const ownsHostRequest = Boolean(response?.hostRequest);
   const hostRequest = ownsHostRequest
     ? {
@@ -1230,6 +1233,9 @@ async function consumeCooperativeResponse(response) {
   state.replBusy = Boolean(response?.pending || response?.hostPending || response?.hostRequest);
   syncConsoleInputState();
   try {
+    if (response?.pending && !stepRequestId) {
+      throw new Error("pending cooperative step response omitted its request id");
+    }
     if (response?.hostRequest) {
       await fulfillReplHostRequest(
         hostRequest.id,
@@ -1242,7 +1248,10 @@ async function consumeCooperativeResponse(response) {
       if (state.activeCooperativeOperation !== operation) {
         return;
       }
-      response = state.repl.continueStep(128);
+      response = state.repl.continueStep(128, stepRequestId);
+      if (response?.pending && response?.stepRequestId !== stepRequestId) {
+        throw new Error("cooperative step response changed request ownership");
+      }
       consumeReplResponse(response);
       state.replTerminated = Boolean(response?.terminated);
     }
@@ -1254,18 +1263,18 @@ async function consumeCooperativeResponse(response) {
     const releasesActiveOperation = state.activeCooperativeOperation === operation;
     const releasesActiveRequest =
       !hostRequest || state.activeHostRequest?.sequence === hostRequest.sequence;
-    if (ownsHostRequest) {
-      const finished = state.repl.finishHostRequest(hostRequest.id);
-      consumeReplResponse(finished);
-      state.replTerminated ||= Boolean(finished?.terminated);
-      if (releasesActiveRequest) {
-        state.activeHostRequest = null;
-      }
-    }
     if (releasesActiveOperation && releasesActiveRequest) {
       state.activeCooperativeOperation = null;
+      if (ownsHostRequest) {
+        state.activeHostRequest = null;
+      }
       state.replBusy = false;
       syncConsoleInputState();
+      if (ownsHostRequest) {
+        const finished = state.repl.finishHostRequest(hostRequest.id);
+        consumeReplResponse(finished);
+        state.replTerminated ||= Boolean(finished?.terminated);
+      }
       if (state.replTerminated) {
         stopRuntime();
         setDocumentStatus("stopped");
@@ -1357,12 +1366,16 @@ function appendActivePrompt() {
     }
     if (state.replBusy && event.ctrlKey && event.key.toLowerCase() === "c") {
       event.preventDefault();
-      const response = state.repl.interrupt();
       invalidateCooperativeOwnership();
-      consumeReplResponse(response);
-      state.replTerminated = Boolean(response?.terminated);
-      state.replBusy = Boolean(response?.pending || response?.hostPending);
-      syncConsoleInputState();
+      try {
+        const response = state.repl.interrupt();
+        consumeReplResponse(response);
+        state.replTerminated = Boolean(response?.terminated);
+        state.replBusy = Boolean(response?.pending || response?.hostPending);
+        syncConsoleInputState();
+      } catch (error) {
+        appendConsoleError(error);
+      }
       return;
     }
     const action = resolveReplInput(event);
@@ -1913,7 +1926,7 @@ async function main() {
   }
   state.repl = {
     invoke: source => state.document.replInvoke(source),
-    continueStep: count => state.document.replContinueStep(count),
+    continueStep: (count, requestId) => state.document.replContinueStep(count, requestId),
     interrupt: () => state.document.replInterrupt(),
     setQuiet: quiet => state.document.replSetQuiet(quiet),
     finishHostRequest: requestId => state.document.replFinishHostRequest(requestId),
