@@ -115,7 +115,7 @@ fn render_response(
         };
     }
 
-    render_content(output, &response.content, mode)
+    render_response_content(output, response, mode)
 }
 
 fn write_indented(output: &mut dyn Write, rendered: &[u8], prefix: &str) -> io::Result<()> {

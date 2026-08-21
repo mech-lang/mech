@@ -819,6 +819,36 @@ impl WasmRepl {
         self.response(None)
     }
 
+    pub(crate) fn finish_documentation_index(
+        &mut self,
+        request_id: &str,
+    ) -> Result<JsValue, JsValue> {
+        if !self.complete_documentation_index(request_id) {
+            return Err(JsValue::from_str(
+                "documentation response does not match the active REPL host request",
+            ));
+        }
+        self.response(None)
+    }
+
+    fn complete_documentation_index(&mut self, request_id: &str) -> bool {
+        if !self.finish_host_request_transition(request_id) {
+            return false;
+        }
+        emit_host_response(
+            &mut self.session,
+            None,
+            ReplResponseStatus::Neutral,
+            OutputContent::Text(TextOutput::new(
+                "Browser documentation topics use `<machine>/<document>`.\n\n\
+                 Example: `:docs core/getting-started` loads `docs/getting-started.mec` \
+                 from the `mech-machines/core` repository.\n\n\
+                 Documentation: https://docs.mech-lang.org/",
+            )),
+        );
+        true
+    }
+
     fn finish_host_request_transition(&mut self, request_id: &str) -> bool {
         if !self.host_request_pending(request_id) {
             return false;
@@ -1317,6 +1347,32 @@ mod tests {
                                 == Some("StepRequestGenerationExhausted")
                     )
                 })
+        );
+    }
+
+    #[cfg(feature = "browser_project_core")]
+    #[test]
+    fn browser_docs_without_a_topic_returns_an_index_instead_of_usage_failure() {
+        let mut repl = WasmRepl::new();
+        repl.handle_host_request(ReplHostRequest::Documentation { topic: None });
+        let request_id = repl.active_host_request_id.unwrap().to_string();
+
+        assert!(repl.complete_documentation_index(&request_id));
+
+        assert_eq!(repl.state, WasmReplState::Ready);
+        assert!(
+            repl.session
+                .drain_events()
+                .unwrap()
+                .iter()
+                .any(|event| matches!(
+                    &event.event,
+                    MechEvent::Repl(ReplEvent::Response(ReplResponse {
+                        content: OutputContent::Text(text),
+                        ..
+                    })) if text.text.contains("<machine>/<document>")
+                        && text.text.contains("https://docs.mech-lang.org/")
+                ))
         );
     }
 

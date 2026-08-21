@@ -2,7 +2,46 @@ use crate::RuntimeValueSnapshot;
 use crate::runtime::{MechRuntime, RuntimeInvalidOperationError};
 use mech_core::{MResult, MechError, OutputId};
 
+#[cfg(feature = "resident-routing")]
+use mech_engine::resident::StateMigrationMapping;
+#[cfg(feature = "resident-routing")]
+use mech_engine::{ArtifactSource, SlotRole};
+
 impl MechRuntime {
+    /// Carry compatible live resident storage into an independently activated
+    /// replacement. The candidate remains discardable until this succeeds.
+    #[cfg(feature = "resident-routing")]
+    pub(crate) fn preserve_compatible_resident_state_from(
+        &mut self,
+        previous: &MechRuntime,
+        changed_state_names: &std::collections::BTreeSet<String>,
+    ) -> MResult<()> {
+        let Some((previous_artifact, previous_instance)) =
+            previous.resident_artifact_and_instance()
+        else {
+            return Ok(());
+        };
+        let Some((candidate_artifact, _)) = self.resident_artifact_and_instance() else {
+            return Ok(());
+        };
+        let mappings =
+            compatible_state_mappings(previous_artifact, candidate_artifact, changed_state_names);
+        if mappings.is_empty() {
+            return Ok(());
+        }
+
+        let candidate_artifact = std::sync::Arc::new(candidate_artifact.clone());
+        let (_, candidate_instance) = self
+            .resident_artifact_and_instance_mut()
+            .expect("candidate artifact was checked above");
+        candidate_instance
+            .migrate_compatible_state_from(previous_instance, &mappings)
+            .map_err(|error| {
+                super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
+            })?;
+        Ok(())
+    }
+
     pub fn root_plan_len(&self) -> usize {
         #[cfg(feature = "resident-routing")]
         if let Some((_, instance)) = self.resident_artifact_and_instance() {
@@ -233,6 +272,25 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing")]
+    fn resident_artifact_and_instance_mut(
+        &mut self,
+    ) -> Option<(
+        &mech_engine::ProgramArtifact,
+        &mut mech_engine::resident::ReactiveInstance,
+    )> {
+        use crate::runtime::program::ActiveProgramExecution;
+        match &mut self.active_program {
+            ActiveProgramExecution::ResidentPure(execution) => {
+                Some((&execution.artifact, &mut execution.instance))
+            }
+            ActiveProgramExecution::ResidentExternal(execution) => {
+                Some((&execution.artifact, execution.coordinator.instance_mut()))
+            }
+            ActiveProgramExecution::None => None,
+        }
+    }
+
+    #[cfg(feature = "resident-routing")]
     fn resident_symbol_values<'a>(
         &self,
         names: impl IntoIterator<Item = &'a str>,
@@ -279,6 +337,102 @@ impl MechRuntime {
         }
         Ok(values)
     }
+}
+
+#[cfg(feature = "resident-routing")]
+fn compatible_state_mappings(
+    source: &mech_engine::ProgramArtifact,
+    target: &mech_engine::ProgramArtifact,
+    changed_state_names: &std::collections::BTreeSet<String>,
+) -> Vec<StateMigrationMapping> {
+    use std::collections::{BTreeMap, BTreeSet};
+
+    let source_named = source
+        .interactive_symbol_bindings()
+        .filter_map(|binding| match binding.artifact_source {
+            ArtifactSource::Slot(slot)
+                if source
+                    .slots()
+                    .get(slot.get() as usize)
+                    .is_some_and(|declaration| declaration.role == SlotRole::State) =>
+            {
+                Some((binding.lexical_name.as_str(), slot))
+            }
+            _ => None,
+        })
+        .collect::<BTreeMap<_, _>>();
+    let mut mapped_sources = BTreeSet::new();
+    let mut mapped_targets = BTreeSet::new();
+    let excluded_targets = target
+        .interactive_symbol_bindings()
+        .filter(|binding| changed_state_names.contains(&binding.lexical_name))
+        .filter_map(|binding| match binding.artifact_source {
+            ArtifactSource::Slot(slot) => Some(slot),
+            ArtifactSource::Constant(_) => None,
+        })
+        .collect::<BTreeSet<_>>();
+    let mut mappings = Vec::new();
+
+    for binding in target.interactive_symbol_bindings() {
+        if changed_state_names.contains(&binding.lexical_name) {
+            continue;
+        }
+        let ArtifactSource::Slot(target_slot) = binding.artifact_source else {
+            continue;
+        };
+        // Several lexical projections can name the same state cell (`ans`
+        // and the source variable are the common case). Once an explicitly
+        // mutated name excludes that cell, none of its aliases may migrate it
+        // back from the retired runtime.
+        if excluded_targets.contains(&target_slot) {
+            continue;
+        }
+        let Some(source_slot) = source_named.get(binding.lexical_name.as_str()).copied() else {
+            continue;
+        };
+        if target
+            .slots()
+            .get(target_slot.get() as usize)
+            .is_some_and(|declaration| declaration.role == SlotRole::State)
+            && mapped_sources.insert(source_slot)
+            && mapped_targets.insert(target_slot)
+        {
+            mappings.push(StateMigrationMapping {
+                source: source_slot,
+                target: target_slot,
+            });
+        }
+    }
+
+    // Preserve non-exported state when its producer remains structurally
+    // identical. This intentionally requires producer identity as well as slot
+    // compatibility so deleting or reordering unrelated definitions cannot
+    // migrate state into a different computation that merely reused an index.
+    for target_slot in target
+        .slots()
+        .iter()
+        .filter(|slot| slot.role == SlotRole::State)
+    {
+        if mapped_targets.contains(&target_slot.slot)
+            || excluded_targets.contains(&target_slot.slot)
+        {
+            continue;
+        }
+        let Some(source_slot) = source.slots().iter().find(|source_slot| {
+            source_slot.role == SlotRole::State
+                && source_slot.producer == target_slot.producer
+                && !mapped_sources.contains(&source_slot.slot)
+        }) else {
+            continue;
+        };
+        mapped_sources.insert(source_slot.slot);
+        mapped_targets.insert(target_slot.slot);
+        mappings.push(StateMigrationMapping {
+            source: source_slot.slot,
+            target: target_slot.slot,
+        });
+    }
+    mappings
 }
 
 fn missing_resident_symbol(operation: &'static str, name: &str) -> MechError {

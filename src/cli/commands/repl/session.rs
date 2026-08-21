@@ -102,14 +102,14 @@ impl ResidentRepl {
     }
 
     pub(super) fn load(&mut self, paths: &[String]) -> MResult<RuntimeValueSnapshot> {
-        let mut candidate_source = self.session.source().to_string();
+        let mut appended_source = String::new();
         for path in paths {
-            candidate_source.push_str(&fs::read_to_string(path)?);
-            if !candidate_source.ends_with('\n') {
-                candidate_source.push('\n');
+            appended_source.push_str(&fs::read_to_string(path)?);
+            if !appended_source.ends_with('\n') {
+                appended_source.push('\n');
             }
         }
-        self.session.replace_source(candidate_source)
+        self.session.submit_host_source(&appended_source)
     }
 
     pub(super) fn reset(&mut self) -> MResult<()> {

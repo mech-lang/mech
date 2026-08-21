@@ -413,12 +413,13 @@ fn emit_resident_inspection<F: ResidentReplRuntimeFactory>(
     names: &[String],
 ) -> MResult<()> {
     let symbols = session.symbol_inspections(names)?;
+    let value_element_limit = session.value_element_limit();
     emit_response(
         session,
         ReplResponseKind::SymbolInspection,
         ReplResponseStatus::Neutral,
         None,
-        symbol_values(symbols),
+        symbol_values(symbols, value_element_limit),
     );
     Ok(())
 }
@@ -428,12 +429,13 @@ fn emit_integrity_constraint_inspection<F: ResidentReplRuntimeFactory>(
     names: &[String],
 ) -> MResult<()> {
     let constraints = session.integrity_constraints(names)?;
+    let value_element_limit = session.value_element_limit();
     emit_response(
         session,
         ReplResponseKind::IntegrityConstraintInspection,
         ReplResponseStatus::Neutral,
         None,
-        integrity_constraint_values(constraints),
+        integrity_constraint_values(constraints, value_element_limit),
     );
     Ok(())
 }
@@ -529,9 +531,10 @@ fn command_help_table(availability: &ReplHostAvailability) -> TableOutput {
         .with_muted_rows(muted_rows)
 }
 
-fn symbol_values(mut symbols: Vec<ResidentSymbolInspection>) -> OutputContent {
-    const VALUE_PREVIEW_LIMIT: usize = 96;
-
+fn symbol_values(
+    mut symbols: Vec<ResidentSymbolInspection>,
+    value_element_limit: usize,
+) -> OutputContent {
     symbols.sort_by(|left, right| left.name.cmp(&right.name));
     if symbols.is_empty() {
         return OutputContent::Text(TextOutput::new("No resident symbols matched."));
@@ -552,7 +555,7 @@ fn symbol_values(mut symbols: Vec<ResidentSymbolInspection>) -> OutputContent {
                         symbol
                             .value
                             .to_value()
-                            .format_preview_inline(VALUE_PREVIEW_LIMIT),
+                            .format_preview_inline(value_element_limit),
                     ]
                 })
                 .collect(),
@@ -563,9 +566,8 @@ fn symbol_values(mut symbols: Vec<ResidentSymbolInspection>) -> OutputContent {
 
 fn integrity_constraint_values(
     mut constraints: Vec<(String, crate::RuntimeValueSnapshot)>,
+    value_element_limit: usize,
 ) -> OutputContent {
-    const VALUE_PREVIEW_LIMIT: usize = 96;
-
     constraints.sort_by(|left, right| left.0.cmp(&right.0));
     if constraints.is_empty() {
         return OutputContent::Text(TextOutput::new("No integrity constraints matched."));
@@ -582,7 +584,7 @@ fn integrity_constraint_values(
                 vec![
                     name,
                     value.kind().to_string(),
-                    value.to_value().format_preview_inline(VALUE_PREVIEW_LIMIT),
+                    value.to_value().format_preview_inline(value_element_limit),
                 ]
             })
             .collect(),
@@ -661,11 +663,14 @@ mod tests {
             mech_core::Ref::new(7.0),
         ))
         .unwrap();
-        let content = symbol_values(vec![ResidentSymbolInspection {
-            name: "x".to_string(),
-            value,
-            selection_token: "selection:9".to_string(),
-        }]);
+        let content = symbol_values(
+            vec![ResidentSymbolInspection {
+                name: "x".to_string(),
+                value,
+                selection_token: "selection:9".to_string(),
+            }],
+            500,
+        );
 
         let OutputContent::Table(table) = content else {
             panic!("symbol inspection must remain tabular");

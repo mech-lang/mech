@@ -11,6 +11,17 @@ use mech_core::{
 #[derive(Debug, Clone)]
 pub struct MissingFunctionError {
     pub function_id: u64,
+    pub function_name: String,
+}
+
+impl MissingFunctionError {
+    pub fn named(name: impl Into<String>) -> Self {
+        let function_name = name.into();
+        Self {
+            function_id: hash_str(&function_name),
+            function_name,
+        }
+    }
 }
 
 impl mech_core::MechErrorKind for MissingFunctionError {
@@ -19,7 +30,10 @@ impl mech_core::MechErrorKind for MissingFunctionError {
     }
 
     fn message(&self) -> String {
-        format!("Function with id {} not found", self.function_id)
+        format!(
+            "Function `{}` not found (id {})",
+            self.function_name, self.function_id,
+        )
     }
 }
 
@@ -52,7 +66,6 @@ impl<'a> FunctionResolver<'a> {
     }
 
     pub fn resolve_named(&self, name: &str) -> MResult<ResolvedNamedFunction<'a>> {
-        let name_id = hash_str(name);
         if let Some(definition) = self.user_functions.resolve_name(name) {
             return Ok(ResolvedNamedFunction::User(definition));
         }
@@ -77,13 +90,9 @@ impl<'a> FunctionResolver<'a> {
                 .entry(extension)
                 .map(ResolvedNamedFunction::Extension)
                 .ok_or_else(|| extension_unavailable(extension, Some(name))),
-            None => Err(MechError::new(
-                MissingFunctionError {
-                    function_id: name_id,
-                },
-                None,
-            )
-            .with_compiler_loc()),
+            None => {
+                Err(MechError::new(MissingFunctionError::named(name), None).with_compiler_loc())
+            }
         }
     }
 
@@ -348,5 +357,12 @@ mod tests {
             Err(error) => error,
         };
         assert_eq!(error.kind_name(), "MissingFunction");
+        assert!(
+            error
+                .display_message()
+                .contains("Function `missing` not found"),
+            "{}",
+            error.display_message(),
+        );
     }
 }

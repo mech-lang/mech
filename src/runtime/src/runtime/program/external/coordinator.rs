@@ -283,6 +283,12 @@ impl ResidentExternalCoordinator {
             .expect("resident instance is present")
     }
 
+    pub(crate) fn instance_mut(&mut self) -> &mut ReactiveInstance {
+        self.instance
+            .as_mut()
+            .expect("resident instance is present")
+    }
+
     #[cfg(feature = "runtime_bench_gate_d3")]
     #[doc(hidden)]
     pub fn set_next_epoch_for_benchmark(&mut self, next: u64) {

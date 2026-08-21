@@ -158,6 +158,7 @@ pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     runtime: Option<MechRuntime>,
     program_events: Option<MechEventBuffer>,
     pending_selection: Option<PendingSelection>,
+    cleared_synthetic_symbols: std::collections::BTreeSet<String>,
     retained_selections: BTreeMap<String, RetainedSelection>,
     reusable_selection_tokens: BTreeMap<String, String>,
     events: MechEventJournal,
@@ -180,6 +181,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             runtime: None,
             program_events: None,
             pending_selection: None,
+            cleared_synthetic_symbols: std::collections::BTreeSet::new(),
             retained_selections: BTreeMap::new(),
             reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
@@ -200,6 +202,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             runtime: None,
             program_events: None,
             pending_selection: None,
+            cleared_synthetic_symbols: std::collections::BTreeSet::new(),
             retained_selections: BTreeMap::new(),
             reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
@@ -225,6 +228,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             runtime: None,
             program_events: None,
             pending_selection: None,
+            cleared_synthetic_symbols: std::collections::BTreeSet::new(),
             retained_selections: BTreeMap::new(),
             reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
@@ -253,6 +257,17 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
 
     pub fn source(&self) -> &str {
         &self.source
+    }
+
+    /// Return the accepted semantic program tree when this session was built
+    /// from an authoritative decoded document.
+    ///
+    /// Rich document hosts must use this tree for output identity and document
+    /// projections. Formatting `source()` and parsing it again is deliberately
+    /// not equivalent: the textual projection is for persistence and echoing,
+    /// while this tree remains the accepted semantic authority.
+    pub fn source_tree(&self) -> Option<&mech_core::nodes::Program> {
+        self.source_tree.as_ref()
     }
 
     pub fn runtime(&self) -> Option<&MechRuntime> {
@@ -345,12 +360,13 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             candidate_source.push('\n');
         }
         candidate_source.push_str(&appended_source);
+        let overlay = mech_syntax::parser::parse(appended_source.trim())?;
+        let changed_state_names = resident_state_mutations(&overlay);
         let value = if let Some(mut tree) = self.source_tree.clone() {
-            let overlay = mech_syntax::parser::parse(appended_source.trim())?;
             tree.body.sections.extend(overlay.body.sections);
-            self.replace_source_tree(candidate_source, tree)?
+            self.replace_source_tree_preserving(candidate_source, tree, &changed_state_names)?
         } else {
-            self.replace_source(candidate_source)?
+            self.replace_source_preserving(candidate_source, &changed_state_names)?
         };
         if emit_value_response && !self.quiet && !suppress_value && !value.is_empty() {
             let canonical = value.format_repl_inline(self.value_element_limit);
@@ -377,11 +393,23 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 
     pub fn replace_source(&mut self, candidate_source: String) -> MResult<RuntimeValueSnapshot> {
+        self.replace_source_preserving(candidate_source, &std::collections::BTreeSet::new())
+    }
+
+    fn replace_source_preserving(
+        &mut self,
+        candidate_source: String,
+        changed_state_names: &std::collections::BTreeSet<String>,
+    ) -> MResult<RuntimeValueSnapshot> {
         if self.source_tree.is_some() {
             let tree = mech_syntax::parser::parse(candidate_source.trim())?;
-            return self.replace_source_tree(candidate_source, tree);
+            return self.replace_source_tree_preserving(
+                candidate_source,
+                tree,
+                changed_state_names,
+            );
         }
-        self.replace_source_candidate(candidate_source, None)
+        self.replace_source_candidate(candidate_source, None, Some(changed_state_names))
     }
 
     fn replace_source_tree(
@@ -389,13 +417,31 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         candidate_source: String,
         candidate_tree: mech_core::nodes::Program,
     ) -> MResult<RuntimeValueSnapshot> {
-        self.replace_source_candidate(candidate_source, Some(candidate_tree))
+        self.replace_source_tree_preserving(
+            candidate_source,
+            candidate_tree,
+            &std::collections::BTreeSet::new(),
+        )
+    }
+
+    fn replace_source_tree_preserving(
+        &mut self,
+        candidate_source: String,
+        candidate_tree: mech_core::nodes::Program,
+        changed_state_names: &std::collections::BTreeSet<String>,
+    ) -> MResult<RuntimeValueSnapshot> {
+        self.replace_source_candidate(
+            candidate_source,
+            Some(candidate_tree),
+            Some(changed_state_names),
+        )
     }
 
     fn replace_source_candidate(
         &mut self,
         candidate_source: String,
         candidate_tree: Option<mech_core::nodes::Program>,
+        changed_state_names: Option<&std::collections::BTreeSet<String>>,
     ) -> MResult<RuntimeValueSnapshot> {
         let candidate_events = MechEventBuffer::default();
         let activated = match candidate_tree.clone() {
@@ -413,6 +459,19 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 return Err(error);
             }
         };
+
+        if let (Some(previous), Some(changed_state_names)) =
+            (self.runtime.as_ref(), changed_state_names)
+        {
+            match candidate.preserve_compatible_resident_state_from(previous, changed_state_names) {
+                Ok(()) => {}
+                Err(error) => {
+                    let _ = candidate.shutdown();
+                    self.factory.abort();
+                    return Err(error);
+                }
+            }
+        }
 
         if let Err(error) = self.factory.prepare_commit(&mut candidate) {
             let _ = candidate.shutdown();
@@ -440,6 +499,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.source = candidate_source;
         self.source_tree = candidate_tree;
         self.pending_selection = None;
+        self.cleared_synthetic_symbols.clear();
         self.reusable_selection_tokens.clear();
         for (code, error) in retirement_failures {
             self.emit_message_diagnostic(
@@ -463,17 +523,47 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     pub fn clear_variables(&mut self, names: &[String]) -> MResult<Vec<String>> {
         if names.is_empty() {
             if self.source_tree.is_some() {
-                self.replace_source_tree(String::new(), mech_syntax::parser::parse("")?)?;
+                self.replace_source_candidate(
+                    String::new(),
+                    Some(mech_syntax::parser::parse("")?),
+                    None,
+                )?;
             } else {
-                self.replace_source(String::new())?;
+                self.replace_source_candidate(String::new(), None, None)?;
             }
             return Ok(Vec::new());
         }
 
-        let requested = names
+        let mut requested = names
             .iter()
             .cloned()
             .collect::<std::collections::BTreeSet<_>>();
+        // `ans` is the runtime's synthetic projection of the current root
+        // result (or a pending clicked selection), not a syntax definition.
+        // Keep it clearable like every other name exposed by `:whos` without
+        // deleting the source statement that may also define an ordinary
+        // resident variable. A later accepted submission creates a new root
+        // result and makes `ans` available again.
+        let requested_ans = requested.remove("ans");
+        let clear_ans = requested_ans
+            && (self.pending_selection.is_some()
+                || self
+                    .runtime
+                    .as_ref()
+                    .and_then(|runtime| runtime.root_symbol_output_id("ans"))
+                    .is_some());
+        if requested_ans && !clear_ans {
+            return Err(interactive_error("resident variable `ans` not found"));
+        }
+
+        if requested.is_empty() {
+            if !clear_ans {
+                return Err(interactive_error("resident variable `ans` not found"));
+            }
+            self.pending_selection = None;
+            self.cleared_synthetic_symbols.insert("ans".to_string());
+            return Ok(vec!["ans".to_string()]);
+        }
         let mut tree = match &self.source_tree {
             Some(tree) => tree.clone(),
             None => mech_syntax::parser::parse(self.source.trim())?,
@@ -511,27 +601,31 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         } else {
             self.replace_source(candidate_source)?;
         }
+        if clear_ans {
+            self.cleared_synthetic_symbols.insert("ans".to_string());
+            removed.insert("ans".to_string());
+        }
         Ok(removed.into_iter().collect())
     }
 
     pub fn reset(&mut self) -> MResult<()> {
         if let Some(initial_source) = self.initial_source.clone() {
             if let Some(initial_tree) = self.initial_tree.clone() {
-                self.replace_source_tree(initial_source, initial_tree)?;
+                self.replace_source_candidate(initial_source, Some(initial_tree), None)?;
             } else {
-                self.replace_source(initial_source)?;
+                self.replace_source_candidate(initial_source, None, None)?;
             }
             return Ok(());
         }
-        if let Some(mut runtime) = self.runtime.take() {
-            runtime.shutdown()?;
-            self.collect_program_events()?;
+        if self.source_tree.is_some() {
+            self.replace_source_candidate(
+                String::new(),
+                Some(mech_syntax::parser::parse("")?),
+                None,
+            )?;
+        } else {
+            self.replace_source_candidate(String::new(), None, None)?;
         }
-        self.program_events = None;
-        self.source.clear();
-        self.source_tree = None;
-        self.pending_selection = None;
-        self.reusable_selection_tokens.clear();
         Ok(())
     }
 
@@ -566,6 +660,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 
     pub fn symbol(&self, name: &str) -> MResult<Option<RuntimeValueSnapshot>> {
+        if self.cleared_synthetic_symbols.contains(name) {
+            return Ok(None);
+        }
         if name == "ans"
             && let Some(value) = &self.pending_selection
         {
@@ -578,6 +675,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     }
 
     pub fn symbol_output_id(&self, name: &str) -> Option<mech_core::OutputId> {
+        if self.cleared_synthetic_symbols.contains(name) {
+            return None;
+        }
         if name == "ans" && self.pending_selection.is_some() {
             return None;
         }
@@ -619,6 +719,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 .expect("resident session was checked above")
                 .root_symbol_values(&requested_names)
         }?;
+        values.retain(|(name, _)| !self.cleared_synthetic_symbols.contains(name));
         if let Some(selected) = &self.pending_selection
             && (names.is_empty() || names.iter().any(|name| name == "ans"))
         {
@@ -881,6 +982,52 @@ fn remove_resident_definitions(
     Ok(())
 }
 
+fn resident_state_mutations(
+    tree: &mech_core::nodes::Program,
+) -> std::collections::BTreeSet<String> {
+    use mech_core::nodes::{MechCode, SectionElement, Statement};
+
+    let mut names = std::collections::BTreeSet::new();
+    let mut collect = |code: &[(MechCode, Option<mech_core::nodes::Comment>)]| {
+        for (node, _) in code {
+            let MechCode::Statement(statement) = node else {
+                continue;
+            };
+            match statement {
+                Statement::VariableDefine(definition) if definition.mutable => {
+                    names.insert(definition.var.name.to_string());
+                }
+                Statement::VariableAssign(assignment) => {
+                    names.insert(assignment.target.name.to_string());
+                }
+                Statement::OpAssign(assignment) => {
+                    names.insert(assignment.target.name.to_string());
+                }
+                Statement::TupleDestructure(destructure) => {
+                    names.extend(
+                        destructure
+                            .vars
+                            .iter()
+                            .map(|variable| variable.name.to_string()),
+                    );
+                }
+                _ => {}
+            }
+        }
+    };
+
+    for section in &tree.body.sections {
+        for element in &section.elements {
+            match element {
+                SectionElement::MechCode(code) => collect(code),
+                SectionElement::FencedMechCode(fenced) => collect(&fenced.code),
+                _ => {}
+            }
+        }
+    }
+    names
+}
+
 fn executable_submission(source: &str) -> (String, bool) {
     let Some(terminal) = mech_syntax::submission_terminal(source) else {
         return (source.to_string(), false);
@@ -1034,6 +1181,16 @@ fn interactive_error(message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn resident_state_mutations_include_compound_assignments() {
+        let tree = mech_syntax::parser::parse("answer += 1\nanswer").unwrap();
+
+        assert_eq!(
+            resident_state_mutations(&tree),
+            std::collections::BTreeSet::from(["answer".to_string()]),
+        );
+    }
     use std::cell::Cell;
 
     struct NeverBuild;
@@ -1075,6 +1232,16 @@ mod tests {
 
     struct CapturingProgramEventFactory {
         events: Arc<Mutex<Option<MechEventBuffer>>>,
+    }
+
+    struct SourceRuntimeFactory;
+
+    impl ResidentReplRuntimeFactory for SourceRuntimeFactory {
+        fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
+            MechRuntime::builder()
+                .function_catalog(mech_stdlib::source_catalog())
+                .build()
+        }
     }
 
     impl ResidentReplRuntimeFactory for CapturingProgramEventFactory {
@@ -1156,6 +1323,89 @@ mod tests {
                     .contains("deliberate retired runtime stop failure")),
             "retirement failure must remain observable as a host warning",
         );
+    }
+
+    #[test]
+    fn standalone_reset_commits_a_clean_candidate_after_retirement_warning() {
+        let factory = FailingRetirementFactory {
+            activations: Cell::new(0),
+        };
+        let mut session = ResidentReplSession::new(factory);
+        session.replace_source("baseline".to_string()).unwrap();
+
+        session.reset().unwrap();
+
+        assert_eq!(session.source(), "");
+        assert!(session.symbols(&[]).unwrap().is_empty());
+        assert!(
+            !session
+                .runtime()
+                .expect("reset commits an empty candidate runtime")
+                .ingress()
+                .is_closed()
+                .unwrap(),
+        );
+        assert!(session.drain_events().unwrap().iter().any(|event| {
+            format!("{event:?}").contains("deliberate retired runtime stop failure")
+        }));
+    }
+
+    #[test]
+    fn accepted_source_preserves_compatible_live_resident_state() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~counter := 0").unwrap();
+        session.submit("counter += 1").unwrap();
+        session.step(2).unwrap();
+        let before = session.symbol("counter").unwrap().unwrap().to_string();
+        assert_eq!(before, "3");
+
+        session.submit("x := 1").unwrap();
+
+        let after = session.symbol("counter").unwrap().unwrap().to_string();
+        assert_eq!(after, before, "accepted source must not replay live state");
+        assert_eq!(session.symbol("x").unwrap().unwrap().to_string(), "1");
+    }
+
+    #[test]
+    fn accepted_source_recomputes_state_explicitly_mutated_by_the_submission() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~answer := 0").unwrap();
+        session.submit("answer += 42").unwrap();
+
+        let result = session.submit("answer += 1\nanswer").unwrap();
+
+        assert_eq!(result.to_string(), "43");
+        assert_eq!(session.symbol("answer").unwrap().unwrap().to_string(), "43");
+    }
+
+    #[test]
+    fn every_symbol_exposed_by_whos_including_ans_is_clearable() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("x := 7").unwrap();
+        assert!(
+            session
+                .symbols(&[])
+                .unwrap()
+                .iter()
+                .any(|(name, _)| name == "ans")
+        );
+
+        assert_eq!(
+            session.clear_variables(&["ans".to_string()]).unwrap(),
+            ["ans"]
+        );
+        assert!(session.symbol("ans").unwrap().is_none());
+        assert!(
+            !session
+                .symbols(&[])
+                .unwrap()
+                .iter()
+                .any(|(name, _)| name == "ans")
+        );
+        assert_eq!(session.symbol("x").unwrap().unwrap().to_string(), "7");
+
+        session.submit("y := 8").unwrap();
+        assert!(session.symbol("ans").unwrap().is_some());
     }
 
     #[test]

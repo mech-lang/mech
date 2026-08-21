@@ -816,6 +816,59 @@ impl ReactiveInstance {
         })
     }
 
+    /// Install compatible published state from another live instance without
+    /// changing this instance's already-validated plan.
+    ///
+    /// Interactive hosts activate replacement programs in isolation before
+    /// calling this method. Migration is staged in a cloned arena, so an
+    /// invalid or incompatible mapping cannot partially mutate the candidate.
+    pub fn migrate_compatible_state_from(
+        &mut self,
+        source: &ReactiveInstance,
+        state_map: &[StateMigrationMapping],
+    ) -> Result<(), ResidentActivationError> {
+        if self.candidate_active || source.candidate_active {
+            return Err(ResidentActivationError::ActiveCandidate);
+        }
+
+        let mut targets = BTreeSet::<CellSlotId>::new();
+        let mut sources = BTreeSet::<CellSlotId>::new();
+        let mut migrated = self.state.clone();
+        let target_epoch = self.published_epoch();
+        let source_epoch = source.published_epoch();
+
+        for mapping in state_map {
+            if !targets.insert(mapping.target) || !sources.insert(mapping.source) {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            }
+            let Some(target) = self.plan.slots.get(mapping.target.get() as usize) else {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            };
+            let Some(source_slot) = source.plan.slots.get(mapping.source.get() as usize) else {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            };
+            if target.role != SlotRole::State
+                || source_slot.role != SlotRole::State
+                || target.schema_key != source_slot.schema_key
+                || target.shape != source_slot.shape
+            {
+                return Err(ResidentActivationError::IncompatibleState {
+                    slot: mapping.target,
+                });
+            }
+            migrated.install_migrated(
+                mapping.target,
+                target_epoch,
+                &source.state,
+                mapping.source,
+                source_epoch,
+            );
+        }
+
+        self.state = migrated;
+        Ok(())
+    }
+
     pub fn reactivate(
         &mut self,
         artifact: &ProgramArtifact,

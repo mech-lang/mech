@@ -34,7 +34,8 @@ pub use general::{
     ActivationFacts, CapturedSignalInput, CapturedValueInput, PreparedResidentTurn,
     ReactiveInstance, ResidentActivationError, ResidentActivationOptions, ResidentExecutionError,
     ResidentExternalAdmission, ResidentExternalPublicationAuthority, ResidentIntegrityMode,
-    ResidentTurnSummary, ResidentValueBorrow, activate, activate_with_options,
+    ResidentTurnSummary, ResidentValueBorrow, StateMigrationMapping, activate,
+    activate_with_options,
 };
 
 #[cfg(feature = "resident-artifact")]

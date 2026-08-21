@@ -690,20 +690,23 @@ mod document {
 
     struct DocumentProgramOutput {
         selection_token: String,
-        snapshot: mech_runtime::RuntimeValueSnapshot,
+        output_id: OutputId,
     }
 
     fn capture_program_output(
         repl: &mut crate::repl::WasmRepl,
     ) -> Result<Option<DocumentProgramOutput>, JsValue> {
-        let captured = {
+        let (output_id, captured) = {
             let Some(runtime) = repl.session.runtime() else {
                 return Ok(None);
             };
             let Some(output_id) = runtime.program_output_id() else {
                 return Ok(None);
             };
-            runtime.output_value(output_id).map_err(to_js_error)?
+            (
+                output_id,
+                runtime.output_value(output_id).map_err(to_js_error)?,
+            )
         };
         let Some(snapshot) = captured else {
             return Ok(None);
@@ -714,7 +717,7 @@ mod document {
             .map_err(to_js_error)?;
         Ok(Some(DocumentProgramOutput {
             selection_token,
-            snapshot,
+            output_id,
         }))
     }
 
@@ -926,7 +929,14 @@ mod document {
             let Some(output) = &self.program_output else {
                 return Ok(JsValue::NULL);
             };
-            let rendered = rendered_named_value(output.snapshot.clone(), None)?;
+            let Some(snapshot) = self
+                .runtime()?
+                .output_value(output.output_id)
+                .map_err(to_js_error)?
+            else {
+                return Ok(JsValue::NULL);
+            };
+            let rendered = rendered_named_value(snapshot, None)?;
             set_rendered_selection_identity(&rendered, &output.selection_token)?;
             Ok(rendered)
         }
@@ -1232,6 +1242,11 @@ mod document {
             self.repl.finish_host_request(request_id)
         }
 
+        #[wasm_bindgen(js_name = replDocumentationIndex)]
+        pub fn repl_documentation_index(&mut self, request_id: &str) -> Result<JsValue, JsValue> {
+            self.repl.finish_documentation_index(request_id)
+        }
+
         #[wasm_bindgen(js_name = replSelectSymbol)]
         pub fn repl_select_symbol(
             &mut self,
@@ -1418,8 +1433,13 @@ mod document {
                 .ok_or_else(|| js_error("document runtime is not active"))
         }
 
-        fn current_interactive_tree(&self) -> MResult<mech_core::nodes::Program> {
-            self.bootstrap.interactive_tree(self.repl.session.source())
+        pub(super) fn current_interactive_tree(&self) -> MResult<mech_core::nodes::Program> {
+            self.repl
+                .session
+                .source_tree()
+                .cloned()
+                .map(Ok)
+                .unwrap_or_else(|| self.bootstrap.interactive_tree(self.repl.session.source()))
         }
 
         fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
@@ -2916,6 +2936,11 @@ mod tests {
                 .unwrap(),
             42.0,
         );
+        assert_eq!(
+            document.current_interactive_tree().unwrap(),
+            document.repl.session.source_tree().unwrap().clone(),
+            "document projections must use the session's accepted semantic tree",
+        );
     }
 
     #[test]
@@ -4212,6 +4237,44 @@ mod browser_tests {
                 .unwrap()
                 .to_string(),
             "120",
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn fixed_program_output_resolves_its_live_value_after_steps() {
+        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 1\nanswer").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        let initial = document.rendered_program_output().unwrap();
+        let selection_token = Reflect::get(&initial, &JsValue::from_str("selectionToken"))
+            .unwrap()
+            .as_string()
+            .unwrap();
+        assert_eq!(
+            Reflect::get(&initial, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("1"),
+        );
+
+        document.repl.step_immediate(2).unwrap();
+
+        let stepped = document.rendered_program_output().unwrap();
+        assert_eq!(
+            Reflect::get(&stepped, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("3"),
+        );
+        assert_eq!(
+            Reflect::get(&stepped, &JsValue::from_str("selectionToken"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some(selection_token.as_str()),
+            "live updates must retain the fixed output identity",
         );
     }
 

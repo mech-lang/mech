@@ -22,6 +22,12 @@ use std::time::Duration;
 use chrono::{Datelike, Local, NaiveDateTime, Timelike};
 use colored::Colorize;
 use crossbeam_channel::{Receiver, RecvTimeoutError, Sender};
+use crossterm::cursor::{MoveToColumn, MoveUp};
+use crossterm::event::{
+    DisableBracketedPaste, EnableBracketedPaste, Event, KeyCode, KeyEventKind, KeyModifiers,
+};
+use crossterm::terminal::{Clear, ClearType, disable_raw_mode, enable_raw_mode};
+use crossterm::{execute, queue};
 #[cfg(feature = "mika")]
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use mech_core::{MResult, MechError};
@@ -103,6 +109,7 @@ fn play_mika_farewell(draw_target: ProgressDrawTarget, message: String, frame_de
 #[derive(Debug)]
 enum ReplInput {
     Line(String),
+    Interrupt,
     EndOfInput,
     ReadFailed(String),
 }
@@ -135,6 +142,7 @@ pub(crate) fn run(nofun: bool, quiet: bool) -> MResult<CliOutcome> {
     }
 
     colored::control::set_override(ui.color());
+    let terminal_editor = io::stdin().is_terminal() && io::stdout().is_terminal();
     let mut stdout = io::stdout().lock();
     let mut stderr = io::stderr().lock();
     if !ui.is_plain() {
@@ -143,7 +151,7 @@ pub(crate) fn run(nofun: bool, quiet: bool) -> MResult<CliOutcome> {
     }
 
     let mut repl = ResidentRepl::new_with_options(ui.quiet(), ui.value_element_limit())?;
-    let worker = spawn_input_worker();
+    let worker = spawn_input_worker(terminal_editor);
     let exit_requested = Arc::new(AtomicBool::new(false));
     let interrupt_count = Arc::new(AtomicUsize::new(0));
     install_interrupt_handler(exit_requested.clone(), interrupt_count.clone())?;
@@ -201,6 +209,18 @@ fn run_interactive_loop(
                 let _ = worker.resume.send(());
                 print_prompt(output, ui)?;
             }
+            Ok(ReplInput::Interrupt) => {
+                let count = interrupt_count.fetch_add(1, Ordering::AcqRel) + 1;
+                if count >= 3 {
+                    exit_requested.store(true, Ordering::Release);
+                }
+                render_pending_interrupts(output, interrupt_count, &mut rendered_interrupts, ui)?;
+                let _ = worker.resume.send(());
+                if exit_requested.load(Ordering::Acquire) {
+                    return Ok(());
+                }
+                print_prompt(output, ui)?;
+            }
             Ok(ReplInput::EndOfInput) | Err(RecvTimeoutError::Disconnected) => return Ok(()),
             Ok(ReplInput::ReadFailed(error)) => {
                 return Err(MechError::new(
@@ -221,24 +241,35 @@ fn run_interactive_loop(
     }
 }
 
-fn spawn_input_worker() -> ReplInputWorker {
+fn spawn_input_worker(terminal_editor: bool) -> ReplInputWorker {
     let (sender, receiver) = crossbeam_channel::bounded(1);
     let (resume, wait_for_resume) = crossbeam_channel::bounded(0);
     let waiting_for_resume = Arc::new(AtomicBool::new(false));
     let worker_waiting_for_resume = waiting_for_resume.clone();
     let handle = thread::spawn(move || {
+        let mut history = Vec::<String>::new();
         loop {
-            let mut input = String::new();
-            match io::stdin().read_line(&mut input) {
-                Ok(0) => {
+            let input = if terminal_editor {
+                read_terminal_entry(&history)
+            } else {
+                let mut input = String::new();
+                io::stdin()
+                    .read_line(&mut input)
+                    .map(|count| (count > 0).then_some(ReplInput::Line(input)))
+            };
+            match input {
+                Ok(None) => {
                     let _ = sender.send(ReplInput::EndOfInput);
                     break;
                 }
-                Ok(_) => {
-                    worker_waiting_for_resume.store(true, Ordering::Release);
-                    if sender.send(ReplInput::Line(input)).is_err()
-                        || wait_for_resume.recv().is_err()
+                Ok(Some(input)) => {
+                    if let ReplInput::Line(line) = &input
+                        && !line.trim().is_empty()
                     {
+                        history.push(line.trim_end_matches(['\r', '\n']).to_string());
+                    }
+                    worker_waiting_for_resume.store(true, Ordering::Release);
+                    if sender.send(input).is_err() || wait_for_resume.recv().is_err() {
                         worker_waiting_for_resume.store(false, Ordering::Release);
                         break;
                     }
@@ -257,6 +288,221 @@ fn spawn_input_worker() -> ReplInputWorker {
         handle,
         waiting_for_resume,
     }
+}
+
+/// Read one complete terminal transaction. The editor owns line breaks until
+/// plain Enter submits, so Ctrl+Enter and bracketed paste cannot be split into
+/// separate resident activations by the stdin transport.
+fn read_terminal_entry(history: &[String]) -> io::Result<Option<ReplInput>> {
+    enable_raw_mode()?;
+    struct RawModeGuard;
+    impl Drop for RawModeGuard {
+        fn drop(&mut self) {
+            let _ = disable_raw_mode();
+        }
+    }
+    let raw_mode = RawModeGuard;
+    let mut output = io::stdout().lock();
+    execute!(output, EnableBracketedPaste)?;
+    let mut buffer = Vec::<char>::new();
+    let mut cursor = 0usize;
+    let mut rendered_lines = 1usize;
+    let mut history_index = history.len();
+
+    let result = loop {
+        let event = match crossterm::event::read() {
+            Ok(event) => event,
+            Err(error) => break Err(error),
+        };
+        match event {
+            Event::Paste(text) => {
+                let pasted = text.replace("\r\n", "\n").replace('\r', "\n");
+                let count = pasted.chars().count();
+                buffer.splice(cursor..cursor, pasted.chars());
+                cursor += count;
+            }
+            Event::Key(key) if key.kind == KeyEventKind::Press => match key.code {
+                KeyCode::Enter if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    buffer.insert(cursor, '\n');
+                    cursor += 1;
+                }
+                KeyCode::Enter => {
+                    let mut entry = buffer.iter().collect::<String>();
+                    entry.push('\n');
+                    break Ok(Some(ReplInput::Line(entry)));
+                }
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    break Ok(Some(ReplInput::Interrupt));
+                }
+                KeyCode::Char('d')
+                    if key.modifiers.contains(KeyModifiers::CONTROL) && buffer.is_empty() =>
+                {
+                    break Ok(None);
+                }
+                KeyCode::Char(character)
+                    if !key
+                        .modifiers
+                        .intersects(KeyModifiers::CONTROL | KeyModifiers::ALT) =>
+                {
+                    buffer.insert(cursor, character);
+                    cursor += 1;
+                }
+                KeyCode::Backspace if cursor > 0 => {
+                    cursor -= 1;
+                    buffer.remove(cursor);
+                }
+                KeyCode::Delete if cursor < buffer.len() => {
+                    buffer.remove(cursor);
+                }
+                KeyCode::Left if cursor > 0 => cursor -= 1,
+                KeyCode::Right if cursor < buffer.len() => cursor += 1,
+                KeyCode::Home => {
+                    cursor = buffer[..cursor]
+                        .iter()
+                        .rposition(|character| *character == '\n')
+                        .map_or(0, |index| index + 1);
+                }
+                KeyCode::End => {
+                    cursor += buffer[cursor..]
+                        .iter()
+                        .position(|character| *character == '\n')
+                        .unwrap_or(buffer.len() - cursor);
+                }
+                KeyCode::Up => {
+                    if let Some(next) = cursor_line_above(&buffer, cursor) {
+                        cursor = next;
+                    } else if history_index > 0 {
+                        history_index -= 1;
+                        buffer = history[history_index].chars().collect();
+                        cursor = buffer.len();
+                    }
+                }
+                KeyCode::Down => {
+                    if let Some(next) = cursor_line_below(&buffer, cursor) {
+                        cursor = next;
+                    } else if history_index < history.len() {
+                        history_index += 1;
+                        buffer = history
+                            .get(history_index)
+                            .map(|entry| entry.chars().collect())
+                            .unwrap_or_default();
+                        cursor = buffer.len();
+                    }
+                }
+                _ => continue,
+            },
+            _ => continue,
+        }
+        redraw_terminal_entry(&mut output, &buffer, cursor, &mut rendered_lines)?;
+    };
+
+    queue!(
+        output,
+        MoveToColumn(0),
+        MoveUp(u16::try_from(rendered_lines.saturating_sub(1)).unwrap_or(u16::MAX)),
+        Clear(ClearType::FromCursorDown),
+        DisableBracketedPaste,
+    )?;
+    if let Ok(Some(ReplInput::Line(entry))) = &result {
+        let entry = entry.trim_end_matches(['\r', '\n']);
+        let mut lines = entry.split('\n');
+        write!(output, "{PROMPT}{}", lines.next().unwrap_or_default())?;
+        for line in lines {
+            write!(output, "\r\n   {line}")?;
+        }
+        write!(output, "\r\n")?;
+    }
+    output.flush()?;
+    drop(raw_mode);
+    result
+}
+
+fn cursor_line_above(buffer: &[char], cursor: usize) -> Option<usize> {
+    let line_start = buffer[..cursor]
+        .iter()
+        .rposition(|character| *character == '\n')
+        .map_or(0, |index| index + 1);
+    if line_start == 0 {
+        return None;
+    }
+    let previous_end = line_start - 1;
+    let previous_start = buffer[..previous_end]
+        .iter()
+        .rposition(|character| *character == '\n')
+        .map_or(0, |index| index + 1);
+    Some(previous_start + (cursor - line_start).min(previous_end - previous_start))
+}
+
+fn cursor_line_below(buffer: &[char], cursor: usize) -> Option<usize> {
+    let line_start = buffer[..cursor]
+        .iter()
+        .rposition(|character| *character == '\n')
+        .map_or(0, |index| index + 1);
+    let line_end = buffer[cursor..]
+        .iter()
+        .position(|character| *character == '\n')
+        .map(|offset| cursor + offset)
+        .unwrap_or(buffer.len());
+    if line_end == buffer.len() {
+        return None;
+    }
+    let next_start = line_end + 1;
+    let next_end = buffer[next_start..]
+        .iter()
+        .position(|character| *character == '\n')
+        .map(|offset| next_start + offset)
+        .unwrap_or(buffer.len());
+    Some(next_start + (cursor - line_start).min(next_end - next_start))
+}
+
+fn redraw_terminal_entry<W: Write>(
+    output: &mut W,
+    buffer: &[char],
+    cursor: usize,
+    rendered_lines: &mut usize,
+) -> io::Result<()> {
+    queue!(
+        output,
+        MoveToColumn(0),
+        MoveUp(u16::try_from(rendered_lines.saturating_sub(1)).unwrap_or(u16::MAX)),
+        Clear(ClearType::FromCursorDown),
+    )?;
+    let text = buffer.iter().collect::<String>();
+    let lines = text.split('\n').collect::<Vec<_>>();
+    write!(
+        output,
+        "{PROMPT}{}",
+        lines.first().copied().unwrap_or_default()
+    )?;
+    for line in lines.iter().skip(1) {
+        write!(output, "\r\n   {line}")?;
+    }
+    *rendered_lines = lines.len().max(1);
+
+    let prefix = buffer[..cursor].iter().collect::<String>();
+    let cursor_line = prefix
+        .chars()
+        .filter(|character| *character == '\n')
+        .count();
+    let cursor_column = prefix
+        .rsplit('\n')
+        .next()
+        .unwrap_or_default()
+        .chars()
+        .count()
+        + 3;
+    let end_line = lines.len().saturating_sub(1);
+    if end_line > cursor_line {
+        queue!(
+            output,
+            MoveUp(u16::try_from(end_line - cursor_line).unwrap_or(u16::MAX)),
+        )?;
+    }
+    queue!(
+        output,
+        MoveToColumn(u16::try_from(cursor_column).unwrap_or(u16::MAX)),
+    )?;
+    output.flush()
 }
 
 fn finish_input_worker(worker: ReplInputWorker) -> MResult<()> {
@@ -622,6 +868,16 @@ mod tests {
     use std::time::Instant;
 
     use super::*;
+
+    #[test]
+    fn multiline_editor_uses_vertical_arrows_before_history() {
+        let buffer = "first\nxy\nthird".chars().collect::<Vec<_>>();
+
+        assert_eq!(cursor_line_above(&buffer, 8), Some(2));
+        assert_eq!(cursor_line_below(&buffer, 2), Some(8));
+        assert_eq!(cursor_line_above(&buffer, 2), None);
+        assert_eq!(cursor_line_below(&buffer, buffer.len()), None);
+    }
 
     #[test]
     fn resident_repl_preserves_the_product_interface_and_evaluates_source() {
