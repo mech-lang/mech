@@ -2007,6 +2007,8 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
 }
 
 .mech-repl-transcript {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -2036,8 +2038,20 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid var(--border-strong);
+  padding: 2px 0;
+}
+
+.repl-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.repl-code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .repl-prompt {
@@ -2056,6 +2070,54 @@ body.console-fullscreen .console-fullscreen-toggle .icon-exit {
   background: transparent;
   color: var(--console-text);
   font: inherit;
+}
+
+.mech-document-output-entry,
+.mech-document-output-html,
+.mech-output-value {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.mech-document-output-entry {
+  overflow: hidden;
+  padding: 8px 0 14px;
+}
+
+.mech-document-output-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mech-document-output-heading .mech-output-kind {
+  color: var(--kind-annotation-color, #f09fca);
+  margin: 0;
+}
+
+.mech-document-output-html,
+.mech-document-output-html > * {
+  max-width: 100%;
+}
+
+.mech-document-output-html {
+  overflow: auto;
+  padding: 0;
+}
+
+.mech-repl-symbols {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.mech-repl-symbols td:last-child {
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .footer-robot img[hidden] + .mika-glyph {

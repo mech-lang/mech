@@ -712,6 +712,52 @@ def assert_console_contract():
     }:
         fail(f"the standard document console did not advertise resident evaluation: {resident!r}")
 
+    evaluate("document.querySelector('#output-tab')?.click()")
+    wait_for(
+        "document.querySelector('#output-panel')?.classList.contains('is-active') && "
+        "Boolean(document.querySelector('.mech-document-output-entry'))",
+        "the document output metadata panel",
+    )
+    metadata = evaluate_json("""
+(() => {
+  const panel = document.querySelector('#mech-document-output');
+  const entry = panel?.querySelector('.mech-document-output-entry');
+  const name = entry?.querySelector('.mech-document-output-name');
+  const kind = entry?.querySelector('.mech-output-kind');
+  const body = entry?.querySelector('.mech-document-output-html');
+  if (!panel || !entry || !name || !kind || !body) return null;
+  const probe = document.createElement('span');
+  probe.style.color = 'var(--kind-annotation-color, #f09fca)';
+  entry.append(probe);
+  const expectedKindColor = getComputedStyle(probe).color;
+  probe.remove();
+  const panelRect = panel.getBoundingClientRect();
+  const entryRect = entry.getBoundingClientRect();
+  return {
+    name: name.textContent.trim(),
+    kind: kind.textContent.trim(),
+    kindColor: getComputedStyle(kind).color,
+    expectedKindColor,
+    contained:
+      entryRect.left >= panelRect.left - 1 &&
+      entryRect.right <= panelRect.right + 1 &&
+      document.documentElement.scrollWidth <= window.innerWidth + 1,
+    bodyOverflow: getComputedStyle(body).overflowX,
+  };
+})()
+""")
+    if (
+        metadata is None or
+        not metadata["name"].startswith("output ") or
+        not metadata["name"].removeprefix("output ").isdigit() or
+        metadata["kind"] != "f64" or
+        metadata["kindColor"] != metadata["expectedKindColor"] or
+        not metadata["contained"] or
+        metadata["bodyOverflow"] not in {"auto", "scroll"}
+    ):
+        fail(f"document output metadata was not compact, typed, rose, and contained: {metadata!r}")
+    evaluate("document.querySelector('#console-tab')?.click()")
+
     multiline = evaluate_json("""
 (() => {
   const input = document.querySelector('.repl-input');
@@ -739,18 +785,19 @@ def assert_console_contract():
     }:
         fail(f"Ctrl+Enter did not insert a multiline browser REPL draft: {multiline!r}")
 
-    submit("answer := 1\nanswer + 1")
+    submit("answer + 1")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-result')].some((row) => "
-        "/2/.test(row.textContent))",
-        "the resident console evaluating multiline Mech source",
+        "/42/.test(row.textContent)) && "
+        "document.querySelector('.mech-repl-transcript')?.lastElementChild?.classList.contains('mech-repl-active-prompt')",
+        "the document-backed resident console and descending active prompt",
     )
     result_count = evaluate_json(
         "document.querySelectorAll('.mech-repl-result').length"
     )
     submit("answer + 2; -- suppress this browser value")
     wait_for(
-        "[...document.querySelectorAll('.mech-repl-source')].some((row) => "
+        "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => "
         "row.textContent.trim() === 'answer + 2; -- suppress this browser value')",
         "the semicolon-terminated browser source echo",
     )
@@ -794,8 +841,62 @@ def assert_console_contract():
     submit(":whos answer")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-symbols')].some((table) => /answer/.test(table.textContent)) && "
-        "[...document.querySelectorAll('.mech-repl-source')].some((row) => row.textContent.trim() === ':whos answer')",
-        "the answer row from :whos",
+        "[...document.querySelectorAll('.mech-repl-symbols')].some((table) => /41/.test(table.textContent)) && "
+        "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === ':whos answer')",
+        "the running document answer row from :whos",
+    )
+    submit("qq := 1..1000;")
+    submit(":whos qq")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-symbols tbody tr')].some((row) => "
+        "/qq/.test(row.textContent) && /…\\]/.test(row.lastElementChild?.textContent || ''))",
+        "an inline, elided :whos value",
+    )
+    whos_layout = evaluate_json("""
+(() => {
+  const rows = [...document.querySelectorAll('.mech-repl-symbols tbody tr')];
+  const row = rows.find(candidate => /qq/.test(candidate.firstElementChild?.textContent || ''));
+  const table = row?.closest('table');
+  const value = row?.lastElementChild;
+  const transcript = table?.closest('.mech-repl-transcript');
+  if (!row || !table || !value || !transcript) return null;
+  const cells = [...table.querySelectorAll('th, td')];
+  return {
+    value: value.textContent,
+    inline: !value.textContent.includes('\\n') && getComputedStyle(value).whiteSpace === 'nowrap',
+    borderless: cells.every(cell => {
+      const style = getComputedStyle(cell);
+      return ['Top', 'Right', 'Bottom', 'Left'].every(side =>
+        parseFloat(style[`border${side}Width`]) === 0);
+    }),
+    contained: table.getBoundingClientRect().right <= transcript.getBoundingClientRect().right + 1,
+  };
+})()
+""")
+    if (
+        whos_layout is None or
+        "…]" not in whos_layout["value"] or
+        not whos_layout["inline"] or
+        not whos_layout["borderless"] or
+        not whos_layout["contained"]
+    ):
+        fail(f":whos was not inline, elided, borderless, and contained: {whos_layout!r}")
+    evaluate("document.querySelector('#mech-smoke-var .mech-var-placeholder')?.click()")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === 'answer') && "
+        "document.querySelector('.mech-repl-transcript')?.lastElementChild?.classList.contains('mech-repl-active-prompt')",
+        "clicking a document variable into the descending REPL transcript",
+    )
+    submit("ans + 1")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-result')].some((row) => /42/.test(row.textContent))",
+        "the clicked document variable being bound as ans",
+    )
+    evaluate("document.querySelector('.mech-inline-mech-code')?.click()")
+    submit("ans")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-result')].some((row) => /42/.test(row.textContent))",
+        "inline document output binding ans",
     )
     submit(":step 256")
     wait_for(
@@ -807,14 +908,31 @@ def assert_console_contract():
     wait_for(
         "Boolean(document.querySelector('.mech-repl-help')) && "
         "/:load/.test(document.querySelector('.mech-repl-help')?.textContent || '') && "
-        "/unavailable: this host did not provide a readable resource provider/.test(document.querySelector('.mech-repl-help')?.textContent || '')",
-        "the full shared command registry and browser availability table",
+        "[...document.querySelectorAll('.mech-repl-help .mech-repl-row-muted')].some((row) => /:load/.test(row.textContent)) && "
+        "document.querySelectorAll('.mech-repl-help th').length === 2",
+        "the shared command registry with unavailable commands muted and no host column",
     )
+    help_layout = evaluate_json("""
+(() => {
+  const table = document.querySelector('.mech-repl-help');
+  if (!table) return null;
+  return {
+    borderless: [...table.querySelectorAll('th, td')].every(cell => {
+      const style = getComputedStyle(cell);
+      return ['Top', 'Right', 'Bottom', 'Left'].every(side =>
+        parseFloat(style[`border${side}Width`]) === 0);
+    }),
+    unavailableReasonLeaked: /unavailable:/.test(table.textContent),
+  };
+})()
+""")
+    if help_layout is None or not help_layout["borderless"] or help_layout["unavailableReasonLeaked"]:
+        fail(f"browser help retained table rules or the removed Host column text: {help_layout!r}")
     submit(":clear")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-info')].some((row) => /Resident REPL state cleared/.test(row.textContent)) && "
         "/41/.test(document.querySelector('#mech-smoke-var')?.textContent || '')",
-        "the independent resident REPL reset",
+        "the document-backed resident REPL reset",
     )
     submit('@out := console://repl/output{:write(line)}\n@out/line <- "browser-output"\n@out/line <- "continued"')
     wait_for(
@@ -962,8 +1080,9 @@ def assert_console_contract():
     )
     submit(":clc")
     wait_for(
-        "document.querySelector('.mech-repl-transcript')?.children.length === 0",
-        "the cleared browser console transcript",
+        "document.querySelector('.mech-repl-transcript')?.children.length === 1 && "
+        "document.querySelector('.mech-repl-transcript')?.lastElementChild?.classList.contains('mech-repl-active-prompt')",
+        "the cleared browser console retaining its active bottom prompt",
     )
     toggled = evaluate_json("""
 (() => {
@@ -1056,27 +1175,74 @@ def assert_console_tab_isolation():
 def assert_right_console_resize_direction():
     state = evaluate_json("""
 (() => {
+  const root = document.querySelector('.mech-root');
   const pane = document.querySelector('#mech-console, .console-pane');
   const handle = document.querySelector('#resizer, [data-mech-console-resizer], #edgeHandle');
-  if (!pane || !handle) return null;
-  const rect = handle.getBoundingClientRect();
-  const startX = rect.left + Math.max(1, rect.width / 2);
-  const startY = rect.top + Math.max(1, rect.height / 2);
+  const toggle = document.querySelector('#toggle-repl, [data-mech-console-toggle]');
+  if (!root || !pane || !handle || !toggle) return null;
+  let pointerId = 80;
+  const drag = (...deltaXs) => {
+    const rect = handle.getBoundingClientRect();
+    const startX = rect.left + Math.max(1, rect.width / 2);
+    const startY = rect.top + Math.max(1, rect.height / 2);
+    pointerId += 1;
+    handle.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true, pointerId, clientX: startX, clientY: startY,
+    }));
+    const states = [];
+    for (const deltaX of deltaXs) {
+      window.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true, pointerId, clientX: startX + deltaX, clientY: startY,
+      }));
+      states.push({
+        open: root.dataset.mechConsoleOpen,
+        fullscreen: pane.classList.contains('is-fullscreen'),
+        fallback: pane.dataset.mechFullscreenFallback,
+      });
+    }
+    const finalDelta = deltaXs.at(-1) || 0;
+    window.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, pointerId, clientX: startX + finalDelta, clientY: startY,
+    }));
+    return states;
+  };
   const before = pane.getBoundingClientRect().width;
-  handle.dispatchEvent(new PointerEvent('pointerdown', {
-    bubbles: true, cancelable: true, pointerId: 73, clientX: startX, clientY: startY,
-  }));
-  window.dispatchEvent(new PointerEvent('pointermove', {
-    bubbles: true, pointerId: 73, clientX: startX - 48, clientY: startY,
-  }));
-  window.dispatchEvent(new PointerEvent('pointerup', {
-    bubbles: true, pointerId: 73, clientX: startX - 48, clientY: startY,
-  }));
-  return { before, after: pane.getBoundingClientRect().width };
+  drag(-48);
+  const widened = pane.getBoundingClientRect().width;
+
+  drag(widened);
+  const collapsed =
+    root.dataset.mechConsoleOpen === 'false' &&
+    (pane.hidden || pane.classList.contains('is-collapsed'));
+  toggle.click();
+  const reopened = root.dataset.mechConsoleOpen === 'true';
+
+  const reopenedWidth = pane.getBoundingClientRect().width;
+  const transitions = drag(
+    -root.getBoundingClientRect().width,
+    reopenedWidth - Math.max(500, Math.min(900, root.getBoundingClientRect().width * 0.6)),
+  );
+  const entered = transitions[0];
+  const exited = transitions[1];
+  const fullscreen =
+    entered?.fullscreen === true &&
+    entered?.fallback === 'true';
+  const returned =
+    exited?.fullscreen === false &&
+    exited?.fallback !== 'true' &&
+    exited?.open === 'true';
+  return { before, widened, collapsed, reopened, fullscreen, returned };
 })()
 """)
-    if state is None or state["after"] <= state["before"]:
-        fail(f"dragging the right console's left handle left did not widen it: {state!r}")
+    if (
+        state is None or
+        state["widened"] <= state["before"] or
+        not state["collapsed"] or
+        not state["reopened"] or
+        not state["fullscreen"] or
+        not state["returned"]
+    ):
+        fail(f"right-console drag thresholds did not widen, collapse, fullscreen, and return: {state!r}")
 
 
 def assert_mobile_contract():

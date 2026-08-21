@@ -3202,6 +3202,8 @@ body {
 }
 
 .mech-repl-transcript {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     min-height: 0;
     overflow: auto;
@@ -3229,10 +3231,22 @@ body {
 
 .mech-repl-input-row {
     align-items: flex-start;
-    border-top: 1px solid var(--mech-shell-border);
     display: flex;
     gap: 8px;
-    padding: 12px;
+    padding: 2px 0;
+}
+
+.repl-line {
+    align-items: flex-start;
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.repl-code {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
 }
 
 .repl-prompt {
@@ -3249,6 +3263,54 @@ body {
     min-height: 1.5rem;
     outline: 0;
     resize: vertical;
+}
+
+.mech-document-output-entry,
+.mech-document-output-html,
+.mech-output-value {
+    box-sizing: border-box;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.mech-document-output-entry {
+    overflow: hidden;
+    padding: 8px 0 14px;
+}
+
+.mech-document-output-heading {
+    align-items: baseline;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.mech-document-output-heading .mech-output-kind {
+    color: var(--kind-annotation-color, #f09fca);
+    margin: 0;
+}
+
+.mech-document-output-html,
+.mech-document-output-html > * {
+    max-width: 100%;
+}
+
+.mech-document-output-html {
+    overflow: auto;
+    padding: 0;
+}
+
+.mech-repl-symbols {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.mech-repl-symbols td:last-child {
+    max-width: 22rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 #edgeHandle {

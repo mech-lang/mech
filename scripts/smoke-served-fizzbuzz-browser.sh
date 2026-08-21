@@ -200,6 +200,7 @@ from pathlib import Path
 import signal
 import subprocess
 import sys
+import time
 
 chrome, page_url, profile, dom_file, chrome_log = sys.argv[1:]
 args = [
@@ -221,13 +222,31 @@ with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
         stderr=stderr,
         start_new_session=True,
     )
-    try:
-        raise SystemExit(process.wait(timeout=45))
-    except subprocess.TimeoutExpired:
-        os.killpg(process.pid, signal.SIGKILL)
-        process.wait()
-        print("headless Chrome exceeded the 45-second smoke deadline", file=sys.stderr)
-        raise SystemExit(124)
+    deadline = time.monotonic() + 45
+    while time.monotonic() < deadline:
+        status = process.poll()
+        if status is not None:
+            raise SystemExit(status)
+        try:
+            dumped = Path(dom_file).read_text(errors="replace")
+        except OSError:
+            dumped = ""
+        if (
+            'data-mech-document-status="ready"' in dumped and
+            "mech-block-output" in dumped
+        ):
+            os.killpg(process.pid, signal.SIGTERM)
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait()
+            raise SystemExit(0)
+        time.sleep(0.1)
+    os.killpg(process.pid, signal.SIGKILL)
+    process.wait()
+    print("headless Chrome exceeded the 45-second smoke deadline", file=sys.stderr)
+    raise SystemExit(124)
 PY
 }
 
