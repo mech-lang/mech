@@ -4,7 +4,14 @@ pub use state::*;
 #[cfg(feature = "semantic-compiler")]
 mod document_outputs;
 #[cfg(feature = "semantic-compiler")]
-pub use document_outputs::{root_document_inline_eval_count, root_document_output_ids};
+pub(crate) use document_outputs::{
+    PROGRAM_OUTPUT_PUBLICATION_ANNOTATION, fenced_document_output_id,
+};
+#[cfg(feature = "semantic-compiler")]
+pub use document_outputs::{
+    configure_root_document_program_output_capture, insert_root_document_program_output_capture,
+    root_document_inline_eval_count, root_document_output_ids, root_document_program_output_id,
+};
 
 #[cfg(feature = "semantic-compiler")]
 mod compiler_planning;

@@ -18,7 +18,10 @@ use mech_browser::{BrowserHostDelegationEnvelope, verify_browser_host_delegation
 #[cfg(feature = "browser_host_console")]
 use mech_console::{BrowserConsoleHostFactory, ConsoleHostFactory};
 use mech_core::{GenericError, MResult, MechError, MechErrorKind, MechSourceCode, OutputId};
-use mech_engine::{root_document_inline_eval_count, root_document_output_ids};
+use mech_engine::{
+    insert_root_document_program_output_capture, root_document_inline_eval_count,
+    root_document_output_ids, root_document_program_output_id,
+};
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
     MAX_RESIDENT_STEP_COUNT, MechConfigDocument, MechEvent, MechEventBuffer, MechEventBus,
@@ -449,6 +452,11 @@ impl WasmDocumentBootstrap {
         self.source().tree.clone()
     }
 
+    fn program_output_id(&self) -> MResult<Option<OutputId>> {
+        let (_, output_id) = document_runtime_tree(self.source(), self.source().tree.clone())?;
+        Ok(output_id)
+    }
+
     fn interactive_tree(&self, candidate_source: &str) -> MResult<mech_core::nodes::Program> {
         mech_syntax::parser::parse(candidate_source.trim())
     }
@@ -543,6 +551,7 @@ fn build_document_repl_runtime_for_tree(
     candidate_tree: mech_core::nodes::Program,
 ) -> MResult<DocumentRuntimeCandidate> {
     let source = bootstrap.source();
+    let (candidate_tree, _) = document_runtime_tree(source, candidate_tree)?;
     let resolver = document_source_resolver(candidate_tree, source)?;
     #[cfg(feature = "browser_host_scene")]
     let candidate_scenes = BrowserSceneRegistry::new();
@@ -601,6 +610,45 @@ fn build_document_repl_runtime_for_tree(
         #[cfg(feature = "browser_host_scene")]
         scenes: candidate_scenes,
     })
+}
+
+/// Add a runtime-only capture at the last ordinary source statement and
+/// publish it at the original document boundary. Appended console sections
+/// remain after this boundary, so they cannot replace the fixed Output pane.
+fn document_runtime_tree(
+    source: &SourceBackedDocumentBootstrap,
+    mut candidate_tree: mech_core::nodes::Program,
+) -> MResult<(mech_core::nodes::Program, Option<OutputId>)> {
+    let boundary = source
+        .tree
+        .body
+        .sections
+        .len()
+        .min(candidate_tree.body.sections.len());
+    let console_sections = candidate_tree.body.sections.split_off(boundary);
+    let mut capture_tree = mech_syntax::parser::parse("~~~mech:hidden\nans\n~~~")?;
+    let capture = capture_tree
+        .body
+        .sections
+        .iter_mut()
+        .flat_map(|section| section.elements.drain(..))
+        .find_map(|element| match element {
+            mech_core::nodes::SectionElement::FencedMechCode(block) => Some(block),
+            _ => None,
+        })
+        .ok_or_else(|| document_runtime_error("program output capture syntax did not parse"))?;
+    let inserted = insert_root_document_program_output_capture(&mut candidate_tree, capture);
+    candidate_tree.body.sections.extend(console_sections);
+    let output_id = if inserted {
+        root_document_output_ids(&candidate_tree)
+            .iter()
+            .position(|candidate| *candidate == root_document_program_output_id())
+            .and_then(|ordinal| u32::try_from(ordinal).ok())
+            .map(OutputId::new)
+    } else {
+        None
+    };
+    Ok((candidate_tree, output_id))
 }
 
 fn document_runtime_error(message: impl Into<String>) -> MechError {
@@ -695,12 +743,13 @@ mod document {
 
     fn capture_program_output(
         repl: &mut crate::repl::WasmRepl,
+        bootstrap: &WasmDocumentBootstrap,
     ) -> Result<Option<DocumentProgramOutput>, JsValue> {
         let (output_id, captured) = {
             let Some(runtime) = repl.session.runtime() else {
                 return Ok(None);
             };
-            let Some(output_id) = runtime.program_output_id() else {
+            let Some(output_id) = bootstrap.program_output_id().map_err(to_js_error)? else {
                 return Ok(None);
             };
             (
@@ -708,7 +757,7 @@ mod document {
                 runtime.output_value(output_id).map_err(to_js_error)?,
             )
         };
-        let Some(snapshot) = captured else {
+        let Some(snapshot) = captured.filter(|snapshot| !snapshot.is_empty()) else {
             return Ok(None);
         };
         let selection_token = repl
@@ -748,7 +797,7 @@ mod document {
             let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
             let mut repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&mut repl)?;
+            let program_output = capture_program_output(&mut repl, &bootstrap)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -804,7 +853,7 @@ mod document {
             let bootstrap = WasmDocumentBootstrap::SourceBacked(bootstrap);
             let mut repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&mut repl)?;
+            let program_output = capture_program_output(&mut repl, &bootstrap)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -896,7 +945,7 @@ mod document {
             });
             let mut repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&mut repl)?;
+            let program_output = capture_program_output(&mut repl, &bootstrap)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -975,7 +1024,7 @@ mod document {
                 Reflect::set(&rendered, &JsValue::from_str("interactive"), &JsValue::TRUE)?;
                 return Ok(rendered);
             }
-            Err(js_error(format!("document value `{name}` is not resident")))
+            Ok(JsValue::NULL)
         }
 
         #[wasm_bindgen(js_name = reset)]
@@ -1214,6 +1263,8 @@ mod document {
             if source.trim().is_empty() || source.trim_start().starts_with(':') {
                 return None;
             }
+            let suppresses_value = mech_syntax::submission_terminal(source)
+                .is_some_and(|terminal| terminal.suppresses_value);
             let tree = mech_syntax::parser::parse(source.trim()).ok()?;
             let mut formatter = mech_syntax::formatter::Formatter::new();
             formatter.html = true;
@@ -1232,6 +1283,14 @@ mod document {
                     }
                     html.push_str(&formatter.mech_code(code));
                     found_code = true;
+                }
+            }
+            if suppresses_value {
+                const TERMINATOR: &str = "<span class=\"mech-code-terminal\">;</span>";
+                if let Some(comment) = html.rfind("<span class=\"mech-comment\">") {
+                    html.insert_str(comment, &format!("{TERMINATOR} "));
+                } else {
+                    html.push_str(TERMINATOR);
                 }
             }
             found_code.then_some(html)
@@ -3051,6 +3110,12 @@ mod tests {
             .expect("valid source should format");
         assert!(formatted.contains("mech-code-block"));
         assert!(formatted.contains("mech-variable-define"));
+        let suppressed = document
+            .repl_format_source("answer + 2; -- suppress this value")
+            .expect("a suppressed entry is complete Mech source");
+        let terminator = suppressed.find("mech-code-terminal").unwrap();
+        let comment = suppressed.find("mech-comment").unwrap();
+        assert!(terminator < comment, "{suppressed}");
         assert!(document.repl_format_source("answer := (").is_none());
         assert!(document.repl_format_source(":help").is_none());
     }

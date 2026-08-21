@@ -1547,7 +1547,11 @@ function bindSymbolClick(element, name, selectionToken = null) {
   const select = (event) => {
     event.preventDefault();
     event.stopPropagation();
-    if (!reflectiveSelectionAllowed()) {
+    if (
+      element.dataset.mechValueAvailable === "false" ||
+      element.dataset.mechValueInteractive === "false" ||
+      !reflectiveSelectionAllowed()
+    ) {
       return;
     }
     try {
@@ -1571,6 +1575,22 @@ function bindSymbolClick(element, name, selectionToken = null) {
       select(event);
     }
   });
+}
+
+function setReflectiveValueAvailability(element, available, interactive = true) {
+  element.dataset.mechValueAvailable = String(available);
+  element.dataset.mechValueInteractive = String(interactive);
+  const enabled = available && interactive;
+  element.classList.toggle("mech-clickable", enabled);
+  if (enabled) {
+    element.tabIndex = 0;
+    element.setAttribute("role", "button");
+    element.removeAttribute("aria-disabled");
+  } else {
+    element.removeAttribute("tabindex");
+    element.removeAttribute("role");
+    element.setAttribute("aria-disabled", "true");
+  }
 }
 
 function bindOutputClick(element, address) {
@@ -1635,7 +1655,10 @@ function renderInlineValue(output, address, rendered) {
 
 function bindReflectiveValues() {
   for (const placeholder of state.root?.querySelectorAll(".mech-var-placeholder") || []) {
-    if (placeholder.dataset.mechConstraint === "true") {
+    if (
+      placeholder.dataset.mechConstraint === "true" ||
+      placeholder.dataset.mechValueAvailable === "false"
+    ) {
       continue;
     }
     bindSymbolClick(placeholder, placeholder.dataset.mechVarName);
@@ -1696,6 +1719,16 @@ function renderValues() {
         placeholder.dataset.mechSource = "";
         placeholder.innerHTML = rendered.inlineHtml;
         placeholder.dataset.mechConstraint = String(rendered.interactive === false);
+        setReflectiveValueAvailability(
+          placeholder,
+          true,
+          rendered.interactive !== false,
+        );
+      } else {
+        delete placeholder.dataset.mechSource;
+        delete placeholder.dataset.mechConstraint;
+        placeholder.textContent = "—";
+        setReflectiveValueAvailability(placeholder, false, false);
       }
     } catch (error) {
       appendError(error);

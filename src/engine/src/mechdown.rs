@@ -46,6 +46,7 @@ pub fn section_compute_placement(section: &Section) -> MResult<Option<ComputePla
             "compute" => ComputePlacement::Compute,
             "cpu" => ComputePlacement::Cpu,
             "gpu" => ComputePlacement::Gpu,
+            crate::program::PROGRAM_OUTPUT_PUBLICATION_ANNOTATION => continue,
             name => {
                 return Err(MechError::new(
                     SectionAnnotationSemanticError::Unsupported { name: name.into() },
@@ -188,8 +189,8 @@ pub fn section_element(
                 out = eval_fenced_code_block(&block.code, p, false)?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let (last_code, _) = block.code.last().unwrap();
-                let out_id = hash_str(&format!("{:?}", last_code));
+                let out_id = crate::program::fenced_document_output_id(block)
+                    .expect("an executable fenced block has an output identity");
                 p.out_values.borrow_mut().insert(out_id, out.clone());
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
@@ -207,9 +208,15 @@ pub fn section_element(
                 })?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let (last_code, _) = block.code.last().unwrap();
-                let out_id = hash_str(&format!("{:?}", last_code));
+                let out_id = crate::program::fenced_document_output_id(block)
+                    .expect("an executable fenced block has an output identity");
                 pp.out_values.borrow_mut().insert(out_id, out.clone());
+                // A named fence is a scoped evaluator, but its returned value is
+                // still the latest document result. Mirror it into the parent
+                // `ans` projection so the document-boundary capture observes the
+                // same value the enclosing Mechdown program returns.
+                #[cfg(feature = "symbol_table")]
+                update_ans_symbol(&out, p);
             }
             return Ok(out);
         }

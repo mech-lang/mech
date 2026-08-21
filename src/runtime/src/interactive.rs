@@ -671,6 +671,9 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         let Some(runtime) = self.runtime.as_ref() else {
             return Ok(None);
         };
+        if runtime.root_symbol_output_id(name).is_none() {
+            return Ok(None);
+        }
         runtime.root_symbol_value(name).map(Some)
     }
 
@@ -1376,6 +1379,15 @@ mod tests {
 
         assert_eq!(result.to_string(), "43");
         assert_eq!(session.symbol("answer").unwrap().unwrap().to_string(), "43");
+    }
+
+    #[test]
+    fn missing_symbol_is_absent_even_when_an_unrelated_runtime_is_active() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("present := 7").unwrap();
+
+        assert!(session.symbol("missing").unwrap().is_none());
+        assert_eq!(session.symbol("present").unwrap().unwrap().to_string(), "7");
     }
 
     #[test]
