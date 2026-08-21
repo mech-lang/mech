@@ -416,6 +416,17 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         Ok(values)
     }
 
+    pub fn integrity_constraints(
+        &self,
+        names: &[String],
+    ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
+        let Some(runtime) = self.runtime.as_ref() else {
+            return Ok(Vec::new());
+        };
+        runtime
+            .root_integrity_constraint_values(&names.iter().map(String::as_str).collect::<Vec<_>>())
+    }
+
     pub fn step(&mut self, count: u64) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         self.step_chunk(count)?;
         self.runtime
@@ -441,6 +452,23 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
 
     pub fn emit(&mut self, event: MechEvent) {
         self.events.emit(event);
+    }
+
+    /// Publish an event produced by the active program into the same bounded
+    /// stream used by runtime host adapters. Program producers may publish
+    /// output, diagnostics, and telemetry; REPL control events remain owned by
+    /// the interactive session itself.
+    pub fn publish_program_event(&self, event: MechEvent) -> MResult<()> {
+        if matches!(event, MechEvent::Repl(_)) {
+            return Err(interactive_error(
+                "program producers cannot publish REPL control events",
+            ));
+        }
+        let events = self
+            .program_events
+            .as_ref()
+            .ok_or_else(|| interactive_error("no resident program event stream is active"))?;
+        events.emit(event)
     }
 
     pub fn emit_error(
@@ -846,13 +874,8 @@ mod tests {
             "baseline".to_string(),
         )
         .unwrap();
-        let program_events = captured
-            .lock()
-            .unwrap()
-            .clone()
-            .expect("the factory must receive the session's program event buffer");
-        program_events
-            .emit(MechEvent::Diagnostic(DiagnosticEvent {
+        session
+            .publish_program_event(MechEvent::Diagnostic(DiagnosticEvent {
                 id: DiagnosticId::new("program-diagnostic"),
                 owner: DiagnosticOwner::Interaction,
                 severity: Severity::Error,
@@ -869,5 +892,13 @@ mod tests {
             &program[0].event,
             MechEvent::Diagnostic(diagnostic) if diagnostic.owner == DiagnosticOwner::Program
         ));
+        assert!(
+            session
+                .publish_program_event(MechEvent::Repl(ReplEvent::Clear(
+                    crate::ReplClearTarget::Interaction,
+                )))
+                .is_err(),
+            "program producers must not impersonate the session control protocol",
+        );
     }
 }

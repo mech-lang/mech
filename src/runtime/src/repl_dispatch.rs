@@ -185,14 +185,7 @@ pub fn dispatch_repl_command<F: ResidentReplRuntimeFactory>(
             return Ok(ReplDispatchControl::Host(ReplHostRequest::Profile { enabled }));
         }
         ReplCommand::Whos(names) => {
-            let symbols = session.symbols(&names)?;
-            emit_response(
-                session,
-                ReplResponseKind::SymbolInspection,
-                ReplResponseStatus::Neutral,
-                Some("Resident values"),
-                symbol_values(symbols),
-            );
+            emit_resident_inspection(session, &names)?;
         }
         ReplCommand::Plan => {
             if let Some(runtime) = session.runtime() {
@@ -304,7 +297,14 @@ pub fn emit_step_complete<F: ResidentReplRuntimeFactory>(
     count: u64,
 ) -> MResult<()> {
     emit_success(session, &format!("Advanced {count} resident step(s)."));
-    let symbols = session.symbols(&[])?;
+    emit_resident_inspection(session, &[])
+}
+
+fn emit_resident_inspection<F: ResidentReplRuntimeFactory>(
+    session: &mut ResidentReplSession<F>,
+    names: &[String],
+) -> MResult<()> {
+    let symbols = session.symbols(names)?;
     emit_response(
         session,
         ReplResponseKind::SymbolInspection,
@@ -312,6 +312,16 @@ pub fn emit_step_complete<F: ResidentReplRuntimeFactory>(
         Some("Resident values"),
         symbol_values(symbols),
     );
+    let constraints = session.integrity_constraints(names)?;
+    if !constraints.is_empty() {
+        emit_response(
+            session,
+            ReplResponseKind::SymbolInspection,
+            ReplResponseStatus::Neutral,
+            Some("Integrity constraints"),
+            integrity_constraint_values(constraints),
+        );
+    }
     Ok(())
 }
 
@@ -383,6 +393,31 @@ fn symbol_values(mut symbols: Vec<(String, crate::RuntimeValueSnapshot)>) -> Out
     OutputContent::Table(TableOutput::new(
         vec!["Name".to_string(), "Type".to_string(), "Value".to_string()],
         symbols
+            .into_iter()
+            .map(|(name, value)| {
+                vec![
+                    name,
+                    value.kind().to_string(),
+                    value.to_value().format_preview_inline(VALUE_PREVIEW_LIMIT),
+                ]
+            })
+            .collect(),
+    ))
+}
+
+fn integrity_constraint_values(
+    mut constraints: Vec<(String, crate::RuntimeValueSnapshot)>,
+) -> OutputContent {
+    const VALUE_PREVIEW_LIMIT: usize = 96;
+
+    constraints.sort_by(|left, right| left.0.cmp(&right.0));
+    OutputContent::Table(TableOutput::new(
+        vec![
+            "Constraint".to_string(),
+            "Type".to_string(),
+            "Value".to_string(),
+        ],
+        constraints
             .into_iter()
             .map(|(name, value)| {
                 vec![

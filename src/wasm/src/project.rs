@@ -1058,6 +1058,11 @@ mod document {
             Ok(response)
         }
 
+        #[wasm_bindgen(js_name = replPublishProgramEvent)]
+        pub fn repl_publish_program_event(&self, event: JsValue) -> Result<(), JsValue> {
+            self.repl.publish_program_event(event)
+        }
+
         #[wasm_bindgen(js_name = replContinueStep)]
         pub fn repl_continue_step(
             &mut self,

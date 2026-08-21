@@ -59,7 +59,14 @@ impl MechRuntime {
 
     pub fn root_symbol_value(&self, name: &str) -> MResult<RuntimeValueSnapshot> {
         #[cfg(feature = "resident-routing")]
-        if self.resident_artifact_and_instance().is_some() {
+        if let Some((artifact, _)) = self.resident_artifact_and_instance() {
+            if artifact
+                .constraints()
+                .iter()
+                .any(|constraint| constraint.name == name)
+            {
+                return Err(missing_resident_symbol("root_symbol_value", name));
+            }
             return self
                 .resident_symbol_values(std::iter::once(name))?
                 .pop()
@@ -82,8 +89,18 @@ impl MechRuntime {
         names: &[&str],
     ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         #[cfg(feature = "resident-routing")]
-        if self.resident_artifact_and_instance().is_some() {
-            return self.resident_symbol_values(names.iter().copied());
+        if let Some((artifact, _)) = self.resident_artifact_and_instance() {
+            let ordinary_names = names
+                .iter()
+                .copied()
+                .filter(|name| {
+                    !artifact
+                        .constraints()
+                        .iter()
+                        .any(|constraint| constraint.name == *name)
+                })
+                .collect::<Vec<_>>();
+            return self.resident_symbol_values(ordinary_names);
         }
         match names.first() {
             Some(name) => Err(missing_resident_symbol("root_symbol_values", name)),
@@ -103,14 +120,45 @@ impl MechRuntime {
                         .as_ref()
                         .map(|binding| binding.lexical_name.clone())
                 })
+                .filter(|name| {
+                    !artifact
+                        .constraints()
+                        .iter()
+                        .any(|constraint| constraint.name == *name)
+                })
                 .collect::<Vec<_>>();
             if !lexical_names.is_empty() {
                 return self.resident_symbol_values(lexical_names.iter().map(String::as_str));
             }
-            return self.resident_symbol_values(
-                artifact.outputs().iter().map(|output| output.name.as_str()),
-            );
+            return self.resident_symbol_values(artifact.outputs().iter().filter_map(|output| {
+                (!artifact
+                    .constraints()
+                    .iter()
+                    .any(|constraint| constraint.name == output.name))
+                .then_some(output.name.as_str())
+            }));
         }
+        Ok(Vec::new())
+    }
+
+    /// Return live integrity-constraint results as their own interactive
+    /// projection. Constraints are artifact declarations, not ordinary root
+    /// symbols, even though the compiler publishes both through output cells.
+    pub fn root_integrity_constraint_values(
+        &self,
+        names: &[&str],
+    ) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
+        #[cfg(feature = "resident-routing")]
+        if let Some((artifact, _)) = self.resident_artifact_and_instance() {
+            let constraint_names = artifact
+                .constraints()
+                .iter()
+                .map(|constraint| constraint.name.as_str())
+                .filter(|name| names.is_empty() || names.contains(name))
+                .collect::<Vec<_>>();
+            return self.resident_symbol_values(constraint_names);
+        }
+        let _ = names;
         Ok(Vec::new())
     }
 

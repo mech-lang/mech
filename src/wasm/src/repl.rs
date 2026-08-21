@@ -332,6 +332,18 @@ impl WasmRepl {
         self.response(None)
     }
 
+    /// Publish one real program-owned event through the resident session. This
+    /// is the embedding boundary used by browser host adapters and document
+    /// integrations; the event is drained and serialized by the next REPL turn.
+    #[wasm_bindgen(js_name = publishProgramEvent)]
+    pub fn publish_program_event(&self, event: JsValue) -> Result<(), JsValue> {
+        let event: MechEvent = serde_wasm_bindgen::from_value(event)
+            .map_err(|error| JsValue::from_str(&format!("invalid program event: {error}")))?;
+        self.session
+            .publish_program_event(event)
+            .map_err(to_js_error)
+    }
+
     pub fn step(&mut self, count: u64) -> Result<JsValue, JsValue> {
         self.transition(WasmReplTransition::StartStep { count });
         self.response(None)

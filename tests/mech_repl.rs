@@ -286,6 +286,36 @@ fn whos_values_are_inline_and_elided_in_rich_and_plain_consoles() {
 }
 
 #[test]
+fn whos_separates_integrity_constraints_from_resident_values() {
+    let output = run_repl(
+        &["--nofun"],
+        None,
+        "x := 1\nsafe! := x <= 2\n:whos\n:quit\n",
+    );
+    let (_, inspection) = output
+        .split_once("Resident values")
+        .unwrap_or_else(|| panic!("missing resident values table: {output}"));
+    let (values, constraints) = inspection
+        .split_once("Integrity constraints")
+        .unwrap_or_else(|| panic!("missing integrity constraints table: {output}"));
+
+    assert!(
+        values.contains(" x f64 1 "),
+        "ordinary symbol is missing: {output}"
+    );
+    assert!(
+        !values.contains("safe!"),
+        "constraint leaked into resident values: {output}"
+    );
+    assert!(
+        constraints.contains("Constraint<*> Type<*> Value<*>")
+            && constraints.contains(" safe! bool true ")
+            && constraints.contains("true"),
+        "constraint did not receive its own live table: {output}"
+    );
+}
+
+#[test]
 fn filesystem_commands_support_quoted_paths_and_transactional_load_save() {
     let root = unique_temp_directory("mech-repl");
     let source = root.join("source file.mec");
