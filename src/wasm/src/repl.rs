@@ -236,7 +236,9 @@ impl WasmRepl {
 
     /// Parse and dispatch one request through the portable command layer.
     pub fn invoke(&mut self, source: &str) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::Invoke) == WasmReplTransitionResult::Rejected {
+        if self.transition_after_program_barrier(WasmReplTransition::Invoke)?
+            == WasmReplTransitionResult::Rejected
+        {
             return self.response(None);
         }
         match parse_repl_request(source) {
@@ -281,7 +283,9 @@ impl WasmRepl {
     /// Submit one complete source entry. Embedded newlines remain part of the
     /// same transactional candidate.
     pub fn submit(&mut self, source: &str) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::Submit) == WasmReplTransitionResult::Rejected {
+        if self.transition_after_program_barrier(WasmReplTransition::Submit)?
+            == WasmReplTransitionResult::Rejected
+        {
             return self.response(None);
         }
         let display_result = self.session.submission_displays_result(source);
@@ -304,7 +308,9 @@ impl WasmRepl {
 
     #[wasm_bindgen(js_name = setQuiet)]
     pub fn set_quiet(&mut self, quiet: bool) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::SetQuiet) == WasmReplTransitionResult::Rejected {
+        if self.transition_after_program_barrier(WasmReplTransition::SetQuiet)?
+            == WasmReplTransitionResult::Rejected
+        {
             return self.response(None);
         }
         self.session.set_quiet(quiet);
@@ -312,7 +318,9 @@ impl WasmRepl {
     }
 
     pub fn reset(&mut self) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::Reset) == WasmReplTransitionResult::Rejected {
+        if self.transition_after_program_barrier(WasmReplTransition::Reset)?
+            == WasmReplTransitionResult::Rejected
+        {
             return self.response(None);
         }
         match self.session.reset() {
@@ -345,7 +353,7 @@ impl WasmRepl {
     }
 
     pub fn step(&mut self, count: u64) -> Result<JsValue, JsValue> {
-        self.transition(WasmReplTransition::StartStep { count });
+        self.transition_after_program_barrier(WasmReplTransition::StartStep { count })?;
         self.response(None)
     }
 
@@ -360,11 +368,12 @@ impl WasmRepl {
                 "cooperative step response does not match the active request",
             ));
         }
-        let remaining = match self.transition(WasmReplTransition::ContinueStep) {
-            WasmReplTransitionResult::Rejected => return self.response(None),
-            WasmReplTransitionResult::ContinueStep { remaining } => remaining,
-            _ => return self.response(None),
-        };
+        let remaining =
+            match self.transition_after_program_barrier(WasmReplTransition::ContinueStep)? {
+                WasmReplTransitionResult::Rejected => return self.response(None),
+                WasmReplTransitionResult::ContinueStep { remaining } => remaining,
+                _ => return self.response(None),
+            };
         if max_steps == 0 {
             return Err(JsValue::from_str("max_steps must be greater than zero"));
         }
@@ -392,7 +401,7 @@ impl WasmRepl {
     }
 
     pub fn interrupt(&mut self) -> Result<JsValue, JsValue> {
-        match self.transition(WasmReplTransition::Interrupt) {
+        match self.transition_after_program_barrier(WasmReplTransition::Interrupt)? {
             WasmReplTransitionResult::Rejected => return self.response(None),
             WasmReplTransitionResult::HostRequestInterrupted => {
                 self.session.emit_message_diagnostic(
@@ -441,7 +450,9 @@ impl WasmRepl {
 
     #[wasm_bindgen(js_name = clearOutputs)]
     pub fn clear_outputs(&mut self) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::ClearOutputs) == WasmReplTransitionResult::Rejected {
+        if self.transition_after_program_barrier(WasmReplTransition::ClearOutputs)?
+            == WasmReplTransitionResult::Rejected
+        {
             return self.response(None);
         }
         self.session.clear_outputs();
@@ -450,7 +461,7 @@ impl WasmRepl {
 
     #[wasm_bindgen(js_name = clearDiagnostics)]
     pub fn clear_diagnostics(&mut self) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::ClearDiagnostics)
+        if self.transition_after_program_barrier(WasmReplTransition::ClearDiagnostics)?
             == WasmReplTransitionResult::Rejected
         {
             return self.response(None);
@@ -710,6 +721,19 @@ impl WasmRepl {
 
 #[cfg(feature = "browser_project_core")]
 impl WasmRepl {
+    fn transition_after_program_barrier(
+        &mut self,
+        transition: WasmReplTransition,
+    ) -> Result<WasmReplTransitionResult, JsValue> {
+        let result = self.transition(transition);
+        if result != WasmReplTransitionResult::Rejected {
+            self.session
+                .synchronize_program_events()
+                .map_err(to_js_error)?;
+        }
+        Ok(result)
+    }
+
     pub(crate) fn step_immediate(&mut self, count: u64) -> MResult<()> {
         if !matches!(self.state, WasmReplState::Ready) {
             return Err(MechError::new(
@@ -761,7 +785,9 @@ impl WasmRepl {
     }
 
     pub(crate) fn begin_selection(&mut self) -> Result<Option<JsValue>, JsValue> {
-        if self.transition(WasmReplTransition::Submit) == WasmReplTransitionResult::Rejected {
+        if self.transition_after_program_barrier(WasmReplTransition::Submit)?
+            == WasmReplTransitionResult::Rejected
+        {
             return self.response(None).map(Some);
         }
         Ok(None)
@@ -771,8 +797,11 @@ impl WasmRepl {
         &mut self,
         source_echo: &str,
         value: mech_runtime::RuntimeValueSnapshot,
+        identity: Option<String>,
     ) -> Result<(JsValue, Option<ValueOutput>), JsValue> {
-        let presentation = self.session.select_value(source_echo, value);
+        let presentation = self
+            .session
+            .select_value_with_identity(source_echo, value, identity);
         self.response(None).map(|response| (response, presentation))
     }
 
@@ -813,6 +842,7 @@ impl WasmRepl {
         if self.transition(WasmReplTransition::Shutdown) == WasmReplTransitionResult::Rejected {
             return Ok(());
         }
+        self.session.synchronize_program_events()?;
         self.session.shutdown()
     }
 }
@@ -1394,5 +1424,42 @@ mod tests {
             "post-termination setQuiet must not mutate session configuration"
         );
         assert_terminated_response(repl.shutdown().unwrap());
+    }
+
+    #[cfg(all(feature = "browser_project_core", target_arch = "wasm32"))]
+    #[wasm_bindgen_test::wasm_bindgen_test]
+    fn queued_program_output_precedes_the_next_clear_command() {
+        let mut repl = WasmRepl::new();
+        repl.submit("x := 1\n").unwrap();
+        let output = MechEvent::Output(mech_runtime::OutputEvent {
+            source: mech_runtime::OutputSource::program(),
+            stream: mech_runtime::OutputStream::Stdout,
+            display_id: Some(mech_runtime::DisplayId::new("queued")),
+            operation: mech_runtime::DisplayOperation::Create,
+            content: OutputContent::Text(TextOutput::new("queued output")),
+        });
+        repl.publish_program_event(serde_wasm_bindgen::to_value(&output).unwrap())
+            .unwrap();
+
+        let response = repl.invoke(":clear output").unwrap();
+        assert!(repl.session.outputs().is_empty());
+        let events: Vec<mech_runtime::MechEventEnvelope> = serde_wasm_bindgen::from_value(
+            Reflect::get(&response, &JsValue::from_str("events")).unwrap(),
+        )
+        .unwrap();
+        let operations = events
+            .iter()
+            .filter_map(|event| match &event.event {
+                MechEvent::Output(output) => Some(output.operation),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            operations,
+            [
+                mech_runtime::DisplayOperation::Create,
+                mech_runtime::DisplayOperation::Clear,
+            ],
+        );
     }
 }

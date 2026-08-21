@@ -662,26 +662,33 @@ mod document {
     }
 
     struct DocumentProgramOutput {
-        output_id: OutputId,
+        selection_token: String,
         snapshot: mech_runtime::RuntimeValueSnapshot,
     }
 
     fn capture_program_output(
-        repl: &crate::repl::WasmRepl,
+        repl: &mut crate::repl::WasmRepl,
     ) -> Result<Option<DocumentProgramOutput>, JsValue> {
-        let Some(runtime) = repl.session.runtime() else {
+        let captured = {
+            let Some(runtime) = repl.session.runtime() else {
+                return Ok(None);
+            };
+            let Some(output_id) = runtime.program_output_id() else {
+                return Ok(None);
+            };
+            runtime.output_value(output_id).map_err(to_js_error)?
+        };
+        let Some(snapshot) = captured else {
             return Ok(None);
         };
-        let Some(output_id) = runtime.program_output_id() else {
-            return Ok(None);
-        };
-        Ok(runtime
-            .output_value(output_id)
-            .map_err(to_js_error)?
-            .map(|snapshot| DocumentProgramOutput {
-                output_id,
-                snapshot,
-            }))
+        let selection_token = repl
+            .session
+            .retain_selection("ans", snapshot.clone(), None)
+            .map_err(to_js_error)?;
+        Ok(Some(DocumentProgramOutput {
+            selection_token,
+            snapshot,
+        }))
     }
 
     #[wasm_bindgen]
@@ -709,9 +716,9 @@ mod document {
                 lifecycle: DocumentRuntimeLifecycle::default(),
             };
             let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
-            let repl =
+            let mut repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&repl)?;
+            let program_output = capture_program_output(&mut repl)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -765,9 +772,9 @@ mod document {
             };
             let document_output_ordinals = document_output_ordinals(&bootstrap.tree);
             let bootstrap = WasmDocumentBootstrap::SourceBacked(bootstrap);
-            let repl =
+            let mut repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&repl)?;
+            let program_output = capture_program_output(&mut repl)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -857,9 +864,9 @@ mod document {
                 config_source: config_source.to_string(),
                 authority,
             });
-            let repl =
+            let mut repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&repl)?;
+            let program_output = capture_program_output(&mut repl)?;
             Ok(Self {
                 repl,
                 bootstrap,
@@ -893,7 +900,7 @@ mod document {
                 return Ok(JsValue::NULL);
             };
             let rendered = rendered_named_value(output.snapshot.clone(), None)?;
-            set_rendered_output_identity(&rendered, output.output_id)?;
+            set_rendered_selection_identity(&rendered, &output.selection_token)?;
             Ok(rendered)
         }
 
@@ -906,6 +913,32 @@ mod document {
                 .map_err(to_js_error)?
                 .ok_or_else(|| js_error(format!("document symbol `{name}` is not resident")))?;
             rendered_value(snapshot)
+        }
+
+        /// Resolve a formatter placeholder without merging integrity
+        /// constraints into the interactive symbol namespace used by :whos.
+        #[wasm_bindgen(js_name = renderedDocumentValue)]
+        pub fn rendered_document_value(&self, name: &str) -> Result<JsValue, JsValue> {
+            let mut constraints = self
+                .repl
+                .session
+                .integrity_constraints(&[name.to_string()])
+                .map_err(to_js_error)?;
+            if let Some((_, snapshot)) = constraints.pop() {
+                let rendered = rendered_value(snapshot)?;
+                Reflect::set(
+                    &rendered,
+                    &JsValue::from_str("interactive"),
+                    &JsValue::FALSE,
+                )?;
+                return Ok(rendered);
+            }
+            if let Some(snapshot) = self.repl.session.symbol(name).map_err(to_js_error)? {
+                let rendered = rendered_value(snapshot)?;
+                Reflect::set(&rendered, &JsValue::from_str("interactive"), &JsValue::TRUE)?;
+                return Ok(rendered);
+            }
+            Err(js_error(format!("document value `{name}` is not resident")))
         }
 
         #[wasm_bindgen(js_name = reset)]
@@ -1143,7 +1176,12 @@ mod document {
             if let Some(response) = self.repl.begin_selection()? {
                 return selected_value_response(response, None, None, name, None);
             }
-            let identity = self
+            let pending_identity = self
+                .repl
+                .session
+                .symbol_selection_identity(name)
+                .map(str::to_string);
+            let reuse_identity = self
                 .repl
                 .session
                 .symbol_output_id(name)
@@ -1156,14 +1194,18 @@ mod document {
                 .ok_or_else(|| js_error(format!("document symbol `{name}` is not resident")))?;
             let block_html =
                 (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
-            let (response, presentation) = self.repl.publish_selection(name, snapshot)?;
-            selected_value_response(
-                response,
-                presentation,
-                block_html,
-                name,
-                identity.as_deref(),
-            )
+            let identity = match pending_identity {
+                Some(identity) => identity,
+                None => self
+                    .repl
+                    .session
+                    .retain_selection(name, snapshot.clone(), reuse_identity.as_deref())
+                    .map_err(to_js_error)?,
+            };
+            let (response, presentation) =
+                self.repl
+                    .publish_selection(name, snapshot, Some(identity.clone()))?;
+            selected_value_response(response, presentation, block_html, name, Some(&identity))
         }
 
         #[wasm_bindgen(js_name = replSelectOutput)]
@@ -1178,24 +1220,64 @@ mod document {
             let Some(runtime_output_id) = self.runtime_output_id(output_id) else {
                 return Err(js_error("document output is not resident"));
             };
-            let runtime = self.runtime()?;
-            let snapshot = runtime
-                .output_value(runtime_output_id)
-                .map_err(to_js_error)?
-                .ok_or_else(|| js_error("document output is not resident"))?;
-            let source_echo = runtime
-                .output_name(runtime_output_id)
-                .unwrap_or_else(|| "ans".to_string());
+            let (snapshot, source_echo) = {
+                let runtime = self.runtime()?;
+                let snapshot = runtime
+                    .output_value(runtime_output_id)
+                    .map_err(to_js_error)?
+                    .ok_or_else(|| js_error("document output is not resident"))?;
+                let source_echo = runtime
+                    .output_name(runtime_output_id)
+                    .unwrap_or_else(|| "ans".to_string());
+                (snapshot, source_echo)
+            };
             let block_html =
                 (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
-            let (response, presentation) = self.repl.publish_selection(&source_echo, snapshot)?;
-            let identity = format!("resident-output:{}", runtime_output_id.get());
+            let reuse_identity = format!("resident-output:{}", runtime_output_id.get());
+            let identity = self
+                .repl
+                .session
+                .retain_selection(&source_echo, snapshot.clone(), Some(&reuse_identity))
+                .map_err(to_js_error)?;
+            let (response, presentation) =
+                self.repl
+                    .publish_selection(&source_echo, snapshot, Some(identity.clone()))?;
             selected_value_response(
                 response,
                 presentation,
                 block_html,
                 &source_echo,
                 Some(&identity),
+            )
+        }
+
+        #[wasm_bindgen(js_name = replSelectRetained)]
+        pub fn repl_select_retained(
+            &mut self,
+            selection_token: &str,
+            render_popup: bool,
+        ) -> Result<JsValue, JsValue> {
+            if let Some(response) = self.repl.begin_selection()? {
+                return selected_value_response(response, None, None, "ans", None);
+            }
+            let (source_echo, snapshot) = self
+                .repl
+                .session
+                .retained_selection(selection_token)
+                .ok_or_else(|| js_error("document selection is no longer retained"))?;
+            let block_html =
+                (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
+            let (response, presentation) = self.repl.publish_selection(
+                &source_echo,
+                snapshot,
+                Some(selection_token.to_string()),
+            )?;
+            selected_value_response(
+                response,
+                presentation,
+                block_html,
+                &source_echo,
+                Some(selection_token),
             )
         }
 
@@ -2057,12 +2139,29 @@ fn set_rendered_output_identity(rendered: &JsValue, output_id: OutputId) -> Resu
     Reflect::set(
         rendered,
         &JsValue::from_str("outputId"),
-        &JsValue::from_f64(f64::from(output_id.get())),
+        &JsValue::from_str(&output_id.get().to_string()),
     )?;
     Reflect::set(
         rendered,
         &JsValue::from_str("identity"),
         &JsValue::from_str(&format!("resident-output:{}", output_id.get())),
+    )?;
+    Ok(())
+}
+
+fn set_rendered_selection_identity(
+    rendered: &JsValue,
+    selection_token: &str,
+) -> Result<(), JsValue> {
+    Reflect::set(
+        rendered,
+        &JsValue::from_str("selectionToken"),
+        &JsValue::from_str(selection_token),
+    )?;
+    Reflect::set(
+        rendered,
+        &JsValue::from_str("identity"),
+        &JsValue::from_str(selection_token),
     )?;
     Ok(())
 }
@@ -3688,7 +3787,16 @@ mod browser_tests {
             .unwrap()
             .as_string()
             .expect("resident selections must expose their binding identity");
-        assert!(identity.starts_with("resident-output:"), "{identity}");
+        assert!(identity.starts_with("selection:"), "{identity}");
+        let ans_selection = document.repl_select_symbol("ans", true).unwrap();
+        assert_eq!(
+            Reflect::get(&ans_selection, &JsValue::from_str("identity"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some(identity.as_str()),
+            "ans must preserve the selected value identity for popup deduplication",
+        );
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
@@ -3909,7 +4017,8 @@ mod browser_tests {
             document.runtime().unwrap().program_route(),
             RuntimeProgramRoute::ResidentPure,
         );
-        let invariant = document.rendered_symbol("first-fifteen!").unwrap();
+        assert!(document.rendered_symbol("first-fifteen!").is_err());
+        let invariant = document.rendered_document_value("first-fifteen!").unwrap();
         assert_eq!(
             Reflect::get(&invariant, &JsValue::from_str("inlineHtml"))
                 .unwrap()
@@ -3918,6 +4027,14 @@ mod browser_tests {
             Some("true"),
         );
         let output = document.rendered_output(output_id).unwrap();
+        assert_eq!(
+            Reflect::get(&output, &JsValue::from_str("outputId"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("29884140763677669"),
+            "u64 output identities must cross JavaScript losslessly",
+        );
         let block_html = Reflect::get(&output, &JsValue::from_str("blockHtml"))
             .unwrap()
             .as_string()
@@ -3956,17 +4073,19 @@ mod browser_tests {
                 .as_deref(),
             Some("120"),
         );
-        let output_id = Reflect::get(&output, &JsValue::from_str("outputId"))
+        let selection_token = Reflect::get(&output, &JsValue::from_str("selectionToken"))
             .unwrap()
-            .as_f64();
+            .as_string()
+            .expect("detached program output must expose a selection token");
 
         document.repl_invoke("1 + 1").unwrap();
         let after_repl = document.rendered_program_output().unwrap();
         assert_eq!(
-            Reflect::get(&after_repl, &JsValue::from_str("outputId"))
+            Reflect::get(&after_repl, &JsValue::from_str("selectionToken"))
                 .unwrap()
-                .as_f64(),
-            output_id,
+                .as_string()
+                .as_deref(),
+            Some(selection_token.as_str()),
             "REPL evaluation must not replace the document program output identity",
         );
         assert_eq!(
@@ -3976,6 +4095,19 @@ mod browser_tests {
                 .as_deref(),
             Some("120"),
             "REPL evaluation must not replace the document program output value",
+        );
+        document
+            .repl_select_retained(&selection_token, false)
+            .unwrap();
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("ans")
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "120",
         );
     }
 

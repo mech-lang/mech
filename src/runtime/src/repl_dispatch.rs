@@ -8,8 +8,8 @@ use crate::{
     ARGUMENT_QUOTING_HELP, ClearTarget, DiagnosticPhase, MechEvent, OutputArtifactStatus,
     OutputContent, OutputSource, REPL_COMMAND_SPECS, ReplClearTarget, ReplCommand, ReplCommandId,
     ReplEvent, ReplHostRequirement, ReplRequest, ReplResponse, ReplResponseKind,
-    ReplResponseStatus, ResidentReplRuntimeFactory, ResidentReplSession, Severity, TableOutput,
-    TextOutput,
+    ReplResponseStatus, ResidentReplRuntimeFactory, ResidentReplSession, ResidentSymbolInspection,
+    Severity, TableOutput, TextOutput,
 };
 
 pub const REPL_TEXT_LOGO: &str = r#"
@@ -315,7 +315,7 @@ fn emit_resident_inspection<F: ResidentReplRuntimeFactory>(
     session: &mut ResidentReplSession<F>,
     names: &[String],
 ) -> MResult<()> {
-    let symbols = session.symbols(names)?;
+    let symbols = session.symbol_inspections(names)?;
     emit_response(
         session,
         ReplResponseKind::SymbolInspection,
@@ -333,7 +333,7 @@ fn emit_integrity_constraint_inspection<F: ResidentReplRuntimeFactory>(
     let constraints = session.integrity_constraints(names)?;
     emit_response(
         session,
-        ReplResponseKind::SymbolInspection,
+        ReplResponseKind::IntegrityConstraintInspection,
         ReplResponseStatus::Neutral,
         Some("Integrity constraints"),
         integrity_constraint_values(constraints),
@@ -404,26 +404,36 @@ fn command_help_table(availability: &ReplHostAvailability) -> TableOutput {
         .with_muted_rows(muted_rows)
 }
 
-fn symbol_values(mut symbols: Vec<(String, crate::RuntimeValueSnapshot)>) -> OutputContent {
+fn symbol_values(mut symbols: Vec<ResidentSymbolInspection>) -> OutputContent {
     const VALUE_PREVIEW_LIMIT: usize = 96;
 
-    symbols.sort_by(|left, right| left.0.cmp(&right.0));
+    symbols.sort_by(|left, right| left.name.cmp(&right.name));
     if symbols.is_empty() {
         return OutputContent::Text(TextOutput::new("No resident symbols matched."));
     }
-    OutputContent::Table(TableOutput::new(
-        vec!["Name".to_string(), "Type".to_string(), "Value".to_string()],
-        symbols
-            .into_iter()
-            .map(|(name, value)| {
-                vec![
-                    name,
-                    value.kind().to_string(),
-                    value.to_value().format_preview_inline(VALUE_PREVIEW_LIMIT),
-                ]
-            })
-            .collect(),
-    ))
+    let selection_tokens = symbols
+        .iter()
+        .map(|symbol| Some(symbol.selection_token.clone()))
+        .collect();
+    OutputContent::Table(
+        TableOutput::new(
+            vec!["Name".to_string(), "Type".to_string(), "Value".to_string()],
+            symbols
+                .into_iter()
+                .map(|symbol| {
+                    vec![
+                        symbol.name,
+                        symbol.value.kind().to_string(),
+                        symbol
+                            .value
+                            .to_value()
+                            .format_preview_inline(VALUE_PREVIEW_LIMIT),
+                    ]
+                })
+                .collect(),
+        )
+        .with_row_selection_tokens(selection_tokens),
+    )
 }
 
 fn integrity_constraint_values(
@@ -518,5 +528,27 @@ mod tests {
                 content: OutputContent::Text(text),
             }) if display_id.as_str() == "warning" && text.text == "warning text"
         )));
+    }
+
+    #[test]
+    fn symbol_tables_align_opaque_selection_tokens_with_rows() {
+        let value = crate::RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(
+            mech_core::Ref::new(7.0),
+        ))
+        .unwrap();
+        let content = symbol_values(vec![ResidentSymbolInspection {
+            name: "x".to_string(),
+            value,
+            selection_token: "selection:9".to_string(),
+        }]);
+
+        let OutputContent::Table(table) = content else {
+            panic!("symbol inspection must remain tabular");
+        };
+        assert_eq!(table.rows[0][0], "x");
+        assert_eq!(
+            table.row_selection_tokens,
+            [Some("selection:9".to_string())],
+        );
     }
 }

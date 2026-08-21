@@ -633,11 +633,16 @@ mod tests {
             "missing REPL banner: {output}"
         );
         assert!(output.contains(":help"), "missing REPL greeting: {output}");
-        assert_eq!(
-            output.matches(REPL_TEXT_LOGO).count(),
-            2,
-            "the rich REPL should show its logo at startup and in :help: {output}",
-        );
+        for logo_line in REPL_TEXT_LOGO.lines().filter(|line| !line.is_empty()) {
+            assert_eq!(
+                output
+                    .lines()
+                    .filter(|rendered| rendered.trim_start() == logo_line.trim_start())
+                    .count(),
+                2,
+                "the rich REPL should show its full logo at startup and indented in :help: {output}",
+            );
+        }
         assert!(output.contains("f64"), "missing scalar type: {output}");
         assert!(output.contains('2'), "missing scalar value: {output}");
         assert!(output.contains("Okay cya!"), "missing farewell: {output}");

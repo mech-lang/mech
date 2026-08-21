@@ -90,6 +90,12 @@ fn render_response(
     mode: ReplRenderMode,
 ) -> io::Result<()> {
     if let Some(title) = &response.title {
+        if mode == ReplRenderMode::Rich {
+            let mut rendered = Vec::new();
+            render_heading(&mut rendered, title, mode)?;
+            render_response_content(&mut rendered, response, mode)?;
+            return write_indented(output, &rendered, "  ");
+        }
         render_heading(output, title, mode)?;
         return render_response_content(output, response, mode);
     }
@@ -110,6 +116,14 @@ fn render_response(
     }
 
     render_content(output, &response.content, mode)
+}
+
+fn write_indented(output: &mut dyn Write, rendered: &[u8], prefix: &str) -> io::Result<()> {
+    for line in rendered.split_inclusive(|byte| *byte == b'\n') {
+        output.write_all(prefix.as_bytes())?;
+        output.write_all(line)?;
+    }
+    Ok(())
 }
 
 fn render_response_content(
@@ -375,6 +389,31 @@ mod tests {
         render_content(&mut output, &value, ReplRenderMode::Plain).unwrap();
 
         assert_eq!(String::from_utf8(output).unwrap(), "[f64]:1,3\n[1 2 3]\n");
+    }
+
+    #[test]
+    fn titled_command_responses_indent_only_in_rich_mode() {
+        let response = ReplResponse::new(
+            ReplResponseKind::Command,
+            ReplResponseStatus::Neutral,
+            Some("Resident values".to_string()),
+            OutputContent::Table(TableOutput::new(
+                vec!["Name".to_string(), "Value".to_string()],
+                vec![vec!["x".to_string(), "1".to_string()]],
+            )),
+        );
+        let mut rich = Vec::new();
+        let mut plain = Vec::new();
+
+        render_response(&mut rich, &response, ReplRenderMode::Rich).unwrap();
+        render_response(&mut plain, &response, ReplRenderMode::Plain).unwrap();
+
+        let rich = String::from_utf8(rich).unwrap();
+        assert!(rich.lines().all(|line| line.starts_with("  ")), "{rich:?}",);
+        assert_eq!(
+            String::from_utf8(plain).unwrap(),
+            "Resident values\n|Name<*> Value<*>| x 1 |\n",
+        );
     }
 }
 

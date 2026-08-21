@@ -1,6 +1,7 @@
 //! Shared resident session state for interactive hosts.
 
-use std::collections::VecDeque;
+use std::collections::{BTreeMap, VecDeque};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use mech_core::{GenericError, MResult, MechError};
@@ -19,6 +20,25 @@ use crate::{
 /// call is checked here before the runtime loop so an adapter cannot block its
 /// event loop with an effectively unbounded request.
 pub const MAX_RESIDENT_STEP_COUNT: u64 = 1_000_000;
+static NEXT_SELECTION_TOKEN: AtomicU64 = AtomicU64::new(1);
+
+#[derive(Clone)]
+struct PendingSelection {
+    value: RuntimeValueSnapshot,
+    identity: Option<String>,
+}
+
+#[derive(Clone)]
+struct RetainedSelection {
+    source_echo: String,
+    value: RuntimeValueSnapshot,
+}
+
+pub struct ResidentSymbolInspection {
+    pub name: String,
+    pub value: RuntimeValueSnapshot,
+    pub selection_token: String,
+}
 
 /// Reject an unsafe synchronous resident step request before any host enters
 /// its runtime loop.
@@ -109,7 +129,9 @@ pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     source: String,
     runtime: Option<MechRuntime>,
     program_events: Option<MechEventBuffer>,
-    pending_selection: Option<RuntimeValueSnapshot>,
+    pending_selection: Option<PendingSelection>,
+    retained_selections: BTreeMap<String, RetainedSelection>,
+    reusable_selection_tokens: BTreeMap<String, String>,
     events: MechEventJournal,
     quiet: bool,
 }
@@ -127,6 +149,8 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             runtime: None,
             program_events: None,
             pending_selection: None,
+            retained_selections: BTreeMap::new(),
+            reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
             quiet,
         }
@@ -142,6 +166,8 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             runtime: None,
             program_events: None,
             pending_selection: None,
+            retained_selections: BTreeMap::new(),
+            reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
             quiet: false,
         };
@@ -200,6 +226,15 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         source_echo: &str,
         value: RuntimeValueSnapshot,
     ) -> Option<ValueOutput> {
+        self.select_value_with_identity(source_echo, value, None)
+    }
+
+    pub fn select_value_with_identity(
+        &mut self,
+        source_echo: &str,
+        value: RuntimeValueSnapshot,
+        identity: Option<String>,
+    ) -> Option<ValueOutput> {
         self.emit_source_echo(source_echo);
         let visible_value = if !self.quiet && !value.is_empty() {
             Some(ValueOutput::new(
@@ -209,7 +244,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         } else {
             None
         };
-        self.pending_selection = Some(value);
+        self.pending_selection = Some(PendingSelection { value, identity });
         if let Some(value) = &visible_value {
             self.emit(MechEvent::Repl(ReplEvent::Response(ReplResponse::new(
                 ReplResponseKind::ValueInspection,
@@ -232,7 +267,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             if !candidate_source.is_empty() && !candidate_source.ends_with('\n') {
                 candidate_source.push('\n');
             }
-            candidate_source.push_str(&selection.format_canonical_inline());
+            candidate_source.push_str(&selection.value.format_canonical_inline());
             if !candidate_source.ends_with('\n') {
                 candidate_source.push('\n');
             }
@@ -306,6 +341,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.program_events = Some(candidate_events);
         self.source = candidate_source;
         self.pending_selection = None;
+        self.reusable_selection_tokens.clear();
         for (code, error) in retirement_failures {
             self.emit_message_diagnostic(
                 Severity::Warning,
@@ -332,6 +368,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.program_events = None;
         self.source.clear();
         self.pending_selection = None;
+        self.reusable_selection_tokens.clear();
         Ok(())
     }
 
@@ -369,7 +406,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         if name == "ans"
             && let Some(value) = &self.pending_selection
         {
-            return Ok(Some(value.clone()));
+            return Ok(Some(value.value.clone()));
         }
         let Some(runtime) = self.runtime.as_ref() else {
             return Ok(None);
@@ -384,6 +421,13 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.runtime
             .as_ref()
             .and_then(|runtime| runtime.root_symbol_output_id(name))
+    }
+
+    pub fn symbol_selection_identity(&self, name: &str) -> Option<&str> {
+        if name != "ans" {
+            return None;
+        }
+        self.pending_selection.as_ref()?.identity.as_deref()
     }
 
     pub fn symbols(&self, names: &[String]) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
@@ -416,13 +460,74 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             && (names.is_empty() || names.iter().any(|name| name == "ans"))
         {
             if let Some((_, value)) = values.iter_mut().find(|(name, _)| name == "ans") {
-                *value = selected.clone();
+                *value = selected.value.clone();
             } else {
-                values.push(("ans".to_string(), selected.clone()));
+                values.push(("ans".to_string(), selected.value.clone()));
                 values.sort_by(|left, right| left.0.cmp(&right.0));
             }
         }
         Ok(values)
+    }
+
+    pub fn symbol_inspections(
+        &mut self,
+        names: &[String],
+    ) -> MResult<Vec<ResidentSymbolInspection>> {
+        self.symbols(names)?
+            .into_iter()
+            .map(|(name, value)| {
+                let selection_token = self.retain_selection(&name, value.clone(), None)?;
+                Ok(ResidentSymbolInspection {
+                    name,
+                    value,
+                    selection_token,
+                })
+            })
+            .collect()
+    }
+
+    pub fn retain_selection(
+        &mut self,
+        source_echo: &str,
+        value: RuntimeValueSnapshot,
+        reuse_identity: Option<&str>,
+    ) -> MResult<String> {
+        if let Some(identity) = reuse_identity
+            && let Some(token) = self.reusable_selection_tokens.get(identity).cloned()
+        {
+            self.retained_selections.insert(
+                token.clone(),
+                RetainedSelection {
+                    source_echo: source_echo.to_string(),
+                    value,
+                },
+            );
+            return Ok(token);
+        }
+        let selection_token = NEXT_SELECTION_TOKEN
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
+                next.checked_add(1)
+            })
+            .map_err(|_| interactive_error("resident selection token space exhausted"))?;
+        let token = format!("selection:{selection_token}");
+        self.retained_selections.insert(
+            token.clone(),
+            RetainedSelection {
+                source_echo: source_echo.to_string(),
+                value,
+            },
+        );
+        if let Some(identity) = reuse_identity {
+            self.reusable_selection_tokens
+                .insert(identity.to_string(), token.clone());
+        }
+        Ok(token)
+    }
+
+    pub fn retained_selection(&self, token: &str) -> Option<(String, RuntimeValueSnapshot)> {
+        self.retained_selections
+            .get(token)
+            .map(|selection| (selection.source_echo.clone(), selection.value.clone()))
     }
 
     pub fn integrity_constraints(
@@ -515,6 +620,13 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
 
     pub fn clear_outputs(&mut self) {
         self.events.clear_outputs();
+    }
+
+    /// Establish a causal barrier between program producers and the next
+    /// interactive mutation. Hosts call this before dispatch so clear and
+    /// inspection commands observe every event published before the command.
+    pub fn synchronize_program_events(&mut self) -> MResult<()> {
+        self.collect_program_events()
     }
 
     pub fn clear_diagnostics(&mut self) {
@@ -908,6 +1020,68 @@ mod tests {
                 )))
                 .is_err(),
             "program producers must not impersonate the session control protocol",
+        );
+    }
+
+    #[test]
+    fn retained_selection_tokens_preserve_snapshot_and_ans_identity() {
+        let mut session = ResidentReplSession::new(NeverBuild);
+        let snapshot =
+            RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(mech_core::Ref::new(42.0)))
+                .unwrap();
+        let token = session
+            .retain_selection("answer", snapshot.clone(), None)
+            .unwrap();
+        let (source_echo, retained) = session.retained_selection(&token).unwrap();
+
+        assert_eq!(source_echo, "answer");
+        assert_eq!(retained.to_string(), "42");
+        session.select_value_with_identity("answer", retained, Some(token.clone()));
+        assert_eq!(session.symbol("ans").unwrap().unwrap().to_string(), "42");
+        assert_eq!(
+            session.symbol_selection_identity("ans"),
+            Some(token.as_str())
+        );
+    }
+
+    #[test]
+    fn program_event_barrier_orders_publish_before_clear() {
+        let captured = Arc::new(Mutex::new(None));
+        let mut session = ResidentReplSession::from_source(
+            CapturingProgramEventFactory {
+                events: Arc::clone(&captured),
+            },
+            "baseline".to_string(),
+        )
+        .unwrap();
+        session
+            .publish_program_event(MechEvent::Output(crate::OutputEvent {
+                source: OutputSource::program(),
+                stream: crate::OutputStream::Stdout,
+                display_id: Some(crate::DisplayId::new("queued")),
+                operation: crate::DisplayOperation::Create,
+                content: OutputContent::Text(crate::TextOutput::new("queued output")),
+            }))
+            .unwrap();
+
+        session.synchronize_program_events().unwrap();
+        assert_eq!(session.outputs().len(), 1);
+        session.clear_outputs();
+        assert!(session.outputs().is_empty());
+        let events = session.drain_events().unwrap();
+        let operations = events
+            .iter()
+            .filter_map(|event| match &event.event {
+                MechEvent::Output(output) => Some(output.operation),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            operations,
+            [
+                crate::DisplayOperation::Create,
+                crate::DisplayOperation::Clear
+            ],
         );
     }
 }

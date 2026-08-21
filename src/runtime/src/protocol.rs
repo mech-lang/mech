@@ -173,6 +173,7 @@ pub enum ReplResponseKind {
     Command,
     Help,
     SymbolInspection,
+    IntegrityConstraintInspection,
     ValueInspection,
 }
 
@@ -398,6 +399,17 @@ pub struct TableOutput {
         serde(default, skip_serializing_if = "Vec::is_empty")
     )]
     pub muted_rows: Vec<usize>,
+    /// Opaque, session-owned selection tokens aligned with `rows`.
+    ///
+    /// Visual hosts may use these to make an inspection row interactive
+    /// without resolving its display name again. A token denotes the detached
+    /// value captured for that exact row, so transcript history remains stable
+    /// even after a resident name is rebound or an output slot is reused.
+    #[cfg_attr(
+        feature = "serde",
+        serde(default, skip_serializing_if = "Vec::is_empty")
+    )]
+    pub row_selection_tokens: Vec<Option<String>>,
 }
 
 impl TableOutput {
@@ -406,11 +418,17 @@ impl TableOutput {
             columns,
             rows,
             muted_rows: Vec::new(),
+            row_selection_tokens: Vec::new(),
         }
     }
 
     pub fn with_muted_rows(mut self, muted_rows: Vec<usize>) -> Self {
         self.muted_rows = muted_rows;
+        self
+    }
+
+    pub fn with_row_selection_tokens(mut self, row_selection_tokens: Vec<Option<String>>) -> Self {
+        self.row_selection_tokens = row_selection_tokens;
         self
     }
 }
