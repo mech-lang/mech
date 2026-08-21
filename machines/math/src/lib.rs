@@ -2,6 +2,8 @@
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 

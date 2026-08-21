@@ -1,5 +1,7 @@
 //! Capability admission and fused WGSL lowering for typed Mech programs.
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     error::Error,

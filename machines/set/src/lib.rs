@@ -1,6 +1,8 @@
 #![cfg_attr(not(test), no_main)]
 #![allow(warnings)]
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {

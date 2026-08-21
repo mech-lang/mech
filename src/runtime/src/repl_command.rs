@@ -14,6 +14,7 @@ a quoted argument.";
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ReplCommandId {
     Help,
+    Version,
     Docs,
     Capabilities,
     Whos,
@@ -37,6 +38,7 @@ impl ReplCommandId {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::Help => "help",
+            Self::Version => "version",
             Self::Docs => "docs",
             Self::Capabilities => "capabilities",
             Self::Whos => "whos",
@@ -109,11 +111,12 @@ pub enum ReplCommand {
     Capabilities,
     Cd(String),
     Clc,
-    Clear(ClearTarget),
+    Clear(Vec<String>),
     Code(String),
     Constraints(Vec<String>),
     Docs(Option<String>),
     Help,
+    Version,
     Load(Vec<String>),
     Ls(Option<String>),
     Output(String),
@@ -137,6 +140,7 @@ impl ReplCommand {
             Self::Constraints(_) => ReplCommandId::Constraints,
             Self::Docs(_) => ReplCommandId::Docs,
             Self::Help => ReplCommandId::Help,
+            Self::Version => ReplCommandId::Version,
             Self::Load(_) => ReplCommandId::Load,
             Self::Ls(_) => ReplCommandId::List,
             Self::Output(_) => ReplCommandId::Output,
@@ -149,18 +153,6 @@ impl ReplCommand {
             Self::Whos(_) => ReplCommandId::Whos,
         }
     }
-}
-
-#[cfg_attr(
-    feature = "serde",
-    derive(serde_derive::Serialize, serde_derive::Deserialize)
-)]
-#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ClearTarget {
-    Session,
-    Output,
-    Diagnostics,
 }
 
 #[cfg_attr(
@@ -194,6 +186,13 @@ pub const REPL_COMMAND_SPECS: &[ReplCommandSpec] = &[
         ":help",
         "show this command index",
         &["h", "?"],
+        ReplHostRequirement::Portable,
+    ),
+    spec(
+        ReplCommandId::Version,
+        ":version",
+        "show installed Mech, library, and host versions",
+        &["v"],
         ReplHostRequirement::Portable,
     ),
     spec(
@@ -289,9 +288,9 @@ pub const REPL_COMMAND_SPECS: &[ReplCommandSpec] = &[
     ),
     spec(
         ReplCommandId::Clear,
-        ":clear [output|errors]",
-        "clear the session, output artifacts, or diagnostics",
-        &["reset"],
+        ":clear [names...]",
+        "remove resident variables; no names clears the workspace",
+        &[],
         ReplHostRequirement::Portable,
     ),
     spec(
@@ -358,13 +357,9 @@ pub fn parse_repl_command(input: &str) -> Result<ReplCommand, String> {
 
     match name.as_str() {
         "help" | "h" | "?" => no_arguments(arguments, ":help", ReplCommand::Help),
+        "version" | "v" => no_arguments(arguments, ":version", ReplCommand::Version),
         "quit" | "exit" | "q" => no_arguments(arguments, ":quit", ReplCommand::Quit),
-        "clear" => parse_clear(arguments),
-        "reset" => no_arguments(
-            arguments,
-            ":reset",
-            ReplCommand::Clear(ClearTarget::Session),
-        ),
+        "clear" => Ok(ReplCommand::Clear(split_arguments(arguments)?)),
         "clc" => no_arguments(arguments, ":clc", ReplCommand::Clc),
         "capabilities" | "capability" | "caps" => {
             no_arguments(arguments, ":capabilities", ReplCommand::Capabilities)
@@ -490,20 +485,6 @@ fn parse_profile(arguments: &str) -> Result<ReplCommand, String> {
         [value] if value == "on" => Ok(ReplCommand::Profile(Some(true))),
         [value] if value == "off" => Ok(ReplCommand::Profile(Some(false))),
         _ => Err("Usage: :profile [on|off]".to_string()),
-    }
-}
-
-fn parse_clear(arguments: &str) -> Result<ReplCommand, String> {
-    let values = split_arguments(arguments)?;
-    match values.as_slice() {
-        [] => Ok(ReplCommand::Clear(ClearTarget::Session)),
-        [target] if matches!(target.as_str(), "output" | "outputs") => {
-            Ok(ReplCommand::Clear(ClearTarget::Output))
-        }
-        [target] if matches!(target.as_str(), "error" | "errors" | "diagnostics") => {
-            Ok(ReplCommand::Clear(ClearTarget::Diagnostics))
-        }
-        _ => Err("Usage: :clear [output|errors]".to_string()),
     }
 }
 

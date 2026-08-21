@@ -2651,6 +2651,95 @@ impl LegacyValue {
         }
     }
 
+    /// Formats a canonical REPL projection while bounding the number of
+    /// matrix cells visited. The accepted runtime value remains complete;
+    /// only its interactive presentation is elided.
+    pub fn format_canonical_inline_with_element_limit(&self, limit: usize) -> String {
+        match self {
+            #[cfg(feature = "matrix")]
+            LegacyValue::MatrixIndex(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "bool"))]
+            LegacyValue::MatrixBool(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "u8"))]
+            LegacyValue::MatrixU8(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "u16"))]
+            LegacyValue::MatrixU16(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "u32"))]
+            LegacyValue::MatrixU32(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "u64"))]
+            LegacyValue::MatrixU64(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "u128"))]
+            LegacyValue::MatrixU128(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "i8"))]
+            LegacyValue::MatrixI8(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "i16"))]
+            LegacyValue::MatrixI16(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "i32"))]
+            LegacyValue::MatrixI32(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "i64"))]
+            LegacyValue::MatrixI64(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "i128"))]
+            LegacyValue::MatrixI128(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "f32"))]
+            LegacyValue::MatrixF32(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "f64"))]
+            LegacyValue::MatrixF64(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "string"))]
+            LegacyValue::MatrixString(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| {
+                    Self::format_string_inline(&value)
+                })
+            }
+            #[cfg(all(feature = "matrix", feature = "rational"))]
+            LegacyValue::MatrixR64(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(all(feature = "matrix", feature = "complex"))]
+            LegacyValue::MatrixC64(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
+            }
+            #[cfg(feature = "matrix")]
+            LegacyValue::MatrixValue(matrix) => {
+                Self::format_matrix_inline_with_limit(matrix, limit, |value| {
+                    value.format_canonical_inline()
+                })
+            }
+            LegacyValue::Typed(value, _) => value.format_canonical_inline_with_element_limit(limit),
+            LegacyValue::MutableReference(value) => value
+                .borrow()
+                .format_canonical_inline_with_element_limit(limit),
+            _ => self.format_canonical_inline(),
+        }
+    }
+
     /// Formats one cell for the inline-table grammar. A table literal uses
     /// the same bar token as its enclosing row terminator, so a directly
     /// nested table must be parenthesized to give both the parser and preview
@@ -2668,7 +2757,10 @@ impl LegacyValue {
     /// Formats a bounded preview without splitting encoded string characters
     /// or discarding delimiters that were opened before the elision point.
     pub fn format_preview_inline(&self, limit: usize) -> String {
-        Self::preview_canonical_inline(&self.format_canonical_inline(), limit)
+        Self::preview_canonical_inline(
+            &self.format_canonical_inline_with_element_limit(limit),
+            limit,
+        )
     }
 
     /// Compatibility alias for callers that require the complete canonical
@@ -2964,6 +3056,40 @@ impl LegacyValue {
             })
             .collect::<Vec<_>>();
         format!("[{}]", row_strings.join("; "))
+    }
+
+    #[cfg(feature = "matrix")]
+    fn format_matrix_inline_with_limit<T, F>(
+        matrix: &Matrix<T>,
+        limit: usize,
+        format_element: F,
+    ) -> String
+    where
+        T: Clone + std::fmt::Debug + PartialEq + 'static,
+        F: Fn(T) -> String,
+    {
+        let shape = matrix.shape();
+        let rows = shape[0];
+        let columns = shape[1];
+        let total = rows.saturating_mul(columns);
+        let visible = total.min(limit);
+        let mut rendered = String::from("[");
+        for index in 0..visible {
+            let row = index / columns;
+            let column = index % columns;
+            if index > 0 {
+                rendered.push_str(if column == 0 { "; " } else { " " });
+            }
+            rendered.push_str(&format_element(matrix.index2d(row + 1, column + 1)));
+        }
+        if visible < total {
+            if visible > 0 {
+                rendered.push(' ');
+            }
+            rendered.push('…');
+        }
+        rendered.push(']');
+        rendered
     }
 
     #[cfg(any(feature = "string", feature = "variable_define"))]

@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub mod config;
 pub mod module;
 pub mod provider;

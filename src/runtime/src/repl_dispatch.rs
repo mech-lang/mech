@@ -5,11 +5,11 @@ use std::collections::BTreeMap;
 use mech_core::MResult;
 
 use crate::{
-    ARGUMENT_QUOTING_HELP, ClearTarget, DiagnosticPhase, MechEvent, OutputArtifactStatus,
-    OutputContent, OutputSource, REPL_COMMAND_SPECS, ReplClearTarget, ReplCommand, ReplCommandId,
-    ReplEvent, ReplHostRequirement, ReplRequest, ReplResponse, ReplResponseKind,
-    ReplResponseStatus, ResidentReplRuntimeFactory, ResidentReplSession, ResidentSymbolInspection,
-    Severity, TableOutput, TextOutput,
+    ARGUMENT_QUOTING_HELP, DiagnosticPhase, MechEvent, OutputArtifactStatus, OutputContent,
+    OutputSource, REPL_COMMAND_SPECS, ReplClearTarget, ReplCommand, ReplCommandId, ReplEvent,
+    ReplHostRequirement, ReplRequest, ReplResponse, ReplResponseKind, ReplResponseStatus,
+    ResidentReplRuntimeFactory, ResidentReplSession, ResidentSymbolInspection, Severity,
+    TableOutput, TextOutput,
 };
 
 pub const REPL_TEXT_LOGO: &str = r#"
@@ -20,13 +20,79 @@ pub const REPL_TEXT_LOGO: &str = r#"
   │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │  │ │
   └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#;
 
+pub const MECH_DOCUMENTATION_URL: &str = "https://docs.mech-lang.org/";
+pub const MECH_HOMEPAGE_URL: &str = "https://mech-lang.org/";
+
 #[cfg_attr(
     feature = "serde",
     derive(serde_derive::Serialize, serde_derive::Deserialize)
 )]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReplComponentKind {
+    Product,
+    Library,
+    Host,
+}
+
+impl ReplComponentKind {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Product => "product",
+            Self::Library => "library",
+            Self::Host => "host",
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReplComponentVersion {
+    pub name: String,
+    pub kind: ReplComponentKind,
+    pub version: String,
+}
+
+impl ReplComponentVersion {
+    pub fn new(
+        name: impl Into<String>,
+        kind: ReplComponentKind,
+        version: impl Into<String>,
+    ) -> Self {
+        Self {
+            name: name.into(),
+            kind,
+            version: version.into(),
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_derive::Serialize, serde_derive::Deserialize)
+)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReplHostAvailability {
     unavailable: BTreeMap<ReplHostRequirement, String>,
+    product: ReplComponentVersion,
+    components: Vec<ReplComponentVersion>,
+}
+
+impl Default for ReplHostAvailability {
+    fn default() -> Self {
+        Self {
+            unavailable: BTreeMap::new(),
+            product: ReplComponentVersion::new(
+                "Mech",
+                ReplComponentKind::Product,
+                env!("CARGO_PKG_VERSION"),
+            ),
+            components: Vec::new(),
+        }
+    }
 }
 
 impl ReplHostAvailability {
@@ -37,6 +103,30 @@ impl ReplHostAvailability {
     pub fn deny(mut self, requirement: ReplHostRequirement, reason: impl Into<String>) -> Self {
         self.unavailable.insert(requirement, reason.into());
         self
+    }
+
+    pub fn with_product(mut self, name: impl Into<String>, version: impl Into<String>) -> Self {
+        self.product = ReplComponentVersion::new(name, ReplComponentKind::Product, version);
+        self
+    }
+
+    pub fn with_component(
+        mut self,
+        name: impl Into<String>,
+        kind: ReplComponentKind,
+        version: impl Into<String>,
+    ) -> Self {
+        self.components
+            .push(ReplComponentVersion::new(name, kind, version));
+        self
+    }
+
+    pub fn product(&self) -> &ReplComponentVersion {
+        &self.product
+    }
+
+    pub fn versions(&self) -> impl Iterator<Item = &ReplComponentVersion> {
+        core::iter::once(&self.product).chain(self.components.iter())
     }
 
     pub fn unavailable_reason(&self, requirement: ReplHostRequirement) -> Option<&str> {
@@ -156,14 +246,17 @@ pub fn dispatch_repl_command<F: ResidentReplRuntimeFactory>(
                 session,
                 ReplResponseKind::Help,
                 ReplResponseStatus::Neutral,
-                Some("REPL commands"),
+                None,
                 command_help(availability),
             );
-            emit_info(
+        }
+        ReplCommand::Version => {
+            emit_response(
                 session,
-                &format!(
-                    "{ARGUMENT_QUOTING_HELP}\nEnter submits; Ctrl+Enter inserts a line break. A trailing `;` suppresses automatic value display.",
-                ),
+                ReplResponseKind::Command,
+                ReplResponseStatus::Neutral,
+                None,
+                version_inventory(availability),
             );
         }
         ReplCommand::Capabilities => {
@@ -205,7 +298,7 @@ pub fn dispatch_repl_command<F: ResidentReplRuntimeFactory>(
                     session,
                     ReplResponseKind::Command,
                     ReplResponseStatus::Neutral,
-                    Some("Resident execution plan"),
+                    None,
                     OutputContent::Table(TableOutput::new(
                         vec!["Property".to_string(), "Value".to_string()],
                         vec![
@@ -247,7 +340,7 @@ pub fn dispatch_repl_command<F: ResidentReplRuntimeFactory>(
                     rows,
                 ))
             };
-            emit_response(session, ReplResponseKind::Command, ReplResponseStatus::Neutral, Some("Session outputs"), content);
+            emit_response(session, ReplResponseKind::Command, ReplResponseStatus::Neutral, None, content);
         }
         ReplCommand::Output(id) => match session.output(&id) {
             Some(artifact) => session.emit(MechEvent::Repl(ReplEvent::FocusDisplay {
@@ -275,15 +368,19 @@ pub fn dispatch_repl_command<F: ResidentReplRuntimeFactory>(
             session.step_chunk(count)?;
             emit_step_complete(session, count)?;
         }
-        ReplCommand::Clear(ClearTarget::Session) => {
-            session.reset()?;
-            emit_success(session, "Resident REPL state cleared.");
+        ReplCommand::Clear(names) => {
+            match session.clear_variables(&names) {
+                Ok(cleared) if cleared.is_empty() => {
+                    emit_success(session, "Resident workspace cleared.");
+                }
+                Ok(cleared) => {
+                    emit_success(session, &format!("Cleared {}.", cleared.join(", ")));
+                }
+                Err(error) => {
+                    session.emit_error(&error, DiagnosticPhase::Compile, Some("<repl>"));
+                }
+            }
         }
-        ReplCommand::Clear(ClearTarget::Output) => {
-            session.clear_outputs();
-            emit_success(session, "Output history cleared.");
-        }
-        ReplCommand::Clear(ClearTarget::Diagnostics) => session.clear_diagnostics(),
         ReplCommand::Clc => session.emit(MechEvent::Repl(ReplEvent::Clear(ReplClearTarget::Interaction))),
         ReplCommand::Quit => {
             emit_success(session, "REPL session terminated.");
@@ -320,7 +417,7 @@ fn emit_resident_inspection<F: ResidentReplRuntimeFactory>(
         session,
         ReplResponseKind::SymbolInspection,
         ReplResponseStatus::Neutral,
-        Some("Resident values"),
+        None,
         symbol_values(symbols),
     );
     Ok(())
@@ -335,7 +432,7 @@ fn emit_integrity_constraint_inspection<F: ResidentReplRuntimeFactory>(
         session,
         ReplResponseKind::IntegrityConstraintInspection,
         ReplResponseStatus::Neutral,
-        Some("Integrity constraints"),
+        None,
         integrity_constraint_values(constraints),
     );
     Ok(())
@@ -382,8 +479,36 @@ fn emit_info<F: ResidentReplRuntimeFactory>(session: &mut ResidentReplSession<F>
 fn command_help(availability: &ReplHostAvailability) -> OutputContent {
     OutputContent::Fragments(vec![
         OutputContent::Text(TextOutput::new(REPL_TEXT_LOGO)),
+        OutputContent::Text(TextOutput::new(format!(
+            "{} v{}\nDocumentation: {MECH_DOCUMENTATION_URL}\nWebsite: {MECH_HOMEPAGE_URL}",
+            availability.product().name,
+            availability.product().version,
+        ))),
         OutputContent::Table(command_help_table(availability)),
+        OutputContent::Text(TextOutput::new(format!(
+            "{ARGUMENT_QUOTING_HELP}\nEnter submits; Ctrl+Enter inserts a line break. A trailing `;` suppresses automatic value display.",
+        ))),
     ])
+}
+
+fn version_inventory(availability: &ReplHostAvailability) -> OutputContent {
+    OutputContent::Table(TableOutput::new(
+        vec![
+            "Component".to_string(),
+            "Kind".to_string(),
+            "Version".to_string(),
+        ],
+        availability
+            .versions()
+            .map(|component| {
+                vec![
+                    component.name.clone(),
+                    component.kind.as_str().to_string(),
+                    component.version.clone(),
+                ]
+            })
+            .collect(),
+    ))
 }
 
 fn command_help_table(availability: &ReplHostAvailability) -> TableOutput {

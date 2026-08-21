@@ -92,6 +92,16 @@ pub trait ResidentReplRuntimeFactory {
         source: &str,
     ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
         let mut runtime = self.build(events)?;
+        if source.trim().is_empty() {
+            return Ok((
+                runtime,
+                RuntimeProgramLoadOutcome {
+                    route: crate::RuntimeProgramRoute::None,
+                    initial_value: RuntimeValueSnapshot::empty(),
+                    info: crate::RuntimeProgramExecutionInfo::default(),
+                },
+            ));
+        }
         let outcome = match runtime
             .load_interactive_source_program(source, ResidentDurabilityPolicy::Volatile)
         {
@@ -123,6 +133,8 @@ pub trait ResidentReplRuntimeFactory {
 ///
 /// Every candidate is compiled and activated in a separate runtime. A failed
 /// entry therefore leaves the accepted source and live runtime unchanged.
+pub const DEFAULT_REPL_VALUE_ELEMENT_LIMIT: usize = 500;
+
 pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     factory: F,
     initial_source: Option<String>,
@@ -134,6 +146,7 @@ pub struct ResidentReplSession<F: ResidentReplRuntimeFactory> {
     reusable_selection_tokens: BTreeMap<String, String>,
     events: MechEventJournal,
     quiet: bool,
+    value_element_limit: usize,
 }
 
 impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
@@ -153,6 +166,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
             quiet,
+            value_element_limit: DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
         }
     }
 
@@ -170,6 +184,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             reusable_selection_tokens: BTreeMap::new(),
             events: MechEventJournal::default(),
             quiet: false,
+            value_element_limit: DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
         };
         session.replace_source(source)?;
         Ok(session)
@@ -181,6 +196,14 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
 
     pub fn is_quiet(&self) -> bool {
         self.quiet
+    }
+
+    pub fn set_value_element_limit(&mut self, max_elements: usize) {
+        self.value_element_limit = max_elements.max(1);
+    }
+
+    pub fn value_element_limit(&self) -> usize {
+        self.value_element_limit
     }
 
     pub fn source(&self) -> &str {
@@ -239,7 +262,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         let visible_value = if !self.quiet && !value.is_empty() {
             Some(ValueOutput::new(
                 value.kind().to_string(),
-                value.format_canonical_inline(),
+                value.format_repl_inline(self.value_element_limit),
             ))
         } else {
             None
@@ -281,7 +304,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         }
         let value = self.replace_source(candidate_source)?;
         if emit_value_response && !self.quiet && !suppress_value && !value.is_empty() {
-            let canonical = value.format_canonical_inline();
+            let canonical = value.format_repl_inline(self.value_element_limit);
             self.emit(MechEvent::Repl(ReplEvent::Response(ReplResponse::new(
                 ReplResponseKind::ValueInspection,
                 ReplResponseStatus::Neutral,
@@ -354,6 +377,54 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             );
         }
         Ok(outcome.initial_value)
+    }
+
+    /// Remove resident variables by rebuilding the complete accepted source.
+    ///
+    /// The candidate runtime is activated before the current runtime is
+    /// retired, so a dependency or activation failure leaves the workspace
+    /// unchanged. With no names, the complete resident workspace is removed.
+    pub fn clear_variables(&mut self, names: &[String]) -> MResult<Vec<String>> {
+        if names.is_empty() {
+            self.replace_source(String::new())?;
+            return Ok(Vec::new());
+        }
+
+        let requested = names
+            .iter()
+            .cloned()
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut tree = mech_syntax::parser::parse(self.source.trim())?;
+        let mut removed = std::collections::BTreeSet::new();
+        for section in &mut tree.body.sections {
+            for element in &mut section.elements {
+                match element {
+                    mech_core::nodes::SectionElement::MechCode(code) => {
+                        remove_resident_definitions(code, &requested, &mut removed)?;
+                    }
+                    mech_core::nodes::SectionElement::FencedMechCode(fenced) => {
+                        remove_resident_definitions(&mut fenced.code, &requested, &mut removed)?;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        let missing = requested.difference(&removed).cloned().collect::<Vec<_>>();
+        if !missing.is_empty() {
+            return Err(interactive_error(format!(
+                "resident variable{} {} not found",
+                if missing.len() == 1 { "" } else { "s" },
+                missing
+                    .iter()
+                    .map(|name| format!("`{name}`"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )));
+        }
+
+        let candidate_source = mech_syntax::formatter::Formatter::new().format(&tree);
+        self.replace_source(candidate_source)?;
+        Ok(removed.into_iter().collect())
     }
 
     pub fn reset(&mut self) -> MResult<()> {
@@ -651,6 +722,71 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             .absorb(events.drain()?.into_iter().map(own_program_diagnostic));
         Ok(())
     }
+}
+
+fn remove_resident_definitions(
+    code: &mut Vec<(
+        mech_core::nodes::MechCode,
+        Option<mech_core::nodes::Comment>,
+    )>,
+    requested: &std::collections::BTreeSet<String>,
+    removed: &mut std::collections::BTreeSet<String>,
+) -> MResult<()> {
+    let mut retained = Vec::with_capacity(code.len());
+    for entry in code.drain(..) {
+        let (node, _) = &entry;
+        let mech_core::nodes::MechCode::Statement(statement) = node else {
+            retained.push(entry);
+            continue;
+        };
+        let targets = match statement {
+            mech_core::nodes::Statement::VariableDefine(definition) => {
+                vec![definition.var.name.to_string()]
+            }
+            mech_core::nodes::Statement::VariableAssign(assignment) => {
+                vec![assignment.target.name.to_string()]
+            }
+            mech_core::nodes::Statement::OpAssign(assignment) => {
+                vec![assignment.target.name.to_string()]
+            }
+            mech_core::nodes::Statement::TupleDestructure(destructure) => destructure
+                .vars
+                .iter()
+                .map(|variable| variable.to_string())
+                .collect(),
+            _ => {
+                retained.push(entry);
+                continue;
+            }
+        };
+        let matched = targets
+            .iter()
+            .filter(|target| requested.contains(*target))
+            .cloned()
+            .collect::<Vec<_>>();
+        if matched.is_empty() {
+            retained.push(entry);
+            continue;
+        }
+        if targets.len() > 1 && matched.len() != targets.len() {
+            return Err(interactive_error(format!(
+                "cannot clear {} independently because {} are defined by the same tuple destructure; clear all of them together",
+                matched
+                    .iter()
+                    .map(|name| format!("`{name}`"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                targets
+                    .iter()
+                    .map(|name| format!("`{name}`"))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            )));
+        }
+        removed.extend(matched);
+    }
+    *code = retained;
+    Ok(())
 }
 
 fn executable_submission(source: &str) -> (String, bool) {

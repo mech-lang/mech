@@ -142,7 +142,7 @@ pub(crate) fn run(nofun: bool, quiet: bool) -> MResult<CliOutcome> {
         print_banner(&mut stdout)?;
     }
 
-    let mut repl = ResidentRepl::new_with_quiet(ui.quiet())?;
+    let mut repl = ResidentRepl::new_with_options(ui.quiet(), ui.value_element_limit())?;
     let worker = spawn_input_worker();
     let exit_requested = Arc::new(AtomicBool::new(false));
     let interrupt_count = Arc::new(AtomicUsize::new(0));
@@ -341,7 +341,7 @@ fn run_with_io_and_ui<R: BufRead, W: Write>(
     if !ui.is_plain() {
         print_banner(&mut output)?;
     }
-    let mut repl = ResidentRepl::new_with_quiet(ui.quiet())?;
+    let mut repl = ResidentRepl::new_with_options(ui.quiet(), ui.value_element_limit())?;
     loop {
         print_prompt(&mut output, ui)?;
         let mut entry = String::new();
@@ -405,7 +405,7 @@ fn execute_host_request(repl: &mut ResidentRepl, request: ReplHostRequest) -> MR
                 repl,
                 ReplResponseKind::Command,
                 ReplResponseStatus::Neutral,
-                Some("Effective REPL host capabilities"),
+                None,
                 capabilities(repl.grants()),
             );
             emit_info(
@@ -417,7 +417,7 @@ fn execute_host_request(repl: &mut ResidentRepl, request: ReplHostRequest) -> MR
             repl,
             ReplResponseKind::Help,
             ReplResponseStatus::Neutral,
-            Some("Embedded documentation"),
+            None,
             OutputContent::Text(TextOutput::new(docs(topic))),
         ),
         ReplHostRequest::ReadSources { resources } => match repl.load(&resources) {
@@ -444,8 +444,11 @@ fn execute_host_request(repl: &mut ResidentRepl, request: ReplHostRequest) -> MR
                 repl,
                 ReplResponseKind::Command,
                 ReplResponseStatus::Neutral,
-                Some(&format!("Directory: {}", path.display())),
-                content,
+                None,
+                OutputContent::Fragments(vec![
+                    OutputContent::Text(TextOutput::new(path.display().to_string())),
+                    content,
+                ]),
             ),
             Err(error) => emit_host_error(repl, "Unable to list directory", &error),
         },
@@ -462,7 +465,7 @@ fn execute_host_request(repl: &mut ResidentRepl, request: ReplHostRequest) -> MR
             repl,
             ReplResponseKind::Command,
             ReplResponseStatus::Neutral,
-            Some("Resident profiling"),
+            None,
             profiling(enabled),
         ),
     }

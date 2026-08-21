@@ -55,6 +55,13 @@ impl RuntimeValueSnapshot {
         self.value.format_canonical_inline()
     }
 
+    /// Returns the bounded canonical representation used by interactive
+    /// hosts. Elision never mutates or replaces the detached value.
+    pub fn format_repl_inline(&self, max_elements: usize) -> String {
+        self.value
+            .format_canonical_inline_with_element_limit(max_elements)
+    }
+
     /// Returns the detached value's rich HTML projection without cloning its
     /// owned value graph. Browser inspection can therefore publish `ans` and
     /// render a popup from one captured snapshot.

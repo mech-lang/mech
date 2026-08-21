@@ -2,6 +2,8 @@
 #![allow(warnings)]
 #![feature(where_clause_attrs)]
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {

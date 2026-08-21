@@ -3,6 +3,7 @@ use std::env;
 pub(super) const NOFUN_ENV: &str = "MECH_NOFUN";
 pub(super) const REPL_STYLE_ENV: &str = "MECH_REPL_STYLE";
 pub(super) const REPL_QUIET_ENV: &str = "MECH_REPL_QUIET";
+pub(super) const REPL_MAX_ELEMENTS_ENV: &str = "MECH_REPL_MAX_ELEMENTS";
 pub(super) const QUIET_ENV: &str = "MECH_QUIET";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -17,6 +18,7 @@ pub(super) struct ReplUi {
     color: bool,
     animation: bool,
     quiet: bool,
+    value_element_limit: usize,
 }
 
 impl ReplUi {
@@ -27,6 +29,7 @@ impl ReplUi {
             mech_nofun: env::var(NOFUN_ENV).ok(),
             repl_style: env::var(REPL_STYLE_ENV).ok(),
             repl_quiet: env::var(REPL_QUIET_ENV).ok(),
+            repl_max_elements: env::var(REPL_MAX_ELEMENTS_ENV).ok(),
             mech_quiet: env::var(QUIET_ENV).ok(),
             term: env::var("TERM").ok(),
             no_color: env::var_os("NO_COLOR").is_some(),
@@ -41,6 +44,7 @@ impl ReplUi {
             color: true,
             animation: true,
             quiet: false,
+            value_element_limit: mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
         }
     }
 
@@ -51,6 +55,7 @@ impl ReplUi {
             color: false,
             animation: false,
             quiet: false,
+            value_element_limit: mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
         }
     }
 
@@ -74,6 +79,10 @@ impl ReplUi {
         self.quiet
     }
 
+    pub(super) const fn value_element_limit(self) -> usize {
+        self.value_element_limit
+    }
+
     fn resolve(settings: EnvironmentSettings) -> Self {
         let style = settings.repl_style.as_deref().map(str::trim);
         let explicit_rich = style.is_some_and(|style| {
@@ -93,12 +102,19 @@ impl ReplUi {
         let quiet = settings.quiet_flag
             || settings.repl_quiet.as_deref().is_some_and(truthy)
             || settings.mech_quiet.as_deref().is_some_and(truthy);
+        let value_element_limit = settings
+            .repl_max_elements
+            .as_deref()
+            .and_then(|value| value.trim().parse::<usize>().ok())
+            .filter(|value| *value > 0)
+            .unwrap_or(mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT);
         if plain {
             return Self {
                 mode: ReplRenderMode::Plain,
                 color: false,
                 animation: false,
                 quiet,
+                value_element_limit,
             };
         }
 
@@ -107,6 +123,7 @@ impl ReplUi {
             color: !settings.no_color && settings.clicolor.as_deref() != Some("0"),
             animation: !settings.ci,
             quiet,
+            value_element_limit,
         }
     }
 }
@@ -118,6 +135,7 @@ struct EnvironmentSettings {
     mech_nofun: Option<String>,
     repl_style: Option<String>,
     repl_quiet: Option<String>,
+    repl_max_elements: Option<String>,
     mech_quiet: Option<String>,
     term: Option<String>,
     no_color: bool,
@@ -198,6 +216,32 @@ mod tests {
             let ui = ReplUi::resolve(settings);
             assert_eq!(ui.mode(), ReplRenderMode::Rich);
             assert!(ui.quiet());
+        }
+    }
+
+    #[test]
+    fn repl_element_limit_is_positive_and_defaults_to_portable_limit() {
+        assert_eq!(
+            ReplUi::resolve(EnvironmentSettings::default()).value_element_limit(),
+            mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
+        );
+        assert_eq!(
+            ReplUi::resolve(EnvironmentSettings {
+                repl_max_elements: Some("72".to_string()),
+                ..EnvironmentSettings::default()
+            })
+            .value_element_limit(),
+            72,
+        );
+        for invalid in ["0", "-1", "many"] {
+            assert_eq!(
+                ReplUi::resolve(EnvironmentSettings {
+                    repl_max_elements: Some(invalid.to_string()),
+                    ..EnvironmentSettings::default()
+                })
+                .value_element_limit(),
+                mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
+            );
         }
     }
 }

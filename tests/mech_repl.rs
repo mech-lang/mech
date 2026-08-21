@@ -181,6 +181,24 @@ fn quiet_mode_and_trailing_semicolons_suppress_automatic_values() {
 }
 
 #[test]
+fn repl_matrix_element_limit_is_configurable_from_the_environment() {
+    let output = run_repl_with_environment(
+        &["--nofun"],
+        &[("MECH_REPL_MAX_ELEMENTS", "3")],
+        "1..10\n:quit\n",
+    );
+
+    assert!(
+        output.contains("[1 2 3 …]"),
+        "configured matrix presentation limit was not applied: {output}"
+    );
+    assert!(
+        !output.contains("[1 2 3 4"),
+        "matrix was not elided: {output}"
+    );
+}
+
+#[test]
 fn repl_commands_are_structured_and_truthful() {
     let output = run_repl(
         &[],
@@ -188,6 +206,7 @@ fn repl_commands_are_structured_and_truthful() {
         concat!(
             "x := 1\n",
             ":help\n",
+            ":version\n",
             ":capabilities\n",
             ":whos\n",
             ":constraints\n",
@@ -199,19 +218,28 @@ fn repl_commands_are_structured_and_truthful() {
     );
 
     assert!(
-        output.contains("REPL commands"),
-        "missing help heading: {output}"
+        output.contains("Mech v0.3.6")
+            && output.contains("https://docs.mech-lang.org/")
+            && output.contains(":version"),
+        "help is missing product version, documentation, or version command: {output}"
     );
     assert!(
         output.contains("Command") && output.contains("Description"),
         "help lost its structured command index: {output}"
     );
     assert!(
+        output.contains("Component")
+            && output.contains("library")
+            && output.contains("host")
+            && output.contains("terminal"),
+        "version inventory is incomplete: {output}"
+    );
+    assert!(
         !output.contains("Host"),
         "help exposed a host column: {output}"
     );
     assert!(
-        output.contains("Effective REPL host capabilities"),
+        output.contains("Context") && output.contains("Operation") && output.contains("Status"),
         "missing capabilities command: {output}"
     );
     assert!(
@@ -219,11 +247,11 @@ fn repl_commands_are_structured_and_truthful() {
         "missing effective CLI grants: {output}"
     );
     assert!(
-        output.contains("Resident values"),
+        output.contains("Name") && output.contains("Type") && output.contains("Value"),
         "whos is not structured: {output}"
     );
     assert!(
-        output.contains("Integrity constraints"),
+        output.contains("No integrity constraints matched."),
         "constraints is not structured: {output}"
     );
     assert!(
@@ -257,9 +285,9 @@ fn whos_values_are_inline_and_elided_in_rich_and_plain_consoles() {
 
     for arguments in [Vec::new(), vec!["--nofun"]] {
         let output = run_repl(&arguments, None, &source);
-        let (_, values) = output
-            .split_once("Resident values")
-            .unwrap_or_else(|| panic!("missing :whos response: {output}"));
+        let values = &output[output
+            .rfind("Name")
+            .unwrap_or_else(|| panic!("missing :whos response: {output}"))..];
 
         assert!(
             values.contains("[1 2 3; 4 5 6]"),
@@ -301,11 +329,8 @@ fn constraints_are_only_exposed_through_their_own_command() {
         None,
         "x := 1\nsafe! := x <= 2\n:whos x safe!\n:constraints safe!\n:quit\n",
     );
-    let (_, after_values_heading) = output
-        .split_once("Resident values")
-        .unwrap_or_else(|| panic!("missing resident values table: {output}"));
-    let (values, constraints) = after_values_heading
-        .split_once("Integrity constraints")
+    let (values, constraints) = output
+        .split_once("Constraint<*>")
         .unwrap_or_else(|| panic!("missing :constraints response: {output}"));
 
     assert!(
@@ -317,7 +342,7 @@ fn constraints_are_only_exposed_through_their_own_command() {
         "constraint leaked into resident values: {output}"
     );
     assert!(
-        constraints.contains("Constraint<*> Type<*> Value<*>")
+        constraints.contains(" Type<*> Value<*>")
             && constraints.contains(" safe! bool true ")
             && constraints.contains("true"),
         "constraint did not receive its own live table: {output}"
@@ -346,8 +371,8 @@ fn filesystem_commands_support_quoted_paths_and_transactional_load_save() {
     );
 
     assert!(
-        output.contains("Directory:"),
-        "ls lost its heading: {output}"
+        output.contains(&root.display().to_string()),
+        "ls lost its directory context: {output}"
     );
     assert!(
         output.contains("Type") && output.contains("Size"),
@@ -411,7 +436,7 @@ fn command_errors_do_not_terminate_the_repl() {
         "missing command error: {errors}"
     );
     assert!(
-        errors.contains("missing") && errors.contains("no resident program is active"),
+        errors.contains("missing") && errors.contains("requires an active resident program"),
         "shared dispatcher errors escaped or were not diagnosed: {errors}"
     );
     assert!(
@@ -433,8 +458,6 @@ fn program_output_diagnostics_and_history_use_distinct_channels() {
             "@err/line <- \"error\"\n",
             ":outputs\n",
             ":output output-1\n",
-            ":clear output\n",
-            ":clear errors\n",
             ":quit\n",
         ),
     );
@@ -442,16 +465,8 @@ fn program_output_diagnostics_and_history_use_distinct_channels() {
     assert!(output.contains("program-output"), "stdout: {output}");
     assert!(!output.contains("program-error"), "stdout: {output}");
     assert!(errors.contains("program-error"), "stderr: {errors}");
-    assert!(output.contains("Session outputs"), "stdout: {output}");
     assert!(output.contains("output-1"), "stdout: {output}");
-    assert!(
-        output.contains("Output history cleared"),
-        "stdout: {output}"
-    );
-    assert!(
-        output.contains("Diagnostic history cleared"),
-        "stdout: {output}"
-    );
+    assert!(!output.contains("Session outputs"), "stdout: {output}");
 }
 
 fn assert_repl_session(arguments: &[&str]) {
@@ -475,8 +490,64 @@ fn assert_repl_session(arguments: &[&str]) {
         "missing matrix type and shape: {output}"
     );
     assert!(
-        output.contains("Resident execution plan"),
+        output.contains("Accepted resident turns"),
         "missing resident plan: {output}"
+    );
+}
+
+#[test]
+fn clear_removes_named_variables_and_bare_clear_wipes_the_workspace() {
+    let (output, errors) = run_repl_streams(
+        &["--nofun"],
+        None,
+        concat!(
+            "x := 1;\n",
+            "y := 2;\n",
+            ":clear x\n",
+            ":whos\n",
+            ":clear\n",
+            ":step\n",
+            ":quit\n",
+        ),
+    );
+
+    let after_named_clear = output
+        .split_once("Cleared x.")
+        .map(|(_, rest)| rest)
+        .unwrap_or_else(|| panic!("named clear did not report success: {output}"));
+    assert!(
+        after_named_clear.contains(" y f64 2 "),
+        "y was not retained: {output}"
+    );
+    assert!(
+        !after_named_clear.contains(" x f64 1 "),
+        "x survived clear: {output}"
+    );
+    assert!(
+        output.contains("Resident workspace cleared."),
+        "bare clear did not report a workspace wipe: {output}"
+    );
+    assert!(
+        errors.contains("requires an active resident program"),
+        "bare clear left an active resident program: {errors}"
+    );
+}
+
+#[test]
+fn clear_rolls_back_when_a_remaining_definition_depends_on_the_variable() {
+    let (output, errors) = run_repl_streams(
+        &["--nofun"],
+        None,
+        "x := 1;\ny := x + 1;\n:clear x\nx\n:quit\n",
+    );
+
+    assert!(
+        errors.contains('x'),
+        "dependency failure was not surfaced: {errors}"
+    );
+    assert!(
+        output.contains("f64\n1"),
+        "failed clear did not preserve the last valid workspace: {output}"
     );
 }
 
@@ -522,6 +593,7 @@ fn run_repl_streams_with_environment(
         .env_remove("MECH_NOFUN")
         .env_remove("MECH_REPL_STYLE")
         .env_remove("MECH_REPL_QUIET")
+        .env_remove("MECH_REPL_MAX_ELEMENTS")
         .env_remove("MECH_QUIET")
         .env_remove("NO_COLOR")
         .env_remove("CLICOLOR")

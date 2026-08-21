@@ -3,9 +3,9 @@ use std::fs;
 use mech_core::MResult;
 use mech_runtime::{
     DiagnosticPhase, MechEvent, MechEventBuffer, MechEventEnvelope, MechRuntime, OutputArtifact,
-    ReplDispatchControl, ReplHostAvailability, ReplHostRequirement, ReplRequest, ReplStepMode,
-    ResidentReplRuntimeFactory, ResidentReplSession, RuntimeConfig, RuntimeValueSnapshot, Severity,
-    dispatch_repl_request,
+    ReplComponentKind, ReplDispatchControl, ReplHostAvailability, ReplHostRequirement, ReplRequest,
+    ReplStepMode, ResidentReplRuntimeFactory, ResidentReplSession, RuntimeConfig,
+    RuntimeValueSnapshot, Severity, dispatch_repl_request,
 };
 
 use crate::cli::host_grants::{
@@ -45,16 +45,19 @@ impl ResidentRepl {
     }
 
     pub(super) fn new_with_quiet(quiet: bool) -> MResult<Self> {
+        Self::new_with_options(quiet, mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT)
+    }
+
+    pub(super) fn new_with_options(quiet: bool, value_element_limit: usize) -> MResult<Self> {
         let grants = effective_cli_host_grants(None, CliHostCapabilitySelection::default())?;
-        Ok(Self {
-            session: ResidentReplSession::with_quiet(
-                CliReplRuntimeFactory {
-                    grants: grants.clone(),
-                },
-                quiet,
-            ),
-            grants,
-        })
+        let mut session = ResidentReplSession::with_quiet(
+            CliReplRuntimeFactory {
+                grants: grants.clone(),
+            },
+            quiet,
+        );
+        session.set_value_element_limit(value_element_limit);
+        Ok(Self { session, grants })
     }
 
     pub(super) fn source(&self) -> &str {
@@ -81,10 +84,7 @@ impl ResidentRepl {
         &mut self,
         request: ReplRequest,
     ) -> MResult<ReplDispatchControl> {
-        let availability = ReplHostAvailability::all_available().deny(
-            ReplHostRequirement::Profiling,
-            "the resident runtime does not expose a profiling control or report API",
-        );
+        let availability = cli_repl_availability();
         dispatch_repl_request(
             &mut self.session,
             request,
@@ -163,6 +163,82 @@ impl ResidentRepl {
     pub(super) fn shutdown(&mut self) -> MResult<()> {
         self.session.shutdown()
     }
+}
+
+fn cli_repl_availability() -> ReplHostAvailability {
+    let mut availability = ReplHostAvailability::all_available()
+        .with_product("Mech", env!("CARGO_PKG_VERSION"))
+        .deny(
+            ReplHostRequirement::Profiling,
+            "the resident runtime does not expose a profiling control or report API",
+        );
+    for library in mech_stdlib::INSTALLED_LIBRARIES {
+        availability =
+            availability.with_component(library.name, ReplComponentKind::Library, library.version);
+    }
+    #[cfg(feature = "cli_host")]
+    {
+        availability = availability.with_component(
+            "terminal",
+            ReplComponentKind::Host,
+            mech_terminal::VERSION,
+        );
+    }
+    #[cfg(any(feature = "web_host", feature = "host_delegation"))]
+    {
+        availability =
+            availability.with_component("browser", ReplComponentKind::Host, mech_browser::VERSION);
+    }
+    #[cfg(any(
+        feature = "time_host_native",
+        feature = "time_host_browser",
+        feature = "web_host"
+    ))]
+    {
+        availability =
+            availability.with_component("time", ReplComponentKind::Host, mech_time::VERSION);
+    }
+    #[cfg(any(
+        feature = "timer_host_native",
+        feature = "timer_host_browser",
+        feature = "web_host"
+    ))]
+    {
+        availability =
+            availability.with_component("timer", ReplComponentKind::Host, mech_timer::VERSION);
+    }
+    #[cfg(any(
+        feature = "console_host_native",
+        feature = "console_host_browser",
+        feature = "web_host"
+    ))]
+    {
+        availability =
+            availability.with_component("console", ReplComponentKind::Host, mech_console::VERSION);
+    }
+    #[cfg(any(
+        feature = "scene_host_native",
+        feature = "scene_host_browser",
+        feature = "web_host"
+    ))]
+    {
+        availability =
+            availability.with_component("scene", ReplComponentKind::Host, mech_scene::VERSION);
+    }
+    #[cfg(feature = "full-hosts")]
+    {
+        availability = availability.with_component(
+            "robot arm",
+            ReplComponentKind::Host,
+            mech_robot_arm::VERSION,
+        );
+    }
+    #[cfg(feature = "compute_backends_native")]
+    {
+        availability =
+            availability.with_component("GPU", ReplComponentKind::Host, mech_gpu::VERSION);
+    }
+    availability
 }
 
 #[cfg(test)]
