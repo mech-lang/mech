@@ -162,6 +162,40 @@ fn formatter_preserves_named_compute_region_metadata() {
 }
 
 #[test]
+fn formatter_keeps_figure_table_hero_frontmatter_parseable() {
+    let source = "Gallery\n===============================================================================\nhero: | ![First](first.svg) | ![Second](second.svg) |\n===============================================================================\n";
+    let program = mech_syntax::parser::parse(source).unwrap();
+    let formatted = Formatter::new().format(&program);
+
+    assert!(
+        formatted.contains("hero: | ![First](first.svg) | ![Second](second.svg) |"),
+        "{formatted}",
+    );
+    assert!(!formatted.contains("Fig 0.1"));
+    let reparsed = mech_syntax::parser::parse(&formatted).unwrap();
+    assert!(matches!(
+        reparsed.title.and_then(|title| title.hero),
+        Some(SectionElement::FigureTable(_))
+    ));
+}
+
+#[test]
+fn formatter_emits_renderer_ready_equations_and_diagrams_with_safe_source_text() {
+    let source = token(TokenKind::Text, "x < y & z > 0");
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+
+    let equation = formatter.equation(&source);
+    assert!(equation.contains("class=\"mech-equation\" data-mech-equation"));
+    assert!(equation.contains("x &lt; y &amp; z &gt; 0"));
+    assert!(!equation.contains("equation=\""));
+
+    let diagram = formatter.diagram(&source);
+    assert!(diagram.contains("class=\"mech-diagram mermaid\" data-mech-diagram"));
+    assert!(diagram.contains("x &lt; y &amp; z &gt; 0"));
+}
+
+#[test]
 fn formatter_preserves_new_prefix_context_resource_read() {
     let mut formatter = Formatter::new();
     let statement = first_statement("name := @browser/body/content/input/_value");

@@ -95,6 +95,12 @@ fn is_mech_slot_name(name: &str) -> bool {
         && bytes.all(|byte| matches!(byte, b'A'..=b'Z' | b'0'..=b'9' | b'_'))
 }
 
+fn escape_html_text(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
 fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRender {
     let mut html = String::with_capacity(shim.len());
     let mut consumed_slots = BTreeSet::new();
@@ -726,7 +732,11 @@ impl Formatter {
                 }
             }
             if let Some(hero) = &node.hero {
-                front_matter.push(format!("hero: {}", self.section_element(hero).trim()));
+                let hero = match hero {
+                    SectionElement::FigureTable(table) => self.figure_table_source(table),
+                    _ => self.section_element(hero).trim().to_string(),
+                };
+                front_matter.push(format!("hero: {hero}"));
             }
             if !node.imports.is_empty() {
                 let imports = node
@@ -940,9 +950,9 @@ impl Formatter {
         let id = hash_str(&format!("inline-equation-{}", node.to_string()));
         if self.html {
             format!(
-                "<span id=\"{}\" equation=\"{}\" class=\"mech-inline-equation\"></span>",
+                "<span id=\"{}\" class=\"mech-inline-equation\" data-mech-equation>{}</span>",
                 id,
-                node.to_string()
+                escape_html_text(&node.to_string())
             )
         } else {
             format!("$${}$$", node.to_string())
@@ -1317,30 +1327,46 @@ impl Formatter {
                 figure_id, rows_html, figure_label, caption_block
             )
         } else {
-            let mut lines: Vec<String> = vec![];
+            let table_source = self.figure_table_source(node);
             for row in &node.rows {
-                let mut line = String::from("|");
                 for figure in row {
-                    line.push(' ');
-                    line.push_str(&format!(
-                        "![{}]({})",
-                        self.paragraph(&figure.caption),
-                        figure.src.to_string()
-                    ));
-                    line.push_str(" |");
                     let label = ((b'a' + (figure_ix as u8)) as char).to_string();
                     captions.push(format!("({}) {}", label, self.paragraph(&figure.caption)));
                     figure_ix += 1;
                 }
-                lines.push(line);
             }
             format!(
                 "{}\n{} {}\n",
-                lines.join("\n"),
+                table_source,
                 figure_label,
                 captions.join(" ")
             )
         }
+    }
+
+    /// Serialize only the language-level figure-table syntax. Generated
+    /// figure numbers and caption summaries are presentation derivatives and
+    /// cannot appear inside title frontmatter, where the parser expects the
+    /// table to end at the next frontmatter field or title delimiter.
+    fn figure_table_source(&mut self, node: &FigureTable) -> String {
+        node.rows
+            .iter()
+            .map(|row| {
+                let figures = row
+                    .iter()
+                    .map(|figure| {
+                        format!(
+                            "![{}]({})",
+                            self.paragraph(&figure.caption).trim(),
+                            figure.src.to_string()
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" | ");
+                format!("| {figures} |")
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     pub fn abstract_el(&mut self, node: &Vec<Paragraph>) -> String {
@@ -1359,9 +1385,9 @@ impl Formatter {
         let id = hash_str(&format!("equation-{}", node.to_string()));
         if self.html {
             format!(
-                "<div id=\"{}\" equation=\"{}\" class=\"mech-equation\"></div>",
+                "<div id=\"{}\" class=\"mech-equation\" data-mech-equation>{}</div>",
                 id,
-                node.to_string()
+                escape_html_text(&node.to_string())
             )
         } else {
             format!("$$ {}\n", node.to_string())
@@ -1372,9 +1398,9 @@ impl Formatter {
         let id = hash_str(&format!("diagram-{}", node.to_string()));
         if self.html {
             format!(
-                "<div id=\"{}\" class=\"mech-diagram mermaid\">{}</div>",
+                "<div id=\"{}\" class=\"mech-diagram mermaid\" data-mech-diagram>{}</div>",
                 id,
-                node.to_string()
+                escape_html_text(&node.to_string())
             )
         } else {
             format!("```{{diagram}}\n{}\n```", node.to_string())
@@ -2649,7 +2675,6 @@ impl Formatter {
         }
     }
 
-    #[cfg(feature = "variable_define")]
     pub fn variable_define(&mut self, node: &VariableDefine) -> String {
         let mut mutable = if node.mutable {
             "~".to_string()
@@ -2752,7 +2777,6 @@ impl Formatter {
         let s = match node {
             Statement::ImportDeclaration(import) => format!("+> {}", import.specifier.to_string()),
             Statement::ExportDeclaration(export) => format!("<+ {}", export.name.to_string()),
-            #[cfg(feature = "variable_define")]
             Statement::VariableDefine(var_def) => self.variable_define(var_def),
             #[cfg(feature = "invariant_define")]
             Statement::InvariantDefine(inv_def) => self.invariant_define(inv_def),

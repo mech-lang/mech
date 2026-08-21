@@ -13,6 +13,7 @@
   --mechdown-accent: var(--accent-primary, #f2b63d);
   --mechdown-link: var(--accent-secondary-teal, #5dd8c8);
   --mechdown-purple: var(--accent-secondary-purple, #d89bd8);
+  --mechdown-inline-code: var(--var-name-color, hsl(290, 45%, 90%));
   --mechdown-border: var(--border, #293140);
   --mechdown-surface: var(--bg-secondary, #111827);
   --mechdown-code-surface: var(--code-background-color, #080b12);
@@ -68,6 +69,7 @@
  * whichever page shell embeds it.
  */
 [data-mechdown] .mechdown-section {
+  counter-increment: mechdown-section;
   counter-reset: mechdown-subsection mechdown-subsubsection mechdown-h5 mechdown-h6;
   max-width: 100%;
   min-width: 0;
@@ -97,7 +99,6 @@
 }
 
 [data-mechdown] .mechdown-section > h2 {
-  counter-increment: mechdown-section;
   font-size: 34px;
   letter-spacing: 0.01em;
   margin: 0 0 14px -20px;
@@ -209,7 +210,7 @@
   background: var(--mechdown-code-surface);
   border: 1px solid var(--mechdown-border);
   border-radius: 4px;
-  color: var(--mechdown-purple);
+  color: var(--mechdown-inline-code);
   font: 0.92em/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   padding: 0.08em 0.32em;
 }

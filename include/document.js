@@ -43,6 +43,7 @@ const state = {
   tocUpdateFrame: null,
   tocEventCleanup: null,
   tocLinkHandlers: new Map(),
+  mermaidInitialized: false,
 };
 
 const ERROR_PANEL_SELECTOR =
@@ -89,10 +90,29 @@ function saveConsoleOpeningSize(axis, size) {
   });
 }
 
+function documentPageScrollOwner(requestedOwner = null) {
+  if (requestedOwner === "window") {
+    return window;
+  }
+  const contentShell = document.querySelector(".content-shell");
+  if (requestedOwner === "content-shell") {
+    return contentShell;
+  }
+  if (contentShell) {
+    const style = getComputedStyle(contentShell);
+    if (["auto", "scroll", "overlay"].includes(style.overflowY)) {
+      return contentShell;
+    }
+  }
+  return window;
+}
+
 function currentPagePosition() {
+  const owner = documentPageScrollOwner();
   return {
-    x: Math.max(0, Math.round(window.scrollX)),
-    y: Math.max(0, Math.round(window.scrollY)),
+    owner: owner === window ? "window" : "content-shell",
+    x: Math.max(0, Math.round(owner === window ? window.scrollX : owner.scrollLeft)),
+    y: Math.max(0, Math.round(owner === window ? window.scrollY : owner.scrollTop)),
   };
 }
 
@@ -186,15 +206,18 @@ function finishPagePositionRestore({ preserveSaved = true } = {}) {
   }
 }
 
-function scrollToImmediately(x, y) {
-  const scrollBehavior = document.documentElement.style.scrollBehavior;
-  document.documentElement.style.scrollBehavior = "auto";
-  window.scrollTo(x, y);
-  document.documentElement.style.scrollBehavior = scrollBehavior;
+function scrollToImmediately(owner, x, y) {
+  const styleOwner = owner === window ? document.documentElement : owner;
+  const scrollBehavior = styleOwner.style.scrollBehavior;
+  styleOwner.style.scrollBehavior = "auto";
+  owner.scrollTo(x, y);
+  styleOwner.style.scrollBehavior = scrollBehavior;
 }
 
 function restorePagePosition() {
   const saved = persistedDocumentLayout().page;
+  const ownerName = saved?.owner === "content-shell" ? "content-shell" :
+    saved?.owner === "window" ? "window" : null;
   const x = Number(saved?.x);
   const y = Number(saved?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
@@ -206,6 +229,7 @@ function restorePagePosition() {
   const restore = {
     x: requestedX,
     y: requestedY,
+    ownerName,
     deadline: performance.now() + 15_000,
     timer: null,
     observer: null,
@@ -213,6 +237,7 @@ function restorePagePosition() {
   };
   state.pagePositionRestore = restore;
   const cancel = () => finishPagePositionRestore({ preserveSaved: false });
+  const savedOwner = documentPageScrollOwner(ownerName);
   for (const [target, type] of [
     [window, "wheel"],
     [window, "touchstart"],
@@ -222,13 +247,31 @@ function restorePagePosition() {
     target.addEventListener(type, cancel, { passive: true });
     restore.cancellations.push([target, type, cancel]);
   }
+  if (savedOwner && savedOwner !== window) {
+    for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
+      savedOwner.addEventListener(type, cancel, { passive: true });
+      restore.cancellations.push([savedOwner, type, cancel]);
+    }
+  }
   const attempt = () => {
     if (state.pagePositionRestore !== restore) {
       return;
     }
-    scrollToImmediately(restore.x, restore.y);
-    const reached = Math.abs(window.scrollX - restore.x) <= 1 &&
-      Math.abs(window.scrollY - restore.y) <= 1;
+    const owner = documentPageScrollOwner(restore.ownerName);
+    if (!owner) {
+      if (performance.now() >= restore.deadline) {
+        finishPagePositionRestore({ preserveSaved: false });
+        return;
+      }
+      clearTimeout(restore.timer);
+      restore.timer = setTimeout(attempt, 120);
+      return;
+    }
+    scrollToImmediately(owner, restore.x, restore.y);
+    const currentX = owner === window ? window.scrollX : owner.scrollLeft;
+    const currentY = owner === window ? window.scrollY : owner.scrollTop;
+    const reached = Math.abs(currentX - restore.x) <= 1 &&
+      Math.abs(currentY - restore.y) <= 1;
     if (reached) {
       finishPagePositionRestore();
       return;
@@ -245,6 +288,10 @@ function restorePagePosition() {
     restore.observer.observe(document.documentElement);
     if (document.body) {
       restore.observer.observe(document.body);
+    }
+    const contentShell = document.querySelector(".content-shell");
+    if (contentShell) {
+      restore.observer.observe(contentShell);
     }
   }
   for (const image of document.images) {
@@ -263,6 +310,11 @@ function initializeDocumentLayoutPersistence() {
   }
   restoreConsoleOpeningSize();
   window.addEventListener("scroll", schedulePagePositionSave, { passive: true });
+  document.querySelector(".content-shell")?.addEventListener(
+    "scroll",
+    schedulePagePositionSave,
+    { passive: true },
+  );
   window.addEventListener("pagehide", flushPagePositionSave);
 }
 
@@ -3201,7 +3253,7 @@ function initializeToc() {
       }
     }
     select(active, {
-      activationLine: metrics.viewportTop + Math.min(metrics.height * 0.35, 280),
+      activationLine: sectionActivationLine,
       includeNested: metrics.top > 1,
       nearBottom,
       viewportBottom: metrics.viewportTop + metrics.height,
@@ -3259,12 +3311,24 @@ function initializeToc() {
 
 function initializeOptionalRenderers() {
   if (window.katex && typeof window.katex.render === "function") {
-    for (const element of document.querySelectorAll("[data-katex], .math-inline, .math-display")) {
+    const equationSelector = [
+      "[data-mech-equation]:not([data-mech-rendered])",
+      "[data-katex]:not([data-mech-rendered])",
+      ".mech-inline-equation:not([data-mech-rendered])",
+      ".mech-equation:not([data-mech-rendered])",
+      ".math-inline:not([data-mech-rendered])",
+      ".math-display:not([data-mech-rendered])",
+    ].join(", ");
+    for (const element of document.querySelectorAll(equationSelector)) {
       try {
-        window.katex.render(element.textContent, element, {
-          displayMode: element.classList.contains("math-display"),
+        const source = element.getAttribute("equation") ?? element.textContent;
+        window.katex.render(source, element, {
+          displayMode:
+            element.classList.contains("mech-equation") ||
+            element.classList.contains("math-display"),
           throwOnError: false,
         });
+        element.dataset.mechRendered = "katex";
       } catch (error) {
         appendError(error);
       }
@@ -3273,10 +3337,15 @@ function initializeOptionalRenderers() {
   if (
     window.mermaid &&
     typeof window.mermaid.run === "function" &&
-    document.querySelector(".mermaid")
+    document.querySelector(".mermaid:not([data-processed])")
   ) {
     try {
-      Promise.resolve(window.mermaid.run({ nodes: document.querySelectorAll(".mermaid") }))
+      if (!state.mermaidInitialized && typeof window.mermaid.initialize === "function") {
+        window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
+        state.mermaidInitialized = true;
+      }
+      const nodes = document.querySelectorAll(".mermaid:not([data-processed])");
+      Promise.resolve(window.mermaid.run({ nodes }))
         .catch(appendError);
     } catch (error) {
       appendError(error);

@@ -85,12 +85,15 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     let css = include("mechdown.css");
     for contract in [
         "counter-reset: mechdown-section",
+        ".mechdown-section {\n  counter-increment: mechdown-section",
         ".mechdown-section > h2::before",
         "content: \"section \" counter(mechdown-section, decimal)",
         ".mechdown-section > h3::before",
         "counter(mechdown-subsection, decimal)",
         ".mech-abstract {",
         "border: 1px solid var(--mechdown-accent)",
+        "--mechdown-inline-code: var(--var-name-color, hsl(290, 45%, 90%))",
+        "color: var(--mechdown-inline-code)",
     ] {
         assert!(
             css.contains(contract),
@@ -143,10 +146,15 @@ fn document_controller_initializes_repl_controls_before_starting_wasm() {
 #[test]
 fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     let controller = include("document.js");
+    assert!(controller.contains("function documentPageScrollOwner(requestedOwner = null)"));
+    assert!(controller.contains("owner: owner === window ? \"window\" : \"content-shell\""));
+    assert!(controller.contains("owner === window ? window.scrollY : owner.scrollTop"));
+    assert!(controller.contains("document.querySelector(\".content-shell\")?.addEventListener("));
     assert!(controller.contains("scrollContainer?.addEventListener(\"scroll\", schedule"));
     assert!(controller.contains("activeLink.classList.add(\"active\", \"active-path\")"));
     assert!(controller.contains("activeItem?.classList.add(\"expanded\")"));
     assert!(controller.contains("maximumScroll > 1 && metrics.top >= maximumScroll - 2"));
+    assert!(controller.contains("activationLine: sectionActivationLine"));
     assert!(controller.contains("className = \"mech-toc-toggle\""));
     assert!(controller.contains("layout.classList.toggle(\"is-toc-open\", open)"));
     assert!(controller.contains("new MutationObserver(updateConsoleErrorBadge)"));
@@ -161,6 +169,22 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     let repl = include("mech-repl.css");
     assert!(repl.contains(".mech-console-error-count"));
     assert!(repl.contains("border-radius: 999px"));
+}
+
+#[test]
+fn shipped_documents_load_and_activate_math_and_diagram_renderers() {
+    for shim in ["index.html", "blog.html", "docs.html"] {
+        let html = include(shim);
+        assert!(html.contains("katex@0.16.22/dist/katex.min.css"), "{shim}");
+        assert!(html.contains("katex@0.16.22/dist/katex.min.js"), "{shim}");
+        assert!(html.contains("mermaid/dist/mermaid.min.js"), "{shim}");
+    }
+
+    let controller = include("document.js");
+    assert!(controller.contains("[data-mech-equation]:not([data-mech-rendered])"));
+    assert!(controller.contains("element.getAttribute(\"equation\") ?? element.textContent"));
+    assert!(controller.contains(".mermaid:not([data-processed])"));
+    assert!(controller.contains("window.mermaid.run({ nodes })"));
 }
 
 #[test]
