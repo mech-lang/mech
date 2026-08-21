@@ -46,6 +46,28 @@ impl MechRuntime {
         None
     }
 
+    /// Return the resident output that represents the program's implicit
+    /// result. Formatted-document projections precede this result and
+    /// interactive symbol aliases follow it. Integrity constraints are a
+    /// separate inspection surface and never become the program display.
+    pub fn program_output_id(&self) -> Option<OutputId> {
+        #[cfg(feature = "resident-routing")]
+        if let Some((artifact, _)) = self.resident_artifact_and_instance() {
+            return artifact
+                .outputs()
+                .iter()
+                .rfind(|output| {
+                    output.interactive_binding.is_none()
+                        && !artifact
+                            .constraints()
+                            .iter()
+                            .any(|constraint| constraint.name == output.name)
+                })
+                .map(|output| output.output);
+        }
+        None
+    }
+
     pub fn program_output_values(
         &self,
         names: &[String],
@@ -82,6 +104,35 @@ impl MechRuntime {
                 });
         }
         Err(missing_resident_symbol("root_symbol_value", name))
+    }
+
+    /// Return the resident output identity that owns an interactive root
+    /// symbol. Names are lookup labels; the output ID is the binding identity
+    /// that reflective hosts use to correlate repeated representations.
+    pub fn root_symbol_output_id(&self, name: &str) -> Option<OutputId> {
+        #[cfg(feature = "resident-routing")]
+        if let Some((artifact, _)) = self.resident_artifact_and_instance() {
+            if artifact
+                .constraints()
+                .iter()
+                .any(|constraint| constraint.name == name)
+            {
+                return None;
+            }
+            return artifact
+                .outputs()
+                .iter()
+                .find(|output| {
+                    output
+                        .interactive_binding
+                        .as_ref()
+                        .is_some_and(|binding| binding.lexical_name == name)
+                })
+                .or_else(|| artifact.outputs().iter().find(|output| output.name == name))
+                .map(|output| output.output);
+        }
+        let _ = name;
+        None
     }
 
     pub fn root_symbol_values(

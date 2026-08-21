@@ -864,9 +864,11 @@ def assert_fullscreen_accessibility():
   const consolePanel = document.querySelector('[data-mech-console-panel="console"]');
   const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
   const errorsPanel = document.querySelector('[data-mech-console-panel="errors"]');
+  const panels = document.querySelector('.console-panels');
+  const tabs = [...document.querySelectorAll('[data-mech-console-tab]')];
   const column = document.querySelector('[data-mech-console-workspace-resizer="column"]');
   const row = document.querySelector('[data-mech-console-workspace-resizer="row"]');
-  if (!pane || !consolePanel || !outputPanel || !errorsPanel || !column || !row) return null;
+  if (!pane || !panels || !consolePanel || !outputPanel || !errorsPanel || !column || !row) return null;
   const beforeConsoleWidth = consolePanel.getBoundingClientRect().width;
   const beforeOutputHeight = outputPanel.getBoundingClientRect().height;
   const drag = (handle, dx, dy, pointerId) => {
@@ -889,6 +891,7 @@ def assert_fullscreen_accessibility():
   const consoleRect = consolePanel.getBoundingClientRect();
   const outputRect = outputPanel.getBoundingClientRect();
   const errorsRect = errorsPanel.getBoundingClientRect();
+  const panelsRect = panels.getBoundingClientRect();
   return {
     fillsViewport: paneRect.left <= 1 && paneRect.top <= 1 &&
       paneRect.right >= innerWidth - 1 && paneRect.bottom >= innerHeight - 1,
@@ -899,6 +902,9 @@ def assert_fullscreen_accessibility():
     allVisible: [consolePanel, outputPanel, errorsPanel].every(panel =>
       !panel.hidden && getComputedStyle(panel).display !== 'none' &&
       panel.getBoundingClientRect().width > 0 && panel.getBoundingClientRect().height > 0),
+    tabsHidden: tabs.length === 3 && tabs.every(tab => getComputedStyle(tab).display === 'none'),
+    panelsFillPane: Math.abs(panelsRect.top - paneRect.top) <= 1 &&
+      Math.abs(panelsRect.bottom - paneRect.bottom) <= 1,
     resizersAccessible: [column, row].every(handle =>
       getComputedStyle(handle).display !== 'none' && handle.getAttribute('role') === 'separator' &&
       handle.tabIndex === 0 && handle.hasAttribute('aria-valuemin') &&
@@ -1014,6 +1020,35 @@ def assert_toc_survives_console_pressure():
         fail(f"the table of contents disappeared under console width pressure: {toc!r}")
 
 
+def assert_empty_toc_is_removed_and_content_is_centered():
+    state = evaluate_json("""
+(() => {
+  const layout = document.querySelector('.article-layout, .docs-layout');
+  const toc = layout?.querySelector('.toc, [data-mech-toc]');
+  const main = layout?.querySelector('.main-content');
+  if (!layout || !toc || !main) return null;
+  const original = toc.innerHTML;
+  toc.innerHTML = '<div class="toc-title">Contents</div><ul></ul>';
+  window.dispatchEvent(new CustomEvent('mech:document-layout-refresh'));
+  const layoutRect = layout.getBoundingClientRect();
+  const mainRect = main.getBoundingClientRect();
+  const result = {
+    classified: layout.classList.contains('has-empty-toc'),
+    tocHidden: toc.hidden && getComputedStyle(toc).display === 'none',
+    contentCentered: Math.abs(
+      (mainRect.left + mainRect.right) / 2 - (layoutRect.left + layoutRect.right) / 2
+    ) <= 1,
+  };
+  toc.innerHTML = original;
+  toc.hidden = false;
+  window.dispatchEvent(new CustomEvent('mech:document-layout-refresh'));
+  return result;
+})()
+""")
+    if state is None or not all(state.values()):
+        fail(f"empty table of contents remained in the document layout: {state!r}")
+
+
 def submit(command):
     command_json = json.dumps(command)
     submitted = evaluate(f"""
@@ -1073,6 +1108,7 @@ def assert_console_contract():
   const panelRect = panel.getBoundingClientRect();
   const entryRect = entry.getBoundingClientRect();
   return {
+    entryCount: panel.querySelectorAll('.mech-document-output-entry').length,
     name: name.textContent.trim(),
     kind: kind.textContent.trim(),
     kindColor: getComputedStyle(kind).color,
@@ -1087,8 +1123,8 @@ def assert_console_contract():
 """)
     if (
         metadata is None or
-        not metadata["name"].startswith("output ") or
-        not metadata["name"].removeprefix("output ").isdigit() or
+        metadata["entryCount"] != 1 or
+        not metadata["name"] or
         metadata["kind"] != "f64" or
         metadata["kindColor"] != metadata["expectedKindColor"] or
         not metadata["contained"] or
@@ -1597,6 +1633,65 @@ def assert_console_contract():
             "closed-console selection did not open a clean, anchored, draggable value popup: "
             f"{popup_performance!r}"
         )
+    popup_identity = evaluate_json("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  const root = document.querySelector('.mech-root');
+  const pane = document.querySelector('#mech-console, .console-pane');
+  const outputs = [...document.querySelectorAll(
+    '.mech-inline-mech-code[id], .mech-block-output[id], ' +
+    '.mech-document-output-entry[data-mech-output-id]'
+  )];
+  if (!root || !pane || outputs.length < 2) return null;
+  const original = WasmDocument.prototype.replSelectOutput;
+  WasmDocument.prototype.replSelectOutput = function(outputId) {
+    return {
+      identity: `resident-output:${outputId}`,
+      response: { events: [] },
+      rendered: {
+        name: 'same-name', kind: 'f64', inlineHtml: String(outputId),
+        blockHtml: `<span>${outputId}</span>`,
+      },
+    };
+  };
+  const [first, second] = outputs;
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '`', bubbles: true, cancelable: true,
+  }));
+  first.click();
+  first.click();
+  second.click();
+  first.click();
+  const popups = [...document.querySelectorAll('[data-mech-repl-popup]')];
+  const identities = popups.map(popup => popup.dataset.mechReplPopupIdentity);
+  const titles = popups.map(popup =>
+    popup.querySelector('.mech-inline-popup__title')?.textContent,
+  );
+  const result = {
+    consoleClosed: root.dataset.mechConsoleOpen === 'false' && pane.hidden,
+    onePerIdentity: popups.length === 2 && new Set(identities).size === 2,
+    nameDidNotCollapseIdentity: titles.every(title => title === 'same-name'),
+  };
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Escape', bubbles: true, cancelable: true,
+  }));
+  result.escapeClosedOnlyTopmost =
+    document.querySelectorAll('[data-mech-repl-popup]').length === 1;
+  document.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '`', bubbles: true, cancelable: true,
+  }));
+  result.openingConsoleDismissedAll =
+    root.dataset.mechConsoleOpen === 'true' && !pane.hidden &&
+    !document.querySelector('[data-mech-repl-popup]');
+  WasmDocument.prototype.replSelectOutput = original;
+  return result;
+})()
+""")
+    if popup_identity is None or not all(popup_identity.values()):
+        fail(
+            "closed-console popups were not keyed one-per-runtime identity: "
+            f"{popup_identity!r}"
+        )
     evaluate("document.dispatchEvent(new KeyboardEvent('keydown', {key: '`', bubbles: true, cancelable: true}))")
     evaluate("""
 (async () => {
@@ -1988,8 +2083,8 @@ def assert_console_contract():
     wait_for(
         "/browser-output\\s*continued/.test(document.querySelector('[data-mech-output-region=repl]')?.textContent || '') && "
         "document.querySelectorAll('[data-mech-output-region=repl] [data-mech-display-id]').length === 1 && "
-        "document.querySelector('#output-tab')?.classList.contains('active')",
-        "framed program output targeted at one browser REPL stream surface",
+        "document.querySelector('[data-mech-output-region=document]')?.children.length === 0",
+        "explicit program output replacing the implicit final-statement projection",
     )
     display_id = evaluate_json(
         "document.querySelector('[data-mech-output-region=repl] [data-mech-display-id]')?.dataset.mechDisplayId || null"
@@ -2205,8 +2300,8 @@ def assert_console_contract():
     wait_for(
         "document.querySelector('#output-tab')?.classList.contains('active') && "
         "document.querySelector('#output-panel')?.classList.contains('is-active') && "
-        "document.querySelector('#mech-document-output')?.textContent.trim().length > 0",
-        "the rendered Output console tab",
+        "document.querySelector('#mech-document-output')?.textContent.trim().length === 0",
+        "the cleared Output console tab",
     )
     submit(":clc")
     wait_for(
@@ -3115,6 +3210,7 @@ try:
     assert_style_layer_contract()
     assert_desktop_console_controls()
     assert_toc_survives_console_pressure()
+    assert_empty_toc_is_removed_and_content_is_centered()
     assert_fullscreen_accessibility()
     assert_console_tab_isolation()
     assert_right_console_resize_direction()

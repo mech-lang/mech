@@ -621,9 +621,15 @@ mod document {
         presentation: Option<mech_runtime::ValueOutput>,
         block_html: Option<String>,
         name: &str,
+        identity: Option<&str>,
     ) -> Result<JsValue, JsValue> {
         let result = Object::new();
         Reflect::set(&result, &JsValue::from_str("response"), &response)?;
+        Reflect::set(
+            &result,
+            &JsValue::from_str("identity"),
+            &identity.map(JsValue::from_str).unwrap_or(JsValue::NULL),
+        )?;
         let rendered = match (presentation, block_html) {
             (Some(presentation), Some(block_html)) => {
                 let rendered = Object::new();
@@ -845,10 +851,30 @@ mod document {
                 return Ok(JsValue::NULL);
             };
             let runtime_name = runtime.output_name(output_id);
-            rendered_named_value(
+            let rendered = rendered_named_value(
                 snapshot,
                 display_name.as_deref().or(runtime_name.as_deref()),
-            )
+            )?;
+            set_rendered_output_identity(&rendered, output_id)?;
+            Ok(rendered)
+        }
+
+        /// Render the program's implicit display projection. This is the final
+        /// ordinary source result, independent of formatted code-fence output.
+        /// Explicit output events can replace this default in the host UI.
+        #[wasm_bindgen(js_name = renderedProgramOutput)]
+        pub fn rendered_program_output(&self) -> Result<JsValue, JsValue> {
+            let runtime = self.runtime()?;
+            let Some(output_id) = runtime.program_output_id() else {
+                return Ok(JsValue::NULL);
+            };
+            let Some(snapshot) = runtime.output_value(output_id).map_err(to_js_error)? else {
+                return Ok(JsValue::NULL);
+            };
+            let rendered =
+                rendered_named_value(snapshot, runtime.output_name(output_id).as_deref())?;
+            set_rendered_output_identity(&rendered, output_id)?;
+            Ok(rendered)
         }
 
         #[wasm_bindgen(js_name = renderedSymbol)]
@@ -1094,8 +1120,13 @@ mod document {
             render_popup: bool,
         ) -> Result<JsValue, JsValue> {
             if let Some(response) = self.repl.begin_selection()? {
-                return selected_value_response(response, None, None, name);
+                return selected_value_response(response, None, None, name, None);
             }
+            let identity = self
+                .repl
+                .session
+                .symbol_output_id(name)
+                .map(|output| format!("resident-output:{}", output.get()));
             let snapshot = self
                 .repl
                 .session
@@ -1105,7 +1136,13 @@ mod document {
             let block_html =
                 (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
             let (response, presentation) = self.repl.publish_selection(name, snapshot)?;
-            selected_value_response(response, presentation, block_html, name)
+            selected_value_response(
+                response,
+                presentation,
+                block_html,
+                name,
+                identity.as_deref(),
+            )
         }
 
         #[wasm_bindgen(js_name = replSelectOutput)]
@@ -1115,7 +1152,7 @@ mod document {
             render_popup: bool,
         ) -> Result<JsValue, JsValue> {
             if let Some(response) = self.repl.begin_selection()? {
-                return selected_value_response(response, None, None, "ans");
+                return selected_value_response(response, None, None, "ans", None);
             }
             let display_name = self.document_output_name(output_id);
             let Some(runtime_output_id) = self.runtime_output_id(output_id) else {
@@ -1132,7 +1169,14 @@ mod document {
             let block_html =
                 (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
             let (response, presentation) = self.repl.publish_selection(&source_echo, snapshot)?;
-            selected_value_response(response, presentation, block_html, &source_echo)
+            let identity = format!("resident-output:{}", runtime_output_id.get());
+            selected_value_response(
+                response,
+                presentation,
+                block_html,
+                &source_echo,
+                Some(&identity),
+            )
         }
 
         #[wasm_bindgen(js_name = replLoadDocumentation)]
@@ -1993,6 +2037,20 @@ fn rendered_named_value(
         &JsValue::from_str(name.unwrap_or("output")),
     )?;
     Ok(rendered)
+}
+
+fn set_rendered_output_identity(rendered: &JsValue, output_id: OutputId) -> Result<(), JsValue> {
+    Reflect::set(
+        rendered,
+        &JsValue::from_str("outputId"),
+        &JsValue::from_f64(f64::from(output_id.get())),
+    )?;
+    Reflect::set(
+        rendered,
+        &JsValue::from_str("identity"),
+        &JsValue::from_str(&format!("resident-output:{}", output_id.get())),
+    )?;
+    Ok(())
 }
 
 pub(super) fn rendered_symbol_names_from_js(
@@ -3611,6 +3669,12 @@ mod browser_tests {
             Some("42"),
         );
         assert!(document.rendered_output(u64::MAX).unwrap().is_null());
+        let selection = document.repl_select_symbol("answer", true).unwrap();
+        let identity = Reflect::get(&selection, &JsValue::from_str("identity"))
+            .unwrap()
+            .as_string()
+            .expect("resident selections must expose their binding identity");
+        assert!(identity.starts_with("resident-output:"), "{identity}");
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
@@ -3845,9 +3909,43 @@ mod browser_tests {
             .as_string()
             .expect("the FizzBuzz source output must render as HTML");
         assert!(block_html.contains("✨🐝"), "{block_html}");
+        let program_output = document.rendered_program_output().unwrap();
+        assert_eq!(
+            Reflect::get(&program_output, &JsValue::from_str("name"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("y"),
+            "integrity constraints must not replace the browser program output",
+        );
         document.start().unwrap();
         assert!(document.frame(1).is_ok());
         document.stop().unwrap();
+    }
+
+    #[wasm_bindgen_test]
+    fn factorial_document_exposes_its_unfenced_final_statement() {
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../examples/working/factorial.mec"))
+                .unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        let output = document.rendered_program_output().unwrap();
+
+        assert_eq!(
+            Reflect::get(&output, &JsValue::from_str("name"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("res"),
+        );
+        assert_eq!(
+            Reflect::get(&output, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("120"),
+        );
     }
 
     #[wasm_bindgen_test]

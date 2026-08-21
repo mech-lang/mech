@@ -51,11 +51,18 @@ fn initial_output_index(
         // Interactive compilation publishes formatted-document outputs, then
         // the program's root result, then named-symbol aliases. The aliases
         // carry `interactive_binding`; the root result is therefore the final
-        // ordinary output even when a rich document precedes the REPL entry.
-        InitialValueProjection::InteractiveRootResult => artifact
-            .outputs()
-            .iter()
-            .rposition(|output| output.interactive_binding.is_none()),
+        // ordinary, non-constraint output even when a rich document precedes
+        // the REPL entry. Integrity constraints have their own projection and
+        // must not replace the program's implicit display value.
+        InitialValueProjection::InteractiveRootResult => {
+            artifact.outputs().iter().rposition(|output| {
+                output.interactive_binding.is_none()
+                    && !artifact
+                        .constraints()
+                        .iter()
+                        .any(|constraint| constraint.name == output.name)
+            })
+        }
     }
 }
 

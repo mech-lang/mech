@@ -580,6 +580,9 @@ impl Formatter {
     }
 
     pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
+        if toc.sections.is_empty() {
+            return String::new();
+        }
         let mut h2_num = 0usize;
         let mut toc_items = String::new();
         for section in &toc.sections {
@@ -664,6 +667,9 @@ impl Formatter {
                 subtitle.to_string(),
                 nested
             ));
+        }
+        if toc_items.is_empty() {
+            return String::new();
         }
         format!(
             "<aside class=\"toc mech-toc\"><div class=\"toc-title\">Contents</div><ul>{}</ul></aside>",

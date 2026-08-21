@@ -25,7 +25,11 @@ const state = {
   cooperativeOperationSequence: 0,
   documentationFragmentSequence: 0,
   programDisplays: new Map(),
-  inlineInspector: null,
+  directedProgramOutput: false,
+  inlineInspectors: new Map(),
+  inlineInspectorSequence: 0,
+  reflectiveElementIdentities: new WeakMap(),
+  reflectiveElementIdentitySequence: 0,
   replHostOffsetObserver: null,
   replPageStyleProbe: null,
   replStyleObserver: null,
@@ -239,7 +243,7 @@ function invalidateCooperativeOwnership() {
 }
 
 function stopRuntime() {
-  dismissInlineInspector({ restoreFocus: false });
+  dismissInlineInspectors({ restoreFocus: false });
   state.running = false;
   cancelFrame();
   invalidateCooperativeOwnership();
@@ -602,6 +606,9 @@ function refreshOutputPanel(entries) {
     return;
   }
   panel.replaceChildren();
+  if (state.directedProgramOutput) {
+    return;
+  }
   for (const entry of entries) {
     panel.append(createOutputEntry(entry.address, entry.rendered));
   }
@@ -824,6 +831,10 @@ function outputContentElement(content) {
 }
 
 function appendProgramOutput(output) {
+  if (output.stream !== "stderr" && output.source) {
+    state.directedProgramOutput = true;
+    outputRegion("document")?.replaceChildren();
+  }
   if (output.operation === "clear" && !output.display_id) {
     for (const entry of state.programDisplays.values()) {
       entry.element.remove();
@@ -927,15 +938,37 @@ function consoleIsOpen() {
   return state.root?.dataset.mechConsoleOpen !== "false";
 }
 
-function dismissInlineInspector(options = {}) {
-  state.inlineInspector?.dismiss(options);
+function dismissInlineInspectors(options = {}) {
+  const inspectors = [...state.inlineInspectors.values()]
+    .sort((left, right) => left.order - right.order);
+  for (const [index, inspector] of inspectors.entries()) {
+    inspector.dismiss({
+      ...options,
+      restoreFocus: Boolean(options.restoreFocus) && index === inspectors.length - 1,
+    });
+  }
 }
 
-function showInlineInspector(title, rendered, anchor, error = null) {
-  dismissInlineInspector({ restoreFocus: false });
+function reflectiveElementIdentity(element, prefix) {
+  let identity = state.reflectiveElementIdentities.get(element);
+  if (!identity) {
+    state.reflectiveElementIdentitySequence += 1;
+    identity = `${prefix}-element:${state.reflectiveElementIdentitySequence}`;
+    state.reflectiveElementIdentities.set(element, identity);
+  }
+  return identity;
+}
+
+function showInlineInspector(identity, title, rendered, anchor, error = null) {
+  const existing = state.inlineInspectors.get(identity);
+  if (existing) {
+    existing.update(title, rendered, anchor, error);
+    return;
+  }
   const popup = document.createElement("aside");
   popup.className = "mech-inline-popup";
   popup.dataset.mechReplPopup = "true";
+  popup.dataset.mechReplPopupIdentity = identity;
   popup.setAttribute("role", "dialog");
   popup.setAttribute("aria-label", `${title || "ans"} value inspector`);
   const header = document.createElement("header");
@@ -967,6 +1000,8 @@ function showInlineInspector(title, rendered, anchor, error = null) {
   popup.append(header, content);
   document.body.append(popup);
 
+  let currentAnchor = anchor;
+  let inspector = null;
   let dragging = false;
   let dragOffsetX = 0;
   let dragOffsetY = 0;
@@ -1032,7 +1067,15 @@ function showInlineInspector(title, rendered, anchor, error = null) {
     window.removeEventListener("pointercancel", stopDragging);
   };
   const closeOnEscape = event => {
-    if (event.key === "Escape") {
+    const topmost = [...state.inlineInspectors.values()]
+      .sort((left, right) => left.order - right.order)
+      .at(-1);
+    if (event.key === "Escape" && topmost === inspector) {
+      // Every inspector owns a document-level listener. Consume this Escape
+      // before dismissing so the next inspector cannot become topmost and
+      // handle the same key event later in the listener queue.
+      event.preventDefault();
+      event.stopImmediatePropagation();
       dismiss();
     }
   };
@@ -1044,15 +1087,40 @@ function showInlineInspector(title, rendered, anchor, error = null) {
     window.visualViewport?.removeEventListener("resize", reclamp);
     window.visualViewport?.removeEventListener("scroll", reclamp);
     popup.remove();
-    if (state.inlineInspector?.dismiss === dismiss) {
-      state.inlineInspector = null;
+    if (state.inlineInspectors.get(identity) === inspector) {
+      state.inlineInspectors.delete(identity);
     }
-    if (restoreFocus && anchor?.isConnected) {
-      anchor.focus({ preventScroll: true });
+    if (restoreFocus && currentAnchor?.isConnected) {
+      currentAnchor.focus({ preventScroll: true });
     }
   };
-  state.inlineInspector = { popup, anchor, dismiss, reclamp };
+  const raise = () => {
+    state.inlineInspectorSequence += 1;
+    inspector.order = state.inlineInspectorSequence;
+    popup.style.zIndex = String(12000 + inspector.order);
+  };
+  const update = (nextTitle, nextRendered, nextAnchor, nextError = null) => {
+    currentAnchor = nextAnchor;
+    heading.textContent = nextTitle || "ans";
+    popup.setAttribute("aria-label", `${nextTitle || "ans"} value inspector`);
+    kind.textContent = nextError === null ? nextRendered?.kind || "" : "Error";
+    popup.classList.toggle("mech-inline-popup--error", nextError !== null);
+    if (nextError === null) {
+      value.dataset.mechSource = "";
+      value.innerHTML = nextRendered?.blockHtml || nextRendered?.inlineHtml || "";
+    } else {
+      delete value.dataset.mechSource;
+      value.textContent = errorMessage(nextError);
+    }
+    raise();
+    reclamp();
+    close.focus({ preventScroll: true });
+  };
+  inspector = { popup, dismiss, reclamp, raise, update, order: 0 };
+  state.inlineInspectors.set(identity, inspector);
+  raise();
   close.addEventListener("click", dismiss);
+  popup.addEventListener("pointerdown", raise);
   document.addEventListener("keydown", closeOnEscape);
   window.addEventListener("resize", reclamp);
   window.addEventListener("orientationchange", reclamp);
@@ -1088,22 +1156,27 @@ function replResponseHasDiagnostics(response) {
   );
 }
 
-function consumeSelection(selection, title, anchor, open) {
+function consumeSelection(selection, title, anchor, open, fallbackIdentity) {
   if (open) {
     consumeReplResponse(selection?.response);
     activateConsolePanel("console");
     state.console?.input?.focus();
   } else if (selection?.rendered) {
-    showInlineInspector(title, selection.rendered, anchor);
+    showInlineInspector(
+      selection.identity || fallbackIdentity,
+      title,
+      selection.rendered,
+      anchor,
+    );
   } else if (replResponseHasDiagnostics(selection?.response)) {
     consumeReplResponse(selection.response);
   }
 }
 
-function handleSelectionFailure(error, title, anchor, open) {
+function handleSelectionFailure(error, title, anchor, open, identity) {
   appendConsoleError(error);
   if (!open) {
-    showInlineInspector(title, null, anchor, error);
+    showInlineInspector(identity, title, null, anchor, error);
   }
 }
 
@@ -1120,6 +1193,7 @@ function bindSymbolClick(element, name) {
   element.classList.add("mech-clickable");
   element.tabIndex = 0;
   element.setAttribute("role", "button");
+  const fallbackIdentity = reflectiveElementIdentity(element, "symbol");
   const select = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -1128,9 +1202,15 @@ function bindSymbolClick(element, name) {
     }
     try {
       const open = consoleIsOpen();
-      consumeSelection(state.repl.selectSymbol(name, !open), name, element, open);
+      consumeSelection(
+        state.repl.selectSymbol(name, !open),
+        name,
+        element,
+        open,
+        fallbackIdentity,
+      );
     } catch (error) {
-      handleSelectionFailure(error, name, element, consoleIsOpen());
+      handleSelectionFailure(error, name, element, consoleIsOpen(), fallbackIdentity);
     }
   };
   element.addEventListener("click", select);
@@ -1149,6 +1229,7 @@ function bindOutputClick(element, address) {
   element.classList.add("mech-clickable");
   element.tabIndex = 0;
   element.setAttribute("role", "button");
+  const fallbackIdentity = reflectiveElementIdentity(element, "output");
   const select = (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -1163,9 +1244,10 @@ function bindOutputClick(element, address) {
         selection?.rendered?.name || "ans",
         element,
         open,
+        fallbackIdentity,
       );
     } catch (error) {
-      handleSelectionFailure(error, "ans", element, consoleIsOpen());
+      handleSelectionFailure(error, "ans", element, consoleIsOpen(), fallbackIdentity);
     }
   };
   element.addEventListener("click", select);
@@ -1224,7 +1306,6 @@ function renderValues() {
   if (!state.document) {
     return;
   }
-  const outputEntries = [];
   for (const output of state.root?.querySelectorAll(".mech-block-output[id]") || []) {
     try {
       const address = outputAddress(output);
@@ -1233,7 +1314,6 @@ function renderValues() {
         output.dataset.mechSource = "";
         output.innerHTML = rendered.blockHtml;
         bindOutputClick(output, address);
-        outputEntries.push({ address, rendered });
       }
     } catch (error) {
       appendError(error);
@@ -1261,7 +1341,10 @@ function renderValues() {
       appendError(error);
     }
   }
-  refreshOutputPanel(outputEntries);
+  const programOutput = state.document.renderedProgramOutput?.() || null;
+  refreshOutputPanel(programOutput
+    ? [{ address: { outputId: BigInt(programOutput.outputId) }, rendered: programOutput }]
+    : []);
   bindReflectiveValues();
   dispatch("mech:document-rendered");
 }
@@ -1962,7 +2045,7 @@ function normalizeReplComponentContract() {
 
 function setConsoleOpen(open) {
   if (open) {
-    dismissInlineInspector({ restoreFocus: false });
+    dismissInlineInspectors({ restoreFocus: false });
   }
   const pane = documentConsolePane();
   if (pane) {
@@ -2397,6 +2480,14 @@ function initializeBreadcrumb() {
 }
 
 function initializeToc() {
+  for (const layout of document.querySelectorAll(".article-layout, .docs-layout")) {
+    const toc = layout.querySelector(".mech-toc, [data-mech-toc], .toc");
+    const empty = !toc || !toc.querySelector("a[href^='#']");
+    layout.classList.toggle("has-empty-toc", empty);
+    if (toc) {
+      toc.hidden = empty;
+    }
+  }
   const links = [...document.querySelectorAll(".mech-toc a[href^='#'], [data-mech-toc] a[href^='#']")];
   if (!links.length) {
     return;
@@ -2532,6 +2623,7 @@ function initializeLayout() {
   initializeWorkspaceResizers();
   initializeFullscreen();
   initializeBreadcrumb();
+  window.addEventListener("mech:document-layout-refresh", initializeToc);
   initializeToc();
   initializeOptionalRenderers();
   window.addEventListener("load", initializeOptionalRenderers, { once: true });

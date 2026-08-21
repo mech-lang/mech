@@ -377,6 +377,15 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         runtime.root_symbol_value(name).map(Some)
     }
 
+    pub fn symbol_output_id(&self, name: &str) -> Option<mech_core::OutputId> {
+        if name == "ans" && self.pending_selection.is_some() {
+            return None;
+        }
+        self.runtime
+            .as_ref()
+            .and_then(|runtime| runtime.root_symbol_output_id(name))
+    }
+
     pub fn symbols(&self, names: &[String]) -> MResult<Vec<(String, RuntimeValueSnapshot)>> {
         if self.runtime.is_none() {
             return Ok(Vec::new());

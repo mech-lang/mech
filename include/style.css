@@ -471,13 +471,14 @@ a { color: inherit; text-decoration: none; }
   align-items: start;
 }
 
-.article-layout.hide-toc { display: block; }
+.article-layout:is(.hide-toc, .no-sections, .has-empty-toc) { display: block; }
 
-.article-layout.hide-toc .toc { display: none; }
+.article-layout:is(.hide-toc, .no-sections, .has-empty-toc) .toc { display: none; }
 
-.article-layout.no-sections { display: block; }
-
-.article-layout.no-sections .toc { display: none; }
+.article-layout:is(.hide-toc, .no-sections, .has-empty-toc) .main-content {
+  margin-inline: auto;
+  max-width: min(100%, calc(var(--content-max-width) - var(--toc-width) - 48px));
+}
 
 .content-shell.hidden { display: none; }
 

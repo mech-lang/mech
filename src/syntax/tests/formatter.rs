@@ -252,6 +252,22 @@ fn html_shim_static_slots_render_once() {
 }
 
 #[test]
+fn html_shim_omits_an_empty_table_of_contents() {
+    let tree = html_fixture(&[]);
+    let html = Formatter::new().format_html(
+        &tree,
+        String::new(),
+        "<div class=\"article-layout\">{{TOC}}<article>{{CONTENTS}}</article></div>".to_string(),
+    );
+
+    assert!(!html.contains("class=\"toc mech-toc\""), "{html}");
+    assert!(
+        html.contains("<div class=\"article-layout\"><article>"),
+        "{html}"
+    );
+}
+
+#[test]
 fn html_style_layers_are_independent_with_legacy_shim_fallback() {
     let tree = html_fixture(&[("Fixture section", "Fixture content")]);
     let styles = HtmlStyleSheets {

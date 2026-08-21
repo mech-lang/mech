@@ -733,9 +733,23 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
     let interactive_loaded = interactive_runtime
         .load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
         .unwrap();
+    let program_output_id = interactive_runtime
+        .program_output_id()
+        .expect("FizzBuzz must retain its final non-constraint result");
+    assert_eq!(
+        interactive_runtime
+            .output_name(program_output_id)
+            .as_deref(),
+        Some("y"),
+        "the trailing integrity constraint must not replace the program output"
+    );
     assert!(
-        matches!(interactive_loaded.initial_value.to_value(), LegacyValue::Bool(value) if *value.borrow()),
-        "interactive loading must select the root result after formatted-document outputs"
+        interactive_loaded
+            .initial_value
+            .to_value()
+            .format_canonical_inline()
+            .contains("✨🐝"),
+        "interactive loading must select the final ordinary result after formatted-document outputs"
     );
     let mut bytecode_runtime = runtime();
     let bytecode_loaded = bytecode_runtime
@@ -820,6 +834,30 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
     assert!(
         matches!(inline, LegacyValue::F64(ref value) if *value.borrow() == 42.0),
         "the first published output must retain the evaluated inline value: {inline:?}"
+    );
+}
+
+#[test]
+fn interactive_program_output_is_the_final_statement_without_a_fenced_output() {
+    let source = include_str!("../../../../../examples/working/factorial.mec");
+    let mut runtime = runtime();
+    let loaded = runtime
+        .load_interactive_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let output_id = runtime
+        .program_output_id()
+        .expect("factorial must publish its final statement");
+
+    assert_eq!(runtime.output_name(output_id).as_deref(), Some("res"));
+    assert_eq!(loaded.initial_value.to_value().to_string(), "120");
+    assert_eq!(
+        runtime
+            .output_value(output_id)
+            .unwrap()
+            .unwrap()
+            .to_value()
+            .to_string(),
+        "120"
     );
 }
 
@@ -1645,6 +1683,14 @@ fn interactive_root_loader_retains_document_symbols_and_reports_the_root_result(
             ("source".to_string(), "41".to_string()),
         ],
     );
+    let answer_id = runtime
+        .root_symbol_output_id("answer")
+        .expect("answer must retain its resident binding identity");
+    let source_id = runtime
+        .root_symbol_output_id("source")
+        .expect("source must retain its resident binding identity");
+    assert_ne!(answer_id, source_id);
+    assert_eq!(runtime.output_name(answer_id).as_deref(), Some("answer"));
 }
 
 #[test]
