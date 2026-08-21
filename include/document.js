@@ -26,6 +26,7 @@ const state = {
   programDisplays: new Map(),
   inlineInspector: null,
   replHostOffsetObserver: null,
+  replStyleObserver: null,
 };
 
 function truthySetting(value) {
@@ -1684,11 +1685,11 @@ function normalizeReplComponentContract() {
   if (mount) {
     mount.dataset.mechRepl = "";
   }
-  const output = state.root.querySelector("#mech-document-output");
+  const output = outputPanel();
   if (output) {
     output.dataset.mechOutputPanel = "";
   }
-  const errors = state.root.querySelector("#mech-document-errors");
+  const errors = errorPanel();
   if (errors) {
     errors.dataset.mechErrorsPanel = "";
   }
@@ -2027,11 +2028,28 @@ function initializeLayout() {
   });
   syncReplHostOffset();
   window.addEventListener("resize", syncReplHostOffset);
+  window.addEventListener("scroll", syncReplHostOffset, { passive: true });
+  window.visualViewport?.addEventListener("scroll", syncReplHostOffset, {
+    passive: true,
+  });
+  window.addEventListener("mech:styles-changed", syncReplHostOffset);
   const header = document.querySelector(".site-header, #header");
   if (header && typeof ResizeObserver === "function") {
     state.replHostOffsetObserver?.disconnect();
     state.replHostOffsetObserver = new ResizeObserver(syncReplHostOffset);
     state.replHostOffsetObserver.observe(header);
+  }
+  const styleRoot = document.head || document.documentElement;
+  if (styleRoot && typeof MutationObserver === "function") {
+    state.replStyleObserver?.disconnect();
+    state.replStyleObserver = new MutationObserver(syncReplHostOffset);
+    state.replStyleObserver.observe(styleRoot, {
+      attributes: true,
+      attributeFilter: ["disabled", "href", "media", "rel"],
+      characterData: true,
+      childList: true,
+      subtree: true,
+    });
   }
   initializeConsoleState();
   initializeConsoleTabs();

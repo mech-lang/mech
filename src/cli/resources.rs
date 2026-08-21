@@ -472,7 +472,7 @@ mod tests {
             "unused",
         ))
         .unwrap();
-        assert_eq!(loaded.css, format!("{}\nbody{{}}", STYLESHEET));
+        assert_eq!(loaded.css, compose_stylesheets(STYLESHEET, "body{}"));
         assert!(loaded.css.ends_with("body{}"));
         assert_eq!(loaded.local_paths, vec![css.canonicalize().unwrap()]);
         std::fs::remove_dir_all(root).unwrap();

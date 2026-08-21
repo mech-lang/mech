@@ -424,7 +424,7 @@ def evaluate(expression):
 
 
 def evaluate_json(expression):
-    value = evaluate(f"JSON.stringify(({expression}))")
+    value = evaluate(f"(async () => JSON.stringify(await ({expression})))()")
     if not isinstance(value, str):
         fail(f"browser expression did not produce JSON: {expression}")
     return json.loads(value)
@@ -621,7 +621,7 @@ def assert_desktop_contract():
 
 def assert_style_layer_contract():
     layers = evaluate_json("""
-(() => {
+(async () => {
   const styles = Object.fromEntries(
     [...document.querySelectorAll('style[data-mech-style-layer]')]
       .map(style => [style.dataset.mechStyleLayer, style])
@@ -652,13 +652,13 @@ def assert_style_layer_contract():
   const initialInlineScrollBehavior = document.documentElement.style.scrollBehavior;
 
   styles.page.disabled = true;
-  window.dispatchEvent(new Event('resize'));
   document.documentElement.style.scrollBehavior = 'auto';
   const headerHeight = header.getBoundingClientRect().height;
   window.scrollTo(0, Math.min(
     headerHeight + 64,
     Math.max(0, document.documentElement.scrollHeight - innerHeight),
   ));
+  await new Promise(resolve => requestAnimationFrame(resolve));
   const consoleRect = consolePane.getBoundingClientRect();
   const pageOff = {
     headerPosition: getComputedStyle(header).position,
@@ -676,8 +676,8 @@ def assert_style_layer_contract():
     promptColor: getComputedStyle(prompt).color,
   };
   styles.page.disabled = false;
-  window.dispatchEvent(new Event('resize'));
   window.scrollTo(0, initialScrollY);
+  await new Promise(resolve => requestAnimationFrame(resolve));
   document.documentElement.style.scrollBehavior = initialInlineScrollBehavior;
 
   styles.mechdown.disabled = true;

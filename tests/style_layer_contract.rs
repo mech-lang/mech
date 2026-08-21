@@ -63,6 +63,7 @@ fn page_variants_do_not_own_source_or_repl_components() {
             ".resize-handle",
             ".edge-handle",
             ".document-console-toggle",
+            ".mech-backmatter-heading",
             "[data-mechdown]",
             "--mech-repl-",
             "--console-width",
@@ -80,6 +81,8 @@ fn mechdown_and_repl_layers_are_standalone_components() {
     let mechdown = include("mechdown.css");
     assert!(mechdown.contains("[data-mechdown] h1"));
     assert!(mechdown.contains("[data-mechdown] .mechdown-table"));
+    assert!(mechdown.contains("[data-mechdown] .mech-backmatter-heading"));
+    assert!(mechdown.contains("[data-mechdown] .mech-backmatter-heading::before"));
     assert!(!mechdown.contains("\nbody {"));
     assert!(!mechdown.contains(".console-pane"));
 
