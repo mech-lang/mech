@@ -776,7 +776,6 @@ function showInlinePopup(title, rendered) {
 
 function consumeSelection(response, title, rendered) {
   consumeReplResponse(response);
-  renderValues();
   if (consoleIsOpen()) {
     activateConsolePanel("console");
     state.console?.input?.focus();
@@ -798,7 +797,7 @@ function bindSymbolClick(element, name) {
     event.preventDefault();
     event.stopPropagation();
     try {
-      const rendered = state.document.renderedSymbol(name);
+      const rendered = consoleIsOpen() ? null : state.document.renderedSymbol(name);
       consumeSelection(state.repl.selectSymbol(name), name, rendered);
     } catch (error) {
       appendConsoleError(error);
@@ -824,13 +823,12 @@ function bindOutputClick(element, address) {
     event.preventDefault();
     event.stopPropagation();
     try {
-      const rendered = state.document.renderedOutput(address.outputId);
-      if (!rendered) {
-        throw new Error("document output is not resident");
-      }
+      const rendered = consoleIsOpen()
+        ? null
+        : state.document.renderedOutput(address.outputId);
       consumeSelection(
         state.repl.selectOutput(address.outputId),
-        rendered.name || "ans",
+        rendered?.name || "ans",
         rendered,
       );
     } catch (error) {
@@ -1117,19 +1115,13 @@ async function fulfillReplHostRequest(request) {
 
 async function consumeCooperativeResponse(response) {
   consumeReplResponse(response);
-  if (response?.hostRequest) {
-    await fulfillReplHostRequest(response.hostRequest);
-  }
   state.replTerminated = Boolean(response?.terminated);
-  if (state.replTerminated && state.console?.input) {
-    state.console.input.disabled = true;
-    setConsoleStatus("terminated");
-  }
-  state.replBusy = Boolean(response?.pending);
-  if (state.console?.input) {
-    state.console.input.disabled = state.replBusy || state.replTerminated;
-  }
+  state.replBusy = Boolean(response?.pending || response?.hostRequest);
+  syncConsoleInputState();
   try {
+    if (response?.hostRequest) {
+      await fulfillReplHostRequest(response.hostRequest);
+    }
     while (response?.pending) {
       await nextBrowserTurn();
       response = state.repl.continueStep(128);
@@ -1138,10 +1130,14 @@ async function consumeCooperativeResponse(response) {
     }
   } finally {
     state.replBusy = false;
-    if (state.console?.input && !state.replTerminated) {
-      state.console.input.disabled = false;
+    syncConsoleInputState();
+    if (state.replTerminated) {
+      stopRuntime();
+      setDocumentStatus("stopped");
+      dispatch("mech:document-stopped");
+    } else {
+      renderValues();
     }
-    renderValues();
   }
 }
 
@@ -1154,6 +1150,9 @@ function runConsoleCommand(source) {
 }
 
 function submitConsoleInput(value, row, input) {
+  if (state.replBusy || state.replTerminated) {
+    return;
+  }
   const source = value.trim();
   if (!source) {
     return;
@@ -1252,8 +1251,22 @@ function appendActivePrompt() {
   target.append(inputRow);
   state.console.inputRow = inputRow;
   state.console.input = input;
+  syncConsoleInputState();
   target.scrollTop = target.scrollHeight;
   input.focus();
+}
+
+function syncConsoleInputState() {
+  const input = state.console?.input;
+  if (!input) {
+    return;
+  }
+  input.disabled = state.replTerminated;
+  input.readOnly = state.replBusy && !state.replTerminated;
+  input.setAttribute("aria-busy", String(state.replBusy));
+  setConsoleStatus(
+    state.replTerminated ? "terminated" : state.replBusy ? "busy" : "ready",
+  );
 }
 
 function attachConsole() {
@@ -1413,13 +1426,17 @@ function initializeConsoleToggle() {
 
 function initializeConsoleKeyboardToggle() {
   document.addEventListener("keydown", event => {
+    const target = event.target;
     if (
       event.isComposing ||
       event.key !== "`" ||
       event.ctrlKey ||
       event.altKey ||
       event.shiftKey ||
-      event.metaKey
+      event.metaKey ||
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target?.isContentEditable
     ) {
       return;
     }

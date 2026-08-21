@@ -792,6 +792,44 @@ def assert_console_contract():
         "document.querySelector('.mech-repl-transcript')?.lastElementChild?.classList.contains('mech-repl-active-prompt')",
         "the document-backed resident console and descending active prompt",
     )
+    if label == "configured":
+        evaluate("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  if (!root || document.getElementById('mech-smoke-clock')) return false;
+  const marker = document.createElement('span');
+  marker.id = 'mech-smoke-clock';
+  const value = document.createElement('span');
+  value.className = 'mech-var-placeholder';
+  value.dataset.mechVarName = 'clock-second';
+  marker.append(value);
+  root.append(marker);
+  return true;
+})()
+""")
+        submit("clock-second := @clock/second;")
+        wait_for(
+            "Boolean(document.querySelector('#mech-smoke-clock .mech-var-placeholder')?.textContent.trim())",
+            "the configured clock variable after REPL replacement",
+        )
+        clock_before = evaluate_json(
+            "document.querySelector('#mech-smoke-clock .mech-var-placeholder').textContent.trim()"
+        )
+        if clock_before is None:
+            fail("the configured clock variable was not rendered before REPL replacement")
+        wait_for(
+            "document.querySelector('#mech-smoke-clock .mech-var-placeholder')?.textContent.trim() !== "
+            + json.dumps(clock_before),
+            "the live time input driver restarting after document REPL replacement",
+            timeout=5,
+        )
+        evaluate("document.querySelector('#mech-smoke-clock')?.remove()")
+        submit(":clear")
+        wait_for(
+            "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === ':clear') && "
+            "document.querySelector('.repl-input')?.readOnly === false",
+            "the configured driver probe returning to the baseline document",
+        )
     result_count = evaluate_json(
         "document.querySelectorAll('.mech-repl-result').length"
     )
@@ -845,7 +883,52 @@ def assert_console_contract():
         "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === ':whos answer')",
         "the running document answer row from :whos",
     )
+    evaluate("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  if (!root || document.getElementById('mech-smoke-large-var')) return false;
+  const marker = document.createElement('span');
+  marker.id = 'mech-smoke-large-var';
+  const value = document.createElement('span');
+  value.className = 'mech-var-placeholder';
+  value.dataset.mechVarName = 'qq';
+  marker.append(value);
+  root.append(marker);
+  return true;
+})()
+""")
     submit("qq := 1..1000;")
+    wait_for(
+        "Boolean(document.querySelector('#mech-smoke-large-var .mech-var-placeholder')?.textContent.trim())",
+        "the large resident variable placeholder",
+    )
+    click_performance = evaluate_json("""
+(() => {
+  const value = document.querySelector('#mech-smoke-large-var .mech-var-placeholder');
+  if (!value) return null;
+  const rendersBefore = Number(window.__MECH_DOCUMENT_RENDERS__ || 0);
+  const started = performance.now();
+  value.click();
+  return {
+    elapsedMs: performance.now() - started,
+    rerenderedDocument:
+      Number(window.__MECH_DOCUMENT_RENDERS__ || 0) !== rendersBefore,
+    printed:
+      [...document.querySelectorAll('.mech-repl-result')]
+        .some(row => /999/.test(row.textContent)),
+  };
+})()
+""")
+    if (
+        click_performance is None or
+        click_performance["elapsedMs"] >= 200 or
+        click_performance["rerenderedDocument"] or
+        not click_performance["printed"]
+    ):
+        fail(
+            "clicking a large resident value recompiled, rerendered, or exceeded the 200ms UI budget: "
+            f"{click_performance!r}"
+        )
     submit(":whos qq")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-symbols tbody tr')].some((row) => "
@@ -881,6 +964,7 @@ def assert_console_contract():
         not whos_layout["contained"]
     ):
         fail(f":whos was not inline, elided, borderless, and contained: {whos_layout!r}")
+    evaluate("document.querySelector('#mech-smoke-large-var')?.remove()")
     evaluate("document.querySelector('#mech-smoke-var .mech-var-placeholder')?.click()")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === 'answer') && "
@@ -903,6 +987,41 @@ def assert_console_contract():
         "[...document.querySelectorAll('.mech-repl-info')].some((row) => "
         "/Advanced 256 resident step/.test(row.textContent))",
         "cooperative browser stepping completing across bounded animation-frame chunks",
+    )
+    submit(":step 1000000")
+    wait_for(
+        "document.querySelector('.repl-input')?.readOnly === true && "
+        "document.querySelector('.repl-input')?.disabled === false && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy'",
+        "the busy browser input remaining focusable for interruption",
+    )
+    evaluate("""
+(() => {
+  const input = document.querySelector('.repl-input');
+  input?.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'c', ctrlKey: true, bubbles: true, cancelable: true,
+  }));
+})()
+""")
+    wait_for(
+        "document.querySelector('.repl-input')?.readOnly === false && "
+        "document.querySelector('.repl-input')?.disabled === false && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
+        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /request interrupted/.test(row.textContent))",
+        "Ctrl+C interrupting a cooperative browser step",
+    )
+    submit(":docs browser-smoke/latency")
+    wait_for(
+        "document.querySelector('.repl-input')?.readOnly === true && "
+        "document.querySelector('.repl-input')?.disabled === false && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy'",
+        "documentation fetch marking the REPL busy without disabling Ctrl+C",
+    )
+    wait_for(
+        "Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/latency\"]')) && "
+        "document.querySelector('.repl-input')?.readOnly === false && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready'",
+        "browser documentation loading into the output panel",
     )
     submit(":help")
     wait_for(
@@ -937,7 +1056,7 @@ def assert_console_contract():
     submit('@out := console://repl/output{:write(line)}\n@out/line <- "browser-output"\n@out/line <- "continued"')
     wait_for(
         "/browser-output\\s*continued/.test(document.querySelector('[data-mech-output-region=repl]')?.textContent || '') && "
-        "document.querySelectorAll('[data-mech-output-region=repl] .mech-repl-output-entry').length === 1 && "
+        "document.querySelectorAll('[data-mech-output-region=repl] [data-mech-display-id]').length === 1 && "
         "document.querySelector('#output-tab')?.classList.contains('active')",
         "framed program output targeted at one browser REPL stream surface",
     )
@@ -1067,7 +1186,7 @@ def assert_console_contract():
 """)
     submit(":clear output")
     wait_for(
-        "(document.querySelector('[data-mech-output-region=repl]')?.children.length || 0) === 0 && "
+        "!document.querySelector('[data-mech-output-region=repl] [data-mech-display-id]') && "
         "(document.querySelector('[data-mech-error-region=program]')?.children.length || 0) === 0",
         "global program stdout and stderr lifecycle clearing",
     )
@@ -1084,6 +1203,26 @@ def assert_console_contract():
         "document.querySelector('.mech-repl-transcript')?.lastElementChild?.classList.contains('mech-repl-active-prompt')",
         "the cleared browser console retaining its active bottom prompt",
     )
+    typed_backtick = evaluate_json("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  const input = document.querySelector('.repl-input');
+  if (!root || !input) return null;
+  const before = root.dataset.mechConsoleOpen;
+  input.focus();
+  input.value = '`';
+  input.dispatchEvent(new KeyboardEvent('keydown', {
+    key: '`', bubbles: true, cancelable: true,
+  }));
+  return {
+    consoleOpen: root.dataset.mechConsoleOpen,
+    unchanged: root.dataset.mechConsoleOpen === before,
+    value: input.value,
+  };
+})()
+""")
+    if typed_backtick is None or not typed_backtick["unchanged"] or typed_backtick["value"] != "`":
+        fail(f"typing a backtick in the REPL toggled the document console: {typed_backtick!r}")
     toggled = evaluate_json("""
 (() => {
   const root = document.querySelector('.mech-root');
@@ -1326,23 +1465,38 @@ def assert_repl_termination():
         "[...document.querySelectorAll('.mech-repl-info')].some((row) => /REPL session terminated/.test(row.textContent))",
         "browser REPL termination disabling further input",
     )
-    evaluate("""
+    terminated_state = evaluate_json("""
 (() => {
   const input = document.querySelector('.repl-input');
-  if (!input) return false;
+  const transcript = document.querySelector('.mech-repl-transcript');
+  if (!input || !transcript) return null;
+  const sourceRows = document.querySelectorAll('.mech-repl-source').length;
+  const frameRequests = Number(window.__MECH_RAF_REQUESTS__ || 0);
   input.disabled = false;
   input.value = '1 + 1';
   input.dispatchEvent(new KeyboardEvent('keydown', {
     key: 'Enter', bubbles: true, cancelable: true,
   }));
-  return true;
+  return {
+    sourceRows,
+    sourceRowsAfter: document.querySelectorAll('.mech-repl-source').length,
+    frameRequests,
+    transcriptRows: transcript.children.length,
+  };
 })()
 """)
-    wait_for(
-        "document.querySelector('.repl-input')?.disabled === true && "
-        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /Create a new session/.test(row.textContent))",
-        "terminated browser session rejecting a forced follow-up request",
-    )
+    if (
+        terminated_state is None or
+        terminated_state["sourceRowsAfter"] != terminated_state["sourceRows"]
+    ):
+        fail(f"terminated browser UI accepted a forced follow-up request: {terminated_state!r}")
+    time.sleep(0.25)
+    frame_requests_after = evaluate_json("Number(window.__MECH_RAF_REQUESTS__ || 0)")
+    if frame_requests_after != terminated_state["frameRequests"]:
+        fail(
+            "the document animation loop continued after :quit: "
+            f"before={terminated_state['frameRequests']!r}, after={frame_requests_after!r}"
+        )
     direct_exports = evaluate("""
 (async () => {
   const { WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
@@ -1477,6 +1631,27 @@ try:
         "Page.addScriptToEvaluateOnNewDocument",
         {"source": """
 (() => {
+  const nativeRequestAnimationFrame = window.requestAnimationFrame.bind(window);
+  window.__MECH_RAF_REQUESTS__ = 0;
+  window.requestAnimationFrame = callback => {
+    window.__MECH_RAF_REQUESTS__ += 1;
+    return nativeRequestAnimationFrame(callback);
+  };
+  window.__MECH_DOCUMENT_RENDERS__ = 0;
+  window.addEventListener('mech:document-rendered', () => {
+    window.__MECH_DOCUMENT_RENDERS__ += 1;
+  });
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : input?.url || String(input);
+    if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency.mec')) {
+      return new Promise(resolve => setTimeout(() => resolve(new Response(
+        'Browser smoke documentation evaluates {answer}.',
+        { status: 200, headers: { 'content-type': 'text/plain' } },
+      )), 300));
+    }
+    return nativeFetch(input, init);
+  };
   window.addEventListener('mech:console-ready', () => {
     document.documentElement.dataset.mechSmokeConsoleReady = 'true';
   });
