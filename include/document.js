@@ -774,14 +774,18 @@ function showInlinePopup(title, rendered) {
   document.body.append(popup);
 }
 
-function consumeSelection(response, title, rendered) {
-  consumeReplResponse(response);
+function consumeSelection(selection, title) {
+  consumeReplResponse(selection?.response);
   if (consoleIsOpen()) {
     activateConsolePanel("console");
     state.console?.input?.focus();
   } else {
-    showInlinePopup(title, rendered);
+    showInlinePopup(title, selection?.rendered);
   }
+}
+
+function reflectiveSelectionAllowed() {
+  return !state.replBusy && !state.replTerminated;
 }
 
 function bindSymbolClick(element, name) {
@@ -796,9 +800,12 @@ function bindSymbolClick(element, name) {
   const select = (event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (!reflectiveSelectionAllowed()) {
+      return;
+    }
     try {
-      const rendered = consoleIsOpen() ? null : state.document.renderedSymbol(name);
-      consumeSelection(state.repl.selectSymbol(name), name, rendered);
+      const renderPopup = !consoleIsOpen();
+      consumeSelection(state.repl.selectSymbol(name, renderPopup), name);
     } catch (error) {
       appendConsoleError(error);
     }
@@ -822,15 +829,13 @@ function bindOutputClick(element, address) {
   const select = (event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (!reflectiveSelectionAllowed()) {
+      return;
+    }
     try {
-      const rendered = consoleIsOpen()
-        ? null
-        : state.document.renderedOutput(address.outputId);
-      consumeSelection(
-        state.repl.selectOutput(address.outputId),
-        rendered?.name || "ans",
-        rendered,
-      );
+      const renderPopup = !consoleIsOpen();
+      const selection = state.repl.selectOutput(address.outputId, renderPopup);
+      consumeSelection(selection, selection?.rendered?.name || "ans");
     } catch (error) {
       appendConsoleError(error);
     }
@@ -1101,7 +1106,7 @@ async function fulfillReplHostRequest(request) {
   const loaded = state.document.replLoadDocumentation(topic, await fetched.text());
   consumeReplResponse(loaded.response);
   const panel = outputRegion("repl");
-  if (panel) {
+  if (panel && loaded.accepted && loaded.html) {
     const row = document.createElement("article");
     row.className = "mech-repl-output-entry mech-repl-documentation";
     row.dataset.mechDocumentationTopic = topic;
@@ -1115,6 +1120,7 @@ async function fulfillReplHostRequest(request) {
 
 async function consumeCooperativeResponse(response) {
   consumeReplResponse(response);
+  const ownsHostRequest = Boolean(response?.hostRequest);
   state.replTerminated = Boolean(response?.terminated);
   state.replBusy = Boolean(response?.pending || response?.hostRequest);
   syncConsoleInputState();
@@ -1129,6 +1135,9 @@ async function consumeCooperativeResponse(response) {
       state.replTerminated = Boolean(response?.terminated);
     }
   } finally {
+    if (ownsHostRequest) {
+      consumeReplResponse(state.repl.finishHostRequest());
+    }
     state.replBusy = false;
     syncConsoleInputState();
     if (state.replTerminated) {
@@ -1768,8 +1777,11 @@ async function main() {
     continueStep: count => state.document.replContinueStep(count),
     interrupt: () => state.document.replInterrupt(),
     setQuiet: quiet => state.document.replSetQuiet(quiet),
-    selectSymbol: name => state.document.replSelectSymbol(name),
-    selectOutput: outputId => state.document.replSelectOutput(outputId),
+    finishHostRequest: () => state.document.replFinishHostRequest(),
+    selectSymbol: (name, renderPopup) =>
+      state.document.replSelectSymbol(name, renderPopup),
+    selectOutput: (outputId, renderPopup) =>
+      state.document.replSelectOutput(outputId, renderPopup),
   };
   state.replQuiet = requestedReplQuiet();
   consumeReplResponse(state.repl.setQuiet(state.replQuiet));

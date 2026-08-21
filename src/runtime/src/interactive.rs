@@ -195,22 +195,30 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
     /// Inspect an already resident value without recompiling the active
     /// document. The canonical expression is folded into the next ordinary
     /// submission so subsequent source can consume the selected `ans`.
-    pub fn select_value(&mut self, source_echo: &str, value: RuntimeValueSnapshot) {
+    pub fn select_value(
+        &mut self,
+        source_echo: &str,
+        value: RuntimeValueSnapshot,
+    ) -> Option<ValueOutput> {
         self.emit_source_echo(source_echo);
         let visible_value = if !self.quiet && !value.is_empty() {
-            Some((value.kind().to_string(), value.format_canonical_inline()))
+            Some(ValueOutput::new(
+                value.kind().to_string(),
+                value.format_canonical_inline(),
+            ))
         } else {
             None
         };
         self.pending_selection = Some(value);
-        if let Some((kind, canonical)) = visible_value {
+        if let Some(value) = &visible_value {
             self.emit(MechEvent::Repl(ReplEvent::Response(ReplResponse::new(
                 ReplResponseKind::ValueInspection,
                 ReplResponseStatus::Neutral,
                 None,
-                OutputContent::Value(ValueOutput::new(kind, canonical)),
+                OutputContent::Value(value.clone()),
             ))));
         }
+        visible_value
     }
 
     fn submit_without_source_echo(
@@ -279,18 +287,18 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             return Err(error);
         }
 
+        // Shutdown is the irreversible handoff boundary: closing ingress and
+        // stopping drivers mutate the retired runtime even when cleanup later
+        // reports an error. The prepared candidate must therefore commit once
+        // shutdown begins; cleanup failures are surfaced as host warnings and
+        // never resurrect a partially stopped runtime.
+        let mut retirement_failures = Vec::new();
         if let Some(mut previous) = self.runtime.take() {
             if let Err(error) = previous.shutdown() {
-                let _ = candidate.shutdown();
-                self.factory.abort();
-                self.runtime = Some(previous);
-                return Err(error);
+                retirement_failures.push(("PreviousRuntimeShutdown", error));
             }
             if let Err(error) = self.collect_program_events() {
-                let _ = candidate.shutdown();
-                self.factory.abort();
-                self.runtime = Some(previous);
-                return Err(error);
+                retirement_failures.push(("PreviousRuntimeEvents", error));
             }
         }
         self.factory.commit();
@@ -298,6 +306,17 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.program_events = Some(candidate_events);
         self.source = candidate_source;
         self.pending_selection = None;
+        for (code, error) in retirement_failures {
+            self.emit_message_diagnostic(
+                Severity::Warning,
+                DiagnosticPhase::Host,
+                code,
+                format!(
+                    "The replacement runtime was accepted, but retired runtime cleanup reported: {}",
+                    error.display_message(),
+                ),
+            );
+        }
         Ok(outcome.initial_value)
     }
 
@@ -362,17 +381,27 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         if self.runtime.is_none() {
             return Ok(Vec::new());
         }
+        let requested_names = if self.pending_selection.is_some() && !names.is_empty() {
+            names
+                .iter()
+                .filter(|name| name.as_str() != "ans")
+                .map(String::as_str)
+                .collect::<Vec<_>>()
+        } else {
+            names.iter().map(String::as_str).collect::<Vec<_>>()
+        };
         let mut values = if names.is_empty() {
             self.runtime
                 .as_ref()
                 .expect("resident session was checked above")
                 .root_symbol_values_all()
+        } else if requested_names.is_empty() {
+            Ok(Vec::new())
         } else {
-            let names = names.iter().map(String::as_str).collect::<Vec<_>>();
             self.runtime
                 .as_ref()
                 .expect("resident session was checked above")
-                .root_symbol_values(&names)
+                .root_symbol_values(&requested_names)
         }?;
         if let Some(selected) = &self.pending_selection
             && (names.is_empty() || names.iter().any(|name| name == "ans"))
@@ -615,6 +644,7 @@ fn interactive_error(message: impl Into<String>) -> MechError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::Cell;
 
     struct NeverBuild;
 
@@ -622,6 +652,94 @@ mod tests {
         fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
             panic!("invalid step counts must be rejected before runtime access")
         }
+    }
+
+    #[derive(Debug)]
+    struct FailingStopDriver;
+
+    impl crate::RuntimeHostInputDriver for FailingStopDriver {
+        fn drives(&self, _source: &crate::RuntimeHostInputSource) -> bool {
+            false
+        }
+
+        fn attach(&mut self, _ingress: crate::RuntimeIngress) -> MResult<()> {
+            Ok(())
+        }
+
+        fn start(&mut self) -> MResult<()> {
+            Ok(())
+        }
+
+        fn stop(&mut self) -> MResult<()> {
+            Err(interactive_error("deliberate retired runtime stop failure"))
+        }
+
+        fn is_live(&self) -> bool {
+            false
+        }
+    }
+
+    struct FailingRetirementFactory {
+        activations: Cell<usize>,
+    }
+
+    impl ResidentReplRuntimeFactory for FailingRetirementFactory {
+        fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
+            unreachable!("the test factory supplies activated runtimes directly")
+        }
+
+        fn activate(
+            &self,
+            _events: MechEventBuffer,
+            _source: &str,
+        ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+            let activation = self.activations.get();
+            self.activations.set(activation + 1);
+            let builder = MechRuntime::builder();
+            let runtime = if activation == 0 {
+                builder.test_input_driver(FailingStopDriver).build()?
+            } else {
+                builder.build()?
+            };
+            Ok((
+                runtime,
+                RuntimeProgramLoadOutcome {
+                    route: crate::RuntimeProgramRoute::None,
+                    initial_value: RuntimeValueSnapshot::empty(),
+                    info: crate::RuntimeProgramExecutionInfo::default(),
+                },
+            ))
+        }
+    }
+
+    #[test]
+    fn replacement_commits_after_retired_runtime_shutdown_has_begun() {
+        let factory = FailingRetirementFactory {
+            activations: Cell::new(0),
+        };
+        let mut session =
+            ResidentReplSession::from_source(factory, "baseline".to_string()).unwrap();
+
+        session.replace_source("replacement".to_string()).unwrap();
+
+        assert_eq!(session.source(), "replacement");
+        assert!(
+            !session
+                .runtime()
+                .expect("the prepared candidate must become active")
+                .ingress()
+                .is_closed()
+                .unwrap(),
+            "the session must not restore the retired runtime with closed ingress",
+        );
+        let events = session.drain_events().unwrap();
+        assert!(
+            events
+                .iter()
+                .any(|event| format!("{event:?}")
+                    .contains("deliberate retired runtime stop failure")),
+            "retirement failure must remain observable as a host warning",
+        );
     }
 
     #[test]

@@ -154,6 +154,11 @@ config := {
       provider: "time"
       settings: {}
     }
+    {
+      name: "repl"
+      provider: "time"
+      settings: {}
+    }
   ]
 
   serve: {
@@ -929,6 +934,44 @@ def assert_console_contract():
             "clicking a large resident value recompiled, rerendered, or exceeded the 200ms UI budget: "
             f"{click_performance!r}"
         )
+    popup_performance = evaluate_json("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  const value = document.querySelector('#mech-smoke-large-var .mech-var-placeholder');
+  if (!root || !value) return null;
+  root.dataset.mechConsoleOpen = 'false';
+  const rendersBefore = Number(window.__MECH_DOCUMENT_RENDERS__ || 0);
+  const started = performance.now();
+  value.click();
+  const elapsedMs = performance.now() - started;
+  const popup = document.querySelector('.mech-inline-popup[data-mech-repl-popup]');
+  const result = {
+    elapsedMs,
+    rerenderedDocument:
+      Number(window.__MECH_DOCUMENT_RENDERS__ || 0) !== rendersBefore,
+    rendered: /999/.test(popup?.textContent || ''),
+  };
+  root.dataset.mechConsoleOpen = 'true';
+  popup?.remove();
+  return result;
+})()
+""")
+    if (
+        popup_performance is None or
+        popup_performance["elapsedMs"] >= 200 or
+        popup_performance["rerenderedDocument"] or
+        not popup_performance["rendered"]
+    ):
+        fail(
+            "closed-console selection duplicated work, rerendered, or exceeded the 200ms UI budget: "
+            f"{popup_performance!r}"
+        )
+    submit(":whos ans")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-symbols tbody tr')].some((row) => "
+        "/ans/.test(row.firstElementChild?.textContent || '') && /999|…/.test(row.lastElementChild?.textContent || ''))",
+        "explicit pending ans inspection before source materialization",
+    )
     submit(":whos qq")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-symbols tbody tr')].some((row) => "
@@ -1017,12 +1060,53 @@ def assert_console_contract():
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy'",
         "documentation fetch marking the REPL busy without disabling Ctrl+C",
     )
+    busy_selection = evaluate_json("""
+(() => {
+  const value = document.querySelector('#mech-smoke-var .mech-var-placeholder');
+  if (!value) return null;
+  const sourceRows = document.querySelectorAll('.mech-repl-source').length;
+  const resultRows = document.querySelectorAll('.mech-repl-result').length;
+  value.click();
+  return {
+    sourceRows,
+    sourceRowsAfter: document.querySelectorAll('.mech-repl-source').length,
+    resultRows,
+    resultRowsAfter: document.querySelectorAll('.mech-repl-result').length,
+  };
+})()
+""")
+    if (
+        busy_selection is None or
+        busy_selection["sourceRowsAfter"] != busy_selection["sourceRows"] or
+        busy_selection["resultRowsAfter"] != busy_selection["resultRows"]
+    ):
+        fail(f"a reflective click mutated the REPL during documentation loading: {busy_selection!r}")
     wait_for(
         "Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/latency\"]')) && "
         "document.querySelector('.repl-input')?.readOnly === false && "
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready'",
         "browser documentation loading into the output panel",
     )
+    submit(":docs browser-smoke/rejected")
+    wait_for(
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
+        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /missing|resident activation failed/.test(row.textContent))",
+        "a semantically rejected documentation fragment returning control",
+    )
+    if evaluate("Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/rejected\"]'))"):
+        fail("semantically rejected documentation was appended to the output DOM")
+    submit(":docs browser-smoke/recovered")
+    wait_for(
+        "Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/recovered\"]')) && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready'",
+        "accepted documentation reusing only the uncommitted runtime namespace",
+    )
+    documentation_ids = evaluate_json("""
+[...document.querySelectorAll('.mech-repl-documentation .mech-inline-mech-code[id]')]
+  .map(element => element.id)
+""")
+    if len(documentation_ids) != len(set(documentation_ids)):
+        fail(f"accepted documentation contains duplicate DOM IDs: {documentation_ids!r}")
     submit(":help")
     wait_for(
         "Boolean(document.querySelector('.mech-repl-help')) && "
@@ -1047,13 +1131,20 @@ def assert_console_contract():
 """)
     if help_layout is None or not help_layout["borderless"] or help_layout["unavailableReasonLeaked"]:
         fail(f"browser help retained table rules or the removed Host column text: {help_layout!r}")
+    console_instance = "repl-console" if label == "configured" else "repl"
+    console_context = f"console://{console_instance}/output"
+    submit(":capabilities")
+    wait_for(
+        f"[...document.querySelectorAll('.mech-repl-response')].some((row) => row.textContent.includes({json.dumps(console_context)}))",
+        "the effective generated console namespace in browser capabilities",
+    )
     submit(":clear")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-info')].some((row) => /Resident REPL state cleared/.test(row.textContent)) && "
         "/41/.test(document.querySelector('#mech-smoke-var')?.textContent || '')",
         "the document-backed resident REPL reset",
     )
-    submit('@out := console://repl/output{:write(line)}\n@out/line <- "browser-output"\n@out/line <- "continued"')
+    submit(f'@out := {console_context}{{:write(line)}}\n@out/line <- "browser-output"\n@out/line <- "continued"')
     wait_for(
         "/browser-output\\s*continued/.test(document.querySelector('[data-mech-output-region=repl]')?.textContent || '') && "
         "document.querySelectorAll('[data-mech-output-region=repl] [data-mech-display-id]').length === 1 && "
@@ -1649,6 +1740,18 @@ try:
         'Browser smoke documentation evaluates {answer}.',
         { status: 200, headers: { 'content-type': 'text/plain' } },
       )), 300));
+    }
+    if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/rejected.mec')) {
+      return Promise.resolve(new Response(
+        'broken := missing + 1\\nRejected documentation evaluates {answer}.',
+        { status: 200, headers: { 'content-type': 'text/plain' } },
+      ));
+    }
+    if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/recovered.mec')) {
+      return Promise.resolve(new Response(
+        'Recovered documentation evaluates {answer}.',
+        { status: 200, headers: { 'content-type': 'text/plain' } },
+      ));
     }
     return nativeFetch(input, init);
   };

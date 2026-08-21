@@ -435,6 +435,10 @@ impl WasmDocumentBootstrap {
         document_interactive_tree(&self.source().tree, candidate_source)
     }
 
+    pub(crate) fn console_output_context(&self) -> String {
+        format!("console://{}/output", self.source().console_instance)
+    }
+
     pub(crate) fn prepare_commit(&self, runtime: &mut MechRuntime) -> MResult<()> {
         if self.source().lifecycle.drivers_started() {
             runtime.start_input_drivers()?;
@@ -610,6 +614,45 @@ mod document {
             .enumerate()
             .map(|(ordinal, output_id)| (output_id, ordinal as u64))
             .collect()
+    }
+
+    fn selected_value_response(
+        response: JsValue,
+        presentation: Option<mech_runtime::ValueOutput>,
+        block_html: Option<String>,
+        name: &str,
+    ) -> Result<JsValue, JsValue> {
+        let result = Object::new();
+        Reflect::set(&result, &JsValue::from_str("response"), &response)?;
+        let rendered = match (presentation, block_html) {
+            (Some(presentation), Some(block_html)) => {
+                let rendered = Object::new();
+                Reflect::set(
+                    &rendered,
+                    &JsValue::from_str("name"),
+                    &JsValue::from_str(name),
+                )?;
+                Reflect::set(
+                    &rendered,
+                    &JsValue::from_str("kind"),
+                    &JsValue::from_str(&presentation.kind),
+                )?;
+                Reflect::set(
+                    &rendered,
+                    &JsValue::from_str("blockHtml"),
+                    &JsValue::from_str(&block_html),
+                )?;
+                Reflect::set(
+                    &rendered,
+                    &JsValue::from_str("inlineHtml"),
+                    &JsValue::from_str(&mech_core::escape_html_text(&presentation.text)),
+                )?;
+                rendered.into()
+            }
+            _ => JsValue::NULL,
+        };
+        Reflect::set(&result, &JsValue::from_str("rendered"), &rendered)?;
+        Ok(result.into())
     }
 
     #[wasm_bindgen]
@@ -1001,19 +1044,41 @@ mod document {
             self.repl.set_quiet(quiet)
         }
 
+        #[wasm_bindgen(js_name = replFinishHostRequest)]
+        pub fn repl_finish_host_request(&mut self) -> Result<JsValue, JsValue> {
+            self.repl.finish_host_request()
+        }
+
         #[wasm_bindgen(js_name = replSelectSymbol)]
-        pub fn repl_select_symbol(&mut self, name: &str) -> Result<JsValue, JsValue> {
-            let source = self
+        pub fn repl_select_symbol(
+            &mut self,
+            name: &str,
+            render_popup: bool,
+        ) -> Result<JsValue, JsValue> {
+            if let Some(response) = self.repl.begin_selection()? {
+                return selected_value_response(response, None, None, name);
+            }
+            let snapshot = self
                 .repl
                 .session
                 .symbol(name)
                 .map_err(to_js_error)?
                 .ok_or_else(|| js_error(format!("document symbol `{name}` is not resident")))?;
-            self.repl.submit_selection(name, source)
+            let block_html =
+                (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
+            let (response, presentation) = self.repl.publish_selection(name, snapshot)?;
+            selected_value_response(response, presentation, block_html, name)
         }
 
         #[wasm_bindgen(js_name = replSelectOutput)]
-        pub fn repl_select_output(&mut self, output_id: u64) -> Result<JsValue, JsValue> {
+        pub fn repl_select_output(
+            &mut self,
+            output_id: u64,
+            render_popup: bool,
+        ) -> Result<JsValue, JsValue> {
+            if let Some(response) = self.repl.begin_selection()? {
+                return selected_value_response(response, None, None, "ans");
+            }
             let display_name = self.document_output_name(output_id);
             let Some(runtime_output_id) = self.runtime_output_id(output_id) else {
                 return Err(js_error("document output is not resident"));
@@ -1026,7 +1091,10 @@ mod document {
             let source_echo = display_name
                 .or_else(|| runtime.output_name(runtime_output_id))
                 .unwrap_or_else(|| "ans".to_string());
-            self.repl.submit_selection(&source_echo, snapshot)
+            let block_html =
+                (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
+            let (response, presentation) = self.repl.publish_selection(&source_echo, snapshot)?;
+            selected_value_response(response, presentation, block_html, &source_echo)
         }
 
         #[wasm_bindgen(js_name = replLoadDocumentation)]
@@ -1035,6 +1103,11 @@ mod document {
             topic: &str,
             source: &str,
         ) -> Result<JsValue, JsValue> {
+            if !self.repl.host_request_pending() {
+                return Err(js_error(
+                    "documentation may only be loaded for the pending REPL host request",
+                ));
+            }
             let tree = mech_syntax::parser::parse(source).map_err(to_js_error)?;
             let inline_offset = root_document_inline_eval_count(
                 &self.current_interactive_tree().map_err(to_js_error)?,
@@ -1043,10 +1116,11 @@ mod document {
             formatter.html = true;
             formatter.set_root_inline_eval_offset(inline_offset);
             let html = formatter.program(&tree);
-            match self.repl.session.submit_host_source(source) {
+            let accepted = match self.repl.session.submit_host_source(source) {
                 Ok(_) => {
                     self.refresh_document_output_ordinals()
                         .map_err(to_js_error)?;
+                    true
                 }
                 Err(error) => {
                     self.repl.session.emit_error(
@@ -1054,8 +1128,9 @@ mod document {
                         mech_runtime::DiagnosticPhase::Compile,
                         Some(topic),
                     );
+                    false
                 }
-            }
+            };
             let result = Object::new();
             Reflect::set(
                 &result,
@@ -1065,7 +1140,16 @@ mod document {
             Reflect::set(
                 &result,
                 &JsValue::from_str("html"),
-                &JsValue::from_str(&html),
+                &if accepted {
+                    JsValue::from_str(&html)
+                } else {
+                    JsValue::NULL
+                },
+            )?;
+            Reflect::set(
+                &result,
+                &JsValue::from_str("accepted"),
+                &JsValue::from_bool(accepted),
             )?;
             Reflect::set(
                 &result,
@@ -2429,8 +2513,14 @@ mod tests {
         );
         assert_eq!(
             document.repl.session.symbol("ans").unwrap(),
-            Some(selected),
+            Some(selected.clone()),
             "the selected snapshot must be immediately visible as ans",
+        );
+        let explicit_ans = document.repl.session.symbols(&["ans".to_string()]).unwrap();
+        assert_eq!(
+            explicit_ans,
+            vec![("ans".to_string(), selected)],
+            "explicit multi-symbol queries must inject pending ans before runtime lookup",
         );
         assert_eq!(
             document

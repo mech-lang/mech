@@ -13,8 +13,8 @@ use mech_runtime::{
     OutputContent, OutputEvent, REPL_COMMAND_SPECS, ReplDispatchControl, ReplEvent,
     ReplHostAvailability, ReplHostRequest, ReplHostRequirement, ReplResponse, ReplResponseKind,
     ReplResponseStatus, ReplStepMode, ResidentReplRuntimeFactory, ResidentReplSession,
-    RunResourceGrantConfig, RuntimeConfig, TableOutput, TextOutput, dispatch_repl_request,
-    emit_host_response, emit_step_complete, parse_repl_request,
+    RunResourceGrantConfig, RuntimeConfig, TableOutput, TextOutput, ValueOutput,
+    dispatch_repl_request, emit_host_response, emit_step_complete, parse_repl_request,
 };
 
 #[cfg(feature = "browser_project_core")]
@@ -152,6 +152,7 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum WasmReplState {
     Ready,
+    AwaitingHost,
     Stepping { remaining: u64, total: u64 },
     Terminated,
 }
@@ -164,7 +165,7 @@ impl WasmReplState {
     fn remaining(self) -> u64 {
         match self {
             Self::Stepping { remaining, .. } => remaining,
-            Self::Ready | Self::Terminated => 0,
+            Self::Ready | Self::AwaitingHost | Self::Terminated => 0,
         }
     }
 
@@ -184,6 +185,7 @@ enum WasmReplTransition {
     StepChunkSucceeded { count: u64 },
     StepChunkFailed,
     Interrupt,
+    FinishHostRequest,
     ClearOutputs,
     ClearDiagnostics,
     Shutdown,
@@ -206,6 +208,7 @@ pub struct WasmRepl {
     availability: ReplHostAvailability,
     pub(crate) state: WasmReplState,
     pending_host_request: Option<ReplHostRequest>,
+    console_output_context: String,
 }
 
 #[cfg(feature = "browser_project_core")]
@@ -218,6 +221,7 @@ impl WasmRepl {
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,
             pending_host_request: None,
+            console_output_context: "console://repl/output".to_string(),
         }
     }
 
@@ -470,6 +474,11 @@ impl WasmRepl {
                 .transpose()?
                 .unwrap_or(JsValue::NULL),
         )?;
+        Reflect::set(
+            &response,
+            &JsValue::from_str("hostPending"),
+            &JsValue::from_bool(matches!(self.state, WasmReplState::AwaitingHost)),
+        )?;
         Ok(response.into())
     }
 
@@ -488,7 +497,7 @@ impl WasmRepl {
                     ],
                     vec![
                         vec![
-                            "console://repl/output".to_string(),
+                            self.console_output_context.clone(),
                             "write".to_string(),
                             "granted".to_string(),
                             "line".to_string(),
@@ -509,6 +518,7 @@ impl WasmRepl {
                 )),
             ),
             request @ ReplHostRequest::Documentation { .. } => {
+                self.state = WasmReplState::AwaitingHost;
                 self.pending_host_request = Some(request);
             }
             _ => unreachable!("unavailable browser host requests are rejected before dispatch"),
@@ -516,7 +526,7 @@ impl WasmRepl {
     }
 
     fn transition(&mut self, transition: WasmReplTransition) -> WasmReplTransitionResult {
-        use WasmReplState::{Ready, Stepping, Terminated};
+        use WasmReplState::{AwaitingHost, Ready, Stepping, Terminated};
         use WasmReplTransition as Transition;
         use WasmReplTransitionResult as TransitionResult;
 
@@ -527,6 +537,23 @@ impl WasmRepl {
                     DiagnosticPhase::Host,
                     "ReplTerminated",
                     "This REPL session has terminated. Create a new session to evaluate another request.",
+                );
+                TransitionResult::Rejected
+            }
+            (AwaitingHost, Transition::FinishHostRequest) => {
+                self.state = Ready;
+                TransitionResult::Allowed
+            }
+            (AwaitingHost, Transition::Shutdown) => {
+                self.state = Terminated;
+                TransitionResult::Allowed
+            }
+            (AwaitingHost, _) => {
+                self.session.emit_message_diagnostic(
+                    mech_runtime::Severity::Error,
+                    DiagnosticPhase::Host,
+                    "ReplBusy",
+                    "A browser host request is still pending. Finish it before mutating the resident session.",
                 );
                 TransitionResult::Rejected
             }
@@ -614,6 +641,7 @@ impl WasmRepl {
     }
 
     pub(crate) fn from_document(bootstrap: crate::project::WasmDocumentBootstrap) -> MResult<Self> {
+        let console_output_context = bootstrap.console_output_context();
         Ok(Self {
             session: ResidentReplSession::from_source(
                 WasmReplRuntimeFactory::Document(bootstrap),
@@ -622,19 +650,34 @@ impl WasmRepl {
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,
             pending_host_request: None,
+            console_output_context,
         })
     }
 
-    pub(crate) fn submit_selection(
+    pub(crate) fn finish_host_request(&mut self) -> Result<JsValue, JsValue> {
+        self.pending_host_request = None;
+        self.transition(WasmReplTransition::FinishHostRequest);
+        self.response(None)
+    }
+
+    pub(crate) fn begin_selection(&mut self) -> Result<Option<JsValue>, JsValue> {
+        if self.transition(WasmReplTransition::Submit) == WasmReplTransitionResult::Rejected {
+            return self.response(None).map(Some);
+        }
+        Ok(None)
+    }
+
+    pub(crate) fn publish_selection(
         &mut self,
         source_echo: &str,
         value: mech_runtime::RuntimeValueSnapshot,
-    ) -> Result<JsValue, JsValue> {
-        if self.transition(WasmReplTransition::Submit) == WasmReplTransitionResult::Rejected {
-            return self.response(None);
-        }
-        self.session.select_value(source_echo, value);
-        self.response(None)
+    ) -> Result<(JsValue, Option<ValueOutput>), JsValue> {
+        let presentation = self.session.select_value(source_echo, value);
+        self.response(None).map(|response| (response, presentation))
+    }
+
+    pub(crate) fn host_request_pending(&self) -> bool {
+        matches!(self.state, WasmReplState::AwaitingHost)
     }
 }
 
@@ -933,6 +976,37 @@ mod tests {
             WasmReplTransitionResult::Allowed
         );
         assert_eq!(repl.state, WasmReplState::Terminated);
+    }
+
+    #[cfg(feature = "browser_project_core")]
+    #[test]
+    fn pending_host_request_owns_mutation_and_capabilities_use_the_active_console() {
+        let mut repl = WasmRepl::new();
+        repl.console_output_context = "console://repl-console-2/output".to_string();
+        repl.handle_host_request(ReplHostRequest::Capabilities);
+        let events = repl.session.drain_events().unwrap();
+        assert!(events.iter().any(|event| matches!(
+            &event.event,
+            MechEvent::Repl(ReplEvent::Response(ReplResponse {
+                content: OutputContent::Table(table),
+                ..
+            })) if table.rows.iter().flatten().any(|cell| cell == "console://repl-console-2/output")
+        )));
+
+        repl.handle_host_request(ReplHostRequest::Documentation {
+            topic: Some("browser/value".to_string()),
+        });
+        assert_eq!(repl.state, WasmReplState::AwaitingHost);
+        assert_eq!(
+            repl.transition(WasmReplTransition::Submit),
+            WasmReplTransitionResult::Rejected,
+        );
+        assert_eq!(repl.state, WasmReplState::AwaitingHost);
+        assert_eq!(
+            repl.transition(WasmReplTransition::FinishHostRequest),
+            WasmReplTransitionResult::Allowed,
+        );
+        assert_eq!(repl.state, WasmReplState::Ready);
     }
 
     #[cfg(feature = "browser_project_core")]

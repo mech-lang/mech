@@ -55,6 +55,14 @@ impl RuntimeValueSnapshot {
         self.value.format_canonical_inline()
     }
 
+    /// Returns the detached value's rich HTML projection without cloning its
+    /// owned value graph. Browser inspection can therefore publish `ans` and
+    /// render a popup from one captured snapshot.
+    #[cfg(feature = "pretty_print")]
+    pub fn format_html(&self) -> String {
+        self.value.to_html()
+    }
+
     pub fn to_value(&self) -> LegacyValue {
         self.value
             .try_deep_snapshot()
