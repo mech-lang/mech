@@ -791,6 +791,26 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         Ok(token)
     }
 
+    /// Refresh a previously retained selection without changing its public
+    /// token. Long-lived host projections use this when their value is backed
+    /// by a replacement runtime but their UI identity belongs to the host
+    /// component rather than to that runtime.
+    pub fn refresh_retained_selection(
+        &mut self,
+        token: &str,
+        source_echo: &str,
+        value: RuntimeValueSnapshot,
+    ) -> MResult<()> {
+        let Some(selection) = self.retained_selections.get_mut(token) else {
+            return Err(interactive_error(format!(
+                "retained selection token `{token}` is not available"
+            )));
+        };
+        selection.source_echo = source_echo.to_string();
+        selection.value = value;
+        Ok(())
+    }
+
     pub fn retained_selection(&self, token: &str) -> Option<(String, RuntimeValueSnapshot)> {
         self.retained_selections
             .get(token)
@@ -1370,6 +1390,29 @@ mod tests {
     }
 
     #[test]
+    fn accepted_source_preserves_the_published_projection_of_live_state() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~counter := 0").unwrap();
+        session.submit("counter += 1").unwrap();
+        session.submit("display := counter + 10").unwrap();
+        session.step(2).unwrap();
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "13"
+        );
+
+        session.submit("unrelated := 1").unwrap();
+
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "13",
+            "replacement output projections must describe the migrated state epoch",
+        );
+    }
+
+    #[test]
     fn accepted_source_recomputes_state_explicitly_mutated_by_the_submission() {
         let mut session = ResidentReplSession::new(SourceRuntimeFactory);
         session.submit("~answer := 0").unwrap();
@@ -1532,6 +1575,26 @@ mod tests {
             session.symbol_selection_identity("ans"),
             Some(token.as_str())
         );
+    }
+
+    #[test]
+    fn retained_selection_tokens_can_refresh_without_changing_public_identity() {
+        let mut session = ResidentReplSession::new(NeverBuild);
+        let initial =
+            RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(mech_core::Ref::new(1.0)))
+                .unwrap();
+        let refreshed =
+            RuntimeValueSnapshot::try_from(mech_core::LegacyValue::F64(mech_core::Ref::new(2.0)))
+                .unwrap();
+        let token = session.retain_selection("ans", initial, None).unwrap();
+
+        session
+            .refresh_retained_selection(&token, "ans", refreshed)
+            .unwrap();
+
+        let (source_echo, retained) = session.retained_selection(&token).unwrap();
+        assert_eq!(source_echo, "ans");
+        assert_eq!(retained.to_string(), "2");
     }
 
     #[test]

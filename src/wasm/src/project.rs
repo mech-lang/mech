@@ -958,15 +958,19 @@ mod document {
 
         #[wasm_bindgen(js_name = renderedOutput)]
         pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
-            let Some(output_id) = self.runtime_output_id(output_id) else {
+            let document_output_id = output_id;
+            let Some(runtime_output_id) = self.runtime_output_id(document_output_id) else {
                 return Ok(JsValue::NULL);
             };
             let runtime = self.runtime()?;
-            let Some(snapshot) = runtime.output_value(output_id).map_err(to_js_error)? else {
+            let Some(snapshot) = runtime
+                .output_value(runtime_output_id)
+                .map_err(to_js_error)?
+            else {
                 return Ok(JsValue::NULL);
             };
             let rendered = rendered_named_value(snapshot, None)?;
-            set_rendered_output_identity(&rendered, output_id)?;
+            set_rendered_output_identity(&rendered, document_output_id)?;
             Ok(rendered)
         }
 
@@ -974,19 +978,25 @@ mod document {
         /// ordinary source result, independent of formatted code-fence output.
         /// Explicit output events can replace this default in the host UI.
         #[wasm_bindgen(js_name = renderedProgramOutput)]
-        pub fn rendered_program_output(&self) -> Result<JsValue, JsValue> {
+        pub fn rendered_program_output(&mut self) -> Result<JsValue, JsValue> {
             let Some(output) = &self.program_output else {
                 return Ok(JsValue::NULL);
             };
+            let output_id = output.output_id;
+            let selection_token = output.selection_token.clone();
             let Some(snapshot) = self
                 .runtime()?
-                .output_value(output.output_id)
+                .output_value(output_id)
                 .map_err(to_js_error)?
             else {
                 return Ok(JsValue::NULL);
             };
+            self.repl
+                .session
+                .refresh_retained_selection(&selection_token, "ans", snapshot.clone())
+                .map_err(to_js_error)?;
             let rendered = rendered_named_value(snapshot, None)?;
-            set_rendered_selection_identity(&rendered, &output.selection_token)?;
+            set_rendered_selection_identity(&rendered, &selection_token)?;
             Ok(rendered)
         }
 
@@ -1502,8 +1512,9 @@ mod document {
         }
 
         fn refresh_document_output_ordinals(&mut self) -> MResult<()> {
-            self.document_output_ordinals =
-                document_output_ordinals(&self.current_interactive_tree()?);
+            let current = self.current_interactive_tree()?;
+            let (runtime_tree, _) = document_runtime_tree(self.bootstrap.source(), current)?;
+            self.document_output_ordinals = document_output_ordinals(&runtime_tree);
             Ok(())
         }
 
@@ -2279,16 +2290,16 @@ fn rendered_named_value(
     Ok(rendered)
 }
 
-fn set_rendered_output_identity(rendered: &JsValue, output_id: OutputId) -> Result<(), JsValue> {
+fn set_rendered_output_identity(rendered: &JsValue, output_id: u64) -> Result<(), JsValue> {
     Reflect::set(
         rendered,
         &JsValue::from_str("outputId"),
-        &JsValue::from_str(&output_id.get().to_string()),
+        &JsValue::from_str(&output_id.to_string()),
     )?;
     Reflect::set(
         rendered,
         &JsValue::from_str("identity"),
-        &JsValue::from_str(&format!("resident-output:{}", output_id.get())),
+        &JsValue::from_str(&format!("resident-output:{output_id}")),
     )?;
     Ok(())
 }
@@ -2433,7 +2444,8 @@ mod tests {
             "+> combinatorics\n\
              +> stats\n\
              pairs := combinatorics/n-choose-k(10.0, 2.0)\n\
-             totals := stats/sum/column([1.0 2.0; 3.0 4.0])\n\
+             column-totals := stats/sum/column([1.0 2.0; 3.0 4.0])\n\
+             row-totals := stats/sum/row([1.0 2.0; 3.0 4.0])\n\
              pairs",
         )
         .unwrap();
@@ -2453,6 +2465,26 @@ mod tests {
                 .unwrap()
                 .to_string(),
             "45",
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("column-totals")
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "[4 6]",
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("row-totals")
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "[3; 7]",
         );
     }
 
@@ -3190,7 +3222,7 @@ mod tests {
 
     #[test]
     fn appended_document_fragments_continue_the_root_inline_output_namespace() {
-        let baseline = mech_syntax::parser::parse("Baseline {1}.").unwrap();
+        let baseline = mech_syntax::parser::parse("Baseline {1}.\n\nanswer := 1\nanswer").unwrap();
         let fragment = mech_syntax::parser::parse("Documentation {2}.").unwrap();
         let offset = root_document_inline_eval_count(&baseline);
         assert_eq!(offset, 1);
@@ -3202,7 +3234,7 @@ mod tests {
         let fragment_id = mech_core::hash_str("inline-eval:0:1");
         assert!(html.contains(&format!("id=\"{fragment_id}:0\"")), "{html}");
 
-        let mut combined = baseline;
+        let mut combined = baseline.clone();
         combined.body.sections.extend(fragment.body.sections);
         assert_eq!(
             root_document_output_ids(&combined),
@@ -3214,6 +3246,22 @@ mod tests {
         assert_eq!(
             document::document_output_ordinals(&combined).get(&fragment_id),
             Some(&1),
+        );
+
+        let source = SourceBackedDocumentBootstrap {
+            root_specifier: "document.mec".to_string(),
+            source_map: HashMap::new(),
+            resolutions: Vec::new(),
+            tree: baseline,
+            console_instance: "repl".to_string(),
+            lifecycle: DocumentRuntimeLifecycle::default(),
+        };
+        let (runtime_tree, program_output) = document_runtime_tree(&source, combined).unwrap();
+        assert!(program_output.is_some());
+        assert_eq!(
+            document::document_output_ordinals(&runtime_tree).get(&fragment_id),
+            Some(&2),
+            "the hidden fixed program output owns the ordinal before appended documentation",
         );
     }
 
@@ -4408,6 +4456,20 @@ mod browser_tests {
                 .as_deref(),
             Some(selection_token.as_str()),
             "live updates must retain the fixed output identity",
+        );
+        document
+            .repl_select_retained(&selection_token, false)
+            .unwrap();
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("ans")
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "3",
+            "the stable selection identity must retain the current live snapshot",
         );
     }
 

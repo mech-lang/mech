@@ -816,12 +816,14 @@ impl ReactiveInstance {
         })
     }
 
-    /// Install compatible published state from another live instance without
-    /// changing this instance's already-validated plan.
+    /// Install compatible persistent storage from another live instance
+    /// without changing this instance's already-validated plan.
     ///
     /// Interactive hosts activate replacement programs in isolation before
-    /// calling this method. Migration is staged in a cloned arena, so an
-    /// invalid or incompatible mapping cannot partially mutate the candidate.
+    /// calling this method. Mutable state and materialized output projections
+    /// share the state arena and migrate together, keeping the replacement's
+    /// published snapshot coherent. Migration is staged in a cloned arena, so
+    /// an invalid or incompatible mapping cannot partially mutate the candidate.
     pub fn migrate_compatible_state_from(
         &mut self,
         source: &ReactiveInstance,
@@ -847,8 +849,8 @@ impl ReactiveInstance {
             let Some(source_slot) = source.plan.slots.get(mapping.source.get() as usize) else {
                 return Err(ResidentActivationError::InvalidStateMigration);
             };
-            if target.role != SlotRole::State
-                || source_slot.role != SlotRole::State
+            if target.role != source_slot.role
+                || !matches!(target.role, SlotRole::State | SlotRole::Output)
                 || target.schema_key != source_slot.schema_key
                 || target.shape != source_slot.shape
             {

@@ -432,6 +432,53 @@ fn compatible_state_mappings(
             target: target_slot.slot,
         });
     }
+
+    // A replacement is activated from source defaults before compatible live
+    // state is installed. Its materialized derived/output slots therefore
+    // describe that default snapshot, not the migrated state snapshot. When
+    // the submission did not explicitly mutate state, migrate those persistent
+    // projections by their public output identity as one transaction with the
+    // state cells. Executing a synthetic turn here would advance transitions;
+    // copying the already-published projections preserves the exact epoch.
+    if changed_state_names.is_empty() {
+        for target_output in target.outputs() {
+            let target_slot = target_output.source;
+            let target_lexical_name = target_output
+                .interactive_binding
+                .as_ref()
+                .map(|binding| binding.lexical_name.as_str());
+            if mapped_targets.contains(&target_slot)
+                || target_lexical_name == Some("ans")
+                || !target
+                    .slots()
+                    .get(target_slot.get() as usize)
+                    .is_some_and(|slot| slot.role == SlotRole::Output)
+            {
+                continue;
+            }
+            let Some(source_output) = source.outputs().iter().find(|source_output| {
+                source_output.name == target_output.name
+                    && source_output
+                        .interactive_binding
+                        .as_ref()
+                        .map(|binding| binding.lexical_name.as_str())
+                        == target_lexical_name
+                    && !mapped_sources.contains(&source_output.source)
+                    && source
+                        .slots()
+                        .get(source_output.source.get() as usize)
+                        .is_some_and(|slot| slot.role == SlotRole::Output)
+            }) else {
+                continue;
+            };
+            mapped_sources.insert(source_output.source);
+            mapped_targets.insert(target_slot);
+            mappings.push(StateMigrationMapping {
+                source: source_output.source,
+                target: target_slot,
+            });
+        }
+    }
     mappings
 }
 
