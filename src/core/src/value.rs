@@ -725,6 +725,37 @@ pub enum LegacyValue {
     Empty,
 }
 
+/// Shared traversal budget for portable inline projections. A single budget
+/// follows nested values so a small outer container cannot hide an unbounded
+/// table, map, tuple, or matrix inside one of its entries.
+#[derive(Clone, Copy, Debug)]
+struct InlineFormatBudget {
+    remaining: Option<usize>,
+}
+
+impl InlineFormatBudget {
+    fn unlimited() -> Self {
+        Self { remaining: None }
+    }
+
+    fn bounded(limit: usize) -> Self {
+        Self {
+            remaining: Some(limit),
+        }
+    }
+
+    fn consume(&mut self) -> bool {
+        match &mut self.remaining {
+            Some(0) => false,
+            Some(remaining) => {
+                *remaining -= 1;
+                true
+            }
+            None => true,
+        }
+    }
+}
+
 impl Eq for LegacyValue {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -2450,6 +2481,10 @@ impl LegacyValue {
     /// String escaping and recursive container formatting belong here so
     /// every host publishes the same canonical representation.
     pub fn format_canonical_inline(&self) -> String {
+        self.format_canonical_inline_with_budget(&mut InlineFormatBudget::unlimited())
+    }
+
+    fn format_canonical_inline_with_budget(&self, budget: &mut InlineFormatBudget) -> String {
         match self {
             #[cfg(feature = "u8")]
             LegacyValue::U8(n) => format!("{}", n.borrow()),
@@ -2484,98 +2519,130 @@ impl LegacyValue {
             #[cfg(feature = "rational")]
             LegacyValue::R64(r) => format!("{}", r.borrow()),
             #[cfg(feature = "matrix")]
-            LegacyValue::MatrixIndex(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixIndex(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            LegacyValue::MatrixBool(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixBool(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            LegacyValue::MatrixU8(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU8(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            LegacyValue::MatrixU16(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU16(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            LegacyValue::MatrixU32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU32(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            LegacyValue::MatrixU64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            LegacyValue::MatrixU128(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU128(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            LegacyValue::MatrixI8(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI8(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            LegacyValue::MatrixI16(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI16(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            LegacyValue::MatrixI32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI32(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            LegacyValue::MatrixI64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            LegacyValue::MatrixI128(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI128(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            LegacyValue::MatrixF32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixF32(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            LegacyValue::MatrixF64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixF64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "string"))]
             LegacyValue::MatrixString(m) => {
-                Self::format_matrix_inline_with(m, |value| Self::format_string_inline(&value))
+                Self::format_matrix_inline_with(m, budget, |value, _| {
+                    Self::format_string_inline(&value)
+                })
             }
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            LegacyValue::MatrixR64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixR64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            LegacyValue::MatrixC64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixC64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(feature = "matrix")]
             LegacyValue::MatrixValue(m) => {
-                Self::format_matrix_inline_with(m, |value| value.format_canonical_inline())
+                Self::format_matrix_inline_with(m, budget, |value, budget| {
+                    value.format_canonical_inline_with_budget(budget)
+                })
             }
             #[cfg(feature = "atom")]
             LegacyValue::Atom(a) => format!("{}", a.borrow()),
             #[cfg(feature = "set")]
             LegacyValue::Set(s) => {
-                let vals = s
-                    .borrow()
-                    .set
-                    .iter()
-                    .map(|v| v.format_canonical_inline())
-                    .collect::<Vec<_>>();
+                let set = s.borrow();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for value in &set.set {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    vals.push(value.format_canonical_inline_with_budget(budget));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "map")]
             LegacyValue::Map(m) => {
-                let vals = m
-                    .borrow()
-                    .map
-                    .iter()
-                    .map(|(k, v)| {
-                        format!(
-                            "{}: {}",
-                            k.format_canonical_inline(),
-                            v.format_canonical_inline()
-                        )
-                    })
-                    .collect::<Vec<_>>();
+                let map = m.borrow();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for (key, value) in &map.map {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    vals.push(format!(
+                        "{}: {}",
+                        key.format_canonical_inline_with_budget(budget),
+                        value.format_canonical_inline_with_budget(budget)
+                    ));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "record")]
             LegacyValue::Record(r) => {
                 let record = r.borrow();
-                let vals = record
-                    .data
-                    .iter()
-                    .map(|(k, v)| {
-                        let name = record
-                            .field_names
-                            .get(k)
-                            .cloned()
-                            .unwrap_or_else(|| format!("{}", k));
-                        format!("{}: {}", name, v.format_canonical_inline())
-                    })
-                    .collect::<Vec<_>>();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for (key, value) in &record.data {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    let name = record
+                        .field_names
+                        .get(key)
+                        .cloned()
+                        .unwrap_or_else(|| format!("{}", key));
+                    vals.push(format!(
+                        "{}: {}",
+                        name,
+                        value.format_canonical_inline_with_budget(budget)
+                    ));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "tuple")]
             LegacyValue::Tuple(t) => {
-                let vals = t
-                    .borrow()
-                    .elements
-                    .iter()
-                    .map(|v| v.format_canonical_inline())
-                    .collect::<Vec<_>>();
+                let tuple = t.borrow();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for value in &tuple.elements {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    vals.push(value.format_canonical_inline_with_budget(budget));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("({})", vals.join(", "))
             }
             #[cfg(feature = "enum")]
@@ -2596,7 +2663,12 @@ impl LegacyValue {
                     .unwrap_or_else(|| format!("{}", variant_id));
                 match payload {
                     Some(value) => {
-                        format!(":{}({})", variant_name, value.format_canonical_inline())
+                        let payload = if budget.consume() {
+                            value.format_canonical_inline_with_budget(budget)
+                        } else {
+                            "…".to_string()
+                        };
+                        format!(":{}({})", variant_name, payload)
                     }
                     None => format!(":{}", variant_name),
                 }
@@ -2613,131 +2685,81 @@ impl LegacyValue {
                 if table.rows == 0 {
                     return format!("<{}>", table.kind());
                 }
-                let headers = table
-                    .data
+                let mut visible_columns = Vec::new();
+                let mut columns_elided = false;
+                for column in &table.data {
+                    if !budget.consume() {
+                        columns_elided = true;
+                        break;
+                    }
+                    visible_columns.push(column);
+                }
+                let mut headers = visible_columns
                     .iter()
-                    .map(|(k, (kind, _))| {
+                    .map(|(key, (kind, _))| {
                         let name = table
                             .col_names
-                            .get(k)
+                            .get(key)
                             .cloned()
-                            .unwrap_or_else(|| format!("{}", k));
+                            .unwrap_or_else(|| format!("{}", key));
                         format!("{}<{}>", name, kind)
                     })
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                let rows = (0..table.rows)
-                    .map(|r| {
-                        table
-                            .data
-                            .iter()
-                            .map(|(_, (_, col))| {
-                                col.index2d(r + 1, 1).format_canonical_table_cell_inline()
-                            })
-                            .collect::<Vec<_>>()
-                            .join(" ")
-                    })
                     .collect::<Vec<_>>();
+                if columns_elided {
+                    headers.push("…<*>".to_string());
+                }
+                let headers = headers.join(" ");
+                let mut rows = Vec::new();
+                let mut values_elided = false;
+                if visible_columns.is_empty() {
+                    // A zero budget still needs one structural elision marker;
+                    // emitting an empty row for every retained row would make
+                    // the supposedly bounded projection scale with the table.
+                    rows.push("…".to_string());
+                } else {
+                    'rows: for row in 0..table.rows {
+                        let mut cells = Vec::new();
+                        for (_, (_, column)) in &visible_columns {
+                            if !budget.consume() {
+                                values_elided = true;
+                                if !cells.is_empty() {
+                                    cells.push("…".to_string());
+                                    rows.push(cells.join(" "));
+                                }
+                                break 'rows;
+                            }
+                            cells.push(
+                                column
+                                    .index2d(row + 1, 1)
+                                    .format_canonical_table_cell_inline(budget),
+                            );
+                        }
+                        rows.push(cells.join(" "));
+                    }
+                    if values_elided || rows.len() < table.rows {
+                        rows.push("…".to_string());
+                    }
+                }
                 format!("|{}| {} |", headers, rows.join(" | "))
             }
             LegacyValue::Id(x) => format!("{}", humanize(x)),
             LegacyValue::Index(x) => format!("{}", x.borrow()),
             LegacyValue::Kind(k) => format!("<{}>", k),
-            LegacyValue::Typed(value, _) => value.format_canonical_inline(),
-            LegacyValue::MutableReference(m) => m.borrow().format_canonical_inline(),
+            LegacyValue::Typed(value, _) => value.format_canonical_inline_with_budget(budget),
+            LegacyValue::MutableReference(m) => {
+                m.borrow().format_canonical_inline_with_budget(budget)
+            }
             LegacyValue::IndexAll => ":".to_string(),
             LegacyValue::EmptyKind(_) => "_".to_string(),
             LegacyValue::Empty => "_".to_string(),
         }
     }
 
-    /// Formats a canonical REPL projection while bounding the number of
-    /// matrix cells visited. The accepted runtime value remains complete;
-    /// only its interactive presentation is elided.
+    /// Formats a canonical REPL projection while bounding aggregate traversal.
+    /// The accepted runtime value remains complete; only its interactive
+    /// presentation is elided, including nested aggregates of every kind.
     pub fn format_canonical_inline_with_element_limit(&self, limit: usize) -> String {
-        match self {
-            #[cfg(feature = "matrix")]
-            LegacyValue::MatrixIndex(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "bool"))]
-            LegacyValue::MatrixBool(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "u8"))]
-            LegacyValue::MatrixU8(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "u16"))]
-            LegacyValue::MatrixU16(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "u32"))]
-            LegacyValue::MatrixU32(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "u64"))]
-            LegacyValue::MatrixU64(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "u128"))]
-            LegacyValue::MatrixU128(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "i8"))]
-            LegacyValue::MatrixI8(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "i16"))]
-            LegacyValue::MatrixI16(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "i32"))]
-            LegacyValue::MatrixI32(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "i64"))]
-            LegacyValue::MatrixI64(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "i128"))]
-            LegacyValue::MatrixI128(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "f32"))]
-            LegacyValue::MatrixF32(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "f64"))]
-            LegacyValue::MatrixF64(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "string"))]
-            LegacyValue::MatrixString(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| {
-                    Self::format_string_inline(&value)
-                })
-            }
-            #[cfg(all(feature = "matrix", feature = "rational"))]
-            LegacyValue::MatrixR64(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(all(feature = "matrix", feature = "complex"))]
-            LegacyValue::MatrixC64(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| value.to_string())
-            }
-            #[cfg(feature = "matrix")]
-            LegacyValue::MatrixValue(matrix) => {
-                Self::format_matrix_inline_with_limit(matrix, limit, |value| {
-                    value.format_canonical_inline()
-                })
-            }
-            LegacyValue::Typed(value, _) => value.format_canonical_inline_with_element_limit(limit),
-            LegacyValue::MutableReference(value) => value
-                .borrow()
-                .format_canonical_inline_with_element_limit(limit),
-            _ => self.format_canonical_inline(),
-        }
+        self.format_canonical_inline_with_budget(&mut InlineFormatBudget::bounded(limit))
     }
 
     /// Formats one cell for the inline-table grammar. A table literal uses
@@ -2745,8 +2767,8 @@ impl LegacyValue {
     /// nested table must be parenthesized to give both the parser and preview
     /// scanner an unambiguous structural boundary. Inspecting the canonical
     /// prefix also covers typed and referenced table values transparently.
-    fn format_canonical_table_cell_inline(&self) -> String {
-        let canonical = self.format_canonical_inline();
+    fn format_canonical_table_cell_inline(&self, budget: &mut InlineFormatBudget) -> String {
+        let canonical = self.format_canonical_inline_with_budget(budget);
         if canonical.starts_with('|') {
             format!("({canonical})")
         } else {
@@ -3031,56 +3053,40 @@ impl LegacyValue {
     }
 
     #[cfg(feature = "matrix")]
-    fn format_matrix_inline<T>(matrix: &Matrix<T>) -> String
+    fn format_matrix_inline<T>(matrix: &Matrix<T>, budget: &mut InlineFormatBudget) -> String
     where
         T: Clone + std::fmt::Display + std::fmt::Debug + PartialEq + 'static,
     {
-        Self::format_matrix_inline_with(matrix, |value| value.to_string())
+        Self::format_matrix_inline_with(matrix, budget, |value, _| value.to_string())
     }
 
     #[cfg(feature = "matrix")]
-    fn format_matrix_inline_with<T, F>(matrix: &Matrix<T>, format_element: F) -> String
+    fn format_matrix_inline_with<T, F>(
+        matrix: &Matrix<T>,
+        budget: &mut InlineFormatBudget,
+        mut format_element: F,
+    ) -> String
     where
         T: Clone + std::fmt::Debug + PartialEq + 'static,
-        F: Fn(T) -> String,
+        F: FnMut(T, &mut InlineFormatBudget) -> String,
     {
         let shape = matrix.shape();
         let rows = shape[0];
         let cols = shape[1];
-        let row_strings = (0..rows)
-            .map(|r| {
-                (0..cols)
-                    .map(|c| format_element(matrix.index2d(r + 1, c + 1)))
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            })
-            .collect::<Vec<_>>();
-        format!("[{}]", row_strings.join("; "))
-    }
-
-    #[cfg(feature = "matrix")]
-    fn format_matrix_inline_with_limit<T, F>(
-        matrix: &Matrix<T>,
-        limit: usize,
-        format_element: F,
-    ) -> String
-    where
-        T: Clone + std::fmt::Debug + PartialEq + 'static,
-        F: Fn(T) -> String,
-    {
-        let shape = matrix.shape();
-        let rows = shape[0];
-        let columns = shape[1];
-        let total = rows.saturating_mul(columns);
-        let visible = total.min(limit);
+        let total = rows.saturating_mul(cols);
         let mut rendered = String::from("[");
-        for index in 0..visible {
-            let row = index / columns;
-            let column = index % columns;
+        let mut visible = 0;
+        for index in 0..total {
+            if !budget.consume() {
+                break;
+            }
+            let row = index / cols;
+            let column = index % cols;
             if index > 0 {
                 rendered.push_str(if column == 0 { "; " } else { " " });
             }
-            rendered.push_str(&format_element(matrix.index2d(row + 1, column + 1)));
+            rendered.push_str(&format_element(matrix.index2d(row + 1, column + 1), budget));
+            visible += 1;
         }
         if visible < total {
             if visible > 0 {
@@ -4934,6 +4940,121 @@ mod reactive_cell_tests {
         assert_eq!(
             LegacyValue::MatrixF64(matrix).format_canonical_inline(),
             "[1 2; 3 4]"
+        );
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    #[test]
+    fn bounded_matrix_formatting_crosses_transparent_value_wrappers() {
+        let matrix = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(
+            na::DMatrix::from_row_slice(2, 3, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
+        )));
+        let typed = LegacyValue::Typed(
+            Box::new(matrix),
+            ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 3]),
+        );
+        let referenced = LegacyValue::MutableReference(Ref::new(typed));
+
+        assert_eq!(
+            referenced.format_canonical_inline_with_element_limit(3),
+            "[1 2 3 …]"
+        );
+        assert_eq!(referenced.format_canonical_inline(), "[1 2 3; 4 5 6]");
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "string",
+        feature = "tuple",
+        feature = "set",
+        feature = "map",
+        feature = "record",
+        feature = "enum",
+        feature = "table",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn bounded_inline_formatting_caps_every_aggregate_family() {
+        let numbers = (1..=5)
+            .map(|number| LegacyValue::F64(Ref::new(number as f64)))
+            .collect::<Vec<_>>();
+
+        let tuple = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(numbers.clone())));
+        assert_eq!(
+            tuple.format_canonical_inline_with_element_limit(2),
+            "(1, 2, …)"
+        );
+
+        let set = LegacyValue::Set(Ref::new(MechSet::from_vec(numbers.clone())));
+        assert_eq!(
+            set.format_canonical_inline_with_element_limit(2),
+            "{1, 2, …}"
+        );
+
+        let map = LegacyValue::Map(Ref::new(MechMap::from_vec(
+            numbers
+                .iter()
+                .enumerate()
+                .map(|(index, value)| {
+                    (
+                        LegacyValue::String(Ref::new(format!("key{index}"))),
+                        value.clone(),
+                    )
+                })
+                .collect(),
+        )));
+        assert_eq!(
+            map.format_canonical_inline_with_element_limit(2),
+            "{\"key0\": 1, \"key1\": 2, …}"
+        );
+
+        let record = LegacyValue::Record(Ref::new(MechRecord::new(vec![
+            ("one", numbers[0].clone()),
+            ("two", numbers[1].clone()),
+            ("three", numbers[2].clone()),
+        ])));
+        assert_eq!(
+            record.format_canonical_inline_with_element_limit(2),
+            "{one: 1, two: 2, …}"
+        );
+
+        let enum_id = hash_str("answer");
+        let variant_id = hash_str("answer/value");
+        let mut names = Dictionary::new();
+        names.insert(enum_id, "answer".to_string());
+        names.insert(variant_id, "answer/value".to_string());
+        let enm = LegacyValue::Enum(Ref::new(MechEnum {
+            id: enum_id,
+            variants: vec![(variant_id, Some(tuple))],
+            names: Ref::new(names),
+        }));
+        assert_eq!(
+            enm.format_canonical_inline_with_element_limit(0),
+            ":value(…)"
+        );
+
+        let column_id = hash_str("message");
+        let column = Matrix::from_vec(
+            vec![
+                LegacyValue::String(Ref::new("first".to_string())),
+                LegacyValue::String(Ref::new("second".to_string())),
+            ],
+            2,
+            1,
+        );
+        let table = LegacyValue::Table(Ref::new(MechTable::from_parts(
+            2,
+            1,
+            vec![(column_id, ValueKind::String, column)],
+            vec![(column_id, "message".to_string())],
+        )));
+        assert_eq!(
+            table.format_canonical_inline_with_element_limit(2),
+            "|message<string>| \"first\" | … |"
+        );
+        assert_eq!(
+            table.format_canonical_inline_with_element_limit(0),
+            "|…<*>| … |"
         );
     }
 
