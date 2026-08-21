@@ -9,9 +9,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
   <script async defer src="https://buttons.github.io/buttons.js"></script>
-  <style>
-{{STYLESHEET}}
-  </style>
+  <style data-mech-style-layer="source">{{MECH_SOURCE_STYLESHEET}}</style>
+  <style data-mech-style-layer="mechdown">{{MECHDOWN_STYLESHEET}}</style>
+  <style data-mech-style-layer="page">{{PAGE_STYLESHEET}}</style>
+  <style data-mech-style-layer="repl">{{MECH_REPL_STYLESHEET}}</style>
 </head>
 <body>
   <header class="site-header">
@@ -39,7 +40,8 @@
     data-mech-document-status="loading"
     mech-engine-id="0"
     data-mech-source-url-key="{{SOURCE_URL_KEY}}"
-    aria-label="Blog workspace">
+    aria-label="Blog workspace"
+    data-mech-repl-host>
     <section class="content-shell" id="contentShell">
       <div class="content-column">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
@@ -57,18 +59,18 @@
             <p class="hero-kicker">{{KICKER}}</p>
             <h1 id="document-title">{{TITLE}}</h1>
             <p class="mech-meta">{{AUTHOR}} <span aria-hidden="true">•</span> {{DATE}}</p>
-            <div class="hero-summary">{{SUMMARY}}</div>
+            <div class="hero-summary" data-mechdown>{{SUMMARY}}</div>
           </div>
           <div class="hero-visual">{{HERO}}</div>
         </section>
 
-        <section class="article-intro" id="articleIntro" aria-label="Introduction">
+        <section class="article-intro" id="articleIntro" aria-label="Introduction" data-mechdown>
           {{INTRO}}
         </section>
 
         <div class="article-layout" id="articleLayout">
           {{TOC}}
-          <article class="main-content" aria-label="Article">
+          <article class="main-content" aria-label="Article" data-mechdown>
             {{CONTENT}}
           </article>
         </div>
@@ -76,10 +78,10 @@
         <div class="mika-separator" aria-hidden="true"></div>
         <section class="article-backmatter" aria-label="Notes and Works Cited">
           <div class="backmatter-row backmatter-notes">
-            <div class="backmatter-body">{{FOOTNOTES}}</div>
+            <div class="backmatter-body" data-mechdown>{{FOOTNOTES}}</div>
           </div>
           <div class="backmatter-row backmatter-cited">
-            <div class="backmatter-body">{{CITED}}</div>
+            <div class="backmatter-body" data-mechdown>{{CITED}}</div>
           </div>
         </section>
 

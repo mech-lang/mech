@@ -35,6 +35,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo::rerun-if-changed=include/document.js");
     println!("cargo::rerun-if-changed=include/index.html");
     println!("cargo::rerun-if-changed=include/style.css");
+    println!("cargo::rerun-if-changed=include/mech-source.css");
+    println!("cargo::rerun-if-changed=include/mechdown.css");
+    println!("cargo::rerun-if-changed=include/mech-repl.css");
     println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm.js");
     println!("cargo::rerun-if-changed=src/wasm/pkg/mech_wasm_bg.wasm");
 

@@ -20,7 +20,7 @@ use publication::{PlannedOutput, publish_outputs_recoverably};
 use crate::cli::outcome::{CliOutcome, RootFlags};
 use crate::cli::resources::{
     LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
-    load_resource, load_stylesheets,
+    html_style_sheets, load_resource, load_stylesheets,
 };
 use crate::fs_paths::{
     absolute_path, extension_allowed, paths_equivalent, source_extension,
@@ -924,9 +924,9 @@ pub(crate) async fn run(options: FormatOptions) -> MResult<CliOutcome> {
                     )?;
                     let tree = parser::parse(authoritative_source.trim())?;
                     let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_slots(
+                    let render = formatter.format_html_with_style_sheets_and_slots(
                         &tree,
-                        stylesheet_str.clone(),
+                        html_style_sheets(stylesheet_str.clone()),
                         shim_str.clone(),
                         &document_slots,
                     );

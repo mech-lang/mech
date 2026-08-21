@@ -26,14 +26,17 @@ done
 command -v grep >/dev/null 2>&1 || fail "grep is required to scan shipped document shims"
 
 for selector in \
-  'id="header"' \
-  'id="logo"' \
-  'id="nav"' \
+  'site-header' \
+  'header-inner' \
   'id="github"' \
   'mech-root' \
-  'mech-toc' \
-  'id="left-pane"' \
-  'id="breadcrumb"' \
+  'contentShell' \
+  'content-column' \
+  'articleIntro' \
+  'articleLayout' \
+  'main-content' \
+  'article-backmatter' \
+  'post-pagination' \
   'id="resizer"' \
   'id="toggle-repl"' \
   'console-pane' \

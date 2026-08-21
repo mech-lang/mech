@@ -1,0 +1,1603 @@
+@import url(https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css);
+
+/*
+ * Mech source presentation layer.
+ *
+ * The formatter intentionally emits structured div/span/table markup so
+ * every token and two-dimensional value can retain syntax highlighting.
+ * data-mech-source is the component boundary; removing this stylesheet
+ * leaves the semantic text/markup in place without source presentation.
+ */
+
+[data-mech-source] {
+  --bracket-color: hsl(288, 30%, 70%);
+  --op-color: hsl(288, 30%, 70%);
+  --function-signature-color: hsl(133, 33%, 80%);
+  --function-name-color: hsl(133, 33%, 80%);
+  --function-bracket-color: hsl(133, 33%, 70%);
+  --function-arrow-color: hsl(133, 33%, 60%);
+  --literal-color: hsl(210, 78%, 78%);
+  --contrast-color-high: hsl(288, 30%, 80%);
+  --contrast-color-mid:  hsl(288, 30%, 70%);
+  --contrast-color-low:  hsl(288, 30%, 60%);
+  --main-color-high: hsl(42, 89%, 80%);
+  --main-color-mid:  hsl(42, 89%, 70%);
+  --main-color-low:  hsl(42, 89%, 60%);
+  --atom-color-high: hsl(33, 43%, 80%);
+  --atom-color-mid: hsl(33, 43%, 70%);
+  --atom-color-low: hsl(33, 43%, 60%);
+  --out-bracket-color: hsl(288, 30%, 85%);
+  --sidebar-width: 300px;
+  --text-color-light: hsl(40, 100%, 95%);
+  --text-color: hsl(41, 49%, 90%);
+  --text-color-dark: hsl(41, 49%, 25%);
+  --code-border-color: #4d5257;
+  --inline-code-border-color: #4d5257;
+  --code-background-color: #090d11;
+  --code-output-background-color: #020303;
+  --var-name-color: hsl(290, 45%, 90%);
+  --field-name-color: #63abb7;
+  --invariant-name-color: hsl(130, 100%, 75%);
+  --kind-annotation-color: #f09fca;
+  --kind-annotation-color-dark: #d574a8;
+  --body-background-color: hsl(216, 28%, 7%);
+  --abstract-background-color: #171c26;
+  --mechdown-table-odd-row-background-color: hsl(222, 25%, 9%);
+  --mechdown-table-even-row-background-color: #171c26;
+  --mechdown-table-row-hover-background-color: hsl(222, 25%, 17%);
+  --h2-underline-color: #343b46;
+  --toc-heading-number-color: rgba(255, 255, 255, 0.55);
+  --toc-accent: hsl(308, 42%, 69%);
+  --toc-accent-soft: hsl(308, 42%, 59%);
+  --toc-text-secondary: hsl(308, 17%, 73%);
+  --toc-border: hsl(308, 17%, 73%);
+  --title-underline-color: hsl(42, 89%, 70%);
+  --callout-background-color: #1f2533;
+  --warning-color: hsl(20, 100%, 75%);
+  --error-color: hsl(350, 100%, 75%);
+  --info-color: hsl(230, 100%, 75%);
+  --success-color: hsl(130, 100%, 75%);
+  --idea-color: hsl(271, 100%, 75%);
+  --question-color: hsl(191, 100%, 75%);
+  --code-namespace-label-color: #f5a7d3;
+  --pattern-color: hsl(133, 33%, 70%);
+  --pattern-parent-color: hsl(133, 33%, 70%);
+  --logo-color: rgb(246,192,78);
+
+  color: var(--text-color, hsl(41, 49%, 90%));
+  font-family: 'FiraCodeRegular', 'SFMono-Regular', Menlo, Consolas, monospace;
+  min-width: 0;
+}
+
+:where([data-mech-source]).mech-invariant-define,
+:where([data-mech-source]) .mech-invariant-define {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-invariant-name,
+:where([data-mech-source]) .mech-invariant-name {
+    color: var(--warning-color);
+}
+
+:where([data-mech-source]).mech-invariant-define-op,
+:where([data-mech-source]) .mech-invariant-define-op {
+    padding-left: 6px;
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-map,
+:where([data-mech-source]) .mech-map {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-set,
+:where([data-mech-source]) .mech-set {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-set-comprehension,
+:where([data-mech-source]) .mech-set-comprehension {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-set-open,
+:where([data-mech-source]) .mech-set-open {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-set-close,
+:where([data-mech-source]) .mech-set-close {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-set-bar,
+:where([data-mech-source]) .mech-set-bar {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-matrix,
+:where([data-mech-source]) .mech-matrix {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-comp-bar,
+:where([data-mech-source]) .mech-comp-bar {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-generator-arrow,
+:where([data-mech-source]) .mech-generator-arrow {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-matrix-comprehension,
+:where([data-mech-source]) .mech-matrix-comprehension {
+    display: inline-flex;
+    align-items: flex-end;
+    white-space: nowrap;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-matrix-comprehension .mech-comp-expr,
+:where([data-mech-source]) .mech-matrix-comprehension .mech-comp-expr,
+:where([data-mech-source]).mech-matrix-comprehension .mech-comp-quals,
+:where([data-mech-source]) .mech-matrix-comprehension .mech-comp-quals {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-matrix-comprehension .mech-bracket.end,
+:where([data-mech-source]) .mech-matrix-comprehension .mech-bracket.end {
+    margin-left: 0;
+}
+
+:where([data-mech-source]).mech-bracket.end,
+:where([data-mech-source]) .mech-bracket.end {
+    align-self: flex-end;
+    margin-left: -10px;
+}
+
+:where([data-mech-source]).mech-slice-ref,
+:where([data-mech-source]) .mech-slice-ref {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-matrix-column,
+:where([data-mech-source]) .mech-matrix-column {
+    display: flex;
+    flex-direction: column;
+    padding-right: 10px;
+}
+
+:where([data-mech-source]).mech-variable-define-op,
+:where([data-mech-source]) .mech-variable-define-op {
+    padding-left:  6px;
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-variable-assign,
+:where([data-mech-source]) .mech-variable-assign {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+}
+
+:where([data-mech-source]).mech-enum-name,
+:where([data-mech-source]) .mech-enum-name {
+    color: var(--kind-annotation-color);
+}
+
+:where([data-mech-source]).mech-enum-define,
+:where([data-mech-source]) .mech-enum-define {
+    display: inline-flex;
+    gap: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-enum-variant,
+:where([data-mech-source]) .mech-enum-variant {
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-kind-define-op,
+:where([data-mech-source]) .mech-kind-define-op {
+    padding-left:  6px;
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-range-operator,
+:where([data-mech-source]) .mech-range-operator {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-assign-op,
+:where([data-mech-source]) .mech-assign-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-transition-statement,
+:where([data-mech-source]) .mech-transition-statement {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-transition-output,
+:where([data-mech-source]) .mech-transition-output {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-fsm-arm-last,
+:where([data-mech-source]) .mech-fsm-arm-last {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-term,
+:where([data-mech-source]) .mech-term {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-formula-operator,
+:where([data-mech-source]) .mech-formula-operator {
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+:where([data-mech-source]).mech-variable-mutable,
+:where([data-mech-source]) .mech-variable-mutable {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-section-element,
+:where([data-mech-source]) .mech-section-element {
+}
+
+:where([data-mech-source]).mech-fsm-specification
+
+.mech-fsm-sigil,
+:where([data-mech-source]) .mech-fsm-specification
+
+.mech-fsm-sigil {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-code-block,
+:where([data-mech-source]) .mech-code-block {
+    display: block;
+    background-color: var(--code-background-color);
+    color: #e6dac2;
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    line-height: 18px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--code-border-color);
+    margin-bottom: 20px;
+    overflow-x: auto;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+}
+
+:where([data-mech-source]).mech-code-block::-webkit-scrollbar,
+:where([data-mech-source]) .mech-code-block::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+:where([data-mech-source]).mech-code-block::-webkit-scrollbar-track,
+:where([data-mech-source]) .mech-code-block::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+:where([data-mech-source]).mech-code-block::-webkit-scrollbar-thumb,
+:where([data-mech-source]) .mech-code-block::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+:where([data-mech-source]).mech-code-block::-webkit-scrollbar-thumb:hover,
+:where([data-mech-source]) .mech-code-block::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+:where([data-mech-source]).mech-code-block,
+:where([data-mech-source]) .mech-code-block {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+:where([data-mech-source]).mech-grammar,
+:where([data-mech-source]) .mech-grammar {
+    display: block;
+    background-color: var(--code-background-color);
+    color: var(--text-color);
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    line-height: 18px;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--code-border-color);
+    margin-bottom: 20px;
+    overflow-x: auto;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+}
+
+:where([data-mech-source]).mech-grammar::-webkit-scrollbar,
+:where([data-mech-source]) .mech-grammar::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+:where([data-mech-source]).mech-grammar::-webkit-scrollbar-track,
+:where([data-mech-source]) .mech-grammar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+:where([data-mech-source]).mech-grammar::-webkit-scrollbar-thumb,
+:where([data-mech-source]) .mech-grammar::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+:where([data-mech-source]).mech-grammar::-webkit-scrollbar-thumb:hover,
+:where([data-mech-source]) .mech-grammar::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+:where([data-mech-source]).mech-grammar,
+:where([data-mech-source]) .mech-grammar {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+:where([data-mech-source]).mech-grammar-identifier,
+:where([data-mech-source]) .mech-grammar-identifier {
+    color: var(--var-name-color);
+}
+
+:where([data-mech-source]).mech-grammar-definition,
+:where([data-mech-source]) .mech-grammar-definition {
+    color: var(--var-name-color);
+}
+
+:where([data-mech-source]).mech-grammar-definition a,
+:where([data-mech-source]) .mech-grammar-definition a {
+    color: var(--var-name-color);
+    text-decoration: none;
+}
+
+:where([data-mech-source]).mech-grammar-definition a:hover,
+:where([data-mech-source]) .mech-grammar-definition a:hover {
+    color: var(--var-name-color);
+    text-decoration: underline;
+}
+
+:where([data-mech-source]).mech-grammar-choice,
+:where([data-mech-source]) .mech-grammar-choice {
+    margin-left: 20px;
+}
+
+:where([data-mech-source]).mech-grammar-sequence,
+:where([data-mech-source]) .mech-grammar-sequence {
+    margin-left: 20px;
+}
+
+:where([data-mech-source]).mech-grammar-terminal,
+:where([data-mech-source]) .mech-grammar-terminal {
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-grammar-rule,
+:where([data-mech-source]) .mech-grammar-rule {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-code,
+:where([data-mech-source]) .mech-code {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+:where([data-mech-source]).mech-match-op,
+:where([data-mech-source]) .mech-match-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-code-block > *:not(:last-child),
+:where([data-mech-source]) .mech-code-block > *:not(:last-child) {
+    margin-bottom: 5px;
+}
+
+:where([data-mech-source]).mech-code .mech-comment,
+:where([data-mech-source]) .mech-code .mech-comment {
+    margin: 0px;
+    padding: 0px;
+}
+
+:where([data-mech-source]).mech-code .mech-comment p,
+:where([data-mech-source]) .mech-code .mech-comment p {
+    line-height: inherit;
+}
+
+:where([data-mech-source]).mech-statement,
+:where([data-mech-source]) .mech-statement {
+    min-width: 225px;
+}
+
+:where([data-mech-source]).mech-inline-mech-code-formatted  .mech-statement,
+:where([data-mech-source]) .mech-inline-mech-code-formatted  .mech-statement {
+    min-width:fit-content;
+}
+
+:where([data-mech-source]).mech-variable-define,
+:where([data-mech-source]) .mech-variable-define {
+    display: flex;
+}
+
+:where([data-mech-source]).mech-fsm-specification-header,
+:where([data-mech-source]) .mech-fsm-specification-header {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-variable-mutable,
+:where([data-mech-source]) .mech-variable-mutable {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-var-name,
+:where([data-mech-source]) .mech-var-name {
+    color: var(--var-name-color);
+    font-style: bold;
+    white-space: nowrap;
+}
+
+:where([data-mech-source]).mech-output-kind,
+:where([data-mech-source]) .mech-output-kind {
+    margin-bottom: 10px;
+}
+
+:where([data-mech-source]).mech-boolean,
+:where([data-mech-source]) .mech-boolean {
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-atom,
+:where([data-mech-source]) .mech-atom {
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-empty,
+:where([data-mech-source]) .mech-empty {
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-grammar-define-op,
+:where([data-mech-source]) .mech-grammar-define-op {
+    padding-right: 12px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-grammar-choice-op,
+:where([data-mech-source]) .mech-grammar-choice-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-grammar-repeat1-op,
+:where([data-mech-source]) .mech-grammar-repeat1-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-grammar-repeat0-op,
+:where([data-mech-source]) .mech-grammar-repeat0-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-grammar-not-op,
+:where([data-mech-source]) .mech-grammar-not-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-grammar-optional-op,
+:where([data-mech-source]) .mech-grammar-optional-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-literal,
+:where([data-mech-source]) .mech-literal {
+}
+
+:where([data-mech-source]).mech-matrix .mech-number,
+:where([data-mech-source]) .mech-matrix .mech-number {
+    text-align: right;
+}
+
+:where([data-mech-source]).mech-number,
+:where([data-mech-source]) .mech-number {
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-factor,
+:where([data-mech-source]) .mech-factor {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-term,
+:where([data-mech-source]) .mech-term {
+}
+
+:where([data-mech-source]).mech-inline-mech-code-formatted .mech-code-block,
+:where([data-mech-source]) .mech-inline-mech-code-formatted .mech-code-block {
+    display: inline-flex;
+    vertical-align: middle;
+    background-color: var(--code-background-color);
+    border: 1px solid var(--inline-code-border-color);
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+:where([data-mech-source]).mech-inline-mech-code-formatted .mech-code-block,
+:where([data-mech-source]) .mech-inline-mech-code-formatted .mech-code-block {
+    background-color: var(--code-background-color);
+    border-radius: 5px 5px 5px 5px !important;
+    border-bottom: 1px solid var(--code-border-color) !important;
+    margin-bottom: 0px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+:where([data-mech-source]).mech-fenced-mech-block .mech-code-block,
+:where([data-mech-source]) .mech-fenced-mech-block .mech-code-block {
+    background-color: var(--code-background-color);
+    border-radius: 10px 10px 0px 0px;
+    border-bottom: 0px solid var(--code-border-color);
+    margin-bottom: 0px;
+    box-shadow: none;
+}
+
+:where([data-mech-source]).mech-fenced-mech-block.no-output .mech-code-block,
+:where([data-mech-source]) .mech-fenced-mech-block.no-output .mech-code-block {
+    border-radius: 10px;
+    border-bottom: 1px solid var(--code-border-color);
+}
+
+:where([data-mech-source]).mech-inline-mech-code,
+:where([data-mech-source]) .mech-inline-mech-code {
+    background-color: var(--code-background-color);
+    border: 1px solid var(--inline-code-border-color);
+    color: var(--literal-color);
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 0px 6px 0px 6px;
+    margin: 0px 2px 0px 2px;
+    border-radius: 3px;
+    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+:where([data-mech-source]).mech-formula-operator,
+:where([data-mech-source]) .mech-formula-operator {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-not-op,
+:where([data-mech-source]) .mech-not-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-op-assign-op,
+:where([data-mech-source]) .mech-op-assign-op {
+    padding-left: 6px;
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-all,
+:where([data-mech-source]) .mech-all {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-transpose-op,
+:where([data-mech-source]) .mech-transpose-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-negate-op,
+:where([data-mech-source]) .mech-negate-op {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-record,
+:where([data-mech-source]) .mech-record {
+    color: var(--op-color);
+    display: flex;
+}
+
+:where([data-mech-source]).mech-binding,
+:where([data-mech-source]) .mech-binding {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-function-call,
+:where([data-mech-source]) .mech-function-call {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-function-call .mech-argument-list,
+:where([data-mech-source]) .mech-function-call .mech-argument-list {
+    color: var(--function-bracket-color);
+}
+
+:where([data-mech-source]).mech-function-call .mech-left-paren,
+:where([data-mech-source]) .mech-function-call .mech-left-paren,
+:where([data-mech-source]).mech-function-call .mech-right-paren,
+:where([data-mech-source]) .mech-function-call .mech-right-paren {
+    color: var(--function-bracket-color);
+}
+
+:where([data-mech-source]).mech-slice,
+:where([data-mech-source]) .mech-slice {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-subscript,
+:where([data-mech-source]) .mech-subscript {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-bracket,
+:where([data-mech-source]) .mech-bracket {
+    display: inline-flex;
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-start-brace,
+:where([data-mech-source]) .mech-start-brace {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-start-paren,
+:where([data-mech-source]) .mech-start-paren {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-end-paren,
+:where([data-mech-source]) .mech-end-paren {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-clickable:hover,
+:where([data-mech-source]) .mech-clickable:hover {
+    background-color: #2a2b34;
+    cursor: pointer;
+}
+
+:where([data-mech-source]).mech-inline-expand,
+:where([data-mech-source]) .mech-inline-expand {
+    color: #eedd00;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+:where([data-mech-source]).mech-end-brace,
+:where([data-mech-source]) .mech-end-brace {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-subscript,
+:where([data-mech-source]) .mech-subscript {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-dot,
+:where([data-mech-source]) .mech-dot {
+    color: var(--field-name-color);
+}
+
+:where([data-mech-source]).mech-binding-colon-op,
+:where([data-mech-source]) .mech-binding-colon-op {
+    padding-right: 6px;
+}
+
+:where([data-mech-source]).mech-right-paren,
+:where([data-mech-source]) .mech-right-paren {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-left-paren,
+:where([data-mech-source]) .mech-left-paren {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-binding-name,
+:where([data-mech-source]) .mech-binding-name {
+    color: var(--field-name-color);
+    padding-left: 6px;
+}
+
+:where([data-mech-source]).mech-parenthetical,
+:where([data-mech-source]) .mech-parenthetical {
+    color: var(--bracket-color);
+}
+
+:where([data-mech-source]).mech-function-name,
+:where([data-mech-source]) .mech-function-name {
+    color: var(--function-name-color);
+}
+
+:where([data-mech-source]).mech-kind-annotation,
+:where([data-mech-source]) .mech-kind-annotation {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-kind,
+:where([data-mech-source]) .mech-kind {
+    color: var(--kind-annotation-color);
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-fsm-define-op,
+:where([data-mech-source]) .mech-fsm-define-op {
+    padding-left: 6px;
+}
+
+:where([data-mech-source]).mech-fsm-output,
+:where([data-mech-source]) .mech-fsm-output {
+    padding-left: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-fsm-input,
+:where([data-mech-source]) .mech-fsm-input {
+    color: #ccbbc2;
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-fsm-name,
+:where([data-mech-source]) .mech-fsm-name {
+    color: #d8a5e4;
+}
+
+:where([data-mech-source]).mech-kind-annotation,
+:where([data-mech-source]) .mech-kind-annotation {
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind .mech-literal .mech-number,
+:where([data-mech-source]) .mech-kind .mech-literal .mech-number {
+    color: var(--kind-annotation-color);
+}
+
+:where([data-mech-source]).mech-kind-annotation .mech-empty,
+:where([data-mech-source]) .mech-kind-annotation .mech-empty {
+    color: var(--kind-annotation-color);
+}
+
+:where([data-mech-source]).mech-fsm-state,
+:where([data-mech-source]) .mech-fsm-state {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-fsm-states,
+:where([data-mech-source]) .mech-fsm-states {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+    line-height: 18px;
+}
+
+:where([data-mech-source]).mech-state-definition,
+:where([data-mech-source]) .mech-state-definition {
+    display: inline-flex;
+    color: var(--atom-color-mid);
+}
+
+:where([data-mech-source]).mech-state-definition .mech-left-paren,
+:where([data-mech-source]) .mech-state-definition .mech-left-paren {
+    color: var(--atom-color-low);
+}
+
+:where([data-mech-source]).mech-state-definition .mech-right-paren,
+:where([data-mech-source]) .mech-state-definition .mech-right-paren {
+    color: var(--atom-color-low);
+}
+
+:where([data-mech-source]).mech-match-arms,
+:where([data-mech-source]) .mech-match-arms {
+    display: flex;
+    flex-direction: column;
+    margin-left: -6ch;
+    color: var(--op-color);
+    line-height: 18px;
+}
+
+:where([data-mech-source]).mech-fsm-arms,
+:where([data-mech-source]) .mech-fsm-arms {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+:where([data-mech-source]).mech-fsm-arm,
+:where([data-mech-source]) .mech-fsm-arm {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-fsm-implementation-header,
+:where([data-mech-source]) .mech-fsm-implementation-header {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-tuple-struct,
+:where([data-mech-source]) .mech-tuple-struct {
+    display: inline-flex;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-fsm-sigil,
+:where([data-mech-source]) .mech-fsm-sigil {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-fsm-state,
+:where([data-mech-source]) .mech-fsm-state {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-tuple-struct-patterns,
+:where([data-mech-source]) .mech-tuple-struct-patterns {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-fsm-define-op,
+:where([data-mech-source]) .mech-fsm-define-op {
+    padding-right: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-matrix.empty .end,
+:where([data-mech-source]) .mech-matrix.empty .end {
+    margin-left: 0px;
+}
+
+:where([data-mech-source]).mech-fsm-implementation,
+:where([data-mech-source]) .mech-fsm-implementation {
+    margin-top: 20px;
+}
+
+:where([data-mech-source]).mech-fsm-guards,
+:where([data-mech-source]) .mech-fsm-guards {
+    display: flex;
+    flex-direction: column;
+    margin-left: 20px;
+    line-height: 18px;
+}
+
+:where([data-mech-source]).mech-fsm-guard-arm,
+:where([data-mech-source]) .mech-fsm-guard-arm {
+    color: var(--op-color);
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-guard-condition,
+:where([data-mech-source]) .mech-guard-condition {
+    padding-left: 6px;
+}
+
+:where([data-mech-source]).mech-transition-output,
+:where([data-mech-source]) .mech-transition-output {
+    padding-left: 0px;
+}
+
+:where([data-mech-source]).mech-state-variables,
+:where([data-mech-source]) .mech-state-variables {
+    display: inline-flex;
+}
+
+:where([data-mech-source]).mech-transition-next,
+:where([data-mech-source]) .mech-transition-next {
+    padding-left: 0px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-guard-condition,
+:where([data-mech-source]) .mech-guard-condition {
+    display: inline-flex;
+    margin: 0px;
+}
+
+:where([data-mech-source]).mech-pattern-wildcard,
+:where([data-mech-source]) .mech-pattern-wildcard {
+    display: inline-flex;
+    color: var(--pattern-color);
+}
+
+:where([data-mech-source]).mech-tuple-struct,
+:where([data-mech-source]) .mech-tuple-struct {
+    margin-right: 6px;
+}
+
+:where([data-mech-source]).mech-tuple,
+:where([data-mech-source]) .mech-tuple {
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-tuple-destructure,
+:where([data-mech-source]) .mech-tuple-destructure {
+    display: flex;
+    gap: 6px;
+    color: var(--op-color);
+}
+
+:where([data-mech-source]).mech-state-name,
+:where([data-mech-source]) .mech-state-name {
+    color: var(--atom-color-mid);
+}
+
+:where([data-mech-source]).mech-code-block .mech-code:first-child .mech-comment,
+:where([data-mech-source]) .mech-code-block .mech-code:first-child .mech-comment {
+    margin-top: 0px;
+    padding-top: 0px;
+}
+
+:where([data-mech-source]).mech-comment,
+:where([data-mech-source]) .mech-comment {
+    color: #5c6467;
+    font-style: italic;
+    padding-top: 20px;
+    display: flex; /* align contents horizontally */
+    gap: 4px;
+}
+
+:where([data-mech-source]).mech-comment p,
+:where([data-mech-source]) .mech-comment p {
+    margin: 0;
+    color: #939a9e;
+    display: inline;
+}
+
+:where([data-mech-source]).mech-comment-sigil,
+:where([data-mech-source]) .mech-comment-sigil {
+    white-space: nowrap;
+}
+
+:where([data-mech-source]).mech-string,
+:where([data-mech-source]) .mech-string {
+    white-space: pre;
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-field-name,
+:where([data-mech-source]) .mech-field-name {
+    color: var(--field-name-color);
+}
+
+:where([data-mech-source]).mech-table-header,
+:where([data-mech-source]) .mech-table-header {
+    color: #dbc3a5;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid var(--code-border-color);
+}
+
+:where([data-mech-source]).mech-table-cell.left,
+:where([data-mech-source]) .mech-table-cell.left {
+    text-align: left;
+}
+
+:where([data-mech-source]).mech-table-cell.right,
+:where([data-mech-source]) .mech-table-cell.right {
+    text-align: right;
+}
+
+:where([data-mech-source]).mech-table-cell.center,
+:where([data-mech-source]) .mech-table-cell.center {
+    text-align: center;
+}
+
+:where([data-mech-source]).mech-table .mech-table-header-cell,
+:where([data-mech-source]) .mech-table .mech-table-header-cell {
+    text-align: center;
+}
+
+:where([data-mech-source]).mech-table-rows,
+:where([data-mech-source]) .mech-table-rows {
+}
+
+:where([data-mech-source]).mech-table-row,
+:where([data-mech-source]) .mech-table-row {
+}
+
+:where([data-mech-source]).mech-table,
+:where([data-mech-source]) .mech-table {
+    background-color: var(--mechdown-table-even-row-background-color);
+    color: var(--text-color);
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 20px;
+    padding: 0px;
+    border-collapse: collapse;
+    border: 1px solid var(--code-border-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+:where([data-mech-source]).mech-output-value .mech-table:last-child,
+:where([data-mech-source]) .mech-output-value .mech-table:last-child {
+  margin-bottom: 0;
+}
+
+:where([data-mech-source]).mech-code-block .mech-table:last-child,
+:where([data-mech-source]) .mech-code-block .mech-table:last-child {
+  margin-bottom: 0;
+}
+
+:where([data-mech-source]).mech-table th,
+:where([data-mech-source]) .mech-table th,
+:where([data-mech-source]).mech-table td,
+:where([data-mech-source]) .mech-table td {
+  padding: 5px;
+}
+
+:where([data-mech-source]).mech-table thead,
+:where([data-mech-source]) .mech-table thead {
+    background-color: var(--mechdown-table-odd-row-background-color);
+}
+
+:where([data-mech-source]).mech-table .mech-table-header-cell,
+:where([data-mech-source]) .mech-table .mech-table-header-cell {
+    padding: 10px;
+}
+
+:where([data-mech-source]).mech-table .mech-table-row-even,
+:where([data-mech-source]) .mech-table .mech-table-row-even {
+    background-color: var(--mechdown-table-even-row-background-color);
+}
+
+:where([data-mech-source]).mech-table .mech-table-row-odd,
+:where([data-mech-source]) .mech-table .mech-table-row-odd {
+    background-color: var(--mechdown-table-odd-row-background-color);
+}
+
+:where([data-mech-source]).mech-table .mech-table-cell,
+:where([data-mech-source]) .mech-table .mech-table-cell {
+    padding: 20px 10px 20px 10px;
+    border-bottom: 1px solid var(--code-border-color);
+}
+
+:where([data-mech-source]).mech-table tbody tr:hover,
+:where([data-mech-source]) .mech-table tbody tr:hover {
+    background-color: var(--mechdown-table-row-hover-background-color);
+}
+
+:where([data-mech-source]).mech-table a,
+:where([data-mech-source]) .mech-table a {
+    color: var(--main-color-high);
+    text-decoration: underline;
+}
+
+:where([data-mech-source]).mech-table a:hover,
+:where([data-mech-source]) .mech-table a:hover {
+    color: #f18181;
+}
+
+:where([data-mech-source]).mech-runtime-error,
+:where([data-mech-source]) .mech-runtime-error {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid color-mix(in srgb, var(--error-color) 65%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--code-background-color) 90%, var(--error-color) 10%);
+    padding: 14px 16px;
+    color: var(--text-color);
+    white-space: normal;
+}
+
+:where([data-mech-source]).mech-output-value:has(.mech-runtime-error),
+:where([data-mech-source]) .mech-output-value:has(.mech-runtime-error) {
+  padding-left: 0px;
+}
+
+:where([data-mech-source]).mech-runtime-error-header,
+:where([data-mech-source]) .mech-runtime-error-header {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+:where([data-mech-source]).mech-runtime-error-header > div,
+:where([data-mech-source]) .mech-runtime-error-header > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+:where([data-mech-source]).mech-runtime-error-icon,
+:where([data-mech-source]) .mech-runtime-error-icon {
+    flex: 0 0 22px;
+    width: 22px;
+    height: 22px;
+    background-color: var(--error-color);
+    mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAxNmguMDEiLz48cGF0aCBkPSJNMTIgOHY0Ii8+PHBhdGggZD0iTTE1LjMxMiAyYTIgMiAwIDAgMSAxLjQxNC41ODZsNC42ODggNC42ODhBMiAyIDAgMCAxIDIyIDguNjg4djYuNjI0YTIgMiAwIDAgMS0uNTg2IDEuNDE0bC00LjY4OCA0LjY4OGEyIDIgMCAwIDEtMS40MTQuNTg2SDguNjg4YTIgMiAwIDAgMS0xLjQxNC0uNTg2bC00LjY4OC00LjY4OEEyIDIgMCAwIDEgMiAxNS4zMTJWOC42ODhhMiAyIDAgMCAxIC41ODYtMS40MTRsNC42ODgtNC42ODhBMiAyIDAgMCAxIDguNjg4IDJ6Ii8+PC9zdmc+") center/100% no-repeat;
+    -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxwYXRoIGQ9Ik0xMiAxNmguMDEiLz48cGF0aCBkPSJNMTIgOHY0Ii8+PHBhdGggZD0iTTE1LjMxMiAyYTIgMiAwIDAgMSAxLjQxNC41ODZsNC42ODggNC42ODhBMiAyIDAgMCAxIDIyIDguNjg4djYuNjI0YTIgMiAwIDAgMS0uNTg2IDEuNDE0bC00LjY4OCA0LjY4OGEyIDIgMCAwIDEtMS40MTQuNTg2SDguNjg4YTIgMiAwIDAgMS0xLjQxNC0uNTg2bC00LjY4OC00LjY4OEEyIDIgMCAwIDEgMiAxNS4zMTJWOC42ODhhMiAyIDAgMCAxIC41ODYtMS40MTRsNC42ODgtNC42ODhBMiAyIDAgMCAxIDguNjg4IDJ6Ii8+PC9zdmc+") center/100% no-repeat;
+}
+
+:where([data-mech-source]).mech-runtime-error-title,
+:where([data-mech-source]) .mech-runtime-error-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--error-color);
+}
+
+:where([data-mech-source]).mech-runtime-error-message,
+:where([data-mech-source]) .mech-runtime-error-message {
+    margin-top: 0px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+:where([data-mech-source]).mech-runtime-error-meta,
+:where([data-mech-source]) .mech-runtime-error-meta {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid color-mix(in srgb, var(--error-color) 35%, transparent);
+}
+
+:where([data-mech-source]).mech-runtime-error-meta-row,
+:where([data-mech-source]) .mech-runtime-error-meta-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+}
+
+:where([data-mech-source]).mech-runtime-error-meta-row + .mech-runtime-error-meta-row,
+:where([data-mech-source]) .mech-runtime-error-meta-row + .mech-runtime-error-meta-row {
+    margin-top: 4px;
+}
+
+:where([data-mech-source]).mech-runtime-error-meta-label,
+:where([data-mech-source]) .mech-runtime-error-meta-label {
+    color: var(--text-color-light);
+}
+
+:where([data-mech-source]).mech-runtime-error-meta-value,
+:where([data-mech-source]) .mech-runtime-error-meta-value {
+    font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
+:where([data-mech-source]).mech-runtime-error-section,
+:where([data-mech-source]) .mech-runtime-error-section {
+    margin-top: 12px;
+}
+
+:where([data-mech-source]).mech-runtime-error-section-title,
+:where([data-mech-source]) .mech-runtime-error-section-title {
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+:where([data-mech-source]).mech-runtime-error-list,
+:where([data-mech-source]) .mech-runtime-error-list {
+    margin: 0;
+    padding-left: 18px;
+}
+
+:where([data-mech-source]).mech-runtime-error-token,
+:where([data-mech-source]) .mech-runtime-error-token {
+    font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
+:where([data-mech-source]).mech-runtime-error-token-range,
+:where([data-mech-source]) .mech-runtime-error-token-range {
+    color: var(--text-color-light);
+    font-family: "Fira Code", "JetBrains Mono", monospace;
+}
+
+:where([data-mech-source]).mech-fenced-mech-block,
+:where([data-mech-source]) .mech-fenced-mech-block {
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+}
+
+:where([data-mech-source]).mech-code-block.hidden,
+:where([data-mech-source]) .mech-code-block.hidden {
+    display: none;
+}
+
+:where([data-mech-source]).mech-fenced-mech-block,
+:where([data-mech-source]) .mech-fenced-mech-block {
+  position: relative;   /* makes this the anchor for absolute positioning */
+}
+
+:where([data-mech-source]).mech-code-block-namespace,
+:where([data-mech-source]) .mech-code-block-namespace {
+    color: var(--code-namespace-label-color);
+    position: absolute;
+    top: -10px;
+    right: 15px;
+    background: rgb(13 17 23);
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    border: 1px solid var(--code-namespace-label-color);
+}
+
+:where([data-mech-source]).mech-code-block-namespace a,
+:where([data-mech-source]) .mech-code-block-namespace a {
+    color: var(--code-namespace-label-color);
+    text-decoration: none;
+}
+
+:where([data-mech-source]).mech-block-output,
+:where([data-mech-source]) .mech-block-output {
+    margin-top: 0px;
+    background-color: var(--code-output-background-color);
+    color: var(--text-color);
+    font-family: 'FiraCodeLight', monospace;
+    font-size: 1rem;
+    padding: 20px;
+    border: 1px solid var(--code-border-color);
+    border-radius: 0px 0px 10px 10px; /* Only bottom corners rounded */
+    overflow-x: auto;
+}
+
+:where([data-mech-source]).mech-block-output::-webkit-scrollbar,
+:where([data-mech-source]) .mech-block-output::-webkit-scrollbar {
+    height: 8px; /* Horizontal scrollbar height */
+}
+
+:where([data-mech-source]).mech-block-output::-webkit-scrollbar-track,
+:where([data-mech-source]) .mech-block-output::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+:where([data-mech-source]).mech-block-output::-webkit-scrollbar-thumb,
+:where([data-mech-source]) .mech-block-output::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.7);
+    border-radius: 10px;
+}
+
+:where([data-mech-source]).mech-block-output::-webkit-scrollbar-thumb:hover,
+:where([data-mech-source]) .mech-block-output::-webkit-scrollbar-thumb:hover {
+    background: rgba(128, 128, 128, 0.9);
+}
+
+:where([data-mech-source]).mech-block-output,
+:where([data-mech-source]) .mech-block-output {
+    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-width: thin;
+}
+
+:where([data-mech-source]).mech-output-value .mech-matrix,
+:where([data-mech-source]) .mech-output-value .mech-matrix {
+    margin: 5px;
+}
+
+:where([data-mech-source]).mech-output-value .mech-matrix td,
+:where([data-mech-source]) .mech-output-value .mech-matrix td {
+    max-width: 150px;
+    overflow: hidden;
+    padding: 5px 10px 5px 10px;
+}
+
+:where([data-mech-source]).mech-output-value,
+:where([data-mech-source]) .mech-output-value {
+    padding-left: 10px;
+}
+
+:where([data-mech-source]).mech-matrix-element,
+:where([data-mech-source]) .mech-matrix-element {
+    text-align: right;
+}
+
+:where([data-mech-source]).mech-matrix-outer,
+:where([data-mech-source]) .mech-matrix-outer {
+    width: fit-content;
+    position:relative;
+    border-left: 3px solid var(--out-bracket-color);
+    border-right: 3px solid var(--out-bracket-color);
+}
+
+:where([data-mech-source]).mech-matrix-outer:after,
+:where([data-mech-source]) .mech-matrix-outer:after {
+    content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    right:0;
+    border-top: 3px solid var(--out-bracket-color);
+}
+
+:where([data-mech-source]).mech-matrix-outer:before,
+:where([data-mech-source]) .mech-matrix-outer:before {
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    border-top: 3px solid var(--out-bracket-color);
+}
+
+:where([data-mech-source]).mech-matrix-inner:before,
+:where([data-mech-source]) .mech-matrix-inner:before {
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    bottom:0;
+    border-bottom: 3px solid var(--out-bracket-color);
+}
+
+:where([data-mech-source]).mech-matrix-inner:after,
+:where([data-mech-source]) .mech-matrix-inner:after {
+      content:'';
+    position:absolute;
+    height:3px;
+    width: 3px;
+    bottom:0; right:0;
+    border-bottom: 3px solid var(--out-bracket-color);
+}
+
+:where([data-mech-source]).mech-output-kind,
+:where([data-mech-source]) .mech-output-kind {
+    color: var(--kind-annotation-color);
+    font-weight: bold;
+    font-family: 'FiraCodeRegular', monospace;
+    margin-bottom: 10px;
+}
+
+:where([data-mech-source]).mech-function-match-arms,
+:where([data-mech-source]) .mech-function-match-arms {
+    margin-bottom: 10px;
+}
+
+:where([data-mech-source]).mech-function-signature .mech-left-paren,
+:where([data-mech-source]) .mech-function-signature .mech-left-paren {
+    color: var(--function-bracket-color);
+}
+
+:where([data-mech-source]).mech-function-signature .mech-right-paren,
+:where([data-mech-source]) .mech-function-signature .mech-right-paren {
+    color: var(--function-bracket-color);
+}
+
+:where([data-mech-source]).mech-function-arrow,
+:where([data-mech-source]) .mech-function-arrow {
+    color: var(--function-arrow-color);
+}
+
+:where([data-mech-source]).mech-function-match-arms .mech-function-arrow,
+:where([data-mech-source]) .mech-function-match-arms .mech-function-arrow {
+    margin-right: 10px;
+}
+
+:where([data-mech-source]).mech-function-match-arms,
+:where([data-mech-source]) .mech-function-match-arms {
+    display: block;
+    padding-left: 2ch;
+}
+
+:where([data-mech-source]).mech-function-match-arm,
+:where([data-mech-source]) .mech-function-match-arm {
+    display: block;
+    line-height: 1.1;
+}
+
+:where([data-mech-source]).mech-function-period,
+:where([data-mech-source]) .mech-function-period {
+    display: none;
+}
+
+:where([data-mech-source]).mech-function-branch,
+:where([data-mech-source]) .mech-function-branch {
+    padding-right: 5px;
+    color: var(--function-arrow-color);
+}
+
+:where([data-mech-source]).mech-function-match-arm:last-of-type::after,
+:where([data-mech-source]) .mech-function-match-arm:last-of-type::after {
+    content: ".";
+    color: var(--function-arrow-color);
+}
+
+:where([data-mech-source]).mech-function-input,
+:where([data-mech-source]) .mech-function-input {
+    color: var(--function-signature-color);
+}
+
+:where([data-mech-source]).mech-pattern,
+:where([data-mech-source]) .mech-pattern {
+    color: var(--pattern-color);
+}
+
+:where([data-mech-source]).mech-pattern .mech-left-paren,
+:where([data-mech-source]) .mech-pattern .mech-left-paren {
+    color: var(--pattern-paren-color);
+}
+
+:where([data-mech-source]).mech-pattern .mech-right-paren,
+:where([data-mech-source]) .mech-pattern .mech-right-paren {
+    color: var(--pattern-paren-color);
+}
+
+:where([data-mech-source]).mech-pattern .mech-number,
+:where([data-mech-source]) .mech-pattern .mech-number {
+    color: var(--pattern-color);
+}
+
+:where([data-mech-source]).mech-pattern .mech-var-name,
+:where([data-mech-source]) .mech-pattern .mech-var-name {
+    color: var(--pattern-color);
+}
+
+:where([data-mech-source]).mech-pattern .mech-atom-name,
+:where([data-mech-source]) .mech-pattern .mech-atom-name {
+    color: var(--atom-color-mid);
+}
+
+:where([data-mech-source]).mech-atom-name,
+:where([data-mech-source]) .mech-atom-name {
+    color: var(--atom-color-mid);
+}
+
+:where([data-mech-source]).mech-enum-variant-name,
+:where([data-mech-source]) .mech-enum-variant-name {
+    color: var(--atom-color-mid);
+}
+
+:where([data-mech-source]).mech-enum-variant-payload,
+:where([data-mech-source]) .mech-enum-variant-payload {
+    color: var(--atom-color-low);
+}
+
+:where([data-mech-source]).mech-pattern .mech-tuple-struct,
+:where([data-mech-source]) .mech-pattern .mech-tuple-struct {
+    color: var(--pattern-color);
+}
+
+:where([data-mech-source]).mech-tuple-struct .mech-right-paren,
+:where([data-mech-source]) .mech-tuple-struct .mech-right-paren {
+    color: var(--atom-color-low);
+}
+
+:where([data-mech-source]).mech-tuple-struct .mech-left-paren,
+:where([data-mech-source]) .mech-tuple-struct .mech-left-paren {
+    color: var(--atom-color-low);
+}
+
+:where([data-mech-source]).mech-tuple-struct .mech-tuple-struct-sigil,
+:where([data-mech-source]) .mech-tuple-struct .mech-tuple-struct-sigil {
+    color: var(--atom-color-low);
+}
+
+:where([data-mech-source]).mech-tuple-struct .mech-tuple-struct-name,
+:where([data-mech-source]) .mech-tuple-struct .mech-tuple-struct-name {
+    color: var(--atom-color-mid);
+}
+
+:where([data-mech-source]).mech-tuple-struct,
+:where([data-mech-source]) .mech-tuple-struct {
+    color: var(--literal-color);
+}
+
+:where([data-mech-source]).mech-record-kind:has(.mech-record-field ~ .mech-record-field),
+:where([data-mech-source]) .mech-record-kind:has(.mech-record-field ~ .mech-record-field) {
+  display: block;
+  white-space: pre;
+  margin-left: 2ch;
+}
+
+:where([data-mech-source]).mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-open::after,
+:where([data-mech-source]) .mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-open::after {
+  content: "\A  ";
+}
+
+:where([data-mech-source]).mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field + .mech-record-field::before,
+:where([data-mech-source]) .mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field + .mech-record-field::before {
+  content: "\A  ";
+}
+
+:where([data-mech-source]).mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-close::before,
+:where([data-mech-source]) .mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-kind-close::before {
+  content: "\A";
+}
+
+:where([data-mech-source]).mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field:has(.mech-record-kind) + .mech-record-field::before,
+:where([data-mech-source]) .mech-record-kind:has(.mech-record-field ~ .mech-record-field)
+  > .mech-record-field:has(.mech-record-kind) + .mech-record-field::before {
+  content: "  ";
+}
+
+:where([data-mech-source]).mech-matrix-kind::before,
+:where([data-mech-source]) .mech-matrix-kind::before {
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-matrix-kind::after,
+:where([data-mech-source]) .mech-matrix-kind::after {
+    content: "⟩";
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-record-kind::before,
+:where([data-mech-source]) .mech-record-kind::before {
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-record-kind::after,
+:where([data-mech-source]) .mech-record-kind::after {
+    content: "⟩";
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind-define > .mech-kind-annotation:first-child::before,
+:where([data-mech-source]) .mech-kind-define > .mech-kind-annotation:first-child::before {
+    content: "⟨";
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind-define > .mech-kind-annotation:first-child::after,
+:where([data-mech-source]) .mech-kind-define > .mech-kind-annotation:first-child::after {
+    content: "⟩";
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::before,
+:where([data-mech-source]) .mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::after,
+:where([data-mech-source]) .mech-kind:has(> .mech-kind > .mech-scalar-kind):has(> .mech-option-question)::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::before,
+:where([data-mech-source]) .mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::before {
+  content: "⟨";
+  color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::after,
+:where([data-mech-source]) .mech-kind:has(> .mech-scalar-kind):not(.mech-matrix-kind-inner > .mech-kind):not(:has(+ .mech-option-question))::after {
+  content: "⟩";
+  color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-kind:has(.mech-record-kind),
+:where([data-mech-source]) .mech-kind:has(.mech-record-kind),
+:where([data-mech-source]).mech-kind-annotation:has(.mech-record-kind),
+:where([data-mech-source]) .mech-kind-annotation:has(.mech-record-kind) {
+  display: contents;
+}
+
+:where([data-mech-source]).mech-record-kind-open,
+:where([data-mech-source]) .mech-record-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-record-kind-close,
+:where([data-mech-source]) .mech-record-kind-close {
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-matrix-kind-open,
+:where([data-mech-source]) .mech-matrix-kind-open {
+    color: var(--kind-annotation-color-dark);
+}
+
+:where([data-mech-source]).mech-matrix-kind-close,
+:where([data-mech-source]) .mech-matrix-kind-close {
+    color: var(--kind-annotation-color-dark);
+}

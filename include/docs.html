@@ -9,9 +9,10 @@
   <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
   <script async defer src="https://buttons.github.io/buttons.js"></script>
-  <style>
-{{STYLESHEET}}
-  </style>
+  <style data-mech-style-layer="source">{{MECH_SOURCE_STYLESHEET}}</style>
+  <style data-mech-style-layer="mechdown">{{MECHDOWN_STYLESHEET}}</style>
+  <style data-mech-style-layer="page">{{PAGE_STYLESHEET}}</style>
+  <style data-mech-style-layer="repl">{{MECH_REPL_STYLESHEET}}</style>
 </head>
 <body>
   <header class="site-header">
@@ -39,7 +40,8 @@
     data-mech-document-status="loading"
     mech-engine-id="0"
     data-mech-source-url-key="{{SOURCE_URL_KEY}}"
-    aria-label="Documentation workspace">
+    aria-label="Documentation workspace"
+    data-mech-repl-host>
     <section class="content-shell" id="contentShell">
       <div class="content-column">
         <nav class="breadcrumbs" aria-label="Breadcrumb">
@@ -54,7 +56,7 @@
 
         <div class="docs-layout article-layout" id="articleLayout">
           {{TOC}}
-          <article class="main-content docs-content" aria-label="Documentation article">
+          <article class="main-content docs-content" aria-label="Documentation article" data-mechdown>
             <header class="docs-header">
               <p class="docs-kicker">{{SECTION}}</p>
               <h1>{{TITLE}}</h1>
@@ -71,10 +73,10 @@
         <div class="mika-separator" aria-hidden="true"></div>
         <section class="article-backmatter" aria-label="Documentation notes and works cited">
           <div class="backmatter-row backmatter-notes">
-            <div class="backmatter-body">{{FOOTNOTES}}</div>
+            <div class="backmatter-body" data-mechdown>{{FOOTNOTES}}</div>
           </div>
           <div class="backmatter-row backmatter-cited">
-            <div class="backmatter-body">{{CITED}}</div>
+            <div class="backmatter-body" data-mechdown>{{CITED}}</div>
           </div>
         </section>
 

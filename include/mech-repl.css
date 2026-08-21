@@ -1,0 +1,560 @@
+/*
+ * Portable REPL component.
+ *
+ * This layer owns the console host, panes, prompt, transcript, value inspector,
+ * and resize/collapse behavior. Host pages may provide shared color tokens,
+ * but sizing stays component-owned and every token has a standalone fallback.
+ */
+
+[data-mech-repl-host],
+[data-mech-repl] {
+  --mech-repl-accent: var(--accent-primary, #f2b63d);
+  --mech-repl-accent-soft: var(--accent-secondary-purple-soft, #7d6fb2);
+  --mech-repl-background: var(--console-bg, #080b12);
+  --mech-repl-surface: var(--bg-secondary, #111827);
+  --mech-repl-surface-raised: var(--bg-tertiary, #1f2937);
+  --mech-repl-border: var(--border-strong, #35393d);
+  --mech-repl-border-soft: var(--border, #293140);
+  --mech-repl-text: var(--console-text, #d7e2e1);
+  --mech-repl-text-muted: var(--text-muted, #827f6b);
+  --mech-repl-kind: var(--kind-annotation-color, #f09fca);
+  --mech-repl-header-height: var(--mech-repl-top-offset, 0px);
+  --mech-repl-size: var(--mech-repl-initial-size, clamp(320px, 50vw, 620px));
+  --mech-repl-grip-width: var(--grip-width, 18px);
+  --mech-repl-grip-height: var(--grip-height, 72px);
+}
+
+[data-mech-repl-host] {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8px var(--mech-console-size, var(--mech-repl-size));
+  min-height: calc(100vh - var(--mech-repl-header-height));
+  min-width: 0;
+}
+
+[data-mech-repl-host] > .content-shell,
+[data-mech-repl-host] > .content,
+[data-mech-repl-host] > #left-pane {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+
+[data-mech-repl-host] > .resize-handle,
+[data-mech-repl-host] > .resizer {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+[data-mech-repl-host] > .console-pane {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+[data-mech-repl-host][data-mech-console-open="false"] {
+  grid-template-columns: minmax(0, 1fr) 0 0;
+}
+
+[data-mech-repl-host][data-mech-console-open="false"] > .resize-handle,
+[data-mech-repl-host][data-mech-console-open="false"] > .resizer {
+  display: none;
+}
+
+.resize-handle,
+.resizer {
+  align-self: stretch;
+  cursor: ew-resize;
+  min-width: 8px;
+  position: relative;
+  z-index: 50;
+}
+
+.resize-handle::after,
+.resizer::after,
+.edge-handle::after {
+  background: var(--mech-repl-accent);
+  border: 1px solid color-mix(in srgb, var(--mech-repl-accent) 70%, #000);
+  border-radius: 999px;
+  content: "";
+  height: var(--mech-repl-grip-height);
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--mech-repl-grip-width);
+}
+
+.resize-handle::before,
+.resizer::before,
+.edge-handle::before {
+  background: var(--mech-repl-border-soft);
+  border-radius: 999px;
+  content: "";
+  height: 20px;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  z-index: 1;
+}
+
+.edge-handle {
+  background: var(--mech-repl-accent);
+  border: 1px solid var(--mech-repl-border);
+  border-radius: 9px 0 0 9px;
+  cursor: ew-resize;
+  display: none;
+  height: var(--mech-repl-grip-height);
+  position: fixed;
+  right: -4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: var(--mech-repl-grip-width);
+  z-index: 1100;
+}
+
+.edge-handle.left {
+  border-radius: 0 9px 9px 0;
+  left: -4px;
+  right: auto;
+}
+
+body.is-resizing,
+body.is-resizing * {
+  cursor: ew-resize !important;
+}
+
+.document-console-toggle,
+.toggle-button {
+  align-items: center;
+  background: var(--mech-repl-background);
+  border: 1px solid var(--mech-repl-border);
+  border-radius: 6px;
+  color: var(--mech-repl-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: 600 12px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  justify-content: center;
+  letter-spacing: 0.03em;
+  min-height: 32px;
+  padding: 6px 10px;
+  position: fixed;
+  right: calc(var(--mech-console-size, var(--mech-repl-size)) + 12px);
+  top: calc(var(--mech-repl-header-height) + 12px);
+  z-index: 902;
+}
+
+.document-console-toggle:hover,
+.document-console-toggle:focus-visible,
+.toggle-button:hover,
+.toggle-button:focus-visible {
+  border-color: var(--mech-repl-accent);
+  outline: none;
+}
+
+[data-mech-repl-host][data-mech-console-open="false"] .document-console-toggle,
+[data-mech-repl-host][data-mech-console-open="false"] .toggle-button {
+  right: 12px;
+}
+
+.console-pane {
+  background: var(--mech-repl-background);
+  border-left: 1px solid var(--mech-repl-border);
+  color: var(--mech-repl-text);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--mech-repl-header-height));
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: sticky;
+  top: var(--mech-repl-header-height);
+  width: 100%;
+}
+
+.console-pane.hidden,
+.console-pane.is-collapsed,
+.console-pane[hidden] {
+  display: none;
+}
+
+.console-pane.is-fullscreen,
+body.console-fullscreen .console-pane {
+  bottom: 0;
+  height: auto;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: var(--mech-repl-header-height);
+  width: 100vw;
+  z-index: 900;
+}
+
+.console-topbar {
+  align-items: center;
+  border-bottom: 1px solid var(--mech-repl-border);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 16px;
+}
+
+.console-tabs {
+  align-items: stretch;
+  align-self: stretch;
+  display: flex;
+  gap: 14px;
+  min-width: 0;
+}
+
+.console-tab {
+  align-items: center;
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--mech-repl-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: 600 12px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.03em;
+  margin-bottom: -1px;
+  padding: 14px 2px 12px;
+  text-transform: uppercase;
+}
+
+.console-tab:hover,
+.console-tab.active {
+  border-bottom-color: var(--mech-repl-accent);
+  color: var(--mech-repl-accent);
+}
+
+.console-fullscreen-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--mech-repl-text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  height: 30px;
+  justify-content: center;
+  margin: 8px 0;
+  padding: 0;
+  width: 30px;
+}
+
+.console-fullscreen-toggle:hover {
+  border-color: var(--mech-repl-border-soft);
+  color: var(--mech-repl-accent);
+}
+
+.console-panels {
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+
+.console-panel {
+  display: none;
+  height: 100%;
+  min-width: 0;
+}
+
+.console-panel.is-active {
+  display: block;
+}
+
+.console-scroll,
+[data-mech-repl] {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+
+.console-scroll {
+  font: 14px/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  overflow: auto;
+  padding: 24px;
+  scrollbar-color: var(--mech-repl-accent-soft) transparent;
+  scrollbar-width: thin;
+}
+
+[data-mech-repl] {
+  background: var(--mech-repl-background);
+  color: var(--mech-repl-text);
+  display: flex;
+  flex-direction: column;
+  font: 14px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+[data-mech-repl].hidden {
+  display: none;
+}
+
+.mech-repl-transcript {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+}
+
+.mech-repl-input-row,
+.repl-line {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 0;
+}
+
+.repl-code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.repl-prompt {
+  color: var(--mech-repl-accent);
+  flex: 0 0 auto;
+  line-height: 1.55;
+}
+
+.repl-input {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  flex: 1;
+  font: inherit;
+  min-height: 1.5rem;
+  min-width: 0;
+  outline: 0;
+  resize: vertical;
+}
+
+.mech-repl-output-table {
+  border: 0;
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+.mech-repl-output-table th,
+.mech-repl-output-table td {
+  border: 0;
+  overflow-wrap: anywhere;
+  padding: 2px 16px 2px 0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.mech-repl-row-muted {
+  color: var(--mech-repl-text-muted);
+}
+
+.mech-repl-symbols {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.mech-repl-symbols td:last-child {
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mech-document-output-entry,
+.mech-document-output-html,
+.mech-output-value {
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.mech-document-output-entry {
+  overflow: hidden;
+  padding: 8px 0 14px;
+}
+
+.mech-document-output-heading {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mech-document-output-heading .mech-output-kind,
+.mech-repl-result-kind {
+  color: var(--mech-repl-kind);
+}
+
+.mech-document-output-html {
+  overflow: auto;
+  padding: 0;
+}
+
+.mech-document-output-html,
+.mech-document-output-html > * {
+  max-width: 100%;
+}
+
+.mech-console-error,
+.mech-repl-error {
+  color: #ff9a9a;
+}
+
+.mech-inline-popup {
+  --mech-repl-accent: var(--accent-primary, #f2b63d);
+  --mech-repl-background: var(--console-bg, #080b12);
+  --mech-repl-surface: var(--bg-secondary, #111827);
+  --mech-repl-surface-raised: var(--bg-tertiary, #1f2937);
+  --mech-repl-border: var(--border-strong, #35393d);
+  --mech-repl-text: var(--console-text, #d7e2e1);
+  background: var(--mech-repl-surface);
+  border: 1px solid var(--mech-repl-border);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 45%);
+  color: var(--mech-repl-text);
+  font: 14px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  left: 24px;
+  max-width: min(460px, calc(100vw - 24px));
+  min-width: 220px;
+  overflow: hidden;
+  position: fixed;
+  top: 96px;
+  z-index: 12000;
+}
+
+.mech-inline-popup[hidden] {
+  display: none !important;
+}
+
+.mech-inline-popup--error {
+  border-color: #c75b66;
+}
+
+.mech-inline-popup__header {
+  align-items: center;
+  border-bottom: 1px solid var(--mech-repl-border);
+  cursor: grab;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 8px 10px;
+  user-select: none;
+}
+
+.mech-inline-popup__header:active {
+  cursor: grabbing;
+}
+
+.mech-inline-popup__title {
+  color: inherit;
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.mech-inline-popup__close {
+  background: var(--mech-repl-surface-raised);
+  border: 1px solid var(--mech-repl-border);
+  border-radius: 5px;
+  color: var(--mech-repl-text);
+  cursor: pointer;
+  height: 24px;
+  line-height: 20px;
+  width: 24px;
+}
+
+.mech-inline-popup__close:hover,
+.mech-inline-popup__close:focus-visible {
+  border-color: var(--mech-repl-accent);
+  color: var(--mech-repl-accent);
+  outline: none;
+}
+
+.mech-inline-popup__content {
+  border-radius: 0 0 8px 8px;
+  margin: 0;
+  max-height: 40vh;
+  overflow: auto;
+  padding: 10px;
+}
+
+.mech-inline-popup__content .mech-output-value {
+  padding: 8px 6px 4px;
+}
+
+@media (max-width: 900px) {
+  [data-mech-repl-host] {
+    display: block;
+    min-height: 0;
+  }
+
+  .document-console-toggle,
+  .toggle-button {
+    bottom: 76px;
+    right: 12px;
+    top: auto;
+  }
+
+  [data-mech-repl-host][data-mech-console-open="true"] .document-console-toggle,
+  [data-mech-repl-host][data-mech-console-open="true"] .toggle-button {
+    right: min(94vw, 520px);
+  }
+
+  [data-mech-repl-host][data-mech-console-open="true"] .console-pane {
+    bottom: 0;
+    box-shadow: -8px 0 28px rgb(0 0 0 / 45%);
+    display: flex !important;
+    height: min(70vh, 620px);
+    position: fixed;
+    right: 0;
+    top: auto;
+    width: min(94vw, 520px);
+    z-index: 900;
+  }
+
+  [data-mech-repl-host][data-mech-console-open="false"] .console-pane,
+  [data-mech-repl-host] .console-pane.hidden,
+  [data-mech-repl-host] .console-pane.is-collapsed {
+    display: none !important;
+  }
+
+  [data-mech-repl-host] .resize-handle,
+  [data-mech-repl-host] .resizer {
+    display: none;
+  }
+
+  [data-mech-repl-host] .edge-handle {
+    bottom: 24px;
+    display: block !important;
+    position: fixed;
+    right: 0;
+    top: auto;
+    transform: none;
+    z-index: 901;
+  }
+
+  [data-mech-repl-host][data-mech-console-open="true"] .edge-handle {
+    right: min(94vw, 520px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mech-inline-popup,
+  .edge-handle,
+  .document-console-toggle,
+  .toggle-button {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

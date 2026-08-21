@@ -174,13 +174,31 @@ fn mech_format_default_shim_restores_rich_shell() {
     shim_contract::assert_rich_shell(
         &html,
         &[
-            "id=\"header\"",
-            "id=\"logo\"",
-            "id=\"nav\"",
+            "site-header",
+            "contentShell",
+            "articleIntro",
+            "articleLayout",
+            "main-content",
             "id=\"github\"",
             "id=\"resizer\"",
             "id=\"toggle-repl\"",
+            "console-pane",
+            "footer",
         ],
+    );
+    for layer in ["source", "mechdown", "page", "repl"] {
+        assert!(
+            html.contains(&format!("data-mech-style-layer=\"{layer}\"")),
+            "default output did not expose the {layer} style layer",
+        );
+    }
+    assert!(
+        html.contains("data-mech-source"),
+        "formatted Mech source lost its presentation boundary",
+    );
+    assert!(
+        html.contains("mechdown-paragraph"),
+        "formatted prose lost its Mechdown presentation hook",
     );
 }
 

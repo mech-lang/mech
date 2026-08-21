@@ -535,6 +535,7 @@ function createOutputEntry(address, rendered) {
   heading.append(name, kind);
   const body = document.createElement("div");
   body.className = "mech-document-output-html mech-output-value";
+  body.dataset.mechSource = "";
   body.innerHTML = rendered.blockHtml;
   row.append(heading, body);
   return row;
@@ -796,6 +797,7 @@ function showInlineInspector(title, rendered, anchor, error = null) {
   const value = document.createElement("div");
   value.className = "mech-output-value";
   if (error === null) {
+    value.dataset.mechSource = "";
     value.innerHTML = rendered?.blockHtml || rendered?.inlineHtml || "";
   } else {
     value.textContent = errorMessage(error);
@@ -1016,6 +1018,7 @@ function bindOutputClick(element, address) {
 }
 
 function renderInlineValue(output, address, rendered) {
+  output.dataset.mechSource = "";
   const probe = document.createElement("span");
   probe.innerHTML = rendered.inlineHtml;
   const plain = probe.textContent || "";
@@ -1068,6 +1071,7 @@ function renderValues() {
       const address = outputAddress(output);
       const rendered = state.document.renderedOutput(address.outputId);
       if (rendered !== null) {
+        output.dataset.mechSource = "";
         output.innerHTML = rendered.blockHtml;
         bindOutputClick(output, address);
         outputEntries.push({ address, rendered });
@@ -1091,6 +1095,7 @@ function renderValues() {
     try {
       const rendered = state.document.renderedSymbol(placeholder.dataset.mechVarName);
       if (rendered !== null) {
+        placeholder.dataset.mechSource = "";
         placeholder.innerHTML = rendered.inlineHtml;
       }
     } catch (error) {
@@ -1129,6 +1134,7 @@ function appendRenderedResult(rendered) {
   kind.textContent = rendered.kind;
   const value = document.createElement("span");
   value.className = "mech-repl-result-value";
+  value.dataset.mechSource = "";
   value.innerHTML = rendered.inlineHtml;
   row.append(kind, value);
   appendToTranscript(row);
@@ -1347,6 +1353,7 @@ async function fulfillReplHostRequest(requestId, request, signal) {
   if (panel && loaded.accepted && loaded.html) {
     const row = document.createElement("article");
     row.className = "mech-repl-output-entry mech-repl-documentation";
+    row.dataset.mechdown = "";
     row.dataset.mechDocumentationTopic = topic;
     row.innerHTML = loaded.html;
     namespaceDocumentationFragment(row, nextDocumentationFragmentNamespace());
@@ -1954,12 +1961,22 @@ function initializeOptionalRenderers() {
   }
 }
 
+function syncReplHostOffset() {
+  const header = document.querySelector(".site-header, #header");
+  const offset = header ? Math.max(0, header.getBoundingClientRect().height) : 0;
+  for (const host of document.querySelectorAll("[data-mech-repl-host]")) {
+    host.style.setProperty("--mech-repl-top-offset", `${offset}px`);
+  }
+}
+
 function initializeLayout() {
   window.addEventListener("mech:output", event => {
     if (event instanceof CustomEvent && event.detail) {
       appendProgramOutput(event.detail);
     }
   });
+  syncReplHostOffset();
+  window.addEventListener("resize", syncReplHostOffset);
   initializeConsoleState();
   initializeConsoleTabs();
   initializeConsoleToggle();

@@ -27,6 +27,21 @@ pub(crate) static STYLESHEET: &str = include_str!("../../include/style.css");
 #[cfg(not(has_file_stylesheet))]
 pub(crate) static STYLESHEET: &str = "No Embedded Stylesheet";
 
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECH_SOURCE_STYLESHEET: &str = include_str!("../../include/mech-source.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECH_SOURCE_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECHDOWN_STYLESHEET: &str = include_str!("../../include/mechdown.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECHDOWN_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECH_REPL_STYLESHEET: &str = include_str!("../../include/mech-repl.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECH_REPL_STYLESHEET: &str = "";
+
 #[cfg(has_file_wasm)]
 fn embedded_wasm() -> Option<&'static [u8]> {
     Some(MECHWASM)
@@ -143,6 +158,15 @@ pub(crate) struct LoadedStylesheets {
     pub css: String,
     pub events: Vec<ResourceEvent>,
     pub local_paths: Vec<PathBuf>,
+}
+
+pub(crate) fn html_style_sheets(page: String) -> mech_syntax::formatter::HtmlStyleSheets {
+    mech_syntax::formatter::HtmlStyleSheets {
+        source: MECH_SOURCE_STYLESHEET.to_string(),
+        mechdown: MECHDOWN_STYLESHEET.to_string(),
+        page,
+        repl: MECH_REPL_STYLESHEET.to_string(),
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -304,8 +328,13 @@ pub(crate) async fn load_stylesheets(
         combined.push_str(&stylesheet_str);
         events.push(event);
     }
+    let css = if combined.is_empty() {
+        STYLESHEET.to_string()
+    } else {
+        format!("{}\n{}", STYLESHEET, combined)
+    };
     Ok(LoadedStylesheets {
-        css: combined,
+        css,
         events,
         local_paths,
     })
@@ -438,7 +467,8 @@ mod tests {
             "unused",
         ))
         .unwrap();
-        assert_eq!(loaded.css, "body{}");
+        assert_eq!(loaded.css, format!("{}\nbody{{}}", STYLESHEET));
+        assert!(loaded.css.ends_with("body{}"));
         assert_eq!(loaded.local_paths, vec![css.canonicalize().unwrap()]);
         std::fs::remove_dir_all(root).unwrap();
     }

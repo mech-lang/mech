@@ -22,6 +22,56 @@ pub struct HtmlShimExtraSlots {
     slots: BTreeMap<String, String>,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HtmlStyleSheets {
+    pub source: String,
+    pub mechdown: String,
+    pub page: String,
+    pub repl: String,
+}
+
+impl HtmlStyleSheets {
+    pub fn legacy(stylesheet: String) -> Self {
+        Self {
+            page: stylesheet,
+            ..Self::default()
+        }
+    }
+
+    pub fn bundle(&self) -> String {
+        [&self.source, &self.mechdown, &self.page, &self.repl]
+            .into_iter()
+            .filter(|stylesheet| !stylesheet.is_empty())
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+impl From<String> for HtmlStyleSheets {
+    fn from(stylesheet: String) -> Self {
+        Self::legacy(stylesheet)
+    }
+}
+
+impl From<&str> for HtmlStyleSheets {
+    fn from(stylesheet: &str) -> Self {
+        Self::legacy(stylesheet.to_string())
+    }
+}
+
+impl From<&String> for HtmlStyleSheets {
+    fn from(stylesheet: &String) -> Self {
+        Self::legacy(stylesheet.clone())
+    }
+}
+
+impl From<&HtmlStyleSheets> for HtmlStyleSheets {
+    fn from(stylesheets: &HtmlStyleSheets) -> Self {
+        stylesheets.clone()
+    }
+}
+
 impl HtmlShimExtraSlots {
     pub fn insert(&mut self, name: impl Into<String>, value: impl Into<String>) {
         self.slots.insert(name.into(), value.into());
@@ -323,6 +373,21 @@ impl Formatter {
         shim: String,
         extra_slots: &HtmlShimExtraSlots,
     ) -> HtmlShimRender {
+        self.format_html_with_style_sheets_and_slots(
+            tree,
+            HtmlStyleSheets::legacy(style),
+            shim,
+            extra_slots,
+        )
+    }
+
+    pub fn format_html_with_style_sheets_and_slots(
+        &mut self,
+        tree: &Program,
+        styles: HtmlStyleSheets,
+        shim: String,
+        extra_slots: &HtmlShimExtraSlots,
+    ) -> HtmlShimRender {
         self.html = true;
         self.inline_eval_counters.clear();
 
@@ -355,11 +420,32 @@ impl Formatter {
   class="console-scroll mech-repl hidden"
   id="mech-output"
   data-mech-repl-mount
+  data-mech-repl
   aria-live="polite">
 </div>"#;
 
+        let has_layer_slots = [
+            "{{MECH_SOURCE_STYLESHEET}}",
+            "{{MECHDOWN_STYLESHEET}}",
+            "{{PAGE_STYLESHEET}}",
+            "{{MECH_REPL_STYLESHEET}}",
+        ]
+        .into_iter()
+        .any(|slot| shim.contains(slot));
+
         let mut slots = BTreeMap::new();
-        slots.insert("STYLESHEET".to_string(), style);
+        slots.insert(
+            "STYLESHEET".to_string(),
+            if has_layer_slots {
+                styles.page.clone()
+            } else {
+                styles.bundle()
+            },
+        );
+        slots.insert("MECH_SOURCE_STYLESHEET".to_string(), styles.source);
+        slots.insert("MECHDOWN_STYLESHEET".to_string(), styles.mechdown);
+        slots.insert("PAGE_STYLESHEET".to_string(), styles.page);
+        slots.insert("MECH_REPL_STYLESHEET".to_string(), styles.repl);
         slots.insert("TITLE".to_string(), title);
         slots.insert("AUTHOR".to_string(), title_slots.author);
         slots.insert("DATE".to_string(), title_slots.date);
@@ -780,7 +866,7 @@ impl Formatter {
             src = format!("{}{}", src, el_str);
         }
         let result = if self.html {
-            format!("<p class=\"mech-paragraph\">{}</p>", src)
+            format!("<p class=\"mech-paragraph mechdown-paragraph\">{}</p>", src)
         } else {
             format!("{}\n", src)
         };
@@ -969,7 +1055,7 @@ impl Formatter {
                 let result = self.mech_code(&vec![(code.clone(), None)]);
                 if self.html {
                     format!(
-                        "<span class=\"mech-inline-mech-code-formatted\">{}</span>",
+                        "<span class=\"mech-inline-mech-code-formatted\" data-mech-source>{}</span>",
                         result
                     )
                 } else {
@@ -1056,13 +1142,13 @@ impl Formatter {
             };
             if block.config.disabled {
                 format!(
-                    "<div class=\"mech-code-block disabled\"{}>{}</div>",
+                    "<div class=\"mech-code-block disabled\" data-mech-source{}>{}</div>",
                     style_attr, src
                 )
             } else if block.config.hidden {
                 // Print it, but give it a hidden class so it can be toggled visible via JS
                 format!(
-                    "<div class=\"mech-code-block hidden\"{}>{}</div>",
+                    "<div class=\"mech-code-block hidden\" data-mech-source{}>{}</div>",
                     style_attr, src
                 )
             } else {
@@ -1088,7 +1174,7 @@ impl Formatter {
                     "mech-fenced-mech-block no-output"
                 };
                 format!(
-                    "<div id=\"{}\" class=\"{}\"{}>
+                    "<div id=\"{}\" class=\"{}\" data-mech-source{}>
           {}
           <div class=\"mech-code-block\">{}</div>
           {}
@@ -1636,7 +1722,7 @@ impl Formatter {
 
     pub fn mechdown_table_html(&mut self, node: &MarkdownTable) -> String {
         let mut html = String::new();
-        html.push_str("<table class=\"mech-table\">");
+        html.push_str("<table class=\"mech-table mechdown-table\">");
 
         // Render the header
         if !node.header.is_empty() {
@@ -2053,7 +2139,10 @@ impl Formatter {
             }
         }
         if self.html {
-            format!("<span class=\"mech-code-block\">{}</span>", src)
+            format!(
+                "<span class=\"mech-code-block\" data-mech-source>{}</span>",
+                src
+            )
         } else {
             src
         }

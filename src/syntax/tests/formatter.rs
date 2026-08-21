@@ -1,7 +1,7 @@
 #![cfg(feature = "formatter")]
 
 use mech_core::{hash_str, nodes::*};
-use mech_syntax::{Formatter, HtmlShimExtraSlots};
+use mech_syntax::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets};
 
 fn token(kind: TokenKind, text: &str) -> Token {
     Token::new(kind, SourceRange::default(), text.chars().collect())
@@ -248,6 +248,48 @@ fn html_shim_static_slots_render_once() {
     assert_eq!(
         wrapper_formatter.format_html(&tree, String::new(), "{{TITLE}}".to_string()),
         "Slot Fixture"
+    );
+}
+
+#[test]
+fn html_style_layers_are_independent_with_legacy_shim_fallback() {
+    let tree = html_fixture(&[("Fixture section", "Fixture content")]);
+    let styles = HtmlStyleSheets {
+        source: "/* source */".to_string(),
+        mechdown: "/* mechdown */".to_string(),
+        page: "/* page */".to_string(),
+        repl: "/* repl */".to_string(),
+    };
+    let layered_shim = [
+        "{{MECH_SOURCE_STYLESHEET}}",
+        "{{MECHDOWN_STYLESHEET}}",
+        "{{PAGE_STYLESHEET}}",
+        "{{MECH_REPL_STYLESHEET}}",
+    ]
+    .join("|");
+
+    let mut formatter = Formatter::new();
+    let layered = formatter.format_html_with_style_sheets_and_slots(
+        &tree,
+        styles.clone(),
+        layered_shim,
+        &HtmlShimExtraSlots::default(),
+    );
+    assert_eq!(
+        layered.html,
+        "/* source */|/* mechdown */|/* page */|/* repl */"
+    );
+
+    let mut legacy_formatter = Formatter::new();
+    let legacy = legacy_formatter.format_html_with_style_sheets_and_slots(
+        &tree,
+        styles,
+        "{{STYLESHEET}}".to_string(),
+        &HtmlShimExtraSlots::default(),
+    );
+    assert_eq!(
+        legacy.html,
+        "/* source */\n/* mechdown */\n/* page */\n/* repl */"
     );
 }
 

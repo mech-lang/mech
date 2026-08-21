@@ -619,6 +619,115 @@ def assert_desktop_contract():
             fail(f"rich shell did not render previous/next controls: {pagination!r}")
 
 
+def assert_style_layer_contract():
+    layers = evaluate_json("""
+(() => {
+  const styles = Object.fromEntries(
+    [...document.querySelectorAll('style[data-mech-style-layer]')]
+      .map(style => [style.dataset.mechStyleLayer, style])
+  );
+  const token = document.querySelector(
+    '[data-mech-source] .mech-number, [data-mech-source].mech-number'
+  );
+  const heading = document.querySelector('[data-mechdown] h2');
+  const header = document.querySelector('.site-header, #header');
+  const consolePane = document.querySelector('.console-pane');
+  const prompt = document.querySelector('.repl-prompt');
+  if (
+    Object.keys(styles).length !== 4 || !token || !heading || !header ||
+    !consolePane || !prompt
+  ) return null;
+
+  const sourceMarkup = token.parentElement?.innerHTML || '';
+  const sourceText = token.parentElement?.textContent || '';
+  const sourceColor = getComputedStyle(token).color;
+  const headingFont = getComputedStyle(heading).fontFamily;
+  const headerPosition = getComputedStyle(header).position;
+  const consoleDisplay = getComputedStyle(consolePane).display;
+  const consolePosition = getComputedStyle(consolePane).position;
+  const consoleHeight = consolePane.getBoundingClientRect().height;
+  const consoleWidth = consolePane.getBoundingClientRect().width;
+  const promptColor = getComputedStyle(prompt).color;
+
+  styles.page.disabled = true;
+  const pageOff = {
+    headerPosition: getComputedStyle(header).position,
+    sourceColor: getComputedStyle(token).color,
+    consoleDisplay: getComputedStyle(consolePane).display,
+    consolePosition: getComputedStyle(consolePane).position,
+    consoleHeight: consolePane.getBoundingClientRect().height,
+    consoleWidth: consolePane.getBoundingClientRect().width,
+    promptColor: getComputedStyle(prompt).color,
+  };
+  styles.page.disabled = false;
+
+  styles.mechdown.disabled = true;
+  const mechdownOff = {
+    headingDisplay: getComputedStyle(heading).display,
+    headingFont: getComputedStyle(heading).fontFamily,
+    sourceColor: getComputedStyle(token).color,
+  };
+  styles.mechdown.disabled = false;
+
+  styles.source.disabled = true;
+  const sourceOff = {
+    color: getComputedStyle(token).color,
+    markup: token.parentElement?.innerHTML || '',
+    text: token.parentElement?.textContent || '',
+    connected: token.isConnected,
+  };
+  styles.source.disabled = false;
+
+  styles.repl.disabled = true;
+  const replOff = {
+    consoleDisplay: getComputedStyle(consolePane).display,
+    promptColor: getComputedStyle(prompt).color,
+  };
+  styles.repl.disabled = false;
+
+  return {
+    sourceMarkup,
+    sourceText,
+    sourceColor,
+    headingFont,
+    headerPosition,
+    consoleDisplay,
+    consolePosition,
+    consoleHeight,
+    consoleWidth,
+    promptColor,
+    pageOff,
+    mechdownOff,
+    sourceOff,
+    replOff,
+  };
+})()
+""")
+    if (
+        layers is None or
+        layers["headerPosition"] != "sticky" or
+        layers["pageOff"]["headerPosition"] == layers["headerPosition"] or
+        layers["pageOff"]["sourceColor"] != layers["sourceColor"] or
+        layers["pageOff"]["consoleDisplay"] != layers["consoleDisplay"] or
+        layers["pageOff"]["consolePosition"] != layers["consolePosition"] or
+        abs(layers["pageOff"]["consoleHeight"] - layers["consoleHeight"]) > 1 or
+        abs(layers["pageOff"]["consoleWidth"] - layers["consoleWidth"]) > 1 or
+        layers["pageOff"]["promptColor"] != layers["promptColor"] or
+        layers["mechdownOff"]["headingDisplay"] != "block" or
+        layers["mechdownOff"]["headingFont"] == layers["headingFont"] or
+        layers["mechdownOff"]["sourceColor"] != layers["sourceColor"] or
+        layers["sourceOff"]["color"] == layers["sourceColor"] or
+        layers["sourceOff"]["markup"] != layers["sourceMarkup"] or
+        layers["sourceOff"]["text"] != layers["sourceText"] or
+        not layers["sourceOff"]["connected"] or
+        (
+            layers["replOff"]["consoleDisplay"] == layers["consoleDisplay"] and
+            layers["replOff"]["promptColor"] == layers["promptColor"]
+        )
+    ):
+        fail(f"independent style-layer contract regressed: {layers!r}")
+
+
 def assert_desktop_console_controls():
     state = evaluate_json("""
 (() => {
@@ -2268,6 +2377,7 @@ try:
         timeout=15,
     )
     assert_desktop_contract()
+    assert_style_layer_contract()
     assert_desktop_console_controls()
     assert_fullscreen_accessibility()
     assert_console_tab_isolation()

@@ -632,13 +632,16 @@ fn mech_serve_default_shim_restores_rich_shell() {
     assert_served_rich_shell(
         &mut server,
         &[
-            "id=\"header\"",
-            "id=\"logo\"",
-            "id=\"nav\"",
+            "site-header",
+            "contentShell",
+            "articleIntro",
+            "articleLayout",
+            "main-content",
             "id=\"github\"",
-            "class=\"mech-toc\"",
             "id=\"resizer\"",
             "id=\"toggle-repl\"",
+            "console-pane",
+            "footer",
         ],
     );
 }

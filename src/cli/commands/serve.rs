@@ -5,7 +5,7 @@ use mech_core::*;
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
     LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
-    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
+    Utf8ConversionError, WebResourceDefaults, html_style_sheets, load_resource, load_stylesheets,
 };
 use crate::cli::{capabilities, config, serve_options};
 use crate::{
@@ -566,7 +566,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     let mut server = MechServer::new_with_runtime_config_and_host_config(
         "Mech Server".to_string(),
         full_address,
-        stylesheet_str,
+        html_style_sheets(stylesheet_str),
         shim_str,
         project_javascript_with_backend(
             project_js.unwrap_or_default(),

@@ -360,10 +360,11 @@ impl ServerSourceRegistry {
         &mut self,
         root: &Path,
         snapshot: &RuntimeWorkspaceSnapshot,
-        stylesheet: &str,
+        stylesheets: impl Into<HtmlStyleSheets>,
         shim: &str,
         generated_html_backing_paths: &[PathBuf],
     ) -> MResult<()> {
+        let stylesheets = stylesheets.into();
         let root = root.canonicalize()?;
         for key in self.workspace_keys.drain() {
             self.raw_sources.remove(&key);
@@ -454,9 +455,9 @@ impl ServerSourceRegistry {
                         extra_slots.insert("DOCUMENT_SOURCES", "");
                     }
                     let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_slots(
+                    let render = formatter.format_html_with_style_sheets_and_slots(
                         &tree,
-                        stylesheet.to_string(),
+                        stylesheets.clone(),
                         shim.to_string(),
                         &extra_slots,
                     );
@@ -659,7 +660,7 @@ fn display_fs_resource(path: &Path) -> String {
 pub struct MechServer {
     name: String,
     init: bool,
-    stylesheet: String,
+    stylesheets: HtmlStyleSheets,
     html_shim: String,
     project_html: String,
     project_js: String,
@@ -773,7 +774,7 @@ impl MechServer {
     pub fn new_with_runtime_config_and_host_config(
         name: String,
         full_address: String,
-        stylesheet: String,
+        stylesheets: impl Into<HtmlStyleSheets>,
         html_shim: String,
         project_js: String,
         wasm: Vec<u8>,
@@ -787,7 +788,7 @@ impl MechServer {
         Self::new_with_project_html_and_host_config(
             name,
             full_address,
-            stylesheet,
+            stylesheets,
             html_shim,
             include_str!("../include/project.html").to_string(),
             project_js,
@@ -804,7 +805,7 @@ impl MechServer {
     pub(crate) fn new_with_project_html_and_host_config(
         name: String,
         full_address: String,
-        stylesheet: String,
+        stylesheets: impl Into<HtmlStyleSheets>,
         html_shim: String,
         project_html: String,
         project_js: String,
@@ -819,7 +820,7 @@ impl MechServer {
         Self {
             name,
             init: false,
-            stylesheet,
+            stylesheets: stylesheets.into(),
             html_shim,
             project_html,
             project_js,
@@ -941,8 +942,9 @@ impl MechServer {
             None,
             self.html_shim_backing_paths.clone(),
         );
+        let stylesheet_bundle = self.stylesheets.bundle();
         let css = asset(
-            self.stylesheet.as_bytes(),
+            stylesheet_bundle.as_bytes(),
             "text/css",
             None,
             self.stylesheet_backing_paths.clone(),
@@ -1165,7 +1167,7 @@ impl MechServer {
             self.registry.write().unwrap().sync_workspace_snapshot(
                 &root,
                 snapshot,
-                &self.stylesheet,
+                &self.stylesheets,
                 &html_shim,
                 &generated_html_backing_paths,
             )?;
@@ -1301,7 +1303,7 @@ impl MechServer {
             let requested = loop {
                 tokio::select! {
                   _ = interval.tick() => {
-                    if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim, &generated_html_backing_paths, project_overlay.as_ref(), server_event_retention(&self.runtime_config)) {
+                    if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheets, &html_shim, &generated_html_backing_paths, project_overlay.as_ref(), server_event_retention(&self.runtime_config)) {
                       eprintln!("[Mech Server] Workspace poll failed: {:?}", error);
                     }
                   }
@@ -1370,7 +1372,7 @@ fn poll_workspace_once(
     registry: &Arc<RwLock<ServerSourceRegistry>>,
     events: &Arc<RwLock<Vec<RuntimeEvent>>>,
     root: &Path,
-    stylesheet: &str,
+    stylesheets: &HtmlStyleSheets,
     shim: &str,
     generated_html_backing_paths: &[PathBuf],
     project_overlay: Option<&ConfiguredProjectOverlay>,
@@ -1424,7 +1426,7 @@ fn poll_workspace_once(
                 candidate.sync_workspace_snapshot(
                     root,
                     snapshot,
-                    stylesheet,
+                    stylesheets,
                     shim,
                     generated_html_backing_paths,
                 )?;
@@ -3621,7 +3623,7 @@ mod tests {
                 .sync_workspace_snapshot(
                     &root,
                     session.snapshot().unwrap(),
-                    &server.stylesheet,
+                    &server.stylesheets,
                     &html_shim,
                     &server.generated_html_backing_paths(),
                 )
