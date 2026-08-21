@@ -432,7 +432,21 @@ impl WasmDocumentBootstrap {
     }
 
     pub(crate) fn initial_repl_source(&self) -> String {
-        mech_syntax::formatter::Formatter::new().format(&self.source().tree)
+        let source = self.source();
+        if let Some(text) = source
+            .source_map
+            .get(&source.root_specifier)
+            .filter(|text| !text.trim().is_empty())
+        {
+            if mech_syntax::parser::parse(text.trim()).ok().as_ref() == Some(&source.tree) {
+                return text.clone();
+            }
+        }
+        mech_syntax::formatter::Formatter::new().format(&source.tree)
+    }
+
+    pub(crate) fn initial_repl_tree(&self) -> mech_core::nodes::Program {
+        self.source().tree.clone()
     }
 
     fn interactive_tree(&self, candidate_source: &str) -> MResult<mech_core::nodes::Program> {
@@ -475,6 +489,15 @@ pub(crate) fn activate_document_repl_runtime(
     source: &str,
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
     let tree = bootstrap.interactive_tree(source)?;
+    activate_document_repl_runtime_tree(bootstrap, events, source, tree)
+}
+
+pub(crate) fn activate_document_repl_runtime_tree(
+    bootstrap: &WasmDocumentBootstrap,
+    events: MechEventBuffer,
+    source: &str,
+    tree: mech_core::nodes::Program,
+) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
     let mut candidate = build_document_repl_runtime_for_tree(bootstrap, events, tree)?;
     if source.trim().is_empty() {
         #[cfg(feature = "browser_host_scene")]
