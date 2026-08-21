@@ -1714,6 +1714,56 @@ def assert_repl_termination():
         fail(f"mutating WASM exports bypassed terminal guard: {direct_exports!r}")
 
 
+def assert_stop_invalidates_pending_ownership():
+    devtools.call("Page.navigate", {"url": page_url}, session_id)
+    wait_for(
+        "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
+        "Boolean(document.querySelector('.repl-input'))",
+        "the document reloading for stop ownership coverage",
+        timeout=45,
+    )
+    submit(":docs browser-smoke/latency")
+    wait_for(
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'busy' && "
+        "Boolean(document.querySelector('.mech-root')?.dataset.mechHostRequestId)",
+        "documentation ownership before document stop",
+    )
+    stopped = evaluate_json("""
+(() => {
+  const renders = Number(window.__MECH_DOCUMENT_RENDERS__ || 0);
+  window.dispatchEvent(new Event('beforeunload'));
+  document.documentElement.dataset.mechDocumentStatus = 'error';
+  document.querySelector('.mech-root').dataset.mechDocumentStatus = 'error';
+  return { renders };
+})()
+""")
+    evaluate("""
+new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+""")
+    stopped_after = evaluate_json("""
+(() => ({
+  rootStatus: document.querySelector('.mech-root')?.dataset.mechDocumentStatus,
+  documentStatus: document.documentElement.dataset.mechDocumentStatus,
+  consoleStatus: document.querySelector('.mech-root')?.dataset.mechConsoleStatus,
+  hostRequestId: document.querySelector('.mech-root')?.dataset.mechHostRequestId || null,
+  renders: Number(window.__MECH_DOCUMENT_RENDERS__ || 0),
+  appended: Boolean(document.querySelector(
+    '[data-mech-documentation-topic="browser-smoke/latency"]'
+  )),
+}))()
+""")
+    if (
+        stopped_after["rootStatus"] != "error" or
+        stopped_after["documentStatus"] != "error" or
+        stopped_after["consoleStatus"] != "terminated" or
+        stopped_after["hostRequestId"] is not None or
+        stopped_after["renders"] != stopped["renders"] or
+        stopped_after["appended"]
+    ):
+        fail(f"stale async ownership changed a stopped/fatal document: {stopped_after!r}")
+
+
 try:
     debugger_port = free_port()
     Path(profile).mkdir(parents=True, exist_ok=True)
@@ -1892,6 +1942,7 @@ try:
     assert_console_contract()
     assert_mobile_contract()
     assert_repl_termination()
+    assert_stop_invalidates_pending_ownership()
     capture_artifacts()
 except Exception as error:
     capture_artifacts()

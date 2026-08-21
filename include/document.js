@@ -175,10 +175,19 @@ function cancelFrame() {
   }
 }
 
+function invalidateCooperativeOwnership() {
+  const activeHostRequest = state.activeHostRequest;
+  state.cooperativeOperationSequence += 1;
+  state.activeCooperativeOperation = null;
+  state.hostRequestSequence += 1;
+  state.activeHostRequest = null;
+  activeHostRequest?.controller.abort();
+}
+
 function stopRuntime() {
   state.running = false;
   cancelFrame();
-  state.activeHostRequest?.controller.abort();
+  invalidateCooperativeOwnership();
   if (!state.document) {
     return;
   }
@@ -1230,6 +1239,9 @@ async function consumeCooperativeResponse(response) {
     }
     while (response?.pending) {
       await nextBrowserTurn();
+      if (state.activeCooperativeOperation !== operation) {
+        return;
+      }
       response = state.repl.continueStep(128);
       consumeReplResponse(response);
       state.replTerminated = Boolean(response?.terminated);
@@ -1346,7 +1358,7 @@ function appendActivePrompt() {
     if (state.replBusy && event.ctrlKey && event.key.toLowerCase() === "c") {
       event.preventDefault();
       const response = state.repl.interrupt();
-      state.activeHostRequest?.controller.abort();
+      invalidateCooperativeOwnership();
       consumeReplResponse(response);
       state.replTerminated = Boolean(response?.terminated);
       state.replBusy = Boolean(response?.pending || response?.hostPending);

@@ -209,8 +209,8 @@ pub struct WasmRepl {
     availability: ReplHostAvailability,
     pub(crate) state: WasmReplState,
     pending_host_request: Option<ReplHostRequest>,
-    host_request_generation: u32,
-    active_host_request_id: Option<u32>,
+    host_request_generation: u64,
+    active_host_request_id: Option<u64>,
     console_output_context: String,
 }
 
@@ -494,7 +494,7 @@ impl WasmRepl {
             &JsValue::from_str("hostRequestId"),
             &self
                 .active_host_request_id
-                .map(|id| JsValue::from_f64(f64::from(id)))
+                .map(|id| JsValue::from_str(&id.to_string()))
                 .unwrap_or(JsValue::NULL),
         )?;
         Ok(response.into())
@@ -536,7 +536,16 @@ impl WasmRepl {
                 )),
             ),
             request @ ReplHostRequest::Documentation { .. } => {
-                self.host_request_generation = self.host_request_generation.wrapping_add(1).max(1);
+                let Some(next_generation) = self.host_request_generation.checked_add(1) else {
+                    self.session.emit_message_diagnostic(
+                        mech_runtime::Severity::Error,
+                        DiagnosticPhase::Host,
+                        "HostRequestGenerationExhausted",
+                        "The browser host-request generation is exhausted; create a new document session.",
+                    );
+                    return;
+                };
+                self.host_request_generation = next_generation;
                 self.active_host_request_id = Some(self.host_request_generation);
                 self.state = WasmReplState::AwaitingHost;
                 self.pending_host_request = Some(request);
@@ -686,13 +695,13 @@ impl WasmRepl {
         })
     }
 
-    pub(crate) fn finish_host_request(&mut self, request_id: u32) -> Result<JsValue, JsValue> {
+    pub(crate) fn finish_host_request(&mut self, request_id: &str) -> Result<JsValue, JsValue> {
         self.finish_host_request_transition(request_id);
         self.response(None)
     }
 
-    fn finish_host_request_transition(&mut self, request_id: u32) -> bool {
-        if self.active_host_request_id != Some(request_id) {
+    fn finish_host_request_transition(&mut self, request_id: &str) -> bool {
+        if !self.host_request_pending(request_id) {
             return false;
         }
         self.pending_host_request = None;
@@ -716,9 +725,19 @@ impl WasmRepl {
         self.response(None).map(|response| (response, presentation))
     }
 
-    pub(crate) fn host_request_pending(&self, request_id: u32) -> bool {
+    pub(crate) fn host_request_pending(&self, request_id: &str) -> bool {
         matches!(self.state, WasmReplState::AwaitingHost)
-            && self.active_host_request_id == Some(request_id)
+            && self
+                .active_host_request_id
+                .is_some_and(|active| active.to_string() == request_id)
+    }
+
+    pub(crate) fn inherit_host_request_generation(&mut self, generation: u64) {
+        self.host_request_generation = self.host_request_generation.max(generation);
+    }
+
+    pub(crate) fn host_request_generation(&self) -> u64 {
+        self.host_request_generation
     }
 
     pub(crate) fn terminate_session(&mut self) -> MResult<()> {
@@ -1065,12 +1084,12 @@ mod tests {
         });
         let second_request = repl.active_host_request_id.unwrap();
         assert_ne!(first_request, second_request);
-        assert!(!repl.host_request_pending(first_request));
-        assert!(repl.host_request_pending(second_request));
-        assert!(!repl.finish_host_request_transition(first_request));
+        assert!(!repl.host_request_pending(&first_request.to_string()));
+        assert!(repl.host_request_pending(&second_request.to_string()));
+        assert!(!repl.finish_host_request_transition(&first_request.to_string()));
         assert_eq!(repl.state, WasmReplState::AwaitingHost);
         assert_eq!(repl.active_host_request_id, Some(second_request));
-        assert!(repl.finish_host_request_transition(second_request));
+        assert!(repl.finish_host_request_transition(&second_request.to_string()));
         assert_eq!(repl.state, WasmReplState::Ready);
 
         repl.handle_host_request(ReplHostRequest::Documentation {
@@ -1079,6 +1098,28 @@ mod tests {
         repl.terminate_session().unwrap();
         assert_eq!(repl.state, WasmReplState::Terminated);
         assert_eq!(repl.active_host_request_id, None);
+
+        let mut exhausted = WasmRepl::new();
+        exhausted.host_request_generation = u64::MAX;
+        exhausted.handle_host_request(ReplHostRequest::Documentation {
+            topic: Some("browser/exhausted".to_string()),
+        });
+        assert_eq!(exhausted.state, WasmReplState::Ready);
+        assert_eq!(exhausted.active_host_request_id, None);
+        assert!(
+            exhausted
+                .session
+                .drain_events()
+                .unwrap()
+                .iter()
+                .any(|event| {
+                    matches!(
+                        &event.event,
+                        MechEvent::Diagnostic(diagnostic)
+                            if diagnostic.code.as_deref() == Some("HostRequestGenerationExhausted")
+                    )
+                })
+        );
     }
 
     #[cfg(feature = "browser_project_core")]

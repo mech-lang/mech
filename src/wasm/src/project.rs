@@ -866,7 +866,7 @@ mod document {
         pub fn reset(&mut self, encoded: &str) -> Result<(), JsValue> {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
-            let replacement = match &self.bootstrap {
+            let mut replacement = match &self.bootstrap {
                 WasmDocumentBootstrap::Detached(_) => Self::from_encoded(encoded)?,
                 WasmDocumentBootstrap::SourceBacked(bootstrap) => {
                     let tree = decode_document_tree(encoded)?;
@@ -892,6 +892,13 @@ mod document {
                     )?
                 }
             };
+            // Request generations belong to the stable WasmDocument wrapper,
+            // not to one replaceable runtime. Carry the clock forward before
+            // retirement so callbacks from the old runtime can never match a
+            // request created by the replacement.
+            replacement
+                .repl
+                .inherit_host_request_generation(self.repl.host_request_generation());
             let was_started = self.started && !self.stopped;
 
             // Constructing the candidate is the rollback-safe phase. Once
@@ -1064,7 +1071,7 @@ mod document {
         }
 
         #[wasm_bindgen(js_name = replFinishHostRequest)]
-        pub fn repl_finish_host_request(&mut self, request_id: u32) -> Result<JsValue, JsValue> {
+        pub fn repl_finish_host_request(&mut self, request_id: &str) -> Result<JsValue, JsValue> {
             self.repl.finish_host_request(request_id)
         }
 
@@ -1119,7 +1126,7 @@ mod document {
         #[wasm_bindgen(js_name = replLoadDocumentation)]
         pub fn repl_load_documentation(
             &mut self,
-            request_id: u32,
+            request_id: &str,
             topic: &str,
             source: &str,
         ) -> Result<JsValue, JsValue> {
@@ -2688,6 +2695,7 @@ mod tests {
             resolutions,
         )
         .unwrap();
+        document.repl.inherit_host_request_generation(41);
         assert_f64(
             document
                 .runtime()
@@ -2698,6 +2706,7 @@ mod tests {
         );
 
         document.reset(&encoded).unwrap();
+        assert_eq!(document.repl.host_request_generation(), 41);
         assert_f64(
             document
                 .runtime()
