@@ -605,7 +605,7 @@ check_wasm_source() {
     --no-default-features \
     --features browser_project \
     -e features,no-dev > "$scratch/wasm-source.tree"
-  for package in mech-engine mech-stdlib mech-syntax mech-compare mech-logic mech-math mech-matrix mech-range mech-string
+  for package in mech-engine mech-stdlib mech-syntax mech-combinatorics mech-compare mech-logic mech-math mech-matrix mech-range mech-stats mech-string
   do
     cargo_nightly tree \
       --manifest-path "$repository_root/Cargo.toml" \
@@ -623,10 +623,10 @@ check_wasm_source() {
     "require=mech-math v" \
     "require=mech-matrix v" \
     "require=mech-range v" \
+    "require=mech-stats v" \
     "require=mech-string v" \
-    "forbid=mech-combinatorics v" \
+    "require=mech-combinatorics v" \
     "forbid=mech-set v" \
-    "forbid=mech-stats v" \
     'require=mech-engine feature "source"' \
     'require=mech-stdlib feature "source"' \
     "forbid=mech-bytecode v" \
@@ -639,7 +639,7 @@ check_wasm_source() {
     'forbid=mech-stdlib feature "full_source"' \
     'forbid=mech-stdlib feature "full_values"' \
     'forbid=mech-core feature "compiler"'
-  for package in mech-compare mech-logic mech-math mech-matrix mech-range mech-string
+  for package in mech-combinatorics mech-compare mech-logic mech-math mech-matrix mech-range mech-stats mech-string
   do
     check_graph "$scratch/wasm-source.tree" "WASM source" \
       "require=$package feature \"runtime\"" \

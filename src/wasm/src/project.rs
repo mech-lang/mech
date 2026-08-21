@@ -2428,6 +2428,74 @@ mod tests {
     }
 
     #[test]
+    fn browser_document_profile_runs_nbody_module_imports() {
+        let tree = mech_syntax::parser::parse(
+            "+> combinatorics\n\
+             +> stats\n\
+             pairs := combinatorics/n-choose-k(10.0, 2.0)\n\
+             totals := stats/sum/column([1.0 2.0; 3.0 4.0])\n\
+             pairs",
+        )
+        .unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = document::WasmDocument::from_encoded(&encoded).unwrap();
+
+        assert_eq!(
+            document.runtime().unwrap().program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("pairs")
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "45",
+        );
+    }
+
+    #[test]
+    fn document_program_output_identity_survives_console_overlays() {
+        let tree =
+            mech_syntax::parser::parse(include_str!("../../../tests/fixtures/shims/all-slots.mec"))
+                .unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = document::WasmDocument::from_encoded(&encoded).unwrap();
+        let output_id = document
+            .bootstrap
+            .program_output_id()
+            .unwrap()
+            .expect("the fixture has an implicit program output");
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .output_value(output_id)
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "7",
+            "a named fence still contributes the enclosing program result",
+        );
+
+        document.repl.session.submit("40 + 2").unwrap();
+
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .output_value(output_id)
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "7",
+            "a console result must not replace the fixed document output",
+        );
+    }
+
+    #[test]
     fn required_paths_returns_configured_paths() {
         assert_eq!(
             required_path_strings(CONFIG).unwrap(),
