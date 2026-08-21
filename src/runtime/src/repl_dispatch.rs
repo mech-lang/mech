@@ -187,6 +187,9 @@ pub fn dispatch_repl_command<F: ResidentReplRuntimeFactory>(
         ReplCommand::Whos(names) => {
             emit_resident_inspection(session, &names)?;
         }
+        ReplCommand::Constraints(names) => {
+            emit_integrity_constraint_inspection(session, &names)?;
+        }
         ReplCommand::Plan => {
             if let Some(runtime) = session.runtime() {
                 let info = runtime.program_execution_info();
@@ -312,16 +315,21 @@ fn emit_resident_inspection<F: ResidentReplRuntimeFactory>(
         Some("Resident values"),
         symbol_values(symbols),
     );
+    Ok(())
+}
+
+fn emit_integrity_constraint_inspection<F: ResidentReplRuntimeFactory>(
+    session: &mut ResidentReplSession<F>,
+    names: &[String],
+) -> MResult<()> {
     let constraints = session.integrity_constraints(names)?;
-    if !constraints.is_empty() {
-        emit_response(
-            session,
-            ReplResponseKind::SymbolInspection,
-            ReplResponseStatus::Neutral,
-            Some("Integrity constraints"),
-            integrity_constraint_values(constraints),
-        );
-    }
+    emit_response(
+        session,
+        ReplResponseKind::SymbolInspection,
+        ReplResponseStatus::Neutral,
+        Some("Integrity constraints"),
+        integrity_constraint_values(constraints),
+    );
     Ok(())
 }
 
@@ -411,6 +419,9 @@ fn integrity_constraint_values(
     const VALUE_PREVIEW_LIMIT: usize = 96;
 
     constraints.sort_by(|left, right| left.0.cmp(&right.0));
+    if constraints.is_empty() {
+        return OutputContent::Text(TextOutput::new("No integrity constraints matched."));
+    }
     OutputContent::Table(TableOutput::new(
         vec![
             "Constraint".to_string(),

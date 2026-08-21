@@ -190,6 +190,7 @@ fn repl_commands_are_structured_and_truthful() {
             ":help\n",
             ":capabilities\n",
             ":whos\n",
+            ":constraints\n",
             ":plan\n",
             ":profile on\n",
             ":step #2 1\n",
@@ -220,6 +221,10 @@ fn repl_commands_are_structured_and_truthful() {
     assert!(
         output.contains("Resident values"),
         "whos is not structured: {output}"
+    );
+    assert!(
+        output.contains("Integrity constraints"),
+        "constraints is not structured: {output}"
     );
     assert!(
         !output.contains(":symbols"),
@@ -290,18 +295,18 @@ fn whos_values_are_inline_and_elided_in_rich_and_plain_consoles() {
 }
 
 #[test]
-fn whos_separates_integrity_constraints_from_resident_values() {
+fn constraints_are_only_exposed_through_their_own_command() {
     let output = run_repl(
         &["--nofun"],
         None,
-        "x := 1\nsafe! := x <= 2\n:whos\n:quit\n",
+        "x := 1\nsafe! := x <= 2\n:whos\n:constraints\n:quit\n",
     );
-    let (_, inspection) = output
+    let (_, after_values_heading) = output
         .split_once("Resident values")
         .unwrap_or_else(|| panic!("missing resident values table: {output}"));
-    let (values, constraints) = inspection
+    let (values, constraints) = after_values_heading
         .split_once("Integrity constraints")
-        .unwrap_or_else(|| panic!("missing integrity constraints table: {output}"));
+        .unwrap_or_else(|| panic!("missing :constraints response: {output}"));
 
     assert!(
         values.contains(" x f64 1 "),

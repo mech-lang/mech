@@ -17,6 +17,7 @@ pub enum ReplCommandId {
     Docs,
     Capabilities,
     Whos,
+    Constraints,
     Plan,
     Outputs,
     Output,
@@ -39,6 +40,7 @@ impl ReplCommandId {
             Self::Docs => "docs",
             Self::Capabilities => "capabilities",
             Self::Whos => "whos",
+            Self::Constraints => "constraints",
             Self::Plan => "plan",
             Self::Outputs => "outputs",
             Self::Output => "output",
@@ -109,6 +111,7 @@ pub enum ReplCommand {
     Clc,
     Clear(ClearTarget),
     Code(String),
+    Constraints(Vec<String>),
     Docs(Option<String>),
     Help,
     Load(Vec<String>),
@@ -131,6 +134,7 @@ impl ReplCommand {
             Self::Clc => ReplCommandId::ClearInteraction,
             Self::Clear(_) => ReplCommandId::Clear,
             Self::Code(_) => ReplCommandId::Code,
+            Self::Constraints(_) => ReplCommandId::Constraints,
             Self::Docs(_) => ReplCommandId::Docs,
             Self::Help => ReplCommandId::Help,
             Self::Load(_) => ReplCommandId::Load,
@@ -211,6 +215,13 @@ pub const REPL_COMMAND_SPECS: &[ReplCommandSpec] = &[
         ":whos [names...]",
         "show resident symbol types and values",
         &["w"],
+        ReplHostRequirement::Portable,
+    ),
+    spec(
+        ReplCommandId::Constraints,
+        ":constraints [names...]",
+        "show integrity constraint types and values",
+        &[],
         ReplHostRequirement::Portable,
     ),
     spec(
@@ -371,6 +382,7 @@ pub fn parse_repl_command(input: &str) -> Result<ReplCommand, String> {
             ))
         }
         "whos" | "w" => Ok(ReplCommand::Whos(split_arguments(arguments)?)),
+        "constraints" => Ok(ReplCommand::Constraints(split_arguments(arguments)?)),
         "load" => {
             let values = split_arguments(arguments)?;
             if values.is_empty() {
