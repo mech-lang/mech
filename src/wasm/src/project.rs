@@ -431,8 +431,12 @@ impl WasmDocumentBootstrap {
         }
     }
 
+    pub(crate) fn initial_repl_source(&self) -> String {
+        mech_syntax::formatter::Formatter::new().format(&self.source().tree)
+    }
+
     fn interactive_tree(&self, candidate_source: &str) -> MResult<mech_core::nodes::Program> {
-        document_interactive_tree(&self.source().tree, candidate_source)
+        mech_syntax::parser::parse(candidate_source.trim())
     }
 
     pub(crate) fn console_output_context(&self) -> String {
@@ -461,7 +465,7 @@ pub(crate) fn build_document_repl_runtime(
     bootstrap: &WasmDocumentBootstrap,
     events: MechEventBuffer,
 ) -> MResult<MechRuntime> {
-    let tree = bootstrap.interactive_tree("")?;
+    let tree = bootstrap.source().tree.clone();
     build_document_repl_runtime_for_tree(bootstrap, events, tree).map(|candidate| candidate.runtime)
 }
 
@@ -472,6 +476,18 @@ pub(crate) fn activate_document_repl_runtime(
 ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
     let tree = bootstrap.interactive_tree(source)?;
     let mut candidate = build_document_repl_runtime_for_tree(bootstrap, events, tree)?;
+    if source.trim().is_empty() {
+        #[cfg(feature = "browser_host_scene")]
+        bootstrap.source().lifecycle.stage_scenes(candidate.scenes);
+        return Ok((
+            candidate.runtime,
+            RuntimeProgramLoadOutcome {
+                route: mech_runtime::RuntimeProgramRoute::None,
+                initial_value: mech_runtime::RuntimeValueSnapshot::empty(),
+                info: mech_runtime::RuntimeProgramExecutionInfo::default(),
+            },
+        ));
+    }
     let runtime = &mut candidate.runtime;
     let durability = runtime.config().resident_durability;
     let activation = runtime.load_interactive_root_program(
@@ -490,18 +506,6 @@ pub(crate) fn activate_document_repl_runtime(
     #[cfg(feature = "browser_host_scene")]
     bootstrap.source().lifecycle.stage_scenes(candidate.scenes);
     Ok((candidate.runtime, outcome))
-}
-
-fn document_interactive_tree(
-    baseline: &mech_core::nodes::Program,
-    candidate_source: &str,
-) -> MResult<mech_core::nodes::Program> {
-    let mut tree = baseline.clone();
-    if !candidate_source.trim().is_empty() {
-        let overlay = mech_syntax::parser::parse(candidate_source.trim())?;
-        tree.body.sections.extend(overlay.body.sections);
-    }
-    Ok(tree)
 }
 
 struct DocumentRuntimeCandidate {
@@ -1160,6 +1164,44 @@ mod document {
         #[wasm_bindgen(js_name = replSetQuiet)]
         pub fn repl_set_quiet(&mut self, quiet: bool) -> Result<JsValue, JsValue> {
             self.repl.set_quiet(quiet)
+        }
+
+        #[wasm_bindgen(js_name = replSetValueElementLimit)]
+        pub fn repl_set_value_element_limit(
+            &mut self,
+            max_elements: usize,
+        ) -> Result<JsValue, JsValue> {
+            self.repl.set_value_element_limit(max_elements)
+        }
+
+        /// Return canonical syntax-highlighted markup only when a console
+        /// entry is a complete, recoverable Mech source fragment.
+        #[wasm_bindgen(js_name = replFormatSource)]
+        pub fn repl_format_source(&self, source: &str) -> Option<String> {
+            if source.trim().is_empty() || source.trim_start().starts_with(':') {
+                return None;
+            }
+            let tree = mech_syntax::parser::parse(source.trim()).ok()?;
+            let mut formatter = mech_syntax::formatter::Formatter::new();
+            formatter.html = true;
+            let mut html = String::new();
+            let mut found_code = false;
+            for section in &tree.body.sections {
+                for element in &section.elements {
+                    let mech_core::nodes::SectionElement::MechCode(code) = element else {
+                        return None;
+                    };
+                    if code
+                        .iter()
+                        .any(|(node, _)| matches!(node, mech_core::nodes::MechCode::Error(_, _)))
+                    {
+                        return None;
+                    }
+                    html.push_str(&formatter.mech_code(code));
+                    found_code = true;
+                }
+            }
+            found_code.then_some(html)
         }
 
         #[wasm_bindgen(js_name = replFinishHostRequest)]
@@ -2903,7 +2945,7 @@ mod tests {
     }
 
     #[test]
-    fn detached_session_reset_reactivates_its_empty_overlay_baseline() {
+    fn detached_session_reset_reactivates_its_complete_source_baseline() {
         let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
         let mut document = WasmDocument::from_encoded(&encoded).unwrap();
@@ -2915,7 +2957,7 @@ mod tests {
 
         document.repl.session.reset().unwrap();
 
-        assert_eq!(document.repl.session.source(), "");
+        assert!(document.repl.session.source().contains("answer"));
         assert_f64(
             document.repl.session.symbol("answer").unwrap().unwrap(),
             42.0,
@@ -2924,6 +2966,45 @@ mod tests {
             document.runtime().unwrap().program_route(),
             RuntimeProgramRoute::ResidentPure,
         );
+    }
+
+    #[test]
+    fn document_repl_clear_owns_the_complete_workspace_source() {
+        let tree = mech_syntax::parser::parse("x := 1\ny := 2\ny").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        document
+            .repl
+            .session
+            .clear_variables(&["x".to_string()])
+            .unwrap();
+        let symbols = document.repl.session.symbols(&[]).unwrap();
+        assert!(!symbols.iter().any(|(name, _)| name == "x"));
+        assert!(symbols.iter().any(|(name, _)| name == "y"));
+
+        document.repl.session.clear_variables(&[]).unwrap();
+        assert!(document.repl.session.source().is_empty());
+        assert!(document.repl.session.symbols(&[]).unwrap().is_empty());
+        assert_eq!(
+            document.runtime().unwrap().program_route(),
+            RuntimeProgramRoute::None,
+        );
+    }
+
+    #[test]
+    fn document_repl_formats_only_complete_mech_source_entries() {
+        let tree = mech_syntax::parser::parse("baseline := 1").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        let formatted = document
+            .repl_format_source("answer:=1+1")
+            .expect("valid source should format");
+        assert!(formatted.contains("mech-code-block"));
+        assert!(formatted.contains("mech-variable-define"));
+        assert!(document.repl_format_source("answer := (").is_none());
+        assert!(document.repl_format_source(":help").is_none());
     }
 
     #[test]

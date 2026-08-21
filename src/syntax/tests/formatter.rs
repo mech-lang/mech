@@ -209,7 +209,7 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
 }
 
 #[test]
-fn html_shim_uses_untitled_when_the_document_has_no_title() {
+fn html_shim_leaves_title_empty_when_the_document_has_no_title() {
     let mut tree = html_fixture(&[]);
     tree.title = None;
     let mut formatter = Formatter::new();
@@ -220,7 +220,7 @@ fn html_shim_uses_untitled_when_the_document_has_no_title() {
         &HtmlShimExtraSlots::default(),
     );
 
-    assert_eq!(render.html, "Untitled");
+    assert_eq!(render.html, "");
 }
 
 #[test]

@@ -91,6 +91,37 @@ fn document_controller_keeps_panel_discovery_inside_its_selected_root() {
 }
 
 #[test]
+fn document_controller_initializes_repl_controls_before_starting_wasm() {
+    let controller = include("document.js");
+    let main = controller
+        .split_once("async function main() {")
+        .expect("document controller must expose main")
+        .1;
+    let attach = main.find("attachConsole();").unwrap();
+    let layout = main.find("initializeLayout();").unwrap();
+    let wasm_import = main.find("await import(wasmModule)").unwrap();
+
+    assert!(
+        attach < wasm_import,
+        "console controls must survive startup errors"
+    );
+    assert!(
+        layout < wasm_import,
+        "layout controls must survive startup errors"
+    );
+
+    let fatal = controller
+        .split_once("function showFatalError(error) {")
+        .expect("document controller must expose fatal error handling")
+        .1
+        .split_once("\n}")
+        .unwrap()
+        .0;
+    assert!(fatal.contains("activateConsolePanel(\"errors\")"));
+    assert!(fatal.contains("state.replBusy = false;"));
+}
+
+#[test]
 fn mechdown_and_repl_layers_are_standalone_components() {
     let mechdown = include("mechdown.css");
     assert!(mechdown.contains("[data-mechdown] h1"));

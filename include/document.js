@@ -277,6 +277,21 @@ function requestedReplQuiet() {
   ].some(truthySetting);
 }
 
+function requestedReplValueElementLimit() {
+  const values = [
+    state.controllerElement?.dataset.mechReplMaxElements,
+    state.root?.dataset.mechReplMaxElements,
+    document.documentElement?.dataset.mechReplMaxElements,
+  ];
+  for (const value of values) {
+    const parsed = Number.parseInt(value || "", 10);
+    if (Number.isSafeInteger(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return 500;
+}
+
 function documentRoot() {
   return document.querySelector(".mech-root, .mech-document");
 }
@@ -485,6 +500,9 @@ function stopRuntime() {
 
 function showFatalError(error) {
   stopRuntime();
+  state.replTerminated = true;
+  state.replBusy = false;
+  syncConsoleInputState();
   const message = appendError(error);
   if (documentConsolePane()) {
     setConsoleOpen(true);
@@ -948,7 +966,7 @@ function outputContentElement(content) {
     return body;
   }
   if (content?.kind === "text") {
-    body.textContent = data.text || "";
+    appendLinkedText(body, data.text || "");
     return body;
   }
   if (content?.kind === "value") {
@@ -1072,6 +1090,22 @@ function outputContentElement(content) {
   const fallback = representations.find(entry => entry.media_type === "text/plain");
   body.textContent = fallback?.data?.value || data.alt_text || `${content?.kind || "rich"} output`;
   return body;
+}
+
+function appendLinkedText(target, text) {
+  const source = String(text ?? "");
+  const pattern = /https?:\/\/[^\s<>]+/g;
+  let cursor = 0;
+  for (const match of source.matchAll(pattern)) {
+    target.append(source.slice(cursor, match.index));
+    const link = document.createElement("a");
+    link.href = match[0];
+    link.textContent = match[0];
+    link.rel = "noopener noreferrer";
+    target.append(link);
+    cursor = match.index + match[0].length;
+  }
+  target.append(source.slice(cursor));
 }
 
 function appendProgramOutput(output) {
@@ -1689,10 +1723,21 @@ function appendSourceEcho(source) {
   prompt.textContent = ">:";
   const code = document.createElement("span");
   code.className = "repl-code";
-  code.textContent = source;
+  formatConsoleSource(code, source);
   row.append(prompt, code);
   appendToTranscript(row);
   return row;
+}
+
+function formatConsoleSource(target, source) {
+  const formatted = state.repl?.formatSource?.(source) || null;
+  if (!formatted) {
+    target.textContent = source;
+    return false;
+  }
+  target.dataset.mechSource = "";
+  target.innerHTML = formatted;
+  return true;
 }
 
 function consumeReplResponse(response) {
@@ -1987,7 +2032,7 @@ function submitConsoleInput(value, row, input) {
   state.historyDraft = "";
   const code = document.createElement("span");
   code.className = "repl-code";
-  code.textContent = value;
+  formatConsoleSource(code, value);
   input.replaceWith(code);
   row.classList.remove("mech-repl-active-prompt");
   row.classList.add("mech-repl-source");
@@ -3049,6 +3094,10 @@ async function main() {
   }
   normalizeReplComponentContract();
   setDocumentStatus("loading");
+  state.replBusy = true;
+  attachConsole();
+  initializeLayout();
+  syncConsoleInputState();
   const embeddedDocumentSources = loadEmbeddedDocumentSourceBundle();
   const wasmModule =
     state.controllerElement?.dataset.mechWasmModule || "/_mech/pkg/mech_wasm.js";
@@ -3131,6 +3180,9 @@ async function main() {
     continueStep: (count, requestId) => state.document.replContinueStep(count, requestId),
     interrupt: () => state.document.replInterrupt(),
     setQuiet: quiet => state.document.replSetQuiet(quiet),
+    setValueElementLimit: maxElements =>
+      state.document.replSetValueElementLimit(maxElements),
+    formatSource: source => state.document.replFormatSource(source),
     finishHostRequest: requestId => state.document.replFinishHostRequest(requestId),
     selectSymbol: (name, renderPopup) =>
       state.document.replSelectSymbol(name, renderPopup),
@@ -3141,8 +3193,9 @@ async function main() {
   };
   state.replQuiet = requestedReplQuiet();
   consumeReplResponse(state.repl.setQuiet(state.replQuiet));
-  attachConsole();
-  initializeLayout();
+  consumeReplResponse(state.repl.setValueElementLimit(requestedReplValueElementLimit()));
+  state.replBusy = false;
+  syncConsoleInputState();
   prepareVarPlaceholders();
   renderValues();
   state.document.start();

@@ -10,11 +10,11 @@ use mech_core::{GenericError, MResult, MechError};
 #[cfg(feature = "browser_project_core")]
 use mech_runtime::{
     ConfigValue, DiagnosticPhase, HostInstanceConfig, MechEvent, MechEventBuffer, MechRuntime,
-    OutputContent, OutputEvent, REPL_COMMAND_SPECS, ReplDispatchControl, ReplEvent,
-    ReplHostAvailability, ReplHostRequest, ReplHostRequirement, ReplResponse, ReplResponseKind,
-    ReplResponseStatus, ReplStepMode, ResidentReplRuntimeFactory, ResidentReplSession,
-    RunResourceGrantConfig, RuntimeConfig, TableOutput, TextOutput, ValueOutput,
-    dispatch_repl_request, emit_host_response, emit_step_complete, parse_repl_request,
+    OutputContent, OutputEvent, REPL_COMMAND_SPECS, ReplComponentKind, ReplDispatchControl,
+    ReplEvent, ReplHostAvailability, ReplHostRequest, ReplHostRequirement, ReplResponse,
+    ReplResponseKind, ReplResponseStatus, ReplStepMode, ResidentReplRuntimeFactory,
+    ResidentReplSession, RunResourceGrantConfig, RuntimeConfig, TableOutput, TextOutput,
+    ValueOutput, dispatch_repl_request, emit_host_response, emit_step_complete, parse_repl_request,
 };
 
 #[cfg(feature = "browser_project_core")]
@@ -110,6 +110,16 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
         match self {
             Self::Standalone => {
                 let mut runtime = self.build(events)?;
+                if source.trim().is_empty() {
+                    return Ok((
+                        runtime,
+                        mech_runtime::RuntimeProgramLoadOutcome {
+                            route: mech_runtime::RuntimeProgramRoute::None,
+                            initial_value: mech_runtime::RuntimeValueSnapshot::empty(),
+                            info: mech_runtime::RuntimeProgramExecutionInfo::default(),
+                        },
+                    ));
+                }
                 let outcome = match runtime.load_interactive_source_program(
                     source,
                     mech_runtime::ResidentDurabilityPolicy::Volatile,
@@ -179,6 +189,7 @@ enum WasmReplTransition {
     Invoke,
     Submit,
     SetQuiet,
+    SetValueElementLimit,
     Reset,
     StartStep { count: u64 },
     ContinueStep,
@@ -314,6 +325,22 @@ impl WasmRepl {
             return self.response(None);
         }
         self.session.set_quiet(quiet);
+        self.response(None)
+    }
+
+    #[wasm_bindgen(js_name = setValueElementLimit)]
+    pub fn set_value_element_limit(&mut self, max_elements: usize) -> Result<JsValue, JsValue> {
+        if max_elements == 0 {
+            return Err(JsValue::from_str(
+                "the REPL value element limit must be greater than zero",
+            ));
+        }
+        if self.transition_after_program_barrier(WasmReplTransition::SetValueElementLimit)?
+            == WasmReplTransitionResult::Rejected
+        {
+            return self.response(None);
+        }
+        self.session.set_value_element_limit(max_elements);
         self.response(None)
     }
 
@@ -545,7 +572,7 @@ impl WasmRepl {
         match request {
             ReplHostRequest::Capabilities => emit_host_response(
                 &mut self.session,
-                Some("Effective REPL host capabilities"),
+                None,
                 ReplResponseStatus::Neutral,
                 OutputContent::Table(TableOutput::new(
                     vec![
@@ -750,10 +777,11 @@ impl WasmRepl {
 
     pub(crate) fn from_document(bootstrap: crate::project::WasmDocumentBootstrap) -> MResult<Self> {
         let console_output_context = bootstrap.console_output_context();
+        let initial_source = bootstrap.initial_repl_source();
         Ok(Self {
             session: ResidentReplSession::from_source(
                 WasmReplRuntimeFactory::Document(bootstrap),
-                String::new(),
+                initial_source,
             )?,
             availability: browser_repl_availability(),
             state: WasmReplState::Ready,
@@ -849,7 +877,8 @@ impl WasmRepl {
 
 #[cfg(feature = "browser_project_core")]
 fn browser_repl_availability() -> ReplHostAvailability {
-    ReplHostAvailability::all_available()
+    let mut availability = ReplHostAvailability::all_available()
+        .with_product("Mech Web", env!("CARGO_PKG_VERSION"))
         .deny(
             ReplHostRequirement::ReadableResources,
             "this host did not provide a readable resource provider",
@@ -865,7 +894,34 @@ fn browser_repl_availability() -> ReplHostAvailability {
         .deny(
             ReplHostRequirement::Profiling,
             "the resident runtime does not expose profiling controls",
-        )
+        );
+    for library in mech_stdlib::INSTALLED_LIBRARIES {
+        availability =
+            availability.with_component(library.name, ReplComponentKind::Library, library.version);
+    }
+    availability =
+        availability.with_component("console", ReplComponentKind::Host, mech_console::VERSION);
+    #[cfg(feature = "browser_host_dom")]
+    {
+        availability =
+            availability.with_component("browser", ReplComponentKind::Host, mech_browser::VERSION);
+    }
+    #[cfg(feature = "browser_host_time")]
+    {
+        availability =
+            availability.with_component("time", ReplComponentKind::Host, mech_time::VERSION);
+    }
+    #[cfg(feature = "browser_host_timer")]
+    {
+        availability =
+            availability.with_component("timer", ReplComponentKind::Host, mech_timer::VERSION);
+    }
+    #[cfg(feature = "browser_host_scene")]
+    {
+        availability =
+            availability.with_component("scene", ReplComponentKind::Host, mech_scene::VERSION);
+    }
+    availability
 }
 
 #[cfg(feature = "browser_project_core")]
@@ -1428,7 +1484,7 @@ mod tests {
 
     #[cfg(all(feature = "browser_project_core", target_arch = "wasm32"))]
     #[wasm_bindgen_test::wasm_bindgen_test]
-    fn queued_program_output_precedes_the_next_clear_command() {
+    fn queued_program_output_precedes_the_next_explicit_output_clear() {
         let mut repl = WasmRepl::new();
         repl.submit("x := 1\n").unwrap();
         let output = MechEvent::Output(mech_runtime::OutputEvent {
@@ -1441,7 +1497,7 @@ mod tests {
         repl.publish_program_event(serde_wasm_bindgen::to_value(&output).unwrap())
             .unwrap();
 
-        let response = repl.invoke(":clear output").unwrap();
+        let response = repl.clear_outputs().unwrap();
         assert!(repl.session.outputs().is_empty());
         let events: Vec<mech_runtime::MechEventEnvelope> = serde_wasm_bindgen::from_value(
             Reflect::get(&response, &JsValue::from_str("events")).unwrap(),
