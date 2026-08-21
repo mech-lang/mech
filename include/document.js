@@ -3010,16 +3010,56 @@ function initializeToc() {
     link.removeEventListener("click", handler);
   }
   state.tocLinkHandlers.clear();
+  const tocControls = new Map();
+  const controlCleanups = [];
   for (const layout of document.querySelectorAll(".article-layout, .docs-layout")) {
     const toc = layout.querySelector(".mech-toc, [data-mech-toc], .toc");
     const empty = !toc || !toc.querySelector("a[href^='#']");
     layout.classList.toggle("has-empty-toc", empty);
+    layout.classList.toggle("is-toc-open", false);
     if (toc) {
       toc.hidden = empty;
     }
+    let toggle = layout.querySelector(":scope > .mech-toc-toggle");
+    if (!toggle && toc) {
+      toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "mech-toc-toggle";
+      toggle.textContent = "Contents";
+      layout.insertBefore(toggle, toc);
+    }
+    if (!toggle) {
+      continue;
+    }
+    toggle.hidden = empty;
+    toggle.setAttribute("aria-expanded", "false");
+    if (empty || !toc) {
+      toggle.removeAttribute("aria-controls");
+      continue;
+    }
+    if (!toc.id) {
+      toc.id = `${layout.id || "mech-document"}-contents`;
+    }
+    toggle.setAttribute("aria-controls", toc.id);
+    toggle.setAttribute("aria-label", "Show document contents");
+    const setOpen = (open) => {
+      layout.classList.toggle("is-toc-open", open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute(
+        "aria-label",
+        open ? "Close document contents" : "Show document contents",
+      );
+    };
+    const activate = () => setOpen(!layout.classList.contains("is-toc-open"));
+    toggle.addEventListener("click", activate);
+    controlCleanups.push(() => toggle.removeEventListener("click", activate));
+    tocControls.set(toc, { layout, toggle, setOpen });
   }
   const links = [...document.querySelectorAll(".mech-toc a[href^='#'], [data-mech-toc] a[href^='#']")];
   if (!links.length) {
+    state.tocEventCleanup = () => {
+      for (const cleanup of controlCleanups) cleanup();
+    };
     return;
   }
   const sections = links
@@ -3048,7 +3088,17 @@ function initializeToc() {
   for (const { link, target } of sections) {
     const handler = (event) => {
       event.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      const control = tocControls.get(
+        link.closest(".mech-toc, [data-mech-toc], .toc"),
+      );
+      if (control?.layout.classList.contains("is-toc-open")) {
+        control.setOpen(false);
+        requestAnimationFrame(() => {
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      } else {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     };
     state.tocLinkHandlers.set(link, handler);
     link.addEventListener("click", handler);
@@ -3162,13 +3212,47 @@ function initializeToc() {
       state.tocUpdateFrame = requestAnimationFrame(update);
     }
   };
+  const reconcileCompactState = () => {
+    for (const { layout, toggle, setOpen } of tocControls.values()) {
+      if (
+        layout.classList.contains("is-toc-open") &&
+        getComputedStyle(toggle).display === "none"
+      ) {
+        setOpen(false);
+      }
+    }
+    schedule();
+  };
+  const closeOnEscape = (event) => {
+    if (event.key !== "Escape") {
+      return;
+    }
+    for (const { layout, toggle, setOpen } of tocControls.values()) {
+      if (layout.classList.contains("is-toc-open")) {
+        event.preventDefault();
+        setOpen(false);
+        toggle.focus({ preventScroll: true });
+        break;
+      }
+    }
+  };
+  const resizeObserver = typeof ResizeObserver === "function"
+    ? new ResizeObserver(reconcileCompactState)
+    : null;
+  for (const { layout } of tocControls.values()) {
+    resizeObserver?.observe(layout);
+  }
   window.addEventListener("scroll", schedule, { passive: true });
   scrollContainer?.addEventListener("scroll", schedule, { passive: true });
-  window.addEventListener("resize", schedule);
+  window.addEventListener("resize", reconcileCompactState);
+  document.addEventListener("keydown", closeOnEscape);
   state.tocEventCleanup = () => {
+    resizeObserver?.disconnect();
+    for (const cleanup of controlCleanups) cleanup();
     window.removeEventListener("scroll", schedule);
     scrollContainer?.removeEventListener("scroll", schedule);
-    window.removeEventListener("resize", schedule);
+    window.removeEventListener("resize", reconcileCompactState);
+    document.removeEventListener("keydown", closeOnEscape);
   };
   update();
 }

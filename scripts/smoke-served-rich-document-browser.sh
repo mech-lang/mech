@@ -614,6 +614,8 @@ def assert_style_layer_contract():
     '[data-mech-source] .mech-number, [data-mech-source].mech-number'
   );
   const heading = document.querySelector('[data-mechdown] h2');
+  const subheading = document.querySelector('[data-mechdown] h3:not(.mech-backmatter-heading)');
+  const abstract = document.querySelector('[data-mechdown] .mech-abstract');
   const header = document.createElement('header');
   header.className = 'site-header';
   header.dataset.mechTestPageChrome = 'true';
@@ -632,6 +634,16 @@ def assert_style_layer_contract():
   const sourceText = token.parentElement?.textContent || '';
   const sourceColor = getComputedStyle(token).color;
   const headingFont = getComputedStyle(heading).fontFamily;
+  const headingDisplay = getComputedStyle(heading).display;
+  const headingBefore = getComputedStyle(heading, '::before').content;
+  const subheadingBefore = subheading
+    ? getComputedStyle(subheading, '::before').content
+    : null;
+  const abstractStyle = abstract ? {
+    borderWidth: parseFloat(getComputedStyle(abstract).borderTopWidth),
+    paddingLeft: parseFloat(getComputedStyle(abstract).paddingLeft),
+    background: getComputedStyle(abstract).backgroundColor,
+  } : null;
   const headerPosition = getComputedStyle(header).position;
   const consoleDisplay = getComputedStyle(consolePane).display;
   const consolePosition = getComputedStyle(consolePane).position;
@@ -711,6 +723,10 @@ def assert_style_layer_contract():
     sourceText,
     sourceColor,
     headingFont,
+    headingDisplay,
+    headingBefore,
+    subheadingBefore,
+    abstractStyle,
     headerPosition,
     consoleDisplay,
     consolePosition,
@@ -728,6 +744,24 @@ def assert_style_layer_contract():
     if (
         layers is None or
         layers["headerPosition"] != "sticky" or
+        layers["headingDisplay"] != "flex" or
+        "section " not in layers["headingBefore"].lower() or
+        "mechdown-section" not in layers["headingBefore"] or
+        (
+            layers["subheadingBefore"] is not None and
+            (
+                "mechdown-section" not in layers["subheadingBefore"] or
+                "mechdown-subsection" not in layers["subheadingBefore"]
+            )
+        ) or
+        (
+            layers["abstractStyle"] is not None and
+            (
+                layers["abstractStyle"]["borderWidth"] < 1 or
+                layers["abstractStyle"]["paddingLeft"] < 16 or
+                layers["abstractStyle"]["background"] == "rgba(0, 0, 0, 0)"
+            )
+        ) or
         layers["pageOff"]["headerPosition"] == layers["headerPosition"] or
         layers["pageOffBeforeScroll"]["consoleTopStyle"] != "0px" or
         layers["pageOffBeforeScroll"]["hostOffset"] != "0px" or
@@ -1091,36 +1125,61 @@ def assert_fullscreen_accessibility():
 
 def assert_toc_survives_console_pressure():
     toc = evaluate_json("""
-(() => {
+(async () => {
   const root = document.querySelector('[data-mech-repl-host]');
   const pane = document.querySelector('[data-mech-console-pane]');
   const content = document.querySelector('.content-column');
   const layout = document.querySelector('.article-layout, .docs-layout');
   const toc = layout?.querySelector('.toc, [data-mech-toc]');
+  const toggle = layout?.querySelector(':scope > .mech-toc-toggle');
   const main = layout?.querySelector('.main-content');
-  if (!root || !pane || !content || !layout || !toc || !main) return null;
+  if (!root || !pane || !content || !layout || !toc || !toggle || !main) return null;
   const oldRootSize = root.style.getPropertyValue('--mech-console-size');
   const oldPaneWidth = pane.style.width;
   const pressuredSize = Math.floor(root.getBoundingClientRect().width * 0.72);
   root.style.setProperty('--mech-console-size', `${pressuredSize}px`);
   pane.style.width = `${pressuredSize}px`;
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   const contentRect = content.getBoundingClientRect();
+  const collapsed = {
+    toggleVisible: getComputedStyle(toggle).display !== 'none' &&
+      toggle.getBoundingClientRect().width > 0,
+    tocHidden: getComputedStyle(toc).display === 'none',
+    mainVisible: getComputedStyle(main).display !== 'none',
+    expanded: toggle.getAttribute('aria-expanded') === 'false',
+  };
+  toggle.click();
+  await new Promise(resolve => requestAnimationFrame(resolve));
   const tocRect = toc.getBoundingClientRect();
-  const mainRect = main.getBoundingClientRect();
+  const open = {
+    classified: layout.classList.contains('is-toc-open'),
+    expanded: toggle.getAttribute('aria-expanded') === 'true',
+    visible: getComputedStyle(toc).display !== 'none' && tocRect.width > 0 && tocRect.height > 0,
+    contentReplaced: getComputedStyle(main).display === 'none',
+    unbounded: getComputedStyle(toc).maxHeight === 'none' &&
+      getComputedStyle(toc).overflowY === 'visible',
+    allLevelsVisible: [...toc.querySelectorAll('.toc-sub')].every(list =>
+      getComputedStyle(list).display !== 'none'),
+  };
+  const link = toc.querySelector('.toc-sub a[href^="#"]') || toc.querySelector('a[href^="#"]');
+  const target = link && document.getElementById(link.getAttribute('href').slice(1));
+  let activations = 0;
+  const originalScrollIntoView = target?.scrollIntoView;
+  if (target) target.scrollIntoView = () => { activations += 1; };
+  link?.click();
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  if (target && originalScrollIntoView) target.scrollIntoView = originalScrollIntoView;
+  const selected = {
+    tocClosed: !layout.classList.contains('is-toc-open') &&
+      toggle.getAttribute('aria-expanded') === 'false',
+    contentRestored: getComputedStyle(main).display !== 'none',
+    oneNavigation: activations === 1,
+  };
   const result = {
     contentNarrowed: contentRect.width < 680,
-    visible: getComputedStyle(toc).display !== 'none' && tocRect.width > 0 && tocRect.height > 0,
-    contained: tocRect.left >= contentRect.left - 1 && tocRect.right <= contentRect.right + 1,
-    stacked: main.offsetTop >= toc.offsetTop + toc.offsetHeight - 1,
-    contentWidth: contentRect.width,
-    layoutWidth: layout.getBoundingClientRect().width,
-    layoutDisplay: getComputedStyle(layout).display,
-    layoutWrap: getComputedStyle(layout).flexWrap,
-    tocOffset: toc.offsetTop,
-    tocHeight: toc.offsetHeight,
-    tocWidth: tocRect.width,
-    mainOffset: main.offsetTop,
-    mainWidth: mainRect.width,
+    collapsed,
+    open,
+    selected,
   };
   if (oldRootSize) root.style.setProperty('--mech-console-size', oldRootSize);
   else root.style.removeProperty('--mech-console-size');
@@ -1128,8 +1187,14 @@ def assert_toc_survives_console_pressure():
   return result;
 })()
 """)
-    if toc is None or not all(toc[key] for key in ("contentNarrowed", "visible", "contained", "stacked")):
-        fail(f"the table of contents disappeared under console width pressure: {toc!r}")
+    if (
+        toc is None or
+        not toc["contentNarrowed"] or
+        not all(toc["collapsed"].values()) or
+        not all(toc["open"].values()) or
+        not all(toc["selected"].values())
+    ):
+        fail(f"the compact table of contents failed under console width pressure: {toc!r}")
 
 
 def assert_toc_scrollspy_is_continuous_and_hierarchical():
@@ -1626,9 +1691,9 @@ def assert_console_contract():
             timeout=5,
         )
         evaluate("document.querySelector('#mech-smoke-clock')?.remove()")
-        submit(":clear")
+        submit(":clear clock-second")
         wait_for(
-            "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === ':clear') && "
+            "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === ':clear clock-second') && "
             "document.querySelector('.repl-input')?.readOnly === false",
             "the configured driver probe returning to the baseline document",
         )
@@ -1638,7 +1703,7 @@ def assert_console_contract():
     submit("answer + 2; -- suppress this browser value")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => "
-        "row.textContent.trim() === 'answer + 2; -- suppress this browser value')",
+        "/^answer\\s*\\+\\s*2\\s*;\\s*--\\s*suppress this browser value$/.test(row.textContent.trim()))",
         "the semicolon-terminated browser source echo",
     )
     suppressed_count = evaluate_json(
@@ -1691,7 +1756,7 @@ def assert_console_contract():
         "activePrompts": 1,
     }:
         fail(f"browser submission duplicated a source or active prompt: {prompt_ownership!r}")
-    submit(":clear errors")
+    submit(":clc")
     wait_for(
         "Boolean(document.querySelector('[data-mech-document-error-smoke=true]')) && "
         "document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic').length === 0 && "
@@ -1719,7 +1784,8 @@ def assert_console_contract():
     wait_for(
         "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => "
         "row.textContent.trim() === ':capabilities') && "
-        "[...document.querySelectorAll('.mech-repl-response')].some((row) => /capabilit/i.test(row.textContent))",
+        "[...document.querySelectorAll('.mech-repl-response')].some((row) => "
+        "/console:\\/\\//i.test(row.textContent) && /granted/i.test(row.textContent))",
         "a locally committed command whose portable source echo was omitted",
     )
     submit(":whos answer")
@@ -2472,12 +2538,6 @@ def assert_console_contract():
         f"[...document.querySelectorAll('.mech-repl-response')].some((row) => row.textContent.includes({json.dumps(console_context)}))",
         "the effective generated console namespace in browser capabilities",
     )
-    submit(":clear")
-    wait_for(
-        "[...document.querySelectorAll('.mech-repl-info')].some((row) => /Resident REPL state cleared/.test(row.textContent)) && "
-        "/41/.test(document.querySelector('#mech-smoke-var')?.textContent || '')",
-        "the document-backed resident REPL reset",
-    )
     submit(f'@out := {console_context}{{:write(line)}}\n@out/line <- "browser-output"\n@out/line <- "continued"')
     wait_for(
         "/browser-output\\s*continued/.test(document.querySelector('[data-mech-output-region=repl]')?.textContent || '') && "
@@ -2504,6 +2564,19 @@ def assert_console_contract():
 })()
 """)
     submit('@out/line <- "while-absent"')
+    wait_for(
+        "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
+        "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => "
+        "/while-absent/.test(row.textContent))",
+        "the retained output turn completing while its pane is absent",
+    )
+    submit(":outputs")
+    wait_for(
+        f"[...document.querySelectorAll('.mech-repl-response')].some((row) => "
+        f"row.textContent.includes({json.dumps(display_id)}) && "
+        "/active/.test(row.textContent))",
+        "the absent-pane output reaching the retained artifact journal",
+    )
     evaluate("""
 (() => {
   const saved = window.__MECH_DETACHED_OUTPUT_PANEL__;
@@ -2724,7 +2797,20 @@ def assert_console_contract():
   return true;
 })()
 """)
-    submit(":clear output")
+    evaluate("""
+(() => {
+  window.dispatchEvent(new CustomEvent('mech:output', {
+    detail: {
+      source: { host: { name: 'browser-smoke', span: null } },
+      stream: 'stdout',
+      display_id: null,
+      operation: 'clear',
+      content: { kind: 'text', data: { text: '' } },
+    },
+  }));
+  return true;
+})()
+""")
     wait_for(
         "!document.querySelector('[data-mech-output-region=repl] [data-mech-display-id]') && "
         "(document.querySelector('[data-mech-error-region=program]')?.children.length || 0) === 0 && "
@@ -2732,18 +2818,20 @@ def assert_console_contract():
         ".mech-program-diagnostic[data-mech-diagnostic-id=program-browser-smoke]'))",
         "program stream clearing without deleting program diagnostics",
     )
-    submit(":clear errors")
-    wait_for(
-        "!document.querySelector('[data-mech-error-region=program-diagnostics]') && "
-        "Boolean(document.querySelector('[data-mech-document-error-smoke=true]'))",
-        "diagnostic clearing without deleting document-owned errors",
-    )
     evaluate("document.querySelector('#output-tab')?.click()")
     wait_for(
         "document.querySelector('#output-tab')?.classList.contains('active') && "
         "document.querySelector('#output-panel')?.classList.contains('is-active') && "
         "Boolean(document.querySelector('#mech-document-output [data-mech-selection-token]'))",
         "the Output console tab restoring the fixed implicit program result after stream clearing",
+    )
+    submit(":clear")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-info')].some((row) => /Resident workspace cleared/.test(row.textContent)) && "
+        "document.querySelector('#mech-smoke-var .mech-var-placeholder')?.dataset.mechValueAvailable === 'false' && "
+        "document.querySelector('#mech-smoke-var .mech-var-placeholder')?.textContent.trim() === '—' && "
+        "(document.querySelector('[data-mech-output-region=document]')?.children.length || 0) === 0",
+        "the document-backed resident workspace clear",
     )
     submit(":clc")
     wait_for(

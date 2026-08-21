@@ -109,8 +109,8 @@ html, body {
   color: var(--text-primary);
   background: var(--bg-primary);
   scroll-behavior: smooth;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-color: rgb(128 128 128 / 70%) transparent;
+  scrollbar-width: thin;
   overflow-x: hidden;
   max-width: 100%;
 }
@@ -121,7 +121,24 @@ body {
 
 html::-webkit-scrollbar,
 body::-webkit-scrollbar {
-  display: none;
+  height: 6px;
+  width: 6px;
+}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb {
+  background: rgb(128 128 128 / 70%);
+  border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover {
+  background: rgb(160 160 160 / 85%);
 }
 
 body { min-height: 100vh; }
@@ -269,7 +286,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .content-shell::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .content-shell::-webkit-scrollbar-track {
@@ -277,15 +294,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .content-shell::-webkit-scrollbar-thumb {
-  background: var(--accent-primary);
+  background: rgb(128 128 128 / 70%);
   border-radius: 999px;
-  border: 2px solid transparent;
-  background-clip: content-box;
 }
 
 .content-shell::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-hover);
-  background-clip: content-box;
+  background: rgb(160 160 160 / 85%);
 }
 
 .content-shell {
@@ -501,6 +515,40 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ── TOC ── */
+.mech-toc-toggle {
+  align-items: center;
+  align-self: flex-start;
+  background: var(--bg-secondary);
+  border: 1px solid var(--toc-border);
+  border-radius: 999px;
+  color: var(--toc-accent);
+  cursor: pointer;
+  display: none;
+  font: 700 12px/1.2 "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  gap: 0.55rem;
+  letter-spacing: 0.08em;
+  padding: 0.5rem 0.8rem;
+  text-transform: uppercase;
+}
+
+.mech-toc-toggle::after {
+  content: "+";
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.article-layout.is-toc-open > .mech-toc-toggle::after,
+.docs-layout.is-toc-open > .mech-toc-toggle::after {
+  content: "−";
+}
+
+.mech-toc-toggle:hover,
+.mech-toc-toggle:focus-visible {
+  border-color: var(--toc-accent);
+  color: var(--accent-soft);
+  outline: none;
+}
+
 .toc {
   flex: 0 0 min(100%, var(--toc-width));
   position: sticky;
@@ -858,14 +906,36 @@ a { color: inherit; text-decoration: none; }
     gap: 24px;
   }
 
-  .toc {
-    border-bottom: 1px dotted var(--toc-border);
+  .article-layout:not(.has-empty-toc, .hide-toc, .no-sections) > .mech-toc-toggle,
+  .docs-layout:not(.has-empty-toc, .hide-toc, .no-sections) > .mech-toc-toggle {
+    display: inline-flex;
+  }
+
+  .article-layout > .toc,
+  .docs-layout > .toc {
+    display: none;
+  }
+
+  .article-layout.is-toc-open > .toc,
+  .docs-layout.is-toc-open > .toc {
+    border-bottom: 0;
     display: block;
-    max-height: min(34vh, 18rem);
-    overflow: auto;
-    padding: 0 0 18px;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
     position: relative;
     width: 100%;
+  }
+
+  .article-layout.is-toc-open > .main-content,
+  .docs-layout.is-toc-open > .main-content,
+  .content-column:has(> .article-layout.is-toc-open, > .docs-layout.is-toc-open) > .article-backmatter {
+    display: none;
+  }
+
+  .article-layout.is-toc-open .toc .toc-sub,
+  .docs-layout.is-toc-open .toc .toc-sub {
+    display: block;
   }
 
   .content-shell {
@@ -945,14 +1015,36 @@ a { color: inherit; text-decoration: none; }
     gap: 24px;
   }
 
-  .toc {
-    border-bottom: 1px dotted var(--toc-border);
+  .article-layout:not(.has-empty-toc, .hide-toc, .no-sections) > .mech-toc-toggle,
+  .docs-layout:not(.has-empty-toc, .hide-toc, .no-sections) > .mech-toc-toggle {
+    display: inline-flex;
+  }
+
+  .article-layout > .toc,
+  .docs-layout > .toc {
+    display: none;
+  }
+
+  .article-layout.is-toc-open > .toc,
+  .docs-layout.is-toc-open > .toc {
+    border-bottom: 0;
     display: block;
-    max-height: min(34vh, 18rem);
-    overflow: auto;
-    padding: 0 0 18px;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
     position: relative;
     width: 100%;
+  }
+
+  .article-layout.is-toc-open > .main-content,
+  .docs-layout.is-toc-open > .main-content,
+  .content-column:has(> .article-layout.is-toc-open, > .docs-layout.is-toc-open) > .article-backmatter {
+    display: none;
+  }
+
+  .article-layout.is-toc-open .toc .toc-sub,
+  .docs-layout.is-toc-open .toc .toc-sub {
+    display: block;
   }
 }
 

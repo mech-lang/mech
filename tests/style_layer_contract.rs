@@ -81,6 +81,25 @@ fn page_variants_do_not_own_source_or_repl_components() {
 }
 
 #[test]
+fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
+    let css = include("mechdown.css");
+    for contract in [
+        "counter-reset: mechdown-section",
+        ".mech-program-section > h2::before",
+        "content: \"section \" counter(mechdown-section, decimal)",
+        ".mech-program-section > h3::before",
+        "counter(mechdown-subsection, decimal)",
+        ".mech-abstract {",
+        "border: 1px solid var(--mechdown-accent)",
+    ] {
+        assert!(
+            css.contains(contract),
+            "Mechdown lost editorial style {contract}"
+        );
+    }
+}
+
+#[test]
 fn document_controller_keeps_panel_discovery_inside_its_selected_root() {
     let controller = include("document.js");
     assert!(controller.contains(
@@ -128,12 +147,16 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("activeLink.classList.add(\"active\", \"active-path\")"));
     assert!(controller.contains("activeItem?.classList.add(\"expanded\")"));
     assert!(controller.contains("maximumScroll > 1 && metrics.top >= maximumScroll - 2"));
+    assert!(controller.contains("className = \"mech-toc-toggle\""));
+    assert!(controller.contains("layout.classList.toggle(\"is-toc-open\", open)"));
     assert!(controller.contains("new MutationObserver(updateConsoleErrorBadge)"));
     assert!(controller.contains("mech-console-error-count"));
 
     let page = include("style.css");
     assert!(page.contains(".toc li.expanded > .toc-sub"));
     assert!(page.contains("border-left: 1px dotted var(--toc-accent-soft)"));
+    assert!(page.contains(".article-layout.is-toc-open > .main-content"));
+    assert!(page.contains("scrollbar-color: rgb(128 128 128 / 70%) transparent"));
 
     let repl = include("mech-repl.css");
     assert!(repl.contains(".mech-console-error-count"));
