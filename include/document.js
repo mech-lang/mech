@@ -188,6 +188,7 @@ function invalidateCooperativeOwnership() {
 }
 
 function stopRuntime() {
+  dismissInlineInspector({ restoreFocus: false });
   state.running = false;
   cancelFrame();
   invalidateCooperativeOwnership();
