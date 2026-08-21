@@ -406,7 +406,7 @@ impl Formatter {
 
         let title = match toc.title {
             Some(title) => title.to_string(),
-            None => "Mech Program".to_string(),
+            None => "Untitled".to_string(),
         };
 
         #[cfg(feature = "serde")]

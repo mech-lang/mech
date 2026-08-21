@@ -12,6 +12,14 @@ use crate::{
     TextOutput,
 };
 
+pub const REPL_TEXT_LOGO: &str = r#"
+  ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐  ┌─┐
+  └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │  │ │
+  ┌─┐ │ │ ┌─┐ ┌──────┐ │ │  └─┘ │ └─┐│ │
+  │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘│ │
+  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │  │ │
+  └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#;
+
 #[cfg_attr(
     feature = "serde",
     derive(serde_derive::Serialize, serde_derive::Deserialize)
@@ -372,6 +380,13 @@ fn emit_info<F: ResidentReplRuntimeFactory>(session: &mut ResidentReplSession<F>
 }
 
 fn command_help(availability: &ReplHostAvailability) -> OutputContent {
+    OutputContent::Fragments(vec![
+        OutputContent::Text(TextOutput::new(REPL_TEXT_LOGO)),
+        OutputContent::Table(command_help_table(availability)),
+    ])
+}
+
+fn command_help_table(availability: &ReplHostAvailability) -> TableOutput {
     let muted_rows = REPL_COMMAND_SPECS
         .iter()
         .enumerate()
@@ -385,10 +400,8 @@ fn command_help(availability: &ReplHostAvailability) -> OutputContent {
         .iter()
         .map(|spec| vec![spec.usage.to_string(), spec.description.to_string()])
         .collect();
-    OutputContent::Table(
-        TableOutput::new(vec!["Command".to_string(), "Description".to_string()], rows)
-            .with_muted_rows(muted_rows),
-    )
+    TableOutput::new(vec!["Command".to_string(), "Description".to_string()], rows)
+        .with_muted_rows(muted_rows)
 }
 
 fn symbol_values(mut symbols: Vec<(String, crate::RuntimeValueSnapshot)>) -> OutputContent {
@@ -459,9 +472,7 @@ mod tests {
             ReplHostRequirement::ReadableResources,
             "this host did not provide a readable resource provider",
         );
-        let OutputContent::Table(help) = command_help(&availability) else {
-            panic!("help table")
-        };
+        let help = command_help_table(&availability);
         let load_index = help
             .rows
             .iter()

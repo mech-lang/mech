@@ -209,6 +209,21 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
 }
 
 #[test]
+fn html_shim_uses_untitled_when_the_document_has_no_title() {
+    let mut tree = html_fixture(&[]);
+    tree.title = None;
+    let mut formatter = Formatter::new();
+    let render = formatter.format_html_with_slots(
+        &tree,
+        String::new(),
+        "{{TITLE}}".to_string(),
+        &HtmlShimExtraSlots::default(),
+    );
+
+    assert_eq!(render.html, "Untitled");
+}
+
+#[test]
 fn html_shim_static_slots_render_once() {
     let tree = html_fixture(&[("Fixture section", "Fixture content")]);
     let mut extra_slots = HtmlShimExtraSlots::default();

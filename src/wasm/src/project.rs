@@ -661,11 +661,35 @@ mod document {
         Ok(result.into())
     }
 
+    struct DocumentProgramOutput {
+        output_id: OutputId,
+        snapshot: mech_runtime::RuntimeValueSnapshot,
+    }
+
+    fn capture_program_output(
+        repl: &crate::repl::WasmRepl,
+    ) -> Result<Option<DocumentProgramOutput>, JsValue> {
+        let Some(runtime) = repl.session.runtime() else {
+            return Ok(None);
+        };
+        let Some(output_id) = runtime.program_output_id() else {
+            return Ok(None);
+        };
+        Ok(runtime
+            .output_value(output_id)
+            .map_err(to_js_error)?
+            .map(|snapshot| DocumentProgramOutput {
+                output_id,
+                snapshot,
+            }))
+    }
+
     #[wasm_bindgen]
     pub struct WasmDocument {
         pub(super) repl: crate::repl::WasmRepl,
         pub(super) bootstrap: WasmDocumentBootstrap,
         document_output_ordinals: HashMap<u64, u64>,
+        program_output: Option<DocumentProgramOutput>,
         started: bool,
         stopped: bool,
     }
@@ -687,10 +711,12 @@ mod document {
             let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
             let repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
+            let program_output = capture_program_output(&repl)?;
             Ok(Self {
                 repl,
                 bootstrap,
                 document_output_ordinals,
+                program_output,
                 started: false,
                 stopped: false,
             })
@@ -741,10 +767,12 @@ mod document {
             let bootstrap = WasmDocumentBootstrap::SourceBacked(bootstrap);
             let repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
+            let program_output = capture_program_output(&repl)?;
             Ok(Self {
                 repl,
                 bootstrap,
                 document_output_ordinals,
+                program_output,
                 started: false,
                 stopped: false,
             })
@@ -831,10 +859,12 @@ mod document {
             });
             let repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
+            let program_output = capture_program_output(&repl)?;
             Ok(Self {
                 repl,
                 bootstrap,
                 document_output_ordinals,
+                program_output,
                 started: false,
                 stopped: false,
             })
@@ -842,7 +872,6 @@ mod document {
 
         #[wasm_bindgen(js_name = renderedOutput)]
         pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
-            let display_name = self.document_output_name(output_id);
             let Some(output_id) = self.runtime_output_id(output_id) else {
                 return Ok(JsValue::NULL);
             };
@@ -850,11 +879,7 @@ mod document {
             let Some(snapshot) = runtime.output_value(output_id).map_err(to_js_error)? else {
                 return Ok(JsValue::NULL);
             };
-            let runtime_name = runtime.output_name(output_id);
-            let rendered = rendered_named_value(
-                snapshot,
-                display_name.as_deref().or(runtime_name.as_deref()),
-            )?;
+            let rendered = rendered_named_value(snapshot, None)?;
             set_rendered_output_identity(&rendered, output_id)?;
             Ok(rendered)
         }
@@ -864,16 +889,11 @@ mod document {
         /// Explicit output events can replace this default in the host UI.
         #[wasm_bindgen(js_name = renderedProgramOutput)]
         pub fn rendered_program_output(&self) -> Result<JsValue, JsValue> {
-            let runtime = self.runtime()?;
-            let Some(output_id) = runtime.program_output_id() else {
+            let Some(output) = &self.program_output else {
                 return Ok(JsValue::NULL);
             };
-            let Some(snapshot) = runtime.output_value(output_id).map_err(to_js_error)? else {
-                return Ok(JsValue::NULL);
-            };
-            let rendered =
-                rendered_named_value(snapshot, runtime.output_name(output_id).as_deref())?;
-            set_rendered_output_identity(&rendered, output_id)?;
+            let rendered = rendered_named_value(output.snapshot.clone(), None)?;
+            set_rendered_output_identity(&rendered, output.output_id)?;
             Ok(rendered)
         }
 
@@ -939,6 +959,7 @@ mod document {
             self.repl = replacement.repl;
             self.bootstrap = replacement.bootstrap;
             self.document_output_ordinals = replacement.document_output_ordinals;
+            self.program_output = replacement.program_output;
             self.started = false;
             self.stopped = false;
             if let Some(error) = retirement_failure {
@@ -1154,7 +1175,6 @@ mod document {
             if let Some(response) = self.repl.begin_selection()? {
                 return selected_value_response(response, None, None, "ans", None);
             }
-            let display_name = self.document_output_name(output_id);
             let Some(runtime_output_id) = self.runtime_output_id(output_id) else {
                 return Err(js_error("document output is not resident"));
             };
@@ -1163,8 +1183,8 @@ mod document {
                 .output_value(runtime_output_id)
                 .map_err(to_js_error)?
                 .ok_or_else(|| js_error("document output is not resident"))?;
-            let source_echo = display_name
-                .or_else(|| runtime.output_name(runtime_output_id))
+            let source_echo = runtime
+                .output_name(runtime_output_id)
                 .unwrap_or_else(|| "ans".to_string());
             let block_html =
                 (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
@@ -1268,12 +1288,6 @@ mod document {
                 .copied()
                 .unwrap_or(output_id);
             u32::try_from(output_id).ok().map(OutputId::new)
-        }
-
-        fn document_output_name(&self, output_id: u64) -> Option<String> {
-            self.document_output_ordinals
-                .get(&output_id)
-                .map(|ordinal| format!("output {}", ordinal.saturating_add(1)))
         }
     }
 }
@@ -2034,7 +2048,7 @@ fn rendered_named_value(
     Reflect::set(
         &rendered,
         &JsValue::from_str("name"),
-        &JsValue::from_str(name.unwrap_or("output")),
+        &name.map(JsValue::from_str).unwrap_or(JsValue::NULL),
     )?;
     Ok(rendered)
 }
@@ -3910,12 +3924,10 @@ mod browser_tests {
             .expect("the FizzBuzz source output must render as HTML");
         assert!(block_html.contains("✨🐝"), "{block_html}");
         let program_output = document.rendered_program_output().unwrap();
-        assert_eq!(
+        assert!(
             Reflect::get(&program_output, &JsValue::from_str("name"))
                 .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("y"),
+                .is_null(),
             "integrity constraints must not replace the browser program output",
         );
         document.start().unwrap();
@@ -3929,15 +3941,13 @@ mod browser_tests {
             mech_syntax::parser::parse(include_str!("../../../examples/working/factorial.mec"))
                 .unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
         let output = document.rendered_program_output().unwrap();
 
-        assert_eq!(
+        assert!(
             Reflect::get(&output, &JsValue::from_str("name"))
                 .unwrap()
-                .as_string()
-                .as_deref(),
-            Some("res"),
+                .is_null(),
         );
         assert_eq!(
             Reflect::get(&output, &JsValue::from_str("inlineHtml"))
@@ -3945,6 +3955,27 @@ mod browser_tests {
                 .as_string()
                 .as_deref(),
             Some("120"),
+        );
+        let output_id = Reflect::get(&output, &JsValue::from_str("outputId"))
+            .unwrap()
+            .as_f64();
+
+        document.repl_invoke("1 + 1").unwrap();
+        let after_repl = document.rendered_program_output().unwrap();
+        assert_eq!(
+            Reflect::get(&after_repl, &JsValue::from_str("outputId"))
+                .unwrap()
+                .as_f64(),
+            output_id,
+            "REPL evaluation must not replace the document program output identity",
+        );
+        assert_eq!(
+            Reflect::get(&after_repl, &JsValue::from_str("inlineHtml"))
+                .unwrap()
+                .as_string()
+                .as_deref(),
+            Some("120"),
+            "REPL evaluation must not replace the document program output value",
         );
     }
 

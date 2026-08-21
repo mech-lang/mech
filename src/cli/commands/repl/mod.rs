@@ -26,8 +26,9 @@ use crossbeam_channel::{Receiver, RecvTimeoutError, Sender};
 use indicatif::{ProgressBar, ProgressDrawTarget, ProgressStyle};
 use mech_core::{MResult, MechError};
 use mech_runtime::{
-    DiagnosticPhase, MechEvent, OutputContent, ReplDispatchControl, ReplEvent, ReplHostRequest,
-    ReplResponse, ReplResponseKind, ReplResponseStatus, Severity, TextOutput, parse_repl_request,
+    DiagnosticPhase, MechEvent, OutputContent, REPL_TEXT_LOGO, ReplDispatchControl, ReplEvent,
+    ReplHostRequest, ReplResponse, ReplResponseKind, ReplResponseStatus, Severity, TextOutput,
+    parse_repl_request,
 };
 #[cfg(feature = "mika")]
 use mech_syntax::MICROMIKA_WAVE;
@@ -39,14 +40,6 @@ use self::session::ResidentRepl;
 use self::terminal::{render_events, render_events_collapsed};
 use self::ui::ReplUi;
 use crate::cli::outcome::CliOutcome;
-
-pub(crate) const TEXT_LOGO: &str = r#"
-  ┌─────────┐ ┌──────┐ ┌─┐ ┌──┐ ┌─┐  ┌─┐
-  └───┐ ┌───┘ └──────┘ │ │ └┐ │ │ │  │ │
-  ┌─┐ │ │ ┌─┐ ┌──────┐ │ │  └─┘ │ └─┐│ │
-  │ │ │ │ │ │ │ ┌────┘ │ │  ┌─┐ │ ┌─┘│ │
-  │ │ └─┘ │ │ │ └────┐ │ └──┘ │ │ │  │ │
-  └─┘     └─┘ └──────┘ └──────┘ └─┘  └─┘"#;
 
 const PROMPT: &str = ">: ";
 const INPUT_POLL: Duration = Duration::from_millis(10);
@@ -540,7 +533,7 @@ fn print_banner(output: &mut dyn Write) -> io::Result<()> {
     writeln!(
         output,
         "{}",
-        TEXT_LOGO.truecolor(MECH_AMBER.0, MECH_AMBER.1, MECH_AMBER.2)
+        REPL_TEXT_LOGO.truecolor(MECH_AMBER.0, MECH_AMBER.1, MECH_AMBER.2)
     )?;
     writeln!(
         output,
@@ -630,7 +623,8 @@ mod tests {
     #[test]
     fn resident_repl_preserves_the_product_interface_and_evaluates_source() {
         let mut output = Vec::new();
-        let outcome = run_with_io(Cursor::new("1 + 1\n[1 1 2]\n:quit\n"), &mut output).unwrap();
+        let outcome =
+            run_with_io(Cursor::new(":help\n1 + 1\n[1 1 2]\n:quit\n"), &mut output).unwrap();
 
         assert!(matches!(outcome, CliOutcome::Exit(0)));
         let output = String::from_utf8(output).unwrap();
@@ -639,6 +633,11 @@ mod tests {
             "missing REPL banner: {output}"
         );
         assert!(output.contains(":help"), "missing REPL greeting: {output}");
+        assert_eq!(
+            output.matches(REPL_TEXT_LOGO).count(),
+            2,
+            "the rich REPL should show its logo at startup and in :help: {output}",
+        );
         assert!(output.contains("f64"), "missing scalar type: {output}");
         assert!(output.contains('2'), "missing scalar value: {output}");
         assert!(output.contains("Okay cya!"), "missing farewell: {output}");
@@ -715,9 +714,12 @@ mod tests {
     #[test]
     fn nofun_repl_keeps_the_prompt_and_typed_value_without_decoration() {
         let mut output = Vec::new();
-        let outcome =
-            run_with_io_and_ui(Cursor::new("1 + 1\n:quit\n"), &mut output, ReplUi::plain())
-                .unwrap();
+        let outcome = run_with_io_and_ui(
+            Cursor::new(":help\n1 + 1\n:quit\n"),
+            &mut output,
+            ReplUi::plain(),
+        )
+        .unwrap();
 
         assert!(matches!(outcome, CliOutcome::Exit(0)));
         let output = String::from_utf8(output).unwrap();
@@ -725,6 +727,7 @@ mod tests {
         assert!(!output.contains("www.mech-lang.org"));
         assert!(!output.contains("╭◉╮"));
         assert!(!output.contains("Okay cya!"));
+        assert!(!output.contains(REPL_TEXT_LOGO));
         assert!(!output.contains("\u{1b}["));
         assert!(output.contains(">: f64\n2\n>: "));
     }

@@ -3,8 +3,8 @@ use std::io::{self, Write};
 use colored::Colorize;
 use mech_runtime::{
     DiagnosticEvent, DisplayOperation, MechEvent, MechEventEnvelope, OutputContent, OutputEvent,
-    OutputStream, ReplClearTarget, ReplEvent, ReplResponse, ReplResponseStatus, RichOutput,
-    Severity, TelemetryEvent,
+    OutputStream, REPL_TEXT_LOGO, ReplClearTarget, ReplEvent, ReplResponse, ReplResponseKind,
+    ReplResponseStatus, RichOutput, Severity, TelemetryEvent,
 };
 
 use super::presentation::{MECH_AMBER, render_table};
@@ -91,7 +91,7 @@ fn render_response(
 ) -> io::Result<()> {
     if let Some(title) = &response.title {
         render_heading(output, title, mode)?;
-        return render_content(output, &response.content, mode);
+        return render_response_content(output, response, mode);
     }
 
     if let OutputContent::Text(text) = &response.content {
@@ -109,6 +109,26 @@ fn render_response(
         };
     }
 
+    render_content(output, &response.content, mode)
+}
+
+fn render_response_content(
+    output: &mut dyn Write,
+    response: &ReplResponse,
+    mode: ReplRenderMode,
+) -> io::Result<()> {
+    if mode == ReplRenderMode::Plain
+        && response.kind == ReplResponseKind::Help
+        && let OutputContent::Fragments(fragments) = &response.content
+    {
+        for fragment in fragments {
+            if matches!(fragment, OutputContent::Text(text) if text.text == REPL_TEXT_LOGO) {
+                continue;
+            }
+            render_content(output, fragment, mode)?;
+        }
+        return Ok(());
+    }
     render_content(output, &response.content, mode)
 }
 
