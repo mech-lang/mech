@@ -54,6 +54,10 @@ fn source_layer_keeps_the_structured_syntax_highlighting_contract() {
 fn page_variants_do_not_own_source_or_repl_components() {
     for stylesheet in ["style.css", "blog.css", "docs.css"] {
         let css = include(stylesheet);
+        assert!(
+            css.contains("--mech-page-style-signal: 1px"),
+            "{stylesheet} lost the observable page-style lifecycle signal",
+        );
         for component in [
             ".mech-code-block",
             ".mech-number",
@@ -74,6 +78,16 @@ fn page_variants_do_not_own_source_or_repl_components() {
             );
         }
     }
+}
+
+#[test]
+fn document_controller_keeps_panel_discovery_inside_its_selected_root() {
+    let controller = include("document.js");
+    assert!(controller.contains(
+        "return state.root\n    ? state.root.querySelector(selector)\n    : document.querySelector(selector);"
+    ));
+    assert!(controller.contains("controllerQuery(ERROR_PANEL_SELECTOR)"));
+    assert!(controller.contains("controllerQuery(OUTPUT_PANEL_SELECTOR)"));
 }
 
 #[test]

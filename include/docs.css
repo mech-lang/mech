@@ -1,5 +1,9 @@
 /* Documentation page variant over the canonical blog-derived page shell. */
 
+:root {
+  --mech-page-style-signal: 1px;
+}
+
 .docs-layout {
   align-items: start;
   display: grid;

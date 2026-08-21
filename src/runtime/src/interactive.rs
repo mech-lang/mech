@@ -696,6 +696,32 @@ mod tests {
         activations: Cell<usize>,
     }
 
+    struct CapturingProgramEventFactory {
+        events: Arc<Mutex<Option<MechEventBuffer>>>,
+    }
+
+    impl ResidentReplRuntimeFactory for CapturingProgramEventFactory {
+        fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
+            unreachable!("the test factory supplies an activated runtime")
+        }
+
+        fn activate(
+            &self,
+            events: MechEventBuffer,
+            _source: &str,
+        ) -> MResult<(MechRuntime, RuntimeProgramLoadOutcome)> {
+            *self.events.lock().unwrap() = Some(events);
+            Ok((
+                MechRuntime::builder().build()?,
+                RuntimeProgramLoadOutcome {
+                    route: crate::RuntimeProgramRoute::None,
+                    initial_value: RuntimeValueSnapshot::empty(),
+                    info: crate::RuntimeProgramExecutionInfo::default(),
+                },
+            ))
+        }
+    }
+
     impl ResidentReplRuntimeFactory for FailingRetirementFactory {
         fn build(&self, _events: MechEventBuffer) -> MResult<MechRuntime> {
             unreachable!("the test factory supplies activated runtimes directly")
@@ -812,19 +838,35 @@ mod tests {
                 if diagnostic.owner == DiagnosticOwner::Interaction
         ));
 
-        let program = own_program_diagnostic(MechEvent::Diagnostic(DiagnosticEvent {
-            id: DiagnosticId::new("program-diagnostic"),
-            owner: DiagnosticOwner::Interaction,
-            severity: Severity::Error,
-            phase: DiagnosticPhase::Execute,
-            code: None,
-            message: "program failed".to_string(),
-            source: None,
-            notes: Vec::new(),
-            related: Vec::new(),
-        }));
+        let captured = Arc::new(Mutex::new(None));
+        let mut session = ResidentReplSession::from_source(
+            CapturingProgramEventFactory {
+                events: Arc::clone(&captured),
+            },
+            "baseline".to_string(),
+        )
+        .unwrap();
+        let program_events = captured
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("the factory must receive the session's program event buffer");
+        program_events
+            .emit(MechEvent::Diagnostic(DiagnosticEvent {
+                id: DiagnosticId::new("program-diagnostic"),
+                owner: DiagnosticOwner::Interaction,
+                severity: Severity::Error,
+                phase: DiagnosticPhase::Execute,
+                code: None,
+                message: "program failed".to_string(),
+                source: None,
+                notes: Vec::new(),
+                related: Vec::new(),
+            }))
+            .unwrap();
+        let program = session.drain_events().unwrap();
         assert!(matches!(
-            program,
+            &program[0].event,
             MechEvent::Diagnostic(diagnostic) if diagnostic.owner == DiagnosticOwner::Program
         ));
     }

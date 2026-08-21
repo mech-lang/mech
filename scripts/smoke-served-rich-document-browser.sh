@@ -653,6 +653,14 @@ def assert_style_layer_contract():
 
   styles.page.disabled = true;
   document.documentElement.style.scrollBehavior = 'auto';
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  await new Promise(resolve => requestAnimationFrame(resolve));
+  const pageOffBeforeScroll = {
+    consoleTopStyle: getComputedStyle(consolePane).top,
+    hostOffset: getComputedStyle(
+      document.querySelector('[data-mech-repl-host]')
+    ).getPropertyValue('--mech-repl-top-offset').trim(),
+  };
   const headerHeight = header.getBoundingClientRect().height;
   window.scrollTo(0, Math.min(
     headerHeight + 64,
@@ -715,6 +723,7 @@ def assert_style_layer_contract():
     consoleHeight,
     consoleWidth,
     promptColor,
+    pageOffBeforeScroll,
     pageOff,
     mechdownOff,
     sourceOff,
@@ -726,6 +735,8 @@ def assert_style_layer_contract():
         layers is None or
         layers["headerPosition"] != "sticky" or
         layers["pageOff"]["headerPosition"] == layers["headerPosition"] or
+        layers["pageOffBeforeScroll"]["consoleTopStyle"] != "0px" or
+        layers["pageOffBeforeScroll"]["hostOffset"] != "0px" or
         layers["pageOff"]["sourceColor"] != layers["sourceColor"] or
         layers["pageOff"]["consoleDisplay"] != layers["consoleDisplay"] or
         layers["pageOff"]["consolePosition"] != layers["consolePosition"] or
@@ -1085,6 +1096,53 @@ def assert_console_contract():
         fail(
             "an omitted source echo leaked submission ownership into the next prompt: "
             f"{omitted_echo_ownership!r}"
+        )
+    repeated_enter_ownership = evaluate_json("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  const original = WasmDocument.prototype.replInvoke;
+  const input = document.querySelector('.repl-input');
+  if (!input) return null;
+  const command = ':plan';
+  const sourceCount = () => [...document.querySelectorAll('.mech-repl-source .repl-code')]
+    .filter(code => code.textContent.trim() === command).length;
+  const sourcesBefore = sourceCount();
+  const responsesBefore = document.querySelectorAll('.mech-repl-response').length;
+  let invocations = 0;
+  WasmDocument.prototype.replInvoke = function(source) {
+    if (source === command) invocations += 1;
+    return original.call(this, source);
+  };
+  input.value = command;
+  const enter = () => input.dispatchEvent(new KeyboardEvent('keydown', {
+    key: 'Enter', bubbles: true, cancelable: true,
+  }));
+  enter();
+  enter();
+  WasmDocument.prototype.replInvoke = original;
+  const matchingRows = [...document.querySelectorAll('.mech-repl-source')]
+    .filter(row => row.querySelector('.repl-code')?.textContent.trim() === command);
+  return {
+    invocations,
+    sourceDelta: sourceCount() - sourcesBefore,
+    responseDelta:
+      document.querySelectorAll('.mech-repl-response').length - responsesBefore,
+    sourcePromptCounts:
+      matchingRows.map(row => row.querySelectorAll(':scope > .repl-prompt').length),
+    activePrompts: document.querySelectorAll('.mech-repl-active-prompt').length,
+  };
+})()
+""")
+    if repeated_enter_ownership != {
+        "invocations": 1,
+        "sourceDelta": 1,
+        "responseDelta": 1,
+        "sourcePromptCounts": [1],
+        "activePrompts": 1,
+    }:
+        fail(
+            "repeated Enter on a retired input duplicated command ownership: "
+            f"{repeated_enter_ownership!r}"
         )
     evaluate("""
 (() => {
@@ -1690,6 +1748,53 @@ def assert_console_contract():
         "document.querySelectorAll('[data-mech-display-id=scene-browser-smoke] [data-mech-rich-scene=true] circle').length === 2",
         "portable rich Scene output rendering as SVG in the Output pane",
     )
+    root_isolation = evaluate_json("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  const localOutput = root?.querySelector('#mech-document-output');
+  const localErrors = root?.querySelector('#mech-document-errors');
+  if (!root || !localOutput || !localErrors) return null;
+  const outputAnchor = document.createComment('mech-output-anchor');
+  const errorsAnchor = document.createComment('mech-errors-anchor');
+  localOutput.before(outputAnchor);
+  localErrors.before(errorsAnchor);
+  const foreign = document.createElement('aside');
+  foreign.id = 'mech-smoke-foreign-panels';
+  foreign.innerHTML = `
+    <section data-mech-document-output></section>
+    <section data-mech-document-errors></section>
+  `;
+  document.body.append(foreign);
+  localOutput.remove();
+  localErrors.remove();
+  const send = (stream) => window.dispatchEvent(new CustomEvent('mech:output', {
+    detail: {
+      source: { host: { name: 'browser-smoke', span: null } },
+      stream,
+      display_id: null,
+      operation: 'create',
+      content: { kind: 'text', data: { text: 'must stay root-local' } },
+    },
+  }));
+  send('stdout');
+  send('stderr');
+  const result = {
+    foreignOutputChildren:
+      foreign.querySelector('[data-mech-document-output]').children.length,
+    foreignErrorChildren:
+      foreign.querySelector('[data-mech-document-errors]').children.length,
+  };
+  outputAnchor.replaceWith(localOutput);
+  errorsAnchor.replaceWith(localErrors);
+  foreign.remove();
+  return result;
+})()
+""")
+    if root_isolation != {
+        "foreignOutputChildren": 0,
+        "foreignErrorChildren": 0,
+    }:
+        fail(f"document controller escaped its selected root: {root_isolation!r}")
     evaluate("""
 (() => {
   const send = (stream, operation, text) => window.dispatchEvent(new CustomEvent('mech:output', {
@@ -1736,6 +1841,43 @@ def assert_console_contract():
         "display removal while the event's destination pane is absent",
     )
     evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  const original = WasmDocument.prototype.replInvoke;
+  WasmDocument.prototype.replInvoke = function(source) {
+    const response = original.call(this, source);
+    if (source === ':outputs') {
+      response.events = response.events || [];
+      response.events.push({
+        event: {
+          channel: 'diagnostic',
+          event: {
+            id: 'program-browser-smoke',
+            owner: 'program',
+            severity: 'error',
+            phase: 'execute',
+            code: 'ProgramBrowserSmoke',
+            message: 'persistent program diagnostic',
+            source: null,
+            notes: [],
+            related: [],
+          },
+        },
+      });
+      WasmDocument.prototype.replInvoke = original;
+    }
+    return response;
+  };
+})()
+""")
+    submit(":outputs")
+    wait_for(
+        "Boolean(document.querySelector('[data-mech-error-region=program-diagnostics] "
+        ".mech-program-diagnostic[data-mech-diagnostic-id=program-browser-smoke]')) && "
+        "document.querySelector('#errors-tab')?.getAttribute('aria-selected') === 'true'",
+        "a program-owned diagnostic routing into the Errors pane",
+    )
+    evaluate("""
 (() => {
   const region = document.querySelector('[data-mech-error-region=program]');
   if (!region) return false;
@@ -1749,8 +1891,16 @@ def assert_console_contract():
     submit(":clear output")
     wait_for(
         "!document.querySelector('[data-mech-output-region=repl] [data-mech-display-id]') && "
-        "(document.querySelector('[data-mech-error-region=program]')?.children.length || 0) === 0",
-        "global program stdout and stderr lifecycle clearing",
+        "(document.querySelector('[data-mech-error-region=program]')?.children.length || 0) === 0 && "
+        "Boolean(document.querySelector('[data-mech-error-region=program-diagnostics] "
+        ".mech-program-diagnostic[data-mech-diagnostic-id=program-browser-smoke]'))",
+        "program stream clearing without deleting program diagnostics",
+    )
+    submit(":clear errors")
+    wait_for(
+        "!document.querySelector('[data-mech-error-region=program-diagnostics]') && "
+        "Boolean(document.querySelector('[data-mech-document-error-smoke=true]'))",
+        "diagnostic clearing without deleting document-owned errors",
     )
     evaluate("document.querySelector('#output-tab')?.click()")
     wait_for(

@@ -26,8 +26,14 @@ const state = {
   programDisplays: new Map(),
   inlineInspector: null,
   replHostOffsetObserver: null,
+  replPageStyleProbe: null,
   replStyleObserver: null,
 };
+
+const ERROR_PANEL_SELECTOR =
+  "#mech-document-errors, [data-mech-document-errors], [data-mech-errors-panel]";
+const OUTPUT_PANEL_SELECTOR =
+  "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]";
 
 function truthySetting(value) {
   return typeof value === "string" &&
@@ -75,12 +81,14 @@ function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function controllerQuery(selector) {
+  return state.root
+    ? state.root.querySelector(selector)
+    : document.querySelector(selector);
+}
+
 function errorPanel() {
-  return state.root?.querySelector(
-    "#mech-document-errors, [data-mech-document-errors], [data-mech-errors-panel]",
-  ) || document.querySelector(
-    "#mech-document-errors, [data-mech-document-errors], [data-mech-errors-panel]",
-  );
+  return controllerQuery(ERROR_PANEL_SELECTOR);
 }
 
 function errorRegion(kind) {
@@ -99,11 +107,7 @@ function errorRegion(kind) {
 }
 
 function outputPanel() {
-  return state.root?.querySelector(
-    "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]",
-  ) || document.querySelector(
-    "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]",
-  );
+  return controllerQuery(OUTPUT_PANEL_SELECTOR);
 }
 
 function outputRegion(kind) {
@@ -147,7 +151,7 @@ function appendError(error, owner = "document") {
 
 function appendDiagnostic(diagnostic) {
   const interaction = diagnostic.owner === "interaction";
-  const target = interaction ? transcript() : errorRegion("program");
+  const target = interaction ? transcript() : errorRegion("program-diagnostics");
   if (!target) {
     return;
   }
@@ -1176,6 +1180,7 @@ function clearReplDiagnostics() {
     diagnostic.remove();
   }
   errorPanel()?.querySelector('[data-mech-error-region="repl"]')?.remove();
+  errorPanel()?.querySelector('[data-mech-error-region="program-diagnostics"]')?.remove();
 }
 
 function clearTranscript() {
@@ -2057,12 +2062,31 @@ function syncReplHostOffset() {
   }
 }
 
+function initializePageStyleProbe() {
+  state.replPageStyleProbe?.remove();
+  const probe = document.createElement("span");
+  probe.dataset.mechPageStyleProbe = "";
+  probe.setAttribute("aria-hidden", "true");
+  probe.style.cssText = [
+    "position: fixed",
+    "visibility: hidden",
+    "pointer-events: none",
+    "overflow: hidden",
+    "width: var(--mech-page-style-signal, 0px)",
+    "height: 0",
+  ].join(";");
+  (state.root || document.body).append(probe);
+  state.replPageStyleProbe = probe;
+  return probe;
+}
+
 function initializeLayout() {
   window.addEventListener("mech:output", event => {
     if (event instanceof CustomEvent && event.detail) {
       appendProgramOutput(event.detail);
     }
   });
+  const pageStyleProbe = initializePageStyleProbe();
   syncReplHostOffset();
   window.addEventListener("resize", syncReplHostOffset);
   window.addEventListener("scroll", syncReplHostOffset, { passive: true });
@@ -2071,10 +2095,12 @@ function initializeLayout() {
   });
   window.addEventListener("mech:styles-changed", syncReplHostOffset);
   const header = document.querySelector(".site-header, #header");
-  if (header && typeof ResizeObserver === "function") {
+  if (typeof ResizeObserver === "function") {
     state.replHostOffsetObserver?.disconnect();
     state.replHostOffsetObserver = new ResizeObserver(syncReplHostOffset);
-    state.replHostOffsetObserver.observe(header);
+    for (const target of [header, pageStyleProbe].filter(Boolean)) {
+      state.replHostOffsetObserver.observe(target);
+    }
   }
   const styleRoot = document.head || document.documentElement;
   if (styleRoot && typeof MutationObserver === "function") {
