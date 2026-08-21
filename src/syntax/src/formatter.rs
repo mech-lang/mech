@@ -254,6 +254,7 @@ impl Formatter {
         Ok((rendered, link))
     }
 
+    #[cfg(feature = "mika")]
     fn mika_interpreter_id(parent_id: u64, node: &(Mika, Option<MikaSection>)) -> u64 {
         hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
     }
@@ -1505,6 +1506,7 @@ impl Formatter {
         }
     }
 
+    #[cfg(feature = "mika")]
     pub fn mika(&mut self, node: &(Mika, Option<MikaSection>)) -> String {
         let (mika, section) = node;
         let mika_str = format!("<div class=\"mech-mika\">{}</div>", mika.to_string());
@@ -1604,6 +1606,7 @@ impl Formatter {
             SectionElement::Image(n) => self.image(n),
             SectionElement::List(n) => self.list(n),
             SectionElement::MechCode(n) => self.mech_code(n),
+            #[cfg(feature = "mika")]
             SectionElement::Mika(n) => self.mika(n),
             SectionElement::Paragraph(n) => self.paragraph(n),
             SectionElement::Subtitle(n) => self.subtitle(n),
