@@ -2247,6 +2247,49 @@ def assert_console_contract():
         "display removal while the event's destination pane is absent",
     )
     evaluate("document.querySelector('#console-tab')?.click()")
+    repl_event_rejection = evaluate_json("""
+(() => {
+  const controller = window.__MECH_SMOKE_DOCUMENT__;
+  const transcript = document.querySelector('.mech-repl-transcript');
+  const panels = [...document.querySelectorAll('[data-mech-console-panel]')];
+  if (!controller || !transcript || panels.length !== 3) return null;
+  const before = JSON.stringify({
+    transcript: transcript.innerHTML,
+    panels: panels.map(panel => ({
+      name: panel.dataset.mechConsolePanel,
+      className: panel.className,
+      html: panel.innerHTML,
+    })),
+  });
+  let rejection = '';
+  try {
+    controller.replPublishProgramEvent({
+      channel: 'repl',
+      event: { kind: 'clear', payload: 'interaction' },
+    });
+  } catch (error) {
+    rejection = String(error);
+  }
+  const after = JSON.stringify({
+    transcript: transcript.innerHTML,
+    panels: panels.map(panel => ({
+      name: panel.dataset.mechConsolePanel,
+      className: panel.className,
+      html: panel.innerHTML,
+    })),
+  });
+  return {
+    rejectedAtSessionBoundary:
+      /program producers cannot publish REPL control events/.test(rejection),
+    presentationUnchanged: before === after,
+  };
+})()
+""")
+    if repl_event_rejection is None or not all(repl_event_rejection.values()):
+        fail(
+            "the served WASM boundary accepted or presented a program-owned REPL event: "
+            f"{repl_event_rejection!r}"
+        )
     evaluate("""
 (() => window.__MECH_SMOKE_DOCUMENT__?.replPublishProgramEvent({
   channel: 'diagnostic',
@@ -2538,13 +2581,16 @@ def assert_real_pointer_capture_cleanup():
   const handle = root?.querySelector(':scope > #resizer, :scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
   if (!handle) return null;
   const rect = handle.getBoundingClientRect();
-  window.__MECH_REAL_POINTER__ = { pointerId: null, captured: false, lost: 0 };
+  window.__MECH_REAL_POINTER__ = { pointerId: null, got: 0, lost: 0 };
+  window.__MECH_REAL_POINTER_HANDLE__ = handle;
   handle.addEventListener('pointerdown', event => {
     window.__MECH_REAL_POINTER__.pointerId = event.pointerId;
-    window.__MECH_REAL_POINTER__.captured = handle.hasPointerCapture(event.pointerId);
   });
   handle.addEventListener('lostpointercapture', () => {
     window.__MECH_REAL_POINTER__.lost += 1;
+  });
+  handle.addEventListener('gotpointercapture', () => {
+    window.__MECH_REAL_POINTER__.got += 1;
   });
   return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 })()
@@ -2559,32 +2605,82 @@ def assert_real_pointer_capture_cleanup():
         },
         session_id,
     )
+    devtools.call(
+        "Input.dispatchMouseEvent",
+        {
+            "type": "mouseMoved", "x": pointer["x"] + 1, "y": pointer["y"],
+            "button": "left", "buttons": 1,
+        },
+        session_id,
+    )
     wait_for(
-        "window.__MECH_REAL_POINTER__?.captured === true",
-        "a real browser pointer capture on the resize handle",
+        "window.__MECH_REAL_POINTER__?.got === 1 && "
+        "window.__MECH_REAL_POINTER_HANDLE__?.hasPointerCapture("
+        "window.__MECH_REAL_POINTER__?.pointerId)",
+        "an active native pointer capture on the resize handle",
     )
     evaluate("""
 (() => {
-  const handle = document.querySelector('.mech-root > #resizer, .mech-root > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
+  const handle = window.__MECH_REAL_POINTER_HANDLE__;
   const pointerId = window.__MECH_REAL_POINTER__?.pointerId;
   if (handle && pointerId != null && handle.hasPointerCapture(pointerId)) {
-    handle.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId }));
+    handle.releasePointerCapture(pointerId);
   }
 })()
 """)
-    # The active pointer and capture are native DevTools input. Dispatching the
-    # browser's loss signal now exercises cleanup while a real session owns it,
-    # before pointerup can provide an alternate teardown path.
+    release_state = evaluate_json("""
+(() => ({
+  lost: window.__MECH_REAL_POINTER__?.lost,
+  captured: window.__MECH_REAL_POINTER_HANDLE__?.hasPointerCapture(
+    window.__MECH_REAL_POINTER__?.pointerId),
+  resizing: document.body.classList.contains('is-resizing'),
+  axis: document.body.dataset.mechResizeAxis || null,
+}))()
+""")
+    pending_loss = {
+        "lost": 0, "captured": False, "resizing": True, "axis": "width",
+    }
+    delivered_loss = {
+        "lost": 1, "captured": False, "resizing": False, "axis": None,
+    }
+    if release_state not in (pending_loss, delivered_loss):
+        fail(
+            "releasePointerCapture left native ownership or inconsistent resize state: "
+            f"{release_state!r}"
+        )
+    devtools.call(
+        "Input.dispatchMouseEvent",
+        {
+            "type": "mouseMoved", "x": pointer["x"] + 2, "y": pointer["y"],
+            "button": "left", "buttons": 1,
+        },
+        session_id,
+    )
     wait_for(
         "window.__MECH_REAL_POINTER__?.lost === 1 && "
         "!document.body.classList.contains('is-resizing') && "
         "!document.body.hasAttribute('data-mech-resize-axis')",
-        "lostpointercapture cleaning the active resize session",
+        "the native lostpointercapture path cleaning the resize session",
     )
+    listeners = devtools.call(
+        "Runtime.evaluate",
+        {
+            "expression": "(getEventListeners(window.__MECH_REAL_POINTER_HANDLE__).lostpointercapture || []).length",
+            "returnByValue": True,
+            "includeCommandLineAPI": True,
+        },
+        session_id,
+    )
+    listener_count = listeners.get("result", {}).get("value")
+    if listener_count != 1:
+        fail(
+            "native pointer-capture cleanup retained its production loss listener: "
+            f"{listener_count!r}"
+        )
     devtools.call(
         "Input.dispatchMouseEvent",
         {
-            "type": "mouseReleased", "x": pointer["x"], "y": pointer["y"],
+            "type": "mouseReleased", "x": pointer["x"] + 2, "y": pointer["y"],
             "button": "left", "buttons": 0, "clickCount": 1,
         },
         session_id,

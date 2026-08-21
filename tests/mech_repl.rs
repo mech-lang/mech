@@ -299,7 +299,7 @@ fn constraints_are_only_exposed_through_their_own_command() {
     let output = run_repl(
         &["--nofun"],
         None,
-        "x := 1\nsafe! := x <= 2\n:whos\n:constraints\n:quit\n",
+        "x := 1\nsafe! := x <= 2\n:whos x safe!\n:constraints safe!\n:quit\n",
     );
     let (_, after_values_heading) = output
         .split_once("Resident values")
