@@ -1860,10 +1860,10 @@ function ensureConsoleWorkspaceResizers(pane = documentConsolePane()) {
     return [];
   }
   const specifications = [
-    ["column", "vertical", "Resize Console and Output panels"],
-    ["row", "horizontal", "Resize Output and Errors panels"],
+    ["column", "vertical", "Resize Console and Output panels", 55],
+    ["row", "horizontal", "Resize Output and Errors panels", 60],
   ];
-  for (const [name, orientation, label] of specifications) {
+  for (const [name, orientation, label, initialValue] of specifications) {
     if (panels.querySelector(`[data-mech-console-workspace-resizer="${name}"]`)) {
       continue;
     }
@@ -1873,6 +1873,9 @@ function ensureConsoleWorkspaceResizers(pane = documentConsolePane()) {
     resizer.setAttribute("role", "separator");
     resizer.setAttribute("aria-orientation", orientation);
     resizer.setAttribute("aria-label", label);
+    resizer.setAttribute("aria-valuemin", "0");
+    resizer.setAttribute("aria-valuemax", "100");
+    resizer.setAttribute("aria-valuenow", String(initialValue));
     resizer.tabIndex = 0;
     panels.append(resizer);
   }
@@ -1914,10 +1917,20 @@ function normalizeReplComponentContract() {
     )) {
       tab.dataset.mechConsoleTab ||= tab.dataset.tab || "";
     }
+    const legacyPanelNames = {
+      "console-panel": "console",
+      "output-panel": "output",
+      "errors-panel": "errors",
+    };
     for (const panel of pane.querySelectorAll(
-      "[data-mech-console-panel], .console-panel[data-panel]",
+      "[data-mech-console-panel], .console-panel[data-panel], #console-panel, #output-panel, #errors-panel",
     )) {
-      panel.dataset.mechConsolePanel ||= panel.dataset.panel || "";
+      panel.dataset.mechConsolePanel ||=
+        panel.dataset.panel || legacyPanelNames[panel.id] || "";
+      const name = panel.dataset.mechConsolePanel;
+      panel.dataset.mechConsoleLabel ||= name
+        ? `${name.charAt(0).toUpperCase()}${name.slice(1)}`
+        : "Panel";
     }
     ensureConsoleWorkspaceResizers(pane);
   }
@@ -2014,16 +2027,21 @@ function activateConsolePanel(name, pane = documentConsolePane()) {
     tab.classList.toggle("active", selected);
     tab.setAttribute("aria-selected", String(selected));
     if (selected) {
-      delete tab.dataset.mechConsoleUnread;
-      if ("mechConsoleBaseLabel" in tab.dataset) {
-        const baseLabel = tab.dataset.mechConsoleBaseLabel;
-        if (baseLabel) {
-          tab.setAttribute("aria-label", baseLabel);
-        } else {
-          tab.removeAttribute("aria-label");
-        }
-      }
+      clearConsoleTabUnread(tab);
     }
+  }
+}
+
+function clearConsoleTabUnread(tab) {
+  delete tab.dataset.mechConsoleUnread;
+  if (!("mechConsoleBaseLabel" in tab.dataset)) {
+    return;
+  }
+  const baseLabel = tab.dataset.mechConsoleBaseLabel;
+  if (baseLabel) {
+    tab.setAttribute("aria-label", baseLabel);
+  } else {
+    tab.removeAttribute("aria-label");
   }
 }
 
@@ -2204,24 +2222,57 @@ function initializeResizeHandles() {
   }
 }
 
-function setWorkspaceSize(pane, resizer, requested) {
+function workspaceSizeMetrics(pane, resizer) {
   const panels = pane.querySelector(":scope > .console-panels");
   if (!panels) {
-    return;
+    return null;
   }
   const rect = panels.getBoundingClientRect();
   const axis = resizer.dataset.mechConsoleWorkspaceResizer;
   const total = axis === "column" ? rect.width : rect.height;
+  if (total <= 0) {
+    return null;
+  }
   const minimum = Math.min(axis === "column" ? 240 : 120, Math.max(0, total / 2 - 4));
   const maximum = Math.max(minimum, total - minimum - 8);
+  return { axis, total, minimum, maximum };
+}
+
+function updateWorkspaceResizerAria(resizer, metrics, size) {
+  const percentage = value => Math.round((value / metrics.total) * 100);
+  resizer.setAttribute("aria-valuemin", String(percentage(metrics.minimum)));
+  resizer.setAttribute("aria-valuemax", String(percentage(metrics.maximum)));
+  resizer.setAttribute("aria-valuenow", String(percentage(size)));
+}
+
+function setWorkspaceSize(pane, resizer, requested) {
+  const metrics = workspaceSizeMetrics(pane, resizer);
+  if (!metrics) {
+    return;
+  }
+  const { axis, total, minimum, maximum } = metrics;
   const size = Math.max(minimum, Math.min(maximum, requested));
   pane.style.setProperty(
     axis === "column" ? "--mech-console-workspace-left" : "--mech-console-workspace-top",
-    `${size}px`,
+    `${(size / total) * 100}%`,
   );
-  resizer.setAttribute("aria-valuemin", String(Math.round(minimum)));
-  resizer.setAttribute("aria-valuemax", String(Math.round(maximum)));
-  resizer.setAttribute("aria-valuenow", String(Math.round(size)));
+  updateWorkspaceResizerAria(resizer, metrics, size);
+}
+
+function refreshWorkspaceResizers(pane) {
+  if (!pane.classList.contains("is-fullscreen")) {
+    return;
+  }
+  for (const resizer of ensureConsoleWorkspaceResizers(pane)) {
+    const metrics = workspaceSizeMetrics(pane, resizer);
+    if (!metrics) {
+      continue;
+    }
+    const size = metrics.axis === "column"
+      ? panelFor("console", pane)?.getBoundingClientRect().width || 0
+      : panelFor("output", pane)?.getBoundingClientRect().height || 0;
+    updateWorkspaceResizerAria(resizer, metrics, size);
+  }
 }
 
 function initializeWorkspaceResizers() {
@@ -2266,6 +2317,9 @@ function initializeWorkspaceResizers() {
       setWorkspaceSize(pane, resizer, current + (forwards ? 24 : -24));
     });
   }
+  const refresh = () => refreshWorkspaceResizers(pane);
+  window.addEventListener("resize", refresh);
+  window.visualViewport?.addEventListener("resize", refresh);
 }
 
 function setFullscreenState(pane, toggle, active) {
@@ -2277,6 +2331,14 @@ function setFullscreenState(pane, toggle, active) {
     active ? "Minimize console workspace" : "Enter fullscreen workspace",
   );
   activateConsolePanel(selectedConsolePanel(pane) || "console", pane);
+  if (active) {
+    for (const tab of pane.querySelectorAll(
+      ".console-tab, [data-mech-console-tab], [data-tab]",
+    )) {
+      clearConsoleTabUnread(tab);
+    }
+    refreshWorkspaceResizers(pane);
+  }
 }
 
 function initializeFullscreen() {

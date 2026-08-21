@@ -528,7 +528,10 @@ def assert_desktop_contract():
       document.documentElement.dataset.mechWindowError,
       document.documentElement.dataset.mechUnhandledRejection,
     ].filter(Boolean),
-    siteChromeAbsent: !document.querySelector(".site-header, .footer, #toggle-repl, [data-mech-console-toggle]"),
+    siteChromeAbsent:
+      !document.querySelector(".site-header, .footer, .breadcrumbs, .mika-separator, .post-pagination") &&
+      [...document.querySelectorAll("#toggle-repl, [data-mech-console-toggle]")]
+        .every(control => control.id === "mech-smoke-custom-toggle"),
     titleVisible: Boolean(title && visible("#document-title, .mech-document-content h1, .main-content h1")),
     contentVisible: Boolean(content && visible("#left-pane, .content-shell, .main-content")),
     console: rectangle(console),
@@ -600,17 +603,6 @@ def assert_desktop_contract():
     if "docs" in label:
         if not evaluate(visible_expression(".version-badge")):
             fail("docs shell did not render visible version metadata")
-    if label in ("blog", "docs", "formatted-blog", "formatted-docs"):
-        pagination = evaluate_json("""
-(() => ({
-  previous: Boolean(document.querySelector(".post-pagination-prev")),
-  next: Boolean(document.querySelector(".post-pagination-next")),
-}))()
-""")
-        if not pagination["previous"] or not pagination["next"]:
-            fail(f"rich shell did not render previous/next controls: {pagination!r}")
-
-
 def assert_style_layer_contract():
     layers = evaluate_json("""
 (async () => {
@@ -777,8 +769,42 @@ def assert_desktop_console_controls():
   };
 })()
 """)
-    if state["rootOpen"] != "true" or state["paneHidden"] or not state["exteriorButtonAbsent"]:
+    if state["rootOpen"] != "true" or state["paneHidden"]:
         fail(f"desktop console did not begin in an accessible open state: {state!r}")
+    if label == "custom":
+        custom = evaluate_json("""
+(() => {
+  const toggle = document.querySelector('#mech-smoke-custom-toggle');
+  const visible = element => {
+    const rect = element?.getBoundingClientRect();
+    return Boolean(element && getComputedStyle(element).display !== 'none' && rect.width && rect.height);
+  };
+  return {
+    visible: visible(toggle),
+    panels: Object.fromEntries(['console', 'output', 'errors'].map(name => [
+      name,
+      document.querySelector(`#${name}-panel`)?.dataset.mechConsolePanel || null,
+    ])),
+  };
+})()
+""")
+        if custom != {
+            "visible": True,
+            "panels": {"console": "console", "output": "output", "errors": "errors"},
+        }:
+            fail(f"custom REPL controls were not preserved and normalized: {custom!r}")
+        evaluate("document.querySelector('#mech-smoke-custom-toggle')?.click()")
+        wait_for(
+            "document.querySelector('.mech-root')?.dataset.mechConsoleOpen === 'false'",
+            "the custom component toggle closing the console",
+        )
+        evaluate("document.querySelector('#mech-smoke-custom-toggle')?.click()")
+        wait_for(
+            "document.querySelector('.mech-root')?.dataset.mechConsoleOpen === 'true'",
+            "the custom component toggle reopening the console",
+        )
+    elif not state["exteriorButtonAbsent"]:
+        fail(f"a shipped shim exposed an exterior Console button: {state!r}")
 
     evaluate("document.dispatchEvent(new KeyboardEvent('keydown', {key: '`', bubbles: true, cancelable: true}))")
     wait_for(
@@ -797,16 +823,32 @@ def assert_desktop_console_controls():
 
 
 def assert_fullscreen_accessibility():
+    evaluate("""
+(() => {
+  for (const name of ['output', 'errors']) {
+    const tab = document.querySelector(`#${name}-tab`);
+    if (tab) tab.dataset.mechConsoleUnread = 'true';
+  }
+})()
+""")
     initial = evaluate_json("""
 (() => {
   const toggle = document.querySelector("#consoleFullscreenToggle, [data-mech-console-fullscreen]");
+  const resizers = [...document.querySelectorAll('[data-mech-console-workspace-resizer]')];
   return {
     pressed: toggle?.getAttribute("aria-pressed"),
     label: toggle?.getAttribute("aria-label"),
+    resizersInitialized: resizers.length === 2 && resizers.every(handle =>
+      handle.hasAttribute('aria-valuemin') && handle.hasAttribute('aria-valuemax') &&
+      handle.hasAttribute('aria-valuenow')),
   };
 })()
 """)
-    if initial["pressed"] != "false" or initial["label"] != "Enter fullscreen workspace":
+    if (
+        initial["pressed"] != "false" or
+        initial["label"] != "Enter fullscreen workspace" or
+        not initial["resizersInitialized"]
+    ):
         fail(f"fullscreen control did not begin with a collapsed accessible state: {initial!r}")
 
     evaluate("document.querySelector('#consoleFullscreenToggle, [data-mech-console-fullscreen]')?.click()")
@@ -859,7 +901,27 @@ def assert_fullscreen_accessibility():
       panel.getBoundingClientRect().width > 0 && panel.getBoundingClientRect().height > 0),
     resizersAccessible: [column, row].every(handle =>
       getComputedStyle(handle).display !== 'none' && handle.getAttribute('role') === 'separator' &&
-      handle.tabIndex === 0 && handle.hasAttribute('aria-valuenow')),
+      handle.tabIndex === 0 && handle.hasAttribute('aria-valuemin') &&
+      handle.hasAttribute('aria-valuemax') && handle.hasAttribute('aria-valuenow')),
+    unreadCleared: !document.querySelector('[data-mech-console-unread]'),
+    responsiveUnits: [
+      pane.style.getPropertyValue('--mech-console-workspace-left'),
+      pane.style.getPropertyValue('--mech-console-workspace-top'),
+    ].every(value => value.endsWith('%')),
+    labeled: [consolePanel, outputPanel, errorsPanel].every(panel =>
+      getComputedStyle(panel, '::before').content.replaceAll('"', '') ===
+        panel.dataset.mechConsoleLabel),
+    delineated: [consolePanel, outputPanel, errorsPanel].every(panel => {
+      const style = getComputedStyle(panel);
+      return ['Top', 'Right', 'Bottom', 'Left'].every(side =>
+        parseFloat(style[`border${side}Width`]) >= 1);
+    }),
+    resizeGrips: (() => {
+      const columnGrip = getComputedStyle(column, '::after');
+      const rowGrip = getComputedStyle(row, '::after');
+      return parseFloat(columnGrip.height) <= 48 && parseFloat(columnGrip.width) <= 4 &&
+        parseFloat(rowGrip.width) <= 48 && parseFloat(rowGrip.height) <= 4;
+    })(),
     columnResized: consoleRect.width > beforeConsoleWidth + 20,
     rowResized: outputRect.height > beforeOutputHeight + 15,
   };
@@ -867,6 +929,38 @@ def assert_fullscreen_accessibility():
 """)
     if workspace is None or not all(workspace.values()):
         fail(f"fullscreen workspace did not expose or resize its three-pane layout: {workspace!r}")
+
+    devtools.call(
+        "Emulation.setDeviceMetricsOverride",
+        {"width": 900, "height": 620, "deviceScaleFactor": 1, "mobile": False},
+        session_id,
+    )
+    time.sleep(0.15)
+    responsive = evaluate_json("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const panels = [...document.querySelectorAll('[data-mech-console-panel]')];
+  const bounds = pane?.getBoundingClientRect();
+  return {
+    contained: Boolean(bounds) && panels.every(panel => {
+      const rect = panel.getBoundingClientRect();
+      return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1 &&
+        rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1;
+    }),
+    ariaCurrent: [...document.querySelectorAll('[data-mech-console-workspace-resizer]')]
+      .every(handle => Number(handle.getAttribute('aria-valuenow')) >= 0 &&
+        Number(handle.getAttribute('aria-valuenow')) <= 100),
+  };
+})()
+""")
+    devtools.call(
+        "Emulation.setDeviceMetricsOverride",
+        {"width": 1680, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+        session_id,
+    )
+    time.sleep(0.15)
+    if not responsive["contained"] or not responsive["ariaCurrent"]:
+        fail(f"fullscreen workspace splits did not adapt to viewport pressure: {responsive!r}")
 
     evaluate("document.querySelector('#consoleFullscreenToggle, [data-mech-console-fullscreen]')?.click()")
     wait_for(
@@ -1056,9 +1150,12 @@ def assert_console_contract():
   if (!result || !kind || !value || !number || !input) return null;
   input.blur();
   result.click();
+  const kindRect = kind.getBoundingClientRect();
+  const valueRect = value.getBoundingClientRect();
   return {
     kind: kind.textContent.trim(),
     kindColored: getComputedStyle(kind).color !== getComputedStyle(value).color,
+    kindAboveValue: kindRect.bottom <= valueRect.top,
     valueTokenized: number.textContent.trim() === '42',
     promptFocusedByResultClick: document.activeElement === input,
   };
@@ -1068,6 +1165,7 @@ def assert_console_contract():
         presentation is None or
         not presentation["kind"] or
         not presentation["kindColored"] or
+        not presentation["kindAboveValue"] or
         not presentation["valueTokenized"] or
         not presentation["promptFocusedByResultClick"]
     ):
@@ -1257,6 +1355,7 @@ def assert_console_contract():
   const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
   const original = WasmDocument.prototype.replInvoke;
   WasmDocument.prototype.replInvoke = function(source) {
+    window.__MECH_SMOKE_DOCUMENT__ = this;
     const response = original.call(this, source);
     if (source === ':capabilities') {
       response.events = (response.events || []).filter(envelope =>
@@ -2054,34 +2153,20 @@ def assert_console_contract():
     )
     evaluate("document.querySelector('#console-tab')?.click()")
     evaluate("""
-(async () => {
-  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
-  const original = WasmDocument.prototype.replInvoke;
-  WasmDocument.prototype.replInvoke = function(source) {
-    const response = original.call(this, source);
-    if (source === ':outputs') {
-      response.events = response.events || [];
-      response.events.push({
-        event: {
-          channel: 'diagnostic',
-          event: {
-            id: 'program-browser-smoke',
-            owner: 'program',
-            severity: 'error',
-            phase: 'execute',
-            code: 'ProgramBrowserSmoke',
-            message: 'persistent program diagnostic',
-            source: null,
-            notes: [],
-            related: [],
-          },
-        },
-      });
-      WasmDocument.prototype.replInvoke = original;
-    }
-    return response;
-  };
-})()
+(() => window.__MECH_SMOKE_DOCUMENT__?.replPublishProgramEvent({
+  channel: 'diagnostic',
+  event: {
+    id: 'program-browser-smoke',
+    owner: 'interaction',
+    severity: 'error',
+    phase: 'execute',
+    code: 'ProgramBrowserSmoke',
+    message: 'persistent program diagnostic',
+    source: null,
+    notes: [],
+    related: [],
+  },
+}))()
 """)
     submit(":outputs")
     wait_for(
@@ -2271,6 +2356,10 @@ def assert_right_console_resize_direction():
         open: root.dataset.mechConsoleOpen,
         fullscreen: pane.classList.contains('is-fullscreen'),
         fallback: pane.dataset.mechFullscreenFallback,
+        fillsViewport: (() => {
+          const paneRect = pane.getBoundingClientRect();
+          return paneRect.left <= 1 && paneRect.right >= innerWidth - 1;
+        })(),
       });
     }
     const finalDelta = deltaXs.at(-1) || 0;
@@ -2322,7 +2411,8 @@ def assert_right_console_resize_direction():
   const exited = transitions[1];
   const fullscreen =
     entered?.fullscreen === true &&
-    entered?.fallback === 'true';
+    entered?.fallback === 'true' &&
+    entered?.fillsViewport === true;
   const returned =
     exited?.fullscreen === false &&
     exited?.fallback !== 'true' &&
@@ -2344,6 +2434,66 @@ def assert_right_console_resize_direction():
         not state["cancelledCleanly"]
     ):
         fail(f"right-console drag thresholds did not widen, collapse, fullscreen, and return: {state!r}")
+
+
+def assert_real_pointer_capture_cleanup():
+    pointer = evaluate_json("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  const handle = root?.querySelector(':scope > #resizer, :scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
+  if (!handle) return null;
+  const rect = handle.getBoundingClientRect();
+  window.__MECH_REAL_POINTER__ = { pointerId: null, captured: false, lost: 0 };
+  handle.addEventListener('pointerdown', event => {
+    window.__MECH_REAL_POINTER__.pointerId = event.pointerId;
+    window.__MECH_REAL_POINTER__.captured = handle.hasPointerCapture(event.pointerId);
+  });
+  handle.addEventListener('lostpointercapture', () => {
+    window.__MECH_REAL_POINTER__.lost += 1;
+  });
+  return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+})()
+""")
+    if pointer is None:
+        fail("could not locate the real pointer-capture resize handle")
+    devtools.call(
+        "Input.dispatchMouseEvent",
+        {
+            "type": "mousePressed", "x": pointer["x"], "y": pointer["y"],
+            "button": "left", "buttons": 1, "clickCount": 1,
+        },
+        session_id,
+    )
+    wait_for(
+        "window.__MECH_REAL_POINTER__?.captured === true",
+        "a real browser pointer capture on the resize handle",
+    )
+    evaluate("""
+(() => {
+  const handle = document.querySelector('.mech-root > #resizer, .mech-root > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
+  const pointerId = window.__MECH_REAL_POINTER__?.pointerId;
+  if (handle && pointerId != null && handle.hasPointerCapture(pointerId)) {
+    handle.dispatchEvent(new PointerEvent('lostpointercapture', { pointerId }));
+  }
+})()
+""")
+    # The active pointer and capture are native DevTools input. Dispatching the
+    # browser's loss signal now exercises cleanup while a real session owns it,
+    # before pointerup can provide an alternate teardown path.
+    wait_for(
+        "window.__MECH_REAL_POINTER__?.lost === 1 && "
+        "!document.body.classList.contains('is-resizing') && "
+        "!document.body.hasAttribute('data-mech-resize-axis')",
+        "lostpointercapture cleaning the active resize session",
+    )
+    devtools.call(
+        "Input.dispatchMouseEvent",
+        {
+            "type": "mouseReleased", "x": pointer["x"], "y": pointer["y"],
+            "button": "left", "buttons": 0, "clickCount": 1,
+        },
+        session_id,
+    )
 
 
 def assert_mobile_contract():
@@ -2811,6 +2961,38 @@ try:
         {"width": 1680, "height": 900, "deviceScaleFactor": 1, "mobile": False},
         session_id,
     )
+    if label == "custom":
+        devtools.call(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": """
+(() => {
+  const install = () => {
+    const root = document.querySelector('.mech-root');
+    if (!root) return;
+    if (!document.getElementById('mech-smoke-custom-toggle')) {
+      const toggle = document.createElement('button');
+      toggle.id = 'mech-smoke-custom-toggle';
+      toggle.type = 'button';
+      toggle.dataset.mechConsoleToggle = '';
+      toggle.textContent = 'Custom console control';
+      Object.assign(toggle.style, { position: 'fixed', left: '8px', bottom: '8px', zIndex: '1200' });
+      root.prepend(toggle);
+    }
+    for (const name of ['console', 'output', 'errors']) {
+      const panel = document.getElementById(`${name}-panel`);
+      if (!panel || 'mechSmokeLegacyContract' in panel.dataset) continue;
+      delete panel.dataset.mechConsolePanel;
+      delete panel.dataset.panel;
+      panel.dataset.mechSmokeLegacyContract = '';
+    }
+  };
+  new MutationObserver(install).observe(document, { childList: true, subtree: true });
+  document.addEventListener('DOMContentLoaded', install, { once: true });
+  install();
+})();
+"""},
+            session_id,
+        )
     # Keep real variable placeholders in the DOM before the controller starts.
     # Shipped templates intentionally do not hard-code a document's symbols, so
     # this uses browser automation instead of test-only production behavior to
@@ -2936,6 +3118,7 @@ try:
     assert_fullscreen_accessibility()
     assert_console_tab_isolation()
     assert_right_console_resize_direction()
+    assert_real_pointer_capture_cleanup()
     assert_console_contract()
     assert_mobile_contract()
     assert_repl_termination()
@@ -3044,6 +3227,7 @@ prepare_formatted_case \
 prepare_configured_case
 
 run_case default "$fixture"
+run_case custom "$fixture"
 run_case blog \
   "$fixture" \
   --shim "$repo_root/include/blog.html" \

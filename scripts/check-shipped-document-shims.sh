@@ -41,7 +41,6 @@ for selector in \
   'articleLayout' \
   'main-content' \
   'article-backmatter' \
-  'post-pagination' \
   'id="resizer"' \
   'console-pane' \
   'console-tabs' \
@@ -59,7 +58,6 @@ for selector in \
   'articleLayout' \
   'main-content' \
   'article-backmatter' \
-  'post-pagination' \
   'console-pane'; do
   require_literal include/blog.html "$selector"
 done
@@ -71,7 +69,6 @@ for selector in \
   'version-badge' \
   'articleIntro' \
   'article-backmatter' \
-  'post-pagination' \
   'console-pane'; do
   require_literal include/docs.html "$selector"
 done
@@ -80,6 +77,9 @@ for file in include/index.html include/blog.html include/docs.html; do
   reject_literal "$file" '<header class="site-header">'
   reject_literal "$file" '<footer class="footer">'
   reject_literal "$file" 'data-mech-console-toggle'
+  reject_literal "$file" 'class="breadcrumbs"'
+  reject_literal "$file" 'class="mika-separator"'
+  reject_literal "$file" 'class="post-pagination"'
   for slot in \
     '{{DOCUMENT_SCRIPT}}' \
     '{{DOCUMENT_SOURCES}}' \

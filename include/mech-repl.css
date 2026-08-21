@@ -139,10 +139,6 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
   cursor: ew-resize !important;
 }
 
-[data-mech-console-toggle] {
-  display: none !important;
-}
-
 [data-mech-console-pane] {
   background: var(--mech-repl-background);
   border-left: 1px solid var(--mech-repl-border);
@@ -167,12 +163,13 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
 [data-mech-console-pane].is-fullscreen,
 body.console-fullscreen [data-mech-console-pane] {
   bottom: 0;
-  height: auto;
+  height: auto !important;
   left: 0;
   position: fixed;
   right: 0;
   top: 0;
-  width: 100vw;
+  /* The component owns an inline width while it is being edge-resized. */
+  width: 100vw !important;
   z-index: 900;
 }
 
@@ -271,21 +268,47 @@ body.console-fullscreen [data-mech-console-pane] {
 body.console-fullscreen [data-mech-console-pane] .console-panels {
   display: grid;
   grid-template-columns:
-    minmax(min(240px, calc(50% - 4px)), var(--mech-console-workspace-left, calc(55% - 4px)))
+    clamp(
+      min(240px, calc(50% - 4px)),
+      var(--mech-console-workspace-left, calc(55% - 4px)),
+      calc(100% - min(240px, calc(50% - 4px)) - 8px)
+    )
     8px
-    minmax(min(240px, calc(50% - 4px)), 1fr);
+    minmax(0, 1fr);
   grid-template-rows:
-    minmax(120px, var(--mech-console-workspace-top, calc(60% - 4px)))
+    clamp(
+      min(120px, calc(50% - 4px)),
+      var(--mech-console-workspace-top, calc(60% - 4px)),
+      calc(100% - min(120px, calc(50% - 4px)) - 8px)
+    )
     8px
-    minmax(120px, 1fr);
+    minmax(0, 1fr);
 }
 
 [data-mech-console-pane].is-fullscreen [data-mech-console-panel],
 body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel] {
+  background: var(--mech-repl-background);
+  border: 1px solid var(--mech-repl-border);
   display: flex;
+  flex-direction: column;
   height: auto;
   min-height: 0;
   overflow: hidden;
+}
+
+[data-mech-console-pane].is-fullscreen [data-mech-console-panel]::before,
+body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel]::before {
+  align-items: center;
+  background: color-mix(in srgb, var(--mech-repl-surface) 72%, var(--mech-repl-background));
+  border-bottom: 1px solid var(--mech-repl-border);
+  color: var(--mech-repl-text-muted);
+  content: attr(data-mech-console-label);
+  display: flex;
+  flex: 0 0 32px;
+  font: 600 11px/1.2 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.08em;
+  padding: 0 12px;
+  text-transform: uppercase;
 }
 
 [data-mech-console-pane].is-fullscreen [data-mech-console-panel] > :is(.console-scroll, [data-mech-repl]),
@@ -302,20 +325,19 @@ body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel="conso
 
 [data-mech-console-pane].is-fullscreen [data-mech-console-panel="output"],
 body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel="output"] {
-  border-bottom: 1px solid var(--mech-repl-border);
   grid-column: 3;
   grid-row: 1;
 }
 
 [data-mech-console-pane].is-fullscreen [data-mech-console-panel="errors"],
 body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel="errors"] {
-  border-top: 1px solid var(--mech-repl-border);
   grid-column: 3;
   grid-row: 3;
 }
 
 [data-mech-console-pane].is-fullscreen [data-mech-console-workspace-resizer],
 body.console-fullscreen [data-mech-console-pane] [data-mech-console-workspace-resizer] {
+  background: color-mix(in srgb, var(--mech-repl-surface) 55%, var(--mech-repl-background));
   display: block;
   position: relative;
   touch-action: none;
@@ -323,11 +345,32 @@ body.console-fullscreen [data-mech-console-pane] [data-mech-console-workspace-re
 }
 
 [data-mech-console-pane] [data-mech-console-workspace-resizer]::after {
-  background: var(--mech-repl-border-soft);
+  background: var(--mech-repl-text-muted);
   border-radius: 999px;
   content: "";
-  inset: 25%;
+  left: 50%;
   position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer="column"]::after {
+  height: 36px;
+  width: 3px;
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer="row"]::after {
+  height: 3px;
+  width: 36px;
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer]:is(:hover, :focus-visible) {
+  background: var(--mech-repl-surface-raised);
+  outline: none;
+}
+
+[data-mech-console-pane] [data-mech-console-workspace-resizer]:is(:hover, :focus-visible)::after {
+  background: var(--mech-repl-accent);
 }
 
 [data-mech-console-workspace-resizer="column"] {
@@ -484,10 +527,10 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
 
 [data-mech-repl] .mech-repl-formatted-value,
 [data-mech-repl-popup] .mech-repl-formatted-value {
-  align-items: baseline;
+  align-items: flex-start;
   display: inline-flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 2px;
   max-width: 100%;
   min-width: 0;
 }
@@ -672,9 +715,13 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   [data-mech-console-pane].is-fullscreen .console-panels,
   body.console-fullscreen [data-mech-console-pane] .console-panels {
     grid-template-columns:
-      minmax(min(180px, calc(50% - 4px)), var(--mech-console-workspace-left, calc(52% - 4px)))
+      clamp(
+        min(180px, calc(50% - 4px)),
+        var(--mech-console-workspace-left, calc(52% - 4px)),
+        calc(100% - min(180px, calc(50% - 4px)) - 8px)
+      )
       8px
-      minmax(min(180px, calc(50% - 4px)), 1fr);
+      minmax(0, 1fr);
   }
 }
 
