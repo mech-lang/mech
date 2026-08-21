@@ -16,7 +16,6 @@ pub enum ReplCommandId {
     Help,
     Docs,
     Capabilities,
-    Symbols,
     Whos,
     Plan,
     Outputs,
@@ -39,7 +38,6 @@ impl ReplCommandId {
             Self::Help => "help",
             Self::Docs => "docs",
             Self::Capabilities => "capabilities",
-            Self::Symbols => "symbols",
             Self::Whos => "whos",
             Self::Plan => "plan",
             Self::Outputs => "outputs",
@@ -122,7 +120,6 @@ pub enum ReplCommand {
     Quit,
     Save(String),
     Step { selector: Option<usize>, count: u64 },
-    Symbols(Option<String>),
     Whos(Vec<String>),
 }
 
@@ -145,7 +142,6 @@ impl ReplCommand {
             Self::Quit => ReplCommandId::Quit,
             Self::Save(_) => ReplCommandId::Save,
             Self::Step { .. } => ReplCommandId::Step,
-            Self::Symbols(_) => ReplCommandId::Symbols,
             Self::Whos(_) => ReplCommandId::Whos,
         }
     }
@@ -208,13 +204,6 @@ pub const REPL_COMMAND_SPECS: &[ReplCommandSpec] = &[
         ":capabilities",
         "show effective REPL host grants",
         &["capability", "caps"],
-        ReplHostRequirement::Portable,
-    ),
-    spec(
-        ReplCommandId::Symbols,
-        ":symbols [name]",
-        "list resident symbol names and types",
-        &["s"],
         ReplHostRequirement::Portable,
     ),
     spec(
@@ -380,13 +369,6 @@ pub fn parse_repl_command(input: &str) -> Result<ReplCommand, String> {
             Ok(ReplCommand::Docs(
                 (!values.is_empty()).then(|| values.join(" ")),
             ))
-        }
-        "symbols" | "s" => {
-            let values = split_arguments(arguments)?;
-            if values.len() > 1 {
-                return Err("Usage: :symbols [name]".to_string());
-            }
-            Ok(ReplCommand::Symbols(values.into_iter().next()))
         }
         "whos" | "w" => Ok(ReplCommand::Whos(split_arguments(arguments)?)),
         "load" => {
@@ -602,6 +584,8 @@ mod tests {
         );
         assert!(parse_repl_command(":step 0").is_err());
         assert!(parse_repl_command(":step 1000001").is_err());
+        assert!(parse_repl_command(":symbols").is_err());
+        assert!(parse_repl_command(":s").is_err());
     }
 
     #[cfg(feature = "serde")]

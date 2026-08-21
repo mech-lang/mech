@@ -184,17 +184,6 @@ pub fn dispatch_repl_command<F: ResidentReplRuntimeFactory>(
         ReplCommand::Profile(enabled) => {
             return Ok(ReplDispatchControl::Host(ReplHostRequest::Profile { enabled }));
         }
-        ReplCommand::Symbols(name) => {
-            let names = name.into_iter().collect::<Vec<_>>();
-            let symbols = session.symbols(&names)?;
-            emit_response(
-                session,
-                ReplResponseKind::SymbolInspection,
-                ReplResponseStatus::Neutral,
-                Some("Resident symbols"),
-                symbol_index(symbols),
-            );
-        }
         ReplCommand::Whos(names) => {
             let symbols = session.symbols(&names)?;
             emit_response(
@@ -382,20 +371,6 @@ fn command_help(availability: &ReplHostAvailability) -> OutputContent {
         TableOutput::new(vec!["Command".to_string(), "Description".to_string()], rows)
             .with_muted_rows(muted_rows),
     )
-}
-
-fn symbol_index(mut symbols: Vec<(String, crate::RuntimeValueSnapshot)>) -> OutputContent {
-    symbols.sort_by(|left, right| left.0.cmp(&right.0));
-    if symbols.is_empty() {
-        return OutputContent::Text(TextOutput::new("No resident symbols matched."));
-    }
-    OutputContent::Table(TableOutput::new(
-        vec!["Name".to_string(), "Type".to_string()],
-        symbols
-            .into_iter()
-            .map(|(name, value)| vec![name, value.kind().to_string()])
-            .collect(),
-    ))
 }
 
 fn symbol_values(mut symbols: Vec<(String, crate::RuntimeValueSnapshot)>) -> OutputContent {

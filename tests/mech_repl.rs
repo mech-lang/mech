@@ -185,7 +185,6 @@ fn repl_commands_are_structured_and_truthful() {
             "x := 1\n",
             ":help\n",
             ":capabilities\n",
-            ":symbols\n",
             ":whos\n",
             ":plan\n",
             ":profile on\n",
@@ -215,12 +214,12 @@ fn repl_commands_are_structured_and_truthful() {
         "missing effective CLI grants: {output}"
     );
     assert!(
-        output.contains("Resident symbols"),
-        "symbols is not structured: {output}"
-    );
-    assert!(
         output.contains("Resident values"),
         "whos is not structured: {output}"
+    );
+    assert!(
+        !output.contains(":symbols"),
+        "help still advertises the redundant symbols command: {output}"
     );
     assert!(
         output.contains("Accepted resident turns"),
