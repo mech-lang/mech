@@ -417,6 +417,20 @@ body.console-fullscreen [data-mech-console-pane] {
   color: #ff9a9a;
 }
 
+:is([data-mech-repl], [data-mech-errors-panel]) .mech-repl-diagnostic {
+  margin: 2px 0;
+}
+
+:is([data-mech-repl], [data-mech-errors-panel]) .mech-repl-diagnostic > header {
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+:is([data-mech-repl], [data-mech-errors-panel]) .mech-repl-diagnostic-note {
+  color: var(--mech-repl-text-muted);
+  padding-left: 16px;
+}
+
 [data-mech-repl-popup] {
   --mech-repl-accent: var(--accent-primary, #f2b63d);
   --mech-repl-background: var(--console-bg, #080b12);

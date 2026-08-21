@@ -146,16 +146,25 @@ function appendError(error, owner = "document") {
 }
 
 function appendDiagnostic(diagnostic) {
-  const panel = errorRegion("repl");
-  if (!panel) {
+  const interaction = diagnostic.owner === "interaction";
+  const target = interaction ? transcript() : errorRegion("program");
+  if (!target) {
     return;
   }
   const row = document.createElement("article");
-  row.className = "mech-console-error mech-repl-diagnostic";
+  const severity = diagnostic.severity || "error";
+  row.className = `mech-repl-entry mech-repl-diagnostic mech-repl-${severity}`;
   row.dataset.mechDiagnosticId = diagnostic.id || "";
-  row.dataset.mechDiagnosticSeverity = diagnostic.severity || "error";
+  row.dataset.mechDiagnosticSeverity = severity;
+  if (severity === "error" || severity === "fatal") {
+    row.classList.add("mech-repl-error");
+    row.setAttribute("role", "alert");
+  }
+  if (!interaction) {
+    row.classList.add("mech-console-error", "mech-program-diagnostic");
+  }
   const heading = document.createElement("header");
-  heading.textContent = [diagnostic.severity, diagnostic.code]
+  heading.textContent = [severity, diagnostic.code]
     .filter(Boolean)
     .join(" ");
   const message = document.createElement("div");
@@ -167,8 +176,12 @@ function appendDiagnostic(diagnostic) {
     detail.textContent = `note: ${note.message}`;
     row.append(detail);
   }
-  panel.append(row);
-  activateConsolePanel("errors");
+  if (interaction) {
+    appendToTranscript(row);
+  } else {
+    target.append(row);
+    activateConsolePanel("errors");
+  }
 }
 
 function cancelFrame() {
@@ -1156,11 +1169,13 @@ function appendTranscriptRow(className, text) {
 
 function appendConsoleError(error) {
   appendTranscriptRow("mech-repl-error", errorMessage(error));
-  appendError(error, "repl");
 }
 
 function clearReplDiagnostics() {
-  errorRegion("repl")?.replaceChildren();
+  for (const diagnostic of transcript()?.querySelectorAll(".mech-repl-diagnostic") || []) {
+    diagnostic.remove();
+  }
+  errorPanel()?.querySelector('[data-mech-error-region="repl"]')?.remove();
 }
 
 function clearTranscript() {
@@ -1174,7 +1189,7 @@ function clearTranscript() {
 
 function appendSourceEcho(source) {
   const pending = state.console?.pendingSubmission;
-  if (pending && pending.source.trimEnd() === source.trimEnd()) {
+  if (pending) {
     state.console.pendingSubmission = null;
     return pending.row;
   }
@@ -1370,6 +1385,7 @@ async function consumeCooperativeResponse(response) {
   const operation = ++state.cooperativeOperationSequence;
   state.activeCooperativeOperation = operation;
   consumeReplResponse(response);
+  state.console.pendingSubmission = null;
   const stepRequestId = response?.pending ? response?.stepRequestId : null;
   const ownsHostRequest = Boolean(response?.hostRequest);
   const hostRequest = ownsHostRequest
@@ -1453,6 +1469,9 @@ function submitConsoleInput(value, row, input) {
   if (state.replBusy || state.replTerminated) {
     return;
   }
+  if (state.console?.input !== input || !row.classList.contains("mech-repl-active-prompt")) {
+    return;
+  }
   const source = value.trim();
   if (!source) {
     return;
@@ -1470,9 +1489,13 @@ function submitConsoleInput(value, row, input) {
   try {
     const result = runConsoleCommand(source);
     if (result && typeof result.catch === "function") {
-      result.catch(appendConsoleError);
+      result.catch(error => {
+        state.console.pendingSubmission = null;
+        appendConsoleError(error);
+      });
     }
   } catch (error) {
+    state.console.pendingSubmission = null;
     appendConsoleError(error);
   }
 }
@@ -1505,6 +1528,20 @@ function appendActivePrompt() {
   if (!target || !state.console) {
     return;
   }
+  const activeRows = [...target.querySelectorAll(":scope > .mech-repl-active-prompt")];
+  const existing = activeRows.pop() || null;
+  for (const duplicate of activeRows) {
+    duplicate.remove();
+  }
+  const existingInput = existing?.querySelector(".repl-input") || null;
+  if (existingInput) {
+    state.console.inputRow = existing;
+    state.console.input = existingInput;
+    syncConsoleInputState();
+    existingInput.focus();
+    return;
+  }
+  existing?.remove();
   const inputRow = document.createElement("div");
   inputRow.className = "repl-line mech-repl-input-row mech-repl-active-prompt";
   const prompt = document.createElement("span");

@@ -6,9 +6,9 @@ use std::sync::{Arc, Mutex};
 use mech_core::{GenericError, MResult, MechError};
 
 use crate::{
-    DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticPhase, MechEvent, MechEventBus,
-    MechEventEnvelope, MechRuntime, OutputArtifact, OutputContent, OutputSource, ReplEvent,
-    ReplResponse, ReplResponseKind, ReplResponseStatus, ResidentDurabilityPolicy,
+    DiagnosticEvent, DiagnosticId, DiagnosticNote, DiagnosticOwner, DiagnosticPhase, MechEvent,
+    MechEventBus, MechEventEnvelope, MechRuntime, OutputArtifact, OutputContent, OutputSource,
+    ReplEvent, ReplResponse, ReplResponseKind, ReplResponseStatus, ResidentDurabilityPolicy,
     RuntimeProgramLoadOutcome, RuntimeValueSnapshot, Severity, SourcePosition, SourceSpan,
     ValueOutput,
 };
@@ -498,7 +498,8 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         let Some(events) = self.program_events.as_ref() else {
             return Ok(());
         };
-        self.events.absorb(events.drain()?);
+        self.events
+            .absorb(events.drain()?.into_iter().map(own_program_diagnostic));
         Ok(())
     }
 }
@@ -590,6 +591,7 @@ impl MechEventJournal {
         }
         self.emit(MechEvent::Diagnostic(DiagnosticEvent {
             id: DiagnosticId::new(format!("diagnostic-{}", self.next_diagnostic)),
+            owner: DiagnosticOwner::Interaction,
             severity: Severity::Error,
             phase,
             code: Some(error.kind_name()),
@@ -610,6 +612,7 @@ impl MechEventJournal {
         self.next_diagnostic = self.next_diagnostic.saturating_add(1);
         self.emit(MechEvent::Diagnostic(DiagnosticEvent {
             id: DiagnosticId::new(format!("diagnostic-{}", self.next_diagnostic)),
+            owner: DiagnosticOwner::Interaction,
             severity,
             phase,
             code: Some(code.into()),
@@ -618,6 +621,16 @@ impl MechEventJournal {
             notes: Vec::new(),
             related: Vec::new(),
         }));
+    }
+}
+
+fn own_program_diagnostic(event: MechEvent) -> MechEvent {
+    match event {
+        MechEvent::Diagnostic(mut diagnostic) => {
+            diagnostic.owner = DiagnosticOwner::Program;
+            MechEvent::Diagnostic(diagnostic)
+        }
+        event => event,
     }
 }
 
@@ -781,5 +794,38 @@ mod tests {
                 "false terminal in {source:?}"
             );
         }
+    }
+
+    #[test]
+    fn diagnostic_ownership_is_assigned_at_the_producer_boundary() {
+        let mut journal = MechEventJournal::default();
+        journal.emit_message_diagnostic(
+            Severity::Error,
+            DiagnosticPhase::Host,
+            "ReplCommand",
+            "bad command",
+        );
+        let interactive = journal.drain_pending();
+        assert!(matches!(
+            &interactive[0].event,
+            MechEvent::Diagnostic(diagnostic)
+                if diagnostic.owner == DiagnosticOwner::Interaction
+        ));
+
+        let program = own_program_diagnostic(MechEvent::Diagnostic(DiagnosticEvent {
+            id: DiagnosticId::new("program-diagnostic"),
+            owner: DiagnosticOwner::Interaction,
+            severity: Severity::Error,
+            phase: DiagnosticPhase::Execute,
+            code: None,
+            message: "program failed".to_string(),
+            source: None,
+            notes: Vec::new(),
+            related: Vec::new(),
+        }));
+        assert!(matches!(
+            program,
+            MechEvent::Diagnostic(diagnostic) if diagnostic.owner == DiagnosticOwner::Program
+        ));
     }
 }

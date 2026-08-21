@@ -1004,15 +1004,58 @@ def assert_console_contract():
 """)
     submit(":step 1000001")
     wait_for(
-        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => "
-        "/step count must be between 1 and 1000000/.test(row.textContent))",
-        "the portable resident step ceiling in the Errors pane",
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => "
+        "/step count must be between 1 and 1000000/.test(row.textContent)) && "
+        "!document.querySelector('[data-mech-error-region=repl]') && "
+        "document.querySelector('#console-tab')?.getAttribute('aria-selected') === 'true'",
+        "the portable resident step ceiling inline in the console",
     )
+    prompt_ownership = evaluate_json("""
+(() => {
+  const sourceRows = [...document.querySelectorAll('.mech-repl-source')]
+    .filter(row => row.querySelector('.repl-code')?.textContent.trim() === ':step 1000001');
+  return {
+    matchingSourceRows: sourceRows.length,
+    sourcePromptCounts: sourceRows.map(row => row.querySelectorAll(':scope > .repl-prompt').length),
+    activePrompts: document.querySelectorAll('.mech-repl-active-prompt').length,
+  };
+})()
+""")
+    if prompt_ownership != {
+        "matchingSourceRows": 1,
+        "sourcePromptCounts": [1],
+        "activePrompts": 1,
+    }:
+        fail(f"browser submission duplicated a source or active prompt: {prompt_ownership!r}")
     submit(":clear errors")
     wait_for(
         "Boolean(document.querySelector('[data-mech-document-error-smoke=true]')) && "
-        "(document.querySelector('[data-mech-error-region=repl]')?.children.length || 0) === 0",
-        "scoped resident diagnostic clearing",
+        "document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic').length === 0 && "
+        "!document.querySelector('[data-mech-error-region=repl]')",
+        "scoped inline resident diagnostic clearing",
+    )
+    evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  const original = WasmDocument.prototype.replInvoke;
+  WasmDocument.prototype.replInvoke = function(source) {
+    const response = original.call(this, source);
+    if (source === ':capabilities') {
+      response.events = (response.events || []).filter(envelope =>
+        envelope.event?.channel !== 'repl' || envelope.event?.event?.kind !== 'source_echo'
+      );
+      WasmDocument.prototype.replInvoke = original;
+    }
+    return response;
+  };
+})()
+""")
+    submit(":capabilities")
+    wait_for(
+        "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => "
+        "row.textContent.trim() === ':capabilities') && "
+        "[...document.querySelectorAll('.mech-repl-response')].some((row) => /capabilit/i.test(row.textContent))",
+        "a locally committed command whose portable source echo was omitted",
     )
     submit(":whos answer")
     wait_for(
@@ -1021,6 +1064,28 @@ def assert_console_contract():
         "[...document.querySelectorAll('.mech-repl-source .repl-code')].some((row) => row.textContent.trim() === ':whos answer')",
         "the running document answer row from :whos",
     )
+    omitted_echo_ownership = evaluate_json("""
+(() => {
+  const commands = [':capabilities', ':whos answer'];
+  const counts = Object.fromEntries(commands.map(command => [
+    command,
+    [...document.querySelectorAll('.mech-repl-source .repl-code')]
+      .filter(code => code.textContent.trim() === command).length,
+  ]));
+  return {
+    counts,
+    activePrompts: document.querySelectorAll('.mech-repl-active-prompt').length,
+  };
+})()
+""")
+    if omitted_echo_ownership != {
+        "counts": {":capabilities": 1, ":whos answer": 1},
+        "activePrompts": 1,
+    }:
+        fail(
+            "an omitted source echo leaked submission ownership into the next prompt: "
+            f"{omitted_echo_ownership!r}"
+        )
     evaluate("""
 (() => {
   const root = document.querySelector('.mech-root');
@@ -1320,7 +1385,7 @@ def assert_console_contract():
         "document.querySelector('.repl-input')?.readOnly === false && "
         "document.querySelector('.repl-input')?.disabled === false && "
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
-        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /request interrupted/.test(row.textContent))",
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => /request interrupted/.test(row.textContent))",
         "Ctrl+C interrupting a cooperative browser step",
     )
     submit(":step 1000000")
@@ -1419,7 +1484,7 @@ def assert_console_contract():
         "document.querySelector('.repl-input')?.readOnly === false && "
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
         "!document.querySelector('.mech-root')?.dataset.mechHostRequestId && "
-        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /documentation request interrupted/i.test(row.textContent))",
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => /documentation request interrupted/i.test(row.textContent))",
         "Ctrl+C canceling an awaiting documentation request",
     )
     submit(":docs browser-smoke/latency-next")
@@ -1474,7 +1539,7 @@ def assert_console_contract():
     submit(":docs browser-smoke/rejected")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' && "
-        "[...document.querySelectorAll('[data-mech-error-region=repl] .mech-repl-diagnostic')].some((row) => /missing|resident activation failed/.test(row.textContent))",
+        "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => /missing|resident activation failed/.test(row.textContent))",
         "a semantically rejected documentation fragment returning control",
     )
     if evaluate("Boolean(document.querySelector('[data-mech-documentation-topic=\"browser-smoke/rejected\"]'))"):

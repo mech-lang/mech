@@ -515,6 +515,8 @@ pub enum RepresentationData {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DiagnosticEvent {
     pub id: DiagnosticId,
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub owner: DiagnosticOwner,
     pub severity: Severity,
     pub phase: DiagnosticPhase,
     pub code: Option<String>,
@@ -522,6 +524,20 @@ pub struct DiagnosticEvent {
     pub source: Option<SourceSpan>,
     pub notes: Vec<DiagnosticNote>,
     pub related: Vec<RelatedDiagnostic>,
+}
+
+/// The producer that owns a diagnostic and therefore its presentation route.
+///
+/// Program diagnostics belong in a host diagnostic surface. Interaction
+/// diagnostics describe source or commands entered through a REPL and belong
+/// alongside that interaction history.
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum DiagnosticOwner {
+    #[default]
+    Program,
+    Interaction,
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -1260,6 +1276,7 @@ mod tests {
         fn diagnostic(id: &str, message: &str) -> MechEvent {
             MechEvent::Diagnostic(DiagnosticEvent {
                 id: DiagnosticId::new(id),
+                owner: DiagnosticOwner::Program,
                 severity: Severity::Warning,
                 phase: DiagnosticPhase::Execute,
                 code: None,
