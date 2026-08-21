@@ -882,6 +882,22 @@ def assert_fullscreen_accessibility():
         /new activity/.test(tab.getAttribute('aria-label') || '') &&
         'mechConsoleBaseLabel' in tab.dataset;
     }),
+    errorBadgeSynchronized: (() => {
+      const tab = document.querySelector('#errors-tab');
+      const badge = tab?.querySelector('.mech-console-error-count');
+      const panel = document.querySelector('#mech-document-errors');
+      const count = panel?.querySelectorAll(
+        ".mech-console-error:not(.mech-repl-diagnostic), " +
+        ".mech-repl-diagnostic[data-mech-diagnostic-severity='error'], " +
+        ".mech-repl-diagnostic[data-mech-diagnostic-severity='fatal']"
+      ).length || 0;
+      if (!tab || !badge || count !== 1) return false;
+      const rect = badge.getBoundingClientRect();
+      return !badge.hidden && badge.textContent === String(count) &&
+        /1 error/.test(tab.getAttribute('aria-label') || '') &&
+        Math.abs(rect.width - rect.height) <= 1 &&
+        parseFloat(getComputedStyle(badge).borderRadius) >= rect.height / 2;
+    })(),
     resizersInitialized: resizers.length === 2 && resizers.every(handle =>
       handle.hasAttribute('aria-valuemin') && handle.hasAttribute('aria-valuemax') &&
       handle.hasAttribute('aria-valuenow')),
@@ -892,6 +908,7 @@ def assert_fullscreen_accessibility():
         initial["pressed"] != "false" or
         initial["label"] != "Enter fullscreen workspace" or
         not initial["unreadCreated"] or
+        not initial["errorBadgeSynchronized"] or
         not initial["resizersInitialized"]
     ):
         fail(f"fullscreen control did not begin with a collapsed accessible state: {initial!r}")
@@ -978,8 +995,9 @@ def assert_fullscreen_accessibility():
     unreadLabelsRestored: ['output', 'errors'].every(name => {
       const tab = document.querySelector(`#${name}-tab`);
       const base = tab?.dataset.mechConsoleBaseLabel || '';
+      const expected = name === 'errors' ? `${base}, 1 error` : base;
       return tab && !tab.dataset.mechConsoleUnread &&
-        (base ? tab.getAttribute('aria-label') === base : !tab.hasAttribute('aria-label'));
+        tab.getAttribute('aria-label') === expected;
     }),
     responsiveUnits: [
       pane.style.getPropertyValue('--mech-console-workspace-left'),
@@ -1114,6 +1132,101 @@ def assert_toc_survives_console_pressure():
         fail(f"the table of contents disappeared under console width pressure: {toc!r}")
 
 
+def assert_toc_scrollspy_is_continuous_and_hierarchical():
+    state = evaluate_json("""
+(async () => {
+  const toc = document.querySelector('.toc, [data-mech-toc]');
+  const list = toc?.querySelector(':scope > ul');
+  const topItems = [...(list?.children || [])].filter(item => item.matches('li'));
+  const topLinks = topItems.map(item => item.querySelector(':scope > a[href^="#"]')).filter(Boolean);
+  const shell = document.querySelector('.content-shell');
+  if (!toc || topLinks.length < 2 || !shell) return null;
+  const contained = /auto|scroll|overlay/.test(getComputedStyle(shell).overflowY) &&
+    shell.scrollHeight > shell.clientHeight + 1;
+  const frame = () => new Promise(resolve => requestAnimationFrame(resolve));
+  const settle = async () => { await frame(); await frame(); };
+  const scrollTo = async (top) => {
+    if (contained) shell.scrollTo({ top, behavior: 'instant' });
+    else window.scrollTo({ top, behavior: 'instant' });
+    await settle();
+  };
+  const maximum = contained
+    ? Math.max(0, shell.scrollHeight - shell.clientHeight)
+    : Math.max(0, document.documentElement.scrollHeight - innerHeight);
+  const snapshot = () => ({
+    activeTop: topLinks.findIndex(link => link.classList.contains('active')),
+    activeTopCount: topLinks.filter(link => link.classList.contains('active')).length,
+    currentCount: toc.querySelectorAll('a[aria-current="location"]').length,
+  });
+
+  await scrollTo(0);
+  const first = snapshot();
+  const samples = [first];
+  for (const fraction of [0.2, 0.45, 0.7]) {
+    await scrollTo(maximum * fraction);
+    samples.push(snapshot());
+  }
+  await scrollTo(maximum);
+  const last = snapshot();
+  samples.push(last);
+
+  const nestedItem = topItems.find(item => item.querySelector(':scope > .toc-sub a[href^="#"]'));
+  let hierarchy = null;
+  if (nestedItem) {
+    const topLink = nestedItem.querySelector(':scope > a[href^="#"]');
+    const nestedLink = nestedItem.querySelector(':scope > .toc-sub a[href^="#"]');
+    const target = nestedLink && document.getElementById(nestedLink.getAttribute('href').slice(1));
+    if (topLink && nestedLink && target) {
+      const shellRect = shell.getBoundingClientRect();
+      const activationOffset = Math.min(
+        (contained ? shell.clientHeight : innerHeight) * 0.35,
+        280
+      );
+      const offset = (contained ? shell.scrollTop : window.scrollY) +
+        target.getBoundingClientRect().top - (contained ? shellRect.top : 0) -
+        activationOffset + 24;
+      await scrollTo(Math.max(2, Math.min(maximum - 10, offset)));
+      const sub = nestedItem.querySelector(':scope > .toc-sub');
+      const style = getComputedStyle(sub);
+      hierarchy = {
+        parentActive: topLink.classList.contains('active'),
+        childActive: nestedLink.classList.contains('active'),
+        expanded: nestedItem.classList.contains('expanded') && style.display !== 'none',
+        indented: parseFloat(style.marginLeft) > 0 && parseFloat(style.paddingLeft) > 0,
+        delineated: parseFloat(style.borderLeftWidth) > 0 && style.borderLeftStyle === 'dotted',
+        targetTop: target.getBoundingClientRect().top,
+        activationLine: (contained ? shell.getBoundingClientRect().top : 0) + activationOffset,
+        scrollTop: contained ? shell.scrollTop : window.scrollY,
+      };
+    }
+  }
+  await scrollTo(0);
+  return {
+    first,
+    last,
+    samples,
+    hierarchy,
+    maximum,
+    topCount: topLinks.length,
+  };
+})()
+""")
+    if state is None or state["maximum"] <= 0:
+        fail(f"TOC scrollspy fixture was not scrollable: {state!r}")
+    if state["first"]["activeTop"] != 0 or state["last"]["activeTop"] != state["topCount"] - 1:
+        fail(f"TOC did not own the first and final scroll positions: {state!r}")
+    if any(sample["activeTopCount"] != 1 or sample["currentCount"] != 1 for sample in state["samples"]):
+        fail(f"TOC scrollspy left a scroll position without one current section: {state!r}")
+    active_indices = [sample["activeTop"] for sample in state["samples"]]
+    if active_indices != sorted(active_indices):
+        fail(f"TOC section progression moved backwards while scrolling down: {state!r}")
+    if state["hierarchy"] is None or not all(
+        state["hierarchy"][key]
+        for key in ("parentActive", "childActive", "expanded", "indented", "delineated")
+    ):
+        fail(f"TOC nested section styling or active path regressed: {state!r}")
+
+
 def assert_empty_toc_is_removed_and_content_is_centered():
     state = evaluate_json("""
 (() => {
@@ -1241,9 +1354,9 @@ def assert_console_contract():
         metadata["kind"] != "f64" or
         metadata["kindColor"] != metadata["expectedKindColor"] or
         not metadata["contained"] or
-        metadata["bodyOverflow"] not in {"auto", "scroll"}
+        metadata["bodyOverflow"] in {"auto", "scroll"}
     ):
-        fail(f"document output metadata was not compact, typed, rose, and contained: {metadata!r}")
+        fail(f"document output metadata was not compact, typed, rose, contained, and scrollbar-free: {metadata!r}")
     evaluate("document.querySelector('#console-tab')?.click()")
 
     multiline = evaluate_json("""
@@ -3745,6 +3858,7 @@ try:
     assert_style_layer_contract()
     assert_desktop_console_controls()
     assert_toc_survives_console_pressure()
+    assert_toc_scrollspy_is_continuous_and_hierarchical()
     assert_empty_toc_is_removed_and_content_is_centered()
     assert_fullscreen_accessibility()
     assert_console_tab_isolation()

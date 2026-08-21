@@ -45,18 +45,3 @@
 .docs-intro {
   margin: 0 0 40px;
 }
-
-/* Keep H2/H3 navigation visible and reveal deeper branches on the active path. */
-.toc > ul,
-.toc > ul > li > .toc-sub {
-  display: block;
-}
-
-.toc > ul > li > .toc-sub > li > .toc-sub {
-  display: none;
-}
-
-.toc li.expanded > .toc-sub,
-.toc li.active-path > .toc-sub {
-  display: block;
-}

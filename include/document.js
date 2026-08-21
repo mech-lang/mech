@@ -39,7 +39,9 @@ const state = {
   pendingPagePosition: null,
   pagePositionRestore: null,
   consoleSizeObserver: null,
-  tocObserver: null,
+  errorBadgeObserver: null,
+  tocUpdateFrame: null,
+  tocEventCleanup: null,
   tocLinkHandlers: new Map(),
 };
 
@@ -404,6 +406,67 @@ function selectedConsolePanel(pane = documentConsolePane()) {
     "";
 }
 
+function consoleTabBaseLabel(tab) {
+  if (!("mechConsoleBaseLabel" in tab.dataset)) {
+    const text = [...tab.childNodes]
+      .filter(node => node.nodeType === Node.TEXT_NODE)
+      .map(node => node.textContent || "")
+      .join(" ")
+      .trim();
+    tab.dataset.mechConsoleBaseLabel = tab.getAttribute("aria-label") || text ||
+      tab.dataset.mechConsoleTab || tab.dataset.tab || "Console section";
+  }
+  return tab.dataset.mechConsoleBaseLabel;
+}
+
+function updateConsoleTabAccessibleLabel(tab) {
+  const label = [consoleTabBaseLabel(tab)];
+  const errors = Number(tab.dataset.mechConsoleErrorCount || "0");
+  if (errors > 0) {
+    label.push(`${errors} ${errors === 1 ? "error" : "errors"}`);
+  }
+  if (tab.dataset.mechConsoleUnread === "true") {
+    label.push("new activity");
+  }
+  tab.setAttribute("aria-label", label.join(", "));
+}
+
+function updateConsoleErrorBadge() {
+  const panel = errorPanel();
+  const count = panel?.querySelectorAll(
+    ".mech-console-error:not(.mech-repl-diagnostic), " +
+    ".mech-repl-diagnostic[data-mech-diagnostic-severity='error'], " +
+    ".mech-repl-diagnostic[data-mech-diagnostic-severity='fatal']",
+  ).length || 0;
+  const pane = documentConsolePane();
+  for (const tab of pane?.querySelectorAll(
+    "[data-mech-console-tab='errors'], [data-tab='errors']",
+  ) || []) {
+    let badge = tab.querySelector(".mech-console-error-count");
+    if (!badge) {
+      badge = document.createElement("span");
+      badge.className = "mech-console-error-count";
+      badge.setAttribute("aria-hidden", "true");
+      tab.append(badge);
+    }
+    badge.textContent = String(count);
+    badge.hidden = count === 0;
+    tab.dataset.mechConsoleErrorCount = String(count);
+    updateConsoleTabAccessibleLabel(tab);
+  }
+}
+
+function initializeConsoleErrorBadge() {
+  state.errorBadgeObserver?.disconnect();
+  state.errorBadgeObserver = null;
+  updateConsoleErrorBadge();
+  const panel = errorPanel();
+  if (panel && typeof MutationObserver === "function") {
+    state.errorBadgeObserver = new MutationObserver(updateConsoleErrorBadge);
+    state.errorBadgeObserver.observe(panel, { childList: true, subtree: true });
+  }
+}
+
 function markConsolePanelActivity(name) {
   const pane = documentConsolePane();
   if (!pane || pane.classList.contains("is-fullscreen") || selectedConsolePanel(pane) === name) {
@@ -415,11 +478,8 @@ function markConsolePanelActivity(name) {
     (candidate.dataset.mechConsoleTab || candidate.dataset.tab) === name
   );
   if (tab) {
-    if (!("mechConsoleBaseLabel" in tab.dataset)) {
-      tab.dataset.mechConsoleBaseLabel = tab.getAttribute("aria-label") || "";
-    }
     tab.dataset.mechConsoleUnread = "true";
-    tab.setAttribute("aria-label", `${tab.textContent.trim()} (new activity)`);
+    updateConsoleTabAccessibleLabel(tab);
   }
 }
 
@@ -1897,6 +1957,10 @@ async function fulfillReplHostRequest(requestId, request, signal) {
     throw new Error(`unsupported browser REPL host request: ${request?.kind || "unknown"}`);
   }
   const topic = request.data?.topic?.trim() || "";
+  if (!topic) {
+    consumeReplResponse(state.document.replDocumentationIndex(requestId));
+    return;
+  }
   const parts = topic.split("/").filter(Boolean);
   if (parts.length !== 2 || parts.some(part => !/^[A-Za-z0-9._-]+$/.test(part))) {
     throw new Error("Usage: :docs <machine>/<document>");
@@ -2479,15 +2543,7 @@ function activateConsolePanel(name, pane = documentConsolePane()) {
 
 function clearConsoleTabUnread(tab) {
   delete tab.dataset.mechConsoleUnread;
-  if (!("mechConsoleBaseLabel" in tab.dataset)) {
-    return;
-  }
-  const baseLabel = tab.dataset.mechConsoleBaseLabel;
-  if (baseLabel) {
-    tab.setAttribute("aria-label", baseLabel);
-  } else {
-    tab.removeAttribute("aria-label");
-  }
+  updateConsoleTabAccessibleLabel(tab);
 }
 
 function initializeConsoleTabs() {
@@ -2911,8 +2967,12 @@ function initializeBreadcrumb() {
 }
 
 function initializeToc() {
-  state.tocObserver?.disconnect();
-  state.tocObserver = null;
+  state.tocEventCleanup?.();
+  state.tocEventCleanup = null;
+  if (state.tocUpdateFrame !== null) {
+    cancelAnimationFrame(state.tocUpdateFrame);
+    state.tocUpdateFrame = null;
+  }
   for (const [link, handler] of state.tocLinkHandlers) {
     link.removeEventListener("click", handler);
   }
@@ -2938,6 +2998,20 @@ function initializeToc() {
       target: document.getElementById((link.getAttribute("href") || "").slice(1)),
     }))
     .filter(({ target }) => target);
+  if (!sections.length) {
+    return;
+  }
+  const toc = links[0]?.closest(".mech-toc, [data-mech-toc], .toc") || null;
+  const tocList = toc?.querySelector(":scope > ul") || links[0]?.closest("ul") || null;
+  const topItems = [...(tocList?.children || [])]
+    .filter(item => item instanceof HTMLLIElement);
+  const topSections = topItems
+    .map((item) => {
+      const link = item.querySelector(":scope > a[href^='#']");
+      return sections.find(section => section.link === link) || null;
+    })
+    .filter(Boolean);
+  const primarySections = topSections.length ? topSections : sections;
   for (const { link, target } of sections) {
     const handler = (event) => {
       event.preventDefault();
@@ -2946,21 +3020,124 @@ function initializeToc() {
     state.tocLinkHandlers.set(link, handler);
     link.addEventListener("click", handler);
   }
-  if (!("IntersectionObserver" in window)) {
-    return;
-  }
-  state.tocObserver = new IntersectionObserver((entries) => {
-    const visible = entries.find((entry) => entry.isIntersecting);
-    if (!visible) {
+  const keepVisible = (link) => {
+    if (!toc || toc.scrollHeight <= toc.clientHeight + 1) {
       return;
     }
-    for (const { link, target } of sections) {
-      link.classList.toggle("active", target === visible.target);
+    const tocRect = toc.getBoundingClientRect();
+    const linkRect = link.getBoundingClientRect();
+    if (linkRect.top < tocRect.top) {
+      toc.scrollTop -= tocRect.top - linkRect.top;
+    } else if (linkRect.bottom > tocRect.bottom) {
+      toc.scrollTop += linkRect.bottom - tocRect.bottom;
     }
-  }, { rootMargin: "-20% 0px -70% 0px" });
-  for (const { target } of sections) {
-    state.tocObserver.observe(target);
-  }
+  };
+  const select = (activeSection, options) => {
+    const { activationLine, includeNested, nearBottom, viewportBottom } = options;
+    for (const { link } of sections) {
+      link.classList.remove("active", "active-path");
+      link.removeAttribute("aria-current");
+    }
+    for (const item of toc?.querySelectorAll("li") || []) {
+      item.classList.remove("active-path", "expanded");
+    }
+    const activeLink = activeSection.link;
+    const activeItem = activeLink.closest("li");
+    activeLink.classList.add("active", "active-path");
+    activeItem?.classList.add("expanded");
+
+    let currentLink = activeLink;
+    if (includeNested && activeItem) {
+      const nested = sections.filter(section =>
+        section.link !== activeLink && activeItem.contains(section.link)
+      );
+      let activeNested = null;
+      for (const section of nested) {
+        const top = section.target.getBoundingClientRect().top;
+        if (nearBottom ? top <= viewportBottom - 40 : top <= activationLine) {
+          activeNested = section;
+        }
+      }
+      if (nearBottom && !activeNested && nested.length) {
+        activeNested = nested[nested.length - 1];
+      }
+      if (activeNested) {
+        currentLink = activeNested.link;
+        currentLink.classList.add("active", "active-path");
+        let item = currentLink.closest("li");
+        while (item && item !== activeItem) {
+          item.classList.add("expanded");
+          const parentItem = item.parentElement?.closest("li") || null;
+          parentItem?.querySelector(":scope > a")?.classList.add("active-path");
+          item = parentItem;
+        }
+      }
+    }
+    currentLink.setAttribute("aria-current", "location");
+    keepVisible(currentLink);
+  };
+  const scrollContainer = primarySections[0]?.target.closest(".content-shell") || null;
+  const scrollMetrics = () => {
+    const containerStyle = scrollContainer ? getComputedStyle(scrollContainer) : null;
+    const contained = Boolean(
+      scrollContainer &&
+      /auto|scroll|overlay/.test(containerStyle?.overflowY || "") &&
+      scrollContainer.scrollHeight > scrollContainer.clientHeight + 1
+    );
+    if (contained) {
+      return {
+        top: scrollContainer.scrollTop,
+        height: scrollContainer.clientHeight,
+        scrollHeight: scrollContainer.scrollHeight,
+        viewportTop: scrollContainer.getBoundingClientRect().top,
+      };
+    }
+    const scrolling = document.scrollingElement || document.documentElement;
+    return {
+      top: window.scrollY,
+      height: window.innerHeight,
+      scrollHeight: scrolling.scrollHeight,
+      viewportTop: 0,
+    };
+  };
+  const update = () => {
+    state.tocUpdateFrame = null;
+    const metrics = scrollMetrics();
+    const maximumScroll = Math.max(0, metrics.scrollHeight - metrics.height);
+    const nearBottom = maximumScroll > 1 && metrics.top >= maximumScroll - 2;
+    const sectionActivationLine = metrics.viewportTop + 20;
+    let active = primarySections[0];
+    if (nearBottom) {
+      active = primarySections[primarySections.length - 1];
+    } else if (metrics.top > 1) {
+      for (const section of primarySections) {
+        if (section.target.getBoundingClientRect().top > sectionActivationLine) {
+          break;
+        }
+        active = section;
+      }
+    }
+    select(active, {
+      activationLine: metrics.viewportTop + Math.min(metrics.height * 0.35, 280),
+      includeNested: metrics.top > 1,
+      nearBottom,
+      viewportBottom: metrics.viewportTop + metrics.height,
+    });
+  };
+  const schedule = () => {
+    if (state.tocUpdateFrame === null) {
+      state.tocUpdateFrame = requestAnimationFrame(update);
+    }
+  };
+  window.addEventListener("scroll", schedule, { passive: true });
+  scrollContainer?.addEventListener("scroll", schedule, { passive: true });
+  window.addEventListener("resize", schedule);
+  state.tocEventCleanup = () => {
+    window.removeEventListener("scroll", schedule);
+    scrollContainer?.removeEventListener("scroll", schedule);
+    window.removeEventListener("resize", schedule);
+  };
+  update();
 }
 
 function initializeOptionalRenderers() {
@@ -3057,6 +3234,7 @@ function initializeLayout() {
   initializeDocumentLayoutPersistence();
   initializeConsoleState();
   initializeConsoleTabs();
+  initializeConsoleErrorBadge();
   initializeConsoleToggle();
   initializeConsoleKeyboardToggle();
   initializeResizeHandles();

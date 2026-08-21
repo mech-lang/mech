@@ -122,6 +122,25 @@ fn document_controller_initializes_repl_controls_before_starting_wasm() {
 }
 
 #[test]
+fn document_controller_keeps_toc_and_error_activity_state_continuous() {
+    let controller = include("document.js");
+    assert!(controller.contains("scrollContainer?.addEventListener(\"scroll\", schedule"));
+    assert!(controller.contains("activeLink.classList.add(\"active\", \"active-path\")"));
+    assert!(controller.contains("activeItem?.classList.add(\"expanded\")"));
+    assert!(controller.contains("maximumScroll > 1 && metrics.top >= maximumScroll - 2"));
+    assert!(controller.contains("new MutationObserver(updateConsoleErrorBadge)"));
+    assert!(controller.contains("mech-console-error-count"));
+
+    let page = include("style.css");
+    assert!(page.contains(".toc li.expanded > .toc-sub"));
+    assert!(page.contains("border-left: 1px dotted var(--toc-accent-soft)"));
+
+    let repl = include("mech-repl.css");
+    assert!(repl.contains(".mech-console-error-count"));
+    assert!(repl.contains("border-radius: 999px"));
+}
+
+#[test]
 fn mechdown_and_repl_layers_are_standalone_components() {
     let mechdown = include("mechdown.css");
     assert!(mechdown.contains("[data-mechdown] h1"));

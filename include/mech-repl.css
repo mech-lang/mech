@@ -19,6 +19,11 @@
   --mech-repl-text: var(--console-text, #d7e2e1);
   --mech-repl-text-muted: var(--text-muted, #827f6b);
   --mech-repl-kind: var(--kind-annotation-color, #f09fca);
+  --mech-repl-tab-text: var(--nav-text-primary, var(--mech-repl-text));
+  --mech-repl-tab-text-hover: var(--nav-text-hover, #ecd7ad);
+  --mech-repl-tab-text-active: var(--nav-text-active, var(--mech-repl-text));
+  --mech-repl-tab-accent-hover: var(--nav-accent-hover, #ecd7ad);
+  --mech-repl-tab-accent-active: var(--nav-accent-active, var(--mech-repl-accent));
   --mech-repl-header-height: var(--mech-repl-top-offset, 0px);
   --mech-repl-size: var(--mech-repl-initial-size, clamp(320px, 50vw, 620px));
   --mech-repl-grip-width: var(--grip-width, 18px);
@@ -227,7 +232,7 @@ body.console-fullscreen [data-mech-console-pane] {
   background: transparent;
   border: 0;
   border-bottom: 2px solid transparent;
-  color: var(--mech-repl-text-muted);
+  color: var(--mech-repl-tab-text);
   cursor: pointer;
   display: inline-flex;
   font: 600 12px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -237,10 +242,14 @@ body.console-fullscreen [data-mech-console-pane] {
   text-transform: uppercase;
 }
 
-[data-mech-console-pane] [data-mech-console-tab]:hover,
+[data-mech-console-pane] [data-mech-console-tab]:hover {
+  border-bottom-color: var(--mech-repl-tab-accent-hover);
+  color: var(--mech-repl-tab-text-hover);
+}
+
 [data-mech-console-pane] [data-mech-console-tab].active {
-  border-bottom-color: var(--mech-repl-accent);
-  color: var(--mech-repl-accent);
+  border-bottom-color: var(--mech-repl-tab-accent-active);
+  color: var(--mech-repl-tab-text-active);
 }
 
 [data-mech-console-pane] [data-mech-console-tab][data-mech-console-unread="true"]::after {
@@ -250,6 +259,41 @@ body.console-fullscreen [data-mech-console-pane] {
   height: 6px;
   margin-left: 6px;
   width: 6px;
+}
+
+[data-mech-console-pane] :is(
+  [data-mech-console-tab="errors"],
+  [data-tab="errors"]
+)[data-mech-console-unread="true"]::after {
+  display: none;
+}
+
+[data-mech-console-pane] .mech-console-error-count {
+  align-items: center;
+  background: var(--mech-repl-surface-raised);
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: var(--mech-repl-text);
+  display: inline-flex;
+  font-size: 0.82em;
+  height: 1.45em;
+  justify-content: center;
+  line-height: 1;
+  margin-left: 6px;
+  min-width: 1.45em;
+  padding: 0 0.32em;
+}
+
+[data-mech-console-pane] .mech-console-error-count[hidden] {
+  display: none;
+}
+
+[data-mech-console-pane] :is(
+  [data-mech-console-tab="errors"],
+  [data-tab="errors"]
+)[data-mech-console-unread="true"] .mech-console-error-count {
+  background: var(--mech-repl-accent);
+  color: var(--mech-repl-background);
 }
 
 [data-mech-console-pane] [data-mech-console-fullscreen] {
