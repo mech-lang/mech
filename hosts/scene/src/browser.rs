@@ -146,11 +146,12 @@ impl BrowserSceneRegistry {
                 )
             })?;
             let fallback = format!(
-                "scene {}×{} ({} circles, {} lines, {} texts)",
+                "scene {}×{} ({} circles, {} lines, {} line strips, {} texts)",
                 scene.width,
                 scene.height,
                 scene.circles.len(),
                 scene.lines.len(),
+                scene.line_strips.len(),
                 scene.texts.len(),
             );
             events.push(OutputEvent {
@@ -357,6 +358,25 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         ctx.stroke();
         ctx.restore();
     }
+    for strip in &scene.line_strips {
+        let Some(first) = strip.positions.first() else {
+            continue;
+        };
+        ctx.set_global_alpha(strip.opacity);
+        ctx.set_stroke_style(&JsValue::from_str(&strip.stroke));
+        ctx.set_line_width(strip.stroke_width);
+        ctx.set_line_cap(&strip.line_cap);
+        ctx.set_line_join(&strip.line_join);
+        ctx.begin_path();
+        ctx.move_to(first[0], first[1]);
+        for point in strip.positions.iter().skip(1) {
+            ctx.line_to(point[0], point[1]);
+        }
+        if strip.closed {
+            ctx.close_path();
+        }
+        ctx.stroke();
+    }
     for text in &scene.texts {
         ctx.set_global_alpha(text.opacity);
         ctx.set_fill_style(&JsValue::from_str(&text.fill));
@@ -426,6 +446,17 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
             &format!("rotate({} {} {})", l.rotation, l.origin_x, l.origin_y),
         )?;
     }
+    for strip in &scene.line_strips {
+        keep.insert(strip.id.clone());
+        let el = upsert(&doc, &root, ns, "polyline", &strip.id)?;
+        set_attr(&el, "points", &line_strip_points(strip))?;
+        set_attr(&el, "fill", "none")?;
+        set_attr(&el, "stroke", &strip.stroke)?;
+        set_attr(&el, "stroke-width", &strip.stroke_width.to_string())?;
+        set_attr(&el, "stroke-linecap", &strip.line_cap)?;
+        set_attr(&el, "stroke-linejoin", &strip.line_join)?;
+        set_attr(&el, "opacity", &strip.opacity.to_string())?;
+    }
     for text in &scene.texts {
         keep.insert(text.id.clone());
         let el = upsert(&doc, &root, ns, "text", &text.id)?;
@@ -453,6 +484,20 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         }
     }
     Ok(())
+}
+
+fn line_strip_points(strip: &crate::LineStripElement) -> String {
+    let mut points = strip
+        .positions
+        .iter()
+        .map(|point| format!("{},{}", point[0], point[1]))
+        .collect::<Vec<_>>();
+    if strip.closed {
+        if let Some(first) = points.first().cloned() {
+            points.push(first);
+        }
+    }
+    points.join(" ")
 }
 fn upsert_background(
     doc: &web_sys::Document,
@@ -553,6 +598,7 @@ mod tests {
                 opacity: 1.0,
             }],
             lines: Vec::new(),
+            line_strips: Vec::new(),
             texts: Vec::new(),
         }
     }

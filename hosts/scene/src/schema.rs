@@ -40,6 +40,19 @@ pub struct LineElement {
 
 #[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
+pub struct LineStripElement {
+    pub id: String,
+    pub positions: Vec<[f64; 2]>,
+    pub stroke: String,
+    pub stroke_width: f64,
+    pub line_cap: String,
+    pub line_join: String,
+    pub opacity: f64,
+    pub closed: bool,
+}
+
+#[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
 pub struct TextElement {
     pub id: String,
     pub x: f64,
@@ -61,6 +74,8 @@ pub struct SceneSnapshot {
     pub background: String,
     pub circles: Vec<CircleElement>,
     pub lines: Vec<LineElement>,
+    #[cfg_attr(feature = "rich-output", serde(default))]
+    pub line_strips: Vec<LineStripElement>,
     pub texts: Vec<TextElement>,
 }
 
@@ -73,6 +88,7 @@ impl SceneSnapshot {
             "background",
             "circles",
             "lines",
+            "line-strips",
             "texts",
             "point-sets",
         ];
@@ -104,6 +120,10 @@ impl SceneSnapshot {
             .map(elements_from_value::<LineElement>)
             .transpose()?
             .unwrap_or_default();
+        let line_strips = record_value(&record, "line-strips")
+            .map(line_strips_from_value)
+            .transpose()?
+            .unwrap_or_default();
         let texts = record_value(&record, "texts")
             .map(elements_from_value::<TextElement>)
             .transpose()?
@@ -113,6 +133,7 @@ impl SceneSnapshot {
             .iter()
             .map(|c| c.id.as_str())
             .chain(lines.iter().map(|l| l.id.as_str()))
+            .chain(line_strips.iter().map(|strip| strip.id.as_str()))
             .chain(texts.iter().map(|text| text.id.as_str()))
         {
             if !ids.insert(id.to_string()) {
@@ -128,6 +149,7 @@ impl SceneSnapshot {
             background,
             circles,
             lines,
+            line_strips,
             texts,
         })
     }
@@ -344,6 +366,15 @@ fn validate_line_cap(id: &str, value: &str) -> MResult<()> {
     }
     Ok(())
 }
+fn validate_line_join(id: &str, value: &str) -> MResult<()> {
+    if !matches!(value, "miter" | "round" | "bevel") {
+        return Err(scene_error(
+            "SceneSchema",
+            format!("line-strip `{id}` line-join must be miter, round, or bevel"),
+        ));
+    }
+    Ok(())
+}
 fn validate_text_anchor(id: &str, value: &str) -> MResult<()> {
     if !matches!(value, "start" | "middle" | "end") {
         return Err(scene_error(
@@ -500,6 +531,102 @@ fn point_set_from_record_value(value: &LegacyValue) -> MResult<Vec<CircleElement
     Ok(circles)
 }
 
+fn line_strips_from_value(value: &LegacyValue) -> MResult<Vec<LineStripElement>> {
+    if host_arg_optional(SCENE_SCHEMA, one_arg(value), 0)
+        .map_err(|_| scene_error("SceneSchema", "scene line-strips could not be resolved"))?
+        .is_none()
+    {
+        return Ok(Vec::new());
+    }
+    if let Ok(tuple) = host_arg_tuple(SCENE_SCHEMA, one_arg(value), 0) {
+        return tuple
+            .elements
+            .iter()
+            .map(|value| line_strip_from_record_value(value.as_ref()))
+            .collect();
+    }
+    if host_arg_record(SCENE_SCHEMA, one_arg(value), 0).is_ok() {
+        return Ok(vec![line_strip_from_record_value(value)?]);
+    }
+    Err(scene_error(
+        "SceneSchema",
+        format!(
+            "scene line-strips must be a record or tuple, got {:?}",
+            resolved_for_diagnostic(value)
+        ),
+    ))
+}
+
+fn line_strip_from_record_value(value: &LegacyValue) -> MResult<LineStripElement> {
+    let record = host_record(value, "scene line-strip must be a record")?;
+    const FIELDS: &[&str] = &[
+        "id",
+        "positions",
+        "stroke",
+        "stroke-width",
+        "line-cap",
+        "line-join",
+        "opacity",
+        "closed",
+    ];
+    reject_unknown_fields(&record, FIELDS, "line-strip")?;
+    let id = required_string(&record, "id", "line-strip.id")?;
+    validate_id("line-strip", &id)?;
+    let positions = required_value(
+        &record,
+        "positions",
+        &format!("line-strip `{id}` positions"),
+    )?;
+    let positions = matrix_f64_values(positions, &format!("line-strip `{id}` positions"))?;
+    if positions.rows < 2 || positions.columns != 2 {
+        return Err(scene_error(
+            "SceneSchema",
+            format!(
+                "line-strip `{id}` positions must be an f64 matrix with at least two rows and exactly two columns"
+            ),
+        ));
+    }
+    let positions = (0..positions.rows)
+        .map(|row| {
+            let x = positions.values[row];
+            let y = positions.values[positions.rows + row];
+            if !x.is_finite() || !y.is_finite() {
+                return Err(scene_error(
+                    "SceneSchema",
+                    format!("line-strip `{id}` row {row} contains a nonfinite coordinate"),
+                ));
+            }
+            Ok([x, y])
+        })
+        .collect::<MResult<Vec<_>>>()?;
+    let stroke_width = required_number(
+        &record,
+        "stroke-width",
+        &format!("line-strip `{id}` stroke-width"),
+    )?;
+    validate_stroke_width(&id, stroke_width)?;
+    let opacity = required_number(&record, "opacity", &format!("line-strip `{id}` opacity"))?;
+    validate_opacity(&id, opacity)?;
+    let line_cap = required_string(&record, "line-cap", &format!("line-strip `{id}` line-cap"))?;
+    validate_line_cap(&id, &line_cap)?;
+    let line_join = required_string(
+        &record,
+        "line-join",
+        &format!("line-strip `{id}` line-join"),
+    )?;
+    validate_line_join(&id, &line_join)?;
+    Ok(LineStripElement {
+        id,
+        positions,
+        stroke: required_string(&record, "stroke", "line-strip.stroke")?,
+        stroke_width,
+        line_cap,
+        line_join,
+        opacity,
+        closed: required_bool(&record, "closed", "line-strip.closed")?,
+    })
+}
+
 struct F64MatrixValues {
     rows: usize,
     columns: usize,
@@ -649,6 +776,21 @@ fn required_number(record: &MechRecord, field: &str, label: &str) -> MResult<f64
         )
     })?;
     finite_number(value, label)
+}
+fn required_bool(record: &MechRecord, field: &str, label: &str) -> MResult<bool> {
+    let resolved = host_arg_resolved(
+        SCENE_SCHEMA,
+        one_arg(required_value(record, field, label)?),
+        0,
+    )
+    .map_err(|_| scene_error("SceneSchema", format!("field `{label}` must be a bool")))?;
+    match resolved {
+        LegacyValue::Bool(value) => Ok(*value.borrow()),
+        _ => Err(scene_error(
+            "SceneSchema",
+            format!("field `{label}` must be a bool"),
+        )),
+    }
 }
 fn reject_unknown_fields(record: &MechRecord, allowed: &[&str], kind: &str) -> MResult<()> {
     for (_, name) in &record.field_names {

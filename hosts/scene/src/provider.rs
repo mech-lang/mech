@@ -319,6 +319,7 @@ pub fn scene_snapshot_from_points(
         background: settings.background.clone(),
         circles,
         lines: Vec::new(),
+        line_strips: Vec::new(),
         texts: Vec::new(),
     })
 }

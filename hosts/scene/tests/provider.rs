@@ -28,6 +28,9 @@ fn f(value: f64) -> LegacyValue {
 fn s(value: &str) -> LegacyValue {
     LegacyValue::String(Ref::new(value.to_string()))
 }
+fn b(value: bool) -> LegacyValue {
+    LegacyValue::Bool(Ref::new(value))
+}
 fn record(fields: Vec<(&str, LegacyValue)>) -> LegacyValue {
     LegacyValue::Record(Ref::new(MechRecord::new(fields)))
 }
@@ -133,6 +136,21 @@ fn point_set(id: &str) -> LegacyValue {
         ("opacity", f(1.0)),
     ])
 }
+fn line_strip(id: &str) -> LegacyValue {
+    record(vec![
+        ("id", s(id)),
+        (
+            "positions",
+            points(3, 2, vec![10.0, 20.0, 30.0, 40.0, 50.0, 60.0]),
+        ),
+        ("stroke", s("gray")),
+        ("stroke-width", f(0.75)),
+        ("line-cap", s("round")),
+        ("line-join", s("round")),
+        ("opacity", f(0.5)),
+        ("closed", b(true)),
+    ])
+}
 
 #[test]
 fn valid_empty_scene() {
@@ -189,6 +207,24 @@ fn point_set_expands_matrix_rows_into_stable_circles() {
     assert_eq!(scene.circles[0].radius, 6.0);
     assert_eq!(scene.circles[0].fill, "gold");
     assert_eq!((scene.circles[1].x, scene.circles[1].y), (20.0, 40.0));
+}
+
+#[test]
+fn line_strip_keeps_matrix_rows_as_one_closed_path() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("line-strips", tuple(vec![line_strip("orbit-earth")])),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.line_strips.len(), 1);
+    assert_eq!(scene.line_strips[0].id, "orbit-earth");
+    assert_eq!(
+        scene.line_strips[0].positions,
+        vec![[10.0, 40.0], [20.0, 50.0], [30.0, 60.0]]
+    );
+    assert!(scene.line_strips[0].closed);
 }
 
 #[test]

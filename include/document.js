@@ -1328,6 +1328,23 @@ function outputContentElement(content) {
           );
           svg.append(element);
         }
+        for (const strip of scene.line_strips || []) {
+          const element = document.createElementNS(namespace, "polyline");
+          element.dataset.mechSceneId = strip.id;
+          const points = [...(strip.positions || [])];
+          if (strip.closed && points.length > 0) {
+            points.push(points[0]);
+          }
+          for (const [name, value] of [
+            ["points", points.map(point => `${point[0]},${point[1]}`).join(" ")],
+            ["fill", "none"], ["stroke", strip.stroke],
+            ["stroke-width", strip.stroke_width], ["stroke-linecap", strip.line_cap],
+            ["stroke-linejoin", strip.line_join], ["opacity", strip.opacity],
+          ]) {
+            element.setAttribute(name, String(value));
+          }
+          svg.append(element);
+        }
         for (const text of scene.texts || []) {
           const element = document.createElementNS(namespace, "text");
           element.dataset.mechSceneId = text.id;
