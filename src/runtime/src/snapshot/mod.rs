@@ -70,6 +70,13 @@ impl RuntimeValueSnapshot {
         self.value.to_html()
     }
 
+    /// Returns the rich browser projection governed by the same aggregate
+    /// traversal budget as textual REPL output and inline document values.
+    #[cfg(feature = "pretty_print")]
+    pub fn format_repl_html(&self, max_elements: usize) -> String {
+        self.value.to_html_with_element_limit(max_elements)
+    }
+
     pub fn to_value(&self) -> LegacyValue {
         self.value
             .try_deep_snapshot()

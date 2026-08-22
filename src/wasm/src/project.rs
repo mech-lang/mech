@@ -205,7 +205,7 @@ impl WasmProject {
         self.runtime
             .output_value(OutputId::new(output_id))
             .map_err(to_js_error)?
-            .map(rendered_value)
+            .map(|value| rendered_value(value, mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT))
             .transpose()
             .map(|value| value.unwrap_or(JsValue::NULL))
     }
@@ -220,7 +220,7 @@ impl WasmProject {
             .pop()
             .map(|(_, value)| value);
         value
-            .map(rendered_value)
+            .map(|value| rendered_value(value, mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT))
             .transpose()
             .map(|value| value.unwrap_or(JsValue::NULL))
     }
@@ -958,6 +958,7 @@ mod document {
 
         #[wasm_bindgen(js_name = renderedOutput)]
         pub fn rendered_output(&self, output_id: u64) -> Result<JsValue, JsValue> {
+            let max_elements = self.repl.session.value_element_limit();
             let document_output_id = output_id;
             let Some(runtime_output_id) = self.runtime_output_id(document_output_id) else {
                 return Ok(JsValue::NULL);
@@ -969,7 +970,7 @@ mod document {
             else {
                 return Ok(JsValue::NULL);
             };
-            let rendered = rendered_named_value(snapshot, None)?;
+            let rendered = rendered_named_value(snapshot, None, max_elements)?;
             set_rendered_output_identity(&rendered, document_output_id)?;
             Ok(rendered)
         }
@@ -979,6 +980,7 @@ mod document {
         /// Explicit output events can replace this default in the host UI.
         #[wasm_bindgen(js_name = renderedProgramOutput)]
         pub fn rendered_program_output(&mut self) -> Result<JsValue, JsValue> {
+            let max_elements = self.repl.session.value_element_limit();
             let Some(output) = &self.program_output else {
                 return Ok(JsValue::NULL);
             };
@@ -995,33 +997,35 @@ mod document {
                 .session
                 .refresh_retained_selection(&selection_token, "ans", snapshot.clone())
                 .map_err(to_js_error)?;
-            let rendered = rendered_named_value(snapshot, None)?;
+            let rendered = rendered_named_value(snapshot, None, max_elements)?;
             set_rendered_selection_identity(&rendered, &selection_token)?;
             Ok(rendered)
         }
 
         #[wasm_bindgen(js_name = renderedSymbol)]
         pub fn rendered_symbol(&self, name: &str) -> Result<JsValue, JsValue> {
+            let max_elements = self.repl.session.value_element_limit();
             let snapshot = self
                 .repl
                 .session
                 .symbol(name)
                 .map_err(to_js_error)?
                 .ok_or_else(|| js_error(format!("document symbol `{name}` is not resident")))?;
-            rendered_value(snapshot)
+            rendered_value(snapshot, max_elements)
         }
 
         /// Resolve a formatter placeholder without merging integrity
         /// constraints into the interactive symbol namespace used by :whos.
         #[wasm_bindgen(js_name = renderedDocumentValue)]
         pub fn rendered_document_value(&self, name: &str) -> Result<JsValue, JsValue> {
+            let max_elements = self.repl.session.value_element_limit();
             let mut constraints = self
                 .repl
                 .session
                 .integrity_constraints(&[name.to_string()])
                 .map_err(to_js_error)?;
             if let Some((_, snapshot)) = constraints.pop() {
-                let rendered = rendered_value(snapshot)?;
+                let rendered = rendered_value(snapshot, max_elements)?;
                 Reflect::set(
                     &rendered,
                     &JsValue::from_str("interactive"),
@@ -1030,7 +1034,7 @@ mod document {
                 return Ok(rendered);
             }
             if let Some(snapshot) = self.repl.session.symbol(name).map_err(to_js_error)? {
-                let rendered = rendered_value(snapshot)?;
+                let rendered = rendered_value(snapshot, max_elements)?;
                 Reflect::set(&rendered, &JsValue::from_str("interactive"), &JsValue::TRUE)?;
                 return Ok(rendered);
             }
@@ -1115,6 +1119,7 @@ mod document {
 
         #[wasm_bindgen(js_name = renderedSymbols)]
         pub fn rendered_symbols(&self, names: JsValue) -> Result<JsValue, JsValue> {
+            let max_elements = self.repl.session.value_element_limit();
             let names = rendered_symbol_names_from_js(names)?;
             let values = match names {
                 Some(names) => self.repl.session.symbols(&names).map_err(to_js_error)?,
@@ -1122,7 +1127,7 @@ mod document {
             };
             let rows = Array::new();
             for (name, value) in values {
-                rows.push(&rendered_symbol_row(&name, value)?);
+                rows.push(&rendered_symbol_row(&name, value, max_elements)?);
             }
             Ok(rows.into())
         }
@@ -1341,8 +1346,8 @@ mod document {
                 .symbol(name)
                 .map_err(to_js_error)?
                 .ok_or_else(|| js_error(format!("document symbol `{name}` is not resident")))?;
-            let block_html =
-                (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
+            let block_html = (render_popup && !self.repl.session.is_quiet())
+                .then(|| snapshot.format_repl_html(self.repl.session.value_element_limit()));
             let identity = match pending_identity {
                 Some(identity) => identity,
                 None => self
@@ -1380,8 +1385,8 @@ mod document {
                     .unwrap_or_else(|| "ans".to_string());
                 (snapshot, source_echo)
             };
-            let block_html =
-                (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
+            let block_html = (render_popup && !self.repl.session.is_quiet())
+                .then(|| snapshot.format_repl_html(self.repl.session.value_element_limit()));
             let reuse_identity = format!("resident-output:{}", runtime_output_id.get());
             let identity = self
                 .repl
@@ -1414,8 +1419,8 @@ mod document {
                 .session
                 .retained_selection(selection_token)
                 .ok_or_else(|| js_error("document selection is no longer retained"))?;
-            let block_html =
-                (render_popup && !self.repl.session.is_quiet()).then(|| snapshot.format_html());
+            let block_html = (render_popup && !self.repl.session.is_quiet())
+                .then(|| snapshot.format_repl_html(self.repl.session.value_element_limit()));
             let (response, presentation) = self.repl.publish_selection(
                 &source_echo,
                 snapshot,
@@ -2254,24 +2259,25 @@ fn runtime_info_value(info: &RuntimeProgramExecutionInfo) -> Result<JsValue, JsV
 
 pub(super) fn rendered_value(
     snapshot: mech_runtime::RuntimeValueSnapshot,
+    max_elements: usize,
 ) -> Result<JsValue, JsValue> {
     let value = snapshot.into_value();
     let rendered = Object::new();
     Reflect::set(
         &rendered,
         &JsValue::from_str("kind"),
-        &JsValue::from_str(&format!("{}", value.kind())),
+        &JsValue::from_str(&value.format_kind_with_element_limit(max_elements)),
     )?;
     Reflect::set(
         &rendered,
         &JsValue::from_str("blockHtml"),
-        &JsValue::from_str(&value.to_html()),
+        &JsValue::from_str(&value.to_html_with_element_limit(max_elements)),
     )?;
     Reflect::set(
         &rendered,
         &JsValue::from_str("inlineHtml"),
         &JsValue::from_str(&mech_core::escape_html_text(
-            &value.format_canonical_inline(),
+            &value.format_canonical_inline_with_element_limit(max_elements),
         )),
     )?;
     Ok(rendered.into())
@@ -2280,8 +2286,9 @@ pub(super) fn rendered_value(
 fn rendered_named_value(
     snapshot: mech_runtime::RuntimeValueSnapshot,
     name: Option<&str>,
+    max_elements: usize,
 ) -> Result<JsValue, JsValue> {
-    let rendered = rendered_value(snapshot)?;
+    let rendered = rendered_value(snapshot, max_elements)?;
     Reflect::set(
         &rendered,
         &JsValue::from_str("name"),
@@ -2345,8 +2352,9 @@ pub(super) fn rendered_symbol_names_from_js(
 pub(super) fn rendered_symbol_row(
     name: &str,
     snapshot: mech_runtime::RuntimeValueSnapshot,
+    max_elements: usize,
 ) -> Result<JsValue, JsValue> {
-    let rendered_value = rendered_value(snapshot)?;
+    let rendered_value = rendered_value(snapshot, max_elements)?;
     let row = Object::new();
     Reflect::set(&row, &JsValue::from_str("name"), &JsValue::from_str(name))?;
     for property in ["kind", "inlineHtml", "blockHtml"] {
@@ -4207,7 +4215,7 @@ mod browser_tests {
             "a\"b\\c\nα\u{2028}line\u{2029}paragraph".to_string(),
         ));
         let snapshot = mech_runtime::RuntimeValueSnapshot::try_from(value).unwrap();
-        let rendered = rendered_value(snapshot).unwrap();
+        let rendered = rendered_value(snapshot, 500).unwrap();
         assert_eq!(
             Reflect::get(&rendered, &JsValue::from_str("inlineHtml"))
                 .unwrap()
@@ -4215,6 +4223,35 @@ mod browser_tests {
                 .as_deref(),
             Some("&quot;a\\&quot;b\\\\c\\nα\\u{2028}line\\u{2029}paragraph&quot;"),
         );
+    }
+
+    #[wasm_bindgen_test]
+    fn configured_preview_limit_bounds_document_rows_and_selection_popups() {
+        let encoded = encoded_document("x := 1..=10\nx");
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        document.repl_set_value_element_limit(2).unwrap();
+
+        let symbol = document.rendered_symbol("x").unwrap();
+        let inline = Reflect::get(&symbol, &JsValue::from_str("inlineHtml"))
+            .unwrap()
+            .as_string()
+            .unwrap();
+        let block = Reflect::get(&symbol, &JsValue::from_str("blockHtml"))
+            .unwrap()
+            .as_string()
+            .unwrap();
+        assert!(inline.contains('…'), "{inline}");
+        assert!(block.contains("mech-value-elided"), "{block}");
+        assert!(!block.contains(">10<"), "{block}");
+
+        let selection = document.repl_select_symbol("x", true).unwrap();
+        let rendered = Reflect::get(&selection, &JsValue::from_str("rendered")).unwrap();
+        let popup = Reflect::get(&rendered, &JsValue::from_str("blockHtml"))
+            .unwrap()
+            .as_string()
+            .unwrap();
+        assert!(popup.contains("mech-value-elided"), "{popup}");
+        assert!(!popup.contains(">10<"), "{popup}");
     }
 
     #[wasm_bindgen_test]

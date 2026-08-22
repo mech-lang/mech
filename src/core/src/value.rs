@@ -201,6 +201,74 @@ pub fn escape_html_text(input: &str) -> String {
 }
 
 impl ValueKind {
+    fn format_with_budget(&self, budget: &mut InlineFormatBudget) -> String {
+        match self {
+            ValueKind::Matrix(element, shape) => format!(
+                "[{}]:{}",
+                element.format_with_budget(budget),
+                shape
+                    .iter()
+                    .map(|dimension| dimension.to_string())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
+            ValueKind::Set(element, size) => format!(
+                "{{{}}}{}",
+                element.format_with_budget(budget),
+                size.map_or(String::new(), |size| format!(":{size}")),
+            ),
+            ValueKind::Map(key, value) => format!(
+                "{{{}:{}}}",
+                key.format_with_budget(budget),
+                value.format_with_budget(budget),
+            ),
+            ValueKind::Record(fields) => {
+                let mut rendered = Vec::new();
+                for (name, kind) in fields {
+                    if !budget.consume() {
+                        rendered.push("…<*>".to_string());
+                        break;
+                    }
+                    rendered.push(format!("{}<{}>", name, kind.format_with_budget(budget)));
+                }
+                format!("{{{}}}", rendered.join(" "))
+            }
+            ValueKind::Table(columns, rows) => {
+                let mut rendered = Vec::new();
+                for (name, kind) in columns {
+                    if !budget.consume() {
+                        rendered.push("…<*>".to_string());
+                        break;
+                    }
+                    rendered.push(format!("{}<{}>", name, kind.format_with_budget(budget)));
+                }
+                let size = (*rows > 0).then(|| format!(":{rows}")).unwrap_or_default();
+                format!("|{}|{size}", rendered.join(" "))
+            }
+            ValueKind::Tuple(elements) => {
+                let mut rendered = Vec::new();
+                for kind in elements {
+                    if !budget.consume() {
+                        rendered.push("…".to_string());
+                        break;
+                    }
+                    rendered.push(kind.format_with_budget(budget));
+                }
+                format!("({})", rendered.join(","))
+            }
+            ValueKind::Reference(inner) => inner.format_with_budget(budget),
+            ValueKind::Option(inner) => format!("{}?", inner.format_with_budget(budget)),
+            ValueKind::Kind(inner) => format!("<{}>", inner.format_with_budget(budget)),
+            scalar => scalar.to_string(),
+        }
+    }
+
+    /// Formats a structural kind without allowing record, table, or tuple
+    /// schemas to grow beyond the shared interactive element budget.
+    pub fn format_with_element_limit(&self, limit: usize) -> String {
+        self.format_with_budget(&mut InlineFormatBudget::bounded(limit))
+    }
+
     pub fn collection_kind(&self) -> Option<ValueKind> {
         match self {
             ValueKind::Matrix(x, _) => Some(*x.clone()),
@@ -731,22 +799,30 @@ pub enum LegacyValue {
 #[derive(Clone, Copy, Debug)]
 struct InlineFormatBudget {
     remaining: Option<usize>,
+    elided: bool,
 }
 
 impl InlineFormatBudget {
     fn unlimited() -> Self {
-        Self { remaining: None }
+        Self {
+            remaining: None,
+            elided: false,
+        }
     }
 
     fn bounded(limit: usize) -> Self {
         Self {
             remaining: Some(limit),
+            elided: false,
         }
     }
 
     fn consume(&mut self) -> bool {
         match &mut self.remaining {
-            Some(0) => false,
+            Some(0) => {
+                self.elided = true;
+                false
+            }
             Some(remaining) => {
                 *remaining -= 1;
                 true
@@ -2473,6 +2549,105 @@ impl LegacyValue {
             }
             LegacyValue::Typed(value, _) => value.to_html(),
             _ => "???".to_string(),
+        }
+    }
+
+    fn format_kind_with_budget(&self, budget: &mut InlineFormatBudget) -> String {
+        match self {
+            #[cfg(feature = "matrix")]
+            LegacyValue::MatrixValue(matrix) => format!(
+                "[*]:{}",
+                matrix
+                    .shape()
+                    .iter()
+                    .map(|dimension| dimension.to_string())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
+            #[cfg(feature = "table")]
+            LegacyValue::Table(table) => {
+                let table = table.borrow();
+                let mut columns = Vec::new();
+                for (key, (kind, _)) in &table.data {
+                    if !budget.consume() {
+                        columns.push("…<*>".to_string());
+                        break;
+                    }
+                    let name = table
+                        .col_names
+                        .get(key)
+                        .cloned()
+                        .unwrap_or_else(|| key.to_string());
+                    columns.push(format!("{}<{}>", name, kind.format_with_budget(budget)));
+                }
+                let size = (table.rows > 0)
+                    .then(|| format!(":{}", table.rows))
+                    .unwrap_or_default();
+                format!("|{}|{size}", columns.join(" "))
+            }
+            #[cfg(feature = "record")]
+            LegacyValue::Record(record) => {
+                let record = record.borrow();
+                let mut fields = Vec::new();
+                for (key, value) in &record.data {
+                    if !budget.consume() {
+                        fields.push("…<*>".to_string());
+                        break;
+                    }
+                    let name = record
+                        .field_names
+                        .get(key)
+                        .cloned()
+                        .unwrap_or_else(|| key.to_string());
+                    fields.push(format!(
+                        "{}<{}>",
+                        name,
+                        value.format_kind_with_budget(budget)
+                    ));
+                }
+                format!("{{{}}}", fields.join(" "))
+            }
+            #[cfg(feature = "tuple")]
+            LegacyValue::Tuple(tuple) => {
+                let tuple = tuple.borrow();
+                let mut elements = Vec::new();
+                for value in &tuple.elements {
+                    if !budget.consume() {
+                        elements.push("…".to_string());
+                        break;
+                    }
+                    elements.push(value.format_kind_with_budget(budget));
+                }
+                format!("({})", elements.join(","))
+            }
+            LegacyValue::EmptyKind(kind) | LegacyValue::Kind(kind) => {
+                kind.format_with_budget(budget)
+            }
+            value => value.kind().format_with_budget(budget),
+        }
+    }
+
+    /// Formats the kind shown beside a browser or terminal value without
+    /// reconstructing an unbounded aggregate schema from the retained value.
+    pub fn format_kind_with_element_limit(&self, limit: usize) -> String {
+        self.format_kind_with_budget(&mut InlineFormatBudget::bounded(limit))
+    }
+
+    /// Render rich HTML without allowing an aggregate projection to traverse
+    /// more elements than the portable REPL budget. Small values retain their
+    /// structured renderer; elided values use their bounded canonical form so
+    /// nested containers and schema-only tables cannot bypass the limit.
+    #[cfg(feature = "pretty_print")]
+    pub fn to_html_with_element_limit(&self, limit: usize) -> String {
+        let mut budget = InlineFormatBudget::bounded(limit);
+        let canonical = self.format_canonical_inline_with_budget(&mut budget);
+        if budget.elided {
+            format!(
+                "<pre class=\"mech-value-preview mech-value-elided\">{}</pre>",
+                escape_html_text(&canonical),
+            )
+        } else {
+            self.to_html()
         }
     }
 
@@ -4762,6 +4937,17 @@ mod reactive_cell_tests {
             table.format_canonical_inline_with_element_limit(2),
             "<|column0<string> column1<string> …<*>|>",
         );
+        assert_eq!(
+            table.format_kind_with_element_limit(2),
+            "|column0<string> column1<string> …<*>|",
+        );
+        #[cfg(feature = "pretty_print")]
+        {
+            let html = table.to_html_with_element_limit(2);
+            assert!(html.contains("mech-value-elided"), "{html}");
+            assert!(html.contains("column0&lt;string&gt;"), "{html}");
+            assert!(!html.contains("column9"), "{html}");
+        }
         let preview = table.format_preview_inline(96);
         assert!(preview.starts_with("<|"), "{preview}");
         assert!(preview.ends_with("|>"), "{preview}");

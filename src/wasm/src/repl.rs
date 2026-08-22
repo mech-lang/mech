@@ -314,12 +314,13 @@ impl WasmRepl {
             return self.response(None);
         }
         let display_result = self.session.submission_displays_result(source);
+        let max_elements = self.session.value_element_limit();
         let result = match self.session.submit(source) {
             Ok(snapshot) => {
                 if snapshot.is_empty() || !display_result {
                     None
                 } else {
-                    Some(rendered_value(snapshot)?)
+                    Some(rendered_value(snapshot, max_elements)?)
                 }
             }
             Err(error) => {
@@ -480,11 +481,12 @@ impl WasmRepl {
         }
         let names = rendered_symbol_names_from_js(names)?;
         let requested = names.unwrap_or_default();
+        let max_elements = self.session.value_element_limit();
         let mut rows = self.session.symbols(&requested).map_err(to_js_error)?;
         rows.sort_by(|left, right| left.0.cmp(&right.0));
         let out = Array::new();
         for (name, snapshot) in rows {
-            out.push(&rendered_symbol_row(&name, snapshot)?);
+            out.push(&rendered_symbol_row(&name, snapshot, max_elements)?);
         }
         Ok(out)
     }
