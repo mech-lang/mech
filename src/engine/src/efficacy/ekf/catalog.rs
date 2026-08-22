@@ -473,7 +473,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     Ok(())
 }
 
-pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(crate) fn install_source_operations(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     for spec in FROZEN_EKF_OPERATIONS {
         let operation = builder.insert_specializer(
             spec.canonical_name,
@@ -489,6 +489,11 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
             exposure: FunctionExposure::ModuleOnly,
         })?;
     }
+    Ok(())
+}
+
+pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    install_source_operations(builder)?;
     let negate = builder.insert_specializer("math/neg", Arc::new(FrozenF64NegateSpecializer))?;
     builder.insert_export(FunctionExport {
         operation: negate,
