@@ -8831,7 +8831,7 @@
             "line": 1546
           },
           {
-            "column": 8,
+            "column": 16,
             "fingerprint": "4e47fe5983efe66d6dc7a314caaf64a31d5fc066e5e78ff5ed84f9eaaf8a7028",
             "line": 4088
           }
@@ -15619,7 +15619,7 @@
               "line": 1546
             },
             {
-              "column": 8,
+              "column": 16,
               "fingerprint": "4e47fe5983efe66d6dc7a314caaf64a31d5fc066e5e78ff5ed84f9eaaf8a7028",
               "line": 4088
             }
@@ -18580,6 +18580,13 @@
       "variant": "Bool"
     },
     {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4146,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Bool"
+    },
+    {
       "column": 18,
       "enum": "LegacyValue",
       "line": 78,
@@ -18701,7 +18708,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 231,
+      "line": 280,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "Bool"
     },
@@ -21268,6 +21275,13 @@
       "variant": "F32"
     },
     {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4188,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "F32"
+    },
+    {
       "column": 23,
       "enum": "LegacyValue",
       "line": 136,
@@ -21319,7 +21333,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 162,
+      "line": 211,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "F32"
     },
@@ -22017,6 +22031,13 @@
       "variant": "F64"
     },
     {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4192,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "F64"
+    },
+    {
       "column": 18,
       "enum": "LegacyValue",
       "line": 90,
@@ -22173,7 +22194,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 256,
+      "line": 305,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "F64"
     },
@@ -22644,6 +22665,13 @@
       "enum": "LegacyValue",
       "line": 458,
       "path": "src/engine/src/integrity.rs",
+      "variant": "I128"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4184,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I128"
     },
     {
@@ -23141,6 +23169,13 @@
       "enum": "LegacyValue",
       "line": 452,
       "path": "src/engine/src/integrity.rs",
+      "variant": "I16"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4172,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I16"
     },
     {
@@ -23648,6 +23683,13 @@
       "variant": "I32"
     },
     {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4176,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "I32"
+    },
+    {
       "column": 23,
       "enum": "LegacyValue",
       "line": 80,
@@ -24142,6 +24184,13 @@
       "enum": "LegacyValue",
       "line": 456,
       "path": "src/engine/src/integrity.rs",
+      "variant": "I64"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4180,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I64"
     },
     {
@@ -24709,6 +24758,13 @@
       "enum": "LegacyValue",
       "line": 450,
       "path": "src/engine/src/integrity.rs",
+      "variant": "I8"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4168,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I8"
     },
     {
@@ -26938,9 +26994,16 @@
       "variant": "Index"
     },
     {
-      "column": 9,
+      "column": 17,
       "enum": "LegacyValue",
       "line": 4073,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4144,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -27087,7 +27150,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 268,
+      "line": 317,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "Index"
     },
@@ -48374,7 +48437,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 276,
+      "line": 325,
       "path": "src/runtime/src/runtime/program/external/value_adapter.rs",
       "variant": "String"
     },
@@ -50381,6 +50444,13 @@
       "variant": "U128"
     },
     {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4164,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "U128"
+    },
+    {
       "column": 23,
       "enum": "LegacyValue",
       "line": 129,
@@ -50864,6 +50934,13 @@
       "variant": "U16"
     },
     {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4152,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "U16"
+    },
+    {
       "column": 23,
       "enum": "LegacyValue",
       "line": 108,
@@ -51344,6 +51421,13 @@
       "enum": "LegacyValue",
       "line": 444,
       "path": "src/engine/src/integrity.rs",
+      "variant": "U32"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4156,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U32"
     },
     {
@@ -51834,6 +51918,13 @@
       "enum": "LegacyValue",
       "line": 446,
       "path": "src/engine/src/integrity.rs",
+      "variant": "U64"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4160,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U64"
     },
     {
@@ -52366,6 +52457,13 @@
       "enum": "LegacyValue",
       "line": 440,
       "path": "src/engine/src/integrity.rs",
+      "variant": "U8"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4148,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U8"
     },
     {
@@ -54396,13 +54494,6 @@
       "enum": "ValueKind",
       "line": 506,
       "path": "src/engine/src/integrity.rs",
-      "variant": "F64"
-    },
-    {
-      "column": 38,
-      "enum": "ValueKind",
-      "line": 4105,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "F64"
     },
     {

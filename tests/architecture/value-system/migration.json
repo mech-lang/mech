@@ -29663,6 +29663,214 @@
       ],
       "sites": [
         {
+          "column": 9,
+          "line": 4146
+        }
+      ],
+      "target": "bool-snapshot",
+      "variant": "Bool"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4188
+        }
+      ],
+      "target": "floating-point-snapshot",
+      "variant": "F32"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4192
+        }
+      ],
+      "target": "floating-point-snapshot",
+      "variant": "F64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4168
+        }
+      ],
+      "target": "signed-integer-snapshot",
+      "variant": "I8"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4172
+        }
+      ],
+      "target": "signed-integer-snapshot",
+      "variant": "I16"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4176
+        }
+      ],
+      "target": "signed-integer-snapshot",
+      "variant": "I32"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4180
+        }
+      ],
+      "target": "signed-integer-snapshot",
+      "variant": "I64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4184
+        }
+      ],
+      "target": "signed-integer-snapshot",
+      "variant": "I128"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4148
+        }
+      ],
+      "target": "unsigned-integer-snapshot",
+      "variant": "U8"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4152
+        }
+      ],
+      "target": "unsigned-integer-snapshot",
+      "variant": "U16"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4156
+        }
+      ],
+      "target": "unsigned-integer-snapshot",
+      "variant": "U32"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4160
+        }
+      ],
+      "target": "unsigned-integer-snapshot",
+      "variant": "U64"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 4164
+        }
+      ],
+      "target": "unsigned-integer-snapshot",
+      "variant": "U128"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
           "column": 49,
           "line": 1618
         }
@@ -30031,8 +30239,12 @@
           "line": 2989
         },
         {
-          "column": 9,
+          "column": 17,
           "line": 4073
+        },
+        {
+          "column": 9,
+          "line": 4144
         }
       ],
       "target": "index-snapshot",
@@ -37277,7 +37489,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 231
+          "line": 280
         }
       ],
       "target": "bool-snapshot",
@@ -37292,7 +37504,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 256
+          "line": 305
         }
       ],
       "target": "floating-point-snapshot",
@@ -37307,7 +37519,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 268
+          "line": 317
         }
       ],
       "target": "index-snapshot",
@@ -37358,7 +37570,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 276
+          "line": 325
         }
       ],
       "target": "string-snapshot",
@@ -45278,22 +45490,6 @@
       ],
       "sites": [
         {
-          "column": 38,
-          "line": 4105
-        }
-      ],
-      "target": "floating-point-schema",
-      "variant": "F64"
-    },
-    {
-      "enum": "ValueKind",
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "roles": [
-        "compiler-type-data",
-        "machine-argument"
-      ],
-      "sites": [
-        {
           "column": 17,
           "line": 1613
         }
@@ -47596,7 +47792,7 @@
       "sites": [
         {
           "column": 9,
-          "line": 162
+          "line": 211
         }
       ],
       "target": "floating-point-snapshot",

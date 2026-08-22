@@ -3,7 +3,7 @@ use mech_core::{
     ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
     ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, ShapeContractReference, ShapeRule,
+    ResolvedOperationContract, SchemaBody, ShapeContractReference, ShapeRule, ValueData,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -1654,7 +1654,10 @@ fn bind_scalar_index(
         ChangeDetectionPolicy::KernelReported,
     )?;
     if request.inputs.len() != 1
-        || request.inputs[0].kind != ResidentValueKind::F64
+        || !matches!(
+            request.inputs[0].kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index | ResidentValueKind::Snapshot
+        )
         || request.inputs[0].shape != ResidentShape::SCALAR
         || request.output.kind != ResidentValueKind::Index
         || request.output.shape != ResidentShape::SCALAR
@@ -3200,8 +3203,31 @@ fn scalar_index(
     if inputs.len() != 1 {
         return Err(ResidentKernelError::InvalidInput);
     }
-    let [value] = f64_input(inputs, 0)? else {
-        return Err(ResidentKernelError::InvalidShape);
+    let next = match inputs.get(0).ok_or(ResidentKernelError::InvalidInput)? {
+        ResidentValueRef::F64([value]) => *value as u64,
+        ResidentValueRef::Index([value]) => *value,
+        ResidentValueRef::Snapshot([Some(value)]) => match value.data() {
+            ValueData::U8(value) => *value as u64,
+            ValueData::U16(value) => *value as u64,
+            ValueData::U32(value) => *value as u64,
+            ValueData::U64(value) => *value,
+            ValueData::U128(value) => *value as u64,
+            ValueData::I8(value) => *value as u64,
+            ValueData::I16(value) => *value as u64,
+            ValueData::I32(value) => *value as u64,
+            ValueData::I64(value) => *value as u64,
+            ValueData::I128(value) => *value as u64,
+            ValueData::F32(value) => value.to_f32() as u64,
+            ValueData::F64(value) => value.to_f64() as u64,
+            ValueData::Index(value) => *value,
+            _ => return Err(ResidentKernelError::InvalidInput),
+        },
+        ResidentValueRef::F64(_) | ResidentValueRef::Index(_) | ResidentValueRef::Snapshot(_) => {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        ResidentValueRef::Bool(_) | ResidentValueRef::String(_) => {
+            return Err(ResidentKernelError::InvalidInput);
+        }
     };
     let ResidentValueMut::Index(output) = output else {
         return Err(ResidentKernelError::InvalidOutput);
@@ -3209,7 +3235,6 @@ fn scalar_index(
     let [target] = output else {
         return Err(ResidentKernelError::InvalidShape);
     };
-    let next = *value as u64;
     let changed = *target != next;
     *target = next;
     Ok(changed)

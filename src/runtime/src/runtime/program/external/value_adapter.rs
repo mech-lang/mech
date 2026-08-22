@@ -1,7 +1,7 @@
 use mech_core::{
-    LegacyMaterializationContext, LegacySnapshotError, LegacyValue, MResult, MechError,
-    MechErrorKind, NominalKey, NominalKind, SchemaBody, SchemaId, SchemaTable, ShapeInstance,
-    Value, legacy_from_snapshot,
+    IntegerWidth, LegacyMaterializationContext, LegacySnapshotError, LegacyValue, MResult,
+    MechError, MechErrorKind, NominalKey, NominalKind, SchemaBody, SchemaId, SchemaTable,
+    ShapeInstance, Value, legacy_from_snapshot,
     matrix::ToMatrix,
     snapshot::{F32Bits, F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
@@ -82,6 +82,20 @@ fn legacy_data(
 ) -> MResult<ValueDataDraft> {
     match body {
         SchemaBody::Bool => legacy_bool(value).map(ValueDataDraft::Bool),
+        SchemaBody::UnsignedInteger(width) => match width {
+            IntegerWidth::W8 => legacy_u8(value).map(ValueDataDraft::U8),
+            IntegerWidth::W16 => legacy_u16(value).map(ValueDataDraft::U16),
+            IntegerWidth::W32 => legacy_u32(value).map(ValueDataDraft::U32),
+            IntegerWidth::W64 => legacy_u64(value).map(ValueDataDraft::U64),
+            IntegerWidth::W128 => legacy_u128(value).map(ValueDataDraft::U128),
+        },
+        SchemaBody::SignedInteger(width) => match width {
+            IntegerWidth::W8 => legacy_i8(value).map(ValueDataDraft::I8),
+            IntegerWidth::W16 => legacy_i16(value).map(ValueDataDraft::I16),
+            IntegerWidth::W32 => legacy_i32(value).map(ValueDataDraft::I32),
+            IntegerWidth::W64 => legacy_i64(value).map(ValueDataDraft::I64),
+            IntegerWidth::W128 => legacy_i128(value).map(ValueDataDraft::I128),
+        },
         SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
             legacy_f32(value).map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
         }
@@ -155,6 +169,41 @@ fn legacy_data(
         )),
     }
 }
+
+macro_rules! legacy_integer_adapter {
+    ($function:ident, $feature:literal, $variant:ident, $type:ty) => {
+        #[cfg(feature = $feature)]
+        fn $function(value: &LegacyValue) -> MResult<$type> {
+            match value {
+                LegacyValue::$variant(value) => Ok(*value.borrow()),
+                _ => Err(unsupported(concat!(
+                    "provider returned a non-",
+                    $feature,
+                    " value"
+                ))),
+            }
+        }
+
+        #[cfg(not(feature = $feature))]
+        fn $function(_value: &LegacyValue) -> MResult<$type> {
+            Err(unsupported(concat!(
+                $feature,
+                " provider adapter feature is disabled"
+            )))
+        }
+    };
+}
+
+legacy_integer_adapter!(legacy_u8, "u8", U8, u8);
+legacy_integer_adapter!(legacy_u16, "u16", U16, u16);
+legacy_integer_adapter!(legacy_u32, "u32", U32, u32);
+legacy_integer_adapter!(legacy_u64, "u64", U64, u64);
+legacy_integer_adapter!(legacy_u128, "u128", U128, u128);
+legacy_integer_adapter!(legacy_i8, "i8", I8, i8);
+legacy_integer_adapter!(legacy_i16, "i16", I16, i16);
+legacy_integer_adapter!(legacy_i32, "i32", I32, i32);
+legacy_integer_adapter!(legacy_i64, "i64", I64, i64);
+legacy_integer_adapter!(legacy_i128, "i128", I128, i128);
 
 #[cfg(feature = "f32")]
 fn legacy_f32(value: &LegacyValue) -> MResult<f32> {
