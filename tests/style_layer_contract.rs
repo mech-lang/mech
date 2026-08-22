@@ -146,13 +146,19 @@ fn document_controller_initializes_repl_controls_before_starting_wasm() {
 #[test]
 fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     let controller = include("document.js");
-    assert!(controller.contains("function documentPageScrollOwner(requestedOwner = null)"));
-    assert!(controller.contains("requestedOwner === \"content-shell\" && contentShell"));
+    assert!(controller.contains("function documentPageScrollOwner()"));
     assert!(controller.contains("contentShell.scrollHeight > contentShell.clientHeight + 1"));
+    assert!(controller.contains("function documentPageContentOrigin(contentShell)"));
+    assert!(controller.contains("function documentPagePositionForOwner(position, owner)"));
+    assert!(controller.contains("x += element.offsetLeft"));
+    assert!(controller.contains("y += element.offsetTop"));
+    assert!(controller.contains("y: Math.max(0, originY + y)"));
+    assert!(controller.contains("y: Math.max(0, y - originY)"));
     assert!(
         controller.contains("saved?.owner === \"content-shell\" ? \"content-shell\" : \"window\"")
     );
     assert!(controller.contains("owner: owner === window ? \"window\" : \"content-shell\""));
+    assert!(controller.contains("const target = documentPagePositionForOwner(restore, owner)"));
     assert!(controller.contains("owner === window ? window.scrollY : owner.scrollTop"));
     assert!(controller.contains("document.querySelector(\".content-shell\")?.addEventListener("));
     assert!(controller.contains("scrollContainer?.addEventListener(\"scroll\", schedule"));

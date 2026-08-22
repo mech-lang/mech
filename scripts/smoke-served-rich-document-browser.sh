@@ -3111,15 +3111,23 @@ def assert_layout_persistence():
   const spacer = document.createElement('div');
   spacer.id = 'mech-late-layout-spacer';
   spacer.style.height = '900px';
-  document.body.append(spacer);
-  const maximumScroll = Math.max(0, document.documentElement.scrollHeight - innerHeight);
-  const scrollBehavior = document.documentElement.style.scrollBehavior;
-  document.documentElement.style.scrollBehavior = 'auto';
-  window.scrollTo(0, maximumScroll);
-  document.documentElement.style.scrollBehavior = scrollBehavior;
+  (document.querySelector('.content-column') || document.body).append(spacer);
+  const shell = document.querySelector('.content-shell');
+  const shellStyle = shell ? getComputedStyle(shell) : null;
+  const owner = shell && ['auto', 'scroll', 'overlay'].includes(shellStyle.overflowY) &&
+    shell.scrollHeight > shell.clientHeight + 1 ? shell : window;
+  const maximumScroll = owner === window
+    ? Math.max(0, document.documentElement.scrollHeight - innerHeight)
+    : Math.max(0, owner.scrollHeight - owner.clientHeight);
+  const styleOwner = owner === window ? document.documentElement : owner;
+  const scrollBehavior = styleOwner.style.scrollBehavior;
+  styleOwner.style.scrollBehavior = 'auto';
+  owner.scrollTo(0, maximumScroll);
+  styleOwner.style.scrollBehavior = scrollBehavior;
   return {
     width: pane.getBoundingClientRect().width,
-    scrollY: window.scrollY,
+    owner: owner === window ? 'window' : 'content-shell',
+    scrollY: owner === window ? window.scrollY : owner.scrollTop,
     maximumScroll,
   };
 })()
@@ -3132,7 +3140,7 @@ def assert_layout_persistence():
 for (const [key, value] of Object.entries(localStorage)) {{
   if (!key.startsWith('mech:document-layout:v1:')) continue;
   const layout = JSON.parse(value);
-  layout.page = {{ x: 0, y: {expected['scrollY']} }};
+  layout.page = {{ owner: {json.dumps(expected['owner'])}, x: 0, y: {expected['scrollY']} }};
   localStorage.setItem(key, JSON.stringify(layout));
 }}
 document.addEventListener('DOMContentLoaded', () => {{
@@ -3141,7 +3149,7 @@ document.addEventListener('DOMContentLoaded', () => {{
     const spacer = document.createElement('div');
     spacer.id = 'mech-late-layout-spacer';
     spacer.style.height = '900px';
-    document.body.append(spacer);
+    (document.querySelector('.content-column') || document.body).append(spacer);
   }}, 450);
 }}, {{ once: true }});
 """},
@@ -3155,17 +3163,27 @@ document.addEventListener('DOMContentLoaded', () => {{
         timeout=45,
     )
     try:
+        expected_owner = json.dumps(expected["owner"])
         wait_for(
             f"Math.abs((document.querySelector('[data-mech-console-pane]')?.getBoundingClientRect().width || 0) - {expected['width']}) <= 2 && "
-            f"Math.abs(window.scrollY - {expected['scrollY']}) <= 2",
+            "(() => { "
+            "const shell = document.querySelector('.content-shell'); "
+            "const style = shell ? getComputedStyle(shell) : null; "
+            "const owner = shell && ['auto', 'scroll', 'overlay'].includes(style.overflowY) && "
+            "shell.scrollHeight > shell.clientHeight + 1 ? shell : window; "
+            f"return (owner === window ? 'window' : 'content-shell') === {expected_owner} && "
+            f"Math.abs((owner === window ? window.scrollY : owner.scrollTop) - {expected['scrollY']}) <= 2; "
+            "})()",
             "the saved REPL opening size and page position restoring after refresh",
         )
     except AssertionError:
         restored = evaluate_json("""
 (() => ({
   width: document.querySelector('[data-mech-console-pane]')?.getBoundingClientRect().width || 0,
-  scrollY: window.scrollY,
-  maximumScroll: Math.max(0, document.documentElement.scrollHeight - innerHeight),
+  windowScrollY: window.scrollY,
+  shellScrollY: document.querySelector('.content-shell')?.scrollTop || 0,
+  shellMaximumScroll: Math.max(0, (document.querySelector('.content-shell')?.scrollHeight || 0) -
+    (document.querySelector('.content-shell')?.clientHeight || 0)),
   persisted: Object.entries(localStorage).find(([key]) =>
     key.startsWith('mech:document-layout:v1:')) || null,
 }))()
@@ -3187,6 +3205,107 @@ document.addEventListener('DOMContentLoaded', () => {{
         "(document.querySelector('[data-mech-repl-host]')?.getBoundingClientRect().width || 0) * 0.8 + 2",
         "the restored console size re-clamping after viewport narrowing",
     )
+    if label == "default":
+        desktop_position = evaluate_json("""
+(() => {
+  const shell = document.querySelector('.content-shell');
+  if (!shell) return null;
+  const maximum = Math.max(0, shell.scrollHeight - shell.clientHeight);
+  const y = Math.min(320, maximum);
+  return { y, maximum };
+})()
+""")
+        if desktop_position is None or desktop_position["y"] < 100:
+            fail(f"could not establish desktop content-shell persistence: {desktop_position!r}")
+        devtools.call(
+            "Emulation.setDeviceMetricsOverride",
+            {"width": 800, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+            session_id,
+        )
+        mobile_restore_script = devtools.call(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": f"""
+(() => {{
+  for (const [key, value] of Object.entries(localStorage)) {{
+    if (!key.startsWith('mech:document-layout:v1:')) continue;
+    const layout = JSON.parse(value);
+    layout.page = {{ owner: 'content-shell', x: 0, y: {desktop_position['y']} }};
+    localStorage.setItem(key, JSON.stringify(layout));
+  }}
+}})()
+"""},
+            session_id,
+        ).get("identifier")
+        devtools.call("Page.navigate", {"url": page_url}, session_id)
+        wait_for(
+            "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
+            "getComputedStyle(document.querySelector('.content-shell')).overflowY === 'visible'",
+            "the mobile document reloading for cross-owner persistence",
+            timeout=45,
+        )
+        if mobile_restore_script:
+            devtools.call(
+                "Page.removeScriptToEvaluateOnNewDocument",
+                {"identifier": mobile_restore_script},
+                session_id,
+            )
+        mobile_expected = evaluate_json(f"""
+(() => {{
+  const shell = document.querySelector('.content-shell');
+  let origin = 0;
+  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
+  return {{ y: origin + {desktop_position['y']}, origin }};
+}})()
+""")
+        wait_for(
+            f"Math.abs(window.scrollY - {mobile_expected['y']}) <= 2",
+            "a desktop content-shell offset translating onto the mobile window",
+        )
+        mobile_y = evaluate_json("window.scrollY")
+        devtools.call(
+            "Emulation.setDeviceMetricsOverride",
+            {"width": 1100, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+            session_id,
+        )
+        desktop_restore_script = devtools.call(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": f"""
+(() => {{
+  for (const [key, value] of Object.entries(localStorage)) {{
+    if (!key.startsWith('mech:document-layout:v1:')) continue;
+    const layout = JSON.parse(value);
+    layout.page = {{ owner: 'window', x: 0, y: {mobile_y} }};
+    localStorage.setItem(key, JSON.stringify(layout));
+  }}
+}})()
+"""},
+            session_id,
+        ).get("identifier")
+        devtools.call("Page.navigate", {"url": page_url}, session_id)
+        wait_for(
+            "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
+            "/auto|scroll|overlay/.test(getComputedStyle(document.querySelector('.content-shell')).overflowY)",
+            "the desktop document reloading for reverse cross-owner persistence",
+            timeout=45,
+        )
+        if desktop_restore_script:
+            devtools.call(
+                "Page.removeScriptToEvaluateOnNewDocument",
+                {"identifier": desktop_restore_script},
+                session_id,
+            )
+        desktop_expected = evaluate_json(f"""
+(() => {{
+  const shell = document.querySelector('.content-shell');
+  let origin = 0;
+  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
+  return {{ y: Math.max(0, {mobile_y} - origin), origin }};
+}})()
+""")
+        wait_for(
+            f"Math.abs(document.querySelector('.content-shell').scrollTop - {desktop_expected['y']}) <= 2",
+            "a mobile window offset translating back onto the desktop content shell",
+        )
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
         {"width": 1680, "height": 900, "deviceScaleFactor": 1, "mobile": False},

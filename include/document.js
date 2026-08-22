@@ -90,14 +90,8 @@ function saveConsoleOpeningSize(axis, size) {
   });
 }
 
-function documentPageScrollOwner(requestedOwner = null) {
+function documentPageScrollOwner() {
   const contentShell = document.querySelector(".content-shell");
-  if (requestedOwner === "content-shell" && contentShell) {
-    return contentShell;
-  }
-  if (requestedOwner === "window") {
-    return window;
-  }
   if (contentShell) {
     const style = getComputedStyle(contentShell);
     const scrollable = ["auto", "scroll", "overlay"].includes(style.overflowY) &&
@@ -107,6 +101,43 @@ function documentPageScrollOwner(requestedOwner = null) {
     }
   }
   return window;
+}
+
+function documentPageContentOrigin(contentShell) {
+  let x = 0;
+  let y = 0;
+  let element = contentShell;
+  while (element) {
+    x += element.offsetLeft;
+    y += element.offsetTop;
+    element = element.offsetParent;
+  }
+  return { x, y };
+}
+
+function documentPagePositionForOwner(position, owner) {
+  const sourceOwner = position.owner === "content-shell" ? "content-shell" : "window";
+  const targetOwner = owner === window ? "window" : "content-shell";
+  const x = Math.max(0, Number(position.x) || 0);
+  const y = Math.max(0, Number(position.y) || 0);
+  if (sourceOwner === targetOwner) {
+    return { x, y };
+  }
+  const contentShell = document.querySelector(".content-shell");
+  if (!contentShell) {
+    return { x, y };
+  }
+  const { x: originX, y: originY } = documentPageContentOrigin(contentShell);
+  if (sourceOwner === "content-shell") {
+    return {
+      x: Math.max(0, originX + x),
+      y: Math.max(0, originY + y),
+    };
+  }
+  return {
+    x: Math.max(0, x - originX),
+    y: Math.max(0, y - originY),
+  };
 }
 
 function currentPagePosition() {
@@ -220,7 +251,7 @@ function restorePagePosition() {
   const saved = persistedDocumentLayout().page;
   // Version-one entries predate scroll-owner persistence and always recorded
   // window coordinates. Preserve that meaning instead of guessing from CSS.
-  const ownerName = saved?.owner === "content-shell" ? "content-shell" : "window";
+  const sourceOwner = saved?.owner === "content-shell" ? "content-shell" : "window";
   const x = Number(saved?.x);
   const y = Number(saved?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
@@ -232,7 +263,7 @@ function restorePagePosition() {
   const restore = {
     x: requestedX,
     y: requestedY,
-    ownerName,
+    owner: sourceOwner,
     deadline: performance.now() + 15_000,
     timer: null,
     observer: null,
@@ -240,7 +271,7 @@ function restorePagePosition() {
   };
   state.pagePositionRestore = restore;
   const cancel = () => finishPagePositionRestore({ preserveSaved: false });
-  const savedOwner = documentPageScrollOwner(ownerName);
+  const activeOwner = documentPageScrollOwner();
   for (const [target, type] of [
     [window, "wheel"],
     [window, "touchstart"],
@@ -250,31 +281,23 @@ function restorePagePosition() {
     target.addEventListener(type, cancel, { passive: true });
     restore.cancellations.push([target, type, cancel]);
   }
-  if (savedOwner && savedOwner !== window) {
+  if (activeOwner !== window) {
     for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
-      savedOwner.addEventListener(type, cancel, { passive: true });
-      restore.cancellations.push([savedOwner, type, cancel]);
+      activeOwner.addEventListener(type, cancel, { passive: true });
+      restore.cancellations.push([activeOwner, type, cancel]);
     }
   }
   const attempt = () => {
     if (state.pagePositionRestore !== restore) {
       return;
     }
-    const owner = documentPageScrollOwner(restore.ownerName);
-    if (!owner) {
-      if (performance.now() >= restore.deadline) {
-        finishPagePositionRestore({ preserveSaved: false });
-        return;
-      }
-      clearTimeout(restore.timer);
-      restore.timer = setTimeout(attempt, 120);
-      return;
-    }
-    scrollToImmediately(owner, restore.x, restore.y);
+    const owner = documentPageScrollOwner();
+    const target = documentPagePositionForOwner(restore, owner);
+    scrollToImmediately(owner, target.x, target.y);
     const currentX = owner === window ? window.scrollX : owner.scrollLeft;
     const currentY = owner === window ? window.scrollY : owner.scrollTop;
-    const reached = Math.abs(currentX - restore.x) <= 1 &&
-      Math.abs(currentY - restore.y) <= 1;
+    const reached = Math.abs(currentX - target.x) <= 1 &&
+      Math.abs(currentY - target.y) <= 1;
     if (reached) {
       finishPagePositionRestore();
       return;
