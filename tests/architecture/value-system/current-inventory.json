@@ -8812,7 +8812,7 @@
         ]
       },
       {
-        "count": 3,
+        "count": 4,
         "path": "src/engine/src/intrinsics/access/matrix.rs",
         "sites": [
           {
@@ -8829,6 +8829,11 @@
             "column": 8,
             "fingerprint": "a7c083fc56767a81b9162ef3ac9b948b43e71d07df5214583fc9c5cf36bc95f7",
             "line": 1546
+          },
+          {
+            "column": 8,
+            "fingerprint": "4e47fe5983efe66d6dc7a314caaf64a31d5fc066e5e78ff5ed84f9eaaf8a7028",
+            "line": 4088
           }
         ]
       },
@@ -15595,7 +15600,7 @@
           ]
         },
         {
-          "count": 3,
+          "count": 4,
           "path": "src/engine/src/intrinsics/access/matrix.rs",
           "sites": [
             {
@@ -15612,6 +15617,11 @@
               "column": 8,
               "fingerprint": "a7c083fc56767a81b9162ef3ac9b948b43e71d07df5214583fc9c5cf36bc95f7",
               "line": 1546
+            },
+            {
+              "column": 8,
+              "fingerprint": "4e47fe5983efe66d6dc7a314caaf64a31d5fc066e5e78ff5ed84f9eaaf8a7028",
+              "line": 4088
             }
           ]
         },
@@ -26924,6 +26934,13 @@
       "column": 68,
       "enum": "LegacyValue",
       "line": 2989,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 4073,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -54379,6 +54396,13 @@
       "enum": "ValueKind",
       "line": 506,
       "path": "src/engine/src/integrity.rs",
+      "variant": "F64"
+    },
+    {
+      "column": 38,
+      "enum": "ValueKind",
+      "line": 4105,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "F64"
     },
     {

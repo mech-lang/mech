@@ -4040,3 +4040,86 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 
     Ok(())
 }
+
+#[cfg(feature = "subscript_formula")]
+declare_matrix_selection_contract!(PURE_UNARY_INDEX_CONVERSION_CONTRACT, 1, "scalar-index");
+
+#[cfg(feature = "subscript_formula")]
+#[derive(Debug)]
+struct ReactiveScalarIndex {
+    source: Ref<f64>,
+    out: Ref<usize>,
+}
+
+#[cfg(feature = "subscript_formula")]
+impl ReactiveScalarIndex {
+    fn from_source(source: Ref<f64>) -> Self {
+        let value = *source.borrow() as usize;
+        Self {
+            source,
+            out: Ref::new(value),
+        }
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+impl MechFunctionImpl for ReactiveScalarIndex {
+    fn solve_result(&self) -> MResult<()> {
+        *self.out.borrow_mut() = *self.source.borrow() as usize;
+        Ok(())
+    }
+
+    fn out(&self) -> LegacyValue {
+        LegacyValue::Index(self.out.clone())
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_UNARY_INDEX_CONVERSION_CONTRACT)
+    }
+
+    fn semantic_operation_name(&self) -> Option<&str> {
+        Some("access/index")
+    }
+
+    fn to_string(&self) -> String {
+        format!("{self:#?}")
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(self.reactive_output_values())
+    }
+}
+
+#[cfg(all(feature = "semantic-compiler", feature = "subscript_formula"))]
+impl MechFunctionCompiler for ReactiveScalarIndex {
+    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        compile_unop!("ReactiveScalarIndex<f64>", self.out, self.source, ctx);
+    }
+}
+
+#[cfg(feature = "subscript_formula")]
+pub(crate) fn reactive_scalar_index(
+    value: &LegacyValue,
+    execution: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
+    if !matches!(value.deref_kind(), ValueKind::F64) {
+        return value.as_index();
+    }
+    let plan = execution.plan();
+    let cells = value.reactive_cell_ids();
+    let produced_by_plan = {
+        let plan = plan.borrow();
+        (0..plan.len()).any(|index| {
+            plan.node(index)
+                .is_some_and(|node| node.outputs.iter().any(|output| cells.contains(output)))
+        })
+    };
+    if !crate::expressions::string_access_input_is_live(value, execution) && !produced_by_plan {
+        return value.as_index();
+    }
+    let source = value.expect_f64()?;
+    let function = ReactiveScalarIndex::from_source(source);
+    let output = function.out();
+    plan.borrow_mut().push(Box::new(function));
+    Ok(output)
+}

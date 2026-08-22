@@ -122,7 +122,7 @@ pub fn subscript_formula_ix(
     match sbscrpt {
         Subscript::Formula(fctr) => {
             let result = factor(fctr, env, p)?;
-            result.as_index()
+            subscript_formula_index(&result, p)
         }
         _ => unreachable!(),
     }
@@ -172,4 +172,15 @@ pub fn subscript(
         Subscript::Bracket(_) => bracket::access(sbscrpt, val, env, p),
         _ => unreachable!(),
     }
+}
+
+#[cfg(feature = "subscript_formula")]
+fn subscript_formula_index(
+    value: &LegacyValue,
+    execution: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
+    #[cfg(feature = "matrix")]
+    return crate::intrinsics::access::matrix::reactive_scalar_index(value, execution);
+    #[cfg(not(feature = "matrix"))]
+    return value.as_index();
 }

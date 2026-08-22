@@ -9515,6 +9515,10 @@
         {
           "column": 68,
           "line": 2989
+        },
+        {
+          "column": 9,
+          "line": 4073
         }
       ],
       "target": "index-snapshot",
@@ -22826,19 +22830,19 @@
       "sites": [
         {
           "column": 18,
-          "line": 286
+          "line": 291
         },
         {
           "column": 55,
-          "line": 286
+          "line": 291
         },
         {
           "column": 18,
-          "line": 289
+          "line": 294
         },
         {
           "column": 24,
-          "line": 292
+          "line": 297
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -24710,7 +24714,7 @@
       "sites": [
         {
           "column": 16,
-          "line": 2291
+          "line": 2321
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -30846,7 +30850,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2712
+          "line": 2742
         }
       ],
       "target": "bool-schema",
@@ -31042,7 +31046,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2733
+          "line": 2763
         }
       ],
       "target": "complex-schema",
@@ -31970,7 +31974,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2670
+          "line": 2700
         }
       ],
       "target": "floating-point-schema",
@@ -32326,7 +32330,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2663
+          "line": 2693
         }
       ],
       "target": "floating-point-schema",
@@ -34994,7 +34998,7 @@
       "sites": [
         {
           "column": 11,
-          "line": 2238
+          "line": 2268
         }
       ],
       "target": "matrix-schema",
@@ -35718,7 +35722,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2726
+          "line": 2756
         }
       ],
       "target": "rational-schema",
@@ -36194,7 +36198,7 @@
       "sites": [
         {
           "column": 11,
-          "line": 2237
+          "line": 2267
         }
       ],
       "target": "reference-binding-contract",
@@ -36738,7 +36742,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2719
+          "line": 2749
         }
       ],
       "target": "string-schema",
@@ -37594,7 +37598,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2705
+          "line": 2735
         }
       ],
       "target": "unsigned-integer-schema",
@@ -37882,7 +37886,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2684
+          "line": 2714
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38170,7 +38174,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2691
+          "line": 2721
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38458,7 +38462,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2698
+          "line": 2728
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38746,7 +38750,7 @@
       "sites": [
         {
           "column": 58,
-          "line": 2677
+          "line": 2707
         }
       ],
       "target": "unsigned-integer-schema",
@@ -38775,6 +38779,18 @@
       ],
       "target": "unsigned-integer-schema",
       "variant": "U8"
+    },
+    {
+      "enum": "ValueKind",
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "sites": [
+        {
+          "column": 38,
+          "line": 4105
+        }
+      ],
+      "target": "floating-point-schema",
+      "variant": "F64"
     }
   ],
   "schema_version": 1,

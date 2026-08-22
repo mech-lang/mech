@@ -47,6 +47,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["compare"], "seq", bind_strict_equal)?;
     register(builder, &["compare"], "sneq", bind_strict_not_equal)?;
     register(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
+    register(builder, &["access"], "index", bind_scalar_index)?;
     register(builder, &["access"], "range", bind_semantic_range_access)?;
     register(builder, &["matrix"], "horzcat", bind_horizontal)?;
     register(builder, &["matrix"], "vertcat", bind_vertical)?;
@@ -1643,6 +1644,26 @@ fn bind_scalar_access_1d(
     bound(scalar_access_1d, Vec::<u64>::new().into_boxed_slice())
 }
 
+fn bind_scalar_index(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    if request.inputs.len() != 1
+        || request.inputs[0].kind != ResidentValueKind::F64
+        || request.inputs[0].shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::Index
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(scalar_index, Vec::<u64>::new().into_boxed_slice())
+}
+
 fn bind_semantic_scalar_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -3171,6 +3192,29 @@ fn scalar_access_1d(
     Ok(changed)
 }
 
+fn scalar_index(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let [value] = f64_input(inputs, 0)? else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let ResidentValueMut::Index(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let next = *value as u64;
+    let changed = *target != next;
+    *target = next;
+    Ok(changed)
+}
+
 fn scalar_access_2d(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -4157,5 +4201,26 @@ mod tests {
             Ok(true)
         );
         assert_eq!(product, [19.0, 43.0, 22.0, 50.0]);
+    }
+
+    #[test]
+    fn scalar_index_matches_existing_f64_index_conversion() {
+        let input = [2.0];
+        let inputs = [ResidentValueRef::F64(&input)];
+        let mut output = [0_u64];
+        let conversion = BoundResidentKernel::new(scalar_index, Box::new([]));
+        assert_eq!(
+            conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [2]);
+
+        let fractional = [1.5];
+        let inputs = [ResidentValueRef::F64(&fractional)];
+        assert_eq!(
+            conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1]);
     }
 }

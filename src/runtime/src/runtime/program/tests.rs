@@ -1519,6 +1519,84 @@ output
     ));
 }
 
+#[test]
+fn dynamic_matrix_selector_recomputes_resident_scalar_access() {
+    let configured_runtime = || {
+        let mut runtime = runtime();
+        runtime
+            .register_resource_provider(Box::new(PlanningObservationProvider {
+                plans: Arc::new(AtomicUsize::new(0)),
+                reads: Arc::new(AtomicUsize::new(0)),
+                value_bits: Arc::new(AtomicU64::new(1.0_f64.to_bits())),
+            }))
+            .unwrap();
+        let subject = runtime.runtime_context().unwrap().subject;
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                CapabilityId(9_024),
+                subject,
+                "test://clock/tick/delta-seconds",
+                ["read"],
+            )))
+            .unwrap();
+        runtime
+    };
+    let mut runtime = configured_runtime();
+    runtime
+        .load_source_program(
+            r#"
+@clock := test://clock/tick{:read(delta-seconds)}
+values := [10.0 20.0 30.0]
+index := @clock/delta-seconds
+selected := values[1,index]
+selected
+"#,
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    runtime.drain_resident_host_inputs(1).unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("dynamic scalar access must remain resident")
+    };
+    assert!(execution.artifact.nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["access"]
+            && node.operation.operation_name == "index"
+    }));
+    assert!(matches!(
+        execution.coordinator.instance().output_borrow(0),
+        Some(ResidentValueBorrow::F64 { values, .. }) if values == [20.0]
+    ));
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+
+    let mut bytecode_runtime = configured_runtime();
+    bytecode_runtime
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    bytecode_runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(3.0),
+        ))
+        .unwrap();
+    bytecode_runtime.drain_resident_host_inputs(1).unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &bytecode_runtime.active_program
+    else {
+        panic!("bytecode scalar access must remain resident")
+    };
+    assert!(matches!(
+        execution.coordinator.instance().output_borrow(0),
+        Some(ResidentValueBorrow::F64 { values, .. }) if values == [30.0]
+    ));
+}
+
 fn assert_typed_observation_round_trip(planned: LegacyValue, packet: crate::RuntimeHostInputValue) {
     const SOURCE: &str = r#"
 @typed := test://typed/value{:read(data)}
