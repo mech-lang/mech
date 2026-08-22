@@ -31,6 +31,22 @@ impl MechRuntime {
         if mappings.is_empty() {
             return Ok(());
         }
+        let mapped_targets = mappings
+            .iter()
+            .map(|mapping| mapping.target)
+            .collect::<std::collections::BTreeSet<_>>();
+        let projection_refresh_targets = candidate_artifact
+            .outputs()
+            .iter()
+            .map(|output| output.source)
+            .filter(|slot| {
+                !mapped_targets.contains(slot)
+                    && candidate_artifact
+                        .slots()
+                        .get(slot.get() as usize)
+                        .is_some_and(|declaration| declaration.role == SlotRole::Output)
+            })
+            .collect::<std::collections::BTreeSet<_>>();
 
         let candidate_artifact = std::sync::Arc::new(candidate_artifact.clone());
         let (_, candidate_instance) = self
@@ -41,6 +57,9 @@ impl MechRuntime {
             .map_err(|error| {
                 super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
             })?;
+        candidate_instance
+            .refresh_output_projections(&projection_refresh_targets)
+            .map_err(super::diagnostics::projection_refresh_failure)?;
         Ok(())
     }
 
@@ -398,7 +417,13 @@ fn compatible_state_mappings(
         if target
             .slots()
             .get(target_slot.get() as usize)
-            .is_some_and(|declaration| declaration.role == SlotRole::State)
+            .zip(source.slots().get(source_slot.get() as usize))
+            .is_some_and(|(target_declaration, source_declaration)| {
+                target_declaration.role == SlotRole::State
+                    && source_declaration.role == SlotRole::State
+                    && target.schemas().get(target_declaration.schema)
+                        == source.schemas().get(source_declaration.schema)
+            })
             && mapped_sources.insert(source_slot)
             && mapped_targets.insert(target_slot)
         {
@@ -427,6 +452,8 @@ fn compatible_state_mappings(
         let Some(source_slot) = source.slots().iter().find(|source_slot| {
             source_slot.role == SlotRole::State
                 && source_slot.producer == target_slot.producer
+                && source.schemas().get(source_slot.schema)
+                    == target.schemas().get(target_slot.schema)
                 && !mapped_sources.contains(&source_slot.slot)
         }) else {
             continue;

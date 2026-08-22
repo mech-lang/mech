@@ -1456,9 +1456,20 @@ display := b + 10
         assert_eq!(session.symbol("b").unwrap().unwrap().to_string(), "106");
         assert_eq!(
             session.symbol("display").unwrap().unwrap().to_string(),
-            "112",
-            "a same-shaped producer rewired to another live state must retain the candidate projection, not the retired state's value",
+            "116",
+            "a rewired projection must be recomputed from migrated state without advancing its transition",
         );
+    }
+
+    #[test]
+    fn accepted_source_resets_a_same_named_state_when_its_schema_changes() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~x := 0").unwrap();
+        session.submit("x += 7").unwrap();
+
+        session.replace_source("~x := \"new\"".to_string()).unwrap();
+
+        assert_eq!(session.symbol("x").unwrap().unwrap().to_string(), "\"new\"");
     }
 
     #[test]

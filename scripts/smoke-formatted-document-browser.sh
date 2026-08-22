@@ -350,10 +350,10 @@ try:
     wait_for_new_symbol_value(previous_symbol_tables, "answer", "58", "the resident symbol value")
     submit(":clear")
     wait_for("[...document.querySelectorAll('.mech-repl-info')].some(row => /Resident workspace cleared/.test(row.textContent))", "the resident workspace clear")
-    submit("answer := 58")
+    submit("answer := 59")
     previous_symbol_tables = evaluate("document.querySelectorAll('.mech-repl-symbols').length")
     submit(":whos answer")
-    wait_for_new_symbol_value(previous_symbol_tables, "answer", "58", "the resident symbol value after reset")
+    wait_for_new_symbol_value(previous_symbol_tables, "answer", "59", "the resident symbol value after reset")
     popup_state = evaluate("""
 (() => {
   const root = document.querySelector('.mech-root');
@@ -375,7 +375,7 @@ try:
   const valueRect = value.getBoundingClientRect();
   const result = {
     consoleClosed: root.dataset.mechConsoleOpen === 'false' && pane.hidden,
-    rendered: /58/.test(popup.textContent || ''),
+    rendered: /59/.test(popup.textContent || ''),
     role: popup.getAttribute('role'),
     styled:
       style.position === 'fixed' && style.backgroundColor !== 'rgba(0, 0, 0, 0)' &&
@@ -412,7 +412,7 @@ try:
     submit(":whos ans")
     wait_for(
         "[...document.querySelectorAll('.mech-repl-symbols')].at(-1)?.textContent.includes('ans') && "
-        "[...document.querySelectorAll('.mech-repl-symbols')].at(-1)?.textContent.includes('58')",
+        "[...document.querySelectorAll('.mech-repl-symbols')].at(-1)?.textContent.includes('59')",
         "the popup selection becoming ans",
     )
 finally:
