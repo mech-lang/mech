@@ -2449,42 +2449,54 @@ mod tests {
              pairs",
         )
         .unwrap();
-        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
-        let document = document::WasmDocument::from_encoded(&encoded).unwrap();
+        let source = SourceBackedDocumentBootstrap {
+            root_specifier: "document.mec".to_string(),
+            source_map: HashMap::from([("document.mec".to_string(), String::new())]),
+            resolutions: Vec::new(),
+            tree: tree.clone(),
+            console_instance: "repl".to_string(),
+            lifecycle: DocumentRuntimeLifecycle::default(),
+        };
+        let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
+        let source = bootstrap.initial_repl_source();
+        let (runtime, outcome) = activate_document_repl_runtime_tree(
+            &bootstrap,
+            MechEventBuffer::default(),
+            &source,
+            tree,
+        )
+        .unwrap();
 
+        assert_eq!(outcome.route, RuntimeProgramRoute::ResidentPure,);
         assert_eq!(
-            document.runtime().unwrap().program_route(),
-            RuntimeProgramRoute::ResidentPure,
-        );
-        assert_eq!(
-            document
-                .repl
-                .session
-                .symbol("pairs")
+            runtime
+                .root_symbol_values(&["pairs"])
                 .unwrap()
+                .pop()
                 .unwrap()
-                .to_string(),
+                .1
+                .format_canonical_inline(),
             "45",
         );
         assert_eq!(
-            document
-                .repl
-                .session
-                .symbol("column-totals")
+            runtime
+                .root_symbol_values(&["column-totals"])
                 .unwrap()
+                .pop()
                 .unwrap()
-                .to_string(),
-            "[4 6]",
+                .1
+                .format_canonical_inline(),
+            "[3; 7]",
         );
         assert_eq!(
-            document
-                .repl
-                .session
-                .symbol("row-totals")
+            runtime
+                .root_symbol_values(&["row-totals"])
                 .unwrap()
+                .pop()
                 .unwrap()
-                .to_string(),
-            "[3; 7]",
+                .1
+                .format_canonical_inline(),
+            "[4 6]",
         );
     }
 
@@ -3266,6 +3278,49 @@ mod tests {
     }
 
     #[test]
+    fn fixed_program_capture_preserves_trailing_comment_output_order() {
+        let tree = mech_syntax::parser::parse(
+            "~~~mech\nanswer := 40 + 2\n-- The next value is {answer + 1}.\n~~~",
+        )
+        .unwrap();
+        let source_output_ids = root_document_output_ids(&tree);
+        assert_eq!(source_output_ids.len(), 2);
+        assert_eq!(source_output_ids[0], mech_core::hash_str("inline-eval:0:0"));
+
+        let source = SourceBackedDocumentBootstrap {
+            root_specifier: "document.mec".to_string(),
+            source_map: HashMap::new(),
+            resolutions: Vec::new(),
+            tree: tree.clone(),
+            console_instance: "repl".to_string(),
+            lifecycle: DocumentRuntimeLifecycle::default(),
+        };
+        let (runtime_tree, program_output) = document_runtime_tree(&source, tree.clone()).unwrap();
+        let mut expected = source_output_ids;
+        expected.push(root_document_program_output_id());
+        assert_eq!(root_document_output_ids(&runtime_tree), expected);
+        assert!(program_output.is_some());
+
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+        let output = document
+            .bootstrap
+            .program_output_id()
+            .unwrap()
+            .expect("the fenced statement is the implicit document output");
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .output_value(output)
+                .unwrap()
+                .unwrap()
+                .to_string(),
+            "42",
+        );
+    }
+
+    #[test]
     fn internal_repl_console_avoids_every_configured_host_namespace() {
         let hosts = vec![
             HostInstanceConfig {
@@ -3884,6 +3939,40 @@ mod browser_tests {
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
+
+    #[wasm_bindgen_test]
+    fn browser_document_profile_executes_both_stats_sum_axes() {
+        let tree = mech_syntax::parser::parse(
+            "+> stats\n\
+             column-totals := stats/sum/column([1.0 2.0; 3.0 4.0])\n\
+             row-totals := stats/sum/row([1.0 2.0; 3.0 4.0])\n\
+             row-totals",
+        )
+        .unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("column-totals")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "[3; 7]",
+        );
+        assert_eq!(
+            document
+                .repl
+                .session
+                .symbol("row-totals")
+                .unwrap()
+                .unwrap()
+                .format_canonical_inline(),
+            "[4 6]",
+        );
+    }
 
     fn encoded_document(source: &str) -> String {
         let tree = mech_syntax::parser::parse(source).unwrap();

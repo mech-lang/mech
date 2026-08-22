@@ -169,7 +169,10 @@ pub fn section_element(
         SectionElement::Diagram(x) => x.hash(&mut hasher),
         SectionElement::MechCode(code) => {
             for (c, cmmnt) in code {
-                out = mech_code(&c, p)?;
+                let value = mech_code(&c, p)?;
+                if crate::program::code_is_program_value(c) {
+                    out = value;
+                }
                 match cmmnt {
                     Some(cmmnt) => {
                         let cmmnt_value = comment(cmmnt, p)?;
@@ -399,7 +402,8 @@ fn eval_fenced_code_block(
     let mut out = LegacyValue::Empty;
     for (c, cmmnt) in code {
         match mech_code(c, interpreter) {
-            Ok(value) => out = value,
+            Ok(value) if crate::program::code_is_program_value(c) => out = value,
+            Ok(_) => {}
             Err(err) => {
                 #[cfg(feature = "string")]
                 if isolate_errors {
@@ -628,7 +632,9 @@ pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<Legac
             .with_tokens(x.tokens())),
     }?;
     #[cfg(feature = "symbol_table")]
-    update_ans_symbol(&out, p);
+    if crate::program::code_is_program_value(code) {
+        update_ans_symbol(&out, p);
+    }
     Ok(out)
 }
 

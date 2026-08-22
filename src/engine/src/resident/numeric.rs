@@ -68,6 +68,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     )?;
     register(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
     register(builder, &["stats", "sum"], "column", bind_sum_columns)?;
+    register(builder, &["stats", "sum"], "row", bind_sum_rows)?;
 
     // Frozen bytecode may still refer to the selected implementation identity.
     register(builder, &runtime, "Access1DSRD<f64>", bind_scalar_access_1d)?;
@@ -229,6 +230,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         bind_range_increment_inclusive,
     )?;
     register(builder, &runtime, "StatsSumColumnMD<f64>", bind_sum_columns)?;
+    register(builder, &runtime, "StatsSumRowMD<f64>", bind_sum_rows)?;
     register(
         builder,
         &runtime,
@@ -1312,6 +1314,28 @@ fn bind_sum_columns(
     }
     bound(
         sum_columns,
+        vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
+    )
+}
+
+fn bind_sum_rows(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
+    let [input] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if request.output.shape.len() != Some(input.shape.columns as usize) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        sum_rows,
         vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
     )
 }
@@ -2698,6 +2722,26 @@ fn sum_columns(
     }))
 }
 
+fn sum_rows(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let input = f64_input(inputs, 0)?;
+    let output = f64_output(output)?;
+    let rows = kernel.parameters()[0] as usize;
+    let columns = kernel.parameters()[1] as usize;
+    if input.len() != rows * columns || output.len() != columns {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64(output, |column| {
+        (0..rows).map(|row| input[row + column * rows]).sum()
+    }))
+}
+
 fn concatenate_horizontal(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -3272,6 +3316,52 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn statistical_reduction_resident_kernels_cover_both_axes() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        assert!(
+            catalog
+                .resident_factory(&["stats".to_owned(), "sum".to_owned()], "column")
+                .is_some()
+        );
+        assert!(
+            catalog
+                .resident_factory(&["stats".to_owned(), "sum".to_owned()], "row")
+                .is_some()
+        );
+        assert!(
+            catalog
+                .resident_factory(&["runtime".to_owned()], "StatsSumColumnMD<f64>")
+                .is_some()
+        );
+        assert!(
+            catalog
+                .resident_factory(&["runtime".to_owned()], "StatsSumRowMD<f64>")
+                .is_some()
+        );
+
+        // Resident matrix storage is column-major: [1 2; 3 4] is [1, 3, 2, 4].
+        let matrix = [1.0, 3.0, 2.0, 4.0];
+        let inputs = [ResidentValueRef::F64(&matrix)];
+        let columns = BoundResidentKernel::new(sum_columns, Box::new([2, 2]));
+        let rows = BoundResidentKernel::new(sum_rows, Box::new([2, 2]));
+        let mut column_output = [0.0; 2];
+        let mut row_output = [0.0; 2];
+
+        assert_eq!(
+            columns.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut column_output)),
+            Ok(true)
+        );
+        assert_eq!(
+            rows.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut row_output)),
+            Ok(true)
+        );
+        assert_eq!(column_output, [3.0, 7.0]);
+        assert_eq!(row_output, [4.0, 6.0]);
     }
 
     #[test]

@@ -5,7 +5,9 @@ use mech_core::{MResult, MechError, OutputId};
 #[cfg(feature = "resident-routing")]
 use mech_engine::resident::StateMigrationMapping;
 #[cfg(feature = "resident-routing")]
-use mech_engine::{ArtifactSource, SlotRole};
+use mech_engine::{
+    ArtifactSource, BindingDeclaration, ProducerReference, ProgramArtifact, SlotRole,
+};
 
 impl MechRuntime {
     /// Carry compatible live resident storage into an independently activated
@@ -440,46 +442,107 @@ fn compatible_state_mappings(
     // projections by their public output identity as one transaction with the
     // state cells. Executing a synthetic turn here would advance transitions;
     // copying the already-published projections preserves the exact epoch.
-    if changed_state_names.is_empty() {
-        for target_output in target.outputs() {
-            let target_slot = target_output.source;
-            let target_lexical_name = target_output
-                .interactive_binding
-                .as_ref()
-                .map(|binding| binding.lexical_name.as_str());
-            if mapped_targets.contains(&target_slot)
-                || target_lexical_name == Some("ans")
-                || !target
-                    .slots()
-                    .get(target_slot.get() as usize)
-                    .is_some_and(|slot| slot.role == SlotRole::Output)
-            {
-                continue;
-            }
-            let Some(source_output) = source.outputs().iter().find(|source_output| {
-                source_output.name == target_output.name
-                    && source_output
-                        .interactive_binding
-                        .as_ref()
-                        .map(|binding| binding.lexical_name.as_str())
-                        == target_lexical_name
-                    && !mapped_sources.contains(&source_output.source)
-                    && source
-                        .slots()
-                        .get(source_output.source.get() as usize)
-                        .is_some_and(|slot| slot.role == SlotRole::Output)
-            }) else {
-                continue;
-            };
-            mapped_sources.insert(source_output.source);
-            mapped_targets.insert(target_slot);
-            mappings.push(StateMigrationMapping {
-                source: source_output.source,
-                target: target_slot,
-            });
+    // A state mutation invalidates only projections that transitively read the
+    // mutated cells. Independent projections remain part of the previous
+    // published epoch and must migrate with their own compatible state.
+    for target_output in target.outputs() {
+        let target_slot = target_output.source;
+        let target_lexical_name = target_output
+            .interactive_binding
+            .as_ref()
+            .map(|binding| binding.lexical_name.as_str());
+        let semantic_source = target_output
+            .interactive_binding
+            .as_ref()
+            .map(|binding| binding.artifact_source)
+            .or_else(
+                || match target.slots().get(target_slot.get() as usize)?.producer {
+                    ProducerReference::Output { source, .. } => Some(source),
+                    _ => Some(ArtifactSource::Slot(target_slot)),
+                },
+            );
+        if mapped_targets.contains(&target_slot)
+            || target_lexical_name == Some("ans")
+            || semantic_source.is_some_and(|source| {
+                artifact_source_depends_on_slots(target, source, &excluded_targets)
+            })
+            || !target
+                .slots()
+                .get(target_slot.get() as usize)
+                .is_some_and(|slot| slot.role == SlotRole::Output)
+        {
+            continue;
         }
+        let Some(source_output) = source.outputs().iter().find(|source_output| {
+            source_output.name == target_output.name
+                && source_output
+                    .interactive_binding
+                    .as_ref()
+                    .map(|binding| binding.lexical_name.as_str())
+                    == target_lexical_name
+                && !mapped_sources.contains(&source_output.source)
+                && source
+                    .slots()
+                    .get(source_output.source.get() as usize)
+                    .is_some_and(|slot| slot.role == SlotRole::Output)
+        }) else {
+            continue;
+        };
+        mapped_sources.insert(source_output.source);
+        mapped_targets.insert(target_slot);
+        mappings.push(StateMigrationMapping {
+            source: source_output.source,
+            target: target_slot,
+        });
     }
     mappings
+}
+
+#[cfg(feature = "resident-routing")]
+fn artifact_source_depends_on_slots(
+    artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    targets: &std::collections::BTreeSet<mech_core::CellSlotId>,
+) -> bool {
+    fn visit(
+        artifact: &ProgramArtifact,
+        source: ArtifactSource,
+        targets: &std::collections::BTreeSet<mech_core::CellSlotId>,
+        visited: &mut std::collections::BTreeSet<mech_core::CellSlotId>,
+    ) -> bool {
+        let ArtifactSource::Slot(slot) = source else {
+            return false;
+        };
+        if targets.contains(&slot) {
+            return true;
+        }
+        if !visited.insert(slot) {
+            return false;
+        }
+        let Some(declaration) = artifact.slots().get(slot.get() as usize) else {
+            return false;
+        };
+        match declaration.producer {
+            ProducerReference::Input(_) => false,
+            ProducerReference::Output { source, .. } => visit(artifact, source, targets, visited),
+            ProducerReference::NodeOutput { node, .. } => {
+                let Some(node) = artifact.nodes().get(node.get() as usize) else {
+                    return false;
+                };
+                artifact.bindings()
+                    [node.input_bindings.start as usize..node.input_bindings.end as usize]
+                    .iter()
+                    .any(|binding| match binding {
+                        BindingDeclaration::Input { source, .. } => {
+                            visit(artifact, *source, targets, visited)
+                        }
+                        BindingDeclaration::Output { .. } => false,
+                    })
+            }
+        }
+    }
+
+    visit(artifact, source, targets, &mut Default::default())
 }
 
 fn missing_resident_symbol(operation: &'static str, name: &str) -> MechError {

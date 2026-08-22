@@ -1402,13 +1402,17 @@ mod tests {
             "13"
         );
 
-        session.submit("unrelated := 1").unwrap();
+        session.submit("~unrelated := 1").unwrap();
 
         assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "3");
         assert_eq!(
             session.symbol("display").unwrap().unwrap().to_string(),
             "13",
             "replacement output projections must describe the migrated state epoch",
+        );
+        assert_eq!(
+            session.symbol("unrelated").unwrap().unwrap().to_string(),
+            "1"
         );
     }
 
@@ -1422,6 +1426,24 @@ mod tests {
 
         assert_eq!(result.to_string(), "43");
         assert_eq!(session.symbol("answer").unwrap().unwrap().to_string(), "43");
+    }
+
+    #[test]
+    fn accepted_source_recomputes_only_projections_of_mutated_state() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~counter := 0").unwrap();
+        session.submit("counter += 1").unwrap();
+        session.submit("display := counter + 10").unwrap();
+        session.step(2).unwrap();
+
+        session.submit("counter += 1").unwrap();
+
+        assert_eq!(session.symbol("counter").unwrap().unwrap().to_string(), "2");
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "11",
+            "a projection of explicitly mutated state must use the candidate plan, not the retired value",
+        );
     }
 
     #[test]

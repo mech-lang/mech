@@ -160,6 +160,13 @@ fn collect_fenced_output_ids(
         return;
     }
     collect_code_comments(&block.code, inline_index, output_ids);
+    // The capture executes beside the source value so it snapshots the right
+    // `ans`, but its public ordinal belongs to the original document boundary.
+    // The boundary annotation below publishes it after all source-visible
+    // inline and fenced outputs in that section.
+    if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE {
+        return;
+    }
     if !block.config.output {
         return;
     }
@@ -197,7 +204,7 @@ fn element_contains_program_value(element: &SectionElement) -> bool {
     }
 }
 
-fn code_is_program_value(code: &MechCode) -> bool {
+pub(crate) fn code_is_program_value(code: &MechCode) -> bool {
     match code {
         MechCode::Expression(_) => true,
         MechCode::Statement(statement) => {
@@ -247,57 +254,16 @@ fn split_element_at_last_program_value(
     element: &SectionElement,
     capture: &FencedMechCode,
 ) -> Option<Vec<SectionElement>> {
-    match element {
-        SectionElement::MechCode(code) => {
-            let target = code
-                .iter()
-                .rposition(|(code, _)| code_is_program_value(code))?;
-            let mut replacement = vec![SectionElement::MechCode(code[..=target].to_vec())];
-            replacement.push(SectionElement::FencedMechCode(capture.clone()));
-            if target + 1 < code.len() {
-                replacement.push(SectionElement::MechCode(code[target + 1..].to_vec()));
-            }
-            Some(replacement)
-        }
-        SectionElement::FencedMechCode(block) if !block.config.disabled => {
-            let target = block
-                .code
-                .iter()
-                .rposition(|(code, _)| code_is_program_value(code))?;
-            let mut left = block.clone();
-            left.code = block.code[..=target].to_vec();
-            let mut replacement = vec![SectionElement::FencedMechCode(left)];
-            replacement.push(SectionElement::FencedMechCode(capture.clone()));
-            if target + 1 < block.code.len() {
-                let mut right = block.clone();
-                right.code = block.code[target + 1..].to_vec();
-                right.imports.clear();
-                right.exports.clear();
-                replacement.push(SectionElement::FencedMechCode(right));
-            }
-            Some(replacement)
-        }
-        SectionElement::Float((inner, direction)) => {
-            let split = split_element_at_last_program_value(inner, capture)?;
-            Some(
-                split
-                    .into_iter()
-                    .map(|element| {
-                        if matches!(
-                            &element,
-                            SectionElement::FencedMechCode(block)
-                                if block.config.namespace_str == PROGRAM_OUTPUT_CAPTURE_NAMESPACE
-                        ) {
-                            element
-                        } else {
-                            SectionElement::Float((Box::new(element), direction.clone()))
-                        }
-                    })
-                    .collect(),
-            )
-        }
-        _ => None,
+    if !element_contains_program_value(element) {
+        return None;
     }
+    // Non-value declarations and comments execute without replacing `ans`, so
+    // retaining the original element avoids inventing split-fence outputs and
+    // preserves the formatter's source-visible publication order.
+    Some(vec![
+        element.clone(),
+        SectionElement::FencedMechCode(capture.clone()),
+    ])
 }
 
 fn collect_code_comments(
