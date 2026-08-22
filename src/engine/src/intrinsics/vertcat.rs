@@ -2256,6 +2256,21 @@ macro_rules! impl_vertcat_arms {
   ($kind:ident, $args:expr, $default:expr) => {
     paste!{
     {
+      #[cfg(feature = "matrix")]
+      fn extract_matrix(arg: &LegacyValue) -> MResult<Box<dyn CopyMat<$kind>>> {
+        match arg {
+          LegacyValue::[<Matrix $kind:camel>](matrix) => Ok(matrix.get_copyable_matrix()),
+          LegacyValue::MutableReference(inner) => extract_matrix(&inner.borrow()),
+          LegacyValue::Typed(inner, _) => extract_matrix(inner),
+          _ => Err(MechError::new(
+            UnhandledFunctionArgumentKind1 {
+              arg: arg.kind(),
+              fxn_name: "matrix/vertcat".to_string(),
+            },
+            None,
+          ).with_compiler_loc()),
+        }
+      }
       let arguments = $args;
       let rows = arguments[0].shape()[0];
       let rows:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[0]);
@@ -2575,14 +2590,9 @@ macro_rules! impl_vertcat_arms {
           #[cfg(feature = "matrixd")]
           (2,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
-            match &arguments[..] {
-              [LegacyValue::[<Matrix $kind:camel>](m0), LegacyValue::[<Matrix $kind:camel>](m1)] => {
-                let e0 = m0.get_copyable_matrix();
-                let e1 = m1.get_copyable_matrix();
-                Ok(Box::new(VerticalConcatenateTwoArgs{e0, e1, out: Ref::new(out)}))
-              }
-              _ => todo!(),
-            }
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            Ok(Box::new(VerticalConcatenateTwoArgs{e0, e1, out: Ref::new(out)}))
           }
           #[cfg(feature = "matrix3x2")]
           (3,3,2) => {
@@ -2623,15 +2633,10 @@ macro_rules! impl_vertcat_arms {
           #[cfg(feature = "matrixd")]
           (3,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
-            match &arguments[..] {
-              [LegacyValue::[<Matrix $kind:camel>](m0),LegacyValue::[<Matrix $kind:camel>](m1),LegacyValue::[<Matrix $kind:camel>](m2)] => {
-                let e0 = m0.get_copyable_matrix();
-                let e1 = m1.get_copyable_matrix();
-                let e2 = m2.get_copyable_matrix();
-                Ok(Box::new(VerticalConcatenateThreeArgs{e0,e1,e2,out:Ref::new(out)}))
-              }
-              _ => todo!(),
-            }
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            let e2 = extract_matrix(&arguments[2])?;
+            Ok(Box::new(VerticalConcatenateThreeArgs{e0,e1,e2,out:Ref::new(out)}))
           }
           #[cfg(feature = "matrix4")]
           (4,4,4) => {
@@ -2646,29 +2651,18 @@ macro_rules! impl_vertcat_arms {
           #[cfg(feature = "matrixd")]
           (4,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
-            match &arguments[..] {
-              [LegacyValue::[<Matrix $kind:camel>](m0),LegacyValue::[<Matrix $kind:camel>](m1),LegacyValue::[<Matrix $kind:camel>](m2),LegacyValue::[<Matrix $kind:camel>](m3)] => {
-                let e0 = m0.get_copyable_matrix();
-                let e1 = m1.get_copyable_matrix();
-                let e2 = m2.get_copyable_matrix();
-                let e3 = m3.get_copyable_matrix();
-                Ok(Box::new(VerticalConcatenateFourArgs{e0,e1,e2,e3,out:Ref::new(out)}))
-              }
-              _ => todo!(),
-            }
+            let e0 = extract_matrix(&arguments[0])?;
+            let e1 = extract_matrix(&arguments[1])?;
+            let e2 = extract_matrix(&arguments[2])?;
+            let e3 = extract_matrix(&arguments[3])?;
+            Ok(Box::new(VerticalConcatenateFourArgs{e0,e1,e2,e3,out:Ref::new(out)}))
           }
           #[cfg(feature = "matrixd")]
           (l,m,n) => {
             let mut out = DMatrix::from_element(m,n,$default);
             let mut args = vec![];
             for arg in arguments {
-              match arg {
-                LegacyValue::[<Matrix $kind:camel>](m0) => {
-                  let e0 = m0.get_copyable_matrix();
-                  args.push(e0);
-                }
-                _ => todo!(),
-              }
+              args.push(extract_matrix(arg)?);
             }
             Ok(Box::new(VerticalConcatenateNArgs{e0: args, out:Ref::new(out)}))
           }
@@ -2682,6 +2676,17 @@ macro_rules! impl_vertcat_arms {
   }}}}}
 
 fn impl_vertcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+    // Mutable variables are wrappers around the same typed matrix references
+    // consumed by the concatenation kernels. Normalize only the wrapper here;
+    // cloning the inner LegacyValue retains its reactive matrix identity.
+    let normalized_arguments = arguments
+        .iter()
+        .map(|argument| match argument {
+            LegacyValue::MutableReference(reference) => reference.borrow().clone(),
+            _ => argument.clone(),
+        })
+        .collect::<Vec<_>>();
+    let arguments = normalized_arguments.as_slice();
     let kinds: Vec<ValueKind> = arguments
         .iter()
         .map(|x| x.kind())

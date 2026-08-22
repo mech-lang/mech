@@ -1,3 +1,6 @@
+#[cfg(test)]
+use crate::portable_index::PORTABLE_INDEX_MAX;
+use crate::portable_index::ToPortableIndex;
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
@@ -51,6 +54,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["access"], "range", bind_semantic_range_access)?;
     register(builder, &["matrix"], "horzcat", bind_horizontal)?;
     register(builder, &["matrix"], "vertcat", bind_vertical)?;
+    register(builder, &["matrix"], "comprehension", bind_horizontal)?;
     register(builder, &["matrix"], "multiply", bind_matmul)?;
     register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
     register(builder, &["core"], "assign", bind_semantic_assign)?;
@@ -3204,24 +3208,29 @@ fn scalar_index(
         return Err(ResidentKernelError::InvalidInput);
     }
     let next = match inputs.get(0).ok_or(ResidentKernelError::InvalidInput)? {
-        ResidentValueRef::F64([value]) => *value as u64,
-        ResidentValueRef::Index([value]) => *value,
+        ResidentValueRef::F64([value]) => value
+            .to_portable_index()
+            .ok_or(ResidentKernelError::InvalidInput)?,
+        ResidentValueRef::Index([value]) => value
+            .to_portable_index()
+            .ok_or(ResidentKernelError::InvalidInput)?,
         ResidentValueRef::Snapshot([Some(value)]) => match value.data() {
-            ValueData::U8(value) => *value as u64,
-            ValueData::U16(value) => *value as u64,
-            ValueData::U32(value) => *value as u64,
-            ValueData::U64(value) => *value,
-            ValueData::U128(value) => *value as u64,
-            ValueData::I8(value) => *value as u64,
-            ValueData::I16(value) => *value as u64,
-            ValueData::I32(value) => *value as u64,
-            ValueData::I64(value) => *value as u64,
-            ValueData::I128(value) => *value as u64,
-            ValueData::F32(value) => value.to_f32() as u64,
-            ValueData::F64(value) => value.to_f64() as u64,
-            ValueData::Index(value) => *value,
+            ValueData::U8(value) => value.to_portable_index(),
+            ValueData::U16(value) => value.to_portable_index(),
+            ValueData::U32(value) => value.to_portable_index(),
+            ValueData::U64(value) => value.to_portable_index(),
+            ValueData::U128(value) => value.to_portable_index(),
+            ValueData::I8(value) => value.to_portable_index(),
+            ValueData::I16(value) => value.to_portable_index(),
+            ValueData::I32(value) => value.to_portable_index(),
+            ValueData::I64(value) => value.to_portable_index(),
+            ValueData::I128(value) => value.to_portable_index(),
+            ValueData::F32(value) => value.to_f32().to_portable_index(),
+            ValueData::F64(value) => value.to_f64().to_portable_index(),
+            ValueData::Index(value) => value.to_portable_index(),
             _ => return Err(ResidentKernelError::InvalidInput),
-        },
+        }
+        .ok_or(ResidentKernelError::InvalidInput)?,
         ResidentValueRef::F64(_) | ResidentValueRef::Index(_) | ResidentValueRef::Snapshot(_) => {
             return Err(ResidentKernelError::InvalidShape);
         }
@@ -4247,5 +4256,21 @@ mod tests {
             Ok(true)
         );
         assert_eq!(output, [1]);
+
+        for rejected in [-1.0, f64::NAN, PORTABLE_INDEX_MAX as f64 + 1.0] {
+            let input = [rejected];
+            let inputs = [ResidentValueRef::F64(&input)];
+            assert_eq!(
+                conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+                Err(ResidentKernelError::InvalidInput)
+            );
+        }
+
+        let input = [PORTABLE_INDEX_MAX + 1];
+        let inputs = [ResidentValueRef::Index(&input)];
+        assert_eq!(
+            conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+            Err(ResidentKernelError::InvalidInput)
+        );
     }
 }

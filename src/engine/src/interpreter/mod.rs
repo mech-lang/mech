@@ -1472,7 +1472,14 @@ impl Interpreter {
     #[cfg(feature = "functions")]
     pub fn clear_plan(&mut self) {
         let mut state = self.state.borrow_mut();
-        state.plan.borrow_mut().clear();
+        // `Interpreter::clone` intentionally shares reactive cells and plan
+        // storage. Planning scopes such as comprehensions clone the enclosing
+        // interpreter so they can see lexical values, but their executable
+        // graph must be isolated. Mutating the shared `Plan` here erased every
+        // node accumulated by the enclosing program before the nested scope.
+        // Install fresh plan storage instead so clearing one interpreter never
+        // truncates another interpreter's program.
+        state.plan = Plan::new();
         state.compute_regions.clear();
         drop(state);
         self.reactive_turn_state = ReactiveTurnState::default();

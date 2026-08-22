@@ -1,5 +1,35 @@
 #[macro_use]
 use crate::intrinsics::*;
+#[cfg(feature = "matrix_comprehensions")]
+use std::sync::LazyLock;
+
+#[cfg(feature = "matrix_comprehensions")]
+static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 1,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: "horizontal-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn detach_comprehension_value(value: &LegacyValue) -> LegacyValue {
@@ -213,6 +243,10 @@ impl MechFunctionImpl for ValueMatrixComprehension {
 
     fn out(&self) -> LegacyValue {
         self.out.borrow().clone()
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_COMPREHENSION_CONTRACT)
     }
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {

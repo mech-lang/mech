@@ -8,6 +8,9 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::LazyLock;
 
+#[cfg(feature = "subscript_formula")]
+use crate::portable_index::ToPortableIndex;
+
 fn matrix_selection_contract(
     input_count: usize,
     _postcondition_name: &'static str,
@@ -4054,18 +4057,33 @@ macro_rules! define_reactive_scalar_index {
         }
 
         impl $name {
-            fn from_source(source: Ref<$source_type>) -> Self {
-                let value = *source.borrow() as usize;
-                Self {
+            fn from_source(source: Ref<$source_type>) -> MResult<Self> {
+                let value = (*source.borrow()).to_portable_index().ok_or_else(|| {
+                    MechError::new(
+                        CannotConvertToTypeError {
+                            target_type: "portable index",
+                        },
+                        None,
+                    )
+                })? as usize;
+                Ok(Self {
                     source,
                     out: Ref::new(value),
-                }
+                })
             }
         }
 
         impl MechFunctionImpl for $name {
             fn solve_result(&self) -> MResult<()> {
-                *self.out.borrow_mut() = *self.source.borrow() as usize;
+                *self.out.borrow_mut() =
+                    (*self.source.borrow()).to_portable_index().ok_or_else(|| {
+                        MechError::new(
+                            CannotConvertToTypeError {
+                                target_type: "portable index",
+                            },
+                            None,
+                        )
+                    })? as usize;
                 Ok(())
             }
 
@@ -4123,11 +4141,17 @@ define_reactive_scalar_index!(ReactiveScalarIndexI128, i128, "ReactiveScalarInde
 define_reactive_scalar_index!(ReactiveScalarIndexF32, f32, "ReactiveScalarIndex<f32>");
 #[cfg(all(feature = "subscript_formula", feature = "f64"))]
 define_reactive_scalar_index!(ReactiveScalarIndexF64, f64, "ReactiveScalarIndex<f64>");
+#[cfg(feature = "subscript_formula")]
+define_reactive_scalar_index!(
+    ReactiveScalarIndexUsize,
+    usize,
+    "ReactiveScalarIndex<usize>"
+);
 
 #[cfg(feature = "subscript_formula")]
 macro_rules! append_reactive_scalar_index {
     ($plan:expr, $source:expr, $function_type:ident) => {{
-        let function = $function_type::from_source($source);
+        let function = $function_type::from_source($source)?;
         let output = function.out();
         $plan.borrow_mut().push(Box::new(function));
         Ok(output)
@@ -4141,7 +4165,9 @@ fn append_reactive_scalar_index_for_value(
 ) -> MResult<LegacyValue> {
     let value = crate::patterns::deep_detach_value(value);
     match &value {
-        LegacyValue::Index(_) => Ok(value.clone()),
+        LegacyValue::Index(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexUsize)
+        }
         #[cfg(feature = "bool")]
         LegacyValue::Bool(_) => Ok(value.clone()),
         #[cfg(feature = "u8")]

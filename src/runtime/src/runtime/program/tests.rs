@@ -1450,6 +1450,75 @@ fn literal_bool_and_matrix_outputs_are_published() {
 }
 
 #[test]
+fn resident_matrix_comprehensions_feed_mutable_vertical_concatenation() {
+    const SOURCE: &str = r#"
+samples := 1..=3
+x-row := [1.0 | sample <- samples]
+y-row := [2.0 | sample <- samples]
+x := x-row'
+y := y-row'
+~trail := [x y]
+new-row := ([7.0 8.0])
+next-trail := matrix/vertcat(trail[2..=3,:], new-row)
+trail = next-trail
+trail
+"#;
+
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let compiled = compiler.compile_source(SOURCE).unwrap();
+
+    let mut source_runtime = runtime();
+    let source = source_runtime
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let mut bytecode_runtime = runtime();
+    let bytecode = bytecode_runtime
+        .load_bytecode_program(
+            compiled.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+
+    for loaded in [source, bytecode] {
+        assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+        let LegacyValue::MatrixF64(matrix) = loaded.initial_value.to_value() else {
+            panic!("compact resident trail must remain an f64 matrix")
+        };
+        assert_eq!((matrix.rows(), matrix.cols()), (3, 2));
+        assert_eq!(matrix.as_vec(), [1.0, 1.0, 7.0, 2.0, 2.0, 8.0]);
+    }
+}
+
+#[test]
+fn matrix_comprehension_scope_preserves_the_enclosing_live_plan() {
+    const SOURCE: &str = r#"
+@clock := test://clock/tick{:read(delta-seconds)}
+delta := @clock/delta-seconds
+samples := 1..=3
+padding := [0.0 | sample <- samples]
+~state := 0.0
+next-state := state + delta + padding[1]
+state = next-state
+state
+"#;
+
+    let (mut runtime, _, _, _) = configured_external_runtime();
+    let loaded = runtime
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentExternal);
+    assert_eq!(
+        runtime.program_execution_info().observation_count,
+        1,
+        "planning a comprehension must not erase live nodes accumulated by its enclosing program",
+    );
+}
+
+#[test]
 fn turn_derived_output_is_published_from_resident_scratch() {
     let plans = Arc::new(AtomicUsize::new(0));
     let reads = Arc::new(AtomicUsize::new(0));
@@ -1696,6 +1765,83 @@ fn dynamic_matrix_selectors_preserve_every_supported_scalar_kind() {
     assert_kind!(F32, 1.0, 2.0, 3.0);
     assert_kind!(F64, 1.0, 2.0, 3.0);
     assert_kind!(Index, 1, 2, 3);
+}
+
+#[test]
+#[cfg(feature = "compiler_default")]
+fn dynamic_matrix_selectors_reject_values_outside_the_portable_width() {
+    const SOURCE: &str = r#"
+@typed := test://typed/value{:read(data)}
+values := [10.0 20.0 30.0]
+selected := values[1,@typed/data]
+selected
+"#;
+    const OUTSIDE_PORTABLE_INDEX: u64 = u32::MAX as u64 + 1;
+
+    let configured_runtime = |planned| {
+        let mut runtime = runtime();
+        runtime
+            .register_resource_provider(Box::new(TypedObservationProvider {
+                planned: LegacyValue::U64(Ref::new(planned)),
+            }))
+            .unwrap();
+        let subject = runtime.runtime_context().unwrap().subject;
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                CapabilityId(9_026),
+                subject,
+                "test://typed/value/data",
+                ["read"],
+            )))
+            .unwrap();
+        runtime
+    };
+
+    let mut initially_oversized = configured_runtime(OUTSIDE_PORTABLE_INDEX);
+    assert!(
+        initially_oversized
+            .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+            .is_err()
+    );
+
+    let mut source = configured_runtime(1);
+    source
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let ActiveProgramExecution::ResidentExternal(execution) = &source.active_program else {
+        panic!("dynamic scalar access must remain resident")
+    };
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+
+    source
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://typed/value", "data").unwrap(),
+            crate::RuntimeHostInputValue::U64(OUTSIDE_PORTABLE_INDEX),
+        ))
+        .unwrap();
+    let rejected = source.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        rejected.turn,
+        Some(crate::ResidentExternalTurnOutcome::Rejected { .. })
+    ));
+
+    let mut decoded = configured_runtime(1);
+    decoded
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    decoded
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://typed/value", "data").unwrap(),
+            crate::RuntimeHostInputValue::U64(OUTSIDE_PORTABLE_INDEX),
+        ))
+        .unwrap();
+    let rejected = decoded.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        rejected.turn,
+        Some(crate::ResidentExternalTurnOutcome::Rejected { .. })
+    ));
 }
 
 fn assert_typed_observation_round_trip(planned: LegacyValue, packet: crate::RuntimeHostInputValue) {
