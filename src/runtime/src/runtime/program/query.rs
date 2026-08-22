@@ -375,6 +375,7 @@ fn compatible_state_mappings(
         .collect::<BTreeSet<_>>();
     let affected_targets = artifact_slots_depending_on(target, &excluded_targets);
     let mut semantic_equivalence = BTreeMap::new();
+    let mut compatible_state_pairs = BTreeSet::new();
     let mut mappings = Vec::new();
 
     for binding in target.interactive_symbol_bindings() {
@@ -401,6 +402,7 @@ fn compatible_state_mappings(
             && mapped_sources.insert(source_slot)
             && mapped_targets.insert(target_slot)
         {
+            compatible_state_pairs.insert((source_slot, target_slot));
             mappings.push(StateMigrationMapping {
                 source: source_slot,
                 target: target_slot,
@@ -431,6 +433,7 @@ fn compatible_state_mappings(
         };
         mapped_sources.insert(source_slot.slot);
         mapped_targets.insert(target_slot.slot);
+        compatible_state_pairs.insert((source_slot.slot, target_slot.slot));
         mappings.push(StateMigrationMapping {
             source: source_slot.slot,
             target: target_slot.slot,
@@ -508,6 +511,7 @@ fn compatible_state_mappings(
                         source_semantic_source,
                         target,
                         target_semantic_source,
+                        &compatible_state_pairs,
                         &mut semantic_equivalence,
                     )
                 })
@@ -578,6 +582,10 @@ fn artifact_sources_semantically_equal(
     source: ArtifactSource,
     target_artifact: &ProgramArtifact,
     target: ArtifactSource,
+    compatible_state_pairs: &std::collections::BTreeSet<(
+        mech_core::CellSlotId,
+        mech_core::CellSlotId,
+    )>,
     cache: &mut std::collections::BTreeMap<(ArtifactSource, ArtifactSource), bool>,
 ) -> bool {
     let root = (source, target);
@@ -627,6 +635,19 @@ fn artifact_sources_semantically_equal(
                 {
                     cache.insert(root, false);
                     return false;
+                }
+                // A derived projection may only cross a state boundary through
+                // the exact state-cell pair selected by migration planning.
+                // Structural producer similarity is deliberately insufficient:
+                // two same-shaped live states can have different values and a
+                // replacement may rewire an otherwise identical expression
+                // from one of them to the other.
+                if source.role == SlotRole::State {
+                    if !compatible_state_pairs.contains(&(source.slot, target.slot)) {
+                        cache.insert(root, false);
+                        return false;
+                    }
+                    continue;
                 }
                 match (source.producer, target.producer) {
                     (ProducerReference::Input(source), ProducerReference::Input(target)) => {

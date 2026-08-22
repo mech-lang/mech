@@ -1417,6 +1417,51 @@ mod tests {
     }
 
     #[test]
+    fn accepted_source_never_migrates_a_projection_across_distinct_state_identity() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session
+            .replace_source(
+                r#"
+~a := 0
+~b := 100
+a += 1
+b += 2
+display := a + 10
+"#
+                .to_string(),
+            )
+            .unwrap();
+        session.step(2).unwrap();
+        assert_eq!(session.symbol("a").unwrap().unwrap().to_string(), "3");
+        assert_eq!(session.symbol("b").unwrap().unwrap().to_string(), "106");
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "13"
+        );
+
+        session
+            .replace_source(
+                r#"
+~a := 0
+~b := 100
+a += 1
+b += 2
+display := b + 10
+"#
+                .to_string(),
+            )
+            .unwrap();
+
+        assert_eq!(session.symbol("a").unwrap().unwrap().to_string(), "3");
+        assert_eq!(session.symbol("b").unwrap().unwrap().to_string(), "106");
+        assert_eq!(
+            session.symbol("display").unwrap().unwrap().to_string(),
+            "112",
+            "a same-shaped producer rewired to another live state must retain the candidate projection, not the retired state's value",
+        );
+    }
+
+    #[test]
     fn accepted_source_recomputes_state_explicitly_mutated_by_the_submission() {
         let mut session = ResidentReplSession::new(SourceRuntimeFactory);
         session.submit("~answer := 0").unwrap();
