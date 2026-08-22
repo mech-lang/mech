@@ -2620,6 +2620,55 @@ impl LegacyValue {
                 }
                 format!("({})", elements.join(","))
             }
+            #[cfg(feature = "set")]
+            LegacyValue::Set(set) => {
+                let set = set.borrow();
+                format!(
+                    "{{{}}}{}",
+                    set.kind.format_with_budget(budget),
+                    set.max_elements
+                        .map_or(String::new(), |size| format!(":{size}")),
+                )
+            }
+            #[cfg(feature = "map")]
+            LegacyValue::Map(map) => {
+                let map = map.borrow();
+                format!(
+                    "{{{}:{}}}",
+                    map.key_kind.format_with_budget(budget),
+                    map.value_kind.format_with_budget(budget),
+                )
+            }
+            #[cfg(feature = "enum")]
+            LegacyValue::Enum(enm) => {
+                let enm = enm.borrow();
+                let names = enm.names.borrow();
+                if let [(variant_id, payload)] = enm.variants.as_slice() {
+                    let variant_name = names
+                        .get(variant_id)
+                        .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+                        .unwrap_or_else(|| variant_id.to_string());
+                    if let Some(value) = payload
+                        && !matches!(value, LegacyValue::Kind(_))
+                    {
+                        return format!(
+                            ":{}({})",
+                            variant_name,
+                            value.format_kind_with_budget(budget),
+                        );
+                    }
+                    return format!(":{variant_name}");
+                }
+                let name = names
+                    .get(&enm.id)
+                    .cloned()
+                    .unwrap_or_else(|| enm.id.to_string());
+                format!(":{name}")
+            }
+            LegacyValue::MutableReference(reference) => {
+                reference.borrow().format_kind_with_budget(budget)
+            }
+            LegacyValue::Typed(_, kind) => kind.format_with_budget(budget),
             LegacyValue::EmptyKind(kind) | LegacyValue::Kind(kind) => {
                 kind.format_with_budget(budget)
             }
@@ -5167,6 +5216,30 @@ mod reactive_cell_tests {
             "[1 2 3 …]"
         );
         assert_eq!(referenced.format_canonical_inline(), "[1 2 3; 4 5 6]");
+    }
+
+    #[cfg(all(feature = "enum", feature = "tuple", feature = "f64"))]
+    #[test]
+    fn bounded_kind_formatting_traverses_enum_and_reference_wrappers_in_place() {
+        let payload = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(
+            (0..32).map(|_| LegacyValue::F64(Ref::new(0.0))).collect(),
+        )));
+        let enum_id = hash_str("message");
+        let variant_id = hash_str("message/value");
+        let mut names = Dictionary::new();
+        names.insert(enum_id, "message".to_string());
+        names.insert(variant_id, "message/value".to_string());
+        let value =
+            LegacyValue::MutableReference(Ref::new(LegacyValue::Enum(Ref::new(MechEnum {
+                id: enum_id,
+                variants: vec![(variant_id, Some(payload))],
+                names: Ref::new(names),
+            }))));
+
+        assert_eq!(
+            value.format_kind_with_element_limit(2),
+            ":value((f64,f64,…))",
+        );
     }
 
     #[cfg(all(
