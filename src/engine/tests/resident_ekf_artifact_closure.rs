@@ -29,6 +29,13 @@ fn ordinary_source_and_bytecode_close_the_same_frozen_artifact() -> MResult<()> 
     assert_eq!(compilation.source_closure.integrity_predicates.len(), 3);
     assert_eq!(compilation.source_closure.state_updates.len(), 2);
     assert_eq!(compilation.source_closure.constraints.len(), 3);
+    assert!(
+        compilation
+            .source_closure
+            .observation_adapter_nodes
+            .is_empty()
+    );
+    assert!(compilation.source_closure.structural_alias_nodes.is_empty());
     assert_eq!(compilation.source_closure.input.name, "frame");
     assert_eq!(compilation.source_closure.output.name, "estimate");
     assert!(

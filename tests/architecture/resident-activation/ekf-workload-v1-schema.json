@@ -29,7 +29,7 @@
         {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 8}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/innovation-covariance"}, "change_detection": {"const": "KernelReported"}}}]},
         {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 9}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/solve-2x2"}, "change_detection": {"const": "KernelReported"}}}]},
         {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 10}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/kalman-gain"}, "change_detection": {"const": "KernelReported"}}}]},
-        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 11}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/innovation"}, "change_detection": {"const": "KernelReported"}}}]},
+        {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 11}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/innovation-from-frame"}, "change_detection": {"const": "KernelReported"}}}]},
         {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 12}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/corrected-state"}, "change_detection": {"const": "KernelReported"}}}]},
         {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 13}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/joseph-covariance-update"}, "change_detection": {"const": "KernelReported"}}}]},
         {"allOf": [{"$ref": "#/$defs/operation"}, {"properties": {"ordinal": {"const": 14}, "role": {"const": "resident-kernel"}, "operation": {"const": "ekf/covariance-symmetrization"}, "change_detection": {"const": "KernelReported"}}}]},
@@ -62,7 +62,7 @@
       "required": ["path", "sha256"],
       "properties": {
         "path": {"const": "tests/architecture/resident-activation/ekf-source-v1.mec"},
-        "sha256": {"const": "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec"}
+        "sha256": {"const": "14dce066e441f78e928b56493dcd9b2ab4dad8b969e9c145e847e9f65b34aa96"}
       }
     },
     "gateB": {

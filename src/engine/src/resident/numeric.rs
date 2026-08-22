@@ -363,6 +363,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+pub(crate) fn install_frozen_ekf_observation_adapter(
+    builder: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
+    register(
+        builder,
+        &["ekf"],
+        "innovation-from-frame",
+        bind_ekf_innovation_from_frame,
+    )
+}
+
 fn register(
     builder: &mut FunctionCatalogBuilder,
     module: &[&str],
@@ -763,6 +774,13 @@ binder_f64_output!(
     bind_ekf_innovation,
     ekf_innovation,
     [2, 2],
+    2,
+    ChangeDetectionPolicy::KernelReported
+);
+binder_f64_output!(
+    bind_ekf_innovation_from_frame,
+    ekf_innovation_from_frame,
+    [4, 2],
     2,
     ChangeDetectionPolicy::KernelReported
 );
@@ -2250,6 +2268,21 @@ fn ekf_innovation(
     write_f64_array(
         output,
         crate::efficacy::ekf::math::innovation(as_f64_array(frame)?, as_f64_array(predicted)?),
+    )
+}
+
+fn ekf_innovation_from_frame(
+    _kernel: &BoundResidentKernel,
+    frame: &[f64],
+    predicted: &[f64],
+    output: &mut [f64],
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::innovation_from_frame(
+            as_f64_array(frame)?,
+            as_f64_array(predicted)?,
+        ),
     )
 }
 

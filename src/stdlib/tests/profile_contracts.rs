@@ -8,34 +8,34 @@ use serde::Deserialize;
 use sha2::{Digest, Sha256};
 
 #[cfg(feature = "full_runtime")]
-const EXPECTED_RUNTIME_FACTORIES: usize = 9_046;
+const EXPECTED_RUNTIME_FACTORIES: usize = 9_047;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_341;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_342;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 82;
+const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 83;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "435526da1d03bc4e295192320422886ee10e85c72b9d2a8fdd8aeb371050c5f3";
+    "8ed709ed176d39178d2e98a3276e517f810e7e93cf56aca21a2c10e3bd712706";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_099;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_100;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "b32454f34e5d22a37aae7b007c45c3e6d6e9865ce23e84be6ace932a621de350";
+    "f8a33c2f17fd4a1fcc844ee726b74e04f50219e0274835904af721e584620e6f";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_017;
 #[cfg(feature = "full_source")]
-const EXPECTED_NAMED_SPECIALIZERS: usize = 137;
+const EXPECTED_NAMED_SPECIALIZERS: usize = 138;
 #[cfg(feature = "full_source")]
 const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 10;
 #[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
 #[cfg(feature = "full_source")]
-const EXPECTED_MODULE_EXPORTS: usize = 68;
+const EXPECTED_MODULE_EXPORTS: usize = 69;
 #[cfg(feature = "full_source")]
-const EXPECTED_ALL_EXPORTS: usize = 138;
+const EXPECTED_ALL_EXPORTS: usize = 139;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
-    "ac50eae527981dcdfb1d2173a3ce95581d6e6e34caf4062c298e0b6c6d11908d";
+    "b713ec00e744d378c95de367c648b1ca29b3d8bbc57fcce872c044270284fcf4";
 #[cfg(feature = "full_runtime")]
 const SOURCE_ONLY_RUNTIME_FACTORY: &str = "HorizontalConcatenateNArgs<f64>";
 #[cfg(feature = "full_runtime")]

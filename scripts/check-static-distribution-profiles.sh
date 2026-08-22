@@ -296,7 +296,7 @@ if set(profiles) != expected_profiles:
     raise SystemExit(
         "static distribution profile contract failed: deterministic profile set mismatch"
     )
-expected_digest = "16d6ed2ce31a15696398540dc5b0a116836b039f4a27cbc219ce25c828fbea37"
+expected_digest = "a59d98b7a63061f1f13a4aecb70415636bc2142cac9cb272140d7a164a3b4fd2"
 selected_digest = "a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d"
 runtime_surface = json.loads(runtime_surface_path.read_text(encoding="utf-8"))
 runtime_factories = runtime_surface.get("runtime_factories")
@@ -318,9 +318,9 @@ if actual_digest != expected_digest:
     )
 expected_surface = {
     "selected-runtime": (3, 0, 0, 0, 0, selected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-runtime": (9028, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-source": (9029, 119, 10, 52, 50, "471a0c091702b82028212f59c3d888a2b12a7cdec828e23cf9839f2e57837ecb", "sha256-canonical-id-tab-name-lf-v1"),
-    "full-compiler": (9029, 119, 10, 52, 50, "471a0c091702b82028212f59c3d888a2b12a7cdec828e23cf9839f2e57837ecb", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-runtime": (9047, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
+    "full-source": (9048, 138, 10, 52, 69, "5d39678673c252d50ea0d680c15f4359814446fa63c31294243ed4793238ac8f", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-compiler": (9100, 138, 10, 52, 69, "f8a33c2f17fd4a1fcc844ee726b74e04f50219e0274835904af721e584620e6f", "sha256-canonical-id-tab-name-lf-v1"),
 }
 surface_keys = (
     "catalog_factory_count", "source_specializer_count", "intrinsic_count",
@@ -399,20 +399,27 @@ expected_layers = {
         ]),
     },
     "full-runtime": {
-        "required_feature_layers": layers(runtime_packages, ["runtime"]),
+        "required_feature_layers": sorted(
+            layers(runtime_packages, ["runtime"])
+            + ["mech-engine/ekf", "mech-stdlib/ekf"]
+        ),
         "forbidden_feature_layers": sorted(
             layers(compiler_packages, ["compiler"])
             + layers(runtime_packages, ["source"])
         ),
     },
     "full-source": {
-        "required_feature_layers": layers(runtime_packages, ["runtime", "source"]),
+        "required_feature_layers": sorted(
+            layers(runtime_packages, ["runtime", "source"])
+            + ["mech-engine/ekf", "mech-stdlib/ekf"]
+        ),
         "forbidden_feature_layers": layers(compiler_packages, ["compiler"]),
     },
     "full-compiler": {
         "required_feature_layers": sorted(
             layers(runtime_packages, ["runtime", "source"])
             + layers(compiler_packages, ["compiler"])
+            + ["mech-engine/ekf", "mech-stdlib/ekf"]
         ),
         "forbidden_feature_layers": [],
     },

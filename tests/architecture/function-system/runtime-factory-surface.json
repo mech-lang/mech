@@ -45209,6 +45209,11 @@
       "owner": "mech-engine::ekf"
     },
     {
+      "name": "ekf/square-drive-state-machine",
+      "id_hex": "009a1337ff50cb54",
+      "owner": "mech-engine::ekf"
+    },
+    {
       "name": "ekf/trigonometric-state",
       "id_hex": "00b5e16638d249a8",
       "owner": "mech-engine::ekf"

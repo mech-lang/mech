@@ -371,6 +371,163 @@ factory!(
     DMatrix<f64>,
     [DMatrix<f64>]
 );
+
+pub(crate) const FROZEN_INNOVATION_FROM_FRAME_NAME: &str = "ekf/innovation-from-frame";
+pub(crate) const FROZEN_INNOVATION_FROM_FRAME_ITEM: &str = "innovation-from-frame";
+pub(crate) const FROZEN_INNOVATION_FROM_FRAME_SPEC: FrozenEkfOperationSpec =
+    FrozenEkfOperationSpec {
+        operation: Kernel(Innovation),
+        canonical_name: FROZEN_INNOVATION_FROM_FRAME_NAME,
+        module_item: FROZEN_INNOVATION_FROM_FRAME_ITEM,
+        inputs: &[
+            FrozenEkfValueShape::Vector(4),
+            FrozenEkfValueShape::Vector(2),
+        ],
+        output: FrozenEkfValueShape::Vector(2),
+        change_detection: ChangeDetectionPolicy::KernelReported,
+    };
+
+#[cfg(feature = "semantic-compiler")]
+struct FrozenInnovationFromFrameSpecializer;
+
+#[cfg(feature = "semantic-compiler")]
+impl FunctionSpecializer for FrozenInnovationFromFrameSpecializer {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+        validate_innovation_from_frame_values(arguments)?;
+        let function = FrozenInnovationFromFrameFunction {
+            arguments: arguments.to_vec().into_boxed_slice(),
+            compile_arguments: frozen_compile_arguments(arguments),
+            output: LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(2)))),
+        };
+        function.solve_result()?;
+        Ok(Box::new(function))
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+        GuardFunctionSafety::PureStatic
+    }
+}
+
+#[derive(Debug)]
+struct FrozenInnovationFromFrameFunction {
+    arguments: Box<[LegacyValue]>,
+    #[cfg(feature = "semantic-compiler")]
+    compile_arguments: Box<[LegacyValue]>,
+    output: LegacyValue,
+}
+
+impl MechFunctionImpl for FrozenInnovationFromFrameFunction {
+    fn solve_result(&self) -> MResult<()> {
+        let frame = frozen_adapter_array::<4>(&self.arguments[0])?;
+        let predicted = frozen_adapter_array::<2>(&self.arguments[1])?;
+        let innovation = math::innovation_from_frame(&frame, &predicted);
+        write_array(Kernel(Innovation), &self.output, innovation)
+    }
+
+    fn out(&self) -> LegacyValue {
+        self.output.clone()
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&KERNEL_2)
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Combinational
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(self.reactive_output_values())
+    }
+
+    fn to_string(&self) -> String {
+        FROZEN_INNOVATION_FROM_FRAME_NAME.to_owned()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for FrozenInnovationFromFrameFunction {
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let destination =
+            compile_runtime_produced_register(&self.output, self.output.addr(), context)?;
+        let seed = LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(2))))
+            .compile_const(context)?;
+        context.record_register_constant_metadata(destination, seed)?;
+        context.emit_const_load(destination, seed);
+        let inputs = self
+            .compile_arguments
+            .iter()
+            .map(|argument| compile_value_register(argument, argument.addr(), context))
+            .collect::<MResult<Vec<_>>>()?;
+        let [frame, predicted] = inputs.as_slice() else {
+            unreachable!("the frozen observation adapter has exactly two inputs")
+        };
+        let function = context.function_id(FROZEN_INNOVATION_FROM_FRAME_NAME)?;
+        context.emit_binop(function, destination, *frame, *predicted);
+        Ok(destination)
+    }
+}
+
+struct FrozenInnovationFromFrameFactory;
+
+impl MechFunctionFactory for FrozenInnovationFromFrameFactory {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
+    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        validate_innovation_from_frame_runtime(&arguments)?;
+        Ok(Box::new(FrozenInnovationFromFrameFunction {
+            #[cfg(feature = "semantic-compiler")]
+            compile_arguments: frozen_compile_arguments(&arguments.input_values()),
+            arguments: arguments.input_values().into_boxed_slice(),
+            output: arguments.output_value().clone(),
+        }))
+    }
+}
+
+fn validate_innovation_from_frame_values(arguments: &[LegacyValue]) -> MResult<()> {
+    if arguments.len() != 2
+        || value_shape(&arguments[0]) != Some(FrozenEkfValueShape::Vector(4))
+        || value_shape(&arguments[1]) != Some(FrozenEkfValueShape::Vector(2))
+    {
+        return Err(function_shape_contract_violation(
+            FROZEN_INNOVATION_FROM_FRAME_NAME,
+            "expected observation [f64]:4,1 and predicted measurement [f64]:2,1",
+        ));
+    }
+    Ok(())
+}
+
+fn validate_innovation_from_frame_runtime(arguments: &FunctionArgs) -> MResult<()> {
+    validate_innovation_from_frame_values(&arguments.input_values())?;
+    if value_shape(arguments.output_value()) != Some(FrozenEkfValueShape::Vector(2)) {
+        return Err(function_shape_contract_violation(
+            FROZEN_INNOVATION_FROM_FRAME_NAME,
+            "output requires [f64]:2,1",
+        ));
+    }
+    Ok(())
+}
+
+fn frozen_adapter_array<const N: usize>(value: &LegacyValue) -> MResult<[f64; N]> {
+    match value {
+        LegacyValue::Typed(value, _) => frozen_adapter_array(value),
+        LegacyValue::MutableReference(value) => frozen_adapter_array(&value.borrow()),
+        LegacyValue::MatrixF64(value) => value.as_vec().try_into().map_err(|_| {
+            function_shape_contract_violation(
+                FROZEN_INNOVATION_FROM_FRAME_NAME,
+                format!("expected f64 vector length {N}"),
+            )
+        }),
+        _ => Err(function_shape_contract_violation(
+            FROZEN_INNOVATION_FROM_FRAME_NAME,
+            format!("expected f64 vector length {N}"),
+        )),
+    }
+}
 factory!(FiniteFactory, validate_finite, Predicate(CandidateFinite), binary, bool, [DVector<f64>, DMatrix<f64>]);
 factory!(
     PositiveFactory,
@@ -644,6 +801,21 @@ fn install_square_drive_runtime(builder: &mut FunctionCatalogBuilder) -> MResult
         SQUARE_DRIVE_NAME,
         contract,
         &KERNEL_3,
+    )?;
+    Ok(())
+}
+
+fn install_frozen_innovation_from_frame_runtime(
+    builder: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
+    builder.insert_runtime_factory_with_semantic_contract::<FrozenInnovationFromFrameFactory>(
+        FROZEN_INNOVATION_FROM_FRAME_NAME,
+        RuntimeFunctionContract::custom(
+            FROZEN_INNOVATION_FROM_FRAME_NAME,
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            validate_innovation_from_frame_runtime,
+        ),
+        &KERNEL_2,
     )?;
     Ok(())
 }
@@ -945,6 +1117,24 @@ pub(crate) fn install_source_operations(builder: &mut FunctionCatalogBuilder) ->
 }
 
 #[cfg(feature = "semantic-compiler")]
+fn install_frozen_innovation_from_frame_source(
+    builder: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
+    let operation = builder.insert_specializer(
+        FROZEN_INNOVATION_FROM_FRAME_NAME,
+        Arc::new(FrozenInnovationFromFrameSpecializer),
+    )?;
+    builder.insert_export(FunctionExport {
+        operation,
+        canonical_name: FROZEN_INNOVATION_FROM_FRAME_NAME.to_owned(),
+        module: Some("ekf".to_owned()),
+        item: Some(FROZEN_INNOVATION_FROM_FRAME_ITEM.to_owned()),
+        exposure: FunctionExposure::ModuleOnly,
+    })?;
+    Ok(())
+}
+
+#[cfg(feature = "semantic-compiler")]
 pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_source_operations(builder)?;
     let negate = builder.insert_specializer("math/neg", Arc::new(FrozenF64NegateSpecializer))?;
@@ -1044,7 +1234,10 @@ pub fn frozen_ekf_compiler_catalog() -> MResult<Arc<FunctionCatalog>> {
     crate::intrinsics::catalog::install_source(&mut builder)?;
     install_runtime(&mut builder)?;
     install_source(&mut builder)?;
+    install_frozen_innovation_from_frame_runtime(&mut builder)?;
+    install_frozen_innovation_from_frame_source(&mut builder)?;
     crate::function::install_intrinsic_resident(&mut builder)?;
+    crate::resident::numeric::install_frozen_ekf_observation_adapter(&mut builder)?;
     Ok(Arc::new(builder.build()?))
 }
 

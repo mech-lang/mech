@@ -115,6 +115,10 @@
       "id_hex": "00ab39e2ebc32902"
     },
     {
+      "name": "ekf/square-drive-state-machine",
+      "id_hex": "009a1337ff50cb54"
+    },
+    {
       "name": "ekf/trigonometric-state",
       "id_hex": "00b5e16638d249a8"
     },
@@ -869,6 +873,12 @@
       "item": "solve-2x2",
       "canonical_name": "ekf/solve-2x2",
       "id_hex": "00ab39e2ebc32902"
+    },
+    {
+      "module": "ekf",
+      "item": "square-drive-state-machine",
+      "canonical_name": "ekf/square-drive-state-machine",
+      "id_hex": "009a1337ff50cb54"
     },
     {
       "module": "ekf",
