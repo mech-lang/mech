@@ -18,7 +18,7 @@ use self::lower::ConfigLowerer;
 pub use self::lower::{
     ActorBootstrapConfig, BuildHostConfig, ConfigCapabilityGrant, ConfigCapabilityKind,
     DiagnosticsConfigPatch, MechConfigDocument, RunHostConfig, RuntimeConfigPatch,
-    RuntimeLimitsPatch, ServeHostConfig,
+    RuntimeLimitsPatch, ServeHostConfig, ServePresentation,
 };
 
 use mech_core::MResult;

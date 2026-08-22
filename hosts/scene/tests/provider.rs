@@ -107,6 +107,32 @@ fn line(id: &str) -> LegacyValue {
         ("origin-y", f(0.0)),
     ])
 }
+fn text(id: &str) -> LegacyValue {
+    record(vec![
+        ("id", s(id)),
+        ("x", f(10.0)),
+        ("y", f(20.0)),
+        ("fill", s("white")),
+        ("font-size", f(12.0)),
+        ("font-family", s("sans-serif")),
+        ("font-weight", s("600")),
+        ("text-anchor", s("start")),
+        ("opacity", f(1.0)),
+        ("value", s("Scene label")),
+    ])
+}
+fn point_set(id: &str) -> LegacyValue {
+    record(vec![
+        ("id", s(id)),
+        ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+        ("radius", f(3.0)),
+        ("first-radius", f(6.0)),
+        ("fills", tuple(vec![s("gold"), s("blue")])),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ])
+}
 
 #[test]
 fn valid_empty_scene() {
@@ -135,6 +161,55 @@ fn valid_line_scene() {
         ("lines", tuple(vec![line("l1")])),
     ]);
     assert_eq!(SceneSnapshot::from_value(&scene).unwrap().lines.len(), 1);
+}
+
+#[test]
+fn valid_text_scene() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("texts", tuple(vec![text("title")])),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.texts[0].value, "Scene label");
+}
+
+#[test]
+fn point_set_expands_matrix_rows_into_stable_circles() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("point-sets", point_set("body")),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.circles.len(), 2);
+    assert_eq!(scene.circles[0].id, "body-0");
+    assert_eq!(scene.circles[0].radius, 6.0);
+    assert_eq!(scene.circles[0].fill, "gold");
+    assert_eq!((scene.circles[1].x, scene.circles[1].y), (20.0, 40.0));
+}
+
+#[test]
+fn point_set_rejects_a_palette_with_the_wrong_length() {
+    let bad = record(vec![
+        ("id", s("body")),
+        ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+        ("radius", f(3.0)),
+        ("first-radius", f(6.0)),
+        ("fills", tuple(vec![s("gold")])),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("point-sets", bad),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
 }
 
 #[test]
@@ -415,6 +490,33 @@ fn invalid_line_cap_is_rejected() {
 #[test]
 fn unknown_renderer() {
     assert!(scene_settings_from_config(&settings("webgl")).is_err());
+}
+
+#[test]
+fn output_renderer_does_not_require_a_selector() {
+    let mut map = BTreeMap::new();
+    map.insert(
+        "renderer".to_string(),
+        ConfigValue::String("output".to_string()),
+    );
+
+    let settings = scene_settings_from_config(&ConfigValue::Map(map)).unwrap();
+
+    assert_eq!(settings.renderer, SceneRendererKind::Output);
+    assert!(settings.selector.is_empty());
+}
+
+#[test]
+fn dom_renderer_still_requires_a_selector() {
+    let mut map = BTreeMap::new();
+    map.insert(
+        "renderer".to_string(),
+        ConfigValue::String("svg".to_string()),
+    );
+
+    let error = scene_settings_from_config(&ConfigValue::Map(map)).unwrap_err();
+
+    assert!(format!("{error:?}").contains("scene selector is required"));
 }
 
 #[test]

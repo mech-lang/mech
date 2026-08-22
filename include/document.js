@@ -372,8 +372,8 @@ function setConsoleStatus(status) {
   }
 }
 
-function dispatch(name) {
-  window.dispatchEvent(new CustomEvent(name));
+function dispatch(name, detail = undefined) {
+  window.dispatchEvent(new CustomEvent(name, { detail }));
 }
 
 function errorMessage(error) {
@@ -618,6 +618,9 @@ function showFatalError(error) {
   syncConsoleInputState();
   const message = appendError(error);
   if (documentConsolePane()) {
+    if (isOutputPresentation()) {
+      setDocumentPresentationView("workspace", { focus: false });
+    }
     setConsoleOpen(true);
     activateConsolePanel("errors");
   }
@@ -1191,6 +1194,20 @@ function outputContentElement(content) {
             "transform",
             `rotate(${line.rotation} ${line.origin_x} ${line.origin_y})`,
           );
+          svg.append(element);
+        }
+        for (const text of scene.texts || []) {
+          const element = document.createElementNS(namespace, "text");
+          element.dataset.mechSceneId = text.id;
+          for (const [name, value] of [
+            ["x", text.x], ["y", text.y], ["fill", text.fill],
+            ["font-size", text.font_size], ["font-family", text.font_family],
+            ["font-weight", text.font_weight], ["text-anchor", text.text_anchor],
+            ["opacity", text.opacity],
+          ]) {
+            element.setAttribute(name, String(value));
+          }
+          element.textContent = text.value;
           svg.append(element);
         }
         body.append(svg);
@@ -2659,6 +2676,30 @@ function initializeConsoleToggle() {
   }
 }
 
+function isOutputPresentation() {
+  return state.root?.dataset.mechPresentation === "output";
+}
+
+function setDocumentPresentationView(view, { focus = true } = {}) {
+  if (!isOutputPresentation() || !state.root) {
+    return;
+  }
+  const next = view === "workspace" ? "workspace" : "output";
+  state.root.dataset.mechPresentationView = next;
+  setConsoleOpen(true);
+  activateConsolePanel(next === "output" ? "output" : "console");
+  if (next === "workspace" && focus) {
+    requestAnimationFrame(() => state.console?.input?.focus());
+  }
+  dispatch("mech:presentation-view", { presentation: "output", view: next });
+}
+
+function initializeDocumentPresentation() {
+  if (isOutputPresentation()) {
+    setDocumentPresentationView("output", { focus: false });
+  }
+}
+
 function initializeConsoleKeyboardToggle() {
   document.addEventListener("keydown", event => {
     const target = event.target;
@@ -2676,6 +2717,11 @@ function initializeConsoleKeyboardToggle() {
       return;
     }
     event.preventDefault();
+    if (isOutputPresentation()) {
+      const current = state.root?.dataset.mechPresentationView || "output";
+      setDocumentPresentationView(current === "output" ? "workspace" : "output");
+      return;
+    }
     const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
     setConsoleOpen(!isOpen);
     if (isOpen) {
@@ -3421,6 +3467,7 @@ function initializeLayout() {
   initializeDocumentLayoutPersistence();
   initializeConsoleState();
   initializeConsoleTabs();
+  initializeDocumentPresentation();
   initializeConsoleErrorBadge();
   initializeConsoleToggle();
   initializeConsoleKeyboardToggle();

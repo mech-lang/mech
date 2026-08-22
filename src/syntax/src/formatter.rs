@@ -167,7 +167,7 @@ pub fn validate_shipped_shim_render(shim_name: &str, render: &HtmlShimRender) ->
         .with_compiler_loc());
     }
 
-    for slot in ["DOCUMENT_SCRIPT", "TITLE", "CODE", "REPL"] {
+    for slot in ["DOCUMENT_SCRIPT", "TITLE", "CODE", "REPL", "PRESENTATION"] {
         if !render.consumed_slots.contains(slot) {
             return Err(MechError::new(
                 GenericError {
@@ -456,6 +456,7 @@ impl Formatter {
         slots.insert("FOOTNOTES".to_string(), formatted_footnotes);
         slots.insert("CODE".to_string(), encoded_tree);
         slots.insert("REPL".to_string(), repl_html.to_string());
+        slots.insert("PRESENTATION".to_string(), "document".to_string());
 
         for (ix, section_html) in self.section_slots(tree).into_iter().enumerate() {
             slots.insert(format!("SECTION{}", ix + 1), section_html);

@@ -103,6 +103,7 @@ impl BrowserSceneRegistry {
             match job.renderer {
                 SceneRendererKind::Canvas => render_canvas(&job.selector, &job.scene)?,
                 SceneRendererKind::Svg => render_svg(&job.selector, &job.scene)?,
+                SceneRendererKind::Output => {}
             }
             let mut guard = self.targets.lock().map_err(|_| {
                 scene_error("BrowserSceneRegistry", "scene registry lock is poisoned")
@@ -145,11 +146,12 @@ impl BrowserSceneRegistry {
                 )
             })?;
             let fallback = format!(
-                "scene {}×{} ({} circles, {} lines)",
+                "scene {}×{} ({} circles, {} lines, {} texts)",
                 scene.width,
                 scene.height,
                 scene.circles.len(),
                 scene.lines.len(),
+                scene.texts.len(),
             );
             events.push(OutputEvent {
                 source: OutputSource::Host {
@@ -355,6 +357,18 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
         ctx.stroke();
         ctx.restore();
     }
+    for text in &scene.texts {
+        ctx.set_global_alpha(text.opacity);
+        ctx.set_fill_style(&JsValue::from_str(&text.fill));
+        ctx.set_font(&format!(
+            "{} {}px {}",
+            text.font_weight, text.font_size, text.font_family
+        ));
+        ctx.set_text_align(&text.text_anchor);
+        ctx.fill_text(&text.value, text.x, text.y).map_err(|_| {
+            scene_error("BrowserScene", format!("failed to draw text `{}`", text.id))
+        })?;
+    }
     ctx.set_global_alpha(1.0);
     Ok(())
 }
@@ -404,6 +418,19 @@ fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
             "transform",
             &format!("rotate({} {} {})", l.rotation, l.origin_x, l.origin_y),
         )?;
+    }
+    for text in &scene.texts {
+        keep.insert(text.id.clone());
+        let el = upsert(&doc, &root, ns, "text", &text.id)?;
+        set_attr(&el, "x", &text.x.to_string())?;
+        set_attr(&el, "y", &text.y.to_string())?;
+        set_attr(&el, "fill", &text.fill)?;
+        set_attr(&el, "font-size", &text.font_size.to_string())?;
+        set_attr(&el, "font-family", &text.font_family)?;
+        set_attr(&el, "font-weight", &text.font_weight)?;
+        set_attr(&el, "text-anchor", &text.text_anchor)?;
+        set_attr(&el, "opacity", &text.opacity.to_string())?;
+        el.set_text_content(Some(&text.value));
     }
     for i in 0..list.length() {
         if let Some(node) = list.item(i) {
@@ -519,6 +546,7 @@ mod tests {
                 opacity: 1.0,
             }],
             lines: Vec::new(),
+            texts: Vec::new(),
         }
     }
 
@@ -548,5 +576,21 @@ mod tests {
         assert_eq!(updated.len(), 1);
         assert_eq!(updated[0].display_id, created[0].display_id);
         assert_eq!(updated[0].operation, DisplayOperation::Update);
+    }
+
+    #[test]
+    fn output_renderer_advances_without_a_dom_target() {
+        let registry = BrowserSceneRegistry::new();
+        registry
+            .register(
+                "orbit",
+                SceneHostSettings::new("", SceneRendererKind::Output),
+            )
+            .unwrap();
+        registry.replace_scene("orbit", snapshot(10.0)).unwrap();
+
+        assert_eq!(registry.render_frame().unwrap(), 1);
+        assert_eq!(registry.render_frame().unwrap(), 0);
+        assert_eq!(registry.drain_output_events().unwrap().len(), 1);
     }
 }

@@ -237,6 +237,7 @@ pub(crate) struct ServePlan {
     pub capability_events: Vec<capabilities::FilesystemCapabilityEvent>,
     pub config_event: config::ConfigLoadEvent,
     pub resources: WebResourceDefaults,
+    pub presentation: mech_runtime::ServePresentation,
 }
 
 pub(crate) fn prepare(
@@ -373,6 +374,7 @@ pub(crate) fn prepare(
         capability_events: authority_build.events,
         config_event: loaded.event,
         resources,
+        presentation: effective.presentation,
     })
 }
 
@@ -588,6 +590,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         js_backing_paths,
     );
     server.set_document_controller(document_controller, shipped_document_shim);
+    server.set_document_presentation(options.presentation);
     server.init().await?;
 
     server.load_serve_plan(options.workspace_plan, options.project_overlay)?;

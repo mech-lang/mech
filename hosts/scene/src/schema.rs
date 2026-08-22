@@ -36,12 +36,28 @@ pub struct LineElement {
 
 #[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq)]
+pub struct TextElement {
+    pub id: String,
+    pub x: f64,
+    pub y: f64,
+    pub fill: String,
+    pub font_size: f64,
+    pub font_family: String,
+    pub font_weight: String,
+    pub text_anchor: String,
+    pub opacity: f64,
+    pub value: String,
+}
+
+#[cfg_attr(feature = "rich-output", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SceneSnapshot {
     pub width: f64,
     pub height: f64,
     pub background: String,
     pub circles: Vec<CircleElement>,
     pub lines: Vec<LineElement>,
+    pub texts: Vec<TextElement>,
 }
 
 impl SceneSnapshot {
@@ -53,7 +69,15 @@ impl SceneSnapshot {
             return Err(scene_error("SceneSchema", "scene must be a record"));
         };
         let record = record.borrow();
-        let allowed = ["width", "height", "background", "circles", "lines"];
+        let allowed = [
+            "width",
+            "height",
+            "background",
+            "circles",
+            "lines",
+            "texts",
+            "point-sets",
+        ];
         for (_, name) in &record.field_names {
             if !allowed.contains(&name.as_str()) {
                 return Err(scene_error(
@@ -71,12 +95,19 @@ impl SceneSnapshot {
             return Err(scene_error("SceneSchema", "scene.height must be positive"));
         }
         let background = required_string(&record, "background", "scene.background")?;
-        let circles = record_value(&record, "circles")
+        let mut circles = record_value(&record, "circles")
             .map(elements_from_value::<CircleElement>)
             .transpose()?
             .unwrap_or_default();
+        if let Some(point_sets) = record_value(&record, "point-sets") {
+            circles.extend(point_set_circles(point_sets)?);
+        }
         let lines = record_value(&record, "lines")
             .map(elements_from_value::<LineElement>)
+            .transpose()?
+            .unwrap_or_default();
+        let texts = record_value(&record, "texts")
+            .map(elements_from_value::<TextElement>)
             .transpose()?
             .unwrap_or_default();
         let mut ids = HashSet::new();
@@ -84,6 +115,7 @@ impl SceneSnapshot {
             .iter()
             .map(|c| c.id.as_str())
             .chain(lines.iter().map(|l| l.id.as_str()))
+            .chain(texts.iter().map(|text| text.id.as_str()))
         {
             if !ids.insert(id.to_string()) {
                 return Err(scene_error(
@@ -98,6 +130,7 @@ impl SceneSnapshot {
             background,
             circles,
             lines,
+            texts,
         })
     }
 }
@@ -223,6 +256,65 @@ impl FromRecord for LineElement {
     }
 }
 
+impl FromRecord for TextElement {
+    const KIND: &'static str = "text";
+    const REQUIRED: &'static [&'static str] = &[
+        "id",
+        "x",
+        "y",
+        "fill",
+        "font-size",
+        "font-family",
+        "font-weight",
+        "text-anchor",
+        "opacity",
+        "value",
+    ];
+    fn from_record(record: &MechRecord) -> MResult<Self> {
+        reject_unknown_fields(record, Self::REQUIRED, Self::KIND)?;
+        let id = required_string(record, "id", "text.id")?;
+        validate_id(Self::KIND, &id)?;
+        let font_size = required_number(record, "font-size", &format!("text `{id}` font-size"))?;
+        if !font_size.is_finite() || font_size <= 0.0 {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("text `{id}` font-size must be finite and positive"),
+            ));
+        }
+        let text_anchor =
+            required_string(record, "text-anchor", &format!("text `{id}` text-anchor"))?;
+        validate_text_anchor(&id, &text_anchor)?;
+        let opacity = required_number(record, "opacity", &format!("text `{id}` opacity"))?;
+        validate_opacity(&id, opacity)?;
+        Ok(Self {
+            id: id.clone(),
+            x: finite_number(
+                required_number(record, "x", &format!("text `{id}` x"))?,
+                &format!("text `{id}` x"),
+            )?,
+            y: finite_number(
+                required_number(record, "y", &format!("text `{id}` y"))?,
+                &format!("text `{id}` y"),
+            )?,
+            fill: required_string(record, "fill", &format!("text `{id}` fill"))?,
+            font_size,
+            font_family: required_string(
+                record,
+                "font-family",
+                &format!("text `{id}` font-family"),
+            )?,
+            font_weight: required_string(
+                record,
+                "font-weight",
+                &format!("text `{id}` font-weight"),
+            )?,
+            text_anchor,
+            opacity,
+            value: required_string(record, "value", &format!("text `{id}` value"))?,
+        })
+    }
+}
+
 fn validate_stroke_width(id: &str, value: f64) -> MResult<()> {
     if !value.is_finite() || value < 0.0 {
         return Err(scene_error(
@@ -259,6 +351,15 @@ fn validate_line_cap(id: &str, value: &str) -> MResult<()> {
     }
     Ok(())
 }
+fn validate_text_anchor(id: &str, value: &str) -> MResult<()> {
+    if !matches!(value, "start" | "middle" | "end") {
+        return Err(scene_error(
+            "SceneSchema",
+            format!("text `{id}` text-anchor must be start, middle, or end"),
+        ));
+    }
+    Ok(())
+}
 fn finite_number(value: f64, label: &str) -> MResult<f64> {
     if !value.is_finite() {
         return Err(scene_error(
@@ -283,6 +384,156 @@ fn elements_from_value<T: FromRecord>(value: &LegacyValue) -> MResult<Vec<T>> {
         other => Err(scene_error(
             "SceneSchema",
             format!("scene elements must be a tuple or table, got {other:?}"),
+        )),
+    }
+}
+
+fn point_set_circles(value: &LegacyValue) -> MResult<Vec<CircleElement>> {
+    match value {
+        LegacyValue::MutableReference(value) => point_set_circles(&value.borrow()),
+        LegacyValue::Tuple(tuple) => {
+            let mut circles = Vec::new();
+            for value in &tuple.borrow().elements {
+                circles.extend(point_set_from_record_value(value.as_ref())?);
+            }
+            Ok(circles)
+        }
+        LegacyValue::Record(_) => point_set_from_record_value(value),
+        LegacyValue::Empty => Ok(Vec::new()),
+        other => Err(scene_error(
+            "SceneSchema",
+            format!("scene point-sets must be a record or tuple, got {other:?}"),
+        )),
+    }
+}
+
+fn point_set_from_record_value(value: &LegacyValue) -> MResult<Vec<CircleElement>> {
+    if let LegacyValue::MutableReference(value) = value {
+        return point_set_from_record_value(&value.borrow());
+    }
+    let LegacyValue::Record(record) = value else {
+        return Err(scene_error(
+            "SceneSchema",
+            "scene point-set must be a record",
+        ));
+    };
+    let record = record.borrow();
+    const FIELDS: &[&str] = &[
+        "id",
+        "positions",
+        "radius",
+        "first-radius",
+        "fills",
+        "stroke",
+        "stroke-width",
+        "opacity",
+    ];
+    reject_unknown_fields(&record, FIELDS, "point-set")?;
+    let id = required_string(&record, "id", "point-set.id")?;
+    validate_id("point-set", &id)?;
+    let positions = required_value(&record, "positions", &format!("point-set `{id}` positions"))?;
+    let positions = matrix_f64_values(positions, &format!("point-set `{id}` positions"))?;
+    if positions.rows == 0 || positions.columns != 2 {
+        return Err(scene_error(
+            "SceneSchema",
+            format!("point-set `{id}` positions must be a non-empty f64 matrix with two columns"),
+        ));
+    }
+    let radius = required_number(&record, "radius", &format!("point-set `{id}` radius"))?;
+    let first_radius = required_number(
+        &record,
+        "first-radius",
+        &format!("point-set `{id}` first-radius"),
+    )?;
+    if radius < 0.0 || first_radius < 0.0 {
+        return Err(scene_error(
+            "SceneSchema",
+            format!("point-set `{id}` radii must be non-negative"),
+        ));
+    }
+    let fills = required_strings(&record, "fills", &format!("point-set `{id}` fills"))?;
+    if fills.len() != positions.rows {
+        return Err(scene_error(
+            "SceneSchema",
+            format!(
+                "point-set `{id}` fills length mismatch: expected {}, got {}",
+                positions.rows,
+                fills.len()
+            ),
+        ));
+    }
+    let stroke = required_string(&record, "stroke", &format!("point-set `{id}` stroke"))?;
+    let stroke_width = required_number(
+        &record,
+        "stroke-width",
+        &format!("point-set `{id}` stroke-width"),
+    )?;
+    validate_stroke_width(&id, stroke_width)?;
+    let opacity = required_number(&record, "opacity", &format!("point-set `{id}` opacity"))?;
+    validate_opacity(&id, opacity)?;
+
+    let mut circles = Vec::with_capacity(positions.rows);
+    for row in 0..positions.rows {
+        let x = positions.values[row];
+        let y = positions.values[positions.rows + row];
+        if !x.is_finite() || !y.is_finite() {
+            return Err(scene_error(
+                "SceneSchema",
+                format!("point-set `{id}` row {row} contains a nonfinite coordinate"),
+            ));
+        }
+        circles.push(CircleElement {
+            id: format!("{id}-{row}"),
+            x,
+            y,
+            radius: if row == 0 { first_radius } else { radius },
+            fill: fills[row].clone(),
+            stroke: stroke.clone(),
+            stroke_width,
+            opacity,
+        });
+    }
+    Ok(circles)
+}
+
+struct F64MatrixValues {
+    rows: usize,
+    columns: usize,
+    values: Vec<f64>,
+}
+
+fn matrix_f64_values(value: &LegacyValue, label: &str) -> MResult<F64MatrixValues> {
+    if let LegacyValue::MutableReference(value) = value {
+        return matrix_f64_values(&value.borrow(), label);
+    }
+    match value {
+        LegacyValue::MatrixF64(matrix) => Ok(F64MatrixValues {
+            rows: matrix.rows(),
+            columns: matrix.cols(),
+            values: matrix.as_vec(),
+        }),
+        LegacyValue::MatrixValue(matrix) => {
+            let values = matrix
+                .as_vec()
+                .into_iter()
+                .map(|value| {
+                    value.as_f64().map(|value| *value.borrow()).map_err(|_| {
+                        scene_error(
+                            "SceneSchema",
+                            format!("field `{label}` must contain only f64 values"),
+                        )
+                    })
+                })
+                .collect::<MResult<Vec<_>>>()?;
+            Ok(F64MatrixValues {
+                rows: matrix.rows(),
+                columns: matrix.cols(),
+                values,
+            })
+        }
+        _ => Err(scene_error(
+            "SceneSchema",
+            format!("field `{label}` must be a dense f64 matrix, got {value:?}"),
         )),
     }
 }
@@ -373,6 +624,30 @@ fn required_string(record: &MechRecord, field: &str, label: &str) -> MResult<Str
         _ => Err(scene_error(
             "SceneSchema",
             format!("field `{label}` must be a string"),
+        )),
+    }
+}
+fn required_strings(record: &MechRecord, field: &str, label: &str) -> MResult<Vec<String>> {
+    strings_from_value(required_value(record, field, label)?, label)
+}
+fn strings_from_value(value: &LegacyValue, label: &str) -> MResult<Vec<String>> {
+    match value {
+        LegacyValue::MutableReference(value) => strings_from_value(&value.borrow(), label),
+        LegacyValue::Tuple(tuple) => tuple
+            .borrow()
+            .elements
+            .iter()
+            .map(|value| match value.as_ref() {
+                LegacyValue::String(value) => Ok(value.borrow().clone()),
+                _ => Err(scene_error(
+                    "SceneSchema",
+                    format!("field `{label}` must contain only strings"),
+                )),
+            })
+            .collect(),
+        _ => Err(scene_error(
+            "SceneSchema",
+            format!("field `{label}` must be a tuple of strings"),
         )),
     }
 }

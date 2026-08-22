@@ -74,6 +74,7 @@ struct ServerSourceRegistry {
     listing_asset: Option<ServerAsset>,
     document_controller: Option<String>,
     shipped_document_shim: Option<String>,
+    document_presentation: mech_runtime::ServePresentation,
     capability_kernel: Option<mech_runtime::SharedCapabilityKernel>,
     capability_subject: Option<String>,
 }
@@ -86,6 +87,10 @@ impl ServerSourceRegistry {
     ) {
         self.document_controller = document_controller;
         self.shipped_document_shim = shipped_document_shim;
+    }
+
+    fn set_document_presentation(&mut self, presentation: mech_runtime::ServePresentation) {
+        self.document_presentation = presentation;
     }
 
     fn with_capabilities(
@@ -437,6 +442,10 @@ impl ServerSourceRegistry {
                 Ok(tree) => {
                     let mut extra_slots = HtmlShimExtraSlots::default();
                     extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
+                    extra_slots.insert(
+                        "PRESENTATION",
+                        self.document_presentation.as_str().to_string(),
+                    );
                     if shim.contains("{{DOCUMENT_SCRIPT}}") {
                         let document_controller = self.document_controller.as_deref().ok_or_else(|| {
               MechError::new(
@@ -872,6 +881,14 @@ impl MechServer {
             .write()
             .unwrap()
             .set_document_controller(document_controller, shipped_document_shim);
+    }
+
+    /// Selects the initial presentation of generated source documents.
+    pub fn set_document_presentation(&mut self, presentation: mech_runtime::ServePresentation) {
+        self.registry
+            .write()
+            .unwrap()
+            .set_document_presentation(presentation);
     }
 
     fn generated_html_backing_paths(&self) -> Vec<PathBuf> {
@@ -2275,6 +2292,7 @@ mod tests {
         assert!(html.contains("/_mech/pkg/mech_wasm.js"));
         assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"));
         assert!(html.contains("data-mech-source-url-key=\"main.mec\""));
+        assert!(html.contains("data-mech-presentation=\"document\""));
         assert!(!html.contains("{{CODE}}"));
         assert!(!html.contains("{{SOURCE_URL_KEY}}"));
         assert!(!html.contains("/_mech/project.js"));
@@ -2282,6 +2300,33 @@ mod tests {
             registry.get_route("/code/main.mec").unwrap().content_type,
             "text/plain",
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn configured_output_presentation_reaches_generated_documents() {
+        let root = temp_root("output-document-presentation");
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let snapshot = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry.set_document_presentation(mech_runtime::ServePresentation::Output);
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        assert!(html.contains("data-mech-presentation=\"output\""));
+        assert!(!html.contains("{{PRESENTATION}}"));
         std::fs::remove_dir_all(root).unwrap();
     }
 

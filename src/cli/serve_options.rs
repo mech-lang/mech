@@ -57,6 +57,7 @@ pub(crate) struct EffectiveServeOptions {
     pub compute_backend: Option<String>,
     pub project_root: Option<PathBuf>,
     pub uses_configured_paths: bool,
+    pub presentation: mech_runtime::ServePresentation,
 }
 
 pub(crate) fn effective_serve_options(
@@ -216,5 +217,8 @@ pub(crate) fn effective_serve_options(
         compute_backend: args.backend.clone(),
         project_root,
         uses_configured_paths,
+        presentation: serve_config
+            .map(|serve| serve.presentation)
+            .unwrap_or_default(),
     })
 }

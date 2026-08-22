@@ -18,7 +18,7 @@ pub use provider::{
     RecordingSceneBackend, SceneBackend, SceneHostFactory, SceneResourceProvider,
     scene_snapshot_from_points,
 };
-pub use schema::{CircleElement, LineElement, SceneSnapshot};
+pub use schema::{CircleElement, LineElement, SceneSnapshot, TextElement};
 
 #[cfg(feature = "browser")]
 pub use browser::{BrowserSceneBackend, BrowserSceneHostFactory, BrowserSceneRegistry};

@@ -65,6 +65,22 @@ pub struct DiagnosticsConfigPatch {
     pub log_level: Option<String>,
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ServePresentation {
+    #[default]
+    Document,
+    Output,
+}
+
+impl ServePresentation {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Document => "document",
+            Self::Output => "output",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ServeHostConfig {
     pub address: Option<String>,
@@ -73,6 +89,7 @@ pub struct ServeHostConfig {
     pub stylesheets: Vec<PathBuf>,
     pub shim: Option<PathBuf>,
     pub wasm: Option<PathBuf>,
+    pub presentation: ServePresentation,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -503,6 +520,18 @@ impl ConfigLowerer {
                 "stylesheets" => out.stylesheets = expect_path_list("serve.stylesheets", value)?,
                 "shim" => out.shim = Some(PathBuf::from(expect_string("serve.shim", value)?)),
                 "wasm" => out.wasm = Some(PathBuf::from(expect_string("serve.wasm", value)?)),
+                "presentation" => {
+                    let presentation = expect_string("serve.presentation", value)?;
+                    out.presentation = match presentation.as_str() {
+                        "document" => ServePresentation::Document,
+                        "output" => ServePresentation::Output,
+                        _ => {
+                            return invalid(format!(
+                                "serve.presentation must be one of document, output; got `{presentation}`"
+                            ));
+                        }
+                    };
+                }
                 other => return invalid(format!("unknown serve field `{other}`")),
             }
         }
@@ -728,6 +757,29 @@ mod tests {
         assert_eq!(
             run.paths,
             vec![PathBuf::from("foo.mec"), PathBuf::from("bar.mec")]
+        );
+    }
+
+    #[test]
+    fn serve_presentation_parses_and_defaults_to_document() {
+        let output = parse(r#"config := {serve: {presentation: "output"}}"#).unwrap();
+        assert_eq!(
+            output.serve.unwrap().presentation,
+            ServePresentation::Output
+        );
+
+        let defaulted = parse(r#"config := {serve: {port: 8081}}"#).unwrap();
+        assert_eq!(
+            defaulted.serve.unwrap().presentation,
+            ServePresentation::Document
+        );
+    }
+
+    #[test]
+    fn unknown_serve_presentation_fails() {
+        let error = parse(r#"config := {serve: {presentation: "canvas"}}"#).unwrap_err();
+        assert!(
+            format!("{error:?}").contains("serve.presentation must be one of document, output")
         );
     }
 
