@@ -14,7 +14,9 @@ MECH_SOLAR_MASS = 4.0 * MECH_PI**2
 MECH_DT = 0.002
 MECH_TURNS = 4_096
 STATE_QUANTUM = 1.0e-8
-EXPECTED_TEN_BODY_STATE = "794eca36e3d31d2f06d48930d48c53252e867b4cce784f1dd7872bb72ec4c8ca"
+EXPECTED_TEN_BODY_STATE = "0c2206f579e31f4c8fa4efa1cd32cab53386224fda0f4593274843e12440f8f8"
+JPL_MERCURY_SEMIMAJOR_AXIS_AU = 0.38709927
+JPL_MERCURY_ECCENTRICITY = 0.20563593
 
 
 def mech_bodies() -> list[list[object]]:
@@ -23,11 +25,11 @@ def mech_bodies() -> list[list[object]]:
     bodies = [
         [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], mass],
         [
-            [-0.38972469318558057, -0.15022403533011131, 0.023476059815063703],
+            [-0.3895481522339008, -0.1503099879924185, 0.02350666145222942],
             [
-                0.0042923857521344092 * year,
-                -0.021425298453769862 * year,
-                -0.0023708721826123731 * year,
+                0.004308277706530398 * year,
+                -0.02502425088636981 * year,
+                -0.002439088939653241 * year,
             ],
             1.660120e-07 * mass,
         ],
@@ -208,11 +210,42 @@ def relative_mercury_state(bodies: list[list[object]]) -> tuple[float, float, fl
     return radius, speed, areal_rate
 
 
+def mercury_orbital_elements(bodies: list[list[object]]) -> tuple[float, float]:
+    position = [bodies[1][0][axis] - bodies[0][0][axis] for axis in range(3)]
+    velocity = [bodies[1][1][axis] - bodies[0][1][axis] for axis in range(3)]
+    radius = math.sqrt(sum(component * component for component in position))
+    speed_squared = sum(component * component for component in velocity)
+    cross = [
+        position[1] * velocity[2] - position[2] * velocity[1],
+        position[2] * velocity[0] - position[0] * velocity[2],
+        position[0] * velocity[1] - position[1] * velocity[0],
+    ]
+    gravitational_parameter = bodies[0][2] + bodies[1][2]
+    semimajor_axis = 1.0 / (2.0 / radius - speed_squared / gravitational_parameter)
+    eccentricity = math.sqrt(
+        1.0
+        - sum(component * component for component in cross)
+        / (gravitational_parameter * semimajor_axis)
+    )
+    return semimajor_axis, eccentricity
+
+
 def main() -> None:
     bodies = mech_bodies()
     initial_momentum = momentum(bodies)
     if any(abs(component) >= 1.0e-12 for component in initial_momentum):
         raise SystemExit(f"ten-body initial momentum is not balanced: {initial_momentum}")
+    mercury_semimajor_axis, mercury_eccentricity = mercury_orbital_elements(bodies)
+    if abs(mercury_semimajor_axis - JPL_MERCURY_SEMIMAJOR_AXIS_AU) >= 0.002:
+        raise SystemExit(
+            "Mercury semimajor axis does not match the JPL orbit: "
+            f"{mercury_semimajor_axis:.9f} AU"
+        )
+    if abs(mercury_eccentricity - JPL_MERCURY_ECCENTRICITY) >= 0.002:
+        raise SystemExit(
+            "Mercury eccentricity does not match the JPL orbit: "
+            f"{mercury_eccentricity:.9f}"
+        )
     initial_energy = energy(bodies)
     mercury = [relative_mercury_state(bodies)]
     for _ in range(MECH_TURNS):
@@ -227,6 +260,10 @@ def main() -> None:
 
     perihelion = min(mercury, key=lambda sample: sample[0])
     aphelion = max(mercury, key=lambda sample: sample[0])
+    if not 0.295 <= perihelion[0] <= 0.320:
+        raise SystemExit(f"Mercury perihelion is outside its nominal orbit: {perihelion}")
+    if not 0.450 <= aphelion[0] <= 0.480:
+        raise SystemExit(f"Mercury aphelion is outside its nominal orbit: {aphelion}")
     if not perihelion[1] > aphelion[1] * 1.2:
         raise SystemExit(
             f"Mercury did not accelerate through perihelion: perihelion={perihelion}, aphelion={aphelion}"
@@ -250,6 +287,8 @@ def main() -> None:
         "NBODY_PYTHON_REFERENCE "
         f"turns={MECH_TURNS} dt={MECH_DT} state={final_hash} "
         f"initial_energy={initial_energy:.12f} final_energy={final_energy:.12f} "
+        f"mercury_semimajor_axis={mercury_semimajor_axis:.9f} "
+        f"mercury_eccentricity={mercury_eccentricity:.9f} "
         f"mercury_perihelion_radius={perihelion[0]:.9f} "
         f"mercury_perihelion_speed={perihelion[1]:.9f} "
         f"mercury_aphelion_radius={aphelion[0]:.9f} "

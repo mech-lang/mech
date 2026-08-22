@@ -111,16 +111,21 @@ harness = '''<script>
     });
 
     const originalSetTimeout = window.setTimeout.bind(window);
-    let firstX;
-    let firstY;
+    let firstMercuryX;
+    let firstMercuryY;
+    let lastSunDisplayUpdate = -1;
+    let sunFrameCount = 0;
+    let maximumSunOffset = 0;
+    let sunEverOffCenter = false;
+    let minimumMercuryOffset = Number.POSITIVE_INFINITY;
     const deadline = Date.now() + 20000;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
-      const body = document.querySelector('[data-mech-scene-id="body-1"]');
-      if (body && firstX === undefined) {
-        firstX = body.getAttribute("cx");
-        firstY = body.getAttribute("cy");
+      const mercury = document.querySelector('[data-mech-scene-id="body-1"]');
+      if (mercury && firstMercuryX === undefined) {
+        firstMercuryX = mercury.getAttribute("cx");
+        firstMercuryY = mercury.getAttribute("cy");
       }
       const display = document.querySelector('[data-mech-display-id="scene-orbit"]');
       const displayUpdates = Number(display?.dataset.mechDisplayUpdates || 0);
@@ -150,9 +155,29 @@ harness = '''<script>
       const sceneGeometryCorrect = bodyRadii.every(
         (radius, index) => radius >= expectedRadiusBands[index][0] && radius < expectedRadiusBands[index][1]
       );
-      const sunCentered = bodyRadii[0] < 0.001;
+      const sunOffset = bodyRadii[0];
+      const mercuryOffset = bodyRadii[1];
+      if (
+        Number.isFinite(sunOffset) &&
+        Number.isFinite(mercuryOffset) &&
+        displayUpdates > 0 &&
+        displayUpdates !== lastSunDisplayUpdate
+      ) {
+        lastSunDisplayUpdate = displayUpdates;
+        sunFrameCount += 1;
+        maximumSunOffset = Math.max(maximumSunOffset, sunOffset);
+        sunEverOffCenter ||= sunOffset >= 0.001;
+        minimumMercuryOffset = Math.min(minimumMercuryOffset, mercuryOffset);
+      }
+      const sunCentered = sunFrameCount > 0 && !sunEverOffCenter;
+      // The independently bounded 0.295 AU perihelion maps above 23 px.
+      const mercuryClearsSun = minimumMercuryOffset > 23;
       root.dataset.mechBodyRadii = bodyRadii.map((radius) => radius.toFixed(3)).join(",");
       root.dataset.mechSunCentered = String(sunCentered);
+      root.dataset.mechSunFrameCount = String(sunFrameCount);
+      root.dataset.mechMaximumSunOffset = maximumSunOffset.toExponential(3);
+      root.dataset.mechMercuryClearsSun = String(mercuryClearsSun);
+      root.dataset.mechMinimumMercuryOffset = minimumMercuryOffset.toFixed(3);
       const sceneVisible = Boolean(
         sceneRect &&
         sceneRect.width > 0 &&
@@ -164,13 +189,15 @@ harness = '''<script>
       );
       root.dataset.mechObservedRendered = String(displayUpdates);
       if (
-        body &&
+        mercury &&
         circles.length === 10 &&
         orbitGuides.length === 9 &&
         title?.textContent === "Solar-System Orbit Viewer" &&
         sceneGeometryCorrect &&
         sunCentered &&
+        mercuryClearsSun &&
         sceneVisible &&
+        sunFrameCount >= 600 &&
         displayUpdates >= 600
       ) {
           const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
@@ -183,8 +210,9 @@ harness = '''<script>
           root.dataset.mechSceneVisible = String(sceneVisible);
           root.dataset.mechSceneWidth = String(Math.round(sceneRect.width));
           root.dataset.mechSceneHeight = String(Math.round(sceneRect.height));
-          root.dataset.mechBodyMoved = String(
-            body.getAttribute("cx") !== firstX || body.getAttribute("cy") !== firstY
+          root.dataset.mechMercuryMoved = String(
+            mercury.getAttribute("cx") !== firstMercuryX ||
+            mercury.getAttribute("cy") !== firstMercuryY
           );
           root.dataset.mechOutputPresentation = String(
             document.querySelector('.mech-root')?.dataset.mechPresentation === "output" &&
@@ -280,6 +308,7 @@ chrome_status="$?"
 set -e
 
 rendered="$(sed -n 's/.*data-mech-rendered="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
+sun_frames="$(sed -n 's/.*data-mech-sun-frame-count="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-done="true"' "$dom_file" \
   || ! grep -q 'data-mech-circles="10"' "$dom_file" \
@@ -287,16 +316,18 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-scene-title="Solar-System Orbit Viewer"' "$dom_file" \
   || ! grep -q 'data-mech-scene-geometry-correct="true"' "$dom_file" \
   || ! grep -q 'data-mech-sun-centered="true"' "$dom_file" \
+  || ! grep -q 'data-mech-mercury-clears-sun="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-width="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-scene-height="[1-9][0-9]*"' "$dom_file" \
-  || ! grep -q 'data-mech-body-moved="true"' "$dom_file" \
+  || ! grep -q 'data-mech-mercury-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q 'data-mech-rich-scene="true"' "$dom_file" \
   || ! grep -q 'data-mech-rich-display-operation="update"' "$dom_file" \
   || ! grep -q 'data-mech-rich-display-updates="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-rich-circles="10"' "$dom_file" \
   || [[ -z "$rendered" || "$rendered" -lt 600 ]] \
+  || [[ -z "$sun_frames" || "$sun_frames" -lt 600 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident n-body browser smoke test failed" >&2
   echo "Server log:" >&2
@@ -308,4 +339,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true scene_geometry=true sun_centered=true scene_visible=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"
+printf 'NBODY_E2E native_energy=true display_updates=%s sun_frames=%s bodies=10 orbit_guides=9 title=true scene_geometry=true sun_centered_continuously=true mercury_clears_sun=true scene_visible=true rich_scene=true rich_operation=update mercury_moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered" "$sun_frames"

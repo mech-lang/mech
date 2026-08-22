@@ -17,7 +17,9 @@ orbits.
 Positions use astronomical units, velocities use astronomical units per year,
 and masses are normalized so the gravitational constant is one. As in the
 Computer Language Benchmarks Game reference system, the Sun's initial velocity
-cancels the planets' total momentum.
+cancels the planets' total momentum. Mercury's heliocentric ecliptic state is a
+JPL Horizons vector for 1974-06-04; unlike the previously copied velocity, it
+has the planet's independently published semimajor axis and eccentricity.
 
 @clock := timer://clock/tick{:read(tick)}
 @scene := scene://orbit/frame{:write(replace)}
@@ -30,16 +32,16 @@ cancels the planets' total momentum.
   ☉ := [ 0,
           0,
           0,
-         -1.0071322343256519e-06 * days-per-year,
-         -8.9101827654437867e-06 * days-per-year,
-          6.6572158095054500e-08 * days-per-year,
+         -1.0071348725807848e-06 * days-per-year,
+         -8.909585296152547e-06 * days-per-year,
+          6.658348289532437e-08 * days-per-year,
           solar-mass ]
-  ☿ := [ -0.38972469318558057,
-           -0.15022403533011131,
-            0.023476059815063703,
-            0.0042923857521344092 * days-per-year,
-           -0.021425298453769862 * days-per-year,
-           -0.0023708721826123731 * days-per-year,
+  ☿ := [ -0.3895481522339008,
+           -0.1503099879924185,
+            0.02350666145222942,
+            0.004308277706530398 * days-per-year,
+           -0.02502425088636981 * days-per-year,
+           -0.002439088939653241 * days-per-year,
             1.660120e-07 * solar-mass ]
   ♀ := [ -0.71803521454713496,
             0.041947688018485076,

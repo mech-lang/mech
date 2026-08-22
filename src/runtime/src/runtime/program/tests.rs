@@ -2724,14 +2724,20 @@ impl ScalarNbodyReference {
         }
     }
 
-    fn mercury_state(&self) -> (f64, f64, f64) {
+    fn relative_body_state(&self, body: usize) -> ([f64; 3], [f64; 3]) {
         let body_count = self.body_count();
-        let position: [f64; 3] = core::array::from_fn(|axis| {
-            self.positions[1 + axis * body_count] - self.positions[axis * body_count]
-        });
-        let velocity: [f64; 3] = core::array::from_fn(|axis| {
-            self.velocities[1 + axis * body_count] - self.velocities[axis * body_count]
-        });
+        (
+            core::array::from_fn(|axis| {
+                self.positions[body + axis * body_count] - self.positions[axis * body_count]
+            }),
+            core::array::from_fn(|axis| {
+                self.velocities[body + axis * body_count] - self.velocities[axis * body_count]
+            }),
+        )
+    }
+
+    fn mercury_state(&self) -> (f64, f64, f64) {
+        let (position, velocity) = self.relative_body_state(1);
         let radius = position
             .iter()
             .map(|value| value * value)
@@ -2749,6 +2755,28 @@ impl ScalarNbodyReference {
         ];
         let areal_rate = 0.5 * cross.iter().map(|value| value * value).sum::<f64>().sqrt();
         (radius, speed, areal_rate)
+    }
+
+    fn mercury_orbital_elements(&self) -> (f64, f64) {
+        let (position, velocity) = self.relative_body_state(1);
+        let radius = position
+            .iter()
+            .map(|value| value * value)
+            .sum::<f64>()
+            .sqrt();
+        let speed_squared = velocity.iter().map(|value| value * value).sum::<f64>();
+        let cross = [
+            position[1] * velocity[2] - position[2] * velocity[1],
+            position[2] * velocity[0] - position[0] * velocity[2],
+            position[0] * velocity[1] - position[1] * velocity[0],
+        ];
+        let gravitational_parameter = self.masses[0] + self.masses[1];
+        let semimajor_axis = 1.0 / (2.0 / radius - speed_squared / gravitational_parameter);
+        let eccentricity = (1.0
+            - cross.iter().map(|value| value * value).sum::<f64>()
+                / (gravitational_parameter * semimajor_axis))
+            .sqrt();
+        (semimajor_axis, eccentricity)
     }
 }
 
@@ -2772,13 +2800,13 @@ fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlo
     assert_eq!(slots.len(), 2, "public N-body has exactly two state cells");
     let first = public_nbody_state_slot(runtime, slots[0]);
     let second = public_nbody_state_slot(runtime, slots[1]);
-    if (first[1] - (-0.38972469318558057)).abs() < 1.0e-12 {
+    if (first[1] - (-0.3895481522339008)).abs() < 1.0e-12 {
         PublicNbodyStateSlots {
             positions: slots[0],
             velocities: slots[1],
         }
     } else {
-        assert!((second[1] - (-0.38972469318558057)).abs() < 1.0e-12);
+        assert!((second[1] - (-0.3895481522339008)).abs() < 1.0e-12);
         PublicNbodyStateSlots {
             positions: slots[1],
             velocities: slots[0],
@@ -2877,6 +2905,9 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
             .all(|component| component.abs() < 1.0e-12),
         "the public source must start in the zero-momentum center-of-mass frame",
     );
+    let (mercury_semimajor_axis, mercury_eccentricity) = raw.mercury_orbital_elements();
+    assert!((mercury_semimajor_axis - 0.38709927).abs() < 0.002);
+    assert!((mercury_eccentricity - 0.20563593).abs() < 0.002);
     let mut mercury = vec![raw.mercury_state()];
 
     let published_energy = |runtime: &crate::MechRuntime| match runtime
@@ -2890,6 +2921,7 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
         }
         value => panic!("N-body energy must be a 1-by-1 f64 matrix, got {value:?}"),
     };
+    let expected_initial_energy = raw.energy();
     raw.advance(0.002);
     advance_product_nbody(&mut runtime);
     assert_public_nbody_matches_raw(&runtime, state_slots, &raw);
@@ -2918,8 +2950,14 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
     let initial_mercury_radius =
         (initial_frame[1] - initial_frame[0]).hypot(initial_frame[11] - initial_frame[10]);
     let initial_energy = published_energy(&runtime);
+    assert!(
+        (initial_energy - expected_initial_energy).abs() < 1.0e-10,
+        "the public Mech energy must equal the independent raw-Rust energy for the published turn: {initial_energy:?} != {expected_initial_energy:?}",
+    );
 
+    let mut expected_final_energy = expected_initial_energy;
     for _ in 1..4_096 {
+        expected_final_energy = raw.energy();
         raw.advance(0.002);
         advance_product_nbody(&mut runtime);
         assert_public_nbody_matches_raw(&runtime, state_slots, &raw);
@@ -2949,6 +2987,10 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
     );
 
     let final_energy = published_energy(&runtime);
+    assert!(
+        (final_energy - expected_final_energy).abs() < 1.0e-10,
+        "the public Mech energy must equal the independent raw-Rust energy for the published turn: {final_energy:?} != {expected_final_energy:?}",
+    );
     assert!(initial_energy.is_finite() && final_energy.is_finite());
     let relative_energy_drift = ((final_energy - initial_energy) / initial_energy).abs();
     assert!(
@@ -2958,7 +3000,7 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
 
     assert_eq!(
         public_nbody_python_state_hash(&raw),
-        "794eca36e3d31d2f06d48930d48c53252e867b4cce784f1dd7872bb72ec4c8ca",
+        "0c2206f579e31f4c8fa4efa1cd32cab53386224fda0f4593274843e12440f8f8",
         "the Mech/raw-Rust trajectory must match the independent Python reference",
     );
     let perihelion = mercury
@@ -2969,6 +3011,14 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
         .iter()
         .max_by(|left, right| left.0.total_cmp(&right.0))
         .unwrap();
+    assert!(
+        (0.295..=0.320).contains(&perihelion.0),
+        "Mercury's perihelion must remain on its independently specified nominal orbit: {perihelion:?}",
+    );
+    assert!(
+        (0.450..=0.480).contains(&aphelion.0),
+        "Mercury's aphelion must remain on its independently specified nominal orbit: {aphelion:?}",
+    );
     assert!(
         perihelion.1 > aphelion.1 * 1.2,
         "Mercury must move faster at perihelion than at aphelion: {perihelion:?} versus {aphelion:?}",
