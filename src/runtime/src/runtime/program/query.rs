@@ -128,6 +128,18 @@ impl MechRuntime {
         None
     }
 
+    /// Snapshot the currently published implicit program result.
+    ///
+    /// Replacement runtimes may migrate live state and refresh derived
+    /// projections after activation, so callers must read this value from the
+    /// accepted candidate instead of retaining its activation-time snapshot.
+    pub fn program_output_value(&self) -> MResult<Option<RuntimeValueSnapshot>> {
+        let Some(output_id) = self.program_output_id() else {
+            return Ok(None);
+        };
+        self.output_value(output_id)
+    }
+
     pub fn program_output_values(
         &self,
         names: &[String],

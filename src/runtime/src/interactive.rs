@@ -473,6 +473,16 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             }
         }
 
+        let accepted_value = match candidate.program_output_value() {
+            Ok(Some(value)) => value,
+            Ok(None) => outcome.initial_value,
+            Err(error) => {
+                let _ = candidate.shutdown();
+                self.factory.abort();
+                return Err(error);
+            }
+        };
+
         if let Err(error) = self.factory.prepare_commit(&mut candidate) {
             let _ = candidate.shutdown();
             self.factory.abort();
@@ -512,7 +522,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
                 ),
             );
         }
-        Ok(outcome.initial_value)
+        Ok(accepted_value)
     }
 
     /// Remove resident variables by rebuilding the complete accepted source.
@@ -1459,6 +1469,20 @@ display := b + 10
             "116",
             "a rewired projection must be recomputed from migrated state without advancing its transition",
         );
+    }
+
+    #[test]
+    fn accepted_source_returns_the_projection_refreshed_from_migrated_state() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("~counter := 0").unwrap();
+        session.submit("counter += 1").unwrap();
+        session.submit("display := counter + 10").unwrap();
+        session.step(2).unwrap();
+
+        let returned = session.submit("counter").unwrap();
+
+        assert_eq!(returned.to_string(), "3");
+        assert_eq!(session.symbol("ans").unwrap().unwrap().to_string(), "3");
     }
 
     #[test]

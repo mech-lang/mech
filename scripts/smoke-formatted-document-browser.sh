@@ -336,9 +336,10 @@ try:
     def wait_for_new_symbol_value(previous_count, name, value, description):
         wait_for(
             "(() => { const tables = [...document.querySelectorAll('.mech-repl-symbols')]; "
-            f"return tables.length > {previous_count} && "
-            f"tables.at(-1)?.textContent.includes({json.dumps(name)}) && "
-            f"tables.at(-1)?.textContent.includes({json.dumps(value)}); }})()",
+            f"const table = tables.at(-1); return tables.length > {previous_count} && "
+            f"[...(table?.tBodies[0]?.rows || [])].some(row => "
+            f"row.cells[0]?.textContent.trim() === {json.dumps(name)} && "
+            f"row.textContent.includes({json.dumps(value)})); }})()",
             description,
         )
 
@@ -409,10 +410,12 @@ try:
         not popup_state["reopened"]
     ):
         fail(f"closed standalone console did not show a styled value popup: {popup_state!r}")
+    previous_symbol_tables = evaluate("document.querySelectorAll('.mech-repl-symbols').length")
     submit(":whos ans")
-    wait_for(
-        "[...document.querySelectorAll('.mech-repl-symbols')].at(-1)?.textContent.includes('ans') && "
-        "[...document.querySelectorAll('.mech-repl-symbols')].at(-1)?.textContent.includes('59')",
+    wait_for_new_symbol_value(
+        previous_symbol_tables,
+        "ans",
+        "59",
         "the popup selection becoming ans",
     )
 finally:
