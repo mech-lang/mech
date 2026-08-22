@@ -333,17 +333,27 @@ try:
         ):
             fail(f"could not submit browser REPL command: {command}")
 
-    exact_answer = "(() => { const tables = [...document.querySelectorAll('.mech-repl-symbols')]; return tables.at(-1)?.textContent.includes('answer') && tables.at(-1)?.textContent.includes('58'); })()"
+    def wait_for_new_symbol_value(previous_count, name, value, description):
+        wait_for(
+            "(() => { const tables = [...document.querySelectorAll('.mech-repl-symbols')]; "
+            f"return tables.length > {previous_count} && "
+            f"tables.at(-1)?.textContent.includes({json.dumps(name)}) && "
+            f"tables.at(-1)?.textContent.includes({json.dumps(value)}); }})()",
+            description,
+        )
+
     submit("answer = 58")
     submit("answer")
     wait_for("[...document.querySelectorAll('.mech-repl-result')].some(row => /58/.test(row.textContent))", "the resident source value")
+    previous_symbol_tables = evaluate("document.querySelectorAll('.mech-repl-symbols').length")
     submit(":whos answer")
-    wait_for(exact_answer, "the resident symbol value")
+    wait_for_new_symbol_value(previous_symbol_tables, "answer", "58", "the resident symbol value")
     submit(":clear")
-    wait_for("[...document.querySelectorAll('.mech-repl-info')].some(row => /Resident REPL state cleared/.test(row.textContent))", "the resident REPL reset")
-    submit("answer = 58")
+    wait_for("[...document.querySelectorAll('.mech-repl-info')].some(row => /Resident workspace cleared/.test(row.textContent))", "the resident workspace clear")
+    submit("answer := 58")
+    previous_symbol_tables = evaluate("document.querySelectorAll('.mech-repl-symbols').length")
     submit(":whos answer")
-    wait_for(exact_answer, "the resident symbol value after reset")
+    wait_for_new_symbol_value(previous_symbol_tables, "answer", "58", "the resident symbol value after reset")
     popup_state = evaluate("""
 (() => {
   const root = document.querySelector('.mech-root');
