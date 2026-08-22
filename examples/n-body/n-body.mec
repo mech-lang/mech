@@ -134,30 +134,9 @@ body's simulated direction.
   safe-radius := orbital-radius + 0.000001
   display-radius := safe-radius ^ 0.5 * 44.0
   display-scale := display-radius / safe-radius
-  screen-offsets := positions[:,[1,2]] * display-scale
-  screen-points := screen-offsets * [
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-    1.0 -1.0
-  ] + [
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-    430.0 380.0
-  ]
+  screen-x := 430.0 + positions[:,1] * display-scale
+  screen-y := 380.0 - positions[:,2] * display-scale
+  screen-points := [screen-x screen-y]
 
   scene-circles := (
     {

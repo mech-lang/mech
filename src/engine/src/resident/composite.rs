@@ -191,46 +191,58 @@ fn composite_matrix_shapes_match_template(shape: &ShapeInstance, plan: &Composit
     })
 }
 
-fn composite_child_data(input: ResidentValueRef<'_>, matrix: bool) -> Option<ValueData> {
-    if matrix {
+fn canonical_matrix_elements<T, U>(
+    values: &[T],
+    shape: ResidentShape,
+    mut convert: impl FnMut(&T) -> Option<U>,
+) -> Option<Box<[U]>> {
+    // Resident matrices are physically column-major, while detached snapshots
+    // are canonical row-major values. Composite host payloads cross that
+    // boundary here for every supported element representation.
+    let rows = shape.rows as usize;
+    let columns = shape.columns as usize;
+    if values.len() != rows.checked_mul(columns)? {
+        return None;
+    }
+    let mut canonical = Vec::with_capacity(values.len());
+    for row in 0..rows {
+        for column in 0..columns {
+            canonical.push(convert(&values[column * rows + row])?);
+        }
+    }
+    Some(canonical.into_boxed_slice())
+}
+
+fn composite_child_data(
+    input: ResidentValueRef<'_>,
+    plan: &CompositeChildPlan,
+) -> Option<ValueData> {
+    if plan.matrix_dimensions.is_some() {
         let matrix = match input {
             ResidentValueRef::Bool(values) => MatrixValue::from_bool_elements(
-                values
-                    .iter()
-                    .copied()
-                    .map(|value| match value {
-                        0 => Some(false),
-                        1 => Some(true),
-                        _ => None,
-                    })
-                    .collect::<Option<Vec<_>>>()?
-                    .into_boxed_slice(),
+                canonical_matrix_elements(values, plan.shape, |value| match value {
+                    0 => Some(false),
+                    1 => Some(true),
+                    _ => None,
+                })?,
             ),
-            ResidentValueRef::Index(values) => {
-                MatrixValue::from_index_elements(values.to_vec().into_boxed_slice())
-            }
+            ResidentValueRef::Index(values) => MatrixValue::from_index_elements(
+                canonical_matrix_elements(values, plan.shape, |value| Some(*value))?,
+            ),
             ResidentValueRef::F64(values) => MatrixValue::from_f64_elements(
-                values
-                    .iter()
-                    .copied()
-                    .map(F64Bits::from_f64)
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
+                canonical_matrix_elements(values, plan.shape, |value| {
+                    Some(F64Bits::from_f64(*value))
+                })?,
             ),
             ResidentValueRef::String(values) => MatrixValue::from_string_elements(
-                values
-                    .iter()
-                    .cloned()
-                    .map(String::into_boxed_str)
-                    .collect::<Vec<_>>()
-                    .into_boxed_slice(),
+                canonical_matrix_elements(values, plan.shape, |value| {
+                    Some(value.clone().into_boxed_str())
+                })?,
             ),
             ResidentValueRef::Snapshot(values) => MatrixValue::from_value_elements(
-                values
-                    .iter()
-                    .map(|value| value.as_ref().map(|value| value.data().clone()))
-                    .collect::<Option<Vec<_>>>()?
-                    .into_boxed_slice(),
+                canonical_matrix_elements(values, plan.shape, |value| {
+                    value.as_ref().map(|value| value.data().clone())
+                })?,
             ),
         };
         return Some(ValueData::Matrix(matrix));
@@ -264,12 +276,7 @@ fn composite_pack(
         return Err(ResidentKernelError::InvalidShape);
     }
     let children = (1..inputs.len())
-        .map(|index| {
-            composite_child_data(
-                inputs.get(index)?,
-                plan.children.get(index - 1)?.matrix_dimensions.is_some(),
-            )
-        })
+        .map(|index| composite_child_data(inputs.get(index)?, plan.children.get(index - 1)?))
         .collect::<Option<Vec<_>>>()
         .ok_or(ResidentKernelError::InvalidInput)?
         .into_boxed_slice();
@@ -380,14 +387,14 @@ mod tests {
     }
 
     #[test]
-    fn matrix_valued_composite_children_keep_their_schema_and_payload_shape() {
+    fn matrix_valued_composite_children_convert_physical_columns_to_canonical_rows() {
         let mut builder = mech_core::SchemaTableBuilder::new();
         let matrix = builder
             .insert(schema(SchemaBody::Matrix {
                 element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
                 dimensions: vec![
-                    mech_core::DimensionExpr::Constant(1),
                     mech_core::DimensionExpr::Constant(2),
+                    mech_core::DimensionExpr::Constant(3),
                 ]
                 .into_boxed_slice(),
             }))
@@ -397,8 +404,8 @@ mod tests {
                 vec![SchemaBody::Matrix {
                     element: Box::new(SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)),
                     dimensions: vec![
-                        mech_core::DimensionExpr::Constant(1),
                         mech_core::DimensionExpr::Constant(2),
+                        mech_core::DimensionExpr::Constant(3),
                     ]
                     .into_boxed_slice(),
                 }]
@@ -419,8 +426,8 @@ mod tests {
             matrix,
             ResidentValueKind::F64,
             ResidentShape {
-                rows: 1,
-                columns: 2,
+                rows: 2,
+                columns: 3,
             },
         );
         assert!(composite_child_layout_supported(
@@ -433,9 +440,18 @@ mod tests {
             &matrix_layout,
         ));
 
-        let values = [1.0, 2.0];
+        let values = [1.0, 4.0, 2.0, 5.0, 3.0, 6.0];
+        let plan = CompositeChildPlan {
+            matrix_dimensions: Some(
+                vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)].into_boxed_slice(),
+            ),
+            shape: ResidentShape {
+                rows: 2,
+                columns: 3,
+            },
+        };
         let Some(ValueData::Matrix(matrix)) =
-            composite_child_data(ResidentValueRef::F64(&values), true)
+            composite_child_data(ResidentValueRef::F64(&values), &plan)
         else {
             panic!("matrix child must remain a matrix snapshot payload")
         };
@@ -447,7 +463,7 @@ mod tests {
                 .iter()
                 .map(|value| value.to_f64())
                 .collect::<Vec<_>>(),
-            [1.0, 2.0]
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
         );
     }
 

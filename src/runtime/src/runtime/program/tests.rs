@@ -2629,6 +2629,26 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
     advance_product_nbody(&mut runtime);
     let initial_frame = scene.lock().unwrap().latest.clone();
     assert_eq!(initial_frame.len(), 20);
+    let initial_display_radii = (0..10)
+        .map(|body| (initial_frame[body] - 430.0).hypot(initial_frame[10 + body] - 380.0))
+        .collect::<Vec<_>>();
+    for (body, radius, expected) in [
+        ("Sun", initial_display_radii[0], 0.0..1.0),
+        ("Mercury", initial_display_radii[1], 20.0..35.0),
+        ("Venus", initial_display_radii[2], 30.0..45.0),
+        ("Earth", initial_display_radii[3], 35.0..52.0),
+        ("Mars", initial_display_radii[4], 45.0..65.0),
+        ("Jupiter", initial_display_radii[5], 85.0..115.0),
+        ("Saturn", initial_display_radii[6], 120.0..155.0),
+        ("Uranus", initial_display_radii[7], 175.0..215.0),
+        ("Neptune", initial_display_radii[8], 220.0..260.0),
+        ("Pluto", initial_display_radii[9], 215.0..265.0),
+    ] {
+        assert!(
+            expected.contains(&radius),
+            "{body} rendered at display radius {radius}, expected {expected:?}",
+        );
+    }
     let initial_mercury_radius =
         (initial_frame[1] - initial_frame[0]).hypot(initial_frame[11] - initial_frame[10]);
     let initial_energy = published_energy(&runtime);

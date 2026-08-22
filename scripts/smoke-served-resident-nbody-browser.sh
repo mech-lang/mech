@@ -74,7 +74,9 @@ PY
 "$MECH_BIN" serve --address 127.0.0.1 --port "$port" "$project_dir" >"$server_log" 2>&1 &
 server_pid="$!"
 page_url="http://127.0.0.1:${port}/"
-for _ in $(seq 1 100); do
+server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-60}"
+server_ready_deadline=$((SECONDS + server_ready_timeout_seconds))
+while ((SECONDS < server_ready_deadline)); do
   if curl --fail --silent "$page_url" >"$browser_dir/index.html.pending" 2>/dev/null; then
     mv "$browser_dir/index.html.pending" "$project_dir/index.html"
     break
@@ -127,6 +129,28 @@ harness = '''<script>
       const title = document.querySelector('[data-mech-scene-id="title"]');
       const scene = document.querySelector('[data-mech-rich-scene="true"]');
       const sceneRect = scene?.getBoundingClientRect();
+      const expectedRadiusBands = [
+        [0, 1],
+        [20, 35],
+        [30, 45],
+        [35, 52],
+        [45, 65],
+        [85, 115],
+        [120, 155],
+        [175, 215],
+        [220, 260],
+        [215, 265],
+      ];
+      const bodyRadii = expectedRadiusBands.map((_, index) => {
+        const circle = document.querySelector(`[data-mech-scene-id="body-${index}"]`);
+        return circle
+          ? Math.hypot(Number(circle.getAttribute("cx")) - 430, Number(circle.getAttribute("cy")) - 380)
+          : Number.NaN;
+      });
+      const sceneGeometryCorrect = bodyRadii.every(
+        (radius, index) => radius >= expectedRadiusBands[index][0] && radius < expectedRadiusBands[index][1]
+      );
+      root.dataset.mechBodyRadii = bodyRadii.map((radius) => radius.toFixed(3)).join(",");
       const sceneVisible = Boolean(
         sceneRect &&
         sceneRect.width > 0 &&
@@ -142,6 +166,7 @@ harness = '''<script>
         circles.length === 10 &&
         orbitGuides.length === 9 &&
         title?.textContent === "Solar-System Orbit Viewer" &&
+        sceneGeometryCorrect &&
         sceneVisible &&
         displayUpdates >= 60
       ) {
@@ -151,6 +176,7 @@ harness = '''<script>
           root.dataset.mechCircles = String(circles.length);
           root.dataset.mechOrbitGuides = String(orbitGuides.length);
           root.dataset.mechSceneTitle = title.textContent;
+          root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
           root.dataset.mechSceneVisible = String(sceneVisible);
           root.dataset.mechSceneWidth = String(Math.round(sceneRect.width));
           root.dataset.mechSceneHeight = String(Math.round(sceneRect.height));
@@ -172,6 +198,8 @@ harness = '''<script>
       }
       if (Date.now() >= deadline && root.dataset.mechDone !== "true") {
         root.dataset.mechTimedOut = "true";
+        root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
+        globalThis.__MECH_STOP__?.();
       }
     }, 16);
   </script>'''
@@ -179,7 +207,8 @@ if html.count(marker) != 1:
     raise SystemExit("could not find the head boundary in generated n-body HTML")
 path.write_text(html.replace(marker, harness + "\n  " + marker, 1))
 PY
-for _ in $(seq 1 100); do
+server_ready_deadline=$((SECONDS + server_ready_timeout_seconds))
+while ((SECONDS < server_ready_deadline)); do
   curl --fail --silent "$page_url" >"$browser_dir/preflight.html" || true
   grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html" && break
   sleep 0.1
@@ -220,7 +249,11 @@ with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
         if return_code is not None:
             raise SystemExit(return_code)
         try:
-            proof_emitted = b'data-mech-done="true"' in Path(dom_file).read_bytes()
+            dom_bytes = Path(dom_file).read_bytes()
+            proof_emitted = (
+                b'data-mech-done="true"' in dom_bytes
+                or b'data-mech-timed-out="true"' in dom_bytes
+            )
         except OSError:
             proof_emitted = False
         if proof_emitted:
@@ -248,6 +281,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-circles="10"' "$dom_file" \
   || ! grep -q 'data-mech-orbit-guides="9"' "$dom_file" \
   || ! grep -q 'data-mech-scene-title="Solar-System Orbit Viewer"' "$dom_file" \
+  || ! grep -q 'data-mech-scene-geometry-correct="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-width="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-scene-height="[1-9][0-9]*"' "$dom_file" \
@@ -269,4 +303,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true scene_visible=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"
+printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true scene_geometry=true scene_visible=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"
