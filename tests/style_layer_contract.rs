@@ -147,9 +147,10 @@ fn document_controller_initializes_repl_controls_before_starting_wasm() {
 fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     let controller = include("document.js");
     assert!(controller.contains("function documentPageScrollOwner(requestedOwner = null)"));
+    assert!(controller.contains("requestedOwner === \"content-shell\" && contentShell"));
+    assert!(controller.contains("contentShell.scrollHeight > contentShell.clientHeight + 1"));
     assert!(
-        controller
-            .contains("requestedOwner === \"content-shell\" && currentOwner === contentShell")
+        controller.contains("saved?.owner === \"content-shell\" ? \"content-shell\" : \"window\"")
     );
     assert!(controller.contains("owner: owner === window ? \"window\" : \"content-shell\""));
     assert!(controller.contains("owner === window ? window.scrollY : owner.scrollTop"));
@@ -158,7 +159,9 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("activeLink.classList.add(\"active\", \"active-path\")"));
     assert!(controller.contains("activeItem?.classList.add(\"expanded\")"));
     assert!(controller.contains("maximumScroll > 1 && metrics.top >= maximumScroll - 2"));
-    assert!(controller.contains("activationLine: sectionActivationLine"));
+    assert!(controller.contains("const sectionActivationLine = metrics.viewportTop + 20"));
+    assert!(controller.contains("const subsectionActivationLine = metrics.viewportTop +"));
+    assert!(controller.contains("activationLine: subsectionActivationLine"));
     assert!(controller.contains("className = \"mech-toc-toggle\""));
     assert!(controller.contains("layout.classList.toggle(\"is-toc-open\", open)"));
     assert!(controller.contains("new MutationObserver(updateConsoleErrorBadge)"));

@@ -92,20 +92,21 @@ function saveConsoleOpeningSize(axis, size) {
 
 function documentPageScrollOwner(requestedOwner = null) {
   const contentShell = document.querySelector(".content-shell");
-  let currentOwner = window;
-  if (contentShell) {
-    const style = getComputedStyle(contentShell);
-    if (["auto", "scroll", "overlay"].includes(style.overflowY)) {
-      currentOwner = contentShell;
-    }
-  }
-  if (requestedOwner === "content-shell" && currentOwner === contentShell) {
+  if (requestedOwner === "content-shell" && contentShell) {
     return contentShell;
   }
-  if (requestedOwner === "window" && currentOwner === window) {
+  if (requestedOwner === "window") {
     return window;
   }
-  return currentOwner;
+  if (contentShell) {
+    const style = getComputedStyle(contentShell);
+    const scrollable = ["auto", "scroll", "overlay"].includes(style.overflowY) &&
+      contentShell.scrollHeight > contentShell.clientHeight + 1;
+    if (scrollable) {
+      return contentShell;
+    }
+  }
+  return window;
 }
 
 function currentPagePosition() {
@@ -217,8 +218,9 @@ function scrollToImmediately(owner, x, y) {
 
 function restorePagePosition() {
   const saved = persistedDocumentLayout().page;
-  const ownerName = saved?.owner === "content-shell" ? "content-shell" :
-    saved?.owner === "window" ? "window" : null;
+  // Version-one entries predate scroll-owner persistence and always recorded
+  // window coordinates. Preserve that meaning instead of guessing from CSS.
+  const ownerName = saved?.owner === "content-shell" ? "content-shell" : "window";
   const x = Number(saved?.x);
   const y = Number(saved?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
@@ -3288,6 +3290,8 @@ function initializeToc() {
     const maximumScroll = Math.max(0, metrics.scrollHeight - metrics.height);
     const nearBottom = maximumScroll > 1 && metrics.top >= maximumScroll - 2;
     const sectionActivationLine = metrics.viewportTop + 20;
+    const subsectionActivationLine = metrics.viewportTop +
+      Math.min(metrics.height * 0.35, 280);
     let active = primarySections[0];
     if (nearBottom) {
       active = primarySections[primarySections.length - 1];
@@ -3300,7 +3304,7 @@ function initializeToc() {
       }
     }
     select(active, {
-      activationLine: sectionActivationLine,
+      activationLine: subsectionActivationLine,
       includeNested: metrics.top > 1,
       nearBottom,
       viewportBottom: metrics.viewportTop + metrics.height,
