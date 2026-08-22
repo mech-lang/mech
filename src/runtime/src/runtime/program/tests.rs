@@ -664,14 +664,28 @@ fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
         .build_compiler()
         .unwrap();
     let product = compiler
-        .compile_source(include_str!("../../../../../examples/working/fizzbuzz.mec"))
+        .compile_source(include_str!(
+            "../../../../../tests/fixtures/shims/all-slots.mec"
+        ))
         .unwrap();
     let compiled = product.artifact();
     let mut outputs = compiled.outputs().to_vec();
-    outputs[0].name = "mech-repl-symbol-61".to_owned();
-    outputs[0].interactive_binding = None;
-    outputs[1].name = "ordinary-output".to_owned();
-    outputs[1].interactive_binding = None;
+    assert!(
+        outputs.len() >= 2,
+        "the rich document fixture must expose multiple outputs"
+    );
+    for (index, output) in outputs.iter_mut().enumerate() {
+        output.name = if index == 0 {
+            "mech-repl-symbol-61".to_owned()
+        } else {
+            format!("ordinary-output-{index}")
+        };
+        output.interactive_binding = None;
+    }
+    let expected_names = outputs
+        .iter()
+        .map(|output| output.name.clone())
+        .collect::<Vec<_>>();
     let ordinary = ProgramArtifactDraft {
         schemas: compiled.schemas().clone(),
         constants: compiled.constants().clone(),
@@ -704,7 +718,7 @@ fn ordinary_output_names_are_never_inferred_as_interactive_symbols() {
             .into_iter()
             .map(|(name, _)| name)
             .collect::<Vec<_>>(),
-        ["mech-repl-symbol-61", "ordinary-output"]
+        expected_names
     );
 }
 
@@ -723,7 +737,11 @@ fn formatted_document_outputs_survive_source_and_bytecode_publication() {
         .map(|output| output.name.as_str())
         .collect::<Vec<_>>();
 
-    assert_eq!(source_outputs, ["y", "first-fifteen!"]);
+    assert_eq!(
+        source_outputs,
+        ["y"],
+        "integrity constraints are not ordinary published outputs"
+    );
     let mut source_runtime = runtime();
     let source_loaded = source_runtime
         .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
