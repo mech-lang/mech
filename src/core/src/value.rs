@@ -2683,7 +2683,24 @@ impl LegacyValue {
                     return "<*>".to_string();
                 }
                 if table.rows == 0 {
-                    return format!("<{}>", table.kind());
+                    let mut columns = Vec::new();
+                    let mut elided = false;
+                    for (key, (kind, _)) in &table.data {
+                        if !budget.consume() {
+                            elided = true;
+                            break;
+                        }
+                        let name = table
+                            .col_names
+                            .get(key)
+                            .cloned()
+                            .unwrap_or_else(|| format!("{}", key));
+                        columns.push(format!("{}<{}>", name, kind));
+                    }
+                    if elided {
+                        columns.push("…<*>".to_string());
+                    }
+                    return format!("<|{}|>", columns.join(" "));
                 }
                 let mut visible_columns = Vec::new();
                 let mut columns_elided = false;
@@ -4741,6 +4758,10 @@ mod reactive_cell_tests {
         let canonical = table.format_canonical_inline();
         assert!(canonical.starts_with("<|"), "{canonical}");
         assert!(canonical.ends_with("|>"), "{canonical}");
+        assert_eq!(
+            table.format_canonical_inline_with_element_limit(2),
+            "<|column0<string> column1<string> …<*>|>",
+        );
         let preview = table.format_preview_inline(96);
         assert!(preview.starts_with("<|"), "{preview}");
         assert!(preview.ends_with("|>"), "{preview}");
