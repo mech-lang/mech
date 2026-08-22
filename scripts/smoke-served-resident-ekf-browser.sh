@@ -114,6 +114,7 @@ harness = r'''<script>
     let turningSamples = 0;
     let curvedMotionSamples = 0;
     let maxHeadingStep = 0;
+    let maxGuideDeviation = 0;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       harnessFrames += 1;
@@ -128,6 +129,7 @@ harness = r'''<script>
       const truthPath = document.querySelector('[data-mech-scene-id="truth-path"]');
       const estimatePath = document.querySelector('[data-mech-scene-id="estimate-path"]');
       const truthHeading = document.querySelector('[data-mech-scene-id="truth-heading"]');
+      const squareGuide = document.querySelector('[data-mech-scene-id="square-guide"]');
       const title = document.querySelector('[data-mech-scene-id="title"]');
       const cameras = document.querySelectorAll('[data-mech-scene-id^="camera-"]:not([data-mech-scene-id^="camera-label-"])');
       const host = document.querySelector('[data-mech-repl-host]');
@@ -143,6 +145,34 @@ harness = r'''<script>
       const truthPoint = finitePoint(truth)
         ? {x: Number(truth.getAttribute("cx")), y: Number(truth.getAttribute("cy"))}
         : undefined;
+      const guideCoordinates = (squareGuide?.getAttribute("points") || "")
+        .trim().split(/[\s,]+/).filter(Boolean).map(Number);
+      const distanceToSegment = (point, ax, ay, bx, by) => {
+        const dx = bx - ax;
+        const dy = by - ay;
+        const lengthSquared = dx * dx + dy * dy;
+        const fraction = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1,
+          ((point.x - ax) * dx + (point.y - ay) * dy) / lengthSquared,
+        ));
+        return Math.hypot(point.x - (ax + fraction * dx), point.y - (ay + fraction * dy));
+      };
+      const distanceToRenderedGuide = (point) => {
+        if (guideCoordinates.length < 8 || guideCoordinates.length % 2 !== 0 ||
+            !guideCoordinates.every(Number.isFinite)) return Number.POSITIVE_INFINITY;
+        let nearest = Number.POSITIVE_INFINITY;
+        const pointCount = guideCoordinates.length / 2;
+        for (let index = 0; index < pointCount; index += 1) {
+          const next = (index + 1) % pointCount;
+          nearest = Math.min(nearest, distanceToSegment(
+            point,
+            guideCoordinates[index * 2],
+            guideCoordinates[index * 2 + 1],
+            guideCoordinates[next * 2],
+            guideCoordinates[next * 2 + 1],
+          ));
+        }
+        return nearest;
+      };
       const heading = truthHeading
         ? Math.atan2(
             -(Number(truthHeading.getAttribute("y2")) - Number(truthHeading.getAttribute("y1"))),
@@ -152,6 +182,7 @@ harness = r'''<script>
       if (truthPoint && updates > 0 && updates !== lastObservedUpdate) {
         lastObservedUpdate = updates;
         if (firstTruth === undefined) firstTruth = truthPoint;
+        maxGuideDeviation = Math.max(maxGuideDeviation, distanceToRenderedGuide(truthPoint));
       }
       if (truthPoint && previousTruth && updates === lastObservedUpdate) {
         const dx = truthPoint.x - previousTruth.x;
@@ -234,6 +265,7 @@ harness = r'''<script>
       root.dataset.mechObservedTurningSamples = String(turningSamples);
       root.dataset.mechObservedCurvedMotionSamples = String(curvedMotionSamples);
       root.dataset.mechObservedMaxHeadingStep = maxHeadingStep.toFixed(6);
+      root.dataset.mechObservedMaxGuideDeviation = maxGuideDeviation.toFixed(4);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
@@ -244,7 +276,11 @@ harness = r'''<script>
         cameras.length === 4 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
         trackingError <= 25 &&
-        truthMoved && lapComplete && smoothTurning &&
+        // The rounded v/ω-controlled corners intentionally leave the square's
+        // one-pixel centerline, but every sample must remain inside the guide's
+        // 50-pixel cornering corridor. A diagonal cut is roughly 135 pixels
+        // from the nearest rendered side and therefore cannot satisfy this.
+        truthMoved && lapComplete && smoothTurning && maxGuideDeviation <= 50 &&
         covarianceGeometry.finite && covarianceGeometry.points >= 48 &&
         covarianceGeometry.extent >= 18 &&
         truthPathGeometry.finite && truthPathGeometry.points >= 64 &&
@@ -264,6 +300,7 @@ harness = r'''<script>
         root.dataset.mechTurningSamples = String(turningSamples);
         root.dataset.mechCurvedMotionSamples = String(curvedMotionSamples);
         root.dataset.mechMaxHeadingStep = maxHeadingStep.toFixed(6);
+        root.dataset.mechMaxGuideDeviation = maxGuideDeviation.toFixed(4);
         root.dataset.mechCovarianceExtent = covarianceGeometry.extent.toFixed(4);
         root.dataset.mechCovariancePoints = String(covarianceGeometry.points);
         root.dataset.mechCovarianceFinite = String(covarianceGeometry.finite);
@@ -364,6 +401,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-turning-samples="[2-9][0-9]' "$dom_file" \
   || ! grep -q 'data-mech-curved-motion-samples="[1-9][0-9]' "$dom_file" \
   || ! grep -q 'data-mech-max-heading-step="0\.' "$dom_file" \
+  || ! grep -q 'data-mech-max-guide-deviation="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-covariance-points="[4-9][0-9]' "$dom_file" \
   || ! grep -q 'data-mech-covariance-finite="true"' "$dom_file" \
   || ! grep -q 'data-mech-covariance-extent="[1-9][0-9]' "$dom_file" \
@@ -387,5 +425,6 @@ fi
 tracking_error_pixels="$(sed -n 's/.*data-mech-tracking-error-pixels="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 turning_samples="$(sed -n 's/.*data-mech-turning-samples="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 max_heading_step="$(sed -n 's/.*data-mech-max-heading-step="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+max_guide_deviation="$(sed -n 's/.*data-mech-max-guide-deviation="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 covariance_extent="$(sed -n 's/.*data-mech-covariance-extent="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-printf 'EKF_E2E display_updates=%s cameras=4 square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$turning_samples" "$max_heading_step" "$covariance_extent" "$tracking_error_pixels"
+printf 'EKF_E2E display_updates=%s cameras=4 square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"
