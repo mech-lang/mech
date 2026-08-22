@@ -323,7 +323,7 @@ impl RuntimeResourceProvider for ProductSceneProvider {
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         assert_eq!(request.base_uri, "scene://orbit/frame");
-        assert_eq!(request.path, "points");
+        assert!(matches!(request.path.as_str(), "points" | "replace"));
         assert_eq!(request.intent, RuntimeResourceWriteIntent::Send);
         Ok(())
     }
@@ -350,21 +350,70 @@ impl RuntimeResourceProvider for ProductSceneProvider {
             operation: request.operation,
             intent: request.intent,
         })?;
-        let values = match request.value {
-            LegacyValue::MatrixF64(matrix) => matrix.as_vec(),
-            LegacyValue::MutableReference(reference) => match &*reference.borrow() {
-                LegacyValue::MatrixF64(matrix) => matrix.as_vec(),
-                other => panic!("scene points must be typed f64 matrix, got {other:?}"),
-            },
-            other => panic!("scene points must be typed f64 matrix, got {other:?}"),
-        };
+        let values = product_scene_points(&request.path, &request.value);
         self.trace.lock().unwrap().preparations += 1;
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             ProductSceneDelivery {
                 trace: self.trace.clone(),
                 values,
+                operation: request.path,
             },
         )))
+    }
+}
+
+fn product_scene_points(path: &str, value: &LegacyValue) -> Vec<f64> {
+    if let LegacyValue::MutableReference(reference) = value {
+        return product_scene_points(path, &reference.borrow());
+    }
+    if path == "replace" {
+        let LegacyValue::Record(scene) = value else {
+            panic!("scene replacement must be a record, got {value:?}")
+        };
+        let scene = scene.borrow();
+        let point_sets = scene
+            .get(&hash_str("point-sets"))
+            .expect("public N-body scene point-sets");
+        return product_scene_point_set_positions(point_sets);
+    }
+    product_scene_matrix_values(value)
+}
+
+fn product_scene_point_set_positions(value: &LegacyValue) -> Vec<f64> {
+    if let LegacyValue::MutableReference(reference) = value {
+        return product_scene_point_set_positions(&reference.borrow());
+    }
+    let point_set = match value {
+        LegacyValue::Record(record) => record.clone(),
+        LegacyValue::Tuple(tuple) if tuple.borrow().elements.len() == 1 => {
+            let tuple = tuple.borrow();
+            let LegacyValue::Record(record) = tuple.elements[0].as_ref() else {
+                panic!("scene point-set tuple must contain a record")
+            };
+            record.clone()
+        }
+        other => panic!("scene point-sets must contain a record, got {other:?}"),
+    };
+    let point_set = point_set.borrow();
+    product_scene_matrix_values(
+        point_set
+            .get(&hash_str("positions"))
+            .expect("public N-body point-set positions"),
+    )
+}
+
+fn product_scene_matrix_values(value: &LegacyValue) -> Vec<f64> {
+    if let LegacyValue::MutableReference(reference) = value {
+        return product_scene_matrix_values(&reference.borrow());
+    }
+    match value {
+        LegacyValue::MatrixF64(matrix) => matrix.as_vec(),
+        LegacyValue::MatrixValue(matrix) => matrix
+            .as_vec()
+            .into_iter()
+            .map(|value| *value.as_f64().unwrap().borrow())
+            .collect(),
+        other => panic!("scene points must be an f64 matrix, got {other:?}"),
     }
 }
 
@@ -372,6 +421,7 @@ impl RuntimeResourceProvider for ProductSceneProvider {
 struct ProductSceneDelivery {
     trace: Arc<Mutex<ProductSceneTrace>>,
     values: Vec<f64>,
+    operation: String,
 }
 
 impl RuntimeAfterCommitEffect for ProductSceneDelivery {
@@ -380,7 +430,7 @@ impl RuntimeAfterCommitEffect for ProductSceneDelivery {
             RuntimeEffectSource::ResourceProvider {
                 scheme: "scene".to_owned(),
             },
-            "points",
+            self.operation.clone(),
         )
         .with_resource("scene://orbit/frame")
         .with_cost(RuntimeEffectCost {
@@ -449,6 +499,11 @@ fn configured_product_nbody_runtime_with_delay(
     let mut grants = vec![(9_100, "timer://clock/tick/tick", vec!["read"])];
     if grant_scene {
         grants.push((9_101, "scene://orbit/frame/points", vec!["write", "points"]));
+        grants.push((
+            9_102,
+            "scene://orbit/frame/replace",
+            vec!["write", "replace"],
+        ));
     }
     for (id, resource, operations) in grants {
         runtime
@@ -2550,7 +2605,7 @@ fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
 }
 
 #[test]
-fn public_nbody_viewer_preserves_the_working_fixed_sun_orbits_residently() {
+fn public_nbody_viewer_integrates_mutual_gravity_residently() {
     let (mut runtime, scene) = product_nbody_runtime();
     let loaded = runtime
         .load_source_program(
@@ -2560,38 +2615,51 @@ fn public_nbody_viewer_preserves_the_working_fixed_sun_orbits_residently() {
         .unwrap();
     assert_eq!(loaded.route, RuntimeProgramRoute::ResidentExternal);
 
-    let expected_radii = [
-        0.3871_f64.sqrt() * 44.0,
-        0.7233_f64.sqrt() * 44.0,
-        1.0000_f64.sqrt() * 44.0,
-        1.5237_f64.sqrt() * 44.0,
-        5.2029_f64.sqrt() * 44.0,
-        9.5370_f64.sqrt() * 44.0,
-        19.1910_f64.sqrt() * 44.0,
-        30.0690_f64.sqrt() * 44.0,
-        39.4820_f64.sqrt() * 44.0,
-    ];
-    let mut first_mercury = None;
-    for _ in 0..4_096 {
+    let published_energy = |runtime: &crate::MechRuntime| match runtime
+        .program_output_value()
+        .unwrap()
+        .expect("N-body publishes total energy")
+        .into_value()
+    {
+        LegacyValue::MatrixF64(value) if (value.rows(), value.cols()) == (1, 1) => {
+            value.as_vec()[0]
+        }
+        value => panic!("N-body energy must be a 1-by-1 f64 matrix, got {value:?}"),
+    };
+    advance_product_nbody(&mut runtime);
+    let initial_frame = scene.lock().unwrap().latest.clone();
+    assert_eq!(initial_frame.len(), 20);
+    let initial_mercury_radius =
+        (initial_frame[1] - initial_frame[0]).hypot(initial_frame[11] - initial_frame[10]);
+    let initial_energy = published_energy(&runtime);
+
+    for _ in 1..4_096 {
         advance_product_nbody(&mut runtime);
         let frame = scene.lock().unwrap().latest.clone();
         assert_eq!(frame.len(), 20);
-        assert_eq!(frame[0], 300.0);
-        assert_eq!(frame[10], 300.0);
         assert!(frame.iter().all(|value| value.is_finite()));
-        first_mercury.get_or_insert((frame[1], frame[11]));
-        for (body, expected_radius) in expected_radii.iter().enumerate() {
-            let x = frame[body + 1] - 300.0;
-            let y = frame[body + 11] - 300.0;
-            let radius = x.hypot(y);
-            assert!(
-                (radius - expected_radius).abs() <= 1.0e-10,
-                "body {body} drifted: expected radius {expected_radius}, got {radius}",
-            );
-        }
     }
     let final_frame = scene.lock().unwrap().latest.clone();
-    assert_ne!(first_mercury.unwrap(), (final_frame[1], final_frame[11]));
+    let final_mercury_radius =
+        (final_frame[1] - final_frame[0]).hypot(final_frame[11] - final_frame[10]);
+    assert_ne!(&initial_frame[1..], &final_frame[1..]);
+    assert_ne!(
+        (initial_frame[0], initial_frame[10]),
+        (final_frame[0], final_frame[10]),
+        "the Sun must respond to the other bodies rather than remain fixed",
+    );
+    assert!(
+        (final_mercury_radius - initial_mercury_radius).abs() > 1.0e-6,
+        "a mutual-gravity orbit must not preserve the old prescribed radius",
+    );
+
+    let final_energy = published_energy(&runtime);
+    assert!(initial_energy.is_finite() && final_energy.is_finite());
+    let relative_energy_drift = ((final_energy - initial_energy) / initial_energy).abs();
+    assert!(
+        relative_energy_drift < 0.01,
+        "symplectic integration energy drifted by {relative_energy_drift:e}",
+    );
 
     let info = runtime.program_execution_info();
     assert_eq!(info.resident_accepted_turns, 4_096);

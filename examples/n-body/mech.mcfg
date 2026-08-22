@@ -13,7 +13,7 @@ config := {
     address: "127.0.0.1"
     port: 8081
     paths: ["."]
-    shim: "index.html"
+    presentation: "output"
   }
 
   hosts: [
@@ -31,13 +31,7 @@ config := {
       name: "orbit"
       provider: "scene"
       settings: {
-        selector: "#solar-system"
-        renderer: "svg"
-        width: 600
-        height: 600
-        point-radius: 4
-        first-point-radius: 8
-        background: "#080b12"
+        renderer: "output"
       }
     }
   ]
@@ -55,7 +49,7 @@ config := {
       {
         target: "orbit/frame"
         operations: ["write"]
-        paths: ["points"]
+        paths: ["replace"]
       }
     ]
   }

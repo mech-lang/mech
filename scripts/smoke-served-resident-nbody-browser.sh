@@ -35,10 +35,12 @@ fi
 
 mkdir -p "$target_dir"
 project_dir="$(mktemp -d "$target_dir/served-resident-nbody.XXXXXX")"
-server_log="$project_dir/server.log"
-chrome_log="$project_dir/chrome.stderr"
-dom_file="$project_dir/chrome.dom"
-chrome_profile="$project_dir/chrome-profile"
+browser_dir="$(mktemp -d "$target_dir/served-resident-nbody-browser.XXXXXX")"
+server_log="$browser_dir/server.log"
+native_log="$browser_dir/native.log"
+chrome_log="$browser_dir/chrome.stderr"
+dom_file="$browser_dir/chrome.dom"
+chrome_profile="$browser_dir/chrome-profile"
 server_pid=""
 
 cleanup() {
@@ -47,13 +49,43 @@ cleanup() {
     wait "$server_pid" 2>/dev/null || true
   fi
   rm -rf "$project_dir"
+  rm -rf "$browser_dir"
 }
 trap cleanup EXIT
 
 cp examples/n-body/mech.mcfg "$project_dir/mech.mcfg"
 cp examples/n-body/n-body.mec "$project_dir/n-body.mec"
-cp examples/n-body/n-body.css "$project_dir/n-body.css"
-cp examples/n-body/index.html "$project_dir/index.html"
+
+"$MECH_BIN" run --max-live-turns 2 "$project_dir" >"$native_log"
+if ! grep -q '\[f64\]:1,1' "$native_log" || ! grep -Eq -- '-0\.[0-9]+' "$native_log"; then
+  echo "Native n-body run did not publish its live total energy" >&2
+  sed -n '1,160p' "$native_log" >&2 || true
+  exit 1
+fi
+
+port="$(python3 - <<'PY'
+import socket
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+    sock.bind(("127.0.0.1", 0))
+    print(sock.getsockname()[1])
+PY
+)"
+
+"$MECH_BIN" serve --address 127.0.0.1 --port "$port" "$project_dir" >"$server_log" 2>&1 &
+server_pid="$!"
+page_url="http://127.0.0.1:${port}/"
+for _ in $(seq 1 100); do
+  if curl --fail --silent "$page_url" >"$browser_dir/index.html.pending" 2>/dev/null; then
+    mv "$browser_dir/index.html.pending" "$project_dir/index.html"
+    break
+  fi
+  sleep 0.1
+done
+if [[ ! -s "$project_dir/index.html" ]]; then
+  echo "Resident n-body server did not generate its document" >&2
+  sed -n '1,240p' "$server_log" >&2 || true
+  exit 1
+fi
 
 python3 - "$project_dir/index.html" <<'PY'
 from pathlib import Path
@@ -61,7 +93,7 @@ import sys
 
 path = Path(sys.argv[1])
 html = path.read_text()
-marker = '<script\n    type="module"\n    src="/_mech/project.js"'
+marker = "</head>"
 harness = '''<script>
     const root = document.documentElement;
     const originalConsoleError = console.error;
@@ -77,81 +109,51 @@ harness = '''<script>
     });
 
     const originalSetTimeout = window.setTimeout.bind(window);
-    let renderedUpdates = 0;
     let firstX;
     let firstY;
-    let firstRadius;
-    let richCreated = false;
-    let richUpdates = 0;
-    let richSceneCircles = 0;
     const deadline = Date.now() + 20000;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
-      const frame = globalThis.__MECH_LAST_FRAME__;
-      if (frame) renderedUpdates += Number(frame.rendered || 0);
-      for (const envelope of frame?.events || []) {
-        const output = envelope?.event?.channel === "output"
-          ? envelope.event.event
-          : null;
-        if (
-          output?.display_id !== "scene-orbit" ||
-          output?.content?.kind !== "scene"
-        ) {
-          continue;
-        }
-        richCreated ||= output.operation === "create";
-        if (output.operation === "update") richUpdates += 1;
-        const representations = output.content.data?.representations?.representations || [];
-        const encoded = representations.find(
-          (entry) => entry.media_type === "application/vnd.mech.scene+json"
-        )?.data?.value;
-        if (typeof encoded === "string") {
-          richSceneCircles = JSON.parse(encoded).circles?.length || 0;
-        }
-      }
-      const info = globalThis.__MECH_RUNTIME_INFO__?.();
-      const sun = document.querySelector('[data-mech-scene-id="body-0"]');
       const body = document.querySelector('[data-mech-scene-id="body-1"]');
-      if (sun && body && firstX === undefined) {
+      if (body && firstX === undefined) {
         firstX = body.getAttribute("cx");
         firstY = body.getAttribute("cy");
-        firstRadius = Math.hypot(
-          Number(firstX) - Number(sun.getAttribute("cx")),
-          Number(firstY) - Number(sun.getAttribute("cy"))
-        );
       }
-      if (info) {
-        root.dataset.mechObservedAccepted = String(info.resident_accepted_turns);
-        root.dataset.mechObservedRendered = String(renderedUpdates);
-        if (
-          sun && body && richCreated && richUpdates > 0 &&
-          richSceneCircles === 10 && info.resident_accepted_turns >= 60
-        ) {
-          const circles = document.querySelectorAll('[data-mech-scene-id^="body-"]');
-          const finalRadius = Math.hypot(
-            Number(body.getAttribute("cx")) - Number(sun.getAttribute("cx")),
-            Number(body.getAttribute("cy")) - Number(sun.getAttribute("cy"))
-          );
+      const display = document.querySelector('[data-mech-display-id="scene-orbit"]');
+      const displayUpdates = Number(display?.dataset.mechDisplayUpdates || 0);
+      const circles = document.querySelectorAll('[data-mech-scene-id^="body-"]');
+      const orbitGuides = document.querySelectorAll('[data-mech-scene-id^="orbit-"]');
+      const title = document.querySelector('[data-mech-scene-id="title"]');
+      root.dataset.mechObservedRendered = String(displayUpdates);
+      if (
+        body &&
+        circles.length === 10 &&
+        orbitGuides.length === 9 &&
+        title?.textContent === "Solar-System Orbit Viewer" &&
+        displayUpdates >= 60
+      ) {
+          const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
           root.dataset.mechDone = "true";
-          root.dataset.mechRoute = info.route;
-          root.dataset.mechAccepted = String(info.resident_accepted_turns);
-          root.dataset.mechRejected = String(info.resident_rejected_turns);
-          root.dataset.mechRendered = String(renderedUpdates);
+          root.dataset.mechRendered = String(displayUpdates);
           root.dataset.mechCircles = String(circles.length);
+          root.dataset.mechOrbitGuides = String(orbitGuides.length);
+          root.dataset.mechSceneTitle = title.textContent;
           root.dataset.mechBodyMoved = String(
             body.getAttribute("cx") !== firstX || body.getAttribute("cy") !== firstY
           );
-          root.dataset.mechSunFixed = String(
-            sun.getAttribute("cx") === "300" && sun.getAttribute("cy") === "300"
+          root.dataset.mechOutputPresentation = String(
+            document.querySelector('.mech-root')?.dataset.mechPresentation === "output" &&
+            document.querySelector('.mech-root')?.dataset.mechPresentationView === "output" &&
+            outputPanel?.hidden === false
           );
-          root.dataset.mechOrbitStable = String(Math.abs(finalRadius - firstRadius) <= 1e-8);
-          root.dataset.mechRichScene = "true";
-          root.dataset.mechRichDisplayOperation = "update";
-          root.dataset.mechRichDisplayUpdates = String(richUpdates);
-          root.dataset.mechRichCircles = String(richSceneCircles);
+          root.dataset.mechRichScene = String(
+            display?.querySelector('[data-mech-rich-scene="true"]') !== null
+          );
+          root.dataset.mechRichDisplayOperation = display?.dataset.mechDisplayOperation || "";
+          root.dataset.mechRichDisplayUpdates = String(displayUpdates);
+          root.dataset.mechRichCircles = String(circles.length);
           globalThis.__MECH_STOP__?.();
-        }
       }
       if (Date.now() >= deadline && root.dataset.mechDone !== "true") {
         root.dataset.mechTimedOut = "true";
@@ -159,27 +161,16 @@ harness = '''<script>
     }, 16);
   </script>'''
 if html.count(marker) != 1:
-    raise SystemExit("could not find project module script in n-body index.html")
+    raise SystemExit("could not find the head boundary in generated n-body HTML")
 path.write_text(html.replace(marker, harness + "\n  " + marker, 1))
 PY
-
-port="$(python3 - <<'PY'
-import socket
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-    sock.bind(("127.0.0.1", 0))
-    print(sock.getsockname()[1])
-PY
-)"
-
-"$MECH_BIN" serve --address 127.0.0.1 --port "$port" "$project_dir" >"$server_log" 2>&1 &
-server_pid="$!"
-page_url="http://127.0.0.1:${port}/"
 for _ in $(seq 1 100); do
-  curl --fail --silent --output /dev/null "$page_url" && break
+  curl --fail --silent "$page_url" >"$browser_dir/preflight.html" || true
+  grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html" && break
   sleep 0.1
 done
-if ! curl --fail --silent --show-error --output /dev/null "$page_url"; then
-  echo "Resident n-body server did not respond" >&2
+if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
+  echo "Resident n-body server did not load the generated test document" >&2
   sed -n '1,240p' "$server_log" >&2 || true
   exit 1
 fi
@@ -220,7 +211,7 @@ with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
         if proof_emitted:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait()
-            print("headless Chrome retained its process after emitting the D4 DOM proof", file=sys.stderr)
+            print("headless Chrome retained its process after emitting the browser DOM proof", file=sys.stderr)
             raise SystemExit(124)
         if time.monotonic() >= deadline:
             os.killpg(process.pid, signal.SIGKILL)
@@ -236,23 +227,20 @@ run_chrome
 chrome_status="$?"
 set -e
 
-accepted="$(sed -n 's/.*data-mech-accepted="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 rendered="$(sed -n 's/.*data-mech-rendered="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-done="true"' "$dom_file" \
-  || ! grep -q 'data-mech-route="resident-external"' "$dom_file" \
-  || ! grep -q 'data-mech-rejected="0"' "$dom_file" \
   || ! grep -q 'data-mech-circles="10"' "$dom_file" \
+  || ! grep -q 'data-mech-orbit-guides="9"' "$dom_file" \
+  || ! grep -q 'data-mech-scene-title="Solar-System Orbit Viewer"' "$dom_file" \
   || ! grep -q 'data-mech-body-moved="true"' "$dom_file" \
-  || ! grep -q 'data-mech-sun-fixed="true"' "$dom_file" \
-  || ! grep -q 'data-mech-orbit-stable="true"' "$dom_file" \
+  || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q 'data-mech-rich-scene="true"' "$dom_file" \
   || ! grep -q 'data-mech-rich-display-operation="update"' "$dom_file" \
   || ! grep -q 'data-mech-rich-display-updates="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-rich-circles="10"' "$dom_file" \
-  || [[ -z "$accepted" || "$accepted" -lt 60 ]] \
   || [[ -z "$rendered" || "$rendered" -lt 60 ]] \
-  || grep -qE 'data-mech-console-error|data-mech-page-error|data-mech-timed-out' "$dom_file"; then
+  || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident n-body browser smoke test failed" >&2
   echo "Server log:" >&2
   sed -n '1,240p' "$server_log" >&2 || true
@@ -263,4 +251,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'D4_BROWSER route=resident-external accepted=%s rejected=0 rendered=%s circles=10 rich_scene=true rich_operation=update moved=true sun_fixed=true orbit_stable=true console_errors=0 page_errors=0\n' "$accepted" "$rendered"
+printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"

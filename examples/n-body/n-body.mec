@@ -1,57 +1,314 @@
-Resident solar-system orbit viewer
+N-Body Simulation
 ===============================================================================
-+> math
+section: Examples
++> combinatorics
++> stats
 ===============================================================================
+
+This program integrates the mutual gravitational interaction of the Sun, eight
+planets, and Pluto. Every body influences every other body; the visualization is
+a projection of the live simulated state, not a collection of prescribed
+orbits.
+
+
+1. Initial Conditions
+-------------------------------------------------------------------------------
+
+Positions use astronomical units, velocities use astronomical units per year,
+and masses are normalized so the gravitational constant is one.
 
 @clock := timer://clock/tick{:read(tick)}
-@scene := scene://orbit/frame{:write(points)}
+@scene := scene://orbit/frame{:write(replace)}
 
-  simulation-years := @clock/tick * 0.01
-  mercury-angle := -2.774 + simulation-years * 26.087902832713034
-  venus-angle := 3.083 + simulation-years * 10.213289900925373
-  earth-angle := 1.752 + simulation-years * 6.2831853071795862
-  mars-angle := -0.010 + simulation-years * 3.3406982705123278
-  jupiter-angle := -0.235 + simulation-years * 0.52969021304835495
-  saturn-angle := 0.459 + simulation-years * 0.21330024466780684
-  uranus-angle := -0.864 + simulation-years * 0.074784690088667616
-  neptune-angle := -1.035 + simulation-years * 0.038128438055583386
-  pluto-angle := -1.911 + simulation-years * 0.025341555647251698
+  days-per-year := 365.24
+  π := 3.141592654
+  solar-mass := 4 * π ^ 2
+  Δt := @clock/tick * 0.0 + 0.002
 
-  mercury-radius := 0.3871 ^ 0.5 * 44.0
-  venus-radius := 0.7233 ^ 0.5 * 44.0
-  earth-radius := 1.0000 ^ 0.5 * 44.0
-  mars-radius := 1.5237 ^ 0.5 * 44.0
-  jupiter-radius := 5.2029 ^ 0.5 * 44.0
-  saturn-radius := 9.5370 ^ 0.5 * 44.0
-  uranus-radius := 19.1910 ^ 0.5 * 44.0
-  neptune-radius := 30.0690 ^ 0.5 * 44.0
-  pluto-radius := 39.4820 ^ 0.5 * 44.0
+  ☉ := [0 0 0 0 0 0 solar-mass]'
+  ☿ := [ -0.38972469318558057,
+           -0.15022403533011131,
+            0.023476059815063703,
+            0.0042923857521344092 * days-per-year,
+           -0.021425298453769862 * days-per-year,
+           -0.0023708721826123731 * days-per-year,
+            1.660120e-07 * solar-mass ]
+  ♀ := [ -0.71803521454713496,
+            0.041947688018485076,
+            0.041304042456734767,
+           -0.0013897739822126357 * days-per-year,
+           -0.020119890903497486 * days-per-year,
+           -0.00030021717325320866 * days-per-year,
+            2.447838e-06 * solar-mass ]
+  ♁ := [ -0.17713546150023925,
+            0.96724162210078579,
+           -0.0000039007362829064718,
+           -0.017201146327519165 * days-per-year,
+           -0.0031864352617521142 * days-per-year,
+            0.00000018827814191274 * days-per-year,
+            3.003489e-06 * solar-mass ]
+  ♂ := [ 1.3907159267594730,
+           -0.013415706106135855,
+           -0.034467796700612273,
+            0.00021345415375975118 * days-per-year,
+            0.015123072614264662 * days-per-year,
+            0.00030512951698556953 * days-per-year,
+            3.227151e-07 * solar-mass ]
+  ♃ := [ 4.84143144246472090,
+           -1.16032004402742839,
+           -0.103622044471123109,
+            0.00166007664274403694 * days-per-year,
+            0.00769901118419740425 * days-per-year,
+           -0.0000690460016972063023 * days-per-year,
+            0.000954791938424326609 * solar-mass ]
+  ♄ := [ 8.34336671824457987,
+            4.12479856412430479,
+           -0.403523417114321381,
+           -0.00276742510726862411 * days-per-year,
+            0.00499852801234917238 * days-per-year,
+            0.0000230417297573763929 * days-per-year,
+            0.000285885980666130812 * solar-mass ]
+  ♅ := [ 12.8943695621391310,
+          -15.1111514016986312,
+           -0.223307578892655734,
+            0.00296460137564761618 * days-per-year,
+            0.00237847173959480950 * days-per-year,
+           -0.0000296589568540237556 * days-per-year,
+            0.0000436624404335156298 * solar-mass ]
+  ♆ := [ 15.3796971148509165,
+          -25.9193146099879641,
+            0.179258772950371181,
+            0.00268067772490389322 * days-per-year,
+            0.00162824170038242295 * days-per-year,
+           -0.000095159225451971587 * days-per-year,
+            0.0000515138902046611451 * solar-mass ]
+  ♇ := [ -9.87512510193949936,
+          -27.9392880241831424,
+            5.06873275440839440,
+            0.00344178030872987300 * days-per-year,
+           -0.00152819214839188910 * days-per-year,
+           -0.00129137458409475460 * days-per-year,
+            6.547e-09 * solar-mass ]
 
-  ~positions := [
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
-    300.0 300.0
+  bodies := [☉ ☿ ♀ ♁ ♂ ♃ ♄ ♅ ♆ ♇]'
+
+
+2. Pairwise Gravity
+-------------------------------------------------------------------------------
+
+The combination table names every unordered pair exactly once. Equal and
+opposite velocity changes preserve the symmetry of each interaction.
+
+  pairs := combinatorics/n-choose-k(1..=10,2)
+  left := pairs[1,:]
+  right := pairs[2,:]
+
+  ~positions := bodies[:,[1,2,3]]
+  ~velocities := bodies[:,[4,5,6]]
+  masses := bodies[:,7]
+
+  separation := positions[left,:] - positions[right,:]
+  distance² := stats/sum/column(separation ^ 2)
+
+  kinetic := 0.5 * masses * stats/sum/column(velocities ^ 2)
+  potential := masses[left] * masses[right] / distance² ^ 0.5
+  kinetic-energy := stats/sum/row(kinetic)
+  potential-energy := stats/sum/row(potential)
+  total-energy := kinetic-energy - potential-energy
+
+  acceleration-step := Δt * distance² ^ -1.5
+  velocities[left,:] -= separation * masses[right] * acceleration-step
+  velocities[right,:] += separation * masses[left] * acceleration-step
+  positions += velocities * Δt
+
+
+3. Live Output
+-------------------------------------------------------------------------------
+
+The complete viewer is a Mech scene: its frame, axes, orbit guides, labels,
+legend, and live bodies are all values below. The square-root display radius
+keeps the inner and outer solar system visible together while preserving every
+body's simulated direction.
+
+  orbital-radius := stats/sum/column(positions[:,[1,2]] ^ 2) ^ 0.5
+  safe-radius := orbital-radius + 0.000001
+  display-radius := safe-radius ^ 0.5 * 44.0
+  display-scale := display-radius / safe-radius
+  screen-offsets := positions[:,[1,2]] * display-scale
+  screen-points := screen-offsets * [
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+    1.0 -1.0
+  ] + [
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
+    430.0 380.0
   ]
 
-  next-positions := [
-    300.0 300.0
-    300.0 + mercury-radius * math/cos(mercury-angle) 300.0 + mercury-radius * math/sin(mercury-angle)
-    300.0 + venus-radius * math/cos(venus-angle) 300.0 + venus-radius * math/sin(venus-angle)
-    300.0 + earth-radius * math/cos(earth-angle) 300.0 + earth-radius * math/sin(earth-angle)
-    300.0 + mars-radius * math/cos(mars-angle) 300.0 + mars-radius * math/sin(mars-angle)
-    300.0 + jupiter-radius * math/cos(jupiter-angle) 300.0 + jupiter-radius * math/sin(jupiter-angle)
-    300.0 + saturn-radius * math/cos(saturn-angle) 300.0 + saturn-radius * math/sin(saturn-angle)
-    300.0 + uranus-radius * math/cos(uranus-angle) 300.0 + uranus-radius * math/sin(uranus-angle)
-    300.0 + neptune-radius * math/cos(neptune-angle) 300.0 + neptune-radius * math/sin(neptune-angle)
-    300.0 + pluto-radius * math/cos(pluto-angle) 300.0 + pluto-radius * math/sin(pluto-angle)
-  ]
+  scene-circles := (
+    {
+      id: "orbit-mercury"
+      x: 430
+      y: 380
+      radius: 27.4
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-venus"
+      x: 430
+      y: 380
+      radius: 37.4
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-earth"
+      x: 430
+      y: 380
+      radius: 44
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-mars"
+      x: 430
+      y: 380
+      radius: 54.3
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-jupiter"
+      x: 430
+      y: 380
+      radius: 100.4
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-saturn"
+      x: 430
+      y: 380
+      radius: 136
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-uranus"
+      x: 430
+      y: 380
+      radius: 192.5
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-neptune"
+      x: 430
+      y: 380
+      radius: 241.2
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {
+      id: "orbit-pluto"
+      x: 430
+      y: 380
+      radius: 276.5
+      fill: "none"
+      stroke: "#536273"
+      stroke-width: 0.75
+      opacity: 0.48
+    },
+    {id: "status-light", x: 593, y: 57, radius: 4, fill: "#61d095", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-sun", x: 28, y: 714, radius: 4, fill: "#ffd166", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-mercury", x: 92, y: 714, radius: 4, fill: "#b9a99a", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-venus", x: 179, y: 714, radius: 4, fill: "#e8b86d", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-earth", x: 247, y: 714, radius: 4, fill: "#55a9ff", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-mars", x: 314, y: 714, radius: 4, fill: "#e76f51", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-jupiter", x: 376, y: 714, radius: 4, fill: "#d7b28c", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-saturn", x: 455, y: 714, radius: 4, fill: "#e7cf8d", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-uranus", x: 529, y: 714, radius: 4, fill: "#72d6d1", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-neptune", x: 607, y: 714, radius: 4, fill: "#5677e8", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-pluto", x: 695, y: 714, radius: 4, fill: "#c9c2b8", stroke: "none", stroke-width: 0, opacity: 1}
+  )
 
-  positions += next-positions - positions
-  @scene/points <- positions
+  scene-point-sets := ({
+    id: "body"
+    positions: screen-points
+    radius: 4
+    first-radius: 8
+    fills: ("#ffd166", "#b9a99a", "#e8b86d", "#55a9ff", "#e76f51", "#d7b28c", "#e7cf8d", "#72d6d1", "#5677e8", "#c9c2b8")
+    stroke: "none"
+    stroke-width: 0
+    opacity: 1
+  })
+
+  scene-lines := (
+    {id: "axis-x", x1: 158, y1: 380, x2: 702, y2: 380, stroke: "#344151", stroke-width: 0.5, line-cap: "butt", opacity: 0.5, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "axis-y", x1: 430, y1: 108, x2: 430, y2: 652, stroke: "#344151", stroke-width: 0.5, line-cap: "butt", opacity: 0.5, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "frame-top", x1: 130, y1: 80, x2: 730, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "frame-right", x1: 730, y1: 80, x2: 730, y2: 680, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "frame-bottom", x1: 730, y1: 680, x2: 130, y2: 680, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "frame-left", x1: 130, y1: 680, x2: 130, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
+  )
+
+  scene-text := (
+    {id: "eyebrow", x: 24, y: 26, fill: "#8fa3b8", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "650", text-anchor: "start", opacity: 1, value: "MECH RESIDENT N-BODY MODEL"},
+    {id: "title", x: 24, y: 62, fill: "#edf2f7", font-size: 38, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "620", text-anchor: "start", opacity: 1, value: "Solar-System Orbit Viewer"},
+    {id: "status", x: 604, y: 61, fill: "#aebdca", font-size: 13, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "60 resident simulation steps per second"},
+    {id: "label-sun", x: 37, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Sun"},
+    {id: "label-mercury", x: 101, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Mercury"},
+    {id: "label-venus", x: 188, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Venus"},
+    {id: "label-earth", x: 256, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Earth"},
+    {id: "label-mars", x: 323, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Mars"},
+    {id: "label-jupiter", x: 385, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Jupiter"},
+    {id: "label-saturn", x: 464, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Saturn"},
+    {id: "label-uranus", x: 538, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Uranus"},
+    {id: "label-neptune", x: 616, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Neptune"},
+    {id: "label-pluto", x: 704, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Pluto"},
+    {id: "scale-note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Live mutual-gravity state · square-root display radius keeps the inner and outer solar system visible together"}
+  )
+
+  n-body-scene := {
+    width: 860
+    height: 770
+    background: "#080b12"
+    circles: scene-circles
+    point-sets: scene-point-sets
+    lines: scene-lines
+    texts: scene-text
+  }
+
+  @scene/replace <- n-body-scene
+  total-energy
