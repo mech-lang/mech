@@ -438,12 +438,16 @@ impl ServerSourceRegistry {
                     backing_paths: vec![path.clone()],
                 },
             );
-            match source
+            let fallback_tree = source
                 .syntax_tree
-                .as_deref()
-                .map(Ok)
-                .unwrap_or_else(|| parser::parse(&source_text))
-            {
+                .is_none()
+                .then(|| parser::parse(&source_text));
+            let tree = match (source.syntax_tree.as_deref(), fallback_tree.as_ref()) {
+                (Some(tree), _) => Ok(tree),
+                (None, Some(tree)) => tree.as_ref(),
+                (None, None) => unreachable!("missing parsed-tree fallback"),
+            };
+            match tree {
                 Ok(tree) => {
                     let mut extra_slots = HtmlShimExtraSlots::default();
                     extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
