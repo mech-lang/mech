@@ -10,12 +10,12 @@ use sha2::{Digest, Sha256};
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_028;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_321;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_323;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 63;
+const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "29e61a2e0769be11408bbb11d435c55756b72fd644079eb222a775d9c606add0";
+    "c345dc16d38ccd9254593cbd0d0d9a203be7413077de169eb7e8387867a8fd24";
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_081;
 #[cfg(feature = "full_compiler")]

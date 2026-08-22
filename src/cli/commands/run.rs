@@ -389,7 +389,9 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     match result {
         Ok(value) => {
             if should_run_live(&runtime)? {
-                run_live_runtime(&mut runtime, plan.max_live_turns)?;
+                if let Some(value) = run_live_runtime(&mut runtime, plan.max_live_turns)? {
+                    print_value(&value);
+                }
             } else {
                 print_value(&value);
             }
@@ -437,7 +439,7 @@ fn should_run_live(runtime: &mech_runtime::MechRuntime) -> MResult<bool> {
 fn run_live_runtime(
     runtime: &mut mech_runtime::MechRuntime,
     max_live_turns: Option<usize>,
-) -> MResult<()> {
+) -> MResult<Option<RuntimeValueSnapshot>> {
     let stop = Arc::new(AtomicBool::new(false));
     let stop_for_handler = Arc::clone(&stop);
     ctrlc::set_handler(move || {
@@ -455,14 +457,19 @@ fn run_live_runtime(
 
     runtime.start_input_drivers()?;
     let run_result = run_live_loop(runtime, &stop, max_live_turns);
+    let output_result = match &run_result {
+        Ok(()) => runtime.program_output_value(),
+        Err(_) => Ok(None),
+    };
     let stop_result = runtime.stop_input_drivers();
     let shutdown_result = runtime.shutdown();
 
-    match (run_result, stop_result, shutdown_result) {
-        (Err(error), _, _) => Err(error),
-        (Ok(()), Err(error), _) => Err(error),
-        (Ok(()), Ok(()), Err(error)) => Err(error),
-        (Ok(()), Ok(()), Ok(())) => Ok(()),
+    match (run_result, output_result, stop_result, shutdown_result) {
+        (Err(error), _, _, _) => Err(error),
+        (Ok(()), Err(error), _, _) => Err(error),
+        (Ok(()), Ok(_), Err(error), _) => Err(error),
+        (Ok(()), Ok(_), Ok(()), Err(error)) => Err(error),
+        (Ok(()), Ok(value), Ok(()), Ok(())) => Ok(value),
     }
 }
 

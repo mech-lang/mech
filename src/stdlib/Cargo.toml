@@ -127,6 +127,7 @@ standard_operations = [
   "mech-engine/math_standard", "mech-engine/compare_default", "mech-engine/logic_default",
   "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_standard",
   "mech-engine/string_default", "mech-engine/stats_default",
+  "mech-engine/combinatorics_default",
   "mech-math", "mech-math/standard_runtime",
   "mech-compare", "mech-compare/standard_runtime",
   "mech-logic", "mech-logic/standard_runtime",
@@ -135,6 +136,7 @@ standard_operations = [
   "mech-set", "mech-set/standard_runtime",
   "mech-string", "mech-string/standard_runtime",
   "mech-stats", "mech-stats/standard_runtime",
+  "mech-combinatorics", "mech-combinatorics/standard_runtime",
 ]
 
 full_operations = [
