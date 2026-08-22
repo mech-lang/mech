@@ -12,8 +12,8 @@ use mech_core::{
     OperationContractDeclaration, ParsedProgram, Ref, ValueData, hash_str,
 };
 use mech_engine::{
-    ArtifactSource, BindingDeclaration, ProgramArtifactDraft, SlotRole,
-    decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
+    __resident::ResidentStorageClass, ArtifactSource, BindingDeclaration, ProgramArtifactDraft,
+    SlotRole, decode_program_artifact_bytecode_v1, encode_program_artifact_bytecode_v1,
     resident::ResidentValueBorrow,
 };
 use sha2::{Digest, Sha256};
@@ -2604,6 +2604,260 @@ fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
     ));
 }
 
+#[derive(Clone, Debug)]
+struct ScalarNbodyReference {
+    positions: Vec<f64>,
+    velocities: Vec<f64>,
+    masses: Vec<f64>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct PublicNbodyStateSlots {
+    positions: mech_core::CellSlotId,
+    velocities: mech_core::CellSlotId,
+}
+
+impl ScalarNbodyReference {
+    fn from_runtime(runtime: &crate::MechRuntime, slots: PublicNbodyStateSlots) -> Self {
+        Self {
+            positions: public_nbody_state_slot(runtime, slots.positions),
+            velocities: public_nbody_state_slot(runtime, slots.velocities),
+            masses: public_nbody_masses(runtime),
+        }
+    }
+
+    fn body_count(&self) -> usize {
+        self.masses.len()
+    }
+
+    fn advance(&mut self, dt: f64) {
+        let body_count = self.body_count();
+        let mut pairs = Vec::with_capacity(body_count * (body_count - 1) / 2);
+        for left in 0..body_count {
+            for right in left + 1..body_count {
+                let delta: [f64; 3] = core::array::from_fn(|axis| {
+                    self.positions[left + axis * body_count]
+                        - self.positions[right + axis * body_count]
+                });
+                let distance_squared = delta.iter().map(|value| value * value).sum::<f64>();
+                pairs.push((left, right, delta, dt * distance_squared.powf(-1.5)));
+            }
+        }
+        for (left, right, delta, magnitude) in &pairs {
+            for axis in 0..3 {
+                self.velocities[*left + axis * body_count] -=
+                    delta[axis] * self.masses[*right] * magnitude;
+            }
+        }
+        for (left, right, delta, magnitude) in pairs {
+            for axis in 0..3 {
+                self.velocities[right + axis * body_count] +=
+                    delta[axis] * self.masses[left] * magnitude;
+            }
+        }
+        for index in 0..self.positions.len() {
+            self.positions[index] += self.velocities[index] * dt;
+        }
+    }
+
+    fn energy(&self) -> f64 {
+        let body_count = self.body_count();
+        let kinetic = (0..body_count)
+            .map(|body| {
+                0.5 * self.masses[body]
+                    * (0..3)
+                        .map(|axis| self.velocities[body + axis * body_count].powi(2))
+                        .sum::<f64>()
+            })
+            .sum::<f64>();
+        let potential = (0..body_count)
+            .flat_map(|left| (left + 1..body_count).map(move |right| (left, right)))
+            .map(|(left, right)| {
+                let distance = (0..3)
+                    .map(|axis| {
+                        (self.positions[left + axis * body_count]
+                            - self.positions[right + axis * body_count])
+                            .powi(2)
+                    })
+                    .sum::<f64>()
+                    .sqrt();
+                self.masses[left] * self.masses[right] / distance
+            })
+            .sum::<f64>();
+        kinetic - potential
+    }
+
+    fn momentum(&self) -> [f64; 3] {
+        let body_count = self.body_count();
+        core::array::from_fn(|axis| {
+            (0..body_count)
+                .map(|body| self.velocities[body + axis * body_count] * self.masses[body])
+                .sum()
+        })
+    }
+
+    fn select_bodies(&self, bodies: &[usize]) -> Self {
+        let body_count = self.body_count();
+        let select = |values: &[f64]| {
+            (0..3)
+                .flat_map(|axis| {
+                    bodies
+                        .iter()
+                        .map(move |body| values[*body + axis * body_count])
+                })
+                .collect()
+        };
+        Self {
+            positions: select(&self.positions),
+            velocities: select(&self.velocities),
+            masses: bodies.iter().map(|body| self.masses[*body]).collect(),
+        }
+    }
+
+    fn offset_solar_momentum(&mut self) {
+        let body_count = self.body_count();
+        for axis in 0..3 {
+            let momentum = (1..body_count)
+                .map(|body| self.velocities[body + axis * body_count] * self.masses[body])
+                .sum::<f64>();
+            self.velocities[axis * body_count] = -momentum / self.masses[0];
+        }
+    }
+
+    fn mercury_state(&self) -> (f64, f64, f64) {
+        let body_count = self.body_count();
+        let position: [f64; 3] = core::array::from_fn(|axis| {
+            self.positions[1 + axis * body_count] - self.positions[axis * body_count]
+        });
+        let velocity: [f64; 3] = core::array::from_fn(|axis| {
+            self.velocities[1 + axis * body_count] - self.velocities[axis * body_count]
+        });
+        let radius = position
+            .iter()
+            .map(|value| value * value)
+            .sum::<f64>()
+            .sqrt();
+        let speed = velocity
+            .iter()
+            .map(|value| value * value)
+            .sum::<f64>()
+            .sqrt();
+        let cross = [
+            position[1] * velocity[2] - position[2] * velocity[1],
+            position[2] * velocity[0] - position[0] * velocity[2],
+            position[0] * velocity[1] - position[1] * velocity[0],
+        ];
+        let areal_rate = 0.5 * cross.iter().map(|value| value * value).sum::<f64>().sqrt();
+        (radius, speed, areal_rate)
+    }
+}
+
+fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlots {
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("public N-body must remain on the resident-external route")
+    };
+    let instance = execution.coordinator.instance();
+    let slots = instance
+        .plan
+        .slots
+        .iter()
+        .filter(|slot| {
+            slot.storage == ResidentStorageClass::State
+                && slot.region.kind == mech_core::ResidentValueKind::F64
+                && slot.region.shape.rows == 10
+                && slot.region.shape.columns == 3
+        })
+        .map(|slot| slot.artifact_id)
+        .collect::<Vec<_>>();
+    assert_eq!(slots.len(), 2, "public N-body has exactly two state cells");
+    let first = public_nbody_state_slot(runtime, slots[0]);
+    let second = public_nbody_state_slot(runtime, slots[1]);
+    if (first[1] - (-0.38972469318558057)).abs() < 1.0e-12 {
+        PublicNbodyStateSlots {
+            positions: slots[0],
+            velocities: slots[1],
+        }
+    } else {
+        assert!((second[1] - (-0.38972469318558057)).abs() < 1.0e-12);
+        PublicNbodyStateSlots {
+            positions: slots[1],
+            velocities: slots[0],
+        }
+    }
+}
+
+fn public_nbody_state_slot(runtime: &crate::MechRuntime, slot: mech_core::CellSlotId) -> Vec<f64> {
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("public N-body must remain on the resident-external route")
+    };
+    let ResidentValueBorrow::F64 { values, .. } = execution
+        .coordinator
+        .instance()
+        .state_borrow(slot)
+        .expect("public N-body state slot")
+    else {
+        panic!("public N-body state must be f64")
+    };
+    values.to_vec()
+}
+
+fn public_nbody_masses(runtime: &crate::MechRuntime) -> Vec<f64> {
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        panic!("public N-body must remain on the resident-external route")
+    };
+    let instance = execution.coordinator.instance();
+    for slot in instance.plan.slots.iter().filter(|slot| {
+        slot.storage == ResidentStorageClass::Constant
+            && slot.region.kind == mech_core::ResidentValueKind::F64
+            && slot.region.shape.rows == 10
+            && slot.region.shape.columns == 1
+    }) {
+        let values = &instance.activation.f64_storage()
+            [slot.region.offset..slot.region.offset + slot.region.len];
+        if values.first().is_some_and(|value| *value > 30.0)
+            && values.iter().all(|value| value.is_finite() && *value > 0.0)
+        {
+            return values.to_vec();
+        }
+    }
+    panic!("public N-body mass vector must be resident activation storage")
+}
+
+fn assert_public_nbody_matches_raw(
+    runtime: &crate::MechRuntime,
+    slots: PublicNbodyStateSlots,
+    raw: &ScalarNbodyReference,
+) {
+    for (name, actual, expected) in [
+        (
+            "positions",
+            public_nbody_state_slot(runtime, slots.positions),
+            &raw.positions,
+        ),
+        (
+            "velocities",
+            public_nbody_state_slot(runtime, slots.velocities),
+            &raw.velocities,
+        ),
+    ] {
+        assert_eq!(actual.len(), expected.len());
+        for (index, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+            assert!(
+                (actual - expected).abs() <= 1.0e-10,
+                "public N-body {name}[{index}] differs from the raw Rust recurrence: {actual:?} != {expected:?}",
+            );
+        }
+    }
+}
+
+fn public_nbody_python_state_hash(raw: &ScalarNbodyReference) -> String {
+    let mut hash = Sha256::new();
+    for value in raw.positions.iter().chain(&raw.velocities) {
+        hash.update(((value / 1.0e-8).round() as i64).to_le_bytes());
+    }
+    finish_hash(hash)
+}
+
 #[test]
 fn public_nbody_viewer_integrates_mutual_gravity_residently() {
     let (mut runtime, scene) = product_nbody_runtime();
@@ -2614,6 +2868,16 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
         )
         .unwrap();
     assert_eq!(loaded.route, RuntimeProgramRoute::ResidentExternal);
+    let state_slots = public_nbody_state_slots(&runtime);
+    let mut raw = ScalarNbodyReference::from_runtime(&runtime, state_slots);
+    let initial_raw = raw.clone();
+    assert!(
+        raw.momentum()
+            .iter()
+            .all(|component| component.abs() < 1.0e-12),
+        "the public source must start in the zero-momentum center-of-mass frame",
+    );
+    let mut mercury = vec![raw.mercury_state()];
 
     let published_energy = |runtime: &crate::MechRuntime| match runtime
         .program_output_value()
@@ -2626,7 +2890,9 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
         }
         value => panic!("N-body energy must be a 1-by-1 f64 matrix, got {value:?}"),
     };
+    raw.advance(0.002);
     advance_product_nbody(&mut runtime);
+    assert_public_nbody_matches_raw(&runtime, state_slots, &raw);
     let initial_frame = scene.lock().unwrap().latest.clone();
     assert_eq!(initial_frame.len(), 20);
     let initial_display_radii = (0..10)
@@ -2654,19 +2920,28 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
     let initial_energy = published_energy(&runtime);
 
     for _ in 1..4_096 {
+        raw.advance(0.002);
         advance_product_nbody(&mut runtime);
+        assert_public_nbody_matches_raw(&runtime, state_slots, &raw);
+        mercury.push(raw.mercury_state());
         let frame = scene.lock().unwrap().latest.clone();
         assert_eq!(frame.len(), 20);
         assert!(frame.iter().all(|value| value.is_finite()));
+        assert!(
+            (frame[0] - 430.0).hypot(frame[10] - 380.0) < 1.0e-9,
+            "the heliocentric camera must keep the rendered Sun at the orbit-guide center",
+        );
     }
     let final_frame = scene.lock().unwrap().latest.clone();
     let final_mercury_radius =
         (final_frame[1] - final_frame[0]).hypot(final_frame[11] - final_frame[10]);
     assert_ne!(&initial_frame[1..], &final_frame[1..]);
+    assert_eq!((initial_frame[0], initial_frame[10]), (430.0, 380.0));
+    assert_eq!((final_frame[0], final_frame[10]), (430.0, 380.0));
     assert_ne!(
-        (initial_frame[0], initial_frame[10]),
-        (final_frame[0], final_frame[10]),
-        "the Sun must respond to the other bodies rather than remain fixed",
+        (&initial_raw.positions[0], &initial_raw.positions[10]),
+        (&raw.positions[0], &raw.positions[10]),
+        "the physical Sun must respond to the other bodies even though the camera follows it",
     );
     assert!(
         (final_mercury_radius - initial_mercury_radius).abs() > 1.0e-6,
@@ -2680,6 +2955,41 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
         relative_energy_drift < 0.01,
         "symplectic integration energy drifted by {relative_energy_drift:e}",
     );
+
+    assert_eq!(
+        public_nbody_python_state_hash(&raw),
+        "794eca36e3d31d2f06d48930d48c53252e867b4cce784f1dd7872bb72ec4c8ca",
+        "the Mech/raw-Rust trajectory must match the independent Python reference",
+    );
+    let perihelion = mercury
+        .iter()
+        .min_by(|left, right| left.0.total_cmp(&right.0))
+        .unwrap();
+    let aphelion = mercury
+        .iter()
+        .max_by(|left, right| left.0.total_cmp(&right.0))
+        .unwrap();
+    assert!(
+        perihelion.1 > aphelion.1 * 1.2,
+        "Mercury must move faster at perihelion than at aphelion: {perihelion:?} versus {aphelion:?}",
+    );
+    let (minimum_areal_rate, maximum_areal_rate) = mercury.iter().fold(
+        (f64::INFINITY, f64::NEG_INFINITY),
+        |(minimum, maximum), sample| (minimum.min(sample.2), maximum.max(sample.2)),
+    );
+    let mean_areal_rate = mercury.iter().map(|sample| sample.2).sum::<f64>() / mercury.len() as f64;
+    assert!(
+        (maximum_areal_rate - minimum_areal_rate) / mean_areal_rate < 0.01,
+        "Mercury's equal-area rate varied beyond the mutual-gravity perturbation bound",
+    );
+
+    let mut benchmark = initial_raw.select_bodies(&[0, 5, 6, 7, 8]);
+    benchmark.offset_solar_momentum();
+    assert!((benchmark.energy() - (-0.169075164)).abs() < 5.0e-10);
+    for _ in 0..1_000 {
+        benchmark.advance(0.01);
+    }
+    assert!((benchmark.energy() - (-0.169087605)).abs() < 5.0e-10);
 
     let info = runtime.program_execution_info();
     assert_eq!(info.resident_accepted_turns, 4_096);

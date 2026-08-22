@@ -150,7 +150,9 @@ harness = '''<script>
       const sceneGeometryCorrect = bodyRadii.every(
         (radius, index) => radius >= expectedRadiusBands[index][0] && radius < expectedRadiusBands[index][1]
       );
+      const sunCentered = bodyRadii[0] < 0.001;
       root.dataset.mechBodyRadii = bodyRadii.map((radius) => radius.toFixed(3)).join(",");
+      root.dataset.mechSunCentered = String(sunCentered);
       const sceneVisible = Boolean(
         sceneRect &&
         sceneRect.width > 0 &&
@@ -167,8 +169,9 @@ harness = '''<script>
         orbitGuides.length === 9 &&
         title?.textContent === "Solar-System Orbit Viewer" &&
         sceneGeometryCorrect &&
+        sunCentered &&
         sceneVisible &&
-        displayUpdates >= 60
+        displayUpdates >= 600
       ) {
           const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
           root.dataset.mechDone = "true";
@@ -199,6 +202,7 @@ harness = '''<script>
       if (Date.now() >= deadline && root.dataset.mechDone !== "true") {
         root.dataset.mechTimedOut = "true";
         root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
+        root.dataset.mechSunCentered = String(sunCentered);
         globalThis.__MECH_STOP__?.();
       }
     }, 16);
@@ -282,6 +286,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-orbit-guides="9"' "$dom_file" \
   || ! grep -q 'data-mech-scene-title="Solar-System Orbit Viewer"' "$dom_file" \
   || ! grep -q 'data-mech-scene-geometry-correct="true"' "$dom_file" \
+  || ! grep -q 'data-mech-sun-centered="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-width="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-scene-height="[1-9][0-9]*"' "$dom_file" \
@@ -291,7 +296,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-rich-display-operation="update"' "$dom_file" \
   || ! grep -q 'data-mech-rich-display-updates="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-rich-circles="10"' "$dom_file" \
-  || [[ -z "$rendered" || "$rendered" -lt 60 ]] \
+  || [[ -z "$rendered" || "$rendered" -lt 600 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident n-body browser smoke test failed" >&2
   echo "Server log:" >&2
@@ -303,4 +308,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true scene_geometry=true scene_visible=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"
+printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true scene_geometry=true sun_centered=true scene_visible=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"
