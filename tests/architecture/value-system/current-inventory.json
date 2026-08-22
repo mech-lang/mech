@@ -3778,32 +3778,6 @@
     "mutable-reference-alias": [
       {
         "count": 4,
-        "path": "hosts/scene/src/schema.rs",
-        "sites": [
-          {
-            "column": 29,
-            "fingerprint": "8a0a7e5143572c2df45fbba980e34746f1088bb5e589db0c2b12ee7d82f9c2dd",
-            "line": 49
-          },
-          {
-            "column": 22,
-            "fingerprint": "89eb531ee456ec06d8b51a81e6161364318c7e3442705b47a2de012b5cc8f917",
-            "line": 274
-          },
-          {
-            "column": 25,
-            "fingerprint": "d025f4239c08aba2ee4a42ae476767028f6bee9edebb4776b19b2d023edcc740",
-            "line": 291
-          },
-          {
-            "column": 22,
-            "fingerprint": "42a45a07262ce775080f33389e1f378ce0a78b959a044dc21363643a260df608",
-            "line": 366
-          }
-        ]
-      },
-      {
-        "count": 4,
         "path": "machines/combinatorics/src/n_choose_k.rs",
         "sites": [
           {
@@ -9982,32 +9956,6 @@
       }
     ],
     "value-mutable-reference": [
-      {
-        "count": 4,
-        "path": "hosts/scene/src/schema.rs",
-        "sites": [
-          {
-            "column": 16,
-            "fingerprint": "93ced1e1720717044e5ea0dc353c3b044d4534d3a8498127c89093da65290a56",
-            "line": 49
-          },
-          {
-            "column": 9,
-            "fingerprint": "8f93335ecf6b80ef787d217242020810ce8edc64124c5c2b0ce4745fc345d9a8",
-            "line": 274
-          },
-          {
-            "column": 12,
-            "fingerprint": "1c8282a89facf9860abcf1e3462bb3a8d471ee8b4fcf00a1a9432c8277d2d24d",
-            "line": 291
-          },
-          {
-            "column": 9,
-            "fingerprint": "d2709e7a6c46a93afc2647ded0952e4f2ae033214487ccb41d58758d412c8900",
-            "line": 366
-          }
-        ]
-      },
       {
         "count": 4,
         "path": "machines/combinatorics/src/n_choose_k.rs",
@@ -19116,13 +19064,6 @@
       "enum": "LegacyValue",
       "line": 197,
       "path": "hosts/robot-arm/src/provider.rs",
-      "variant": "Empty"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 282,
-      "path": "hosts/scene/src/schema.rs",
       "variant": "Empty"
     },
     {
@@ -43248,34 +43189,6 @@
       "variant": "MatrixValue"
     },
     {
-      "column": 16,
-      "enum": "LegacyValue",
-      "line": 49,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 274,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 12,
-      "enum": "LegacyValue",
-      "line": 291,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "MutableReference"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 366,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "MutableReference"
-    },
-    {
       "column": 18,
       "enum": "LegacyValue",
       "line": 1140,
@@ -46757,20 +46670,6 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 52,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "Record"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 294,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "Record"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
       "line": 694,
       "path": "src/core/src/function/signature.rs",
       "variant": "Record"
@@ -47861,20 +47760,6 @@
       "variant": "String"
     },
     {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 365,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "String"
-    },
-    {
-      "column": 13,
-      "enum": "LegacyValue",
-      "line": 367,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "String"
-    },
-    {
       "column": 16,
       "enum": "LegacyValue",
       "line": 166,
@@ -48477,13 +48362,6 @@
       "variant": "String"
     },
     {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 281,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "Table"
-    },
-    {
       "column": 10,
       "enum": "LegacyValue",
       "line": 242,
@@ -49035,13 +48913,6 @@
       "line": 529,
       "path": "src/runtime/src/host/arg.rs",
       "variant": "Table"
-    },
-    {
-      "column": 9,
-      "enum": "LegacyValue",
-      "line": 275,
-      "path": "hosts/scene/src/schema.rs",
-      "variant": "Tuple"
     },
     {
       "column": 47,

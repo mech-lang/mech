@@ -1,6 +1,10 @@
 use std::collections::HashSet;
 
 use mech_core::{LegacyValue, MResult, MechRecord, MechTable, hash_str};
+use mech_runtime::{
+    host_arg_f64, host_arg_matrix_f64, host_arg_matrix_value_matrix, host_arg_optional,
+    host_arg_record, host_arg_resolved, host_arg_string, host_arg_table, host_arg_tuple,
+};
 
 use crate::scene_error;
 
@@ -62,13 +66,7 @@ pub struct SceneSnapshot {
 
 impl SceneSnapshot {
     pub fn from_value(value: &LegacyValue) -> MResult<Self> {
-        if let LegacyValue::MutableReference(value) = value {
-            return Self::from_value(&value.borrow());
-        }
-        let LegacyValue::Record(record) = value else {
-            return Err(scene_error("SceneSchema", "scene must be a record"));
-        };
-        let record = record.borrow();
+        let record = host_record(value, "scene must be a record")?;
         let allowed = [
             "width",
             "height",
@@ -375,53 +373,59 @@ fn finite_number(value: f64, label: &str) -> MResult<f64> {
 }
 
 fn elements_from_value<T: FromRecord>(value: &LegacyValue) -> MResult<Vec<T>> {
-    match value {
-        LegacyValue::MutableReference(value) => elements_from_value::<T>(&value.borrow()),
-        LegacyValue::Tuple(tuple) => tuple
-            .borrow()
+    if host_arg_optional(SCENE_SCHEMA, one_arg(value), 0)
+        .map_err(|_| scene_error("SceneSchema", "scene elements could not be resolved"))?
+        .is_none()
+    {
+        return Ok(Vec::new());
+    }
+    if let Ok(tuple) = host_arg_tuple(SCENE_SCHEMA, one_arg(value), 0) {
+        return tuple
             .elements
             .iter()
             .map(|value| record_element::<T>(value.as_ref()))
-            .collect(),
-        LegacyValue::Table(table) => table_rows::<T>(&table.borrow()),
-        LegacyValue::Empty => Ok(Vec::new()),
-        other => Err(scene_error(
-            "SceneSchema",
-            format!("scene elements must be a tuple or table, got {other:?}"),
-        )),
+            .collect();
     }
+    if let Ok(table) = host_arg_table(SCENE_SCHEMA, one_arg(value), 0) {
+        return table_rows::<T>(&table);
+    }
+    Err(scene_error(
+        "SceneSchema",
+        format!(
+            "scene elements must be a tuple or table, got {:?}",
+            resolved_for_diagnostic(value)
+        ),
+    ))
 }
 
 fn point_set_circles(value: &LegacyValue) -> MResult<Vec<CircleElement>> {
-    match value {
-        LegacyValue::MutableReference(value) => point_set_circles(&value.borrow()),
-        LegacyValue::Tuple(tuple) => {
-            let mut circles = Vec::new();
-            for value in &tuple.borrow().elements {
-                circles.extend(point_set_from_record_value(value.as_ref())?);
-            }
-            Ok(circles)
-        }
-        LegacyValue::Record(_) => point_set_from_record_value(value),
-        LegacyValue::Empty => Ok(Vec::new()),
-        other => Err(scene_error(
-            "SceneSchema",
-            format!("scene point-sets must be a record or tuple, got {other:?}"),
-        )),
+    if host_arg_optional(SCENE_SCHEMA, one_arg(value), 0)
+        .map_err(|_| scene_error("SceneSchema", "scene point-sets could not be resolved"))?
+        .is_none()
+    {
+        return Ok(Vec::new());
     }
+    if let Ok(tuple) = host_arg_tuple(SCENE_SCHEMA, one_arg(value), 0) {
+        let mut circles = Vec::new();
+        for value in &tuple.elements {
+            circles.extend(point_set_from_record_value(value.as_ref())?);
+        }
+        return Ok(circles);
+    }
+    if host_arg_record(SCENE_SCHEMA, one_arg(value), 0).is_ok() {
+        return point_set_from_record_value(value);
+    }
+    Err(scene_error(
+        "SceneSchema",
+        format!(
+            "scene point-sets must be a record or tuple, got {:?}",
+            resolved_for_diagnostic(value)
+        ),
+    ))
 }
 
 fn point_set_from_record_value(value: &LegacyValue) -> MResult<Vec<CircleElement>> {
-    if let LegacyValue::MutableReference(value) = value {
-        return point_set_from_record_value(&value.borrow());
-    }
-    let LegacyValue::Record(record) = value else {
-        return Err(scene_error(
-            "SceneSchema",
-            "scene point-set must be a record",
-        ));
-    };
-    let record = record.borrow();
+    let record = host_record(value, "scene point-set must be a record")?;
     const FIELDS: &[&str] = &[
         "id",
         "positions",
@@ -503,49 +507,43 @@ struct F64MatrixValues {
 }
 
 fn matrix_f64_values(value: &LegacyValue, label: &str) -> MResult<F64MatrixValues> {
-    if let LegacyValue::MutableReference(value) = value {
-        return matrix_f64_values(&value.borrow(), label);
-    }
-    match value {
-        LegacyValue::MatrixF64(matrix) => Ok(F64MatrixValues {
+    if let Ok(matrix) = host_arg_matrix_f64(SCENE_SCHEMA, one_arg(value), 0) {
+        return Ok(F64MatrixValues {
             rows: matrix.rows(),
             columns: matrix.cols(),
             values: matrix.as_vec(),
-        }),
-        LegacyValue::MatrixValue(matrix) => {
-            let values = matrix
-                .as_vec()
-                .into_iter()
-                .map(|value| {
-                    value.as_f64().map(|value| *value.borrow()).map_err(|_| {
-                        scene_error(
-                            "SceneSchema",
-                            format!("field `{label}` must contain only f64 values"),
-                        )
-                    })
-                })
-                .collect::<MResult<Vec<_>>>()?;
-            Ok(F64MatrixValues {
-                rows: matrix.rows(),
-                columns: matrix.cols(),
-                values,
-            })
-        }
-        _ => Err(scene_error(
-            "SceneSchema",
-            format!("field `{label}` must be a dense f64 matrix, got {value:?}"),
-        )),
+        });
     }
+    if let Ok(matrix) = host_arg_matrix_value_matrix(SCENE_SCHEMA, one_arg(value), 0) {
+        let values = matrix
+            .as_vec()
+            .into_iter()
+            .map(|value| {
+                host_arg_f64(SCENE_SCHEMA, one_arg(&value), 0).map_err(|_| {
+                    scene_error(
+                        "SceneSchema",
+                        format!("field `{label}` must contain only f64 values"),
+                    )
+                })
+            })
+            .collect::<MResult<Vec<_>>>()?;
+        return Ok(F64MatrixValues {
+            rows: matrix.rows(),
+            columns: matrix.cols(),
+            values,
+        });
+    }
+    Err(scene_error(
+        "SceneSchema",
+        format!(
+            "field `{label}` must be a dense f64 matrix, got {:?}",
+            resolved_for_diagnostic(value)
+        ),
+    ))
 }
 
 fn record_element<T: FromRecord>(value: &LegacyValue) -> MResult<T> {
-    if let LegacyValue::MutableReference(value) = value {
-        return record_element::<T>(&value.borrow());
-    }
-    let LegacyValue::Record(record) = value else {
-        return Err(scene_error("SceneSchema", "scene element must be a record"));
-    };
-    T::from_record(&record.borrow())
+    T::from_record(&host_record(value, "scene element must be a record")?)
 }
 
 fn table_rows<T: FromRecord>(table: &MechTable) -> MResult<Vec<T>> {
@@ -612,54 +610,45 @@ fn required_value<'a>(
         .ok_or_else(|| scene_error("SceneSchema", format!("missing required field `{label}`")))
 }
 fn required_string(record: &MechRecord, field: &str, label: &str) -> MResult<String> {
-    match required_value(record, field, label)? {
-        LegacyValue::String(value) => Ok(value.borrow().clone()),
-        LegacyValue::MutableReference(value) => match &*value.borrow() {
-            LegacyValue::String(value) => Ok(value.borrow().clone()),
-            _ => Err(scene_error(
-                "SceneSchema",
-                format!("field `{label}` must be a string"),
-            )),
-        },
-        _ => Err(scene_error(
-            "SceneSchema",
-            format!("field `{label}` must be a string"),
-        )),
-    }
+    host_arg_string(
+        SCENE_SCHEMA,
+        one_arg(required_value(record, field, label)?),
+        0,
+    )
+    .map_err(|_| scene_error("SceneSchema", format!("field `{label}` must be a string")))
 }
 fn required_strings(record: &MechRecord, field: &str, label: &str) -> MResult<Vec<String>> {
     strings_from_value(required_value(record, field, label)?, label)
 }
 fn strings_from_value(value: &LegacyValue, label: &str) -> MResult<Vec<String>> {
-    match value {
-        LegacyValue::MutableReference(value) => strings_from_value(&value.borrow(), label),
-        LegacyValue::Tuple(tuple) => tuple
-            .borrow()
-            .elements
-            .iter()
-            .map(|value| match value.as_ref() {
-                LegacyValue::String(value) => Ok(value.borrow().clone()),
-                _ => Err(scene_error(
-                    "SceneSchema",
-                    format!("field `{label}` must contain only strings"),
-                )),
-            })
-            .collect(),
-        _ => Err(scene_error(
+    let tuple = host_arg_tuple(SCENE_SCHEMA, one_arg(value), 0).map_err(|_| {
+        scene_error(
             "SceneSchema",
             format!("field `{label}` must be a tuple of strings"),
-        )),
-    }
+        )
+    })?;
+    tuple
+        .elements
+        .iter()
+        .map(|value| {
+            host_arg_string(SCENE_SCHEMA, one_arg(value.as_ref()), 0).map_err(|_| {
+                scene_error(
+                    "SceneSchema",
+                    format!("field `{label}` must contain only strings"),
+                )
+            })
+        })
+        .collect()
 }
 fn required_number(record: &MechRecord, field: &str, label: &str) -> MResult<f64> {
     let value = required_value(record, field, label)?;
-    let value = value.as_f64().map_err(|_| {
+    let value = host_arg_f64(SCENE_SCHEMA, one_arg(value), 0).map_err(|_| {
         scene_error(
             "SceneSchema",
             format!("field `{label}` must be numeric, got {value:?}"),
         )
     })?;
-    finite_number(*value.borrow(), label)
+    finite_number(value, label)
 }
 fn reject_unknown_fields(record: &MechRecord, allowed: &[&str], kind: &str) -> MResult<()> {
     for (_, name) in &record.field_names {
@@ -671,4 +660,19 @@ fn reject_unknown_fields(record: &MechRecord, allowed: &[&str], kind: &str) -> M
         }
     }
     Ok(())
+}
+
+const SCENE_SCHEMA: &str = "scene schema";
+
+fn one_arg(value: &LegacyValue) -> &[LegacyValue] {
+    std::slice::from_ref(value)
+}
+
+fn host_record(value: &LegacyValue, message: &str) -> MResult<MechRecord> {
+    host_arg_record(SCENE_SCHEMA, one_arg(value), 0)
+        .map_err(|_| scene_error("SceneSchema", message))
+}
+
+fn resolved_for_diagnostic(value: &LegacyValue) -> LegacyValue {
+    host_arg_resolved(SCENE_SCHEMA, one_arg(value), 0).unwrap_or_else(|_| value.clone())
 }

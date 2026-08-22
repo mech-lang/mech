@@ -2942,18 +2942,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "hosts/scene/src/schema.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 282
-        }
-      ],
-      "target": "generic-dispatch",
-      "variant": "Empty"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/build/src/analysis/requirements/external.rs",
       "sites": [
         {
@@ -21914,30 +21902,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "hosts/scene/src/schema.rs",
-      "sites": [
-        {
-          "column": 16,
-          "line": 49
-        },
-        {
-          "column": 9,
-          "line": 274
-        },
-        {
-          "column": 12,
-          "line": 291
-        },
-        {
-          "column": 9,
-          "line": 366
-        }
-      ],
-      "target": "mutable-reference-runtime-storage",
-      "variant": "MutableReference"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "sites": [
         {
@@ -25190,22 +25154,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "hosts/scene/src/schema.rs",
-      "sites": [
-        {
-          "column": 13,
-          "line": 52
-        },
-        {
-          "column": 9,
-          "line": 294
-        }
-      ],
-      "target": "record-snapshot",
-      "variant": "Record"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "src/core/src/function/signature.rs",
       "sites": [
         {
@@ -26310,22 +26258,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "hosts/scene/src/schema.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 365
-        },
-        {
-          "column": 13,
-          "line": 367
-        }
-      ],
-      "target": "string-snapshot",
-      "variant": "String"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "hosts/terminal/src/provider.rs",
       "sites": [
         {
@@ -26886,18 +26818,6 @@
     },
     {
       "enum": "LegacyValue",
-      "path": "hosts/scene/src/schema.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 281
-        }
-      ],
-      "target": "table-snapshot",
-      "variant": "Table"
-    },
-    {
-      "enum": "LegacyValue",
       "path": "machines/compare/src/eq.rs",
       "sites": [
         {
@@ -27395,18 +27315,6 @@
       ],
       "target": "table-snapshot",
       "variant": "Table"
-    },
-    {
-      "enum": "LegacyValue",
-      "path": "hosts/scene/src/schema.rs",
-      "sites": [
-        {
-          "column": 9,
-          "line": 275
-        }
-      ],
-      "target": "tuple-snapshot",
-      "variant": "Tuple"
     },
     {
       "enum": "LegacyValue",
