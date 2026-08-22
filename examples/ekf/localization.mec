@@ -28,7 +28,8 @@ so their range and bearing geometry changes throughout every lap.
 @scene := scene://localization/frame{:write(replace)}
 
   π := 3.141592654
-  Δt := @clock/tick * 0.0 + 0.05
+  turn-pulse := @clock/tick * 0.0 + 1.0
+  Δt := turn-pulse * 0.05
   speed := 1.25
   low-bound := 2.5
   high-bound := 7.5
@@ -47,10 +48,11 @@ so their range and bearing geometry changes throughout every lap.
 -------------------------------------------------------------------------------
 
 The controller is an explicit finite state machine with East, North, West, and
-South states. It emits the repeating phase program consumed by the resident
-timer graph. Each state owns one side of the square; the first tick of a new
-phase supplies the next cardinal heading. Coordinate clipping shortens the
-final translation so truth lands exactly on every corner.
+South states. It emits the repeating phase program consumed once per delivered
+resident turn, independently of the timer's absolute tick values. Each state
+owns one side of the square; the first turn of a new phase supplies the next
+cardinal heading. Coordinate clipping shortens the final translation so truth
+lands exactly on every corner.
 
 #SquareDrive(side-ticks<f64>) => <[f64]:1,340>
   ├ :East(remaining<f64>, side-ticks<f64>, phases<[f64]>)
@@ -77,8 +79,9 @@ final translation so truth lands exactly on every corner.
   side-ticks := 85.0
   drive-phases<[f64]:1,340> := #SquareDrive(side-ticks)
   lap-ticks := 4.0 * side-ticks
-  drive-phase-index := (@clock/tick % lap-ticks) + 1.0
+  ~drive-phase-index := 1.0
   drive-phase := drive-phases[1,drive-phase-index]
+  next-drive-phase-index := (drive-phase-index % lap-ticks) + turn-pulse
   drive-heading := drive-phase * π / 2.0
   drive-cos := math/cos(drive-heading)
   drive-sin := math/sin(drive-heading)
@@ -100,6 +103,7 @@ final translation so truth lands exactly on every corner.
                  unconstrained-truth[3]]
 
   truth = next-truth
+  drive-phase-index = next-drive-phase-index
 
 
 3. Noisy Camera Observations

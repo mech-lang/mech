@@ -66,7 +66,7 @@ PY
 "$MECH_BIN" serve --address 127.0.0.1 --port "$port" "$project_dir" >"$server_log" 2>&1 &
 server_pid="$!"
 page_url="http://127.0.0.1:${port}/"
-server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-60}"
+server_ready_timeout_seconds="${MECH_BROWSER_SERVER_READY_TIMEOUT_SECONDS:-120}"
 server_ready_deadline=$((SECONDS + server_ready_timeout_seconds))
 while ((SECONDS < server_ready_deadline)); do
   if curl --fail --silent "$page_url" >"$browser_dir/index.html.pending" 2>/dev/null; then
@@ -108,6 +108,8 @@ harness = r'''<script>
     let previousTruth;
     let departedStart = false;
     const squareSides = new Set();
+    const truthBounds = {minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity};
+    let cornerDistances = [];
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
@@ -118,6 +120,7 @@ harness = r'''<script>
       const estimate = document.querySelector('[data-mech-scene-id="estimate"]');
       const prediction = document.querySelector('[data-mech-scene-id="prediction"]');
       const covariance = document.querySelector('[data-mech-scene-id="covariance"]');
+      const squareGuide = document.querySelector('[data-mech-scene-id="square-guide"]');
       const truthPath = document.querySelector('[data-mech-scene-id="truth-path"]');
       const estimatePath = document.querySelector('[data-mech-scene-id="estimate-path"]');
       const title = document.querySelector('[data-mech-scene-id="title"]');
@@ -158,13 +161,16 @@ harness = r'''<script>
             Number(estimate.getAttribute("cy")) - Number(truth.getAttribute("cy")),
           )
         : Number.POSITIVE_INFINITY;
-      const lineStripGeometry = (element) => {
+      const lineStripCoordinates = (element) => {
         const coordinates = (element?.getAttribute("points") || "")
           .trim().split(/[\s,]+/).filter(Boolean).map(Number);
-        const finite = coordinates.length >= 4 &&
+        return coordinates.length >= 4 &&
           coordinates.length % 2 === 0 &&
-          coordinates.every(Number.isFinite);
-        if (!finite) return {finite: false, points: 0, extent: 0};
+          coordinates.every(Number.isFinite) ? coordinates : [];
+      };
+      const lineStripGeometry = (element) => {
+        const coordinates = lineStripCoordinates(element);
+        if (coordinates.length === 0) return {finite: false, points: 0, extent: 0};
         const xs = coordinates.filter((_, index) => index % 2 === 0);
         const ys = coordinates.filter((_, index) => index % 2 === 1);
         const extent = Math.max(
@@ -176,6 +182,55 @@ harness = r'''<script>
       const covarianceGeometry = lineStripGeometry(covariance);
       const truthPathGeometry = lineStripGeometry(truthPath);
       const estimatePathGeometry = lineStripGeometry(estimatePath);
+      const truthPathCoordinates = lineStripCoordinates(truthPath);
+      const guideCoordinates = lineStripCoordinates(squareGuide);
+      const guideCorners = [];
+      for (let index = 0; index + 1 < guideCoordinates.length; index += 2) {
+        const point = {x: guideCoordinates[index], y: guideCoordinates[index + 1]};
+        if (!guideCorners.some(corner => corner.x === point.x && corner.y === point.y)) {
+          guideCorners.push(point);
+        }
+      }
+      const observedTruthPoints = [];
+      if (truthPoint) observedTruthPoints.push(truthPoint);
+      for (let index = 0; index + 1 < truthPathCoordinates.length; index += 2) {
+        observedTruthPoints.push({
+          x: truthPathCoordinates[index],
+          y: truthPathCoordinates[index + 1],
+        });
+      }
+      for (const point of observedTruthPoints) {
+        truthBounds.minX = Math.min(truthBounds.minX, point.x);
+        truthBounds.maxX = Math.max(truthBounds.maxX, point.x);
+        truthBounds.minY = Math.min(truthBounds.minY, point.y);
+        truthBounds.maxY = Math.max(truthBounds.maxY, point.y);
+      }
+      if (guideCorners.length === 4) {
+        if (cornerDistances.length !== 4) cornerDistances = Array(4).fill(Infinity);
+        guideCorners.forEach((corner, cornerIndex) => {
+          for (const point of observedTruthPoints) {
+            cornerDistances[cornerIndex] = Math.min(
+              cornerDistances[cornerIndex],
+              Math.hypot(point.x - corner.x, point.y - corner.y),
+            );
+          }
+        });
+      }
+      const guideXs = guideCorners.map(corner => corner.x);
+      const guideYs = guideCorners.map(corner => corner.y);
+      const guideBounds = guideCorners.length === 4 ? {
+        minX: Math.min(...guideXs), maxX: Math.max(...guideXs),
+        minY: Math.min(...guideYs), maxY: Math.max(...guideYs),
+      } : undefined;
+      const boundError = guideBounds ? Math.max(
+        Math.abs(truthBounds.minX - guideBounds.minX),
+        Math.abs(truthBounds.maxX - guideBounds.maxX),
+        Math.abs(truthBounds.minY - guideBounds.minY),
+        Math.abs(truthBounds.maxY - guideBounds.maxY),
+      ) : Infinity;
+      const squareBoundsExact = guideCorners.length === 4 &&
+        cornerDistances.length === 4 && cornerDistances.every(distance => distance <= 1.5) &&
+        boundError <= 1.5;
       const sceneRect = scene?.getBoundingClientRect();
       const sceneVisible = Boolean(sceneRect && sceneRect.width > 0 && sceneRect.height > 0);
       const outputPresentation = Boolean(
@@ -196,13 +251,17 @@ harness = r'''<script>
       root.dataset.mechObservedCovariance = JSON.stringify(covarianceGeometry);
       root.dataset.mechObservedTruthPath = JSON.stringify(truthPathGeometry);
       root.dataset.mechObservedEstimatePath = JSON.stringify(estimatePathGeometry);
+      root.dataset.mechObservedTruthBounds = JSON.stringify(truthBounds);
+      root.dataset.mechObservedCornerDistances = JSON.stringify(cornerDistances);
+      root.dataset.mechObservedSquareBoundError = boundError.toFixed(4);
+      root.dataset.mechObservedSquareBoundsExact = String(squareBoundsExact);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       if (
         updates >= 320 &&
         cameras.length === 4 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
         trackingError <= 25 &&
-        truthMoved && lapComplete &&
+        truthMoved && lapComplete && squareBoundsExact &&
         covarianceGeometry.finite && covarianceGeometry.points >= 48 &&
         covarianceGeometry.extent > 0.1 &&
         truthPathGeometry.finite && truthPathGeometry.points >= 64 &&
@@ -218,6 +277,8 @@ harness = r'''<script>
         root.dataset.mechSquareSides = ["east", "north", "west", "south"]
           .filter(side => squareSides.has(side)).join(",");
         root.dataset.mechLapComplete = String(lapComplete);
+        root.dataset.mechSquareBoundsExact = String(squareBoundsExact);
+        root.dataset.mechSquareBoundError = boundError.toFixed(4);
         root.dataset.mechCovariancePoints = String(covarianceGeometry.points);
         root.dataset.mechCovarianceFinite = String(covarianceGeometry.finite);
         root.dataset.mechTruthPathPoints = String(truthPathGeometry.points);
@@ -311,6 +372,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-truth-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-square-sides="east,north,west,south"' "$dom_file" \
   || ! grep -q 'data-mech-lap-complete="true"' "$dom_file" \
+  || ! grep -q 'data-mech-square-bounds-exact="true"' "$dom_file" \
   || ! grep -q 'data-mech-covariance-points="[4-9][0-9]' "$dom_file" \
   || ! grep -q 'data-mech-covariance-finite="true"' "$dom_file" \
   || ! grep -q 'data-mech-truth-path-finite="true"' "$dom_file" \
@@ -331,4 +393,5 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
 fi
 
 tracking_error_pixels="$(sed -n 's/.*data-mech-tracking-error-pixels="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-printf 'EKF_E2E display_updates=%s cameras=4 square_sides=4 lap_complete=true truth_moved=true covariance_finite=true paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$tracking_error_pixels"
+square_bound_error="$(sed -n 's/.*data-mech-square-bound-error="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+printf 'EKF_E2E display_updates=%s cameras=4 square_sides=4 lap_complete=true square_bounds_exact=true square_bound_error_pixels=%s truth_moved=true covariance_finite=true paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$square_bound_error" "$tracking_error_pixels"
