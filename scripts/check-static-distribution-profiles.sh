@@ -628,6 +628,7 @@ check_wasm_source() {
     "require=mech-combinatorics v" \
     "forbid=mech-set v" \
     'require=mech-engine feature "source"' \
+    'require=mech-engine feature "state_machines"' \
     'require=mech-stdlib feature "source"' \
     "forbid=mech-bytecode v" \
     'forbid=mech-wasm feature "compiler"' \

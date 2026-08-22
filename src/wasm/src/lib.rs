@@ -8,6 +8,11 @@ compile_error!(
     "browser_project_core must include browser_host_console because every WasmDocument controller exports WasmRepl"
 );
 
+#[cfg(all(feature = "browser_project", not(feature = "state_machines")))]
+compile_error!(
+    "browser_project must include state_machines because served documents may contain FSM specifications and implementations"
+);
+
 mod repl;
 
 #[cfg(feature = "browser_host_dom")]

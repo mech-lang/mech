@@ -2893,6 +2893,28 @@ mod tests {
     }
 
     #[test]
+    fn encoded_document_controller_accepts_resident_state_machines() {
+        let source = r#"#Drive(phase<f64>) => <f64>
+  └ :Done(next-phase<f64>).
+
+#Drive(phase<f64>) -> :Done(phase)
+  :Done(next-phase) => next-phase.
+
+~phase := 0.0
+next-phase := #Drive(phase)
+phase = next-phase
+phase"#;
+        let tree = mech_syntax::parser::parse(source).unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        assert_eq!(
+            document.runtime().unwrap().program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+    }
+
+    #[test]
     fn document_console_queries_and_updates_the_same_resident_program() {
         let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
