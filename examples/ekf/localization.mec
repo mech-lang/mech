@@ -30,18 +30,16 @@ so their range and bearing geometry changes throughout every lap.
   π := 3.141592654
   turn-pulse := @clock/tick * 0.0 + 1.0
   Δt := turn-pulse * 0.05
-  speed := 1.25
+  cruise-speed := 1.15
+  turn-rate-limit := 1.75
+  heading-gain := 4.0
   low-bound := 2.5
   high-bound := 7.5
 
-  camera-1 := [1.0
-               1.0]
-  camera-2 := [9.0
-               1.0]
-  camera-3 := [9.0
-               9.0]
-  camera-4 := [1.0
-               9.0]
+  cameras := [1.0 1.0
+              9.0 1.0
+              9.0 9.0
+              1.0 9.0]
 
 
 2. Square-Drive State Machine
@@ -50,11 +48,12 @@ so their range and bearing geometry changes throughout every lap.
 The controller is an explicit finite state machine with East, North, West, and
 South states. It emits the repeating phase program consumed once per delivered
 resident turn, independently of the timer's absolute tick values. Each state
-owns one side of the square; the first turn of a new phase supplies the next
-cardinal heading. Coordinate clipping shortens the final translation so truth
-lands exactly on every corner.
+supplies a cardinal target heading, but the robot is a unicycle: its only control
+inputs are forward velocity `v` and angular velocity `ω`. A bounded heading
+controller slows the robot while turning, so the four corners are smooth arcs
+instead of instantaneous rotations or position clamps.
 
-#SquareDrive(side-ticks<f64>) => <[f64]:1,340>
+#SquareDrive(side-ticks<f64>) => <[f64]:1,344>
   ├ :East(remaining<f64>, side-ticks<f64>, phases<[f64]>)
   ├ :North(remaining<f64>, side-ticks<f64>, phases<[f64]>)
   ├ :West(remaining<f64>, side-ticks<f64>, phases<[f64]>)
@@ -76,31 +75,32 @@ lands exactly on every corner.
     └ * -> :Done(phases)
   :Done(phases) => phases.
 
-  side-ticks := 85.0
-  drive-phases<[f64]:1,340> := #SquareDrive(side-ticks)
+  side-ticks := 86.0
+  drive-phases<[f64]:1,344> := #SquareDrive(side-ticks)
   lap-ticks := 4.0 * side-ticks
   ~drive-phase-index := 1.0
   drive-phase := drive-phases[1,drive-phase-index]
   next-drive-phase-index := (drive-phase-index % lap-ticks) + turn-pulse
-  drive-heading := drive-phase * π / 2.0
-  drive-cos := math/cos(drive-heading)
-  drive-sin := math/sin(drive-heading)
+  target-heading := drive-phase * π / 2.0
   ~truth := [2.5
              2.5
              0.0]
   simulation-time := @clock/tick * Δt
+  heading-error-raw := target-heading - truth[3]
+  heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
+  requested-omega := heading-gain * heading-error
+  commanded-omega := (((requested-omega + turn-rate-limit) ^ 2) ^ 0.5 - ((requested-omega - turn-rate-limit) ^ 2) ^ 0.5) / 2.0
+  turn-fraction := ((commanded-omega ^ 2) ^ 0.5) / turn-rate-limit
+  commanded-speed := cruise-speed * (1.0 - 0.42 * turn-fraction)
   actual-speed-scale := 0.965 + 0.025 * math/sin(simulation-time * 0.73)
-  commanded-speed := speed
+  actual-omega-scale := 0.99 + 0.01 * math/sin(simulation-time * 0.51 + 0.8)
   actual-speed := commanded-speed * actual-speed-scale
+  actual-omega := commanded-omega * actual-omega-scale
+  truth-mid-heading := truth[3] + actual-omega * Δt / 2.0
 
-  unconstrained-truth := truth + [actual-speed * drive-cos * Δt
-                                  actual-speed * drive-sin * Δt
-                                  drive-heading - truth[3]]
-  constrained-truth-x := (low-bound + high-bound + ((unconstrained-truth[1] - low-bound) ^ 2) ^ 0.5 - ((unconstrained-truth[1] - high-bound) ^ 2) ^ 0.5) / 2.0
-  constrained-truth-y := (low-bound + high-bound + ((unconstrained-truth[2] - low-bound) ^ 2) ^ 0.5 - ((unconstrained-truth[2] - high-bound) ^ 2) ^ 0.5) / 2.0
-  next-truth := [constrained-truth-x
-                 constrained-truth-y
-                 unconstrained-truth[3]]
+  next-truth := truth + [actual-speed * math/cos(truth-mid-heading) * Δt
+                         actual-speed * math/sin(truth-mid-heading) * Δt
+                         actual-omega * Δt]
 
   truth = next-truth
   drive-phase-index = next-drive-phase-index
@@ -109,49 +109,33 @@ lands exactly on every corner.
 3. Noisy Camera Observations
 -------------------------------------------------------------------------------
 
-Every camera reports range and robot-relative bearing. The four noise signals are
-deterministic sums of sinusoids: repeatable enough for regression testing, but
-unknown to the filter and different for every camera.
+One camera is selected on each resident turn, so the filter continuously cycles
+through all four viewpoints without duplicating the same update graph four times.
+Each selected camera reports range and robot-relative bearing with deterministic
+noise that is unknown to the filter.
 
-  camera-1-dx := camera-1[1] - next-truth[1]
-  camera-1-dy := camera-1[2] - next-truth[2]
-  camera-1-range := (camera-1-dx ^ 2 + camera-1-dy ^ 2) ^ 0.5
-  camera-2-dx := camera-2[1] - next-truth[1]
-  camera-2-dy := camera-2[2] - next-truth[2]
-  camera-2-range := (camera-2-dx ^ 2 + camera-2-dy ^ 2) ^ 0.5
-  camera-3-dx := camera-3[1] - next-truth[1]
-  camera-3-dy := camera-3[2] - next-truth[2]
-  camera-3-range := (camera-3-dx ^ 2 + camera-3-dy ^ 2) ^ 0.5
-  camera-4-dx := camera-4[1] - next-truth[1]
-  camera-4-dy := camera-4[2] - next-truth[2]
-  camera-4-range := (camera-4-dx ^ 2 + camera-4-dy ^ 2) ^ 0.5
-
-  range-1 := camera-1-range + 0.12 * math/sin(simulation-time * 1.31 + 0.2)
-  range-2 := camera-2-range + 0.10 * math/sin(simulation-time * 1.73 + 1.1)
-  range-3 := camera-3-range + 0.13 * math/sin(simulation-time * 1.17 + 2.4)
-  range-4 := camera-4-range + 0.11 * math/sin(simulation-time * 1.91 + 3.2)
-  bearing-1 := math/atan2(camera-1-dy, camera-1-dx) - next-truth[3] + 0.012 * math/sin(simulation-time * 2.11 + 0.4)
-  bearing-2 := math/atan2(camera-2-dy, camera-2-dx) - next-truth[3] + 0.010 * math/sin(simulation-time * 1.67 + 1.7)
-  bearing-3 := math/atan2(camera-3-dy, camera-3-dx) - next-truth[3] + 0.013 * math/sin(simulation-time * 2.37 + 2.8)
-  bearing-4 := math/atan2(camera-4-dy, camera-4-dx) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.43 + 4.0)
-
-  observation-a := [range-1
-                    bearing-1]
-  observation-b := [range-2
-                    bearing-2]
-  observation-c := [range-3
-                    bearing-3]
-  observation-d := [range-4
-                    bearing-4]
+  camera-index := (@clock/tick % 4.0) + 1.0
+  active-camera := cameras[camera-index,:]
+  camera-dx := active-camera[1] - next-truth[1]
+  camera-dy := active-camera[2] - next-truth[2]
+  camera-range := (camera-dx ^ 2 + camera-dy ^ 2) ^ 0.5
+  measured-range := camera-range + 0.11 * math/sin(simulation-time * 1.57 + camera-index * 0.7)
+  measured-bearing := math/atan2(camera-dy, camera-dx) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.91 + camera-index)
+  observation := [measured-range
+                  measured-bearing]
 
 
 4. Extended Kalman Filter
 -------------------------------------------------------------------------------
 
-The motion model predicts once per control interval. Four measurement updates
-then consume the cameras in a fixed order. Each update uses the numerically stable
-Joseph covariance form before symmetrization.
+The matrix equations below are the complete filter. The motion model predicts
+once per control interval, then one range-and-bearing camera observation corrects
+the state. The cameras rotate every turn. Covariance uses the numerically stable
+Joseph form and is symmetrized before becoming the next resident state.
 
+  identity-3 := [1.0 0.0 0.0
+                 0.0 1.0 0.0
+                 0.0 0.0 1.0]
   process-covariance := [0.08 0.0
                          0.0 0.018]
   measurement-covariance := [0.0225 0.0
@@ -163,112 +147,54 @@ Joseph covariance form before symmetrization.
                   0.0 0.45 0.0
                   0.0 0.0 0.08]
 
-  estimate-heading := estimate[3]
-  motion-jacobian := [1.0 0.0 0.0
-                      0.0 1.0 0.0
-                      0.0 0.0 0.0]
-  control-jacobian := [drive-cos * Δt 0.0
-                       drive-sin * Δt 0.0
-                       0.0 1.0]
-  predicted-estimate := estimate + [commanded-speed * drive-cos * Δt
-                                    commanded-speed * drive-sin * Δt
-                                    drive-heading - estimate-heading]
+  estimate-mid-heading := estimate[3] + commanded-omega * Δt / 2.0
+  estimate-mid-cos := math/cos(estimate-mid-heading)
+  estimate-mid-sin := math/sin(estimate-mid-heading)
+  motion-jacobian := [1.0 0.0 -commanded-speed * estimate-mid-sin * Δt
+                      0.0 1.0  commanded-speed * estimate-mid-cos * Δt
+                      0.0 0.0 1.0]
+  control-jacobian := [estimate-mid-cos * Δt -commanded-speed * estimate-mid-sin * Δt ^ 2 / 2.0
+                       estimate-mid-sin * Δt  commanded-speed * estimate-mid-cos * Δt ^ 2 / 2.0
+                       0.0                      Δt]
+  predicted-estimate := estimate + [commanded-speed * estimate-mid-cos * Δt
+                                    commanded-speed * estimate-mid-sin * Δt
+                                    commanded-omega * Δt]
   predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-covariance ** control-jacobian'
 
-  predicted-dx-1 := camera-1[1] - predicted-estimate[1]
-  predicted-dy-1 := camera-1[2] - predicted-estimate[2]
-  predicted-q-1 := predicted-dx-1 ^ 2 + predicted-dy-1 ^ 2
-  predicted-range-1 := predicted-q-1 ^ 0.5
-  predicted-observation-1 := [predicted-range-1
-                              math/atan2(predicted-dy-1, predicted-dx-1) - predicted-estimate[3]]
-  observation-jacobian-1 := [-predicted-dx-1 / predicted-range-1 -predicted-dy-1 / predicted-range-1 0.0
-                              predicted-dy-1 / predicted-q-1     -predicted-dx-1 / predicted-q-1 -1.0]
-  innovation-covariance-1 := observation-jacobian-1 ** predicted-covariance ** observation-jacobian-1' + measurement-covariance
-  innovation-determinant-1 := innovation-covariance-1[1,1] * innovation-covariance-1[2,2] - innovation-covariance-1[1,2] * innovation-covariance-1[2,1]
-  innovation-inverse-1 := [ innovation-covariance-1[2,2] / innovation-determinant-1 -innovation-covariance-1[1,2] / innovation-determinant-1
-                           -innovation-covariance-1[2,1] / innovation-determinant-1  innovation-covariance-1[1,1] / innovation-determinant-1]
-  gain-1 := predicted-covariance ** observation-jacobian-1' ** innovation-inverse-1
-  bearing-residual-1 := observation-a[2] - predicted-observation-1[2]
-  innovation-1 := [observation-a[1] - predicted-observation-1[1]
-                   math/atan2(math/sin(bearing-residual-1), math/cos(bearing-residual-1))]
-  corrected-estimate-1 := predicted-estimate + gain-1 ** innovation-1
-  joseph-a-1 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-1 ** observation-jacobian-1
-  corrected-covariance-1 := joseph-a-1 ** predicted-covariance ** joseph-a-1' + gain-1 ** measurement-covariance ** gain-1'
-  symmetric-covariance-1 := 0.5 * (corrected-covariance-1 + corrected-covariance-1')
+  predicted-dx := active-camera[1] - predicted-estimate[1]
+  predicted-dy := active-camera[2] - predicted-estimate[2]
+  predicted-q := predicted-dx ^ 2 + predicted-dy ^ 2
+  predicted-range := predicted-q ^ 0.5
+  predicted-observation := [predicted-range
+                            math/atan2(predicted-dy, predicted-dx) - predicted-estimate[3]]
+  observation-jacobian := [-predicted-dx / predicted-range -predicted-dy / predicted-range 0.0
+                            predicted-dy / predicted-q     -predicted-dx / predicted-q -1.0]
+  innovation-covariance := observation-jacobian ** predicted-covariance ** observation-jacobian' + measurement-covariance
+  innovation-determinant := innovation-covariance[1,1] * innovation-covariance[2,2] - innovation-covariance[1,2] * innovation-covariance[2,1]
+  innovation-inverse := [ innovation-covariance[2,2] / innovation-determinant -innovation-covariance[1,2] / innovation-determinant
+                         -innovation-covariance[2,1] / innovation-determinant  innovation-covariance[1,1] / innovation-determinant]
+  kalman-gain := predicted-covariance ** observation-jacobian' ** innovation-inverse
+  bearing-residual := observation[2] - predicted-observation[2]
+  innovation := [observation[1] - predicted-observation[1]
+                 math/atan2(math/sin(bearing-residual), math/cos(bearing-residual))]
+  corrected-estimate := predicted-estimate + kalman-gain ** innovation
+  joseph-a := identity-3 - kalman-gain ** observation-jacobian
+  corrected-covariance-raw := joseph-a ** predicted-covariance ** joseph-a' + kalman-gain ** measurement-covariance ** kalman-gain'
+  corrected-covariance := 0.5 * (corrected-covariance-raw + corrected-covariance-raw')
 
-  predicted-dx-2 := camera-2[1] - corrected-estimate-1[1]
-  predicted-dy-2 := camera-2[2] - corrected-estimate-1[2]
-  predicted-q-2 := predicted-dx-2 ^ 2 + predicted-dy-2 ^ 2
-  predicted-range-2 := predicted-q-2 ^ 0.5
-  predicted-observation-2 := [predicted-range-2
-                              math/atan2(predicted-dy-2, predicted-dx-2) - corrected-estimate-1[3]]
-  observation-jacobian-2 := [-predicted-dx-2 / predicted-range-2 -predicted-dy-2 / predicted-range-2 0.0
-                              predicted-dy-2 / predicted-q-2     -predicted-dx-2 / predicted-q-2 -1.0]
-  innovation-covariance-2 := observation-jacobian-2 ** symmetric-covariance-1 ** observation-jacobian-2' + measurement-covariance
-  innovation-determinant-2 := innovation-covariance-2[1,1] * innovation-covariance-2[2,2] - innovation-covariance-2[1,2] * innovation-covariance-2[2,1]
-  innovation-inverse-2 := [ innovation-covariance-2[2,2] / innovation-determinant-2 -innovation-covariance-2[1,2] / innovation-determinant-2
-                           -innovation-covariance-2[2,1] / innovation-determinant-2  innovation-covariance-2[1,1] / innovation-determinant-2]
-  gain-2 := symmetric-covariance-1 ** observation-jacobian-2' ** innovation-inverse-2
-  bearing-residual-2 := observation-b[2] - predicted-observation-2[2]
-  innovation-2 := [observation-b[1] - predicted-observation-2[1]
-                   math/atan2(math/sin(bearing-residual-2), math/cos(bearing-residual-2))]
-  corrected-estimate-2 := corrected-estimate-1 + gain-2 ** innovation-2
-  joseph-a-2 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-2 ** observation-jacobian-2
-  corrected-covariance-2 := joseph-a-2 ** symmetric-covariance-1 ** joseph-a-2' + gain-2 ** measurement-covariance ** gain-2'
-  symmetric-covariance-2 := 0.5 * (corrected-covariance-2 + corrected-covariance-2')
-
-  predicted-dx-3 := camera-3[1] - corrected-estimate-2[1]
-  predicted-dy-3 := camera-3[2] - corrected-estimate-2[2]
-  predicted-q-3 := predicted-dx-3 ^ 2 + predicted-dy-3 ^ 2
-  predicted-range-3 := predicted-q-3 ^ 0.5
-  predicted-observation-3 := [predicted-range-3
-                              math/atan2(predicted-dy-3, predicted-dx-3) - corrected-estimate-2[3]]
-  observation-jacobian-3 := [-predicted-dx-3 / predicted-range-3 -predicted-dy-3 / predicted-range-3 0.0
-                              predicted-dy-3 / predicted-q-3     -predicted-dx-3 / predicted-q-3 -1.0]
-  innovation-covariance-3 := observation-jacobian-3 ** symmetric-covariance-2 ** observation-jacobian-3' + measurement-covariance
-  innovation-determinant-3 := innovation-covariance-3[1,1] * innovation-covariance-3[2,2] - innovation-covariance-3[1,2] * innovation-covariance-3[2,1]
-  innovation-inverse-3 := [ innovation-covariance-3[2,2] / innovation-determinant-3 -innovation-covariance-3[1,2] / innovation-determinant-3
-                           -innovation-covariance-3[2,1] / innovation-determinant-3  innovation-covariance-3[1,1] / innovation-determinant-3]
-  gain-3 := symmetric-covariance-2 ** observation-jacobian-3' ** innovation-inverse-3
-  bearing-residual-3 := observation-c[2] - predicted-observation-3[2]
-  innovation-3 := [observation-c[1] - predicted-observation-3[1]
-                   math/atan2(math/sin(bearing-residual-3), math/cos(bearing-residual-3))]
-  corrected-estimate-3 := corrected-estimate-2 + gain-3 ** innovation-3
-  joseph-a-3 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-3 ** observation-jacobian-3
-  corrected-covariance-3 := joseph-a-3 ** symmetric-covariance-2 ** joseph-a-3' + gain-3 ** measurement-covariance ** gain-3'
-  symmetric-covariance-3 := 0.5 * (corrected-covariance-3 + corrected-covariance-3')
-
-  predicted-dx-4 := camera-4[1] - corrected-estimate-3[1]
-  predicted-dy-4 := camera-4[2] - corrected-estimate-3[2]
-  predicted-q-4 := predicted-dx-4 ^ 2 + predicted-dy-4 ^ 2
-  predicted-range-4 := predicted-q-4 ^ 0.5
-  predicted-observation-4 := [predicted-range-4
-                              math/atan2(predicted-dy-4, predicted-dx-4) - corrected-estimate-3[3]]
-  observation-jacobian-4 := [-predicted-dx-4 / predicted-range-4 -predicted-dy-4 / predicted-range-4 0.0
-                              predicted-dy-4 / predicted-q-4     -predicted-dx-4 / predicted-q-4 -1.0]
-  innovation-covariance-4 := observation-jacobian-4 ** symmetric-covariance-3 ** observation-jacobian-4' + measurement-covariance
-  innovation-determinant-4 := innovation-covariance-4[1,1] * innovation-covariance-4[2,2] - innovation-covariance-4[1,2] * innovation-covariance-4[2,1]
-  innovation-inverse-4 := [ innovation-covariance-4[2,2] / innovation-determinant-4 -innovation-covariance-4[1,2] / innovation-determinant-4
-                           -innovation-covariance-4[2,1] / innovation-determinant-4  innovation-covariance-4[1,1] / innovation-determinant-4]
-  gain-4 := symmetric-covariance-3 ** observation-jacobian-4' ** innovation-inverse-4
-  bearing-residual-4 := observation-d[2] - predicted-observation-4[2]
-  innovation-4 := [observation-d[1] - predicted-observation-4[1]
-                   math/atan2(math/sin(bearing-residual-4), math/cos(bearing-residual-4))]
-  corrected-estimate-4 := corrected-estimate-3 + gain-4 ** innovation-4
-  joseph-a-4 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-4 ** observation-jacobian-4
-  corrected-covariance-4 := joseph-a-4 ** symmetric-covariance-3 ** joseph-a-4' + gain-4 ** measurement-covariance ** gain-4'
-  symmetric-covariance-4 := 0.5 * (corrected-covariance-4 + corrected-covariance-4')
-
-  estimate = corrected-estimate-4
-  covariance = symmetric-covariance-4
+  estimate = corrected-estimate
+  covariance = corrected-covariance
 
 
 5. Live Tracking Field
 -------------------------------------------------------------------------------
 
 The covariance outline is the two-standard-deviation position ellipse calculated
-from the live 2x2 covariance block. Camera rays terminate at simulated truth;
-only their noisy range and bearing values enter the filter.
+from the live 2x2 covariance block. Because four-camera fusion can make the
+physical ellipse smaller than a useful screen mark, display axes have a 0.16-unit
+quadrature floor; this changes only the drawing, never the filter covariance.
+Camera rays terminate at simulated truth; only their noisy range and bearing
+values enter the filter.
 
   screen-scale := 62.0
   screen-origin-x := 120.0
@@ -277,16 +203,16 @@ only their noisy range and bearing values enter the filter.
   truth-screen-y := screen-origin-y - next-truth[2] * screen-scale
   predicted-screen-x := screen-origin-x + predicted-estimate[1] * screen-scale
   predicted-screen-y := screen-origin-y - predicted-estimate[2] * screen-scale
-  estimate-screen-x := screen-origin-x + corrected-estimate-4[1] * screen-scale
-  estimate-screen-y := screen-origin-y - corrected-estimate-4[2] * screen-scale
+  estimate-screen-x := screen-origin-x + corrected-estimate[1] * screen-scale
+  estimate-screen-y := screen-origin-y - corrected-estimate[2] * screen-scale
 
-  position-error-x := corrected-estimate-4[1] - next-truth[1]
-  position-error-y := corrected-estimate-4[2] - next-truth[2]
+  position-error-x := corrected-estimate[1] - next-truth[1]
+  position-error-y := corrected-estimate[2] - next-truth[2]
   position-error := (position-error-x ^ 2 + position-error-y ^ 2) ^ 0.5
 
-  ellipse-a := symmetric-covariance-4[1,1]
-  ellipse-b := symmetric-covariance-4[1,2]
-  ellipse-c := symmetric-covariance-4[2,2]
+  ellipse-a := corrected-covariance[1,1]
+  ellipse-b := corrected-covariance[1,2]
+  ellipse-c := corrected-covariance[2,2]
   ellipse-root := (((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2) ^ 0.5
   ellipse-major := ((ellipse-a + ellipse-c) / 2.0 + ellipse-root) ^ 0.5 * 2.0
   ellipse-minor := ((ellipse-a + ellipse-c) / 2.0 - ellipse-root) ^ 0.5 * 2.0
@@ -295,270 +221,28 @@ only their noisy range and bearing values enter the filter.
   ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
   ellipse-cos := math/cos(ellipse-angle)
   ellipse-sin := math/sin(ellipse-angle)
-  ellipse-x := estimate-screen-x + screen-scale * (ellipse-major * ellipse-cos * math/cos(ellipse-rotation) - ellipse-minor * ellipse-sin * math/sin(ellipse-rotation))
-  ellipse-y := estimate-screen-y - screen-scale * (ellipse-major * ellipse-cos * math/sin(ellipse-rotation) + ellipse-minor * ellipse-sin * math/cos(ellipse-rotation))
+  ellipse-display-floor := 0.16
+  display-ellipse-major := (ellipse-major ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
+  display-ellipse-minor := (ellipse-minor ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
+  ellipse-x := estimate-screen-x + screen-scale * (display-ellipse-major * ellipse-cos * math/cos(ellipse-rotation) - display-ellipse-minor * ellipse-sin * math/sin(ellipse-rotation))
+  ellipse-y := estimate-screen-y - screen-scale * (display-ellipse-major * ellipse-cos * math/sin(ellipse-rotation) + display-ellipse-minor * ellipse-sin * math/cos(ellipse-rotation))
   covariance-ellipse := [ellipse-x ellipse-y]
 
-  trail-shift := [0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0
-                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0]
-  trail-injection := [0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      0.0
-                      1.0]
-  ~truth-path := [275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0
-                  275.0 545.0]
-  ~estimate-path := [299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7
-                     299.8 566.7]
+  trail-samples := 1..=64
+  initial-truth-path-x-row := [275.0 | sample <- trail-samples]
+  initial-truth-path-y-row := [545.0 | sample <- trail-samples]
+  initial-estimate-path-x-row := [299.8 | sample <- trail-samples]
+  initial-estimate-path-y-row := [566.7 | sample <- trail-samples]
+  initial-truth-path-x := initial-truth-path-x-row'
+  initial-truth-path-y := initial-truth-path-y-row'
+  initial-estimate-path-x := initial-estimate-path-x-row'
+  initial-estimate-path-y := initial-estimate-path-y-row'
+  ~truth-path := [initial-truth-path-x initial-truth-path-y]
+  ~estimate-path := [initial-estimate-path-x initial-estimate-path-y]
   truth-screen-point := ([truth-screen-x truth-screen-y])
   estimate-screen-point := ([estimate-screen-x estimate-screen-y])
-  next-truth-path := trail-shift ** truth-path + trail-injection ** truth-screen-point
-  next-estimate-path := trail-shift ** estimate-path + trail-injection ** estimate-screen-point
+  next-truth-path := matrix/vertcat(truth-path[2..=64,:], truth-screen-point)
+  next-estimate-path := matrix/vertcat(estimate-path[2..=64,:], estimate-screen-point)
   truth-path = next-truth-path
   estimate-path = next-estimate-path
 
@@ -591,7 +275,7 @@ only their noisy range and bearing values enter the filter.
     {id: "ray-3", x1: 678, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "ray-4", x1: 182, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "truth-heading", x1: truth-screen-x, y1: truth-screen-y, x2: truth-screen-x + 18.0 * math/cos(next-truth[3]), y2: truth-screen-y - 18.0 * math/sin(next-truth[3]), stroke: "#d7fff8", stroke-width: 2, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "estimate-heading", x1: estimate-screen-x, y1: estimate-screen-y, x2: estimate-screen-x + 16.0 * math/cos(corrected-estimate-4[3]), y2: estimate-screen-y - 16.0 * math/sin(corrected-estimate-4[3]), stroke: "#ffe1ef", stroke-width: 1.5, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
+    {id: "estimate-heading", x1: estimate-screen-x, y1: estimate-screen-y, x2: estimate-screen-x + 16.0 * math/cos(corrected-estimate[3]), y2: estimate-screen-y - 16.0 * math/sin(corrected-estimate[3]), stroke: "#ffe1ef", stroke-width: 1.5, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
   )
 
   scene-line-strips := (
@@ -604,7 +288,7 @@ only their noisy range and bearing values enter the filter.
   scene-text := (
     {id: "eyebrow", x: 24, y: 26, fill: "#8fa3b8", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "650", text-anchor: "start", opacity: 1, value: "MECH RESIDENT SENSOR FUSION"},
     {id: "title", x: 24, y: 62, fill: "#edf2f7", font-size: 36, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "620", text-anchor: "start", opacity: 1, value: "Camera EKF Localization"},
-    {id: "state-label", x: 638, y: 58, fill: "#f4c95d", font-size: 13, font-family: "ui-monospace, SFMono-Regular, Menlo, monospace", font-weight: "650", text-anchor: "start", opacity: 1, value: "SQUARE-DRIVE FSM"},
+    {id: "state-label", x: 602, y: 58, fill: "#f4c95d", font-size: 13, font-family: "ui-monospace, SFMono-Regular, Menlo, monospace", font-weight: "650", text-anchor: "start", opacity: 1, value: "V/Ω SQUARE-DRIVE FSM"},
     {id: "camera-label-1", x: 195, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 1, value: "CAM 1"},
     {id: "camera-label-2", x: 665, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 1, value: "CAM 2"},
     {id: "camera-label-3", x: 665, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 1, value: "CAM 3"},
@@ -612,7 +296,7 @@ only their noisy range and bearing values enter the filter.
     {id: "legend-truth-label", x: 40, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "actual robot + path"},
     {id: "legend-prediction-label", x: 215, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "motion prediction"},
     {id: "legend-estimate-label", x: 415, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "EKF estimate + 2σ covariance"},
-    {id: "note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Four noisy camera observations per turn · Joseph covariance update · square-drive state machine"}
+    {id: "note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Rotating range + bearing update · Joseph covariance · bounded v/ω cornering"}
   )
 
   field-presentation := {

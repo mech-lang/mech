@@ -3841,10 +3841,56 @@ rows := |id<string> x<f64>|
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
+    #[derive(Clone, Debug)]
+    struct SharedManualTimerInputDriver(
+        std::sync::Arc<std::sync::Mutex<mech_timer::ManualTimerInputDriver>>,
+    );
+
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
+    impl SharedManualTimerInputDriver {
+        fn new(instance: &str, frequency_hz: u64, max_catch_up_steps: u64) -> Self {
+            Self(std::sync::Arc::new(std::sync::Mutex::new(
+                mech_timer::ManualTimerInputDriver::new(instance, frequency_hz, max_catch_up_steps),
+            )))
+        }
+
+        fn snapshot(&self) -> mech_timer::SharedTimerSnapshot {
+            self.0.lock().unwrap().snapshot()
+        }
+
+        fn publish_steps(&self, count: usize) -> mech_core::MResult<usize> {
+            self.0.lock().unwrap().publish_steps(count)
+        }
+    }
+
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
+    impl mech_runtime::RuntimeHostInputDriver for SharedManualTimerInputDriver {
+        fn drives(&self, source: &mech_runtime::RuntimeHostInputSource) -> bool {
+            self.0.lock().unwrap().drives(source)
+        }
+
+        fn attach(&mut self, ingress: mech_runtime::RuntimeIngress) -> mech_core::MResult<()> {
+            self.0.lock().unwrap().attach(ingress)
+        }
+
+        fn start(&mut self) -> mech_core::MResult<()> {
+            self.0.lock().unwrap().start()
+        }
+
+        fn stop(&mut self) -> mech_core::MResult<()> {
+            self.0.lock().unwrap().stop()
+        }
+
+        fn is_live(&self) -> bool {
+            self.0.lock().unwrap().is_live()
+        }
+    }
+
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     #[derive(Debug)]
     struct TestManualTimerHostFactory {
         manifest: mech_runtime::HostManifestConfig,
-        snapshot: mech_timer::SharedTimerSnapshot,
+        driver: SharedManualTimerInputDriver,
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
@@ -3852,7 +3898,7 @@ rows := |id<string> x<f64>|
         fn new() -> Self {
             Self {
                 manifest: mech_timer::timer_host_manifest().unwrap(),
-                snapshot: mech_timer::new_shared_snapshot(mech_timer::TimerSnapshot::new(0, 60, 0)),
+                driver: SharedManualTimerInputDriver::new("clock", 60, 1),
             }
         }
     }
@@ -3877,20 +3923,83 @@ rows := |id<string> x<f64>|
             instance_name: &str,
             settings: &mech_runtime::ConfigValue,
         ) -> mech_core::MResult<mech_runtime::RuntimeHostInstallation> {
-            let settings = mech_timer::timer_settings_from_config(settings)?;
+            mech_timer::timer_settings_from_config(settings)?;
             Ok(mech_runtime::RuntimeHostInstallation {
                 interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
                 resource_providers: vec![Box::new(mech_timer::TimerResourceProvider::new(
                     instance_name,
-                    self.snapshot.clone(),
+                    self.driver.snapshot(),
                 ))],
-                input_drivers: vec![Box::new(mech_timer::ManualTimerInputDriver::new(
-                    instance_name,
-                    settings.frequency_hz,
-                    settings.max_catch_up_steps,
-                ))],
+                input_drivers: vec![Box::new(self.driver.clone())],
             })
         }
+    }
+
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
+    #[test]
+    fn ekf_scene_advances_on_every_resident_timer_packet() {
+        let document = parse_config_document(
+            "examples/ekf/mech.mcfg",
+            include_str!("../../../examples/ekf/mech.mcfg"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let source = include_str!("../../../examples/ekf/localization.mec").to_string();
+        let sources = HashMap::from([("localization.mec".to_string(), source)]);
+        let timer_factory = TestManualTimerHostFactory::new();
+        let timer_driver = timer_factory.driver.clone();
+        let scene_backend = mech_scene::RecordingSceneBackend::new();
+        let mut builder = browser_runtime_builder()
+            .source_resolver(project_source_resolver(&sources).unwrap())
+            .host_input_capacity(16)
+            .host_factory(Box::new(timer_factory))
+            .unwrap()
+            .host_factory(Box::new(
+                mech_scene::SceneHostFactory::with_backend(scene_backend.clone()).unwrap(),
+            ))
+            .unwrap();
+        for host in &document.hosts {
+            builder = builder.host_instance(host.clone());
+        }
+        for grant in &document.run.as_ref().unwrap().grants {
+            builder = builder.run_resource_grant(grant.clone());
+        }
+        let mut runtime = builder.build().unwrap();
+        run_project_sources(&mut runtime, &document).unwrap();
+        runtime.start_input_drivers().unwrap();
+
+        let truth_position = |snapshot: &mech_scene::SceneSnapshot| {
+            let truth = snapshot
+                .circles
+                .iter()
+                .find(|circle| circle.id == "truth")
+                .unwrap();
+            (truth.x, truth.y)
+        };
+        assert_eq!(
+            runtime.program_execution_info().observation_count,
+            1,
+            "EKF timer read must remain in the resident artifact"
+        );
+        assert!(scene_backend.latest().is_none());
+        let mut previous = None;
+        for turn in 1..=4 {
+            assert_eq!(timer_driver.publish_steps(1).unwrap(), 1);
+            let outcomes = runtime.drain_host_inputs(1).unwrap();
+            let current = truth_position(&scene_backend.latest().unwrap());
+            if let Some(previous) = previous {
+                assert_ne!(
+                    current,
+                    previous,
+                    "EKF truth must advance on turn {turn}; outcomes={outcomes:?}; info={:?}; scene_generation={}",
+                    runtime.program_execution_info(),
+                    scene_backend.generation(),
+                );
+            }
+            previous = Some(current);
+        }
+        assert_eq!(runtime.program_execution_info().resident_accepted_turns, 4);
+        assert_eq!(scene_backend.generation(), 4);
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]

@@ -21,7 +21,7 @@ config := {
       name: "clock"
       provider: "timer"
       settings: {
-        frequency-hz: 20
+        frequency-hz: 60
         max-catch-up-steps: 1
         queue-policy: "latest"
       }
