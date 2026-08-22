@@ -353,11 +353,12 @@ struct OwnedRuntimeFactory {
 }
 
 fn generate_runtime_factory_surface() -> AppResult<RuntimeFactorySurface> {
-    let fragments: [(&str, RuntimeInstaller); 10] = [
+    let fragments: [(&str, RuntimeInstaller); 11] = [
         (
             "mech-engine::stdlib",
             mech_engine::install_intrinsic_runtime,
         ),
+        ("mech-engine::ekf", mech_engine::install_ekf_runtime),
         ("mech-math", mech_math::install_runtime),
         ("mech-compare", mech_compare::install_runtime),
         ("mech-logic", mech_logic::install_runtime),

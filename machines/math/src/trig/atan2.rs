@@ -97,6 +97,11 @@ macro_rules! impl_two_arg_fxn {
             fn out(&self) -> LegacyValue {
                 self.out.to_value()
             }
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(crate::ops::arithmetic_full_write_contract(
+                    <$out_kind as FunctionRuntimeType>::REPRESENTATION,
+                ))
+            }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
             }

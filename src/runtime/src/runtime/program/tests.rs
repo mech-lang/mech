@@ -35,6 +35,8 @@ const PURE_SOURCE: &str =
 const PRODUCT_NBODY_SOURCE: &str =
     include_str!("../../../../../examples/resident-n-body/n-body.mec");
 const PUBLIC_NBODY_VIEWER_SOURCE: &str = include_str!("../../../../../examples/n-body/n-body.mec");
+const PUBLIC_EKF_LOCALIZATION_SOURCE: &str =
+    include_str!("../../../../../examples/ekf/localization.mec");
 
 fn runtime() -> crate::MechRuntime {
     RuntimeBuilder::new()
@@ -278,6 +280,7 @@ enum ProductSceneContract {
 
 #[derive(Debug)]
 struct ProductSceneProvider {
+    base_uri: &'static str,
     trace: Arc<Mutex<ProductSceneTrace>>,
     contract: ProductSceneContract,
     prepare_delay: Duration,
@@ -299,7 +302,7 @@ impl RuntimeResourceProvider for ProductSceneProvider {
     }
 
     fn base_uris(&self) -> Vec<String> {
-        vec!["scene://orbit/frame".to_owned()]
+        vec![self.base_uri.to_owned()]
     }
 
     fn semantic_write_contract(
@@ -322,7 +325,7 @@ impl RuntimeResourceProvider for ProductSceneProvider {
     }
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
-        assert_eq!(request.base_uri, "scene://orbit/frame");
+        assert_eq!(request.base_uri, self.base_uri);
         assert!(matches!(request.path.as_str(), "points" | "replace"));
         assert_eq!(request.intent, RuntimeResourceWriteIntent::Send);
         Ok(())
@@ -354,6 +357,7 @@ impl RuntimeResourceProvider for ProductSceneProvider {
         self.trace.lock().unwrap().preparations += 1;
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             ProductSceneDelivery {
+                base_uri: self.base_uri,
                 trace: self.trace.clone(),
                 values,
                 operation: request.path,
@@ -371,10 +375,16 @@ fn product_scene_points(path: &str, value: &LegacyValue) -> Vec<f64> {
             panic!("scene replacement must be a record, got {value:?}")
         };
         let scene = scene.borrow();
-        let point_sets = scene
-            .get(&hash_str("point-sets"))
-            .expect("public N-body scene point-sets");
-        return product_scene_point_set_positions(point_sets);
+        if let Some(point_sets) = scene.get(&hash_str("point-sets")) {
+            return product_scene_point_set_positions(point_sets);
+        }
+        for field in ["circles", "lines", "line-strips", "texts"] {
+            assert!(
+                scene.get(&hash_str(field)).is_some(),
+                "rich scene replacement omitted `{field}`",
+            );
+        }
+        return vec![scene.data.len() as f64];
     }
     product_scene_matrix_values(value)
 }
@@ -419,6 +429,7 @@ fn product_scene_matrix_values(value: &LegacyValue) -> Vec<f64> {
 
 #[derive(Debug)]
 struct ProductSceneDelivery {
+    base_uri: &'static str,
     trace: Arc<Mutex<ProductSceneTrace>>,
     values: Vec<f64>,
     operation: String,
@@ -432,7 +443,7 @@ impl RuntimeAfterCommitEffect for ProductSceneDelivery {
             },
             self.operation.clone(),
         )
-        .with_resource("scene://orbit/frame")
+        .with_resource(self.base_uri)
         .with_cost(RuntimeEffectCost {
             bytes: self.values.len() as u64 * 8,
             items: 1,
@@ -489,6 +500,7 @@ fn configured_product_nbody_runtime_with_delay(
     if include_scene {
         runtime
             .register_resource_provider(Box::new(ProductSceneProvider {
+                base_uri: "scene://orbit/frame",
                 trace: trace.clone(),
                 contract,
                 prepare_delay,
@@ -506,6 +518,47 @@ fn configured_product_nbody_runtime_with_delay(
         ));
     }
     for (id, resource, operations) in grants {
+        runtime
+            .grant_capability(Arc::new(BasicCapability::from_keys(
+                CapabilityId(id),
+                subject.clone(),
+                resource,
+                operations,
+            )))
+            .unwrap();
+    }
+    (runtime, trace)
+}
+
+fn configured_product_ekf_runtime(
+    catalog: Arc<mech_core::FunctionCatalog>,
+) -> (crate::MechRuntime, Arc<Mutex<ProductSceneTrace>>) {
+    let trace = Arc::new(Mutex::new(ProductSceneTrace::default()));
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(catalog)
+        .input_driver(ResidentTestInputDriver)
+        .build()
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(ProductTimerProvider))
+        .unwrap();
+    runtime
+        .register_resource_provider(Box::new(ProductSceneProvider {
+            base_uri: "scene://localization/frame",
+            trace: trace.clone(),
+            contract: ProductSceneContract::AtMostOnce,
+            prepare_delay: Duration::ZERO,
+        }))
+        .unwrap();
+    let subject = runtime.runtime_context().unwrap().subject;
+    for (id, resource, operations) in [
+        (9_300, "timer://clock/tick/tick", vec!["read"]),
+        (
+            9_301,
+            "scene://localization/frame/replace",
+            vec!["write", "replace"],
+        ),
+    ] {
         runtime
             .grant_capability(Arc::new(BasicCapability::from_keys(
                 CapabilityId(id),
@@ -2587,7 +2640,7 @@ fn finish_hash(hash: Sha256) -> String {
         .collect()
 }
 
-fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
+fn advance_product_clock(runtime: &mut crate::MechRuntime) {
     runtime
         .ingress()
         .submit(crate::RuntimeHostInput::single(
@@ -2602,6 +2655,10 @@ fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
         outcome.turn,
         Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
     ));
+}
+
+fn advance_product_nbody(runtime: &mut crate::MechRuntime) {
+    advance_product_clock(runtime);
 }
 
 #[derive(Clone, Debug)]
@@ -2937,6 +2994,101 @@ fn public_nbody_python_state_hash(raw: &ScalarNbodyReference) -> String {
         hash.update(((value / 1.0e-8).round() as i64).to_le_bytes());
     }
     finish_hash(hash)
+}
+
+fn snapshot_f64_values(snapshot: crate::RuntimeValueSnapshot) -> Vec<f64> {
+    match snapshot.into_value() {
+        LegacyValue::F64(value) => vec![*value.borrow()],
+        LegacyValue::MatrixF64(value) => value.as_vec(),
+        value => panic!("expected an f64 resident value, got {value:?}"),
+    }
+}
+
+#[test]
+fn public_ekf_localization_closes_source_bytecode_and_square_drive_runtime_surfaces() {
+    let (mut source_runtime, source_scene) =
+        configured_product_ekf_runtime(mech_stdlib::source_native_plan_catalog());
+    let loaded = source_runtime
+        .load_interactive_source_program(
+            PUBLIC_EKF_LOCALIZATION_SOURCE,
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    assert_eq!(loaded.route, RuntimeProgramRoute::ResidentExternal);
+
+    let mut minimum_x = f64::INFINITY;
+    let mut maximum_x = f64::NEG_INFINITY;
+    let mut minimum_y = f64::INFINITY;
+    let mut maximum_y = f64::NEG_INFINITY;
+    // Cover more than two laps at the slowest deterministic speed modulation,
+    // including the four zero-translation corner turns per lap.
+    for _ in 0..800 {
+        advance_product_clock(&mut source_runtime);
+        let truth = snapshot_f64_values(source_runtime.root_symbol_value("truth").unwrap());
+        assert_eq!(truth.len(), 3);
+        let (x, y) = (truth[0], truth[1]);
+        assert!(
+            (2.5 - 1.0e-12..=7.5 + 1.0e-12).contains(&x),
+            "square-drive truth crossed the horizontal boundary: {truth:?}",
+        );
+        assert!(
+            (2.5 - 1.0e-12..=7.5 + 1.0e-12).contains(&y),
+            "square-drive truth crossed the vertical boundary: {truth:?}",
+        );
+        minimum_x = minimum_x.min(x);
+        maximum_x = maximum_x.max(x);
+        minimum_y = minimum_y.min(y);
+        maximum_y = maximum_y.max(y);
+    }
+    for (name, observed, expected) in [
+        ("minimum x", minimum_x, 2.5),
+        ("maximum x", maximum_x, 7.5),
+        ("minimum y", minimum_y, 2.5),
+        ("maximum y", maximum_y, 7.5),
+    ] {
+        assert!(
+            (observed - expected).abs() < 1.0e-10,
+            "square-drive {name} did not land on its exact boundary: {observed}",
+        );
+    }
+    let source_error = snapshot_f64_values(
+        source_runtime
+            .program_output_value()
+            .unwrap()
+            .expect("EKF must publish its position error"),
+    );
+    assert_eq!(source_error.len(), 1);
+    assert!(source_error[0].is_finite() && source_error[0] < 1.0);
+    let source_scene = source_scene.lock().unwrap();
+    assert_eq!(source_scene.deliveries, 800);
+    assert_eq!(source_scene.latest.len(), 1);
+    drop(source_scene);
+
+    let ActiveProgramExecution::ResidentExternal(execution) = &source_runtime.active_program else {
+        panic!("EKF source must remain on the resident-external route")
+    };
+    let bytecode = encode_program_artifact_bytecode_v1(&execution.artifact).unwrap();
+    let source_revision = execution.artifact.revision();
+
+    let (mut bytecode_runtime, bytecode_scene) =
+        configured_product_ekf_runtime(mech_stdlib::runtime_catalog());
+    let decoded = bytecode_runtime
+        .load_bytecode_program(&bytecode, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    assert_eq!(decoded.route, RuntimeProgramRoute::ResidentExternal);
+    assert_eq!(decoded.info.program_revision, Some(source_revision));
+    for _ in 0..8 {
+        advance_product_clock(&mut bytecode_runtime);
+    }
+    assert_eq!(bytecode_scene.lock().unwrap().deliveries, 8);
+    let bytecode_error = snapshot_f64_values(
+        bytecode_runtime
+            .program_output_value()
+            .unwrap()
+            .expect("decoded EKF must publish its position error"),
+    );
+    assert_eq!(bytecode_error.len(), 1);
+    assert!(bytecode_error[0].is_finite() && bytecode_error[0] < 1.0);
 }
 
 #[test]

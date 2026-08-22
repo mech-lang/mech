@@ -80,6 +80,17 @@ class ImpactClassifierTests(unittest.TestCase):
                 self.assertIn("nbody-browser-canary", result["matched_owners"])
                 self.assertTrue(result["browser_canary_required"])
 
+    def test_ekf_validation_surface_requests_browser_canary(self):
+        for path in (
+            "examples/ekf/localization.mec",
+            "examples/ekf/mech.mcfg",
+            "scripts/smoke-served-resident-ekf-browser.sh",
+        ):
+            with self.subTest(path=path):
+                result = self.classify([path])
+                self.assertIn("ekf-browser-canary", result["matched_owners"])
+                self.assertTrue(result["browser_canary_required"])
+
     def test_leading_dot_owner_paths_are_not_treated_as_unknown(self):
         for path in (".github/workflows/ci.yml", "./.github/workflows/ci.yml"):
             with self.subTest(path=path):

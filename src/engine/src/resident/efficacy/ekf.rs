@@ -66,7 +66,7 @@ pub(crate) fn execute(
             );
         }
         Innovation => {
-            scratch.innovation = math::innovation(input, &scratch.predicted_measurement);
+            scratch.innovation = math::innovation_from_frame(input, &scratch.predicted_measurement);
         }
         CorrectedState => {
             scratch.corrected_state =

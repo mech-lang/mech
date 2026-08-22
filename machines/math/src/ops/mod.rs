@@ -76,7 +76,7 @@ fn pure_binary_full_write(
     }
 }
 
-fn arithmetic_full_write_contract(
+pub(crate) fn arithmetic_full_write_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {
     match output {

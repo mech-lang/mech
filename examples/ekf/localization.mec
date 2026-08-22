@@ -31,7 +31,6 @@ so their range and bearing geometry changes throughout every lap.
   π := 3.141592654
   Δt := @clock/tick * 0.0 + 0.05
   speed := 1.25
-  turn-rate := π / (2.0 * Δt)
   low-bound := 2.5
   high-bound := 7.5
 
@@ -48,50 +47,26 @@ so their range and bearing geometry changes throughout every lap.
 2. Square-Drive State Machine
 -------------------------------------------------------------------------------
 
-The controller is an explicit finite state machine. Each named state owns one
-side of the square and transitions only after truth reaches that side's boundary.
-A transition tick rotates the robot ninety degrees in place; ordinary ticks move
-straight ahead.
+The controller is an explicit resident finite state machine with East, North,
+West, and South states. Each state owns one side of the square. It shortens the
+last translational step so truth lands exactly on a corner, then rotates ninety
+degrees in place on the transition turn.
 
-#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) => <f64>
-  ├ :Select(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>)
-  ├ :East(x<f64>, high<f64>)
-  ├ :North(y<f64>, high<f64>)
-  ├ :West(x<f64>, low<f64>)
-  ├ :South(y<f64>, low<f64>)
-  └ :Done(next-phase<f64>).
-
-#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) -> :Select(phase, x, y, low, high)
-  :Select(phase, x, y, low, high)
-    ├ phase == 0.0 -> :East(x, high)
-    ├ phase == 1.0 -> :North(y, high)
-    ├ phase == 2.0 -> :West(x, low)
-    └ phase == 3.0 -> :South(y, low)
-  :East(x, high)
-    ├ x < high -> :Done(0.0)
-    └ x >= high -> :Done(1.0)
-  :North(y, high)
-    ├ y < high -> :Done(1.0)
-    └ y >= high -> :Done(2.0)
-  :West(x, low)
-    ├ x > low -> :Done(2.0)
-    └ x <= low -> :Done(3.0)
-  :South(y, low)
-    ├ y > low -> :Done(3.0)
-    └ y <= low -> :Done(0.0)
-  :Done(next-phase) => next-phase.
-
-  ~drive-phase := 0.0
   ~truth := [2.5
              2.5
              0.0]
-  ~simulation-time := 0.0
-
-  next-drive-phase := #SquareDrive(drive-phase,
-    truth[1], truth[2], low-bound, high-bound)
-  phase-step := (next-drive-phase - drive-phase + 4.0) % 4.0
-  commanded-speed := speed * (1.0 - phase-step)
-  commanded-turn-rate := turn-rate * phase-step
+  simulation-time := @clock/tick * Δt
+  actual-speed-scale := 0.965 + 0.025 * math/sin(simulation-time * 0.73)
+  drive-motion := [speed
+                   speed * actual-speed-scale
+                   Δt]
+  drive-bounds := [low-bound
+                   high-bound]
+  drive-control := ekf/square-drive-state-machine(truth, drive-motion, drive-bounds)
+  drive-phase := drive-control[1]
+  commanded-speed := drive-control[2]
+  actual-speed := drive-control[3]
+  commanded-turn-rate := drive-control[4]
 
   velocity-basis := [1.0
                      0.0
@@ -101,16 +76,7 @@ straight ahead.
                  1.0
                  0.0
                  0.0]
-  range-basis := [0.0
-                  0.0
-                  1.0
-                  0.0]
-  bearing-basis := [0.0
-                    0.0
-                    0.0
-                    1.0]
   commanded-frame := commanded-speed * velocity-basis + commanded-turn-rate * turn-basis
-  actual-speed := commanded-speed * (0.965 + 0.025 * math/sin(simulation-time * 0.73))
   actual-turn-rate := commanded-turn-rate
   actual-motion-frame := actual-speed * velocity-basis + actual-turn-rate * turn-basis
 
@@ -118,9 +84,7 @@ straight ahead.
   next-truth := ekf/predicted-state(truth,
     actual-motion-frame, truth-trigonometry, Δt)
 
-  drive-phase = next-drive-phase
   truth = next-truth
-  simulation-time += Δt
 
 
 3. Noisy Camera Observations
@@ -144,10 +108,14 @@ unknown to the filter and different for every camera.
   bearing-3 := math/atan2(camera-3-delta[2], camera-3-delta[1]) - next-truth[3] + 0.013 * math/sin(simulation-time * 2.37 + 2.8)
   bearing-4 := math/atan2(camera-4-delta[2], camera-4-delta[1]) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.43 + 4.0)
 
-  observation-a := commanded-frame + range-1 * range-basis + bearing-1 * bearing-basis
-  observation-b := commanded-frame + range-2 * range-basis + bearing-2 * bearing-basis
-  observation-c := commanded-frame + range-3 * range-basis + bearing-3 * bearing-basis
-  observation-d := commanded-frame + range-4 * range-basis + bearing-4 * bearing-basis
+  observation-a := [range-1
+                    bearing-1]
+  observation-b := [range-2
+                    bearing-2]
+  observation-c := [range-3
+                    bearing-3]
+  observation-d := [range-4
+                    bearing-4]
 
 
 4. Extended Kalman Filter

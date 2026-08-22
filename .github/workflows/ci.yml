@@ -212,6 +212,8 @@ jobs:
             --lib
       - name: Verify resident rendering without browser errors
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
+      - name: Verify resident EKF rendering without browser errors
+        run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-ekf-browser.sh
       - name: Remove generated browser package
         if: always()
         run: rm -rf src/wasm/pkg

@@ -33,6 +33,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["math"], "pow", bind_pow)?;
     register(builder, &["math"], "cos", bind_cos)?;
     register(builder, &["math"], "sin", bind_sin)?;
+    register(builder, &["math"], "atan2", bind_atan2)?;
     register(builder, &["logic"], "and", bind_semantic_bool_and)?;
     register(builder, &["logic"], "or", bind_bool_or)?;
     register(builder, &["logic"], "xor", bind_bool_xor)?;
@@ -74,6 +75,24 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "Access1DSRD<f64>", bind_scalar_access_1d)?;
     register(builder, &runtime, "Access1DSVD<f64>", bind_scalar_access_1d)?;
     register(builder, &runtime, "Access1DSMD<f64>", bind_scalar_access_1d)?;
+    for name in [
+        "Access2DSSM2<f64>",
+        "Access2DSSM3<f64>",
+        "Access2DSSM4<f64>",
+        "Access2DSSM2x3<f64>",
+        "Access2DSSM3x2<f64>",
+        "Access2DSSMD<f64>",
+        "Access2DSSV2<f64>",
+        "Access2DSSV3<f64>",
+        "Access2DSSV4<f64>",
+        "Access2DSSVD<f64>",
+        "Access2DSSR2<f64>",
+        "Access2DSSR3<f64>",
+        "Access2DSSR4<f64>",
+        "Access2DSSRD<f64>",
+    ] {
+        register(builder, &runtime, name, bind_scalar_access_2d)?;
+    }
     register(builder, &runtime, "Access1DVDVD<f64>", bind_gather_1d)?;
     register(
         builder,
@@ -199,6 +218,8 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "MathCosF64VD", bind_cos)?;
     register(builder, &runtime, "MathSinF64S", bind_sin)?;
     register(builder, &runtime, "MathSinF64VD", bind_sin)?;
+    register(builder, &runtime, "Atan2F64", bind_atan2)?;
+    register(builder, &runtime, "Atan2VDF64", bind_atan2)?;
     register(builder, &runtime, "MatMulMDMD<f64>", bind_matmul)?;
     register(builder, &runtime, "NChooseKMatrix<f64>", bind_n_choose_k)?;
     register(builder, &runtime, "NegateS<f64>", bind_negate)?;
@@ -332,6 +353,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         &["ekf"],
         "covariance-symmetric",
         bind_ekf_symmetric,
+    )?;
+    register(
+        builder,
+        &["ekf"],
+        "square-drive-state-machine",
+        bind_ekf_square_drive,
     )?;
     Ok(())
 }
@@ -735,7 +762,7 @@ binder_f64_output!(
 binder_f64_output!(
     bind_ekf_innovation,
     ekf_innovation,
-    [4, 2],
+    [2, 2],
     2,
     ChangeDetectionPolicy::KernelReported
 );
@@ -758,6 +785,13 @@ binder_f64_output!(
     ekf_symmetrize,
     [9],
     9,
+    ChangeDetectionPolicy::KernelReported
+);
+binder_f64_output!(
+    bind_ekf_square_drive,
+    ekf_square_drive,
+    [3, 3, 2],
+    4,
     ChangeDetectionPolicy::KernelReported
 );
 binder!(
@@ -870,6 +904,12 @@ fn bind_sin(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_unary_f64(request, sine)
+}
+
+fn bind_atan2(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, arctangent2)
 }
 
 fn bind_sub(
@@ -1617,10 +1657,44 @@ fn bind_scalar_access_1d(
 fn bind_semantic_scalar_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
-    bind_scalar_access_1d(request)
+    bind_scalar_access_2d(request)
+        .or_else(|_| bind_scalar_access_1d(request))
         .or_else(|_| bind_all_rows_column(request))
         .or_else(|_| bind_row_all_columns(request))
         .or_else(|_| super::text::bind_string_scalar_access(request))
+}
+
+fn bind_scalar_access_2d(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        3,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    if request.inputs.len() != 3
+        || request.inputs[0].kind != ResidentValueKind::F64
+        || request.inputs[1..].iter().any(|input| {
+            !matches!(
+                input.kind,
+                ResidentValueKind::F64 | ResidentValueKind::Index
+            ) || input.shape != ResidentShape::SCALAR
+        })
+        || request.output.kind != ResidentValueKind::F64
+        || request.output.shape != ResidentShape::SCALAR
+        || request.inputs[0].shape.len().is_none()
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        scalar_access_2d,
+        vec![
+            request.inputs[0].shape.rows as u64,
+            request.inputs[0].shape.columns as u64,
+        ]
+        .into_boxed_slice(),
+    )
 }
 
 fn bind_semantic_range_access(
@@ -2226,6 +2300,23 @@ fn ekf_symmetrize(
     )
 }
 
+fn ekf_square_drive(
+    _kernel: &BoundResidentKernel,
+    state: &[f64],
+    motion: &[f64],
+    bounds: &[f64],
+    output: &mut [f64],
+) -> Result<bool, ResidentKernelError> {
+    write_f64_array(
+        output,
+        crate::efficacy::ekf::math::square_drive_state_machine(
+            as_f64_array(state)?,
+            as_f64_array(motion)?,
+            as_f64_array(bounds)?,
+        ),
+    )
+}
+
 fn ekf_finite(
     _kernel: &BoundResidentKernel,
     state: &[f64],
@@ -2309,6 +2400,14 @@ fn sine(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     unary_f64(inputs, output, f64::sin)
+}
+
+fn arctangent2(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(inputs, output, f64::atan2)
 }
 
 fn binary_f64(
@@ -3096,6 +3195,32 @@ fn scalar_access_1d(
         return Err(ResidentKernelError::InvalidShape);
     };
     let next = source[index];
+    let changed = target.to_bits() != next.to_bits();
+    *target = next;
+    Ok(changed)
+}
+
+fn scalar_access_2d(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 3 || kernel.parameters().len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let source = f64_input(inputs, 0)?;
+    let rows = kernel.parameters()[0] as usize;
+    let columns = kernel.parameters()[1] as usize;
+    if source.len() != rows * columns {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let row = checked_one_based(index_at(inputs, 1, 0)?, rows)?;
+    let column = checked_one_based(index_at(inputs, 2, 0)?, columns)?;
+    let output = f64_output(output)?;
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let next = source[row + column * rows];
     let changed = target.to_bits() != next.to_bits();
     *target = next;
     Ok(changed)

@@ -191,7 +191,7 @@ pub(crate) const FROZEN_EKF_OPERATIONS: [FrozenEkfOperationSpec; 18] = [
     spec!(
         Kernel(Innovation),
         "innovation",
-        &[V4, V2],
+        &[V2, V2],
         V2,
         KernelReported,
     ),

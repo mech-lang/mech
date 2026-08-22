@@ -27,14 +27,14 @@ pub fn install_intrinsic_resident(builder: &mut FunctionCatalogBuilder) -> MResu
 /// Installs the fixed-shape EKF runtime operations used by resident robotics
 /// applications. The operations live in the engine because their allocation-
 /// free kernels are also shared by the resident execution substrate.
-#[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
+#[cfg(feature = "ekf")]
 pub fn install_ekf_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     crate::efficacy::ekf::catalog::install_runtime(builder)
 }
 
 /// Installs source specializers for the public `ekf/*` module without the
 /// frozen efficacy fixture's private compatibility entries.
-#[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
+#[cfg(all(feature = "ekf", feature = "semantic-compiler"))]
 pub fn install_ekf_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     crate::efficacy::ekf::catalog::install_source_operations(builder)
 }

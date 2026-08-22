@@ -1,17 +1,22 @@
 //! Hidden ordinary-source compiler catalog for the frozen EKF efficacy path.
 
-use std::sync::{Arc, LazyLock};
+#[cfg(feature = "semantic-compiler")]
+use std::sync::Arc;
+use std::sync::LazyLock;
 
 use mech_core::{
-    AccessMode, AliasPolicy, BytecodeCompilerContext, ChangeDetectionPolicy, CompileConst,
-    DeliveryMode, ExternalInteraction, FunctionArgs, FunctionCatalog, FunctionCatalogBuilder,
-    FunctionExport, FunctionExposure, FunctionRuntimeType, FunctionSpecializer,
-    GuardFunctionSafety, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
-    MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Ref,
-    Register, RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
-    ShapeRule, compile_runtime_produced_register, compile_value_register,
-    function_shape_contract_violation,
+    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
+    FunctionArgs, FunctionCatalogBuilder, FunctionRuntimeType, InputPortLayout, InputPortPolicy,
+    LegacyValue, MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
+    MechFunctionImpl, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
+    ReactiveNodeKind, Ref, RuntimeFunctionContract, RuntimeFunctionSignature,
+    RuntimeOutputAliasPolicy, ShapeRule, function_shape_contract_violation,
+};
+#[cfg(feature = "semantic-compiler")]
+use mech_core::{
+    BytecodeCompilerContext, CompileConst, FunctionCatalog, FunctionExport, FunctionExposure,
+    FunctionSpecializer, GuardFunctionSafety, MechFunctionCompiler, Register,
+    compile_runtime_produced_register, compile_value_register,
 };
 use nalgebra::{DMatrix, DVector};
 
@@ -122,16 +127,19 @@ pub(crate) fn semantic_contract(
     }
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub(crate) struct FrozenEkfSpecializer {
     operation: FrozenEkfOperation,
 }
 
+#[cfg(feature = "semantic-compiler")]
 impl FunctionSpecializer for FrozenEkfSpecializer {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         validate_source_arguments(self.operation, arguments)?;
         let function = FrozenEkfFunction {
             operation: self.operation,
             arguments: arguments.to_vec().into_boxed_slice(),
+            #[cfg(feature = "semantic-compiler")]
             compile_arguments: frozen_compile_arguments(arguments),
             output: allocate_output(operation_spec(self.operation).output),
         };
@@ -148,6 +156,7 @@ impl FunctionSpecializer for FrozenEkfSpecializer {
 pub(crate) struct FrozenEkfFunction {
     operation: FrozenEkfOperation,
     arguments: Box<[LegacyValue]>,
+    #[cfg(feature = "semantic-compiler")]
     compile_arguments: Box<[LegacyValue]>,
     output: LegacyValue,
 }
@@ -178,6 +187,7 @@ impl MechFunctionImpl for FrozenEkfFunction {
     }
 }
 
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for FrozenEkfFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination =
@@ -212,6 +222,7 @@ impl MechFunctionCompiler for FrozenEkfFunction {
     }
 }
 
+#[cfg(feature = "semantic-compiler")]
 fn frozen_compile_argument(value: &LegacyValue) -> LegacyValue {
     match value {
         LegacyValue::Typed(value, _) => frozen_compile_argument(value),
@@ -221,6 +232,7 @@ fn frozen_compile_argument(value: &LegacyValue) -> LegacyValue {
     }
 }
 
+#[cfg(feature = "semantic-compiler")]
 fn frozen_compile_arguments(arguments: &[LegacyValue]) -> Box<[LegacyValue]> {
     arguments
         .iter()
@@ -236,6 +248,7 @@ fn instantiate(
     let input_values = arguments.input_values();
     Ok(Box::new(FrozenEkfFunction {
         operation,
+        #[cfg(feature = "semantic-compiler")]
         compile_arguments: frozen_compile_arguments(&input_values),
         arguments: input_values.into_boxed_slice(),
         output: arguments.output_value().clone(),
@@ -376,6 +389,164 @@ factory!(
     [DMatrix<f64>]
 );
 
+const SQUARE_DRIVE_NAME: &str = "ekf/square-drive-state-machine";
+
+#[cfg(feature = "semantic-compiler")]
+struct SquareDriveSpecializer;
+
+#[cfg(feature = "semantic-compiler")]
+impl FunctionSpecializer for SquareDriveSpecializer {
+    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+        validate_square_drive_values(arguments)?;
+        let function = SquareDriveFunction {
+            arguments: arguments.to_vec().into_boxed_slice(),
+            compile_arguments: frozen_compile_arguments(arguments),
+            output: LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(4)))),
+        };
+        function.solve_result()?;
+        Ok(Box::new(function))
+    }
+
+    fn guard_safety(&self) -> GuardFunctionSafety {
+        GuardFunctionSafety::PureStatic
+    }
+}
+
+#[derive(Debug)]
+struct SquareDriveFunction {
+    arguments: Box<[LegacyValue]>,
+    #[cfg(feature = "semantic-compiler")]
+    compile_arguments: Box<[LegacyValue]>,
+    output: LegacyValue,
+}
+
+impl MechFunctionImpl for SquareDriveFunction {
+    fn solve_result(&self) -> MResult<()> {
+        let next = math::square_drive_state_machine(
+            &square_drive_array(&self.arguments[0])?,
+            &square_drive_array(&self.arguments[1])?,
+            &square_drive_array(&self.arguments[2])?,
+        );
+        let LegacyValue::MatrixF64(Matrix::DVector(output)) = &self.output else {
+            return Err(function_shape_contract_violation(
+                SQUARE_DRIVE_NAME,
+                "output requires an f64 vector of length 4",
+            ));
+        };
+        output.borrow_mut().as_mut_slice().copy_from_slice(&next);
+        Ok(())
+    }
+
+    fn out(&self) -> LegacyValue {
+        self.output.clone()
+    }
+
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&KERNEL_3)
+    }
+
+    fn reactive_node_kind(&self) -> ReactiveNodeKind {
+        ReactiveNodeKind::Combinational
+    }
+
+    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+        Ok(self.reactive_output_values())
+    }
+
+    fn to_string(&self) -> String {
+        SQUARE_DRIVE_NAME.to_owned()
+    }
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl MechFunctionCompiler for SquareDriveFunction {
+    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+        let destination =
+            compile_runtime_produced_register(&self.output, self.output.addr(), context)?;
+        let seed = LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(4))))
+            .compile_const(context)?;
+        context.record_register_constant_metadata(destination, seed)?;
+        context.emit_const_load(destination, seed);
+        let inputs = self
+            .compile_arguments
+            .iter()
+            .map(|argument| compile_value_register(argument, argument.addr(), context))
+            .collect::<MResult<Vec<_>>>()?;
+        let [state, motion, bounds] = inputs.as_slice() else {
+            unreachable!("square drive has exactly three inputs")
+        };
+        let function = context.function_id(SQUARE_DRIVE_NAME)?;
+        context.emit_ternop(function, destination, *state, *motion, *bounds);
+        Ok(destination)
+    }
+}
+
+struct SquareDriveFactory;
+
+impl MechFunctionFactory for SquareDriveFactory {
+    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
+        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+    );
+
+    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+        validate_square_drive_runtime(&arguments)?;
+        Ok(Box::new(SquareDriveFunction {
+            #[cfg(feature = "semantic-compiler")]
+            compile_arguments: frozen_compile_arguments(&arguments.input_values()),
+            arguments: arguments.input_values().into_boxed_slice(),
+            output: arguments.output_value().clone(),
+        }))
+    }
+}
+
+fn validate_square_drive_values(arguments: &[LegacyValue]) -> MResult<()> {
+    if arguments.len() != 3
+        || value_shape(&arguments[0]) != Some(FrozenEkfValueShape::Vector(3))
+        || value_shape(&arguments[1]) != Some(FrozenEkfValueShape::Vector(3))
+        || value_shape(&arguments[2]) != Some(FrozenEkfValueShape::Vector(2))
+    {
+        return Err(function_shape_contract_violation(
+            SQUARE_DRIVE_NAME,
+            "expected state [f64]:3,1, motion [f64]:3,1, and bounds [f64]:2,1",
+        ));
+    }
+    Ok(())
+}
+
+fn validate_square_drive_runtime(arguments: &FunctionArgs) -> MResult<()> {
+    validate_square_drive_values(&arguments.input_values())?;
+    if value_shape(arguments.output_value()) != Some(FrozenEkfValueShape::Vector(4)) {
+        return Err(function_shape_contract_violation(
+            SQUARE_DRIVE_NAME,
+            "output requires [f64]:4,1",
+        ));
+    }
+    Ok(())
+}
+
+fn square_drive_array<const N: usize>(value: &LegacyValue) -> MResult<[f64; N]> {
+    match value {
+        LegacyValue::Typed(value, _) => square_drive_array(value),
+        LegacyValue::MutableReference(value) => square_drive_array(&value.borrow()),
+        LegacyValue::MatrixF64(value) => {
+            let values = value.as_vec();
+            values.try_into().map_err(|_| {
+                function_shape_contract_violation(
+                    SQUARE_DRIVE_NAME,
+                    format!("expected f64 vector length {N}"),
+                )
+            })
+        }
+        _ => Err(function_shape_contract_violation(
+            SQUARE_DRIVE_NAME,
+            format!("expected f64 vector length {N}"),
+        )),
+    }
+}
+
 fn runtime_registration(
     operation: FrozenEkfOperation,
 ) -> (
@@ -437,7 +608,7 @@ macro_rules! register {
                 "mech-engine",
                 "mech_engine",
                 $installer,
-                &["resident-artifact", "semantic-compiler"],
+                &["ekf"],
             )?,
             semantic_contract(spec.operation),
         )?;
@@ -448,6 +619,33 @@ macro_rules! register {
             semantic_contract(spec.operation),
         )?;
     }};
+}
+
+fn install_square_drive_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    let contract = RuntimeFunctionContract::custom(
+        SQUARE_DRIVE_NAME,
+        RuntimeOutputAliasPolicy::DisallowInputAlias,
+        validate_square_drive_runtime,
+    );
+    #[cfg(feature = "native-plan")]
+    builder.insert_runtime_factory_with_linkage_and_semantic_contract::<SquareDriveFactory>(
+        SQUARE_DRIVE_NAME,
+        contract,
+        mech_core::NativeFunctionLinkage::for_factory::<SquareDriveFactory>(
+            "mech-engine",
+            "mech_engine",
+            "mech_engine::__mech_native::install_ekf_square_drive_state_machine",
+            &["ekf"],
+        )?,
+        &KERNEL_3,
+    )?;
+    #[cfg(not(feature = "native-plan"))]
+    builder.insert_runtime_factory_with_semantic_contract::<SquareDriveFactory>(
+        SQUARE_DRIVE_NAME,
+        contract,
+        &KERNEL_3,
+    )?;
+    Ok(())
 }
 
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
@@ -577,6 +775,7 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
         validate_symmetric,
         "mech_engine::__mech_native::install_ekf_covariance_symmetric"
     );
+    install_square_drive_runtime(builder)?;
     Ok(())
 }
 
@@ -700,8 +899,23 @@ pub mod __mech_native {
         SymmetricFactory,
         validate_symmetric
     );
+
+    pub fn install_ekf_square_drive_state_machine(
+        builder: &mut FunctionCatalogBuilder,
+    ) -> MResult<()> {
+        builder.insert_runtime_factory_with_semantic_contract::<SquareDriveFactory>(
+            SQUARE_DRIVE_NAME,
+            RuntimeFunctionContract::custom(
+                SQUARE_DRIVE_NAME,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                validate_square_drive_runtime,
+            ),
+            &KERNEL_3,
+        )
+    }
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub(crate) fn install_source_operations(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     for spec in FROZEN_EKF_OPERATIONS {
         let operation = builder.insert_specializer(
@@ -718,9 +932,19 @@ pub(crate) fn install_source_operations(builder: &mut FunctionCatalogBuilder) ->
             exposure: FunctionExposure::ModuleOnly,
         })?;
     }
+    let square_drive =
+        builder.insert_specializer(SQUARE_DRIVE_NAME, Arc::new(SquareDriveSpecializer))?;
+    builder.insert_export(FunctionExport {
+        operation: square_drive,
+        canonical_name: SQUARE_DRIVE_NAME.to_owned(),
+        module: Some("ekf".to_owned()),
+        item: Some("square-drive-state-machine".to_owned()),
+        exposure: FunctionExposure::ModuleOnly,
+    })?;
     Ok(())
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_source_operations(builder)?;
     let negate = builder.insert_specializer("math/neg", Arc::new(FrozenF64NegateSpecializer))?;
@@ -734,8 +958,10 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
     Ok(())
 }
 
+#[cfg(feature = "semantic-compiler")]
 struct FrozenF64NegateSpecializer;
 
+#[cfg(feature = "semantic-compiler")]
 impl FunctionSpecializer for FrozenF64NegateSpecializer {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let [argument] = arguments else {
@@ -777,10 +1003,12 @@ impl FunctionSpecializer for FrozenF64NegateSpecializer {
 }
 
 #[derive(Debug)]
+#[cfg(feature = "semantic-compiler")]
 struct FrozenF64NegateFunction {
     output: Ref<f64>,
 }
 
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for FrozenF64NegateFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
@@ -799,6 +1027,7 @@ impl MechFunctionImpl for FrozenF64NegateFunction {
     }
 }
 
+#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for FrozenF64NegateFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = LegacyValue::F64(self.output.clone());
@@ -807,6 +1036,7 @@ impl MechFunctionCompiler for FrozenF64NegateFunction {
 }
 
 #[doc(hidden)]
+#[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 pub fn frozen_ekf_compiler_catalog() -> MResult<Arc<FunctionCatalog>> {
     let mut builder = FunctionCatalogBuilder::new();
     crate::intrinsics::catalog::install_runtime(&mut builder)?;
@@ -839,6 +1069,7 @@ fn value_shape(value: &LegacyValue) -> Option<FrozenEkfValueShape> {
     }
 }
 
+#[cfg(feature = "semantic-compiler")]
 fn validate_source_arguments(
     operation: FrozenEkfOperation,
     arguments: &[LegacyValue],
@@ -897,6 +1128,7 @@ fn validate_runtime_shapes(operation: FrozenEkfOperation, args: &FunctionArgs) -
     Ok(())
 }
 
+#[cfg(feature = "semantic-compiler")]
 fn allocate_output(shape: FrozenEkfValueShape) -> LegacyValue {
     match shape {
         FrozenEkfValueShape::Bool => LegacyValue::Bool(Ref::new(false)),
