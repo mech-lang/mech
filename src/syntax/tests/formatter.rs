@@ -196,6 +196,47 @@ fn formatter_emits_renderer_ready_equations_and_diagrams_with_safe_source_text()
 }
 
 #[test]
+fn formatter_marks_only_heading_owned_sections_for_editorial_numbering() {
+    let program = Program {
+        title: None,
+        body: Body {
+            sections: vec![
+                Section {
+                    subtitle: None,
+                    annotations: Vec::new(),
+                    elements: vec![SectionElement::Paragraph(plain_paragraph(
+                        "Introductory prose.",
+                    ))],
+                },
+                Section {
+                    subtitle: Some(Subtitle {
+                        text: plain_paragraph("First section"),
+                        level: 2,
+                    }),
+                    annotations: Vec::new(),
+                    elements: Vec::new(),
+                },
+            ],
+        },
+    };
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.program(&program);
+
+    assert_eq!(
+        html.matches("class=\"mechdown-section\"").count(),
+        1,
+        "{html}"
+    );
+    assert_eq!(
+        html.matches("class=\"mechdown-section mechdown-titled-section\"")
+            .count(),
+        1,
+        "{html}",
+    );
+}
+
+#[test]
 fn formatter_preserves_new_prefix_context_resource_read() {
     let mut formatter = Formatter::new();
     let statement = first_statement("name := @browser/body/content/input/_value");

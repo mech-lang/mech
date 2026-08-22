@@ -85,7 +85,7 @@ fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     let css = include("mechdown.css");
     for contract in [
         "counter-reset: mechdown-section",
-        ".mechdown-section {\n  counter-increment: mechdown-section",
+        ".mechdown-section.mechdown-titled-section {\n  counter-increment: mechdown-section",
         ".mechdown-section > h2::before",
         "content: \"section \" counter(mechdown-section, decimal)",
         ".mechdown-section > h3::before",
@@ -147,6 +147,10 @@ fn document_controller_initializes_repl_controls_before_starting_wasm() {
 fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     let controller = include("document.js");
     assert!(controller.contains("function documentPageScrollOwner(requestedOwner = null)"));
+    assert!(
+        controller
+            .contains("requestedOwner === \"content-shell\" && currentOwner === contentShell")
+    );
     assert!(controller.contains("owner: owner === window ? \"window\" : \"content-shell\""));
     assert!(controller.contains("owner === window ? window.scrollY : owner.scrollTop"));
     assert!(controller.contains("document.querySelector(\".content-shell\")?.addEventListener("));

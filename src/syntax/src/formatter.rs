@@ -887,9 +887,19 @@ impl Formatter {
         let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
         let id = hash_str(&format!("section-{}{}", self.h2_num + 1, toc));
         if self.html {
+            let titled = if node.subtitle.is_some() {
+                "mechdown-titled-section"
+            } else {
+                ""
+            };
+            let classes = ["mechdown-section", toc, titled]
+                .into_iter()
+                .filter(|class| !class.is_empty())
+                .collect::<Vec<_>>()
+                .join(" ");
             format!(
-                "<section id=\"{}\" section=\"{}\" class=\"mechdown-section {}\">{}</section>",
-                id, section_id, toc, src
+                "<section id=\"{}\" section=\"{}\" class=\"{}\">{}</section>",
+                id, section_id, classes, src
             )
         } else {
             src

@@ -69,12 +69,15 @@
  * whichever page shell embeds it.
  */
 [data-mechdown] .mechdown-section {
-  counter-increment: mechdown-section;
   counter-reset: mechdown-subsection mechdown-subsubsection mechdown-h5 mechdown-h6;
   max-width: 100%;
   min-width: 0;
   padding: 0 10px 30px;
   width: 100%;
+}
+
+[data-mechdown] .mechdown-section.mechdown-titled-section {
+  counter-increment: mechdown-section;
 }
 
 [data-mechdown] .mechdown-section > h2,

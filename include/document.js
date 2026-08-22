@@ -91,20 +91,21 @@ function saveConsoleOpeningSize(axis, size) {
 }
 
 function documentPageScrollOwner(requestedOwner = null) {
-  if (requestedOwner === "window") {
-    return window;
-  }
   const contentShell = document.querySelector(".content-shell");
-  if (requestedOwner === "content-shell") {
-    return contentShell;
-  }
+  let currentOwner = window;
   if (contentShell) {
     const style = getComputedStyle(contentShell);
     if (["auto", "scroll", "overlay"].includes(style.overflowY)) {
-      return contentShell;
+      currentOwner = contentShell;
     }
   }
-  return window;
+  if (requestedOwner === "content-shell" && currentOwner === contentShell) {
+    return contentShell;
+  }
+  if (requestedOwner === "window" && currentOwner === window) {
+    return window;
+  }
+  return currentOwner;
 }
 
 function currentPagePosition() {
