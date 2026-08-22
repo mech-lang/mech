@@ -17,12 +17,12 @@ use mech_compute::{
     build_compute_region_interface,
 };
 use mech_core::{
-    ApplicationRequirement, Body, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-    LegacyValue, MResult, MechError, MechErrorKind, MechExecutionServices, MechSourceCode,
-    ModuleManifestCatalog, OperationContractDeclaration, Program, Ref, ResourceIntent,
+    ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
+    MResult, MechError, MechErrorKind, MechExecutionServices, MechSourceCode,
+    ModuleManifestCatalog, OperationContractDeclaration, Ref, ResourceIntent,
 };
 #[cfg(feature = "compute")]
-use mech_core::{MechCode, Section, SectionElement};
+use mech_core::{Body, MechCode, Program, Section, SectionElement};
 use mech_engine::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
     ProgramArtifactCompilationProduct, ProgramCompilationProduct, root_document_output_ids,
@@ -616,6 +616,7 @@ impl<'a> ProgramCompilerView<'a> {
         })
     }
 
+    #[cfg(feature = "compute")]
     fn compile_resolved_tree_artifact(
         &self,
         root: &str,
@@ -1418,6 +1419,7 @@ fn source_declared_compute_inputs(tree: &Program) -> MResult<BTreeSet<String>> {
         .collect())
 }
 
+#[cfg(feature = "compute")]
 fn replace_root_tree(module: &mut CompilerModule, tree: Program) -> MResult<()> {
     let inherited_contexts = module.source.contexts.clone();
     module.source.source = MechSourceCode::Tree(tree);
@@ -1745,6 +1747,7 @@ fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {
     }
 }
 
+#[cfg(feature = "compute")]
 fn declaration_tree(source: &MechSourceCode) -> MResult<Program> {
     match source {
         MechSourceCode::String(source) => mech_syntax::parser::parse(source.trim()),
