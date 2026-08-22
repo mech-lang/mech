@@ -1,9 +1,9 @@
 {
-  "dependency_count": 404,
+  "dependency_count": 407,
   "distribution": "standard",
-  "native_planning_owner_count": 5,
-  "runtime_factory_count": 1377,
-  "runtime_surface_digest": "7c3c7e351b71f6c9cb9d3f1434016b2e7a780b37e92427d2dde0e4ae1e72eb15",
+  "native_planning_owner_count": 6,
+  "runtime_factory_count": 1379,
+  "runtime_surface_digest": "cb904e39b9e93a25d1806a3cf0375ece2bfe89da39b53f2cd9f29d17ed8bff2b",
   "runtime_surface_digest_algorithm": "sha256-canonical-id-tab-name-lf-v1",
   "schema": "mech.distribution-contract.v1",
   "selected_hosts": [
@@ -15,6 +15,9 @@
     "mech-timer"
   ],
   "selected_machine_operations": {
+    "mech-combinatorics": [
+      "n_choose_k"
+    ],
     "mech-compare": [
       "eq",
       "gt",
@@ -91,6 +94,7 @@
     "mech-browser",
     "mech-build",
     "mech-bytecode",
+    "mech-combinatorics",
     "mech-compare",
     "mech-console",
     "mech-core",
@@ -188,7 +192,7 @@
     "vectord",
     "web_host"
   ],
-  "source_specializer_count": 69,
-  "surface_digest": "4e541074d0ae29290e9af7a205eea5ddc4ff8e32f3844b2c864f0bf862c26699",
+  "source_specializer_count": 70,
+  "surface_digest": "3d73cf133ac27bd35578def18d93810f9f338e7448e8de632359d9e3fb174673",
   "surface_digest_algorithm": "sha256-canonical-selected-cargo-surface-v1"
 }

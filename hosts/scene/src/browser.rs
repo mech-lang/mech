@@ -364,13 +364,20 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
             "{} {}px {}",
             text.font_weight, text.font_size, text.font_family
         ));
-        ctx.set_text_align(&text.text_anchor);
+        ctx.set_text_align(canvas_text_align(&text.text_anchor));
         ctx.fill_text(&text.value, text.x, text.y).map_err(|_| {
             scene_error("BrowserScene", format!("failed to draw text `{}`", text.id))
         })?;
     }
     ctx.set_global_alpha(1.0);
     Ok(())
+}
+
+fn canvas_text_align(anchor: &str) -> &str {
+    match anchor {
+        "middle" => "center",
+        anchor => anchor,
+    }
 }
 
 fn render_svg(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
@@ -592,5 +599,12 @@ mod tests {
         assert_eq!(registry.render_frame().unwrap(), 1);
         assert_eq!(registry.render_frame().unwrap(), 0);
         assert_eq!(registry.drain_output_events().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn canvas_text_alignment_uses_canvas_vocabulary() {
+        assert_eq!(canvas_text_align("start"), "start");
+        assert_eq!(canvas_text_align("middle"), "center");
+        assert_eq!(canvas_text_align("end"), "end");
     }
 }

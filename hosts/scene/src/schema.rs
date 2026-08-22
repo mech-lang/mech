@@ -164,12 +164,7 @@ impl FromRecord for CircleElement {
             &format!("circle `{id}` stroke-width"),
         )?;
         let opacity = required_number(record, "opacity", &format!("circle `{id}` opacity"))?;
-        if !radius.is_finite() || radius < 0.0 {
-            return Err(scene_error(
-                "SceneSchema",
-                format!("circle `{id}` radius must be finite and non-negative"),
-            ));
-        }
+        validate_radius(radius, &format!("circle `{id}` radius"))?;
         validate_stroke_width(&id, stroke_width)?;
         validate_opacity(&id, opacity)?;
         Ok(Self {
@@ -360,6 +355,15 @@ fn validate_text_anchor(id: &str, value: &str) -> MResult<()> {
     }
     Ok(())
 }
+fn validate_radius(value: f64, label: &str) -> MResult<()> {
+    if !value.is_finite() || value < 0.0 {
+        return Err(scene_error(
+            "SceneSchema",
+            format!("{label} must be finite and non-negative"),
+        ));
+    }
+    Ok(())
+}
 fn finite_number(value: f64, label: &str) -> MResult<f64> {
     if !value.is_finite() {
         return Err(scene_error(
@@ -445,12 +449,8 @@ fn point_set_from_record_value(value: &LegacyValue) -> MResult<Vec<CircleElement
         "first-radius",
         &format!("point-set `{id}` first-radius"),
     )?;
-    if radius < 0.0 || first_radius < 0.0 {
-        return Err(scene_error(
-            "SceneSchema",
-            format!("point-set `{id}` radii must be non-negative"),
-        ));
-    }
+    validate_radius(radius, &format!("point-set `{id}` radius"))?;
+    validate_radius(first_radius, &format!("point-set `{id}` first-radius"))?;
     let fills = required_strings(&record, "fills", &format!("point-set `{id}` fills"))?;
     if fills.len() != positions.rows {
         return Err(scene_error(

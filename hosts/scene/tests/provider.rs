@@ -213,6 +213,29 @@ fn point_set_rejects_a_palette_with_the_wrong_length() {
 }
 
 #[test]
+fn point_set_rejects_nonfinite_radii() {
+    for (radius, first_radius) in [(f64::NAN, 6.0), (3.0, f64::INFINITY)] {
+        let bad = record(vec![
+            ("id", s("body")),
+            ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+            ("radius", f(radius)),
+            ("first-radius", f(first_radius)),
+            ("fills", tuple(vec![s("gold"), s("blue")])),
+            ("stroke", s("none")),
+            ("stroke-width", f(0.0)),
+            ("opacity", f(1.0)),
+        ]);
+        let scene = record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("point-sets", bad),
+        ]);
+        assert!(SceneSnapshot::from_value(&scene).is_err());
+    }
+}
+
+#[test]
 fn invalid_dimensions() {
     let scene = record(vec![
         ("width", f(0.0)),
