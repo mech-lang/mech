@@ -211,6 +211,7 @@ body.console-fullscreen [data-mech-console-pane] {
 /* Output-first applications start as a borderless program surface. The
  * backtick presentation toggle restores the ordinary document workspace,
  * including its TOC and complete portable REPL, without changing the program. */
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"],
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) {
   display: block;
   height: 100dvh;
@@ -218,6 +219,12 @@ body.console-fullscreen [data-mech-console-pane] {
   overflow: hidden;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] > :is(
+  .content-shell,
+  .content,
+  #left-pane,
+  [data-mech-console-resizer]
+),
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) > :is(
   .content-shell,
   .content,
@@ -227,6 +234,7 @@ body.console-fullscreen [data-mech-console-pane] {
   display: none !important;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] > [data-mech-console-pane],
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) > [data-mech-console-pane] {
   border: 0;
   bottom: 0;
@@ -241,31 +249,68 @@ body.console-fullscreen [data-mech-console-pane] {
   z-index: 900;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] .console-topbar,
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] .console-topbar {
+  border: 0;
+  min-height: 0;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 8px;
+  top: 1px;
+  z-index: 3;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] :is(
+  .console-tabs,
+  [data-mech-console-fullscreen]
+),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] :is(
+  .console-tabs,
+  [data-mech-console-fullscreen]
+) {
   display: none;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] [data-mech-output-fullscreen],
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] [data-mech-output-fullscreen] {
+  display: inline-flex;
+  margin: 1px 0;
+  pointer-events: auto;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] .console-panels,
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] .console-panels {
   display: block;
   height: 100%;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] [data-mech-console-panel],
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] [data-mech-console-panel] {
   border: 0;
   display: none !important;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-console-pane] [data-mech-console-panel="output"],
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-console-pane] [data-mech-console-panel="output"] {
   display: block !important;
   height: 100%;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel],
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] {
   height: 100%;
   overflow: hidden;
   padding: 0;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] :is(
+  .mech-output-region,
+  .mech-repl-output-entry,
+  .mech-repl-output-content,
+  .mech-repl-output-scene,
+  .mech-repl-scene
+),
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] :is(
   .mech-output-region,
   .mech-repl-output-entry,
@@ -280,14 +325,17 @@ body.console-fullscreen [data-mech-console-pane] {
   width: 100%;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-repl-output-entry,
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-repl-output-entry {
   padding: 0;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-output-region:empty,
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-output-region:empty {
   display: none;
 }
 
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-repl-scene,
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-repl-scene {
   display: block;
   object-fit: contain;
@@ -298,9 +346,13 @@ body.console-fullscreen [data-mech-console-pane] {
   border-bottom: 1px solid var(--mech-repl-border);
   display: flex;
   gap: 16px;
-  justify-content: space-between;
+  justify-content: flex-start;
   min-height: 48px;
   padding: 0 16px;
+}
+
+[data-mech-console-pane] [data-mech-output-fullscreen] {
+  margin-left: auto;
 }
 
 [data-mech-console-pane] .console-tabs {
@@ -381,7 +433,10 @@ body.console-fullscreen [data-mech-console-pane] {
   color: var(--mech-repl-background);
 }
 
-[data-mech-console-pane] [data-mech-console-fullscreen] {
+[data-mech-console-pane] :is(
+  [data-mech-console-fullscreen],
+  [data-mech-output-fullscreen]
+) {
   align-items: center;
   background: transparent;
   border: 1px solid transparent;
@@ -397,7 +452,10 @@ body.console-fullscreen [data-mech-console-pane] {
   width: 30px;
 }
 
-[data-mech-console-pane] [data-mech-console-fullscreen]:hover {
+[data-mech-console-pane] :is(
+  [data-mech-console-fullscreen],
+  [data-mech-output-fullscreen]
+):hover {
   border-color: var(--mech-repl-border-soft);
   color: var(--mech-repl-accent);
 }
@@ -416,6 +474,8 @@ body.console-fullscreen [data-mech-console-pane] .console-topbar {
 
 [data-mech-console-pane].is-fullscreen .console-tabs,
 body.console-fullscreen [data-mech-console-pane] .console-tabs,
+[data-mech-console-pane].is-fullscreen [data-mech-output-fullscreen],
+body.console-fullscreen [data-mech-console-pane] [data-mech-output-fullscreen],
 [data-mech-console-pane].is-fullscreen [data-mech-console-tab],
 body.console-fullscreen [data-mech-console-pane] [data-mech-console-tab] {
   display: none;
@@ -832,6 +892,13 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
 [data-mech-repl-popup] .mech-repl-result-kind {
   color: var(--mech-repl-kind);
   flex: 0 0 auto;
+}
+
+:is([data-mech-repl], [data-mech-output-panel], [data-mech-repl-popup]) [data-mech-kind-elided="true"] {
+  max-width: min(100%, 96ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 [data-mech-repl] .mech-repl-result-value,

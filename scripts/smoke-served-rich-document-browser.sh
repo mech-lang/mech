@@ -537,6 +537,8 @@ def assert_desktop_contract():
     console: rectangle(console),
     consoleVisible: visible(".console-pane"),
     tabs: console?.querySelectorAll(".console-tab").length || 0,
+    tabOrder: [...(console?.querySelectorAll('[data-mech-console-tab]') || [])]
+      .map(tab => tab.dataset.mechConsoleTab),
     consoleTabActive: Boolean(document.querySelector("#console-tab.console-tab.active[aria-selected='true']")),
     promptVisible: visible(".repl-prompt"),
     inputVisible: visible(".repl-input"),
@@ -544,6 +546,7 @@ def assert_desktop_contract():
     errorsIsPlaceholder: /under construction/i.test(document.querySelector("#mech-document-errors")?.textContent || ""),
     resizerVisible: visible("#resizer"),
     fullscreenVisible: visible("#consoleFullscreenToggle"),
+    outputFullscreenVisible: visible("#outputFullscreenToggle, button[data-mech-output-fullscreen]"),
     tocLinks: document.querySelectorAll(".mech-toc a[href], .toc a[href], [data-mech-toc] a[href]").length,
     numericToc,
     citationsVisible: visible(".mech-works-cited"),
@@ -566,13 +569,15 @@ def assert_desktop_contract():
     for name in (
         "siteChromeAbsent", "titleVisible", "contentVisible", "consoleVisible",
         "consoleTabActive", "promptVisible", "inputVisible", "resizerVisible",
-        "fullscreenVisible", "citationsVisible", "footnotesVisible", "blockOutput",
+        "fullscreenVisible", "outputFullscreenVisible", "citationsVisible", "footnotesVisible", "blockOutput",
         "inlineOutput", "variableHydrated",
     ):
         if not desktop[name]:
             fail(f"desktop rich-document contract failed for {name}: {desktop!r}")
     if desktop["tabs"] != 3:
         fail(f"expected exactly three console tabs: {desktop!r}")
+    if desktop["tabOrder"] != ["output", "console", "errors"]:
+        fail(f"console tabs did not follow Output, Console, Errors: {desktop!r}")
     if desktop["outputIsPlaceholder"] or desktop["errorsIsPlaceholder"]:
         fail(f"rich console still contains an unfinished placeholder: {desktop!r}")
     if desktop["tocLinks"] < 2:
@@ -881,12 +886,93 @@ def assert_desktop_console_controls():
             f"before={edge_before!r}, after={edge_after!r}"
         )
 
-    evaluate("document.dispatchEvent(new KeyboardEvent('keydown', {key: '`', bubbles: true, cancelable: true}))")
+    terminal_toggle = evaluate_json("""
+(() => {
+  const input = document.querySelector('.repl-input');
+  if (!input) return null;
+  input.value = 'terminal-draft';
+  input.focus();
+  const event = new KeyboardEvent('keydown', {key: '`', bubbles: true, cancelable: true});
+  input.dispatchEvent(event);
+  return { prevented: event.defaultPrevented, value: input.value };
+})()
+""")
+    if terminal_toggle != {"prevented": True, "value": "terminal-draft"}:
+        fail(f"backtick was not captured from the active terminal prompt: {terminal_toggle!r}")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleOpen === 'true' && "
         "document.querySelector('.console-pane')?.hidden === false",
         "the desktop console reopening through its keyboard command",
     )
+
+
+def assert_output_fullscreen_control():
+    initial = evaluate_json("""
+(() => {
+  const toggle = document.querySelector('button[data-mech-output-fullscreen]');
+  return toggle ? {
+    pressed: toggle.getAttribute('aria-pressed'),
+    label: toggle.getAttribute('aria-label'),
+  } : null;
+})()
+""")
+    if initial != {"pressed": "false", "label": "Enter fullscreen output"}:
+        fail(f"output fullscreen control did not begin independently inactive: {initial!r}")
+
+    evaluate("document.querySelector('button[data-mech-output-fullscreen]')?.click()")
+    wait_for(
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'true' && "
+        "document.querySelector('button[data-mech-output-fullscreen]')?.getAttribute('aria-pressed') === 'true'",
+        "the output-only fullscreen control entering",
+    )
+    fullscreen = evaluate_json("""
+(() => {
+  const root = document.querySelector('[data-mech-repl-host]');
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const output = document.querySelector('[data-mech-console-panel="output"]');
+  const content = root?.querySelector(':scope > .content-shell, :scope > .content, :scope > #left-pane');
+  const outputToggle = document.querySelector('button[data-mech-output-fullscreen]');
+  const consoleToggle = document.querySelector('[data-mech-console-fullscreen]');
+  const rect = output?.getBoundingClientRect();
+  const visible = element => Boolean(element && getComputedStyle(element).display !== 'none' &&
+    element.getBoundingClientRect().width > 0 && element.getBoundingClientRect().height > 0);
+  return {
+    outputOnly: [...document.querySelectorAll('[data-mech-console-panel]')].every(panel =>
+      visible(panel) === (panel.dataset.mechConsolePanel === 'output')),
+    fillsViewport: Boolean(rect) && rect.left <= 1 && rect.top <= 1 &&
+      rect.right >= innerWidth - 1 && rect.bottom >= innerHeight - 1,
+    contentHidden: !visible(content),
+    outputExitVisible: visible(outputToggle) &&
+      outputToggle.getAttribute('aria-label') === 'Exit fullscreen output',
+    consoleFullscreenHidden: !visible(consoleToggle),
+    distinctFromWorkspace: !pane?.classList.contains('is-fullscreen') &&
+      document.body.classList.contains('output-fullscreen'),
+  };
+})()
+""")
+    if not all(fullscreen.values()):
+        fail(f"output fullscreen did not remain an independent output-only surface: {fullscreen!r}")
+
+    captured = evaluate_json("""
+(() => {
+  const input = document.querySelector('.repl-input');
+  if (!input) return null;
+  input.value = 'output-fullscreen-draft';
+  const event = new KeyboardEvent('keydown', {key: '`', bubbles: true, cancelable: true});
+  input.dispatchEvent(event);
+  return { prevented: event.defaultPrevented, value: input.value };
+})()
+""")
+    if captured != {"prevented": True, "value": "output-fullscreen-draft"}:
+        fail(f"backtick leaked into the prompt while leaving output fullscreen: {captured!r}")
+    wait_for(
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'false' && "
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleOpen === 'true' && "
+        "document.querySelector(\"[data-mech-console-tab='output']\")?.getAttribute('aria-selected') === 'true' && "
+        "getComputedStyle(document.querySelector('.content-shell, .content, #left-pane')).display !== 'none'",
+        "backtick revealing the editor with Output selected",
+    )
+    evaluate("document.querySelector(\"[data-mech-console-tab='console']\")?.click()")
 
 
 def assert_fullscreen_accessibility():
@@ -895,7 +981,13 @@ def assert_fullscreen_accessibility():
   const publish = detail => window.dispatchEvent(new CustomEvent('mech:output', { detail }));
   publish({
     stream: 'stdout', operation: 'create', display_id: 'unread-output',
-    content: { kind: 'text', data: { text: 'new output activity' } },
+    content: {
+      kind: 'value',
+      data: {
+        kind: `record<${'planet-state<f64> '.repeat(30)}>`,
+        text: 'new output activity',
+      },
+    },
   });
   publish({
     stream: 'stderr', operation: 'create', display_id: 'unread-error',
@@ -935,6 +1027,12 @@ def assert_fullscreen_accessibility():
     resizersInitialized: resizers.length === 2 && resizers.every(handle =>
       handle.hasAttribute('aria-valuemin') && handle.hasAttribute('aria-valuemax') &&
       handle.hasAttribute('aria-valuenow')),
+    kindElided: (() => {
+      const kind = document.querySelector(
+        '[data-mech-display-id="unread-output"] [data-mech-kind-elided="true"]');
+      return Boolean(kind) && kind.textContent.length <= 96 &&
+        kind.textContent.endsWith('…') && (kind.title || '').length > 96;
+    })(),
   };
 })()
 """)
@@ -943,7 +1041,8 @@ def assert_fullscreen_accessibility():
         initial["label"] != "Enter fullscreen workspace" or
         not initial["unreadCreated"] or
         not initial["errorBadgeSynchronized"] or
-        not initial["resizersInitialized"]
+        not initial["resizersInitialized"] or
+        not initial["kindElided"]
     ):
         fail(f"fullscreen control did not begin with a collapsed accessible state: {initial!r}")
 
@@ -1136,7 +1235,15 @@ def assert_toc_survives_console_pressure():
   if (!root || !pane || !content || !layout || !toc || !toggle || !main) return null;
   const oldRootSize = root.style.getPropertyValue('--mech-console-size');
   const oldPaneWidth = pane.style.width;
-  const pressuredSize = Math.floor(root.getBoundingClientRect().width * 0.72);
+  const initialTocRect = toc.getBoundingClientRect();
+  const initialMainRect = main.getBoundingClientRect();
+  const initialSideBySide = getComputedStyle(toc).display !== 'none' &&
+    initialTocRect.right <= initialMainRect.left + 1 &&
+    Math.abs(initialTocRect.top - initialMainRect.top) < 80;
+  const pressuredSize = Math.max(
+    370,
+    Math.floor(root.getBoundingClientRect().width - 72 - 840),
+  );
   root.style.setProperty('--mech-console-size', `${pressuredSize}px`);
   pane.style.width = `${pressuredSize}px`;
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -1176,7 +1283,8 @@ def assert_toc_survives_console_pressure():
     oneNavigation: activations === 1,
   };
   const result = {
-    contentNarrowed: contentRect.width < 680,
+    initialSideBySide,
+    contentUsesCompactRange: contentRect.width > 680 && contentRect.width < 900,
     collapsed,
     open,
     selected,
@@ -1189,7 +1297,8 @@ def assert_toc_survives_console_pressure():
 """)
     if (
         toc is None or
-        not toc["contentNarrowed"] or
+        not toc["initialSideBySide"] or
+        not toc["contentUsesCompactRange"] or
         not all(toc["collapsed"].values()) or
         not all(toc["open"].values()) or
         not all(toc["selected"].values())
@@ -2846,19 +2955,26 @@ def assert_console_contract():
   if (!root || !input) return null;
   const before = root.dataset.mechConsoleOpen;
   input.focus();
-  input.value = '`';
-  input.dispatchEvent(new KeyboardEvent('keydown', {
+  input.value = 'terminal-draft';
+  const event = new KeyboardEvent('keydown', {
     key: '`', bubbles: true, cancelable: true,
-  }));
+  });
+  input.dispatchEvent(event);
   return {
     consoleOpen: root.dataset.mechConsoleOpen,
-    unchanged: root.dataset.mechConsoleOpen === before,
+    closed: before === 'true' && root.dataset.mechConsoleOpen === 'false',
+    prevented: event.defaultPrevented,
     value: input.value,
   };
 })()
 """)
-    if typed_backtick is None or not typed_backtick["unchanged"] or typed_backtick["value"] != "`":
-        fail(f"typing a backtick in the REPL toggled the document console: {typed_backtick!r}")
+    if typed_backtick != {
+        "consoleOpen": "false",
+        "closed": True,
+        "prevented": True,
+        "value": "terminal-draft",
+    }:
+        fail(f"the focused REPL did not capture backtick as its console command: {typed_backtick!r}")
     toggled = evaluate_json("""
 (() => {
   const root = document.querySelector('.mech-root');
@@ -2866,19 +2982,14 @@ def assert_console_contract():
   document.dispatchEvent(new KeyboardEvent('keydown', {
     key: '`', bubbles: true, cancelable: true,
   }));
-  const closed = root.dataset.mechConsoleOpen;
-  document.dispatchEvent(new KeyboardEvent('keydown', {
-    key: '`', bubbles: true, cancelable: true,
-  }));
   return {
-    closed,
     reopened: root.dataset.mechConsoleOpen,
     consoleActive: document.querySelector('#console-tab')?.classList.contains('active'),
   };
 })()
 """)
-    if toggled != {"closed": "false", "reopened": "true", "consoleActive": True}:
-        fail(f"backtick did not close and reopen the browser REPL: {toggled!r}")
+    if toggled != {"reopened": "true", "consoleActive": True}:
+        fail(f"backtick did not reopen the browser REPL: {toggled!r}")
 
 
 def assert_console_tab_isolation():
@@ -4395,6 +4506,7 @@ try:
     assert_desktop_contract()
     assert_style_layer_contract()
     assert_desktop_console_controls()
+    assert_output_fullscreen_control()
     assert_toc_survives_console_pressure()
     assert_toc_scrollspy_is_continuous_and_hierarchical()
     assert_empty_toc_is_removed_and_content_is_centered()

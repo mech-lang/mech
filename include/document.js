@@ -44,6 +44,7 @@ const state = {
   tocEventCleanup: null,
   tocLinkHandlers: new Map(),
   mermaidInitialized: false,
+  outputFullscreenController: null,
 };
 
 const ERROR_PANEL_SELECTOR =
@@ -51,6 +52,7 @@ const ERROR_PANEL_SELECTOR =
 const OUTPUT_PANEL_SELECTOR =
   "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]";
 const DOCUMENT_LAYOUT_STORAGE_VERSION = 1;
+const KIND_ANNOTATION_MAX_CHARACTERS = 96;
 
 function documentLayoutStorageKey() {
   return `mech:document-layout:v${DOCUMENT_LAYOUT_STORAGE_VERSION}:${location.origin}${location.pathname}${location.search}`;
@@ -1066,6 +1068,21 @@ function prepareVarPlaceholders() {
   }
 }
 
+function setKindAnnotation(element, kind) {
+  const complete = String(kind || "");
+  const elided = complete.length > KIND_ANNOTATION_MAX_CHARACTERS;
+  element.textContent = elided
+    ? `${complete.slice(0, KIND_ANNOTATION_MAX_CHARACTERS - 1)}…`
+    : complete;
+  if (elided) {
+    element.title = complete;
+    element.dataset.mechKindElided = "true";
+  } else {
+    element.removeAttribute("title");
+    delete element.dataset.mechKindElided;
+  }
+}
+
 function createOutputEntry(address, rendered) {
   const row = document.createElement("article");
   row.className = "mech-document-output-entry";
@@ -1087,7 +1104,7 @@ function createOutputEntry(address, rendered) {
   }
   const kind = document.createElement("span");
   kind.className = "mech-output-kind";
-  kind.textContent = rendered.kind;
+  setKindAnnotation(kind, rendered.kind);
   heading.append(kind);
   const body = document.createElement("div");
   body.className = "mech-document-output-html mech-output-value";
@@ -1193,7 +1210,7 @@ function formattedValueElement(kind, value) {
   if (kind) {
     const kindElement = document.createElement("span");
     kindElement.className = "mech-repl-result-kind mech-kind-annotation";
-    kindElement.textContent = kind;
+    setKindAnnotation(kindElement, kind);
     rendered.append(kindElement);
   }
   const valueElement = document.createElement("span");
@@ -1251,7 +1268,7 @@ function outputContentElement(content) {
           cell.append(formattedMechInline(value));
         } else if (column === "type" || column === "kind") {
           cell.className = "mech-repl-result-kind";
-          cell.textContent = value;
+          setKindAnnotation(cell, value);
         } else {
           cell.textContent = value;
         }
@@ -1554,7 +1571,7 @@ function showInlineInspector(identity, title, rendered, anchor, error = null) {
   content.className = "mech-inline-popup__content";
   const kind = document.createElement("div");
   kind.className = "mech-output-kind";
-  kind.textContent = error === null ? rendered?.kind || "" : "Error";
+  setKindAnnotation(kind, error === null ? rendered?.kind || "" : "Error");
   const value = document.createElement("div");
   value.className = "mech-output-value";
   if (error === null) {
@@ -1672,7 +1689,10 @@ function showInlineInspector(identity, title, rendered, anchor, error = null) {
     currentAnchor = nextAnchor;
     heading.textContent = nextTitle || "ans";
     popup.setAttribute("aria-label", `${nextTitle || "ans"} value inspector`);
-    kind.textContent = nextError === null ? nextRendered?.kind || "" : "Error";
+    setKindAnnotation(
+      kind,
+      nextError === null ? nextRendered?.kind || "" : "Error",
+    );
     popup.classList.toggle("mech-inline-popup--error", nextError !== null);
     if (nextError === null) {
       value.dataset.mechSource = "";
@@ -2665,6 +2685,42 @@ function documentConsoleFullscreenControls() {
     : [];
 }
 
+function documentOutputFullscreenControls() {
+  const root = state.root;
+  const pane = documentConsolePane();
+  if (!root) {
+    return [];
+  }
+  return pane
+    ? [...new Set(pane.querySelectorAll(
+        "[data-mech-output-fullscreen], #outputFullscreenToggle",
+      ))]
+    : [];
+}
+
+function ensureOutputFullscreenControl(pane = documentConsolePane()) {
+  const existing = documentOutputFullscreenControls();
+  if (existing.length || !pane) {
+    return existing;
+  }
+  const topbar = pane.querySelector(":scope > .console-topbar");
+  if (!topbar) {
+    return [];
+  }
+  const control = document.createElement("button");
+  control.className = "output-fullscreen-toggle";
+  control.type = "button";
+  control.dataset.mechOutputFullscreen = "";
+  control.setAttribute("aria-pressed", "false");
+  control.setAttribute("aria-label", "Enter fullscreen output");
+  const icon = document.createElement("span");
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "⛶";
+  control.append(icon);
+  topbar.insertBefore(control, documentConsoleFullscreenControls()[0] || null);
+  return [control];
+}
+
 function normalizeReplComponentContract() {
   if (!state.root) {
     return;
@@ -2677,6 +2733,19 @@ function normalizeReplComponentContract() {
       "[data-mech-console-tab], .console-tab[data-tab]",
     )) {
       tab.dataset.mechConsoleTab ||= tab.dataset.tab || "";
+    }
+    const tablist = pane.querySelector(":scope > .console-topbar .console-tabs");
+    if (tablist) {
+      for (const name of ["output", "console", "errors"]) {
+        const tab = [...tablist.querySelectorAll(
+          "[data-mech-console-tab], .console-tab[data-tab]",
+        )].find(candidate =>
+          (candidate.dataset.mechConsoleTab || candidate.dataset.tab) === name
+        );
+        if (tab) {
+          tablist.append(tab);
+        }
+      }
     }
     const legacyPanelNames = {
       "console-panel": "console",
@@ -2706,6 +2775,9 @@ function normalizeReplComponentContract() {
   }
   for (const control of documentConsoleFullscreenControls()) {
     control.dataset.mechConsoleFullscreen = "";
+  }
+  for (const control of ensureOutputFullscreenControl(pane)) {
+    control.dataset.mechOutputFullscreen = "";
   }
   const mount = state.root.querySelector("#mech-output");
   if (mount) {
@@ -2829,46 +2901,73 @@ function isOutputPresentation() {
   return state.root?.dataset.mechPresentation === "output";
 }
 
-function setDocumentPresentationView(view, { focus = true } = {}) {
+function outputFullscreenActive() {
+  return state.root?.dataset.mechOutputFullscreenActive === "true";
+}
+
+function setOutputFullscreenVisualState(active) {
+  if (!state.root) {
+    return;
+  }
+  state.root.dataset.mechOutputFullscreenActive = String(active);
+  document.body.classList.toggle("output-fullscreen", active);
+  if (active) {
+    setConsoleOpen(true);
+    activateConsolePanel("output");
+  }
+  for (const control of documentOutputFullscreenControls()) {
+    control.setAttribute("aria-pressed", String(active));
+    control.setAttribute(
+      "aria-label",
+      active ? "Exit fullscreen output" : "Enter fullscreen output",
+    );
+  }
+  dispatch("mech:output-fullscreen", { active });
+}
+
+function setDocumentPresentationView(view) {
   if (!isOutputPresentation() || !state.root) {
     return;
   }
   const next = view === "workspace" ? "workspace" : "output";
   state.root.dataset.mechPresentationView = next;
   setConsoleOpen(true);
-  activateConsolePanel(next === "output" ? "output" : "console");
-  if (next === "workspace" && focus) {
-    requestAnimationFrame(() => state.console?.input?.focus());
-  }
+  activateConsolePanel("output");
+  setOutputFullscreenVisualState(next === "output");
   dispatch("mech:presentation-view", { presentation: "output", view: next });
 }
 
 function initializeDocumentPresentation() {
   if (isOutputPresentation()) {
-    setDocumentPresentationView("output", { focus: false });
+    setDocumentPresentationView("output");
   }
 }
 
 function initializeConsoleKeyboardToggle() {
   document.addEventListener("keydown", event => {
-    const target = event.target;
     if (
       event.isComposing ||
       event.key !== "`" ||
       event.ctrlKey ||
       event.altKey ||
       event.shiftKey ||
-      event.metaKey ||
-      target instanceof HTMLInputElement ||
-      target instanceof HTMLTextAreaElement ||
-      target?.isContentEditable
+      event.metaKey
     ) {
       return;
     }
     event.preventDefault();
-    if (isOutputPresentation()) {
-      const current = state.root?.dataset.mechPresentationView || "output";
-      setDocumentPresentationView(current === "output" ? "workspace" : "output");
+    event.stopPropagation();
+    if (outputFullscreenActive()) {
+      if (state.outputFullscreenController) {
+        void state.outputFullscreenController.exit({ revealWorkspace: true });
+      } else {
+        setOutputFullscreenVisualState(false);
+        if (isOutputPresentation()) {
+          setDocumentPresentationView("workspace");
+        }
+        setConsoleOpen(true);
+        activateConsolePanel("output");
+      }
       return;
     }
     const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
@@ -3162,7 +3261,8 @@ function initializeFullscreen() {
   let buttonFullscreenState = "idle";
 
   const synchronize = () => {
-    const nativeFullscreen = document.fullscreenElement === pane;
+    const nativeFullscreen =
+      document.fullscreenElement === pane && !outputFullscreenActive();
     if (nativeFullscreen) {
       buttonFullscreenState = "native";
       delete pane.dataset.mechFullscreenFallback;
@@ -3236,6 +3336,86 @@ function initializeFullscreen() {
     }
     synchronize();
   });
+}
+
+function initializeOutputFullscreen() {
+  const pane = documentConsolePane();
+  const controls = documentOutputFullscreenControls();
+  if (!pane || !controls.length) {
+    return;
+  }
+  let buttonState = "idle";
+
+  const revealWorkspace = () => {
+    setOutputFullscreenVisualState(false);
+    if (isOutputPresentation()) {
+      setDocumentPresentationView("workspace");
+    } else {
+      setConsoleOpen(true);
+      activateConsolePanel("output");
+    }
+  };
+
+  const synchronize = () => {
+    const nativeFullscreen =
+      document.fullscreenElement === pane && outputFullscreenActive();
+    if (nativeFullscreen) {
+      buttonState = "native";
+    } else if (buttonState === "native") {
+      buttonState = "idle";
+      revealWorkspace();
+    }
+    setOutputFullscreenVisualState(outputFullscreenActive());
+  };
+
+  const exit = async ({ revealWorkspace: shouldReveal = true } = {}) => {
+    buttonState = "idle";
+    if (document.fullscreenElement === pane) {
+      try {
+        await document.exitFullscreen();
+      } catch (error) {
+        appendError(error);
+      }
+    }
+    if (shouldReveal) {
+      revealWorkspace();
+    } else {
+      setOutputFullscreenVisualState(false);
+    }
+  };
+
+  const enter = async () => {
+    buttonState = "requesting";
+    if (isOutputPresentation()) {
+      state.root.dataset.mechPresentationView = "output";
+    }
+    setOutputFullscreenVisualState(true);
+    if (pane.requestFullscreen) {
+      try {
+        await pane.requestFullscreen();
+        buttonState = document.fullscreenElement === pane ? "native" : "fallback";
+      } catch (error) {
+        buttonState = "fallback";
+        appendError(error);
+      }
+    } else {
+      buttonState = "fallback";
+    }
+    synchronize();
+  };
+
+  state.outputFullscreenController = { enter, exit };
+  document.addEventListener("fullscreenchange", synchronize);
+  for (const control of controls) {
+    control.addEventListener("click", () => {
+      if (outputFullscreenActive()) {
+        void exit({ revealWorkspace: true });
+      } else {
+        void enter();
+      }
+    });
+  }
+  synchronize();
 }
 
 function initializeBreadcrumb() {
@@ -3625,6 +3805,7 @@ function initializeLayout() {
   initializeResizeHandles();
   initializeWorkspaceResizers();
   initializeFullscreen();
+  initializeOutputFullscreen();
   initializeBreadcrumb();
   window.addEventListener("mech:document-layout-refresh", initializeToc);
   initializeToc();

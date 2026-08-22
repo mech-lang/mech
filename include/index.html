@@ -58,10 +58,13 @@
     <aside class="console-pane" id="mech-console" aria-label="Document console" data-mech-console-pane>
       <div class="console-topbar">
         <div class="console-tabs" role="tablist" aria-label="Console sections">
-          <button class="console-tab active" id="console-tab" type="button" role="tab" aria-selected="true" aria-controls="console-panel" data-tab="console" data-mech-console-tab="console">Console</button>
           <button class="console-tab" id="output-tab" type="button" role="tab" aria-selected="false" aria-controls="output-panel" data-tab="output" data-mech-console-tab="output">Output</button>
+          <button class="console-tab active" id="console-tab" type="button" role="tab" aria-selected="true" aria-controls="console-panel" data-tab="console" data-mech-console-tab="console">Console</button>
           <button class="console-tab" id="errors-tab" type="button" role="tab" aria-selected="false" aria-controls="errors-panel" data-tab="errors" data-mech-console-tab="errors">Errors</button>
         </div>
+        <button class="output-fullscreen-toggle" id="outputFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen output" data-mech-output-fullscreen>
+          <span aria-hidden="true">⛶</span>
+        </button>
         <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen workspace" data-mech-console-fullscreen>
           <span aria-hidden="true">⛶</span>
         </button>

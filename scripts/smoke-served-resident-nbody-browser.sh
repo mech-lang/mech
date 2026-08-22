@@ -134,6 +134,7 @@ harness = r'''<script>
       const title = document.querySelector('[data-mech-scene-id="title"]');
       const scene = document.querySelector('[data-mech-rich-scene="true"]');
       const sceneRect = scene?.getBoundingClientRect();
+      const host = document.querySelector('[data-mech-repl-host]');
       const expectedRadiusBands = [
         [0, 1],
         [20, 35],
@@ -214,6 +215,22 @@ harness = r'''<script>
         sceneRect.right > 0
       );
       root.dataset.mechObservedRendered = String(displayUpdates);
+      if (root.dataset.mechPresentationRevealStarted === "true") {
+        const content = document.querySelector('.content-shell, .content, #left-pane');
+        const outputTab = document.querySelector('[data-mech-console-tab="output"]');
+        const presentationRevealed =
+          host?.dataset.mechPresentationView === "workspace" &&
+          host?.dataset.mechOutputFullscreenActive === "false" &&
+          host?.dataset.mechConsoleOpen === "true" &&
+          outputTab?.getAttribute("aria-selected") === "true" &&
+          content && getComputedStyle(content).display !== "none";
+        root.dataset.mechPresentationRevealed = String(presentationRevealed);
+        if (presentationRevealed) {
+          root.dataset.mechDone = "true";
+          globalThis.__MECH_STOP__?.();
+          return;
+        }
+      }
       if (
         mercury &&
         circles.length === 10 &&
@@ -229,35 +246,54 @@ harness = r'''<script>
         displayUpdates >= 600
       ) {
           const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
-          root.dataset.mechDone = "true";
-          root.dataset.mechRendered = String(displayUpdates);
-          root.dataset.mechCircles = String(circles.length);
-          root.dataset.mechOrbitGuides = String(orbitGuides.length);
-          root.dataset.mechGuidesMatchBodies = String(guidesMatchBodies);
-          root.dataset.mechOrbitGuidesPhysicallyDistinct = String(orbitGuidesPhysicallyDistinct);
-          root.dataset.mechNeptuneGuideRange = neptuneGuideRange.map(value => value.toFixed(3)).join(",");
-          root.dataset.mechPlutoGuideRange = plutoGuideRange.map(value => value.toFixed(3)).join(",");
-          root.dataset.mechSceneTitle = title.textContent;
-          root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
-          root.dataset.mechSceneVisible = String(sceneVisible);
-          root.dataset.mechSceneWidth = String(Math.round(sceneRect.width));
-          root.dataset.mechSceneHeight = String(Math.round(sceneRect.height));
-          root.dataset.mechMercuryMoved = String(
-            mercury.getAttribute("cx") !== firstMercuryX ||
-            mercury.getAttribute("cy") !== firstMercuryY
-          );
-          root.dataset.mechOutputPresentation = String(
-            document.querySelector('.mech-root')?.dataset.mechPresentation === "output" &&
-            document.querySelector('.mech-root')?.dataset.mechPresentationView === "output" &&
-            outputPanel?.hidden === false
-          );
-          root.dataset.mechRichScene = String(
-            display?.querySelector('[data-mech-rich-scene="true"]') !== null
-          );
-          root.dataset.mechRichDisplayOperation = display?.dataset.mechDisplayOperation || "";
-          root.dataset.mechRichDisplayUpdates = String(displayUpdates);
-          root.dataset.mechRichCircles = String(circles.length);
-          globalThis.__MECH_STOP__?.();
+          if (root.dataset.mechPresentationRevealStarted !== "true") {
+            const outputToggle = document.querySelector('button[data-mech-output-fullscreen]');
+            const tabs = [...document.querySelectorAll('[data-mech-console-tab]')]
+              .map(tab => tab.dataset.mechConsoleTab).join(",");
+            root.dataset.mechRendered = String(displayUpdates);
+            root.dataset.mechCircles = String(circles.length);
+            root.dataset.mechOrbitGuides = String(orbitGuides.length);
+            root.dataset.mechGuidesMatchBodies = String(guidesMatchBodies);
+            root.dataset.mechOrbitGuidesPhysicallyDistinct = String(orbitGuidesPhysicallyDistinct);
+            root.dataset.mechNeptuneGuideRange = neptuneGuideRange.map(value => value.toFixed(3)).join(",");
+            root.dataset.mechPlutoGuideRange = plutoGuideRange.map(value => value.toFixed(3)).join(",");
+            root.dataset.mechSceneTitle = title.textContent;
+            root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
+            root.dataset.mechSceneVisible = String(sceneVisible);
+            root.dataset.mechSceneWidth = String(Math.round(sceneRect.width));
+            root.dataset.mechSceneHeight = String(Math.round(sceneRect.height));
+            root.dataset.mechMercuryMoved = String(
+              mercury.getAttribute("cx") !== firstMercuryX ||
+              mercury.getAttribute("cy") !== firstMercuryY
+            );
+            root.dataset.mechOutputPresentation = String(
+              host?.dataset.mechPresentation === "output" &&
+              host?.dataset.mechPresentationView === "output" &&
+              host?.dataset.mechOutputFullscreenActive === "true" &&
+              outputToggle?.getAttribute("aria-pressed") === "true" &&
+              outputPanel?.hidden === false &&
+              tabs === "output,console,errors"
+            );
+            root.dataset.mechRichScene = String(
+              display?.querySelector('[data-mech-rich-scene="true"]') !== null
+            );
+            root.dataset.mechRichDisplayOperation = display?.dataset.mechDisplayOperation || "";
+            root.dataset.mechRichDisplayUpdates = String(displayUpdates);
+            root.dataset.mechRichCircles = String(circles.length);
+            const input = document.querySelector('.repl-input');
+            if (input) {
+              input.value = "n-body-draft";
+              const event = new KeyboardEvent("keydown", {
+                key: "`", bubbles: true, cancelable: true,
+              });
+              input.dispatchEvent(event);
+              root.dataset.mechBacktickCaptured = String(
+                event.defaultPrevented && input.value === "n-body-draft"
+              );
+            }
+            root.dataset.mechPresentationRevealStarted = "true";
+            return;
+          }
       }
       if (Date.now() >= deadline && root.dataset.mechDone !== "true") {
         root.dataset.mechTimedOut = "true";
@@ -358,6 +394,8 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-scene-height="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-mercury-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
+  || ! grep -q 'data-mech-backtick-captured="true"' "$dom_file" \
+  || ! grep -q 'data-mech-presentation-revealed="true"' "$dom_file" \
   || ! grep -q 'data-mech-rich-scene="true"' "$dom_file" \
   || ! grep -q 'data-mech-rich-display-operation="update"' "$dom_file" \
   || ! grep -q 'data-mech-rich-display-updates="[1-9][0-9]*"' "$dom_file" \
@@ -375,4 +413,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'NBODY_E2E native_energy=true display_updates=%s sun_frames=%s bodies=10 orbit_guides=9 guides_match_bodies=true neptune_guide_range=%s pluto_guide_range=%s title=true scene_geometry=true sun_centered_continuously=true mercury_clears_sun=true scene_visible=true rich_scene=true rich_operation=update mercury_moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered" "$sun_frames" "$neptune_guide_range" "$pluto_guide_range"
+printf 'NBODY_E2E native_energy=true display_updates=%s sun_frames=%s bodies=10 orbit_guides=9 guides_match_bodies=true neptune_guide_range=%s pluto_guide_range=%s title=true scene_geometry=true sun_centered_continuously=true mercury_clears_sun=true scene_visible=true rich_scene=true rich_operation=update mercury_moved=true output_presentation=true backtick_reveals_workspace=true console_errors=0 page_errors=0\n' "$rendered" "$sun_frames" "$neptune_guide_range" "$pluto_guide_range"
