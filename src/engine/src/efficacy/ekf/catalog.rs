@@ -112,6 +112,18 @@ static PREDICATE_1: LazyLock<OperationContractDeclaration> =
 static PREDICATE_2: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| semantic_declaration(2, ChangeDetectionPolicy::ExactScalar));
 
+const EKF_KERNEL_CONTRACT: &str = "ekf_kernel";
+const EKF_PREDICATE_CONTRACT: &str = "ekf_predicate";
+const EKF_STATE_MACHINE_CONTRACT: &str = "ekf_state_machine";
+const EKF_FIXTURE_ADAPTER_CONTRACT: &str = "ekf_fixture_adapter";
+
+fn runtime_contract_kind(operation: FrozenEkfOperation) -> &'static str {
+    match operation {
+        FrozenEkfOperation::Kernel(_) => EKF_KERNEL_CONTRACT,
+        FrozenEkfOperation::Predicate(_) => EKF_PREDICATE_CONTRACT,
+    }
+}
+
 pub(crate) fn semantic_contract(
     operation: FrozenEkfOperation,
 ) -> &'static OperationContractDeclaration {
@@ -753,7 +765,7 @@ macro_rules! register {
         debug_assert_eq!(signature, <$factory>::SIGNATURE);
         debug_assert_eq!(validator as usize, $validator as usize);
         let contract = RuntimeFunctionContract::custom(
-            spec.canonical_name,
+            runtime_contract_kind(spec.operation),
             RuntimeOutputAliasPolicy::DisallowInputAlias,
             $validator,
         );
@@ -780,7 +792,7 @@ macro_rules! register {
 
 fn install_square_drive_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     let contract = RuntimeFunctionContract::custom(
-        SQUARE_DRIVE_NAME,
+        EKF_STATE_MACHINE_CONTRACT,
         RuntimeOutputAliasPolicy::DisallowInputAlias,
         validate_square_drive_runtime,
     );
@@ -811,7 +823,7 @@ fn install_frozen_innovation_from_frame_runtime(
     builder.insert_runtime_factory_with_semantic_contract::<FrozenInnovationFromFrameFactory>(
         FROZEN_INNOVATION_FROM_FRAME_NAME,
         RuntimeFunctionContract::custom(
-            FROZEN_INNOVATION_FROM_FRAME_NAME,
+            EKF_FIXTURE_ADAPTER_CONTRACT,
             RuntimeOutputAliasPolicy::DisallowInputAlias,
             validate_innovation_from_frame_runtime,
         ),
@@ -963,7 +975,7 @@ pub mod __mech_native {
                 builder.insert_runtime_factory_with_semantic_contract::<$factory>(
                     spec.canonical_name,
                     RuntimeFunctionContract::custom(
-                        spec.canonical_name,
+                        runtime_contract_kind(spec.operation),
                         RuntimeOutputAliasPolicy::DisallowInputAlias,
                         $validator,
                     ),
@@ -1078,7 +1090,7 @@ pub mod __mech_native {
         builder.insert_runtime_factory_with_semantic_contract::<SquareDriveFactory>(
             SQUARE_DRIVE_NAME,
             RuntimeFunctionContract::custom(
-                SQUARE_DRIVE_NAME,
+                EKF_STATE_MACHINE_CONTRACT,
                 RuntimeOutputAliasPolicy::DisallowInputAlias,
                 validate_square_drive_runtime,
             ),

@@ -2,18 +2,18 @@
   "schema": "mech.native-linkage-coverage-summary.v1",
   "detail_schema": "mech.native-linkage-coverage.v2",
   "full": {
-    "entry_count": 9028,
-    "linked_entry_count": 9028,
+    "entry_count": 9047,
+    "linked_entry_count": 9047,
     "missing_linkage_count": 0,
-    "runtime_surface_digest": "bd3aca01f2b367a73a651bffde0583dc7b9568d61d01dec2c1cf265c8b56a838",
-    "installer_surface_digest": "0a287b6650b6b16a74d53360a563c73bbc340bb461a4e616a421cc9666daf389",
-    "feature_surface_digest": "060dbbaf6b4e35a6c9c55d76ec8d1208a24608e16a604c3106102eaef5895334",
-    "runtime_contract_count": 9028,
+    "runtime_surface_digest": "3eee735e0f1b2f10de6211c23e34b8646da6475644e7d2aae3469f1100ffb19a",
+    "installer_surface_digest": "9e93f0bfa8a386288b8e77ff3f6ad05ff17ff5b67d33e369a9d64d43b263d006",
+    "feature_surface_digest": "5a6adc5cf61d663c9349eff969c943a14b7e1664a0c8e2998eaeca8eb3fa7bd1",
+    "runtime_contract_count": 9047,
     "missing_contract_count": 0,
-    "runtime_contract_surface_digest": "9bbcfea9dda7207c0f8efee088f8e9d78e8f367deea3316dc9a727a78279de72",
-    "runtime_signature_count": 9028,
+    "runtime_contract_surface_digest": "6fa93397fcf70b59adaa0f07c9dbb5231db0373de4f23eb8f87c404d9eba8a3d",
+    "runtime_signature_count": 9047,
     "missing_signature_count": 0,
-    "runtime_signature_surface_digest": "772f3cddfe055e0b5399429a79926971244e51ad6034b6df08ca207876e88cf2"
+    "runtime_signature_surface_digest": "af0f2bdda68a1b5913ca8a5c963a4d1bdbec4b423f12f036fff0b3b5e5885375"
   },
   "extended": {
     "entry_count": 120025,
@@ -34,21 +34,21 @@
     "representation_feature_missing_count": 0,
     "representation_feature_manually_listed_extra_count": 0,
     "feature_dependent_output_representation_count": 0,
-    "exact_closure_count": 34024,
+    "exact_closure_count": 34029,
     "exact_closure_shard_counts": [
-      4321,
+      4322,
       4214,
-      4253,
-      4121,
-      4235,
-      4257,
+      4254,
+      4122,
+      4236,
+      4258,
       4243,
       4380
     ]
   },
   "coverage_digest": {
     "algorithm": "sha256-canonical-json-without-coverage-digest-v2",
-    "sha256": "a0b8a3e507a696c09a7fafb53c6aa64105005dc68f3722a05859437cb191554f"
+    "sha256": "b50c3f37d114abad86ea1f295c692b0596efa73b130be91c84204c393a24e6c1"
   },
   "detail_artifact": {
     "path": "target/native-linkage/coverage-full.json",
