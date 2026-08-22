@@ -284,6 +284,10 @@ body.console-fullscreen [data-mech-console-pane] {
   padding: 0;
 }
 
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-output-region:empty {
+  display: none;
+}
+
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-repl-scene {
   display: block;
   object-fit: contain;

@@ -125,12 +125,24 @@ harness = '''<script>
       const circles = document.querySelectorAll('[data-mech-scene-id^="body-"]');
       const orbitGuides = document.querySelectorAll('[data-mech-scene-id^="orbit-"]');
       const title = document.querySelector('[data-mech-scene-id="title"]');
+      const scene = document.querySelector('[data-mech-rich-scene="true"]');
+      const sceneRect = scene?.getBoundingClientRect();
+      const sceneVisible = Boolean(
+        sceneRect &&
+        sceneRect.width > 0 &&
+        sceneRect.height > 0 &&
+        sceneRect.top < window.innerHeight &&
+        sceneRect.bottom > 0 &&
+        sceneRect.left < window.innerWidth &&
+        sceneRect.right > 0
+      );
       root.dataset.mechObservedRendered = String(displayUpdates);
       if (
         body &&
         circles.length === 10 &&
         orbitGuides.length === 9 &&
         title?.textContent === "Solar-System Orbit Viewer" &&
+        sceneVisible &&
         displayUpdates >= 60
       ) {
           const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
@@ -139,6 +151,9 @@ harness = '''<script>
           root.dataset.mechCircles = String(circles.length);
           root.dataset.mechOrbitGuides = String(orbitGuides.length);
           root.dataset.mechSceneTitle = title.textContent;
+          root.dataset.mechSceneVisible = String(sceneVisible);
+          root.dataset.mechSceneWidth = String(Math.round(sceneRect.width));
+          root.dataset.mechSceneHeight = String(Math.round(sceneRect.height));
           root.dataset.mechBodyMoved = String(
             body.getAttribute("cx") !== firstX || body.getAttribute("cy") !== firstY
           );
@@ -233,6 +248,9 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-circles="10"' "$dom_file" \
   || ! grep -q 'data-mech-orbit-guides="9"' "$dom_file" \
   || ! grep -q 'data-mech-scene-title="Solar-System Orbit Viewer"' "$dom_file" \
+  || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
+  || ! grep -q 'data-mech-scene-width="[1-9][0-9]*"' "$dom_file" \
+  || ! grep -q 'data-mech-scene-height="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-body-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q 'data-mech-rich-scene="true"' "$dom_file" \
@@ -251,4 +269,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"
+printf 'NBODY_E2E native_energy=true display_updates=%s bodies=10 orbit_guides=9 title=true scene_visible=true rich_scene=true rich_operation=update moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered"
