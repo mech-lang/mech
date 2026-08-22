@@ -438,7 +438,12 @@ impl ServerSourceRegistry {
                     backing_paths: vec![path.clone()],
                 },
             );
-            match parser::parse(&source_text) {
+            match source
+                .syntax_tree
+                .as_deref()
+                .map(Ok)
+                .unwrap_or_else(|| parser::parse(&source_text))
+            {
                 Ok(tree) => {
                     let mut extra_slots = HtmlShimExtraSlots::default();
                     extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
@@ -4203,6 +4208,7 @@ mod tests {
                     canonical_uri: "missing".to_string(),
                     path: Some(root.join("missing.mec")),
                     source: None,
+                    syntax_tree: None,
                     module_version: None,
                     content_hash: 0,
                     modified_time: None,

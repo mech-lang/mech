@@ -28,7 +28,8 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode};
+use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Program};
+use std::sync::Arc;
 
 use crate::capability::CapabilityRequest;
 
@@ -227,6 +228,13 @@ pub struct ResolvedSource {
     pub name: String,
     pub canonical_uri: String,
     pub source: MechSourceCode,
+    /// Canonical syntax tree parsed while resolving textual Mech source.
+    ///
+    /// Source text remains authoritative for identity and host presentation;
+    /// downstream indexing, compilation, and rendering share this tree instead
+    /// of reparsing the same document at every boundary.
+    #[cfg_attr(feature = "serde", serde(skip))]
+    pub syntax_tree: Option<Arc<Program>>,
     pub kind: SourceKind,
     pub imports: Vec<SourceImportDeclaration>,
     pub exports: Vec<SourceExportDeclaration>,
@@ -247,6 +255,7 @@ impl ResolvedSource {
             name: name.into(),
             canonical_uri: canonical_uri.into(),
             source,
+            syntax_tree: None,
             kind: SourceKind::Unknown("".to_string()),
             imports: Vec::new(),
             exports: Vec::new(),
@@ -256,6 +265,11 @@ impl ResolvedSource {
             dependencies: Vec::new(),
             capability_requirements: Vec::new(),
         }
+    }
+
+    pub fn with_syntax_tree(mut self, syntax_tree: Program) -> Self {
+        self.syntax_tree = Some(Arc::new(syntax_tree));
+        self
     }
 
     pub fn with_kind(mut self, kind: SourceKind) -> Self {

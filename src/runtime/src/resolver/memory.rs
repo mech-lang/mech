@@ -216,12 +216,20 @@ impl InMemorySourceResolver {
         let specifier = specifier.into();
         let source = source.into();
 
-        let resolved = ResolvedSource::new(
+        #[cfg(feature = "source")]
+        let syntax_tree = mech_syntax::parser::parse(source.trim())?;
+
+        let mut resolved = ResolvedSource::new(
             specifier.clone(),
             Self::default_canonical_uri(&specifier),
             MechSourceCode::String(source),
         )
         .with_kind(SourceKind::Mech);
+
+        #[cfg(feature = "source")]
+        {
+            resolved = resolved.with_syntax_tree(syntax_tree);
+        }
 
         self.insert_source(specifier, resolved)
     }

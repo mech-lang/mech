@@ -127,14 +127,14 @@ impl MechRuntime {
                     )?;
                     Ok(Arc::new(
                         runtime
-                            .plan_root_source_product(request.clone(), module_options)?
+                            .plan_resolved_root_source_product(resolved, module_options)?
                             .into_parts()
                             .0,
                     ))
                 }
                 MechSourceCode::Tree(_) => Ok(Arc::new(
                     runtime
-                        .plan_root_source_product(request.clone(), module_options)?
+                        .plan_resolved_root_source_product(resolved, module_options)?
                         .into_parts()
                         .0,
                 )),
@@ -178,8 +178,8 @@ impl MechRuntime {
                         )?;
                         Ok(Arc::new(
                             runtime
-                                .plan_interactive_root_source_product(
-                                    request.clone(),
+                                .plan_interactive_resolved_root_source_product(
+                                    resolved,
                                     module_options,
                                 )?
                                 .into_parts()
@@ -188,7 +188,10 @@ impl MechRuntime {
                     }
                     MechSourceCode::Tree(_) => Ok(Arc::new(
                         runtime
-                            .plan_interactive_root_source_product(request.clone(), module_options)?
+                            .plan_interactive_resolved_root_source_product(
+                                resolved,
+                                module_options,
+                            )?
                             .into_parts()
                             .0,
                     )),
@@ -310,6 +313,16 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
+    fn plan_resolved_root_source_product(
+        &mut self,
+        resolved: crate::ResolvedSource,
+        module_options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?
+            .compile_resolved_root(resolved, module_options)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
     fn plan_interactive_root_source_product(
         &mut self,
         request: SourceRequest,
@@ -317,6 +330,16 @@ impl MechRuntime {
     ) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?
             .compile_interactive_root(request, module_options)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_interactive_resolved_root_source_product(
+        &mut self,
+        resolved: crate::ResolvedSource,
+        module_options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?
+            .compile_interactive_resolved_root(resolved, module_options)
     }
 
     #[cfg(feature = "resident-routing-source")]

@@ -258,6 +258,7 @@ impl SourceResolver for FileSourceResolver {
                     .collect::<Vec<_>>();
 
                 resolved = resolved
+                    .with_syntax_tree(tree)
                     .with_imports(imports)
                     .with_exports(exports)
                     .with_contexts(contexts)

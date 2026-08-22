@@ -789,6 +789,18 @@ impl<'a> ProgramCompilerView<'a> {
         self.compile_root_with_projection(request, options, RootOutputProjection::ObservableResults)
     }
 
+    pub(crate) fn compile_resolved_root(
+        &self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compile_resolved_root_with_projection(
+            resolved,
+            options,
+            RootOutputProjection::ObservableResults,
+        )
+    }
+
     pub(crate) fn compile_interactive_root(
         &self,
         request: SourceRequest,
@@ -801,6 +813,18 @@ impl<'a> ProgramCompilerView<'a> {
         )
     }
 
+    pub(crate) fn compile_interactive_resolved_root(
+        &self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compile_resolved_root_with_projection(
+            resolved,
+            options,
+            RootOutputProjection::ObservableResultsAndSymbols,
+        )
+    }
+
     fn compile_root_with_projection(
         &self,
         request: SourceRequest,
@@ -808,9 +832,27 @@ impl<'a> ProgramCompilerView<'a> {
         output_projection: RootOutputProjection,
     ) -> MResult<ProgramCompilationProduct> {
         request.validate()?;
+        let resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
+            route_failure(
+                ResidentRouteFailureClass::InvalidArtifact,
+                format!(
+                    "root or imported source `{}` was not found",
+                    request.specifier
+                ),
+            )
+        })?;
+        self.compile_resolved_root_with_projection(resolved, options, output_projection)
+    }
+
+    fn compile_resolved_root_with_projection(
+        &self,
+        resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+        output_projection: RootOutputProjection,
+    ) -> MResult<ProgramCompilationProduct> {
         let mut modules = HashMap::new();
         let mut stack = Vec::new();
-        let root = self.resolve_module(request, options, &mut modules, &mut stack)?;
+        let root = self.resolve_resolved_module(resolved, options, &mut modules, &mut stack)?;
         let mut instances = HashMap::new();
         let mut active = Vec::new();
         let mut root_program = Some(self.new_program());
@@ -938,7 +980,7 @@ impl<'a> ProgramCompilerView<'a> {
         modules: &mut HashMap<String, CompilerModule>,
         stack: &mut Vec<String>,
     ) -> MResult<String> {
-        let mut resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
+        let resolved = self.source_resolver.resolve(&request)?.ok_or_else(|| {
             route_failure(
                 ResidentRouteFailureClass::InvalidArtifact,
                 format!(
@@ -947,6 +989,16 @@ impl<'a> ProgramCompilerView<'a> {
                 ),
             )
         })?;
+        self.resolve_resolved_module(resolved, options, modules, stack)
+    }
+
+    fn resolve_resolved_module(
+        &self,
+        mut resolved: ResolvedSource,
+        options: ModuleBuildOptions<'_>,
+        modules: &mut HashMap<String, CompilerModule>,
+        stack: &mut Vec<String>,
+    ) -> MResult<String> {
         index_source(&mut resolved)?;
         resolved.capability_requirements.extend(
             options
@@ -976,9 +1028,9 @@ impl<'a> ProgramCompilerView<'a> {
             let dependency_request =
                 source_request_for_import(&import, Some(&resolved.canonical_uri));
             match self.source_resolver.resolve(&dependency_request)? {
-                Some(_) => {
+                Some(dependency_source) => {
                     let dependency =
-                        self.resolve_module(dependency_request, options, modules, stack)?;
+                        self.resolve_resolved_module(dependency_source, options, modules, stack)?;
                     import_edges.push((import, dependency));
                 }
                 None if import_requires_source_dependency(&import) => {
@@ -1149,7 +1201,7 @@ impl<'a> ProgramCompilerView<'a> {
         install_context_imports(program, &module.source.imports, &module.source.contexts)?;
         let environment = build_import_environment(module, instances)?;
         install_environment(program, &environment)?;
-        let tree = executable_tree(&module.source.source)?;
+        let tree = executable_resolved_tree(&module.source)?;
         let resource_send_operations = compiled_resource_send_operations(&module.source.contexts);
         let mut services = CompilerPlanningServices {
             providers: self.resources,
@@ -1653,11 +1705,18 @@ fn index_source(resolved: &mut ResolvedSource) -> MResult<()> {
     if !resolved.scopes.is_empty() {
         return Ok(());
     }
-    let tree = source_tree(&resolved.source)?;
-    let Some(tree) = tree else {
-        return Ok(());
+    let parsed;
+    let tree = match resolved.syntax_tree.as_deref() {
+        Some(tree) => tree,
+        None => {
+            parsed = source_tree(&resolved.source)?;
+            let Some(tree) = parsed.as_ref() else {
+                return Ok(());
+            };
+            tree
+        }
     };
-    let index = SourceIndex::from_program(&tree);
+    let index = SourceIndex::from_program(tree);
     index.validate_address_targets()?;
     resolved.imports = index.all_imports();
     resolved.exports = index.all_exports();
@@ -1665,6 +1724,13 @@ fn index_source(resolved: &mut ResolvedSource) -> MResult<()> {
     resolved.address_references = index.all_address_references();
     resolved.scopes = index.module_scopes();
     Ok(())
+}
+
+fn executable_resolved_tree(source: &ResolvedSource) -> MResult<mech_core::Program> {
+    match source.syntax_tree.as_deref() {
+        Some(tree) => sanitize_tree(tree.clone()),
+        None => executable_tree(&source.source),
+    }
 }
 
 fn source_tree(source: &MechSourceCode) -> MResult<Option<mech_core::Program>> {

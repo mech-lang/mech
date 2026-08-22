@@ -105,6 +105,7 @@ impl ModuleBuilder {
             resolved.canonical_uri,
             resolved.kind,
             resolved.source,
+            resolved.syntax_tree,
             compiler_version,
             language_edition,
             target,

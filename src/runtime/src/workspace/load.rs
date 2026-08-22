@@ -168,7 +168,12 @@ fn collect_loaded_modules(
 
         snapshot.sources.insert(
             module.name.clone(),
-            source_snapshot(module.name, module_version, version.source.clone()),
+            source_snapshot(
+                module.name,
+                module_version,
+                version.source.clone(),
+                version.syntax_tree.clone(),
+            ),
         );
 
         for edge in &version.import_edges {
@@ -201,6 +206,7 @@ fn source_snapshot(
     canonical_uri: String,
     module_version: ModuleVersionId,
     source: Option<MechSourceCode>,
+    syntax_tree: Option<std::sync::Arc<mech_core::Program>>,
 ) -> RuntimeWorkspaceSourceSnapshot {
     let path = file_uri_path(&canonical_uri);
     let content_hash = path
@@ -217,6 +223,7 @@ fn source_snapshot(
         canonical_uri,
         path,
         source,
+        syntax_tree,
         module_version: Some(module_version),
         content_hash,
         modified_time,
