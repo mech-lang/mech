@@ -4134,7 +4134,7 @@ macro_rules! append_reactive_scalar_index {
     }};
 }
 
-#[cfg(feature = "subscript_formula")]
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 fn append_reactive_scalar_index_for_value(
     value: &LegacyValue,
     plan: &Plan,
@@ -4196,7 +4196,7 @@ fn append_reactive_scalar_index_for_value(
     }
 }
 
-#[cfg(feature = "subscript_formula")]
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 pub(crate) fn reactive_scalar_index(
     value: &LegacyValue,
     execution: &InterpreterExecution<'_>,
