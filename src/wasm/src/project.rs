@@ -2915,6 +2915,61 @@ phase"#;
     }
 
     #[test]
+    fn encoded_document_controller_accepts_resident_atan2() {
+        let tree = mech_syntax::parser::parse(
+            "Resident Atan2\n================\n+> math\n================\n\nangle := math/atan2(1.0, 0.0)\nangle",
+        )
+        .unwrap();
+        let module = ["math".to_string()];
+        assert!(
+            mech_stdlib::source_catalog()
+                .resident_factory(&module, "atan2")
+                .is_some(),
+            "the standard source catalog must install resident math/atan2",
+        );
+        let source = SourceBackedDocumentBootstrap {
+            root_specifier: "document.mec".to_string(),
+            source_map: HashMap::from([("document.mec".to_string(), String::new())]),
+            resolutions: Vec::new(),
+            tree,
+            console_instance: "repl".to_string(),
+            lifecycle: DocumentRuntimeLifecycle::default(),
+        };
+        let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
+        let document = crate::repl::WasmRepl::from_document(bootstrap);
+        assert!(document.is_ok(), "{:#?}", document.err());
+        let document = document.unwrap();
+
+        assert_eq!(
+            document.session.runtime().unwrap().program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+    }
+
+    #[test]
+    fn encoded_document_controller_accepts_resident_matrix_scalar_access() {
+        let tree = mech_syntax::parser::parse(
+            "matrix := [1.0 2.0; 3.0 4.0]\nselected := matrix[2,1]\nselected",
+        )
+        .unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let document = WasmDocument::from_encoded(&encoded).unwrap();
+
+        assert_eq!(
+            document.runtime().unwrap().program_route(),
+            RuntimeProgramRoute::ResidentPure,
+        );
+        assert_f64(
+            document
+                .runtime()
+                .unwrap()
+                .root_symbol_value("selected")
+                .unwrap(),
+            3.0,
+        );
+    }
+
+    #[test]
     fn document_console_queries_and_updates_the_same_resident_program() {
         let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 42\nanswer").unwrap();
         let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();

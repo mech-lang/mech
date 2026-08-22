@@ -92,7 +92,6 @@ mech-set = ["dep:mech-set"]
 mech-string = ["dep:mech-string"]
 mech-stats = ["dep:mech-stats"]
 mech-combinatorics = ["dep:mech-combinatorics"]
-ekf = ["mech-engine/ekf"]
 
 standard_runtime = ["runtime", "standard_values", "standard_operations"]
 standard_source = ["standard_runtime", "source"]
@@ -129,7 +128,6 @@ standard_operations = [
   "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_standard",
   "mech-engine/string_default", "mech-engine/stats_default",
   "mech-engine/combinatorics_default",
-  "ekf",
   "mech-math", "mech-math/standard_runtime",
   "mech-compare", "mech-compare/standard_runtime",
   "mech-logic", "mech-logic/standard_runtime",
@@ -149,7 +147,6 @@ full_operations = [
   "mech-engine/math_default", "mech-engine/compare_default", "mech-engine/logic_default",
   "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_default",
   "mech-engine/string_default", "mech-engine/stats_default", "mech-engine/combinatorics_default",
-  "ekf",
   # Select the complete operation families, but let this crate's `full_values`
   # forward the product's dynamic-shape value set. Machine `full_runtime`
   # profiles intentionally remain owner-level exhaustive profiles and include

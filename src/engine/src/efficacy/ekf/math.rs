@@ -125,41 +125,6 @@ pub(crate) fn trigonometric_state(state: &[f64; 3]) -> [f64; 2] {
     [state[2].cos(), state[2].sin()]
 }
 
-/// Runs one transition of the four-state square-drive controller.
-///
-/// `motion` is `[commanded_speed, actual_speed, dt]` and `bounds` is
-/// `[low, high]`. The returned frame is
-/// `[phase, commanded_speed, actual_speed, turn_rate]`.
-#[inline(always)]
-pub(crate) fn square_drive_state_machine(
-    state: &[f64; 3],
-    motion: &[f64; 3],
-    bounds: &[f64; 2],
-) -> [f64; 4] {
-    let quarter_turn = core::f64::consts::FRAC_PI_2;
-    let phase = ((state[2] / quarter_turn).round() as i64).rem_euclid(4) as usize;
-    let distance = match phase {
-        0 => bounds[1] - state[0],
-        1 => bounds[1] - state[1],
-        2 => state[0] - bounds[0],
-        _ => state[1] - bounds[0],
-    };
-    let dt = motion[2];
-    if !dt.is_finite() || dt <= 0.0 {
-        return [phase as f64, 0.0, 0.0, 0.0];
-    }
-    if distance <= 1.0e-12 {
-        return [((phase + 1) % 4) as f64, 0.0, 0.0, quarter_turn / dt];
-    }
-    let boundary_speed = distance / dt;
-    [
-        phase as f64,
-        motion[0].max(0.0).min(boundary_speed),
-        motion[1].max(0.0).min(boundary_speed),
-        0.0,
-    ]
-}
-
 #[inline(always)]
 pub(crate) fn motion_jacobian(frame: &[f64; 4], trig: &[f64; 2], dt: f64) -> [f64; 9] {
     [
@@ -274,15 +239,8 @@ pub(crate) fn kalman_gain(
 }
 
 #[inline(always)]
-pub(crate) fn innovation(measurement: &[f64; 2], predicted: &[f64; 2]) -> [f64; 2] {
-    [measurement[0] - predicted[0], measurement[1] - predicted[1]]
-}
-
-/// Adapts the frozen efficacy workload's historical `[v, ω, range, bearing]`
-/// input frame without exposing that fixture layout through the public EKF API.
-#[inline(always)]
-pub(crate) fn innovation_from_frame(frame: &[f64; 4], predicted: &[f64; 2]) -> [f64; 2] {
-    innovation(&[frame[2], frame[3]], predicted)
+pub(crate) fn innovation(frame: &[f64; 4], predicted: &[f64; 2]) -> [f64; 2] {
+    [frame[2] - predicted[0], frame[3] - predicted[1]]
 }
 
 #[inline(always)]
@@ -370,72 +328,6 @@ mod tests {
         assert_eq!(
             transpose2x3(&[0., 1., 2., 3., 4., 5.]),
             [0., 2., 4., 1., 3., 5.]
-        );
-    }
-
-    #[test]
-    fn square_drive_clips_translation_at_each_boundary() {
-        let bounds = [2.5, 7.5];
-        let motion = [2.0, 1.5, 0.25];
-
-        assert_eq!(
-            square_drive_state_machine(&[7.25, 2.5, 0.0], &motion, &bounds),
-            [0.0, 1.0, 1.0, 0.0]
-        );
-        assert_eq!(
-            square_drive_state_machine(
-                &[7.5, 7.25, core::f64::consts::FRAC_PI_2],
-                &motion,
-                &bounds,
-            ),
-            [1.0, 1.0, 1.0, 0.0]
-        );
-        assert_eq!(
-            square_drive_state_machine(&[2.75, 7.5, core::f64::consts::PI], &motion, &bounds),
-            [2.0, 1.0, 1.0, 0.0]
-        );
-        assert_eq!(
-            square_drive_state_machine(
-                &[2.5, 2.75, 3.0 * core::f64::consts::FRAC_PI_2],
-                &motion,
-                &bounds,
-            ),
-            [3.0, 1.0, 1.0, 0.0]
-        );
-    }
-
-    #[test]
-    fn square_drive_turns_in_place_and_advances_phase() {
-        let bounds = [2.5, 7.5];
-        let motion = [1.0, 0.9, 0.25];
-
-        assert_eq!(
-            square_drive_state_machine(&[7.5, 2.5, 0.0], &motion, &bounds),
-            [1.0, 0.0, 0.0, 2.0 * core::f64::consts::PI]
-        );
-        assert_eq!(
-            square_drive_state_machine(&[7.5, 7.5, core::f64::consts::FRAC_PI_2], &motion, &bounds),
-            [2.0, 0.0, 0.0, 2.0 * core::f64::consts::PI]
-        );
-        assert_eq!(
-            square_drive_state_machine(&[2.5, 7.5, core::f64::consts::PI], &motion, &bounds),
-            [3.0, 0.0, 0.0, 2.0 * core::f64::consts::PI]
-        );
-        assert_eq!(
-            square_drive_state_machine(
-                &[2.5, 2.5, 3.0 * core::f64::consts::FRAC_PI_2],
-                &motion,
-                &bounds,
-            ),
-            [0.0, 0.0, 0.0, 2.0 * core::f64::consts::PI]
-        );
-    }
-
-    #[test]
-    fn square_drive_rejects_invalid_time_steps() {
-        assert_eq!(
-            square_drive_state_machine(&[2.5, 2.5, 0.0], &[1.0, 0.9, 0.0], &[2.5, 7.5]),
-            [0.0, 0.0, 0.0, 0.0]
         );
     }
 }

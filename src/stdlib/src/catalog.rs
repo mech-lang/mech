@@ -35,8 +35,6 @@ fn build_catalog_on_large_stack(
 /// Installs the concrete runtime factories selected for this distribution.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     mech_engine::install_intrinsic_runtime(builder)?;
-    #[cfg(feature = "ekf")]
-    mech_engine::install_ekf_runtime(builder)?;
 
     #[cfg(feature = "mech-math")]
     mech_math::install_runtime(builder)?;
@@ -66,8 +64,6 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 #[cfg(feature = "source")]
 pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     mech_engine::install_intrinsic_source(builder)?;
-    #[cfg(all(feature = "ekf", feature = "semantic-compiler"))]
-    mech_engine::install_ekf_source(builder)?;
 
     #[cfg(feature = "mech-math")]
     mech_math::install_source(builder)?;
@@ -106,8 +102,6 @@ pub fn build_runtime_catalog() -> MResult<FunctionCatalog> {
 #[cfg(feature = "native-plan")]
 pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     mech_engine::install_intrinsic_native_plan(builder)?;
-    #[cfg(feature = "ekf")]
-    mech_engine::install_ekf_runtime(builder)?;
 
     #[cfg(feature = "mech-math")]
     mech_math::install_native_plan(builder)?;

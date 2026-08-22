@@ -1,22 +1,17 @@
 //! Hidden ordinary-source compiler catalog for the frozen EKF efficacy path.
 
-#[cfg(feature = "semantic-compiler")]
-use std::sync::Arc;
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 
 use mech_core::{
-    AccessMode, AliasPolicy, ChangeDetectionPolicy, DeliveryMode, ExternalInteraction,
-    FunctionArgs, FunctionCatalogBuilder, FunctionRuntimeType, InputPortLayout, InputPortPolicy,
-    LegacyValue, MResult, MechError, MechErrorKind, MechFunction, MechFunctionFactory,
-    MechFunctionImpl, OperationContractDeclaration, OutputConstruction, OutputPortPolicy,
-    ReactiveNodeKind, Ref, RuntimeFunctionContract, RuntimeFunctionSignature,
-    RuntimeOutputAliasPolicy, ShapeRule, function_shape_contract_violation,
-};
-#[cfg(feature = "semantic-compiler")]
-use mech_core::{
-    BytecodeCompilerContext, CompileConst, FunctionCatalog, FunctionExport, FunctionExposure,
-    FunctionSpecializer, GuardFunctionSafety, MechFunctionCompiler, Register,
-    compile_runtime_produced_register, compile_value_register,
+    AccessMode, AliasPolicy, BytecodeCompilerContext, ChangeDetectionPolicy, CompileConst,
+    DeliveryMode, ExternalInteraction, FunctionArgs, FunctionCatalog, FunctionCatalogBuilder,
+    FunctionExport, FunctionExposure, FunctionRuntimeType, FunctionSpecializer,
+    GuardFunctionSafety, InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError,
+    MechErrorKind, MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ReactiveNodeKind, Ref,
+    Register, RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
+    ShapeRule, compile_runtime_produced_register, compile_value_register,
+    function_shape_contract_violation,
 };
 use nalgebra::{DMatrix, DVector};
 
@@ -112,18 +107,6 @@ static PREDICATE_1: LazyLock<OperationContractDeclaration> =
 static PREDICATE_2: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| semantic_declaration(2, ChangeDetectionPolicy::ExactScalar));
 
-const EKF_KERNEL_CONTRACT: &str = "ekf_kernel";
-const EKF_PREDICATE_CONTRACT: &str = "ekf_predicate";
-const EKF_STATE_MACHINE_CONTRACT: &str = "ekf_state_machine";
-const EKF_FIXTURE_ADAPTER_CONTRACT: &str = "ekf_fixture_adapter";
-
-fn runtime_contract_kind(operation: FrozenEkfOperation) -> &'static str {
-    match operation {
-        FrozenEkfOperation::Kernel(_) => EKF_KERNEL_CONTRACT,
-        FrozenEkfOperation::Predicate(_) => EKF_PREDICATE_CONTRACT,
-    }
-}
-
 pub(crate) fn semantic_contract(
     operation: FrozenEkfOperation,
 ) -> &'static OperationContractDeclaration {
@@ -139,19 +122,16 @@ pub(crate) fn semantic_contract(
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
 pub(crate) struct FrozenEkfSpecializer {
     operation: FrozenEkfOperation,
 }
 
-#[cfg(feature = "semantic-compiler")]
 impl FunctionSpecializer for FrozenEkfSpecializer {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         validate_source_arguments(self.operation, arguments)?;
         let function = FrozenEkfFunction {
             operation: self.operation,
             arguments: arguments.to_vec().into_boxed_slice(),
-            #[cfg(feature = "semantic-compiler")]
             compile_arguments: frozen_compile_arguments(arguments),
             output: allocate_output(operation_spec(self.operation).output),
         };
@@ -168,7 +148,6 @@ impl FunctionSpecializer for FrozenEkfSpecializer {
 pub(crate) struct FrozenEkfFunction {
     operation: FrozenEkfOperation,
     arguments: Box<[LegacyValue]>,
-    #[cfg(feature = "semantic-compiler")]
     compile_arguments: Box<[LegacyValue]>,
     output: LegacyValue,
 }
@@ -199,7 +178,6 @@ impl MechFunctionImpl for FrozenEkfFunction {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for FrozenEkfFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let destination =
@@ -234,7 +212,6 @@ impl MechFunctionCompiler for FrozenEkfFunction {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
 fn frozen_compile_argument(value: &LegacyValue) -> LegacyValue {
     match value {
         LegacyValue::Typed(value, _) => frozen_compile_argument(value),
@@ -244,7 +221,6 @@ fn frozen_compile_argument(value: &LegacyValue) -> LegacyValue {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
 fn frozen_compile_arguments(arguments: &[LegacyValue]) -> Box<[LegacyValue]> {
     arguments
         .iter()
@@ -260,7 +236,6 @@ fn instantiate(
     let input_values = arguments.input_values();
     Ok(Box::new(FrozenEkfFunction {
         operation,
-        #[cfg(feature = "semantic-compiler")]
         compile_arguments: frozen_compile_arguments(&input_values),
         arguments: input_values.into_boxed_slice(),
         output: arguments.output_value().clone(),
@@ -383,163 +358,6 @@ factory!(
     DMatrix<f64>,
     [DMatrix<f64>]
 );
-
-pub(crate) const FROZEN_INNOVATION_FROM_FRAME_NAME: &str = "ekf/innovation-from-frame";
-pub(crate) const FROZEN_INNOVATION_FROM_FRAME_ITEM: &str = "innovation-from-frame";
-pub(crate) const FROZEN_INNOVATION_FROM_FRAME_SPEC: FrozenEkfOperationSpec =
-    FrozenEkfOperationSpec {
-        operation: Kernel(Innovation),
-        canonical_name: FROZEN_INNOVATION_FROM_FRAME_NAME,
-        module_item: FROZEN_INNOVATION_FROM_FRAME_ITEM,
-        inputs: &[
-            FrozenEkfValueShape::Vector(4),
-            FrozenEkfValueShape::Vector(2),
-        ],
-        output: FrozenEkfValueShape::Vector(2),
-        change_detection: ChangeDetectionPolicy::KernelReported,
-    };
-
-#[cfg(feature = "semantic-compiler")]
-struct FrozenInnovationFromFrameSpecializer;
-
-#[cfg(feature = "semantic-compiler")]
-impl FunctionSpecializer for FrozenInnovationFromFrameSpecializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        validate_innovation_from_frame_values(arguments)?;
-        let function = FrozenInnovationFromFrameFunction {
-            arguments: arguments.to_vec().into_boxed_slice(),
-            compile_arguments: frozen_compile_arguments(arguments),
-            output: LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(2)))),
-        };
-        function.solve_result()?;
-        Ok(Box::new(function))
-    }
-
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        GuardFunctionSafety::PureStatic
-    }
-}
-
-#[derive(Debug)]
-struct FrozenInnovationFromFrameFunction {
-    arguments: Box<[LegacyValue]>,
-    #[cfg(feature = "semantic-compiler")]
-    compile_arguments: Box<[LegacyValue]>,
-    output: LegacyValue,
-}
-
-impl MechFunctionImpl for FrozenInnovationFromFrameFunction {
-    fn solve_result(&self) -> MResult<()> {
-        let frame = frozen_adapter_array::<4>(&self.arguments[0])?;
-        let predicted = frozen_adapter_array::<2>(&self.arguments[1])?;
-        let innovation = math::innovation_from_frame(&frame, &predicted);
-        write_array(Kernel(Innovation), &self.output, innovation)
-    }
-
-    fn out(&self) -> LegacyValue {
-        self.output.clone()
-    }
-
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&KERNEL_2)
-    }
-
-    fn reactive_node_kind(&self) -> ReactiveNodeKind {
-        ReactiveNodeKind::Combinational
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
-    fn to_string(&self) -> String {
-        FROZEN_INNOVATION_FROM_FRAME_NAME.to_owned()
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-impl MechFunctionCompiler for FrozenInnovationFromFrameFunction {
-    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let destination =
-            compile_runtime_produced_register(&self.output, self.output.addr(), context)?;
-        let seed = LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(2))))
-            .compile_const(context)?;
-        context.record_register_constant_metadata(destination, seed)?;
-        context.emit_const_load(destination, seed);
-        let inputs = self
-            .compile_arguments
-            .iter()
-            .map(|argument| compile_value_register(argument, argument.addr(), context))
-            .collect::<MResult<Vec<_>>>()?;
-        let [frame, predicted] = inputs.as_slice() else {
-            unreachable!("the frozen observation adapter has exactly two inputs")
-        };
-        let function = context.function_id(FROZEN_INNOVATION_FROM_FRAME_NAME)?;
-        context.emit_binop(function, destination, *frame, *predicted);
-        Ok(destination)
-    }
-}
-
-struct FrozenInnovationFromFrameFactory;
-
-impl MechFunctionFactory for FrozenInnovationFromFrameFactory {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
-        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
-        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
-    );
-
-    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        validate_innovation_from_frame_runtime(&arguments)?;
-        Ok(Box::new(FrozenInnovationFromFrameFunction {
-            #[cfg(feature = "semantic-compiler")]
-            compile_arguments: frozen_compile_arguments(&arguments.input_values()),
-            arguments: arguments.input_values().into_boxed_slice(),
-            output: arguments.output_value().clone(),
-        }))
-    }
-}
-
-fn validate_innovation_from_frame_values(arguments: &[LegacyValue]) -> MResult<()> {
-    if arguments.len() != 2
-        || value_shape(&arguments[0]) != Some(FrozenEkfValueShape::Vector(4))
-        || value_shape(&arguments[1]) != Some(FrozenEkfValueShape::Vector(2))
-    {
-        return Err(function_shape_contract_violation(
-            FROZEN_INNOVATION_FROM_FRAME_NAME,
-            "expected observation [f64]:4,1 and predicted measurement [f64]:2,1",
-        ));
-    }
-    Ok(())
-}
-
-fn validate_innovation_from_frame_runtime(arguments: &FunctionArgs) -> MResult<()> {
-    validate_innovation_from_frame_values(&arguments.input_values())?;
-    if value_shape(arguments.output_value()) != Some(FrozenEkfValueShape::Vector(2)) {
-        return Err(function_shape_contract_violation(
-            FROZEN_INNOVATION_FROM_FRAME_NAME,
-            "output requires [f64]:2,1",
-        ));
-    }
-    Ok(())
-}
-
-fn frozen_adapter_array<const N: usize>(value: &LegacyValue) -> MResult<[f64; N]> {
-    match value {
-        LegacyValue::Typed(value, _) => frozen_adapter_array(value),
-        LegacyValue::MutableReference(value) => frozen_adapter_array(&value.borrow()),
-        LegacyValue::MatrixF64(value) => value.as_vec().try_into().map_err(|_| {
-            function_shape_contract_violation(
-                FROZEN_INNOVATION_FROM_FRAME_NAME,
-                format!("expected f64 vector length {N}"),
-            )
-        }),
-        _ => Err(function_shape_contract_violation(
-            FROZEN_INNOVATION_FROM_FRAME_NAME,
-            format!("expected f64 vector length {N}"),
-        )),
-    }
-}
 factory!(FiniteFactory, validate_finite, Predicate(CandidateFinite), binary, bool, [DVector<f64>, DMatrix<f64>]);
 factory!(
     PositiveFactory,
@@ -557,164 +375,6 @@ factory!(
     bool,
     [DMatrix<f64>]
 );
-
-const SQUARE_DRIVE_NAME: &str = "ekf/square-drive-state-machine";
-
-#[cfg(feature = "semantic-compiler")]
-struct SquareDriveSpecializer;
-
-#[cfg(feature = "semantic-compiler")]
-impl FunctionSpecializer for SquareDriveSpecializer {
-    fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        validate_square_drive_values(arguments)?;
-        let function = SquareDriveFunction {
-            arguments: arguments.to_vec().into_boxed_slice(),
-            compile_arguments: frozen_compile_arguments(arguments),
-            output: LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(4)))),
-        };
-        function.solve_result()?;
-        Ok(Box::new(function))
-    }
-
-    fn guard_safety(&self) -> GuardFunctionSafety {
-        GuardFunctionSafety::PureStatic
-    }
-}
-
-#[derive(Debug)]
-struct SquareDriveFunction {
-    arguments: Box<[LegacyValue]>,
-    #[cfg(feature = "semantic-compiler")]
-    compile_arguments: Box<[LegacyValue]>,
-    output: LegacyValue,
-}
-
-impl MechFunctionImpl for SquareDriveFunction {
-    fn solve_result(&self) -> MResult<()> {
-        let next = math::square_drive_state_machine(
-            &square_drive_array(&self.arguments[0])?,
-            &square_drive_array(&self.arguments[1])?,
-            &square_drive_array(&self.arguments[2])?,
-        );
-        let LegacyValue::MatrixF64(Matrix::DVector(output)) = &self.output else {
-            return Err(function_shape_contract_violation(
-                SQUARE_DRIVE_NAME,
-                "output requires an f64 vector of length 4",
-            ));
-        };
-        output.borrow_mut().as_mut_slice().copy_from_slice(&next);
-        Ok(())
-    }
-
-    fn out(&self) -> LegacyValue {
-        self.output.clone()
-    }
-
-    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-        Some(&KERNEL_3)
-    }
-
-    fn reactive_node_kind(&self) -> ReactiveNodeKind {
-        ReactiveNodeKind::Combinational
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-
-    fn to_string(&self) -> String {
-        SQUARE_DRIVE_NAME.to_owned()
-    }
-}
-
-#[cfg(feature = "semantic-compiler")]
-impl MechFunctionCompiler for SquareDriveFunction {
-    fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let destination =
-            compile_runtime_produced_register(&self.output, self.output.addr(), context)?;
-        let seed = LegacyValue::MatrixF64(Matrix::DVector(Ref::new(DVector::zeros(4))))
-            .compile_const(context)?;
-        context.record_register_constant_metadata(destination, seed)?;
-        context.emit_const_load(destination, seed);
-        let inputs = self
-            .compile_arguments
-            .iter()
-            .map(|argument| compile_value_register(argument, argument.addr(), context))
-            .collect::<MResult<Vec<_>>>()?;
-        let [state, motion, bounds] = inputs.as_slice() else {
-            unreachable!("square drive has exactly three inputs")
-        };
-        let function = context.function_id(SQUARE_DRIVE_NAME)?;
-        context.emit_ternop(function, destination, *state, *motion, *bounds);
-        Ok(destination)
-    }
-}
-
-struct SquareDriveFactory;
-
-impl MechFunctionFactory for SquareDriveFactory {
-    const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::ternary(
-        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
-        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
-        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
-        <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
-    );
-
-    fn new(arguments: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        validate_square_drive_runtime(&arguments)?;
-        Ok(Box::new(SquareDriveFunction {
-            #[cfg(feature = "semantic-compiler")]
-            compile_arguments: frozen_compile_arguments(&arguments.input_values()),
-            arguments: arguments.input_values().into_boxed_slice(),
-            output: arguments.output_value().clone(),
-        }))
-    }
-}
-
-fn validate_square_drive_values(arguments: &[LegacyValue]) -> MResult<()> {
-    if arguments.len() != 3
-        || value_shape(&arguments[0]) != Some(FrozenEkfValueShape::Vector(3))
-        || value_shape(&arguments[1]) != Some(FrozenEkfValueShape::Vector(3))
-        || value_shape(&arguments[2]) != Some(FrozenEkfValueShape::Vector(2))
-    {
-        return Err(function_shape_contract_violation(
-            SQUARE_DRIVE_NAME,
-            "expected state [f64]:3,1, motion [f64]:3,1, and bounds [f64]:2,1",
-        ));
-    }
-    Ok(())
-}
-
-fn validate_square_drive_runtime(arguments: &FunctionArgs) -> MResult<()> {
-    validate_square_drive_values(&arguments.input_values())?;
-    if value_shape(arguments.output_value()) != Some(FrozenEkfValueShape::Vector(4)) {
-        return Err(function_shape_contract_violation(
-            SQUARE_DRIVE_NAME,
-            "output requires [f64]:4,1",
-        ));
-    }
-    Ok(())
-}
-
-fn square_drive_array<const N: usize>(value: &LegacyValue) -> MResult<[f64; N]> {
-    match value {
-        LegacyValue::Typed(value, _) => square_drive_array(value),
-        LegacyValue::MutableReference(value) => square_drive_array(&value.borrow()),
-        LegacyValue::MatrixF64(value) => {
-            let values = value.as_vec();
-            values.try_into().map_err(|_| {
-                function_shape_contract_violation(
-                    SQUARE_DRIVE_NAME,
-                    format!("expected f64 vector length {N}"),
-                )
-            })
-        }
-        _ => Err(function_shape_contract_violation(
-            SQUARE_DRIVE_NAME,
-            format!("expected f64 vector length {N}"),
-        )),
-    }
-}
 
 fn runtime_registration(
     operation: FrozenEkfOperation,
@@ -759,348 +419,61 @@ fn runtime_registration(
 // Builder registration requires factory types at compile time, so keep the
 // ordered calls derived from the single operation table and assert alignment.
 macro_rules! register {
-    ($builder:expr, $index:expr, $factory:ty, $validator:ident, $installer:literal) => {{
+    ($builder:expr, $index:expr, $factory:ty, $validator:ident) => {{
         let spec = &FROZEN_EKF_OPERATIONS[$index];
         let (signature, _, validator) = runtime_registration(spec.operation);
         debug_assert_eq!(signature, <$factory>::SIGNATURE);
         debug_assert_eq!(validator as usize, $validator as usize);
-        let contract = RuntimeFunctionContract::custom(
-            runtime_contract_kind(spec.operation),
-            RuntimeOutputAliasPolicy::DisallowInputAlias,
-            $validator,
-        );
-        #[cfg(feature = "native-plan")]
-        $builder.insert_runtime_factory_with_linkage_and_semantic_contract::<$factory>(
-            spec.canonical_name,
-            contract,
-            mech_core::NativeFunctionLinkage::for_factory::<$factory>(
-                "mech-engine",
-                "mech_engine",
-                $installer,
-                &["ekf"],
-            )?,
-            semantic_contract(spec.operation),
-        )?;
-        #[cfg(not(feature = "native-plan"))]
         $builder.insert_runtime_factory_with_semantic_contract::<$factory>(
             spec.canonical_name,
-            contract,
+            RuntimeFunctionContract::custom(
+                spec.canonical_name,
+                RuntimeOutputAliasPolicy::DisallowInputAlias,
+                $validator,
+            ),
             semantic_contract(spec.operation),
         )?;
     }};
 }
 
-fn install_square_drive_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    let contract = RuntimeFunctionContract::custom(
-        EKF_STATE_MACHINE_CONTRACT,
-        RuntimeOutputAliasPolicy::DisallowInputAlias,
-        validate_square_drive_runtime,
-    );
-    #[cfg(feature = "native-plan")]
-    builder.insert_runtime_factory_with_linkage_and_semantic_contract::<SquareDriveFactory>(
-        SQUARE_DRIVE_NAME,
-        contract,
-        mech_core::NativeFunctionLinkage::for_factory::<SquareDriveFactory>(
-            "mech-engine",
-            "mech_engine",
-            "mech_engine::__mech_native::install_ekf_square_drive_state_machine",
-            &["ekf"],
-        )?,
-        &KERNEL_3,
-    )?;
-    #[cfg(not(feature = "native-plan"))]
-    builder.insert_runtime_factory_with_semantic_contract::<SquareDriveFactory>(
-        SQUARE_DRIVE_NAME,
-        contract,
-        &KERNEL_3,
-    )?;
-    Ok(())
-}
-
-fn install_frozen_innovation_from_frame_runtime(
-    builder: &mut FunctionCatalogBuilder,
-) -> MResult<()> {
-    builder.insert_runtime_factory_with_semantic_contract::<FrozenInnovationFromFrameFactory>(
-        FROZEN_INNOVATION_FROM_FRAME_NAME,
-        RuntimeFunctionContract::custom(
-            EKF_FIXTURE_ADAPTER_CONTRACT,
-            RuntimeOutputAliasPolicy::DisallowInputAlias,
-            validate_innovation_from_frame_runtime,
-        ),
-        &KERNEL_2,
-    )?;
-    Ok(())
-}
-
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    register!(builder, 0, TrigFactory, validate_trig);
+    register!(builder, 1, MotionFactory, validate_motion);
+    register!(builder, 2, ControlFactory, validate_control);
+    register!(builder, 3, PredictedStateFactory, validate_predicted_state);
     register!(
         builder,
-        0,
-        TrigFactory,
-        validate_trig,
-        "mech_engine::__mech_native::install_ekf_trigonometric_state"
-    );
-    register!(
-        builder,
-        1,
-        MotionFactory,
-        validate_motion,
-        "mech_engine::__mech_native::install_ekf_motion_jacobian"
-    );
-    register!(
-        builder,
-        2,
-        ControlFactory,
-        validate_control,
-        "mech_engine::__mech_native::install_ekf_control_jacobian"
-    );
-    register!(
-        builder,
-        3,
-        PredictedStateFactory,
-        validate_predicted_state,
-        "mech_engine::__mech_native::install_ekf_predicted_state"
-    );
-    register!(
-        builder,
-        4,
-        PredictedCovarianceFactory,
-        validate_predicted_covariance,
-        "mech_engine::__mech_native::install_ekf_predicted_covariance"
-    );
-    register!(
-        builder,
-        5,
-        LandmarkFactory,
-        validate_landmark,
-        "mech_engine::__mech_native::install_ekf_landmark_delta_and_range"
-    );
-    register!(
-        builder,
-        6,
-        MeasurementFactory,
-        validate_measurement,
-        "mech_engine::__mech_native::install_ekf_predicted_measurement"
-    );
-    register!(
-        builder,
-        7,
-        MeasurementJacobianFactory,
-        validate_measurement_jacobian,
-        "mech_engine::__mech_native::install_ekf_measurement_jacobian"
-    );
-    register!(
-        builder,
-        8,
-        InnovationCovarianceFactory,
-        validate_innovation_covariance,
-        "mech_engine::__mech_native::install_ekf_innovation_covariance"
-    );
-    register!(
-        builder,
-        9,
-        SolveFactory,
-        validate_solve,
-        "mech_engine::__mech_native::install_ekf_solve_2x2"
-    );
-    register!(
-        builder,
-        10,
-        GainFactory,
-        validate_gain,
-        "mech_engine::__mech_native::install_ekf_kalman_gain"
-    );
-    register!(
-        builder,
-        11,
-        InnovationFactory,
-        validate_innovation,
-        "mech_engine::__mech_native::install_ekf_innovation"
-    );
-    register!(
-        builder,
-        12,
-        CorrectedStateFactory,
-        validate_corrected_state,
-        "mech_engine::__mech_native::install_ekf_corrected_state"
-    );
-    register!(
-        builder,
-        13,
-        JosephFactory,
-        validate_joseph,
-        "mech_engine::__mech_native::install_ekf_joseph_covariance_update"
-    );
-    register!(
-        builder,
-        14,
-        SymmetrizationFactory,
-        validate_symmetrization,
-        "mech_engine::__mech_native::install_ekf_covariance_symmetrization"
-    );
-    register!(
-        builder,
-        15,
-        FiniteFactory,
-        validate_finite,
-        "mech_engine::__mech_native::install_ekf_candidate_finite"
-    );
-    register!(
-        builder,
-        16,
-        PositiveFactory,
-        validate_positive,
-        "mech_engine::__mech_native::install_ekf_covariance_positive_diagonal"
-    );
-    register!(
-        builder,
-        17,
-        SymmetricFactory,
-        validate_symmetric,
-        "mech_engine::__mech_native::install_ekf_covariance_symmetric"
-    );
-    install_square_drive_runtime(builder)?;
-    Ok(())
-}
-
-#[doc(hidden)]
-#[cfg(feature = "native-link")]
-pub mod __mech_native {
-    use super::*;
-
-    macro_rules! installer {
-        ($name:ident, $index:expr, $factory:ty, $validator:ident) => {
-            pub fn $name(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-                let spec = &FROZEN_EKF_OPERATIONS[$index];
-                builder.insert_runtime_factory_with_semantic_contract::<$factory>(
-                    spec.canonical_name,
-                    RuntimeFunctionContract::custom(
-                        runtime_contract_kind(spec.operation),
-                        RuntimeOutputAliasPolicy::DisallowInputAlias,
-                        $validator,
-                    ),
-                    semantic_contract(spec.operation),
-                )
-            }
-        };
-    }
-
-    installer!(
-        install_ekf_trigonometric_state,
-        0,
-        TrigFactory,
-        validate_trig
-    );
-    installer!(
-        install_ekf_motion_jacobian,
-        1,
-        MotionFactory,
-        validate_motion
-    );
-    installer!(
-        install_ekf_control_jacobian,
-        2,
-        ControlFactory,
-        validate_control
-    );
-    installer!(
-        install_ekf_predicted_state,
-        3,
-        PredictedStateFactory,
-        validate_predicted_state
-    );
-    installer!(
-        install_ekf_predicted_covariance,
         4,
         PredictedCovarianceFactory,
         validate_predicted_covariance
     );
-    installer!(
-        install_ekf_landmark_delta_and_range,
-        5,
-        LandmarkFactory,
-        validate_landmark
-    );
-    installer!(
-        install_ekf_predicted_measurement,
-        6,
-        MeasurementFactory,
-        validate_measurement
-    );
-    installer!(
-        install_ekf_measurement_jacobian,
+    register!(builder, 5, LandmarkFactory, validate_landmark);
+    register!(builder, 6, MeasurementFactory, validate_measurement);
+    register!(
+        builder,
         7,
         MeasurementJacobianFactory,
         validate_measurement_jacobian
     );
-    installer!(
-        install_ekf_innovation_covariance,
+    register!(
+        builder,
         8,
         InnovationCovarianceFactory,
         validate_innovation_covariance
     );
-    installer!(install_ekf_solve_2x2, 9, SolveFactory, validate_solve);
-    installer!(install_ekf_kalman_gain, 10, GainFactory, validate_gain);
-    installer!(
-        install_ekf_innovation,
-        11,
-        InnovationFactory,
-        validate_innovation
-    );
-    installer!(
-        install_ekf_corrected_state,
-        12,
-        CorrectedStateFactory,
-        validate_corrected_state
-    );
-    installer!(
-        install_ekf_joseph_covariance_update,
-        13,
-        JosephFactory,
-        validate_joseph
-    );
-    installer!(
-        install_ekf_covariance_symmetrization,
-        14,
-        SymmetrizationFactory,
-        validate_symmetrization
-    );
-    installer!(
-        install_ekf_candidate_finite,
-        15,
-        FiniteFactory,
-        validate_finite
-    );
-    installer!(
-        install_ekf_covariance_positive_diagonal,
-        16,
-        PositiveFactory,
-        validate_positive
-    );
-    installer!(
-        install_ekf_covariance_symmetric,
-        17,
-        SymmetricFactory,
-        validate_symmetric
-    );
-
-    pub fn install_ekf_square_drive_state_machine(
-        builder: &mut FunctionCatalogBuilder,
-    ) -> MResult<()> {
-        builder.insert_runtime_factory_with_semantic_contract::<SquareDriveFactory>(
-            SQUARE_DRIVE_NAME,
-            RuntimeFunctionContract::custom(
-                EKF_STATE_MACHINE_CONTRACT,
-                RuntimeOutputAliasPolicy::DisallowInputAlias,
-                validate_square_drive_runtime,
-            ),
-            &KERNEL_3,
-        )
-    }
+    register!(builder, 9, SolveFactory, validate_solve);
+    register!(builder, 10, GainFactory, validate_gain);
+    register!(builder, 11, InnovationFactory, validate_innovation);
+    register!(builder, 12, CorrectedStateFactory, validate_corrected_state);
+    register!(builder, 13, JosephFactory, validate_joseph);
+    register!(builder, 14, SymmetrizationFactory, validate_symmetrization);
+    register!(builder, 15, FiniteFactory, validate_finite);
+    register!(builder, 16, PositiveFactory, validate_positive);
+    register!(builder, 17, SymmetricFactory, validate_symmetric);
+    Ok(())
 }
 
-#[cfg(feature = "semantic-compiler")]
-pub(crate) fn install_source_operations(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     for spec in FROZEN_EKF_OPERATIONS {
         let operation = builder.insert_specializer(
             spec.canonical_name,
@@ -1116,39 +489,6 @@ pub(crate) fn install_source_operations(builder: &mut FunctionCatalogBuilder) ->
             exposure: FunctionExposure::ModuleOnly,
         })?;
     }
-    let square_drive =
-        builder.insert_specializer(SQUARE_DRIVE_NAME, Arc::new(SquareDriveSpecializer))?;
-    builder.insert_export(FunctionExport {
-        operation: square_drive,
-        canonical_name: SQUARE_DRIVE_NAME.to_owned(),
-        module: Some("ekf".to_owned()),
-        item: Some("square-drive-state-machine".to_owned()),
-        exposure: FunctionExposure::ModuleOnly,
-    })?;
-    Ok(())
-}
-
-#[cfg(feature = "semantic-compiler")]
-fn install_frozen_innovation_from_frame_source(
-    builder: &mut FunctionCatalogBuilder,
-) -> MResult<()> {
-    let operation = builder.insert_specializer(
-        FROZEN_INNOVATION_FROM_FRAME_NAME,
-        Arc::new(FrozenInnovationFromFrameSpecializer),
-    )?;
-    builder.insert_export(FunctionExport {
-        operation,
-        canonical_name: FROZEN_INNOVATION_FROM_FRAME_NAME.to_owned(),
-        module: Some("ekf".to_owned()),
-        item: Some(FROZEN_INNOVATION_FROM_FRAME_ITEM.to_owned()),
-        exposure: FunctionExposure::ModuleOnly,
-    })?;
-    Ok(())
-}
-
-#[cfg(feature = "semantic-compiler")]
-pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    install_source_operations(builder)?;
     let negate = builder.insert_specializer("math/neg", Arc::new(FrozenF64NegateSpecializer))?;
     builder.insert_export(FunctionExport {
         operation: negate,
@@ -1160,10 +500,8 @@ pub(crate) fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()
     Ok(())
 }
 
-#[cfg(feature = "semantic-compiler")]
 struct FrozenF64NegateSpecializer;
 
-#[cfg(feature = "semantic-compiler")]
 impl FunctionSpecializer for FrozenF64NegateSpecializer {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         let [argument] = arguments else {
@@ -1205,12 +543,10 @@ impl FunctionSpecializer for FrozenF64NegateSpecializer {
 }
 
 #[derive(Debug)]
-#[cfg(feature = "semantic-compiler")]
 struct FrozenF64NegateFunction {
     output: Ref<f64>,
 }
 
-#[cfg(feature = "semantic-compiler")]
 impl MechFunctionImpl for FrozenF64NegateFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
@@ -1229,7 +565,6 @@ impl MechFunctionImpl for FrozenF64NegateFunction {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for FrozenF64NegateFunction {
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = LegacyValue::F64(self.output.clone());
@@ -1238,7 +573,6 @@ impl MechFunctionCompiler for FrozenF64NegateFunction {
 }
 
 #[doc(hidden)]
-#[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
 pub fn frozen_ekf_compiler_catalog() -> MResult<Arc<FunctionCatalog>> {
     let mut builder = FunctionCatalogBuilder::new();
     crate::intrinsics::catalog::install_runtime(&mut builder)?;
@@ -1246,10 +580,7 @@ pub fn frozen_ekf_compiler_catalog() -> MResult<Arc<FunctionCatalog>> {
     crate::intrinsics::catalog::install_source(&mut builder)?;
     install_runtime(&mut builder)?;
     install_source(&mut builder)?;
-    install_frozen_innovation_from_frame_runtime(&mut builder)?;
-    install_frozen_innovation_from_frame_source(&mut builder)?;
     crate::function::install_intrinsic_resident(&mut builder)?;
-    crate::resident::numeric::install_frozen_ekf_observation_adapter(&mut builder)?;
     Ok(Arc::new(builder.build()?))
 }
 
@@ -1274,7 +605,6 @@ fn value_shape(value: &LegacyValue) -> Option<FrozenEkfValueShape> {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
 fn validate_source_arguments(
     operation: FrozenEkfOperation,
     arguments: &[LegacyValue],
@@ -1333,7 +663,6 @@ fn validate_runtime_shapes(operation: FrozenEkfOperation, args: &FunctionArgs) -
     Ok(())
 }
 
-#[cfg(feature = "semantic-compiler")]
 fn allocate_output(shape: FrozenEkfValueShape) -> LegacyValue {
     match shape {
         FrozenEkfValueShape::Bool => LegacyValue::Bool(Ref::new(false)),

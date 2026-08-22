@@ -4718,22 +4718,22 @@
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 286
+            "line": 291
           },
           {
             "column": 68,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 286
+            "line": 291
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 289
+            "line": 294
           },
           {
             "column": 37,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 292
+            "line": 297
           }
         ]
       },
@@ -6806,7 +6806,7 @@
           {
             "column": 29,
             "fingerprint": "9781e313737f51598aac62d1f86bb5ccd04352dd1e502c3ed865973f2658e8cb",
-            "line": 2291
+            "line": 2321
           }
         ]
       },
@@ -8224,7 +8224,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 104
+            "line": 109
           }
         ]
       },
@@ -9468,77 +9468,77 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 109
+            "line": 112
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 214
+            "line": 220
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 324
+            "line": 333
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 413
+            "line": 422
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 518
+            "line": 530
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 635
+            "line": 650
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 743
+            "line": 758
           },
           {
             "column": 12,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 879
+            "line": 897
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 965
+            "line": 986
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1068
+            "line": 1092
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1182
+            "line": 1209
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1304
+            "line": 1331
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1391
+            "line": 1421
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1531
+            "line": 1561
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1824
+            "line": 1854
           }
         ]
       }
@@ -10898,22 +10898,22 @@
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 286
+            "line": 291
           },
           {
             "column": 55,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 286
+            "line": 291
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 289
+            "line": 294
           },
           {
             "column": 24,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 292
+            "line": 297
           }
         ]
       },
@@ -12925,7 +12925,7 @@
           {
             "column": 16,
             "fingerprint": "2defd88696f711ffea87ef413e74d6f91975dc75c7b9604a110192f8691ac547",
-            "line": 2291
+            "line": 2321
           }
         ]
       },
@@ -15007,7 +15007,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 104
+              "line": 109
             }
           ]
         },
@@ -16251,77 +16251,77 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 109
+              "line": 112
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 214
+              "line": 220
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 324
+              "line": 333
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 413
+              "line": 422
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 518
+              "line": 530
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 635
+              "line": 650
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 743
+              "line": 758
             },
             {
               "column": 12,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 879
+              "line": 897
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 965
+              "line": 986
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1068
+              "line": 1092
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1182
+              "line": 1209
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1304
+              "line": 1331
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1391
+              "line": 1421
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1531
+              "line": 1561
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1824
+              "line": 1854
             }
           ]
         }
@@ -44087,28 +44087,28 @@
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 286,
+      "line": 291,
       "path": "machines/math/src/trig/atan2.rs",
       "variant": "MutableReference"
     },
     {
       "column": 55,
       "enum": "LegacyValue",
-      "line": 286,
+      "line": 291,
       "path": "machines/math/src/trig/atan2.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 289,
+      "line": 294,
       "path": "machines/math/src/trig/atan2.rs",
       "variant": "MutableReference"
     },
     {
       "column": 24,
       "enum": "LegacyValue",
-      "line": 292,
+      "line": 297,
       "path": "machines/math/src/trig/atan2.rs",
       "variant": "MutableReference"
     },
@@ -46236,7 +46236,7 @@
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 2291,
+      "line": 2321,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "MutableReference"
     },
@@ -52886,7 +52886,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2712,
+      "line": 2742,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "Bool"
     },
@@ -53047,7 +53047,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2733,
+      "line": 2763,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "C64"
     },
@@ -53999,7 +53999,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2670,
+      "line": 2700,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "F32"
     },
@@ -54412,7 +54412,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2663,
+      "line": 2693,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "F64"
     },
@@ -57331,7 +57331,7 @@
     {
       "column": 11,
       "enum": "ValueKind",
-      "line": 2238,
+      "line": 2268,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "Matrix"
     },
@@ -58038,7 +58038,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2726,
+      "line": 2756,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "R64"
     },
@@ -58437,7 +58437,7 @@
     {
       "column": 11,
       "enum": "ValueKind",
-      "line": 2237,
+      "line": 2267,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "Reference"
     },
@@ -58913,7 +58913,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2719,
+      "line": 2749,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "String"
     },
@@ -59739,7 +59739,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2705,
+      "line": 2735,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U128"
     },
@@ -60061,7 +60061,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2684,
+      "line": 2714,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U16"
     },
@@ -60383,7 +60383,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2691,
+      "line": 2721,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U32"
     },
@@ -60705,7 +60705,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2698,
+      "line": 2728,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U64"
     },
@@ -61027,7 +61027,7 @@
     {
       "column": 58,
       "enum": "ValueKind",
-      "line": 2677,
+      "line": 2707,
       "path": "src/engine/src/intrinsics/vertcat.rs",
       "variant": "U8"
     },

@@ -164,7 +164,7 @@
         { "path": "src/engine/src/activation/dispatch.rs", "scope_contains": "<file>", "max_occurrences": 6 },
         { "path": "src/engine/src/activation/guards.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/activation/registers.rs", "scope_contains": "<file>", "max_occurrences": 1 },
-        { "path": "src/engine/src/efficacy/ekf/catalog.rs", "scope_contains": "<file>", "max_occurrences": 4 },
+        { "path": "src/engine/src/efficacy/ekf/catalog.rs", "scope_contains": "<file>", "max_occurrences": 2 },
         { "path": "src/engine/src/function/external/host_call.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/function/external/resource_read.rs", "scope_contains": "<file>", "max_occurrences": 1 },
         { "path": "src/engine/src/function/external/resource_write.rs", "scope_contains": "<file>", "max_occurrences": 1 },

@@ -1,7 +1,6 @@
 Extended Kalman Filter Localization
 ===============================================================================
 section: Examples
-+> ekf
 +> math
 ===============================================================================
 
@@ -52,38 +51,53 @@ West, and South states. Each state owns one side of the square. It shortens the
 last translational step so truth lands exactly on a corner, then rotates ninety
 degrees in place on the transition turn.
 
+#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) => <f64>
+  ├ :Select(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>)
+  ├ :East(x<f64>, high<f64>)
+  ├ :North(y<f64>, high<f64>)
+  ├ :West(x<f64>, low<f64>)
+  ├ :South(y<f64>, low<f64>)
+  └ :Done(next-phase<f64>).
+
+#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) -> :Select(phase, x, y, low, high)
+  :Select(phase, x, y, low, high)
+    ├ phase == 0.0 -> :East(x, high)
+    ├ phase == 1.0 -> :North(y, high)
+    ├ phase == 2.0 -> :West(x, low)
+    └ phase == 3.0 -> :South(y, low)
+  :East(x, high)
+    ├ x < high -> :Done(0.0)
+    └ x >= high -> :Done(1.0)
+  :North(y, high)
+    ├ y < high -> :Done(1.0)
+    └ y >= high -> :Done(2.0)
+  :West(x, low)
+    ├ x > low -> :Done(2.0)
+    └ x <= low -> :Done(3.0)
+  :South(y, low)
+    ├ y > low -> :Done(3.0)
+    └ y <= low -> :Done(0.0)
+  :Done(next-phase) => next-phase.
+
+  ~drive-phase := 0.0
   ~truth := [2.5
              2.5
              0.0]
   simulation-time := @clock/tick * Δt
   actual-speed-scale := 0.965 + 0.025 * math/sin(simulation-time * 0.73)
-  drive-motion := [speed
-                   speed * actual-speed-scale
-                   Δt]
-  drive-bounds := [low-bound
-                   high-bound]
-  drive-control := ekf/square-drive-state-machine(truth, drive-motion, drive-bounds)
-  drive-phase := drive-control[1]
-  commanded-speed := drive-control[2]
-  actual-speed := drive-control[3]
-  commanded-turn-rate := drive-control[4]
-
-  velocity-basis := [1.0
-                     0.0
-                     0.0
-                     0.0]
-  turn-basis := [0.0
-                 1.0
-                 0.0
-                 0.0]
-  commanded-frame := commanded-speed * velocity-basis + commanded-turn-rate * turn-basis
+  next-drive-phase := #SquareDrive(drive-phase,
+    truth[1], truth[2], low-bound, high-bound)
+  phase-step := (next-drive-phase - drive-phase + 4.0) % 4.0
+  commanded-speed := speed * (1.0 - phase-step)
+  actual-speed := commanded-speed * actual-speed-scale
+  commanded-turn-rate := (π / (2.0 * Δt)) * phase-step
   actual-turn-rate := commanded-turn-rate
-  actual-motion-frame := actual-speed * velocity-basis + actual-turn-rate * turn-basis
 
-  truth-trigonometry := ekf/trigonometric-state(truth)
-  next-truth := ekf/predicted-state(truth,
-    actual-motion-frame, truth-trigonometry, Δt)
+  next-truth := truth + [actual-speed * math/cos(truth[3]) * Δt
+                         actual-speed * math/sin(truth[3]) * Δt
+                         actual-turn-rate * Δt]
 
+  drive-phase = next-drive-phase
   truth = next-truth
 
 
@@ -94,19 +108,27 @@ Every camera reports range and robot-relative bearing. The four noise signals ar
 deterministic sums of sinusoids: repeatable enough for regression testing, but
 unknown to the filter and different for every camera.
 
-  camera-1-delta := ekf/landmark-delta-and-range(next-truth, camera-1)
-  camera-2-delta := ekf/landmark-delta-and-range(next-truth, camera-2)
-  camera-3-delta := ekf/landmark-delta-and-range(next-truth, camera-3)
-  camera-4-delta := ekf/landmark-delta-and-range(next-truth, camera-4)
+  camera-1-dx := camera-1[1] - next-truth[1]
+  camera-1-dy := camera-1[2] - next-truth[2]
+  camera-1-range := (camera-1-dx ^ 2 + camera-1-dy ^ 2) ^ 0.5
+  camera-2-dx := camera-2[1] - next-truth[1]
+  camera-2-dy := camera-2[2] - next-truth[2]
+  camera-2-range := (camera-2-dx ^ 2 + camera-2-dy ^ 2) ^ 0.5
+  camera-3-dx := camera-3[1] - next-truth[1]
+  camera-3-dy := camera-3[2] - next-truth[2]
+  camera-3-range := (camera-3-dx ^ 2 + camera-3-dy ^ 2) ^ 0.5
+  camera-4-dx := camera-4[1] - next-truth[1]
+  camera-4-dy := camera-4[2] - next-truth[2]
+  camera-4-range := (camera-4-dx ^ 2 + camera-4-dy ^ 2) ^ 0.5
 
-  range-1 := camera-1-delta[3] + 0.12 * math/sin(simulation-time * 1.31 + 0.2)
-  range-2 := camera-2-delta[3] + 0.10 * math/sin(simulation-time * 1.73 + 1.1)
-  range-3 := camera-3-delta[3] + 0.13 * math/sin(simulation-time * 1.17 + 2.4)
-  range-4 := camera-4-delta[3] + 0.11 * math/sin(simulation-time * 1.91 + 3.2)
-  bearing-1 := math/atan2(camera-1-delta[2], camera-1-delta[1]) - next-truth[3] + 0.012 * math/sin(simulation-time * 2.11 + 0.4)
-  bearing-2 := math/atan2(camera-2-delta[2], camera-2-delta[1]) - next-truth[3] + 0.010 * math/sin(simulation-time * 1.67 + 1.7)
-  bearing-3 := math/atan2(camera-3-delta[2], camera-3-delta[1]) - next-truth[3] + 0.013 * math/sin(simulation-time * 2.37 + 2.8)
-  bearing-4 := math/atan2(camera-4-delta[2], camera-4-delta[1]) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.43 + 4.0)
+  range-1 := camera-1-range + 0.12 * math/sin(simulation-time * 1.31 + 0.2)
+  range-2 := camera-2-range + 0.10 * math/sin(simulation-time * 1.73 + 1.1)
+  range-3 := camera-3-range + 0.13 * math/sin(simulation-time * 1.17 + 2.4)
+  range-4 := camera-4-range + 0.11 * math/sin(simulation-time * 1.91 + 3.2)
+  bearing-1 := math/atan2(camera-1-dy, camera-1-dx) - next-truth[3] + 0.012 * math/sin(simulation-time * 2.11 + 0.4)
+  bearing-2 := math/atan2(camera-2-dy, camera-2-dx) - next-truth[3] + 0.010 * math/sin(simulation-time * 1.67 + 1.7)
+  bearing-3 := math/atan2(camera-3-dy, camera-3-dx) - next-truth[3] + 0.013 * math/sin(simulation-time * 2.37 + 2.8)
+  bearing-4 := math/atan2(camera-4-dy, camera-4-dx) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.43 + 4.0)
 
   observation-a := [range-1
                     bearing-1]
@@ -136,75 +158,103 @@ Joseph covariance form before symmetrization.
                   0.0 0.45 0.0
                   0.0 0.0 0.08]
 
-  estimate-trigonometry := ekf/trigonometric-state(estimate)
-  motion-jacobian := ekf/motion-jacobian(estimate,
-    commanded-frame, estimate-trigonometry, Δt)
-  control-jacobian := ekf/control-jacobian(estimate-trigonometry, Δt)
-  predicted-estimate := ekf/predicted-state(estimate,
-    commanded-frame, estimate-trigonometry, Δt)
-  predicted-covariance := ekf/predicted-covariance(covariance,
-    motion-jacobian, control-jacobian, process-covariance)
+  estimate-heading := estimate[3]
+  estimate-cos := math/cos(estimate-heading)
+  estimate-sin := math/sin(estimate-heading)
+  motion-jacobian := [1.0 0.0 -commanded-speed * estimate-sin * Δt
+                      0.0 1.0  commanded-speed * estimate-cos * Δt
+                      0.0 0.0 1.0]
+  control-jacobian := [estimate-cos * Δt 0.0
+                       estimate-sin * Δt 0.0
+                       0.0 Δt]
+  predicted-estimate := estimate + [commanded-speed * estimate-cos * Δt
+                                    commanded-speed * estimate-sin * Δt
+                                    commanded-turn-rate * Δt]
+  predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-covariance ** control-jacobian'
 
-  predicted-delta-1 := ekf/landmark-delta-and-range(predicted-estimate, camera-1)
-  predicted-observation-1 := ekf/predicted-measurement(predicted-estimate, predicted-delta-1)
-  observation-jacobian-1 := ekf/measurement-jacobian(predicted-delta-1)
-  innovation-covariance-1 := ekf/innovation-covariance(predicted-covariance,
-    observation-jacobian-1, measurement-covariance)
-  innovation-inverse-1 := ekf/solve-2x2(innovation-covariance-1)
-  gain-1 := ekf/kalman-gain(predicted-covariance,
-    observation-jacobian-1, innovation-inverse-1)
-  innovation-1 := ekf/innovation(observation-a, predicted-observation-1)
-  corrected-estimate-1 := ekf/corrected-state(predicted-estimate, gain-1, innovation-1)
-  corrected-covariance-1 := ekf/joseph-covariance-update(predicted-covariance,
-    observation-jacobian-1, gain-1, measurement-covariance)
-  symmetric-covariance-1 := ekf/covariance-symmetrization(corrected-covariance-1)
+  predicted-dx-1 := camera-1[1] - predicted-estimate[1]
+  predicted-dy-1 := camera-1[2] - predicted-estimate[2]
+  predicted-q-1 := predicted-dx-1 ^ 2 + predicted-dy-1 ^ 2
+  predicted-range-1 := predicted-q-1 ^ 0.5
+  predicted-observation-1 := [predicted-range-1
+                              math/atan2(predicted-dy-1, predicted-dx-1) - predicted-estimate[3]]
+  observation-jacobian-1 := [-predicted-dx-1 / predicted-range-1 -predicted-dy-1 / predicted-range-1 0.0
+                              predicted-dy-1 / predicted-q-1     -predicted-dx-1 / predicted-q-1 -1.0]
+  innovation-covariance-1 := observation-jacobian-1 ** predicted-covariance ** observation-jacobian-1' + measurement-covariance
+  innovation-determinant-1 := innovation-covariance-1[1,1] * innovation-covariance-1[2,2] - innovation-covariance-1[1,2] * innovation-covariance-1[2,1]
+  innovation-inverse-1 := [ innovation-covariance-1[2,2] / innovation-determinant-1 -innovation-covariance-1[1,2] / innovation-determinant-1
+                           -innovation-covariance-1[2,1] / innovation-determinant-1  innovation-covariance-1[1,1] / innovation-determinant-1]
+  gain-1 := predicted-covariance ** observation-jacobian-1' ** innovation-inverse-1
+  bearing-residual-1 := observation-a[2] - predicted-observation-1[2]
+  innovation-1 := [observation-a[1] - predicted-observation-1[1]
+                   math/atan2(math/sin(bearing-residual-1), math/cos(bearing-residual-1))]
+  corrected-estimate-1 := predicted-estimate + gain-1 ** innovation-1
+  joseph-a-1 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-1 ** observation-jacobian-1
+  corrected-covariance-1 := joseph-a-1 ** predicted-covariance ** joseph-a-1' + gain-1 ** measurement-covariance ** gain-1'
+  symmetric-covariance-1 := 0.5 * (corrected-covariance-1 + corrected-covariance-1')
 
-  predicted-delta-2 := ekf/landmark-delta-and-range(corrected-estimate-1, camera-2)
-  predicted-observation-2 := ekf/predicted-measurement(corrected-estimate-1, predicted-delta-2)
-  observation-jacobian-2 := ekf/measurement-jacobian(predicted-delta-2)
-  innovation-covariance-2 := ekf/innovation-covariance(symmetric-covariance-1,
-    observation-jacobian-2, measurement-covariance)
-  innovation-inverse-2 := ekf/solve-2x2(innovation-covariance-2)
-  gain-2 := ekf/kalman-gain(symmetric-covariance-1,
-    observation-jacobian-2, innovation-inverse-2)
-  innovation-2 := ekf/innovation(observation-b, predicted-observation-2)
-  corrected-estimate-2 := ekf/corrected-state(corrected-estimate-1, gain-2, innovation-2)
-  corrected-covariance-2 := ekf/joseph-covariance-update(symmetric-covariance-1,
-    observation-jacobian-2, gain-2, measurement-covariance)
-  symmetric-covariance-2 := ekf/covariance-symmetrization(corrected-covariance-2)
+  predicted-dx-2 := camera-2[1] - corrected-estimate-1[1]
+  predicted-dy-2 := camera-2[2] - corrected-estimate-1[2]
+  predicted-q-2 := predicted-dx-2 ^ 2 + predicted-dy-2 ^ 2
+  predicted-range-2 := predicted-q-2 ^ 0.5
+  predicted-observation-2 := [predicted-range-2
+                              math/atan2(predicted-dy-2, predicted-dx-2) - corrected-estimate-1[3]]
+  observation-jacobian-2 := [-predicted-dx-2 / predicted-range-2 -predicted-dy-2 / predicted-range-2 0.0
+                              predicted-dy-2 / predicted-q-2     -predicted-dx-2 / predicted-q-2 -1.0]
+  innovation-covariance-2 := observation-jacobian-2 ** symmetric-covariance-1 ** observation-jacobian-2' + measurement-covariance
+  innovation-determinant-2 := innovation-covariance-2[1,1] * innovation-covariance-2[2,2] - innovation-covariance-2[1,2] * innovation-covariance-2[2,1]
+  innovation-inverse-2 := [ innovation-covariance-2[2,2] / innovation-determinant-2 -innovation-covariance-2[1,2] / innovation-determinant-2
+                           -innovation-covariance-2[2,1] / innovation-determinant-2  innovation-covariance-2[1,1] / innovation-determinant-2]
+  gain-2 := symmetric-covariance-1 ** observation-jacobian-2' ** innovation-inverse-2
+  bearing-residual-2 := observation-b[2] - predicted-observation-2[2]
+  innovation-2 := [observation-b[1] - predicted-observation-2[1]
+                   math/atan2(math/sin(bearing-residual-2), math/cos(bearing-residual-2))]
+  corrected-estimate-2 := corrected-estimate-1 + gain-2 ** innovation-2
+  joseph-a-2 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-2 ** observation-jacobian-2
+  corrected-covariance-2 := joseph-a-2 ** symmetric-covariance-1 ** joseph-a-2' + gain-2 ** measurement-covariance ** gain-2'
+  symmetric-covariance-2 := 0.5 * (corrected-covariance-2 + corrected-covariance-2')
 
-  predicted-delta-3 := ekf/landmark-delta-and-range(corrected-estimate-2, camera-3)
-  predicted-observation-3 := ekf/predicted-measurement(corrected-estimate-2, predicted-delta-3)
-  observation-jacobian-3 := ekf/measurement-jacobian(predicted-delta-3)
-  innovation-covariance-3 := ekf/innovation-covariance(symmetric-covariance-2,
-    observation-jacobian-3, measurement-covariance)
-  innovation-inverse-3 := ekf/solve-2x2(innovation-covariance-3)
-  gain-3 := ekf/kalman-gain(symmetric-covariance-2,
-    observation-jacobian-3, innovation-inverse-3)
-  innovation-3 := ekf/innovation(observation-c, predicted-observation-3)
-  corrected-estimate-3 := ekf/corrected-state(corrected-estimate-2, gain-3, innovation-3)
-  corrected-covariance-3 := ekf/joseph-covariance-update(symmetric-covariance-2,
-    observation-jacobian-3, gain-3, measurement-covariance)
-  symmetric-covariance-3 := ekf/covariance-symmetrization(corrected-covariance-3)
+  predicted-dx-3 := camera-3[1] - corrected-estimate-2[1]
+  predicted-dy-3 := camera-3[2] - corrected-estimate-2[2]
+  predicted-q-3 := predicted-dx-3 ^ 2 + predicted-dy-3 ^ 2
+  predicted-range-3 := predicted-q-3 ^ 0.5
+  predicted-observation-3 := [predicted-range-3
+                              math/atan2(predicted-dy-3, predicted-dx-3) - corrected-estimate-2[3]]
+  observation-jacobian-3 := [-predicted-dx-3 / predicted-range-3 -predicted-dy-3 / predicted-range-3 0.0
+                              predicted-dy-3 / predicted-q-3     -predicted-dx-3 / predicted-q-3 -1.0]
+  innovation-covariance-3 := observation-jacobian-3 ** symmetric-covariance-2 ** observation-jacobian-3' + measurement-covariance
+  innovation-determinant-3 := innovation-covariance-3[1,1] * innovation-covariance-3[2,2] - innovation-covariance-3[1,2] * innovation-covariance-3[2,1]
+  innovation-inverse-3 := [ innovation-covariance-3[2,2] / innovation-determinant-3 -innovation-covariance-3[1,2] / innovation-determinant-3
+                           -innovation-covariance-3[2,1] / innovation-determinant-3  innovation-covariance-3[1,1] / innovation-determinant-3]
+  gain-3 := symmetric-covariance-2 ** observation-jacobian-3' ** innovation-inverse-3
+  bearing-residual-3 := observation-c[2] - predicted-observation-3[2]
+  innovation-3 := [observation-c[1] - predicted-observation-3[1]
+                   math/atan2(math/sin(bearing-residual-3), math/cos(bearing-residual-3))]
+  corrected-estimate-3 := corrected-estimate-2 + gain-3 ** innovation-3
+  joseph-a-3 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-3 ** observation-jacobian-3
+  corrected-covariance-3 := joseph-a-3 ** symmetric-covariance-2 ** joseph-a-3' + gain-3 ** measurement-covariance ** gain-3'
+  symmetric-covariance-3 := 0.5 * (corrected-covariance-3 + corrected-covariance-3')
 
-  predicted-delta-4 := ekf/landmark-delta-and-range(corrected-estimate-3, camera-4)
-  predicted-observation-4 := ekf/predicted-measurement(corrected-estimate-3, predicted-delta-4)
-  observation-jacobian-4 := ekf/measurement-jacobian(predicted-delta-4)
-  innovation-covariance-4 := ekf/innovation-covariance(symmetric-covariance-3,
-    observation-jacobian-4, measurement-covariance)
-  innovation-inverse-4 := ekf/solve-2x2(innovation-covariance-4)
-  gain-4 := ekf/kalman-gain(symmetric-covariance-3,
-    observation-jacobian-4, innovation-inverse-4)
-  innovation-4 := ekf/innovation(observation-d, predicted-observation-4)
-  corrected-estimate-4 := ekf/corrected-state(corrected-estimate-3, gain-4, innovation-4)
-  corrected-covariance-4 := ekf/joseph-covariance-update(symmetric-covariance-3,
-    observation-jacobian-4, gain-4, measurement-covariance)
-  symmetric-covariance-4 := ekf/covariance-symmetrization(corrected-covariance-4)
-
-  estimate-finite! := ekf/candidate-finite(corrected-estimate-4,
-    symmetric-covariance-4)
-  covariance-positive! := ekf/covariance-positive-diagonal(symmetric-covariance-4)
-  covariance-symmetric! := ekf/covariance-symmetric(symmetric-covariance-4)
+  predicted-dx-4 := camera-4[1] - corrected-estimate-3[1]
+  predicted-dy-4 := camera-4[2] - corrected-estimate-3[2]
+  predicted-q-4 := predicted-dx-4 ^ 2 + predicted-dy-4 ^ 2
+  predicted-range-4 := predicted-q-4 ^ 0.5
+  predicted-observation-4 := [predicted-range-4
+                              math/atan2(predicted-dy-4, predicted-dx-4) - corrected-estimate-3[3]]
+  observation-jacobian-4 := [-predicted-dx-4 / predicted-range-4 -predicted-dy-4 / predicted-range-4 0.0
+                              predicted-dy-4 / predicted-q-4     -predicted-dx-4 / predicted-q-4 -1.0]
+  innovation-covariance-4 := observation-jacobian-4 ** symmetric-covariance-3 ** observation-jacobian-4' + measurement-covariance
+  innovation-determinant-4 := innovation-covariance-4[1,1] * innovation-covariance-4[2,2] - innovation-covariance-4[1,2] * innovation-covariance-4[2,1]
+  innovation-inverse-4 := [ innovation-covariance-4[2,2] / innovation-determinant-4 -innovation-covariance-4[1,2] / innovation-determinant-4
+                           -innovation-covariance-4[2,1] / innovation-determinant-4  innovation-covariance-4[1,1] / innovation-determinant-4]
+  gain-4 := symmetric-covariance-3 ** observation-jacobian-4' ** innovation-inverse-4
+  bearing-residual-4 := observation-d[2] - predicted-observation-4[2]
+  innovation-4 := [observation-d[1] - predicted-observation-4[1]
+                   math/atan2(math/sin(bearing-residual-4), math/cos(bearing-residual-4))]
+  corrected-estimate-4 := corrected-estimate-3 + gain-4 ** innovation-4
+  joseph-a-4 := [1.0 0.0 0.0; 0.0 1.0 0.0; 0.0 0.0 1.0] - gain-4 ** observation-jacobian-4
+  corrected-covariance-4 := joseph-a-4 ** symmetric-covariance-3 ** joseph-a-4' + gain-4 ** measurement-covariance ** gain-4'
+  symmetric-covariance-4 := 0.5 * (corrected-covariance-4 + corrected-covariance-4')
 
   estimate = corrected-estimate-4
   covariance = symmetric-covariance-4

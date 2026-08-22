@@ -77,7 +77,7 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # console provider in this smallest document closure so reduced, base, full,
 # and compiler-inferred builds all satisfy the same controller contract.
 browser_project_core = ["resident-routing-source", "program", "pretty_print", "formatter", "serde", "browser_host_console"]
-browser_project = ["browser_project_core", "source", "sample_hold", "state_step", "ekf", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_scene", "baselib", "mika", "statements_default", "state_machines", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "stats_default", "combinatorics_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
+browser_project = ["browser_project_core", "source", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_scene", "baselib", "mika", "statements_default", "state_machines", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "stats_default", "combinatorics_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
 browser_compute = [
   "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
   "mech-runtime/compute",
@@ -86,7 +86,6 @@ browser_compute = [
   "mech-stdlib/native-plan", "dep:mech-compute", "dep:mech-gpu", "mech-gpu/runtime-host",
 ]
 served_project_authority = ["host_delegation_signing"]
-ekf = ["mech-stdlib/ekf"]
 browser_host_dom = ["dep:mech-browser", "mech-browser/provider", "mech-browser/serde"]
 browser_host_time = ["dep:mech-time", "mech-time/browser"]
 browser_host_timer = ["dep:mech-timer", "mech-timer/browser"]

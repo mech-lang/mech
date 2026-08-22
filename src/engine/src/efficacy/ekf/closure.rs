@@ -16,10 +16,7 @@ use crate::{
     decode_program_artifact_bytecode_v1,
 };
 
-use super::catalog::{
-    FROZEN_INNOVATION_FROM_FRAME_ITEM, FROZEN_INNOVATION_FROM_FRAME_NAME,
-    FROZEN_INNOVATION_FROM_FRAME_SPEC, frozen_ekf_compiler_catalog,
-};
+use super::catalog::frozen_ekf_compiler_catalog;
 use super::operation::{
     EkfKernel, EkfPredicate, FROZEN_EKF_OPERATIONS, FrozenEkfOperation, FrozenEkfOperationSpec,
     FrozenEkfValueShape,
@@ -197,30 +194,21 @@ impl FrozenEkfArtifactClosure {
 
             if node.operation.module_path.as_ref() == ["ekf"] {
                 let canonical = format!("ekf/{}", node.operation.operation_name);
-                let spec = if canonical == FROZEN_INNOVATION_FROM_FRAME_NAME {
-                    &FROZEN_INNOVATION_FROM_FRAME_SPEC
-                } else if let Some(spec) = FROZEN_EKF_OPERATIONS
+                let Some(spec) = FROZEN_EKF_OPERATIONS
                     .iter()
                     .find(|spec| spec.canonical_name == canonical)
-                {
-                    spec
-                } else {
+                else {
                     return Err(FrozenEkfArtifactClosureError::UnexpectedExecutableNode {
                         node: node.node,
                         operation: node.operation.clone(),
                     });
                 };
-                let operation_key = if canonical == FROZEN_INNOVATION_FROM_FRAME_NAME {
-                    "ekf/innovation"
-                } else {
-                    spec.canonical_name
-                };
                 if output_by_operation
-                    .insert(operation_key, outputs.first().copied())
+                    .insert(spec.canonical_name, outputs.first().copied())
                     .is_some()
                 {
                     return Err(FrozenEkfArtifactClosureError::DuplicateFrozenOperation {
-                        operation: operation_key,
+                        operation: spec.canonical_name,
                     });
                 }
                 validate_frozen_operation(artifact, node.node, spec, declared, &inputs, &outputs)?;
@@ -1114,10 +1102,6 @@ fn compile_frozen_ekf_product(
             .expect("the frozen catalog installs every EKF module export");
         program.bind_compiler_catalog_export(export, spec.canonical_name)?;
     }
-    let observation_adapter = catalog
-        .module_export("ekf", FROZEN_INNOVATION_FROM_FRAME_ITEM)
-        .expect("the frozen catalog installs its observation adapter");
-    program.bind_compiler_catalog_export(observation_adapter, FROZEN_INNOVATION_FROM_FRAME_NAME)?;
     let tree = mech_syntax::parser::parse(source.trim())?;
     program.plan_tree_with_services(&tree, services)?;
     let (source_artifact, bytecode) = program.compile_program_product()?.into_parts();
@@ -1188,13 +1172,6 @@ mod tests {
         assert_eq!(compilation.source_closure.integrity_predicates.len(), 3);
         assert_eq!(compilation.source_closure.state_updates.len(), 2);
         assert_eq!(compilation.source_closure.constraints.len(), 3);
-        assert!(
-            compilation
-                .source_closure
-                .observation_adapter_nodes
-                .is_empty()
-        );
-        assert!(compilation.source_closure.structural_alias_nodes.is_empty());
         assert_eq!(services.reads.len(), 1);
         assert_eq!(services.live_bindings.len(), 1);
         Ok(())

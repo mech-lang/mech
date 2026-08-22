@@ -25,10 +25,10 @@ runtime = ["program", "functions"]
 # Runtime-only diagnostic hook consumed by mech-runtime's non-default Gate A probes.
 runtime_bench_probes = ["runtime"]
 resident-ekf = ["mech-core/resident-execution"]
-ekf = ["resident-ekf", "runtime", "f64", "matrixd", "row_vectord"]
 artifact-codec = ["dep:serde_json", "mech-core/program", "mech-core/serde"]
 resident-artifact = [
-  "ekf", "artifact-codec",
+  "resident-ekf", "runtime", "artifact-codec",
+  "f64", "matrixd", "row_vectord",
 ]
 native-plan = ["runtime", "mech-core/native-plan"]
 native-link = ["runtime"]

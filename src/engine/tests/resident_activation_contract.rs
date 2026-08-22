@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 
 const TRACE_SHA256: &str = "ab901e1d115aa92166dc2a6d45a28732e6a548363b829997aa410ae4c2d77c8b";
 const TRAJECTORY_SHA256: &str = "ddca8ab17cb390839d4c77e7cecc5203122f249685f5a28c36fd342cf303a758";
-const EKF_SOURCE_SHA256: &str = "14dce066e441f78e928b56493dcd9b2ab4dad8b969e9c145e847e9f65b34aa96";
+const EKF_SOURCE_SHA256: &str = "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec";
 
 fn repository_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")

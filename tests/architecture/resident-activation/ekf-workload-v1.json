@@ -4,7 +4,7 @@
   "workload": "ordinary-ekf-resident-v1",
   "source": {
     "path": "tests/architecture/resident-activation/ekf-source-v1.mec",
-    "sha256": "14dce066e441f78e928b56493dcd9b2ab4dad8b969e9c145e847e9f65b34aa96"
+    "sha256": "a64d72c34434fe240dfac2ce31763d4b1af24e8eb3abc0319c167db50468e1ec"
   },
   "gate_b": {
     "contract": "benchmarks/runtime/gate-b/ekf-v1.json",
@@ -63,7 +63,7 @@
     {"ordinal": 8, "role": "resident-kernel", "operation": "ekf/innovation-covariance", "input_schemas": ["3x3", "2x3", "2x2"], "output_schema": "2x2", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
     {"ordinal": 9, "role": "resident-kernel", "operation": "ekf/solve-2x2", "input_schemas": ["2x2"], "output_schema": "2x2", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
     {"ordinal": 10, "role": "resident-kernel", "operation": "ekf/kalman-gain", "input_schemas": ["3x3", "2x3", "2x2"], "output_schema": "3x2", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
-    {"ordinal": 11, "role": "resident-kernel", "operation": "ekf/innovation-from-frame", "input_schemas": ["4x1", "2x1"], "output_schema": "2x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
+    {"ordinal": 11, "role": "resident-kernel", "operation": "ekf/innovation", "input_schemas": ["4x1", "2x1"], "output_schema": "2x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
     {"ordinal": 12, "role": "resident-kernel", "operation": "ekf/corrected-state", "input_schemas": ["3x1", "3x2", "2x1"], "output_schema": "3x1", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
     {"ordinal": 13, "role": "resident-kernel", "operation": "ekf/joseph-covariance-update", "input_schemas": ["3x3", "2x3", "3x2", "2x2"], "output_schema": "3x3", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},
     {"ordinal": 14, "role": "resident-kernel", "operation": "ekf/covariance-symmetrization", "input_schemas": ["3x3"], "output_schema": "3x3", "contract": "Declared", "delivery": "Signal", "interaction": "Pure", "input_access": "Read", "output_access": "Write", "construction": {"kind": "FullWrite", "shape": "Declared"}, "alias": "NoAlias", "change_detection": "KernelReported"},

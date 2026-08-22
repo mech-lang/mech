@@ -133,6 +133,12 @@ harness = r'''<script>
       const finitePoint = (element) => element &&
         Number.isFinite(Number(element.getAttribute("cx"))) &&
         Number.isFinite(Number(element.getAttribute("cy")));
+      const trackingError = finitePoint(truth) && finitePoint(estimate)
+        ? Math.hypot(
+            Number(estimate.getAttribute("cx")) - Number(truth.getAttribute("cx")),
+            Number(estimate.getAttribute("cy")) - Number(truth.getAttribute("cy")),
+          )
+        : Number.POSITIVE_INFINITY;
       const lineStripPoints = (element) => (element?.getAttribute("points") || "")
         .trim().split(/\s+/).filter(Boolean).length;
       const sceneRect = scene?.getBoundingClientRect();
@@ -151,6 +157,7 @@ harness = r'''<script>
         updates >= 160 &&
         cameras.length === 4 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
+        trackingError <= 25 &&
         truthMoved &&
         lineStripPoints(covariance) >= 48 &&
         lineStripPoints(truthPath) >= 64 &&
@@ -164,6 +171,7 @@ harness = r'''<script>
         root.dataset.mechCovariancePoints = String(lineStripPoints(covariance));
         root.dataset.mechTruthPathPoints = String(lineStripPoints(truthPath));
         root.dataset.mechEstimatePathPoints = String(lineStripPoints(estimatePath));
+        root.dataset.mechTrackingErrorPixels = trackingError.toFixed(4);
         root.dataset.mechSceneVisible = String(sceneVisible);
         root.dataset.mechOutputPresentation = String(outputPresentation);
         root.dataset.mechDone = "true";
@@ -251,6 +259,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-covariance-points="[4-9][0-9]' "$dom_file" \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
+  || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
   || [[ -z "$updates" || "$updates" -lt 160 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident EKF browser smoke test failed" >&2
@@ -263,4 +272,5 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'EKF_E2E display_updates=%s cameras=4 truth_moved=true covariance=true paths=true output_presentation=true console_errors=0 page_errors=0\n' "$updates"
+tracking_error_pixels="$(sed -n 's/.*data-mech-tracking-error-pixels="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+printf 'EKF_E2E display_updates=%s cameras=4 truth_moved=true covariance=true paths=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$tracking_error_pixels"
