@@ -9853,6 +9853,22 @@
     },
     {
       "enum": "LegacyValue",
+      "path": "hosts/scene/src/schema.rs",
+      "roles": [
+        "machine-argument",
+        "semantic-payload"
+      ],
+      "sites": [
+        {
+          "column": 9,
+          "line": 788
+        }
+      ],
+      "target": "bool-snapshot",
+      "variant": "Bool"
+    },
+    {
+      "enum": "LegacyValue",
       "path": "machines/set/src/membership/element_of.rs",
       "roles": [
         "semantic-payload"

@@ -18145,6 +18145,13 @@
     {
       "column": 9,
       "enum": "LegacyValue",
+      "line": 788,
+      "path": "hosts/scene/src/schema.rs",
+      "variant": "Bool"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
       "line": 62,
       "path": "machines/set/src/membership/element_of.rs",
       "variant": "Bool"
