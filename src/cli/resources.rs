@@ -92,7 +92,11 @@ pub(crate) struct WebResourceDefaults {
 }
 
 impl WebResourceDefaults {
-    pub(crate) fn new(version: &str) -> Self {
+    pub(crate) fn for_current_package() -> Self {
+        Self::for_package_version(env!("CARGO_PKG_VERSION"))
+    }
+
+    fn for_package_version(version: &str) -> Self {
         Self {
             shim_backup_url:
                 "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html"
@@ -501,10 +505,23 @@ mod tests {
 
     #[test]
     fn default_shim_fallback_points_at_the_shipped_index_shell() {
-        let defaults = WebResourceDefaults::new("0.0.0");
+        let defaults = WebResourceDefaults::for_package_version("0.0.0");
         assert_eq!(
             defaults.shim_backup_url,
             "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html",
+        );
+    }
+
+    #[test]
+    fn web_release_fallbacks_use_an_exact_package_version() {
+        let defaults = WebResourceDefaults::for_package_version("0.3.6");
+        assert_eq!(
+            defaults.wasm_backup_url,
+            "https://github.com/mech-lang/mech/releases/download/v0.3.6-beta/mech_wasm_bg.wasm",
+        );
+        assert_eq!(
+            defaults.js_backup_url,
+            "https://github.com/mech-lang/mech/releases/download/v0.3.6-beta/mech_wasm.js",
         );
     }
 }

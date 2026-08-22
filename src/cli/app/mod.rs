@@ -128,7 +128,7 @@ async fn async_main() -> MResult<()> {
 pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     let flags = root_flags(&cli_matches);
     #[cfg(any(feature = "formatter", feature = "serve"))]
-    let resources = WebResourceDefaults::new(VERSION);
+    let resources = WebResourceDefaults::for_current_package();
 
     #[cfg(feature = "bundle_web")]
     if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
