@@ -1447,6 +1447,20 @@ mod tests {
     }
 
     #[test]
+    fn accepted_source_never_migrates_an_output_across_a_changed_definition() {
+        let mut session = ResidentReplSession::new(SourceRuntimeFactory);
+        session.submit("x := 1").unwrap();
+
+        session.replace_source("x := 2".to_string()).unwrap();
+
+        assert_eq!(
+            session.symbol("x").unwrap().unwrap().to_string(),
+            "2",
+            "a matching lexical name cannot make a changed computation semantically compatible",
+        );
+    }
+
+    #[test]
     fn missing_symbol_is_absent_even_when_an_unrelated_runtime_is_active() {
         let mut session = ResidentReplSession::new(SourceRuntimeFactory);
         session.submit("present := 7").unwrap();

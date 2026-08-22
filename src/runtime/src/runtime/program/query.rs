@@ -373,6 +373,8 @@ fn compatible_state_mappings(
             ArtifactSource::Constant(_) => None,
         })
         .collect::<BTreeSet<_>>();
+    let affected_targets = artifact_slots_depending_on(target, &excluded_targets);
+    let mut semantic_equivalence = BTreeMap::new();
     let mut mappings = Vec::new();
 
     for binding in target.interactive_symbol_bindings() {
@@ -463,9 +465,7 @@ fn compatible_state_mappings(
             );
         if mapped_targets.contains(&target_slot)
             || target_lexical_name == Some("ans")
-            || semantic_source.is_some_and(|source| {
-                artifact_source_depends_on_slots(target, source, &excluded_targets)
-            })
+            || matches!(semantic_source, Some(ArtifactSource::Slot(slot)) if affected_targets.contains(&slot))
             || !target
                 .slots()
                 .get(target_slot.get() as usize)
@@ -473,7 +473,24 @@ fn compatible_state_mappings(
         {
             continue;
         }
+        let Some(target_semantic_source) = semantic_source else {
+            continue;
+        };
         let Some(source_output) = source.outputs().iter().find(|source_output| {
+            let source_semantic_source = source_output
+                .interactive_binding
+                .as_ref()
+                .map(|binding| binding.artifact_source)
+                .or_else(|| {
+                    match source
+                        .slots()
+                        .get(source_output.source.get() as usize)?
+                        .producer
+                    {
+                        ProducerReference::Output { source, .. } => Some(source),
+                        _ => Some(ArtifactSource::Slot(source_output.source)),
+                    }
+                });
             source_output.name == target_output.name
                 && source_output
                     .interactive_binding
@@ -485,6 +502,15 @@ fn compatible_state_mappings(
                     .slots()
                     .get(source_output.source.get() as usize)
                     .is_some_and(|slot| slot.role == SlotRole::Output)
+                && source_semantic_source.is_some_and(|source_semantic_source| {
+                    artifact_sources_semantically_equal(
+                        source,
+                        source_semantic_source,
+                        target,
+                        target_semantic_source,
+                        &mut semantic_equivalence,
+                    )
+                })
         }) else {
             continue;
         };
@@ -499,50 +525,217 @@ fn compatible_state_mappings(
 }
 
 #[cfg(feature = "resident-routing")]
-fn artifact_source_depends_on_slots(
+fn artifact_slots_depending_on(
     artifact: &ProgramArtifact,
-    source: ArtifactSource,
-    targets: &std::collections::BTreeSet<mech_core::CellSlotId>,
-) -> bool {
-    fn visit(
-        artifact: &ProgramArtifact,
-        source: ArtifactSource,
-        targets: &std::collections::BTreeSet<mech_core::CellSlotId>,
-        visited: &mut std::collections::BTreeSet<mech_core::CellSlotId>,
-    ) -> bool {
-        let ArtifactSource::Slot(slot) = source else {
-            return false;
-        };
-        if targets.contains(&slot) {
-            return true;
-        }
-        if !visited.insert(slot) {
-            return false;
-        }
-        let Some(declaration) = artifact.slots().get(slot.get() as usize) else {
-            return false;
+    roots: &std::collections::BTreeSet<mech_core::CellSlotId>,
+) -> std::collections::BTreeSet<mech_core::CellSlotId> {
+    let mut dependents = vec![Vec::new(); artifact.slots().len()];
+    for declaration in artifact.slots() {
+        let target = declaration.slot;
+        let mut add_source = |source: ArtifactSource| {
+            if let ArtifactSource::Slot(source) = source
+                && let Some(slots) = dependents.get_mut(source.get() as usize)
+            {
+                slots.push(target);
+            }
         };
         match declaration.producer {
-            ProducerReference::Input(_) => false,
-            ProducerReference::Output { source, .. } => visit(artifact, source, targets, visited),
+            ProducerReference::Input(_) => {}
+            ProducerReference::Output { source, .. } => add_source(source),
             ProducerReference::NodeOutput { node, .. } => {
                 let Some(node) = artifact.nodes().get(node.get() as usize) else {
-                    return false;
+                    continue;
                 };
-                artifact.bindings()
+                for binding in &artifact.bindings()
                     [node.input_bindings.start as usize..node.input_bindings.end as usize]
-                    .iter()
-                    .any(|binding| match binding {
-                        BindingDeclaration::Input { source, .. } => {
-                            visit(artifact, *source, targets, visited)
-                        }
-                        BindingDeclaration::Output { .. } => false,
-                    })
+                {
+                    if let BindingDeclaration::Input { source, .. } = binding {
+                        add_source(*source);
+                    }
+                }
             }
         }
     }
 
-    visit(artifact, source, targets, &mut Default::default())
+    let mut affected = roots.clone();
+    let mut pending = roots.iter().copied().collect::<Vec<_>>();
+    while let Some(source) = pending.pop() {
+        let Some(slots) = dependents.get(source.get() as usize) else {
+            continue;
+        };
+        for target in slots {
+            if affected.insert(*target) {
+                pending.push(*target);
+            }
+        }
+    }
+    affected
+}
+
+#[cfg(feature = "resident-routing")]
+fn artifact_sources_semantically_equal(
+    source_artifact: &ProgramArtifact,
+    source: ArtifactSource,
+    target_artifact: &ProgramArtifact,
+    target: ArtifactSource,
+    cache: &mut std::collections::BTreeMap<(ArtifactSource, ArtifactSource), bool>,
+) -> bool {
+    let root = (source, target);
+    if let Some(equal) = cache.get(&root) {
+        return *equal;
+    }
+
+    let mut pending = vec![root];
+    let mut visited = std::collections::BTreeSet::new();
+    while let Some((source, target)) = pending.pop() {
+        if let Some(equal) = cache.get(&(source, target)) {
+            if !equal {
+                cache.insert(root, false);
+                return false;
+            }
+            continue;
+        }
+        if !visited.insert((source, target)) {
+            continue;
+        }
+        match (source, target) {
+            (ArtifactSource::Constant(source), ArtifactSource::Constant(target)) => {
+                let source = source_artifact
+                    .constants()
+                    .entry(source)
+                    .map(|entry| entry.hash());
+                let target = target_artifact
+                    .constants()
+                    .entry(target)
+                    .map(|entry| entry.hash());
+                if source.is_none() || source != target {
+                    cache.insert(root, false);
+                    return false;
+                }
+            }
+            (ArtifactSource::Slot(source), ArtifactSource::Slot(target)) => {
+                let (Some(source), Some(target)) = (
+                    source_artifact.slots().get(source.get() as usize),
+                    target_artifact.slots().get(target.get() as usize),
+                ) else {
+                    cache.insert(root, false);
+                    return false;
+                };
+                if source.role != target.role
+                    || source_artifact.schemas().get(source.schema)
+                        != target_artifact.schemas().get(target.schema)
+                {
+                    cache.insert(root, false);
+                    return false;
+                }
+                match (source.producer, target.producer) {
+                    (ProducerReference::Input(source), ProducerReference::Input(target)) => {
+                        let (Some(source), Some(target)) = (
+                            source_artifact.inputs().get(source.get() as usize),
+                            target_artifact.inputs().get(target.get() as usize),
+                        ) else {
+                            cache.insert(root, false);
+                            return false;
+                        };
+                        if source.name != target.name
+                            || source_artifact.schemas().get(source.schema)
+                                != target_artifact.schemas().get(target.schema)
+                        {
+                            cache.insert(root, false);
+                            return false;
+                        }
+                    }
+                    (
+                        ProducerReference::Output { source, .. },
+                        ProducerReference::Output { source: target, .. },
+                    ) => pending.push((source, target)),
+                    (
+                        ProducerReference::NodeOutput {
+                            node: source_node,
+                            output_ordinal: source_ordinal,
+                        },
+                        ProducerReference::NodeOutput {
+                            node: target_node,
+                            output_ordinal: target_ordinal,
+                        },
+                    ) => {
+                        let (Some(source_node), Some(target_node)) = (
+                            source_artifact.nodes().get(source_node.get() as usize),
+                            target_artifact.nodes().get(target_node.get() as usize),
+                        ) else {
+                            cache.insert(root, false);
+                            return false;
+                        };
+                        if source_ordinal != target_ordinal
+                            || source_node.operation != target_node.operation
+                            || source_node.requirement.and_then(|requirement| {
+                                source_artifact.requirements().get(requirement)
+                            }) != target_node.requirement.and_then(|requirement| {
+                                target_artifact.requirements().get(requirement)
+                            })
+                        {
+                            cache.insert(root, false);
+                            return false;
+                        }
+                        let source_inputs =
+                            source_artifact.bindings()[source_node.input_bindings.start as usize
+                                ..source_node.input_bindings.end as usize]
+                                .iter()
+                                .filter_map(|binding| match binding {
+                                    BindingDeclaration::Input {
+                                        port_ordinal,
+                                        source,
+                                        ..
+                                    } => Some((*port_ordinal, *source)),
+                                    BindingDeclaration::Output { .. } => None,
+                                });
+                        let target_inputs =
+                            target_artifact.bindings()[target_node.input_bindings.start as usize
+                                ..target_node.input_bindings.end as usize]
+                                .iter()
+                                .filter_map(|binding| match binding {
+                                    BindingDeclaration::Input {
+                                        port_ordinal,
+                                        source,
+                                        ..
+                                    } => Some((*port_ordinal, *source)),
+                                    BindingDeclaration::Output { .. } => None,
+                                });
+                        let source_inputs = source_inputs.collect::<Vec<_>>();
+                        let target_inputs = target_inputs.collect::<Vec<_>>();
+                        if source_inputs.len() != target_inputs.len()
+                            || source_inputs
+                                .iter()
+                                .zip(&target_inputs)
+                                .any(|(source, target)| source.0 != target.0)
+                        {
+                            cache.insert(root, false);
+                            return false;
+                        }
+                        pending.extend(
+                            source_inputs
+                                .into_iter()
+                                .zip(target_inputs)
+                                .map(|(source, target)| (source.1, target.1)),
+                        );
+                    }
+                    _ => {
+                        cache.insert(root, false);
+                        return false;
+                    }
+                }
+            }
+            _ => {
+                cache.insert(root, false);
+                return false;
+            }
+        }
+    }
+
+    for pair in visited {
+        cache.insert(pair, true);
+    }
+    true
 }
 
 fn missing_resident_symbol(operation: &'static str, name: &str) -> MechError {
