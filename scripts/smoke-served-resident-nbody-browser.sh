@@ -96,7 +96,7 @@ import sys
 path = Path(sys.argv[1])
 html = path.read_text()
 marker = "</head>"
-harness = '''<script>
+harness = r'''<script>
     const root = document.documentElement;
     const originalConsoleError = console.error;
     console.error = (...args) => {
@@ -155,6 +155,32 @@ harness = '''<script>
       const sceneGeometryCorrect = bodyRadii.every(
         (radius, index) => radius >= expectedRadiusBands[index][0] && radius < expectedRadiusBands[index][1]
       );
+      const guidePoints = (guide) => (guide?.getAttribute("points") || "")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((point) => point.split(",").map(Number));
+      const bodyNames = ["mercury", "venus", "earth", "mars", "jupiter", "saturn", "uranus", "neptune", "pluto"];
+      const guidesMatchBodies = bodyNames.every((name, index) => {
+        const guide = document.querySelector(`[data-mech-scene-id="orbit-${name}"]`);
+        const body = document.querySelector(`[data-mech-scene-id="body-${index + 1}"]`);
+        const points = guidePoints(guide);
+        if (guide?.tagName.toLowerCase() !== "polyline" || points.length < 97 || !body) return false;
+        const bodyX = Number(body.getAttribute("cx"));
+        const bodyY = Number(body.getAttribute("cy"));
+        return Math.min(...points.map(([x, y]) => Math.hypot(x - bodyX, y - bodyY))) < 8;
+      });
+      const guideRadialRange = (name) => {
+        const radii = guidePoints(document.querySelector(`[data-mech-scene-id="orbit-${name}"]`))
+          .map(([x, y]) => Math.hypot(x - 430, y - 380));
+        return radii.length > 0 ? [Math.min(...radii), Math.max(...radii)] : [Number.NaN, Number.NaN];
+      };
+      const neptuneGuideRange = guideRadialRange("neptune");
+      const plutoGuideRange = guideRadialRange("pluto");
+      const orbitGuidesPhysicallyDistinct =
+        neptuneGuideRange[1] - neptuneGuideRange[0] < 5 &&
+        plutoGuideRange[1] - plutoGuideRange[0] > 50 &&
+        plutoGuideRange[1] > neptuneGuideRange[1] + 50;
       const sunOffset = bodyRadii[0];
       const mercuryOffset = bodyRadii[1];
       if (
@@ -192,6 +218,8 @@ harness = '''<script>
         mercury &&
         circles.length === 10 &&
         orbitGuides.length === 9 &&
+        guidesMatchBodies &&
+        orbitGuidesPhysicallyDistinct &&
         title?.textContent === "Solar-System Orbit Viewer" &&
         sceneGeometryCorrect &&
         sunCentered &&
@@ -205,6 +233,10 @@ harness = '''<script>
           root.dataset.mechRendered = String(displayUpdates);
           root.dataset.mechCircles = String(circles.length);
           root.dataset.mechOrbitGuides = String(orbitGuides.length);
+          root.dataset.mechGuidesMatchBodies = String(guidesMatchBodies);
+          root.dataset.mechOrbitGuidesPhysicallyDistinct = String(orbitGuidesPhysicallyDistinct);
+          root.dataset.mechNeptuneGuideRange = neptuneGuideRange.map(value => value.toFixed(3)).join(",");
+          root.dataset.mechPlutoGuideRange = plutoGuideRange.map(value => value.toFixed(3)).join(",");
           root.dataset.mechSceneTitle = title.textContent;
           root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
           root.dataset.mechSceneVisible = String(sceneVisible);
@@ -309,10 +341,14 @@ set -e
 
 rendered="$(sed -n 's/.*data-mech-rendered="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 sun_frames="$(sed -n 's/.*data-mech-sun-frame-count="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
+neptune_guide_range="$(sed -n 's/.*data-mech-neptune-guide-range="\([^"]*\)".*/\1/p' "$dom_file" | head -1)"
+pluto_guide_range="$(sed -n 's/.*data-mech-pluto-guide-range="\([^"]*\)".*/\1/p' "$dom_file" | head -1)"
 if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-done="true"' "$dom_file" \
   || ! grep -q 'data-mech-circles="10"' "$dom_file" \
   || ! grep -q 'data-mech-orbit-guides="9"' "$dom_file" \
+  || ! grep -q 'data-mech-guides-match-bodies="true"' "$dom_file" \
+  || ! grep -q 'data-mech-orbit-guides-physically-distinct="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-title="Solar-System Orbit Viewer"' "$dom_file" \
   || ! grep -q 'data-mech-scene-geometry-correct="true"' "$dom_file" \
   || ! grep -q 'data-mech-sun-centered="true"' "$dom_file" \
@@ -339,4 +375,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   exit 1
 fi
 
-printf 'NBODY_E2E native_energy=true display_updates=%s sun_frames=%s bodies=10 orbit_guides=9 title=true scene_geometry=true sun_centered_continuously=true mercury_clears_sun=true scene_visible=true rich_scene=true rich_operation=update mercury_moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered" "$sun_frames"
+printf 'NBODY_E2E native_energy=true display_updates=%s sun_frames=%s bodies=10 orbit_guides=9 guides_match_bodies=true neptune_guide_range=%s pluto_guide_range=%s title=true scene_geometry=true sun_centered_continuously=true mercury_clears_sun=true scene_visible=true rich_scene=true rich_operation=update mercury_moved=true output_presentation=true console_errors=0 page_errors=0\n' "$rendered" "$sun_frames" "$neptune_guide_range" "$pluto_guide_range"

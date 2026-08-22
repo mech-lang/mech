@@ -14,101 +14,115 @@ MECH_SOLAR_MASS = 4.0 * MECH_PI**2
 MECH_DT = 0.002
 MECH_TURNS = 4_096
 STATE_QUANTUM = 1.0e-8
-EXPECTED_TEN_BODY_STATE = "0c2206f579e31f4c8fa4efa1cd32cab53386224fda0f4593274843e12440f8f8"
-JPL_MERCURY_SEMIMAJOR_AXIS_AU = 0.38709927
-JPL_MERCURY_ECCENTRICITY = 0.20563593
+EXPECTED_TEN_BODY_STATE = "f9194e44d424d554c68dfcecbd8f0af95e764b65aff5387fd99d1a781c78d3c8"
+JPL_ORBITS = (
+    ("Mercury", 0.3870982252718477, 0.2056302515978038),
+    ("Venus", 0.7233268496756070, 0.006755697268576816),
+    ("Earth", 1.000371833994387, 0.01704239718110438),
+    ("Mars", 1.523678184286835, 0.09331460654156362),
+    ("Jupiter", 5.205108585205607, 0.04892305962953223),
+    ("Saturn", 9.581451990528134, 0.05559928887285597),
+    ("Uranus", 19.22993812529615, 0.04439367187710320),
+    ("Neptune", 30.09700542229719, 0.01114790154011905),
+    ("Pluto", 39.50058973957585, 0.2478572758892915),
+)
 
 
 def mech_bodies() -> list[list[object]]:
     year = DAYS_PER_YEAR
     mass = MECH_SOLAR_MASS
-    bodies = [
-        [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], mass],
+    return [
         [
-            [-0.3895481522339008, -0.1503099879924185, 0.02350666145222942],
+            [0.0, 0.0, 0.0],
             [
-                0.004308277706530398 * year,
-                -0.02502425088636981 * year,
-                -0.002439088939653241 * year,
+                5.37374287703080437e-06 * year,
+                -7.41169057513150263e-06 * year,
+                -9.41516755244529502e-08 * year,
+            ],
+            mass,
+        ],
+        [
+            [-0.1407280797108344, -0.4439009580270337, -0.02334555919971206],
+            [
+                0.0211742451018037403 * year,
+                -0.00710538711113244733 * year,
+                -0.00252292518239450756 * year,
             ],
             1.660120e-07 * mass,
         ],
         [
-            [-0.71803521454713496, 0.041947688018485076, 0.041304042456734767],
+            [-0.7186302169204941, -0.02250380069428597, 0.04117184128636830],
             [
-                -0.0013897739822126357 * year,
-                -0.020119890903497486 * year,
-                -0.00030021717325320866 * year,
+                0.000518906490022535321 * year,
+                -0.0203135533130517909 * year,
+                -0.000307268671743680998 * year,
             ],
             2.447838e-06 * mass,
         ],
         [
-            [-0.17713546150023925, 0.96724162210078579, -0.0000039007362829064718],
+            [-0.1685246483858782, 0.9687833049070306, -0.000004120490278477264],
             [
-                -0.017201146327519165 * year,
-                -0.0031864352617521142 * year,
-                0.00000018827814191274 * year,
+                -0.0172285720895999014 * year,
+                -0.00301507194043644251 * year,
+                -0.0000000585259466404432129 * year,
             ],
             3.003489e-06 * mass,
         ],
         [
-            [1.3907159267594730, -0.013415706106135855, -0.034467796700612273],
+            [1.390361066039004, -0.02100972225898463, -0.03461801440927048],
             [
-                0.00021345415375975118 * year,
-                0.015123072614264662 * year,
-                0.00030512951698556953 * year,
+                0.000753300878828797971 * year,
+                0.0151788869860826885 * year,
+                0.000299659058967668502 * year,
             ],
             3.227151e-07 * mass,
         ],
         [
-            [4.84143144246472090, -1.16032004402742839, -0.103622044471123109],
+            [4.003460488693537, 2.935353187887882, -0.1018230443988181],
             [
-                0.00166007664274403694 * year,
-                0.00769901118419740425 * year,
-                -0.0000690460016972063023 * year,
+                -0.00455837705250217509 * year,
+                0.00643986253216750643 * year,
+                0.0000753759450047445577 * year,
             ],
             0.000954791938424326609 * mass,
         ],
         [
-            [8.34336671824457987, 4.12479856412430479, -0.403523417114321381],
+            [6.408556035505925, 6.568042752621957, -0.3691272880681217],
             [
-                -0.00276742510726862411 * year,
-                0.00499852801234917238 * year,
-                0.0000230417297573763929 * year,
+                -0.00428516675602203662 * year,
+                0.00388457920257733250 * year,
+                0.000102515602671251747 * year,
             ],
             0.000285885980666130812 * mass,
         ],
         [
-            [12.8943695621391310, -15.1111514016986312, -0.223307578892655734],
+            [14.43051609648136, -13.73565967460644, -0.2381293855338772],
             [
-                0.00296460137564761618 * year,
-                0.00237847173959480950 * year,
-                -0.0000296589568540237556 * year,
+                0.00268383937076146876 * year,
+                0.00266501521249669056 * year,
+                -0.0000248452866168716821 * year,
             ],
             0.0000436624404335156298 * mass,
         ],
         [
-            [15.3796971148509165, -25.9193146099879641, 0.179258772950371181],
+            [16.81075807703606, -24.99265146883861, 0.1272705680239183],
             [
-                0.00268067772490389322 * year,
-                0.00162824170038242295 * year,
-                -0.000095159225451971587 * year,
+                0.00258459075834710852 * year,
+                0.00176894334798696740 * year,
+                -0.0000962942121658658866 * year,
             ],
             0.0000515138902046611451 * mass,
         ],
         [
-            [-9.87512510193949936, -27.9392880241831424, 5.06873275440839440],
+            [-9.876866563865008, -27.95802013288459, 5.850814086362886],
             [
-                0.00344178030872987300 * year,
-                -0.00152819214839188910 * year,
-                -0.00129137458409475460 * year,
+                0.00304437716859956966 * year,
+                -0.00153730074570079052 * year,
+                -0.000717326330158363440 * year,
             ],
             6.547e-09 * mass,
         ],
     ]
-    momentum = [sum(body[1][axis] * body[2] for body in bodies) for axis in range(3)]
-    bodies[0][1] = [-component / mass for component in momentum]
-    return bodies
 
 
 def benchmark_bodies() -> list[list[object]]:
@@ -196,9 +210,11 @@ def state_hash(bodies: list[list[object]]) -> str:
     return digest.hexdigest()
 
 
-def relative_mercury_state(bodies: list[list[object]]) -> tuple[float, float, float]:
-    position = [bodies[1][0][axis] - bodies[0][0][axis] for axis in range(3)]
-    velocity = [bodies[1][1][axis] - bodies[0][1][axis] for axis in range(3)]
+def relative_body_state(
+    bodies: list[list[object]], body_index: int
+) -> tuple[float, float, float]:
+    position = [bodies[body_index][0][axis] - bodies[0][0][axis] for axis in range(3)]
+    velocity = [bodies[body_index][1][axis] - bodies[0][1][axis] for axis in range(3)]
     radius = math.sqrt(sum(component * component for component in position))
     speed = math.sqrt(sum(component * component for component in velocity))
     cross = [
@@ -210,9 +226,11 @@ def relative_mercury_state(bodies: list[list[object]]) -> tuple[float, float, fl
     return radius, speed, areal_rate
 
 
-def mercury_orbital_elements(bodies: list[list[object]]) -> tuple[float, float]:
-    position = [bodies[1][0][axis] - bodies[0][0][axis] for axis in range(3)]
-    velocity = [bodies[1][1][axis] - bodies[0][1][axis] for axis in range(3)]
+def body_orbital_elements(
+    bodies: list[list[object]], body_index: int
+) -> tuple[float, float]:
+    position = [bodies[body_index][0][axis] - bodies[0][0][axis] for axis in range(3)]
+    velocity = [bodies[body_index][1][axis] - bodies[0][1][axis] for axis in range(3)]
     radius = math.sqrt(sum(component * component for component in position))
     speed_squared = sum(component * component for component in velocity)
     cross = [
@@ -220,7 +238,7 @@ def mercury_orbital_elements(bodies: list[list[object]]) -> tuple[float, float]:
         position[2] * velocity[0] - position[0] * velocity[2],
         position[0] * velocity[1] - position[1] * velocity[0],
     ]
-    gravitational_parameter = bodies[0][2] + bodies[1][2]
+    gravitational_parameter = bodies[0][2] + bodies[body_index][2]
     semimajor_axis = 1.0 / (2.0 / radius - speed_squared / gravitational_parameter)
     eccentricity = math.sqrt(
         1.0
@@ -235,22 +253,38 @@ def main() -> None:
     initial_momentum = momentum(bodies)
     if any(abs(component) >= 1.0e-12 for component in initial_momentum):
         raise SystemExit(f"ten-body initial momentum is not balanced: {initial_momentum}")
-    mercury_semimajor_axis, mercury_eccentricity = mercury_orbital_elements(bodies)
-    if abs(mercury_semimajor_axis - JPL_MERCURY_SEMIMAJOR_AXIS_AU) >= 0.002:
+    orbital_elements = []
+    for body_index, (name, expected_axis, expected_eccentricity) in enumerate(
+        JPL_ORBITS, start=1
+    ):
+        semimajor_axis, eccentricity = body_orbital_elements(bodies, body_index)
+        axis_tolerance = max(0.002, expected_axis * 0.0004)
+        if abs(semimajor_axis - expected_axis) >= axis_tolerance:
+            raise SystemExit(
+                f"{name} semimajor axis does not match its JPL J2000 element: "
+                f"expected {expected_axis:.9f}, got {semimajor_axis:.9f} AU"
+            )
+        if abs(eccentricity - expected_eccentricity) >= 0.001:
+            raise SystemExit(
+                f"{name} eccentricity does not match its JPL J2000 element: "
+                f"expected {expected_eccentricity:.9f}, got {eccentricity:.9f}"
+            )
+        orbital_elements.append((semimajor_axis, eccentricity))
+    mercury_semimajor_axis, mercury_eccentricity = orbital_elements[0]
+    neptune_axis, _ = orbital_elements[7]
+    pluto_axis, pluto_eccentricity = orbital_elements[8]
+    pluto_perihelion = pluto_axis * (1.0 - pluto_eccentricity)
+    pluto_aphelion = pluto_axis * (1.0 + pluto_eccentricity)
+    if not pluto_perihelion < neptune_axis < pluto_aphelion:
         raise SystemExit(
-            "Mercury semimajor axis does not match the JPL orbit: "
-            f"{mercury_semimajor_axis:.9f} AU"
-        )
-    if abs(mercury_eccentricity - JPL_MERCURY_ECCENTRICITY) >= 0.002:
-        raise SystemExit(
-            "Mercury eccentricity does not match the JPL orbit: "
-            f"{mercury_eccentricity:.9f}"
+            "Pluto's eccentric orbit must span Neptune's semimajor axis: "
+            f"q={pluto_perihelion:.9f}, Neptune a={neptune_axis:.9f}, Q={pluto_aphelion:.9f}"
         )
     initial_energy = energy(bodies)
-    mercury = [relative_mercury_state(bodies)]
+    mercury = [relative_body_state(bodies, 1)]
     for _ in range(MECH_TURNS):
         advance(bodies, MECH_DT)
-        mercury.append(relative_mercury_state(bodies))
+        mercury.append(relative_body_state(bodies, 1))
     final_energy = energy(bodies)
     final_hash = state_hash(bodies)
     if final_hash != EXPECTED_TEN_BODY_STATE:
@@ -283,12 +317,23 @@ def main() -> None:
     if abs(benchmark_final - (-0.169087605)) >= 5.0e-10:
         raise SystemExit(f"benchmark final energy mismatch: {benchmark_final:.12f}")
 
+    orbit_summary = ",".join(
+        f"{name}:{semimajor_axis:.9f}/{eccentricity:.9f}"
+        for (name, _, _), (semimajor_axis, eccentricity) in zip(
+            JPL_ORBITS, orbital_elements
+        )
+    )
     print(
         "NBODY_PYTHON_REFERENCE "
         f"turns={MECH_TURNS} dt={MECH_DT} state={final_hash} "
+        f"jpl_orbits={orbit_summary} "
         f"initial_energy={initial_energy:.12f} final_energy={final_energy:.12f} "
         f"mercury_semimajor_axis={mercury_semimajor_axis:.9f} "
         f"mercury_eccentricity={mercury_eccentricity:.9f} "
+        f"pluto_semimajor_axis={pluto_axis:.9f} "
+        f"pluto_eccentricity={pluto_eccentricity:.9f} "
+        f"pluto_perihelion={pluto_perihelion:.9f} "
+        f"pluto_aphelion={pluto_aphelion:.9f} "
         f"mercury_perihelion_radius={perihelion[0]:.9f} "
         f"mercury_perihelion_speed={perihelion[1]:.9f} "
         f"mercury_aphelion_radius={aphelion[0]:.9f} "

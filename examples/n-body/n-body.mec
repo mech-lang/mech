@@ -2,6 +2,7 @@ N-Body Simulation
 ===============================================================================
 section: Examples
 +> combinatorics
++> math
 +> stats
 ===============================================================================
 
@@ -15,11 +16,11 @@ orbits.
 -------------------------------------------------------------------------------
 
 Positions use astronomical units, velocities use astronomical units per year,
-and masses are normalized so the gravitational constant is one. As in the
-Computer Language Benchmarks Game reference system, the Sun's initial velocity
-cancels the planets' total momentum. Mercury's heliocentric ecliptic state is a
-JPL Horizons vector for 1974-06-04; unlike the previously copied velocity, it
-has the planet's independently published semimajor axis and eccentricity.
+and masses are normalized so the gravitational constant is one. All
+heliocentric ecliptic position, velocity, and comparison elements come from the
+[NASA/JPL Horizons API](https://ssd-api.jpl.nasa.gov/doc/horizons.html) at
+2000-01-01 00:00 TDB. One common velocity translates that coherent snapshot to
+the center-of-momentum frame without changing any body's heliocentric orbit.
 
 @clock := timer://clock/tick{:read(tick)}
 @scene := scene://orbit/frame{:write(replace)}
@@ -28,86 +29,155 @@ has the planet's independently published semimajor axis and eccentricity.
   π := 3.141592654
   solar-mass := 4 * π ^ 2
   Δt := @clock/tick * 0.0 + 0.002
+  initial-sun-vx := 5.37374287703080437e-06 * days-per-year
+  initial-sun-vy := -7.41169057513150263e-06 * days-per-year
+  initial-sun-vz := -9.41516755244529502e-08 * days-per-year
 
   ☉ := [ 0,
           0,
           0,
-         -1.0071348725807848e-06 * days-per-year,
-         -8.909585296152547e-06 * days-per-year,
-          6.658348289532437e-08 * days-per-year,
+          initial-sun-vx,
+          initial-sun-vy,
+          initial-sun-vz,
           solar-mass ]
-  ☿ := [ -0.3895481522339008,
-           -0.1503099879924185,
-            0.02350666145222942,
-            0.004308277706530398 * days-per-year,
-           -0.02502425088636981 * days-per-year,
-           -0.002439088939653241 * days-per-year,
+  ☿ := [ -0.1407280797108344,
+           -0.4439009580270337,
+           -0.02334555919971206,
+            0.0211742451018037403 * days-per-year,
+           -0.00710538711113244733 * days-per-year,
+           -0.00252292518239450756 * days-per-year,
             1.660120e-07 * solar-mass ]
-  ♀ := [ -0.71803521454713496,
-            0.041947688018485076,
-            0.041304042456734767,
-           -0.0013897739822126357 * days-per-year,
-           -0.020119890903497486 * days-per-year,
-           -0.00030021717325320866 * days-per-year,
+  ♀ := [ -0.7186302169204941,
+           -0.02250380069428597,
+            0.04117184128636830,
+            0.000518906490022535321 * days-per-year,
+           -0.0203135533130517909 * days-per-year,
+           -0.000307268671743680998 * days-per-year,
             2.447838e-06 * solar-mass ]
-  ♁ := [ -0.17713546150023925,
-            0.96724162210078579,
-           -0.0000039007362829064718,
-           -0.017201146327519165 * days-per-year,
-           -0.0031864352617521142 * days-per-year,
-            0.00000018827814191274 * days-per-year,
+  ♁ := [ -0.1685246483858782,
+            0.9687833049070306,
+           -0.000004120490278477264,
+           -0.0172285720895999014 * days-per-year,
+           -0.00301507194043644251 * days-per-year,
+           -0.0000000585259466404432129 * days-per-year,
             3.003489e-06 * solar-mass ]
-  ♂ := [ 1.3907159267594730,
-           -0.013415706106135855,
-           -0.034467796700612273,
-            0.00021345415375975118 * days-per-year,
-            0.015123072614264662 * days-per-year,
-            0.00030512951698556953 * days-per-year,
+  ♂ := [ 1.390361066039004,
+           -0.02100972225898463,
+           -0.03461801440927048,
+            0.000753300878828797971 * days-per-year,
+            0.0151788869860826885 * days-per-year,
+            0.000299659058967668502 * days-per-year,
             3.227151e-07 * solar-mass ]
-  ♃ := [ 4.84143144246472090,
-           -1.16032004402742839,
-           -0.103622044471123109,
-            0.00166007664274403694 * days-per-year,
-            0.00769901118419740425 * days-per-year,
-           -0.0000690460016972063023 * days-per-year,
+  ♃ := [ 4.003460488693537,
+            2.935353187887882,
+           -0.1018230443988181,
+           -0.00455837705250217509 * days-per-year,
+            0.00643986253216750643 * days-per-year,
+            0.0000753759450047445577 * days-per-year,
             0.000954791938424326609 * solar-mass ]
-  ♄ := [ 8.34336671824457987,
-            4.12479856412430479,
-           -0.403523417114321381,
-           -0.00276742510726862411 * days-per-year,
-            0.00499852801234917238 * days-per-year,
-            0.0000230417297573763929 * days-per-year,
+  ♄ := [ 6.408556035505925,
+            6.568042752621957,
+           -0.3691272880681217,
+           -0.00428516675602203662 * days-per-year,
+            0.00388457920257733250 * days-per-year,
+            0.000102515602671251747 * days-per-year,
             0.000285885980666130812 * solar-mass ]
-  ♅ := [ 12.8943695621391310,
-          -15.1111514016986312,
-           -0.223307578892655734,
-            0.00296460137564761618 * days-per-year,
-            0.00237847173959480950 * days-per-year,
-           -0.0000296589568540237556 * days-per-year,
+  ♅ := [ 14.43051609648136,
+          -13.73565967460644,
+           -0.2381293855338772,
+            0.00268383937076146876 * days-per-year,
+            0.00266501521249669056 * days-per-year,
+           -0.0000248452866168716821 * days-per-year,
             0.0000436624404335156298 * solar-mass ]
-  ♆ := [ 15.3796971148509165,
-          -25.9193146099879641,
-            0.179258772950371181,
-            0.00268067772490389322 * days-per-year,
-            0.00162824170038242295 * days-per-year,
-           -0.000095159225451971587 * days-per-year,
+  ♆ := [ 16.81075807703606,
+          -24.99265146883861,
+            0.1272705680239183,
+            0.00258459075834710852 * days-per-year,
+            0.00176894334798696740 * days-per-year,
+           -0.0000962942121658658866 * days-per-year,
             0.0000515138902046611451 * solar-mass ]
-  ♇ := [ -9.87512510193949936,
-          -27.9392880241831424,
-            5.06873275440839440,
-            0.00344178030872987300 * days-per-year,
-           -0.00152819214839188910 * days-per-year,
-           -0.00129137458409475460 * days-per-year,
+  ♇ := [ -9.876866563865008,
+          -27.95802013288459,
+            5.850814086362886,
+            0.00304437716859956966 * days-per-year,
+           -0.00153730074570079052 * days-per-year,
+           -0.000717326330158363440 * days-per-year,
             6.547e-09 * solar-mass ]
 
   bodies := [☉ ☿ ♀ ♁ ♂ ♃ ♄ ♅ ♆ ♇]'
+
+  planet-selector := [0 1 0 0 0 0 0 0 0 0
+                      0 0 1 0 0 0 0 0 0 0
+                      0 0 0 1 0 0 0 0 0 0
+                      0 0 0 0 1 0 0 0 0 0
+                      0 0 0 0 0 1 0 0 0 0
+                      0 0 0 0 0 0 1 0 0 0
+                      0 0 0 0 0 0 0 1 0 0
+                      0 0 0 0 0 0 0 0 1 0
+                      0 0 0 0 0 0 0 0 0 1]
+  orbit-rx := planet-selector ** bodies[:,1]
+  orbit-ry := planet-selector ** bodies[:,2]
+  orbit-rz := planet-selector ** bodies[:,3]
+  orbit-vx := planet-selector ** bodies[:,4] - initial-sun-vx
+  orbit-vy := planet-selector ** bodies[:,5] - initial-sun-vy
+  orbit-vz := planet-selector ** bodies[:,6] - initial-sun-vz
+  orbit-radius := (orbit-rx ^ 2 + orbit-ry ^ 2 + orbit-rz ^ 2) ^ 0.5
+  orbit-speed² := orbit-vx ^ 2 + orbit-vy ^ 2 + orbit-vz ^ 2
+  orbit-μ := solar-mass + planet-selector ** bodies[:,7]
+
+  orbit-hx := orbit-ry * orbit-vz - orbit-rz * orbit-vy
+  orbit-hy := orbit-rz * orbit-vx - orbit-rx * orbit-vz
+  orbit-hz := orbit-rx * orbit-vy - orbit-ry * orbit-vx
+  orbit-h := (orbit-hx ^ 2 + orbit-hy ^ 2 + orbit-hz ^ 2) ^ 0.5
+  orbit-ex := (orbit-vy * orbit-hz - orbit-vz * orbit-hy) / orbit-μ - orbit-rx / orbit-radius
+  orbit-ey := (orbit-vz * orbit-hx - orbit-vx * orbit-hz) / orbit-μ - orbit-ry / orbit-radius
+  orbit-ez := (orbit-vx * orbit-hy - orbit-vy * orbit-hx) / orbit-μ - orbit-rz / orbit-radius
+  orbit-e := (orbit-ex ^ 2 + orbit-ey ^ 2 + orbit-ez ^ 2) ^ 0.5
+  orbit-a := (2 / orbit-radius - orbit-speed² / orbit-μ) ^ -1
+
+  orbit-px := orbit-ex / orbit-e
+  orbit-py := orbit-ey / orbit-e
+  orbit-pz := orbit-ez / orbit-e
+  orbit-nx := orbit-hx / orbit-h
+  orbit-ny := orbit-hy / orbit-h
+  orbit-nz := orbit-hz / orbit-h
+  orbit-qx := orbit-ny * orbit-pz - orbit-nz * orbit-py
+  orbit-qy := orbit-nz * orbit-px - orbit-nx * orbit-pz
+  orbit-qz := orbit-nx * orbit-py - orbit-ny * orbit-px
+
+  guide-samples := 0..=96
+  guide-angle := guide-samples' * (2 * π / 96)
+  guide-cos := math/cos(guide-angle)
+  guide-sin := math/sin(guide-angle)
+
+  mercury-guide-x := orbit-a[1] * (guide-cos - orbit-e[1]) * orbit-px[1] + orbit-a[1] * (1 - orbit-e[1] ^ 2) ^ 0.5 * guide-sin * orbit-qx[1]
+  mercury-guide-y := orbit-a[1] * (guide-cos - orbit-e[1]) * orbit-py[1] + orbit-a[1] * (1 - orbit-e[1] ^ 2) ^ 0.5 * guide-sin * orbit-qy[1]
+  venus-guide-x := orbit-a[2] * (guide-cos - orbit-e[2]) * orbit-px[2] + orbit-a[2] * (1 - orbit-e[2] ^ 2) ^ 0.5 * guide-sin * orbit-qx[2]
+  venus-guide-y := orbit-a[2] * (guide-cos - orbit-e[2]) * orbit-py[2] + orbit-a[2] * (1 - orbit-e[2] ^ 2) ^ 0.5 * guide-sin * orbit-qy[2]
+  earth-guide-x := orbit-a[3] * (guide-cos - orbit-e[3]) * orbit-px[3] + orbit-a[3] * (1 - orbit-e[3] ^ 2) ^ 0.5 * guide-sin * orbit-qx[3]
+  earth-guide-y := orbit-a[3] * (guide-cos - orbit-e[3]) * orbit-py[3] + orbit-a[3] * (1 - orbit-e[3] ^ 2) ^ 0.5 * guide-sin * orbit-qy[3]
+  mars-guide-x := orbit-a[4] * (guide-cos - orbit-e[4]) * orbit-px[4] + orbit-a[4] * (1 - orbit-e[4] ^ 2) ^ 0.5 * guide-sin * orbit-qx[4]
+  mars-guide-y := orbit-a[4] * (guide-cos - orbit-e[4]) * orbit-py[4] + orbit-a[4] * (1 - orbit-e[4] ^ 2) ^ 0.5 * guide-sin * orbit-qy[4]
+  jupiter-guide-x := orbit-a[5] * (guide-cos - orbit-e[5]) * orbit-px[5] + orbit-a[5] * (1 - orbit-e[5] ^ 2) ^ 0.5 * guide-sin * orbit-qx[5]
+  jupiter-guide-y := orbit-a[5] * (guide-cos - orbit-e[5]) * orbit-py[5] + orbit-a[5] * (1 - orbit-e[5] ^ 2) ^ 0.5 * guide-sin * orbit-qy[5]
+  saturn-guide-x := orbit-a[6] * (guide-cos - orbit-e[6]) * orbit-px[6] + orbit-a[6] * (1 - orbit-e[6] ^ 2) ^ 0.5 * guide-sin * orbit-qx[6]
+  saturn-guide-y := orbit-a[6] * (guide-cos - orbit-e[6]) * orbit-py[6] + orbit-a[6] * (1 - orbit-e[6] ^ 2) ^ 0.5 * guide-sin * orbit-qy[6]
+  uranus-guide-x := orbit-a[7] * (guide-cos - orbit-e[7]) * orbit-px[7] + orbit-a[7] * (1 - orbit-e[7] ^ 2) ^ 0.5 * guide-sin * orbit-qx[7]
+  uranus-guide-y := orbit-a[7] * (guide-cos - orbit-e[7]) * orbit-py[7] + orbit-a[7] * (1 - orbit-e[7] ^ 2) ^ 0.5 * guide-sin * orbit-qy[7]
+  neptune-guide-x := orbit-a[8] * (guide-cos - orbit-e[8]) * orbit-px[8] + orbit-a[8] * (1 - orbit-e[8] ^ 2) ^ 0.5 * guide-sin * orbit-qx[8]
+  neptune-guide-y := orbit-a[8] * (guide-cos - orbit-e[8]) * orbit-py[8] + orbit-a[8] * (1 - orbit-e[8] ^ 2) ^ 0.5 * guide-sin * orbit-qy[8]
+  pluto-guide-x := orbit-a[9] * (guide-cos - orbit-e[9]) * orbit-px[9] + orbit-a[9] * (1 - orbit-e[9] ^ 2) ^ 0.5 * guide-sin * orbit-qx[9]
+  pluto-guide-y := orbit-a[9] * (guide-cos - orbit-e[9]) * orbit-py[9] + orbit-a[9] * (1 - orbit-e[9] ^ 2) ^ 0.5 * guide-sin * orbit-qy[9]
 
 
 2. Pairwise Gravity
 -------------------------------------------------------------------------------
 
 The combination table names every unordered pair exactly once. Equal and
-opposite velocity changes preserve the symmetry of each interaction.
+opposite velocity changes preserve the symmetry of each interaction. The
+independent regression oracle also reproduces the published
+[Computer Language Benchmarks Game n-body reference](https://benchmarksgame-team.pages.debian.net/benchmarksgame/description/nbody.html)
+energies exactly.
 
   pairs := combinatorics/n-choose-k(1..=10,2)
   left := pairs[1,:]
@@ -136,9 +206,12 @@ opposite velocity changes preserve the symmetry of each interaction.
 -------------------------------------------------------------------------------
 
 The complete viewer is a Mech scene: its frame, axes, orbit guides, labels,
-legend, and live bodies are all values below. The simulation state remains in
-its inertial frame, but the camera follows the Sun so the fixed orbit guides and
-live bodies share one heliocentric display frame. The square-root display radius
+legend, and live bodies are all values below. Each guide is the osculating
+Kepler ellipse calculated from that body's initial position and velocity, with
+the Sun at its focus; it is not a nominal circle. Its semimajor axis and
+eccentricity are independently checked against the same-epoch JPL elements
+from [Horizons](https://ssd.jpl.nasa.gov/horizons/). The simulation remains in its
+inertial frame while the camera follows the Sun. The square-root display radius
 keeps the inner and outer solar system visible together while preserving every
 body's simulated direction from the Sun.
 
@@ -158,97 +231,26 @@ body's simulated direction from the Sun.
   screen-y := 380.0 - heliocentric-y * display-scale
   screen-points := [screen-x screen-y]
 
+  mercury-guide-scale := 44 / (mercury-guide-x ^ 2 + mercury-guide-y ^ 2 + 0.000001) ^ 0.25
+  mercury-guide := [430 + mercury-guide-x * mercury-guide-scale 380 - mercury-guide-y * mercury-guide-scale]
+  venus-guide-scale := 44 / (venus-guide-x ^ 2 + venus-guide-y ^ 2 + 0.000001) ^ 0.25
+  venus-guide := [430 + venus-guide-x * venus-guide-scale 380 - venus-guide-y * venus-guide-scale]
+  earth-guide-scale := 44 / (earth-guide-x ^ 2 + earth-guide-y ^ 2 + 0.000001) ^ 0.25
+  earth-guide := [430 + earth-guide-x * earth-guide-scale 380 - earth-guide-y * earth-guide-scale]
+  mars-guide-scale := 44 / (mars-guide-x ^ 2 + mars-guide-y ^ 2 + 0.000001) ^ 0.25
+  mars-guide := [430 + mars-guide-x * mars-guide-scale 380 - mars-guide-y * mars-guide-scale]
+  jupiter-guide-scale := 44 / (jupiter-guide-x ^ 2 + jupiter-guide-y ^ 2 + 0.000001) ^ 0.25
+  jupiter-guide := [430 + jupiter-guide-x * jupiter-guide-scale 380 - jupiter-guide-y * jupiter-guide-scale]
+  saturn-guide-scale := 44 / (saturn-guide-x ^ 2 + saturn-guide-y ^ 2 + 0.000001) ^ 0.25
+  saturn-guide := [430 + saturn-guide-x * saturn-guide-scale 380 - saturn-guide-y * saturn-guide-scale]
+  uranus-guide-scale := 44 / (uranus-guide-x ^ 2 + uranus-guide-y ^ 2 + 0.000001) ^ 0.25
+  uranus-guide := [430 + uranus-guide-x * uranus-guide-scale 380 - uranus-guide-y * uranus-guide-scale]
+  neptune-guide-scale := 44 / (neptune-guide-x ^ 2 + neptune-guide-y ^ 2 + 0.000001) ^ 0.25
+  neptune-guide := [430 + neptune-guide-x * neptune-guide-scale 380 - neptune-guide-y * neptune-guide-scale]
+  pluto-guide-scale := 44 / (pluto-guide-x ^ 2 + pluto-guide-y ^ 2 + 0.000001) ^ 0.25
+  pluto-guide := [430 + pluto-guide-x * pluto-guide-scale 380 - pluto-guide-y * pluto-guide-scale]
+
   scene-circles := (
-    {
-      id: "orbit-mercury"
-      x: 430
-      y: 380
-      radius: 27.4
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-venus"
-      x: 430
-      y: 380
-      radius: 37.4
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-earth"
-      x: 430
-      y: 380
-      radius: 44
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-mars"
-      x: 430
-      y: 380
-      radius: 54.3
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-jupiter"
-      x: 430
-      y: 380
-      radius: 100.4
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-saturn"
-      x: 430
-      y: 380
-      radius: 136
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-uranus"
-      x: 430
-      y: 380
-      radius: 192.5
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-neptune"
-      x: 430
-      y: 380
-      radius: 241.2
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
-    {
-      id: "orbit-pluto"
-      x: 430
-      y: 380
-      radius: 276.5
-      fill: "none"
-      stroke: "#536273"
-      stroke-width: 0.75
-      opacity: 0.48
-    },
     {id: "status-light", x: 593, y: 57, radius: 4, fill: "#61d095", stroke: "none", stroke-width: 0, opacity: 1},
     {id: "legend-sun", x: 28, y: 714, radius: 4, fill: "#ffd166", stroke: "none", stroke-width: 0, opacity: 1},
     {id: "legend-mercury", x: 92, y: 714, radius: 4, fill: "#b9a99a", stroke: "none", stroke-width: 0, opacity: 1},
@@ -260,6 +262,18 @@ body's simulated direction from the Sun.
     {id: "legend-uranus", x: 529, y: 714, radius: 4, fill: "#72d6d1", stroke: "none", stroke-width: 0, opacity: 1},
     {id: "legend-neptune", x: 607, y: 714, radius: 4, fill: "#5677e8", stroke: "none", stroke-width: 0, opacity: 1},
     {id: "legend-pluto", x: 695, y: 714, radius: 4, fill: "#c9c2b8", stroke: "none", stroke-width: 0, opacity: 1}
+  )
+
+  scene-line-strips := (
+    {id: "orbit-mercury", positions: mercury-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-venus", positions: venus-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-earth", positions: earth-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-mars", positions: mars-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-jupiter", positions: jupiter-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-saturn", positions: saturn-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-uranus", positions: uranus-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-neptune", positions: neptune-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true},
+    {id: "orbit-pluto", positions: pluto-guide, stroke: "#536273", stroke-width: 0.75, line-cap: "round", line-join: "round", opacity: 0.48, closed: true}
   )
 
   scene-point-sets := ({
@@ -296,7 +310,7 @@ body's simulated direction from the Sun.
     {id: "label-uranus", x: 538, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Uranus"},
     {id: "label-neptune", x: 616, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Neptune"},
     {id: "label-pluto", x: 704, y: 718, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "Pluto"},
-    {id: "scale-note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Live elliptical motion · circles mark nominal distance bands · square-root radial scale"}
+    {id: "scale-note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Live mutual gravity · guides are calculated osculating orbits · square-root radial scale"}
   )
 
   n-body-scene := {
@@ -306,6 +320,7 @@ body's simulated direction from the Sun.
     circles: scene-circles
     point-sets: scene-point-sets
     lines: scene-lines
+    line-strips: scene-line-strips
     texts: scene-text
   }
 

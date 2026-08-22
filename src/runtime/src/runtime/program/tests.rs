@@ -2626,6 +2626,77 @@ impl ScalarNbodyReference {
         }
     }
 
+    fn benchmark_game() -> Self {
+        let year = 365.24;
+        let solar_mass = 4.0 * std::f64::consts::PI.powi(2);
+        let rows = [
+            ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 1.0),
+            (
+                [
+                    4.84143144246472090,
+                    -1.16032004402742839,
+                    -0.103622044471123109,
+                ],
+                [
+                    0.00166007664274403694 * year,
+                    0.00769901118419740425 * year,
+                    -0.0000690460016972063023 * year,
+                ],
+                0.000954791938424326609,
+            ),
+            (
+                [
+                    8.34336671824457987,
+                    4.12479856412430479,
+                    -0.403523417114321381,
+                ],
+                [
+                    -0.00276742510726862411 * year,
+                    0.00499852801234917238 * year,
+                    0.0000230417297573763929 * year,
+                ],
+                0.000285885980666130812,
+            ),
+            (
+                [
+                    12.8943695621391310,
+                    -15.1111514016986312,
+                    -0.223307578892655734,
+                ],
+                [
+                    0.00296460137564761618 * year,
+                    0.00237847173959480950 * year,
+                    -0.0000296589568540237556 * year,
+                ],
+                0.0000436624404335156298,
+            ),
+            (
+                [
+                    15.3796971148509165,
+                    -25.9193146099879641,
+                    0.179258772950371181,
+                ],
+                [
+                    0.00268067772490389322 * year,
+                    0.00162824170038242295 * year,
+                    -0.000095159225451971587 * year,
+                ],
+                0.0000515138902046611451,
+            ),
+        ];
+        let mut reference = Self {
+            positions: (0..3)
+                .flat_map(|axis| rows.iter().map(move |row| row.0[axis]))
+                .collect(),
+            velocities: (0..3)
+                .flat_map(|axis| rows.iter().map(move |row| row.1[axis]))
+                .collect(),
+            masses: rows.iter().map(|row| row.2 * solar_mass).collect(),
+        };
+        reference.offset_solar_momentum();
+        reference
+    }
+
     fn body_count(&self) -> usize {
         self.masses.len()
     }
@@ -2696,24 +2767,6 @@ impl ScalarNbodyReference {
         })
     }
 
-    fn select_bodies(&self, bodies: &[usize]) -> Self {
-        let body_count = self.body_count();
-        let select = |values: &[f64]| {
-            (0..3)
-                .flat_map(|axis| {
-                    bodies
-                        .iter()
-                        .map(move |body| values[*body + axis * body_count])
-                })
-                .collect()
-        };
-        Self {
-            positions: select(&self.positions),
-            velocities: select(&self.velocities),
-            masses: bodies.iter().map(|body| self.masses[*body]).collect(),
-        }
-    }
-
     fn offset_solar_momentum(&mut self) {
         let body_count = self.body_count();
         for axis in 0..3 {
@@ -2757,8 +2810,8 @@ impl ScalarNbodyReference {
         (radius, speed, areal_rate)
     }
 
-    fn mercury_orbital_elements(&self) -> (f64, f64) {
-        let (position, velocity) = self.relative_body_state(1);
+    fn body_orbital_elements(&self, body: usize) -> (f64, f64) {
+        let (position, velocity) = self.relative_body_state(body);
         let radius = position
             .iter()
             .map(|value| value * value)
@@ -2770,7 +2823,7 @@ impl ScalarNbodyReference {
             position[2] * velocity[0] - position[0] * velocity[2],
             position[0] * velocity[1] - position[1] * velocity[0],
         ];
-        let gravitational_parameter = self.masses[0] + self.masses[1];
+        let gravitational_parameter = self.masses[0] + self.masses[body];
         let semimajor_axis = 1.0 / (2.0 / radius - speed_squared / gravitational_parameter);
         let eccentricity = (1.0
             - cross.iter().map(|value| value * value).sum::<f64>()
@@ -2800,13 +2853,13 @@ fn public_nbody_state_slots(runtime: &crate::MechRuntime) -> PublicNbodyStateSlo
     assert_eq!(slots.len(), 2, "public N-body has exactly two state cells");
     let first = public_nbody_state_slot(runtime, slots[0]);
     let second = public_nbody_state_slot(runtime, slots[1]);
-    if (first[1] - (-0.3895481522339008)).abs() < 1.0e-12 {
+    if (first[1] - (-0.1407280797108344)).abs() < 1.0e-12 {
         PublicNbodyStateSlots {
             positions: slots[0],
             velocities: slots[1],
         }
     } else {
-        assert!((second[1] - (-0.3895481522339008)).abs() < 1.0e-12);
+        assert!((second[1] - (-0.1407280797108344)).abs() < 1.0e-12);
         PublicNbodyStateSlots {
             positions: slots[1],
             velocities: slots[0],
@@ -2905,9 +2958,165 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
             .all(|component| component.abs() < 1.0e-12),
         "the public source must start in the zero-momentum center-of-mass frame",
     );
-    let (mercury_semimajor_axis, mercury_eccentricity) = raw.mercury_orbital_elements();
-    assert!((mercury_semimajor_axis - 0.38709927).abs() < 0.002);
-    assert!((mercury_eccentricity - 0.20563593).abs() < 0.002);
+    // Exact heliocentric ecliptic vectors returned by Horizons for every body
+    // at the one shared epoch used by the public source. Comparing the live
+    // program state component-by-component prevents a plausible-looking orbit
+    // from concealing a wrong body, epoch, axis, or velocity.
+    let jpl_states = [
+        (
+            "Mercury",
+            [
+                -0.1407280797108344,
+                -0.4439009580270337,
+                -0.02334555919971206,
+            ],
+            [
+                0.02116887135892671,
+                -0.007097975420557316,
+                -0.002522831030718983,
+            ],
+        ),
+        (
+            "Venus",
+            [
+                -0.7186302169204941,
+                -0.02250380069428597,
+                0.04117184128636830,
+            ],
+            [
+                0.0005135327471455046,
+                -0.02030614162247666,
+                -0.0003071745200681565,
+            ],
+        ),
+        (
+            "Earth",
+            [
+                -0.1685246483858782,
+                0.9687833049070306,
+                -0.000004120490278477264,
+            ],
+            [
+                -0.01723394583247693,
+                -0.003007660249861311,
+                0.00000003562572888400974,
+            ],
+        ),
+        (
+            "Mars",
+            [
+                1.390361066039004,
+                -0.02100972225898463,
+                -0.03461801440927048,
+            ],
+            [
+                0.0007479271359517672,
+                0.01518629867665782,
+                0.0002997532106431930,
+            ],
+        ),
+        (
+            "Jupiter",
+            [4.003460488693537, 2.935353187887882, -0.1018230443988181],
+            [
+                -0.004563750795379206,
+                0.006447274222742638,
+                0.00007547009668026901,
+            ],
+        ),
+        (
+            "Saturn",
+            [6.408556035505925, 6.568042752621957, -0.3691272880681217],
+            [
+                -0.004290540498899068,
+                0.003891990893152464,
+                0.0001026097543467762,
+            ],
+        ),
+        (
+            "Uranus",
+            [14.43051609648136, -13.73565967460644, -0.2381293855338772],
+            [
+                0.002678465627884438,
+                0.002672426903071822,
+                -0.00002475113494134723,
+            ],
+        ),
+        (
+            "Neptune",
+            [16.81075807703606, -24.99265146883861, 0.1272705680239183],
+            [
+                0.002579217015470078,
+                0.001776355038562099,
+                -0.00009620006049034144,
+            ],
+        ),
+        (
+            "Pluto",
+            [-9.876866563865008, -27.95802013288459, 5.850814086362886],
+            [
+                0.003039003425722539,
+                -0.001529889055125659,
+                -0.0007172321784828390,
+            ],
+        ),
+    ];
+    for (index, (name, expected_position, expected_velocity_per_day)) in
+        jpl_states.iter().enumerate()
+    {
+        let (position, velocity) = raw.relative_body_state(index + 1);
+        for axis in 0..3 {
+            assert!(
+                (position[axis] - expected_position[axis]).abs() < 1.0e-12,
+                "{name} JPL position component {axis} differs: {:?} != {:?}",
+                position[axis],
+                expected_position[axis],
+            );
+            let expected_velocity = expected_velocity_per_day[axis] * 365.24;
+            assert!(
+                (velocity[axis] - expected_velocity).abs() < 1.0e-12,
+                "{name} JPL velocity component {axis} differs: {:?} != {:?}",
+                velocity[axis],
+                expected_velocity,
+            );
+        }
+    }
+
+    let jpl_orbits = [
+        ("Mercury", 0.3870982252718477, 0.2056302515978038),
+        ("Venus", 0.7233268496756070, 0.006755697268576816),
+        ("Earth", 1.000371833994387, 0.01704239718110438),
+        ("Mars", 1.523678184286835, 0.09331460654156362),
+        ("Jupiter", 5.205108585205607, 0.04892305962953223),
+        ("Saturn", 9.581451990528134, 0.05559928887285597),
+        ("Uranus", 19.22993812529615, 0.04439367187710320),
+        ("Neptune", 30.09700542229719, 0.01114790154011905),
+        ("Pluto", 39.50058973957585, 0.2478572758892915),
+    ];
+    let orbital_elements = jpl_orbits
+        .iter()
+        .enumerate()
+        .map(|(index, (name, expected_axis, expected_eccentricity))| {
+            let (axis, eccentricity) = raw.body_orbital_elements(index + 1);
+            let axis_tolerance = f64::max(0.002, expected_axis * 0.0004);
+            assert!(
+                (axis - expected_axis).abs() < axis_tolerance,
+                "{name} semimajor axis differs from its independent JPL J2000 element: {axis:?} != {expected_axis:?}",
+            );
+            assert!(
+                (eccentricity - expected_eccentricity).abs() < 0.001,
+                "{name} eccentricity differs from its independent JPL J2000 element: {eccentricity:?} != {expected_eccentricity:?}",
+            );
+            (axis, eccentricity)
+        })
+        .collect::<Vec<_>>();
+    let neptune_axis = orbital_elements[7].0;
+    let (pluto_axis, pluto_eccentricity) = orbital_elements[8];
+    assert!(
+        pluto_axis * (1.0 - pluto_eccentricity) < neptune_axis
+            && neptune_axis < pluto_axis * (1.0 + pluto_eccentricity),
+        "Pluto's independently derived eccentric orbit must span Neptune's semimajor axis",
+    );
     let mut mercury = vec![raw.mercury_state()];
 
     let published_energy = |runtime: &crate::MechRuntime| match runtime
@@ -3000,7 +3209,7 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
 
     assert_eq!(
         public_nbody_python_state_hash(&raw),
-        "0c2206f579e31f4c8fa4efa1cd32cab53386224fda0f4593274843e12440f8f8",
+        "f9194e44d424d554c68dfcecbd8f0af95e764b65aff5387fd99d1a781c78d3c8",
         "the Mech/raw-Rust trajectory must match the independent Python reference",
     );
     let perihelion = mercury
@@ -3033,8 +3242,7 @@ fn public_nbody_viewer_integrates_mutual_gravity_residently() {
         "Mercury's equal-area rate varied beyond the mutual-gravity perturbation bound",
     );
 
-    let mut benchmark = initial_raw.select_bodies(&[0, 5, 6, 7, 8]);
-    benchmark.offset_solar_momentum();
+    let mut benchmark = ScalarNbodyReference::benchmark_game();
     assert!((benchmark.energy() - (-0.169075164)).abs() < 5.0e-10);
     for _ in 0..1_000 {
         benchmark.advance(0.01);
