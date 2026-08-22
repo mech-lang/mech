@@ -3287,6 +3287,10 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
             f"Math.abs(window.scrollY - {mobile_expected['y']}) <= 2",
             "a desktop content-shell offset translating onto the mobile window",
         )
+        wait_for(
+            "!document.documentElement.dataset.mechPagePositionRestore",
+            "the mobile canonical restore reaching a stable mapping",
+        )
         if mobile_expected["origin"] <= desktop_position["origin"] + 20:
             fail(
                 "responsive persistence coverage did not cross the compact-header origin: "
@@ -3628,6 +3632,10 @@ document.addEventListener('DOMContentLoaded', () => {{
         wait_for(
             f"Math.abs(document.querySelector('.content-shell').scrollTop - {legacy_target}) <= 2",
             "a legacy ownerless window offset using its defined fallback",
+        )
+        wait_for(
+            "!document.documentElement.dataset.mechPagePositionRestore",
+            "the legacy ownerless restore reaching a stable mapping",
         )
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
