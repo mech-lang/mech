@@ -46,58 +46,59 @@ so their range and bearing geometry changes throughout every lap.
 2. Square-Drive State Machine
 -------------------------------------------------------------------------------
 
-The controller is an explicit resident finite state machine with East, North,
-West, and South states. Each state owns one side of the square. It shortens the
-last translational step so truth lands exactly on a corner, then rotates ninety
-degrees in place on the transition turn.
+The controller is an explicit finite state machine with East, North, West, and
+South states. It emits the repeating phase program consumed by the resident
+timer graph. Each state owns one side of the square; the first tick of a new
+phase supplies the next cardinal heading. Coordinate clipping shortens the
+final translation so truth lands exactly on every corner.
 
-#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) => <f64>
-  ├ :Select(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>)
-  ├ :East(x<f64>, high<f64>)
-  ├ :North(y<f64>, high<f64>)
-  ├ :West(x<f64>, low<f64>)
-  ├ :South(y<f64>, low<f64>)
-  └ :Done(next-phase<f64>).
+#SquareDrive(side-ticks<f64>) => <[f64]:1,340>
+  ├ :East(remaining<f64>, side-ticks<f64>, phases<[f64]>)
+  ├ :North(remaining<f64>, side-ticks<f64>, phases<[f64]>)
+  ├ :West(remaining<f64>, side-ticks<f64>, phases<[f64]>)
+  ├ :South(remaining<f64>, side-ticks<f64>, phases<[f64]>)
+  └ :Done(phases<[f64]>).
 
-#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) -> :Select(phase, x, y, low, high)
-  :Select(phase, x, y, low, high)
-    ├ phase == 0.0 -> :East(x, high)
-    ├ phase == 1.0 -> :North(y, high)
-    ├ phase == 2.0 -> :West(x, low)
-    └ phase == 3.0 -> :South(y, low)
-  :East(x, high)
-    ├ x < high -> :Done(0.0)
-    └ x >= high -> :Done(1.0)
-  :North(y, high)
-    ├ y < high -> :Done(1.0)
-    └ y >= high -> :Done(2.0)
-  :West(x, low)
-    ├ x > low -> :Done(2.0)
-    └ x <= low -> :Done(3.0)
-  :South(y, low)
-    ├ y > low -> :Done(3.0)
-    └ y <= low -> :Done(0.0)
-  :Done(next-phase) => next-phase.
+#SquareDrive(side-ticks<u64>) -> :East(side-ticks, side-ticks, [])
+  :East(remaining, side-ticks, phases)
+    ├ remaining > 0 -> :East(remaining - 1, side-ticks, [phases 0.0])
+    └ * -> :North(side-ticks, side-ticks, phases)
+  :North(remaining, side-ticks, phases)
+    ├ remaining > 0 -> :North(remaining - 1, side-ticks, [phases 1.0])
+    └ * -> :West(side-ticks, side-ticks, phases)
+  :West(remaining, side-ticks, phases)
+    ├ remaining > 0 -> :West(remaining - 1, side-ticks, [phases 2.0])
+    └ * -> :South(side-ticks, side-ticks, phases)
+  :South(remaining, side-ticks, phases)
+    ├ remaining > 0 -> :South(remaining - 1, side-ticks, [phases 3.0])
+    └ * -> :Done(phases)
+  :Done(phases) => phases.
 
-  ~drive-phase := 0.0
+  side-ticks := 85.0
+  drive-phases<[f64]:1,340> := #SquareDrive(side-ticks)
+  lap-ticks := 4.0 * side-ticks
+  drive-phase-index := (@clock/tick % lap-ticks) + 1.0
+  drive-phase := drive-phases[1,drive-phase-index]
+  drive-heading := drive-phase * π / 2.0
+  drive-cos := math/cos(drive-heading)
+  drive-sin := math/sin(drive-heading)
   ~truth := [2.5
              2.5
              0.0]
   simulation-time := @clock/tick * Δt
   actual-speed-scale := 0.965 + 0.025 * math/sin(simulation-time * 0.73)
-  next-drive-phase := #SquareDrive(drive-phase,
-    truth[1], truth[2], low-bound, high-bound)
-  phase-step := (next-drive-phase - drive-phase + 4.0) % 4.0
-  commanded-speed := speed * (1.0 - phase-step)
+  commanded-speed := speed
   actual-speed := commanded-speed * actual-speed-scale
-  commanded-turn-rate := (π / (2.0 * Δt)) * phase-step
-  actual-turn-rate := commanded-turn-rate
 
-  next-truth := truth + [actual-speed * math/cos(truth[3]) * Δt
-                         actual-speed * math/sin(truth[3]) * Δt
-                         actual-turn-rate * Δt]
+  unconstrained-truth := truth + [actual-speed * drive-cos * Δt
+                                  actual-speed * drive-sin * Δt
+                                  drive-heading - truth[3]]
+  constrained-truth-x := (low-bound + high-bound + ((unconstrained-truth[1] - low-bound) ^ 2) ^ 0.5 - ((unconstrained-truth[1] - high-bound) ^ 2) ^ 0.5) / 2.0
+  constrained-truth-y := (low-bound + high-bound + ((unconstrained-truth[2] - low-bound) ^ 2) ^ 0.5 - ((unconstrained-truth[2] - high-bound) ^ 2) ^ 0.5) / 2.0
+  next-truth := [constrained-truth-x
+                 constrained-truth-y
+                 unconstrained-truth[3]]
 
-  drive-phase = next-drive-phase
   truth = next-truth
 
 
@@ -159,17 +160,15 @@ Joseph covariance form before symmetrization.
                   0.0 0.0 0.08]
 
   estimate-heading := estimate[3]
-  estimate-cos := math/cos(estimate-heading)
-  estimate-sin := math/sin(estimate-heading)
-  motion-jacobian := [1.0 0.0 -commanded-speed * estimate-sin * Δt
-                      0.0 1.0  commanded-speed * estimate-cos * Δt
-                      0.0 0.0 1.0]
-  control-jacobian := [estimate-cos * Δt 0.0
-                       estimate-sin * Δt 0.0
-                       0.0 Δt]
-  predicted-estimate := estimate + [commanded-speed * estimate-cos * Δt
-                                    commanded-speed * estimate-sin * Δt
-                                    commanded-turn-rate * Δt]
+  motion-jacobian := [1.0 0.0 0.0
+                      0.0 1.0 0.0
+                      0.0 0.0 0.0]
+  control-jacobian := [drive-cos * Δt 0.0
+                       drive-sin * Δt 0.0
+                       0.0 1.0]
+  predicted-estimate := estimate + [commanded-speed * drive-cos * Δt
+                                    commanded-speed * drive-sin * Δt
+                                    drive-heading - estimate-heading]
   predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-covariance ** control-jacobian'
 
   predicted-dx-1 := camera-1[1] - predicted-estimate[1]

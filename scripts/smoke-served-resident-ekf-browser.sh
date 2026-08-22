@@ -103,8 +103,11 @@ harness = r'''<script>
     });
 
     const originalSetTimeout = window.setTimeout.bind(window);
-    const deadline = Date.now() + 20000;
+    const deadline = Date.now() + 30000;
     let firstTruth;
+    let previousTruth;
+    let departedStart = false;
+    const squareSides = new Set();
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
@@ -125,22 +128,54 @@ harness = r'''<script>
       const tabs = [...document.querySelectorAll('[data-mech-console-tab]')]
         .map(tab => tab.dataset.mechConsoleTab).join(",");
       const updates = Number(display?.dataset.mechDisplayUpdates || 0);
-      const truthPoint = truth
-        ? `${truth.getAttribute("cx")},${truth.getAttribute("cy")}`
-        : undefined;
-      if (truthPoint && firstTruth === undefined) firstTruth = truthPoint;
-      const truthMoved = Boolean(firstTruth && truthPoint && truthPoint !== firstTruth);
       const finitePoint = (element) => element &&
         Number.isFinite(Number(element.getAttribute("cx"))) &&
         Number.isFinite(Number(element.getAttribute("cy")));
+      const truthPoint = finitePoint(truth)
+        ? {x: Number(truth.getAttribute("cx")), y: Number(truth.getAttribute("cy"))}
+        : undefined;
+      if (truthPoint && firstTruth === undefined) firstTruth = truthPoint;
+      if (truthPoint && previousTruth) {
+        const dx = truthPoint.x - previousTruth.x;
+        const dy = truthPoint.y - previousTruth.y;
+        if (dx > 0.5) squareSides.add("east");
+        if (dy < -0.5) squareSides.add("north");
+        if (dx < -0.5) squareSides.add("west");
+        if (dy > 0.5) squareSides.add("south");
+      }
+      if (truthPoint) previousTruth = truthPoint;
+      const distanceFromStart = firstTruth && truthPoint
+        ? Math.hypot(truthPoint.x - firstTruth.x, truthPoint.y - firstTruth.y)
+        : 0;
+      departedStart ||= distanceFromStart > 100;
+      const truthMoved = Boolean(departedStart);
+      const lapComplete = Boolean(
+        departedStart && squareSides.size === 4 && distanceFromStart <= 12
+      );
       const trackingError = finitePoint(truth) && finitePoint(estimate)
         ? Math.hypot(
             Number(estimate.getAttribute("cx")) - Number(truth.getAttribute("cx")),
             Number(estimate.getAttribute("cy")) - Number(truth.getAttribute("cy")),
           )
         : Number.POSITIVE_INFINITY;
-      const lineStripPoints = (element) => (element?.getAttribute("points") || "")
-        .trim().split(/\s+/).filter(Boolean).length;
+      const lineStripGeometry = (element) => {
+        const coordinates = (element?.getAttribute("points") || "")
+          .trim().split(/[\s,]+/).filter(Boolean).map(Number);
+        const finite = coordinates.length >= 4 &&
+          coordinates.length % 2 === 0 &&
+          coordinates.every(Number.isFinite);
+        if (!finite) return {finite: false, points: 0, extent: 0};
+        const xs = coordinates.filter((_, index) => index % 2 === 0);
+        const ys = coordinates.filter((_, index) => index % 2 === 1);
+        const extent = Math.max(
+          Math.max(...xs) - Math.min(...xs),
+          Math.max(...ys) - Math.min(...ys),
+        );
+        return {finite: true, points: coordinates.length / 2, extent};
+      };
+      const covarianceGeometry = lineStripGeometry(covariance);
+      const truthPathGeometry = lineStripGeometry(truthPath);
+      const estimatePathGeometry = lineStripGeometry(estimatePath);
       const sceneRect = scene?.getBoundingClientRect();
       const sceneVisible = Boolean(sceneRect && sceneRect.width > 0 && sceneRect.height > 0);
       const outputPresentation = Boolean(
@@ -153,24 +188,42 @@ harness = r'''<script>
       );
 
       root.dataset.mechObservedUpdates = String(updates);
+      root.dataset.mechObservedSquareSides = ["east", "north", "west", "south"]
+        .filter(side => squareSides.has(side)).join(",");
+      root.dataset.mechObservedDistanceFromStart = distanceFromStart.toFixed(4);
+      root.dataset.mechObservedLapComplete = String(lapComplete);
+      root.dataset.mechObservedTrackingErrorPixels = trackingError.toFixed(4);
+      root.dataset.mechObservedCovariance = JSON.stringify(covarianceGeometry);
+      root.dataset.mechObservedTruthPath = JSON.stringify(truthPathGeometry);
+      root.dataset.mechObservedEstimatePath = JSON.stringify(estimatePathGeometry);
+      root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       if (
-        updates >= 160 &&
+        updates >= 320 &&
         cameras.length === 4 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
         trackingError <= 25 &&
-        truthMoved &&
-        lineStripPoints(covariance) >= 48 &&
-        lineStripPoints(truthPath) >= 64 &&
-        lineStripPoints(estimatePath) >= 64 &&
+        truthMoved && lapComplete &&
+        covarianceGeometry.finite && covarianceGeometry.points >= 48 &&
+        covarianceGeometry.extent > 0.1 &&
+        truthPathGeometry.finite && truthPathGeometry.points >= 64 &&
+        truthPathGeometry.extent > 100 &&
+        estimatePathGeometry.finite && estimatePathGeometry.points >= 64 &&
+        estimatePathGeometry.extent > 100 &&
         title?.textContent === "Camera EKF Localization" &&
         sceneVisible && outputPresentation
       ) {
         root.dataset.mechUpdates = String(updates);
         root.dataset.mechCameras = String(cameras.length);
         root.dataset.mechTruthMoved = String(truthMoved);
-        root.dataset.mechCovariancePoints = String(lineStripPoints(covariance));
-        root.dataset.mechTruthPathPoints = String(lineStripPoints(truthPath));
-        root.dataset.mechEstimatePathPoints = String(lineStripPoints(estimatePath));
+        root.dataset.mechSquareSides = ["east", "north", "west", "south"]
+          .filter(side => squareSides.has(side)).join(",");
+        root.dataset.mechLapComplete = String(lapComplete);
+        root.dataset.mechCovariancePoints = String(covarianceGeometry.points);
+        root.dataset.mechCovarianceFinite = String(covarianceGeometry.finite);
+        root.dataset.mechTruthPathPoints = String(truthPathGeometry.points);
+        root.dataset.mechTruthPathFinite = String(truthPathGeometry.finite);
+        root.dataset.mechEstimatePathPoints = String(estimatePathGeometry.points);
+        root.dataset.mechEstimatePathFinite = String(estimatePathGeometry.finite);
         root.dataset.mechTrackingErrorPixels = trackingError.toFixed(4);
         root.dataset.mechSceneVisible = String(sceneVisible);
         root.dataset.mechOutputPresentation = String(outputPresentation);
@@ -218,7 +271,7 @@ args = [
     "--disable-gpu",
     "--disable-dev-shm-usage",
     "--run-all-compositor-stages-before-draw",
-    "--virtual-time-budget=22000",
+    "--virtual-time-budget=32000",
     "--dump-dom",
     f"--user-data-dir={profile}",
     page_url,
@@ -256,11 +309,16 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-done="true"' "$dom_file" \
   || ! grep -q 'data-mech-cameras="4"' "$dom_file" \
   || ! grep -q 'data-mech-truth-moved="true"' "$dom_file" \
+  || ! grep -q 'data-mech-square-sides="east,north,west,south"' "$dom_file" \
+  || ! grep -q 'data-mech-lap-complete="true"' "$dom_file" \
   || ! grep -q 'data-mech-covariance-points="[4-9][0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-covariance-finite="true"' "$dom_file" \
+  || ! grep -q 'data-mech-truth-path-finite="true"' "$dom_file" \
+  || ! grep -q 'data-mech-estimate-path-finite="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
-  || [[ -z "$updates" || "$updates" -lt 160 ]] \
+  || [[ -z "$updates" || "$updates" -lt 320 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident EKF browser smoke test failed" >&2
   echo "Server log:" >&2
@@ -273,4 +331,4 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
 fi
 
 tracking_error_pixels="$(sed -n 's/.*data-mech-tracking-error-pixels="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-printf 'EKF_E2E display_updates=%s cameras=4 truth_moved=true covariance=true paths=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$tracking_error_pixels"
+printf 'EKF_E2E display_updates=%s cameras=4 square_sides=4 lap_complete=true truth_moved=true covariance_finite=true paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$tracking_error_pixels"
