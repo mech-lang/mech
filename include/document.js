@@ -279,10 +279,12 @@ function finishPagePositionRestore({ preserveSaved = true } = {}) {
   }
   clearTimeout(restore.timer);
   restore.observer?.disconnect();
+  restore.mutationObserver?.disconnect();
   for (const [target, type, listener] of restore.cancellations) {
     target.removeEventListener(type, listener);
   }
   state.pagePositionRestore = null;
+  delete document.documentElement.dataset.mechPagePositionRestore;
   if (!preserveSaved) {
     savePagePosition();
   }
@@ -319,9 +321,13 @@ function restorePagePosition() {
     deadline: performance.now() + 15_000,
     timer: null,
     observer: null,
+    mutationObserver: null,
     cancellations: [],
+    mapping: null,
+    stableSince: null,
   };
   state.pagePositionRestore = restore;
+  document.documentElement.dataset.mechPagePositionRestore = "pending";
   const cancel = () => finishPagePositionRestore({ preserveSaved: false });
   const activeOwner = documentPageScrollOwner();
   for (const [target, type] of [
@@ -346,6 +352,9 @@ function restorePagePosition() {
     const owner = documentPageScrollOwner();
     const target = documentPagePositionForOwner(restore, owner);
     if (!target) {
+      restore.mapping = null;
+      restore.stableSince = null;
+      document.documentElement.dataset.mechPagePositionRestore = "waiting-anchor";
       if (performance.now() >= restore.deadline) {
         finishPagePositionRestore({ preserveSaved: false });
         return;
@@ -354,15 +363,45 @@ function restorePagePosition() {
       restore.timer = setTimeout(attempt, 120);
       return;
     }
+    const mapping = `${owner === window ? "window" : "content-shell"}:${target.x}:${target.y}`;
+    if (restore.mapping !== mapping) {
+      restore.mapping = mapping;
+      restore.stableSince = null;
+    }
     scrollToImmediately(owner, target.x, target.y);
     const currentX = owner === window ? window.scrollX : owner.scrollLeft;
     const currentY = owner === window ? window.scrollY : owner.scrollTop;
     const reached = Math.abs(currentX - target.x) <= 1 &&
       Math.abs(currentY - target.y) <= 1;
     if (reached) {
-      finishPagePositionRestore();
+      const now = performance.now();
+      // A raw window coordinate is only provisional while the canonical
+      // content anchor is absent. Keep the restoration lifecycle alive for
+      // the full retry window so a late shell can become the owner and
+      // receive the translated coordinate instead of inheriting scrollTop 0.
+      if (owner === window && !document.querySelector(".content-shell")) {
+        restore.stableSince = null;
+        document.documentElement.dataset.mechPagePositionRestore = "waiting-owner";
+        if (now >= restore.deadline) {
+          finishPagePositionRestore();
+          return;
+        }
+        clearTimeout(restore.timer);
+        restore.timer = setTimeout(attempt, 120);
+        return;
+      }
+      restore.stableSince ??= now;
+      document.documentElement.dataset.mechPagePositionRestore = "settling";
+      if (now - restore.stableSince >= 600 || now >= restore.deadline) {
+        finishPagePositionRestore();
+        return;
+      }
+      clearTimeout(restore.timer);
+      restore.timer = setTimeout(attempt, 120);
       return;
     }
+    restore.stableSince = null;
+    document.documentElement.dataset.mechPagePositionRestore = "restoring";
     if (performance.now() >= restore.deadline) {
       finishPagePositionRestore({ preserveSaved: false });
       return;
@@ -380,6 +419,13 @@ function restorePagePosition() {
     if (contentShell) {
       restore.observer.observe(contentShell);
     }
+  }
+  if (typeof MutationObserver === "function") {
+    restore.mutationObserver = new MutationObserver(attempt);
+    restore.mutationObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+    });
   }
   for (const image of document.images) {
     if (!image.complete) {

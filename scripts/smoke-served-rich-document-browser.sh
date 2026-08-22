@@ -3195,6 +3195,10 @@ document.addEventListener('DOMContentLoaded', () => {{
             {"identifier": late_layout_script},
             session_id,
         )
+    wait_for(
+        "!document.documentElement.dataset.mechPagePositionRestore",
+        "the refreshed layout restore reaching a stable mapping",
+    )
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
         {"width": 1100, "height": 900, "deviceScaleFactor": 1, "mobile": False},
@@ -3302,18 +3306,8 @@ document.addEventListener('DOMContentLoaded', () => {{
   temporaryRange.id = 'mech-shellless-scroll-range';
   temporaryRange.style.height = '2000px';
   document.body.append(temporaryRange);
+  window.__MECH_DELAYED_SHELL__ = {{ shell, parent, next, temporaryRange }};
   document.documentElement.dataset.mechDelayedShell = 'missing';
-  setTimeout(() => {{
-    temporaryRange.remove();
-    parent.insertBefore(shell, next?.parentNode === parent ? next : null);
-    if (!shell.querySelector('#mech-late-layout-spacer')) {{
-      const spacer = document.createElement('div');
-      spacer.id = 'mech-late-layout-spacer';
-      spacer.style.height = '900px';
-      (shell.querySelector('.content-column') || shell).append(spacer);
-    }}
-    document.documentElement.dataset.mechDelayedShell = 'restored';
-  }}, 1200);
 }}, {{ once: true }});
 """},
             session_id,
@@ -3321,8 +3315,10 @@ document.addEventListener('DOMContentLoaded', () => {{
         devtools.call("Page.navigate", {"url": page_url}, session_id)
         wait_for(
             "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
-            "document.documentElement?.dataset.mechDelayedShell === 'restored'",
-            "the canonical anchor returning after a shell-less restore interval",
+            "document.documentElement?.dataset.mechDelayedShell === 'missing' && "
+            "document.documentElement?.dataset.mechPagePositionRestore === 'waiting-anchor' && "
+            f"Math.max(0, document.documentElement.scrollHeight - innerHeight) >= {desktop_position['y']}",
+            "an observed canonical restore attempt waiting on a missing reachable anchor",
             timeout=45,
         )
         if delayed_shell_script:
@@ -3331,6 +3327,24 @@ document.addEventListener('DOMContentLoaded', () => {{
                 {"identifier": delayed_shell_script},
                 session_id,
             )
+        evaluate("""
+(() => {
+  const held = window.__MECH_DELAYED_SHELL__;
+  if (!held) return;
+  held.temporaryRange.remove();
+  held.parent.insertBefore(
+    held.shell,
+    held.next?.parentNode === held.parent ? held.next : null,
+  );
+  if (!held.shell.querySelector('#mech-late-layout-spacer')) {
+    const spacer = document.createElement('div');
+    spacer.id = 'mech-late-layout-spacer';
+    spacer.style.height = '900px';
+    (held.shell.querySelector('.content-column') || held.shell).append(spacer);
+  }
+  document.documentElement.dataset.mechDelayedShell = 'restored';
+})()
+""")
         delayed_shell_expected = evaluate_json(f"""
 (() => {{
   const shell = document.querySelector('.content-shell');
@@ -3342,6 +3356,10 @@ document.addEventListener('DOMContentLoaded', () => {{
         wait_for(
             f"Math.abs(window.scrollY - {delayed_shell_expected['y']}) <= 2",
             "canonical restoration waiting for its delayed content-shell anchor",
+        )
+        wait_for(
+            "!document.documentElement.dataset.mechPagePositionRestore",
+            "the delayed canonical restore reaching a stable mapping",
         )
         mobile_position = evaluate_json("""
 (() => {
@@ -3440,6 +3458,126 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
         wait_for(
             f"Math.abs(document.querySelector('.content-shell').scrollTop - {mobile_position['y']}) <= 2",
             "a mobile window offset translating back onto the desktop content shell",
+        )
+        wait_for(
+            "!document.documentElement.dataset.mechPagePositionRestore",
+            "the canonical reverse restore reaching a stable mapping",
+        )
+
+        devtools.call(
+            "Emulation.setDeviceMetricsOverride",
+            {"width": 650, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+            session_id,
+        )
+        wait_for(
+            "getComputedStyle(document.querySelector('.content-shell')).overflowY === 'visible'",
+            "the explicit-window persistence source switching to its mobile layout",
+        )
+        shellless_position = evaluate_json("""
+(() => {
+  const shell = document.querySelector('.content-shell');
+  if (!shell) return null;
+  shell.remove();
+  const temporaryRange = document.createElement('div');
+  temporaryRange.id = 'mech-shellless-scroll-range';
+  temporaryRange.style.height = '2000px';
+  document.body.append(temporaryRange);
+  const scrollBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  window.scrollTo(0, 260);
+  document.documentElement.style.scrollBehavior = scrollBehavior;
+  return { x: window.scrollX, y: window.scrollY };
+})()
+""")
+        if shellless_position is None or shellless_position["y"] < 200:
+            fail(f"could not establish shell-less window persistence: {shellless_position!r}")
+        wait_for(
+            "(() => { "
+            "const entry = Object.entries(localStorage).find(([key]) => "
+            "key.startsWith('mech:document-layout:v1:')); "
+            "if (!entry) return false; "
+            "const page = JSON.parse(entry[1]).page; "
+            f"return page?.owner === 'window' && page?.coordinateSpace === 'window' && "
+            f"Math.abs(page.y - {shellless_position['y']}) <= 2; "
+            "})()",
+            "a real shell-less scroll persisting explicit window coordinates",
+        )
+        shellless_layout = evaluate_json("""
+Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layout:v1:')) || null
+""")
+        if shellless_layout is None:
+            fail("shell-less scrolling did not produce a persisted layout entry")
+        delayed_window_script = devtools.call(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": f"""
+localStorage.setItem({json.dumps(shellless_layout[0])}, {json.dumps(shellless_layout[1])});
+document.addEventListener('DOMContentLoaded', () => {{
+  const shell = document.querySelector('.content-shell');
+  const parent = shell?.parentNode;
+  if (!shell || !parent) return;
+  const next = shell.nextSibling;
+  shell.remove();
+  const temporaryRange = document.createElement('div');
+  temporaryRange.id = 'mech-shellless-scroll-range';
+  temporaryRange.style.height = '2000px';
+  document.body.append(temporaryRange);
+  window.__MECH_DELAYED_SHELL__ = {{ shell, parent, next, temporaryRange }};
+  document.documentElement.dataset.mechDelayedShell = 'missing';
+}}, {{ once: true }});
+"""},
+            session_id,
+        ).get("identifier")
+        devtools.call(
+            "Emulation.setDeviceMetricsOverride",
+            {"width": 1100, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+            session_id,
+        )
+        devtools.call("Page.navigate", {"url": page_url}, session_id)
+        wait_for(
+            "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
+            "document.documentElement?.dataset.mechDelayedShell === 'missing' && "
+            "document.documentElement?.dataset.mechPagePositionRestore === 'waiting-owner' && "
+            f"Math.abs(window.scrollY - {shellless_position['y']}) <= 2",
+            "an explicit window restore remaining live after reaching its shell-less target",
+            timeout=45,
+        )
+        if delayed_window_script:
+            devtools.call(
+                "Page.removeScriptToEvaluateOnNewDocument",
+                {"identifier": delayed_window_script},
+                session_id,
+            )
+        explicit_window_expected = evaluate_json(f"""
+(() => {{
+  const held = window.__MECH_DELAYED_SHELL__;
+  if (!held) return null;
+  held.temporaryRange.remove();
+  if (!held.shell.querySelector('#mech-late-layout-spacer')) {{
+    const spacer = document.createElement('div');
+    spacer.id = 'mech-late-layout-spacer';
+    spacer.style.height = '900px';
+    (held.shell.querySelector('.content-column') || held.shell).append(spacer);
+  }}
+  held.parent.insertBefore(
+    held.shell,
+    held.next?.parentNode === held.parent ? held.next : null,
+  );
+  let origin = 0;
+  for (let element = held.shell; element; element = element.offsetParent) origin += element.offsetTop;
+  document.documentElement.dataset.mechDelayedShell = 'restored';
+  return {{ y: Math.max(0, {shellless_position['y']} - origin), origin }};
+}})()
+""")
+        if explicit_window_expected is None:
+            fail("could not reinsert the explicit-window restore anchor")
+        wait_for(
+            f"Math.abs(document.querySelector('.content-shell').scrollTop - {explicit_window_expected['y']}) <= 2 && "
+            "document.documentElement.dataset.mechPagePositionRestore === 'settling'",
+            "a reached window coordinate reprojecting onto the returned shell",
+        )
+        wait_for(
+            "!document.documentElement.dataset.mechPagePositionRestore",
+            "the reprojected explicit-window restore reaching a stable mapping",
         )
 
         legacy_target = 180

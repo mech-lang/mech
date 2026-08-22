@@ -167,6 +167,13 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("coordinateSpace,"));
     assert!(controller.contains("const target = documentPagePositionForOwner(restore, owner)"));
     assert!(controller.contains("if (!target) {"));
+    assert!(controller.contains("restore.mapping !== mapping"));
+    assert!(controller.contains("restore.stableSince ??= now"));
+    assert!(controller.contains("now - restore.stableSince >= 600"));
+    assert!(controller.contains("new MutationObserver(attempt)"));
+    assert!(controller.contains("dataset.mechPagePositionRestore = \"waiting-anchor\""));
+    assert!(controller.contains("dataset.mechPagePositionRestore = \"waiting-owner\""));
+    assert!(controller.contains("dataset.mechPagePositionRestore = \"settling\""));
     assert!(controller.contains("owner === window ? window.scrollY : owner.scrollTop"));
     assert!(controller.contains("document.querySelector(\".content-shell\")?.addEventListener("));
     assert!(controller.contains("scrollContainer?.addEventListener(\"scroll\", schedule"));
