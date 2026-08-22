@@ -10,34 +10,55 @@ use sha2::{Digest, Sha256};
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_FACTORIES: usize = 9_028;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_323;
+const EXPECTED_STANDARD_COMPILER_RUNTIME_FACTORIES: usize = 1_341;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
-const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 64;
+const EXPECTED_STANDARD_SOURCE_SPECIALIZERS: usize = 82;
 #[cfg(all(feature = "standard_compiler", not(feature = "full_compiler")))]
 const EXPECTED_STANDARD_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "c345dc16d38ccd9254593cbd0d0d9a203be7413077de169eb7e8387867a8fd24";
+    "435526da1d03bc4e295192320422886ee10e85c72b9d2a8fdd8aeb371050c5f3";
 #[cfg(feature = "full_compiler")]
-const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_081;
+const EXPECTED_FULL_COMPILER_RUNTIME_FACTORIES: usize = 9_099;
 #[cfg(feature = "full_compiler")]
 const EXPECTED_FULL_COMPILER_RUNTIME_SURFACE_DIGEST: &str =
-    "0228bf738f02fe8bb1ff6dc557d447c5a79e7303ee071769602fbf40f4f90aa7";
+    "b32454f34e5d22a37aae7b007c45c3e6d6e9865ce23e84be6ace932a621de350";
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = 120_017;
 #[cfg(feature = "full_source")]
-const EXPECTED_NAMED_SPECIALIZERS: usize = 119;
+const EXPECTED_NAMED_SPECIALIZERS: usize = 137;
 #[cfg(feature = "full_source")]
 const EXPECTED_INTRINSIC_SPECIALIZERS: usize = 10;
 #[cfg(feature = "full_source")]
 const EXPECTED_PRELUDE_EXPORTS: usize = 52;
 #[cfg(feature = "full_source")]
-const EXPECTED_MODULE_EXPORTS: usize = 50;
+const EXPECTED_MODULE_EXPORTS: usize = 68;
 #[cfg(feature = "full_source")]
-const EXPECTED_ALL_EXPORTS: usize = 120;
+const EXPECTED_ALL_EXPORTS: usize = 138;
 #[cfg(feature = "full_runtime")]
 const EXPECTED_RUNTIME_SURFACE_FILE_SHA256: &str =
     "a759bb071a8ed4975755957a9df5e92b4c20cb90ba60d2469702556ad898ed27";
 #[cfg(feature = "full_runtime")]
 const SOURCE_ONLY_RUNTIME_FACTORY: &str = "HorizontalConcatenateNArgs<f64>";
+#[cfg(feature = "full_source")]
+const COMPILER_EKF_RUNTIME_FACTORIES: [&str; 18] = [
+    "ekf/trigonometric-state",
+    "ekf/motion-jacobian",
+    "ekf/control-jacobian",
+    "ekf/predicted-state",
+    "ekf/predicted-covariance",
+    "ekf/landmark-delta-and-range",
+    "ekf/predicted-measurement",
+    "ekf/measurement-jacobian",
+    "ekf/innovation-covariance",
+    "ekf/solve-2x2",
+    "ekf/kalman-gain",
+    "ekf/innovation",
+    "ekf/corrected-state",
+    "ekf/joseph-covariance-update",
+    "ekf/covariance-symmetrization",
+    "ekf/candidate-finite",
+    "ekf/covariance-positive-diagonal",
+    "ekf/covariance-symmetric",
+];
 #[cfg(feature = "full_runtime")]
 const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =
     "4bf16c1523cdc584d4e0479c3210903f0000679ba180601804388e94938b9c07";
@@ -232,7 +253,13 @@ fn assert_runtime_surface(catalog: &FunctionCatalog, allow_source_only_factory: 
         return;
     }
 
-    let expected_count = EXPECTED_RUNTIME_FACTORIES + usize::from(allow_source_only_factory);
+    #[cfg(feature = "full_source")]
+    let compiler_runtime_factory_count = COMPILER_EKF_RUNTIME_FACTORIES.len();
+    #[cfg(not(feature = "full_source"))]
+    let compiler_runtime_factory_count = 0;
+    let expected_count = EXPECTED_RUNTIME_FACTORIES
+        + usize::from(allow_source_only_factory)
+        + compiler_runtime_factory_count;
     assert_eq!(
         count, expected_count,
         "selected runtime catalog is neither the frozen standard nor exhaustive profile",
@@ -257,6 +284,15 @@ fn assert_runtime_surface(catalog: &FunctionCatalog, allow_source_only_factory: 
             .find_map(|(id, name)| (name == SOURCE_ONLY_RUNTIME_FACTORY).then(|| id.clone()))
             .expect("full source catalog must contain its one source-only runtime factory");
         actual.remove(&source_only);
+    }
+    #[cfg(feature = "full_source")]
+    for name in COMPILER_EKF_RUNTIME_FACTORIES {
+        let id = id_hex(mech_core::RuntimeFunctionId::from_name(name).raw());
+        assert_eq!(
+            actual.remove(&id).as_deref(),
+            Some(name),
+            "compiler profile omitted or renamed public runtime factory {name}",
+        );
     }
     assert_eq!(actual, expected, "runtime catalog diverged from PR2");
 

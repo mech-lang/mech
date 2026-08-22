@@ -165,6 +165,8 @@ pub mod tracing;
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    #[cfg(all(feature = "resident-artifact", feature = "semantic-compiler"))]
+    pub use crate::efficacy::ekf::catalog::__mech_native::*;
     #[cfg(all(feature = "access", feature = "matrix"))]
     pub use crate::intrinsics::access::matrix::__mech_native::*;
     #[cfg(all(feature = "access", feature = "tuple"))]

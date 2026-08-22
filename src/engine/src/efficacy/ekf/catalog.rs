@@ -419,58 +419,287 @@ fn runtime_registration(
 // Builder registration requires factory types at compile time, so keep the
 // ordered calls derived from the single operation table and assert alignment.
 macro_rules! register {
-    ($builder:expr, $index:expr, $factory:ty, $validator:ident) => {{
+    ($builder:expr, $index:expr, $factory:ty, $validator:ident, $installer:literal) => {{
         let spec = &FROZEN_EKF_OPERATIONS[$index];
         let (signature, _, validator) = runtime_registration(spec.operation);
         debug_assert_eq!(signature, <$factory>::SIGNATURE);
         debug_assert_eq!(validator as usize, $validator as usize);
+        let contract = RuntimeFunctionContract::custom(
+            spec.canonical_name,
+            RuntimeOutputAliasPolicy::DisallowInputAlias,
+            $validator,
+        );
+        #[cfg(feature = "native-plan")]
+        $builder.insert_runtime_factory_with_linkage_and_semantic_contract::<$factory>(
+            spec.canonical_name,
+            contract,
+            mech_core::NativeFunctionLinkage::for_factory::<$factory>(
+                "mech-engine",
+                "mech_engine",
+                $installer,
+                &["resident-artifact", "semantic-compiler"],
+            )?,
+            semantic_contract(spec.operation),
+        )?;
+        #[cfg(not(feature = "native-plan"))]
         $builder.insert_runtime_factory_with_semantic_contract::<$factory>(
             spec.canonical_name,
-            RuntimeFunctionContract::custom(
-                spec.canonical_name,
-                RuntimeOutputAliasPolicy::DisallowInputAlias,
-                $validator,
-            ),
+            contract,
             semantic_contract(spec.operation),
         )?;
     }};
 }
 
 pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register!(builder, 0, TrigFactory, validate_trig);
-    register!(builder, 1, MotionFactory, validate_motion);
-    register!(builder, 2, ControlFactory, validate_control);
-    register!(builder, 3, PredictedStateFactory, validate_predicted_state);
+    register!(
+        builder,
+        0,
+        TrigFactory,
+        validate_trig,
+        "mech_engine::__mech_native::install_ekf_trigonometric_state"
+    );
+    register!(
+        builder,
+        1,
+        MotionFactory,
+        validate_motion,
+        "mech_engine::__mech_native::install_ekf_motion_jacobian"
+    );
+    register!(
+        builder,
+        2,
+        ControlFactory,
+        validate_control,
+        "mech_engine::__mech_native::install_ekf_control_jacobian"
+    );
+    register!(
+        builder,
+        3,
+        PredictedStateFactory,
+        validate_predicted_state,
+        "mech_engine::__mech_native::install_ekf_predicted_state"
+    );
     register!(
         builder,
         4,
         PredictedCovarianceFactory,
-        validate_predicted_covariance
+        validate_predicted_covariance,
+        "mech_engine::__mech_native::install_ekf_predicted_covariance"
     );
-    register!(builder, 5, LandmarkFactory, validate_landmark);
-    register!(builder, 6, MeasurementFactory, validate_measurement);
+    register!(
+        builder,
+        5,
+        LandmarkFactory,
+        validate_landmark,
+        "mech_engine::__mech_native::install_ekf_landmark_delta_and_range"
+    );
+    register!(
+        builder,
+        6,
+        MeasurementFactory,
+        validate_measurement,
+        "mech_engine::__mech_native::install_ekf_predicted_measurement"
+    );
     register!(
         builder,
         7,
         MeasurementJacobianFactory,
-        validate_measurement_jacobian
+        validate_measurement_jacobian,
+        "mech_engine::__mech_native::install_ekf_measurement_jacobian"
     );
     register!(
         builder,
         8,
         InnovationCovarianceFactory,
+        validate_innovation_covariance,
+        "mech_engine::__mech_native::install_ekf_innovation_covariance"
+    );
+    register!(
+        builder,
+        9,
+        SolveFactory,
+        validate_solve,
+        "mech_engine::__mech_native::install_ekf_solve_2x2"
+    );
+    register!(
+        builder,
+        10,
+        GainFactory,
+        validate_gain,
+        "mech_engine::__mech_native::install_ekf_kalman_gain"
+    );
+    register!(
+        builder,
+        11,
+        InnovationFactory,
+        validate_innovation,
+        "mech_engine::__mech_native::install_ekf_innovation"
+    );
+    register!(
+        builder,
+        12,
+        CorrectedStateFactory,
+        validate_corrected_state,
+        "mech_engine::__mech_native::install_ekf_corrected_state"
+    );
+    register!(
+        builder,
+        13,
+        JosephFactory,
+        validate_joseph,
+        "mech_engine::__mech_native::install_ekf_joseph_covariance_update"
+    );
+    register!(
+        builder,
+        14,
+        SymmetrizationFactory,
+        validate_symmetrization,
+        "mech_engine::__mech_native::install_ekf_covariance_symmetrization"
+    );
+    register!(
+        builder,
+        15,
+        FiniteFactory,
+        validate_finite,
+        "mech_engine::__mech_native::install_ekf_candidate_finite"
+    );
+    register!(
+        builder,
+        16,
+        PositiveFactory,
+        validate_positive,
+        "mech_engine::__mech_native::install_ekf_covariance_positive_diagonal"
+    );
+    register!(
+        builder,
+        17,
+        SymmetricFactory,
+        validate_symmetric,
+        "mech_engine::__mech_native::install_ekf_covariance_symmetric"
+    );
+    Ok(())
+}
+
+#[doc(hidden)]
+#[cfg(feature = "native-link")]
+pub mod __mech_native {
+    use super::*;
+
+    macro_rules! installer {
+        ($name:ident, $index:expr, $factory:ty, $validator:ident) => {
+            pub fn $name(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+                let spec = &FROZEN_EKF_OPERATIONS[$index];
+                builder.insert_runtime_factory_with_semantic_contract::<$factory>(
+                    spec.canonical_name,
+                    RuntimeFunctionContract::custom(
+                        spec.canonical_name,
+                        RuntimeOutputAliasPolicy::DisallowInputAlias,
+                        $validator,
+                    ),
+                    semantic_contract(spec.operation),
+                )
+            }
+        };
+    }
+
+    installer!(
+        install_ekf_trigonometric_state,
+        0,
+        TrigFactory,
+        validate_trig
+    );
+    installer!(
+        install_ekf_motion_jacobian,
+        1,
+        MotionFactory,
+        validate_motion
+    );
+    installer!(
+        install_ekf_control_jacobian,
+        2,
+        ControlFactory,
+        validate_control
+    );
+    installer!(
+        install_ekf_predicted_state,
+        3,
+        PredictedStateFactory,
+        validate_predicted_state
+    );
+    installer!(
+        install_ekf_predicted_covariance,
+        4,
+        PredictedCovarianceFactory,
+        validate_predicted_covariance
+    );
+    installer!(
+        install_ekf_landmark_delta_and_range,
+        5,
+        LandmarkFactory,
+        validate_landmark
+    );
+    installer!(
+        install_ekf_predicted_measurement,
+        6,
+        MeasurementFactory,
+        validate_measurement
+    );
+    installer!(
+        install_ekf_measurement_jacobian,
+        7,
+        MeasurementJacobianFactory,
+        validate_measurement_jacobian
+    );
+    installer!(
+        install_ekf_innovation_covariance,
+        8,
+        InnovationCovarianceFactory,
         validate_innovation_covariance
     );
-    register!(builder, 9, SolveFactory, validate_solve);
-    register!(builder, 10, GainFactory, validate_gain);
-    register!(builder, 11, InnovationFactory, validate_innovation);
-    register!(builder, 12, CorrectedStateFactory, validate_corrected_state);
-    register!(builder, 13, JosephFactory, validate_joseph);
-    register!(builder, 14, SymmetrizationFactory, validate_symmetrization);
-    register!(builder, 15, FiniteFactory, validate_finite);
-    register!(builder, 16, PositiveFactory, validate_positive);
-    register!(builder, 17, SymmetricFactory, validate_symmetric);
-    Ok(())
+    installer!(install_ekf_solve_2x2, 9, SolveFactory, validate_solve);
+    installer!(install_ekf_kalman_gain, 10, GainFactory, validate_gain);
+    installer!(
+        install_ekf_innovation,
+        11,
+        InnovationFactory,
+        validate_innovation
+    );
+    installer!(
+        install_ekf_corrected_state,
+        12,
+        CorrectedStateFactory,
+        validate_corrected_state
+    );
+    installer!(
+        install_ekf_joseph_covariance_update,
+        13,
+        JosephFactory,
+        validate_joseph
+    );
+    installer!(
+        install_ekf_covariance_symmetrization,
+        14,
+        SymmetrizationFactory,
+        validate_symmetrization
+    );
+    installer!(
+        install_ekf_candidate_finite,
+        15,
+        FiniteFactory,
+        validate_finite
+    );
+    installer!(
+        install_ekf_covariance_positive_diagonal,
+        16,
+        PositiveFactory,
+        validate_positive
+    );
+    installer!(
+        install_ekf_covariance_symmetric,
+        17,
+        SymmetricFactory,
+        validate_symmetric
+    );
 }
 
 pub(crate) fn install_source_operations(builder: &mut FunctionCatalogBuilder) -> MResult<()> {

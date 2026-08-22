@@ -35,10 +35,14 @@ so their range and bearing geometry changes throughout every lap.
   low-bound := 2.5
   high-bound := 7.5
 
-  camera-1 := [1.0 1.0]'
-  camera-2 := [9.0 1.0]'
-  camera-3 := [9.0 9.0]'
-  camera-4 := [1.0 9.0]'
+  camera-1 := [1.0
+               1.0]
+  camera-2 := [9.0
+               1.0]
+  camera-3 := [9.0
+               9.0]
+  camera-4 := [1.0
+               9.0]
 
 
 2. Square-Drive State Machine
@@ -78,7 +82,9 @@ straight ahead.
   :Done(next-phase) => next-phase.
 
   ~drive-phase := 0.0
-  ~truth := [2.5 2.5 0.0]'
+  ~truth := [2.5
+             2.5
+             0.0]
   ~simulation-time := 0.0
 
   next-drive-phase := #SquareDrive(drive-phase,
@@ -87,13 +93,25 @@ straight ahead.
   commanded-speed := speed * (1.0 - phase-step)
   commanded-turn-rate := turn-rate * phase-step
 
-  velocity-basis := [1.0 0.0 0.0 0.0]'
-  turn-basis := [0.0 1.0 0.0 0.0]'
-  range-basis := [0.0 0.0 1.0 0.0]'
-  bearing-basis := [0.0 0.0 0.0 1.0]'
+  velocity-basis := [1.0
+                     0.0
+                     0.0
+                     0.0]
+  turn-basis := [0.0
+                 1.0
+                 0.0
+                 0.0]
+  range-basis := [0.0
+                  0.0
+                  1.0
+                  0.0]
+  bearing-basis := [0.0
+                    0.0
+                    0.0
+                    1.0]
   commanded-frame := commanded-speed * velocity-basis + commanded-turn-rate * turn-basis
-  actual-speed<f64> := commanded-speed * (0.965 + 0.025 * math/sin(simulation-time * 0.73))
-  actual-turn-rate<f64> := commanded-turn-rate
+  actual-speed := commanded-speed * (0.965 + 0.025 * math/sin(simulation-time * 0.73))
+  actual-turn-rate := commanded-turn-rate
   actual-motion-frame := actual-speed * velocity-basis + actual-turn-rate * turn-basis
 
   truth-trigonometry := ekf/trigonometric-state(truth)
@@ -117,14 +135,14 @@ unknown to the filter and different for every camera.
   camera-3-delta := ekf/landmark-delta-and-range(next-truth, camera-3)
   camera-4-delta := ekf/landmark-delta-and-range(next-truth, camera-4)
 
-  range-1<f64> := camera-1-delta[3] + 0.12 * math/sin(simulation-time * 1.31 + 0.2)
-  range-2<f64> := camera-2-delta[3] + 0.10 * math/sin(simulation-time * 1.73 + 1.1)
-  range-3<f64> := camera-3-delta[3] + 0.13 * math/sin(simulation-time * 1.17 + 2.4)
-  range-4<f64> := camera-4-delta[3] + 0.11 * math/sin(simulation-time * 1.91 + 3.2)
-  bearing-1<f64> := math/atan2(camera-1-delta[2], camera-1-delta[1]) - next-truth[3] + 0.012 * math/sin(simulation-time * 2.11 + 0.4)
-  bearing-2<f64> := math/atan2(camera-2-delta[2], camera-2-delta[1]) - next-truth[3] + 0.010 * math/sin(simulation-time * 1.67 + 1.7)
-  bearing-3<f64> := math/atan2(camera-3-delta[2], camera-3-delta[1]) - next-truth[3] + 0.013 * math/sin(simulation-time * 2.37 + 2.8)
-  bearing-4<f64> := math/atan2(camera-4-delta[2], camera-4-delta[1]) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.43 + 4.0)
+  range-1 := camera-1-delta[3] + 0.12 * math/sin(simulation-time * 1.31 + 0.2)
+  range-2 := camera-2-delta[3] + 0.10 * math/sin(simulation-time * 1.73 + 1.1)
+  range-3 := camera-3-delta[3] + 0.13 * math/sin(simulation-time * 1.17 + 2.4)
+  range-4 := camera-4-delta[3] + 0.11 * math/sin(simulation-time * 1.91 + 3.2)
+  bearing-1 := math/atan2(camera-1-delta[2], camera-1-delta[1]) - next-truth[3] + 0.012 * math/sin(simulation-time * 2.11 + 0.4)
+  bearing-2 := math/atan2(camera-2-delta[2], camera-2-delta[1]) - next-truth[3] + 0.010 * math/sin(simulation-time * 1.67 + 1.7)
+  bearing-3 := math/atan2(camera-3-delta[2], camera-3-delta[1]) - next-truth[3] + 0.013 * math/sin(simulation-time * 2.37 + 2.8)
+  bearing-4 := math/atan2(camera-4-delta[2], camera-4-delta[1]) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.43 + 4.0)
 
   observation-a := commanded-frame + range-1 * range-basis + bearing-1 * bearing-basis
   observation-b := commanded-frame + range-2 * range-basis + bearing-2 * bearing-basis
@@ -143,7 +161,9 @@ Joseph covariance form before symmetrization.
                          0.0 0.018]
   measurement-covariance := [0.0225 0.0
                              0.0 0.0004]
-  ~estimate := [2.9 2.15 0.16]'
+  ~estimate := [2.9
+                2.15
+                0.16]
   ~covariance := [0.45 0.0 0.0
                   0.0 0.45 0.0
                   0.0 0.0 0.08]
