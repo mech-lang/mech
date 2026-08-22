@@ -1,0 +1,588 @@
+Extended Kalman Filter Localization
+===============================================================================
+section: Examples
++> ekf
++> math
+===============================================================================
+
+This resident application localizes a robot from noisy range-and-bearing
+measurements made by four fixed cameras. The cyan robot is simulated truth, the
+amber marker is the motion-model prediction, and the rose robot is the corrected
+EKF estimate. Their rolling paths make tracking error visible instead of hiding
+it in a final scalar.
+
+The filter follows the recursive predict/correct formulation and extended
+linearization described by [Welch and Bishop's EKF tutorial](https://www.cs.unc.edu/~welch/media/pdf/kalman_intro.pdf),
+building on [Kalman's original state-space filtering paper](https://doi.org/10.1115/1.3662552).
+The camera observations are generated
+from truth with deterministic noise; the filter receives only commanded motion,
+camera locations, measurements, and covariance models.
+
+
+1. Field and Cameras
+-------------------------------------------------------------------------------
+
+The robot drives between 2.5 and 7.5 field units. Cameras surround that square,
+so their range and bearing geometry changes throughout every lap.
+
+@clock := timer://clock/tick{:read(tick)}
+@scene := scene://localization/frame{:write(replace)}
+
+  π := 3.141592654
+  Δt := @clock/tick * 0.0 + 0.05
+  speed := 1.25
+  turn-rate := π / (2.0 * Δt)
+  low-bound := 2.5
+  high-bound := 7.5
+
+  camera-1 := [1.0 1.0]'
+  camera-2 := [9.0 1.0]'
+  camera-3 := [9.0 9.0]'
+  camera-4 := [1.0 9.0]'
+
+
+2. Square-Drive State Machine
+-------------------------------------------------------------------------------
+
+The controller is an explicit finite state machine. Each named state owns one
+side of the square and transitions only after truth reaches that side's boundary.
+A transition tick rotates the robot ninety degrees in place; ordinary ticks move
+straight ahead.
+
+#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) => <f64>
+  ├ :Select(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>)
+  ├ :East(x<f64>, high<f64>)
+  ├ :North(y<f64>, high<f64>)
+  ├ :West(x<f64>, low<f64>)
+  ├ :South(y<f64>, low<f64>)
+  └ :Done(next-phase<f64>).
+
+#SquareDrive(phase<f64>, x<f64>, y<f64>, low<f64>, high<f64>) -> :Select(phase, x, y, low, high)
+  :Select(phase, x, y, low, high)
+    ├ phase == 0.0 -> :East(x, high)
+    ├ phase == 1.0 -> :North(y, high)
+    ├ phase == 2.0 -> :West(x, low)
+    └ phase == 3.0 -> :South(y, low)
+  :East(x, high)
+    ├ x < high -> :Done(0.0)
+    └ x >= high -> :Done(1.0)
+  :North(y, high)
+    ├ y < high -> :Done(1.0)
+    └ y >= high -> :Done(2.0)
+  :West(x, low)
+    ├ x > low -> :Done(2.0)
+    └ x <= low -> :Done(3.0)
+  :South(y, low)
+    ├ y > low -> :Done(3.0)
+    └ y <= low -> :Done(0.0)
+  :Done(next-phase) => next-phase.
+
+  ~drive-phase := 0.0
+  ~truth := [2.5 2.5 0.0]'
+  ~simulation-time := 0.0
+
+  next-drive-phase := #SquareDrive(drive-phase,
+    truth[1], truth[2], low-bound, high-bound)
+  phase-step := (next-drive-phase - drive-phase + 4.0) % 4.0
+  commanded-speed := speed * (1.0 - phase-step)
+  commanded-turn-rate := turn-rate * phase-step
+
+  velocity-basis := [1.0 0.0 0.0 0.0]'
+  turn-basis := [0.0 1.0 0.0 0.0]'
+  range-basis := [0.0 0.0 1.0 0.0]'
+  bearing-basis := [0.0 0.0 0.0 1.0]'
+  commanded-frame := commanded-speed * velocity-basis + commanded-turn-rate * turn-basis
+  actual-speed<f64> := commanded-speed * (0.965 + 0.025 * math/sin(simulation-time * 0.73))
+  actual-turn-rate<f64> := commanded-turn-rate
+  actual-motion-frame := actual-speed * velocity-basis + actual-turn-rate * turn-basis
+
+  truth-trigonometry := ekf/trigonometric-state(truth)
+  next-truth := ekf/predicted-state(truth,
+    actual-motion-frame, truth-trigonometry, Δt)
+
+  drive-phase = next-drive-phase
+  truth = next-truth
+  simulation-time += Δt
+
+
+3. Noisy Camera Observations
+-------------------------------------------------------------------------------
+
+Every camera reports range and robot-relative bearing. The four noise signals are
+deterministic sums of sinusoids: repeatable enough for regression testing, but
+unknown to the filter and different for every camera.
+
+  camera-1-delta := ekf/landmark-delta-and-range(next-truth, camera-1)
+  camera-2-delta := ekf/landmark-delta-and-range(next-truth, camera-2)
+  camera-3-delta := ekf/landmark-delta-and-range(next-truth, camera-3)
+  camera-4-delta := ekf/landmark-delta-and-range(next-truth, camera-4)
+
+  range-1<f64> := camera-1-delta[3] + 0.12 * math/sin(simulation-time * 1.31 + 0.2)
+  range-2<f64> := camera-2-delta[3] + 0.10 * math/sin(simulation-time * 1.73 + 1.1)
+  range-3<f64> := camera-3-delta[3] + 0.13 * math/sin(simulation-time * 1.17 + 2.4)
+  range-4<f64> := camera-4-delta[3] + 0.11 * math/sin(simulation-time * 1.91 + 3.2)
+  bearing-1<f64> := math/atan2(camera-1-delta[2], camera-1-delta[1]) - next-truth[3] + 0.012 * math/sin(simulation-time * 2.11 + 0.4)
+  bearing-2<f64> := math/atan2(camera-2-delta[2], camera-2-delta[1]) - next-truth[3] + 0.010 * math/sin(simulation-time * 1.67 + 1.7)
+  bearing-3<f64> := math/atan2(camera-3-delta[2], camera-3-delta[1]) - next-truth[3] + 0.013 * math/sin(simulation-time * 2.37 + 2.8)
+  bearing-4<f64> := math/atan2(camera-4-delta[2], camera-4-delta[1]) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.43 + 4.0)
+
+  observation-a := commanded-frame + range-1 * range-basis + bearing-1 * bearing-basis
+  observation-b := commanded-frame + range-2 * range-basis + bearing-2 * bearing-basis
+  observation-c := commanded-frame + range-3 * range-basis + bearing-3 * bearing-basis
+  observation-d := commanded-frame + range-4 * range-basis + bearing-4 * bearing-basis
+
+
+4. Extended Kalman Filter
+-------------------------------------------------------------------------------
+
+The motion model predicts once per control interval. Four measurement updates
+then consume the cameras in a fixed order. Each update uses the numerically stable
+Joseph covariance form before symmetrization.
+
+  process-covariance := [0.08 0.0
+                         0.0 0.018]
+  measurement-covariance := [0.0225 0.0
+                             0.0 0.0004]
+  ~estimate := [2.9 2.15 0.16]'
+  ~covariance := [0.45 0.0 0.0
+                  0.0 0.45 0.0
+                  0.0 0.0 0.08]
+
+  estimate-trigonometry := ekf/trigonometric-state(estimate)
+  motion-jacobian := ekf/motion-jacobian(estimate,
+    commanded-frame, estimate-trigonometry, Δt)
+  control-jacobian := ekf/control-jacobian(estimate-trigonometry, Δt)
+  predicted-estimate := ekf/predicted-state(estimate,
+    commanded-frame, estimate-trigonometry, Δt)
+  predicted-covariance := ekf/predicted-covariance(covariance,
+    motion-jacobian, control-jacobian, process-covariance)
+
+  predicted-delta-1 := ekf/landmark-delta-and-range(predicted-estimate, camera-1)
+  predicted-observation-1 := ekf/predicted-measurement(predicted-estimate, predicted-delta-1)
+  observation-jacobian-1 := ekf/measurement-jacobian(predicted-delta-1)
+  innovation-covariance-1 := ekf/innovation-covariance(predicted-covariance,
+    observation-jacobian-1, measurement-covariance)
+  innovation-inverse-1 := ekf/solve-2x2(innovation-covariance-1)
+  gain-1 := ekf/kalman-gain(predicted-covariance,
+    observation-jacobian-1, innovation-inverse-1)
+  innovation-1 := ekf/innovation(observation-a, predicted-observation-1)
+  corrected-estimate-1 := ekf/corrected-state(predicted-estimate, gain-1, innovation-1)
+  corrected-covariance-1 := ekf/joseph-covariance-update(predicted-covariance,
+    observation-jacobian-1, gain-1, measurement-covariance)
+  symmetric-covariance-1 := ekf/covariance-symmetrization(corrected-covariance-1)
+
+  predicted-delta-2 := ekf/landmark-delta-and-range(corrected-estimate-1, camera-2)
+  predicted-observation-2 := ekf/predicted-measurement(corrected-estimate-1, predicted-delta-2)
+  observation-jacobian-2 := ekf/measurement-jacobian(predicted-delta-2)
+  innovation-covariance-2 := ekf/innovation-covariance(symmetric-covariance-1,
+    observation-jacobian-2, measurement-covariance)
+  innovation-inverse-2 := ekf/solve-2x2(innovation-covariance-2)
+  gain-2 := ekf/kalman-gain(symmetric-covariance-1,
+    observation-jacobian-2, innovation-inverse-2)
+  innovation-2 := ekf/innovation(observation-b, predicted-observation-2)
+  corrected-estimate-2 := ekf/corrected-state(corrected-estimate-1, gain-2, innovation-2)
+  corrected-covariance-2 := ekf/joseph-covariance-update(symmetric-covariance-1,
+    observation-jacobian-2, gain-2, measurement-covariance)
+  symmetric-covariance-2 := ekf/covariance-symmetrization(corrected-covariance-2)
+
+  predicted-delta-3 := ekf/landmark-delta-and-range(corrected-estimate-2, camera-3)
+  predicted-observation-3 := ekf/predicted-measurement(corrected-estimate-2, predicted-delta-3)
+  observation-jacobian-3 := ekf/measurement-jacobian(predicted-delta-3)
+  innovation-covariance-3 := ekf/innovation-covariance(symmetric-covariance-2,
+    observation-jacobian-3, measurement-covariance)
+  innovation-inverse-3 := ekf/solve-2x2(innovation-covariance-3)
+  gain-3 := ekf/kalman-gain(symmetric-covariance-2,
+    observation-jacobian-3, innovation-inverse-3)
+  innovation-3 := ekf/innovation(observation-c, predicted-observation-3)
+  corrected-estimate-3 := ekf/corrected-state(corrected-estimate-2, gain-3, innovation-3)
+  corrected-covariance-3 := ekf/joseph-covariance-update(symmetric-covariance-2,
+    observation-jacobian-3, gain-3, measurement-covariance)
+  symmetric-covariance-3 := ekf/covariance-symmetrization(corrected-covariance-3)
+
+  predicted-delta-4 := ekf/landmark-delta-and-range(corrected-estimate-3, camera-4)
+  predicted-observation-4 := ekf/predicted-measurement(corrected-estimate-3, predicted-delta-4)
+  observation-jacobian-4 := ekf/measurement-jacobian(predicted-delta-4)
+  innovation-covariance-4 := ekf/innovation-covariance(symmetric-covariance-3,
+    observation-jacobian-4, measurement-covariance)
+  innovation-inverse-4 := ekf/solve-2x2(innovation-covariance-4)
+  gain-4 := ekf/kalman-gain(symmetric-covariance-3,
+    observation-jacobian-4, innovation-inverse-4)
+  innovation-4 := ekf/innovation(observation-d, predicted-observation-4)
+  corrected-estimate-4 := ekf/corrected-state(corrected-estimate-3, gain-4, innovation-4)
+  corrected-covariance-4 := ekf/joseph-covariance-update(symmetric-covariance-3,
+    observation-jacobian-4, gain-4, measurement-covariance)
+  symmetric-covariance-4 := ekf/covariance-symmetrization(corrected-covariance-4)
+
+  estimate-finite! := ekf/candidate-finite(corrected-estimate-4,
+    symmetric-covariance-4)
+  covariance-positive! := ekf/covariance-positive-diagonal(symmetric-covariance-4)
+  covariance-symmetric! := ekf/covariance-symmetric(symmetric-covariance-4)
+
+  estimate = corrected-estimate-4
+  covariance = symmetric-covariance-4
+
+
+5. Live Tracking Field
+-------------------------------------------------------------------------------
+
+The covariance outline is the two-standard-deviation position ellipse calculated
+from the live 2x2 covariance block. Camera rays terminate at simulated truth;
+only their noisy range and bearing values enter the filter.
+
+  screen-scale := 62.0
+  screen-origin-x := 120.0
+  screen-origin-y := 700.0
+  truth-screen-x := screen-origin-x + next-truth[1] * screen-scale
+  truth-screen-y := screen-origin-y - next-truth[2] * screen-scale
+  predicted-screen-x := screen-origin-x + predicted-estimate[1] * screen-scale
+  predicted-screen-y := screen-origin-y - predicted-estimate[2] * screen-scale
+  estimate-screen-x := screen-origin-x + corrected-estimate-4[1] * screen-scale
+  estimate-screen-y := screen-origin-y - corrected-estimate-4[2] * screen-scale
+
+  position-error-x := corrected-estimate-4[1] - next-truth[1]
+  position-error-y := corrected-estimate-4[2] - next-truth[2]
+  position-error := (position-error-x ^ 2 + position-error-y ^ 2) ^ 0.5
+
+  ellipse-a := symmetric-covariance-4[1,1]
+  ellipse-b := symmetric-covariance-4[1,2]
+  ellipse-c := symmetric-covariance-4[2,2]
+  ellipse-root := (((ellipse-a - ellipse-c) / 2.0) ^ 2 + ellipse-b ^ 2) ^ 0.5
+  ellipse-major := ((ellipse-a + ellipse-c) / 2.0 + ellipse-root) ^ 0.5 * 2.0
+  ellipse-minor := ((ellipse-a + ellipse-c) / 2.0 - ellipse-root) ^ 0.5 * 2.0
+  ellipse-rotation := 0.5 * math/atan2(2.0 * ellipse-b, ellipse-a - ellipse-c)
+  ellipse-samples := 0..=64
+  ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
+  ellipse-cos := math/cos(ellipse-angle)
+  ellipse-sin := math/sin(ellipse-angle)
+  ellipse-x := estimate-screen-x + screen-scale * (ellipse-major * ellipse-cos * math/cos(ellipse-rotation) - ellipse-minor * ellipse-sin * math/sin(ellipse-rotation))
+  ellipse-y := estimate-screen-y - screen-scale * (ellipse-major * ellipse-cos * math/sin(ellipse-rotation) + ellipse-minor * ellipse-sin * math/cos(ellipse-rotation))
+  covariance-ellipse := [ellipse-x ellipse-y]
+
+  trail-shift := [0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0 0.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 1.0
+                   0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0]
+  trail-injection := [0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      0.0
+                      1.0]
+  ~truth-path := [275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0
+                  275.0 545.0]
+  ~estimate-path := [299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7
+                     299.8 566.7]
+  truth-screen-point := ([truth-screen-x truth-screen-y])
+  estimate-screen-point := ([estimate-screen-x estimate-screen-y])
+  next-truth-path := trail-shift ** truth-path + trail-injection ** truth-screen-point
+  next-estimate-path := trail-shift ** estimate-path + trail-injection ** estimate-screen-point
+  truth-path = next-truth-path
+  estimate-path = next-estimate-path
+
+  square-guide := [275.0 545.0
+                   585.0 545.0
+                   585.0 235.0
+                   275.0 235.0
+                   275.0 545.0]
+
+  scene-circles := (
+    {id: "camera-1", x: 182, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
+    {id: "camera-2", x: 678, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
+    {id: "camera-3", x: 678, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
+    {id: "camera-4", x: 182, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
+    {id: "truth", x: truth-screen-x, y: truth-screen-y, radius: 8, fill: "#63d6c5", stroke: "#d7fff8", stroke-width: 1.5, opacity: 1},
+    {id: "prediction", x: predicted-screen-x, y: predicted-screen-y, radius: 6, fill: "none", stroke: "#f2b84b", stroke-width: 2, opacity: 1},
+    {id: "estimate", x: estimate-screen-x, y: estimate-screen-y, radius: 7, fill: "#f087b8", stroke: "#ffe1ef", stroke-width: 1.5, opacity: 1},
+    {id: "legend-truth", x: 30, y: 718, radius: 4, fill: "#63d6c5", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-prediction", x: 205, y: 718, radius: 4, fill: "#f2b84b", stroke: "none", stroke-width: 0, opacity: 1},
+    {id: "legend-estimate", x: 405, y: 718, radius: 4, fill: "#f087b8", stroke: "none", stroke-width: 0, opacity: 1}
+  )
+
+  scene-lines := (
+    {id: "frame-top", x1: 120, y1: 80, x2: 740, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "frame-right", x1: 740, y1: 80, x2: 740, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "frame-bottom", x1: 740, y1: 700, x2: 120, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "frame-left", x1: 120, y1: 700, x2: 120, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-1", x1: 182, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-2", x1: 678, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-3", x1: 678, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-4", x1: 182, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "truth-heading", x1: truth-screen-x, y1: truth-screen-y, x2: truth-screen-x + 18.0 * math/cos(next-truth[3]), y2: truth-screen-y - 18.0 * math/sin(next-truth[3]), stroke: "#d7fff8", stroke-width: 2, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "estimate-heading", x1: estimate-screen-x, y1: estimate-screen-y, x2: estimate-screen-x + 16.0 * math/cos(corrected-estimate-4[3]), y2: estimate-screen-y - 16.0 * math/sin(corrected-estimate-4[3]), stroke: "#ffe1ef", stroke-width: 1.5, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
+  )
+
+  scene-line-strips := (
+    {id: "square-guide", positions: square-guide, stroke: "#536273", stroke-width: 1, line-cap: "round", line-join: "round", opacity: 0.38, closed: true},
+    {id: "truth-path", positions: next-truth-path, stroke: "#63d6c5", stroke-width: 2, line-cap: "round", line-join: "round", opacity: 0.8, closed: false},
+    {id: "estimate-path", positions: next-estimate-path, stroke: "#f087b8", stroke-width: 2, line-cap: "round", line-join: "round", opacity: 0.84, closed: false},
+    {id: "covariance", positions: covariance-ellipse, stroke: "#f087b8", stroke-width: 1.5, line-cap: "round", line-join: "round", opacity: 0.72, closed: true}
+  )
+
+  scene-text := (
+    {id: "eyebrow", x: 24, y: 26, fill: "#8fa3b8", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "650", text-anchor: "start", opacity: 1, value: "MECH RESIDENT SENSOR FUSION"},
+    {id: "title", x: 24, y: 62, fill: "#edf2f7", font-size: 36, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "620", text-anchor: "start", opacity: 1, value: "Camera EKF Localization"},
+    {id: "state-label", x: 638, y: 58, fill: "#f4c95d", font-size: 13, font-family: "ui-monospace, SFMono-Regular, Menlo, monospace", font-weight: "650", text-anchor: "start", opacity: 1, value: "SQUARE-DRIVE FSM"},
+    {id: "camera-label-1", x: 195, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 1, value: "CAM 1"},
+    {id: "camera-label-2", x: 665, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 1, value: "CAM 2"},
+    {id: "camera-label-3", x: 665, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 1, value: "CAM 3"},
+    {id: "camera-label-4", x: 195, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 1, value: "CAM 4"},
+    {id: "legend-truth-label", x: 40, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "actual robot + path"},
+    {id: "legend-prediction-label", x: 215, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "motion prediction"},
+    {id: "legend-estimate-label", x: 415, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "EKF estimate + 2σ covariance"},
+    {id: "note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Four noisy camera observations per turn · Joseph covariance update · square-drive state machine"}
+  )
+
+  field-presentation := {
+    width: 860
+    height: 770
+    background: "#080b12"
+    circles: scene-circles
+    lines: scene-lines
+    line-strips: scene-line-strips
+    texts: scene-text
+  }
+
+  @scene/replace <- field-presentation
+  position-error

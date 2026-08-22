@@ -1,0 +1,56 @@
+config := {
+  runtime: {
+    name: "ekf-localization"
+
+    resident-durability: "volatile"
+
+    limits: {
+      max-turn-duration-ms: 2000
+    }
+  }
+
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["."]
+    presentation: "output"
+  }
+
+  hosts: [
+    {
+      name: "clock"
+      provider: "timer"
+      settings: {
+        frequency-hz: 20
+        max-catch-up-steps: 1
+        queue-policy: "latest"
+      }
+    }
+
+    {
+      name: "localization"
+      provider: "scene"
+      settings: {
+        renderer: "output"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["localization.mec"]
+
+    grants: [
+      {
+        target: "clock/tick"
+        operations: ["read"]
+        paths: ["tick"]
+      }
+
+      {
+        target: "localization/frame"
+        operations: ["write"]
+        paths: ["replace"]
+      }
+    ]
+  }
+}
