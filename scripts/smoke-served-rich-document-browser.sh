@@ -3288,6 +3288,61 @@ Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layou
                 "responsive persistence coverage did not cross the compact-header origin: "
                 f"desktop={desktop_position!r}, mobile={mobile_expected!r}"
             )
+        delayed_shell_script = devtools.call(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": f"""
+localStorage.setItem({json.dumps(desktop_layout[0])}, {json.dumps(desktop_layout[1])});
+document.addEventListener('DOMContentLoaded', () => {{
+  const shell = document.querySelector('.content-shell');
+  const parent = shell?.parentNode;
+  if (!shell || !parent) return;
+  const next = shell.nextSibling;
+  shell.remove();
+  const temporaryRange = document.createElement('div');
+  temporaryRange.id = 'mech-shellless-scroll-range';
+  temporaryRange.style.height = '2000px';
+  document.body.append(temporaryRange);
+  document.documentElement.dataset.mechDelayedShell = 'missing';
+  setTimeout(() => {{
+    temporaryRange.remove();
+    parent.insertBefore(shell, next?.parentNode === parent ? next : null);
+    if (!shell.querySelector('#mech-late-layout-spacer')) {{
+      const spacer = document.createElement('div');
+      spacer.id = 'mech-late-layout-spacer';
+      spacer.style.height = '900px';
+      (shell.querySelector('.content-column') || shell).append(spacer);
+    }}
+    document.documentElement.dataset.mechDelayedShell = 'restored';
+  }}, 1200);
+}}, {{ once: true }});
+"""},
+            session_id,
+        ).get("identifier")
+        devtools.call("Page.navigate", {"url": page_url}, session_id)
+        wait_for(
+            "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
+            "document.documentElement?.dataset.mechDelayedShell === 'restored'",
+            "the canonical anchor returning after a shell-less restore interval",
+            timeout=45,
+        )
+        if delayed_shell_script:
+            devtools.call(
+                "Page.removeScriptToEvaluateOnNewDocument",
+                {"identifier": delayed_shell_script},
+                session_id,
+            )
+        delayed_shell_expected = evaluate_json(f"""
+(() => {{
+  const shell = document.querySelector('.content-shell');
+  let origin = 0;
+  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
+  return {{ y: origin + {desktop_position['y']}, origin }};
+}})()
+""")
+        wait_for(
+            f"Math.abs(window.scrollY - {delayed_shell_expected['y']}) <= 2",
+            "canonical restoration waiting for its delayed content-shell anchor",
+        )
         mobile_position = evaluate_json("""
 (() => {
   const shell = document.querySelector('.content-shell');

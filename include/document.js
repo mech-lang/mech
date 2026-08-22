@@ -121,11 +121,11 @@ function documentPagePositionForOwner(position, owner) {
   const x = Number(position.x) || 0;
   const y = Number(position.y) || 0;
   const contentShell = document.querySelector(".content-shell");
-  if (!contentShell) {
-    return { x: Math.max(0, x), y: Math.max(0, y) };
-  }
-  const { x: originX, y: originY } = documentPageContentOrigin(contentShell);
   if (position.coordinateSpace === "content-shell") {
+    if (!contentShell) {
+      return null;
+    }
+    const { x: originX, y: originY } = documentPageContentOrigin(contentShell);
     if (targetOwner === "window") {
       return {
         x: Math.max(0, originX + x),
@@ -137,6 +137,19 @@ function documentPagePositionForOwner(position, owner) {
       y: Math.max(0, y),
     };
   }
+  if (position.coordinateSpace === "window") {
+    if (targetOwner === "window") {
+      return { x: Math.max(0, x), y: Math.max(0, y) };
+    }
+    if (!contentShell) {
+      return null;
+    }
+    const { x: originX, y: originY } = documentPageContentOrigin(contentShell);
+    return {
+      x: Math.max(0, x - originX),
+      y: Math.max(0, y - originY),
+    };
+  }
 
   // Legacy positions used coordinates local to their recorded owner. Keep
   // that behavior defined for existing v1 entries, including ownerless
@@ -145,6 +158,12 @@ function documentPagePositionForOwner(position, owner) {
   if (sourceOwner === targetOwner) {
     return { x: Math.max(0, x), y: Math.max(0, y) };
   }
+  if (!contentShell) {
+    return sourceOwner === "content-shell"
+      ? null
+      : { x: Math.max(0, x), y: Math.max(0, y) };
+  }
+  const { x: originX, y: originY } = documentPageContentOrigin(contentShell);
   if (sourceOwner === "content-shell") {
     return {
       x: Math.max(0, originX + x),
@@ -160,9 +179,15 @@ function documentPagePositionForOwner(position, owner) {
 function currentPagePosition() {
   const owner = documentPageScrollOwner();
   const contentShell = document.querySelector(".content-shell");
-  const origin = contentShell
-    ? documentPageContentOrigin(contentShell)
-    : { x: 0, y: 0 };
+  if (!contentShell) {
+    return {
+      owner: "window",
+      coordinateSpace: "window",
+      x: Math.max(0, Math.round(window.scrollX)),
+      y: Math.max(0, Math.round(window.scrollY)),
+    };
+  }
+  const origin = documentPageContentOrigin(contentShell);
   const ownerX = owner === window ? window.scrollX : owner.scrollLeft;
   const ownerY = owner === window ? window.scrollY : owner.scrollTop;
   return {
@@ -279,7 +304,7 @@ function restorePagePosition() {
   const sourceOwner = saved?.owner === "content-shell" ? "content-shell" : "window";
   const coordinateSpace = saved?.coordinateSpace === "content-shell"
     ? "content-shell"
-    : "owner";
+    : saved?.coordinateSpace === "window" ? "window" : "owner";
   const x = Number(saved?.x);
   const y = Number(saved?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
@@ -320,6 +345,15 @@ function restorePagePosition() {
     }
     const owner = documentPageScrollOwner();
     const target = documentPagePositionForOwner(restore, owner);
+    if (!target) {
+      if (performance.now() >= restore.deadline) {
+        finishPagePositionRestore({ preserveSaved: false });
+        return;
+      }
+      clearTimeout(restore.timer);
+      restore.timer = setTimeout(attempt, 120);
+      return;
+    }
     scrollToImmediately(owner, target.x, target.y);
     const currentX = owner === window ? window.scrollX : owner.scrollLeft;
     const currentY = owner === window ? window.scrollY : owner.scrollTop;
