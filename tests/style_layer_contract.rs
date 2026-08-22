@@ -152,12 +152,17 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("function documentPagePositionForOwner(position, owner)"));
     assert!(controller.contains("x += element.offsetLeft"));
     assert!(controller.contains("y += element.offsetTop"));
+    assert!(controller.contains("position.coordinateSpace === \"content-shell\""));
+    assert!(controller.contains("coordinateSpace: \"content-shell\""));
+    assert!(controller.contains("ownerX - origin.x"));
+    assert!(controller.contains("ownerY - origin.y"));
     assert!(controller.contains("y: Math.max(0, originY + y)"));
     assert!(controller.contains("y: Math.max(0, y - originY)"));
     assert!(
         controller.contains("saved?.owner === \"content-shell\" ? \"content-shell\" : \"window\"")
     );
     assert!(controller.contains("owner: owner === window ? \"window\" : \"content-shell\""));
+    assert!(controller.contains("coordinateSpace,"));
     assert!(controller.contains("const target = documentPagePositionForOwner(restore, owner)"));
     assert!(controller.contains("owner === window ? window.scrollY : owner.scrollTop"));
     assert!(controller.contains("document.querySelector(\".content-shell\")?.addEventListener("));

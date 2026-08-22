@@ -118,16 +118,33 @@ function documentPageContentOrigin(contentShell) {
 function documentPagePositionForOwner(position, owner) {
   const sourceOwner = position.owner === "content-shell" ? "content-shell" : "window";
   const targetOwner = owner === window ? "window" : "content-shell";
-  const x = Math.max(0, Number(position.x) || 0);
-  const y = Math.max(0, Number(position.y) || 0);
-  if (sourceOwner === targetOwner) {
-    return { x, y };
-  }
+  const x = Number(position.x) || 0;
+  const y = Number(position.y) || 0;
   const contentShell = document.querySelector(".content-shell");
   if (!contentShell) {
-    return { x, y };
+    return { x: Math.max(0, x), y: Math.max(0, y) };
   }
   const { x: originX, y: originY } = documentPageContentOrigin(contentShell);
+  if (position.coordinateSpace === "content-shell") {
+    if (targetOwner === "window") {
+      return {
+        x: Math.max(0, originX + x),
+        y: Math.max(0, originY + y),
+      };
+    }
+    return {
+      x: Math.max(0, x),
+      y: Math.max(0, y),
+    };
+  }
+
+  // Legacy positions used coordinates local to their recorded owner. Keep
+  // that behavior defined for existing v1 entries, including ownerless
+  // entries (which were window coordinates), while all newly saved entries
+  // use the layout-independent content-shell coordinate space above.
+  if (sourceOwner === targetOwner) {
+    return { x: Math.max(0, x), y: Math.max(0, y) };
+  }
   if (sourceOwner === "content-shell") {
     return {
       x: Math.max(0, originX + x),
@@ -142,10 +159,17 @@ function documentPagePositionForOwner(position, owner) {
 
 function currentPagePosition() {
   const owner = documentPageScrollOwner();
+  const contentShell = document.querySelector(".content-shell");
+  const origin = contentShell
+    ? documentPageContentOrigin(contentShell)
+    : { x: 0, y: 0 };
+  const ownerX = owner === window ? window.scrollX : owner.scrollLeft;
+  const ownerY = owner === window ? window.scrollY : owner.scrollTop;
   return {
     owner: owner === window ? "window" : "content-shell",
-    x: Math.max(0, Math.round(owner === window ? window.scrollX : owner.scrollLeft)),
-    y: Math.max(0, Math.round(owner === window ? window.scrollY : owner.scrollTop)),
+    coordinateSpace: "content-shell",
+    x: Math.round(owner === window ? ownerX - origin.x : ownerX),
+    y: Math.round(owner === window ? ownerY - origin.y : ownerY),
   };
 }
 
@@ -249,21 +273,24 @@ function scrollToImmediately(owner, x, y) {
 
 function restorePagePosition() {
   const saved = persistedDocumentLayout().page;
-  // Version-one entries predate scroll-owner persistence and always recorded
-  // window coordinates. Preserve that meaning instead of guessing from CSS.
+  // Ownerless entries predate scroll-owner persistence and always recorded
+  // window coordinates. Entries without coordinateSpace retain owner-local
+  // v1 semantics; current entries are canonical content-shell coordinates.
   const sourceOwner = saved?.owner === "content-shell" ? "content-shell" : "window";
+  const coordinateSpace = saved?.coordinateSpace === "content-shell"
+    ? "content-shell"
+    : "owner";
   const x = Number(saved?.x);
   const y = Number(saved?.y);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
     return;
   }
   finishPagePositionRestore();
-  const requestedX = Math.max(0, x);
-  const requestedY = Math.max(0, y);
   const restore = {
-    x: requestedX,
-    y: requestedY,
+    x,
+    y,
     owner: sourceOwner,
+    coordinateSpace,
     deadline: performance.now() + 15_000,
     timer: null,
     observer: null,

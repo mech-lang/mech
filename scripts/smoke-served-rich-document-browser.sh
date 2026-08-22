@@ -3210,32 +3210,48 @@ document.addEventListener('DOMContentLoaded', () => {{
 (() => {
   const shell = document.querySelector('.content-shell');
   if (!shell) return null;
+  if (!document.getElementById('mech-late-layout-spacer')) {
+    const spacer = document.createElement('div');
+    spacer.id = 'mech-late-layout-spacer';
+    spacer.style.height = '900px';
+    (document.querySelector('.content-column') || document.body).append(spacer);
+  }
   const maximum = Math.max(0, shell.scrollHeight - shell.clientHeight);
   const y = Math.min(320, maximum);
-  return { y, maximum };
+  let origin = 0;
+  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
+  shell.scrollTo(0, y);
+  return { y: shell.scrollTop, maximum, origin };
 })()
 """)
-        if desktop_position is None or desktop_position["y"] < 100:
+        if desktop_position is None or desktop_position["y"] < 200:
             fail(f"could not establish desktop content-shell persistence: {desktop_position!r}")
-        devtools.call(
-            "Emulation.setDeviceMetricsOverride",
-            {"width": 800, "height": 900, "deviceScaleFactor": 1, "mobile": False},
-            session_id,
+        wait_for(
+            "(() => { "
+            "const entry = Object.entries(localStorage).find(([key]) => "
+            "key.startsWith('mech:document-layout:v1:')); "
+            "if (!entry) return false; "
+            "const page = JSON.parse(entry[1]).page; "
+            f"return page?.owner === 'content-shell' && page?.coordinateSpace === 'content-shell' && "
+            f"Math.abs(page.y - {desktop_position['y']}) <= 2; "
+            "})()",
+            "desktop scrolling persisting canonical content coordinates",
         )
-        mobile_restore_script = devtools.call(
+        desktop_layout = evaluate_json("""
+Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layout:v1:')) || null
+""")
+        if desktop_layout is None:
+            fail("desktop scrolling did not produce a persisted layout entry")
+        desktop_transfer_script = devtools.call(
             "Page.addScriptToEvaluateOnNewDocument",
-            {"source": f"""
-(() => {{
-  for (const [key, value] of Object.entries(localStorage)) {{
-    if (!key.startsWith('mech:document-layout:v1:')) continue;
-    const layout = JSON.parse(value);
-    layout.page = {{ owner: 'content-shell', x: 0, y: {desktop_position['y']} }};
-    localStorage.setItem(key, JSON.stringify(layout));
-  }}
-}})()
-"""},
+            {"source": f"localStorage.setItem({json.dumps(desktop_layout[0])}, {json.dumps(desktop_layout[1])});"},
             session_id,
         ).get("identifier")
+        devtools.call(
+            "Emulation.setDeviceMetricsOverride",
+            {"width": 650, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+            session_id,
+        )
         devtools.call("Page.navigate", {"url": page_url}, session_id)
         wait_for(
             "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
@@ -3243,15 +3259,21 @@ document.addEventListener('DOMContentLoaded', () => {{
             "the mobile document reloading for cross-owner persistence",
             timeout=45,
         )
-        if mobile_restore_script:
+        if desktop_transfer_script:
             devtools.call(
                 "Page.removeScriptToEvaluateOnNewDocument",
-                {"identifier": mobile_restore_script},
+                {"identifier": desktop_transfer_script},
                 session_id,
             )
         mobile_expected = evaluate_json(f"""
 (() => {{
   const shell = document.querySelector('.content-shell');
+  if (!document.getElementById('mech-late-layout-spacer')) {{
+    const spacer = document.createElement('div');
+    spacer.id = 'mech-late-layout-spacer';
+    spacer.style.height = '900px';
+    (document.querySelector('.content-column') || document.body).append(spacer);
+  }}
   let origin = 0;
   for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
   return {{ y: origin + {desktop_position['y']}, origin }};
@@ -3261,26 +3283,83 @@ document.addEventListener('DOMContentLoaded', () => {{
             f"Math.abs(window.scrollY - {mobile_expected['y']}) <= 2",
             "a desktop content-shell offset translating onto the mobile window",
         )
-        mobile_y = evaluate_json("window.scrollY")
+        if mobile_expected["origin"] <= desktop_position["origin"] + 20:
+            fail(
+                "responsive persistence coverage did not cross the compact-header origin: "
+                f"desktop={desktop_position!r}, mobile={mobile_expected!r}"
+            )
+        mobile_position = evaluate_json("""
+(() => {
+  const shell = document.querySelector('.content-shell');
+  let origin = 0;
+  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
+  const maximum = Math.max(0, document.documentElement.scrollHeight - innerHeight);
+  const contentMaximum = Math.max(0, maximum - origin);
+  // Deliberately move away from the restored desktop offset so this must
+  // emit a real window scroll event before persistence can pass.
+  const target = Math.min(140, contentMaximum);
+  const scrollBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  window.scrollTo(0, origin + target);
+  document.documentElement.style.scrollBehavior = scrollBehavior;
+  return { y: target, maximum, origin };
+})()
+""")
+        if mobile_position is None or mobile_position["y"] < 100:
+            fail(f"could not establish mobile window persistence: {mobile_position!r}")
+        wait_for(
+            f"Math.abs(window.scrollY - {mobile_position['origin'] + mobile_position['y']}) <= 2",
+            "the deliberate mobile window scroll completing",
+        )
+        try:
+            wait_for(
+                "(() => { "
+                "const entry = Object.entries(localStorage).find(([key]) => "
+                "key.startsWith('mech:document-layout:v1:')); "
+                "if (!entry) return false; "
+                "const page = JSON.parse(entry[1]).page; "
+                f"return page?.owner === 'window' && page?.coordinateSpace === 'content-shell' && "
+                f"Math.abs(page.y - {mobile_position['y']}) <= 2; "
+                "})()",
+                "mobile scrolling persisting canonical content coordinates",
+            )
+        except AssertionError:
+            mobile_persistence = evaluate_json("""
+(() => {
+  const shell = document.querySelector('.content-shell');
+  let origin = 0;
+  for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
+  const entry = Object.entries(localStorage).find(([key]) =>
+    key.startsWith('mech:document-layout:v1:')) || null;
+  return {
+    windowY: window.scrollY,
+    origin,
+    contentY: window.scrollY - origin,
+    shellY: shell?.scrollTop || 0,
+    shellOverflowY: shell ? getComputedStyle(shell).overflowY : null,
+    page: entry ? JSON.parse(entry[1]).page : null,
+  };
+})()
+""")
+            fail(
+                "mobile canonical persistence mismatch: "
+                f"expected={mobile_position!r}, actual={mobile_persistence!r}"
+            )
+        mobile_layout = evaluate_json("""
+Object.entries(localStorage).find(([key]) => key.startsWith('mech:document-layout:v1:')) || null
+""")
+        if mobile_layout is None:
+            fail("mobile scrolling did not produce a persisted layout entry")
+        mobile_transfer_script = devtools.call(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": f"localStorage.setItem({json.dumps(mobile_layout[0])}, {json.dumps(mobile_layout[1])});"},
+            session_id,
+        ).get("identifier")
         devtools.call(
             "Emulation.setDeviceMetricsOverride",
             {"width": 1100, "height": 900, "deviceScaleFactor": 1, "mobile": False},
             session_id,
         )
-        desktop_restore_script = devtools.call(
-            "Page.addScriptToEvaluateOnNewDocument",
-            {"source": f"""
-(() => {{
-  for (const [key, value] of Object.entries(localStorage)) {{
-    if (!key.startsWith('mech:document-layout:v1:')) continue;
-    const layout = JSON.parse(value);
-    layout.page = {{ owner: 'window', x: 0, y: {mobile_y} }};
-    localStorage.setItem(key, JSON.stringify(layout));
-  }}
-}})()
-"""},
-            session_id,
-        ).get("identifier")
         devtools.call("Page.navigate", {"url": page_url}, session_id)
         wait_for(
             "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
@@ -3288,23 +3367,74 @@ document.addEventListener('DOMContentLoaded', () => {{
             "the desktop document reloading for reverse cross-owner persistence",
             timeout=45,
         )
-        if desktop_restore_script:
+        if mobile_transfer_script:
             devtools.call(
                 "Page.removeScriptToEvaluateOnNewDocument",
-                {"identifier": desktop_restore_script},
+                {"identifier": mobile_transfer_script},
                 session_id,
             )
-        desktop_expected = evaluate_json(f"""
-(() => {{
+        evaluate("""
+(() => {
+  if (document.getElementById('mech-late-layout-spacer')) return;
+  const spacer = document.createElement('div');
+  spacer.id = 'mech-late-layout-spacer';
+  spacer.style.height = '900px';
+  (document.querySelector('.content-column') || document.body).append(spacer);
+})()
+""")
+        wait_for(
+            f"Math.abs(document.querySelector('.content-shell').scrollTop - {mobile_position['y']}) <= 2",
+            "a mobile window offset translating back onto the desktop content shell",
+        )
+
+        legacy_target = 180
+        legacy_origin = evaluate_json("""
+(() => {
   const shell = document.querySelector('.content-shell');
   let origin = 0;
   for (let element = shell; element; element = element.offsetParent) origin += element.offsetTop;
-  return {{ y: Math.max(0, {mobile_y} - origin), origin }};
-}})()
+  return origin;
+})()
 """)
+        legacy_restore_script = devtools.call(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": f"""
+(() => {{
+  for (const [key, value] of Object.entries(localStorage)) {{
+    if (!key.startsWith('mech:document-layout:v1:')) continue;
+    const layout = JSON.parse(value);
+    layout.page = {{ x: 0, y: {legacy_origin + legacy_target} }};
+    localStorage.setItem(key, JSON.stringify(layout));
+  }}
+}})()
+document.addEventListener('DOMContentLoaded', () => {{
+  setTimeout(() => {{
+    if (document.getElementById('mech-late-layout-spacer')) return;
+    const spacer = document.createElement('div');
+    spacer.id = 'mech-late-layout-spacer';
+    spacer.style.height = '900px';
+    (document.querySelector('.content-column') || document.body).append(spacer);
+  }}, 450);
+}}, {{ once: true }});
+"""},
+            session_id,
+        ).get("identifier")
+        devtools.call("Page.navigate", {"url": page_url}, session_id)
         wait_for(
-            f"Math.abs(document.querySelector('.content-shell').scrollTop - {desktop_expected['y']}) <= 2",
-            "a mobile window offset translating back onto the desktop content shell",
+            "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
+            "/auto|scroll|overlay/.test(getComputedStyle(document.querySelector('.content-shell')).overflowY)",
+            "the desktop document reloading for legacy ownerless persistence",
+            timeout=45,
+        )
+        if legacy_restore_script:
+            devtools.call(
+                "Page.removeScriptToEvaluateOnNewDocument",
+                {"identifier": legacy_restore_script},
+                session_id,
+            )
+        wait_for(
+            f"Math.abs(document.querySelector('.content-shell').scrollTop - {legacy_target}) <= 2",
+            "a legacy ownerless window offset using its defined fallback",
         )
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
@@ -3313,7 +3443,7 @@ document.addEventListener('DOMContentLoaded', () => {{
     )
     time.sleep(0.15)
     evaluate("document.querySelector('#mech-late-layout-spacer')?.remove()")
-    evaluate("window.scrollTo(0, 0)")
+    evaluate("document.querySelector('.content-shell')?.scrollTo(0, 0); window.scrollTo(0, 0)")
     time.sleep(0.1)
 
 
