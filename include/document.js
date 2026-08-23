@@ -46,6 +46,8 @@ const state = {
   mermaidInitialized: false,
   outputFullscreenController: null,
   computeBridge: null,
+  computeBridgeRefresh: null,
+  computeBridgeGeneration: null,
   computeAdapter: undefined,
 };
 
@@ -733,6 +735,8 @@ function stopRuntime() {
   dismissInlineInspectors({ restoreFocus: false });
   state.running = false;
   cancelFrame();
+  state.computeBridge?.retire();
+  state.computeBridge = null;
   invalidateCooperativeOwnership();
   if (!state.document) {
     return;
@@ -3862,13 +3866,28 @@ class DocumentComputeBridge {
     if (!adapter) {
       throw new Error("the document selected WebGPU but no compatible adapter is available");
     }
+    const bindingBytes = manifest.bindings.map(binding =>
+      Math.max(4, Number(binding.elements) * 4)
+    );
+    const readbackBytes = Math.max(
+      4,
+      manifest.outputs.reduce(
+        (total, output) => total + Number(output.elementsPerInstance) * 4,
+        0,
+      ) + (manifest.bindings.find(binding => binding.role === "integrity-fault")?.elements || 0) * 4,
+    );
     const requiredLimits = {
       maxStorageBuffersPerShaderStage: manifest.bindings.length,
       maxComputeWorkgroupsPerDimension: Math.ceil(
         manifest.dispatchElements / manifest.workgroupSize,
       ),
+      maxStorageBufferBindingSize: Math.max(...bindingBytes, 4),
+      maxBufferSize: Math.max(...bindingBytes, readbackBytes, 4),
     };
     for (const [name, required] of Object.entries(requiredLimits)) {
+      if (!Number.isSafeInteger(required) || required <= 0) {
+        throw new Error(`Mech computed an invalid ${name} requirement: ${required}`);
+      }
       if (required > adapter.limits[name]) {
         throw new Error(
           `Mech requires ${required} for ${name}, but this adapter supports ${adapter.limits[name]}`,
@@ -3907,10 +3926,33 @@ class DocumentComputeBridge {
     this.blocked = false;
     this.failure = null;
     this.dispatches = 0;
+    this.retired = false;
+    this.generation = typeof controller.computeGeneration === "function"
+      ? controller.computeGeneration()
+      : 0;
     document.documentElement.dataset.mechComputeBackend = this.backend;
     document.documentElement.dataset.mechComputeInstances = String(
       this.manifest.dispatchElements,
     );
+  }
+
+  isCurrent() {
+    return !this.retired && (
+      typeof this.controller.computeGeneration !== "function" ||
+      this.controller.computeGeneration() === this.generation
+    );
+  }
+
+  retire() {
+    this.retired = true;
+    for (const buffers of this.stateBuffers?.values() || []) {
+      buffers.forEach(buffer => buffer.destroy());
+    }
+    for (const buffer of this.fixedBuffers?.values() || []) {
+      buffer.destroy();
+    }
+    this.readback?.destroy();
+    this.device?.destroy();
   }
 
   createBuffers() {
@@ -4011,6 +4053,9 @@ class DocumentComputeBridge {
     if (!command?.dispatch || this.backend !== "wgpu") {
       return;
     }
+    if (!this.isCurrent()) {
+      throw new Error("a retired document compute bridge received a dispatch");
+    }
     if (this.blocked) {
       throw new Error("a checked document compute dispatch is already in flight");
     }
@@ -4078,9 +4123,15 @@ class DocumentComputeBridge {
           const instance = packed >>> 8;
           const constraint = (this.manifest.constraints || [])
             .find(candidate => candidate.code === code);
-          throw new Error(
-            `GPU integrity constraint ${constraint?.name || code} failed at batch instance ${instance}`,
-          );
+          this.readback.unmap();
+          if (this.isCurrent()) {
+            this.controller.rejectIntegrityComputeCommand(
+              dispatchId,
+              constraint?.name || String(code),
+              instance,
+            );
+          }
+          return;
         }
       }
       const outputs = this.readbackPlan.map(({ output, offset, bytes }) => ({
@@ -4088,15 +4139,20 @@ class DocumentComputeBridge {
         values: Float32Array.from(new Float32Array(mapped, offset, bytes / 4)),
       }));
       this.readback.unmap();
-      this.activeBuffer = outputIndex;
-      this.dispatches += 1;
-      this.controller.completeComputeCommand(dispatchId, outputs);
-      document.documentElement.dataset.mechComputeDispatches = String(this.dispatches);
+      if (this.isCurrent()) {
+        this.controller.completeComputeCommand(dispatchId, outputs);
+        this.activeBuffer = outputIndex;
+        this.dispatches += 1;
+        document.documentElement.dataset.mechComputeDispatches = String(this.dispatches);
+      }
     } catch (error) {
       if (this.readback.mapState === "mapped") {
         this.readback.unmap();
       }
       try {
+        if (!this.isCurrent()) {
+          return;
+        }
         this.controller.rejectComputeCommand(
           dispatchId,
           error instanceof Error ? error.message : String(error),
@@ -4111,11 +4167,42 @@ class DocumentComputeBridge {
   }
 }
 
+function refreshDocumentComputeBridge() {
+  const bridge = state.computeBridge;
+  const generation = typeof state.document?.computeGeneration === "function"
+    ? state.document.computeGeneration()
+    : 0;
+  if (
+    state.computeBridgeRefresh ||
+    (state.computeBridgeGeneration === generation && (!bridge || bridge.isCurrent()))
+  ) {
+    return Boolean(state.computeBridgeRefresh);
+  }
+  bridge?.retire();
+  state.computeBridge = null;
+  state.computeBridgeRefresh = DocumentComputeBridge.create(state.document)
+    .then(next => {
+      state.computeBridge = next;
+      state.computeBridgeGeneration = generation;
+    })
+    .catch(showFatalError)
+    .finally(() => {
+      state.computeBridgeRefresh = null;
+      if (state.running) {
+        state.animationFrame = requestAnimationFrame(frame);
+      }
+    });
+  return true;
+}
+
 function frame() {
   if (!state.running || !state.document) {
     return;
   }
   try {
+    if (refreshDocumentComputeBridge()) {
+      return;
+    }
     if (state.computeBridge?.failure) {
       throw state.computeBridge.failure;
     }
@@ -4134,6 +4221,90 @@ function frame() {
     state.animationFrame = requestAnimationFrame(frame);
   } catch (error) {
     showFatalError(error);
+  }
+}
+
+function constructDocumentController(WasmDocument, documentSources) {
+  if (documentSources?.config) {
+    if (
+      !Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG") ||
+      (documentSources.version === 2
+        ? typeof WasmDocument.fromServedEncodedWithBundle !== "function"
+        : typeof WasmDocument.fromServedEncoded !== "function")
+    ) {
+      throw new Error(
+        "configured source documents require a browser WASM build with served project authority",
+      );
+    }
+    return documentSources.version === 2
+      ? WasmDocument.fromServedEncodedWithBundle(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.config,
+          documentSources.sources,
+          documentSources.resolutions,
+        )
+      : WasmDocument.fromServedEncoded(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.config,
+          documentSources.sources,
+        );
+  }
+  if (documentSources) {
+    if (
+      documentSources.version === 2 &&
+      typeof WasmDocument.fromEncodedWithBundle !== "function"
+    ) {
+      throw new Error(
+        "source document bundles require a browser WASM build with explicit source resolution",
+      );
+    }
+    if (
+      documentSources.version !== 2 &&
+      typeof WasmDocument.fromEncodedWithSources !== "function"
+    ) {
+      throw new Error(
+        "source documents with imports require a browser WASM build with document source resolution",
+      );
+    }
+    return documentSources.version === 2
+      ? WasmDocument.fromEncodedWithBundle(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.sources,
+          documentSources.resolutions,
+        )
+      : WasmDocument.fromEncodedWithSources(
+          state.initialEncoded,
+          documentSources.rootSpecifier,
+          documentSources.sources,
+        );
+  }
+  return WasmDocument.fromEncoded(state.initialEncoded);
+}
+
+async function createDocumentComputeBridgeWithFallback(WasmDocument, documentSources) {
+  try {
+    return await DocumentComputeBridge.create(state.document);
+  } catch (error) {
+    const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
+    if (requestedBackend !== "auto" || state.document.computeBackend() !== "wgpu") {
+      throw error;
+    }
+    try {
+      state.document.stop();
+    } catch (_stopError) {
+      // The provisional runtime never started; stopping is best-effort.
+    }
+    state.computeAdapter = null;
+    window.__MECH_GPU_AVAILABLE = false;
+    state.document = constructDocumentController(WasmDocument, documentSources);
+    const bridge = await DocumentComputeBridge.create(state.document);
+    if (bridge?.backend === "wgpu") {
+      throw error;
+    }
+    return bridge;
   }
 }
 
@@ -4166,69 +4337,19 @@ async function main() {
   if (documentSources?.config) {
     await probeServedComputeAdapter();
   }
-  if (documentSources?.config) {
-    if (
-      !Object.prototype.hasOwnProperty.call(window, "__MECH_HOST_CONFIG") ||
-      (documentSources.version === 2
-        ? typeof WasmDocument.fromServedEncodedWithBundle !== "function"
-        : typeof WasmDocument.fromServedEncoded !== "function")
-    ) {
-      throw new Error(
-        "configured source documents require a browser WASM build with served project authority",
-      );
-    }
-    state.document = documentSources.version === 2
-      ? WasmDocument.fromServedEncodedWithBundle(
-          state.initialEncoded,
-          documentSources.rootSpecifier,
-          documentSources.config,
-          documentSources.sources,
-          documentSources.resolutions,
-        )
-      : WasmDocument.fromServedEncoded(
-          state.initialEncoded,
-          documentSources.rootSpecifier,
-          documentSources.config,
-          documentSources.sources,
-        );
-  } else if (documentSources) {
-    if (
-      documentSources.version === 2 &&
-      typeof WasmDocument.fromEncodedWithBundle !== "function"
-    ) {
-      throw new Error(
-        "source document bundles require a browser WASM build with explicit source resolution",
-      );
-    }
-    if (
-      documentSources.version !== 2 &&
-      typeof WasmDocument.fromEncodedWithSources !== "function"
-    ) {
-      throw new Error(
-        "source documents with imports require a browser WASM build with document source resolution",
-      );
-    }
-    state.document = documentSources.version === 2
-      ? WasmDocument.fromEncodedWithBundle(
-          state.initialEncoded,
-          documentSources.rootSpecifier,
-          documentSources.sources,
-          documentSources.resolutions,
-        )
-      : WasmDocument.fromEncodedWithSources(
-          state.initialEncoded,
-          documentSources.rootSpecifier,
-          documentSources.sources,
-        );
-  } else {
-    state.document = WasmDocument.fromEncoded(state.initialEncoded);
-  }
+  state.document = constructDocumentController(WasmDocument, documentSources);
   if (typeof state.document.replInvoke !== "function") {
     throw new Error(
       "the browser WASM build does not include the document-backed resident REPL host",
     );
   }
-  state.computeBridge = await DocumentComputeBridge.create(state.document);
+  state.computeBridge = await createDocumentComputeBridgeWithFallback(
+    WasmDocument,
+    documentSources,
+  );
+  state.computeBridgeGeneration = typeof state.document.computeGeneration === "function"
+    ? state.document.computeGeneration()
+    : 0;
   state.repl = {
     invoke: source => state.document.replInvoke(source),
     continueStep: (count, requestId) => state.document.replContinueStep(count, requestId),
