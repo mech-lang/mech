@@ -35319,7 +35319,7 @@
       "sites": [
         {
           "column": 59,
-          "line": 816
+          "line": 832
         }
       ],
       "target": "bool-snapshot",
@@ -35334,15 +35334,15 @@
       "sites": [
         {
           "column": 25,
-          "line": 788
+          "line": 804
         },
         {
           "column": 28,
-          "line": 794
+          "line": 810
         },
         {
           "column": 28,
-          "line": 799
+          "line": 815
         }
       ],
       "target": "option-absence",
@@ -35358,15 +35358,15 @@
       "sites": [
         {
           "column": 26,
-          "line": 752
+          "line": 768
         },
         {
           "column": 30,
-          "line": 793
+          "line": 809
         },
         {
           "column": 30,
-          "line": 798
+          "line": 814
         }
       ],
       "target": "mutable-reference-runtime-storage",
@@ -35381,35 +35381,35 @@
       "sites": [
         {
           "column": 24,
-          "line": 755
-        },
-        {
-          "column": 30,
-          "line": 756
-        },
-        {
-          "column": 21,
-          "line": 759
-        },
-        {
-          "column": 21,
-          "line": 762
-        },
-        {
-          "column": 21,
-          "line": 765
-        },
-        {
-          "column": 21,
-          "line": 768
-        },
-        {
-          "column": 21,
           "line": 771
         },
         {
+          "column": 30,
+          "line": 772
+        },
+        {
           "column": 21,
-          "line": 774
+          "line": 775
+        },
+        {
+          "column": 21,
+          "line": 778
+        },
+        {
+          "column": 21,
+          "line": 781
+        },
+        {
+          "column": 21,
+          "line": 784
+        },
+        {
+          "column": 21,
+          "line": 787
+        },
+        {
+          "column": 21,
+          "line": 790
         }
       ],
       "target": "string-snapshot",
