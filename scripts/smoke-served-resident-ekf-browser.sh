@@ -661,7 +661,10 @@ else:
     # The canary proves the browser WebGPU transport, not host-driver setup.
     # Force Chromium's test adapter so headless macOS and GPU-less Linux CI do
     # not hang while probing an unavailable presentation-capable device.
-    for flag in chrome_webgpu_test_flags(software_adapter=True):
+    for flag in chrome_webgpu_test_flags(
+        software_adapter=True,
+        linux=sys.platform.startswith("linux"),
+    ):
         args.insert(-1, flag)
 
 def read_exact(connection, length):

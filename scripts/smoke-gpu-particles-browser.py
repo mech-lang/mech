@@ -347,7 +347,10 @@ def main() -> None:
                 f"--user-data-dir={work / 'profile'}",
             ]
             software_adapter = args.software_adapter or sys.platform.startswith("linux")
-            command.extend(chrome_webgpu_test_flags(software_adapter=software_adapter))
+            command.extend(chrome_webgpu_test_flags(
+                software_adapter=software_adapter,
+                linux=sys.platform.startswith("linux"),
+            ))
             if software_adapter:
                 command.extend(["--no-sandbox", "--disable-dev-shm-usage"])
             command.append("about:blank")
