@@ -1517,7 +1517,11 @@ fn plan_serve_inputs_with_root(
     paths: &[String],
     fixed_root: Option<&Path>,
 ) -> MResult<ServeInputPlan> {
-    let current_dir = std::env::current_dir()?.canonicalize()?;
+    // Resolve user-relative selectors before canonicalization. On Windows,
+    // `canonicalize` returns a verbatim `\\?\` path; joining a subsequently
+    // supplied relative selector onto that namespace can make an existing
+    // directory fail `exists()` and leave the common-root planner empty.
+    let current_dir = std::env::current_dir()?;
     if paths.is_empty() {
         let root = fixed_root
             .map(Path::to_path_buf)
@@ -1681,7 +1685,9 @@ fn relative_specifier(root: &Path, path: &Path) -> Option<String> {
 }
 
 fn log_skipped_serve_inputs(paths: &[String]) -> MResult<()> {
-    let current_dir = std::env::current_dir()?.canonicalize()?;
+    // Keep this resolution identical to `plan_serve_inputs_with_root`: append
+    // relative user input before Windows introduces a verbatim path prefix.
+    let current_dir = std::env::current_dir()?;
     for input in paths {
         let path = Path::new(input);
         let path = if path.is_absolute() {
@@ -3756,6 +3762,29 @@ mod tests {
         assert!(registry.get_route("ROADMAP.mec").is_none());
         assert!(registry.get_route("mech.mcfg").is_none());
         drop(registry);
+        drop(guard);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_relative_project_directory_is_resolved_before_verbatim_canonicalization() {
+        let root = temp_root("windows-relative-project-directory");
+        let project = root.join("examples").join("ekf");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::write(project.join("localization.mec"), "x := 1\n").unwrap();
+        let guard = CurrentDirGuard::enter(&root);
+
+        let plan = plan_serve_inputs(&["examples/ekf".to_owned()]).unwrap();
+
+        assert_eq!(plan.root, project.canonicalize().unwrap());
+        assert_eq!(
+            plan.folders,
+            vec![RuntimeWorkspaceFolder {
+                specifier: ".".to_owned(),
+                recursive: true,
+            }]
+        );
         drop(guard);
         std::fs::remove_dir_all(root).unwrap();
     }
