@@ -263,10 +263,21 @@ pub(crate) fn gpu_program_manifest(
         if let BrowserGpuProgram::FixedShape(program) = program {
             dimensions.push(&JsValue::from_f64(f64::from(program.instances())));
         }
+        let sample_dimensions = Array::new();
         for dimension in &output.dimensions {
             dimensions.push(&JsValue::from_f64(*dimension as f64));
+            sample_dimensions.push(&JsValue::from_f64(*dimension as f64));
         }
         set(&value, "dimensions", dimensions)?;
+        set(&value, "sampleDimensions", sample_dimensions)?;
+        set(
+            &value,
+            "physicalLayout",
+            match program {
+                BrowserGpuProgram::Elementwise(_) => "row-major",
+                BrowserGpuProgram::FixedShape(_) => "column-major",
+            },
+        )?;
         outputs.push(&value);
     }
     set(&manifest, "outputs", outputs)?;

@@ -1825,7 +1825,7 @@ fn browser_output_snapshot(
         ));
     }
     let mut values = BTreeMap::new();
-    for (name, physical) in completed {
+    for (name, logical) in completed {
         let port = program
             .interface()
             .outputs
@@ -1848,26 +1848,25 @@ fn browser_output_snapshot(
         let expected = port.elements().map_err(|failure| {
             browser_execution_error(WGPU_BACKEND, "read outputs", failure.to_string())
         })?;
-        if physical.len() != expected {
+        if logical.len() != expected {
             return Err(browser_execution_error(
                 WGPU_BACKEND,
                 "read outputs",
                 format!(
                     "browser bridge returned {} values for `{name}`; expected {expected}",
-                    physical.len()
+                    logical.len()
                 ),
             ));
         }
         let value = if port.dimensions.is_empty() {
-            ComputeValue::ScalarF32(physical[0])
+            ComputeValue::ScalarF32(logical[0])
         } else {
             ComputeValue::TensorF32 {
                 dimensions: port.dimensions.clone(),
-                layout: match program.kernel() {
-                    ComputeKernel::FixedShape(_) => TensorLayout::ColumnMajor,
-                    ComputeKernel::Elementwise(_) => TensorLayout::RowMajor,
-                },
-                values: physical.into(),
+                // The browser bridge canonicalizes every physical backend
+                // buffer before it crosses back into the portable runtime.
+                layout: TensorLayout::RowMajor,
+                values: logical.into(),
             }
         };
         values.insert(port.id, value);
@@ -2488,6 +2487,24 @@ state
             compute.state.lock().unwrap().phase,
             ComputeCommandPhase::Idle
         ));
+    }
+
+    #[test]
+    fn browser_completion_enters_the_runtime_in_portable_row_major_order() {
+        let (_document, prepared) = compile_fixture(CONFIG, FIXED_SHAPE_SOURCE);
+        let output = &prepared.program.interface().outputs[0];
+        let snapshot = browser_output_snapshot(
+            &prepared.program,
+            &BTreeSet::from([output.id]),
+            BTreeMap::from([(output.name.to_string(), vec![1.0, 2.0])]),
+        )
+        .unwrap();
+
+        let ComputeValue::TensorF32 { layout, values, .. } = &snapshot.values[&output.id] else {
+            panic!("the fixed-shape matrix output must remain a tensor");
+        };
+        assert_eq!(*layout, TensorLayout::RowMajor);
+        assert_eq!(values.as_ref(), [1.0, 2.0]);
     }
 
     #[test]

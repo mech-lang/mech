@@ -1,5 +1,36 @@
 /* Shared WebGPU resource and completion protocol for Mech browser hosts. */
 globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
+  static logicalOutputValues(output, physicalValues) {
+    const dimensions = (output.sampleDimensions || []).map(Number);
+    if (output.physicalLayout !== "column-major" || dimensions.length < 2) {
+      return Float32Array.from(physicalValues);
+    }
+    const elements = dimensions.reduce((product, dimension) => product * dimension, 1);
+    if (elements !== physicalValues.length) {
+      throw new Error(
+        `compute output ${output.name} has ${physicalValues.length} physical values; expected ${elements}`,
+      );
+    }
+    const logical = new Float32Array(elements);
+    const columnMajorStrides = [];
+    let columnMajorStride = 1;
+    for (const dimension of dimensions) {
+      columnMajorStrides.push(columnMajorStride);
+      columnMajorStride *= dimension;
+    }
+    for (let rowMajorIndex = 0; rowMajorIndex < elements; rowMajorIndex += 1) {
+      let remaining = rowMajorIndex;
+      let columnMajorIndex = 0;
+      for (let axis = dimensions.length - 1; axis >= 0; axis -= 1) {
+        const coordinate = remaining % dimensions[axis];
+        remaining = Math.floor(remaining / dimensions[axis]);
+        columnMajorIndex += coordinate * columnMajorStrides[axis];
+      }
+      logical[rowMajorIndex] = physicalValues[columnMajorIndex];
+    }
+    return logical;
+  }
+
   static requiredLimits(manifest, supported, requestedOutputNames = []) {
     const requested = new Set(requestedOutputNames);
     const bindingBytes = manifest.bindings.map((binding) =>
@@ -241,7 +272,8 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
       }
       const outputs = [];
       for (const item of this.readbackPlan) {
-        const values = Float32Array.from(
+        const values = MechBrowserComputeDevice.logicalOutputValues(
+          item.output,
           new Float32Array(mapped, item.offset, item.bytes / Float32Array.BYTES_PER_ELEMENT),
         );
         this.metrics.gpuToCpuReadbackBytes += item.bytes;
