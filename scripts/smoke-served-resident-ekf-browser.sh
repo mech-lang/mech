@@ -145,6 +145,7 @@ harness = r'''<script>
     let sawCamera = false;
     let maxVisibleCameras = 0;
     let previousVisibleCameraCount;
+    let paritySnapshot;
     const visibleCameraHistory = [];
     let stableCameraGeometry;
     let cameraGeometryStable = true;
@@ -309,12 +310,10 @@ harness = r'''<script>
         sawNoCamera ||= visibleCameraCount === 0;
         sawCamera ||= visibleCameraCount > 0;
         maxVisibleCameras = Math.max(maxVisibleCameras, visibleCameraCount);
-        // WebGPU completion is consumed by the next resident turn, so its
-        // sampled estimate corresponds to the preceding turn's measurement.
-        // The scalar backend completes inside the current turn.
-        const filterVisibleCameraCount = root.dataset.mechComputeBackend === "wgpu"
-          ? previousVisibleCameraCount
-          : visibleCameraCount;
+        // Asynchronous WebGPU completion publishes the originating turn
+        // directly, so its sampled estimate and camera visibility share one
+        // resident snapshot just like the scalar backend.
+        const filterVisibleCameraCount = visibleCameraCount;
         if (filterVisibleCameraCount === 0 && isComputeCompletionFrame) {
           const predictionGap = finitePoint(estimate) && finitePoint(prediction)
             ? Math.hypot(
@@ -322,9 +321,6 @@ harness = r'''<script>
                 Number(estimate.getAttribute("cy")) - Number(prediction.getAttribute("cy")),
               )
             : Number.POSITIVE_INFINITY;
-          // The WGPU sample is consumed asynchronously, one resident output
-          // behind the live ray geometry. At reacquisition boundaries permit
-          // only a subpixel remnant; sustained dead-zone samples coincide.
           const comparisonValid = predictionGap <= 0.25;
           predictionOnlyValid &&= Boolean(comparisonValid);
           if (comparisonValid) predictionOnlyComparisons += 1;
@@ -415,6 +411,17 @@ harness = r'''<script>
       );
       const computeBackend = root.dataset.mechComputeBackend || "";
       const computeInstances = Number(root.dataset.mechComputeInstances || 0);
+      if (
+        paritySnapshot === undefined && observedLapComplete &&
+        finitePoint(truth) && finitePoint(estimate) && covarianceGeometry.finite
+      ) {
+        paritySnapshot = {
+          updates,
+          truth: [Number(truth.getAttribute("cx")), Number(truth.getAttribute("cy"))],
+          estimate: [Number(estimate.getAttribute("cx")), Number(estimate.getAttribute("cy"))],
+          covarianceExtent: covarianceGeometry.extent,
+        };
+      }
 
       root.dataset.mechObservedUpdates = String(updates);
       root.dataset.mechObservedSquareSides = ["east", "north", "west", "south"]
@@ -496,6 +503,16 @@ harness = r'''<script>
         root.dataset.mechEstimatePathPoints = String(estimatePathGeometry.points);
         root.dataset.mechEstimatePathFinite = String(estimatePathGeometry.finite);
         root.dataset.mechTrackingErrorPixels = trackingError.toFixed(4);
+        root.dataset.mechTruthX = truth.getAttribute("cx");
+        root.dataset.mechTruthY = truth.getAttribute("cy");
+        root.dataset.mechEstimateX = estimate.getAttribute("cx");
+        root.dataset.mechEstimateY = estimate.getAttribute("cy");
+        root.dataset.mechParityUpdates = String(paritySnapshot.updates);
+        root.dataset.mechParityTruthX = String(paritySnapshot.truth[0]);
+        root.dataset.mechParityTruthY = String(paritySnapshot.truth[1]);
+        root.dataset.mechParityEstimateX = String(paritySnapshot.estimate[0]);
+        root.dataset.mechParityEstimateY = String(paritySnapshot.estimate[1]);
+        root.dataset.mechParityCovarianceExtent = String(paritySnapshot.covarianceExtent);
         root.dataset.mechSceneVisible = String(sceneVisible);
         root.dataset.mechOutputPresentation = String(outputPresentation);
         root.dataset.mechVerifiedComputeBackend = computeBackend;
@@ -614,6 +631,16 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q "data-mech-verified-compute-backend=\"$expected_compute_backend\"" "$dom_file" \
   || ! grep -q 'data-mech-verified-compute-instances="1000"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-truth-x="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-truth-y="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-estimate-x="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-estimate-y="[0-9]' "$dom_file" \
+  || ! grep -qE 'data-mech-parity-updates="[3-9][0-9][0-9]"' "$dom_file" \
+  || ! grep -q 'data-mech-parity-truth-x="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-parity-truth-y="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-parity-estimate-x="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-parity-estimate-y="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-parity-covariance-extent="[0-9]' "$dom_file" \
   || [[ -z "$updates" || "$updates" -lt 376 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident EKF browser smoke test failed" >&2
@@ -649,4 +676,33 @@ turning_samples="$(sed -n 's/.*data-mech-turning-samples="\([0-9][0-9]*\)".*/\1/
 max_heading_step="$(sed -n 's/.*data-mech-max-heading-step="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 max_guide_deviation="$(sed -n 's/.*data-mech-max-guide-deviation="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 covariance_extent="$(sed -n 's/.*data-mech-covariance-extent="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+truth_x="$(sed -n 's/.*data-mech-truth-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+truth_y="$(sed -n 's/.*data-mech-truth-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+estimate_x="$(sed -n 's/.*data-mech-estimate-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+estimate_y="$(sed -n 's/.*data-mech-estimate-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_updates="$(sed -n 's/.*data-mech-parity-updates="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_truth_x="$(sed -n 's/.*data-mech-parity-truth-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_truth_y="$(sed -n 's/.*data-mech-parity-truth-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_estimate_x="$(sed -n 's/.*data-mech-parity-estimate-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_estimate_y="$(sed -n 's/.*data-mech-parity-estimate-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_covariance_extent="$(sed -n 's/.*data-mech-parity-covariance-extent="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+if [[ -n "${MECH_EKF_RESULT_FILE:-}" ]]; then
+  python3 - "$MECH_EKF_RESULT_FILE" "$compute_backend" "$parity_updates" \
+    "$parity_truth_x" "$parity_truth_y" "$parity_estimate_x" "$parity_estimate_y" \
+    "$parity_covariance_extent" "$tracking_error_pixels" <<'PY'
+import json
+from pathlib import Path
+import sys
+
+path, backend, updates, truth_x, truth_y, estimate_x, estimate_y, covariance, tracking = sys.argv[1:]
+Path(path).write_text(json.dumps({
+    "backend": backend,
+    "updates": int(updates),
+    "truth": [float(truth_x), float(truth_y)],
+    "estimate": [float(estimate_x), float(estimate_y)],
+    "covariance_extent": float(covariance),
+    "tracking_error": float(tracking),
+}, sort_keys=True))
+PY
+fi
 printf 'EKF_E2E display_updates=%s requested_compute_backend=%s compute_backend=%s compute_instances=1000 cameras=4 max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$compute_backend" "$expected_compute_backend" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"

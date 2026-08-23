@@ -177,7 +177,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -218,8 +218,39 @@ jobs:
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech --features compute_backends_native
-      - name: Verify resident EKF rendering without browser errors
-        run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-ekf-browser.sh
+      - name: Verify scalar and WebGPU EKF rendering against one numeric oracle
+        run: |
+          MECH_BIN=target/debug/mech \
+            MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
+            MECH_EKF_RESULT_FILE=/tmp/ekf-cpu.json \
+            bash scripts/smoke-served-resident-ekf-browser.sh
+          MECH_BIN=target/debug/mech \
+            MECH_EKF_COMPUTE_BACKEND=wgpu \
+            MECH_EKF_RESULT_FILE=/tmp/ekf-wgpu.json \
+            bash scripts/smoke-served-resident-ekf-browser.sh
+          python3 - <<'PY'
+          import json
+          import math
+
+          with open("/tmp/ekf-cpu.json") as source:
+              cpu = json.load(source)
+          with open("/tmp/ekf-wgpu.json") as source:
+              wgpu = json.load(source)
+          # The asynchronous bridge can observe the first completed-lap frame
+          # a few resident packets later than the synchronous scalar backend.
+          # Compare both at that physical checkpoint with bounds tighter than
+          # one robot radius rather than coupling the proof to frame timing.
+          truth_error = math.dist(cpu["truth"], wgpu["truth"])
+          if truth_error > 2.0:
+              raise SystemExit(f"WebGPU truth checkpoint diverged from scalar oracle by {truth_error} pixels")
+          estimate_error = math.dist(cpu["estimate"], wgpu["estimate"])
+          if estimate_error > 6.0:
+              raise SystemExit(f"WebGPU estimate diverged from scalar oracle by {estimate_error} pixels")
+          covariance_error = abs(cpu["covariance_extent"] - wgpu["covariance_extent"])
+          if covariance_error > 0.1:
+              raise SystemExit(f"WebGPU covariance diverged from scalar oracle by {covariance_error} pixels")
+          print("EKF_WEBGPU_PARITY", json.dumps({"cpu": cpu, "wgpu": wgpu}, sort_keys=True))
+          PY
       - name: Remove generated browser package
         if: always()
         run: rm -rf src/wasm/pkg
