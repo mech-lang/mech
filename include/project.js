@@ -737,10 +737,31 @@ function installComputeSmokeTest(target) {
   }
   let pointerQueuedAt = null;
   const fail = (message) => {
+    if (root.dataset.mechGpuSmoke !== 'running') {
+      return;
+    }
     root.dataset.mechGpuSmoke = 'failed';
     root.dataset.mechGpuSmokeError = message;
     clearInterval(timer);
   };
+  target.device?.lost.then((info) => {
+    fail(`browser WebGPU device lost before compute completion: ${JSON.stringify({
+      reason: info.reason,
+      message: info.message,
+      adapter: target.adapter?.info ? {
+        vendor: target.adapter.info.vendor,
+        architecture: target.adapter.info.architecture,
+        device: target.adapter.info.device,
+        description: target.adapter.info.description,
+      } : null,
+      totalDispatches: target.totalDispatches,
+      dispatchPending: target.dispatchPending,
+      delayedCompletions,
+      pendingObservations,
+      pageErrors,
+      firstPageError,
+    })}`);
+  });
   const timer = setInterval(async () => {
     try {
       const state = globalThis.__MECH_GPU_RUNTIME__;

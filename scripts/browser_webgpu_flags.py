@@ -16,8 +16,17 @@ def chrome_webgpu_test_flags(*, software_adapter: bool, linux: bool = False) -> 
             ]
         )
         if linux:
-            # Chromium's Linux WebGPU decoder requires a Vulkan shared
-            # context (or GLES compat). Force the same SwiftShader Vulkan
-            # driver as the selected Dawn fallback adapter on GPU-less CI.
-            flags.extend(["--enable-features=Vulkan", "--use-vulkan=swiftshader"])
+            # Chromium's own Linux WebGPU SwiftShader pixel-test profile keeps
+            # ANGLE, Dawn, and Vulkan on the same software implementation and
+            # avoids creating a presentation surface in a headless process.
+            # Using only the Vulkan switches can destroy Dawn's external
+            # instance while submitted work is still pending.
+            flags.extend(
+                [
+                    "--enable-features=Vulkan",
+                    "--use-angle=swiftshader",
+                    "--use-vulkan=swiftshader",
+                    "--disable-vulkan-surface",
+                ]
+            )
     return flags
