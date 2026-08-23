@@ -1125,6 +1125,42 @@ fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
 
 #[cfg(feature = "compute")]
 #[test]
+fn mixed_tree_coordinator_retains_interactive_root_symbols() {
+    let tree = mech_syntax::parse(
+        r#"
+visible := 41
+@compute := compute://worker/kernel{:write(input/x), :write(turn)}
+@compute/input/x <- visible
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 1f32
+result := x + 1f32
+result
+"#,
+    )
+    .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+    let names = mixed
+        .coordinator
+        .artifact()
+        .outputs()
+        .iter()
+        .filter_map(|output| output.interactive_binding.as_ref())
+        .map(|binding| binding.lexical_name.as_str())
+        .collect::<Vec<_>>();
+
+    assert!(names.contains(&"visible"));
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn mixed_tree_retains_array_activation_as_outer_broadcast_extent() {
     let tree = mech_syntax::parse(
         r#"

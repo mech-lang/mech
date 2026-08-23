@@ -503,6 +503,7 @@ impl<'a> ProgramCompilerView<'a> {
             inputs,
             external_input_names,
             None,
+            false,
         )
         .map(|(product, inputs, _)| (product, inputs))
     }
@@ -513,6 +514,7 @@ impl<'a> ProgramCompilerView<'a> {
         inputs: &BTreeMap<String, RuntimeHostInputValue>,
         external_input_names: &BTreeSet<String>,
         compute_interface: Option<&ComputeRegionInterface>,
+        retain_root_symbols: bool,
     ) -> MResult<(
         ProgramArtifactCompilationProduct,
         BTreeMap<String, RuntimeHostInputValue>,
@@ -546,6 +548,9 @@ impl<'a> ProgramCompilerView<'a> {
         #[cfg(not(feature = "compute"))]
         let activation_inputs = BTreeMap::new();
         publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
+        if retain_root_symbols {
+            program.publish_compiler_root_symbols();
+        }
         let input_names = external_input_names
             .iter()
             .map(String::as_str)
@@ -592,6 +597,7 @@ impl<'a> ProgramCompilerView<'a> {
                 &BTreeMap::new(),
                 &BTreeSet::new(),
                 Some(&compute.interface),
+                true,
             )?;
         Ok(MixedProgramCompilation {
             coordinator,
@@ -619,6 +625,7 @@ impl<'a> ProgramCompilerView<'a> {
             partition.compute,
             &external_input_names,
             None,
+            false,
         )?;
         let compute = assemble_compute_region(compute, initial_inputs, &partition.name)?;
         let (coordinator, _, activation_inputs) = self.compile_resolved_tree_artifact(
@@ -627,6 +634,7 @@ impl<'a> ProgramCompilerView<'a> {
             partition.coordinator,
             &BTreeSet::new(),
             Some(&compute.interface),
+            true,
         )?;
         Ok(MixedProgramCompilation {
             coordinator,
@@ -643,6 +651,7 @@ impl<'a> ProgramCompilerView<'a> {
         tree: Program,
         external_input_names: &BTreeSet<String>,
         compute_interface: Option<&ComputeRegionInterface>,
+        retain_root_symbols: bool,
     ) -> MResult<(
         ProgramArtifactCompilationProduct,
         BTreeMap<String, RuntimeHostInputValue>,
@@ -678,6 +687,9 @@ impl<'a> ProgramCompilerView<'a> {
                 .get(root)
                 .expect("the requested root was executed"),
         );
+        if retain_root_symbols {
+            program.publish_compiler_root_symbols();
+        }
         let input_names = external_input_names
             .iter()
             .map(String::as_str)
