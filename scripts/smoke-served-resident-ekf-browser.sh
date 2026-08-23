@@ -123,6 +123,7 @@ harness = r'''<script>
     let cameraGeometryStable = true;
     let cameraRangeOracleValid = true;
     let predictionOnlyValid = true;
+    let predictionOnlyComparisons = 0;
     let sawInsideCameraRange = false;
     let sawOutsideCameraRange = false;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
@@ -192,6 +193,12 @@ harness = r'''<script>
             Number(truthHeading.getAttribute("x2")) - Number(truthHeading.getAttribute("x1")),
           )
         : undefined;
+      if (!truthPoint && updates > 0 && updates !== lastObservedUpdate) {
+        lastObservedUpdate = updates;
+        cameraGeometryStable = false;
+        cameraRangeOracleValid = false;
+        predictionOnlyValid = false;
+      }
       if (truthPoint && updates > 0 && updates !== lastObservedUpdate) {
         lastObservedUpdate = updates;
         if (firstTruth === undefined) firstTruth = truthPoint;
@@ -253,10 +260,12 @@ harness = r'''<script>
         sawNoCamera ||= visibleCameraCount === 0;
         sawCamera ||= visibleCameraCount > 0;
         maxVisibleCameras = Math.max(maxVisibleCameras, visibleCameraCount);
-        if (visibleCameraCount === 0 && finitePoint(estimate) && finitePoint(prediction)) {
-          predictionOnlyValid &&=
+        if (visibleCameraCount === 0) {
+          const comparisonValid = finitePoint(estimate) && finitePoint(prediction) &&
             Number(estimate.getAttribute("cx")) === Number(prediction.getAttribute("cx")) &&
             Number(estimate.getAttribute("cy")) === Number(prediction.getAttribute("cy"));
+          predictionOnlyValid &&= Boolean(comparisonValid);
+          if (comparisonValid) predictionOnlyComparisons += 1;
         }
       }
       if (truthPoint && previousTruth && updates === lastObservedUpdate) {
@@ -347,6 +356,7 @@ harness = r'''<script>
       root.dataset.mechObservedCameraGeometryStable = String(cameraGeometryStable);
       root.dataset.mechObservedCameraRangeOracle = String(cameraRangeOracleValid);
       root.dataset.mechObservedPredictionOnly = String(predictionOnlyValid);
+      root.dataset.mechObservedPredictionOnlyComparisons = String(predictionOnlyComparisons);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
@@ -356,6 +366,7 @@ harness = r'''<script>
         updates >= 376 &&
         cameras.length === 4 && cameraRanges.length === 4 && cameraRays.length === 4 &&
         cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
+        predictionOnlyComparisons > 0 &&
         sawInsideCameraRange && sawOutsideCameraRange &&
         sawNoCamera && sawCamera && maxVisibleCameras === 1 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
@@ -383,6 +394,7 @@ harness = r'''<script>
         root.dataset.mechCameraGeometryStable = String(cameraGeometryStable);
         root.dataset.mechCameraRangeOracle = String(cameraRangeOracleValid);
         root.dataset.mechPredictionOnly = String(predictionOnlyValid);
+        root.dataset.mechPredictionOnlyComparisons = String(predictionOnlyComparisons);
         root.dataset.mechTruthMoved = String(truthMoved);
         root.dataset.mechSquareSides = ["east", "north", "west", "south"]
           .filter(side => squareSides.has(side)).join(",");
@@ -492,6 +504,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-camera-geometry-stable="true"' "$dom_file" \
   || ! grep -q 'data-mech-camera-range-oracle="true"' "$dom_file" \
   || ! grep -q 'data-mech-prediction-only="true"' "$dom_file" \
+  || ! grep -qE 'data-mech-prediction-only-comparisons="[1-9][0-9]*"' "$dom_file" \
   || ! grep -q 'data-mech-truth-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-square-sides="east,north,west,south"' "$dom_file" \
   || ! grep -q 'data-mech-lap-complete="true"' "$dom_file" \
