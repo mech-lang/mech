@@ -188,8 +188,15 @@ harness = r'''<script>
     let sawOutsideCameraRange = false;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
-      harnessFrames += 1;
       callback(performance.now());
+
+      // Adapter discovery and pipeline creation are asynchronous. Chrome's
+      // virtual-time budget can advance thousands of unrelated layout frames
+      // while WebGPU initialization is still legitimately pending, especially
+      // with a software adapter in CI. Start the simulation-frame budget only
+      // after the document runtime is ready; the outer process deadline still
+      // catches an initialization that actually hangs.
+      if (root.dataset.mechDocumentStatus === "ready") harnessFrames += 1;
 
       const display = document.querySelector('[data-mech-display-id="scene-localization"]');
       const scene = document.querySelector('[data-mech-rich-scene="true"]');
@@ -579,7 +586,11 @@ import sys
 import time
 
 chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
-virtual_time_budget = int(os.environ.get("MECH_BROWSER_VIRTUAL_TIME_BUDGET_MS", "600000"))
+default_virtual_time_budget = "3600000" if compute_backend == "wgpu" else "600000"
+virtual_time_budget = int(os.environ.get(
+    "MECH_BROWSER_VIRTUAL_TIME_BUDGET_MS",
+    default_virtual_time_budget,
+))
 args = [
     chrome,
     "--headless=new",
