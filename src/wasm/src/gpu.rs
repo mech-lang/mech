@@ -61,6 +61,14 @@ pub(crate) fn gpu_program_manifest(
         BrowserGpuProgram::FixedShape(program) => Some(program.physical_states()),
         BrowserGpuProgram::Elementwise(_) => None,
     };
+    if let BrowserGpuProgram::FixedShape(program) = program
+        && program.integrity_buffer().is_some()
+        && program.instances() >= (1 << 24)
+    {
+        return Err(error(
+            "checked WebGPU fault records support fewer than 2^24 instances",
+        ));
+    }
 
     let bindings = Array::new();
     match program {

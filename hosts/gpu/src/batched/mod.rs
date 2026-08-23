@@ -588,6 +588,22 @@ impl FixedShapeKernel {
                 "resident fixed-shape storage requires a fixed-shape kernel",
             ));
         }
+        let state_slots = storage
+            .states
+            .iter()
+            .map(|state| state.slot)
+            .collect::<BTreeSet<_>>();
+        if let Some(output) = program
+            .interface()
+            .outputs
+            .iter()
+            .find(|output| !state_slots.contains(&output.slot))
+        {
+            return Err(fixed_shape_program_error(format!(
+                "fixed-shape output `{}` is derived storage; browser and native GPU backends require every published output to be resident state",
+                output.name,
+            )));
+        }
 
         let mut binding = 0_u32;
         let inputs = storage

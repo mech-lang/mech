@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::collections::{BTreeMap, BTreeSet};
 use std::num::NonZeroU32;
 use std::sync::{Arc, Mutex};
 
@@ -6,10 +6,10 @@ use js_sys::{Array, Float32Array, Object, Reflect};
 use mech_compute::{
     BackendClass, BackendId, BackendRequest, CPU_SCALAR_BACKEND, ComputeBackendCapabilities,
     ComputeBackendDescriptor, ComputeBackendError, ComputeBackendFactory, ComputeBackendRegistry,
-    ComputeBackendRejection, ComputeDispatchReport, ComputeExecutable, ComputeExecutionError,
-    ComputeInitializerSet, ComputeInputUpdate, ComputeKernel, ComputeOutputSelection,
-    ComputeOutputSnapshot, ComputePlatform, ComputeProgram, ComputeSession, ComputeValue,
-    TensorLayout, WGPU_BACKEND,
+    ComputeBackendRejection, ComputeCompletionTarget, ComputeDispatchReport, ComputeExecutable,
+    ComputeExecutionError, ComputeFaultEvidence, ComputeInitializerSet, ComputeInputUpdate,
+    ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputeProgram,
+    ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
 };
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
@@ -293,6 +293,16 @@ impl BrowserComputeBridge {
 
     pub(crate) fn reject(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
         self.command.reject(dispatch_id, reason)
+    }
+
+    pub(crate) fn reject_integrity(
+        &self,
+        dispatch_id: u32,
+        constraint: &str,
+        instance: u32,
+    ) -> Result<(), JsValue> {
+        self.command
+            .reject_integrity(dispatch_id, constraint, instance)
     }
 }
 
@@ -715,21 +725,31 @@ impl RuntimeHostInputDriver for PointerInputDriver {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(crate) struct ComputeCommandHandle {
     pub(crate) region: String,
     state: Arc<Mutex<ComputeCommandState>>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct ComputeCommandState {
     changed_inputs: BTreeMap<String, Vec<f32>>,
     queued: Option<QueuedComputeCommand>,
     next_dispatch_id: u32,
     in_flight: BTreeSet<u32>,
-    acknowledged: u32,
-    completed_outputs: VecDeque<BTreeMap<String, Vec<f32>>>,
-    rejected: VecDeque<(u32, String)>,
+    cpu_reserved: bool,
+    completion_program: Option<ComputeProgram>,
+    completion_target: Option<Arc<dyn ComputeCompletionTarget>>,
+    fault_count: u64,
+}
+
+impl std::fmt::Debug for ComputeCommandHandle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ComputeCommandHandle")
+            .field("region", &self.region)
+            .finish_non_exhaustive()
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -774,52 +794,85 @@ impl ComputeCommandHandle {
         }))
     }
 
-    fn queue_cpu(
+    fn reserve_cpu(&self) -> Result<(), ComputeExecutionError> {
+        let mut state = self.state.lock().map_err(|_| {
+            browser_execution_error(CPU_SCALAR_BACKEND, "dispatch", "command lock is poisoned")
+        })?;
+        ensure_command_slot_available(&state, CPU_SCALAR_BACKEND)?;
+        state.cpu_reserved = true;
+        Ok(())
+    }
+
+    fn cancel_cpu_reservation(&self) {
+        if let Ok(mut state) = self.state.lock() {
+            state.cpu_reserved = false;
+        }
+    }
+
+    fn commit_cpu(
         &self,
         changed_inputs: &mut BTreeMap<String, Vec<f32>>,
     ) -> Result<(), ComputeExecutionError> {
         let mut state = self.state.lock().map_err(|_| {
             browser_execution_error(CPU_SCALAR_BACKEND, "dispatch", "command lock is poisoned")
         })?;
-        ensure_command_slot_available(&state, CPU_SCALAR_BACKEND)?;
+        if !state.cpu_reserved {
+            return Err(browser_execution_error(
+                CPU_SCALAR_BACKEND,
+                "dispatch",
+                "the browser CPU command slot was not reserved",
+            ));
+        }
         state.changed_inputs.append(changed_inputs);
         state.queued = Some(QueuedComputeCommand {
             dispatch_id: None,
             acknowledgement_required: false,
         });
+        state.cpu_reserved = false;
         Ok(())
     }
 
     fn queue_wgpu(
         &self,
         changed_inputs: &mut BTreeMap<String, Vec<f32>>,
-    ) -> Result<(u32, Option<BTreeMap<String, Vec<f32>>>), ComputeExecutionError> {
+    ) -> Result<(), ComputeExecutionError> {
         let mut state = self.state.lock().map_err(|_| {
             browser_execution_error(WGPU_BACKEND, "dispatch", "command lock is poisoned")
         })?;
-        if let Some((dispatch_id, reason)) = state.rejected.pop_front() {
-            return Err(browser_execution_error(
-                WGPU_BACKEND,
-                "complete dispatch",
-                format!("browser bridge rejected dispatch {dispatch_id}: {reason}"),
-            ));
-        }
         ensure_command_slot_available(&state, WGPU_BACKEND)?;
         let dispatch_id = state.next_dispatch_id.checked_add(1).ok_or_else(|| {
             browser_execution_error(WGPU_BACKEND, "dispatch", "dispatch ID space exhausted")
         })?;
         state.next_dispatch_id = dispatch_id;
-        let completed_turns = std::mem::take(&mut state.acknowledged);
-        let mut latest_outputs = None;
-        for _ in 0..completed_turns {
-            latest_outputs = state.completed_outputs.pop_front();
-        }
         state.changed_inputs.append(changed_inputs);
         state.queued = Some(QueuedComputeCommand {
             dispatch_id: Some(dispatch_id),
             acknowledgement_required: true,
         });
-        Ok((completed_turns, latest_outputs))
+        Ok(())
+    }
+
+    fn configure_completion(&self, program: &ComputeProgram) -> Result<(), ComputeBackendError> {
+        let mut state = self.state.lock().map_err(|_| ComputeBackendError {
+            backend: BackendId::new(WGPU_BACKEND).expect("static backend ID is valid"),
+            operation: "compile",
+            detail: "compute command lock is poisoned".into(),
+        })?;
+        state.completion_program = Some(program.clone());
+        Ok(())
+    }
+
+    fn bind_completion_target(
+        &self,
+        target: Arc<dyn ComputeCompletionTarget>,
+    ) -> Result<(), ComputeBackendError> {
+        let mut state = self.state.lock().map_err(|_| ComputeBackendError {
+            backend: BackendId::new(WGPU_BACKEND).expect("static backend ID is valid"),
+            operation: "bind completion",
+            detail: "compute command lock is poisoned".into(),
+        })?;
+        state.completion_target = Some(target);
+        Ok(())
     }
 
     pub(crate) fn acknowledge(&self, dispatch_id: u32) -> Result<(), JsValue> {
@@ -831,21 +884,81 @@ impl ComputeCommandHandle {
         dispatch_id: u32,
         outputs: BTreeMap<String, Vec<f32>>,
     ) -> Result<(), JsValue> {
-        let mut state = self
-            .state
+        let (program, target, report) = {
+            let state = self
+                .state
+                .lock()
+                .map_err(|_| error("compute command state lock is poisoned"))?;
+            if !state.in_flight.contains(&dispatch_id) {
+                return Err(error(format!(
+                    "compute dispatch {dispatch_id} is not awaiting acknowledgement"
+                )));
+            }
+            let program = state
+                .completion_program
+                .clone()
+                .ok_or_else(|| error("compute completion has no compiled output contract"))?;
+            let target = state
+                .completion_target
+                .clone()
+                .ok_or_else(|| error("compute completion has no resident publication target"))?;
+            let report = ComputeDispatchReport {
+                completed_turns: 1,
+                fault_count: state.fault_count,
+                ..Default::default()
+            };
+            (program, target, report)
+        };
+        let snapshot = browser_output_snapshot(&program, outputs)
+            .map_err(|failure| error(format!("{}: {}", failure.operation, failure.detail)))?;
+        self.state
             .lock()
-            .map_err(|_| error("compute command state lock is poisoned"))?;
-        if !state.in_flight.remove(&dispatch_id) {
-            return Err(error(format!(
-                "compute dispatch {dispatch_id} is not awaiting acknowledgement"
-            )));
-        }
-        state.acknowledged = state
-            .acknowledged
-            .checked_add(1)
-            .ok_or_else(|| error("compute acknowledgement count overflow"))?;
-        state.completed_outputs.push_back(outputs);
+            .map_err(|_| error("compute command state lock is poisoned"))?
+            .in_flight
+            .remove(&dispatch_id);
+        target
+            .complete(report, snapshot)
+            .map_err(|failure| error(format!("{}: {}", failure.operation, failure.detail)))?;
         Ok(())
+    }
+
+    pub(crate) fn reject_integrity(
+        &self,
+        dispatch_id: u32,
+        constraint: &str,
+        instance: u32,
+    ) -> Result<(), JsValue> {
+        let (target, report) = {
+            let mut state = self
+                .state
+                .lock()
+                .map_err(|_| error("compute command state lock is poisoned"))?;
+            if !state.in_flight.remove(&dispatch_id) {
+                return Err(error(format!(
+                    "compute dispatch {dispatch_id} is not awaiting acknowledgement"
+                )));
+            }
+            state.fault_count = state.fault_count.saturating_add(1);
+            let target = state
+                .completion_target
+                .clone()
+                .ok_or_else(|| error("compute completion has no resident publication target"))?;
+            let report = ComputeDispatchReport {
+                completed_turns: 0,
+                fault_count: state.fault_count,
+                last_fault: Some(ComputeFaultEvidence {
+                    attempted_turn: u64::from(dispatch_id),
+                    constraint: constraint.to_owned().into_boxed_str(),
+                    detail: format!("candidate rejected at batch instance {instance}")
+                        .into_boxed_str(),
+                }),
+                ..Default::default()
+            };
+            (target, report)
+        };
+        target
+            .complete(report, ComputeOutputSnapshot::default())
+            .map_err(|failure| error(format!("{}: {}", failure.operation, failure.detail)))
     }
 
     pub(crate) fn reject(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
@@ -858,14 +971,7 @@ impl ComputeCommandHandle {
                 "compute dispatch {dispatch_id} is not awaiting acknowledgement"
             )));
         }
-        state.rejected.push_back((
-            dispatch_id,
-            if reason.trim().is_empty() {
-                "WebGPU completion failed".to_owned()
-            } else {
-                reason.to_owned()
-            },
-        ));
+        let _ = reason;
         Ok(())
     }
 }
@@ -874,7 +980,7 @@ fn ensure_command_slot_available(
     state: &ComputeCommandState,
     backend: &str,
 ) -> Result<(), ComputeExecutionError> {
-    if state.queued.is_some() {
+    if state.queued.is_some() || !state.in_flight.is_empty() || state.cpu_reserved {
         return Err(browser_execution_error(
             backend,
             "dispatch",
@@ -921,14 +1027,7 @@ impl BrowserOutputHandle {
         program: &ComputeProgram,
         snapshot: &ComputeOutputSnapshot,
     ) -> Result<(), ComputeExecutionError> {
-        let mut values = self.values.lock().map_err(|_| {
-            browser_execution_error(
-                CPU_SCALAR_BACKEND,
-                "publish outputs",
-                "output lock is poisoned",
-            )
-        })?;
-        values.clear();
+        let mut candidate = BTreeMap::new();
         for port in &program.interface().outputs {
             let value = snapshot.values.get(&port.id).ok_or_else(|| {
                 browser_execution_error(
@@ -937,8 +1036,15 @@ impl BrowserOutputHandle {
                     format!("backend omitted output `{}`", port.name),
                 )
             })?;
-            values.insert(port.name.to_string(), value_elements(value));
+            candidate.insert(port.name.to_string(), value_elements(value));
         }
+        *self.values.lock().map_err(|_| {
+            browser_execution_error(
+                CPU_SCALAR_BACKEND,
+                "publish outputs",
+                "output lock is poisoned",
+            )
+        })? = candidate;
         Ok(())
     }
 
@@ -1074,11 +1180,18 @@ impl ComputeSession for BrowserCpuSession {
         &mut self,
         turns: NonZeroU32,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
-        let report = self.inner.dispatch(turns)?;
-        let snapshot = self.inner.read_outputs(&ComputeOutputSelection::All)?;
-        self.outputs.publish(&self.program, &snapshot)?;
-        self.command.queue_cpu(&mut self.changed_inputs)?;
-        Ok(report)
+        self.command.reserve_cpu()?;
+        let result = (|| {
+            let report = self.inner.dispatch(turns)?;
+            let snapshot = self.inner.read_outputs(&ComputeOutputSelection::All)?;
+            self.outputs.publish(&self.program, &snapshot)?;
+            self.command.commit_cpu(&mut self.changed_inputs)?;
+            Ok(report)
+        })();
+        if result.is_err() {
+            self.command.cancel_cpu_reservation();
+        }
+        result
     }
 
     fn read_outputs(
@@ -1158,11 +1271,19 @@ impl ComputeBackendFactory for BrowserWgpuBackendFactory {
             operation: "compile",
             detail: format!("{failure:?}").into(),
         })?;
+        self.command.configure_completion(program)?;
         Ok(Box::new(BrowserWgpuExecutable {
             backend: self.descriptor.id.clone(),
             program: program.clone(),
             command: self.command.clone(),
         }))
+    }
+
+    fn bind_completion_target(
+        &self,
+        target: Arc<dyn ComputeCompletionTarget>,
+    ) -> Result<(), ComputeBackendError> {
+        self.command.bind_completion_target(target)
     }
 }
 
@@ -1187,7 +1308,6 @@ impl ComputeExecutable for BrowserWgpuExecutable {
             program: self.program.clone(),
             command: self.command.clone(),
             changed_inputs: BTreeMap::new(),
-            outputs: ComputeOutputSnapshot::default(),
         }))
     }
 }
@@ -1197,7 +1317,6 @@ struct BrowserWgpuSession {
     program: ComputeProgram,
     command: ComputeCommandHandle,
     changed_inputs: BTreeMap<String, Vec<f32>>,
-    outputs: ComputeOutputSnapshot,
 }
 
 impl ComputeSession for BrowserWgpuSession {
@@ -1238,12 +1357,9 @@ impl ComputeSession for BrowserWgpuSession {
                 "the browser render bridge accepts one resident turn per frame",
             ));
         }
-        let (completed_turns, outputs) = self.command.queue_wgpu(&mut self.changed_inputs)?;
-        if let Some(outputs) = outputs.filter(|outputs| !outputs.is_empty()) {
-            self.outputs = browser_output_snapshot(&self.program, outputs)?;
-        }
+        self.command.queue_wgpu(&mut self.changed_inputs)?;
         Ok(ComputeDispatchReport {
-            completed_turns,
+            completed_turns: 0,
             ..Default::default()
         })
     }
@@ -1252,17 +1368,8 @@ impl ComputeSession for BrowserWgpuSession {
         &mut self,
         selection: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        let values = self
-            .outputs
-            .values
-            .iter()
-            .filter(|(port, _)| match selection {
-                ComputeOutputSelection::All => true,
-                ComputeOutputSelection::Ports(ports) => ports.contains(port),
-            })
-            .map(|(port, value)| (*port, value.clone()))
-            .collect();
-        Ok(ComputeOutputSnapshot { values })
+        let _ = selection;
+        Ok(ComputeOutputSnapshot::default())
     }
 }
 
@@ -1270,6 +1377,29 @@ fn browser_output_snapshot(
     program: &ComputeProgram,
     completed: BTreeMap<String, Vec<f32>>,
 ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
+    if completed.len() != program.interface().outputs.len() {
+        let missing = program
+            .interface()
+            .outputs
+            .iter()
+            .filter(|port| !completed.contains_key(port.name.as_ref()))
+            .map(|port| port.name.as_ref())
+            .collect::<Vec<_>>();
+        return Err(browser_execution_error(
+            WGPU_BACKEND,
+            "read outputs",
+            format!(
+                "browser bridge returned {} outputs; expected {}{}",
+                completed.len(),
+                program.interface().outputs.len(),
+                if missing.is_empty() {
+                    String::new()
+                } else {
+                    format!("; missing {}", missing.join(", "))
+                },
+            ),
+        ));
+    }
     let mut values = BTreeMap::new();
     for (name, physical) in completed {
         let port = program
@@ -1369,6 +1499,22 @@ fn error(message: impl AsRef<str>) -> JsValue {
 mod tests {
     use super::*;
     use std::collections::BTreeSet;
+
+    #[derive(Default)]
+    struct RecordingCompletion {
+        reports: Mutex<Vec<ComputeDispatchReport>>,
+    }
+
+    impl ComputeCompletionTarget for RecordingCompletion {
+        fn complete(
+            &self,
+            report: ComputeDispatchReport,
+            _snapshot: ComputeOutputSnapshot,
+        ) -> Result<(), ComputeExecutionError> {
+            self.reports.lock().unwrap().push(report);
+            Ok(())
+        }
+    }
 
     const CONFIG: &str = r#"
 config := {
@@ -1582,9 +1728,31 @@ state
         assert_eq!(command.changed_inputs["force-point"], vec![0.25, -0.5]);
         assert_eq!(command.changed_inputs["force-strength"], vec![1.0]);
         let dispatch_id = command.dispatch_id.unwrap();
-        assert_eq!(compute.state.lock().unwrap().acknowledged, 0);
-        compute.acknowledge(dispatch_id).unwrap();
-        assert_eq!(compute.state.lock().unwrap().acknowledged, 1);
+        assert!(
+            compute
+                .state
+                .lock()
+                .unwrap()
+                .in_flight
+                .contains(&dispatch_id)
+        );
+        compute
+            .complete(
+                dispatch_id,
+                BTreeMap::from([
+                    ("result.0".to_owned(), vec![0.0; 8]),
+                    ("result.1".to_owned(), vec![0.0; 8]),
+                ]),
+            )
+            .unwrap();
+        assert!(
+            !compute
+                .state
+                .lock()
+                .unwrap()
+                .in_flight
+                .contains(&dispatch_id)
+        );
     }
 
     #[test]
@@ -1618,25 +1786,22 @@ state
     }
 
     #[test]
-    fn wgpu_reports_completion_only_after_the_bridge_acknowledges_it() {
+    fn wgpu_holds_the_command_slot_until_the_bridge_completes_it() {
         let compute = ComputeCommandHandle::new("test".to_owned());
         let mut first_inputs = BTreeMap::from([("x".to_owned(), vec![1.0])]);
-        assert_eq!(compute.queue_wgpu(&mut first_inputs).unwrap(), (0, None));
+        compute.queue_wgpu(&mut first_inputs).unwrap();
 
         let first = compute.take_command_data().unwrap().unwrap();
         assert!(first.acknowledgement_required);
         let dispatch_id = first.dispatch_id.unwrap();
-        compute.acknowledge(dispatch_id).unwrap();
-
         let mut second_inputs = BTreeMap::new();
-        assert_eq!(
-            compute.queue_wgpu(&mut second_inputs).unwrap(),
-            (1, Some(BTreeMap::new()))
-        );
+        assert!(compute.queue_wgpu(&mut second_inputs).is_err());
+        compute.reject(dispatch_id, "test cleanup").unwrap();
+        compute.queue_wgpu(&mut second_inputs).unwrap();
     }
 
     #[test]
-    fn wgpu_bridge_rejection_is_returned_to_the_next_dispatch() {
+    fn wgpu_bridge_rejection_releases_the_command_slot() {
         let compute = ComputeCommandHandle::new("test".to_owned());
         let mut inputs = BTreeMap::new();
         compute.queue_wgpu(&mut inputs).unwrap();
@@ -1645,9 +1810,59 @@ state
             .reject(command.dispatch_id.unwrap(), "device lost")
             .unwrap();
 
-        let error = compute.queue_wgpu(&mut inputs).unwrap_err();
-        assert_eq!(error.operation, "complete dispatch");
-        assert!(error.detail.contains("device lost"));
+        compute.queue_wgpu(&mut inputs).unwrap();
+    }
+
+    #[test]
+    fn wgpu_completion_validates_the_whole_snapshot_before_publishing() {
+        let (_document, prepared) = compile_fixture(CONFIG, SOURCE);
+        let compute = ComputeCommandHandle::new("test".to_owned());
+        compute.configure_completion(&prepared.program).unwrap();
+        let completion = Arc::new(RecordingCompletion::default());
+        compute.bind_completion_target(completion.clone()).unwrap();
+        let mut inputs = BTreeMap::new();
+        compute.queue_wgpu(&mut inputs).unwrap();
+        let dispatch_id = compute
+            .take_command_data()
+            .unwrap()
+            .unwrap()
+            .dispatch_id
+            .unwrap();
+
+        let error = browser_output_snapshot(
+            &prepared.program,
+            BTreeMap::from([("result.0".to_owned(), vec![0.0; 8])]),
+        )
+        .unwrap_err();
+        assert!(error.detail.contains("missing result.1"));
+        assert!(
+            compute
+                .state
+                .lock()
+                .unwrap()
+                .in_flight
+                .contains(&dispatch_id)
+        );
+        assert!(completion.reports.lock().unwrap().is_empty());
+
+        compute
+            .complete(
+                dispatch_id,
+                BTreeMap::from([
+                    ("result.0".to_owned(), vec![0.0; 8]),
+                    ("result.1".to_owned(), vec![0.0; 8]),
+                ]),
+            )
+            .unwrap();
+        assert_eq!(completion.reports.lock().unwrap()[0].completed_turns, 1);
+        assert!(
+            !compute
+                .state
+                .lock()
+                .unwrap()
+                .in_flight
+                .contains(&dispatch_id)
+        );
     }
 
     #[test]

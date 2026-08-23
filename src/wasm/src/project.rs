@@ -383,6 +383,8 @@ struct SourceBackedDocumentBootstrap {
 #[derive(Clone, Default)]
 struct DocumentRuntimeLifecycle {
     drivers_started: Rc<Cell<bool>>,
+    #[cfg(feature = "browser_compute")]
+    compute_generation: Rc<Cell<u32>>,
     #[cfg(feature = "browser_host_scene")]
     scenes: Rc<RefCell<BrowserSceneRegistry>>,
     #[cfg(feature = "browser_host_scene")]
@@ -430,6 +432,11 @@ impl DocumentRuntimeLifecycle {
     }
 
     #[cfg(feature = "browser_compute")]
+    fn compute_generation(&self) -> u32 {
+        self.compute_generation.get()
+    }
+
+    #[cfg(feature = "browser_compute")]
     fn stage_compute(&self, compute: Option<BrowserComputeBridge>) {
         *self.pending_compute.borrow_mut() = compute;
     }
@@ -437,6 +444,8 @@ impl DocumentRuntimeLifecycle {
     #[cfg(feature = "browser_compute")]
     fn commit_compute(&self) {
         *self.compute.borrow_mut() = self.pending_compute.borrow_mut().take();
+        self.compute_generation
+            .set(self.compute_generation.get().wrapping_add(1));
     }
 
     #[cfg(feature = "browser_compute")]
@@ -1308,6 +1317,12 @@ mod document {
         }
 
         #[cfg(feature = "browser_compute")]
+        #[wasm_bindgen(js_name = computeGeneration)]
+        pub fn compute_generation(&self) -> u32 {
+            self.bootstrap.source().lifecycle.compute_generation()
+        }
+
+        #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = acknowledgeComputeCommand)]
         pub fn acknowledge_compute_command(&self, dispatch_id: u32) -> Result<(), JsValue> {
             self.bootstrap
@@ -1346,6 +1361,22 @@ mod document {
                 .compute()
                 .ok_or_else(|| js_error("document has no compute region"))?
                 .reject(dispatch_id, reason)
+        }
+
+        #[cfg(feature = "browser_compute")]
+        #[wasm_bindgen(js_name = rejectIntegrityComputeCommand)]
+        pub fn reject_integrity_compute_command(
+            &self,
+            dispatch_id: u32,
+            constraint: &str,
+            instance: u32,
+        ) -> Result<(), JsValue> {
+            self.bootstrap
+                .source()
+                .lifecycle
+                .compute()
+                .ok_or_else(|| js_error("document has no compute region"))?
+                .reject_integrity(dispatch_id, constraint, instance)
         }
 
         pub fn frame(&mut self, max_inputs: usize) -> Result<JsValue, JsValue> {

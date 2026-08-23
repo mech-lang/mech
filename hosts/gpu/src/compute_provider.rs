@@ -2,15 +2,16 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     num::NonZeroU32,
     sync::{
-        Arc, Mutex,
+        Arc, Mutex, Weak,
         atomic::{AtomicBool, Ordering},
     },
 };
 
 use mech_compute::{
-    BackendRequest, ComputeBackendRegistry, ComputeDispatchReport, ComputeInitializerSet,
-    ComputeInputUpdate, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform,
-    ComputePort, ComputeProgram, ComputeSession, ComputeValue, TensorLayout,
+    BackendId, BackendRequest, ComputeBackendRegistry, ComputeCompletionTarget,
+    ComputeDispatchReport, ComputeExecutionError, ComputeInitializerSet, ComputeInputUpdate,
+    ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePort, ComputeProgram,
+    ComputeSession, ComputeValue, TensorLayout,
 };
 use mech_core::{
     ComputePlacement, LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration,
@@ -196,13 +197,6 @@ impl RuntimeHostFactory for ComputeHostFactory {
         let telemetry = Arc::new(Mutex::new(None));
         let live = Arc::new(AtomicBool::new(false));
         let base_uri = format!("compute://{instance_name}/kernel");
-        let sample_requests = self
-            .program
-            .interface()
-            .outputs
-            .iter()
-            .map(|port| port.name.to_string())
-            .collect();
         let state = Arc::new(Mutex::new(ComputeHostState {
             backend: backend_id.to_string(),
             program: Arc::clone(&self.program),
@@ -211,10 +205,27 @@ impl RuntimeHostFactory for ComputeHostFactory {
             fault_count: Ref::new(0.0),
             last_fault: Ref::new(String::new()),
             sampled_outputs: initial_sampled_outputs(&self.program)?,
-            sample_requests,
-            last_turn: None,
+            sample_requests: BTreeSet::new(),
+            last_submitted_turn: None,
+            terminal_failure: None,
             session,
         }));
+        backend
+            .bind_completion_target(Arc::new(ComputeHostCompletionTarget {
+                backend: backend_id.clone(),
+                resource: base_uri.clone(),
+                state: Arc::downgrade(&state),
+                telemetry: Arc::clone(&telemetry),
+            }))
+            .map_err(|error| {
+                compute_host_error(
+                    "ComputeBackendInitialize",
+                    format!(
+                        "region `{}` could not bind completion: {error}",
+                        self.region
+                    ),
+                )
+            })?;
         let installation = RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
             resource_providers: vec![Box::new(ComputeResourceProvider {
@@ -251,8 +262,75 @@ struct ComputeHostState {
     last_fault: Ref<String>,
     sampled_outputs: BTreeMap<String, LegacyValue>,
     sample_requests: BTreeSet<String>,
-    last_turn: Option<RuntimeHostInputValue>,
+    last_submitted_turn: Option<ComputeTurnToken>,
+    terminal_failure: Option<String>,
     session: Box<dyn ComputeSession>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+struct ComputeTurnToken(u128);
+
+struct ComputeHostCompletionTarget {
+    backend: BackendId,
+    resource: String,
+    state: Weak<Mutex<ComputeHostState>>,
+    telemetry: Arc<Mutex<Option<RuntimeIngress>>>,
+}
+
+impl ComputeCompletionTarget for ComputeHostCompletionTarget {
+    fn complete(
+        &self,
+        report: ComputeDispatchReport,
+        snapshot: ComputeOutputSnapshot,
+    ) -> Result<(), ComputeExecutionError> {
+        let state = self.state.upgrade().ok_or_else(|| {
+            completion_error(&self.backend, "resident compute host has been retired")
+        })?;
+        let mut state = state
+            .lock()
+            .map_err(|_| completion_error(&self.backend, "compute host state lock is poisoned"))?;
+        if let Some(failure) = state.terminal_failure.as_ref() {
+            return Err(completion_error(
+                &self.backend,
+                format!("compute host is stopped after an incomplete transaction: {failure}"),
+            ));
+        }
+        let sampled = if report.completed_turns > 0 {
+            materialize_sampled_outputs(&state, &snapshot)
+                .map_err(|error| completion_error(&self.backend, format!("{error:?}")))?
+        } else {
+            BTreeMap::new()
+        };
+        let updates = {
+            state.sampled_outputs.extend(sampled);
+            apply_report(&mut state, &report);
+            telemetry_updates(&self.resource, &state)
+                .map_err(|error| completion_error(&self.backend, format!("{error:?}")))?
+        };
+        drop(state);
+        if let Some(ingress) = self
+            .telemetry
+            .lock()
+            .map_err(|_| completion_error(&self.backend, "telemetry ingress lock is poisoned"))?
+            .as_ref()
+        {
+            ingress
+                .submit_latest(
+                    RuntimeHostInput::new(updates)
+                        .map_err(|error| completion_error(&self.backend, format!("{error:?}")))?,
+                )
+                .map_err(|error| completion_error(&self.backend, format!("{error:?}")))?;
+        }
+        Ok(())
+    }
+}
+
+fn completion_error(backend: &BackendId, detail: impl Into<String>) -> ComputeExecutionError {
+    ComputeExecutionError {
+        backend: backend.clone(),
+        operation: "complete asynchronous dispatch",
+        detail: detail.into().into_boxed_str(),
+    }
 }
 
 impl std::fmt::Debug for ComputeHostState {
@@ -533,17 +611,32 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
     }
 
     fn deliver(&mut self) -> MResult<()> {
+        let turn = canonical_turn_token(&self.turn)?;
         let mut state = self.state.lock().map_err(|_| {
             compute_host_error("ComputeHostDispatch", "compute host state lock is poisoned")
         })?;
-        if state.last_turn.as_ref() == Some(&self.turn) {
+        if let Some(failure) = state.terminal_failure.as_ref() {
+            return Err(compute_host_error(
+                "ComputeHostDispatch",
+                format!("compute host is stopped after an incomplete transaction: {failure}"),
+            ));
+        }
+        if state
+            .last_submitted_turn
+            .is_some_and(|submitted| turn <= submitted)
+        {
             return Ok(());
         }
-        let report = state
+        let report = match state
             .session
             .dispatch(NonZeroU32::new(1).expect("one is nonzero"))
-            .map_err(|error| compute_host_error("ComputeHostDispatch", error.to_string()))?;
-        state.last_turn = Some(self.turn.clone());
+        {
+            Ok(report) => report,
+            Err(error) => {
+                return Err(compute_host_error("ComputeHostDispatch", error.to_string()));
+            }
+        };
+        let mut sampled = None;
         if report.completed_turns > 0 && !state.sample_requests.is_empty() {
             let selected = state
                 .program
@@ -553,12 +646,28 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
                 .filter(|port| state.sample_requests.contains(port.name.as_ref()))
                 .map(|port| port.id)
                 .collect();
-            let snapshot = state
+            let snapshot = match state
                 .session
                 .read_outputs(&ComputeOutputSelection::Ports(selected))
-                .map_err(|error| compute_host_error("ComputeHostRead", error.to_string()))?;
-            update_sampled_outputs(&mut state, snapshot)?;
+            {
+                Ok(snapshot) => snapshot,
+                Err(error) => {
+                    state.terminal_failure = Some(error.to_string());
+                    return Err(compute_host_error("ComputeHostRead", error.to_string()));
+                }
+            };
+            sampled = Some(match materialize_sampled_outputs(&state, &snapshot) {
+                Ok(sampled) => sampled,
+                Err(error) => {
+                    state.terminal_failure = Some(format!("{error:?}"));
+                    return Err(error);
+                }
+            });
         }
+        if let Some(sampled) = sampled {
+            state.sampled_outputs.extend(sampled);
+        }
+        state.last_submitted_turn = Some(turn);
         apply_report(&mut state, &report);
         let updates = telemetry_updates(&self.resource, &state)?;
         drop(state);
@@ -577,6 +686,40 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
         }
         Ok(())
     }
+}
+
+fn canonical_turn_token(value: &RuntimeHostInputValue) -> MResult<ComputeTurnToken> {
+    let invalid = || {
+        compute_host_error(
+            "ComputeHostDispatch",
+            "compute turn tokens must be non-negative, finite integers",
+        )
+    };
+    let token = match value {
+        RuntimeHostInputValue::U8(value) => u128::from(*value),
+        RuntimeHostInputValue::U16(value) => u128::from(*value),
+        RuntimeHostInputValue::U32(value) => u128::from(*value),
+        RuntimeHostInputValue::U64(value) => u128::from(*value),
+        RuntimeHostInputValue::U128(value) => *value,
+        RuntimeHostInputValue::Index(value) => *value as u128,
+        RuntimeHostInputValue::I8(value) if *value >= 0 => *value as u128,
+        RuntimeHostInputValue::I16(value) if *value >= 0 => *value as u128,
+        RuntimeHostInputValue::I32(value) if *value >= 0 => *value as u128,
+        RuntimeHostInputValue::I64(value) if *value >= 0 => *value as u128,
+        RuntimeHostInputValue::I128(value) if *value >= 0 => *value as u128,
+        RuntimeHostInputValue::F32(value)
+            if value.is_finite() && *value >= 0.0 && value.fract() == 0.0 =>
+        {
+            *value as u128
+        }
+        RuntimeHostInputValue::F64(value)
+            if value.is_finite() && *value >= 0.0 && value.fract() == 0.0 =>
+        {
+            *value as u128
+        }
+        _ => return Err(invalid()),
+    };
+    Ok(ComputeTurnToken(token))
 }
 
 fn apply_report(state: &mut ComputeHostState, report: &ComputeDispatchReport) {
@@ -946,10 +1089,10 @@ fn zero_sample_value(port: &ComputePort) -> MResult<LegacyValue> {
     )
 }
 
-fn update_sampled_outputs(
-    state: &mut ComputeHostState,
-    snapshot: ComputeOutputSnapshot,
-) -> MResult<()> {
+fn materialize_sampled_outputs(
+    state: &ComputeHostState,
+    snapshot: &ComputeOutputSnapshot,
+) -> MResult<BTreeMap<String, LegacyValue>> {
     let ports = state
         .program
         .interface()
@@ -958,6 +1101,7 @@ fn update_sampled_outputs(
         .filter(|port| state.sample_requests.contains(port.name.as_ref()))
         .cloned()
         .collect::<Vec<_>>();
+    let mut sampled = BTreeMap::new();
     for port in ports {
         let value = snapshot.values.get(&port.id).ok_or_else(|| {
             compute_host_error(
@@ -965,12 +1109,12 @@ fn update_sampled_outputs(
                 format!("backend omitted sampled output `{}`", port.name),
             )
         })?;
-        state.sampled_outputs.insert(
+        sampled.insert(
             port.name.to_string(),
             sampled_output_value(&port, value.clone())?,
         );
     }
-    Ok(())
+    Ok(sampled)
 }
 
 fn sampled_output_value(port: &ComputePort, value: ComputeValue) -> MResult<LegacyValue> {
@@ -1341,12 +1485,16 @@ mod tests {
     }
 
     fn turn_write_with(value: f32) -> RuntimeResourceWriteRequest {
+        turn_write_value(RuntimeHostInputValue::F32(value))
+    }
+
+    fn turn_write_value(value: RuntimeHostInputValue) -> RuntimeResourceWriteRequest {
         RuntimeResourceWriteRequest {
             base_uri: "compute://particles/kernel".to_owned(),
             path: "turn".to_owned(),
             context_name: "particles".to_owned(),
             operation: RuntimeCapabilityOperation::Write,
-            value: LegacyValue::from(value),
+            value: value.into_mech_value().unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
         }
     }
@@ -1533,6 +1681,50 @@ mod tests {
         runtime.write_resource(turn_write_with(2.0)).unwrap();
         assert_eq!(calls.lock().unwrap().last(), Some(&FakeCall::Dispatch(1)));
         assert_eq!(calls.lock().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn turn_tokens_are_width_independent_and_never_move_backwards() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let mut runtime = runtime_with_fake_backend(
+            true,
+            Arc::clone(&calls),
+            ComputeDispatchReport {
+                completed_turns: 1,
+                ..Default::default()
+            },
+        );
+
+        runtime.write_resource(turn_write_with(2.0)).unwrap();
+        runtime
+            .write_resource(turn_write_value(RuntimeHostInputValue::F64(2.0)))
+            .unwrap();
+        runtime
+            .write_resource(turn_write_value(RuntimeHostInputValue::F64(1.0)))
+            .unwrap();
+        assert_eq!(
+            calls
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|call| matches!(call, FakeCall::Dispatch(_)))
+                .count(),
+            1,
+        );
+
+        runtime
+            .write_resource(turn_write_value(RuntimeHostInputValue::F64(3.0)))
+            .unwrap();
+        assert_eq!(
+            calls
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|call| matches!(call, FakeCall::Dispatch(_)))
+                .count(),
+            2,
+        );
+        assert!(canonical_turn_token(&RuntimeHostInputValue::F64(3.5)).is_err());
     }
 
     #[test]

@@ -179,6 +179,27 @@ pub trait ComputeBackendFactory {
         &self,
         program: &ComputeProgram,
     ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError>;
+
+    /// Connects an asynchronous backend to the resident host that owns its
+    /// published outputs. Synchronous backends use the default no-op because
+    /// their dispatch report and output snapshot are returned together.
+    fn bind_completion_target(
+        &self,
+        _target: Arc<dyn ComputeCompletionTarget>,
+    ) -> Result<(), ComputeBackendError> {
+        Ok(())
+    }
+}
+
+/// Atomic publication boundary for backends whose work completes after
+/// `ComputeSession::dispatch` returns. Implementations must validate and stage
+/// a whole snapshot before changing resident-visible state.
+pub trait ComputeCompletionTarget {
+    fn complete(
+        &self,
+        report: ComputeDispatchReport,
+        snapshot: ComputeOutputSnapshot,
+    ) -> Result<(), ComputeExecutionError>;
 }
 
 pub trait ComputeExecutable {
