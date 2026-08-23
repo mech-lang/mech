@@ -4731,11 +4731,7 @@ rows := |id<string> x<f64>|
         assert_ekf_scene_advances_on_every_resident_timer_packet();
     }
 
-    #[cfg(all(
-        feature = "browser_host_timer",
-        feature = "browser_host_scene",
-        feature = "browser_compute"
-    ))]
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     fn generic_fixture_document() -> MechConfigDocument {
         parse_config_document(
             "generic-timer-table-scene/mech.mcfg",
