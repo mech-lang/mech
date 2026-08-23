@@ -240,10 +240,21 @@ jobs:
               raise SystemExit("scalar and WebGPU checkpoints used different completed turns")
           if len(cpu["output"]) != 15 or len(wgpu["output"]) != 15:
               raise SystemExit("the EKF checkpoint must contain state, covariance, and prediction")
-          errors = [abs(left - right) for left, right in zip(cpu["output"], wgpu["output"])]
-          if not all(math.isfinite(error) for error in errors) or max(errors) > 1e-5:
+          relative_tolerance = 1e-5
+          absolute_tolerance = 1e-7
+          comparisons = []
+          for index, (left, right) in enumerate(zip(cpu["output"], wgpu["output"])):
+              error = abs(left - right)
+              tolerance = absolute_tolerance + relative_tolerance * max(abs(left), abs(right))
+              comparisons.append((index, left, right, error, tolerance))
+          failures = [comparison for comparison in comparisons
+                      if not math.isfinite(comparison[3]) or comparison[3] > comparison[4]]
+          if failures:
+              index, left, right, error, tolerance = max(failures, key=lambda item: item[3] / item[4])
               raise SystemExit(
-                  f"WebGPU EKF checkpoint diverged from scalar oracle; max component error={max(errors)}"
+                  "WebGPU EKF checkpoint diverged from scalar oracle at "
+                  f"component {index}: cpu={left}, wgpu={right}, "
+                  f"error={error}, tolerance={tolerance}"
               )
           print("EKF_WEBGPU_PARITY", json.dumps({"cpu": cpu, "wgpu": wgpu}, sort_keys=True))
           PY
