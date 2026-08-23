@@ -1440,11 +1440,43 @@ impl<'a> BatchCompiler<'a> {
     }
 
     fn collect_slots(&mut self) {
+        let required_nodes = turn_required_nodes(self.artifact);
+        let required_slots = required_nodes
+            .iter()
+            .flat_map(|node| {
+                let node = &self.artifact.nodes()[node.get() as usize];
+                node.input_bindings
+                    .clone()
+                    .filter_map(
+                        |binding| match self.artifact.bindings().get(binding as usize) {
+                            Some(BindingDeclaration::Input {
+                                source: ArtifactSource::Slot(slot),
+                                ..
+                            }) => Some(*slot),
+                            _ => None,
+                        },
+                    )
+                    .chain(node.output_bindings.clone().filter_map(|binding| {
+                        match self.artifact.bindings().get(binding as usize) {
+                            Some(BindingDeclaration::Output { target, .. }) => Some(*target),
+                            _ => None,
+                        }
+                    }))
+            })
+            .collect::<BTreeSet<_>>();
         for slot in self.artifact.slots() {
             // E3 gives public outputs dedicated publication slots. Batched
             // kernels operate on the underlying numeric graph and persistent
             // state, so the output aliases are not registers of their own.
             if slot.role == SlotRole::Output {
+                continue;
+            }
+            // The semantic artifact can retain selector temporaries whose
+            // constant result was folded directly into a later access node.
+            // They are not part of the executable turn graph and may use
+            // selector-only schemas (for example a matrix of indices), so do
+            // not allocate numeric registers or reject them as data slots.
+            if !required_slots.contains(&slot.slot) {
                 continue;
             }
             if let ProducerReference::NodeOutput { node, .. } = slot.producer {
@@ -1555,8 +1587,8 @@ impl<'a> BatchCompiler<'a> {
                 continue;
             }
             let output = outputs[0];
-            let result = if operation == "access/scalar" {
-                self.lower_access_2d(output, &inputs)
+            let result = if operation == "access/scalar" || operation == "access/range" {
+                self.lower_access(output, &inputs)
             } else if operation == "matrix/horzcat" {
                 self.lower_concatenate(output, &inputs, true)
             } else if operation == "matrix/vertcat" {
@@ -1657,34 +1689,73 @@ impl<'a> BatchCompiler<'a> {
         Ok(())
     }
 
-    fn lower_access_2d(
+    fn lower_access(
         &mut self,
         output: CellSlotId,
         inputs: &[ArtifactSource],
     ) -> Result<(), String> {
-        if inputs.len() != 3 || self.shape(output)?.elements() != 1 {
-            return Err(
-                "fixed scalar matrix access requires a matrix, row, column, and scalar output"
-                    .to_owned(),
-            );
-        }
-        let shape = self.source_shape(inputs[0])?;
-        let row = self.constant_index(inputs[1], "row")?;
-        let column = self.constant_index(inputs[2], "column")?;
-        if row >= shape.rows || column >= shape.columns {
+        if inputs.len() != 2 && inputs.len() != 3 {
             return Err(format!(
-                "matrix access [{},{}] is outside {}x{}",
-                row + 1,
-                column + 1,
-                shape.rows,
-                shape.columns
+                "fixed matrix access requires a source and one or two static selectors, found {} inputs",
+                inputs.len()
             ));
         }
-        self.emit(
-            output,
-            0,
-            ScalarComputation::Copy(self.operand(inputs[0], shape.index(row, column))?),
-        );
+        let source = self.source_shape(inputs[0])?;
+        let result = self.shape(output)?;
+        let (rows, columns) = if inputs.len() == 3 {
+            (
+                self.constant_indices(inputs[1], source.rows, "row")?,
+                self.constant_indices(inputs[2], source.columns, "column")?,
+            )
+        } else {
+            let selector =
+                self.constant_indices(inputs[1], source.rows.max(source.columns), "matrix")?;
+            let selects_columns = result.rows == source.rows && result.columns == selector.len();
+            let selects_rows = result.rows == selector.len() && result.columns == source.columns;
+            match (selects_rows, selects_columns) {
+                (false, true) => ((0..source.rows).collect(), selector),
+                (true, false) => (selector, (0..source.columns).collect()),
+                (true, true) if source.rows == 1 || source.columns == 1 => {
+                    if result.rows == source.rows {
+                        ((0..source.rows).collect(), selector)
+                    } else {
+                        (selector, (0..source.columns).collect())
+                    }
+                }
+                (true, true) => {
+                    return Err(format!(
+                        "matrix access selector is ambiguous for {}x{} -> {}x{}",
+                        source.rows, source.columns, result.rows, result.columns
+                    ));
+                }
+                (false, false) => {
+                    return Err(format!(
+                        "matrix access selector cannot produce {}x{} from {}x{}",
+                        result.rows, result.columns, source.rows, source.columns
+                    ));
+                }
+            }
+        };
+        if result.rows != rows.len() || result.columns != columns.len() {
+            return Err(format!(
+                "matrix access selected {}x{} elements but output is {}x{}",
+                rows.len(),
+                columns.len(),
+                result.rows,
+                result.columns
+            ));
+        }
+        for (result_column, source_column) in columns.into_iter().enumerate() {
+            for (result_row, source_row) in rows.iter().copied().enumerate() {
+                self.emit(
+                    output,
+                    result.index(result_row, result_column),
+                    ScalarComputation::Copy(
+                        self.operand(inputs[0], source.index(source_row, source_column))?,
+                    ),
+                );
+            }
+        }
         Ok(())
     }
 
@@ -1952,22 +2023,47 @@ impl<'a> BatchCompiler<'a> {
         }
     }
 
-    fn constant_index(&self, source: ArtifactSource, role: &str) -> Result<usize, String> {
+    fn constant_indices(
+        &self,
+        source: ArtifactSource,
+        upper: usize,
+        role: &str,
+    ) -> Result<Vec<usize>, String> {
         let ArtifactSource::Constant(constant) = source else {
-            return Err(format!("matrix {role} index must be compile-time constant"));
+            return Err(format!(
+                "matrix {role} selector must be compile-time constant"
+            ));
         };
         let value = self
             .artifact
             .constants()
             .get(constant)
             .ok_or_else(|| format!("constant {} does not exist", constant.get()))?;
-        let ValueData::Index(index) = value.data() else {
-            return Err(format!("matrix {role} index is not an index value"));
+        let one_based = match value.data() {
+            ValueData::Index(index) => vec![*index],
+            ValueData::Matrix(matrix) => match matrix.elements() {
+                SequenceView::Index(indices) => indices.to_vec(),
+                _ => return Err(format!("matrix {role} selector is not an index vector")),
+            },
+            _ => return Err(format!("matrix {role} selector is not an index value")),
         };
-        let zero_based = index
-            .checked_sub(1)
-            .ok_or_else(|| format!("matrix {role} index must be at least 1"))?;
-        usize::try_from(zero_based).map_err(|_| format!("matrix {role} index does not fit usize"))
+        one_based
+            .into_iter()
+            .map(|index| {
+                let zero_based = index
+                    .checked_sub(1)
+                    .ok_or_else(|| format!("matrix {role} index must be at least 1"))?;
+                let index = usize::try_from(zero_based)
+                    .map_err(|_| format!("matrix {role} index does not fit usize"))?;
+                if index >= upper {
+                    return Err(format!(
+                        "matrix {role} index {} is outside 1..={upper}",
+                        index + 1
+                    ));
+                }
+                Ok(index)
+            })
+            .collect()
     }
 
     fn source_shape(&self, source: ArtifactSource) -> Result<FixedShape, String> {

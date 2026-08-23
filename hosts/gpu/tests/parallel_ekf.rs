@@ -701,6 +701,74 @@ fn mech_arrays_define_the_broadcast_extent() {
 }
 
 #[test]
+fn lane_zero_recurrence_is_independent_of_broadcast_extent() {
+    let (single_program, single_inputs) = source_program(1);
+    let (batch_program, batch_inputs) = source_program(1_000);
+    let mut single = single_program.prepare_cpu(&single_inputs).unwrap();
+    let mut batch = batch_program.prepare_cpu(&batch_inputs).unwrap();
+
+    for turn in 0..128 {
+        let lane_zero_bearing = -0.55 + 0.012 * (turn as f32 * 0.17).sin();
+        let single_update = BTreeMap::from([("bearing".to_owned(), vec![lane_zero_bearing])]);
+        let mut batch_bearings = batch_inputs["bearing"].clone();
+        batch_bearings[0] = lane_zero_bearing;
+        let batch_update = BTreeMap::from([("bearing".to_owned(), batch_bearings)]);
+        single.update_inputs(&single_update).unwrap();
+        batch.update_inputs(&batch_update).unwrap();
+        single.dispatch_turns(1).unwrap();
+        batch.dispatch_turns(1).unwrap();
+
+        for (slot, elements) in single_program.state_layout() {
+            let single_lane = &single.state()[&slot][..elements];
+            let batch_lane_zero = &batch.state()[&slot][..elements];
+            assert_close(single_lane, batch_lane_zero, 0.0);
+        }
+    }
+}
+
+#[cfg(feature = "native")]
+#[test]
+fn native_gpu_lane_zero_is_independent_of_broadcast_extent() {
+    let (single_program, single_inputs) = source_program(1);
+    let (batch_program, batch_inputs) = source_program(1_000);
+    let mut single = match single_program.prepare_resident(&single_inputs) {
+        Ok(session) => session,
+        Err(BatchedExecutionError::Native(message))
+            if message.to_ascii_lowercase().contains("adapter") =>
+        {
+            return;
+        }
+        Err(error) => panic!("single-lane native GPU preparation failed: {error}"),
+    };
+    let mut batch = batch_program
+        .prepare_resident(&batch_inputs)
+        .expect("the same adapter must admit the 1,000-lane program");
+    let state_slots = single_program
+        .state_layout()
+        .map(|(slot, _)| slot)
+        .collect::<BTreeSet<_>>();
+
+    for turn in 0..128 {
+        let lane_zero_bearing = -0.55 + 0.012 * (turn as f32 * 0.17).sin();
+        let single_update = BTreeMap::from([("bearing".to_owned(), vec![lane_zero_bearing])]);
+        let mut batch_bearings = batch_inputs["bearing"].clone();
+        batch_bearings[0] = lane_zero_bearing;
+        let batch_update = BTreeMap::from([("bearing".to_owned(), batch_bearings)]);
+        single
+            .update_inputs(&single_program, &single_update)
+            .unwrap();
+        batch.update_inputs(&batch_program, &batch_update).unwrap();
+        single.dispatch_turns(1).unwrap();
+        batch.dispatch_turns(1).unwrap();
+        let single_sample = single.read_published_samples(&state_slots).unwrap();
+        let batch_sample = batch.read_published_samples(&state_slots).unwrap();
+        for slot in &state_slots {
+            assert_close(&single_sample[slot], &batch_sample[slot], 1.0e-6);
+        }
+    }
+}
+
+#[test]
 fn conflicting_mech_array_extents_are_rejected() {
     let tree = source_tree(7);
     let driver = evaluate_driver(&tree);

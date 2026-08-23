@@ -1,8 +1,11 @@
-use mech_compute::{BackendRequest, ComputePlatform};
+use std::collections::BTreeMap;
+
+use mech_compute::{BackendRequest, ComputePlatform, ComputeValue};
 use mech_core::{MResult, MechError, MechErrorKind};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
-    ComputeHostFactory, lower_elementwise_compute_program, native_compute_backend_registry,
+    ComputeHostFactory, ComputeLowerer, lower_elementwise_compute_program,
+    native_compute_backend_registry,
 };
 use mech_runtime::{FileSourceResolver, RuntimeHostFactory, SourceRequest};
 
@@ -97,15 +100,29 @@ fn compile_compute_application(
     .build_compiler()?;
     let mixed = compile(&mut compiler)?;
 
-    let program = lower_elementwise_compute_program(&mixed.compute.artifact).map_err(|error| {
-        compute_cli_error(
-            "lower_compute_region",
-            format!(
-                "region `{}` is not supported by the native compute backends:\n{error}",
-                mixed.compute.declaration.name
-            ),
-        )
-    })?;
+    let mut activation_values =
+        initializer_values(&mixed.compute.interface, &mixed.compute.initializers)?;
+    activation_values.extend(
+        mixed
+            .activation_inputs
+            .iter()
+            .map(|(name, value)| (name.clone(), value_elements(value))),
+    );
+    let program = match lower_elementwise_compute_program(&mixed.compute.artifact) {
+        Ok(program) => program,
+        Err(elementwise_failure) => ComputeLowerer
+            .compile_broadcast(&mixed.compute.artifact, &activation_values)
+            .map(|kernel| kernel.compute_program().clone())
+            .map_err(|fixed_failure| {
+                compute_cli_error(
+                    "lower_compute_region",
+                    format!(
+                        "region `{}` is not supported by the native compute backends; elementwise: {elementwise_failure}; fixed-shape: {fixed_failure}",
+                        mixed.compute.declaration.name,
+                    ),
+                )
+            })?,
+    };
     let mut factory = ComputeHostFactory::new(
         mixed.compute.declaration.name.clone(),
         mixed.compute.declaration.placement,
@@ -128,6 +145,35 @@ fn compile_compute_application(
         coordinator: mixed.coordinator.into_artifact(),
         factory: Box::new(factory),
     })
+}
+
+fn initializer_values(
+    interface: &mech_compute::ComputeRegionInterface,
+    initializers: &mech_compute::ComputeInitializerSet,
+) -> MResult<BTreeMap<String, Vec<f32>>> {
+    interface
+        .inputs
+        .iter()
+        .map(|port| {
+            let value = initializers.get(port.id).ok_or_else(|| {
+                compute_cli_error(
+                    "lower_compute_region",
+                    format!("compute input `{}` has no initializer", port.name),
+                )
+            })?;
+            let value = port.normalize_value(value.clone()).map_err(|failure| {
+                compute_cli_error("lower_compute_region", failure.to_string())
+            })?;
+            Ok((port.name.to_string(), value_elements(&value)))
+        })
+        .collect()
+}
+
+fn value_elements(value: &ComputeValue) -> Vec<f32> {
+    match value {
+        ComputeValue::ScalarF32(value) => vec![*value],
+        ComputeValue::TensorF32 { values, .. } => values.to_vec(),
+    }
 }
 
 #[derive(Clone, Debug)]
