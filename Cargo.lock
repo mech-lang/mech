@@ -2956,6 +2956,7 @@ dependencies = [
  "mech-time",
  "mech-timer",
  "miniz_oxide",
+ "nalgebra",
  "serde",
  "serde-wasm-bindgen",
  "serde_json",

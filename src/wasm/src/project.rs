@@ -3952,8 +3952,9 @@ rows := |id<string> x<f64>|
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
-    #[test]
-    fn ekf_scene_advances_on_every_resident_timer_packet() {
+    pub(super) fn assert_ekf_scene_advances_on_every_resident_timer_packet() {
+        use nalgebra::{SMatrix, SVector};
+
         let document = parse_config_document(
             "examples/ekf/mech.mcfg",
             include_str!("../../../examples/ekf/mech.mcfg"),
@@ -3981,7 +3982,17 @@ rows := |id<string> x<f64>|
             builder = builder.run_resource_grant(grant.clone());
         }
         let mut runtime = builder.build().unwrap();
-        run_project_sources(&mut runtime, &document).unwrap();
+        let root = document.run.as_ref().unwrap().paths[0]
+            .to_string_lossy()
+            .to_string();
+        let durability = runtime.config().resident_durability;
+        runtime
+            .load_interactive_root_program(
+                SourceRequest::new(root),
+                browser_module_options(),
+                durability,
+            )
+            .unwrap();
         runtime.start_input_drivers().unwrap();
 
         let rendered_truth = |snapshot: &mech_scene::SceneSnapshot| {
@@ -4001,6 +4012,23 @@ rows := |id<string> x<f64>|
                 (-(heading.y2 - heading.y1)).atan2(heading.x2 - heading.x1),
             ]
         };
+        let rendered_estimate = |snapshot: &mech_scene::SceneSnapshot| {
+            let estimate = snapshot
+                .circles
+                .iter()
+                .find(|circle| circle.id == "estimate")
+                .unwrap();
+            let heading = snapshot
+                .lines
+                .iter()
+                .find(|line| line.id == "estimate-heading")
+                .unwrap();
+            SVector::<f64, 3>::new(
+                (estimate.x - 120.0) / 62.0,
+                (700.0 - estimate.y) / 62.0,
+                (-(heading.y2 - heading.y1)).atan2(heading.x2 - heading.x1),
+            )
+        };
         assert_eq!(
             runtime.program_execution_info().observation_count,
             1,
@@ -4013,6 +4041,21 @@ rows := |id<string> x<f64>|
         let turn_rate_limit = 1.75_f64;
         let heading_gain = 4.0_f64;
         let mut expected_truth = [2.5_f64, 2.5_f64, 0.0_f64];
+        let mut expected_estimate = SVector::<f64, 3>::new(2.9, 2.15, 0.16);
+        let mut expected_covariance = SMatrix::<f64, 3, 3>::new(
+            0.45, 0.0, 0.0, //
+            0.0, 0.45, 0.0, //
+            0.0, 0.0, 0.08,
+        );
+        let identity = SMatrix::<f64, 3, 3>::identity();
+        let process_covariance = SMatrix::<f64, 2, 2>::new(0.08, 0.0, 0.0, 0.018);
+        let measurement_covariance = SMatrix::<f64, 2, 2>::new(0.0225, 0.0, 0.0, 0.0004);
+        let camera_positions = [
+            SVector::<f64, 2>::new(1.0, 1.0),
+            SVector::<f64, 2>::new(9.0, 1.0),
+            SVector::<f64, 2>::new(9.0, 9.0),
+            SVector::<f64, 2>::new(1.0, 9.0),
+        ];
 
         // Publish five scheduler steps at a time. The configured latest-value
         // policy delivers only one packet, whose absolute tick jumps by five.
@@ -4045,6 +4088,82 @@ rows := |id<string> x<f64>|
                 expected_truth[2] + actual_omega * dt,
             ];
 
+            // Reproduce the complete filter independently from the Mech
+            // resident graph. This oracle checks the state and covariance,
+            // not merely that a scene changed after each accepted packet.
+            let estimate_mid_heading = expected_estimate[2] + commanded_omega * dt / 2.0;
+            let estimate_mid_cos = estimate_mid_heading.cos();
+            let estimate_mid_sin = estimate_mid_heading.sin();
+            let motion_jacobian = SMatrix::<f64, 3, 3>::new(
+                1.0,
+                0.0,
+                -commanded_speed * estimate_mid_sin * dt,
+                0.0,
+                1.0,
+                commanded_speed * estimate_mid_cos * dt,
+                0.0,
+                0.0,
+                1.0,
+            );
+            let control_jacobian = SMatrix::<f64, 3, 2>::new(
+                estimate_mid_cos * dt,
+                -commanded_speed * estimate_mid_sin * dt.powi(2) / 2.0,
+                estimate_mid_sin * dt,
+                commanded_speed * estimate_mid_cos * dt.powi(2) / 2.0,
+                0.0,
+                dt,
+            );
+            let predicted_estimate = expected_estimate
+                + SVector::<f64, 3>::new(
+                    commanded_speed * estimate_mid_cos * dt,
+                    commanded_speed * estimate_mid_sin * dt,
+                    commanded_omega * dt,
+                );
+            let predicted_covariance =
+                motion_jacobian * expected_covariance * motion_jacobian.transpose()
+                    + control_jacobian * process_covariance * control_jacobian.transpose();
+
+            let camera_index = (turn - 1) % camera_positions.len();
+            let active_camera = camera_positions[camera_index];
+            let truth_dx = active_camera[0] - expected_truth[0];
+            let truth_dy = active_camera[1] - expected_truth[1];
+            let measured_range = (truth_dx.powi(2) + truth_dy.powi(2)).sqrt()
+                + 0.11 * (simulation_time * 1.57 + (camera_index + 1) as f64 * 0.7).sin();
+            let measured_bearing = truth_dy.atan2(truth_dx) - expected_truth[2]
+                + 0.011 * (simulation_time * 1.91 + (camera_index + 1) as f64).sin();
+
+            let predicted_dx = active_camera[0] - predicted_estimate[0];
+            let predicted_dy = active_camera[1] - predicted_estimate[1];
+            let predicted_q = predicted_dx.powi(2) + predicted_dy.powi(2);
+            let predicted_range = predicted_q.sqrt();
+            let observation_jacobian = SMatrix::<f64, 2, 3>::new(
+                -predicted_dx / predicted_range,
+                -predicted_dy / predicted_range,
+                0.0,
+                predicted_dy / predicted_q,
+                -predicted_dx / predicted_q,
+                -1.0,
+            );
+            let innovation_covariance =
+                observation_jacobian * predicted_covariance * observation_jacobian.transpose()
+                    + measurement_covariance;
+            let kalman_gain = predicted_covariance
+                * observation_jacobian.transpose()
+                * innovation_covariance
+                    .try_inverse()
+                    .expect("EKF innovation covariance must remain invertible");
+            let bearing_residual =
+                measured_bearing - (predicted_dy.atan2(predicted_dx) - predicted_estimate[2]);
+            let innovation = SVector::<f64, 2>::new(
+                measured_range - predicted_range,
+                bearing_residual.sin().atan2(bearing_residual.cos()),
+            );
+            expected_estimate = predicted_estimate + kalman_gain * innovation;
+            let joseph_a = identity - kalman_gain * observation_jacobian;
+            let corrected_covariance = joseph_a * predicted_covariance * joseph_a.transpose()
+                + kalman_gain * measurement_covariance * kalman_gain.transpose();
+            expected_covariance = 0.5 * (corrected_covariance + corrected_covariance.transpose());
+
             let snapshot = scene_backend.latest().unwrap();
             let actual_truth = rendered_truth(&snapshot);
             for (component, (actual, expected)) in
@@ -4056,7 +4175,57 @@ rows := |id<string> x<f64>|
                 );
             }
 
-            let active_camera = snapshot
+            let actual_estimate = runtime
+                .root_symbol_value("estimate")
+                .unwrap()
+                .into_value()
+                .as_vecf64()
+                .unwrap();
+            let actual_covariance = runtime
+                .root_symbol_value("covariance")
+                .unwrap()
+                .into_value()
+                .as_vecf64()
+                .unwrap();
+            assert_eq!(actual_estimate.len(), 3);
+            assert_eq!(actual_covariance.len(), 9);
+            for component in 0..3 {
+                assert!(
+                    (actual_estimate[component] - expected_estimate[component]).abs() < 1.0e-8,
+                    "EKF estimate component {component} diverged on delivered turn {turn}: actual={:?} expected={:?}",
+                    actual_estimate,
+                    expected_estimate.as_slice(),
+                );
+            }
+            let actual_covariance = SMatrix::<f64, 3, 3>::from_column_slice(&actual_covariance);
+            for row in 0..3 {
+                for column in 0..3 {
+                    assert!(
+                        (actual_covariance[(row, column)] - expected_covariance[(row, column)])
+                            .abs()
+                            < 1.0e-8,
+                        "EKF covariance ({row}, {column}) diverged on delivered turn {turn}: actual={actual_covariance:?} expected={expected_covariance:?}",
+                    );
+                }
+            }
+
+            let scene_estimate = rendered_estimate(&snapshot);
+            for component in 0..3 {
+                let error = if component == 2 {
+                    (scene_estimate[component] - expected_estimate[component])
+                        .sin()
+                        .atan2((scene_estimate[component] - expected_estimate[component]).cos())
+                        .abs()
+                } else {
+                    (scene_estimate[component] - expected_estimate[component]).abs()
+                };
+                assert!(
+                    error < 1.0e-8,
+                    "rendered EKF estimate component {component} diverged on delivered turn {turn}: actual={scene_estimate:?} expected={expected_estimate:?}",
+                );
+            }
+
+            let rendered_active_camera = snapshot
                 .circles
                 .iter()
                 .find(|circle| circle.id == "active-camera")
@@ -4068,13 +4237,23 @@ rows := |id<string> x<f64>|
                 (182.0, 142.0),
             ][(turn - 1) % 4];
             assert_eq!(
-                (active_camera.x, active_camera.y),
+                (rendered_active_camera.x, rendered_active_camera.y),
                 expected_camera,
                 "camera selection must follow delivered resident turn {turn}, not skipped absolute ticks",
             );
         }
         assert_eq!(runtime.program_execution_info().resident_accepted_turns, 90);
         assert_eq!(scene_backend.generation(), 90);
+    }
+
+    #[cfg(all(
+        not(target_arch = "wasm32"),
+        feature = "browser_host_timer",
+        feature = "browser_host_scene"
+    ))]
+    #[test]
+    fn ekf_scene_advances_on_every_resident_timer_packet() {
+        assert_ekf_scene_advances_on_every_resident_timer_packet();
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
@@ -4208,6 +4387,12 @@ mod browser_tests {
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);
+
+    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
+    #[wasm_bindgen_test]
+    fn ekf_filter_recurrence_runs_in_browser_wasm() {
+        super::tests::assert_ekf_scene_advances_on_every_resident_timer_packet();
+    }
 
     #[wasm_bindgen_test]
     fn browser_document_profile_executes_both_stats_sum_axes() {
