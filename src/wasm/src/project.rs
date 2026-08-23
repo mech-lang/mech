@@ -4064,6 +4064,12 @@ rows := |id<string> x<f64>|
             SVector::<f64, 2>::new(9.0, 9.0),
             SVector::<f64, 2>::new(1.0, 9.0),
         ];
+        let camera_screen_positions = [
+            [182.0_f64, 638.0_f64],
+            [678.0_f64, 638.0_f64],
+            [678.0_f64, 142.0_f64],
+            [182.0_f64, 142.0_f64],
+        ];
 
         let positive_part = |value: f64| (value + value.abs()) / 2.0;
         let clamp_unit = |value: f64| positive_part(value) - positive_part(value - 1.0);
@@ -4216,6 +4222,28 @@ rows := |id<string> x<f64>|
                 (actual_visibility - visibility).abs() < 1.0e-9,
                 "selected camera visibility diverged on delivered turn {turn}: actual={actual_visibility} expected={visibility}",
             );
+            let boundary_visibilities = runtime
+                .root_symbol_value("camera-boundary-probe-visibility")
+                .unwrap()
+                .into_value()
+                .as_vecf64()
+                .unwrap();
+            let boundary_corrections = runtime
+                .root_symbol_value("camera-boundary-probe-correction")
+                .unwrap()
+                .into_value()
+                .as_vecf64()
+                .unwrap();
+            assert_eq!(
+                boundary_visibilities.as_slice(),
+                [1.0, 0.0, 0.0, 0.0],
+                "the resident camera graph must be exactly zero at and beyond its physical boundary",
+            );
+            assert_eq!(
+                boundary_corrections.as_slice(),
+                [21.0, 12.0, 13.0, 14.0],
+                "zero visibility must leave the predicted state unchanged at and beyond the boundary",
+            );
             let actual_predicted = runtime
                 .root_symbol_value("predicted-estimate")
                 .unwrap()
@@ -4274,6 +4302,13 @@ rows := |id<string> x<f64>|
                 .unwrap();
             assert_eq!(actual_estimate.len(), 3);
             assert_eq!(actual_covariance.len(), 9);
+            if actual_visibility == 0.0 {
+                assert_eq!(
+                    actual_estimate.as_slice(),
+                    actual_predicted.as_slice(),
+                    "a prediction-only runtime turn must not apply a hidden measurement correction",
+                );
+            }
             for component in 0..3 {
                 assert!(
                     (actual_estimate[component] - expected_estimate[component]).abs() < 1.0e-8,
@@ -4360,7 +4395,13 @@ rows := |id<string> x<f64>|
             });
             let expected_visibilities = expected_distances
                 .map(|distance| clamp_unit((camera_max_range - distance) / camera_range_fade));
-            let visible_camera_count = expected_visibilities
+            let actual_visibilities = runtime
+                .root_symbol_value("camera-visibility")
+                .unwrap()
+                .into_value()
+                .as_vecf64()
+                .unwrap();
+            let visible_camera_count = actual_visibilities
                 .iter()
                 .filter(|visibility| **visibility > 0.0)
                 .count();
@@ -4369,12 +4410,18 @@ rows := |id<string> x<f64>|
             for (camera, expected_visibility) in expected_visibilities.iter().enumerate() {
                 if expected_distances[camera] >= camera_max_range {
                     assert_eq!(
-                        *expected_visibility,
+                        actual_visibilities[camera],
                         0.0,
-                        "camera {} remained visible beyond its maximum range on delivered turn {turn}",
+                        "runtime camera {} remained visible at or beyond its maximum range on delivered turn {turn}",
                         camera + 1,
                     );
                 }
+                assert!(
+                    (actual_visibilities[camera] - expected_visibility).abs() < 1.0e-9,
+                    "runtime camera {} visibility diverged on delivered turn {turn}: actual={} expected={expected_visibility}",
+                    camera + 1,
+                    actual_visibilities[camera],
+                );
                 let ring = snapshot
                     .circles
                     .iter()
@@ -4385,6 +4432,21 @@ rows := |id<string> x<f64>|
                     .iter()
                     .find(|line| line.id == format!("ray-{}", camera + 1))
                     .unwrap();
+                let body = snapshot
+                    .circles
+                    .iter()
+                    .find(|circle| circle.id == format!("camera-{}", camera + 1))
+                    .unwrap();
+                assert_eq!(
+                    [body.x, body.y],
+                    camera_screen_positions[camera],
+                    "camera {} body moved on delivered turn {turn}",
+                    camera + 1,
+                );
+                assert_eq!(body.radius, 9.0);
+                assert_eq!(body.opacity, 1.0);
+                assert_eq!([ring.x, ring.y], camera_screen_positions[camera]);
+                assert_eq!([ray.x1, ray.y1], camera_screen_positions[camera]);
                 assert!(
                     (ring.radius - camera_max_range * 62.0).abs() < 1.0e-9,
                     "camera {} sensing footprint has the wrong rendered radius on delivered turn {turn}: actual={}",

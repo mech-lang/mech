@@ -182,6 +182,25 @@ than pretending that every camera sees through the entire field.
   camera-inside-fade-relu := (camera-inside-fade-raw + (camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
   camera-inside-fade-one-relu := (camera-inside-fade-raw - 1.0 + ((camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
   camera-visibility := camera-inside-fade-relu - camera-inside-fade-one-relu
+
+  -- These boundary witnesses exercise the exact same resident visibility
+  -- graph at the inner fade edge, the physical boundary, and two points
+  -- beyond it. They are intentionally ordinary Mech values rather than a
+  -- host-side copy of the formula, so every runtime can qualify the hard
+  -- sensing contract even when the driven trajectory does not land on an
+  -- exact floating-point boundary.
+  camera-boundary-probe-distances := [camera-max-range - camera-range-fade
+                                      camera-max-range
+                                      camera-max-range + 0.000001
+                                      camera-max-range + camera-range-fade]
+  camera-boundary-probe-raw := (camera-max-range - camera-boundary-probe-distances) / camera-range-fade
+  camera-boundary-probe-relu := (camera-boundary-probe-raw + (camera-boundary-probe-raw ^ 2) ^ 0.5) / 2.0
+  camera-boundary-probe-one-relu := (camera-boundary-probe-raw - 1.0 + ((camera-boundary-probe-raw - 1.0) ^ 2) ^ 0.5) / 2.0
+  camera-boundary-probe-visibility := camera-boundary-probe-relu - camera-boundary-probe-one-relu
+  camera-boundary-probe-correction := [11.0 + camera-boundary-probe-visibility[1] * (21.0 - 11.0)
+                                       12.0 + camera-boundary-probe-visibility[2] * (22.0 - 12.0)
+                                       13.0 + camera-boundary-probe-visibility[3] * (23.0 - 13.0)
+                                       14.0 + camera-boundary-probe-visibility[4] * (24.0 - 14.0)]
   active-camera-visibility := camera-visibility[camera-index]
   camera-dx := active-camera[1] - next-truth[1]
   camera-dy := active-camera[2] - next-truth[2]

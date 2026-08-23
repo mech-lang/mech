@@ -119,6 +119,12 @@ harness = r'''<script>
     let sawNoCamera = false;
     let sawCamera = false;
     let maxVisibleCameras = 0;
+    let stableCameraGeometry;
+    let cameraGeometryStable = true;
+    let cameraRangeOracleValid = true;
+    let predictionOnlyValid = true;
+    let sawInsideCameraRange = false;
+    let sawOutsideCameraRange = false;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       harnessFrames += 1;
@@ -190,12 +196,68 @@ harness = r'''<script>
         lastObservedUpdate = updates;
         if (firstTruth === undefined) firstTruth = truthPoint;
         maxGuideDeviation = Math.max(maxGuideDeviation, distanceToRenderedGuide(truthPoint));
-        const visibleCameraCount = cameraRays.filter(ray =>
-          Number(ray.getAttribute("opacity") || 0) > 0.001
-        ).length;
+        const indexed = (elements, prefix) => [...elements].sort((left, right) =>
+          Number((left.dataset.mechSceneId || "").slice(prefix.length)) -
+          Number((right.dataset.mechSceneId || "").slice(prefix.length))
+        );
+        const orderedCameras = indexed(cameras, "camera-");
+        const orderedRanges = indexed(cameraRanges, "camera-range-");
+        const orderedRays = indexed(cameraRays, "ray-");
+        const currentCameraGeometry = orderedCameras.map((camera, index) => {
+          const range = orderedRanges[index];
+          const ray = orderedRays[index];
+          const x = Number(camera?.getAttribute("cx"));
+          const y = Number(camera?.getAttribute("cy"));
+          const radius = Number(camera?.getAttribute("r"));
+          const opacity = Number(camera?.getAttribute("opacity"));
+          const rangeX = Number(range?.getAttribute("cx"));
+          const rangeY = Number(range?.getAttribute("cy"));
+          const rangeRadius = Number(range?.getAttribute("r"));
+          const rayX = Number(ray?.getAttribute("x1"));
+          const rayY = Number(ray?.getAttribute("y1"));
+          return {x, y, radius, opacity, rangeX, rangeY, rangeRadius, rayX, rayY};
+        });
+        if (stableCameraGeometry === undefined) {
+          stableCameraGeometry = currentCameraGeometry;
+        } else {
+          cameraGeometryStable &&= JSON.stringify(currentCameraGeometry) ===
+            JSON.stringify(stableCameraGeometry);
+        }
+        cameraGeometryStable &&= currentCameraGeometry.length === 4 &&
+          currentCameraGeometry.every(sensor =>
+            Object.values(sensor).every(Number.isFinite) &&
+            sensor.radius === 9 && sensor.opacity === 1 &&
+            sensor.x === sensor.rangeX && sensor.y === sensor.rangeY &&
+            sensor.x === sensor.rayX && sensor.y === sensor.rayY
+          );
+        let visibleCameraCount = 0;
+        for (let index = 0; index < currentCameraGeometry.length; index += 1) {
+          const sensor = currentCameraGeometry[index];
+          const rayOpacity = Number(orderedRays[index]?.getAttribute("opacity"));
+          const distance = Math.hypot(truthPoint.x - sensor.x, truthPoint.y - sensor.y);
+          const fadeWidth = sensor.rangeRadius * (0.18 / 3.6);
+          const expectedVisibility = Math.max(0, Math.min(1,
+            (sensor.rangeRadius - distance) / fadeWidth,
+          ));
+          const expectedRayOpacity = 0.4 * expectedVisibility;
+          cameraRangeOracleValid &&= Number.isFinite(rayOpacity) &&
+            Math.abs(rayOpacity - expectedRayOpacity) <= 1e-9;
+          if (distance >= sensor.rangeRadius) {
+            sawOutsideCameraRange = true;
+            cameraRangeOracleValid &&= rayOpacity === 0;
+          } else {
+            sawInsideCameraRange = true;
+          }
+          if (rayOpacity > 0) visibleCameraCount += 1;
+        }
         sawNoCamera ||= visibleCameraCount === 0;
         sawCamera ||= visibleCameraCount > 0;
         maxVisibleCameras = Math.max(maxVisibleCameras, visibleCameraCount);
+        if (visibleCameraCount === 0 && finitePoint(estimate) && finitePoint(prediction)) {
+          predictionOnlyValid &&=
+            Number(estimate.getAttribute("cx")) === Number(prediction.getAttribute("cx")) &&
+            Number(estimate.getAttribute("cy")) === Number(prediction.getAttribute("cy"));
+        }
       }
       if (truthPoint && previousTruth && updates === lastObservedUpdate) {
         const dx = truthPoint.x - previousTruth.x;
@@ -282,6 +344,9 @@ harness = r'''<script>
       root.dataset.mechObservedSawNoCamera = String(sawNoCamera);
       root.dataset.mechObservedSawCamera = String(sawCamera);
       root.dataset.mechObservedMaxVisibleCameras = String(maxVisibleCameras);
+      root.dataset.mechObservedCameraGeometryStable = String(cameraGeometryStable);
+      root.dataset.mechObservedCameraRangeOracle = String(cameraRangeOracleValid);
+      root.dataset.mechObservedPredictionOnly = String(predictionOnlyValid);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
@@ -290,7 +355,8 @@ harness = r'''<script>
       if (
         updates >= 376 &&
         cameras.length === 4 && cameraRanges.length === 4 && cameraRays.length === 4 &&
-        cameras.every(camera => Number(camera.getAttribute("opacity")) === 1) &&
+        cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
+        sawInsideCameraRange && sawOutsideCameraRange &&
         sawNoCamera && sawCamera && maxVisibleCameras === 1 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
         trackingError <= 25 &&
@@ -314,6 +380,9 @@ harness = r'''<script>
         root.dataset.mechSawNoCamera = String(sawNoCamera);
         root.dataset.mechSawCamera = String(sawCamera);
         root.dataset.mechMaxVisibleCameras = String(maxVisibleCameras);
+        root.dataset.mechCameraGeometryStable = String(cameraGeometryStable);
+        root.dataset.mechCameraRangeOracle = String(cameraRangeOracleValid);
+        root.dataset.mechPredictionOnly = String(predictionOnlyValid);
         root.dataset.mechTruthMoved = String(truthMoved);
         root.dataset.mechSquareSides = ["east", "north", "west", "south"]
           .filter(side => squareSides.has(side)).join(",");
@@ -420,6 +489,9 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-saw-no-camera="true"' "$dom_file" \
   || ! grep -q 'data-mech-saw-camera="true"' "$dom_file" \
   || ! grep -q 'data-mech-max-visible-cameras="1"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-geometry-stable="true"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-range-oracle="true"' "$dom_file" \
+  || ! grep -q 'data-mech-prediction-only="true"' "$dom_file" \
   || ! grep -q 'data-mech-truth-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-square-sides="east,north,west,south"' "$dom_file" \
   || ! grep -q 'data-mech-lap-complete="true"' "$dom_file" \
