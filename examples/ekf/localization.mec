@@ -36,6 +36,7 @@ robot and contracts after the next camera reacquires it.
   clock-delta-positive := (clock-delta + (clock-delta ^ 2) ^ 0.5) / 2.0
   clock-pulse := clock-delta-positive - (clock-delta-positive - 1.0 + ((clock-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
   ~requested-compute-turn := 0.0
+  ~last-requested-simulation-step := 0.0
   compute-inflight-gap := requested-compute-turn - @filters/turns
   compute-inflight-gap-absolute := (compute-inflight-gap ^ 2) ^ 0.5
   compute-idle-raw := 1.0 - compute-inflight-gap-absolute
@@ -103,14 +104,13 @@ reduction make the corners smooth without position clamps.
   drive-phases<[f64]:1,376> := #SquareDrive(side-ticks)
   lap-ticks := 4.0 * side-ticks
   ~simulation-step := 0.0
-  ~pending-simulation-step := 1.0
-  attempted-simulation-step := simulation-step + 1.0
-  next-simulation-step := simulation-step + sample-pulse * (pending-simulation-step - simulation-step)
+  next-simulation-step := simulation-step + clock-pulse
+  filter-step-span := next-simulation-step - last-requested-simulation-step
+  next-last-requested-simulation-step := last-requested-simulation-step + request-pulse * filter-step-span
   ~drive-phase-index := 1.0
-  ~pending-drive-phase-index := 2.0
   drive-phase := drive-phases[1,drive-phase-index]
   advanced-drive-phase-index := (drive-phase-index % lap-ticks) + 1.0
-  next-drive-phase-index := drive-phase-index + sample-pulse * (pending-drive-phase-index - drive-phase-index)
+  next-drive-phase-index := drive-phase-index + clock-pulse * (advanced-drive-phase-index - drive-phase-index)
   phase-progress := ((drive-phase-index - 1.0) % side-ticks) / side-ticks
   path-parameter := drive-phase + phase-progress
   lookahead-parameter := (path-parameter + 0.15) % 4.0
@@ -128,10 +128,7 @@ reduction make the corners smooth without position clamps.
   ~truth := [2.5
              2.5
              0.0]
-  ~pending-truth := [2.5
-                     2.5
-                     0.0]
-  simulation-time := attempted-simulation-step * 0.05
+  simulation-time := next-simulation-step * 0.05
   target-heading := math/atan2(target-y - truth[2], target-x - truth[1])
   heading-error-raw := target-heading - truth[3]
   heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
@@ -148,15 +145,13 @@ reduction make the corners smooth without position clamps.
   attempted-truth := truth + [actual-speed * math/cos(truth-mid-heading) * Δt
                               actual-speed * math/sin(truth-mid-heading) * Δt
                               actual-omega * Δt]
-  next-truth := truth + sample-pulse * (pending-truth - truth)
+  next-truth := truth + clock-pulse * (attempted-truth - truth)
 
   truth = next-truth
-  pending-truth = attempted-truth
   simulation-step = next-simulation-step
-  pending-simulation-step = attempted-simulation-step
   drive-phase-index = next-drive-phase-index
-  pending-drive-phase-index = advanced-drive-phase-index
   requested-compute-turn = next-requested-compute-turn
+  last-requested-simulation-step = next-last-requested-simulation-step
 
 
 3. Noisy Camera Observations
@@ -260,7 +255,7 @@ one arithmetic result. Only lane zero is sampled back for the scene.
   filter-count := 1000.0
   filter-index := 1.0..=filter-count
   filter-phase := 2.0 * 3.141592654 * (filter-index - 1.0) / filter-count
-  lane-dt-base := Δt
+  lane-dt-base := Δt * filter-step-span
   lane-speed-base := commanded-speed
   lane-omega-base := commanded-omega
   lane-camera-x-base := active-camera[1]
@@ -287,15 +282,9 @@ one arithmetic result. Only lane zero is sampled back for the scene.
   @filters/turn <- next-requested-compute-turn
 
   filter-sample := @filters/sample/result.0
-  corrected-estimate := [filter-sample[1]
-                         filter-sample[2]
-                         filter-sample[3]]
-  corrected-covariance := [filter-sample[4] filter-sample[7] filter-sample[10]
-                           filter-sample[5] filter-sample[8] filter-sample[11]
-                           filter-sample[6] filter-sample[9] filter-sample[12]]
-  predicted-estimate := [filter-sample[13]
-                         filter-sample[14]
-                         filter-sample[15]]
+  corrected-estimate := filter-sample[:,1]
+  corrected-covariance := filter-sample[:,2..=4]
+  predicted-estimate := filter-sample[:,5]
 
 
 ekf-batch @compute
@@ -316,27 +305,13 @@ ekf-batch @compute
                          0f32 0.018<f32>]
   measurement-covariance := [0.0225<f32> 0f32
                              0f32 0.0004<f32>]
-  ~filter-state := [2.9<f32>
-                    2.15<f32>
-                    0.16<f32>
-                    0.45<f32>
-                    0f32
-                    0f32
-                    0f32
-                    0.45<f32>
-                    0f32
-                    0f32
-                    0f32
-                    0.08<f32>
-                    2.9<f32>
-                    2.15<f32>
-                    0.16<f32>]
-  state := [filter-state[1,1]
-            filter-state[2,1]
-            filter-state[3,1]]
-  covariance := [filter-state[4,1] filter-state[7,1] filter-state[10,1]
-                 filter-state[5,1] filter-state[8,1] filter-state[11,1]
-                 filter-state[6,1] filter-state[9,1] filter-state[12,1]]
+  -- The resident value is the whole filter checkpoint. Its columns are the
+  -- corrected state, the 3x3 covariance, and the uncorrected prediction.
+  ~filter-sample := [2.9<f32>  0.45<f32> 0f32       0f32       2.9<f32>
+                     2.15<f32> 0f32       0.45<f32> 0f32       2.15<f32>
+                     0.16<f32> 0f32       0f32       0.08<f32> 0.16<f32>]
+  state := filter-sample[:,1]
+  covariance := filter-sample[:,2..=4]
 
   mid-heading := state[3,1] + angular-velocity * dt / 2f32
   mid-cos := math/cos(mid-heading)
@@ -381,23 +356,8 @@ ekf-batch @compute
   positive-covariance! := next-covariance[1,1] > 0f32 && next-covariance[2,2] > 0f32 && next-covariance[3,3] > 0f32
   symmetric-covariance! := math/abs(next-covariance[1,2] - next-covariance[2,1]) <= 0.0001<f32> && math/abs(next-covariance[1,3] - next-covariance[3,1]) <= 0.0001<f32> && math/abs(next-covariance[2,3] - next-covariance[3,2]) <= 0.0001<f32>
 
-  next-filter-state := [next-state[1,1]
-                        next-state[2,1]
-                        next-state[3,1]
-                        next-covariance[1,1]
-                        next-covariance[2,1]
-                        next-covariance[3,1]
-                        next-covariance[1,2]
-                        next-covariance[2,2]
-                        next-covariance[3,2]
-                        next-covariance[1,3]
-                        next-covariance[2,3]
-                        next-covariance[3,3]
-                        predicted-state[1,1]
-                        predicted-state[2,1]
-                        predicted-state[3,1]]
-  filter-state = next-filter-state
-  (filter-state, filter-state)
+  filter-sample = [next-state next-covariance predicted-state]
+  (filter-sample, filter-sample)
 
 
 5. Live Tracking Field

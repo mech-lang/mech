@@ -222,6 +222,11 @@ jobs:
         run: |
           MECH_BIN=target/debug/mech \
             MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
+            MECH_EKF_FILTER_COUNT=1 \
+            MECH_EKF_RESULT_FILE=/tmp/ekf-cpu-single.json \
+            bash scripts/smoke-served-resident-ekf-browser.sh
+          MECH_BIN=target/debug/mech \
+            MECH_EKF_COMPUTE_BACKEND=cpu-scalar \
             MECH_EKF_RESULT_FILE=/tmp/ekf-cpu.json \
             bash scripts/smoke-served-resident-ekf-browser.sh
           MECH_BIN=target/debug/mech \
@@ -232,10 +237,16 @@ jobs:
           import json
           import math
 
+          with open("/tmp/ekf-cpu-single.json") as source:
+              cpu_single = json.load(source)
           with open("/tmp/ekf-cpu.json") as source:
               cpu = json.load(source)
           with open("/tmp/ekf-wgpu.json") as source:
               wgpu = json.load(source)
+          if cpu_single != cpu:
+              raise SystemExit(
+                  "served scalar EKF checkpoint depends on the independent filter count"
+              )
           if cpu["updates"] != wgpu["updates"]:
               raise SystemExit("scalar and WebGPU checkpoints used different completed turns")
           if len(cpu["output"]) != 15 or len(wgpu["output"]) != 15:

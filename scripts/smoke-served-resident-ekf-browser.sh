@@ -55,6 +55,24 @@ trap cleanup EXIT
 cp examples/ekf/mech.mcfg "$project_dir/mech.mcfg"
 cp examples/ekf/localization.mec "$project_dir/localization.mec"
 
+filter_count="${MECH_EKF_FILTER_COUNT:-1000}"
+if [[ ! "$filter_count" =~ ^[1-9][0-9]*$ ]]; then
+  echo "MECH_EKF_FILTER_COUNT must be a positive integer" >&2
+  exit 1
+fi
+python3 - "$project_dir/localization.mec" "$filter_count" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+filter_count = sys.argv[2]
+source = path.read_text()
+needle = "  filter-count := 1000.0"
+if source.count(needle) != 1:
+    raise SystemExit("could not select the EKF browser smoke filter count")
+path.write_text(source.replace(needle, f"  filter-count := {filter_count}.0", 1))
+PY
+
 compute_backend="${MECH_EKF_COMPUTE_BACKEND:-cpu-scalar}"
 case "$compute_backend" in
   cpu-scalar|wgpu) expected_compute_backend="$compute_backend" ;;
@@ -103,17 +121,19 @@ if [[ ! -s "$project_dir/index.html" ]]; then
   exit 1
 fi
 
-python3 - "$project_dir/index.html" "$expected_compute_backend" <<'PY'
+python3 - "$project_dir/index.html" "$expected_compute_backend" "$filter_count" <<'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
 compute_backend = sys.argv[2]
+filter_count = sys.argv[3]
 html = path.read_text()
 marker = "</head>"
 harness = r'''<script>
     const root = document.documentElement;
     const expectedComputeBackend = "__MECH_EXPECTED_COMPUTE_BACKEND__";
+    const expectedComputeInstances = Number("__MECH_EXPECTED_COMPUTE_INSTANCES__");
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
     console.error = (...args) => {
@@ -506,7 +526,7 @@ harness = r'''<script>
         estimatePathGeometry.extent > 100 &&
         title?.textContent === "Camera EKF Localization" &&
         sceneVisible && outputPresentation &&
-        computeBackend === expectedComputeBackend && computeInstances === 1000
+        computeBackend === expectedComputeBackend && computeInstances === expectedComputeInstances
       ) {
         root.dataset.mechUpdates = String(updates);
         root.dataset.mechCameras = String(cameras.length);
@@ -561,6 +581,7 @@ harness = r'''<script>
 if html.count(marker) != 1:
     raise SystemExit("could not find the head boundary in generated EKF HTML")
 harness = harness.replace("__MECH_EXPECTED_COMPUTE_BACKEND__", compute_backend)
+harness = harness.replace("__MECH_EXPECTED_COMPUTE_INSTANCES__", filter_count)
 path.write_text(html.replace(marker, harness + "\n  " + marker, 1))
 PY
 
@@ -578,66 +599,229 @@ fi
 
 set +e
 python3 - "$chrome_bin" "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" <<'PY'
+import base64
+import json
 import os
 from pathlib import Path
 import signal
+import socket
+import struct
 import subprocess
 import sys
 import time
+import urllib.request
+from urllib.parse import urlparse
 
 chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
-# Chrome can consume accelerated virtual time while adapter discovery, large
-# WASM compilation, and software-WebGPU pipeline creation wait on real work.
-# Chrome can advance virtual time more than four thousand times faster than wall
-# time while a software WebGPU adapter is initializing. Keep this ceiling far
-# beyond the independent 90-second real-time watchdog; a successful proof stops
-# its timers and lets --dump-dom exit immediately.
-default_virtual_time_budget = "2000000000" if compute_backend == "wgpu" else "600000"
-virtual_time_budget = int(os.environ.get(
-    "MECH_BROWSER_VIRTUAL_TIME_BUDGET_MS",
-    default_virtual_time_budget,
-))
 args = [
     chrome,
     "--headless=new",
     "--no-sandbox",
     "--disable-dev-shm-usage",
-    "--run-all-compositor-stages-before-draw",
-    f"--virtual-time-budget={virtual_time_budget}",
-    "--dump-dom",
+    "--remote-debugging-port=0",
+    "--remote-allow-origins=*",
     f"--user-data-dir={profile}",
     page_url,
 ]
 if compute_backend != "wgpu":
     args.insert(-1, "--disable-gpu")
 else:
-    args.insert(-1, "--enable-unsafe-webgpu")
-with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
-    process = subprocess.Popen(args, stdout=stdout, stderr=stderr, start_new_session=True)
-    deadline = time.monotonic() + 90
+    # The canary proves the browser WebGPU transport, not host-driver setup.
+    # Force Chromium's test adapter so headless macOS and GPU-less Linux CI do
+    # not hang while probing an unavailable presentation-capable device.
+    for flag in (
+        "--enable-unsafe-webgpu",
+        "--enable-unsafe-swiftshader",
+        "--use-webgpu-adapter=swiftshader",
+        "--use-gpu-in-tests",
+    ):
+        args.insert(-1, flag)
+
+def read_exact(connection, length):
+    chunks = []
+    remaining = length
+    while remaining:
+        chunk = connection.recv(remaining)
+        if not chunk:
+            raise RuntimeError("Chrome closed the debugging socket")
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
+
+def send_frame(connection, payload, opcode=1):
+    payload = payload if isinstance(payload, bytes) else payload.encode()
+    mask = os.urandom(4)
+    length = len(payload)
+    header = bytearray([0x80 | opcode])
+    if length < 126:
+        header.append(0x80 | length)
+    elif length <= 0xffff:
+        header.append(0x80 | 126)
+        header.extend(struct.pack("!H", length))
+    else:
+        header.append(0x80 | 127)
+        header.extend(struct.pack("!Q", length))
+    header.extend(mask)
+    header.extend(byte ^ mask[index % 4] for index, byte in enumerate(payload))
+    connection.sendall(header)
+
+def receive_message(connection):
+    fragments = []
+    message_opcode = None
     while True:
-        return_code = process.poll()
-        if return_code is not None:
-            raise SystemExit(return_code)
+        first, second = read_exact(connection, 2)
+        final = bool(first & 0x80)
+        opcode = first & 0x0f
+        length = second & 0x7f
+        if length == 126:
+            length = struct.unpack("!H", read_exact(connection, 2))[0]
+        elif length == 127:
+            length = struct.unpack("!Q", read_exact(connection, 8))[0]
+        mask = read_exact(connection, 4) if second & 0x80 else None
+        payload = read_exact(connection, length)
+        if mask:
+            payload = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
+        if opcode == 8:
+            raise RuntimeError("Chrome closed the debugging websocket")
+        if opcode == 9:
+            send_frame(connection, payload, opcode=10)
+            continue
+        if opcode in (1, 2):
+            message_opcode = opcode
+            fragments = [payload]
+        elif opcode == 0:
+            fragments.append(payload)
+        else:
+            continue
+        if final:
+            joined = b"".join(fragments)
+            return joined.decode() if message_opcode == 1 else joined
+
+def connect_debugger(process, deadline):
+    active_port = Path(profile) / "DevToolsActivePort"
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError(f"Chrome exited during debugger startup ({process.returncode})")
         try:
-            dom_bytes = Path(dom_file).read_bytes()
-            proof_emitted = (
-                b'data-mech-done="true"' in dom_bytes
-                or b'data-mech-timed-out="true"' in dom_bytes
-                or b'data-mech-console-error=' in dom_bytes
-                or b'data-mech-page-error=' in dom_bytes
+            port = int(active_port.read_text().splitlines()[0])
+            targets = json.load(urllib.request.urlopen(
+                f"http://127.0.0.1:{port}/json/list", timeout=1,
+            ))
+            target = next(
+                (candidate for candidate in targets if candidate.get("type") == "page"),
+                None,
             )
+            if target:
+                endpoint = urlparse(target["webSocketDebuggerUrl"])
+                connection = socket.create_connection((endpoint.hostname, endpoint.port), timeout=2)
+                key = base64.b64encode(os.urandom(16)).decode()
+                request = (
+                    f"GET {endpoint.path} HTTP/1.1\r\n"
+                    f"Host: {endpoint.hostname}:{endpoint.port}\r\n"
+                    "Upgrade: websocket\r\n"
+                    "Connection: Upgrade\r\n"
+                    f"Sec-WebSocket-Key: {key}\r\n"
+                    "Sec-WebSocket-Version: 13\r\n\r\n"
+                )
+                connection.sendall(request.encode())
+                response = b""
+                while b"\r\n\r\n" not in response:
+                    response += connection.recv(4096)
+                if not response.startswith(b"HTTP/1.1 101"):
+                    raise RuntimeError(f"debugging websocket rejected the upgrade: {response[:200]!r}")
+                connection.settimeout(5)
+                return connection
+        except (OSError, ValueError, StopIteration, urllib.error.URLError):
+            pass
+        time.sleep(0.1)
+    raise RuntimeError("Chrome did not expose its debugging target")
+
+next_command_id = 0
+def command(connection, method, params=None):
+    global next_command_id
+    next_command_id += 1
+    command_id = next_command_id
+    send_frame(connection, json.dumps({
+        "id": command_id,
+        "method": method,
+        "params": params or {},
+    }))
+    while True:
+        message = json.loads(receive_message(connection))
+        if message.get("id") == command_id:
+            if "error" in message:
+                raise RuntimeError(f"Chrome debugging command failed: {message['error']}")
+            return message.get("result", {})
+
+def evaluate(connection, expression):
+    result = command(connection, "Runtime.evaluate", {
+        "expression": expression,
+        "returnByValue": True,
+        "awaitPromise": True,
+    })
+    if "exceptionDetails" in result:
+        raise RuntimeError(f"browser evaluation failed: {result['exceptionDetails']}")
+    return result.get("result", {}).get("value")
+
+def stop(process):
+    if process.poll() is None:
+        os.killpg(process.pid, signal.SIGKILL)
+        process.wait()
+
+deadline = time.monotonic() + 90
+milestones = {}
+connection = None
+with Path(chrome_log).open("wb") as stderr:
+    process = subprocess.Popen(
+        args,
+        stdout=subprocess.DEVNULL,
+        stderr=stderr,
+        start_new_session=True,
+    )
+try:
+    connection = connect_debugger(process, deadline)
+    command(connection, "Runtime.enable")
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            raise RuntimeError(f"Chrome exited while running the canary ({process.returncode})")
+        snapshot = evaluate(connection, r'''(() => {
+          const root = document.documentElement;
+          const data = root?.dataset || {};
+          return {
+            readyState: document.readyState,
+            documentStatus: data.mechDocumentStatus || "",
+            adapterStatus: data.mechComputeAdapterStatus || "",
+            deviceStatus: data.mechComputeDeviceStatus || "",
+            computeLifecycle: data.mechComputeLifecycle || "",
+            computeBackend: data.mechComputeBackend || "",
+            computeDispatches: data.mechComputeDispatches || "0",
+            done: data.mechDone === "true",
+            timedOut: data.mechTimedOut === "true",
+            consoleError: data.mechConsoleError || "",
+            pageError: data.mechPageError || "",
+          };
+        })()''') or {}
+        milestones = snapshot
+        if any((
+            snapshot.get("done"),
+            snapshot.get("timedOut"),
+            snapshot.get("consoleError"),
+            snapshot.get("pageError"),
+        )):
+            break
+        time.sleep(0.1)
+    html = evaluate(connection, "document.documentElement.outerHTML") or ""
+    Path(dom_file).write_text(html)
+finally:
+    if connection is not None:
+        try:
+            connection.close()
         except OSError:
-            proof_emitted = False
-        if proof_emitted:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
-            raise SystemExit(124)
-        if time.monotonic() >= deadline:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
-            raise SystemExit(124)
-        time.sleep(0.25)
+            pass
+    stop(process)
+    with Path(chrome_log).open("ab") as log:
+        log.write(("\nMech browser milestones: " + json.dumps(milestones, sort_keys=True) + "\n").encode())
+raise SystemExit(124)
 PY
 chrome_status="$?"
 set -e
@@ -671,7 +855,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q "data-mech-verified-compute-backend=\"$expected_compute_backend\"" "$dom_file" \
-  || ! grep -q 'data-mech-verified-compute-instances="1000"' "$dom_file" \
+  || ! grep -q "data-mech-verified-compute-instances=\"$filter_count\"" "$dom_file" \
   || ! grep -q 'data-mech-sampled-readback-efficient="true"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-x="[0-9]' "$dom_file" \
@@ -740,4 +924,4 @@ Path(path).write_text(json.dumps({
 }, sort_keys=True))
 PY
 fi
-printf 'EKF_E2E display_updates=%s requested_compute_backend=%s compute_backend=%s compute_instances=1000 cameras=4 max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$compute_backend" "$expected_compute_backend" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"
+printf 'EKF_E2E display_updates=%s requested_compute_backend=%s compute_backend=%s compute_instances=%s cameras=4 max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$compute_backend" "$expected_compute_backend" "$filter_count" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"

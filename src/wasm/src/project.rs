@@ -4542,8 +4542,19 @@ rows := |id<string> x<f64>|
                 .unwrap()
                 .expect("every timer token must queue one compute command");
             assert!(!command.acknowledgement_required);
-            assert_eq!(command.changed_inputs["control"].len(), 3_000);
-            assert_eq!(command.changed_inputs["measurement"].len(), 3_000);
+            for (name, width) in [
+                ("control", 3_000),
+                ("camera", 2_000),
+                ("measurement", 3_000),
+            ] {
+                if let Some(values) = command.changed_inputs.get(name) {
+                    assert_eq!(
+                        values.len(),
+                        width,
+                        "compute input `{name}` had the wrong batch extent"
+                    );
+                }
+            }
             outcomes.extend(runtime.drain_host_inputs(1).unwrap_or_else(|error| {
                 let events = runtime.list_events(Some(32)).unwrap_or_default();
                 panic!("compute completion turn failed: {error:?}; recent events={events:?}")
@@ -4878,7 +4889,11 @@ rows := |id<string> x<f64>|
             runtime.program_execution_info().resident_accepted_turns,
             840
         );
-        assert_eq!(scene_backend.generation(), 840);
+        assert_eq!(
+            scene_backend.generation(),
+            840,
+            "the asynchronous scene must publish current robot truth on timer turns and completed estimates on filter turns",
+        );
     }
 
     #[cfg(all(

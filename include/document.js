@@ -60,6 +60,11 @@ const OUTPUT_PANEL_SELECTOR =
 const DOCUMENT_LAYOUT_STORAGE_VERSION = 1;
 const KIND_ANNOTATION_MAX_CHARACTERS = 96;
 
+function setComputeBridgeLifecycle(lifecycle) {
+  state.computeBridgeLifecycle = lifecycle;
+  document.documentElement.dataset.mechComputeLifecycle = lifecycle;
+}
+
 function documentLayoutStorageKey() {
   return `mech:document-layout:v${DOCUMENT_LAYOUT_STORAGE_VERSION}:${location.origin}${location.pathname}${location.search}`;
 }
@@ -740,7 +745,7 @@ function invalidateCooperativeOwnership() {
 function stopRuntime() {
   dismissInlineInspectors({ restoreFocus: false });
   state.running = false;
-  state.computeBridgeLifecycle = "stopped";
+  setComputeBridgeLifecycle("stopped");
   state.computeBridgeBuildId += 1;
   cancelFrame();
   state.computeBridge?.retire();
@@ -3839,11 +3844,13 @@ async function probeServedComputeAdapter() {
     return;
   }
   const requestedBackend = computeHost.settings?.backend || "auto";
+  document.documentElement.dataset.mechComputeAdapterStatus = "requesting";
   try {
     state.computeAdapter = requestedBackend === "cpu-scalar" || !navigator.gpu
       ? null
       : await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
   } catch (error) {
+    document.documentElement.dataset.mechComputeAdapterStatus = "failed";
     if (requestedBackend !== "auto") {
       throw error;
     }
@@ -3853,6 +3860,9 @@ async function probeServedComputeAdapter() {
   // adapter probe so `auto` selects the same backend the bridge can execute,
   // including browsers that expose navigator.gpu but return no adapter.
   window.__MECH_GPU_AVAILABLE = Boolean(state.computeAdapter);
+  document.documentElement.dataset.mechComputeAdapterStatus = state.computeAdapter
+    ? "ready"
+    : "unavailable";
 }
 
 class DocumentComputeBridge {
@@ -3876,7 +3886,15 @@ class DocumentComputeBridge {
     if (!adapter) {
       throw new Error("the document selected WebGPU but no compatible adapter is available");
     }
-    const resource = await globalThis.MechBrowserComputeDevice.create(manifest, adapter, []);
+    document.documentElement.dataset.mechComputeDeviceStatus = "requesting";
+    let resource;
+    try {
+      resource = await globalThis.MechBrowserComputeDevice.create(manifest, adapter, []);
+    } catch (error) {
+      document.documentElement.dataset.mechComputeDeviceStatus = "failed";
+      throw error;
+    }
+    document.documentElement.dataset.mechComputeDeviceStatus = "ready";
     return new DocumentComputeBridge(controller, manifest, backend, resource);
   }
 
@@ -4023,7 +4041,7 @@ function refreshDocumentComputeBridge() {
   state.computeBridge = null;
   const buildId = ++state.computeBridgeBuildId;
   const controller = state.document;
-  state.computeBridgeLifecycle = "building";
+  setComputeBridgeLifecycle("building");
   const refresh = createDocumentComputeBridgeWithFallback(controller)
     .then(next => {
       const currentGeneration = typeof controller?.computeGeneration === "function"
@@ -4042,11 +4060,11 @@ function refreshDocumentComputeBridge() {
       state.computeBridgeGeneration = typeof controller?.computeGeneration === "function"
         ? controller.computeGeneration()
         : generation;
-      state.computeBridgeLifecycle = "ready";
+      setComputeBridgeLifecycle("ready");
     })
     .catch(error => {
       if (buildId === state.computeBridgeBuildId) {
-        state.computeBridgeLifecycle = "fatal";
+        setComputeBridgeLifecycle("fatal");
         showFatalError(error);
       }
     })
@@ -4083,12 +4101,15 @@ function frame() {
       }
       throw failure;
     }
-    if (state.computeBridge?.blocked) {
-      state.animationFrame = requestAnimationFrame(frame);
-      return;
-    }
     const result = state.document.frame(8);
-    state.computeBridge?.submit(result.computeCommand);
+    if (state.computeBridge?.blocked && result.computeCommand?.dispatch) {
+      throw new Error(
+        "the resident coordinator queued another compute turn while the previous turn is in flight",
+      );
+    }
+    if (!state.computeBridge?.blocked) {
+      state.computeBridge?.submit(result.computeCommand);
+    }
     if (result.events?.length) {
       consumeReplResponse(result);
     }
@@ -4182,7 +4203,7 @@ async function createDocumentComputeBridgeWithFallback(controller = state.docume
         { cause: error },
       );
     }
-    state.computeBridgeLifecycle = "falling-back";
+    setComputeBridgeLifecycle("falling-back");
     controller.fallbackComputeToCpu();
     const bridge = await DocumentComputeBridge.create(controller);
     if (bridge?.backend === "wgpu") {
@@ -4227,14 +4248,14 @@ async function main() {
       "the browser WASM build does not include the document-backed resident REPL host",
     );
   }
-  state.computeBridgeLifecycle = "building";
+  setComputeBridgeLifecycle("building");
   const initialBuildId = ++state.computeBridgeBuildId;
   state.computeBridge = await createDocumentComputeBridgeWithFallback(state.document);
   if (initialBuildId !== state.computeBridgeBuildId) {
     state.computeBridge?.retire();
     return;
   }
-  state.computeBridgeLifecycle = "ready";
+  setComputeBridgeLifecycle("ready");
   state.computeBridgeGeneration = typeof state.document.computeGeneration === "function"
     ? state.document.computeGeneration()
     : "0";
