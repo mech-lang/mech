@@ -716,7 +716,7 @@ function installComputeSmokeTest(target) {
       }
     };
   }
-  let pressedAt = 0;
+  let pointerQueuedAt = null;
   const fail = (message) => {
     root.dataset.mechGpuSmoke = 'failed';
     root.dataset.mechGpuSmokeError = message;
@@ -736,7 +736,7 @@ function installComputeSmokeTest(target) {
           delayedCompletions,
           pendingObservations,
           maxCompletionsInFlight,
-          pressedAt,
+          pointerQueuedAt,
           lastInputs: state?.lastInputs,
           pageErrors,
         })}`);
@@ -745,12 +745,13 @@ function installComputeSmokeTest(target) {
       if (!state || state.itemCount !== expectedItemCount) {
         return;
       }
-      // Submit one baseline turn, then change the input while that turn owns
-      // the single command slot. The next submitted turn must carry the
-      // pointer transaction, which proves both completion-backed progress and
-      // queued input delivery without coupling the canary to GPU throughput.
-      if (pressedAt === 0 && state.totalDispatches >= 1) {
+      // Change the input only while a submitted baseline turn owns the single
+      // command slot. Recording the owning dispatch before delivering the
+      // event makes this an explicit queued-input proof rather than an
+      // inference from animation-frame timing.
+      if (pointerQueuedAt === null && target.dispatchPending && state.totalDispatches >= 1) {
         const rect = target.canvas.getBoundingClientRect();
+        pointerQueuedAt = state.totalDispatches;
         target.canvas.dispatchEvent(new PointerEvent('pointerdown', {
           bubbles: true,
           pointerId: 1,
@@ -758,10 +759,9 @@ function installComputeSmokeTest(target) {
           clientX: rect.left + rect.width * 0.75,
           clientY: rect.top + rect.height * 0.25,
         }));
-        pressedAt = state.totalDispatches;
         return;
       }
-      if (pressedAt === 0 || state.totalDispatches < pressedAt + 1) {
+      if (pointerQueuedAt === null || state.totalDispatches < pointerQueuedAt + 1) {
         return;
       }
       if (

@@ -276,7 +276,7 @@ def main() -> None:
         "--particle-count",
         type=int,
         default=1_000_000,
-        help="particle lanes compiled from the checked-in source (CI uses a bounded SwiftShader workload)",
+        help="particle lanes compiled from the checked-in source",
     )
     args = parser.parse_args()
     if args.particle_count <= 0:
