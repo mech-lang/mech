@@ -674,8 +674,13 @@ class BrowserComputeProject {
 }
 
 function installComputeSmokeTest(target) {
-  if (!new URLSearchParams(window.location.search).has('mech-gpu-smoke')) {
+  const smokeValue = new URLSearchParams(window.location.search).get('mech-gpu-smoke');
+  if (smokeValue === null) {
     return;
+  }
+  const expectedItemCount = Number(smokeValue);
+  if (!Number.isSafeInteger(expectedItemCount) || expectedItemCount <= 0) {
+    throw new Error(`invalid particle smoke item count ${smokeValue}`);
   }
   const root = document.documentElement;
   root.dataset.mechGpuSmoke = 'running';
@@ -737,7 +742,7 @@ function installComputeSmokeTest(target) {
         })}`);
         return;
       }
-      if (!state || state.itemCount !== 1_000_000) {
+      if (!state || state.itemCount !== expectedItemCount) {
         return;
       }
       // Submit one baseline turn, then change the input while that turn owns

@@ -219,10 +219,11 @@ jobs:
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech --features compute_backends_native
-      - name: Verify million-particle report-only WebGPU execution
+      - name: Verify report-only particle WebGPU execution
         run: >-
           MECH_BIN=target/debug/mech
-          python3 scripts/smoke-gpu-particles-browser.py --backend gpu
+          python3 scripts/smoke-gpu-particles-browser.py
+          --backend gpu --particle-count 16384
       - name: Verify scalar and WebGPU EKF rendering against one numeric oracle
         run: |
           MECH_BIN=target/debug/mech \

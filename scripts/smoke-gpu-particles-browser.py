@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the served million-particle application through a real WebGPU browser."""
+"""Run the served particle application through a real WebGPU browser."""
 
 from __future__ import annotations
 
@@ -265,7 +265,15 @@ def main() -> None:
     parser.add_argument("--build", action="store_true", help="rebuild WASM and the release server first")
     parser.add_argument("--backend", choices=("auto", "cpu", "gpu"), default="auto")
     parser.add_argument("--timeout", type=int, default=180)
+    parser.add_argument(
+        "--particle-count",
+        type=int,
+        default=1_000_000,
+        help="particle lanes compiled from the checked-in source (CI uses a bounded SwiftShader workload)",
+    )
     args = parser.parse_args()
+    if args.particle_count <= 0:
+        fail("--particle-count must be positive")
 
     if args.build:
         build()
@@ -281,15 +289,35 @@ def main() -> None:
         fail("release Mech executable is missing; rerun with --build")
 
     port = free_port()
-    page_url = f"http://127.0.0.1:{port}/?mech-gpu-smoke=1"
+    page_url = f"http://127.0.0.1:{port}/?mech-gpu-smoke={args.particle_count}"
     work = Path(tempfile.mkdtemp(prefix="mech-gpu-smoke-"))
+    project_root = ROOT / "examples/gpu-particles"
+    project_copy: Path | None = None
+    if args.particle_count != 1_000_000:
+        target_root = ROOT / "target"
+        target_root.mkdir(exist_ok=True)
+        project_copy = Path(tempfile.mkdtemp(prefix="gpu-particles-ci-", dir=target_root))
+        shutil.copytree(project_root, project_copy, dirs_exist_ok=True)
+        particle_source = project_copy / "particles.mec"
+        source = particle_source.read_text(encoding="utf-8")
+        declaration = "particle-count := 1000000f32"
+        if source.count(declaration) != 1:
+            fail(
+                "checked-in particle source no longer has one canonical particle-count "
+                f"declaration; artifacts: {work}; project: {project_copy}"
+            )
+        particle_source.write_text(
+            source.replace(declaration, f"particle-count := {args.particle_count}f32"),
+            encoding="utf-8",
+        )
+        project_root = project_copy
     passed = False
     try:
         server_log = (work / "server.log").open("wb")
         browser_log = (work / "browser.log").open("wb")
         server = subprocess.Popen(
             [
-                str(mech), "serve", "examples/gpu-particles", "--port", str(port),
+                str(mech), "serve", str(project_root), "--port", str(port),
                 "--backend", args.backend,
             ],
             cwd=ROOT,
@@ -352,8 +380,9 @@ def main() -> None:
                 marker = 'data-mech-gpu-smoke-error="'
                 detail = dom.split(marker, 1)[1].split('"', 1)[0] if marker in dom else "acceptance marker was not reached"
                 fail(f"{detail}; artifacts: {work}")
-            if "1,000,000" not in dom:
-                fail(f"page did not report one million particles; artifacts: {work}")
+            formatted_count = f"{args.particle_count:,}"
+            if formatted_count not in dom:
+                fail(f"page did not report {formatted_count} particles; artifacts: {work}")
             expected_backend = "wgpu" if args.backend in ("auto", "gpu") else "cpu-scalar"
             if f'data-mech-compute-backend="{expected_backend}"' not in dom:
                 fail(f"page did not select {expected_backend} compute; artifacts: {work}")
@@ -379,7 +408,7 @@ def main() -> None:
             print("Compute particle browser smoke passed")
             print(f"browser: {browser}")
             print(f"backend: {expected_backend}")
-            print("particles: 1,000,000")
+            print(f"particles: {formatted_count}")
             print("compute frames: advanced")
             print("pointer -> Mech CPU transaction -> compute inputs: verified")
             passed = True
@@ -402,8 +431,12 @@ def main() -> None:
     finally:
         if passed:
             shutil.rmtree(work)
+            if project_copy is not None:
+                shutil.rmtree(project_copy)
         else:
             print(f"GPU particle smoke artifacts retained at {work}", file=sys.stderr)
+            if project_copy is not None:
+                print(f"GPU particle smoke project retained at {project_copy}", file=sys.stderr)
 
 
 if __name__ == "__main__":
