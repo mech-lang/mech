@@ -28,13 +28,17 @@ robot and contracts after the next camera reacquires it.
 
 @clock := timer://clock/tick{:read(tick)}
 @scene := scene://localization/frame{:write(replace)}
-@filters := compute://filters/kernel{:read(sample/result.0), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}
+@filters := compute://filters/kernel{:read(sample/result.0), :read(turns), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}
 
   π := 3.141592654
   ~last-clock-tick := 0.0
   clock-delta := @clock/tick - last-clock-tick
   clock-delta-positive := (clock-delta + (clock-delta ^ 2) ^ 0.5) / 2.0
   turn-pulse := clock-delta-positive - (clock-delta-positive - 1.0 + ((clock-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
+  ~last-filter-turn := 0.0
+  filter-turn-delta := @filters/turns - last-filter-turn
+  filter-turn-delta-positive := (filter-turn-delta + (filter-turn-delta ^ 2) ^ 0.5) / 2.0
+  sample-pulse := filter-turn-delta-positive - (filter-turn-delta-positive - 1.0 + ((filter-turn-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
   Δt := turn-pulse * 0.05
   cruise-speed := 1.15
   turn-rate-limit := 1.75
@@ -51,6 +55,7 @@ robot and contracts after the next camera reacquires it.
               1.0 9.0]
 
   last-clock-tick = @clock/tick
+  last-filter-turn = @filters/turns
 
 
 2. Square-Drive State Machine
@@ -435,7 +440,6 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   advanced-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen-point)
   advanced-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen-point)
   next-truth-path := truth-path + turn-pulse * (advanced-truth-path - truth-path)
-  sample-pulse := 1.0 - turn-pulse
   next-estimate-path := estimate-path + sample-pulse * (advanced-estimate-path - estimate-path)
   truth-path = next-truth-path
   estimate-path = next-estimate-path

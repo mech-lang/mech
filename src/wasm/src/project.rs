@@ -4364,8 +4364,8 @@ rows := |id<string> x<f64>|
         };
         assert_eq!(
             runtime.program_execution_info().observation_count,
-            2,
-            "the resident artifact must observe the timer and one packed compute sample"
+            3,
+            "the resident artifact must observe the timer, compute completion, and packed sample"
         );
         assert!(scene_backend.latest().is_none());
         let pi = 3.141592654_f64;
@@ -4748,6 +4748,22 @@ rows := |id<string> x<f64>|
             maximum_guide_deviation < 0.5,
             "the closed-loop square controller drifted {maximum_guide_deviation} field units from its guide",
         );
+        let final_snapshot = scene_backend.latest().unwrap();
+        for id in ["truth-path", "estimate-path"] {
+            let path = final_snapshot
+                .line_strips
+                .iter()
+                .find(|strip| strip.id == id)
+                .unwrap_or_else(|| panic!("EKF scene must render `{id}`"));
+            let (minimum_x, maximum_x) = path.positions.iter().fold(
+                (f64::INFINITY, f64::NEG_INFINITY),
+                |(minimum, maximum), point| (minimum.min(point[0]), maximum.max(point[0])),
+            );
+            assert!(
+                maximum_x - minimum_x > 100.0,
+                "`{id}` must advance across compute/timer scheduling boundaries",
+            );
+        }
         assert_eq!(
             runtime.program_execution_info().resident_accepted_turns,
             840
