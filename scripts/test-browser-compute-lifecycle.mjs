@@ -119,7 +119,7 @@ function fakeDeviceFor(bytes) {
 const rejectedBytes = new ArrayBuffer(68);
 new Uint32Array(rejectedBytes, 60, 2).set([1, (7 << 8) | 1]);
 const rejectedDevice = fakeDeviceFor(rejectedBytes);
-const rejected = await rejectedDevice.finish();
+const rejected = await rejectedDevice.finish(Promise.resolve());
 assert.deepEqual(rejected, {
   outputs: [],
   integrity: { constraint: "finite-estimate!", instance: 7 },
@@ -130,14 +130,20 @@ assert.equal(rejectedDevice.metrics.gpuToCpuOutputBytes, 0);
 const acceptedBytes = new ArrayBuffer(68);
 new Float32Array(acceptedBytes, 0, 15).set(Array.from({ length: 15 }, (_, index) => index));
 const acceptedDevice = fakeDeviceFor(acceptedBytes);
-const acceptedResult = await acceptedDevice.finish();
+const acceptedResult = await acceptedDevice.finish(Promise.resolve());
 assert.equal(acceptedResult.outputs.length, 2);
 assert.equal(acceptedDevice.metrics.gpuToCpuReadbackBytes, 68);
 assert.equal(acceptedDevice.metrics.gpuToCpuOutputBytes, 120);
 
 const reportOnly = Object.create(Device.prototype);
 reportOnly.readback = null;
-reportOnly.device = { queue: { async onSubmittedWorkDone() {} } };
+reportOnly.device = {
+  queue: {
+    async onSubmittedWorkDone() {
+      throw new Error("finish must not widen completion to later queue work");
+    },
+  },
+};
 reportOnly.metrics = {
   cpuToGpuInputBytes: 0,
   gpuToCpuReadbackBytes: 0,
@@ -146,7 +152,14 @@ reportOnly.metrics = {
   uniquePhysicalOutputBuffers: 0,
 };
 reportOnly.publishMetrics = () => {};
-assert.deepEqual(await reportOnly.finish(), { outputs: [], integrity: null });
+assert.deepEqual(
+  await reportOnly.finish(Promise.resolve()),
+  { outputs: [], integrity: null },
+);
 assert.equal(reportOnly.metrics.gpuToCpuReadbackBytes, 0);
+await assert.rejects(
+  () => reportOnly.finish(),
+  /exact submission promise/,
+);
 
 console.log("browser compute submission lifecycle tests passed");

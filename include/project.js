@@ -483,16 +483,17 @@ class BrowserComputeProject {
     this.resize();
     const encoder = this.device.createCommandEncoder();
     let renderedBuffer = this.activeBuffer;
-    let readback = null;
+    let computeCompletion = null;
     if (dispatch && this.backend === 'wgpu') {
       this.lastInputs = Object.fromEntries(
         command.inputs.map((input) => [input.name, Array.from(input.values)]),
       );
       this.computeResource.setRequestedOutputs(command.requestedOutputs || []);
-      renderedBuffer = this.computeResource.submit(command, this.activeBuffer).outputIndex;
-      readback = true;
+      const submission = this.computeResource.submit(command, this.activeBuffer);
+      renderedBuffer = submission.outputIndex;
+      computeCompletion = submission.completion;
     }
-    const displayBuffer = readback ? this.activeBuffer : renderedBuffer;
+    const displayBuffer = computeCompletion ? this.activeBuffer : renderedBuffer;
     const render = encoder.beginRenderPass({
       colorAttachments: [{
         view: this.context.getCurrentTexture().createView(),
@@ -506,7 +507,7 @@ class BrowserComputeProject {
     render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
-    return { renderedBuffer, readback };
+    return { renderedBuffer, computeCompletion };
   }
 
   rejectWgpuCommand(dispatchToken, error) {
@@ -522,8 +523,8 @@ class BrowserComputeProject {
     return failure;
   }
 
-  trackWgpuCompletion(dispatchToken, readback, outputIndex) {
-    this.computeResource.finish().then(
+  trackWgpuCompletion(dispatchToken, completion, outputIndex) {
+    this.computeResource.finish(completion).then(
       ({ outputs, integrity }) => {
         if (this.stopped) return;
         try {
@@ -600,7 +601,7 @@ class BrowserComputeProject {
       this.dispatchPending = true;
       this.trackWgpuCompletion(
         wgpuDispatchToken,
-        submission.readback,
+        submission.computeCompletion,
         submission.renderedBuffer,
       );
     }
@@ -700,17 +701,20 @@ function installComputeSmokeTest(target) {
   window.addEventListener('unhandledrejection', recordPageError);
   if (target.backend === 'wgpu') {
     const finish = target.computeResource.finish.bind(target.computeResource);
-    target.computeResource.finish = async () => {
+    target.computeResource.finish = async (completion) => {
       completionsInFlight += 1;
       maxCompletionsInFlight = Math.max(maxCompletionsInFlight, completionsInFlight);
       try {
+        // Attach to the exact compute completion immediately, before delaying
+        // publication, so a fast rejection cannot become unhandled.
+        const result = finish(completion);
         // Exercise more than one animation frame while the elementwise GPU
         // dispatch owns the command slot. A second dispatch during this delay
         // would either raise maxCompletionsInFlight or trip Rust backpressure.
         await new Promise(resolve => setTimeout(resolve, 75));
-        const result = await finish();
+        const completed = await result;
         delayedCompletions += 1;
-        return result;
+        return completed;
       } finally {
         completionsInFlight -= 1;
       }

@@ -3986,18 +3986,18 @@ class DocumentComputeBridge {
       throw new Error("the document compute command has no valid completion identity");
     }
     this.resource.setRequestedOutputs(command.requestedOutputs || []);
-    const { outputIndex } = this.resource.submit(command, this.activeBuffer);
+    const { outputIndex, completion } = this.resource.submit(command, this.activeBuffer);
     // queue.submit() has succeeded at this point. Record that fact before any
     // promise continuation can observe device loss; this generation may no
     // longer be rebuilt on scalar compute automatically.
     this.lifecycle.markSubmitted(command.dispatchToken);
     this.blocked = true;
-    this.finish(command.dispatchToken, outputIndex);
+    this.finish(command.dispatchToken, outputIndex, completion);
   }
 
-  async finish(dispatchToken, outputIndex) {
+  async finish(dispatchToken, outputIndex, completion) {
     try {
-      const { outputs, integrity } = await this.resource.finish();
+      const { outputs, integrity } = await this.resource.finish(completion);
       if (integrity) {
         if (this.isCurrent()) {
           this.controller.rejectIntegrityComputeCommand(

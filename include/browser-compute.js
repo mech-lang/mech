@@ -292,16 +292,32 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
       );
     }
     this.device.queue.submit([encoder.finish()]);
-    return { outputIndex };
+    // Capture completion at the compute submission boundary. Callers may
+    // submit unrelated presentation work to the same queue immediately after
+    // this method returns; resident acknowledgement must not wait for it.
+    let completion;
+    try {
+      completion = this.readback
+        ? this.readback.mapAsync(GPUMapMode.READ, 0, this.readbackBytes)
+        : this.device.queue.onSubmittedWorkDone();
+    } catch (error) {
+      // Submission has already succeeded. Surface setup failure through the
+      // completion channel so the bridge records the accepted submission
+      // before applying its terminal-failure policy.
+      completion = Promise.reject(error);
+    }
+    return { outputIndex, completion };
   }
 
-  async finish() {
+  async finish(completion) {
+    if (!completion || typeof completion.then !== "function") {
+      throw new Error("compute completion requires its exact submission promise");
+    }
+    await completion;
     if (!this.readback) {
-      await this.device.queue.onSubmittedWorkDone();
       this.publishMetrics();
       return { outputs: [], integrity: null };
     }
-    await this.readback.mapAsync(GPUMapMode.READ, 0, this.readbackBytes);
     try {
       const mapped = this.readback.getMappedRange(0, this.readbackBytes);
       // This is the physical mapped transfer. Count it exactly once per
