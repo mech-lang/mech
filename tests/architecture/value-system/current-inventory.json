@@ -16,6 +16,7 @@
     "hosts/gpu/src/batched/mod.rs",
     "hosts/gpu/src/compute_backends.rs",
     "hosts/gpu/src/compute_provider.rs",
+    "hosts/gpu/src/execution_plan.rs",
     "hosts/gpu/src/lib.rs",
     "hosts/gpu/src/native.rs",
     "hosts/robot-arm/src/lib.rs",
@@ -2100,6 +2101,7 @@
     "hosts/gpu/src/batched/mod.rs",
     "hosts/gpu/src/compute_backends.rs",
     "hosts/gpu/src/compute_provider.rs",
+    "hosts/gpu/src/execution_plan.rs",
     "hosts/gpu/src/lib.rs",
     "hosts/gpu/src/native.rs",
     "hosts/gpu/tests/parallel_ekf.rs",
@@ -61262,7 +61264,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 903
+      "rust_file_count": 904
     },
     {
       "directory": "hosts/browser",
@@ -61280,7 +61282,7 @@
       "directory": "hosts/gpu",
       "manifest": "hosts/gpu/Cargo.toml",
       "name": "mech-gpu",
-      "rust_file_count": 12
+      "rust_file_count": 13
     },
     {
       "directory": "hosts/robot-arm",
