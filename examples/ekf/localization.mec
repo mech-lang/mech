@@ -290,73 +290,77 @@ one arithmetic result. Only lane zero is sampled back for the scene.
 ekf-batch @compute
 -------------------------------------------------------------------------------
 
+  ekf-predict(μ<[f32]:3,1>, Σ<[f32]:3,3>, u<[f32]:3,1>, Q<[f32]:2,2>) = (μ-<[f32]:3,1>, Σ-<[f32]:3,3>) :=
+    δt := u[1]
+    v := u[2]
+    ω := u[3]
+    θ := μ[3] + ω * δt / 2f32
+    c := math/cos(θ)
+    s := math/sin(θ)
+    G := [1f32 0f32 -v * s * δt
+          0f32 1f32  v * c * δt
+          0f32 0f32 1f32]
+    V := [c * δt -v * s * δt * δt / 2f32
+          s * δt  v * c * δt * δt / 2f32
+          0f32     δt]
+    μ- := μ + [v * c * δt
+               v * s * δt
+               ω * δt]
+    Σ- := G ** Σ ** G' + V ** Q ** V'.
+
+  ekf-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>, camera<[f32]:2,1>, z<[f32]:2,1>, R<[f32]:2,2>) = (μ+<[f32]:3,1>, Σ+<[f32]:3,3>) :=
+    Δ := camera - μ-[1..=2]
+    q := Δ · Δ
+    r := math/sqrt(q)
+    ẑ := [r
+          math/atan2(Δ[2], Δ[1]) - μ-[3]]
+    H := [-Δ[1] / r -Δ[2] / r 0f32
+           Δ[2] / q -Δ[1] / q -1f32]
+    S := H ** Σ- ** H' + R
+    B := H ** Σ-
+    K := (S \ B)'
+    νθ := z[2] - ẑ[2]
+    ν := [z[1] - ẑ[1]
+          math/atan2(math/sin(νθ), math/cos(νθ))]
+    μ+ := μ- + K ** ν
+    I := [1f32 0f32 0f32
+          0f32 1f32 0f32
+          0f32 0f32 1f32]
+    A := I - K ** H
+    Σ-raw := A ** Σ- ** A' + K ** R ** K'
+    Σ+ := 0.5<f32> * (Σ-raw + Σ-raw').
+
   control := [0.05<f32>; 1f32; 0f32]
   camera := [1f32; 1f32]
   measurement := [1f32; 0f32; 0f32]
-  dt := control[1,1]
-  linear-velocity := control[2,1]
-  angular-velocity := control[3,1]
-  visibility := measurement[3,1]
+  z := [measurement[1]; measurement[2]]
+  γ := measurement[3]
+  Q := [0.08<f32> 0f32
+        0f32 0.018<f32>]
+  R := [0.0225<f32> 0f32
+        0f32 0.0004<f32>]
 
-  identity-3 := [1f32 0f32 0f32
-                 0f32 1f32 0f32
-                 0f32 0f32 1f32]
-  process-covariance := [0.08<f32> 0f32
-                         0f32 0.018<f32>]
-  measurement-covariance := [0.0225<f32> 0f32
-                             0f32 0.0004<f32>]
+  -- These two fixed-shape calls are the whole filter. The compute host maps
+  -- them over the outer lane arrays supplied by the document; increasing the
+  -- lane count does not duplicate this source graph.
   -- The resident value is the whole filter checkpoint. Its columns are the
-  -- corrected state, the 3x3 covariance, and the uncorrected prediction.
+  -- posterior state, its 3x3 covariance, and the prior state.
   ~filter-sample := [2.9<f32>  0.45<f32> 0f32       0f32       2.9<f32>
                      2.15<f32> 0f32       0.45<f32> 0f32       2.15<f32>
                      0.16<f32> 0f32       0f32       0.08<f32> 0.16<f32>]
-  state := filter-sample[:,1]
-  covariance := filter-sample[:,2..=4]
-
-  mid-heading := state[3,1] + angular-velocity * dt / 2f32
-  mid-cos := math/cos(mid-heading)
-  mid-sin := math/sin(mid-heading)
-  motion-jacobian := [1f32 0f32 -linear-velocity * mid-sin * dt
-                      0f32 1f32  linear-velocity * mid-cos * dt
-                      0f32 0f32 1f32]
-  control-jacobian := [mid-cos * dt -linear-velocity * mid-sin * dt * dt / 2f32
-                       mid-sin * dt  linear-velocity * mid-cos * dt * dt / 2f32
-                       0f32          dt]
-  predicted-state := state + [linear-velocity * mid-cos * dt
-                              linear-velocity * mid-sin * dt
-                              angular-velocity * dt]
-  predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-covariance ** control-jacobian'
-
-  camera-delta := camera - [predicted-state[1,1]; predicted-state[2,1]]
-  predicted-dx := camera-delta[1,1]
-  predicted-dy := camera-delta[2,1]
-  predicted-q := predicted-dx * predicted-dx + predicted-dy * predicted-dy
-  predicted-range := math/sqrt(predicted-q)
-  predicted-observation := [predicted-range
-                            math/atan2(predicted-dy, predicted-dx) - predicted-state[3,1]]
-  observation-jacobian := [-predicted-dx / predicted-range -predicted-dy / predicted-range 0f32
-                            predicted-dy / predicted-q     -predicted-dx / predicted-q -1f32]
-  innovation-covariance := observation-jacobian ** predicted-covariance ** observation-jacobian' + measurement-covariance
-  innovation-determinant := innovation-covariance[1,1] * innovation-covariance[2,2] - innovation-covariance[1,2] * innovation-covariance[2,1]
-  innovation-inverse := [ innovation-covariance[2,2] / innovation-determinant -innovation-covariance[1,2] / innovation-determinant
-                         -innovation-covariance[2,1] / innovation-determinant  innovation-covariance[1,1] / innovation-determinant]
-  kalman-gain := predicted-covariance ** observation-jacobian' ** innovation-inverse
-  bearing-residual := measurement[2,1] - predicted-observation[2,1]
-  innovation := [measurement[1,1] - predicted-observation[1,1]
-                 math/atan2(math/sin(bearing-residual), math/cos(bearing-residual))]
-  observed-state := predicted-state + kalman-gain ** innovation
-  joseph-a := identity-3 - kalman-gain ** observation-jacobian
-  observed-covariance-raw := joseph-a ** predicted-covariance ** joseph-a' + kalman-gain ** measurement-covariance ** kalman-gain'
-  observed-covariance := 0.5<f32> * (observed-covariance-raw + observed-covariance-raw')
-  next-state := predicted-state + visibility * (observed-state - predicted-state)
-  next-covariance := predicted-covariance + visibility * (observed-covariance - predicted-covariance)
+  μ := filter-sample[:,1]
+  Σ := filter-sample[:,2..=4]
+  (μ-, Σ-) := ekf-predict(μ, Σ, control, Q)
+  (μ+, Σ+) := ekf-correct(μ-, Σ-, camera, z, R)
+  μ-next := μ- + γ * (μ+ - μ-)
+  Σ-next := Σ- + γ * (Σ+ - Σ-)
 
   finite-limit := 3.402823466e38<f32>
-  finite-state! := math/abs(next-state[1,1]) <= finite-limit && math/abs(next-state[2,1]) <= finite-limit && math/abs(next-state[3,1]) <= finite-limit
-  positive-covariance! := next-covariance[1,1] > 0f32 && next-covariance[2,2] > 0f32 && next-covariance[3,3] > 0f32
-  symmetric-covariance! := math/abs(next-covariance[1,2] - next-covariance[2,1]) <= 0.0001<f32> && math/abs(next-covariance[1,3] - next-covariance[3,1]) <= 0.0001<f32> && math/abs(next-covariance[2,3] - next-covariance[3,2]) <= 0.0001<f32>
+  finite-state! := math/abs(μ-next[1,1]) <= finite-limit && math/abs(μ-next[2,1]) <= finite-limit && math/abs(μ-next[3,1]) <= finite-limit
+  positive-covariance! := Σ-next[1,1] > 0f32 && Σ-next[2,2] > 0f32 && Σ-next[3,3] > 0f32
+  symmetric-covariance! := math/abs(Σ-next[1,2] - Σ-next[2,1]) <= 0.0001<f32> && math/abs(Σ-next[1,3] - Σ-next[3,1]) <= 0.0001<f32> && math/abs(Σ-next[2,3] - Σ-next[3,2]) <= 0.0001<f32>
 
-  filter-sample = [next-state next-covariance predicted-state]
+  filter-sample = [μ-next Σ-next μ-]
   (filter-sample, filter-sample)
 
 

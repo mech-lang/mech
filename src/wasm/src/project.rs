@@ -4339,6 +4339,22 @@ rows := |id<string> x<f64>|
         )
         .unwrap();
         let source = include_str!("../../../examples/ekf/localization.mec").to_string();
+        assert!(
+            source.contains("ekf-predict(μ<[f32]:3,1>, Σ<[f32]:3,3>"),
+            "the EKF prediction must remain an ordinary fixed-shape Mech function",
+        );
+        assert!(
+            source.contains("ekf-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>"),
+            "the EKF correction must remain an ordinary fixed-shape Mech function",
+        );
+        assert!(
+            source.contains("K := (S \\ B)'"),
+            "the Kalman gain must use the language's matrix solve operation",
+        );
+        assert!(
+            !source.contains("innovation-inverse") && !source.contains("innovation-determinant"),
+            "the example must not expand a matrix inverse by hand",
+        );
         let sources = HashMap::from([("localization.mec".to_string(), source.clone())]);
         let timer_factory = TestManualTimerHostFactory::new();
         let timer_driver = timer_factory.driver.clone();
