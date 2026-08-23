@@ -285,7 +285,7 @@ mod tests {
             .stack_size(64 * 1024 * 1024)
             .spawn(|| {
                 let runtime = runtime_catalog();
-                assert_eq!(runtime.runtime_factory_count(), 9_019);
+                assert_eq!(runtime.runtime_factory_count(), 9_022);
                 let runtime_entries = runtime
                     .runtime_entries()
                     .map(|entry| (entry.id, entry.name.clone()))
@@ -299,7 +299,7 @@ mod tests {
                 );
 
                 let native_plan = native_plan_catalog();
-                assert_eq!(native_plan.runtime_factory_count(), 9_116);
+                assert_eq!(native_plan.runtime_factory_count(), 9_119);
                 assert!(!Arc::ptr_eq(&runtime, &native_plan));
                 let native_plan_entries = native_plan
                     .runtime_entries()

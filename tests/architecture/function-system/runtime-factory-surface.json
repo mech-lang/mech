@@ -28969,6 +28969,21 @@
       "owner": "mech-math"
     },
     {
+      "name": "MatrixSolveMDMD<f32>",
+      "id_hex": "00405178b4b50d2f",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatrixSolveMDMD<f64>",
+      "id_hex": "003ec4f968646717",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatrixSolveMDVD<f32>",
+      "id_hex": "00c3def1222b905d",
+      "owner": "mech-matrix"
+    },
+    {
       "name": "MatrixSolveMDVD<f64>",
       "id_hex": "002588af33ff6a84",
       "owner": "mech-matrix"
