@@ -563,13 +563,14 @@ import sys
 import time
 
 chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
+virtual_time_budget = int(os.environ.get("MECH_BROWSER_VIRTUAL_TIME_BUDGET_MS", "600000"))
 args = [
     chrome,
     "--headless=new",
     "--no-sandbox",
     "--disable-dev-shm-usage",
     "--run-all-compositor-stages-before-draw",
-    "--virtual-time-budget=120000",
+    f"--virtual-time-budget={virtual_time_budget}",
     "--dump-dom",
     f"--user-data-dir={profile}",
     page_url,
