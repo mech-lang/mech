@@ -359,6 +359,98 @@ result
     }
 }
 
+#[test]
+fn matrix_right_hand_side_solve_is_portable_across_compute_backends() {
+    let tree = mech_syntax::parse(
+        r#"
+portable matrix solve @compute
+-------------------------------------------------------------------------------
+coefficients := source-coefficients
+rhs := source-rhs
+~result := [0f32 0f32 0f32
+            0f32 0f32 0f32]
+result = coefficients \ rhs
+result
+"#,
+    )
+    .unwrap();
+    let planning_inputs = BTreeMap::from([
+        (
+            "source-coefficients".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 2,
+                columns: 2,
+                values: vec![4.0, 2.0, 1.0, 3.0],
+            },
+        ),
+        (
+            "source-rhs".to_owned(),
+            RuntimeHostInputValue::F32Matrix {
+                rows: 2,
+                columns: 3,
+                values: vec![9.0, 8.0, 1.0, 7.0, 5.0, 2.0],
+            },
+        ),
+    ]);
+    let artifact = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap()
+        .compile_tree_artifact_with_inputs(
+            &tree,
+            &planning_inputs,
+            &BTreeSet::from(["coefficients".to_owned(), "rhs".to_owned()]),
+        )
+        .unwrap()
+        .into_artifact();
+    assert!(artifact.nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["matrix"]
+            && node.operation.operation_name == "solve"
+    }));
+    let activation_inputs = BTreeMap::from([
+        ("coefficients".to_owned(), vec![4.0, 2.0, 1.0, 3.0]),
+        ("rhs".to_owned(), vec![9.0, 8.0, 1.0, 7.0, 5.0, 2.0]),
+    ]);
+    let program = ComputeLowerer
+        .compile_broadcast(&artifact, &activation_inputs)
+        .unwrap();
+    let initializers = compute_initializers(&program, &activation_inputs);
+    let registry = native_compute_backend_registry();
+    let expected = [1.9, -0.4, 1.3, 1.4, 2.6, -0.2];
+
+    let mut backends = vec!["cpu-scalar", "cpu-simd"];
+    if cfg!(feature = "jit") {
+        backends.push("cpu-jit");
+    }
+    backends.push("wgpu");
+    for backend in backends {
+        let request = BackendRequest::parse(backend).unwrap();
+        let factory = match registry.resolve(
+            &request,
+            ComputePlatform::Native,
+            ComputePlacement::Compute,
+            program.compute_program(),
+        ) {
+            Ok(factory) => factory,
+            Err(error) if backend == "wgpu" && error.to_string().contains("adapter") => continue,
+            Err(error) => panic!("{backend} rejected the matrix solve program: {error}"),
+        };
+        let executable = factory.compile(program.compute_program()).unwrap();
+        let mut session = executable.create_session(&initializers).unwrap();
+        session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+        let outputs =
+            flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
+        assert!(
+            outputs.values().any(|values| values.len() == expected.len()
+                && values
+                    .iter()
+                    .zip(expected)
+                    .all(|(actual, expected)| (actual - expected).abs() < 1.0e-5)),
+            "{backend} did not publish the expected matrix solution: {outputs:?}",
+        );
+    }
+}
+
 fn source_program(instances: usize) -> (FixedShapeKernel, BTreeMap<String, Vec<f32>>) {
     source_program_from(SOURCE, instances)
 }

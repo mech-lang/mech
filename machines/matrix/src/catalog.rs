@@ -375,6 +375,18 @@ macro_rules! export_matrix_transpose_fixed_family {
 }
 
 mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "solve", feature = "matrixd", feature = "vectord", feature = "f32"),
+    registration: register_matrix_solve_mdvd_f32,
+    installer: install_matrix_solve_mdvd_f32,
+    name: "MatrixSolveMDVD<f32>",
+    factory_type: crate::solve::MatrixSolveMDVD<f32>,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-matrix", crate_name: "mech_matrix",
+    installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f32",
+    extra_cargo_features: ["solve"],
+}
+
+mech_core::declare_native_runtime_factory! {
     cfg: all(feature = "solve", feature = "matrixd", feature = "vectord", feature = "f64"),
     registration: register_matrix_solve_mdvd_f64,
     installer: install_matrix_solve_mdvd_f64,
@@ -383,6 +395,30 @@ mech_core::declare_native_runtime_factory! {
     contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-matrix", crate_name: "mech_matrix",
     installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f64",
+    extra_cargo_features: ["solve"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "solve", feature = "matrixd", feature = "f32"),
+    registration: register_matrix_solve_mdmd_f32,
+    installer: install_matrix_solve_mdmd_f32,
+    name: "MatrixSolveMDMD<f32>",
+    factory_type: crate::solve::MatrixSolveMDMD<f32>,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-matrix", crate_name: "mech_matrix",
+    installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdmd_f32",
+    extra_cargo_features: ["solve"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "solve", feature = "matrixd", feature = "f64"),
+    registration: register_matrix_solve_mdmd_f64,
+    installer: install_matrix_solve_mdmd_f64,
+    name: "MatrixSolveMDMD<f64>",
+    factory_type: crate::solve::MatrixSolveMDMD<f64>,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-matrix", crate_name: "mech_matrix",
+    installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdmd_f64",
     extra_cargo_features: ["solve"],
 }
 
@@ -582,9 +618,20 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         feature = "solve",
         feature = "matrixd",
         feature = "vectord",
+        feature = "f32"
+    ))]
+    register_matrix_solve_mdvd_f32(builder)?;
+    #[cfg(all(
+        feature = "solve",
+        feature = "matrixd",
+        feature = "vectord",
         feature = "f64"
     ))]
     register_matrix_solve_mdvd_f64(builder)?;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f32"))]
+    register_matrix_solve_mdmd_f32(builder)?;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f64"))]
+    register_matrix_solve_mdmd_f64(builder)?;
     #[cfg(feature = "transpose")]
     install_transpose_runtime(builder)?;
     Ok(())
@@ -624,9 +671,20 @@ pub mod __mech_native {
         feature = "solve",
         feature = "matrixd",
         feature = "vectord",
+        feature = "f32"
+    ))]
+    pub use super::install_matrix_solve_mdvd_f32;
+    #[cfg(all(
+        feature = "solve",
+        feature = "matrixd",
+        feature = "vectord",
         feature = "f64"
     ))]
     pub use super::install_matrix_solve_mdvd_f64;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f32"))]
+    pub use super::install_matrix_solve_mdmd_f32;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f64"))]
+    pub use super::install_matrix_solve_mdmd_f64;
 }
 
 #[cfg(all(test, feature = "source"))]

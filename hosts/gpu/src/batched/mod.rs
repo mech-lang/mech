@@ -1597,6 +1597,8 @@ impl<'a> BatchCompiler<'a> {
                 self.lower_transpose(output, &inputs)
             } else if operation == "matrix/multiply" {
                 self.lower_matmul(output, &inputs)
+            } else if operation == "matrix/solve" {
+                self.lower_solve(output, &inputs)
             } else if operation == "matrix/dot" {
                 self.lower_dot(output, &inputs)
             } else if operation == "math/neg" {
@@ -1927,6 +1929,107 @@ impl<'a> BatchCompiler<'a> {
         Ok(())
     }
 
+    fn lower_solve(&mut self, output: CellSlotId, inputs: &[ArtifactSource]) -> Result<(), String> {
+        if inputs.len() != 2 {
+            return Err(
+                "matrix solve requires a coefficient matrix and right-hand side".to_owned(),
+            );
+        }
+        let coefficients = self.source_shape(inputs[0])?;
+        let rhs = self.source_shape(inputs[1])?;
+        let result = self.shape(output)?;
+        if coefficients.rows != coefficients.columns
+            || rhs.rows != coefficients.rows
+            || result != rhs
+        {
+            return Err(format!(
+                "invalid matrix solve {}x{} \\ {}x{} -> {}x{}",
+                coefficients.rows,
+                coefficients.columns,
+                rhs.rows,
+                rhs.columns,
+                result.rows,
+                result.columns
+            ));
+        }
+
+        match coefficients.rows {
+            1 => {
+                let denominator = self.operand(inputs[0], 0)?;
+                for component in 0..rhs.elements() {
+                    let numerator = self.operand(inputs[1], component)?;
+                    self.emit(
+                        output,
+                        component,
+                        ScalarComputation::Elementwise {
+                            operation: ElementwiseOperation::Binary(BinaryOperation::Divide),
+                            inputs: vec![numerator, denominator],
+                        },
+                    );
+                }
+            }
+            2 => {
+                // A fixed 2x2 solve is scalarized once at compile time. The
+                // resulting arithmetic is shared by CPU SIMD and WebGPU, so
+                // ordinary Mech `A \\ b` source does not need to spell out an
+                // inverse or depend on an accelerator-specific EKF primitive.
+                let a00 = self.operand(inputs[0], coefficients.index(0, 0))?;
+                let a01 = self.operand(inputs[0], coefficients.index(0, 1))?;
+                let a10 = self.operand(inputs[0], coefficients.index(1, 0))?;
+                let a11 = self.operand(inputs[0], coefficients.index(1, 1))?;
+                let diagonal = self.emit_temporary_binary(BinaryOperation::Multiply, a00, a11);
+                let off_diagonal = self.emit_temporary_binary(BinaryOperation::Multiply, a01, a10);
+                let determinant =
+                    self.emit_temporary_binary(BinaryOperation::Subtract, diagonal, off_diagonal);
+
+                for column in 0..rhs.columns {
+                    let b0 = self.operand(inputs[1], rhs.index(0, column))?;
+                    let b1 = self.operand(inputs[1], rhs.index(1, column))?;
+                    let numerator0_diagonal =
+                        self.emit_temporary_binary(BinaryOperation::Multiply, a11, b0);
+                    let numerator0_off_diagonal =
+                        self.emit_temporary_binary(BinaryOperation::Multiply, a01, b1);
+                    let numerator0 = self.emit_temporary_binary(
+                        BinaryOperation::Subtract,
+                        numerator0_diagonal,
+                        numerator0_off_diagonal,
+                    );
+                    let numerator1_diagonal =
+                        self.emit_temporary_binary(BinaryOperation::Multiply, a00, b1);
+                    let numerator1_off_diagonal =
+                        self.emit_temporary_binary(BinaryOperation::Multiply, a10, b0);
+                    let numerator1 = self.emit_temporary_binary(
+                        BinaryOperation::Subtract,
+                        numerator1_diagonal,
+                        numerator1_off_diagonal,
+                    );
+                    self.emit(
+                        output,
+                        result.index(0, column),
+                        ScalarComputation::Elementwise {
+                            operation: ElementwiseOperation::Binary(BinaryOperation::Divide),
+                            inputs: vec![numerator0, determinant],
+                        },
+                    );
+                    self.emit(
+                        output,
+                        result.index(1, column),
+                        ScalarComputation::Elementwise {
+                            operation: ElementwiseOperation::Binary(BinaryOperation::Divide),
+                            inputs: vec![numerator1, determinant],
+                        },
+                    );
+                }
+            }
+            rows => {
+                return Err(format!(
+                    "fixed-shape matrix solve currently supports 1x1 and 2x2 coefficient matrices, found {rows}x{rows}"
+                ));
+            }
+        }
+        Ok(())
+    }
+
     fn lower_transpose(
         &mut self,
         output: CellSlotId,
@@ -1996,6 +2099,24 @@ impl<'a> BatchCompiler<'a> {
             output: self.register_offsets[&slot] + component,
             computation,
         });
+    }
+
+    fn emit_temporary_binary(
+        &mut self,
+        operation: BinaryOperation,
+        left: ScalarOperand,
+        right: ScalarOperand,
+    ) -> ScalarOperand {
+        let output = self.register_count;
+        self.register_count += 1;
+        self.instructions.push(ScalarInstruction {
+            output,
+            computation: ScalarComputation::Elementwise {
+                operation: ElementwiseOperation::Binary(operation),
+                inputs: vec![left, right],
+            },
+        });
+        ScalarOperand::Register(output)
     }
 
     fn operand(&self, source: ArtifactSource, component: usize) -> Result<ScalarOperand, String> {

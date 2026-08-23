@@ -186,6 +186,16 @@ macro_rules! impl_solve {
 #[cfg(all(feature = "matrixd", feature = "vectord"))]
 impl_solve!(MatrixSolveMDVD, DMatrix<T>, DVector<T>, DVector<T>);
 
+#[cfg(feature = "matrixd")]
+impl_solve!(MatrixSolveMDMD, DMatrix<T>, DMatrix<T>, DMatrix<T>);
+
+// Keep fixed-shape source mathematical. The semantic compiler sees the
+// ordinary solve operation and compute backends can scalarize it without the
+// program spelling out an inverse or splitting a matrix right-hand side into
+// columns.
+#[cfg(all(feature = "matrix2", feature = "matrix2x3"))]
+impl_solve!(MatrixSolveM2M2x3, Matrix2<T>, Matrix2x3<T>, Matrix2x3<T>);
+
 #[cfg(all(test, feature = "f64", feature = "matrixd", feature = "vectord"))]
 mod tests {
     use super::*;
@@ -209,6 +219,27 @@ mod tests {
         assert_eq!(error.kind_name(), "MatrixSolveSingular");
         assert_eq!(*out.borrow(), previous);
     }
+
+    #[test]
+    fn matrix_right_hand_side_is_solved_in_one_operation() {
+        let lhs = Ref::new(DMatrix::from_row_slice(2, 2, &[4.0, 1.0, 2.0, 3.0]));
+        let rhs = Ref::new(DMatrix::from_row_slice(
+            2,
+            3,
+            &[9.0, 1.0, 5.0, 8.0, 7.0, 2.0],
+        ));
+        let out = Ref::new(DMatrix::zeros(2, 3));
+        let function = MatrixSolveMDMD {
+            lhs: lhs.clone(),
+            rhs: rhs.clone(),
+            out: out.clone(),
+        };
+
+        function.solve_result().unwrap();
+
+        let residual = lhs.borrow().clone() * out.borrow().clone() - rhs.borrow().clone();
+        assert!(residual.norm() < 1.0e-12);
+    }
 }
 
 #[cfg(feature = "source")]
@@ -217,6 +248,30 @@ macro_rules! impl_solve_match_arms {
     match $arg {
       $(
         $(
+          #[cfg(all(feature = $value_string, feature = "matrixd"))]
+          (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DMatrix(rhs))) => {
+            let (a_rows, a_cols) = lhs.borrow().shape();
+            let (b_rows, b_cols) = rhs.borrow().shape();
+            if a_rows != a_cols || a_rows != b_rows {
+              return Err(MechError::new(
+                DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
+                Some("Matrix solve requires a square coefficient matrix whose rows match the right-hand side".to_string())
+              ).with_compiler_loc());
+            }
+            Ok(Box::new(MatrixSolveMDMD {
+              lhs: lhs.clone(),
+              rhs: rhs.clone(),
+              out: Ref::new(DMatrix::from_element(a_rows, b_cols, $target_type::zero())),
+            }))
+          },
+          #[cfg(all(feature = $value_string, feature = "matrix2", feature = "matrix2x3"))]
+          (LegacyValue::$matrix_kind(Matrix::Matrix2(lhs)), LegacyValue::$matrix_kind(Matrix::Matrix2x3(rhs))) => {
+            Ok(Box::new(MatrixSolveM2M2x3 {
+              lhs: lhs.clone(),
+              rhs: rhs.clone(),
+              out: Ref::new(Matrix2x3::from_element($target_type::zero())),
+            }))
+          },
           #[cfg(all(feature = $value_string, feature = "matrixd", feature = "vectord"))]
           (LegacyValue::$matrix_kind(Matrix::DMatrix(lhs)), LegacyValue::$matrix_kind(Matrix::DVector(rhs))) => {
             let (a_rows, a_cols) = lhs.borrow().shape();
@@ -227,10 +282,10 @@ macro_rules! impl_solve_match_arms {
                 Some("Right-hand side must be a vector (1 column)".to_string())
               ).with_compiler_loc());
             }
-            if a_rows != b_rows {
+            if a_rows != a_cols || a_rows != b_rows {
               return Err(MechError::new(
                 DimensionMismatch { dims: vec![a_rows, a_cols, b_rows, b_cols] },
-                Some("Matrix rows must match vector rows".to_string())
+                Some("Matrix solve requires a square coefficient matrix whose rows match the right-hand side".to_string())
               ).with_compiler_loc());
             }
             Ok(Box::new(MatrixSolveMDVD { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DVector::from_element(a_rows, $target_type::zero())) }))
@@ -241,14 +296,14 @@ macro_rules! impl_solve_match_arms {
             let rhs_shape = rhs.shape();
             return Err(MechError::new(
               DimensionMismatch { dims: vec![lhs_shape[0], lhs_shape[1], rhs_shape[0], rhs_shape[1]] },
-              Some("Matrix multiplication is only implemented for `matrixd` and `vectord` types".to_string())
+              Some("Matrix solve is not implemented for this pair of matrix representations".to_string())
             ).with_compiler_loc());
           }
         )+
       )+
       (arg1,arg2) => Err(MechError::new(
         UnhandledFunctionArgumentKind2 { arg: (arg1.kind(),arg2.kind()), fxn_name: stringify!($fxn).to_string() },
-        Some("Unsupported types for matrix multiplication".to_string())
+        Some("Unsupported types for matrix solve".to_string())
       ).with_compiler_loc()),
     }
   }
