@@ -880,6 +880,7 @@ def frozen_semantics_failures(migration: dict[str, Any], migration_path: Path) -
         ("ValueKind", "Empty"): {"value-kind-hole"},
         ("Kind", "Empty"): {"kind-hole"},
         ("LegacyValue", "MatrixValue"): {
+            "heterogeneous-matrix-rejected",
             "matrix-construction-ir",
             "homogeneous-matrix-snapshot",
             "legacy-matrix-value-adapter",
@@ -966,30 +967,48 @@ def frozen_semantics_failures(migration: dict[str, Any], migration_path: Path) -
 
 
 def matrix_value_classification_failures(
-    migration: dict[str, Any], migration_path: Path
+    migration: dict[str, Any], migration_path: Path, root: Path = ROOT
 ) -> list[Failure]:
-    rejected = [
+    def is_explicit_rejection(path: str, site: dict[str, Any]) -> bool:
+        source_path = root / path
+        try:
+            lines = source_path.read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeError):
+            return False
+        start = int(site["line"]) - 1
+        if start < 0 or start >= len(lines):
+            return False
+        end = len(lines)
+        for index in range(start + 1, len(lines)):
+            if re.match(r"\s*LegacyValue::", lines[index]):
+                end = index
+                break
+        arm = "\n".join(lines[start:end])
+        return re.search(r"=>\s*Err\s*\(", arm) is not None
+
+    unproved = [
         (row["path"], site)
         for row in migration["use_classifications"]
         if row["enum"] == "LegacyValue"
         and row["variant"] == "MatrixValue"
         and row["target"] == "heterogeneous-matrix-rejected"
         for site in row["sites"]
+        if not is_explicit_rejection(row["path"], site)
     ]
     return [
         failure(
             "C0-MATRIX-VALUE-CLASSIFICATION",
-            "live MatrixValue destination",
+            "rejected MatrixValue destination",
             path,
-            "legacy-matrix-value-adapter or a proved homogeneous/construction target",
-            "heterogeneous-matrix-rejected",
+            "an explicit Err-returning match arm",
+            "classification is not proved by the source occurrence",
             f"{migration_path}:use_classifications",
             int(site["line"]),
             int(site["column"]),
             "LegacyValue",
             "MatrixValue",
         )
-        for path, site in rejected
+        for path, site in unproved
     ]
 
 
@@ -3711,7 +3730,7 @@ def audit(
     failures.extend(target_applicability_failures(migration, migration_path))
     failures.extend(occurrence_classification_failures(live, migration, migration_path))
     failures.extend(frozen_semantics_failures(migration, migration_path))
-    failures.extend(matrix_value_classification_failures(migration, migration_path))
+    failures.extend(matrix_value_classification_failures(migration, migration_path, root))
     failures.extend(
         frozen_target_failures(
             migration, frozen_targets, migration_path, frozen_targets_path

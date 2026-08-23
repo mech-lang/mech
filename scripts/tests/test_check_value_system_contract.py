@@ -90,6 +90,7 @@ fn classified_uses() {
     let _ = Value::MatrixValue;
     let _ = Value::MatrixValue;
     let _ = Value::MatrixValue;
+    let _ = match value { Value::MatrixValue(_) => Err(()), _ => Ok(()) };
     let _ = ValueKind::Empty;
     let _ = Kind::Empty;
     let _ = Value::Kind;
@@ -215,8 +216,9 @@ class ReviewedContractsTests(unittest.TestCase):
         for identifier in expected:
             self.assertGreater(actual.count(identifier), 0)
 
-    def test_matrix_value_has_exact_three_live_targets_and_zero_rejections(self):
+    def test_matrix_value_has_exact_four_live_targets_including_proved_rejection(self):
         expected = {
+            "heterogeneous-matrix-rejected",
             "matrix-construction-ir",
             "homogeneous-matrix-snapshot",
             "legacy-matrix-value-adapter",
@@ -225,7 +227,6 @@ class ReviewedContractsTests(unittest.TestCase):
         self.assertEqual(set(actual), expected)
         for identifier in expected:
             self.assertGreater(actual.count(identifier), 0)
-        self.assertNotIn("heterogeneous-matrix-rejected", actual)
 
     def test_matrix_value_fallback_and_adapter_sites_are_exact(self):
         sites = {
@@ -714,6 +715,7 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
                 "matrix-construction-ir",
                 "homogeneous-matrix-snapshot",
                 "legacy-matrix-value-adapter",
+                "heterogeneous-matrix-rejected",
             ]
         )
         defaults = {
@@ -1951,6 +1953,15 @@ class BoundaryAndReportingTests(unittest.TestCase):
                     migration, Path("migration.json")
                 )
             },
+        )
+
+    def test_explicit_matrix_value_rejection_passes(self):
+        migration = CHECKER.load_json(CONTRACTS / "migration.json")
+        self.assertEqual(
+            CHECKER.matrix_value_classification_failures(
+                migration, Path("migration.json")
+            ),
+            [],
         )
 
     def test_changed_golden_vector_fails(self):

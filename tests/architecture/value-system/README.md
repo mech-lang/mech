@@ -82,8 +82,9 @@ overflow is invalid.
 `option-absence`, `execution-no-result`, `uninitialized-storage`,
 `unspecified-extent`, and `generic-dispatch`. `Value::MatrixValue` is
 partitioned among `matrix-construction-ir`, `homogeneous-matrix-snapshot`, and
-`legacy-matrix-value-adapter`. `heterogeneous-matrix-rejected` remains frozen
-with zero current uses.
+`legacy-matrix-value-adapter`. The nonempty bytecode-v1 rejection arm is frozen
+separately as `heterogeneous-matrix-rejected`; it must not be counted as a
+homogeneous immutable snapshot.
 
 Permitted role identifiers are:
 

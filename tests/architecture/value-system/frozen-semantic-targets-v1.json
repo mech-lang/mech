@@ -21483,13 +21483,21 @@
         {
           "column": 9,
           "line": 715
-        },
+        }
+      ],
+      "target": "homogeneous-matrix-snapshot",
+      "variant": "MatrixValue"
+    },
+    {
+      "enum": "LegacyValue",
+      "path": "src/core/src/program/compiler/constants.rs",
+      "sites": [
         {
           "column": 9,
           "line": 744
         }
       ],
-      "target": "homogeneous-matrix-snapshot",
+      "target": "heterogeneous-matrix-rejected",
       "variant": "MatrixValue"
     },
     {
