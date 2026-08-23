@@ -45,6 +45,24 @@ pub struct ComprehensionGeneratorError {
     pub(super) found: ValueKind,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReactiveComprehensionStructureUnsupported {
+    pub qualifier: &'static str,
+}
+
+impl MechErrorKind for ReactiveComprehensionStructureUnsupported {
+    fn name(&self) -> &str {
+        "ReactiveComprehensionStructureUnsupported"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "A live comprehension {} can change resident matrix membership, but resident matrix shapes are fixed during activation. Keep generator and filter membership stable; live values remain supported in let qualifiers and the comprehension result.",
+            self.qualifier,
+        )
+    }
+}
+
 impl MechErrorKind for ComprehensionGeneratorError {
     fn name(&self) -> &str {
         "ComprehensionGenerator"

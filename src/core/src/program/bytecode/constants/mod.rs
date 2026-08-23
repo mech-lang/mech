@@ -1188,6 +1188,35 @@ fn decode_matrix_constant(
     #[cfg(feature = "matrix")]
     validate_matrix_payload_feasibility(element, rows, cols, bytes)?;
     #[cfg(feature = "matrix")]
+    if matches!(element, RuntimeType::Any) {
+        let mut reader = ByteReader::new(bytes);
+        if (
+            reader.read_u32("empty value-matrix rows")?,
+            reader.read_u32("empty value-matrix columns")?,
+        ) != (rows, cols)
+            || !storage.validate_dimensions(rows, cols)
+        {
+            return invalid("empty value-matrix shape disagrees with RuntimeType");
+        }
+        let (_, _, element_count) = matrix::element_count(rows, cols)?;
+        if element_count != 0 || !reader.is_empty() {
+            return invalid(
+                "Any-element matrix constants are reserved for empty value matrices in bytecode v1",
+            );
+        }
+        return Ok(LegacyValue::MatrixValue(
+            crate::structures::Matrix::from_vec(
+                Vec::new(),
+                usize::try_from(rows).map_err(|_| {
+                    invalid::<()>("empty value-matrix row count exceeds usize").unwrap_err()
+                })?,
+                usize::try_from(cols).map_err(|_| {
+                    invalid::<()>("empty value-matrix column count exceeds usize").unwrap_err()
+                })?,
+            ),
+        ));
+    }
+    #[cfg(feature = "matrix")]
     match element {
         #[cfg(feature = "bool")]
         RuntimeType::Bool => decode_matrix(storage, rows, cols, bytes, |reader| {

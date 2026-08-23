@@ -712,10 +712,39 @@ fn encode_constant_value(
         #[cfg(feature = "matrix")]
         LegacyValue::MatrixIndex(value) => capture_constant(value),
         #[cfg(feature = "matrix")]
-        LegacyValue::MatrixValue(_) => Err(unsupported_constant(
+        LegacyValue::MatrixValue(value) if value.as_vec().is_empty() => {
+            let kind =
+                ValueKind::Matrix(Box::new(ValueKind::Any), vec![value.rows(), value.cols()]);
+            let rows = u32::try_from(value.rows()).map_err(|_| {
+                unsupported_constant(
+                    RuntimeType::Any,
+                    kind.clone(),
+                    "empty value-matrix row count exceeds u32",
+                )
+            })?;
+            let cols = u32::try_from(value.cols()).map_err(|_| {
+                unsupported_constant(
+                    RuntimeType::Any,
+                    kind,
+                    "empty value-matrix column count exceeds u32",
+                )
+            })?;
+            let runtime_type = RuntimeType::Matrix {
+                element: Box::new(RuntimeType::Any),
+                storage: MatrixStorage::MatrixD,
+                rows,
+                cols,
+            };
+            let mut bytes = Vec::with_capacity(8);
+            bytes.extend_from_slice(&rows.to_le_bytes());
+            bytes.extend_from_slice(&cols.to_le_bytes());
+            Ok(encoded_constant(runtime_type, 4, bytes))
+        }
+        #[cfg(feature = "matrix")]
+        LegacyValue::MatrixValue(value) => Err(unsupported_constant(
             RuntimeType::Any,
-            ValueKind::Any,
-            "MatrixValue constants do not have a bytecode-v1 encoding",
+            ValueKind::Matrix(Box::new(ValueKind::Any), vec![value.rows(), value.cols()]),
+            "nonempty value-matrix constants require heterogeneous element encoding, which bytecode v1 does not define",
         )),
         #[cfg(feature = "tuple")]
         LegacyValue::Tuple(value) => encode_tuple_constant(&value.borrow(), context),

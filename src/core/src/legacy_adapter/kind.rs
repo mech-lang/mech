@@ -257,9 +257,20 @@ fn schema_body_from_legacy(
             });
         }
         ValueKind::Matrix(element, legacy_dimensions) => {
-            let element = with_path(path, LegacyTypePathSegment::MatrixElement, |path| {
-                schema_body_from_legacy(element, context, dimensions, path)
-            })?;
+            // An empty heterogeneous legacy matrix has no element from which
+            // to infer a concrete schema. Canonicalize only that uninhabited
+            // carrier to Index, which is always available and cannot change
+            // value semantics because the matrix contains no elements.
+            let empty_generic_matrix = matches!(element.as_ref(), ValueKind::Any)
+                && !legacy_dimensions.is_empty()
+                && legacy_dimensions.contains(&0);
+            let element = if empty_generic_matrix {
+                SchemaBody::Index
+            } else {
+                with_path(path, LegacyTypePathSegment::MatrixElement, |path| {
+                    schema_body_from_legacy(element, context, dimensions, path)
+                })?
+            };
             let dimensions = if legacy_dimensions.is_empty() {
                 require_dimensions(context, dimensions, LegacyTypeSource::ValueKind, path)?
             } else {

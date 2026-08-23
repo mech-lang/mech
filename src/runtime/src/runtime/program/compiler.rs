@@ -23,6 +23,7 @@ use mech_core::{
 };
 #[cfg(feature = "compute")]
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
+use mech_engine::expressions::ReactiveComprehensionStructureUnsupported;
 use mech_engine::{
     CompiledResourceSendOperation, CompilerPlanningConfig, CompilerPlanningProgram,
     ProgramArtifactCompilationProduct, ProgramCompilationProduct, root_document_output_ids,
@@ -2160,6 +2161,11 @@ fn classify_source_planning(error: mech_core::MechError) -> mech_core::MechError
     }
     let class = if error.kind_as::<RuntimeResourceProviderNotFound>().is_some() {
         ResidentRouteFailureClass::ProviderUnavailable
+    } else if error
+        .kind_as::<ReactiveComprehensionStructureUnsupported>()
+        .is_some()
+    {
+        ResidentRouteFailureClass::SemanticUnsupported
     } else {
         ResidentRouteFailureClass::InvalidArtifact
     };

@@ -1511,6 +1511,72 @@ trail
 }
 
 #[test]
+fn empty_matrix_comprehension_activates_through_source_and_bytecode() {
+    const SOURCE: &str = r#"
+samples := 1..=3
+empty := [sample | sample <- samples, sample > 4.0]
+empty
+"#;
+
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let compiled = compiler.compile_source(SOURCE).unwrap();
+
+    let mut source_runtime = runtime();
+    let source = source_runtime
+        .load_source_program(SOURCE, crate::ResidentDurabilityPolicy::Volatile)
+        .unwrap();
+    let mut bytecode_runtime = runtime();
+    let bytecode = bytecode_runtime
+        .load_bytecode_program(
+            compiled.bytecode(),
+            crate::ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+
+    for loaded in [source, bytecode] {
+        assert_eq!(loaded.route, RuntimeProgramRoute::ResidentPure);
+        let LegacyValue::MatrixIndex(matrix) = loaded.initial_value.to_value() else {
+            panic!("empty comprehension must use the canonical empty resident matrix carrier")
+        };
+        assert_eq!((matrix.rows(), matrix.cols()), (0, 0));
+        assert!(matrix.as_vec().is_empty());
+    }
+}
+
+#[test]
+fn live_comprehension_membership_is_rejected_before_resident_activation() {
+    const FILTER: &str = r#"
+~gate := 0.0
+samples := 1..=3
+values := [sample | sample <- samples, gate > 0.0]
+values
+"#;
+    const GENERATOR: &str = r#"
+~samples := [1.0 2.0 3.0]
+values := [sample | sample <- samples]
+values
+"#;
+
+    for (qualifier, source) in [("filter", FILTER), ("generator", GENERATOR)] {
+        let error = runtime()
+            .load_source_program(source, crate::ResidentDurabilityPolicy::Volatile)
+            .unwrap_err();
+        let failure = error.kind_as::<ResidentRouteFailure>().unwrap();
+        assert!(
+            failure.class == ResidentRouteFailureClass::SemanticUnsupported
+                && failure
+                    .reason
+                    .contains("ReactiveComprehensionStructureUnsupported")
+                && failure.reason.contains(qualifier),
+            "live {qualifier} membership must fail explicitly instead of freezing its initial cardinality: {error:?}",
+        );
+    }
+}
+
+#[test]
 fn matrix_comprehension_scope_preserves_the_enclosing_live_plan() {
     const SOURCE: &str = r#"
 @clock := test://clock/tick{:read(delta-seconds)}

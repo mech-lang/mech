@@ -54,7 +54,12 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &["access"], "range", bind_semantic_range_access)?;
     register(builder, &["matrix"], "horzcat", bind_horizontal)?;
     register(builder, &["matrix"], "vertcat", bind_vertical)?;
-    register(builder, &["matrix"], "comprehension", bind_horizontal)?;
+    register(
+        builder,
+        &["matrix"],
+        "comprehension",
+        bind_matrix_comprehension,
+    )?;
     register(builder, &["matrix"], "multiply", bind_matmul)?;
     register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
     register(builder, &["core"], "assign", bind_semantic_assign)?;
@@ -1411,6 +1416,22 @@ fn bind_horizontal(
     bound(concatenate_horizontal, parameters.into_boxed_slice())
 }
 
+fn bind_matrix_comprehension(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if !request.inputs.is_empty() {
+        return bind_horizontal(request);
+    }
+    validate_build(request, 0, &["matrix", "concatenate"], "horizontal-output")?;
+    if request.output.shape.len() != Some(0) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        retain_empty_matrix_comprehension,
+        Vec::<u64>::new().into_boxed_slice(),
+    )
+}
+
 fn bind_vertical(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -2087,6 +2108,24 @@ fn hold_state(
             target.clone_from_slice(source);
             Ok(changed)
         }
+        _ => Err(ResidentKernelError::InvalidShape),
+    }
+}
+
+fn retain_empty_matrix_comprehension(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if !inputs.is_empty() {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    match output {
+        ResidentValueMut::Bool(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::Index(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::F64(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::String(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::Snapshot(values) if values.is_empty() => Ok(false),
         _ => Err(ResidentKernelError::InvalidShape),
     }
 }

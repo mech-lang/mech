@@ -214,7 +214,10 @@ impl MatrixStorage {
             Self::Vector4 => (rows, cols) == (4, 1),
             Self::RowVectorD => rows == 1 && cols > 0,
             Self::VectorD => rows > 0 && cols == 1,
-            Self::MatrixD => rows > 0 && cols > 0,
+            // A dynamic matrix owns its dimensions, including canonical empty
+            // shapes such as 0x0. Fixed and vector storage classes retain
+            // their stricter dimensional contracts above.
+            Self::MatrixD => true,
         }
     }
 }
@@ -888,7 +891,9 @@ fn validate_runtime_type(ty: &RuntimeType, depth: usize) -> MResult<()> {
             if !storage.validate_dimensions(*rows, *cols) {
                 return invalid("matrix storage and dimensions disagree");
             }
-            validate_matrix_element_type(element)?;
+            if !(matches!(element.as_ref(), RuntimeType::Any) && (*rows == 0 || *cols == 0)) {
+                validate_matrix_element_type(element)?;
+            }
         }
         RuntimeType::Enum { id, name } => validate_named_id("runtime enum", *id, name)?,
         RuntimeType::Atom { id, name } => validate_named_id("runtime atom", *id, name)?,

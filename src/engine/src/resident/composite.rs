@@ -126,6 +126,45 @@ fn bind_composite_pack(
     let ResolvedOperationContract::Declared(contract) = request.contract else {
         return Err(ResidentKernelBindError::UnsupportedContract);
     };
+    if matches!(
+        request
+            .schemas
+            .get(request.output.schema_id)
+            .map(|schema| schema.body()),
+        Some(SchemaBody::Matrix { .. })
+    ) && request.inputs.len() == 1
+        && request.inputs[0].schema_id == request.output.schema_id
+        && request.inputs[0].kind == request.output.kind
+        && request.inputs[0].shape == request.output.shape
+        && request.output.shape.len() == Some(0)
+    {
+        if contract.interaction != ExternalInteraction::Pure
+            || contract.inputs.len() != 1
+            || contract.inputs[0].schema != request.inputs[0].schema_id
+            || contract.inputs[0].access != AccessMode::Read
+            || contract.inputs[0].delivery != DeliveryMode::Signal
+            || contract.outputs.len() != 1
+        {
+            return Err(ResidentKernelBindError::UnsupportedContract);
+        }
+        let output = &contract.outputs[0];
+        if output.schema != request.output.schema_id
+            || output.access != AccessMode::Write
+            || output.delivery != DeliveryMode::Signal
+            || output.construction
+                != (OutputConstruction::FullWrite {
+                    shape: ShapeRule::Declared,
+                })
+            || output.alias != AliasPolicy::NoAlias
+            || output.change_detection != ChangeDetectionPolicy::AlwaysChanged
+        {
+            return Err(ResidentKernelBindError::UnsupportedContract);
+        }
+        return Ok(BoundResidentKernel::new(
+            retain_empty_matrix_composite,
+            Box::new([]),
+        ));
+    }
     if contract.interaction != ExternalInteraction::Pure
         || contract.inputs.len() != request.inputs.len()
         || contract.inputs.is_empty()
@@ -173,6 +212,35 @@ fn bind_composite_pack(
     }
     let plan = composite_pack_plan(request).ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     Ok(BoundResidentKernel::new(composite_pack, Box::new([])).with_retained_state(Arc::new(plan)))
+}
+
+fn retain_empty_matrix_composite(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let input_is_empty = match inputs.get(0) {
+        Some(ResidentValueRef::Bool(values)) => values.is_empty(),
+        Some(ResidentValueRef::Index(values)) => values.is_empty(),
+        Some(ResidentValueRef::F64(values)) => values.is_empty(),
+        Some(ResidentValueRef::String(values)) => values.is_empty(),
+        Some(ResidentValueRef::Snapshot(values)) => values.is_empty(),
+        None => false,
+    };
+    let output_is_empty = match output {
+        ResidentValueMut::Bool(values) => values.is_empty(),
+        ResidentValueMut::Index(values) => values.is_empty(),
+        ResidentValueMut::F64(values) => values.is_empty(),
+        ResidentValueMut::String(values) => values.is_empty(),
+        ResidentValueMut::Snapshot(values) => values.is_empty(),
+    };
+    if !input_is_empty || !output_is_empty {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(true)
 }
 
 fn composite_matrix_shapes_match_template(shape: &ShapeInstance, plan: &CompositePackPlan) -> bool {
