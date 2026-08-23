@@ -44,6 +44,29 @@ globalThis.MechComputeSubmissionLifecycle ||= class MechComputeSubmissionLifecyc
   }
 };
 
+globalThis.MechComputeStateResetLedger ||= class MechComputeStateResetLedger {
+  constructor() {
+    this.transitions = new Set();
+    this.count = 0;
+  }
+
+  record(previousGeneration, nextGeneration, previousRevision, nextRevision) {
+    const previous = String(previousRevision || "none");
+    const next = String(nextRevision || "none");
+    if (previous === next) return null;
+    const transition = [
+      String(previousGeneration || "none"),
+      String(nextGeneration || "none"),
+      previous,
+      next,
+    ].join(":");
+    if (this.transitions.has(transition)) return null;
+    this.transitions.add(transition);
+    this.count += 1;
+    return { previousRevision: previous, nextRevision: next, resetCount: this.count };
+  }
+};
+
 globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
   static logicalOutputValues(output, physicalValues) {
     const dimensions = (output.sampleDimensions || []).map(Number);
@@ -119,6 +142,9 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
         `unsupported GPU execution plan version ${manifest.planVersion}; expected 1`,
       );
     }
+    if (!/^sha256:[0-9a-f]{64}$/.test(String(manifest.physicalRevision || ""))) {
+      throw new Error("GPU execution plan omitted its stable physical revision");
+    }
     const requiredLimits = this.requiredLimits(
       manifest,
       adapter.limits,
@@ -149,6 +175,17 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     this.manifest = manifest;
     this.device = device;
     this.pipeline = pipeline;
+    this.physicalRevision = String(manifest.physicalRevision || "");
+    globalThis.__MECH_COMPUTE_RESOURCE_SEQUENCE__ =
+      Number(globalThis.__MECH_COMPUTE_RESOURCE_SEQUENCE__ || 0) + 1;
+    globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__ =
+      Number(globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__ || 0) + 1;
+    this.resourceIdentity = String(globalThis.__MECH_COMPUTE_RESOURCE_SEQUENCE__);
+    this.deviceIdentity = `device-${this.resourceIdentity}`;
+    this.pipelineIdentity =
+      `pipeline-${globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__}`;
+    this.stateIdentity = `state-${this.resourceIdentity}`;
+    this.pipelineBuildCount = globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__;
     this.disposed = false;
     this.metrics = {
       cpuToGpuInputBytes: 0,
@@ -158,6 +195,18 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
       uniquePhysicalOutputBuffers: 0,
     };
     this.createBuffers(requestedOutputNames);
+  }
+
+  compatibleWith(manifest) {
+    return !this.disposed && this.physicalRevision !== "" &&
+      this.physicalRevision === String(manifest?.physicalRevision || "");
+  }
+
+  adoptManifest(manifest) {
+    if (!this.compatibleWith(manifest)) {
+      throw new Error("cannot adopt an incompatible GPU execution plan");
+    }
+    this.manifest = manifest;
   }
 
   createBuffers(requestedOutputNames) {

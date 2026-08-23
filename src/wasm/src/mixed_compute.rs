@@ -15,8 +15,8 @@ use mech_compute::{
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
-    ComputeHostFactory, ComputeLowerer, CpuScalarBackendFactory, ElementwiseKernel,
-    FixedShapeKernel, lower_elementwise_compute_program,
+    ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
+    ElementwiseKernel, FixedShapeKernel, lower_elementwise_compute_program,
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
@@ -92,6 +92,7 @@ impl WasmMixedComputeProject {
         let manifest = gpu_program_manifest(
             prepared.kernel.browser_program(),
             &initializer_values(&prepared.program, &prepared.initializers).map_err(js_error)?,
+            &backend,
             prepared.timings,
         )?;
         let mut builder = RuntimeBuilder::new()
@@ -276,6 +277,8 @@ pub(crate) struct BrowserComputeBridge {
     command: ComputeCommandHandle,
     manifest: JsValue,
     backend: String,
+    physical_revision: String,
+    host_state: ComputeHostStateSnapshotHandle,
 }
 
 impl BrowserComputeBridge {
@@ -289,6 +292,18 @@ impl BrowserComputeBridge {
 
     pub(crate) fn generation(&self) -> u64 {
         self.command.generation()
+    }
+
+    pub(crate) fn physical_revision(&self) -> &str {
+        &self.physical_revision
+    }
+
+    pub(crate) fn host_state_snapshot(&self) -> &ComputeHostStateSnapshotHandle {
+        &self.host_state
+    }
+
+    pub(crate) fn ensure_source_replacement_ready(&self) -> MResult<()> {
+        self.command.ensure_source_replacement_ready()
     }
 
     pub(crate) fn take_command(&self) -> Result<JsValue, JsValue> {
@@ -336,11 +351,12 @@ pub(crate) fn prepare_browser_compute_host(
     prepared: PreparedComputeRegion,
     gpu_available: bool,
     generation: u64,
+    previous: Option<&BrowserComputeBridge>,
 ) -> MResult<PreparedBrowserComputeHost> {
     let compute_index = configured_host_index(document, "compute")?;
     let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
     let registry = browser_resident_compute_backend_registry(command.clone(), gpu_available)?;
-    let factory = ComputeHostFactory::new(
+    let mut factory = ComputeHostFactory::new(
         prepared.region.clone(),
         prepared.placement,
         prepared.program.clone(),
@@ -354,9 +370,27 @@ pub(crate) fn prepare_browser_compute_host(
     let manifest = gpu_program_manifest(
         prepared.kernel.browser_program(),
         &initializer_values(&prepared.program, &prepared.initializers)?,
+        &backend,
         prepared.timings,
     )
     .map_err(|failure| mixed_error(format!("browser compute manifest failed: {failure:?}")))?;
+    let physical_revision = Reflect::get(&manifest, &JsValue::from_str("physicalRevision"))
+        .map_err(|failure| {
+            mixed_error(format!(
+                "browser compute manifest revision could not be read: {failure:?}"
+            ))
+        })?
+        .as_string()
+        .ok_or_else(|| mixed_error("browser compute manifest has no physical revision"))?;
+    if let Some(previous) = previous.filter(|previous| {
+        previous.backend == backend && previous.physical_revision() == physical_revision
+    }) {
+        let resume = previous.host_state_snapshot().snapshot()?.ok_or_else(|| {
+            mixed_error("compatible browser compute state was retired before source replacement")
+        })?;
+        factory = factory.with_resume_state(resume);
+    }
+    let host_state = factory.state_snapshot_handle();
     Ok(PreparedBrowserComputeHost {
         factory,
         coordinator: prepared.coordinator,
@@ -364,6 +398,8 @@ pub(crate) fn prepare_browser_compute_host(
             command,
             manifest,
             backend,
+            physical_revision,
+            host_state,
         },
     })
 }
@@ -852,6 +888,31 @@ impl ComputeCommandHandle {
 
     pub(crate) fn generation(&self) -> u64 {
         self.state.lock().map(|state| state.generation).unwrap_or(0)
+    }
+
+    fn ensure_source_replacement_ready(&self) -> MResult<()> {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| mixed_error("compute command state lock is poisoned"))?;
+        let phase = match &state.phase {
+            ComputeCommandPhase::CpuReserved => Some("cpu-reserved"),
+            ComputeCommandPhase::Queued(_) => Some("queued"),
+            ComputeCommandPhase::Serializing(_) => Some("serializing"),
+            ComputeCommandPhase::Claimed(_) => Some("claimed"),
+            ComputeCommandPhase::Completing(_) => Some("completing"),
+            ComputeCommandPhase::Idle | ComputeCommandPhase::Terminal(_) => None,
+        };
+        match phase {
+            Some(phase) => Err(MechError::new(
+                ComputeSourceReplacementBusy {
+                    region: self.region.clone(),
+                    phase,
+                },
+                None,
+            )),
+            None => Ok(()),
+        }
     }
 
     pub(crate) fn take_command_data(&self) -> Result<Option<ComputeCommandData>, JsValue> {
@@ -1948,6 +2009,26 @@ fn mixed_error(message: impl Into<String>) -> MechError {
     MechError::new(MixedComputeProjectError(message.into()), None).with_compiler_loc()
 }
 
+#[derive(Clone, Debug)]
+struct ComputeSourceReplacementBusy {
+    region: String,
+    phase: &'static str,
+}
+
+impl MechErrorKind for ComputeSourceReplacementBusy {
+    fn name(&self) -> &str {
+        "ComputeSourceReplacementBusy"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "compute region `{}` is {phase}; wait for its current turn to complete before replacing source",
+            self.region,
+            phase = self.phase,
+        )
+    }
+}
+
 fn milliseconds(started: Instant) -> f64 {
     started.elapsed().as_secs_f64() * 1_000.0
 }
@@ -2591,6 +2672,37 @@ state
             replacement.validate_token_value(replacement_token).unwrap(),
             replacement_token
         );
+    }
+
+    #[test]
+    fn source_replacement_is_recoverably_busy_until_the_command_completes() {
+        let (_document, prepared) = compile_fixture(CONFIG, SOURCE);
+        let compute = ComputeCommandHandle::new("test".to_owned(), 19);
+        compute.configure_completion(&prepared.program).unwrap();
+        compute
+            .bind_completion_target(Arc::new(RecordingCompletion::default()))
+            .unwrap();
+        assert!(compute.ensure_source_replacement_ready().is_ok());
+
+        let mut inputs = BTreeMap::new();
+        compute
+            .queue_wgpu(&mut inputs, &ComputeDispatchRequest::default())
+            .unwrap();
+        let queued = compute.ensure_source_replacement_ready().unwrap_err();
+        assert_eq!(queued.kind_name(), "ComputeSourceReplacementBusy");
+        assert!(queued.display_message().contains("queued"));
+
+        let token = compute
+            .take_command_data()
+            .unwrap()
+            .unwrap()
+            .dispatch_token
+            .unwrap();
+        let claimed = compute.ensure_source_replacement_ready().unwrap_err();
+        assert!(claimed.display_message().contains("claimed"));
+
+        compute.acknowledge(token).unwrap();
+        assert!(compute.ensure_source_replacement_ready().is_ok());
     }
 
     #[test]

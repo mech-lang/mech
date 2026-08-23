@@ -50,6 +50,7 @@ const state = {
   computeBridgeGeneration: null,
   computeBridgeBuildId: 0,
   computeBridgeLifecycle: "absent",
+  computeResetLedger: null,
   computeAdapter: undefined,
 };
 
@@ -696,6 +697,7 @@ function appendDiagnostic(diagnostic) {
   row.className = `mech-repl-entry mech-repl-diagnostic mech-repl-${severity}`;
   row.dataset.mechDiagnosticId = diagnostic.id || "";
   row.dataset.mechDiagnosticSeverity = severity;
+  row.dataset.mechDiagnosticCode = diagnostic.code || "";
   if (severity === "error" || severity === "fatal") {
     row.classList.add("mech-repl-error");
     row.setAttribute("role", "alert");
@@ -3872,7 +3874,7 @@ async function probeServedComputeAdapter() {
 }
 
 class DocumentComputeBridge {
-  static async create(controller) {
+  static async create(controller, previous = null) {
     if (typeof controller.computeManifest !== "function") {
       return null;
     }
@@ -3888,7 +3890,24 @@ class DocumentComputeBridge {
       document.documentElement.dataset.mechComputeInstances = String(
         manifest.dispatchElements,
       );
+      document.documentElement.dataset.mechComputeRevision =
+        String(manifest.physicalRevision || "");
       return null;
+    }
+    if (previous?.canTransferTo(manifest, backend)) {
+      return new DocumentComputeBridge(
+        controller,
+        manifest,
+        backend,
+        previous.resource,
+        {
+          activeBuffer: previous.activeBuffer,
+          dispatches: previous.dispatches,
+          priorDispatchToken: previous.lastDispatchToken,
+          ownsResource: false,
+          adoptionSource: previous,
+        },
+      );
     }
     const adapter = state.computeAdapter !== undefined
       ? state.computeAdapter
@@ -3910,18 +3929,23 @@ class DocumentComputeBridge {
     return new DocumentComputeBridge(controller, manifest, backend, resource);
   }
 
-  constructor(controller, manifest, backend, resource) {
+  constructor(controller, manifest, backend, resource, options = {}) {
     this.controller = controller;
     this.manifest = manifest;
     this.backend = backend;
     this.resource = resource;
     this.device = resource?.device || null;
     this.pipeline = resource?.pipeline || null;
-    this.activeBuffer = 0;
+    this.activeBuffer = options.activeBuffer ?? 0;
     this.blocked = false;
     this.failure = null;
-    this.dispatches = 0;
+    this.dispatches = options.dispatches ?? 0;
+    this.lastDispatchToken = null;
+    this.priorDispatchToken = options.priorDispatchToken || null;
     this.retired = false;
+    this.ownsResource = options.ownsResource ?? true;
+    this.adoptionSource = options.adoptionSource || null;
+    this.physicalRevision = String(manifest.physicalRevision || "");
     this.generation = typeof controller.computeGeneration === "function"
       ? controller.computeGeneration()
       : "0";
@@ -3937,6 +3961,7 @@ class DocumentComputeBridge {
     document.documentElement.dataset.mechComputeInstances = String(
       this.manifest.dispatchElements,
     );
+    this.publishIdentity();
   }
 
   isCurrent() {
@@ -3946,14 +3971,56 @@ class DocumentComputeBridge {
     );
   }
 
+  canTransferTo(manifest, backend) {
+    return !this.retired && !this.blocked && !this.failure && this.ownsResource &&
+      this.backend === backend && this.resource?.compatibleWith(manifest);
+  }
+
+  adoptCompatibleResource() {
+    const previous = this.adoptionSource;
+    if (!previous || !previous.canTransferTo(this.manifest, this.backend)) {
+      throw new Error("the compatible GPU resource is no longer transferable");
+    }
+    if (
+      this.priorDispatchToken &&
+      typeof this.controller.isComputeCommandTokenCurrent === "function" &&
+      this.controller.isComputeCommandTokenCurrent(this.priorDispatchToken)
+    ) {
+      throw new Error("a stale compute completion token remained valid after generation handoff");
+    }
+    previous.ownsResource = false;
+    previous.retired = true;
+    this.resource.adoptManifest(this.manifest);
+    this.ownsResource = true;
+    this.adoptionSource = null;
+    document.documentElement.dataset.mechComputeStaleCompletionRejected =
+      String(Boolean(this.priorDispatchToken));
+    this.publishIdentity();
+  }
+
+  publishIdentity() {
+    const root = document.documentElement;
+    root.dataset.mechComputeGeneration = String(this.generation);
+    root.dataset.mechComputeRevision = this.physicalRevision;
+    root.dataset.mechComputeActiveBuffer = String(this.activeBuffer);
+    root.dataset.mechComputeResourceIdentity = this.resource?.resourceIdentity || "";
+    root.dataset.mechComputeDeviceIdentity = this.resource?.deviceIdentity || "";
+    root.dataset.mechComputePipelineIdentity = this.resource?.pipelineIdentity || "";
+    root.dataset.mechComputeStateIdentity = this.resource?.stateIdentity || "";
+    root.dataset.mechComputePipelineBuildCount =
+      String(this.resource?.pipelineBuildCount ?? 0);
+  }
+
   retire() {
     this.retired = true;
-    this.resource?.dispose();
+    if (this.ownsResource) this.resource?.dispose();
+    this.ownsResource = false;
   }
 
   publishCompletion(outputs) {
     this.dispatches += 1;
     document.documentElement.dataset.mechComputeDispatches = String(this.dispatches);
+    this.publishIdentity();
     window.dispatchEvent(new CustomEvent("mech:compute-complete", {
       detail: {
         backend: this.backend,
@@ -3991,7 +4058,16 @@ class DocumentComputeBridge {
     // promise continuation can observe device loss; this generation may no
     // longer be rebuilt on scalar compute automatically.
     this.lifecycle.markSubmitted(command.dispatchToken);
+    this.lastDispatchToken = command.dispatchToken;
     this.blocked = true;
+    window.dispatchEvent(new CustomEvent("mech:compute-submit", {
+      detail: {
+        dispatchToken: command.dispatchToken,
+        generation: this.generation,
+        revision: this.physicalRevision,
+        resourceIdentity: this.resource?.resourceIdentity || "",
+      },
+    }));
     this.finish(command.dispatchToken, outputIndex, completion);
   }
 
@@ -4020,6 +4096,7 @@ class DocumentComputeBridge {
         }
         this.lifecycle.markAccepted(dispatchToken);
         this.activeBuffer = outputIndex;
+        this.publishIdentity();
         this.publishCompletion(outputs);
       }
     } catch (error) {
@@ -4052,12 +4129,16 @@ function refreshDocumentComputeBridge() {
   ) {
     return Boolean(state.computeBridgeRefresh);
   }
-  bridge?.retire();
-  state.computeBridge = null;
+  // Runtime preparation rejects source replacement while Rust still owns a
+  // queued/claimed command. Keep this browser-side guard as the ownership
+  // backstop so an asynchronous refresh can never retire pending GPU state.
+  if (bridge?.blocked) {
+    return true;
+  }
   const buildId = ++state.computeBridgeBuildId;
   const controller = state.document;
   setComputeBridgeLifecycle("building");
-  const refresh = createDocumentComputeBridgeWithFallback(controller)
+  const refresh = createDocumentComputeBridgeWithFallback(controller, bridge)
     .then(next => {
       const currentGeneration = typeof controller?.computeGeneration === "function"
         ? controller.computeGeneration()
@@ -4066,16 +4147,48 @@ function refreshDocumentComputeBridge() {
         buildId !== state.computeBridgeBuildId ||
         controller !== state.document ||
         state.computeBridgeLifecycle === "stopped" ||
-        next?.generation !== currentGeneration
+        (next && next.generation !== currentGeneration)
       ) {
         next?.retire();
         return;
+      }
+      const reused = Boolean(next?.adoptionSource === bridge);
+      if (reused) {
+        next.adoptCompatibleResource();
+      } else {
+        bridge?.retire();
       }
       state.computeBridge = next;
       state.computeBridgeGeneration = typeof controller?.computeGeneration === "function"
         ? controller.computeGeneration()
         : generation;
+      document.documentElement.dataset.mechComputeGeneration =
+        String(state.computeBridgeGeneration);
       setComputeBridgeLifecycle("ready");
+      if (bridge && !reused) {
+        const previousRevision = bridge.physicalRevision || "none";
+        const nextRevision = next?.physicalRevision ||
+          String(controller.computeManifest?.()?.physicalRevision || "none");
+        state.computeResetLedger ||= new globalThis.MechComputeStateResetLedger();
+        const reset = state.computeResetLedger.record(
+          bridge.generation,
+          state.computeBridgeGeneration,
+          previousRevision,
+          nextRevision,
+        );
+        if (reset) {
+          document.documentElement.dataset.mechComputeStateResets =
+            String(reset.resetCount);
+          if (typeof controller.reportComputeStateReset === "function") {
+            consumeReplResponse(
+              controller.reportComputeStateReset(previousRevision, nextRevision),
+            );
+          }
+          window.dispatchEvent(new CustomEvent("mech:compute-state-reset", {
+            detail: reset,
+          }));
+        }
+      }
     })
     .catch(error => {
       if (buildId === state.computeBridgeBuildId) {
@@ -4206,9 +4319,12 @@ function constructDocumentController(WasmDocument, documentSources) {
   return WasmDocument.fromEncoded(state.initialEncoded);
 }
 
-async function createDocumentComputeBridgeWithFallback(controller = state.document) {
+async function createDocumentComputeBridgeWithFallback(
+  controller = state.document,
+  previous = null,
+) {
   try {
-    return await DocumentComputeBridge.create(controller);
+    return await DocumentComputeBridge.create(controller, previous);
   } catch (error) {
     const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
     if (requestedBackend !== "auto" || controller.computeBackend() !== "wgpu") {
@@ -4278,6 +4394,8 @@ async function main() {
   state.computeBridgeGeneration = typeof state.document.computeGeneration === "function"
     ? state.document.computeGeneration()
     : "0";
+  document.documentElement.dataset.mechComputeGeneration =
+    String(state.computeBridgeGeneration);
   state.repl = {
     invoke: source => state.document.replInvoke(source),
     continueStep: (count, requestId) => state.document.replContinueStep(count, requestId),

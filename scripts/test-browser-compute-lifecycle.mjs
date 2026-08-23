@@ -4,7 +4,24 @@ globalThis.GPUMapMode = { READ: 1 };
 await import("../include/browser-compute.js");
 
 const Lifecycle = globalThis.MechComputeSubmissionLifecycle;
+const ResetLedger = globalThis.MechComputeStateResetLedger;
 const Device = globalThis.MechBrowserComputeDevice;
+
+const resets = new ResetLedger();
+assert.equal(resets.record(1, 2, "sha256:same", "sha256:same"), null);
+assert.deepEqual(
+  resets.record(2, 3, "sha256:old", "sha256:new"),
+  {
+    previousRevision: "sha256:old",
+    nextRevision: "sha256:new",
+    resetCount: 1,
+  },
+);
+assert.equal(
+  resets.record(2, 3, "sha256:old", "sha256:new"),
+  null,
+  "one physical plan transition must publish exactly one reset",
+);
 
 const beforeSubmission = new Lifecycle(7);
 assert.equal(beforeSubmission.canAutoFallback(), true);
@@ -42,6 +59,7 @@ assert.equal(firstFailure.markFailed(new Error("second")), first);
 assert.equal(firstFailure.failure.message, "first");
 
 const manifest = {
+  physicalRevision: "sha256:stable-plan",
   bindings: [
     { elements: 15, role: "state-write" },
     { elements: 2, role: "integrity-fault" },
@@ -67,6 +85,19 @@ const manifest = {
   dispatchElements: 1,
   workgroupSize: 64,
 };
+
+const reusable = Object.create(Device.prototype);
+reusable.disposed = false;
+reusable.physicalRevision = manifest.physicalRevision;
+reusable.manifest = manifest;
+assert.equal(reusable.compatibleWith({ ...manifest }), true);
+assert.equal(
+  reusable.compatibleWith({ ...manifest, physicalRevision: "sha256:changed-plan" }),
+  false,
+);
+const replacementManifest = { ...manifest };
+reusable.adoptManifest(replacementManifest);
+assert.equal(reusable.manifest, replacementManifest);
 const supported = {
   maxStorageBuffersPerShaderStage: 8,
   maxComputeWorkgroupsPerDimension: 65535,

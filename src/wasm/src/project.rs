@@ -522,6 +522,10 @@ impl WasmDocumentBootstrap {
     }
 
     pub(crate) fn prepare_commit(&self, runtime: &mut MechRuntime) -> MResult<()> {
+        #[cfg(feature = "browser_compute")]
+        if let Some(compute) = self.source().lifecycle.compute() {
+            compute.ensure_source_replacement_ready()?;
+        }
         if self.source().lifecycle.drivers_started() {
             runtime.start_input_drivers()?;
         }
@@ -635,6 +639,12 @@ fn build_document_repl_runtime_for_tree(
     candidate_tree: mech_core::nodes::Program,
 ) -> MResult<DocumentRuntimeCandidate> {
     let source = bootstrap.source();
+    #[cfg(feature = "browser_compute")]
+    let previous_compute = source.lifecycle.compute();
+    #[cfg(feature = "browser_compute")]
+    if let Some(previous) = previous_compute.as_ref() {
+        previous.ensure_source_replacement_ready()?;
+    }
     let (candidate_tree, _) = document_runtime_tree(source, candidate_tree)?;
     #[cfg(feature = "browser_host_scene")]
     let candidate_scenes = BrowserSceneRegistry::new();
@@ -694,6 +704,7 @@ fn build_document_repl_runtime_for_tree(
                     prepared,
                     browser_gpu_available(),
                     source.lifecycle.next_compute_generation()?,
+                    previous_compute.as_ref(),
                 )?)
             } else {
                 None
@@ -1343,6 +1354,27 @@ mod document {
                 .lifecycle
                 .compute_generation()
                 .to_string()
+        }
+
+        #[cfg(feature = "browser_compute")]
+        #[wasm_bindgen(js_name = isComputeCommandTokenCurrent)]
+        pub fn is_compute_command_token_current(&self, dispatch_token: &str) -> bool {
+            self.bootstrap
+                .source()
+                .lifecycle
+                .compute()
+                .is_some_and(|compute| compute.validate_token(dispatch_token).is_ok())
+        }
+
+        #[cfg(feature = "browser_compute")]
+        #[wasm_bindgen(js_name = reportComputeStateReset)]
+        pub fn report_compute_state_reset(
+            &mut self,
+            previous_revision: &str,
+            next_revision: &str,
+        ) -> Result<JsValue, JsValue> {
+            self.repl
+                .report_compute_state_reset(previous_revision, next_revision)
         }
 
         /// Rebuild the accepted source generation after the browser has

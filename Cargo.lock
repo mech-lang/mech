@@ -2738,6 +2738,7 @@ dependencies = [
  "pollster",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
  "web-time",
  "wgpu",
  "wide",

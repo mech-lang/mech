@@ -39,6 +39,8 @@ pub struct ComputeHostFactory {
     platform: ComputePlatform,
     backend_override: Option<BackendRequest>,
     installed_instance: Mutex<Option<String>>,
+    state_snapshot: ComputeHostStateSnapshotHandle,
+    resume_state: Option<ComputeHostResumeState>,
     manifest: HostManifestConfig,
 }
 
@@ -80,12 +82,23 @@ impl ComputeHostFactory {
             platform,
             backend_override: None,
             installed_instance: Mutex::new(None),
+            state_snapshot: ComputeHostStateSnapshotHandle::default(),
+            resume_state: None,
             manifest: compute_host_manifest(),
         })
     }
 
     pub fn with_backend_override(mut self, request: BackendRequest) -> Self {
         self.backend_override = Some(request);
+        self
+    }
+
+    pub fn state_snapshot_handle(&self) -> ComputeHostStateSnapshotHandle {
+        self.state_snapshot.clone()
+    }
+
+    pub fn with_resume_state(mut self, state: ComputeHostResumeState) -> Self {
+        self.resume_state = Some(state);
         self
     }
 
@@ -197,20 +210,34 @@ impl RuntimeHostFactory for ComputeHostFactory {
         let telemetry = Arc::new(Mutex::new(None));
         let live = Arc::new(AtomicBool::new(false));
         let base_uri = format!("compute://{instance_name}/kernel");
+        let resume = self.resume_state.as_ref();
         let state = Arc::new(Mutex::new(ComputeHostState {
             backend: backend_id.to_string(),
             program: Arc::clone(&self.program),
-            turns: Ref::new(0.0),
-            dispatch_ms: Ref::new(0.0),
-            fault_count: Ref::new(0.0),
-            last_fault: Ref::new(String::new()),
-            sampled_outputs: initial_sampled_outputs(&self.program)?,
-            sample_requests: BTreeSet::new(),
+            turns: Ref::new(resume.map_or(0.0, |state| state.turns)),
+            dispatch_ms: Ref::new(resume.map_or(0.0, |state| state.dispatch_ms)),
+            fault_count: Ref::new(resume.map_or(0.0, |state| state.fault_count)),
+            last_fault: Ref::new(resume.map_or_else(String::new, |state| state.last_fault.clone())),
+            sampled_outputs: match resume {
+                Some(state) => state.sampled_outputs.clone(),
+                None => initial_sampled_outputs(&self.program)?,
+            },
+            sample_requests: resume
+                .map(|state| state.sample_requests.clone())
+                .unwrap_or_default(),
             phase: ComputeHostPhase::Ready {
-                last_submitted_turn: None,
+                last_submitted_turn: resume
+                    .and_then(|state| state.last_submitted_turn)
+                    .map(ComputeTurnToken),
             },
             session,
         }));
+        *self.state_snapshot.state.lock().map_err(|_| {
+            compute_host_error(
+                "ComputeBackendInitialize",
+                "compute host snapshot handle lock is poisoned",
+            )
+        })? = Some(Arc::downgrade(&state));
         let completion_target = Arc::new(ComputeHostCompletionTarget {
             backend: backend_id.clone(),
             resource: base_uri.clone(),
@@ -260,6 +287,83 @@ impl RuntimeHostFactory for ComputeHostFactory {
         };
         *installed = Some(instance_name.to_owned());
         Ok(installation)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct ComputeHostResumeState {
+    turns: f64,
+    dispatch_ms: f64,
+    fault_count: f64,
+    last_fault: String,
+    sampled_outputs: BTreeMap<String, LegacyValue>,
+    sample_requests: BTreeSet<String>,
+    last_submitted_turn: Option<u128>,
+}
+
+#[derive(Clone, Default)]
+pub struct ComputeHostStateSnapshotHandle {
+    state: Arc<Mutex<Option<Weak<Mutex<ComputeHostState>>>>>,
+}
+
+impl std::fmt::Debug for ComputeHostStateSnapshotHandle {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("ComputeHostStateSnapshotHandle")
+            .finish_non_exhaustive()
+    }
+}
+
+impl ComputeHostStateSnapshotHandle {
+    pub fn snapshot(&self) -> MResult<Option<ComputeHostResumeState>> {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| {
+                compute_host_error(
+                    "ComputeHostSnapshot",
+                    "compute host snapshot handle lock is poisoned",
+                )
+            })?
+            .as_ref()
+            .and_then(Weak::upgrade);
+        let Some(state) = state else {
+            return Ok(None);
+        };
+        let state = state.lock().map_err(|_| {
+            compute_host_error("ComputeHostSnapshot", "compute host state lock is poisoned")
+        })?;
+        let last_submitted_turn = match &state.phase {
+            ComputeHostPhase::Ready {
+                last_submitted_turn,
+            } => last_submitted_turn.map(|turn| turn.0),
+            ComputeHostPhase::InFlight { turn } => {
+                return Err(compute_host_error(
+                    "ComputeHostSnapshot",
+                    format!("compute turn {} is still in flight", turn.0),
+                ));
+            }
+            ComputeHostPhase::Failed { reason } => {
+                return Err(compute_host_error(
+                    "ComputeHostSnapshot",
+                    format!("compute host is terminal: {reason}"),
+                ));
+            }
+        };
+        let sampled_outputs = state
+            .sampled_outputs
+            .iter()
+            .map(|(name, value)| Ok((name.clone(), value.try_deep_snapshot()?)))
+            .collect::<MResult<_>>()?;
+        Ok(Some(ComputeHostResumeState {
+            turns: *state.turns.borrow(),
+            dispatch_ms: *state.dispatch_ms.borrow(),
+            fault_count: *state.fault_count.borrow(),
+            last_fault: state.last_fault.borrow().clone(),
+            sampled_outputs,
+            sample_requests: state.sample_requests.clone(),
+            last_submitted_turn,
+        }))
     }
 }
 
@@ -1910,6 +2014,54 @@ mod tests {
         factory.instantiate("particles", &settings()).unwrap();
         let error = factory.instantiate("second", &settings()).unwrap_err();
         assert_eq!(error.kind_name(), "MultipleComputeHostsUnsupported");
+    }
+
+    #[test]
+    fn compatible_factory_resumes_completed_host_turn_state() {
+        let resume = ComputeHostResumeState {
+            turns: 120.0,
+            dispatch_ms: 3.25,
+            fault_count: 2.0,
+            last_fault: "retained diagnostic".to_owned(),
+            sampled_outputs: BTreeMap::new(),
+            sample_requests: BTreeSet::new(),
+            last_submitted_turn: Some(120),
+        };
+        let factory = ComputeHostFactory::new(
+            "particle-field",
+            ComputePlacement::Compute,
+            program(),
+            ComputeInitializerSet::default(),
+            registry(),
+            ComputePlatform::Native,
+        )
+        .unwrap()
+        .with_resume_state(resume);
+        let snapshot = factory.state_snapshot_handle();
+        let installation = factory.instantiate("particles", &settings()).unwrap();
+        let resumed = snapshot.snapshot().unwrap().unwrap();
+        assert_eq!(resumed.turns, 120.0);
+        assert_eq!(resumed.dispatch_ms, 3.25);
+        assert_eq!(resumed.fault_count, 2.0);
+        assert_eq!(resumed.last_fault, "retained diagnostic");
+        assert_eq!(resumed.last_submitted_turn, Some(120));
+        drop(installation);
+        assert!(snapshot.snapshot().unwrap().is_none());
+    }
+
+    #[test]
+    fn in_flight_host_state_cannot_be_snapshotted_for_replacement() {
+        let state = provider_state(
+            ComputeHostPhase::InFlight {
+                turn: ComputeTurnToken(121),
+            },
+            Arc::new(Mutex::new(Vec::new())),
+        );
+        let snapshot = ComputeHostStateSnapshotHandle::default();
+        *snapshot.state.lock().unwrap() = Some(Arc::downgrade(&state));
+        let error = snapshot.snapshot().unwrap_err();
+        assert_eq!(error.kind_name(), "ComputeHostSnapshot");
+        assert!(error.display_message().contains("121 is still in flight"));
     }
 
     #[test]

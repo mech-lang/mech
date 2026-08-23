@@ -148,10 +148,72 @@ harness = r'''<script>
     });
 
     const parityComputeTurn = 376;
+    const continuityEditTurn = 120;
+    const busyReplacementTurn = 40;
     let computeParitySample;
+    let continuityNextSample;
+    let continuityEditRequested = false;
+    let continuityGenerationChanged = false;
+    let continuityResourcePreserved = expectedComputeBackend !== "wgpu";
+    let continuityActiveBufferPreserved = expectedComputeBackend !== "wgpu";
+    let continuityBefore;
+    let busyReplacementAttempted = false;
+    let busyReplacementRejected = expectedComputeBackend !== "wgpu";
+    let busyGeneration;
     let displayParityTrackingError;
     let computeReadbackBytes = 0;
     let sampledReadbackEfficient = true;
+    const computeIdentity = () => ({
+      generation: root.dataset.mechComputeGeneration || "",
+      revision: root.dataset.mechComputeRevision || "",
+      resource: root.dataset.mechComputeResourceIdentity || "",
+      device: root.dataset.mechComputeDeviceIdentity || "",
+      pipeline: root.dataset.mechComputePipelineIdentity || "",
+      state: root.dataset.mechComputeStateIdentity || "",
+      pipelineBuilds: root.dataset.mechComputePipelineBuildCount || "",
+      activeBuffer: root.dataset.mechComputeActiveBuffer || "",
+    });
+    const submitResidentSource = (source) => {
+      const input = document.querySelector(".mech-repl-active-prompt .repl-input");
+      if (!input || input.disabled || input.readOnly) return false;
+      input.value = source;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent("keydown", {
+        key: "Enter",
+        bubbles: true,
+        cancelable: true,
+      }));
+      return true;
+    };
+    const renderedDocumentNumbers = (name) => {
+      const rendered = globalThis.__MECH_RENDERED_DOCUMENT_VALUE__?.(name);
+      const text = document.createElement("span");
+      text.innerHTML = rendered?.inlineHtml || "";
+      return (text.textContent || "")
+        .match(/[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g)
+        ?.map(Number) || [];
+    };
+    const renderedFilterSample = () => {
+      const values = renderedDocumentNumbers("filter-sample");
+      return values.length === 15 && values.every(Number.isFinite) ? values : undefined;
+    };
+    const renderedFilterVisibility = () => {
+      const values = renderedDocumentNumbers("filter-camera-visibility");
+      return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
+    };
+    const renderedFilterTurn = () => {
+      const values = renderedDocumentNumbers("last-filter-turn");
+      return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
+    };
+    window.addEventListener("mech:compute-submit", () => {
+      if (
+        expectedComputeBackend !== "wgpu" || busyReplacementAttempted ||
+        Number(root.dataset.mechComputeDispatches || 0) !== busyReplacementTurn
+      ) return;
+      busyReplacementAttempted = true;
+      busyGeneration = root.dataset.mechComputeGeneration || "";
+      submitResidentSource("busy-replacement-probe := 1");
+    });
     window.addEventListener("mech:compute-complete", (event) => {
       const completedTurns = event.detail?.completedTurns;
       root.dataset.mechObservedComputeCompletion = String(completedTurns ?? "missing");
@@ -159,10 +221,10 @@ harness = r'''<script>
         computeReadbackBytes = Number(root.dataset.mechComputeGpuToCpuReadbackBytes || 0);
         const computeOutputBytes = Number(root.dataset.mechComputeGpuToCpuOutputBytes || 0);
         sampledReadbackEfficient &&= Boolean(
-          Number(root.dataset.mechComputeLogicalOutputs || 0) === 1 &&
-          Number(root.dataset.mechComputePhysicalOutputBuffers || 0) === 1 &&
-          computeReadbackBytes === completedTurns * (15 * Float32Array.BYTES_PER_ELEMENT + 8) &&
-          computeOutputBytes === completedTurns * 15 * Float32Array.BYTES_PER_ELEMENT
+          Number(root.dataset.mechComputeLogicalOutputs || 0) === 2 &&
+          Number(root.dataset.mechComputePhysicalOutputBuffers || 0) === 2 &&
+          computeReadbackBytes === completedTurns * (16 * Float32Array.BYTES_PER_ELEMENT + 8) &&
+          computeOutputBytes === completedTurns * 16 * Float32Array.BYTES_PER_ELEMENT
         );
       }
       if (completedTurns !== parityComputeTurn) return;
@@ -181,6 +243,24 @@ harness = r'''<script>
         computeParitySample = values.slice(0, 15);
       }
     });
+    window.addEventListener("mech:compute-complete", (event) => {
+      const completedTurns = event.detail?.completedTurns;
+      if (completedTurns === continuityEditTurn && !continuityEditRequested) {
+        continuityBefore = computeIdentity();
+        continuityEditRequested = submitResidentSource("continuity-probe := 1");
+        return;
+      }
+      if (
+        continuityEditRequested && continuityNextSample === undefined &&
+        completedTurns > continuityEditTurn
+      ) {
+        const output = event.detail.outputs?.find(candidate => candidate.name === "result.0");
+        const values = Array.from(output?.values || []);
+        if (values.length === 15 && values.every(Number.isFinite)) {
+          continuityNextSample = values;
+        }
+      }
+    });
 
     const originalSetTimeout = window.setTimeout.bind(window);
     let harnessFrames = 0;
@@ -189,6 +269,7 @@ harness = r'''<script>
     let previousHeading;
     let lastObservedUpdate = -1;
     let lastObservedComputeDispatch = 0;
+    let lastObservedCpuFilterTurn;
     let departedStart = false;
     const squareSides = new Set();
     let turningSamples = 0;
@@ -243,6 +324,50 @@ harness = r'''<script>
       const tabs = [...document.querySelectorAll('[data-mech-console-tab]')]
         .map(tab => tab.dataset.mechConsoleTab).join(",");
       const updates = Number(display?.dataset.mechDisplayUpdates || 0);
+      const completedFilterTurn = expectedComputeBackend === "cpu-scalar"
+        ? renderedFilterTurn()
+        : undefined;
+      if (
+        expectedComputeBackend === "cpu-scalar" &&
+        completedFilterTurn === continuityEditTurn &&
+        !continuityEditRequested
+      ) {
+        continuityBefore = computeIdentity();
+        continuityEditRequested = submitResidentSource("continuity-probe := 1");
+      }
+      if (busyReplacementAttempted && !busyReplacementRejected) {
+        busyReplacementRejected = Boolean(
+          root.dataset.mechComputeGeneration === busyGeneration &&
+          document.querySelector(
+            '[data-mech-diagnostic-code="ComputeSourceReplacementBusy"]',
+          )
+        );
+      }
+      if (continuityEditRequested && continuityBefore) {
+        const after = computeIdentity();
+        if (after.generation && after.generation !== continuityBefore.generation) {
+          continuityGenerationChanged = true;
+          if (expectedComputeBackend === "wgpu") {
+            continuityResourcePreserved = Boolean(
+              after.revision === continuityBefore.revision &&
+              after.resource === continuityBefore.resource &&
+              after.device === continuityBefore.device &&
+              after.pipeline === continuityBefore.pipeline &&
+              after.state === continuityBefore.state &&
+              after.pipelineBuilds === continuityBefore.pipelineBuilds
+            );
+            continuityActiveBufferPreserved =
+              after.activeBuffer === continuityBefore.activeBuffer;
+          }
+        }
+      }
+      if (
+        expectedComputeBackend === "cpu-scalar" && continuityEditRequested &&
+        continuityNextSample === undefined &&
+        completedFilterTurn === continuityEditTurn + 1
+      ) {
+        continuityNextSample = renderedFilterSample();
+      }
       const finiteCoordinate = (element, attribute) => {
         const raw = element?.getAttribute(attribute);
         return typeof raw === "string" && raw.trim() !== "" && Number.isFinite(Number(raw));
@@ -305,8 +430,13 @@ harness = r'''<script>
       if (truthPoint && updates > 0 && updates !== lastObservedUpdate) {
         lastObservedUpdate = updates;
         const computeDispatches = Number(root.dataset.mechComputeDispatches || 0);
-        const isComputeCompletionFrame = expectedComputeBackend === "cpu-scalar" ||
-          computeDispatches > lastObservedComputeDispatch;
+        const isComputeCompletionFrame = expectedComputeBackend === "cpu-scalar"
+          ? Number.isFinite(completedFilterTurn) &&
+            completedFilterTurn !== lastObservedCpuFilterTurn
+          : computeDispatches > lastObservedComputeDispatch;
+        if (Number.isFinite(completedFilterTurn)) {
+          lastObservedCpuFilterTurn = completedFilterTurn;
+        }
         lastObservedComputeDispatch = computeDispatches;
         if (firstTruth === undefined) firstTruth = truthPoint;
         maxGuideDeviation = Math.max(maxGuideDeviation, distanceToRenderedGuide(truthPoint));
@@ -370,8 +500,8 @@ harness = r'''<script>
         // Asynchronous WebGPU completion publishes the originating turn
         // directly, so its sampled estimate and camera visibility share one
         // resident snapshot just like the scalar backend.
-        const filterVisibleCameraCount = visibleCameraCount;
-        if (filterVisibleCameraCount === 0 && isComputeCompletionFrame) {
+        const filterVisibility = renderedFilterVisibility();
+        if (filterVisibility === 0 && isComputeCompletionFrame) {
           const predictionGap = finitePoint(estimate) && finitePoint(prediction)
             ? Math.hypot(
                 Number(estimate.getAttribute("cx")) - Number(prediction.getAttribute("cx")),
@@ -443,19 +573,11 @@ harness = r'''<script>
         displayParityTrackingError = trackingError;
       }
       if (
-        updates === parityComputeTurn &&
+        completedFilterTurn === parityComputeTurn &&
         expectedComputeBackend === "cpu-scalar" &&
         computeParitySample === undefined
       ) {
-        const rendered = globalThis.__MECH_RENDERED_DOCUMENT_VALUE__?.("filter-sample");
-        const text = document.createElement("span");
-        text.innerHTML = rendered?.inlineHtml || "";
-        const values = (text.textContent || "")
-          .match(/[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g)
-          ?.map(Number) || [];
-        if (values.length === 15 && values.every(Number.isFinite)) {
-          computeParitySample = values;
-        }
+        computeParitySample = renderedFilterSample();
       }
       const lineStripCoordinates = (element) => {
         const coordinates = (element?.getAttribute("points") || "")
@@ -521,9 +643,27 @@ harness = r'''<script>
       root.dataset.mechObservedComputeLogicalOutputs = root.dataset.mechComputeLogicalOutputs || "missing";
       root.dataset.mechObservedComputePhysicalOutputBuffers =
         root.dataset.mechComputePhysicalOutputBuffers || "missing";
+      root.dataset.mechObservedContinuityEditRequested = String(continuityEditRequested);
+      root.dataset.mechObservedContinuityGenerationChanged =
+        String(continuityGenerationChanged);
+      root.dataset.mechObservedContinuityResourcePreserved =
+        String(continuityResourcePreserved);
+      root.dataset.mechObservedContinuityActiveBufferPreserved =
+        String(continuityActiveBufferPreserved);
+      root.dataset.mechObservedContinuityNextSample =
+        JSON.stringify(continuityNextSample || null);
+      root.dataset.mechObservedBusyReplacementAttempted =
+        String(busyReplacementAttempted);
+      root.dataset.mechObservedBusyReplacementRejected =
+        String(busyReplacementRejected);
+      root.dataset.mechObservedComputeStateResets =
+        root.dataset.mechComputeStateResets || "0";
+      root.dataset.mechObservedStaleCompletionRejected =
+        root.dataset.mechComputeStaleCompletionRejected ||
+        String(expectedComputeBackend !== "wgpu");
       root.dataset.mechObservedExpectedReadbackBytes = String(
         Number(root.dataset.mechObservedComputeCompletion || 0) *
-          15 * Float32Array.BYTES_PER_ELEMENT
+          16 * Float32Array.BYTES_PER_ELEMENT
       );
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
@@ -538,6 +678,13 @@ harness = r'''<script>
         computeParitySample !== undefined &&
         displayParityTrackingError !== undefined &&
         sampledReadbackEfficient &&
+        continuityEditRequested && continuityGenerationChanged &&
+        continuityResourcePreserved && continuityActiveBufferPreserved &&
+        continuityNextSample !== undefined &&
+        busyReplacementRejected &&
+        (expectedComputeBackend !== "wgpu" ||
+          root.dataset.mechComputeStaleCompletionRejected === "true") &&
+        Number(root.dataset.mechComputeStateResets || 0) === 0 &&
         sawInsideCameraRange && sawOutsideCameraRange &&
         sawNoCamera && sawCamera && maxVisibleCameras === 1 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
@@ -598,6 +745,18 @@ harness = r'''<script>
         root.dataset.mechVerifiedComputeInstances = String(computeInstances);
         root.dataset.mechSampledReadbackEfficient = String(sampledReadbackEfficient);
         root.dataset.mechGpuToCpuReadbackBytes = String(computeReadbackBytes);
+        root.dataset.mechContinuityGenerationChanged =
+          String(continuityGenerationChanged);
+        root.dataset.mechContinuityResourcePreserved =
+          String(continuityResourcePreserved);
+        root.dataset.mechContinuityActiveBufferPreserved =
+          String(continuityActiveBufferPreserved);
+        root.dataset.mechContinuityNextSample = continuityNextSample.join(",");
+        root.dataset.mechBusyReplacementRejected = String(busyReplacementRejected);
+        root.dataset.mechStaleCompletionRejected =
+          root.dataset.mechComputeStaleCompletionRejected || "true";
+        root.dataset.mechComputeStateResetsVerified =
+          root.dataset.mechComputeStateResets || "0";
         root.dataset.mechDone = "true";
         globalThis.__MECH_STOP__?.();
         return;
@@ -887,6 +1046,13 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q "data-mech-verified-compute-backend=\"$expected_compute_backend\"" "$dom_file" \
   || ! grep -q "data-mech-verified-compute-instances=\"$filter_count\"" "$dom_file" \
   || ! grep -q 'data-mech-sampled-readback-efficient="true"' "$dom_file" \
+  || ! grep -q 'data-mech-continuity-generation-changed="true"' "$dom_file" \
+  || ! grep -q 'data-mech-continuity-resource-preserved="true"' "$dom_file" \
+  || ! grep -q 'data-mech-continuity-active-buffer-preserved="true"' "$dom_file" \
+  || ! grep -q 'data-mech-continuity-next-sample="[-0-9.,eE+]*"' "$dom_file" \
+  || ! grep -q 'data-mech-busy-replacement-rejected="true"' "$dom_file" \
+  || ! grep -q 'data-mech-stale-completion-rejected="true"' "$dom_file" \
+  || ! grep -q 'data-mech-compute-state-resets-verified="0"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-x="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-y="[0-9]' "$dom_file" \
@@ -937,21 +1103,28 @@ estimate_x="$(sed -n 's/.*data-mech-estimate-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom
 estimate_y="$(sed -n 's/.*data-mech-estimate-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 parity_updates="$(sed -n 's/.*data-mech-parity-updates="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 parity_output="$(sed -n 's/.*data-mech-parity-output="\([^"]*\)".*/\1/p' "$dom_file" | head -1)"
+continuity_output="$(sed -n 's/.*data-mech-continuity-next-sample="\([^"]*\)".*/\1/p' "$dom_file" | head -1)"
 if [[ -n "${MECH_EKF_RESULT_FILE:-}" ]]; then
   python3 - "$MECH_EKF_RESULT_FILE" "$compute_backend" "$parity_updates" \
-    "$parity_output" "$parity_tracking_error" <<'PY'
+    "$parity_output" "$parity_tracking_error" "$continuity_output" <<'PY'
 import json
 from pathlib import Path
 import sys
 
-path, backend, updates, output, tracking = sys.argv[1:]
+path, backend, updates, output, tracking, continuity_output = sys.argv[1:]
 values = [float(value) for value in output.split(",") if value]
+continuity_values = [float(value) for value in continuity_output.split(",") if value]
 if len(values) != 15:
     raise SystemExit(f"expected 15 EKF checkpoint values, got {len(values)}")
+if len(continuity_values) != 15:
+    raise SystemExit(
+        f"expected 15 EKF continuity checkpoint values, got {len(continuity_values)}"
+    )
 Path(path).write_text(json.dumps({
     "backend": backend,
     "updates": int(updates),
     "output": values,
+    "continuity_output": continuity_values,
     "tracking_error": float(tracking),
 }, sort_keys=True))
 PY

@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::{
     ElementwiseKernel, FixedShapeKernel, GpuBindingAccess, GpuBindingRole, WORKGROUP_SIZE,
@@ -296,6 +297,32 @@ impl GpuExecutionPlan {
             ));
         }
         Ok(())
+    }
+
+    /// Return the stable identity of the browser/native physical allocation
+    /// contract. A resident runtime generation is deliberately not part of
+    /// this digest: generations own commands and completions, while equal
+    /// revisions may adopt the same device, pipeline, and state buffers.
+    pub fn physical_revision(&self, backend: &str) -> Result<String, GpuExecutionPlanError> {
+        self.validate()?;
+        let encoded = serde_json::to_vec(self).map_err(|failure| {
+            GpuExecutionPlanError::Invalid(format!(
+                "GPU execution plan revision serialization failed: {failure}"
+            ))
+        })?;
+        let mut digest = Sha256::new();
+        digest.update(b"mech-gpu-physical-revision-v1\0");
+        digest.update(backend.as_bytes());
+        digest.update(b"\0");
+        digest.update(encoded);
+        let digest = digest.finalize();
+        let mut revision = String::with_capacity("sha256:".len() + digest.len() * 2);
+        revision.push_str("sha256:");
+        for byte in digest {
+            use std::fmt::Write as _;
+            write!(revision, "{byte:02x}").expect("writing to a string is infallible");
+        }
+        Ok(revision)
     }
 }
 
@@ -699,5 +726,43 @@ mod tests {
             physical_layout: GpuPlanLayout::RowMajor,
         });
         assert!(plan.validate().is_err());
+    }
+
+    #[test]
+    fn physical_revision_tracks_the_complete_allocation_contract() {
+        let plan = GpuExecutionPlan {
+            version: GPU_EXECUTION_PLAN_VERSION,
+            kernel_kind: GpuPlanKernelKind::Elementwise,
+            wgsl: "@compute @workgroup_size(64) fn main() {}".to_owned(),
+            workgroup_size: 64,
+            dispatch_elements: 1,
+            bindings: vec![GpuPlanBinding {
+                binding: 0,
+                name: "input".to_owned(),
+                access: GpuPlanBindingAccess::Read,
+                role: GpuPlanBindingRole::Input,
+                slot: 1,
+                elements: 2,
+                scalar: GpuPlanScalar::F32,
+                initial_values: Some(GpuPlanInitialValues::F32(vec![1.0, 2.0])),
+            }],
+            states: Vec::new(),
+            outputs: Vec::new(),
+            physical_outputs: Vec::new(),
+            constraints: Vec::new(),
+        };
+        let revision = plan.physical_revision("wgpu").unwrap();
+        assert_eq!(revision, plan.physical_revision("wgpu").unwrap());
+        assert_ne!(revision, plan.physical_revision("cpu-scalar").unwrap());
+
+        let mut changed = plan.clone();
+        changed.dispatch_elements = 2;
+        assert_ne!(revision, changed.physical_revision("wgpu").unwrap());
+        changed = plan.clone();
+        changed.bindings[0].initial_values = Some(GpuPlanInitialValues::F32(vec![1.0, 3.0]));
+        assert_ne!(revision, changed.physical_revision("wgpu").unwrap());
+        changed = plan.clone();
+        changed.wgsl.push_str(" // changed kernel");
+        assert_ne!(revision, changed.physical_revision("wgpu").unwrap());
     }
 }

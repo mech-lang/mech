@@ -26,6 +26,7 @@ pub(crate) enum BrowserGpuProgram<'a> {
 pub(crate) fn gpu_program_manifest(
     program: BrowserGpuProgram<'_>,
     input_values: &BTreeMap<String, Vec<f32>>,
+    backend: &str,
     timings: CompileTimings,
 ) -> Result<JsValue, JsValue> {
     let manifest_started = Instant::now();
@@ -39,6 +40,12 @@ pub(crate) fn gpu_program_manifest(
         input_values,
     )
     .map_err(|failure| error(failure.to_string()))?;
+    set(
+        &manifest,
+        "physicalRevision",
+        plan.physical_revision(backend)
+            .map_err(|failure| error(failure.to_string()))?,
+    )?;
     set(&manifest, "planVersion", plan.version)?;
     set(
         &manifest,

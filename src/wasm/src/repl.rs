@@ -13,7 +13,7 @@ use mech_runtime::{
     OutputContent, OutputEvent, REPL_COMMAND_SPECS, ReplComponentKind, ReplDispatchControl,
     ReplEvent, ReplHostAvailability, ReplHostRequest, ReplHostRequirement, ReplResponse,
     ReplResponseKind, ReplResponseStatus, ReplStepMode, ResidentReplRuntimeFactory,
-    ResidentReplSession, RunResourceGrantConfig, RuntimeConfig, TableOutput, TextOutput,
+    ResidentReplSession, RunResourceGrantConfig, RuntimeConfig, Severity, TableOutput, TextOutput,
     ValueOutput, dispatch_repl_request, emit_host_response, emit_step_complete, parse_repl_request,
 };
 
@@ -582,6 +582,22 @@ impl WasmRepl {
                 .unwrap_or(JsValue::NULL),
         )?;
         Ok(response.into())
+    }
+
+    pub(crate) fn report_compute_state_reset(
+        &mut self,
+        previous_revision: &str,
+        next_revision: &str,
+    ) -> Result<JsValue, JsValue> {
+        self.session.emit_message_diagnostic(
+            Severity::Warning,
+            DiagnosticPhase::Host,
+            "ComputeStateReset",
+            format!(
+                "The physical compute plan changed from `{previous_revision}` to `{next_revision}`; GPU-resident state was reinitialized."
+            ),
+        );
+        self.response(None)
     }
 
     fn handle_host_request(&mut self, request: ReplHostRequest) {
