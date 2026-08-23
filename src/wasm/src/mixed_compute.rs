@@ -339,8 +339,7 @@ pub(crate) fn prepare_browser_compute_host(
 ) -> MResult<PreparedBrowserComputeHost> {
     let compute_index = configured_host_index(document, "compute")?;
     let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
-    let outputs = BrowserOutputHandle::default();
-    let registry = browser_compute_backend_registry(command.clone(), outputs, gpu_available)?;
+    let registry = browser_resident_compute_backend_registry(command.clone(), gpu_available)?;
     let factory = ComputeHostFactory::new(
         prepared.region.clone(),
         prepared.placement,
@@ -1090,9 +1089,11 @@ impl ComputeCommandHandle {
                 required
             )));
         }
+        let attempted_turn = request.logical_turn;
         self.publish_completion(
             request,
             ComputeCompletionOutcome::Completed {
+                attempted_turn,
                 report: self.success_report()?,
                 snapshot: ComputeOutputSnapshot::default(),
             },
@@ -1123,9 +1124,11 @@ impl ComputeCommandHandle {
                 return Err(failure);
             }
         };
+        let attempted_turn = request.logical_turn;
         self.publish_completion(
             request,
             ComputeCompletionOutcome::Completed {
+                attempted_turn,
                 report: self.success_report()?,
                 snapshot,
             },
@@ -1168,9 +1171,13 @@ impl ComputeCommandHandle {
                 ..Default::default()
             }
         };
+        let attempted_turn = request.logical_turn;
         self.publish_completion(
             request,
-            ComputeCompletionOutcome::IntegrityRejected { report },
+            ComputeCompletionOutcome::IntegrityRejected {
+                attempted_turn,
+                report,
+            },
             false,
         )
     }
@@ -1467,6 +1474,29 @@ pub(crate) fn browser_compute_backend_registry(
             command.clone(),
             outputs,
         )))
+        .map_err(|failure| mixed_error(failure.to_string()))?;
+    registry
+        .register(Arc::new(BrowserWgpuBackendFactory::new(
+            command,
+            gpu_available,
+        )))
+        .map_err(|failure| mixed_error(failure.to_string()))?;
+    Ok(Arc::new(registry))
+}
+
+/// Backend registry for a resident browser document.
+///
+/// Scalar compute is executed and sampled directly by the resident compute
+/// host. Only WebGPU needs the browser command transport. Keeping that split
+/// here prevents the standalone presentation adapter from turning every CPU
+/// dispatch into an all-output readback and JavaScript command.
+pub(crate) fn browser_resident_compute_backend_registry(
+    command: ComputeCommandHandle,
+    gpu_available: bool,
+) -> MResult<Arc<ComputeBackendRegistry>> {
+    let mut registry = ComputeBackendRegistry::default();
+    registry
+        .register(Arc::new(CpuScalarBackendFactory::new()))
         .map_err(|failure| mixed_error(failure.to_string()))?;
     registry
         .register(Arc::new(BrowserWgpuBackendFactory::new(

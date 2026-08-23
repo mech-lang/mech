@@ -214,10 +214,15 @@ jobs:
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
       - name: Build mixed compute WASM and refresh the server
         run: |
+          node scripts/test-browser-compute-lifecycle.mjs
           bash scripts/build-mech-gpu-browser.sh
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech --features compute_backends_native
+      - name: Verify million-particle report-only WebGPU execution
+        run: >-
+          MECH_BIN=target/debug/mech
+          python3 scripts/smoke-gpu-particles-browser.py --backend gpu
       - name: Verify scalar and WebGPU EKF rendering against one numeric oracle
         run: |
           MECH_BIN=target/debug/mech \

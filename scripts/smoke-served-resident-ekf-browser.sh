@@ -157,10 +157,12 @@ harness = r'''<script>
       root.dataset.mechObservedComputeCompletion = String(completedTurns ?? "missing");
       if (expectedComputeBackend === "wgpu") {
         computeReadbackBytes = Number(root.dataset.mechComputeGpuToCpuReadbackBytes || 0);
+        const computeOutputBytes = Number(root.dataset.mechComputeGpuToCpuOutputBytes || 0);
         sampledReadbackEfficient &&= Boolean(
           Number(root.dataset.mechComputeLogicalOutputs || 0) === 1 &&
           Number(root.dataset.mechComputePhysicalOutputBuffers || 0) === 1 &&
-          computeReadbackBytes === completedTurns * 15 * Float32Array.BYTES_PER_ELEMENT
+          computeReadbackBytes === completedTurns * (15 * Float32Array.BYTES_PER_ELEMENT + 8) &&
+          computeOutputBytes === completedTurns * 15 * Float32Array.BYTES_PER_ELEMENT
         );
       }
       if (completedTurns !== parityComputeTurn) return;
@@ -303,7 +305,8 @@ harness = r'''<script>
       if (truthPoint && updates > 0 && updates !== lastObservedUpdate) {
         lastObservedUpdate = updates;
         const computeDispatches = Number(root.dataset.mechComputeDispatches || 0);
-        const isComputeCompletionFrame = computeDispatches > lastObservedComputeDispatch;
+        const isComputeCompletionFrame = expectedComputeBackend === "cpu-scalar" ||
+          computeDispatches > lastObservedComputeDispatch;
         lastObservedComputeDispatch = computeDispatches;
         if (firstTruth === undefined) firstTruth = truthPoint;
         maxGuideDeviation = Math.max(maxGuideDeviation, distanceToRenderedGuide(truthPoint));
@@ -438,6 +441,21 @@ harness = r'''<script>
         Number.isFinite(trackingError)
       ) {
         displayParityTrackingError = trackingError;
+      }
+      if (
+        updates === parityComputeTurn &&
+        expectedComputeBackend === "cpu-scalar" &&
+        computeParitySample === undefined
+      ) {
+        const rendered = globalThis.__MECH_RENDERED_DOCUMENT_VALUE__?.("filter-sample");
+        const text = document.createElement("span");
+        text.innerHTML = rendered?.inlineHtml || "";
+        const values = (text.textContent || "")
+          .match(/[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/g)
+          ?.map(Number) || [];
+        if (values.length === 15 && values.every(Number.isFinite)) {
+          computeParitySample = values;
+        }
       }
       const lineStripCoordinates = (element) => {
         const coordinates = (element?.getAttribute("points") || "")

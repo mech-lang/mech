@@ -170,10 +170,12 @@ pub struct ComputeDispatchRequest {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ComputeCompletionOutcome {
     Completed {
+        attempted_turn: u128,
         report: ComputeDispatchReport,
         snapshot: ComputeOutputSnapshot,
     },
     IntegrityRejected {
+        attempted_turn: u128,
         report: ComputeDispatchReport,
     },
     TransportFailed {

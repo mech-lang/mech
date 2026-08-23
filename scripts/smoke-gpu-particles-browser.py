@@ -271,7 +271,12 @@ def main() -> None:
         build()
     verify_package()
     browser = browser_path(args.browser)
-    mech = ROOT / "target" / "release" / ("mech.exe" if os.name == "nt" else "mech")
+    configured_mech = os.environ.get("MECH_BIN")
+    mech = Path(configured_mech) if configured_mech else (
+        ROOT / "target" / "release" / ("mech.exe" if os.name == "nt" else "mech")
+    )
+    if not mech.is_absolute():
+        mech = ROOT / mech
     if not mech.is_file():
         fail("release Mech executable is missing; rerun with --build")
 
@@ -365,6 +370,12 @@ def main() -> None:
                         fail(f"delayed completion evidence {name} was only {value}; artifacts: {work}")
                 if 'data-mech-gpu-smoke-readback-bytes="0"' not in dom:
                     fail(f"report-only elementwise dispatch copied output data to the CPU; artifacts: {work}")
+                if 'data-mech-gpu-smoke-state-advanced="true"' not in dom:
+                    fail(f"completion-backed turns did not advance rendered GPU state; artifacts: {work}")
+                if 'data-mech-gpu-smoke-disposed="true"' not in dom:
+                    fail(f"particle compute resources were not disposed during teardown; artifacts: {work}")
+                if 'data-mech-gpu-smoke-page-errors="0"' not in dom:
+                    fail(f"the particle page reported a console, page, or promise error; artifacts: {work}")
             print("Compute particle browser smoke passed")
             print(f"browser: {browser}")
             print(f"backend: {expected_backend}")

@@ -684,6 +684,15 @@ function installComputeSmokeTest(target) {
   let completionsInFlight = 0;
   let maxCompletionsInFlight = 0;
   let pendingObservations = 0;
+  let pageErrors = 0;
+  const originalConsoleError = console.error;
+  console.error = (...args) => {
+    pageErrors += 1;
+    originalConsoleError.apply(console, args);
+  };
+  const recordPageError = () => { pageErrors += 1; };
+  window.addEventListener('error', recordPageError);
+  window.addEventListener('unhandledrejection', recordPageError);
   if (target.backend === 'wgpu') {
     const finish = target.computeResource.finish.bind(target.computeResource);
     target.computeResource.finish = async () => {
@@ -765,6 +774,16 @@ function installComputeSmokeTest(target) {
       root.dataset.mechGpuSmokeReadbackBytes =
         root.dataset.mechComputeGpuToCpuReadbackBytes || "0";
       root.dataset.mechComputeBackend = state.backend;
+      root.dataset.mechGpuSmokeStateAdvanced = String(state.totalDispatches >= 6);
+      running = false;
+      target.stop();
+      root.dataset.mechGpuSmokeDisposed = String(
+        target.stopped === true && target.computeResource?.disposed === true,
+      );
+      root.dataset.mechGpuSmokePageErrors = String(pageErrors);
+      window.removeEventListener('error', recordPageError);
+      window.removeEventListener('unhandledrejection', recordPageError);
+      console.error = originalConsoleError;
       clearInterval(timer);
     } catch (error) {
       fail(error instanceof Error ? error.message : String(error));

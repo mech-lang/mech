@@ -2000,6 +2000,12 @@ function renderValues() {
   dispatch("mech:document-rendered");
 }
 
+// A read-only reflection seam for browser conformance harnesses and embedders.
+// It observes an ordinary retained resident symbol; it does not allocate a
+// compute presentation buffer or route scalar compute through JavaScript.
+globalThis.__MECH_RENDERED_DOCUMENT_VALUE__ = (name) =>
+  state.document?.renderedDocumentValue?.(String(name)) || null;
+
 function transcript() {
   return state.console?.transcript || null;
 }
@@ -3876,7 +3882,13 @@ class DocumentComputeBridge {
     }
     const backend = controller.computeBackend();
     if (backend !== "wgpu") {
-      return new DocumentComputeBridge(controller, manifest, backend, null);
+      // Resident scalar compute completes inside the runtime. It has no
+      // browser transport, command queue, or full-output presentation bridge.
+      document.documentElement.dataset.mechComputeBackend = backend;
+      document.documentElement.dataset.mechComputeInstances = String(
+        manifest.dispatchElements,
+      );
+      return null;
     }
     const adapter = state.computeAdapter !== undefined
       ? state.computeAdapter
@@ -3913,11 +3925,12 @@ class DocumentComputeBridge {
     this.generation = typeof controller.computeGeneration === "function"
       ? controller.computeGeneration()
       : "0";
+    this.lifecycle = new globalThis.MechComputeSubmissionLifecycle(this.generation);
     this.device?.lost.then((info) => {
       if (this.isCurrent()) {
         const failure = new Error(`GPU device lost: ${info.message || info.reason || "unknown reason"}`);
         failure.mechDeviceLost = true;
-        this.failure = failure;
+        this.failure = this.lifecycle.markFailed(failure);
       }
     });
     document.documentElement.dataset.mechComputeBackend = this.backend;
@@ -3959,13 +3972,6 @@ class DocumentComputeBridge {
     if (!command?.dispatch) {
       return;
     }
-    if (this.backend !== "wgpu") {
-      if (command.acknowledgementRequired === true) {
-        throw new Error("a synchronous browser compute command unexpectedly requires acknowledgement");
-      }
-      this.publishCompletion(command.outputs);
-      return;
-    }
     if (!this.isCurrent()) {
       throw new Error("a retired document compute bridge received a dispatch");
     }
@@ -3981,6 +3987,10 @@ class DocumentComputeBridge {
     }
     this.resource.setRequestedOutputs(command.requestedOutputs || []);
     const { outputIndex } = this.resource.submit(command, this.activeBuffer);
+    // queue.submit() has succeeded at this point. Record that fact before any
+    // promise continuation can observe device loss; this generation may no
+    // longer be rebuilt on scalar compute automatically.
+    this.lifecycle.markSubmitted(command.dispatchToken);
     this.blocked = true;
     this.finish(command.dispatchToken, outputIndex);
   }
@@ -3995,6 +4005,10 @@ class DocumentComputeBridge {
             integrity.constraint,
             integrity.instance,
           );
+          // Integrity rejection is a matching terminal completion: the
+          // candidate state was not published, but the host is reusable for
+          // the next independent turn.
+          this.lifecycle.markAccepted(dispatchToken);
         }
         return;
       }
@@ -4004,6 +4018,7 @@ class DocumentComputeBridge {
         } else {
           this.controller.acknowledgeComputeCommand(dispatchToken);
         }
+        this.lifecycle.markAccepted(dispatchToken);
         this.activeBuffer = outputIndex;
         this.publishCompletion(outputs);
       }
@@ -4019,7 +4034,7 @@ class DocumentComputeBridge {
       } catch (rejectionError) {
         this.failure = rejectionError;
       }
-      this.failure ||= error;
+      this.failure = this.lifecycle.markFailed(this.failure || error);
     } finally {
       this.blocked = false;
     }
@@ -4089,7 +4104,11 @@ function frame() {
     if (state.computeBridge?.failure) {
       const failure = state.computeBridge.failure;
       const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
-      if (failure.mechDeviceLost && requestedBackend === "auto") {
+      if (
+        failure.mechDeviceLost &&
+        requestedBackend === "auto" &&
+        state.computeBridge.lifecycle.canAutoFallback()
+      ) {
         state.computeBridge.failure = null;
         state.computeBridge.retire();
         state.computeBridge = null;
@@ -4101,15 +4120,15 @@ function frame() {
       }
       throw failure;
     }
+    if (state.computeBridge?.blocked) {
+      // The resident compute host is in its single InFlight phase. Leave
+      // timer and pointer packets queued (or coalesced by their configured
+      // policy) until the matching completion has been accepted.
+      state.animationFrame = requestAnimationFrame(frame);
+      return;
+    }
     const result = state.document.frame(8);
-    if (state.computeBridge?.blocked && result.computeCommand?.dispatch) {
-      throw new Error(
-        "the resident coordinator queued another compute turn while the previous turn is in flight",
-      );
-    }
-    if (!state.computeBridge?.blocked) {
-      state.computeBridge?.submit(result.computeCommand);
-    }
+    state.computeBridge?.submit(result.computeCommand);
     if (result.events?.length) {
       consumeReplResponse(result);
     }

@@ -206,8 +206,9 @@ impl RuntimeHostFactory for ComputeHostFactory {
             last_fault: Ref::new(String::new()),
             sampled_outputs: initial_sampled_outputs(&self.program)?,
             sample_requests: BTreeSet::new(),
-            last_submitted_turn: None,
-            terminal_failure: None,
+            phase: ComputeHostPhase::Ready {
+                last_submitted_turn: None,
+            },
             session,
         }));
         let completion_target = Arc::new(ComputeHostCompletionTarget {
@@ -271,9 +272,78 @@ struct ComputeHostState {
     last_fault: Ref<String>,
     sampled_outputs: BTreeMap<String, LegacyValue>,
     sample_requests: BTreeSet<String>,
-    last_submitted_turn: Option<ComputeTurnToken>,
-    terminal_failure: Option<String>,
+    phase: ComputeHostPhase,
     session: Box<dyn ComputeSession>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+enum ComputeHostPhase {
+    Ready {
+        last_submitted_turn: Option<ComputeTurnToken>,
+    },
+    InFlight {
+        turn: ComputeTurnToken,
+    },
+    Failed {
+        reason: Box<str>,
+    },
+}
+
+impl ComputeHostState {
+    fn require_ready(&self, operation: &'static str) -> MResult<Option<ComputeTurnToken>> {
+        match &self.phase {
+            ComputeHostPhase::Ready {
+                last_submitted_turn,
+            } => Ok(*last_submitted_turn),
+            ComputeHostPhase::InFlight { turn } => Err(compute_host_error(
+                operation,
+                format!("compute turn {} is still in flight", turn.0),
+            )),
+            ComputeHostPhase::Failed { reason } => Err(compute_host_error(
+                operation,
+                format!("compute host is stopped after an incomplete transaction: {reason}"),
+            )),
+        }
+    }
+
+    fn require_in_flight(
+        &mut self,
+        operation: &'static str,
+        turn: ComputeTurnToken,
+    ) -> MResult<()> {
+        match &self.phase {
+            ComputeHostPhase::InFlight { turn: current } if *current == turn => Ok(()),
+            ComputeHostPhase::Failed { reason } => Err(compute_host_error(
+                operation,
+                format!("compute host is stopped after an incomplete transaction: {reason}"),
+            )),
+            other => {
+                let reason = format!(
+                    "completion for compute turn {} does not match host phase {other:?}",
+                    turn.0
+                );
+                self.fail(reason.clone());
+                Err(compute_host_error(operation, reason))
+            }
+        }
+    }
+
+    fn ready_after(&mut self, turn: ComputeTurnToken) {
+        self.phase = ComputeHostPhase::Ready {
+            last_submitted_turn: Some(turn),
+        };
+    }
+
+    fn fail(&mut self, reason: impl Into<String>) -> Box<str> {
+        if let ComputeHostPhase::Failed { reason } = &self.phase {
+            return reason.clone();
+        }
+        let reason = reason.into().into_boxed_str();
+        self.phase = ComputeHostPhase::Failed {
+            reason: reason.clone(),
+        };
+        reason
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
@@ -294,49 +364,70 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
         let mut state = state
             .lock()
             .map_err(|_| completion_error(&self.backend, "compute host state lock is poisoned"))?;
-        if let Some(failure) = state.terminal_failure.as_ref() {
-            return Err(completion_error(
-                &self.backend,
-                format!("compute host is stopped after an incomplete transaction: {failure}"),
-            ));
-        }
-        let (report, sampled, transport_failure) = match outcome {
-            ComputeCompletionOutcome::Completed { report, snapshot } => {
+        let (attempted_turn, report, sampled, transport_failure) = match outcome {
+            ComputeCompletionOutcome::Completed {
+                attempted_turn,
+                report,
+                snapshot,
+            } => {
+                let turn = ComputeTurnToken(attempted_turn);
+                state
+                    .require_in_flight("ComputeHostCompletion", turn)
+                    .map_err(|error| completion_error(&self.backend, format!("{error:?}")))?;
                 let sampled = if report.completed_turns > 0 {
                     match materialize_sampled_outputs(&state, &snapshot) {
                         Ok(sampled) => sampled,
                         Err(error) => {
-                            state.terminal_failure =
-                                Some(format!("sample publication failed: {error:?}"));
+                            state.fail(format!("sample publication failed: {error:?}"));
                             return Err(completion_error(&self.backend, format!("{error:?}")));
                         }
                     }
                 } else {
                     BTreeMap::new()
                 };
-                (report, sampled, None)
+                (turn, report, sampled, None)
             }
-            ComputeCompletionOutcome::IntegrityRejected { report } => {
-                (report, BTreeMap::new(), None)
+            ComputeCompletionOutcome::IntegrityRejected {
+                attempted_turn,
+                report,
+            } => {
+                let turn = ComputeTurnToken(attempted_turn);
+                state
+                    .require_in_flight("ComputeHostCompletion", turn)
+                    .map_err(|error| completion_error(&self.backend, format!("{error:?}")))?;
+                (turn, report, BTreeMap::new(), None)
             }
             ComputeCompletionOutcome::TransportFailed {
                 attempted_turn,
                 reason,
-            } => (
-                ComputeDispatchReport {
-                    completed_turns: 0,
-                    fault_count: (*state.fault_count.borrow() as u64).saturating_add(1),
-                    last_fault: Some(mech_compute::ComputeFaultEvidence {
-                        attempted_turn,
-                        constraint: "backend-transport".into(),
-                        detail: reason.clone(),
-                    }),
-                    ..Default::default()
-                },
-                BTreeMap::new(),
-                Some(reason.to_string()),
-            ),
+            } => {
+                let turn = ComputeTurnToken(attempted_turn);
+                state
+                    .require_in_flight("ComputeHostCompletion", turn)
+                    .map_err(|error| completion_error(&self.backend, format!("{error:?}")))?;
+                (
+                    turn,
+                    ComputeDispatchReport {
+                        completed_turns: 0,
+                        fault_count: (*state.fault_count.borrow() as u64).saturating_add(1),
+                        last_fault: Some(mech_compute::ComputeFaultEvidence {
+                            attempted_turn,
+                            constraint: "backend-transport".into(),
+                            detail: reason.clone(),
+                        }),
+                        ..Default::default()
+                    },
+                    BTreeMap::new(),
+                    Some(reason.to_string()),
+                )
+            }
         };
+        if let Some(failure) = transport_failure.as_ref() {
+            // The backend transport is the first terminal failure. Preserve
+            // it even if best-effort fault telemetry subsequently encounters
+            // another error.
+            state.fail(failure.clone());
+        }
         let mut candidate_outputs = state.sampled_outputs.clone();
         candidate_outputs.extend(sampled);
         let candidate_turns = *state.turns.borrow() + f64::from(report.completed_turns);
@@ -362,7 +453,7 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
             &candidate_outputs,
         )
         .map_err(|error| {
-            state.terminal_failure = Some(
+            state.fail(
                 transport_failure
                     .clone()
                     .unwrap_or_else(|| format!("telemetry encoding failed: {error:?}")),
@@ -370,7 +461,7 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
             completion_error(&self.backend, format!("{error:?}"))
         })?;
         let packet = RuntimeHostInput::new(updates).map_err(|error| {
-            state.terminal_failure = Some(
+            state.fail(
                 transport_failure
                     .clone()
                     .unwrap_or_else(|| format!("telemetry packet creation failed: {error:?}")),
@@ -378,12 +469,12 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
             completion_error(&self.backend, format!("{error:?}"))
         })?;
         let telemetry = self.telemetry.lock().map_err(|_| {
-            state.terminal_failure = Some("telemetry ingress lock is poisoned".to_owned());
+            state.fail("telemetry ingress lock is poisoned");
             completion_error(&self.backend, "telemetry ingress lock is poisoned")
         })?;
         if let Some(ingress) = telemetry.as_ref() {
             if let Err(error) = ingress.submit_latest(packet) {
-                state.terminal_failure = Some(format!("telemetry publication failed: {error:?}"));
+                state.fail(format!("telemetry publication failed: {error:?}"));
                 return Err(completion_error(&self.backend, format!("{error:?}")));
             }
         }
@@ -392,7 +483,11 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
         *state.dispatch_ms.borrow_mut() = candidate_dispatch_ms;
         *state.fault_count.borrow_mut() = candidate_fault_count;
         *state.last_fault.borrow_mut() = candidate_last_fault;
-        state.terminal_failure = transport_failure;
+        if let Some(failure) = transport_failure {
+            state.fail(failure);
+        } else {
+            state.ready_after(attempted_turn);
+        }
         Ok(())
     }
 }
@@ -417,6 +512,7 @@ impl std::fmt::Debug for ComputeHostState {
             .field("fault_count", &self.fault_count)
             .field("last_fault", &self.last_fault)
             .field("sample_requests", &self.sample_requests)
+            .field("phase", &self.phase)
             .field("session", &"<dyn ComputeSession>")
             .finish()
     }
@@ -457,13 +553,14 @@ impl ComputeResourceProvider {
     }
 
     fn telemetry_value(&self, path: &str, planning: bool) -> MResult<LegacyValue> {
+        let mut state = self.state.lock().map_err(|_| {
+            compute_host_error("ComputeHostRead", "compute host state lock is poisoned")
+        })?;
+        state.require_ready("ComputeHostRead")?;
         if let Some(port) = self.declared_sample_output(path) {
             if planning {
                 return zero_sample_value(port);
             }
-            let mut state = self.state.lock().map_err(|_| {
-                compute_host_error("ComputeHostRead", "compute host state lock is poisoned")
-            })?;
             state.sample_requests.insert(port.name.to_string());
             return state
                 .sampled_outputs
@@ -490,9 +587,6 @@ impl ComputeResourceProvider {
                 )),
             };
         }
-        let state = self.state.lock().map_err(|_| {
-            compute_host_error("ComputeHostRead", "compute host state lock is poisoned")
-        })?;
         match path {
             "backend" => RuntimeHostInputValue::String(state.backend.clone()).into_mech_value(),
             "turns" => RuntimeHostInputValue::F64(*state.turns.borrow()).into_mech_value(),
@@ -546,6 +640,12 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
 
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         self.validate_base_uri(&request.base_uri, "ComputeHostWrite")?;
+        self.state
+            .lock()
+            .map_err(|_| {
+                compute_host_error("ComputeHostWrite", "compute host state lock is poisoned")
+            })?
+            .require_ready("ComputeHostWrite")?;
         if request.intent != RuntimeResourceWriteIntent::Send {
             return Err(compute_host_error(
                 "ComputeHostWrite",
@@ -651,14 +751,20 @@ impl RuntimeAfterCommitEffect for ComputeInputEffect {
     }
 
     fn deliver(&mut self) -> MResult<()> {
-        self.state
-            .lock()
-            .map_err(|_| {
-                compute_host_error("ComputeHostWrite", "compute host state lock is poisoned")
-            })?
+        let mut state = self.state.lock().map_err(|_| {
+            compute_host_error("ComputeHostWrite", "compute host state lock is poisoned")
+        })?;
+        state.require_ready("ComputeHostWrite")?;
+        if let Err(error) = state
             .session
             .update_inputs(std::slice::from_ref(&self.update))
-            .map_err(|error| compute_host_error("ComputeHostWrite", error.to_string()))
+        {
+            if error.state_advanced {
+                state.fail(error.to_string());
+            }
+            return Err(compute_host_error("ComputeHostWrite", error.to_string()));
+        }
+        Ok(())
     }
 }
 
@@ -688,16 +794,8 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
         let mut state = self.state.lock().map_err(|_| {
             compute_host_error("ComputeHostDispatch", "compute host state lock is poisoned")
         })?;
-        if let Some(failure) = state.terminal_failure.as_ref() {
-            return Err(compute_host_error(
-                "ComputeHostDispatch",
-                format!("compute host is stopped after an incomplete transaction: {failure}"),
-            ));
-        }
-        if state
-            .last_submitted_turn
-            .is_some_and(|submitted| turn <= submitted)
-        {
+        let previous_turn = state.require_ready("ComputeHostDispatch")?;
+        if previous_turn.is_some_and(|submitted| turn <= submitted) {
             return Ok(());
         }
         let outputs = state
@@ -712,6 +810,7 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             outputs,
             logical_turn: turn.0,
         };
+        state.phase = ComputeHostPhase::InFlight { turn };
         let report = match state
             .session
             .dispatch_requested(NonZeroU32::new(1).expect("one is nonzero"), &request)
@@ -719,11 +818,21 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             Ok(report) => report,
             Err(error) => {
                 if error.state_advanced {
-                    state.terminal_failure = Some(error.to_string());
+                    state.fail(error.to_string());
+                } else {
+                    state.phase = ComputeHostPhase::Ready {
+                        last_submitted_turn: previous_turn,
+                    };
                 }
                 return Err(compute_host_error("ComputeHostDispatch", error.to_string()));
             }
         };
+        // Asynchronous browser compute has accepted this exact logical turn
+        // and will complete it through ComputeHostCompletionTarget. Do not
+        // publish a speculative telemetry packet while the host is InFlight.
+        if report.completed_turns == 0 && report.last_fault.is_none() {
+            return Ok(());
+        }
         let mut sampled = None;
         if report.completed_turns > 0 && !state.sample_requests.is_empty() {
             let selected = state
@@ -740,14 +849,14 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             {
                 Ok(snapshot) => snapshot,
                 Err(error) => {
-                    state.terminal_failure = Some(error.to_string());
+                    state.fail(error.to_string());
                     return Err(compute_host_error("ComputeHostRead", error.to_string()));
                 }
             };
             sampled = Some(match materialize_sampled_outputs(&state, &snapshot) {
                 Ok(sampled) => sampled,
                 Err(error) => {
-                    state.terminal_failure = Some(format!("{error:?}"));
+                    state.fail(format!("{error:?}"));
                     return Err(error);
                 }
             });
@@ -779,15 +888,15 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             &candidate_outputs,
         )
         .map_err(|error| {
-            state.terminal_failure = Some(format!("telemetry encoding failed: {error:?}"));
+            state.fail(format!("telemetry encoding failed: {error:?}"));
             error
         })?;
         let packet = RuntimeHostInput::new(updates).map_err(|error| {
-            state.terminal_failure = Some(format!("telemetry packet creation failed: {error:?}"));
+            state.fail(format!("telemetry packet creation failed: {error:?}"));
             error
         })?;
         let telemetry = self.telemetry.lock().map_err(|_| {
-            state.terminal_failure = Some("compute telemetry ingress lock is poisoned".to_owned());
+            state.fail("compute telemetry ingress lock is poisoned");
             compute_host_error(
                 "ComputeHostDispatch",
                 "compute telemetry ingress lock is poisoned",
@@ -795,16 +904,16 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
         })?;
         if let Some(ingress) = telemetry.as_ref() {
             if let Err(error) = ingress.submit(packet) {
-                state.terminal_failure = Some(format!("telemetry publication failed: {error:?}"));
+                state.fail(format!("telemetry publication failed: {error:?}"));
                 return Err(error);
             }
         }
         state.sampled_outputs = candidate_outputs;
-        state.last_submitted_turn = Some(turn);
         *state.turns.borrow_mut() = candidate_turns;
         *state.dispatch_ms.borrow_mut() = candidate_dispatch_ms;
         *state.fault_count.borrow_mut() = candidate_fault_count;
         *state.last_fault.borrow_mut() = candidate_last_fault;
+        state.ready_after(turn);
         Ok(())
     }
 }
@@ -1372,9 +1481,10 @@ mod tests {
     use std::collections::BTreeMap;
 
     use mech_compute::{
-        BackendClass, ComputeBackendCapabilities, ComputeBackendDescriptor, ComputeBackendError,
-        ComputeBackendFactory, ComputeBackendRejection, ComputeExecutable, ComputeFaultEvidence,
-        ComputeKernel, ComputePhysicalPlan, ComputeRegionInterface, ElementwiseIr,
+        BackendClass, CPU_SCALAR_BACKEND, ComputeBackendCapabilities, ComputeBackendDescriptor,
+        ComputeBackendError, ComputeBackendFactory, ComputeBackendRejection, ComputeExecutable,
+        ComputeFaultEvidence, ComputeKernel, ComputePhysicalPlan, ComputeRegionInterface,
+        ElementwiseIr,
     };
     use mech_core::{CellSlotId, SchemaId};
     use mech_runtime::{
@@ -1385,6 +1495,7 @@ mod tests {
     enum FakeCall {
         Update(ComputeInputUpdate),
         Dispatch(u32),
+        Read(ComputeOutputSelection),
     }
 
     struct FakeBackend {
@@ -1464,10 +1575,14 @@ mod tests {
 
         fn read_outputs(
             &mut self,
-            _selection: &mech_compute::ComputeOutputSelection,
+            selection: &mech_compute::ComputeOutputSelection,
         ) -> Result<mech_compute::ComputeOutputSnapshot, mech_compute::ComputeExecutionError>
         {
             let _ = &self.backend;
+            self.calls
+                .lock()
+                .unwrap()
+                .push(FakeCall::Read(selection.clone()));
             Ok(Default::default())
         }
     }
@@ -1647,6 +1762,41 @@ mod tests {
             operation: RuntimeCapabilityOperation::Write,
             value: value.into_mech_value().unwrap(),
             intent: RuntimeResourceWriteIntent::Send,
+        }
+    }
+
+    fn provider_state(
+        phase: ComputeHostPhase,
+        calls: Arc<Mutex<Vec<FakeCall>>>,
+    ) -> Arc<Mutex<ComputeHostState>> {
+        Arc::new(Mutex::new(ComputeHostState {
+            backend: CPU_SCALAR_BACKEND.to_owned(),
+            program: Arc::new(program()),
+            turns: Ref::new(0.0),
+            dispatch_ms: Ref::new(0.0),
+            fault_count: Ref::new(0.0),
+            last_fault: Ref::new(String::new()),
+            sampled_outputs: BTreeMap::new(),
+            sample_requests: BTreeSet::new(),
+            phase,
+            session: Box::new(FakeSession {
+                backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
+                calls,
+                result: Ok(ComputeDispatchReport {
+                    completed_turns: 1,
+                    ..Default::default()
+                }),
+            }),
+        }))
+    }
+
+    fn provider_for_state(state: Arc<Mutex<ComputeHostState>>) -> ComputeResourceProvider {
+        ComputeResourceProvider {
+            instance: "particles".to_owned(),
+            region: "particle-field".into(),
+            program: Arc::new(program()),
+            state,
+            telemetry: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -1907,17 +2057,13 @@ mod tests {
         );
 
         runtime.begin_transaction(&mut context).unwrap();
-        runtime
-            .write_resource_with_context(&mut context, turn_write_with(2.0))
-            .unwrap();
         let second = runtime
-            .commit_runtime_transaction_detailed(&mut context)
+            .write_resource_with_context(&mut context, turn_write_with(2.0))
+            .unwrap_err();
+        assert!(second.kind_message().contains("incomplete transaction"));
+        runtime
+            .abort_runtime_transaction(&mut context, "expected failed-host rejection")
             .unwrap();
-        assert!(
-            second.delivery_failures[0]
-                .message
-                .contains("incomplete transaction")
-        );
         assert_eq!(
             calls
                 .lock()
@@ -1926,6 +2072,137 @@ mod tests {
                 .filter(|call| matches!(call, FakeCall::Dispatch(_)))
                 .count(),
             1,
+        );
+    }
+
+    #[test]
+    fn failed_and_inflight_phases_guard_every_resource_and_effect_boundary() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let state = provider_state(
+            ComputeHostPhase::Ready {
+                last_submitted_turn: None,
+            },
+            Arc::clone(&calls),
+        );
+        let provider = provider_for_state(Arc::clone(&state));
+        let prepared = provider.prepare_write(input_write(vec![0.0; 6])).unwrap();
+
+        state.lock().unwrap().phase = ComputeHostPhase::InFlight {
+            turn: ComputeTurnToken(1),
+        };
+        let read = RuntimeResourceReadRequest {
+            base_uri: "compute://particles/kernel".to_owned(),
+            path: "turns".to_owned(),
+            context_name: "particles".to_owned(),
+        };
+        assert!(provider.plan_read(read.clone()).is_err());
+        assert!(provider.read(read.clone()).is_err());
+        assert!(
+            provider
+                .preflight_write(RuntimeResourceWritePreflightRequest {
+                    base_uri: "compute://particles/kernel".to_owned(),
+                    path: "turn".to_owned(),
+                    context_name: "particles".to_owned(),
+                    operation: RuntimeCapabilityOperation::Write,
+                    intent: RuntimeResourceWriteIntent::Send,
+                })
+                .is_err()
+        );
+        assert!(provider.plan_write(turn_write()).is_err());
+        assert!(provider.prepare_write(turn_write()).is_err());
+        let PreparedRuntimeEffect::AfterCommit(mut effect) = prepared else {
+            panic!("compute input must remain an after-commit effect")
+        };
+        assert!(effect.deliver().is_err());
+        assert!(calls.lock().unwrap().is_empty());
+
+        state.lock().unwrap().fail("first terminal reason");
+        assert!(provider.plan_read(read.clone()).is_err());
+        assert!(provider.read(read).is_err());
+        assert!(provider.plan_write(turn_write()).is_err());
+        assert!(provider.prepare_write(turn_write()).is_err());
+        assert!(calls.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn asynchronous_completion_requires_the_exact_inflight_turn_and_failure_is_absorbing() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let state = provider_state(
+            ComputeHostPhase::InFlight {
+                turn: ComputeTurnToken(7),
+            },
+            calls,
+        );
+        let target = ComputeHostCompletionTarget {
+            backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
+            resource: "compute://particles/kernel".to_owned(),
+            state: Arc::downgrade(&state),
+            telemetry: Arc::new(Mutex::new(None)),
+        };
+        let mismatch = target.complete(ComputeCompletionOutcome::Completed {
+            attempted_turn: 6,
+            report: ComputeDispatchReport {
+                completed_turns: 1,
+                ..Default::default()
+            },
+            snapshot: ComputeOutputSnapshot::default(),
+        });
+        assert!(mismatch.is_err());
+        let first_reason = match &state.lock().unwrap().phase {
+            ComputeHostPhase::Failed { reason } => reason.clone(),
+            phase => panic!("mismatch did not stop the host: {phase:?}"),
+        };
+        let later = target.complete(ComputeCompletionOutcome::TransportFailed {
+            attempted_turn: 7,
+            reason: "later transport failure".into(),
+        });
+        assert!(later.is_err());
+        assert!(matches!(
+            &state.lock().unwrap().phase,
+            ComputeHostPhase::Failed { reason } if *reason == first_reason
+        ));
+    }
+
+    #[test]
+    fn integrity_rejection_returns_the_matching_host_to_ready() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let state = provider_state(
+            ComputeHostPhase::InFlight {
+                turn: ComputeTurnToken(9),
+            },
+            calls,
+        );
+        let target = ComputeHostCompletionTarget {
+            backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
+            resource: "compute://particles/kernel".to_owned(),
+            state: Arc::downgrade(&state),
+            telemetry: Arc::new(Mutex::new(None)),
+        };
+        target
+            .complete(ComputeCompletionOutcome::IntegrityRejected {
+                attempted_turn: 9,
+                report: ComputeDispatchReport {
+                    completed_turns: 0,
+                    fault_count: 1,
+                    last_fault: Some(ComputeFaultEvidence {
+                        attempted_turn: 9,
+                        constraint: "finite".into(),
+                        detail: "candidate rejected".into(),
+                    }),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+        assert_eq!(
+            state.lock().unwrap().phase,
+            ComputeHostPhase::Ready {
+                last_submitted_turn: Some(ComputeTurnToken(9)),
+            }
+        );
+        assert!(
+            provider_for_state(state)
+                .plan_write(turn_write_with(10.0))
+                .is_ok()
         );
     }
 
