@@ -588,9 +588,11 @@ import time
 chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
 # Chrome can consume accelerated virtual time while adapter discovery, large
 # WASM compilation, and software-WebGPU pipeline creation wait on real work.
-# Keep the WebGPU ceiling beyond the independent 90-second real-time watchdog;
-# a successful proof stops its timers and lets --dump-dom exit immediately.
-default_virtual_time_budget = "60000000" if compute_backend == "wgpu" else "600000"
+# Chrome can advance virtual time more than four thousand times faster than wall
+# time while a software WebGPU adapter is initializing. Keep this ceiling far
+# beyond the independent 90-second real-time watchdog; a successful proof stops
+# its timers and lets --dump-dom exit immediately.
+default_virtual_time_budget = "2000000000" if compute_backend == "wgpu" else "600000"
 virtual_time_budget = int(os.environ.get(
     "MECH_BROWSER_VIRTUAL_TIME_BUDGET_MS",
     default_virtual_time_budget,
