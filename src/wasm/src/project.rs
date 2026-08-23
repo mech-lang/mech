@@ -2727,7 +2727,32 @@ fn js_error(message: impl Into<String>) -> JsValue {
     JsValue::from_str(&message.into())
 }
 fn to_js_error(error: MechError) -> JsValue {
-    js_error(format!("{error:?}"))
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = error;
+        JsValue::NULL
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        let recoverable_resident_turn = error
+            .kind_as::<mech_runtime::ResidentHostTurnFailed>()
+            .is_some_and(mech_runtime::ResidentHostTurnFailed::is_recoverable);
+        let kind = error.kind_name();
+        let rendered = format!("{error:?}");
+        let javascript_error = js_sys::Error::new(&rendered);
+        let target = javascript_error.as_ref();
+        let _ = Reflect::set(
+            target,
+            &JsValue::from_str("mechKind"),
+            &JsValue::from_str(&kind),
+        );
+        let _ = Reflect::set(
+            target,
+            &JsValue::from_str("mechRecoverableResidentTurn"),
+            &JsValue::from_bool(recoverable_resident_turn),
+        );
+        javascript_error.into()
+    }
 }
 
 #[cfg(test)]

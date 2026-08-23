@@ -93,6 +93,11 @@ pub enum ResidentExternalTurnOutcome {
         turn: TurnId,
         receipt_sequence: LedgerSequence,
         phase: TurnFailurePhase,
+        /// The durable rejection evidence written to the turn receipt.
+        ///
+        /// Keeping it on the immediate outcome prevents host-facing callers
+        /// from replacing the actual cause with a count-only summary.
+        failure: TurnFailureRecord,
     },
     PublishedIndeterminate {
         turn: TurnId,
@@ -666,12 +671,13 @@ impl ResidentExternalCoordinator {
 
         match record.header.status {
             TurnRecordStatus::Rejected => {
-                let phase = record
+                let failure = record
                     .header
                     .failure
                     .as_ref()
                     .expect("validated rejected replay receipt")
-                    .phase;
+                    .clone();
+                let phase = failure.phase;
                 if let Some(prepared) = prepared_input {
                     self.append_prepared_input(prepared);
                 }
@@ -685,6 +691,7 @@ impl ResidentExternalCoordinator {
                     turn,
                     receipt_sequence,
                     phase,
+                    failure,
                 })
             }
             TurnRecordStatus::Accepted => self.execute_replay_accepted(
@@ -1565,17 +1572,18 @@ impl ResidentExternalCoordinator {
         error: MechError,
     ) -> MResult<ResidentExternalTurnOutcome> {
         let message = bounded_failure_message(&error);
+        let failure = TurnFailureRecord {
+            phase,
+            kind: error.kind_name(),
+            message,
+        };
         let record = OwnedTurnRecord {
             header: TurnRecordHeader {
                 turn_id: turn,
                 transaction_id: transaction,
                 input_range: evidence.input_range,
                 status: TurnRecordStatus::Rejected,
-                failure: Some(TurnFailureRecord {
-                    phase,
-                    kind: "ResidentExternalTurnRejected".to_owned(),
-                    message,
-                }),
+                failure: Some(failure.clone()),
             },
             body: ResidentTurnReceiptV1 {
                 version: ResidentTurnReceiptV1::VERSION,
@@ -1605,6 +1613,7 @@ impl ResidentExternalCoordinator {
             turn,
             receipt_sequence,
             phase,
+            failure,
         })
     }
 

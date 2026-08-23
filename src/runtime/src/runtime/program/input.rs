@@ -23,6 +23,35 @@ pub struct ResidentHostTurnFailed {
     pub failures: Vec<String>,
 }
 
+impl ResidentHostTurnFailed {
+    /// A rejected candidate never published state and may be followed by a
+    /// later turn. Outcomes that advanced or indeterminately published state
+    /// require host intervention instead.
+    pub fn is_recoverable(&self) -> bool {
+        self.status == "rejected"
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResidentHostTurnCause {
+    pub phase: crate::TurnFailurePhase,
+    pub kind: String,
+    pub detail: String,
+}
+
+impl MechErrorKind for ResidentHostTurnCause {
+    fn name(&self) -> &str {
+        &self.kind
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "resident turn failed during {:?}: {}",
+            self.phase, self.detail
+        )
+    }
+}
+
 impl MechErrorKind for ResidentHostTurnFailed {
     fn name(&self) -> &str {
         "ResidentHostTurnFailed"
@@ -50,7 +79,7 @@ impl MechErrorKind for ResidentHostTurnFailed {
 pub(crate) fn resident_host_turn_error(
     outcome: &crate::ResidentExternalTurnOutcome,
 ) -> Option<MechError> {
-    let failure = match outcome {
+    let (failure, source) = match outcome {
         crate::ResidentExternalTurnOutcome::Accepted {
             delivery_failures, ..
         } if delivery_failures.is_empty() => return None,
@@ -58,26 +87,42 @@ pub(crate) fn resident_host_turn_error(
             turn,
             delivery_failures,
             ..
-        } => ResidentHostTurnFailed {
-            turn: *turn,
-            status: "accepted-with-delivery-failures",
-            failure_count: delivery_failures.len(),
-            phase: None,
-            failures: delivery_failures
-                .iter()
-                .map(|failure| failure.message.clone())
-                .collect(),
-        },
-        crate::ResidentExternalTurnOutcome::Rejected { turn, phase, .. } => {
+        } => (
+            ResidentHostTurnFailed {
+                turn: *turn,
+                status: "accepted-with-delivery-failures",
+                failure_count: delivery_failures.len(),
+                phase: None,
+                failures: delivery_failures
+                    .iter()
+                    .map(|failure| failure.message.clone())
+                    .collect(),
+            },
+            None,
+        ),
+        crate::ResidentExternalTurnOutcome::Rejected {
+            turn,
+            phase,
+            failure,
+            ..
+        } => (
             ResidentHostTurnFailed {
                 turn: *turn,
                 status: "rejected",
                 failure_count: 1,
                 phase: Some(*phase),
-                failures: Vec::new(),
-            }
-        }
-        crate::ResidentExternalTurnOutcome::PublishedIndeterminate { turn, failures, .. } => {
+                failures: vec![format!("{}: {}", failure.kind, failure.message)],
+            },
+            Some(MechError::new(
+                ResidentHostTurnCause {
+                    phase: failure.phase,
+                    kind: failure.kind.clone(),
+                    detail: failure.message.clone(),
+                },
+                None,
+            )),
+        ),
+        crate::ResidentExternalTurnOutcome::PublishedIndeterminate { turn, failures, .. } => (
             ResidentHostTurnFailed {
                 turn: *turn,
                 status: "published-indeterminate",
@@ -87,10 +132,15 @@ pub(crate) fn resident_host_turn_error(
                     .iter()
                     .map(|failure| failure.message.clone())
                     .collect(),
-            }
-        }
+            },
+            None,
+        ),
     };
-    Some(MechError::new(failure, None))
+    let error = MechError::new(failure, None);
+    Some(match source {
+        Some(source) => error.with_source(source),
+        None => error,
+    })
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]

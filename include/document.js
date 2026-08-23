@@ -520,6 +520,10 @@ function errorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function isRecoverableResidentTurnError(error) {
+  return error instanceof Error && error.mechRecoverableResidentTurn === true;
+}
+
 function controllerQuery(selector) {
   return state.root
     ? state.root.querySelector(selector)
@@ -4093,6 +4097,11 @@ function frame() {
     }
     state.animationFrame = requestAnimationFrame(frame);
   } catch (error) {
+    if (isRecoverableResidentTurnError(error)) {
+      appendError(error);
+      state.animationFrame = requestAnimationFrame(frame);
+      return;
+    }
     showFatalError(error);
   }
 }

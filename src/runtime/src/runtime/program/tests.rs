@@ -3809,6 +3809,20 @@ fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly
 
     let error = runtime.drain_host_inputs(1).unwrap_err();
     assert_eq!(error.kind_name(), "ResidentHostTurnFailed");
+    assert!(
+        error
+            .kind_as::<super::ResidentHostTurnFailed>()
+            .expect("resident host turn failure kind")
+            .is_recoverable()
+    );
+    assert!(
+        error
+            .kind_message()
+            .contains("ResourceBudgetExceeded: MechError")
+    );
+    let source = error.source.as_ref().expect("rejection cause is preserved");
+    assert_eq!(source.kind_name(), "ResourceBudgetExceeded");
+    assert!(source.kind_message().contains("turn_duration_ms"));
     assert_eq!(scene.lock().unwrap().deliveries, 0);
     assert_eq!(runtime.program_execution_info().resident_rejected_turns, 1);
     let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
@@ -3829,6 +3843,21 @@ fn resident_turn_duration_rejects_before_scene_publication_and_surfaces_publicly
             .phase,
         crate::TurnFailurePhase::Execution,
     );
+
+    runtime.config.limits.max_turn_duration_ms = None;
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("timer://clock/tick", "tick").unwrap(),
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    let recovered = runtime.drain_host_inputs(1).unwrap();
+    assert_eq!(recovered.len(), 1);
+    assert_eq!(scene.lock().unwrap().deliveries, 1);
+    let info = runtime.program_execution_info();
+    assert_eq!(info.resident_rejected_turns, 1);
+    assert_eq!(info.resident_accepted_turns, 1);
 }
 
 #[test]
