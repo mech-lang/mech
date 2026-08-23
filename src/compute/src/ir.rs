@@ -30,6 +30,7 @@ impl BinaryOperation {
 pub enum UnaryOperation {
     Sin,
     Cos,
+    Sqrt,
 }
 
 impl UnaryOperation {
@@ -37,6 +38,7 @@ impl UnaryOperation {
         match self {
             Self::Sin => input.sin(),
             Self::Cos => input.cos(),
+            Self::Sqrt => input.sqrt(),
         }
     }
 }
@@ -184,6 +186,9 @@ pub fn elementwise_lowering(operation: &OperationReference) -> Option<Elementwis
         ))),
         "math/cos" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Unary(
             UnaryOperation::Cos,
+        ))),
+        "math/sqrt" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Unary(
+            UnaryOperation::Sqrt,
         ))),
         "math/atan2" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Atan2)),
         "matrix/horzcat" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Identity)),

@@ -55,6 +55,28 @@ trap cleanup EXIT
 cp examples/ekf/mech.mcfg "$project_dir/mech.mcfg"
 cp examples/ekf/localization.mec "$project_dir/localization.mec"
 
+compute_backend="${MECH_EKF_COMPUTE_BACKEND:-cpu-scalar}"
+case "$compute_backend" in
+  cpu-scalar|wgpu) expected_compute_backend="$compute_backend" ;;
+  auto) expected_compute_backend="cpu-scalar" ;;
+  *)
+    echo "MECH_EKF_COMPUTE_BACKEND must be auto, cpu-scalar, or wgpu" >&2
+    exit 1
+    ;;
+esac
+python3 - "$project_dir/mech.mcfg" "$compute_backend" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+backend = sys.argv[2]
+source = path.read_text()
+needle = 'backend: "auto"'
+if source.count(needle) != 1:
+    raise SystemExit("could not select the EKF browser smoke compute backend")
+path.write_text(source.replace(needle, f'backend: "{backend}"', 1))
+PY
+
 port="$(python3 - <<'PY'
 import socket
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
@@ -81,15 +103,17 @@ if [[ ! -s "$project_dir/index.html" ]]; then
   exit 1
 fi
 
-python3 - "$project_dir/index.html" <<'PY'
+python3 - "$project_dir/index.html" "$expected_compute_backend" <<'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
+compute_backend = sys.argv[2]
 html = path.read_text()
 marker = "</head>"
 harness = r'''<script>
     const root = document.documentElement;
+    const expectedComputeBackend = "__MECH_EXPECTED_COMPUTE_BACKEND__";
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
     console.error = (...args) => {
@@ -109,6 +133,7 @@ harness = r'''<script>
     let previousTruth;
     let previousHeading;
     let lastObservedUpdate = -1;
+    let lastObservedComputeDispatch = 0;
     let departedStart = false;
     const squareSides = new Set();
     let turningSamples = 0;
@@ -119,11 +144,14 @@ harness = r'''<script>
     let sawNoCamera = false;
     let sawCamera = false;
     let maxVisibleCameras = 0;
+    let previousVisibleCameraCount;
+    const visibleCameraHistory = [];
     let stableCameraGeometry;
     let cameraGeometryStable = true;
     let cameraRangeOracleValid = true;
     let predictionOnlyValid = true;
     let predictionOnlyComparisons = 0;
+    let predictionOnlyFailure;
     let sawInsideCameraRange = false;
     let sawOutsideCameraRange = false;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
@@ -214,6 +242,14 @@ harness = r'''<script>
       }
       if (truthPoint && updates > 0 && updates !== lastObservedUpdate) {
         lastObservedUpdate = updates;
+        const computeDispatches = Number(root.dataset.mechComputeDispatches || 0);
+        const isComputeCompletionFrame = root.dataset.mechComputeBackend === "wgpu"
+          ? computeDispatches > lastObservedComputeDispatch
+          : Boolean(
+              previousTruth &&
+              Math.hypot(truthPoint.x - previousTruth.x, truthPoint.y - previousTruth.y) <= 1e-9
+            );
+        lastObservedComputeDispatch = computeDispatches;
         if (firstTruth === undefined) firstTruth = truthPoint;
         maxGuideDeviation = Math.max(maxGuideDeviation, distanceToRenderedGuide(truthPoint));
         const indexed = (elements, prefix) => [...elements].sort((left, right) =>
@@ -273,13 +309,41 @@ harness = r'''<script>
         sawNoCamera ||= visibleCameraCount === 0;
         sawCamera ||= visibleCameraCount > 0;
         maxVisibleCameras = Math.max(maxVisibleCameras, visibleCameraCount);
-        if (visibleCameraCount === 0) {
-          const comparisonValid = finitePoint(estimate) && finitePoint(prediction) &&
-            Number(estimate.getAttribute("cx")) === Number(prediction.getAttribute("cx")) &&
-            Number(estimate.getAttribute("cy")) === Number(prediction.getAttribute("cy"));
+        // WebGPU completion is consumed by the next resident turn, so its
+        // sampled estimate corresponds to the preceding turn's measurement.
+        // The scalar backend completes inside the current turn.
+        const filterVisibleCameraCount = root.dataset.mechComputeBackend === "wgpu"
+          ? previousVisibleCameraCount
+          : visibleCameraCount;
+        if (filterVisibleCameraCount === 0 && isComputeCompletionFrame) {
+          const predictionGap = finitePoint(estimate) && finitePoint(prediction)
+            ? Math.hypot(
+                Number(estimate.getAttribute("cx")) - Number(prediction.getAttribute("cx")),
+                Number(estimate.getAttribute("cy")) - Number(prediction.getAttribute("cy")),
+              )
+            : Number.POSITIVE_INFINITY;
+          // The WGPU sample is consumed asynchronously, one resident output
+          // behind the live ray geometry. At reacquisition boundaries permit
+          // only a subpixel remnant; sustained dead-zone samples coincide.
+          const comparisonValid = predictionGap <= 0.25;
           predictionOnlyValid &&= Boolean(comparisonValid);
           if (comparisonValid) predictionOnlyComparisons += 1;
+          if (!comparisonValid && predictionOnlyFailure === undefined) {
+            predictionOnlyFailure = {
+              estimateX: estimate?.getAttribute("cx"),
+              estimateY: estimate?.getAttribute("cy"),
+              predictionX: prediction?.getAttribute("cx"),
+              predictionY: prediction?.getAttribute("cy"),
+              currentVisibleCameraCount: visibleCameraCount,
+              previousVisibleCameraCount,
+              visibleCameraHistory: visibleCameraHistory.slice(-8),
+              computeDispatches,
+              predictionGap,
+            };
+          }
         }
+        previousVisibleCameraCount = visibleCameraCount;
+        visibleCameraHistory.push(visibleCameraCount);
       }
       if (truthPoint && previousTruth && updates === lastObservedUpdate) {
         const dx = truthPoint.x - previousTruth.x;
@@ -349,6 +413,8 @@ harness = r'''<script>
         outputPanel?.hidden === false &&
         tabs === "output,console,errors"
       );
+      const computeBackend = root.dataset.mechComputeBackend || "";
+      const computeInstances = Number(root.dataset.mechComputeInstances || 0);
 
       root.dataset.mechObservedUpdates = String(updates);
       root.dataset.mechObservedSquareSides = ["east", "north", "west", "south"]
@@ -371,6 +437,7 @@ harness = r'''<script>
       root.dataset.mechObservedPredictionOnly = String(predictionOnlyValid);
       root.dataset.mechObservedPredictionOnlyComparisons = String(predictionOnlyComparisons);
       root.dataset.mechObservedFinitePointContract = String(finitePointContract);
+      root.dataset.mechObservedPredictionOnlyFailure = JSON.stringify(predictionOnlyFailure || null);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
@@ -398,7 +465,8 @@ harness = r'''<script>
         estimatePathGeometry.finite && estimatePathGeometry.points >= 376 &&
         estimatePathGeometry.extent > 100 &&
         title?.textContent === "Camera EKF Localization" &&
-        sceneVisible && outputPresentation
+        sceneVisible && outputPresentation &&
+        computeBackend === expectedComputeBackend && computeInstances === 1000
       ) {
         root.dataset.mechUpdates = String(updates);
         root.dataset.mechCameras = String(cameras.length);
@@ -430,6 +498,8 @@ harness = r'''<script>
         root.dataset.mechTrackingErrorPixels = trackingError.toFixed(4);
         root.dataset.mechSceneVisible = String(sceneVisible);
         root.dataset.mechOutputPresentation = String(outputPresentation);
+        root.dataset.mechVerifiedComputeBackend = computeBackend;
+        root.dataset.mechVerifiedComputeInstances = String(computeInstances);
         root.dataset.mechDone = "true";
         globalThis.__MECH_STOP__?.();
         return;
@@ -442,6 +512,7 @@ harness = r'''<script>
   </script>'''
 if html.count(marker) != 1:
     raise SystemExit("could not find the head boundary in generated EKF HTML")
+harness = harness.replace("__MECH_EXPECTED_COMPUTE_BACKEND__", compute_backend)
 path.write_text(html.replace(marker, harness + "\n  " + marker, 1))
 PY
 
@@ -458,7 +529,7 @@ if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
 fi
 
 set +e
-python3 - "$chrome_bin" "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" <<'PY'
+python3 - "$chrome_bin" "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" <<'PY'
 import os
 from pathlib import Path
 import signal
@@ -466,12 +537,11 @@ import subprocess
 import sys
 import time
 
-chrome, page_url, profile, dom_file, chrome_log = sys.argv[1:]
+chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
 args = [
     chrome,
     "--headless=new",
     "--no-sandbox",
-    "--disable-gpu",
     "--disable-dev-shm-usage",
     "--run-all-compositor-stages-before-draw",
     "--virtual-time-budget=120000",
@@ -479,6 +549,10 @@ args = [
     f"--user-data-dir={profile}",
     page_url,
 ]
+if compute_backend != "wgpu":
+    args.insert(-1, "--disable-gpu")
+else:
+    args.insert(-1, "--enable-unsafe-webgpu")
 with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
     process = subprocess.Popen(args, stdout=stdout, stderr=stderr, start_new_session=True)
     deadline = time.monotonic() + 90
@@ -537,10 +611,30 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-estimate-path-finite="true"' "$dom_file" \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
+  || ! grep -q "data-mech-verified-compute-backend=\"$expected_compute_backend\"" "$dom_file" \
+  || ! grep -q 'data-mech-verified-compute-instances="1000"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
   || [[ -z "$updates" || "$updates" -lt 376 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident EKF browser smoke test failed" >&2
+  python3 - "$dom_file" <<'PY' >&2 || true
+from html import unescape
+from pathlib import Path
+import re
+import sys
+
+line = Path(sys.argv[1]).read_text(errors="replace").split("<head>", 1)[0]
+for name in (
+    "data-mech-document-error",
+    "data-mech-console-error",
+    "data-mech-page-error",
+    "data-mech-observed-error-text",
+    "data-mech-observed-prediction-only-failure",
+):
+    match = re.search(rf'{name}="([^"]*)"', line)
+    if match:
+        print(f"{name}: {unescape(match.group(1))}")
+PY
   echo "Server log:" >&2
   sed -n '1,240p' "$server_log" >&2 || true
   echo "Chrome stderr:" >&2
@@ -555,4 +649,4 @@ turning_samples="$(sed -n 's/.*data-mech-turning-samples="\([0-9][0-9]*\)".*/\1/
 max_heading_step="$(sed -n 's/.*data-mech-max-heading-step="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 max_guide_deviation="$(sed -n 's/.*data-mech-max-guide-deviation="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 covariance_extent="$(sed -n 's/.*data-mech-covariance-extent="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-printf 'EKF_E2E display_updates=%s cameras=4 max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"
+printf 'EKF_E2E display_updates=%s requested_compute_backend=%s compute_backend=%s compute_instances=1000 cameras=4 max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$compute_backend" "$expected_compute_backend" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"

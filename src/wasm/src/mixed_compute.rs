@@ -9,7 +9,7 @@ use mech_compute::{
     ComputeBackendRejection, ComputeDispatchReport, ComputeExecutable, ComputeExecutionError,
     ComputeInitializerSet, ComputeInputUpdate, ComputeKernel, ComputeOutputSelection,
     ComputeOutputSnapshot, ComputePlatform, ComputeProgram, ComputeSession, ComputeValue,
-    WGPU_BACKEND,
+    TensorLayout, WGPU_BACKEND,
 };
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
@@ -186,6 +186,16 @@ impl WasmMixedComputeProject {
         self.compute.acknowledge(dispatch_id)
     }
 
+    #[wasm_bindgen(js_name = completeComputeCommand)]
+    pub fn complete_compute_command(
+        &self,
+        dispatch_id: u32,
+        outputs: Array,
+    ) -> Result<(), JsValue> {
+        self.compute
+            .complete(dispatch_id, completed_outputs_from_js(outputs)?)
+    }
+
     #[wasm_bindgen(js_name = rejectComputeCommand)]
     pub fn reject_compute_command(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
         self.compute.reject(dispatch_id, reason)
@@ -208,19 +218,129 @@ impl WasmMixedComputeProject {
     }
 }
 
-#[derive(Debug)]
-struct PreparedComputeRegion {
-    region: String,
-    placement: mech_core::ComputePlacement,
-    coordinator: ProgramArtifact,
-    program: ComputeProgram,
-    initializers: ComputeInitializerSet,
-    kernel: PreparedGpuKernel,
-    timings: CompileTimings,
+pub(crate) fn completed_outputs_from_js(
+    outputs: Array,
+) -> Result<BTreeMap<String, Vec<f32>>, JsValue> {
+    let mut completed = BTreeMap::new();
+    for value in outputs.iter() {
+        let name = Reflect::get(&value, &JsValue::from_str("name"))?
+            .as_string()
+            .ok_or_else(|| error("completed compute output is missing its name"))?;
+        let values = Reflect::get(&value, &JsValue::from_str("values"))?;
+        if !values.is_instance_of::<Float32Array>() {
+            return Err(error(format!(
+                "completed compute output `{name}` must contain Float32Array values"
+            )));
+        }
+        if completed
+            .insert(name.clone(), Float32Array::new(&values).to_vec())
+            .is_some()
+        {
+            return Err(error(format!(
+                "completed compute output `{name}` was supplied more than once"
+            )));
+        }
+    }
+    Ok(completed)
 }
 
 #[derive(Debug)]
-enum PreparedGpuKernel {
+pub(crate) struct PreparedComputeRegion {
+    pub(crate) region: String,
+    pub(crate) placement: mech_core::ComputePlacement,
+    pub(crate) coordinator: ProgramArtifact,
+    pub(crate) program: ComputeProgram,
+    pub(crate) initializers: ComputeInitializerSet,
+    pub(crate) kernel: PreparedGpuKernel,
+    pub(crate) timings: CompileTimings,
+}
+
+#[derive(Clone)]
+pub(crate) struct BrowserComputeBridge {
+    command: ComputeCommandHandle,
+    manifest: JsValue,
+    backend: String,
+}
+
+impl BrowserComputeBridge {
+    pub(crate) fn manifest(&self) -> JsValue {
+        self.manifest.clone()
+    }
+
+    pub(crate) fn backend(&self) -> String {
+        self.backend.clone()
+    }
+
+    pub(crate) fn take_command(&self) -> Result<JsValue, JsValue> {
+        self.command
+            .take_command_data()?
+            .map(|command| compute_command_value(&self.command.region, command))
+            .transpose()
+            .map(|command| command.unwrap_or(JsValue::NULL))
+    }
+
+    pub(crate) fn acknowledge(&self, dispatch_id: u32) -> Result<(), JsValue> {
+        self.command.acknowledge(dispatch_id)
+    }
+
+    pub(crate) fn complete(
+        &self,
+        dispatch_id: u32,
+        outputs: BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), JsValue> {
+        self.command.complete(dispatch_id, outputs)
+    }
+
+    pub(crate) fn reject(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
+        self.command.reject(dispatch_id, reason)
+    }
+}
+
+pub(crate) struct PreparedBrowserComputeHost {
+    pub(crate) factory: ComputeHostFactory,
+    pub(crate) coordinator: ProgramArtifact,
+    pub(crate) bridge: BrowserComputeBridge,
+}
+
+pub(crate) fn prepare_browser_compute_host(
+    document: &MechConfigDocument,
+    prepared: PreparedComputeRegion,
+    gpu_available: bool,
+) -> MResult<PreparedBrowserComputeHost> {
+    let compute_index = configured_host_index(document, "compute")?;
+    let command = ComputeCommandHandle::new(prepared.region.clone());
+    let outputs = BrowserOutputHandle::default();
+    let registry = browser_compute_backend_registry(command.clone(), outputs, gpu_available)?;
+    let factory = ComputeHostFactory::new(
+        prepared.region.clone(),
+        prepared.placement,
+        prepared.program.clone(),
+        prepared.initializers.clone(),
+        registry,
+        ComputePlatform::Browser,
+    )?;
+    let backend = factory
+        .resolved_backend_id(&document.hosts[compute_index].settings)?
+        .to_string();
+    let manifest = gpu_program_manifest(
+        prepared.kernel.browser_program(),
+        &initializer_values(&prepared.program, &prepared.initializers)?,
+        prepared.timings,
+    )
+    .map_err(|failure| mixed_error(format!("browser compute manifest failed: {failure:?}")))?;
+    Ok(PreparedBrowserComputeHost {
+        factory,
+        coordinator: prepared.coordinator,
+        bridge: BrowserComputeBridge {
+            command,
+            manifest,
+            backend,
+        },
+    })
+}
+
+#[derive(Debug)]
+pub(crate) enum PreparedGpuKernel {
     Elementwise(ElementwiseKernel),
     FixedShape(FixedShapeKernel),
 }
@@ -233,7 +353,7 @@ impl PreparedGpuKernel {
         }
     }
 
-    fn browser_program(&self) -> BrowserGpuProgram<'_> {
+    pub(crate) fn browser_program(&self) -> BrowserGpuProgram<'_> {
         match self {
             Self::Elementwise(program) => BrowserGpuProgram::Elementwise(program),
             Self::FixedShape(program) => BrowserGpuProgram::FixedShape(program),
@@ -265,12 +385,28 @@ fn compile_named_compute_region(
     }
     let mut compiler = builder.build_compiler()?;
     let catalog_setup = milliseconds(compiler_started);
+    prepare_compute_region(&mut compiler, tree, parsing, catalog_setup)
+}
+
+pub(crate) fn prepare_compute_region(
+    compiler: &mut mech_runtime::ProgramCompiler,
+    tree: &Program,
+    parsing: f64,
+    catalog_setup: f64,
+) -> MResult<PreparedComputeRegion> {
     let artifact_started = Instant::now();
     let mixed = compiler.compile_mixed_tree(tree)?;
     let artifact_compilation = milliseconds(artifact_started);
     let lowering_started = Instant::now();
     let initial_values =
         initializer_values_from_interface(&mixed.compute.interface, &mixed.compute.initializers)?;
+    let mut activation_values = initial_values.clone();
+    activation_values.extend(
+        mixed
+            .activation_inputs
+            .iter()
+            .map(|(name, value)| (name.clone(), value_elements(value))),
+    );
     let kernel = match lower_elementwise_compute_program(&mixed.compute.artifact) {
         Ok(program) => PreparedGpuKernel::Elementwise(
             ElementwiseKernel::from_compute_program(&program)
@@ -278,7 +414,7 @@ fn compile_named_compute_region(
         ),
         Err(elementwise_failure) => PreparedGpuKernel::FixedShape(
             ComputeLowerer
-                .compile_broadcast(&mixed.compute.artifact, &initial_values)
+                .compile_broadcast(&mixed.compute.artifact, &activation_values)
                 .map_err(|fixed_failure| {
                     mixed_error(format!(
                         "compute lowering failed for both portable kernels; elementwise: {elementwise_failure}; fixed-shape: {fixed_failure}",
@@ -343,7 +479,7 @@ fn configured_host_index(document: &MechConfigDocument, provider: &str) -> MResu
     Ok(hosts[0].0)
 }
 
-fn initializer_values(
+pub(crate) fn initializer_values(
     program: &ComputeProgram,
     initializers: &ComputeInitializerSet,
 ) -> MResult<BTreeMap<String, Vec<f32>>> {
@@ -580,8 +716,8 @@ impl RuntimeHostInputDriver for PointerInputDriver {
 }
 
 #[derive(Clone, Debug)]
-struct ComputeCommandHandle {
-    region: String,
+pub(crate) struct ComputeCommandHandle {
+    pub(crate) region: String,
     state: Arc<Mutex<ComputeCommandState>>,
 }
 
@@ -592,6 +728,7 @@ struct ComputeCommandState {
     next_dispatch_id: u32,
     in_flight: BTreeSet<u32>,
     acknowledged: u32,
+    completed_outputs: VecDeque<BTreeMap<String, Vec<f32>>>,
     rejected: VecDeque<(u32, String)>,
 }
 
@@ -602,21 +739,21 @@ struct QueuedComputeCommand {
 }
 
 #[derive(Debug)]
-struct ComputeCommandData {
-    changed_inputs: BTreeMap<String, Vec<f32>>,
-    dispatch_id: Option<u32>,
-    acknowledgement_required: bool,
+pub(crate) struct ComputeCommandData {
+    pub(crate) changed_inputs: BTreeMap<String, Vec<f32>>,
+    pub(crate) dispatch_id: Option<u32>,
+    pub(crate) acknowledgement_required: bool,
 }
 
 impl ComputeCommandHandle {
-    fn new(region: String) -> Self {
+    pub(crate) fn new(region: String) -> Self {
         Self {
             region,
             state: Arc::new(Mutex::new(ComputeCommandState::default())),
         }
     }
 
-    fn take_command_data(&self) -> Result<Option<ComputeCommandData>, JsValue> {
+    pub(crate) fn take_command_data(&self) -> Result<Option<ComputeCommandData>, JsValue> {
         let mut state = self
             .state
             .lock()
@@ -656,7 +793,7 @@ impl ComputeCommandHandle {
     fn queue_wgpu(
         &self,
         changed_inputs: &mut BTreeMap<String, Vec<f32>>,
-    ) -> Result<u32, ComputeExecutionError> {
+    ) -> Result<(u32, Option<BTreeMap<String, Vec<f32>>>), ComputeExecutionError> {
         let mut state = self.state.lock().map_err(|_| {
             browser_execution_error(WGPU_BACKEND, "dispatch", "command lock is poisoned")
         })?;
@@ -673,15 +810,27 @@ impl ComputeCommandHandle {
         })?;
         state.next_dispatch_id = dispatch_id;
         let completed_turns = std::mem::take(&mut state.acknowledged);
+        let mut latest_outputs = None;
+        for _ in 0..completed_turns {
+            latest_outputs = state.completed_outputs.pop_front();
+        }
         state.changed_inputs.append(changed_inputs);
         state.queued = Some(QueuedComputeCommand {
             dispatch_id: Some(dispatch_id),
             acknowledgement_required: true,
         });
-        Ok(completed_turns)
+        Ok((completed_turns, latest_outputs))
     }
 
-    fn acknowledge(&self, dispatch_id: u32) -> Result<(), JsValue> {
+    pub(crate) fn acknowledge(&self, dispatch_id: u32) -> Result<(), JsValue> {
+        self.complete(dispatch_id, BTreeMap::new())
+    }
+
+    pub(crate) fn complete(
+        &self,
+        dispatch_id: u32,
+        outputs: BTreeMap<String, Vec<f32>>,
+    ) -> Result<(), JsValue> {
         let mut state = self
             .state
             .lock()
@@ -695,10 +844,11 @@ impl ComputeCommandHandle {
             .acknowledged
             .checked_add(1)
             .ok_or_else(|| error("compute acknowledgement count overflow"))?;
+        state.completed_outputs.push_back(outputs);
         Ok(())
     }
 
-    fn reject(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
+    pub(crate) fn reject(&self, dispatch_id: u32, reason: &str) -> Result<(), JsValue> {
         let mut state = self
             .state
             .lock()
@@ -734,7 +884,10 @@ fn ensure_command_slot_available(
     Ok(())
 }
 
-fn compute_command_value(region: &str, command: ComputeCommandData) -> Result<JsValue, JsValue> {
+pub(crate) fn compute_command_value(
+    region: &str,
+    command: ComputeCommandData,
+) -> Result<JsValue, JsValue> {
     let value = Object::new();
     set(&value, "region", region)?;
     set(&value, "dispatch", true)?;
@@ -758,7 +911,7 @@ fn compute_command_value(region: &str, command: ComputeCommandData) -> Result<Js
 }
 
 #[derive(Clone, Debug, Default)]
-struct BrowserOutputHandle {
+pub(crate) struct BrowserOutputHandle {
     values: Arc<Mutex<BTreeMap<String, Vec<f32>>>>,
 }
 
@@ -799,7 +952,7 @@ impl BrowserOutputHandle {
     }
 }
 
-fn browser_compute_backend_registry(
+pub(crate) fn browser_compute_backend_registry(
     command: ComputeCommandHandle,
     outputs: BrowserOutputHandle,
     gpu_available: bool,
@@ -1034,6 +1187,7 @@ impl ComputeExecutable for BrowserWgpuExecutable {
             program: self.program.clone(),
             command: self.command.clone(),
             changed_inputs: BTreeMap::new(),
+            outputs: ComputeOutputSnapshot::default(),
         }))
     }
 }
@@ -1043,6 +1197,7 @@ struct BrowserWgpuSession {
     program: ComputeProgram,
     command: ComputeCommandHandle,
     changed_inputs: BTreeMap<String, Vec<f32>>,
+    outputs: ComputeOutputSnapshot,
 }
 
 impl ComputeSession for BrowserWgpuSession {
@@ -1083,7 +1238,10 @@ impl ComputeSession for BrowserWgpuSession {
                 "the browser render bridge accepts one resident turn per frame",
             ));
         }
-        let completed_turns = self.command.queue_wgpu(&mut self.changed_inputs)?;
+        let (completed_turns, outputs) = self.command.queue_wgpu(&mut self.changed_inputs)?;
+        if let Some(outputs) = outputs.filter(|outputs| !outputs.is_empty()) {
+            self.outputs = browser_output_snapshot(&self.program, outputs)?;
+        }
         Ok(ComputeDispatchReport {
             completed_turns,
             ..Default::default()
@@ -1092,14 +1250,68 @@ impl ComputeSession for BrowserWgpuSession {
 
     fn read_outputs(
         &mut self,
-        _selection: &ComputeOutputSelection,
+        selection: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        Err(browser_execution_error(
-            WGPU_BACKEND,
-            "read outputs",
-            "browser WebGPU outputs remain resident in the JavaScript render bridge",
-        ))
+        let values = self
+            .outputs
+            .values
+            .iter()
+            .filter(|(port, _)| match selection {
+                ComputeOutputSelection::All => true,
+                ComputeOutputSelection::Ports(ports) => ports.contains(port),
+            })
+            .map(|(port, value)| (*port, value.clone()))
+            .collect();
+        Ok(ComputeOutputSnapshot { values })
     }
+}
+
+fn browser_output_snapshot(
+    program: &ComputeProgram,
+    completed: BTreeMap<String, Vec<f32>>,
+) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
+    let mut values = BTreeMap::new();
+    for (name, physical) in completed {
+        let port = program
+            .interface()
+            .outputs
+            .iter()
+            .find(|port| port.name.as_ref() == name)
+            .ok_or_else(|| {
+                browser_execution_error(
+                    WGPU_BACKEND,
+                    "read outputs",
+                    format!("browser bridge returned undeclared output `{name}`"),
+                )
+            })?;
+        let expected = port.elements().map_err(|failure| {
+            browser_execution_error(WGPU_BACKEND, "read outputs", failure.to_string())
+        })?;
+        if physical.len() != expected {
+            return Err(browser_execution_error(
+                WGPU_BACKEND,
+                "read outputs",
+                format!(
+                    "browser bridge returned {} values for `{name}`; expected {expected}",
+                    physical.len()
+                ),
+            ));
+        }
+        let value = if port.dimensions.is_empty() {
+            ComputeValue::ScalarF32(physical[0])
+        } else {
+            ComputeValue::TensorF32 {
+                dimensions: port.dimensions.clone(),
+                layout: match program.kernel() {
+                    ComputeKernel::FixedShape(_) => TensorLayout::ColumnMajor,
+                    ComputeKernel::Elementwise(_) => TensorLayout::RowMajor,
+                },
+                values: physical.into(),
+            }
+        };
+        values.insert(port.id, value);
+    }
+    Ok(ComputeOutputSnapshot { values })
 }
 
 fn value_elements(value: &ComputeValue) -> Vec<f32> {
@@ -1216,12 +1428,17 @@ positions = next-positions
 
     const FIXED_SHAPE_SOURCE: &str = r#"
 +> math
+@particles := compute://particles/kernel{:write(input/control), :write(turn)}
+lane := 1f32..=1000f32
+@particles/input/control <- lane * 0.001<f32>
+@particles/turn <- 1
 
-matrix-step @compute
+particle-field @compute
 -------------------------------------------------------------------------------
 transform := [1f32 0f32; 0f32 1f32]
 ~state := [1f32; 2f32]
-state = transform ** state + [0.5<f32>; 0.25<f32>]
+control := 0f32
+state = transform ** state + [control; 0.25<f32>]
 state
 "#;
 
@@ -1335,9 +1552,9 @@ state
             panic!("matrix recurrence must select the fixed-shape kernel")
         };
 
-        assert_eq!(kernel.instances(), 1);
-        assert!(kernel.physical_inputs(&inputs).unwrap().is_empty());
-        assert_eq!(kernel.physical_states()[0].elements, 2);
+        assert_eq!(kernel.instances(), 1_000);
+        assert_eq!(kernel.physical_inputs(&inputs).unwrap()[0].elements, 1_000);
+        assert_eq!(kernel.physical_states()[0].elements, 2_000);
         assert!(kernel.wgsl().contains("state_write_"));
     }
 
@@ -1404,7 +1621,7 @@ state
     fn wgpu_reports_completion_only_after_the_bridge_acknowledges_it() {
         let compute = ComputeCommandHandle::new("test".to_owned());
         let mut first_inputs = BTreeMap::from([("x".to_owned(), vec![1.0])]);
-        assert_eq!(compute.queue_wgpu(&mut first_inputs).unwrap(), 0);
+        assert_eq!(compute.queue_wgpu(&mut first_inputs).unwrap(), (0, None));
 
         let first = compute.take_command_data().unwrap().unwrap();
         assert!(first.acknowledgement_required);
@@ -1412,7 +1629,10 @@ state
         compute.acknowledge(dispatch_id).unwrap();
 
         let mut second_inputs = BTreeMap::new();
-        assert_eq!(compute.queue_wgpu(&mut second_inputs).unwrap(), 1);
+        assert_eq!(
+            compute.queue_wgpu(&mut second_inputs).unwrap(),
+            (1, Some(BTreeMap::new()))
+        );
     }
 
     #[test]

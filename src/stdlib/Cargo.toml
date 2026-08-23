@@ -213,6 +213,7 @@ combinatorics_default = ["combinatorics_n_choose_k"]
 
 # Machine-owned leaf operations select the owning crate's concrete runtime
 # implementation and, where syntax has a dedicated branch, its engine marker.
+math_abs = ["mech-math", "mech-math/abs"]
 math_add = ["mech-math", "mech-math/add", "mech-engine/math_add"]
 math_sub = ["mech-math", "mech-math/sub", "mech-engine/math_sub"]
 math_mul = ["mech-math", "mech-math/mul", "mech-engine/math_mul"]

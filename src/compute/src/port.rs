@@ -114,6 +114,95 @@ impl ComputePort {
             }),
         }
     }
+
+    /// Normalizes either one inner value or an outer batch of inner values.
+    ///
+    /// The source language only owns ordinary scalar and matrix values, so a
+    /// coordinator may express a scalar batch as a row/column matrix rather
+    /// than a rank-one tensor. Batch admission therefore follows element
+    /// count, while the returned compute value has the canonical
+    /// `[instances, ..inner_dimensions]` row-major shape.
+    pub fn normalize_broadcast_value(
+        &self,
+        value: ComputeValue,
+        expected_instances: Option<u32>,
+    ) -> Result<(ComputeValue, u32), ComputeValueError> {
+        if let Ok(value) = self.normalize_value(value.clone()) {
+            return Ok((value, 1));
+        }
+
+        let ComputeValue::TensorF32 {
+            dimensions,
+            layout,
+            values,
+        } = value
+        else {
+            return self.normalize_value(value).map(|value| (value, 1));
+        };
+        let inner_elements = self.elements()?;
+        if inner_elements == 0 || values.is_empty() || values.len() % inner_elements != 0 {
+            return Err(ComputeValueError::ElementCountMismatch {
+                port: self.name.clone(),
+                expected: inner_elements,
+                actual: values.len(),
+            });
+        }
+        let instances = values.len() / inner_elements;
+        if let Some(expected) = expected_instances
+            && instances != 1
+            && instances != expected as usize
+        {
+            let mut expected_dimensions = Vec::from(self.dimensions.as_ref());
+            expected_dimensions.insert(0, u64::from(expected));
+            return Err(ComputeValueError::DimensionMismatch {
+                port: self.name.clone(),
+                expected: expected_dimensions.into_boxed_slice(),
+                actual: dimensions,
+            });
+        }
+        let instances =
+            u32::try_from(instances).map_err(|_| ComputeValueError::ElementCountMismatch {
+                port: self.name.clone(),
+                expected: usize::try_from(u32::MAX).unwrap_or(usize::MAX),
+                actual: values.len(),
+            })?;
+        let values = match layout {
+            TensorLayout::RowMajor => values,
+            TensorLayout::ColumnMajor => {
+                Arc::from(column_major_to_row_major(&dimensions, values.as_ref())?)
+            }
+            TensorLayout::Scalar => {
+                return Err(ComputeValueError::LayoutMismatch {
+                    port: self.name.clone(),
+                    expected: TensorLayout::RowMajor,
+                    actual: TensorLayout::Scalar,
+                });
+            }
+        };
+        if instances == 1 {
+            if self.dimensions.is_empty() {
+                return Ok((ComputeValue::ScalarF32(values[0]), 1));
+            }
+            return Ok((
+                ComputeValue::TensorF32 {
+                    dimensions: self.dimensions.clone(),
+                    layout: TensorLayout::RowMajor,
+                    values,
+                },
+                1,
+            ));
+        }
+        let mut canonical_dimensions = Vec::from(self.dimensions.as_ref());
+        canonical_dimensions.insert(0, u64::from(instances));
+        Ok((
+            ComputeValue::TensorF32 {
+                dimensions: canonical_dimensions.into_boxed_slice(),
+                layout: TensorLayout::RowMajor,
+                values,
+            },
+            instances,
+        ))
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

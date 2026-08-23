@@ -232,6 +232,8 @@ class BrowserComputeProject {
     this.lastInputs = {};
     this.totalDispatches = 0;
     this.bridgeFailure = null;
+    this.readbackBuffers = [];
+    this.fixedDispatchPending = false;
   }
 
   async start() {
@@ -284,7 +286,9 @@ class BrowserComputeProject {
     if (
       this.backend === 'wgpu' &&
       (typeof this.controller.acknowledgeComputeCommand !== 'function' ||
-        typeof this.controller.rejectComputeCommand !== 'function')
+        typeof this.controller.rejectComputeCommand !== 'function' ||
+        (this.manifest.kernelKind === 'fixed-shape' &&
+          typeof this.controller.completeComputeCommand !== 'function'))
     ) {
       throw new Error('WASM build-profile mismatch: the WebGPU command acknowledgement API is unavailable');
     }
@@ -395,7 +399,7 @@ class BrowserComputeProject {
     for (const state of this.manifest.states) {
       const buffers = [0, 1].map(() => this.device.createBuffer({
         size: state.elements * Float32Array.BYTES_PER_ELEMENT,
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       }));
       this.device.queue.writeBuffer(buffers[0], 0, state.initialValues);
       if (this.backend === 'wgpu') {
@@ -412,7 +416,7 @@ class BrowserComputeProject {
       }
       const buffer = this.device.createBuffer({
         size: Math.max(4, binding.elements * Float32Array.BYTES_PER_ELEMENT),
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
       });
       if (binding.initialValues && this.backend === 'wgpu') {
         this.device.queue.writeBuffer(buffer, 0, binding.initialValues);
@@ -456,17 +460,106 @@ class BrowserComputeProject {
     return this.fixedBuffers.get(binding.binding);
   }
 
-  outputBuffer(index) {
-    if (this.stateBuffers.has(this.output.slot)) {
-      return this.stateBuffers.get(this.output.slot)[index];
+  outputBuffer(index, output = this.output) {
+    if (this.stateBuffers.has(output.slot)) {
+      return this.stateBuffers.get(output.slot)[index];
     }
     const binding = this.manifest.bindings.find(
-      (candidate) => candidate.role === 'output' && candidate.slot === this.output.slot,
+      (candidate) => candidate.role === 'output' && candidate.slot === output.slot,
     );
     if (!binding) {
-      throw new Error(`compute output ${this.output.name} has no physical buffer`);
+      throw new Error(`compute output ${output.name} has no physical buffer`);
     }
     return this.fixedBuffers.get(binding.binding);
+  }
+
+  acquireReadbackBuffer(size) {
+    let entry = this.readbackBuffers.find((candidate) => !candidate.busy && candidate.size >= size);
+    if (!entry) {
+      entry = {
+        buffer: this.device.createBuffer({
+          size: Math.max(4, size),
+          usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
+        }),
+        size: Math.max(4, size),
+        busy: false,
+      };
+      this.readbackBuffers.push(entry);
+    }
+    entry.busy = true;
+    return entry;
+  }
+
+  prepareFixedReadback(encoder, outputIndex) {
+    if (this.manifest.kernelKind !== 'fixed-shape') {
+      return null;
+    }
+    const outputs = [];
+    let byteLength = 0;
+    for (const output of this.manifest.outputs) {
+      const bytes = output.elementsPerInstance * Float32Array.BYTES_PER_ELEMENT;
+      outputs.push({ output, offset: byteLength, bytes });
+      byteLength += bytes;
+    }
+    const integrity = this.manifest.bindings.find(
+      (binding) => binding.role === 'integrity-fault',
+    );
+    const integrityOffset = integrity ? byteLength : null;
+    if (integrity) {
+      byteLength += integrity.elements * Uint32Array.BYTES_PER_ELEMENT;
+    }
+    const staging = this.acquireReadbackBuffer(byteLength);
+    for (const item of outputs) {
+      encoder.copyBufferToBuffer(
+        this.outputBuffer(outputIndex, item.output),
+        0,
+        staging.buffer,
+        item.offset,
+        item.bytes,
+      );
+    }
+    if (integrity) {
+      const source = this.fixedBuffers.get(integrity.binding);
+      encoder.copyBufferToBuffer(
+        source,
+        0,
+        staging.buffer,
+        integrityOffset,
+        integrity.elements * Uint32Array.BYTES_PER_ELEMENT,
+      );
+    }
+    return { staging, outputs, integrity, integrityOffset, byteLength };
+  }
+
+  async completedFixedOutputs(readback) {
+    await readback.staging.buffer.mapAsync(GPUMapMode.READ, 0, readback.byteLength);
+    try {
+      const mapped = readback.staging.buffer.getMappedRange(0, readback.byteLength);
+      if (readback.integrity) {
+        const words = new Uint32Array(
+          mapped,
+          readback.integrityOffset,
+          readback.integrity.elements,
+        );
+        if (words[0] !== 0) {
+          const packed = words[1];
+          const code = packed & 0xff;
+          const instance = packed >>> 8;
+          const constraint = (this.manifest.constraints || [])
+            .find((candidate) => candidate.code === code);
+          throw new Error(
+            `GPU integrity constraint ${constraint?.name || code} failed at batch instance ${instance}`,
+          );
+        }
+      }
+      return readback.outputs.map(({ output, offset, bytes }) => ({
+        name: output.name,
+        values: Float32Array.from(new Float32Array(mapped, offset, bytes / 4)),
+      }));
+    } finally {
+      readback.staging.buffer.unmap();
+      readback.staging.busy = false;
+    }
   }
 
   resize() {
@@ -540,7 +633,18 @@ class BrowserComputeProject {
     this.resize();
     const encoder = this.device.createCommandEncoder();
     let renderedBuffer = this.activeBuffer;
+    let readback = null;
     if (dispatch && this.backend === 'wgpu') {
+      const integrity = this.manifest.bindings.find(
+        (binding) => binding.role === 'integrity-fault',
+      );
+      if (integrity) {
+        this.device.queue.writeBuffer(
+          this.fixedBuffers.get(integrity.binding),
+          0,
+          new Uint32Array([0, 0xffffffff]),
+        );
+      }
       const compute = encoder.beginComputePass();
       compute.setPipeline(this.computePipeline);
       compute.setBindGroup(0, this.computeBindGroups[this.activeBuffer]);
@@ -549,7 +653,9 @@ class BrowserComputeProject {
       );
       compute.end();
       renderedBuffer = 1 - this.activeBuffer;
+      readback = this.prepareFixedReadback(encoder, renderedBuffer);
     }
+    const displayBuffer = readback ? this.activeBuffer : renderedBuffer;
     const render = encoder.beginRenderPass({
       colorAttachments: [{
         view: this.context.getCurrentTexture().createView(),
@@ -559,11 +665,11 @@ class BrowserComputeProject {
       }],
     });
     render.setPipeline(this.renderPipeline);
-    render.setBindGroup(0, this.renderBindGroups[renderedBuffer]);
+    render.setBindGroup(0, this.renderBindGroups[displayBuffer]);
     render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
-    return renderedBuffer;
+    return { renderedBuffer, readback };
   }
 
   rejectWgpuCommand(dispatchId, error) {
@@ -579,7 +685,7 @@ class BrowserComputeProject {
     return failure;
   }
 
-  trackWgpuCompletion(dispatchId) {
+  trackWgpuCompletion(dispatchId, readback, outputIndex) {
     let completion;
     try {
       completion = this.device.queue.onSubmittedWorkDone();
@@ -587,15 +693,24 @@ class BrowserComputeProject {
       throw this.rejectWgpuCommand(dispatchId, error);
     }
     completion.then(
-      () => {
+      async () => {
         try {
-          this.controller.acknowledgeComputeCommand(dispatchId);
+          if (readback) {
+            const outputs = await this.completedFixedOutputs(readback);
+            this.activeBuffer = outputIndex;
+            this.controller.completeComputeCommand(dispatchId, outputs);
+          } else {
+            this.controller.acknowledgeComputeCommand(dispatchId);
+          }
         } catch (error) {
-          this.bridgeFailure = error instanceof Error ? error : new Error(String(error));
+          this.bridgeFailure = this.rejectWgpuCommand(dispatchId, error);
+        } finally {
+          this.fixedDispatchPending = false;
         }
       },
       (error) => {
         this.bridgeFailure = this.rejectWgpuCommand(dispatchId, error);
+        this.fixedDispatchPending = false;
       },
     );
   }
@@ -613,13 +728,18 @@ class BrowserComputeProject {
       ? 1 / 60
       : Math.max(0.001, Math.min(0.05, (timestamp - this.lastFrameTime) / 1000));
     this.lastFrameTime = timestamp;
-    const command = this.controller.frame(
-      this.pointer.x,
-      this.pointer.y,
-      this.pointer.pressed,
-      deltaSeconds,
-      maxInputsPerFrame,
-    );
+    const fixedDispatchBlocked = this.backend === 'wgpu' &&
+      this.manifest.kernelKind === 'fixed-shape' &&
+      this.fixedDispatchPending;
+    const command = fixedDispatchBlocked
+      ? null
+      : this.controller.frame(
+          this.pointer.x,
+          this.pointer.y,
+          this.pointer.pressed,
+          deltaSeconds,
+          maxInputsPerFrame,
+        );
     const dispatch = command?.dispatch === true;
     let wgpuDispatchId = null;
     if (dispatch && this.backend === 'wgpu') {
@@ -632,9 +752,9 @@ class BrowserComputeProject {
       }
       wgpuDispatchId = command.dispatchId;
     }
-    let renderedBuffer;
+    let submission;
     try {
-      renderedBuffer = this.submitFrame(command, dispatch);
+      submission = this.submitFrame(command, dispatch);
     } catch (error) {
       if (wgpuDispatchId !== null) {
         throw this.rejectWgpuCommand(wgpuDispatchId, error);
@@ -642,8 +762,16 @@ class BrowserComputeProject {
       throw error;
     }
     if (wgpuDispatchId !== null) {
-      this.activeBuffer = renderedBuffer;
-      this.trackWgpuCompletion(wgpuDispatchId);
+      if (submission.readback) {
+        this.fixedDispatchPending = true;
+      } else {
+        this.activeBuffer = submission.renderedBuffer;
+      }
+      this.trackWgpuCompletion(
+        wgpuDispatchId,
+        submission.readback,
+        submission.renderedBuffer,
+      );
     }
     if (dispatch) {
       this.totalDispatches += 1;

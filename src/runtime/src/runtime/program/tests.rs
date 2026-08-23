@@ -1125,6 +1125,47 @@ fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
 
 #[cfg(feature = "compute")]
 #[test]
+fn mixed_tree_retains_array_activation_as_outer_broadcast_extent() {
+    let tree = mech_syntax::parse(
+        r#"
+@compute := compute://worker/kernel{:write(input/x), :write(turn)}
+lanes := [1f32 2f32 3f32 4f32]
+@compute/input/x <- lanes
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 0f32
+result := x + 1f32
+result
+"#,
+    )
+    .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+
+    assert_eq!(
+        mixed.activation_inputs["x"],
+        mech_compute::ComputeValue::TensorF32 {
+            dimensions: vec![4].into_boxed_slice(),
+            layout: mech_compute::TensorLayout::RowMajor,
+            values: Arc::from([1.0, 2.0, 3.0, 4.0]),
+        }
+    );
+    let input = mixed.compute.interface.input_named("x").unwrap();
+    assert_eq!(
+        mixed.compute.initializers.get(input.id),
+        Some(&mech_compute::ComputeValue::ScalarF32(0.0)),
+        "the one-lane port initializer must remain distinct from its outer activation batch",
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn mixed_tree_normalizes_matrix_initializers_to_canonical_row_major_layout() {
     let tree = mech_syntax::parse(
         r#"

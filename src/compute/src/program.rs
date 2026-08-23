@@ -87,6 +87,20 @@ impl ComputeProgram {
         &self,
         update: ComputeInputUpdate,
     ) -> Result<ComputeInputUpdate, ComputeInputError> {
-        self.interface.normalize_input_update(update)
+        let port = self
+            .interface
+            .input(update.port)
+            .ok_or(ComputeInputError::UnknownInputPort { port: update.port })?;
+        let value = if let Some(storage) = self.fixed_shape_storage() {
+            port.normalize_broadcast_value(update.value, Some(storage.instances))
+                .map(|(value, _)| value)
+        } else {
+            port.normalize_value(update.value)
+        }
+        .map_err(ComputeInputError::InvalidValue)?;
+        Ok(ComputeInputUpdate {
+            port: update.port,
+            value,
+        })
     }
 }

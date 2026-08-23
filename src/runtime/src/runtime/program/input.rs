@@ -20,6 +20,7 @@ pub struct ResidentHostTurnFailed {
     pub status: &'static str,
     pub failure_count: usize,
     pub phase: Option<crate::TurnFailurePhase>,
+    pub failures: Vec<String>,
 }
 
 impl MechErrorKind for ResidentHostTurnFailed {
@@ -28,14 +29,20 @@ impl MechErrorKind for ResidentHostTurnFailed {
     }
 
     fn message(&self) -> String {
+        let details = if self.failures.is_empty() {
+            String::new()
+        } else {
+            format!(": {}", self.failures.join("; "))
+        };
         format!(
-            "resident host turn {} completed as {}{} with {} reported failures",
+            "resident host turn {} completed as {}{} with {} reported failures{}",
             self.turn.get(),
             self.status,
             self.phase
                 .map(|phase| format!(" during {phase:?}"))
                 .unwrap_or_default(),
             self.failure_count,
+            details,
         )
     }
 }
@@ -56,6 +63,10 @@ pub(crate) fn resident_host_turn_error(
             status: "accepted-with-delivery-failures",
             failure_count: delivery_failures.len(),
             phase: None,
+            failures: delivery_failures
+                .iter()
+                .map(|failure| failure.message.clone())
+                .collect(),
         },
         crate::ResidentExternalTurnOutcome::Rejected { turn, phase, .. } => {
             ResidentHostTurnFailed {
@@ -63,6 +74,7 @@ pub(crate) fn resident_host_turn_error(
                 status: "rejected",
                 failure_count: 1,
                 phase: Some(*phase),
+                failures: Vec::new(),
             }
         }
         crate::ResidentExternalTurnOutcome::PublishedIndeterminate { turn, failures, .. } => {
@@ -71,6 +83,10 @@ pub(crate) fn resident_host_turn_error(
                 status: "published-indeterminate",
                 failure_count: failures.len(),
                 phase: None,
+                failures: failures
+                    .iter()
+                    .map(|failure| failure.message.clone())
+                    .collect(),
             }
         }
     };

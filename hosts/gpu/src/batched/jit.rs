@@ -163,6 +163,7 @@ impl NativeKernel {
         jit_builder
             .symbol("mech_jit_sinf", mech_jit_sinf as *const u8)
             .symbol("mech_jit_cosf", mech_jit_cosf as *const u8)
+            .symbol("mech_jit_sqrtf", mech_jit_sqrtf as *const u8)
             .symbol("mech_jit_atan2f", mech_jit_atan2f as *const u8);
         let mut module = JITModule::new(jit_builder);
 
@@ -184,6 +185,9 @@ impl NativeKernel {
             .map_err(native_error)?;
         let cos_id = module
             .declare_function("mech_jit_cosf", Linkage::Import, &unary_signature)
+            .map_err(native_error)?;
+        let sqrt_id = module
+            .declare_function("mech_jit_sqrtf", Linkage::Import, &unary_signature)
             .map_err(native_error)?;
         let atan2_id = module
             .declare_function("mech_jit_atan2f", Linkage::Import, &binary_signature)
@@ -267,10 +271,12 @@ impl NativeKernel {
             builder.switch_to_block(body);
             let sin_ref = module.declare_func_in_func(sin_id, builder.func);
             let cos_ref = module.declare_func_in_func(cos_id, builder.func);
+            let sqrt_ref = module.declare_func_in_func(sqrt_id, builder.func);
             let atan2_ref = module.declare_func_in_func(atan2_id, builder.func);
             let functions = MathFunctions {
                 sin: sin_ref,
                 cos: cos_ref,
+                sqrt: sqrt_ref,
                 atan2: atan2_ref,
             };
             let mut registers = vec![None; program.fixed_ir().register_count];
@@ -386,6 +392,7 @@ impl NativeKernel {
 struct MathFunctions {
     sin: cranelift_codegen::ir::FuncRef,
     cos: cranelift_codegen::ir::FuncRef,
+    sqrt: cranelift_codegen::ir::FuncRef,
     atan2: cranelift_codegen::ir::FuncRef,
 }
 
@@ -466,6 +473,7 @@ fn lower_computation(
                 ElementwiseOperation::Unary(operation) => match operation {
                     UnaryOperation::Sin => call_math(builder, functions.sin, &values),
                     UnaryOperation::Cos => call_math(builder, functions.cos, &values),
+                    UnaryOperation::Sqrt => call_math(builder, functions.sqrt, &values),
                 },
                 ElementwiseOperation::Atan2 => call_math(builder, functions.atan2, &values),
                 ElementwiseOperation::Identity => values[0],
@@ -680,6 +688,10 @@ extern "C" fn mech_jit_sinf(value: f32) -> f32 {
 
 extern "C" fn mech_jit_cosf(value: f32) -> f32 {
     value.cos()
+}
+
+extern "C" fn mech_jit_sqrtf(value: f32) -> f32 {
+    value.sqrt()
 }
 
 extern "C" fn mech_jit_atan2f(y: f32, x: f32) -> f32 {

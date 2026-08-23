@@ -96,6 +96,7 @@ fn evaluate_scalar_computation_simd(computation: &ScalarComputation, registers: 
                 ElementwiseOperation::Unary(operation) => match operation {
                     UnaryOperation::Sin => values[0].sin(),
                     UnaryOperation::Cos => values[0].cos(),
+                    UnaryOperation::Sqrt => values[0].sqrt(),
                 },
                 ElementwiseOperation::Atan2 => values[0].atan2(values[1]),
                 ElementwiseOperation::Identity => values[0],
@@ -2003,6 +2004,7 @@ fn scalar_operation(name: &str) -> Option<ElementwiseOperation> {
         "math/div" => Some(ElementwiseOperation::Binary(BinaryOperation::Divide)),
         "math/sin" => Some(ElementwiseOperation::Unary(UnaryOperation::Sin)),
         "math/cos" => Some(ElementwiseOperation::Unary(UnaryOperation::Cos)),
+        "math/sqrt" => Some(ElementwiseOperation::Unary(UnaryOperation::Sqrt)),
         "math/atan2" => Some(ElementwiseOperation::Atan2),
         _ => None,
     }

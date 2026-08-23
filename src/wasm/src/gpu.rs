@@ -155,6 +155,23 @@ pub(crate) fn gpu_program_manifest(
     }
     set(&manifest, "bindings", bindings)?;
 
+    let constraints = Array::new();
+    if let BrowserGpuProgram::FixedShape(program) = program {
+        for (index, (_id, name)) in program.named_integrity_constraints().enumerate() {
+            let value = Object::new();
+            set(
+                &value,
+                "code",
+                u32::try_from(index + 1).map_err(|_| {
+                    error("GPU integrity constraint count exceeds the browser limit")
+                })?,
+            )?;
+            set(&value, "name", name)?;
+            constraints.push(&value);
+        }
+    }
+    set(&manifest, "constraints", constraints)?;
+
     let states = Array::new();
     match program {
         BrowserGpuProgram::Elementwise(program) => {

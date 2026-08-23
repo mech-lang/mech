@@ -49,6 +49,8 @@ use super::{ResidentRouteFailure, ResidentRouteFailureClass, route_failure, unsu
 
 #[cfg(not(feature = "compute"))]
 type ComputeRegionInterface = ();
+#[cfg(not(feature = "compute"))]
+type ComputeValue = ();
 
 #[derive(Clone, Copy)]
 enum ProgramBytecodeEncoding {
@@ -82,6 +84,11 @@ pub struct ProgramCompiler {
 pub struct MixedProgramCompilation {
     pub coordinator: ProgramArtifactCompilationProduct,
     pub compute: ComputeRegionCompilation,
+    /// Declaration-time values sent across the compute boundary by the
+    /// coordinator. Fixed-shape backends use these ordinary Mech arrays to
+    /// infer the outer broadcast extent; the inner compute interface remains
+    /// the schema for one independent instance.
+    pub activation_inputs: BTreeMap<String, ComputeValue>,
 }
 
 #[cfg(feature = "compute")]
@@ -456,6 +463,8 @@ impl<'a> ProgramCompilerView<'a> {
             providers: self.resources,
             resource_send_operations: &operations,
             compute_interface: None,
+            #[cfg(feature = "compute")]
+            compute_activation_inputs: BTreeMap::new(),
         };
         let result = program
             .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
@@ -495,6 +504,7 @@ impl<'a> ProgramCompilerView<'a> {
             external_input_names,
             None,
         )
+        .map(|(product, inputs, _)| (product, inputs))
     }
 
     fn compile_tree_artifact_with_input_initializers_and_compute(
@@ -506,6 +516,7 @@ impl<'a> ProgramCompilerView<'a> {
     ) -> MResult<(
         ProgramArtifactCompilationProduct,
         BTreeMap<String, RuntimeHostInputValue>,
+        BTreeMap<String, ComputeValue>,
     )> {
         let mut program = self.new_program();
         for (name, value) in inputs {
@@ -524,10 +535,16 @@ impl<'a> ProgramCompilerView<'a> {
             providers: self.resources,
             resource_send_operations: &operations,
             compute_interface,
+            #[cfg(feature = "compute")]
+            compute_activation_inputs: BTreeMap::new(),
         };
         let result = program
             .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
             .map_err(classify_source_planning)?;
+        #[cfg(feature = "compute")]
+        let activation_inputs = std::mem::take(&mut services.compute_activation_inputs);
+        #[cfg(not(feature = "compute"))]
+        let activation_inputs = BTreeMap::new();
         publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
         let input_names = external_input_names
             .iter()
@@ -556,7 +573,7 @@ impl<'a> ProgramCompilerView<'a> {
                     format!("resident ProgramArtifact finalization failed: {error:?}"),
                 )
             })?;
-        Ok((product, initial_inputs))
+        Ok((product, initial_inputs, activation_inputs))
     }
 
     #[cfg(feature = "compute")]
@@ -569,17 +586,17 @@ impl<'a> ProgramCompilerView<'a> {
             &external_input_names,
         )?;
         let compute = assemble_compute_region(compute, initial_inputs, &partition.name)?;
-        let coordinator = self
+        let (coordinator, _, activation_inputs) = self
             .compile_tree_artifact_with_input_initializers_and_compute(
                 &partition.coordinator,
                 &BTreeMap::new(),
                 &BTreeSet::new(),
                 Some(&compute.interface),
-            )?
-            .0;
+            )?;
         Ok(MixedProgramCompilation {
             coordinator,
             compute,
+            activation_inputs,
         })
     }
 
@@ -596,7 +613,7 @@ impl<'a> ProgramCompilerView<'a> {
         let tree = declaration_tree(&modules[&root].source.source)?;
         let partition = partition_mixed_program(&tree)?;
         let external_input_names = source_declared_compute_inputs(&tree)?;
-        let (compute, initial_inputs) = self.compile_resolved_tree_artifact(
+        let (compute, initial_inputs, _) = self.compile_resolved_tree_artifact(
             &root,
             &modules,
             partition.compute,
@@ -604,7 +621,7 @@ impl<'a> ProgramCompilerView<'a> {
             None,
         )?;
         let compute = assemble_compute_region(compute, initial_inputs, &partition.name)?;
-        let (coordinator, _) = self.compile_resolved_tree_artifact(
+        let (coordinator, _, activation_inputs) = self.compile_resolved_tree_artifact(
             &root,
             &modules,
             partition.coordinator,
@@ -614,6 +631,7 @@ impl<'a> ProgramCompilerView<'a> {
         Ok(MixedProgramCompilation {
             coordinator,
             compute,
+            activation_inputs,
         })
     }
 
@@ -628,6 +646,7 @@ impl<'a> ProgramCompilerView<'a> {
     ) -> MResult<(
         ProgramArtifactCompilationProduct,
         BTreeMap<String, RuntimeHostInputValue>,
+        BTreeMap<String, ComputeValue>,
     )> {
         let mut modules = resolved_modules.clone();
         replace_root_tree(
@@ -640,6 +659,7 @@ impl<'a> ProgramCompilerView<'a> {
         let mut instances = HashMap::new();
         let mut active = Vec::new();
         let mut root_program = Some(self.new_program());
+        let mut activation_inputs = BTreeMap::new();
         self.execute_module(
             root,
             &modules,
@@ -647,6 +667,7 @@ impl<'a> ProgramCompilerView<'a> {
             &mut active,
             Some(&mut root_program),
             compute_interface,
+            &mut activation_inputs,
         )?;
         let program = root_program
             .as_mut()
@@ -689,7 +710,7 @@ impl<'a> ProgramCompilerView<'a> {
                     format!("resident ProgramArtifact finalization failed: {error:?}"),
                 )
             })?;
-        Ok((product, initial_inputs))
+        Ok((product, initial_inputs, activation_inputs))
     }
 
     fn evaluate_static_tree_symbols(
@@ -714,6 +735,8 @@ impl<'a> ProgramCompilerView<'a> {
             providers: self.resources,
             resource_send_operations: &operations,
             compute_interface: None,
+            #[cfg(feature = "compute")]
+            compute_activation_inputs: BTreeMap::new(),
         };
         program
             .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
@@ -858,6 +881,8 @@ impl<'a> ProgramCompilerView<'a> {
         let mut instances = HashMap::new();
         let mut active = Vec::new();
         let mut root_program = Some(self.new_program());
+        #[cfg(feature = "compute")]
+        let mut compute_activation_inputs = BTreeMap::new();
         self.execute_module(
             &root,
             &modules,
@@ -865,6 +890,8 @@ impl<'a> ProgramCompilerView<'a> {
             &mut active,
             Some(&mut root_program),
             None,
+            #[cfg(feature = "compute")]
+            &mut compute_activation_inputs,
         )?;
         let program = root_program
             .as_mut()
@@ -912,6 +939,8 @@ impl<'a> ProgramCompilerView<'a> {
         let mut instances = HashMap::new();
         let mut active = Vec::new();
         let mut root_program = Some(self.new_program());
+        #[cfg(feature = "compute")]
+        let mut compute_activation_inputs = BTreeMap::new();
         for root in plan_order {
             self.execute_module(
                 &root,
@@ -920,6 +949,8 @@ impl<'a> ProgramCompilerView<'a> {
                 &mut active,
                 Some(&mut root_program),
                 None,
+                #[cfg(feature = "compute")]
+                &mut compute_activation_inputs,
             )?;
         }
         let program = root_program
@@ -1162,6 +1193,7 @@ impl<'a> ProgramCompilerView<'a> {
         active: &mut Vec<String>,
         root_program: Option<&mut Option<CompilerPlanningProgram>>,
         compute_interface: Option<&ComputeRegionInterface>,
+        #[cfg(feature = "compute")] compute_activation_inputs: &mut BTreeMap<String, ComputeValue>,
     ) -> MResult<()> {
         if instances.contains_key(canonical_uri) {
             return Ok(());
@@ -1189,6 +1221,8 @@ impl<'a> ProgramCompilerView<'a> {
                 active,
                 None,
                 compute_interface,
+                #[cfg(feature = "compute")]
+                compute_activation_inputs,
             )?;
         }
 
@@ -1209,10 +1243,14 @@ impl<'a> ProgramCompilerView<'a> {
             providers: self.resources,
             resource_send_operations: &resource_send_operations,
             compute_interface,
+            #[cfg(feature = "compute")]
+            compute_activation_inputs: BTreeMap::new(),
         };
         let result = program
             .plan_tree_with_services(&tree, &mut services)
             .map_err(classify_source_planning)?;
+        #[cfg(feature = "compute")]
+        compute_activation_inputs.append(&mut services.compute_activation_inputs);
         let document_output_ids = root_document_output_ids(&tree);
         let document_outputs = program.compiler_document_output_values(&document_output_ids)?;
 
@@ -1499,6 +1537,9 @@ fn compute_initializers(
         })?;
         let value = match value {
             RuntimeHostInputValue::F32(value) => ComputeValue::ScalarF32(value),
+            RuntimeHostInputValue::F64(value) => {
+                ComputeValue::ScalarF32(narrow_compute_input_f64(port.name.as_ref(), value)?)
+            }
             RuntimeHostInputValue::F32Matrix {
                 rows,
                 columns,
@@ -1507,6 +1548,19 @@ fn compute_initializers(
                 dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
                 layout: TensorLayout::ColumnMajor,
                 values: Arc::from(values),
+            },
+            RuntimeHostInputValue::F64Matrix {
+                rows,
+                columns,
+                values,
+            } => ComputeValue::TensorF32 {
+                dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
+                layout: TensorLayout::ColumnMajor,
+                values: values
+                    .into_iter()
+                    .map(|value| narrow_compute_input_f64(port.name.as_ref(), value))
+                    .collect::<MResult<Vec<_>>>()?
+                    .into(),
             },
             value => {
                 return Err(MechError::new(
@@ -1545,6 +1599,23 @@ fn compute_initializers(
         ));
     }
     Ok(ComputeInitializerSet::new(initializers))
+}
+
+#[cfg(feature = "compute")]
+fn narrow_compute_input_f64(port: &str, value: f64) -> MResult<f32> {
+    let narrowed = value as f32;
+    if value.is_finite() && !narrowed.is_finite() {
+        return Err(MechError::new(
+            RuntimeInvalidOperationError {
+                operation: "compile_mixed_program",
+                reason: format!(
+                    "compute input `{port}` contains f64 value {value} outside the f32 range"
+                ),
+            },
+            None,
+        ));
+    }
+    Ok(narrowed)
 }
 
 /// Preserve caller order for independent roots while promoting any requested
@@ -1964,6 +2035,8 @@ struct CompilerPlanningServices<'a> {
     providers: &'a RuntimeResourceRegistry,
     resource_send_operations: &'a [CompiledResourceSendOperation],
     compute_interface: Option<&'a ComputeRegionInterface>,
+    #[cfg(feature = "compute")]
+    compute_activation_inputs: BTreeMap<String, ComputeValue>,
 }
 
 struct CompilerExternalContractResolver<'a> {
@@ -2046,7 +2119,10 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
             .compute_interface
             .filter(|_| is_compute_kernel_base(&key.base_uri))
         {
-            return plan_compute_write(interface, &key, intent, value);
+            if let Some((name, value)) = plan_compute_write(interface, &key, intent, value)? {
+                self.compute_activation_inputs.insert(name, value);
+            }
+            return Ok(());
         }
         self.providers.plan_write(RuntimeResourceWriteRequest {
             base_uri: key.base_uri,
@@ -2072,11 +2148,10 @@ impl CompilerPlanningServices<'_> {
     fn plan_read(&self, request: &ExecutionResourceRequest) -> MResult<LegacyValue> {
         let key = RuntimeResourceKey::new(&request.base_uri, &request.path)?;
         #[cfg(feature = "compute")]
-        if self
-            .compute_interface
-            .is_some_and(|_| is_compute_kernel_base(&key.base_uri))
+        if is_compute_kernel_base(&key.base_uri)
+            && let Some(interface) = self.compute_interface
         {
-            return plan_compute_read(&key);
+            return plan_compute_read(interface, &key);
         }
         self.providers.plan_read(RuntimeResourceReadRequest {
             base_uri: key.base_uri,
@@ -2092,7 +2167,44 @@ fn is_compute_kernel_base(base_uri: &str) -> bool {
         .is_some_and(|instance| !instance.is_empty() && instance.ends_with("/kernel"))
 }
 
-fn plan_compute_read(key: &RuntimeResourceKey) -> MResult<LegacyValue> {
+#[cfg(feature = "compute")]
+fn plan_compute_read(
+    interface: &ComputeRegionInterface,
+    key: &RuntimeResourceKey,
+) -> MResult<LegacyValue> {
+    if let Some(name) = key.path.strip_prefix("sample/") {
+        let port = interface
+            .outputs
+            .iter()
+            .find(|port| port.name.as_ref() == name)
+            .ok_or_else(|| {
+                compute_planning_error(format!("unknown sampled compute output `{name}`"))
+            })?;
+        let elements = port.elements().map_err(|error| {
+            compute_planning_error(format!(
+                "sampled compute output `{name}` has an invalid shape: {error}"
+            ))
+        })?;
+        return match port.dimensions.as_ref() {
+            [] => RuntimeHostInputValue::F64(0.0).into_mech_value(),
+            [columns] => RuntimeHostInputValue::F64Matrix {
+                rows: 1,
+                columns: *columns as usize,
+                values: vec![0.0; elements],
+            }
+            .into_mech_value(),
+            [rows, columns] => RuntimeHostInputValue::F64Matrix {
+                rows: *rows as usize,
+                columns: *columns as usize,
+                values: vec![0.0; elements],
+            }
+            .into_mech_value(),
+            dimensions => Err(compute_planning_error(format!(
+                "sampled compute output `{name}` has unsupported rank {}",
+                dimensions.len(),
+            ))),
+        };
+    }
     match key.path.as_str() {
         "backend" | "last-fault" => RuntimeHostInputValue::String(String::new()).into_mech_value(),
         "turns" | "dispatch-ms" | "fault-count" => {
@@ -2110,14 +2222,14 @@ fn plan_compute_write(
     key: &RuntimeResourceKey,
     intent: RuntimeResourceWriteIntent,
     value: &LegacyValue,
-) -> MResult<()> {
+) -> MResult<Option<(String, ComputeValue)>> {
     if intent != RuntimeResourceWriteIntent::Send {
         return Err(compute_planning_error(
             "compute inputs and turns are effects; use <-",
         ));
     }
     if key.path == "turn" {
-        return Ok(());
+        return Ok(None);
     }
     let name = key.path.strip_prefix("input/").ok_or_else(|| {
         compute_planning_error(format!("unknown compute input path `{}`", key.path))
@@ -2128,6 +2240,9 @@ fn plan_compute_write(
     let value =
         RuntimeHostInputValue::from_numeric_mech_value(value).and_then(|value| match value {
             RuntimeHostInputValue::F32(value) => Ok(ComputeValue::ScalarF32(value)),
+            RuntimeHostInputValue::F64(value) => Ok(ComputeValue::ScalarF32(
+                narrow_compute_input_f64(port.name.as_ref(), value)?,
+            )),
             RuntimeHostInputValue::F32Matrix {
                 rows,
                 columns,
@@ -2137,15 +2252,30 @@ fn plan_compute_write(
                 layout: TensorLayout::ColumnMajor,
                 values: Arc::from(values),
             }),
+            RuntimeHostInputValue::F64Matrix {
+                rows,
+                columns,
+                values,
+            } => Ok(ComputeValue::TensorF32 {
+                dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
+                layout: TensorLayout::ColumnMajor,
+                values: values
+                    .into_iter()
+                    .map(|value| narrow_compute_input_f64(port.name.as_ref(), value))
+                    .collect::<MResult<Vec<_>>>()?
+                    .into(),
+            }),
             value => Err(compute_planning_error(format!(
                 "compute input `{}` requires fixed-shape f32 data, found `{value:?}`",
                 port.name
             ))),
         })?;
-    port.normalize_value(value).map_err(|error| {
-        compute_planning_error(format!("compute input `{}` is invalid: {error}", port.name))
-    })?;
-    Ok(())
+    let (value, _) = port
+        .normalize_broadcast_value(value, None)
+        .map_err(|error| {
+            compute_planning_error(format!("compute input `{}` is invalid: {error}", port.name))
+        })?;
+    Ok(Some((name.to_owned(), value)))
 }
 
 fn compute_planning_error(message: impl Into<String>) -> MechError {

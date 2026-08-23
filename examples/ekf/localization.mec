@@ -28,9 +28,13 @@ robot and contracts after the next camera reacquires it.
 
 @clock := timer://clock/tick{:read(tick)}
 @scene := scene://localization/frame{:write(replace)}
+@filters := compute://filters/kernel{:read(sample/result.0), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}
 
   π := 3.141592654
-  turn-pulse := @clock/tick * 0.0 + 1.0
+  ~last-clock-tick := 0.0
+  clock-delta := @clock/tick - last-clock-tick
+  clock-delta-positive := (clock-delta + (clock-delta ^ 2) ^ 0.5) / 2.0
+  turn-pulse := clock-delta-positive - (clock-delta-positive - 1.0 + ((clock-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
   Δt := turn-pulse * 0.05
   cruise-speed := 1.15
   turn-rate-limit := 1.75
@@ -45,6 +49,8 @@ robot and contracts after the next camera reacquires it.
               9.0 1.0
               9.0 9.0
               1.0 9.0]
+
+  last-clock-tick = @clock/tick
 
 
 2. Square-Drive State Machine
@@ -86,7 +92,8 @@ reduction make the corners smooth without position clamps.
   lap-ticks := 4.0 * side-ticks
   ~drive-phase-index := 1.0
   drive-phase := drive-phases[1,drive-phase-index]
-  next-drive-phase-index := (drive-phase-index % lap-ticks) + turn-pulse
+  advanced-drive-phase-index := (drive-phase-index % lap-ticks) + 1.0
+  next-drive-phase-index := drive-phase-index + turn-pulse * (advanced-drive-phase-index - drive-phase-index)
   phase-progress := ((drive-phase-index - 1.0) % side-ticks) / side-ticks
   path-parameter := drive-phase + phase-progress
   lookahead-parameter := (path-parameter + 0.15) % 4.0
@@ -104,7 +111,7 @@ reduction make the corners smooth without position clamps.
   ~truth := [2.5
              2.5
              0.0]
-  simulation-time := @clock/tick * Δt
+  simulation-time := @clock/tick * 0.05
   target-heading := math/atan2(target-y - truth[2], target-x - truth[1])
   heading-error-raw := target-heading - truth[3]
   heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
@@ -218,60 +225,152 @@ The matrix equations below are the complete filter. The motion model predicts
 once per control interval, then the scheduled range-and-bearing observation may
 correct the state if that camera is in range. Covariance uses the numerically
 stable Joseph form and is symmetrized before becoming the next resident state.
+The ordinary arrays here define 1,000 independent lanes. Lane zero receives the
+exact displayed measurement; the remaining lanes receive deterministic sensor
+perturbations so the work is a real filter ensemble rather than 1,000 copies of
+one arithmetic result. Only lane zero is sampled back for the scene.
 
-  identity-3 := [1.0 0.0 0.0
-                 0.0 1.0 0.0
-                 0.0 0.0 1.0]
-  process-covariance := [0.08 0.0
-                         0.0 0.018]
-  measurement-covariance := [0.0225 0.0
-                             0.0 0.0004]
-  ~estimate := [2.9
-                2.15
-                0.16]
-  ~covariance := [0.45 0.0 0.0
-                  0.0 0.45 0.0
-                  0.0 0.0 0.08]
+  filter-count := 1000.0
+  filter-index := 1.0..=filter-count
+  filter-phase := 2.0 * 3.141592654 * (filter-index - 1.0) / filter-count
+  lane-dt-base := Δt
+  lane-speed-base := commanded-speed
+  lane-omega-base := commanded-omega
+  lane-camera-x-base := active-camera[1]
+  lane-camera-y-base := active-camera[2]
+  lane-range-base := observation[1]
+  lane-bearing-base := observation[2]
+  lane-visibility-base := active-camera-visibility
+  lane-zero := filter-index * 0.0
+  lane-dt := lane-zero + lane-dt-base
+  lane-speed := lane-zero + lane-speed-base * (1.0 + 0.002 * math/sin(filter-phase * 3.0))
+  lane-omega := lane-zero + lane-omega-base * (1.0 + 0.002 * math/sin(filter-phase * 5.0))
+  lane-camera-x := lane-zero + lane-camera-x-base
+  lane-camera-y := lane-zero + lane-camera-y-base
+  lane-range := lane-zero + lane-range-base + 0.012 * math/sin(filter-phase * 7.0)
+  lane-bearing := lane-zero + lane-bearing-base + 0.0015 * math/sin(filter-phase * 11.0)
+  lane-visibility := lane-zero + lane-visibility-base
+  lane-control := [lane-dt' lane-speed' lane-omega']
+  lane-camera := [lane-camera-x' lane-camera-y']
+  lane-measurement := [lane-range' lane-bearing' lane-visibility']
 
-  estimate-mid-heading := estimate[3] + commanded-omega * Δt / 2.0
-  estimate-mid-cos := math/cos(estimate-mid-heading)
-  estimate-mid-sin := math/sin(estimate-mid-heading)
-  motion-jacobian := [1.0 0.0 -commanded-speed * estimate-mid-sin * Δt
-                      0.0 1.0  commanded-speed * estimate-mid-cos * Δt
-                      0.0 0.0 1.0]
-  control-jacobian := [estimate-mid-cos * Δt -commanded-speed * estimate-mid-sin * Δt ^ 2 / 2.0
-                       estimate-mid-sin * Δt  commanded-speed * estimate-mid-cos * Δt ^ 2 / 2.0
-                       0.0                      Δt]
-  predicted-estimate := estimate + [commanded-speed * estimate-mid-cos * Δt
-                                    commanded-speed * estimate-mid-sin * Δt
-                                    commanded-omega * Δt]
+  @filters/input/control <- lane-control
+  @filters/input/camera <- lane-camera
+  @filters/input/measurement <- lane-measurement
+  @filters/turn <- @clock/tick
+
+  filter-sample := @filters/sample/result.0
+  corrected-estimate := [filter-sample[1]
+                         filter-sample[2]
+                         filter-sample[3]]
+  corrected-covariance := [filter-sample[4] filter-sample[7] filter-sample[10]
+                           filter-sample[5] filter-sample[8] filter-sample[11]
+                           filter-sample[6] filter-sample[9] filter-sample[12]]
+  predicted-estimate := [filter-sample[13]
+                         filter-sample[14]
+                         filter-sample[15]]
+
+
+ekf-batch @compute
+-------------------------------------------------------------------------------
+
+  control := [0.05<f32>; 1f32; 0f32]
+  camera := [1f32; 1f32]
+  measurement := [1f32; 0f32; 0f32]
+  dt := control[1,1]
+  linear-velocity := control[2,1]
+  angular-velocity := control[3,1]
+  visibility := measurement[3,1]
+
+  identity-3 := [1f32 0f32 0f32
+                 0f32 1f32 0f32
+                 0f32 0f32 1f32]
+  process-covariance := [0.08<f32> 0f32
+                         0f32 0.018<f32>]
+  measurement-covariance := [0.0225<f32> 0f32
+                             0f32 0.0004<f32>]
+  ~filter-state := [2.9<f32>
+                    2.15<f32>
+                    0.16<f32>
+                    0.45<f32>
+                    0f32
+                    0f32
+                    0f32
+                    0.45<f32>
+                    0f32
+                    0f32
+                    0f32
+                    0.08<f32>
+                    2.9<f32>
+                    2.15<f32>
+                    0.16<f32>]
+  state := [filter-state[1,1]
+            filter-state[2,1]
+            filter-state[3,1]]
+  covariance := [filter-state[4,1] filter-state[7,1] filter-state[10,1]
+                 filter-state[5,1] filter-state[8,1] filter-state[11,1]
+                 filter-state[6,1] filter-state[9,1] filter-state[12,1]]
+
+  mid-heading := state[3,1] + angular-velocity * dt / 2f32
+  mid-cos := math/cos(mid-heading)
+  mid-sin := math/sin(mid-heading)
+  motion-jacobian := [1f32 0f32 -linear-velocity * mid-sin * dt
+                      0f32 1f32  linear-velocity * mid-cos * dt
+                      0f32 0f32 1f32]
+  control-jacobian := [mid-cos * dt -linear-velocity * mid-sin * dt * dt / 2f32
+                       mid-sin * dt  linear-velocity * mid-cos * dt * dt / 2f32
+                       0f32          dt]
+  predicted-state := state + [linear-velocity * mid-cos * dt
+                              linear-velocity * mid-sin * dt
+                              angular-velocity * dt]
   predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-covariance ** control-jacobian'
 
-  predicted-dx := active-camera[1] - predicted-estimate[1]
-  predicted-dy := active-camera[2] - predicted-estimate[2]
-  predicted-q := predicted-dx ^ 2 + predicted-dy ^ 2
-  predicted-range := predicted-q ^ 0.5
+  camera-delta := camera - [predicted-state[1,1]; predicted-state[2,1]]
+  predicted-dx := camera-delta[1,1]
+  predicted-dy := camera-delta[2,1]
+  predicted-q := predicted-dx * predicted-dx + predicted-dy * predicted-dy
+  predicted-range := math/sqrt(predicted-q)
   predicted-observation := [predicted-range
-                            math/atan2(predicted-dy, predicted-dx) - predicted-estimate[3]]
-  observation-jacobian := [-predicted-dx / predicted-range -predicted-dy / predicted-range 0.0
-                            predicted-dy / predicted-q     -predicted-dx / predicted-q -1.0]
+                            math/atan2(predicted-dy, predicted-dx) - predicted-state[3,1]]
+  observation-jacobian := [-predicted-dx / predicted-range -predicted-dy / predicted-range 0f32
+                            predicted-dy / predicted-q     -predicted-dx / predicted-q -1f32]
   innovation-covariance := observation-jacobian ** predicted-covariance ** observation-jacobian' + measurement-covariance
   innovation-determinant := innovation-covariance[1,1] * innovation-covariance[2,2] - innovation-covariance[1,2] * innovation-covariance[2,1]
   innovation-inverse := [ innovation-covariance[2,2] / innovation-determinant -innovation-covariance[1,2] / innovation-determinant
                          -innovation-covariance[2,1] / innovation-determinant  innovation-covariance[1,1] / innovation-determinant]
   kalman-gain := predicted-covariance ** observation-jacobian' ** innovation-inverse
-  bearing-residual := observation[2] - predicted-observation[2]
-  innovation := [observation[1] - predicted-observation[1]
+  bearing-residual := measurement[2,1] - predicted-observation[2,1]
+  innovation := [measurement[1,1] - predicted-observation[1,1]
                  math/atan2(math/sin(bearing-residual), math/cos(bearing-residual))]
-  observed-estimate := predicted-estimate + kalman-gain ** innovation
+  observed-state := predicted-state + kalman-gain ** innovation
   joseph-a := identity-3 - kalman-gain ** observation-jacobian
   observed-covariance-raw := joseph-a ** predicted-covariance ** joseph-a' + kalman-gain ** measurement-covariance ** kalman-gain'
-  observed-covariance := 0.5 * (observed-covariance-raw + observed-covariance-raw')
-  corrected-estimate := predicted-estimate + active-camera-visibility * (observed-estimate - predicted-estimate)
-  corrected-covariance := predicted-covariance + active-camera-visibility * (observed-covariance - predicted-covariance)
+  observed-covariance := 0.5<f32> * (observed-covariance-raw + observed-covariance-raw')
+  next-state := predicted-state + visibility * (observed-state - predicted-state)
+  next-covariance := predicted-covariance + visibility * (observed-covariance - predicted-covariance)
 
-  estimate = corrected-estimate
-  covariance = corrected-covariance
+  finite-limit := 3.402823466e38<f32>
+  finite-state! := math/abs(next-state[1,1]) <= finite-limit && math/abs(next-state[2,1]) <= finite-limit && math/abs(next-state[3,1]) <= finite-limit
+  positive-covariance! := next-covariance[1,1] > 0f32 && next-covariance[2,2] > 0f32 && next-covariance[3,3] > 0f32
+  symmetric-covariance! := math/abs(next-covariance[1,2] - next-covariance[2,1]) <= 0.0001<f32> && math/abs(next-covariance[1,3] - next-covariance[3,1]) <= 0.0001<f32> && math/abs(next-covariance[2,3] - next-covariance[3,2]) <= 0.0001<f32>
+
+  next-filter-state := [next-state[1,1]
+                        next-state[2,1]
+                        next-state[3,1]
+                        next-covariance[1,1]
+                        next-covariance[2,1]
+                        next-covariance[3,1]
+                        next-covariance[1,2]
+                        next-covariance[2,2]
+                        next-covariance[3,2]
+                        next-covariance[1,3]
+                        next-covariance[2,3]
+                        next-covariance[3,3]
+                        predicted-state[1,1]
+                        predicted-state[2,1]
+                        predicted-state[3,1]]
+  filter-state = next-filter-state
+  (filter-state, filter-state)
 
 
 5. Live Tracking Field
@@ -330,8 +429,11 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   ~estimate-path := [initial-estimate-path-x initial-estimate-path-y]
   truth-screen-point := ([truth-screen-x truth-screen-y])
   estimate-screen-point := ([estimate-screen-x estimate-screen-y])
-  next-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen-point)
-  next-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen-point)
+  advanced-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen-point)
+  advanced-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen-point)
+  next-truth-path := truth-path + turn-pulse * (advanced-truth-path - truth-path)
+  sample-pulse := 1.0 - turn-pulse
+  next-estimate-path := estimate-path + sample-pulse * (advanced-estimate-path - estimate-path)
   truth-path = next-truth-path
   estimate-path = next-estimate-path
 

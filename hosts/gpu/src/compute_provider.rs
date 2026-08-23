@@ -1,4 +1,5 @@
 use std::{
+    collections::{BTreeMap, BTreeSet},
     num::NonZeroU32,
     sync::{
         Arc, Mutex,
@@ -8,8 +9,8 @@ use std::{
 
 use mech_compute::{
     BackendRequest, ComputeBackendRegistry, ComputeDispatchReport, ComputeInitializerSet,
-    ComputeInputUpdate, ComputePlatform, ComputePort, ComputeProgram, ComputeSession, ComputeValue,
-    TensorLayout,
+    ComputeInputUpdate, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform,
+    ComputePort, ComputeProgram, ComputeSession, ComputeValue, TensorLayout,
 };
 use mech_core::{
     ComputePlacement, LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration,
@@ -195,12 +196,23 @@ impl RuntimeHostFactory for ComputeHostFactory {
         let telemetry = Arc::new(Mutex::new(None));
         let live = Arc::new(AtomicBool::new(false));
         let base_uri = format!("compute://{instance_name}/kernel");
+        let sample_requests = self
+            .program
+            .interface()
+            .outputs
+            .iter()
+            .map(|port| port.name.to_string())
+            .collect();
         let state = Arc::new(Mutex::new(ComputeHostState {
             backend: backend_id.to_string(),
+            program: Arc::clone(&self.program),
             turns: Ref::new(0.0),
             dispatch_ms: Ref::new(0.0),
             fault_count: Ref::new(0.0),
             last_fault: Ref::new(String::new()),
+            sampled_outputs: initial_sampled_outputs(&self.program)?,
+            sample_requests,
+            last_turn: None,
             session,
         }));
         let installation = RuntimeHostInstallation {
@@ -216,6 +228,13 @@ impl RuntimeHostFactory for ComputeHostFactory {
                 base_uri,
                 ingress: telemetry,
                 live,
+                sample_outputs: self
+                    .program
+                    .interface()
+                    .outputs
+                    .iter()
+                    .map(|port| port.name.to_string())
+                    .collect(),
             })],
         };
         *installed = Some(instance_name.to_owned());
@@ -225,10 +244,14 @@ impl RuntimeHostFactory for ComputeHostFactory {
 
 struct ComputeHostState {
     backend: String,
+    program: Arc<ComputeProgram>,
     turns: Ref<f64>,
     dispatch_ms: Ref<f64>,
     fault_count: Ref<f64>,
     last_fault: Ref<String>,
+    sampled_outputs: BTreeMap<String, LegacyValue>,
+    sample_requests: BTreeSet<String>,
+    last_turn: Option<RuntimeHostInputValue>,
     session: Box<dyn ComputeSession>,
 }
 
@@ -237,10 +260,12 @@ impl std::fmt::Debug for ComputeHostState {
         formatter
             .debug_struct("ComputeHostState")
             .field("backend", &self.backend)
+            .field("program", &self.program)
             .field("turns", &self.turns)
             .field("dispatch_ms", &self.dispatch_ms)
             .field("fault_count", &self.fault_count)
             .field("last_fault", &self.last_fault)
+            .field("sample_requests", &self.sample_requests)
             .field("session", &"<dyn ComputeSession>")
             .finish()
     }
@@ -267,7 +292,39 @@ impl ComputeResourceProvider {
             .flatten()
     }
 
+    fn declared_sample_output(&self, path: &str) -> Option<&ComputePort> {
+        let name = path.strip_prefix("sample/")?;
+        (!name.is_empty())
+            .then(|| {
+                self.program
+                    .interface()
+                    .outputs
+                    .iter()
+                    .find(|port| port.name.as_ref() == name)
+            })
+            .flatten()
+    }
+
     fn telemetry_value(&self, path: &str, planning: bool) -> MResult<LegacyValue> {
+        if let Some(port) = self.declared_sample_output(path) {
+            if planning {
+                return zero_sample_value(port);
+            }
+            let mut state = self.state.lock().map_err(|_| {
+                compute_host_error("ComputeHostRead", "compute host state lock is poisoned")
+            })?;
+            state.sample_requests.insert(port.name.to_string());
+            return state
+                .sampled_outputs
+                .get(port.name.as_ref())
+                .ok_or_else(|| {
+                    compute_host_error(
+                        "ComputeHostRead",
+                        format!("sampled output `{}` was not initialized", port.name),
+                    )
+                })?
+                .try_deep_snapshot();
+        }
         if planning {
             return match path {
                 "backend" | "last-fault" => {
@@ -362,7 +419,9 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
             intent: request.intent,
         })?;
         if let Some(port) = self.declared_input(&request.path) {
-            compute_input_update(port, request.value.try_deep_snapshot()?)?;
+            compute_input_update(&self.program, port, request.value.try_deep_snapshot()?)?;
+        } else {
+            compute_turn_token(&request.value)?;
         }
         Ok(())
     }
@@ -379,7 +438,8 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
             intent: request.intent,
         })?;
         if let Some(port) = self.declared_input(&request.path) {
-            let update = compute_input_update(port, request.value.try_deep_snapshot()?)?;
+            let update =
+                compute_input_update(&self.program, port, request.value.try_deep_snapshot()?)?;
             return Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
                 ComputeInputEffect {
                     resource: request.base_uri,
@@ -389,10 +449,12 @@ impl RuntimeResourceProvider for ComputeResourceProvider {
                 },
             )));
         }
+        let turn = compute_turn_token(&request.value)?;
         Ok(PreparedRuntimeEffect::AfterCommit(Box::new(
             ComputeDispatchEffect {
                 resource: request.base_uri,
                 region: self.region.clone(),
+                turn,
                 state: Arc::clone(&self.state),
                 telemetry: Arc::clone(&self.telemetry),
             },
@@ -453,6 +515,7 @@ impl RuntimeAfterCommitEffect for ComputeInputEffect {
 struct ComputeDispatchEffect {
     resource: String,
     region: Box<str>,
+    turn: RuntimeHostInputValue,
     state: Arc<Mutex<ComputeHostState>>,
     telemetry: Arc<Mutex<Option<RuntimeIngress>>>,
 }
@@ -473,10 +536,29 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
         let mut state = self.state.lock().map_err(|_| {
             compute_host_error("ComputeHostDispatch", "compute host state lock is poisoned")
         })?;
+        if state.last_turn.as_ref() == Some(&self.turn) {
+            return Ok(());
+        }
         let report = state
             .session
             .dispatch(NonZeroU32::new(1).expect("one is nonzero"))
             .map_err(|error| compute_host_error("ComputeHostDispatch", error.to_string()))?;
+        state.last_turn = Some(self.turn.clone());
+        if report.completed_turns > 0 && !state.sample_requests.is_empty() {
+            let selected = state
+                .program
+                .interface()
+                .outputs
+                .iter()
+                .filter(|port| state.sample_requests.contains(port.name.as_ref()))
+                .map(|port| port.id)
+                .collect();
+            let snapshot = state
+                .session
+                .read_outputs(&ComputeOutputSelection::Ports(selected))
+                .map_err(|error| compute_host_error("ComputeHostRead", error.to_string()))?;
+            update_sampled_outputs(&mut state, snapshot)?;
+        }
         apply_report(&mut state, &report);
         let updates = telemetry_updates(&self.resource, &state)?;
         drop(state);
@@ -513,7 +595,7 @@ fn telemetry_updates(
     resource: &str,
     state: &ComputeHostState,
 ) -> MResult<Vec<RuntimeHostInputUpdate>> {
-    Ok(vec![
+    let mut updates = vec![
         telemetry_update(
             resource,
             "backend",
@@ -539,7 +621,20 @@ fn telemetry_updates(
             "last-fault",
             RuntimeHostInputValue::String(state.last_fault.borrow().clone()),
         )?,
-    ])
+    ];
+    for name in &state.sample_requests {
+        let value = state.sampled_outputs.get(name).ok_or_else(|| {
+            compute_host_error(
+                "ComputeHostRead",
+                format!("requested sampled output `{name}` has no retained value"),
+            )
+        })?;
+        updates.push(RuntimeHostInputUpdate {
+            source: RuntimeHostInputSource::new(resource, format!("sample/{name}"))?,
+            value: RuntimeHostInputValue::from_numeric_mech_value(value)?,
+        });
+    }
+    Ok(updates)
 }
 
 fn telemetry_update(
@@ -558,15 +653,19 @@ struct ComputeTelemetryDriver {
     base_uri: String,
     ingress: Arc<Mutex<Option<RuntimeIngress>>>,
     live: Arc<AtomicBool>,
+    sample_outputs: BTreeSet<String>,
 }
 
 impl RuntimeHostInputDriver for ComputeTelemetryDriver {
     fn drives(&self, source: &RuntimeHostInputSource) -> bool {
         source.base_uri() == self.base_uri
-            && matches!(
+            && (matches!(
                 source.path(),
                 "backend" | "turns" | "dispatch-ms" | "fault-count" | "last-fault"
-            )
+            ) || source
+                .path()
+                .strip_prefix("sample/")
+                .is_some_and(|name| self.sample_outputs.contains(name)))
     }
 
     fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
@@ -628,6 +727,10 @@ pub fn compute_host_manifest() -> HostManifestConfig {
     }
 }
 
+pub fn validate_compute_host_settings(settings: &ConfigValue) -> MResult<()> {
+    configured_compute_settings(settings).map(|_| ())
+}
+
 struct ConfiguredComputeSettings {
     region: String,
     backend: BackendRequest,
@@ -681,10 +784,17 @@ fn configured_compute_settings(settings: &ConfigValue) -> MResult<ConfiguredComp
     })
 }
 
-fn compute_input_update(port: &ComputePort, value: LegacyValue) -> MResult<ComputeInputUpdate> {
+fn compute_input_update(
+    program: &ComputeProgram,
+    port: &ComputePort,
+    value: LegacyValue,
+) -> MResult<ComputeInputUpdate> {
     let detached = RuntimeHostInputValue::from_numeric_mech_value(&value)?;
     let value = match detached {
         RuntimeHostInputValue::F32(value) => ComputeValue::ScalarF32(value),
+        RuntimeHostInputValue::F64(value) => {
+            ComputeValue::ScalarF32(narrow_f64_input(port.name.as_ref(), value)?)
+        }
         RuntimeHostInputValue::F32Matrix {
             rows,
             columns,
@@ -693,6 +803,19 @@ fn compute_input_update(port: &ComputePort, value: LegacyValue) -> MResult<Compu
             dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
             layout: TensorLayout::ColumnMajor,
             values: Arc::from(values),
+        },
+        RuntimeHostInputValue::F64Matrix {
+            rows,
+            columns,
+            values,
+        } => ComputeValue::TensorF32 {
+            dimensions: vec![rows as u64, columns as u64].into_boxed_slice(),
+            layout: TensorLayout::ColumnMajor,
+            values: values
+                .into_iter()
+                .map(|value| narrow_f64_input(port.name.as_ref(), value))
+                .collect::<MResult<Vec<_>>>()?
+                .into(),
         },
         other => {
             return Err(compute_host_error(
@@ -704,16 +827,49 @@ fn compute_input_update(port: &ComputePort, value: LegacyValue) -> MResult<Compu
             ));
         }
     };
-    let value = port.normalize_value(value).map_err(|error| {
-        compute_host_error(
+    let update = program
+        .normalize_input_update(ComputeInputUpdate {
+            port: port.id,
+            value,
+        })
+        .map_err(|error| {
+            compute_host_error(
+                "ComputeHostWrite",
+                format!("compute input `{}` is invalid: {error}", port.name),
+            )
+        })?;
+    Ok(update)
+}
+
+fn compute_turn_token(value: &LegacyValue) -> MResult<RuntimeHostInputValue> {
+    let token = RuntimeHostInputValue::from_numeric_mech_value(value)?;
+    match token {
+        RuntimeHostInputValue::F32(value) if value.is_finite() => {
+            Ok(RuntimeHostInputValue::F32(value))
+        }
+        RuntimeHostInputValue::F64(value) if value.is_finite() => {
+            Ok(RuntimeHostInputValue::F64(value))
+        }
+        RuntimeHostInputValue::F32(_) | RuntimeHostInputValue::F64(_) => Err(compute_host_error(
             "ComputeHostWrite",
-            format!("compute input `{}` is invalid: {error}", port.name),
-        )
-    })?;
-    Ok(ComputeInputUpdate {
-        port: port.id,
-        value,
-    })
+            "compute turn token must be finite",
+        )),
+        other => Err(compute_host_error(
+            "ComputeHostWrite",
+            format!("compute turn token must be a scalar number, found `{other:?}`"),
+        )),
+    }
+}
+
+fn narrow_f64_input(port: &str, value: f64) -> MResult<f32> {
+    let narrowed = value as f32;
+    if value.is_finite() && !narrowed.is_finite() {
+        return Err(compute_host_error(
+            "ComputeHostWrite",
+            format!("compute input `{port}` contains f64 value {value} outside the f32 range"),
+        ));
+    }
+    Ok(narrowed)
 }
 
 fn compute_value_elements(value: &ComputeValue) -> u64 {
@@ -721,6 +877,217 @@ fn compute_value_elements(value: &ComputeValue) -> u64 {
         ComputeValue::ScalarF32(_) => 1,
         ComputeValue::TensorF32 { values, .. } => u64::try_from(values.len()).unwrap_or(u64::MAX),
     }
+}
+
+fn initial_sampled_outputs(program: &ComputeProgram) -> MResult<BTreeMap<String, LegacyValue>> {
+    program
+        .interface()
+        .outputs
+        .iter()
+        .map(|port| {
+            let value = program
+                .fixed_shape_storage()
+                .and_then(|storage| storage.states.iter().find(|state| state.slot == port.slot))
+                .map(|state| ComputeValue::TensorF32 {
+                    dimensions: port.dimensions.clone(),
+                    layout: TensorLayout::ColumnMajor,
+                    values: Arc::clone(&state.initializer),
+                })
+                .or_else(|| {
+                    program.elementwise_storage().and_then(|storage| {
+                        storage
+                            .states
+                            .iter()
+                            .find(|state| state.slot == port.slot)
+                            .map(|state| ComputeValue::TensorF32 {
+                                dimensions: port.dimensions.clone(),
+                                layout: TensorLayout::RowMajor,
+                                values: Arc::clone(&state.initializer),
+                            })
+                    })
+                });
+            Ok((
+                port.name.to_string(),
+                match value {
+                    Some(ComputeValue::TensorF32 { values, .. })
+                        if port.dimensions.is_empty() && values.len() == 1 =>
+                    {
+                        sampled_output_value(port, ComputeValue::ScalarF32(values[0]))?
+                    }
+                    Some(value) => sampled_output_value(port, value)?,
+                    None => zero_sample_value(port)?,
+                },
+            ))
+        })
+        .collect()
+}
+
+fn zero_sample_value(port: &ComputePort) -> MResult<LegacyValue> {
+    let elements = port.elements().map_err(|error| {
+        compute_host_error(
+            "ComputeHostConfiguration",
+            format!(
+                "compute output `{}` has an invalid shape: {error}",
+                port.name
+            ),
+        )
+    })?;
+    sampled_output_value(
+        port,
+        if port.dimensions.is_empty() {
+            ComputeValue::ScalarF32(0.0)
+        } else {
+            ComputeValue::TensorF32 {
+                dimensions: port.dimensions.clone(),
+                layout: TensorLayout::RowMajor,
+                values: vec![0.0; elements].into(),
+            }
+        },
+    )
+}
+
+fn update_sampled_outputs(
+    state: &mut ComputeHostState,
+    snapshot: ComputeOutputSnapshot,
+) -> MResult<()> {
+    let ports = state
+        .program
+        .interface()
+        .outputs
+        .iter()
+        .filter(|port| state.sample_requests.contains(port.name.as_ref()))
+        .cloned()
+        .collect::<Vec<_>>();
+    for port in ports {
+        let value = snapshot.values.get(&port.id).ok_or_else(|| {
+            compute_host_error(
+                "ComputeHostRead",
+                format!("backend omitted sampled output `{}`", port.name),
+            )
+        })?;
+        state.sampled_outputs.insert(
+            port.name.to_string(),
+            sampled_output_value(&port, value.clone())?,
+        );
+    }
+    Ok(())
+}
+
+fn sampled_output_value(port: &ComputePort, value: ComputeValue) -> MResult<LegacyValue> {
+    let inner_elements = port.elements().map_err(|error| {
+        compute_host_error(
+            "ComputeHostRead",
+            format!(
+                "compute output `{}` has an invalid shape: {error}",
+                port.name
+            ),
+        )
+    })?;
+    let row_major = match value {
+        ComputeValue::ScalarF32(value) if port.dimensions.is_empty() => vec![value],
+        ComputeValue::TensorF32 {
+            dimensions,
+            layout: TensorLayout::RowMajor,
+            values,
+        } => {
+            let inner_shape = port.dimensions.as_ref();
+            let expected_elements = if dimensions.as_ref() == inner_shape {
+                Some(inner_elements)
+            } else if dimensions.len() == inner_shape.len() + 1 && dimensions[1..] == *inner_shape {
+                usize::try_from(dimensions[0])
+                    .ok()
+                    .and_then(|instances| instances.checked_mul(inner_elements))
+            } else {
+                None
+            };
+            if expected_elements != Some(values.len()) || values.len() < inner_elements {
+                return Err(compute_host_error(
+                    "ComputeHostRead",
+                    format!(
+                        "sampled output `{}` returned shape {:?} with {} elements; expected one or more {:?} values",
+                        port.name,
+                        dimensions,
+                        values.len(),
+                        inner_shape,
+                    ),
+                ));
+            }
+            values[..inner_elements].to_vec()
+        }
+        ComputeValue::TensorF32 {
+            dimensions,
+            layout: TensorLayout::ColumnMajor,
+            values,
+        } if dimensions.as_ref() == port.dimensions.as_ref() => {
+            column_major_sample_to_row_major(&port.dimensions, values.as_ref())?
+        }
+        other => {
+            return Err(compute_host_error(
+                "ComputeHostRead",
+                format!(
+                    "sampled output `{}` does not match its inner {:?} contract: {other:?}",
+                    port.name, port.dimensions,
+                ),
+            ));
+        }
+    };
+    let row_major = row_major.into_iter().map(f64::from).collect::<Vec<_>>();
+    let detached = match port.dimensions.as_ref() {
+        [] => RuntimeHostInputValue::F64(row_major[0]),
+        [columns] => RuntimeHostInputValue::F64Matrix {
+            rows: 1,
+            columns: *columns as usize,
+            values: row_major,
+        },
+        [rows, columns] => RuntimeHostInputValue::F64Matrix {
+            rows: *rows as usize,
+            columns: *columns as usize,
+            values: row_major_sample_to_column_major_f64(
+                *rows as usize,
+                *columns as usize,
+                &row_major,
+            ),
+        },
+        dimensions => {
+            return Err(compute_host_error(
+                "ComputeHostRead",
+                format!(
+                    "sampled output `{}` has unsupported rank {}",
+                    port.name,
+                    dimensions.len(),
+                ),
+            ));
+        }
+    };
+    detached.into_mech_value()
+}
+
+fn column_major_sample_to_row_major(dimensions: &[u64], values: &[f32]) -> MResult<Vec<f32>> {
+    let rows = dimensions.first().copied().unwrap_or(1) as usize;
+    let columns = dimensions.get(1).copied().unwrap_or(1) as usize;
+    if values.len() != rows.saturating_mul(columns) {
+        return Err(compute_host_error(
+            "ComputeHostRead",
+            "sampled column-major output has the wrong element count",
+        ));
+    }
+    let mut row_major = vec![0.0; values.len()];
+    for row in 0..rows {
+        for column in 0..columns {
+            row_major[row * columns + column] = values[row + column * rows];
+        }
+    }
+    Ok(row_major)
+}
+
+fn row_major_sample_to_column_major_f64(rows: usize, columns: usize, values: &[f64]) -> Vec<f64> {
+    let mut column_major = vec![0.0; values.len()];
+    for row in 0..rows {
+        for column in 0..columns {
+            column_major[row + column * rows] = values[row * columns + column];
+        }
+    }
+    column_major
 }
 
 #[derive(Clone, Debug)]
@@ -970,12 +1337,16 @@ mod tests {
     }
 
     fn turn_write() -> RuntimeResourceWriteRequest {
+        turn_write_with(1.0)
+    }
+
+    fn turn_write_with(value: f32) -> RuntimeResourceWriteRequest {
         RuntimeResourceWriteRequest {
             base_uri: "compute://particles/kernel".to_owned(),
             path: "turn".to_owned(),
             context_name: "particles".to_owned(),
             operation: RuntimeCapabilityOperation::Write,
-            value: LegacyValue::from(1.0_f32),
+            value: LegacyValue::from(value),
             intent: RuntimeResourceWriteIntent::Send,
         }
     }
@@ -1001,7 +1372,7 @@ mod tests {
         }
         .into_mech_value()
         .unwrap();
-        let update = compute_input_update(port, valid).unwrap();
+        let update = compute_input_update(&program, port, valid).unwrap();
         let ComputeValue::TensorF32 { layout, values, .. } = update.value else {
             panic!("matrix became a scalar")
         };
@@ -1015,7 +1386,65 @@ mod tests {
         }
         .into_mech_value()
         .unwrap();
-        assert!(compute_input_update(port, wrong_shape).is_err());
+        assert!(compute_input_update(&program, port, wrong_shape).is_err());
+    }
+
+    #[test]
+    fn f64_resident_inputs_narrow_once_at_the_f32_compute_boundary() {
+        let program = program();
+        let port = &program.interface().inputs[0];
+        let value = RuntimeHostInputValue::F64Matrix {
+            rows: 2,
+            columns: 3,
+            values: vec![1.0, 4.0, 2.0, 5.0, 3.0, 6.0],
+        }
+        .into_mech_value()
+        .unwrap();
+        let update = compute_input_update(&program, port, value).unwrap();
+        let ComputeValue::TensorF32 { layout, values, .. } = update.value else {
+            panic!("f64 matrix became a scalar")
+        };
+        assert_eq!(layout, TensorLayout::RowMajor);
+        assert_eq!(values.as_ref(), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+
+        let overflow = RuntimeHostInputValue::F64Matrix {
+            rows: 2,
+            columns: 3,
+            values: vec![f64::MAX; 6],
+        }
+        .into_mech_value()
+        .unwrap();
+        let error = compute_input_update(&program, port, overflow).unwrap_err();
+        assert!(error.display_message().contains("outside the f32 range"));
+    }
+
+    #[test]
+    fn sampled_batch_returns_lane_zero_as_a_resident_f64_matrix() {
+        let port = ComputePort {
+            id: mech_compute::ComputePortId::new(1),
+            name: "matrix".into(),
+            slot: CellSlotId::new(1),
+            schema: SchemaId::new(1),
+            element: mech_compute::ComputeElementType::F32,
+            dimensions: vec![2, 2].into_boxed_slice(),
+        };
+        let sampled = sampled_output_value(
+            &port,
+            ComputeValue::TensorF32 {
+                dimensions: vec![2, 2, 2].into_boxed_slice(),
+                layout: TensorLayout::RowMajor,
+                values: Arc::from([1.0, 2.0, 3.0, 4.0, 10.0, 20.0, 30.0, 40.0]),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            RuntimeHostInputValue::from_numeric_mech_value(&sampled).unwrap(),
+            RuntimeHostInputValue::F64Matrix {
+                rows: 2,
+                columns: 2,
+                values: vec![1.0, 3.0, 2.0, 4.0],
+            },
+        );
     }
 
     #[test]
@@ -1094,6 +1523,16 @@ mod tests {
         assert_eq!(values.as_ref(), [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
         assert_eq!(observed[1], FakeCall::Dispatch(1));
         assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+
+        runtime.write_resource(turn_write()).unwrap();
+        assert_eq!(
+            calls.lock().unwrap().as_slice(),
+            observed.as_slice(),
+            "repeating a compute turn token must not create a feedback dispatch",
+        );
+        runtime.write_resource(turn_write_with(2.0)).unwrap();
+        assert_eq!(calls.lock().unwrap().last(), Some(&FakeCall::Dispatch(1)));
+        assert_eq!(calls.lock().unwrap().len(), 3);
     }
 
     #[test]

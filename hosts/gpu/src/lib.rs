@@ -1841,6 +1841,7 @@ fn wgsl_elementwise_expression(operation: ElementwiseOperation, inputs: &[String
             let function = match operation {
                 UnaryOperation::Sin => "sin",
                 UnaryOperation::Cos => "cos",
+                UnaryOperation::Sqrt => "sqrt",
             };
             format!("{function}({})", inputs[0])
         }

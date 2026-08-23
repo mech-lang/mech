@@ -46,6 +46,11 @@ fn standard_browser_runtime_provider_profile() -> MResult<BrowserRuntimeProvider
     profile.register(mech_scene::scene_host_manifest()?, |settings| {
         mech_scene::scene_settings_from_config(settings).map(|_| ())
     })?;
+    #[cfg(feature = "compute_backends_native")]
+    profile.register(
+        mech_gpu::compute_host_manifest(),
+        mech_gpu::validate_compute_host_settings,
+    )?;
     Ok(profile)
 }
 
@@ -404,5 +409,38 @@ mod tests {
                 .any(|grant| grant.target == "native/command")
         );
         assert!(browser_runtime_injection_config_script(&config).is_ok());
+    }
+
+    #[cfg(feature = "compute_backends_native")]
+    #[test]
+    fn ekf_authority_preserves_the_declared_browser_compute_host_and_grants() {
+        let document = parse_config_document(
+            "examples/ekf/mech.mcfg",
+            include_str!("../examples/ekf/mech.mcfg"),
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let config =
+            web_runtime_injection_config_from_document(&document, &RuntimeConfig::default())
+                .unwrap();
+
+        assert!(config.hosts.iter().any(|host| {
+            host.name == "filters"
+                && host.provider == "compute"
+                && matches!(
+                    &host.settings,
+                    ConfigValue::Map(settings)
+                        if settings.get("region")
+                            == Some(&ConfigValue::String("ekf-batch".to_owned()))
+                )
+        }));
+        let grant = config
+            .run_grants
+            .iter()
+            .find(|grant| grant.target == "filters/kernel")
+            .expect("compute authority must retain the declared kernel grant");
+        assert_eq!(grant.operations, ["read", "write"]);
+        assert!(grant.paths.iter().any(|path| path == "sample/result.0"));
+        assert!(grant.paths.iter().any(|path| path == "turn"));
     }
 }

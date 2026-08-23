@@ -34,6 +34,15 @@ config := {
         renderer: "output"
       }
     }
+
+    {
+      name: "filters"
+      provider: "compute"
+      settings: {
+        region: "ekf-batch"
+        backend: "auto"
+      }
+    }
   ]
 
   run: {
@@ -50,6 +59,18 @@ config := {
         target: "localization/frame"
         operations: ["write"]
         paths: ["replace"]
+      }
+
+      {
+        target: "filters/kernel"
+        operations: ["read", "write"]
+        paths: [
+          "input/control"
+          "input/camera"
+          "input/measurement"
+          "sample/result.0"
+          "turn"
+        ]
       }
     ]
   }
