@@ -5055,7 +5055,11 @@ mod browser_tests {
 
     wasm_bindgen_test_configure!(run_in_browser);
 
-    #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
+    #[cfg(all(
+        feature = "browser_host_timer",
+        feature = "browser_host_scene",
+        feature = "browser_compute"
+    ))]
     #[wasm_bindgen_test]
     fn ekf_filter_recurrence_runs_in_browser_wasm() {
         super::tests::assert_ekf_scene_advances_on_every_resident_timer_packet();
