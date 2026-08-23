@@ -223,7 +223,7 @@ jobs:
         run: >-
           MECH_BIN=target/debug/mech
           python3 scripts/smoke-gpu-particles-browser.py
-          --backend gpu --particle-count 16384
+          --backend gpu --particle-count 16384 --software-adapter
       - name: Verify scalar and WebGPU EKF rendering against one numeric oracle
         run: |
           MECH_BIN=target/debug/mech \

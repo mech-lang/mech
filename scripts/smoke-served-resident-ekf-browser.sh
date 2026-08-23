@@ -642,6 +642,8 @@ import time
 import urllib.request
 from urllib.parse import urlparse
 
+from scripts.browser_webgpu_flags import chrome_webgpu_test_flags
+
 chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
 args = [
     chrome,
@@ -659,12 +661,7 @@ else:
     # The canary proves the browser WebGPU transport, not host-driver setup.
     # Force Chromium's test adapter so headless macOS and GPU-less Linux CI do
     # not hang while probing an unavailable presentation-capable device.
-    for flag in (
-        "--enable-unsafe-webgpu",
-        "--enable-unsafe-swiftshader",
-        "--use-webgpu-adapter=swiftshader",
-        "--use-gpu-in-tests",
-    ):
+    for flag in chrome_webgpu_test_flags(software_adapter=True):
         args.insert(-1, flag)
 
 def read_exact(connection, length):

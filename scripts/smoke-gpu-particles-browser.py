@@ -21,6 +21,8 @@ import time
 import urllib.request
 import urllib.parse
 
+from browser_webgpu_flags import chrome_webgpu_test_flags
+
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = ROOT / "src" / "wasm" / "pkg"
@@ -264,6 +266,11 @@ def main() -> None:
     parser.add_argument("--browser", help="path to Chrome or Edge")
     parser.add_argument("--build", action="store_true", help="rebuild WASM and the release server first")
     parser.add_argument("--backend", choices=("auto", "cpu", "gpu"), default="auto")
+    parser.add_argument(
+        "--software-adapter",
+        action="store_true",
+        help="force Chromium's WebGPU SwiftShader test adapter",
+    )
     parser.add_argument("--timeout", type=int, default=180)
     parser.add_argument(
         "--particle-count",
@@ -333,15 +340,16 @@ def main() -> None:
                 str(browser),
                 "--headless=new",
                 f"--remote-debugging-port={debugger_port}",
-                "--enable-unsafe-webgpu",
                 "--ignore-gpu-blocklist",
                 "--no-first-run",
                 "--no-default-browser-check",
                 "--run-all-compositor-stages-before-draw",
                 f"--user-data-dir={work / 'profile'}",
             ]
-            if sys.platform.startswith("linux"):
-                command.extend(["--no-sandbox", "--enable-features=Vulkan", "--use-angle=swiftshader"])
+            software_adapter = args.software_adapter or sys.platform.startswith("linux")
+            command.extend(chrome_webgpu_test_flags(software_adapter=software_adapter))
+            if software_adapter:
+                command.extend(["--no-sandbox", "--disable-dev-shm-usage"])
             command.append("about:blank")
             browser_process = subprocess.Popen(
                 command,

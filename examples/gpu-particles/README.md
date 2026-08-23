@@ -111,11 +111,12 @@ the canonical product-only `build-mech` scripts above.
 The command defaults to the shipped one-million-particle source. A bounded
 software-GPU run can be requested with `--particle-count`; it copies the same
 project under `target`, changes only the canonical particle-count declaration,
-and leaves the checked-in application untouched. CI uses 16,384 lanes (256
-workgroups) because GitHub's SwiftShader adapter does not finish even its first
-one-million-lane dispatch within the browser gate's two-minute deadline. The
-CI run retains the same two-turn lifecycle, backpressure, input, zero-readback,
-error, and disposal assertions.
+and leaves the checked-in application untouched. `--software-adapter` selects
+the same dedicated Chromium WebGPU SwiftShader test adapter used by CI. CI uses
+16,384 lanes (256 workgroups) because its software adapter does not finish even
+its first one-million-lane dispatch within the browser gate's two-minute
+deadline. The CI run retains the same two-turn lifecycle, backpressure, input,
+zero-readback, error, and disposal assertions.
 
 ## Full-size acceptance
 
