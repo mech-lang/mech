@@ -1,4 +1,49 @@
 /* Shared WebGPU resource and completion protocol for Mech browser hosts. */
+globalThis.MechComputeSubmissionLifecycle ||= class MechComputeSubmissionLifecycle {
+  constructor(generation) {
+    this.generation = String(generation);
+    this.phase = "ready";
+    this.submitted = false;
+    this.inFlight = null;
+    this.failure = null;
+  }
+
+  markSubmitted(identity) {
+    if (this.phase === "failed") {
+      throw this.failure;
+    }
+    if (this.inFlight !== null) {
+      throw new Error("a checked document compute dispatch is already in flight");
+    }
+    this.submitted = true;
+    this.inFlight = String(identity);
+    this.phase = "in-flight";
+  }
+
+  markAccepted(identity) {
+    if (this.phase === "failed") {
+      throw this.failure;
+    }
+    if (this.inFlight !== String(identity)) {
+      throw new Error("compute completion does not match the in-flight submission");
+    }
+    this.inFlight = null;
+    this.phase = "ready";
+  }
+
+  markFailed(reason) {
+    if (this.phase !== "failed") {
+      this.failure = reason instanceof Error ? reason : new Error(String(reason));
+      this.phase = "failed";
+    }
+    return this.failure;
+  }
+
+  canAutoFallback() {
+    return !this.submitted;
+  }
+};
+
 globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
   static logicalOutputValues(output, physicalValues) {
     const dimensions = (output.sampleDimensions || []).map(Number);
@@ -31,14 +76,15 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     return logical;
   }
 
-  static requiredLimits(manifest, supported, requestedOutputNames = []) {
-    const requested = new Set(requestedOutputNames);
+  static requiredLimits(manifest, supported) {
     const bindingBytes = manifest.bindings.map((binding) =>
       Math.max(4, Number(binding.elements) * Float32Array.BYTES_PER_ELEMENT));
-    const readbackBytes = manifest.outputs
-      .filter((output) => requested.has(output.name))
+    // Output sampling is selected per turn, after device creation. Reserve
+    // enough address space for the largest legal readback plan up front so a
+    // later sample request cannot exceed the limits admitted for this device.
+    const readbackBytes = (manifest.physicalOutputs || [])
       .reduce(
-        (total, output) => total + Number(output.elementsPerInstance) * Float32Array.BYTES_PER_ELEMENT,
+        (total, output) => total + Number(output.sampleElements) * Float32Array.BYTES_PER_ELEMENT,
         0,
       );
     const integrityBytes = Number(
@@ -68,10 +114,14 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
   }
 
   static async create(manifest, adapter, requestedOutputNames = []) {
+    if (Number(manifest.planVersion) !== 1) {
+      throw new Error(
+        `unsupported GPU execution plan version ${manifest.planVersion}; expected 1`,
+      );
+    }
     const requiredLimits = this.requiredLimits(
       manifest,
       adapter.limits,
-      requestedOutputNames,
     );
     const device = await adapter.requestDevice({ requiredLimits });
     try {
@@ -103,6 +153,7 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     this.metrics = {
       cpuToGpuInputBytes: 0,
       gpuToCpuReadbackBytes: 0,
+      gpuToCpuOutputBytes: 0,
       logicalOutputs: requestedOutputNames.length,
       uniquePhysicalOutputBuffers: 0,
     };
@@ -148,23 +199,23 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     this.metrics.logicalOutputs = requestedOutputNames.length;
     this.readback?.destroy();
     const requested = new Set(requestedOutputNames);
-    const physical = new Map();
     this.readbackPlan = [];
     let byteLength = 0;
-    for (const output of this.manifest.outputs) {
-      if (!requested.has(output.name)) continue;
-      const key = String(output.slot);
-      let item = physical.get(key);
-      if (!item) {
-        const bytes = output.elementsPerInstance * Float32Array.BYTES_PER_ELEMENT;
-        item = { output, offset: byteLength, bytes, aliases: [] };
-        physical.set(key, item);
-        this.readbackPlan.push(item);
-        byteLength += bytes;
+    for (const physical of this.manifest.physicalOutputs || []) {
+      const aliases = physical.aliases
+        .filter((name) => requested.has(name))
+        .map((name) => this.manifest.outputs.find((output) => output.name === name));
+      if (!aliases.length) continue;
+      if (aliases.some((output) => !output)) {
+        throw new Error(`GPU physical output ${physical.id} names an unknown logical alias`);
       }
-      item.aliases.push(output);
+      const bytes = physical.sampleElements * Float32Array.BYTES_PER_ELEMENT;
+      this.readbackPlan.push({
+        output: aliases[0], physical, offset: byteLength, bytes, aliases,
+      });
+      byteLength += bytes;
     }
-    this.metrics.uniquePhysicalOutputBuffers = physical.size;
+    this.metrics.uniquePhysicalOutputBuffers = this.readbackPlan.length;
     this.integrityOffset = this.integrity ? byteLength : null;
     if (this.integrity) byteLength += this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT;
     this.readbackBytes = byteLength;
@@ -186,13 +237,12 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     return this.fixedBuffers.get(binding.binding);
   }
 
-  outputBuffer(index, output) {
-    if (this.stateBuffers.has(output.slot)) return this.stateBuffers.get(output.slot)[index];
-    const binding = this.manifest.bindings.find(
-      (candidate) => candidate.role === "output" && candidate.slot === output.slot,
-    );
-    if (!binding) throw new Error(`compute output ${output.name} has no physical buffer`);
-    return this.fixedBuffers.get(binding.binding);
+  outputBuffer(index, physical) {
+    if (this.stateBuffers.has(physical.slot)) return this.stateBuffers.get(physical.slot)[index];
+    if (!Number.isInteger(physical.binding)) {
+      throw new Error(`compute physical output ${physical.id} has no buffer binding`);
+    }
+    return this.fixedBuffers.get(physical.binding);
   }
 
   applyInputs(command) {
@@ -230,7 +280,7 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     pass.end();
     for (const item of this.readbackPlan) {
       encoder.copyBufferToBuffer(
-        this.outputBuffer(outputIndex, item.output), 0,
+        this.outputBuffer(outputIndex, item.physical), 0,
         this.readback, item.offset, item.bytes,
       );
     }
@@ -254,6 +304,10 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     await this.readback.mapAsync(GPUMapMode.READ, 0, this.readbackBytes);
     try {
       const mapped = this.readback.getMappedRange(0, this.readbackBytes);
+      // This is the physical mapped transfer. Count it exactly once per
+      // accepted mapping, including integrity metadata and mappings whose
+      // integrity check rejects the candidate state.
+      this.metrics.gpuToCpuReadbackBytes += this.readbackBytes;
       if (this.integrity) {
         const words = new Uint32Array(mapped, this.integrityOffset, this.integrity.elements);
         if (words[0] !== 0) {
@@ -276,7 +330,7 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
           item.output,
           new Float32Array(mapped, item.offset, item.bytes / Float32Array.BYTES_PER_ELEMENT),
         );
-        this.metrics.gpuToCpuReadbackBytes += item.bytes;
+        this.metrics.gpuToCpuOutputBytes += item.bytes * item.aliases.length;
         for (const output of item.aliases) outputs.push({ name: output.name, values });
       }
       this.publishMetrics();
@@ -290,6 +344,7 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     const root = document.documentElement;
     root.dataset.mechComputeCpuToGpuInputBytes = String(this.metrics.cpuToGpuInputBytes);
     root.dataset.mechComputeGpuToCpuReadbackBytes = String(this.metrics.gpuToCpuReadbackBytes);
+    root.dataset.mechComputeGpuToCpuOutputBytes = String(this.metrics.gpuToCpuOutputBytes);
     root.dataset.mechComputeLogicalOutputs = String(this.metrics.logicalOutputs);
     root.dataset.mechComputePhysicalOutputBuffers = String(
       this.metrics.uniquePhysicalOutputBuffers,

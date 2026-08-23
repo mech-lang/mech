@@ -43,6 +43,8 @@ mod compute_provider;
 pub use compute_provider::*;
 mod compute_backends;
 pub use compute_backends::*;
+mod execution_plan;
+pub use execution_plan::*;
 pub const WORKGROUP_SIZE: u32 = 64;
 
 #[cfg(test)]
@@ -122,8 +124,6 @@ struct KernelOutput {
     source: CellSlotId,
     elements: u64,
     dimensions: Vec<u64>,
-    #[cfg_attr(not(feature = "native"), allow(dead_code))]
-    binding: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -246,9 +246,7 @@ impl ElementwiseKernel {
                     format!("output `{}` element count exceeds u64", output.name),
                 )
             })?;
-            let binding = if let Some(binding) = state_write_bindings.get(&output.slot) {
-                *binding
-            } else {
+            if !state_write_bindings.contains_key(&output.slot) {
                 let binding = bindings.len() as u32;
                 bindings.push(GpuBinding {
                     binding,
@@ -257,14 +255,12 @@ impl ElementwiseKernel {
                     elements,
                     kind: GpuBindingKind::Output(output.slot),
                 });
-                binding
-            };
+            }
             outputs.push(KernelOutput {
                 name: output.name.to_string(),
                 source: output.slot,
                 elements,
                 dimensions: output.dimensions.to_vec(),
-                binding,
             });
         }
 
@@ -1419,7 +1415,7 @@ impl<'a> Compiler<'a> {
                 };
                 let dimensions = self.slot_dimensions(source);
                 if let Some(state) = self.state_slots.get(&source) {
-                    let Some(binding) = state.write_binding else {
+                    let Some(_) = state.write_binding else {
                         continue;
                     };
                     self.outputs.push(KernelOutput {
@@ -1427,7 +1423,6 @@ impl<'a> Compiler<'a> {
                         source,
                         elements,
                         dimensions,
-                        binding,
                     });
                     continue;
                 }
@@ -1444,7 +1439,6 @@ impl<'a> Compiler<'a> {
                     source,
                     elements,
                     dimensions,
-                    binding,
                 });
             }
         }
@@ -1984,7 +1978,6 @@ mod tests {
                 source: output,
                 elements,
                 dimensions: vec![elements],
-                binding: 0,
             }],
             states: Vec::new(),
             input_slots: BTreeMap::new(),

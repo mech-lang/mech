@@ -6,9 +6,13 @@ use std::{
     time::{Duration, Instant},
 };
 
+use mech_core::CellSlotId;
 use wgpu::util::DeviceExt;
 
-use super::{ElementwiseKernel, GpuBindingAccess, GpuBindingKind};
+use super::{
+    ElementwiseKernel, GpuExecutionPlan, GpuKernelPlanSource, GpuPhysicalOutputPlan,
+    GpuPlanBindingAccess, GpuPlanBindingRole, GpuPlanInitialValues, GpuPlanScalar,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum GpuExecutionError {
@@ -28,6 +32,7 @@ pub enum GpuExecutionError {
         required: u32,
         supported: u32,
     },
+    InvalidPlan(String),
 }
 
 impl fmt::Display for GpuExecutionError {
@@ -103,6 +108,9 @@ impl ElementwiseKernel {
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<GpuExecutionProfile, GpuExecutionError> {
         let total_started = Instant::now();
+        let execution_plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(self), inputs)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
         let setup_started = Instant::now();
         let instance = wgpu::Instance::default();
         let adapter = instance
@@ -118,7 +126,8 @@ impl ElementwiseKernel {
             format!("{} ({:?})", info.name, info.backend)
         };
         let adapter_limits = adapter.limits();
-        let (required_limits, workgroups) = self.required_device_limits(&adapter_limits)?;
+        let (required_limits, workgroups) =
+            required_device_limits_for_plan(&execution_plan, &adapter_limits)?;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -133,51 +142,43 @@ impl ElementwiseKernel {
         let setup = setup_started.elapsed();
 
         let pipeline_started = Instant::now();
-        let mut buffers = Vec::with_capacity(self.bindings.len());
-        for binding in &self.bindings {
-            let buffer = match binding.kind {
-                GpuBindingKind::Input(_) => {
-                    let values = inputs
-                        .get(&binding.name)
-                        .ok_or_else(|| GpuExecutionError::MissingInput(binding.name.clone()))?;
-                    if values.len() != binding.elements as usize {
-                        return Err(GpuExecutionError::InputLength {
-                            name: binding.name.clone(),
-                            expected: binding.elements,
-                            actual: values.len(),
-                        });
-                    }
+        let mut buffers = BTreeMap::new();
+        for binding in &execution_plan.bindings {
+            let usage = wgpu::BufferUsages::STORAGE
+                | if matches!(
+                    binding.role,
+                    GpuPlanBindingRole::StateWrite | GpuPlanBindingRole::Output
+                ) {
+                    wgpu::BufferUsages::COPY_SRC
+                } else {
+                    wgpu::BufferUsages::empty()
+                };
+            let buffer = match &binding.initial_values {
+                Some(GpuPlanInitialValues::F32(values)) => {
                     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                         label: Some(&binding.name),
                         contents: bytemuck::cast_slice(values),
-                        usage: wgpu::BufferUsages::STORAGE,
+                        usage,
                     })
                 }
-                GpuBindingKind::StateRead(slot) => {
-                    let state = self
-                        .states
-                        .iter()
-                        .find(|state| state.slot == slot)
-                        .expect("state binding references known state");
+                Some(GpuPlanInitialValues::U32(values)) => {
                     device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                         label: Some(&binding.name),
-                        contents: bytemuck::cast_slice(&state.initializer),
-                        usage: wgpu::BufferUsages::STORAGE,
+                        contents: bytemuck::cast_slice(values),
+                        usage,
                     })
                 }
-                GpuBindingKind::StateWrite(_) | GpuBindingKind::Output(_) => {
-                    device.create_buffer(&wgpu::BufferDescriptor {
-                        label: Some(&binding.name),
-                        size: binding.elements * std::mem::size_of::<f32>() as u64,
-                        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
-                        mapped_at_creation: false,
-                    })
-                }
+                None => device.create_buffer(&wgpu::BufferDescriptor {
+                    label: Some(&binding.name),
+                    size: binding.elements * scalar_size(binding.scalar),
+                    usage,
+                    mapped_at_creation: false,
+                }),
             };
-            buffers.push(buffer);
+            buffers.insert(binding.binding, buffer);
         }
 
-        let layout_entries = self
+        let layout_entries = execution_plan
             .bindings
             .iter()
             .map(|binding| wgpu::BindGroupLayoutEntry {
@@ -185,7 +186,7 @@ impl ElementwiseKernel {
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage {
-                        read_only: binding.access == GpuBindingAccess::Read,
+                        read_only: binding.access == GpuPlanBindingAccess::Read,
                     },
                     has_dynamic_offset: false,
                     min_binding_size: None,
@@ -197,13 +198,12 @@ impl ElementwiseKernel {
             label: Some("Mech GPU bindings"),
             entries: &layout_entries,
         });
-        let bind_entries = self
+        let bind_entries = execution_plan
             .bindings
             .iter()
-            .zip(&buffers)
-            .map(|(binding, buffer)| wgpu::BindGroupEntry {
+            .map(|binding| wgpu::BindGroupEntry {
                 binding: binding.binding,
-                resource: buffer.as_entire_binding(),
+                resource: buffers[&binding.binding].as_entire_binding(),
             })
             .collect::<Vec<_>>();
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -213,7 +213,7 @@ impl ElementwiseKernel {
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Generated Mech WGSL"),
-            source: wgpu::ShaderSource::Wgsl(self.wgsl.clone().into()),
+            source: wgpu::ShaderSource::Wgsl(execution_plan.wgsl.clone().into()),
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Mech GPU pipeline layout"),
@@ -243,21 +243,22 @@ impl ElementwiseKernel {
             pass.set_bind_group(0, &bind_group, &[]);
             pass.dispatch_workgroups(workgroups, 1, 1);
         }
-        for output in &self.outputs {
-            let size = output.elements * std::mem::size_of::<f32>() as u64;
+        for output in &execution_plan.physical_outputs {
+            let size = output.sample_elements * std::mem::size_of::<f32>() as u64;
             let readback = device.create_buffer(&wgpu::BufferDescriptor {
                 label: Some("Mech GPU readback"),
                 size,
                 usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                 mapped_at_creation: false,
             });
-            encoder.copy_buffer_to_buffer(&buffers[output.binding as usize], 0, &readback, 0, size);
-            readbacks.push((output.name.clone(), readback));
+            let binding = physical_output_binding(&execution_plan, output)?;
+            encoder.copy_buffer_to_buffer(&buffers[&binding], 0, &readback, 0, size);
+            readbacks.push((output.aliases.clone(), readback));
         }
         queue.submit(Some(encoder.finish()));
 
         let mut outputs = BTreeMap::new();
-        for (name, readback) in readbacks {
+        for (aliases, readback) in readbacks {
             let slice = readback.slice(..);
             let (sender, receiver) = mpsc::channel();
             slice.map_async(wgpu::MapMode::Read, move |result| {
@@ -269,7 +270,10 @@ impl ElementwiseKernel {
                 .map_err(|_| GpuExecutionError::ChannelClosed)?
                 .map_err(|error| GpuExecutionError::BufferMap(error.to_string()))?;
             let mapped = slice.get_mapped_range();
-            outputs.insert(name, bytemuck::cast_slice::<u8, f32>(&mapped).to_vec());
+            let values = bytemuck::cast_slice::<u8, f32>(&mapped).to_vec();
+            for name in aliases {
+                outputs.insert(name, values.clone());
+            }
             drop(mapped);
             readback.unmap();
         }
@@ -294,6 +298,9 @@ impl ElementwiseKernel {
         &self,
         inputs: &BTreeMap<String, Vec<f32>>,
     ) -> Result<ResidentGpuSession, GpuExecutionError> {
+        let execution_plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(self), inputs)
+                .map_err(|failure| GpuExecutionError::InvalidPlan(failure.to_string()))?;
         let instance = wgpu::Instance::default();
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
@@ -306,7 +313,8 @@ impl ElementwiseKernel {
         let adapter_info = adapter.get_info();
         let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
         let adapter_limits = adapter.limits();
-        let (required_limits, workgroups) = self.required_device_limits(&adapter_limits)?;
+        let (required_limits, workgroups) =
+            required_device_limits_for_plan(&execution_plan, &adapter_limits)?;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -322,11 +330,12 @@ impl ElementwiseKernel {
         let mut state_buffers = BTreeMap::new();
         let mut fixed_buffers = BTreeMap::new();
         let mut input_buffers = BTreeMap::new();
-        for state in &self.states {
+        for state in &execution_plan.states {
+            let slot = CellSlotId::new(state.slot);
             let initial = Arc::new(
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some("Mech resident initial state"),
-                    contents: bytemuck::cast_slice(&state.initializer),
+                    contents: bytemuck::cast_slice(&state.initial_values),
                     usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                 }),
             );
@@ -336,22 +345,18 @@ impl ElementwiseKernel {
                 usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                 mapped_at_creation: false,
             }));
-            state_buffers.insert(state.slot, [initial, alternate]);
+            state_buffers.insert(slot, [initial, alternate]);
         }
-        for binding in &self.bindings {
-            if !matches!(binding.kind, GpuBindingKind::Input(_)) {
+        for binding in &execution_plan.bindings {
+            if binding.role != GpuPlanBindingRole::Input {
                 continue;
             }
-            let values = inputs
-                .get(&binding.name)
-                .ok_or_else(|| GpuExecutionError::MissingInput(binding.name.clone()))?;
-            if values.len() != binding.elements as usize {
-                return Err(GpuExecutionError::InputLength {
-                    name: binding.name.clone(),
-                    expected: binding.elements,
-                    actual: values.len(),
-                });
-            }
+            let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
+                return Err(GpuExecutionError::InvalidPlan(format!(
+                    "input binding `{}` has no f32 initializer",
+                    binding.name
+                )));
+            };
             let buffer = Arc::new(
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                     label: Some(&binding.name),
@@ -363,31 +368,39 @@ impl ElementwiseKernel {
             input_buffers.insert(binding.name.clone(), (buffer, binding.elements));
         }
 
-        let mut group_buffers: [Vec<Arc<wgpu::Buffer>>; 2] = [Vec::new(), Vec::new()];
-        for binding in &self.bindings {
-            match binding.kind {
-                GpuBindingKind::Input(_) => {
+        let mut group_buffers: [BTreeMap<u32, Arc<wgpu::Buffer>>; 2] =
+            [BTreeMap::new(), BTreeMap::new()];
+        for binding in &execution_plan.bindings {
+            match binding.role {
+                GpuPlanBindingRole::Input => {
                     let buffer = fixed_buffers[&binding.binding].clone();
-                    group_buffers[0].push(buffer.clone());
-                    group_buffers[1].push(buffer);
+                    group_buffers[0].insert(binding.binding, buffer.clone());
+                    group_buffers[1].insert(binding.binding, buffer);
                 }
-                GpuBindingKind::StateRead(slot) => {
-                    group_buffers[0].push(state_buffers[&slot][0].clone());
-                    group_buffers[1].push(state_buffers[&slot][1].clone());
+                GpuPlanBindingRole::StateRead => {
+                    let slot = CellSlotId::new(binding.slot);
+                    group_buffers[0].insert(binding.binding, state_buffers[&slot][0].clone());
+                    group_buffers[1].insert(binding.binding, state_buffers[&slot][1].clone());
                 }
-                GpuBindingKind::StateWrite(slot) => {
-                    group_buffers[0].push(state_buffers[&slot][1].clone());
-                    group_buffers[1].push(state_buffers[&slot][0].clone());
+                GpuPlanBindingRole::StateWrite => {
+                    let slot = CellSlotId::new(binding.slot);
+                    group_buffers[0].insert(binding.binding, state_buffers[&slot][1].clone());
+                    group_buffers[1].insert(binding.binding, state_buffers[&slot][0].clone());
                 }
-                GpuBindingKind::Output(_) => {
+                GpuPlanBindingRole::Output => {
                     let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
                         label: Some(&binding.name),
-                        size: binding.elements * std::mem::size_of::<f32>() as u64,
+                        size: binding.elements * scalar_size(binding.scalar),
                         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                         mapped_at_creation: false,
                     }));
-                    group_buffers[0].push(buffer.clone());
-                    group_buffers[1].push(buffer.clone());
+                    group_buffers[0].insert(binding.binding, buffer.clone());
+                    group_buffers[1].insert(binding.binding, buffer.clone());
+                }
+                GpuPlanBindingRole::IntegrityFault => {
+                    return Err(GpuExecutionError::InvalidPlan(
+                        "elementwise plan unexpectedly contains an integrity binding".to_owned(),
+                    ));
                 }
             }
         }
@@ -395,17 +408,25 @@ impl ElementwiseKernel {
         let mut output_buffers: [BTreeMap<String, Arc<wgpu::Buffer>>; 2] =
             [BTreeMap::new(), BTreeMap::new()];
         let mut output_elements = BTreeMap::new();
-        for output in &self.outputs {
+        for output in &execution_plan.outputs {
             for group in 0..2 {
-                output_buffers[group].insert(
-                    output.name.clone(),
-                    group_buffers[group][output.binding as usize].clone(),
-                );
+                let physical = execution_plan
+                    .physical_outputs
+                    .iter()
+                    .find(|physical| physical.id == output.physical_output)
+                    .expect("validated execution plan references a physical output");
+                let buffer = if let Some(binding) = physical.binding {
+                    group_buffers[group][&binding].clone()
+                } else {
+                    let slot = CellSlotId::new(output.slot);
+                    state_buffers[&slot][1 - group].clone()
+                };
+                output_buffers[group].insert(output.name.clone(), buffer);
             }
             output_elements.insert(output.name.clone(), output.elements);
         }
 
-        let layout_entries = self
+        let layout_entries = execution_plan
             .bindings
             .iter()
             .map(|binding| wgpu::BindGroupLayoutEntry {
@@ -413,7 +434,7 @@ impl ElementwiseKernel {
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage {
-                        read_only: binding.access == GpuBindingAccess::Read,
+                        read_only: binding.access == GpuPlanBindingAccess::Read,
                     },
                     has_dynamic_offset: false,
                     min_binding_size: None,
@@ -426,13 +447,12 @@ impl ElementwiseKernel {
             entries: &layout_entries,
         });
         let bind_groups = [0, 1].map(|group| {
-            let entries = self
+            let entries = execution_plan
                 .bindings
                 .iter()
-                .zip(&group_buffers[group])
-                .map(|(binding, buffer)| wgpu::BindGroupEntry {
+                .map(|binding| wgpu::BindGroupEntry {
                     binding: binding.binding,
-                    resource: buffer.as_entire_binding(),
+                    resource: group_buffers[group][&binding.binding].as_entire_binding(),
                 })
                 .collect::<Vec<_>>();
             device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -443,7 +463,7 @@ impl ElementwiseKernel {
         });
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("Generated resident Mech WGSL"),
-            source: wgpu::ShaderSource::Wgsl(self.wgsl.clone().into()),
+            source: wgpu::ShaderSource::Wgsl(execution_plan.wgsl.clone().into()),
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Mech resident GPU pipeline layout"),
@@ -472,34 +492,62 @@ impl ElementwiseKernel {
             last_output_group: None,
         })
     }
+}
 
-    fn required_device_limits(
-        &self,
-        adapter_limits: &wgpu::Limits,
-    ) -> Result<(wgpu::Limits, u32), GpuExecutionError> {
-        let required_storage_buffers = self.bindings.len() as u32;
-        if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
-            return Err(GpuExecutionError::DeviceRequest(format!(
-                "kernel needs {required_storage_buffers} storage buffers, adapter supports {}",
-                adapter_limits.max_storage_buffers_per_shader_stage
-            )));
-        }
-        let workgroups = self.workgroup_count();
-        if workgroups > adapter_limits.max_compute_workgroups_per_dimension {
-            return Err(GpuExecutionError::WorkgroupLimit {
-                required: workgroups,
-                supported: adapter_limits.max_compute_workgroups_per_dimension,
-            });
-        }
-        Ok((
-            wgpu::Limits {
-                max_storage_buffers_per_shader_stage: required_storage_buffers,
-                max_compute_workgroups_per_dimension: workgroups,
-                ..wgpu::Limits::downlevel_defaults()
-            },
-            workgroups,
-        ))
+fn scalar_size(scalar: GpuPlanScalar) -> u64 {
+    match scalar {
+        GpuPlanScalar::F32 | GpuPlanScalar::U32 => 4,
     }
+}
+
+fn physical_output_binding(
+    plan: &GpuExecutionPlan,
+    output: &GpuPhysicalOutputPlan,
+) -> Result<u32, GpuExecutionError> {
+    output
+        .binding
+        .or_else(|| {
+            plan.bindings
+                .iter()
+                .find(|binding| {
+                    binding.role == GpuPlanBindingRole::StateWrite && binding.slot == output.slot
+                })
+                .map(|binding| binding.binding)
+        })
+        .ok_or_else(|| {
+            GpuExecutionError::InvalidPlan(format!(
+                "physical output {} has no readable binding",
+                output.id
+            ))
+        })
+}
+
+fn required_device_limits_for_plan(
+    plan: &GpuExecutionPlan,
+    adapter_limits: &wgpu::Limits,
+) -> Result<(wgpu::Limits, u32), GpuExecutionError> {
+    let required_storage_buffers = plan.bindings.len() as u32;
+    if required_storage_buffers > adapter_limits.max_storage_buffers_per_shader_stage {
+        return Err(GpuExecutionError::DeviceRequest(format!(
+            "kernel needs {required_storage_buffers} storage buffers, adapter supports {}",
+            adapter_limits.max_storage_buffers_per_shader_stage
+        )));
+    }
+    let workgroups = plan.dispatch_elements.div_ceil(plan.workgroup_size);
+    if workgroups > adapter_limits.max_compute_workgroups_per_dimension {
+        return Err(GpuExecutionError::WorkgroupLimit {
+            required: workgroups,
+            supported: adapter_limits.max_compute_workgroups_per_dimension,
+        });
+    }
+    Ok((
+        wgpu::Limits {
+            max_storage_buffers_per_shader_stage: required_storage_buffers,
+            max_compute_workgroups_per_dimension: workgroups,
+            ..wgpu::Limits::downlevel_defaults()
+        },
+        workgroups,
+    ))
 }
 
 impl ResidentGpuSession {
@@ -620,7 +668,7 @@ impl ResidentGpuSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::GpuBinding;
+    use crate::{GpuBinding, GpuBindingAccess, GpuBindingKind};
     use mech_core::CellSlotId;
 
     #[test]
@@ -638,8 +686,11 @@ mod tests {
         let mut limits = wgpu::Limits::downlevel_defaults();
         limits.max_compute_workgroups_per_dimension = 1;
 
+        let plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(&program), &BTreeMap::new())
+                .unwrap();
         assert_eq!(
-            program.required_device_limits(&limits).unwrap_err(),
+            required_device_limits_for_plan(&plan, &limits).unwrap_err(),
             GpuExecutionError::WorkgroupLimit {
                 required: 2,
                 supported: 1,
@@ -671,7 +722,10 @@ mod tests {
             ..wgpu::Limits::downlevel_defaults()
         };
 
-        let (requested, workgroups) = program.required_device_limits(&limits).unwrap();
+        let plan =
+            GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(&program), &BTreeMap::new())
+                .unwrap();
+        let (requested, workgroups) = required_device_limits_for_plan(&plan, &limits).unwrap();
         assert_eq!(workgroups, 2);
         assert_eq!(requested.max_storage_buffers_per_shader_stage, 1);
         assert_eq!(requested.max_compute_workgroups_per_dimension, 2);

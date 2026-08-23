@@ -11,7 +11,8 @@ use mech_core::{
 use mech_engine::{SlotRole, decode_program_artifact_sections, encode_program_artifact_sections};
 use mech_gpu::{
     ComputeHostFactory, ComputeLowerer, ElementwiseKernel, ExecutionTarget, GpuBindingRole,
-    GpuDiagnosticCode, SlotResidence, TransferDirection, native_compute_backend_registry,
+    GpuDiagnosticCode, GpuExecutionPlan, GpuKernelPlanSource, GpuPlanBindingRole,
+    GpuPlanKernelKind, SlotResidence, TransferDirection, native_compute_backend_registry,
 };
 use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, ProgramCompiler, RuntimeBuilder,
@@ -540,6 +541,26 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     inputs.insert("attraction".to_owned(), vec![0.5]);
     inputs.insert("drag".to_owned(), vec![0.9]);
     inputs.insert("dt".to_owned(), vec![0.1]);
+    let plan = GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(&program), &inputs)
+        .expect("particle kernel must produce a physical GPU execution plan");
+    assert_eq!(plan.kernel_kind, GpuPlanKernelKind::Elementwise);
+    assert_eq!(plan.wgsl, program.wgsl());
+    assert_eq!(plan.bindings.len(), program.bindings().len());
+    assert_eq!(plan.states.len(), 2);
+    assert_eq!(plan.physical_outputs.len(), 2);
+    assert!(
+        plan.bindings
+            .iter()
+            .filter(|binding| binding.role == GpuPlanBindingRole::StateRead)
+            .all(|binding| binding.initial_values.is_some()),
+        "the physical plan must carry resident state initializers"
+    );
+    assert!(
+        plan.physical_outputs
+            .iter()
+            .all(|output| output.binding.is_none()),
+        "resident particle outputs must read from the selected ping-pong state buffer"
+    );
     let outputs = program.run_cpu(&inputs).expect("CPU backend must run");
 
     let expected_velocities = [-0.045, -0.0225, 0.045, 0.0225, -0.09, -0.18, 0.09, 0.18];
@@ -548,6 +569,38 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     ];
     assert_close(&outputs["result.1"], &expected_velocities);
     assert_close(&outputs["result.0"], &expected_positions);
+}
+
+#[test]
+fn particle_execution_plan_groups_logical_output_aliases_once() {
+    let source = PARTICLE_SOURCE.replacen(
+        "(positions, velocities)",
+        "(positions, positions, velocities)",
+        1,
+    );
+    let artifact = compile_source(&source, particle_inputs());
+    let program = ComputeLowerer
+        .compile(&artifact)
+        .expect("aliased particle outputs must lower");
+    let inputs = BTreeMap::from([
+        ("positions".to_owned(), vec![0.0; 8]),
+        ("velocities".to_owned(), vec![0.0; 8]),
+        ("origin".to_owned(), vec![0.0]),
+        ("attraction".to_owned(), vec![0.5]),
+        ("drag".to_owned(), vec![0.9]),
+        ("dt".to_owned(), vec![0.1]),
+    ]);
+    let plan = GpuExecutionPlan::build(GpuKernelPlanSource::Elementwise(&program), &inputs)
+        .expect("aliased particle outputs must produce one physical readback plan");
+
+    assert_eq!(plan.outputs.len(), 3);
+    assert_eq!(plan.physical_outputs.len(), 2);
+    assert!(
+        plan.physical_outputs
+            .iter()
+            .any(|output| output.aliases.len() == 2),
+        "two names for the same resident value must share one physical transfer"
+    );
 }
 
 #[test]

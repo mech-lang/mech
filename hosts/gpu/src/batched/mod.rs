@@ -2473,11 +2473,14 @@ mod native {
         time::{Duration, Instant},
     };
 
-    use mech_core::CellSlotId;
+    use mech_core::{CellSlotId, IntegrityConstraintId};
     use wgpu::util::DeviceExt;
 
     use super::{
         BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, FixedShapeKernel,
+    };
+    use crate::{
+        GpuPlanBindingAccess, GpuPlanBindingRole, GpuPlanConstraint, GpuPlanInitialValues,
     };
 
     const GPU_FAULT_WORDS: usize = 2;
@@ -2493,7 +2496,7 @@ mod native {
         output_buffers: [BTreeMap<CellSlotId, Arc<wgpu::Buffer>>; 2],
         output_elements: BTreeMap<CellSlotId, usize>,
         output_elements_per_instance: BTreeMap<CellSlotId, usize>,
-        constraints: Box<[super::BatchedConstraint]>,
+        constraints: Box<[GpuPlanConstraint]>,
         integrity_fault: Option<Arc<wgpu::Buffer>>,
         integrity_readback: Option<wgpu::Buffer>,
         workgroups: u32,
@@ -2523,11 +2526,11 @@ mod native {
             &self,
             inputs: &BTreeMap<String, Vec<f32>>,
         ) -> Result<BatchedResidentGpuSession, BatchedExecutionError> {
-            if !self.constraints.is_empty() && self.instances >= (1 << 24) {
-                return Err(BatchedExecutionError::IntegrityConfiguration(
-                    "checked GPU fault records support fewer than 2^24 instances".to_owned(),
-                ));
-            }
+            let execution_plan = crate::GpuExecutionPlan::build(
+                crate::GpuKernelPlanSource::FixedShape(self),
+                inputs,
+            )
+            .map_err(|failure| BatchedExecutionError::Native(failure.to_string()))?;
             let instance = wgpu::Instance::default();
             let adapter = instance
                 .request_adapter(&wgpu::RequestAdapterOptions {
@@ -2541,10 +2544,7 @@ mod native {
                 })?;
             let adapter_info = adapter.get_info();
             let adapter_name = format!("{} ({:?})", adapter_info.name, adapter_info.backend);
-            let required_storage_buffers = (self.inputs.len()
-                + self.states.len() * 2
-                + usize::from(!self.constraints.is_empty()))
-                as u32;
+            let required_storage_buffers = execution_plan.bindings.len() as u32;
             let limits = adapter.limits();
             if required_storage_buffers > limits.max_storage_buffers_per_shader_stage {
                 return Err(BatchedExecutionError::Native(format!(
@@ -2552,16 +2552,18 @@ mod native {
                     limits.max_storage_buffers_per_shader_stage
                 )));
             }
-            if self.workgroup_count() > limits.max_compute_workgroups_per_dimension {
+            let workgroup_count = execution_plan
+                .dispatch_elements
+                .div_ceil(execution_plan.workgroup_size);
+            if workgroup_count > limits.max_compute_workgroups_per_dimension {
                 return Err(BatchedExecutionError::Native(format!(
                     "kernel requires {} workgroups; adapter supports {}",
-                    self.workgroup_count(),
-                    limits.max_compute_workgroups_per_dimension
+                    workgroup_count, limits.max_compute_workgroups_per_dimension
                 )));
             }
             let required_limits = wgpu::Limits {
                 max_storage_buffers_per_shader_stage: required_storage_buffers,
-                max_compute_workgroups_per_dimension: self.workgroup_count(),
+                max_compute_workgroups_per_dimension: workgroup_count,
                 ..wgpu::Limits::downlevel_defaults()
             };
             let (device, queue) = adapter
@@ -2576,121 +2578,122 @@ mod native {
                 .await
                 .map_err(|error| BatchedExecutionError::Native(error.to_string()))?;
 
-            let expanded_inputs = self.expand_inputs(inputs)?;
             let mut input_buffers = BTreeMap::new();
-            for input in &self.inputs {
+            for binding in execution_plan
+                .bindings
+                .iter()
+                .filter(|binding| binding.role == GpuPlanBindingRole::Input)
+            {
+                let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
+                    return Err(BatchedExecutionError::Native(format!(
+                        "GPU input `{}` has no f32 initializer",
+                        binding.name
+                    )));
+                };
                 input_buffers.insert(
-                    input.slot,
+                    CellSlotId::new(binding.slot),
                     Arc::new(
                         device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                            label: Some(&input.name),
-                            contents: bytemuck::cast_slice(&expanded_inputs[&input.slot]),
+                            label: Some(&binding.name),
+                            contents: bytemuck::cast_slice(values),
                             usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
                         }),
                     ),
                 );
             }
 
-            let initial_state = self.initial_state();
             let mut state_buffers = BTreeMap::new();
-            for state in &self.states {
+            for state in &execution_plan.states {
+                let slot = CellSlotId::new(state.slot);
                 let initial = Arc::new(device.create_buffer_init(
                     &wgpu::util::BufferInitDescriptor {
                         label: Some("Mech fixed-shape initial state"),
-                        contents: bytemuck::cast_slice(&initial_state[&state.slot]),
+                        contents: bytemuck::cast_slice(&state.initial_values),
                         usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                     },
                 ));
                 let alternate = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech fixed-shape alternate state"),
-                    size: (initial_state[&state.slot].len() * std::mem::size_of::<f32>()) as u64,
+                    size: state.elements * std::mem::size_of::<f32>() as u64,
                     usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_SRC,
                     mapped_at_creation: false,
                 }));
-                state_buffers.insert(state.slot, [initial, alternate]);
+                state_buffers.insert(slot, [initial, alternate]);
             }
 
-            let integrity_fault = (!self.constraints.is_empty()).then(|| {
+            let integrity_binding = execution_plan
+                .bindings
+                .iter()
+                .find(|binding| binding.role == GpuPlanBindingRole::IntegrityFault);
+            let integrity_fault = integrity_binding.map(|binding| {
                 Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech integrity-constraint fault"),
-                    size: (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
+                    size: binding.elements * std::mem::size_of::<u32>() as u64,
                     usage: wgpu::BufferUsages::STORAGE
                         | wgpu::BufferUsages::COPY_SRC
                         | wgpu::BufferUsages::COPY_DST,
                     mapped_at_creation: false,
                 }))
             });
-            let integrity_readback = (!self.constraints.is_empty()).then(|| {
+            let integrity_readback = integrity_binding.map(|binding| {
                 device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech integrity-constraint readback"),
-                    size: (GPU_FAULT_WORDS * std::mem::size_of::<u32>()) as u64,
+                    size: binding.elements * std::mem::size_of::<u32>() as u64,
                     usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                     mapped_at_creation: false,
                 })
             });
 
-            let mut layout_entries =
-                self.inputs
-                    .iter()
-                    .map(|input| (input.binding, true))
-                    .chain(self.states.iter().flat_map(|state| {
-                        [(state.read_binding, true), (state.write_binding, false)]
-                    }))
-                    .map(|(binding, read_only)| wgpu::BindGroupLayoutEntry {
-                        binding,
-                        visibility: wgpu::ShaderStages::COMPUTE,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Storage { read_only },
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    })
-                    .collect::<Vec<_>>();
-            if !self.constraints.is_empty() {
-                layout_entries.push(wgpu::BindGroupLayoutEntry {
-                    binding: (self.inputs.len() + self.states.len() * 2) as u32,
+            let layout_entries = execution_plan
+                .bindings
+                .iter()
+                .map(|binding| wgpu::BindGroupLayoutEntry {
+                    binding: binding.binding,
                     visibility: wgpu::ShaderStages::COMPUTE,
                     ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Storage { read_only: false },
+                        ty: wgpu::BufferBindingType::Storage {
+                            read_only: binding.access == GpuPlanBindingAccess::Read,
+                        },
                         has_dynamic_offset: false,
                         min_binding_size: None,
                     },
                     count: None,
-                });
-            }
+                })
+                .collect::<Vec<_>>();
             let bind_group_layout =
                 device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                     label: Some("Mech fixed-shape batch bindings"),
                     entries: &layout_entries,
                 });
             let bind_groups = [0, 1].map(|group| {
-                let mut entries = self
-                    .inputs
+                let entries = execution_plan
+                    .bindings
                     .iter()
-                    .map(|input| wgpu::BindGroupEntry {
-                        binding: input.binding,
-                        resource: input_buffers[&input.slot].as_entire_binding(),
+                    .map(|binding| {
+                        let resource = match binding.role {
+                            GpuPlanBindingRole::Input => {
+                                input_buffers[&CellSlotId::new(binding.slot)].as_entire_binding()
+                            }
+                            GpuPlanBindingRole::StateRead => state_buffers
+                                [&CellSlotId::new(binding.slot)][group]
+                                .as_entire_binding(),
+                            GpuPlanBindingRole::StateWrite => state_buffers
+                                [&CellSlotId::new(binding.slot)][1 - group]
+                                .as_entire_binding(),
+                            GpuPlanBindingRole::IntegrityFault => integrity_fault
+                                .as_ref()
+                                .expect("integrity plan has a fault buffer")
+                                .as_entire_binding(),
+                            GpuPlanBindingRole::Output => {
+                                unreachable!("fixed-shape outputs alias resident state buffers")
+                            }
+                        };
+                        wgpu::BindGroupEntry {
+                            binding: binding.binding,
+                            resource,
+                        }
                     })
-                    .chain(self.states.iter().flat_map(|state| {
-                        [
-                            wgpu::BindGroupEntry {
-                                binding: state.read_binding,
-                                resource: state_buffers[&state.slot][group].as_entire_binding(),
-                            },
-                            wgpu::BindGroupEntry {
-                                binding: state.write_binding,
-                                resource: state_buffers[&state.slot][1 - group].as_entire_binding(),
-                            },
-                        ]
-                    }))
                     .collect::<Vec<_>>();
-                if let Some(fault) = &integrity_fault {
-                    entries.push(wgpu::BindGroupEntry {
-                        binding: (self.inputs.len() + self.states.len() * 2) as u32,
-                        resource: fault.as_entire_binding(),
-                    });
-                }
                 device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: Some("Mech fixed-shape batch bind group"),
                     layout: &bind_group_layout,
@@ -2699,7 +2702,7 @@ mod native {
             });
             let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some("Scalarized Mech fixed-shape batch"),
-                source: wgpu::ShaderSource::Wgsl(self.wgsl.clone().into()),
+                source: wgpu::ShaderSource::Wgsl(execution_plan.wgsl.clone().into()),
             });
             let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Mech fixed-shape batch pipeline layout"),
@@ -2715,20 +2718,29 @@ mod native {
             });
 
             let output_buffers = [0, 1].map(|group| {
-                self.states
+                execution_plan
+                    .physical_outputs
                     .iter()
-                    .map(|state| (state.slot, state_buffers[&state.slot][1 - group].clone()))
+                    .map(|output| {
+                        let slot = CellSlotId::new(output.slot);
+                        (slot, state_buffers[&slot][1 - group].clone())
+                    })
                     .collect()
             });
-            let output_elements = self
-                .states
+            let output_elements = execution_plan
+                .outputs
                 .iter()
-                .map(|state| (state.slot, state.shape.elements() * self.instances as usize))
+                .map(|output| (CellSlotId::new(output.slot), output.elements as usize))
                 .collect();
-            let output_elements_per_instance = self
-                .states
+            let output_elements_per_instance = execution_plan
+                .outputs
                 .iter()
-                .map(|state| (state.slot, state.shape.elements()))
+                .map(|output| {
+                    (
+                        CellSlotId::new(output.slot),
+                        output.elements_per_instance as usize,
+                    )
+                })
                 .collect();
             Ok(BatchedResidentGpuSession {
                 adapter: adapter_name,
@@ -2740,10 +2752,10 @@ mod native {
                 output_buffers,
                 output_elements,
                 output_elements_per_instance,
-                constraints: self.constraints.clone().into_boxed_slice(),
+                constraints: execution_plan.constraints.into_boxed_slice(),
                 integrity_fault,
                 integrity_readback,
-                workgroups: self.workgroup_count(),
+                workgroups: workgroup_count,
                 next_group: 0,
                 last_output_group: None,
                 faults: BatchedFaultRecorder::default(),
@@ -2867,8 +2879,8 @@ mod native {
                     let fault = BatchedIntegrityFault {
                         attempted_turn,
                         instance: packed >> 8,
-                        constraint: constraint.id,
-                        constraint_name: constraint.name.clone(),
+                        constraint: IntegrityConstraintId::new(constraint.id),
+                        constraint_name: constraint.name.clone().into_boxed_str(),
                     };
                     return Err(self.faults.record(fault));
                 }

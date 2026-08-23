@@ -2736,6 +2736,8 @@ dependencies = [
  "mech-stdlib",
  "mech-syntax",
  "pollster",
+ "serde",
+ "serde_json",
  "web-time",
  "wgpu",
  "wide",

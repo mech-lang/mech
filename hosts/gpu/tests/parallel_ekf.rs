@@ -13,7 +13,8 @@ use mech_engine::{
     ProgramArtifact, decode_program_artifact_sections, encode_program_artifact_sections,
 };
 use mech_gpu::{
-    BatchedExecutionError, ComputeLowerer, FixedShapeKernel, native_compute_backend_registry,
+    BatchedExecutionError, ComputeLowerer, FixedShapeKernel, GpuExecutionPlan, GpuKernelPlanSource,
+    GpuPlanBindingRole, GpuPlanKernelKind, native_compute_backend_registry,
 };
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
@@ -509,6 +510,45 @@ fn fixed_shape_physical_plan_expands_one_thousand_lane_resident_buffers() {
         "every browser/native fixed-shape buffer must have one unique binding",
     );
     assert_eq!(program.integrity_buffer().unwrap().words, 2);
+
+    let plan = GpuExecutionPlan::build(GpuKernelPlanSource::FixedShape(&program), &inputs)
+        .expect("EKF kernel must produce one portable physical GPU plan");
+    assert_eq!(plan.kernel_kind, GpuPlanKernelKind::FixedShape);
+    assert_eq!(plan.dispatch_elements, instances as u32);
+    assert_eq!(plan.bindings.len(), bindings.len());
+    assert_eq!(plan.states.len(), 2);
+    assert_eq!(plan.constraints.len(), 3);
+    assert_eq!(
+        plan.bindings
+            .iter()
+            .filter(|binding| binding.role == GpuPlanBindingRole::IntegrityFault)
+            .map(|binding| binding.elements)
+            .collect::<Vec<_>>(),
+        vec![2]
+    );
+    assert!(
+        plan.physical_outputs
+            .iter()
+            .all(|output| output.binding.is_none()),
+        "fixed-shape outputs must read from the selected resident-state generation"
+    );
+}
+
+#[test]
+fn fixed_shape_execution_plan_groups_aliased_state_outputs_once() {
+    let source = SOURCE.replacen("(state, covariance)", "(state, state, covariance)", 1);
+    let (program, inputs) = source_program_from(&source, 8);
+    let plan = GpuExecutionPlan::build(GpuKernelPlanSource::FixedShape(&program), &inputs)
+        .expect("aliased EKF outputs must produce a physical execution plan");
+
+    assert_eq!(plan.outputs.len(), 3);
+    assert_eq!(plan.physical_outputs.len(), 2);
+    assert!(
+        plan.physical_outputs
+            .iter()
+            .any(|output| output.aliases.len() == 2),
+        "logical state aliases must share one physical resident readback"
+    );
 }
 
 fn compute_initializers(
