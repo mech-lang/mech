@@ -372,6 +372,48 @@ fn source_program_from(
     (program, inputs)
 }
 
+#[test]
+fn fixed_shape_physical_plan_expands_one_thousand_lane_resident_buffers() {
+    let instances = 1_000;
+    let (program, inputs) = source_program(instances);
+    let physical_inputs = program.physical_inputs(&inputs).unwrap();
+    let physical_states = program.physical_states();
+
+    assert_eq!(program.instances(), instances as u32);
+    assert!(
+        physical_inputs
+            .iter()
+            .all(|input| input.elements == instances)
+    );
+    assert_eq!(physical_states.len(), 2);
+    assert!(
+        physical_states
+            .iter()
+            .any(|state| { state.elements_per_instance == 3 && state.elements == instances * 3 })
+    );
+    assert!(
+        physical_states
+            .iter()
+            .any(|state| { state.elements_per_instance == 9 && state.elements == instances * 9 })
+    );
+    let bindings = physical_inputs
+        .iter()
+        .map(|input| input.binding)
+        .chain(
+            physical_states
+                .iter()
+                .flat_map(|state| [state.read_binding, state.write_binding]),
+        )
+        .chain(program.integrity_buffer().map(|fault| fault.binding))
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        bindings.len(),
+        physical_inputs.len() + physical_states.len() * 2 + 1,
+        "every browser/native fixed-shape buffer must have one unique binding",
+    );
+    assert_eq!(program.integrity_buffer().unwrap().words, 2);
+}
+
 fn compute_initializers(
     program: &FixedShapeKernel,
     inputs: &BTreeMap<String, Vec<f32>>,

@@ -14,8 +14,8 @@ use mech_compute::{
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
-    ComputeHostFactory, CpuScalarBackendFactory, ElementwiseKernel,
-    lower_elementwise_compute_program,
+    ComputeHostFactory, ComputeLowerer, CpuScalarBackendFactory, ElementwiseKernel,
+    FixedShapeKernel, lower_elementwise_compute_program,
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
@@ -27,7 +27,7 @@ use mech_runtime::{
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
-use crate::gpu::{CompileTimings, gpu_program_manifest};
+use crate::gpu::{BrowserGpuProgram, CompileTimings, gpu_program_manifest};
 
 const POINTER_PATHS: [&str; 4] = ["pulse", "position", "pressed", "delta-seconds"];
 
@@ -89,7 +89,7 @@ impl WasmMixedComputeProject {
             .map_err(js_error)?
             .to_string();
         let manifest = gpu_program_manifest(
-            &prepared.render_program,
+            prepared.kernel.browser_program(),
             &initializer_values(&prepared.program, &prepared.initializers).map_err(js_error)?,
             prepared.timings,
         )?;
@@ -215,8 +215,30 @@ struct PreparedComputeRegion {
     coordinator: ProgramArtifact,
     program: ComputeProgram,
     initializers: ComputeInitializerSet,
-    render_program: ElementwiseKernel,
+    kernel: PreparedGpuKernel,
     timings: CompileTimings,
+}
+
+#[derive(Debug)]
+enum PreparedGpuKernel {
+    Elementwise(ElementwiseKernel),
+    FixedShape(FixedShapeKernel),
+}
+
+impl PreparedGpuKernel {
+    fn compute_program(&self) -> &ComputeProgram {
+        match self {
+            Self::Elementwise(program) => program.compute_program(),
+            Self::FixedShape(program) => program.compute_program(),
+        }
+    }
+
+    fn browser_program(&self) -> BrowserGpuProgram<'_> {
+        match self {
+            Self::Elementwise(program) => BrowserGpuProgram::Elementwise(program),
+            Self::FixedShape(program) => BrowserGpuProgram::FixedShape(program),
+        }
+    }
 }
 
 fn compile_named_compute_region(
@@ -247,10 +269,24 @@ fn compile_named_compute_region(
     let mixed = compiler.compile_mixed_tree(tree)?;
     let artifact_compilation = milliseconds(artifact_started);
     let lowering_started = Instant::now();
-    let program = lower_elementwise_compute_program(&mixed.compute.artifact)
-        .map_err(|failure| mixed_error(format!("compute lowering failed: {failure}")))?;
-    let render_program = ElementwiseKernel::from_compute_program(&program)
-        .map_err(|failure| mixed_error(format!("render lowering failed: {failure}")))?;
+    let initial_values =
+        initializer_values_from_interface(&mixed.compute.interface, &mixed.compute.initializers)?;
+    let kernel = match lower_elementwise_compute_program(&mixed.compute.artifact) {
+        Ok(program) => PreparedGpuKernel::Elementwise(
+            ElementwiseKernel::from_compute_program(&program)
+                .map_err(|failure| mixed_error(format!("elementwise lowering failed: {failure}")))?,
+        ),
+        Err(elementwise_failure) => PreparedGpuKernel::FixedShape(
+            ComputeLowerer
+                .compile_broadcast(&mixed.compute.artifact, &initial_values)
+                .map_err(|fixed_failure| {
+                    mixed_error(format!(
+                        "compute lowering failed for both portable kernels; elementwise: {elementwise_failure}; fixed-shape: {fixed_failure}",
+                    ))
+                })?,
+        ),
+    };
+    let program = kernel.compute_program().clone();
     let gpu_lowering = milliseconds(lowering_started);
     let input_started = Instant::now();
     initializer_values(&program, &mixed.compute.initializers)?;
@@ -261,7 +297,7 @@ fn compile_named_compute_region(
         coordinator: mixed.coordinator.into_artifact(),
         program,
         initializers: mixed.compute.initializers,
-        render_program,
+        kernel,
         timings: CompileTimings {
             catalog_setup,
             parsing,
@@ -270,6 +306,25 @@ fn compile_named_compute_region(
             input_capture,
         },
     })
+}
+
+fn initializer_values_from_interface(
+    interface: &mech_compute::ComputeRegionInterface,
+    initializers: &ComputeInitializerSet,
+) -> MResult<BTreeMap<String, Vec<f32>>> {
+    interface
+        .inputs
+        .iter()
+        .map(|port| {
+            let value = initializers.get(port.id).ok_or_else(|| {
+                mixed_error(format!("compute input `{}` has no initializer", port.name))
+            })?;
+            let value = port
+                .normalize_value(value.clone())
+                .map_err(|failure| mixed_error(failure.to_string()))?;
+            Ok((port.name.to_string(), value_elements(&value)))
+        })
+        .collect()
 }
 
 fn configured_host_index(document: &MechConfigDocument, provider: &str) -> MResult<usize> {
@@ -896,6 +951,8 @@ impl BrowserWgpuBackendFactory {
                 priority: 400,
                 capabilities: ComputeBackendCapabilities {
                     elementwise: true,
+                    fixed_shape: true,
+                    integrity_rejection: true,
                     browser: true,
                     ..Default::default()
                 },
@@ -918,12 +975,14 @@ impl ComputeBackendFactory for BrowserWgpuBackendFactory {
                 reason: "WebGPU is unavailable in this browser".into(),
             });
         }
-        if !matches!(program.kernel(), ComputeKernel::Elementwise(_))
-            || program.elementwise_storage().is_none()
-        {
+        let planned = match program.kernel() {
+            ComputeKernel::Elementwise(_) => program.elementwise_storage().is_some(),
+            ComputeKernel::FixedShape(_) => program.fixed_shape_storage().is_some(),
+        };
+        if !planned {
             return Err(ComputeBackendRejection {
                 backend: self.descriptor.id.clone(),
-                reason: "browser wgpu currently supports elementwise programs only".into(),
+                reason: "browser wgpu requires a complete physical storage plan".into(),
             });
         }
         Ok(())
@@ -933,12 +992,18 @@ impl ComputeBackendFactory for BrowserWgpuBackendFactory {
         &self,
         program: &ComputeProgram,
     ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError> {
-        ElementwiseKernel::from_compute_program(program).map_err(|failure| {
-            ComputeBackendError {
-                backend: self.descriptor.id.clone(),
-                operation: "compile",
-                detail: format!("{failure:?}").into(),
+        match program.kernel() {
+            ComputeKernel::Elementwise(_) => {
+                ElementwiseKernel::from_compute_program(program).map(|_| ())
             }
+            ComputeKernel::FixedShape(_) => {
+                FixedShapeKernel::from_compute_program(program).map(|_| ())
+            }
+        }
+        .map_err(|failure| ComputeBackendError {
+            backend: self.descriptor.id.clone(),
+            operation: "compile",
+            detail: format!("{failure:?}").into(),
         })?;
         Ok(Box::new(BrowserWgpuExecutable {
             backend: self.descriptor.id.clone(),
@@ -1149,6 +1214,17 @@ positions = next-positions
     const SERVED_CONFIG: &str = include_str!("../../../examples/gpu-particles/mech.mcfg");
     const SERVED_SOURCE: &str = include_str!("../../../examples/gpu-particles/particles.mec");
 
+    const FIXED_SHAPE_SOURCE: &str = r#"
++> math
+
+matrix-step @compute
+-------------------------------------------------------------------------------
+transform := [1f32 0f32; 0f32 1f32]
+~state := [1f32; 2f32]
+state = transform ** state + [0.5<f32>; 0.25<f32>]
+state
+"#;
+
     fn compile_fixture(config: &str, source: &str) -> (MechConfigDocument, PreparedComputeRegion) {
         let document =
             parse_config_document("test.mcfg", config, ConfigProfileOptions::default()).unwrap();
@@ -1242,10 +1318,27 @@ positions = next-positions
         let inputs = initializer_values(&prepared.program, &prepared.initializers).unwrap();
 
         assert_eq!(prepared.region, "particle-field");
-        assert_eq!(prepared.render_program.dispatch_elements(), 2_000_000);
+        let PreparedGpuKernel::Elementwise(kernel) = prepared.kernel else {
+            panic!("particle source must select the elementwise kernel")
+        };
+        assert_eq!(kernel.dispatch_elements(), 2_000_000);
         assert_eq!(inputs["force-point"], vec![0.0, 0.0]);
         assert_eq!(inputs["force-strength"], vec![0.0]);
         assert_eq!(inputs["dt"], vec![0.016666667]);
+    }
+
+    #[test]
+    fn browser_compiler_selects_the_generic_fixed_shape_kernel_for_matrix_batches() {
+        let (_document, prepared) = compile_fixture(CONFIG, FIXED_SHAPE_SOURCE);
+        let inputs = initializer_values(&prepared.program, &prepared.initializers).unwrap();
+        let PreparedGpuKernel::FixedShape(kernel) = prepared.kernel else {
+            panic!("matrix recurrence must select the fixed-shape kernel")
+        };
+
+        assert_eq!(kernel.instances(), 1);
+        assert!(kernel.physical_inputs(&inputs).unwrap().is_empty());
+        assert_eq!(kernel.physical_states()[0].elements, 2);
+        assert!(kernel.wgsl().contains("state_write_"));
     }
 
     #[test]

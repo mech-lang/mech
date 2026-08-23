@@ -30,6 +30,7 @@ mod jit;
 pub use jit::*;
 
 const SIMD_LANES: usize = 4;
+const FIXED_SHAPE_INTEGRITY_WORDS: usize = 2;
 
 fn evaluate_operand_simd(operand: ScalarOperand, registers: &[f32x4]) -> f32x4 {
     match operand {
@@ -419,6 +420,37 @@ pub struct FixedShapeKernel {
     wgsl: String,
 }
 
+/// One immutable browser/native storage binding for a fixed-shape input after
+/// scalar or per-lane source values have been expanded to the physical batch.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FixedShapeInputBuffer {
+    pub slot: CellSlotId,
+    pub name: String,
+    pub binding: u32,
+    pub elements: usize,
+    pub initial_values: Vec<f32>,
+}
+
+/// Ping-pong storage metadata for one resident fixed-shape state. The physical
+/// buffer is lane-contiguous, so one sampled lane can later be copied without
+/// materializing the rest of the batch on the CPU.
+#[derive(Clone, Debug, PartialEq)]
+pub struct FixedShapeStateBuffer {
+    pub slot: CellSlotId,
+    pub read_binding: u32,
+    pub write_binding: u32,
+    pub elements_per_instance: usize,
+    pub elements: usize,
+    pub initial_values: Vec<f32>,
+}
+
+/// Optional two-word atomic fault buffer used by checked fixed-shape kernels.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct FixedShapeIntegrityBuffer {
+    pub binding: u32,
+    pub words: usize,
+}
+
 /// Bounded fault evidence for one rejected candidate. Sessions retain only the
 /// latest record plus a total count, never an append-only transaction log.
 #[derive(Clone, Debug, PartialEq)]
@@ -651,6 +683,63 @@ impl FixedShapeKernel {
         self.states
             .iter()
             .map(|state| (state.slot, state.shape.elements()))
+    }
+
+    /// Materializes the backend-neutral physical input plan used by both the
+    /// native wgpu session and the browser WebGPU bridge.
+    pub fn physical_inputs(
+        &self,
+        provided: &BTreeMap<String, Vec<f32>>,
+    ) -> Result<Vec<FixedShapeInputBuffer>, BatchedExecutionError> {
+        self.inputs
+            .iter()
+            .map(|input| {
+                let values = provided
+                    .get(&input.name)
+                    .ok_or_else(|| BatchedExecutionError::MissingInput(input.name.clone()))?;
+                let initial_values = self.expand_input(input, values)?;
+                Ok(FixedShapeInputBuffer {
+                    slot: input.slot,
+                    name: input.name.clone(),
+                    binding: input.binding,
+                    elements: initial_values.len(),
+                    initial_values,
+                })
+            })
+            .collect()
+    }
+
+    /// Materializes the initial ping-pong state plan without selecting a GPU
+    /// API. Each instance owns one contiguous fixed-shape value.
+    pub fn physical_states(&self) -> Vec<FixedShapeStateBuffer> {
+        self.states
+            .iter()
+            .map(|state| {
+                let elements_per_instance = state.shape.elements();
+                let initial_values = state
+                    .initializer
+                    .iter()
+                    .copied()
+                    .cycle()
+                    .take(elements_per_instance * self.instances as usize)
+                    .collect::<Vec<_>>();
+                FixedShapeStateBuffer {
+                    slot: state.slot,
+                    read_binding: state.read_binding,
+                    write_binding: state.write_binding,
+                    elements_per_instance,
+                    elements: initial_values.len(),
+                    initial_values,
+                }
+            })
+            .collect()
+    }
+
+    pub fn integrity_buffer(&self) -> Option<FixedShapeIntegrityBuffer> {
+        (!self.constraints.is_empty()).then_some(FixedShapeIntegrityBuffer {
+            binding: (self.inputs.len() + self.states.len() * 2) as u32,
+            words: FIXED_SHAPE_INTEGRITY_WORDS,
+        })
     }
 
     pub fn integrity_constraints(&self) -> impl Iterator<Item = IntegrityConstraintId> + '_ {
