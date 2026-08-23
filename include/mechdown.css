@@ -107,6 +107,14 @@
   margin: 0 0 14px -20px;
 }
 
+[data-mechdown] .mech-section-annotations {
+  color: var(--mechdown-purple);
+  font-size: 0.42em;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
 [data-mechdown] .mechdown-section > h3 {
   counter-increment: mechdown-subsection;
   counter-reset: mechdown-subsubsection mechdown-h5 mechdown-h6;

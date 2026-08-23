@@ -294,6 +294,14 @@ pub fn annotated_subtitle(input: ParseString) -> ParseResult<(Subtitle, Vec<Sect
             "Expected an annotated section heading",
         )));
     }
+    // A source ordinal is authoring metadata, just as it is for an ordinary
+    // underlined subtitle. Rendering assigns the editorial section counter
+    // from document order, so never retain `5.` as part of the semantic title.
+    let (input, _) = opt(tuple((
+        many1(alt((digit_token, alpha_token))),
+        period,
+        many0(space_tab),
+    )))(input)?;
     let (input, title_tokens) = many1(nom_tuple((is_not(at), text)))(input)?;
     if !title_tokens
         .last()

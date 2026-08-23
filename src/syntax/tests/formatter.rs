@@ -237,6 +237,26 @@ fn formatter_marks_only_heading_owned_sections_for_editorial_numbering() {
 }
 
 #[test]
+fn formatter_shows_compute_annotation_without_polluting_the_section_title() {
+    let program = mech_syntax::parser::parse(
+        "ekf-batch @cpu\n-------------------------------------------------------------------------------\nx := 1\n",
+    )
+    .expect("unnumbered compute region must parse");
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.program(&program);
+
+    assert!(html.contains("class=\"mechdown-section mechdown-titled-section\""));
+    assert!(html.contains(">ekf-batch</a>"), "{html}");
+    assert!(
+        html.contains("class=\"mech-section-annotations\">@cpu</span>"),
+        "{html}",
+    );
+    assert!(html.contains("data-mech-annotations=\"@cpu\""), "{html}");
+    assert!(!html.contains(">5. ekf-batch</a>"), "{html}");
+}
+
+#[test]
 fn formatter_preserves_new_prefix_context_resource_read() {
     let mut formatter = Formatter::new();
     let statement = first_statement("name := @browser/body/content/input/_value");

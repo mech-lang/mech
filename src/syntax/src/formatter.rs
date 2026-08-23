@@ -766,6 +766,10 @@ impl Formatter {
     }
 
     pub fn subtitle(&mut self, node: &Subtitle) -> String {
+        self.subtitle_with_annotations(node, None)
+    }
+
+    fn subtitle_with_annotations(&mut self, node: &Subtitle, annotations: Option<&str>) -> String {
         let level = node.level;
         if level == 2 {
             self.h2_num += 1;
@@ -826,15 +830,28 @@ impl Formatter {
         };
 
         if self.html {
+            let annotation_attribute = annotations
+                .map(|annotations| format!(" data-mech-annotations=\"{}\"", annotations))
+                .unwrap_or_default();
+            let annotation_label = annotations
+                .map(|annotations| {
+                    format!(
+                        "<span class=\"mech-section-annotations\">{}</span>",
+                        escape_html_text(annotations),
+                    )
+                })
+                .unwrap_or_default();
             format!(
-                "<h{} id=\"{}\" {} class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>",
+                "<h{} id=\"{}\" {} class=\"mech-program-subtitle {}\"{}><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a>{}</h{}>",
                 level,
                 title_id,
                 section,
                 toc,
+                annotation_attribute,
                 toc,
                 link_id,
                 node.to_string(),
+                annotation_label,
                 level
             )
         } else {
@@ -872,11 +889,7 @@ impl Formatter {
                 title.to_string(),
                 annotations,
             ),
-            (Some(title), false) => format!(
-                "<div class=\"mech-annotated-section-heading\" data-mech-annotations=\"{}\">{}</div>",
-                annotations,
-                self.subtitle(title),
-            ),
+            (Some(title), false) => self.subtitle_with_annotations(title, Some(&annotations)),
             (Some(title), true) => self.subtitle(title),
             (None, _) => "".to_string(),
         };

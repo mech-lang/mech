@@ -24,6 +24,16 @@ fn named_regions_accept_hard_cpu_and_gpu_annotations() {
 }
 
 #[test]
+fn numbered_compute_region_keeps_the_ordinal_out_of_its_name() {
+    let source = format!("5. ekf-batch @cpu\n{}\nx := 1\n", "-".repeat(79),);
+    let program = parser::parse(&source).expect("numbered compute region must parse");
+    let section = &program.body.sections[0];
+
+    assert_eq!(section.subtitle.as_ref().unwrap().to_string(), "ekf-batch");
+    assert_eq!(section.annotations[0].name.as_ref(), "cpu");
+}
+
+#[test]
 fn ordinary_mechdown_section_has_no_annotations() {
     let program = parser::parse(
         "1. Documentation\n-------------------------------------------------------------------------------\n\nText only.\n",
