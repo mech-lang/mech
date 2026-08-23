@@ -153,9 +153,22 @@ harness = r'''<script>
       const tabs = [...document.querySelectorAll('[data-mech-console-tab]')]
         .map(tab => tab.dataset.mechConsoleTab).join(",");
       const updates = Number(display?.dataset.mechDisplayUpdates || 0);
-      const finitePoint = (element) => element &&
-        Number.isFinite(Number(element.getAttribute("cx"))) &&
-        Number.isFinite(Number(element.getAttribute("cy")));
+      const finiteCoordinate = (element, attribute) => {
+        const raw = element?.getAttribute(attribute);
+        return typeof raw === "string" && raw.trim() !== "" && Number.isFinite(Number(raw));
+      };
+      const finitePoint = (element) =>
+        finiteCoordinate(element, "cx") && finiteCoordinate(element, "cy");
+      const finitePointContract = (() => {
+        const probe = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        const rejectsMissing = !finitePoint(probe);
+        probe.setAttribute("cx", " ");
+        probe.setAttribute("cy", "2");
+        const rejectsEmpty = !finitePoint(probe);
+        probe.setAttribute("cx", "1");
+        const acceptsFinite = finitePoint(probe);
+        return rejectsMissing && rejectsEmpty && acceptsFinite;
+      })();
       const truthPoint = finitePoint(truth)
         ? {x: Number(truth.getAttribute("cx")), y: Number(truth.getAttribute("cy"))}
         : undefined;
@@ -357,6 +370,7 @@ harness = r'''<script>
       root.dataset.mechObservedCameraRangeOracle = String(cameraRangeOracleValid);
       root.dataset.mechObservedPredictionOnly = String(predictionOnlyValid);
       root.dataset.mechObservedPredictionOnlyComparisons = String(predictionOnlyComparisons);
+      root.dataset.mechObservedFinitePointContract = String(finitePointContract);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
@@ -364,6 +378,7 @@ harness = r'''<script>
         .map(element => element.dataset.mechDisplayId).join(",");
       if (
         updates >= 376 &&
+        finitePointContract &&
         cameras.length === 4 && cameraRanges.length === 4 && cameraRays.length === 4 &&
         cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
         predictionOnlyComparisons > 0 &&
@@ -395,6 +410,7 @@ harness = r'''<script>
         root.dataset.mechCameraRangeOracle = String(cameraRangeOracleValid);
         root.dataset.mechPredictionOnly = String(predictionOnlyValid);
         root.dataset.mechPredictionOnlyComparisons = String(predictionOnlyComparisons);
+        root.dataset.mechFinitePointContract = String(finitePointContract);
         root.dataset.mechTruthMoved = String(truthMoved);
         root.dataset.mechSquareSides = ["east", "north", "west", "south"]
           .filter(side => squareSides.has(side)).join(",");
@@ -505,6 +521,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-camera-range-oracle="true"' "$dom_file" \
   || ! grep -q 'data-mech-prediction-only="true"' "$dom_file" \
   || ! grep -qE 'data-mech-prediction-only-comparisons="[1-9][0-9]*"' "$dom_file" \
+  || ! grep -q 'data-mech-finite-point-contract="true"' "$dom_file" \
   || ! grep -q 'data-mech-truth-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-square-sides="east,north,west,south"' "$dom_file" \
   || ! grep -q 'data-mech-lap-complete="true"' "$dom_file" \
