@@ -467,7 +467,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute_activation_inputs: BTreeMap::new(),
         };
         let result = program
-            .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
+            .plan_artifact_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
             .map_err(classify_source_planning)?;
         publish_document_and_root_outputs(&mut program, &document_output_ids, &result)?;
         if matches!(
@@ -541,7 +541,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute_activation_inputs: BTreeMap::new(),
         };
         let result = program
-            .plan_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
+            .plan_artifact_tree_with_services(&sanitize_tree(tree.clone())?, &mut services)
             .map_err(classify_source_planning)?;
         #[cfg(feature = "compute")]
         let activation_inputs = std::mem::take(&mut services.compute_activation_inputs);
@@ -1259,7 +1259,7 @@ impl<'a> ProgramCompilerView<'a> {
             compute_activation_inputs: BTreeMap::new(),
         };
         let result = program
-            .plan_tree_with_services(&tree, &mut services)
+            .plan_artifact_tree_with_services(&tree, &mut services)
             .map_err(classify_source_planning)?;
         #[cfg(feature = "compute")]
         compute_activation_inputs.append(&mut services.compute_activation_inputs);

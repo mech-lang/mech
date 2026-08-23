@@ -275,6 +275,22 @@ impl CompilerPlanningProgram {
         self.interpreter.interpret_with_services(tree, services)
     }
 
+    /// Plans source for an executable artifact, retaining user-function call
+    /// graphs in the caller plan so artifact lowering can inline their ordinary
+    /// operations and preserve dependencies on caller-owned inputs.
+    ///
+    /// Interactive evaluation keeps the normal call-local plan boundary; only
+    /// compilation needs the expanded graph after the function frame returns.
+    pub fn plan_artifact_tree_with_services(
+        &mut self,
+        tree: &mech_core::Program,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<LegacyValue> {
+        let _persistent_user_function_plan =
+            crate::function::PersistentUserFunctionPlanScope::enter(&self.interpreter);
+        self.interpreter.interpret_with_services(tree, services)
+    }
+
     #[cfg(test)]
     pub(crate) fn plan_source_for_test(&mut self, source: &str) -> MResult<LegacyValue> {
         let tree = mech_syntax::parser::parse(source.trim())?;

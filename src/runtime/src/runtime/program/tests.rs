@@ -1260,8 +1260,11 @@ result
 
     let error = compiler.compile_mixed_tree(&tree).unwrap_err();
     let rendered = format!("{error:?}");
-    assert!(rendered.contains("compute boundary planning failed"));
-    assert!(rendered.contains("DimensionMismatch"));
+    assert!(
+        rendered.contains("compute boundary planning failed"),
+        "{rendered}"
+    );
+    assert!(rendered.contains("ElementCountMismatch"), "{rendered}");
 }
 
 #[cfg(feature = "compute")]
@@ -1343,6 +1346,48 @@ result
         mixed.compute.initializers.get(input.id),
         Some(&mech_compute::ComputeValue::ScalarF32(1.0))
     );
+}
+
+#[cfg(feature = "compute")]
+#[test]
+fn mixed_root_inlines_user_function_graphs_into_compute_artifacts() {
+    let mut resolver = InMemorySourceResolver::new();
+    resolver
+        .insert_string(
+            "main.mec",
+            r#"
+@compute := compute://worker/kernel{:write(input/x), :write(turn)}
+@compute/input/x <- [3f32; 4f32]
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+twice(value<[f32]:2,1>) = result<[f32]:2,1> :=
+  result := value * 2f32.
+
+x := [1f32; 2f32]
+result := twice(x)
+result
+"#,
+        )
+        .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .source_resolver(resolver)
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler
+        .compile_mixed_root(
+            SourceRequest::new("main.mec"),
+            ModuleBuildOptions::new("test", "v0.4", "native", &[], &[]),
+        )
+        .unwrap();
+
+    assert!(mixed.compute.interface.input_named("x").is_some());
+    assert!(mixed.compute.artifact.nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["math"] && node.operation.operation_name == "mul"
+    }));
 }
 
 #[cfg(feature = "compute")]
