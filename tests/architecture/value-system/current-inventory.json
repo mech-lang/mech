@@ -5633,12 +5633,12 @@
           {
             "column": 22,
             "fingerprint": "8a22e6f176706a174b3e73a9df8f77ef20eb211dad37fde42601ba1bfa449da1",
-            "line": 734
+            "line": 763
           },
           {
             "column": 13,
             "fingerprint": "155f008570f7b756a008a8f7d0260e9d2f55a590a55d5b67aa6b8282903e7c81",
-            "line": 1235
+            "line": 1264
           }
         ]
       },
@@ -6006,7 +6006,7 @@
           {
             "column": 22,
             "fingerprint": "5c435a4307f2e2c7c6472055a486db3087b3c9db7da34cc6aba780c46d1d0ec7",
-            "line": 164
+            "line": 218
           }
         ]
       },
@@ -11828,7 +11828,7 @@
           {
             "column": 9,
             "fingerprint": "c477a9b4a87748af3cd403b7714b4e63e6ead15099fd43936365d72993e7dd8b",
-            "line": 734
+            "line": 763
           }
         ]
       },
@@ -12175,7 +12175,7 @@
           {
             "column": 9,
             "fingerprint": "47e210ef03e975c85f64f30e9f5b13920d6b9a297ddadc83e69762b0212901d2",
-            "line": 164
+            "line": 218
           }
         ]
       },
@@ -13312,7 +13312,7 @@
           {
             "column": 9,
             "fingerprint": "c477a9b4a87748af3cd403b7714b4e63e6ead15099fd43936365d72993e7dd8b",
-            "line": 735
+            "line": 764
           }
         ]
       },
@@ -16655,21 +16655,21 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 872,
+      "line": 875,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Any"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1027,
+      "line": 1032,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Any"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1514,
+      "line": 1519,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Any"
     },
@@ -16718,28 +16718,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 801,
+      "line": 804,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Atom"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1029,
+      "line": 1034,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Atom"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1047,
+      "line": 1052,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Atom"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1516,
+      "line": 1521,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Atom"
     },
@@ -16788,21 +16788,21 @@
     {
       "column": 34,
       "enum": "Kind",
-      "line": 872,
+      "line": 875,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Empty"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1030,
+      "line": 1035,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Empty"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1520,
+      "line": 1525,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Empty"
     },
@@ -16851,28 +16851,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 802,
+      "line": 805,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Enum"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1031,
+      "line": 1036,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Enum"
     },
     {
       "column": 32,
       "enum": "Kind",
-      "line": 1047,
+      "line": 1052,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Enum"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1521,
+      "line": 1526,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Enum"
     },
@@ -16914,21 +16914,21 @@
     {
       "column": 48,
       "enum": "Kind",
-      "line": 872,
+      "line": 875,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Id"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1032,
+      "line": 1037,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Id"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1525,
+      "line": 1530,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Id"
     },
@@ -16970,21 +16970,21 @@
     {
       "column": 59,
       "enum": "Kind",
-      "line": 872,
+      "line": 875,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Index"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1033,
+      "line": 1038,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Index"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1526,
+      "line": 1531,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Index"
     },
@@ -17026,28 +17026,28 @@
     {
       "column": 56,
       "enum": "Kind",
-      "line": 819,
+      "line": 822,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Kind"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1043,
+      "line": 1048,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Kind"
     },
     {
       "column": 56,
       "enum": "Kind",
-      "line": 1073,
+      "line": 1078,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Kind"
     },
     {
       "column": 15,
       "enum": "Kind",
-      "line": 1602,
+      "line": 1607,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Kind"
     },
@@ -17096,28 +17096,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 803,
+      "line": 806,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Map"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1034,
+      "line": 1039,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Map"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1051,
+      "line": 1056,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Map"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1527,
+      "line": 1532,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Map"
     },
@@ -17166,28 +17166,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 807,
+      "line": 810,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Matrix"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1035,
+      "line": 1040,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Matrix"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1055,
+      "line": 1060,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Matrix"
     },
     {
       "column": 13,
       "enum": "Kind",
-      "line": 1544,
+      "line": 1549,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Matrix"
     },
@@ -17236,21 +17236,21 @@
     {
       "column": 21,
       "enum": "Kind",
-      "line": 872,
+      "line": 875,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "None"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1028,
+      "line": 1033,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "None"
     },
     {
       "column": 14,
       "enum": "Kind",
-      "line": 1515,
+      "line": 1520,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "None"
     },
@@ -17299,28 +17299,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 819,
+      "line": 822,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Option"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1036,
+      "line": 1041,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Option"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1073,
+      "line": 1078,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Option"
     },
     {
       "column": 15,
       "enum": "Kind",
-      "line": 1546,
+      "line": 1551,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Option"
     },
@@ -17369,28 +17369,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 822,
+      "line": 825,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Record"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1037,
+      "line": 1042,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Record"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1076,
+      "line": 1081,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Record"
     },
     {
       "column": 13,
       "enum": "Kind",
-      "line": 1557,
+      "line": 1562,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Record"
     },
@@ -17439,28 +17439,28 @@
     {
       "column": 31,
       "enum": "Kind",
-      "line": 819,
+      "line": 822,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Reference"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1038,
+      "line": 1043,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Reference"
     },
     {
       "column": 31,
       "enum": "Kind",
-      "line": 1073,
+      "line": 1078,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Reference"
     },
     {
       "column": 15,
       "enum": "Kind",
-      "line": 1559,
+      "line": 1564,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Reference"
     },
@@ -17502,28 +17502,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 871,
+      "line": 874,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Scalar"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1039,
+      "line": 1044,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Scalar"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1089,
+      "line": 1094,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Scalar"
     },
     {
       "column": 15,
       "enum": "Kind",
-      "line": 1560,
+      "line": 1565,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Scalar"
     },
@@ -17572,28 +17572,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 835,
+      "line": 838,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Set"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1040,
+      "line": 1045,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Set"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1090,
+      "line": 1095,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Set"
     },
     {
       "column": 13,
       "enum": "Kind",
-      "line": 1570,
+      "line": 1575,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Set"
     },
@@ -17649,28 +17649,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 843,
+      "line": 846,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Table"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1041,
+      "line": 1046,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Table"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1105,
+      "line": 1110,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Table"
     },
     {
       "column": 13,
       "enum": "Kind",
-      "line": 1586,
+      "line": 1591,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Table"
     },
@@ -17719,28 +17719,28 @@
     {
       "column": 9,
       "enum": "Kind",
-      "line": 862,
+      "line": 865,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Tuple"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1042,
+      "line": 1047,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Tuple"
     },
     {
       "column": 9,
       "enum": "Kind",
-      "line": 1124,
+      "line": 1129,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Tuple"
     },
     {
       "column": 13,
       "enum": "Kind",
-      "line": 1600,
+      "line": 1605,
       "path": "src/core/src/program/bytecode/types.rs",
       "variant": "Tuple"
     },
@@ -17824,14 +17824,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 731,
+      "line": 760,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Atom"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 2001,
+      "line": 2030,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Atom"
     },
@@ -18571,9 +18571,9 @@
       "variant": "Bool"
     },
     {
-      "column": 28,
+      "column": 41,
       "enum": "LegacyValue",
-      "line": 62,
+      "line": 116,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "Bool"
     },
@@ -19224,7 +19224,7 @@
     {
       "column": 24,
       "enum": "LegacyValue",
-      "line": 1291,
+      "line": 1320,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Empty"
     },
@@ -20085,7 +20085,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 736,
+      "line": 765,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "EmptyKind"
     },
@@ -20393,14 +20393,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 733,
+      "line": 762,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Enum"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 1994,
+      "line": 2023,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Enum"
     },
@@ -26406,7 +26406,7 @@
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 92,
+      "line": 146,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "Index"
     },
@@ -27239,7 +27239,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 742,
+      "line": 771,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "IndexAll"
     },
@@ -29066,7 +29066,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 737,
+      "line": 766,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Kind"
     },
@@ -29591,14 +29591,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 725,
+      "line": 754,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Map"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 2029,
+      "line": 2058,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Map"
     },
@@ -29906,7 +29906,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1200,
+      "line": 1229,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixBool"
     },
@@ -31593,7 +31593,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 95,
+      "line": 149,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixBool"
     },
@@ -32006,7 +32006,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1323,
+      "line": 1352,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixC64"
     },
@@ -32209,7 +32209,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 157,
+      "line": 211,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixC64"
     },
@@ -33959,7 +33959,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1285,
+      "line": 1314,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixF32"
     },
@@ -34169,7 +34169,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 139,
+      "line": 193,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixF32"
     },
@@ -35989,7 +35989,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1290,
+      "line": 1319,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixF64"
     },
@@ -36360,7 +36360,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 143,
+      "line": 197,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixF64"
     },
@@ -36521,7 +36521,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1280,
+      "line": 1309,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI128"
     },
@@ -36731,7 +36731,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 135,
+      "line": 189,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixI128"
     },
@@ -36815,7 +36815,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1250,
+      "line": 1279,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI16"
     },
@@ -37025,7 +37025,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 123,
+      "line": 177,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixI16"
     },
@@ -37109,7 +37109,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1260,
+      "line": 1289,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI32"
     },
@@ -37319,7 +37319,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 127,
+      "line": 181,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixI32"
     },
@@ -37403,7 +37403,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1270,
+      "line": 1299,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI64"
     },
@@ -37613,7 +37613,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 131,
+      "line": 185,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixI64"
     },
@@ -37697,7 +37697,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1240,
+      "line": 1269,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixI8"
     },
@@ -37907,7 +37907,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 119,
+      "line": 173,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixI8"
     },
@@ -37998,7 +37998,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1329,
+      "line": 1358,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixIndex"
     },
@@ -40315,7 +40315,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 89,
+      "line": 143,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixIndex"
     },
@@ -40791,7 +40791,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1314,
+      "line": 1343,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixR64"
     },
@@ -40994,7 +40994,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 151,
+      "line": 205,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixR64"
     },
@@ -41057,7 +41057,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1299,
+      "line": 1328,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixString"
     },
@@ -41267,7 +41267,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 147,
+      "line": 201,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixString"
     },
@@ -41358,7 +41358,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1230,
+      "line": 1259,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU128"
     },
@@ -41568,7 +41568,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 115,
+      "line": 169,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixU128"
     },
@@ -41652,7 +41652,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1210,
+      "line": 1239,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU16"
     },
@@ -41862,7 +41862,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 103,
+      "line": 157,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixU16"
     },
@@ -41946,7 +41946,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1215,
+      "line": 1244,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU32"
     },
@@ -42156,7 +42156,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 107,
+      "line": 161,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixU32"
     },
@@ -42240,7 +42240,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1220,
+      "line": 1249,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU64"
     },
@@ -42450,7 +42450,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 111,
+      "line": 165,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixU64"
     },
@@ -42541,7 +42541,7 @@
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 1205,
+      "line": 1234,
       "path": "src/core/src/program/bytecode/constants/mod.rs",
       "variant": "MatrixU8"
     },
@@ -42751,7 +42751,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 99,
+      "line": 153,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixU8"
     },
@@ -42868,9 +42868,23 @@
       "variant": "MatrixValue"
     },
     {
+      "column": 19,
+      "enum": "LegacyValue",
+      "line": 1207,
+      "path": "src/core/src/program/bytecode/constants/mod.rs",
+      "variant": "MatrixValue"
+    },
+    {
       "column": 9,
       "enum": "LegacyValue",
       "line": 715,
+      "path": "src/core/src/program/compiler/constants.rs",
+      "variant": "MatrixValue"
+    },
+    {
+      "column": 9,
+      "enum": "LegacyValue",
+      "line": 744,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "MatrixValue"
     },
@@ -43087,14 +43101,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 163,
+      "line": 217,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixValue"
     },
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 191,
+      "line": 245,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MatrixValue"
     },
@@ -45117,7 +45131,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 734,
+      "line": 763,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "MutableReference"
     },
@@ -45544,7 +45558,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 164,
+      "line": 218,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "MutableReference"
     },
@@ -46874,14 +46888,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 723,
+      "line": 752,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Record"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 1987,
+      "line": 2016,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Record"
     },
@@ -47567,14 +47581,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 727,
+      "line": 756,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Set"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 2008,
+      "line": 2037,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Set"
     },
@@ -47756,7 +47770,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 87,
+      "line": 141,
       "path": "src/engine/src/expressions/comprehensions.rs",
       "variant": "Set"
     },
@@ -48596,14 +48610,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 729,
+      "line": 758,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Table"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 2022,
+      "line": 2051,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Table"
     },
@@ -49135,14 +49149,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 721,
+      "line": 750,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Tuple"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 2015,
+      "line": 2044,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Tuple"
     },
@@ -49695,7 +49709,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 735,
+      "line": 764,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Typed"
     },
@@ -52563,9 +52577,16 @@
       "variant": "Any"
     },
     {
+      "column": 67,
+      "enum": "ValueKind",
+      "line": 264,
+      "path": "src/core/src/legacy_adapter/kind.rs",
+      "variant": "Any"
+    },
+    {
       "column": 9,
       "enum": "ValueKind",
-      "line": 492,
+      "line": 503,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Any"
     },
@@ -52619,30 +52640,37 @@
       "variant": "Any"
     },
     {
-      "column": 13,
+      "column": 44,
       "enum": "ValueKind",
       "line": 717,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Any"
     },
     {
-      "column": 13,
+      "column": 40,
       "enum": "ValueKind",
-      "line": 763,
+      "line": 746,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Any"
     },
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 1242,
+      "line": 792,
+      "path": "src/core/src/program/compiler/constants.rs",
+      "variant": "Any"
+    },
+    {
+      "column": 13,
+      "enum": "ValueKind",
+      "line": 1271,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Any"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1261,
+      "line": 1290,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Any"
     },
@@ -52782,14 +52810,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 314,
+      "line": 325,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Atom"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 498,
+      "line": 509,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Atom"
     },
@@ -52845,7 +52873,7 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 1126,
+      "line": 1155,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Atom"
     },
@@ -52915,7 +52943,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 488,
+      "line": 499,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Bool"
     },
@@ -53090,7 +53118,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 485,
+      "line": 496,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "C64"
     },
@@ -53286,7 +53314,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 491,
+      "line": 502,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Empty"
     },
@@ -53342,7 +53370,7 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 744,
+      "line": 773,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Empty"
     },
@@ -53552,14 +53580,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 277,
+      "line": 288,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Enum"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 495,
+      "line": 506,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Enum"
     },
@@ -53804,7 +53832,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 483,
+      "line": 494,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "F32"
     },
@@ -54196,7 +54224,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 484,
+      "line": 495,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "F64"
     },
@@ -54609,7 +54637,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 482,
+      "line": 493,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I128"
     },
@@ -54924,7 +54952,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 479,
+      "line": 490,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I16"
     },
@@ -55239,7 +55267,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 480,
+      "line": 491,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I32"
     },
@@ -55554,7 +55582,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 481,
+      "line": 492,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I64"
     },
@@ -55869,7 +55897,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 478,
+      "line": 489,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "I8"
     },
@@ -56191,7 +56219,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 489,
+      "line": 500,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Id"
     },
@@ -56289,7 +56317,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 490,
+      "line": 501,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Index"
     },
@@ -56352,14 +56380,14 @@
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1366,
+      "line": 1395,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Index"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1641,
+      "line": 1670,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Index"
     },
@@ -56590,14 +56618,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 381,
+      "line": 392,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Kind"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 504,
+      "line": 515,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Kind"
     },
@@ -56702,14 +56730,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 294,
+      "line": 305,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Map"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 497,
+      "line": 508,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Map"
     },
@@ -56898,7 +56926,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 494,
+      "line": 505,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Matrix"
     },
@@ -56966,23 +56994,37 @@
       "variant": "Matrix"
     },
     {
-      "column": 25,
+      "column": 17,
       "enum": "ValueKind",
-      "line": 1822,
+      "line": 717,
+      "path": "src/core/src/program/compiler/constants.rs",
+      "variant": "Matrix"
+    },
+    {
+      "column": 13,
+      "enum": "ValueKind",
+      "line": 746,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Matrix"
     },
     {
       "column": 25,
       "enum": "ValueKind",
-      "line": 1832,
+      "line": 1851,
+      "path": "src/core/src/program/compiler/constants.rs",
+      "variant": "Matrix"
+    },
+    {
+      "column": 25,
+      "enum": "ValueKind",
+      "line": 1861,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Matrix"
     },
     {
       "column": 41,
       "enum": "ValueKind",
-      "line": 1839,
+      "line": 1868,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Matrix"
     },
@@ -57563,7 +57605,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 493,
+      "line": 504,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "None"
     },
@@ -57619,7 +57661,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1262,
+      "line": 1291,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "None"
     },
@@ -57661,14 +57703,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 376,
+      "line": 387,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Option"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 503,
+      "line": 514,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Option"
     },
@@ -57759,14 +57801,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1263,
+      "line": 1292,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Option"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 1282,
+      "line": 1311,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Option"
     },
@@ -58081,7 +58123,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 486,
+      "line": 497,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "R64"
     },
@@ -58235,14 +58277,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 287,
+      "line": 298,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Record"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 496,
+      "line": 507,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Record"
     },
@@ -58445,7 +58487,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 501,
+      "line": 512,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Reference"
     },
@@ -58697,14 +58739,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 357,
+      "line": 368,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Set"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 502,
+      "line": 513,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Set"
     },
@@ -58893,7 +58935,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 487,
+      "line": 498,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "String"
     },
@@ -58942,7 +58984,7 @@
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1579,
+      "line": 1608,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "String"
     },
@@ -59117,14 +59159,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 322,
+      "line": 333,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Table"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 499,
+      "line": 510,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Table"
     },
@@ -59194,7 +59236,7 @@
     {
       "column": 27,
       "enum": "ValueKind",
-      "line": 1061,
+      "line": 1090,
       "path": "src/core/src/program/compiler/constants.rs",
       "variant": "Table"
     },
@@ -59397,14 +59439,14 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 343,
+      "line": 354,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Tuple"
     },
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 500,
+      "line": 511,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "Tuple"
     },
@@ -59614,7 +59656,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 477,
+      "line": 488,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U128"
     },
@@ -59936,7 +59978,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 474,
+      "line": 485,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U16"
     },
@@ -60258,7 +60300,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 475,
+      "line": 486,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U32"
     },
@@ -60580,7 +60622,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 476,
+      "line": 487,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U64"
     },
@@ -60902,7 +60944,7 @@
     {
       "column": 9,
       "enum": "ValueKind",
-      "line": 473,
+      "line": 484,
       "path": "src/core/src/legacy_adapter/kind.rs",
       "variant": "U8"
     },
