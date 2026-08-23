@@ -177,7 +177,7 @@ jobs:
     needs: impact
     if: needs.impact.outputs.browser_canary_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 20
     env:
       CARGO_TERM_COLOR: always
       CARGO_INCREMENTAL: 0
@@ -212,6 +212,12 @@ jobs:
             --lib
       - name: Verify resident rendering without browser errors
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-nbody-browser.sh
+      - name: Build mixed compute WASM and refresh the server
+        run: |
+          bash scripts/build-mech-gpu-browser.sh
+          grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
+          grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
+          cargo build --locked --bin mech --features compute_backends_native
       - name: Verify resident EKF rendering without browser errors
         run: MECH_BIN=target/debug/mech bash scripts/smoke-served-resident-ekf-browser.sh
       - name: Remove generated browser package
