@@ -178,11 +178,10 @@ than pretending that every camera sees through the entire field.
   camera-dx-all := cameras[:,1] - next-truth[1]
   camera-dy-all := cameras[:,2] - next-truth[2]
   camera-range-all := (camera-dx-all ^ 2 + camera-dy-all ^ 2) ^ 0.5
-  camera-outside-raw := (camera-range-all - camera-max-range) / camera-range-fade
-  camera-outside-relu := (camera-outside-raw + (camera-outside-raw ^ 2) ^ 0.5) / 2.0
-  camera-outside-one-relu := (camera-outside-raw - 1.0 + ((camera-outside-raw - 1.0) ^ 2) ^ 0.5) / 2.0
-  camera-outside-weight := camera-outside-relu - camera-outside-one-relu
-  camera-visibility := 1.0 - camera-outside-weight
+  camera-inside-fade-raw := (camera-max-range - camera-range-all) / camera-range-fade
+  camera-inside-fade-relu := (camera-inside-fade-raw + (camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
+  camera-inside-fade-one-relu := (camera-inside-fade-raw - 1.0 + ((camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
+  camera-visibility := camera-inside-fade-relu - camera-inside-fade-one-relu
   active-camera-visibility := camera-visibility[camera-index]
   camera-dx := active-camera[1] - next-truth[1]
   camera-dy := active-camera[2] - next-truth[2]

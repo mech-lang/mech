@@ -4191,14 +4191,13 @@ rows := |id<string> x<f64>|
             let observed_covariance = joseph_a * predicted_covariance * joseph_a.transpose()
                 + kalman_gain * measurement_covariance * kalman_gain.transpose();
             let observed_covariance = 0.5 * (observed_covariance + observed_covariance.transpose());
-            let visibility = 1.0
-                - clamp_unit(
-                    ((camera_positions[camera_index]
+            let visibility = clamp_unit(
+                (camera_max_range
+                    - (camera_positions[camera_index]
                         - SVector::<f64, 2>::new(expected_truth[0], expected_truth[1]))
-                    .norm()
-                        - camera_max_range)
-                        / camera_range_fade,
-                );
+                    .norm())
+                    / camera_range_fade,
+            );
             expected_estimate =
                 predicted_estimate + visibility * (observed_estimate - predicted_estimate);
             expected_covariance =
@@ -4356,14 +4355,11 @@ rows := |id<string> x<f64>|
                 );
             }
 
-            let expected_visibilities = camera_positions.map(|camera| {
-                1.0 - clamp_unit(
-                    ((camera - SVector::<f64, 2>::new(expected_truth[0], expected_truth[1]))
-                        .norm()
-                        - camera_max_range)
-                        / camera_range_fade,
-                )
+            let expected_distances = camera_positions.map(|camera| {
+                (camera - SVector::<f64, 2>::new(expected_truth[0], expected_truth[1])).norm()
             });
+            let expected_visibilities = expected_distances
+                .map(|distance| clamp_unit((camera_max_range - distance) / camera_range_fade));
             let visible_camera_count = expected_visibilities
                 .iter()
                 .filter(|visibility| **visibility > 0.0)
@@ -4371,6 +4367,14 @@ rows := |id<string> x<f64>|
             saw_zero_camera_turn |= visible_camera_count == 0;
             maximum_visible_cameras = maximum_visible_cameras.max(visible_camera_count);
             for (camera, expected_visibility) in expected_visibilities.iter().enumerate() {
+                if expected_distances[camera] >= camera_max_range {
+                    assert_eq!(
+                        *expected_visibility,
+                        0.0,
+                        "camera {} remained visible beyond its maximum range on delivered turn {turn}",
+                        camera + 1,
+                    );
+                }
                 let ring = snapshot
                     .circles
                     .iter()
