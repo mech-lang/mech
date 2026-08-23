@@ -3451,6 +3451,23 @@ mod compiler_tests {
         ));
     }
 
+    #[cfg(feature = "f64")]
+    #[test]
+    fn absent_matrix_option_rejects_an_unspecified_shape() {
+        for dimensions in [vec![], vec![2], vec![2, 2, 2]] {
+            let value = LegacyValue::EmptyKind(ValueKind::Option(Box::new(ValueKind::Matrix(
+                Box::new(ValueKind::F64),
+                dimensions,
+            ))));
+            let error = value
+                .compile_const(&mut ConstantContext::default())
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+            let detail = error.kind_as::<BytecodeConstantUnsupported>().unwrap();
+            assert!(detail.reason.contains("explicit two-dimensional shape"));
+        }
+    }
+
     #[cfg(all(
         feature = "f64",
         feature = "i64",

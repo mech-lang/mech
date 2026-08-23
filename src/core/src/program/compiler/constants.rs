@@ -206,30 +206,30 @@ fn runtime_type_from_value_kind(kind: &ValueKind) -> MResult<RuntimeType> {
         ValueKind::Any => RuntimeType::Any,
         ValueKind::None => RuntimeType::None,
         ValueKind::Matrix(element, dimensions) => {
-            let rows = dimensions
-                .first()
-                .copied()
-                .unwrap_or(0)
-                .try_into()
-                .map_err(|_| {
-                    unsupported_constant(
-                        RuntimeType::Any,
-                        kind.clone(),
-                        "matrix row count exceeds u32",
-                    )
-                })?;
-            let cols = dimensions
-                .get(1)
-                .copied()
-                .unwrap_or(0)
-                .try_into()
-                .map_err(|_| {
-                    unsupported_constant(
-                        RuntimeType::Any,
-                        kind.clone(),
-                        "matrix column count exceeds u32",
-                    )
-                })?;
+            // Missing dimensions are schema holes, not zeros. Only an explicit
+            // pair can describe a concrete matrix, including a real 0x0
+            // shape.
+            let [row_count, column_count] = dimensions.as_slice() else {
+                return Err(unsupported_constant(
+                    RuntimeType::Any,
+                    kind.clone(),
+                    "matrix bytecode types require an explicit two-dimensional shape",
+                ));
+            };
+            let rows = (*row_count).try_into().map_err(|_| {
+                unsupported_constant(
+                    RuntimeType::Any,
+                    kind.clone(),
+                    "matrix row count exceeds u32",
+                )
+            })?;
+            let cols = (*column_count).try_into().map_err(|_| {
+                unsupported_constant(
+                    RuntimeType::Any,
+                    kind.clone(),
+                    "matrix column count exceeds u32",
+                )
+            })?;
             RuntimeType::Matrix {
                 element: Box::new(runtime_type_from_value_kind(element)?),
                 storage: MatrixStorage::MatrixD,
