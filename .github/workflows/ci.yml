@@ -243,9 +243,23 @@ jobs:
               cpu = json.load(source)
           with open("/tmp/ekf-wgpu.json") as source:
               wgpu = json.load(source)
-          if cpu_single != cpu:
+          # Each smoke run independently verifies its rendered tracking error.
+          # That DOM measurement is diagnostic presentation state and can be
+          # observed on an adjacent animation frame. Filter-count invariance is
+          # the compute checkpoint: the same completed turn and first-lane
+          # numeric output must be bit-for-bit identical.
+          scalar_checkpoint_fields = ("updates", "output")
+          scalar_differences = {
+              field: (cpu_single[field], cpu[field])
+              for field in scalar_checkpoint_fields
+              if cpu_single[field] != cpu[field]
+          }
+          if cpu_single["backend"] != "cpu-scalar" or cpu["backend"] != "cpu-scalar":
+              raise SystemExit("scalar EKF checkpoint reported a non-scalar backend")
+          if scalar_differences:
               raise SystemExit(
-                  "served scalar EKF checkpoint depends on the independent filter count"
+                  "served scalar EKF compute checkpoint depends on the independent "
+                  f"filter count: {scalar_differences}"
               )
           if cpu["updates"] != wgpu["updates"]:
               raise SystemExit("scalar and WebGPU checkpoints used different completed turns")
