@@ -23,7 +23,10 @@ fn comprehension_environments(
     let mut envs: Vec<Environment> = vec![HashMap::new()];
     let mut new_p: Interpreter = (**p).clone();
     new_p.id = comprehension_id;
-    new_p.clear_plan();
+    // A comprehension has its own lexical environment, not its own reactive
+    // lifetime. Keep the enclosing plan shared so operations compiled inside
+    // generators, filters, lets, and the result expression remain live and
+    // precede the final comprehension node in the same dependency graph.
     for qual in qualifiers {
         envs = match qual {
             ComprehensionQualifier::Generator((pttrn, expr)) => {

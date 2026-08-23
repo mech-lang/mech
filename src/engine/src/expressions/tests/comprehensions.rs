@@ -44,6 +44,33 @@ fn matrix_comprehension_factory_reconstructs_variadic_inputs() {
     assert_eq!(matrix.as_vec(), vec![1.0, 2.0]);
 }
 
+#[cfg(feature = "matrix_comprehensions")]
+#[test]
+fn matrix_comprehension_factory_accepts_empty_nullary_encoding() {
+    let function = ValueMatrixComprehension::new(FunctionArgs::Nullary(LegacyValue::MatrixValue(
+        crate::Matrix::from_vec(Vec::new(), 0, 0),
+    )))
+    .unwrap();
+
+    function.solve_result().unwrap();
+    let LegacyValue::MatrixValue(matrix) = function.out() else {
+        panic!("expected an empty value matrix")
+    };
+    assert_eq!((matrix.rows(), matrix.cols()), (0, 0));
+    assert!(matrix.as_vec().is_empty());
+    assert_eq!(
+        function.semantic_operation_contract().unwrap().inputs,
+        crate::InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: crate::InputPortPolicy {
+                access: crate::AccessMode::Read,
+                delivery: crate::DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+    );
+}
+
 #[cfg(feature = "set_comprehensions")]
 #[test]
 fn set_comprehension_factory_preserves_checked_set_output() {

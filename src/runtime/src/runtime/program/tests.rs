@@ -1237,11 +1237,29 @@ result
     );
     assert!(
         mixed
+            .coordinator
+            .artifact()
+            .outputs()
+            .iter()
+            .all(|output| output.name != "result"),
+        "the coordinator must execute its generated partition, not the cached full source tree",
+    );
+    assert!(
+        mixed
             .compute
             .artifact
             .outputs()
             .iter()
             .any(|output| output.name == "result")
+    );
+    assert!(
+        mixed
+            .compute
+            .artifact
+            .outputs()
+            .iter()
+            .all(|output| output.name != "coordinator-value"),
+        "the compute artifact must execute its generated partition, not the cached full source tree",
     );
     let input = mixed.compute.interface.input_named("x").unwrap();
     assert_eq!(
@@ -1498,11 +1516,8 @@ fn matrix_comprehension_scope_preserves_the_enclosing_live_plan() {
 @clock := test://clock/tick{:read(delta-seconds)}
 delta := @clock/delta-seconds
 samples := 1..=3
-padding := [0.0 | sample <- samples]
-~state := 0.0
-next-state := state + delta + padding[1]
-state = next-state
-state
+values := [delta + 1.0 | sample <- samples]
+values
 "#;
 
     let (mut runtime, _, _, _) = configured_external_runtime();
@@ -1515,6 +1530,25 @@ state
         runtime.program_execution_info().observation_count,
         1,
         "planning a comprehension must not erase live nodes accumulated by its enclosing program",
+    );
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    runtime.drain_resident_host_inputs(1).unwrap();
+
+    let LegacyValue::MatrixF64(values) = runtime.root_symbol_value("values").unwrap().into_value()
+    else {
+        panic!("live comprehension output must remain an f64 matrix")
+    };
+    assert_eq!(
+        values.as_vec(),
+        [3.0, 3.0, 3.0],
+        "operations inside the comprehension must execute on every accepted turn",
     );
 }
 

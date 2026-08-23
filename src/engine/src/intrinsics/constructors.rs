@@ -12,7 +12,7 @@ static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration
                 access: AccessMode::Read,
                 delivery: DeliveryMode::Signal,
             },
-            min_repetitions: 1,
+            min_repetitions: 0,
         },
         outputs: vec![OutputPortPolicy {
             access: AccessMode::Write,
@@ -267,6 +267,14 @@ impl MechFunctionFactory for ValueMatrixComprehension {
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
+            // Bytecode v1 represents a zero-input variadic operation as a
+            // nullary call. Empty comprehensions are valid 0x0 matrices, so
+            // retain that canonical encoding instead of imposing an
+            // accidental one-element minimum at reconstruction time.
+            FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension {
+                arguments: Vec::new(),
+                out: Ref::new(out),
+            })),
             FunctionArgs::Variadic(out, arguments) => Ok(Box::new(ValueMatrixComprehension {
                 arguments,
                 out: Ref::new(out),

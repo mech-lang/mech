@@ -1422,12 +1422,7 @@ fn source_declared_compute_inputs(tree: &Program) -> MResult<BTreeSet<String>> {
 #[cfg(feature = "compute")]
 fn replace_root_tree(module: &mut CompilerModule, tree: Program) -> MResult<()> {
     let inherited_contexts = module.source.contexts.clone();
-    module.source.source = MechSourceCode::Tree(tree);
-    module.source.imports.clear();
-    module.source.exports.clear();
-    module.source.contexts.clear();
-    module.source.address_references.clear();
-    module.source.scopes.clear();
+    module.source.replace_source(MechSourceCode::Tree(tree));
     index_source(&mut module.source)?;
     for context in inherited_contexts {
         if !module
