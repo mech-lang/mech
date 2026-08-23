@@ -149,6 +149,7 @@ harness = r'''<script>
 
     const parityComputeTurn = 376;
     let computeParitySample;
+    let displayParityTrackingError;
     let computeReadbackBytes = 0;
     let sampledReadbackEfficient = true;
     window.addEventListener("mech:compute-complete", (event) => {
@@ -431,6 +432,13 @@ harness = r'''<script>
             Number(estimate.getAttribute("cy")) - Number(truth.getAttribute("cy")),
           )
         : Number.POSITIVE_INFINITY;
+      if (
+        updates === parityComputeTurn &&
+        displayParityTrackingError === undefined &&
+        Number.isFinite(trackingError)
+      ) {
+        displayParityTrackingError = trackingError;
+      }
       const lineStripCoordinates = (element) => {
         const coordinates = (element?.getAttribute("points") || "")
           .trim().split(/[\s,]+/).filter(Boolean).map(Number);
@@ -488,6 +496,8 @@ harness = r'''<script>
       root.dataset.mechObservedPredictionOnlyFailure = JSON.stringify(predictionOnlyFailure || null);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedParityCaptured = String(computeParitySample !== undefined);
+      root.dataset.mechObservedParityTrackingCaptured =
+        String(displayParityTrackingError !== undefined);
       root.dataset.mechObservedSampledReadbackEfficient = String(sampledReadbackEfficient);
       root.dataset.mechObservedComputeReadbackBytes = String(computeReadbackBytes);
       root.dataset.mechObservedComputeLogicalOutputs = root.dataset.mechComputeLogicalOutputs || "missing";
@@ -508,6 +518,7 @@ harness = r'''<script>
         cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
         predictionOnlyComparisons > 0 &&
         computeParitySample !== undefined &&
+        displayParityTrackingError !== undefined &&
         sampledReadbackEfficient &&
         sawInsideCameraRange && sawOutsideCameraRange &&
         sawNoCamera && sawCamera && maxVisibleCameras === 1 &&
@@ -562,6 +573,7 @@ harness = r'''<script>
         root.dataset.mechEstimateY = estimate.getAttribute("cy");
         root.dataset.mechParityUpdates = String(parityComputeTurn);
         root.dataset.mechParityOutput = computeParitySample.join(",");
+        root.dataset.mechParityTrackingError = displayParityTrackingError.toFixed(4);
         root.dataset.mechSceneVisible = String(sceneVisible);
         root.dataset.mechOutputPresentation = String(outputPresentation);
         root.dataset.mechVerifiedComputeBackend = computeBackend;
@@ -864,6 +876,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-estimate-y="[0-9]' "$dom_file" \
   || ! grep -qE 'data-mech-parity-updates="[3-9][0-9][0-9]"' "$dom_file" \
   || ! grep -q 'data-mech-parity-output="[-0-9.,eE+]*"' "$dom_file" \
+  || ! grep -q 'data-mech-parity-tracking-error="[0-9]' "$dom_file" \
   || [[ -z "$updates" || "$updates" -lt 376 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident EKF browser smoke test failed" >&2
@@ -895,6 +908,7 @@ PY
 fi
 
 tracking_error_pixels="$(sed -n 's/.*data-mech-tracking-error-pixels="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_tracking_error="$(sed -n 's/.*data-mech-parity-tracking-error="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 turning_samples="$(sed -n 's/.*data-mech-turning-samples="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
 max_heading_step="$(sed -n 's/.*data-mech-max-heading-step="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 max_guide_deviation="$(sed -n 's/.*data-mech-max-guide-deviation="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
@@ -907,7 +921,7 @@ parity_updates="$(sed -n 's/.*data-mech-parity-updates="\([0-9][0-9]*\)".*/\1/p'
 parity_output="$(sed -n 's/.*data-mech-parity-output="\([^"]*\)".*/\1/p' "$dom_file" | head -1)"
 if [[ -n "${MECH_EKF_RESULT_FILE:-}" ]]; then
   python3 - "$MECH_EKF_RESULT_FILE" "$compute_backend" "$parity_updates" \
-    "$parity_output" "$tracking_error_pixels" <<'PY'
+    "$parity_output" "$parity_tracking_error" <<'PY'
 import json
 from pathlib import Path
 import sys
