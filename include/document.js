@@ -3831,9 +3831,16 @@ async function probeServedComputeAdapter() {
     return;
   }
   const requestedBackend = computeHost.settings?.backend || "auto";
-  state.computeAdapter = requestedBackend === "cpu-scalar" || !navigator.gpu
-    ? null
-    : await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  try {
+    state.computeAdapter = requestedBackend === "cpu-scalar" || !navigator.gpu
+      ? null
+      : await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  } catch (error) {
+    if (requestedBackend !== "auto") {
+      throw error;
+    }
+    state.computeAdapter = null;
+  }
   // Runtime construction is synchronous. Publish the result of the actual
   // adapter probe so `auto` selects the same backend the bridge can execute,
   // including browsers that expose navigator.gpu but return no adapter.
@@ -3888,9 +3895,13 @@ class DocumentComputeBridge {
       if (!Number.isSafeInteger(required) || required <= 0) {
         throw new Error(`Mech computed an invalid ${name} requirement: ${required}`);
       }
-      if (required > adapter.limits[name]) {
+      const supported = Number(adapter.limits[name]);
+      if (!Number.isFinite(supported) || supported <= 0) {
+        throw new Error(`this WebGPU adapter does not report the required ${name} limit`);
+      }
+      if (required > supported) {
         throw new Error(
-          `Mech requires ${required} for ${name}, but this adapter supports ${adapter.limits[name]}`,
+          `Mech requires ${required} for ${name}, but this adapter supports ${supported}`,
         );
       }
     }
