@@ -103,7 +103,6 @@ instead of instantaneous rotations or position clamps.
                          actual-omega * Δt]
 
   truth = next-truth
-  drive-phase-index = next-drive-phase-index
 
 
 3. Noisy Camera Observations
@@ -114,7 +113,8 @@ through all four viewpoints without duplicating the same update graph four times
 Each selected camera reports range and robot-relative bearing with deterministic
 noise that is unknown to the filter.
 
-  camera-index := (@clock/tick % 4.0) + 1.0
+  ~camera-index := 1.0
+  next-camera-index := (camera-index % 4.0) + turn-pulse
   active-camera := cameras[camera-index,:]
   camera-dx := active-camera[1] - next-truth[1]
   camera-dy := active-camera[2] - next-truth[2]
@@ -199,6 +199,8 @@ values enter the filter.
   screen-scale := 62.0
   screen-origin-x := 120.0
   screen-origin-y := 700.0
+  active-camera-screen-x := screen-origin-x + active-camera[1] * screen-scale
+  active-camera-screen-y := screen-origin-y - active-camera[2] * screen-scale
   truth-screen-x := screen-origin-x + next-truth[1] * screen-scale
   truth-screen-y := screen-origin-y - next-truth[2] * screen-scale
   predicted-screen-x := screen-origin-x + predicted-estimate[1] * screen-scale
@@ -253,6 +255,7 @@ values enter the filter.
                    275.0 545.0]
 
   scene-circles := (
+    {id: "active-camera", x: active-camera-screen-x, y: active-camera-screen-y, radius: 14, fill: "#f4c95d22", stroke: "#f4c95d", stroke-width: 2, opacity: 1},
     {id: "camera-1", x: 182, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
     {id: "camera-2", x: 678, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
     {id: "camera-3", x: 678, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
@@ -309,5 +312,7 @@ values enter the filter.
     texts: scene-text
   }
 
+  drive-phase-index = next-drive-phase-index
+  camera-index = next-camera-index
   @scene/replace <- field-presentation
   position-error

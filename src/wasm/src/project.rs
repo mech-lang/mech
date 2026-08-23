@@ -3848,9 +3848,20 @@ rows := |id<string> x<f64>|
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
     impl SharedManualTimerInputDriver {
-        fn new(instance: &str, frequency_hz: u64, max_catch_up_steps: u64) -> Self {
+        fn new(
+            instance: &str,
+            frequency_hz: u64,
+            max_catch_up_steps: u64,
+            queue_policy: mech_timer::TimerQueuePolicy,
+        ) -> Self {
             Self(std::sync::Arc::new(std::sync::Mutex::new(
-                mech_timer::ManualTimerInputDriver::new(instance, frequency_hz, max_catch_up_steps),
+                mech_timer::ManualTimerInputDriver::with_backend_and_policy(
+                    instance,
+                    mech_timer::ManualMonotonicTimerBackend::new(),
+                    frequency_hz,
+                    max_catch_up_steps,
+                    queue_policy,
+                ),
             )))
         }
 
@@ -3898,7 +3909,12 @@ rows := |id<string> x<f64>|
         fn new() -> Self {
             Self {
                 manifest: mech_timer::timer_host_manifest().unwrap(),
-                driver: SharedManualTimerInputDriver::new("clock", 60, 1),
+                driver: SharedManualTimerInputDriver::new(
+                    "clock",
+                    60,
+                    1,
+                    mech_timer::TimerQueuePolicy::Latest,
+                ),
             }
         }
     }
@@ -3968,13 +3984,22 @@ rows := |id<string> x<f64>|
         run_project_sources(&mut runtime, &document).unwrap();
         runtime.start_input_drivers().unwrap();
 
-        let truth_position = |snapshot: &mech_scene::SceneSnapshot| {
+        let rendered_truth = |snapshot: &mech_scene::SceneSnapshot| {
             let truth = snapshot
                 .circles
                 .iter()
                 .find(|circle| circle.id == "truth")
                 .unwrap();
-            (truth.x, truth.y)
+            let heading = snapshot
+                .lines
+                .iter()
+                .find(|line| line.id == "truth-heading")
+                .unwrap();
+            [
+                (truth.x - 120.0) / 62.0,
+                (700.0 - truth.y) / 62.0,
+                (-(heading.y2 - heading.y1)).atan2(heading.x2 - heading.x1),
+            ]
         };
         assert_eq!(
             runtime.program_execution_info().observation_count,
@@ -3982,24 +4007,74 @@ rows := |id<string> x<f64>|
             "EKF timer read must remain in the resident artifact"
         );
         assert!(scene_backend.latest().is_none());
-        let mut previous = None;
-        for turn in 1..=4 {
-            assert_eq!(timer_driver.publish_steps(1).unwrap(), 1);
+        let pi = 3.141592654_f64;
+        let dt = 0.05_f64;
+        let cruise_speed = 1.15_f64;
+        let turn_rate_limit = 1.75_f64;
+        let heading_gain = 4.0_f64;
+        let mut expected_truth = [2.5_f64, 2.5_f64, 0.0_f64];
+
+        // Publish five scheduler steps at a time. The configured latest-value
+        // policy delivers only one packet, whose absolute tick jumps by five.
+        // Control phase and camera selection must nevertheless advance exactly
+        // once per accepted resident packet.
+        for turn in 1..=90 {
+            assert_eq!(timer_driver.publish_steps(5).unwrap(), 1);
             let outcomes = runtime.drain_host_inputs(1).unwrap();
-            let current = truth_position(&scene_backend.latest().unwrap());
-            if let Some(previous) = previous {
-                assert_ne!(
-                    current,
-                    previous,
-                    "EKF truth must advance on turn {turn}; outcomes={outcomes:?}; info={:?}; scene_generation={}",
-                    runtime.program_execution_info(),
-                    scene_backend.generation(),
+
+            let delivered_turn = (turn - 1) as usize;
+            let drive_phase = ((delivered_turn / 86) % 4) as f64;
+            let target_heading = drive_phase * pi / 2.0;
+            let heading_error = (target_heading - expected_truth[2])
+                .sin()
+                .atan2((target_heading - expected_truth[2]).cos());
+            let requested_omega = heading_gain * heading_error;
+            let commanded_omega = ((requested_omega + turn_rate_limit).powi(2).sqrt()
+                - (requested_omega - turn_rate_limit).powi(2).sqrt())
+                / 2.0;
+            let turn_fraction = commanded_omega.powi(2).sqrt() / turn_rate_limit;
+            let commanded_speed = cruise_speed * (1.0 - 0.42 * turn_fraction);
+            let simulation_time = (turn * 5) as f64 * dt;
+            let actual_speed = commanded_speed * (0.965 + 0.025 * (simulation_time * 0.73).sin());
+            let actual_omega =
+                commanded_omega * (0.99 + 0.01 * (simulation_time * 0.51 + 0.8).sin());
+            let midpoint_heading = expected_truth[2] + actual_omega * dt / 2.0;
+            expected_truth = [
+                expected_truth[0] + actual_speed * midpoint_heading.cos() * dt,
+                expected_truth[1] + actual_speed * midpoint_heading.sin() * dt,
+                expected_truth[2] + actual_omega * dt,
+            ];
+
+            let snapshot = scene_backend.latest().unwrap();
+            let actual_truth = rendered_truth(&snapshot);
+            for (component, (actual, expected)) in
+                actual_truth.iter().zip(expected_truth).enumerate()
+            {
+                assert!(
+                    (actual - expected).abs() < 1.0e-9,
+                    "EKF truth component {component} diverged on delivered turn {turn}: actual={actual:?} expected={expected:?}; outcomes={outcomes:?}",
                 );
             }
-            previous = Some(current);
+
+            let active_camera = snapshot
+                .circles
+                .iter()
+                .find(|circle| circle.id == "active-camera")
+                .unwrap();
+            let expected_camera = [
+                (182.0, 638.0),
+                (678.0, 638.0),
+                (678.0, 142.0),
+                (182.0, 142.0),
+            ][(turn - 1) % 4];
+            assert_eq!(
+                (active_camera.x, active_camera.y),
+                expected_camera,
+                "camera selection must follow delivered resident turn {turn}, not skipped absolute ticks",
+            );
         }
-        assert_eq!(runtime.program_execution_info().resident_accepted_turns, 4);
-        assert_eq!(scene_backend.generation(), 4);
+        assert_eq!(runtime.program_execution_info().resident_accepted_turns, 90);
+        assert_eq!(scene_backend.generation(), 90);
     }
 
     #[cfg(all(feature = "browser_host_timer", feature = "browser_host_scene"))]
