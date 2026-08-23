@@ -1235,6 +1235,14 @@ impl ComputeSession for BrowserCpuSession {
         self.command.reserve_cpu()?;
         let result = (|| {
             let report = self.inner.dispatch(turns)?;
+            if report.completed_turns == 0 {
+                // Integrity rejection preserves the backend's previously
+                // accepted state. There is no new snapshot or browser
+                // completion to publish for this attempted turn.
+                self.changed_inputs.clear();
+                self.command.cancel_cpu_reservation();
+                return Ok(report);
+            }
             let snapshot = self.inner.read_outputs(&ComputeOutputSelection::All)?;
             let mut completed_outputs = self.outputs.publish(&self.program, &snapshot)?;
             self.command
@@ -1569,6 +1577,40 @@ mod tests {
         }
     }
 
+    struct RejectingCpuSession;
+
+    impl ComputeSession for RejectingCpuSession {
+        fn update_inputs(
+            &mut self,
+            _updates: &[ComputeInputUpdate],
+        ) -> Result<(), ComputeExecutionError> {
+            Ok(())
+        }
+
+        fn dispatch(
+            &mut self,
+            _turns: NonZeroU32,
+        ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+            Ok(ComputeDispatchReport {
+                completed_turns: 0,
+                fault_count: 1,
+                last_fault: Some(ComputeFaultEvidence {
+                    attempted_turn: 1,
+                    constraint: "finite".into(),
+                    detail: "candidate rejected".into(),
+                }),
+                ..Default::default()
+            })
+        }
+
+        fn read_outputs(
+            &mut self,
+            _selection: &ComputeOutputSelection,
+        ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
+            panic!("a rejected CPU turn must not read or publish outputs")
+        }
+    }
+
     const CONFIG: &str = r#"
 config := {
   runtime: {
@@ -1838,6 +1880,29 @@ state
         assert!(positions.iter().all(|value| value.is_finite()));
         assert_eq!(state.completed_outputs["result.0"], positions);
         assert_eq!(state.completed_outputs["result.1"].len(), 8);
+    }
+
+    #[test]
+    fn cpu_integrity_rejection_does_not_publish_a_completion_command() {
+        let (_document, prepared) = compile_fixture(CONFIG, SOURCE);
+        let command = ComputeCommandHandle::new(prepared.region.clone());
+        let outputs = BrowserOutputHandle::default();
+        let mut session = BrowserCpuSession {
+            inner: Box::new(RejectingCpuSession),
+            program: prepared.program,
+            command: command.clone(),
+            outputs: outputs.clone(),
+            changed_inputs: BTreeMap::from([("force-strength".to_owned(), vec![1.0])]),
+        };
+
+        let report = session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+
+        assert_eq!(report.completed_turns, 0);
+        assert_eq!(report.fault_count, 1);
+        assert!(session.changed_inputs.is_empty());
+        assert!(command.take_command_data().unwrap().is_none());
+        assert!(!command.state.lock().unwrap().cpu_reserved);
+        assert!(outputs.values.lock().unwrap().is_empty());
     }
 
     #[test]
