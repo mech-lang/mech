@@ -4295,6 +4295,51 @@ rows := |id<string> x<f64>|
                 }
             }
 
+            let rendered_covariance = snapshot
+                .line_strips
+                .iter()
+                .find(|strip| strip.id == "covariance")
+                .expect("EKF scene must render its covariance outline");
+            assert_eq!(
+                rendered_covariance.positions.len(),
+                65,
+                "the covariance outline must retain every 0..=64 sample"
+            );
+            let ellipse_a = expected_covariance[(0, 0)];
+            let ellipse_b = expected_covariance[(0, 1)];
+            let ellipse_c = expected_covariance[(1, 1)];
+            let ellipse_root = (((ellipse_a - ellipse_c) / 2.0).powi(2) + ellipse_b.powi(2)).sqrt();
+            let ellipse_major = ((ellipse_a + ellipse_c) / 2.0 + ellipse_root).sqrt() * 2.0;
+            let ellipse_minor = ((ellipse_a + ellipse_c) / 2.0 - ellipse_root).sqrt() * 2.0;
+            let ellipse_rotation = 0.5 * (2.0 * ellipse_b).atan2(ellipse_a - ellipse_c);
+            let display_major = (ellipse_major.powi(2) + 0.04_f64.powi(2)).sqrt();
+            let display_minor = (ellipse_minor.powi(2) + 0.04_f64.powi(2)).sqrt();
+            let rotation_cos = ellipse_rotation.cos();
+            let rotation_sin = ellipse_rotation.sin();
+            for (sample, actual) in rendered_covariance.positions.iter().enumerate() {
+                let angle = sample as f64 * (2.0 * pi / 64.0);
+                let angle_cos = angle.cos();
+                let angle_sin = angle.sin();
+                let expected = [
+                    120.0
+                        + expected_estimate[0] * 62.0
+                        + 62.0
+                            * (display_major * angle_cos * rotation_cos
+                                - display_minor * angle_sin * rotation_sin),
+                    700.0
+                        - expected_estimate[1] * 62.0
+                        - 62.0
+                            * (display_major * angle_cos * rotation_sin
+                                + display_minor * angle_sin * rotation_cos),
+                ];
+                for axis in 0..2 {
+                    assert!(
+                        (actual[axis] - expected[axis]).abs() < 1.0e-8,
+                        "rendered covariance sample {sample} axis {axis} diverged on delivered turn {turn}: actual={actual:?} expected={expected:?}",
+                    );
+                }
+            }
+
             let scene_estimate = rendered_estimate(&snapshot);
             for component in 0..3 {
                 let error = if component == 2 {
