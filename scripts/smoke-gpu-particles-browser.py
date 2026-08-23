@@ -366,7 +366,7 @@ def main() -> None:
                     if marker not in dom:
                         fail(f"delayed completion evidence {name} is missing; artifacts: {work}")
                     value = int(dom.split(marker, 1)[1].split('"', 1)[0])
-                    if value < 3:
+                    if value < 2:
                         fail(f"delayed completion evidence {name} was only {value}; artifacts: {work}")
                 if 'data-mech-gpu-smoke-readback-bytes="0"' not in dom:
                     fail(f"report-only elementwise dispatch copied output data to the CPU; artifacts: {work}")

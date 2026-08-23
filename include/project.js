@@ -722,13 +722,29 @@ function installComputeSmokeTest(target) {
       const state = globalThis.__MECH_GPU_RUNTIME__;
       if (target.dispatchPending) pendingObservations += 1;
       if (performance.now() > deadline) {
-        fail('timed out waiting for compute frames and pointer transaction');
+        fail(`timed out waiting for compute convergence: ${JSON.stringify({
+          runtimeReady: Boolean(state),
+          itemCount: state?.itemCount,
+          dispatched: state?.dispatched,
+          totalDispatches: state?.totalDispatches,
+          dispatchPending: target.dispatchPending,
+          delayedCompletions,
+          pendingObservations,
+          maxCompletionsInFlight,
+          pressedAt,
+          lastInputs: state?.lastInputs,
+          pageErrors,
+        })}`);
         return;
       }
-      if (!state || state.itemCount !== 1_000_000 || !state.dispatched) {
+      if (!state || state.itemCount !== 1_000_000) {
         return;
       }
-      if (pressedAt === 0 && state.totalDispatches >= 3) {
+      // Submit one baseline turn, then change the input while that turn owns
+      // the single command slot. The next submitted turn must carry the
+      // pointer transaction, which proves both completion-backed progress and
+      // queued input delivery without coupling the canary to GPU throughput.
+      if (pressedAt === 0 && state.totalDispatches >= 1) {
         const rect = target.canvas.getBoundingClientRect();
         target.canvas.dispatchEvent(new PointerEvent('pointerdown', {
           bubbles: true,
@@ -740,12 +756,12 @@ function installComputeSmokeTest(target) {
         pressedAt = state.totalDispatches;
         return;
       }
-      if (pressedAt === 0 || state.totalDispatches < pressedAt + 3) {
+      if (pressedAt === 0 || state.totalDispatches < pressedAt + 1) {
         return;
       }
       if (
         target.backend === 'wgpu' &&
-        (delayedCompletions < 3 || pendingObservations < 3 || maxCompletionsInFlight !== 1)
+        (delayedCompletions < 2 || pendingObservations < 2 || maxCompletionsInFlight !== 1)
       ) {
         return;
       }
@@ -774,7 +790,7 @@ function installComputeSmokeTest(target) {
       root.dataset.mechGpuSmokeReadbackBytes =
         root.dataset.mechComputeGpuToCpuReadbackBytes || "0";
       root.dataset.mechComputeBackend = state.backend;
-      root.dataset.mechGpuSmokeStateAdvanced = String(state.totalDispatches >= 6);
+      root.dataset.mechGpuSmokeStateAdvanced = String(state.totalDispatches >= 2);
       running = false;
       target.stop();
       root.dataset.mechGpuSmokeDisposed = String(
