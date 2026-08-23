@@ -90,6 +90,8 @@ reduction make the corners smooth without position clamps.
   side-ticks := 94.0
   drive-phases<[f64]:1,376> := #SquareDrive(side-ticks)
   lap-ticks := 4.0 * side-ticks
+  ~simulation-step := 0.0
+  next-simulation-step := simulation-step + turn-pulse
   ~drive-phase-index := 1.0
   drive-phase := drive-phases[1,drive-phase-index]
   advanced-drive-phase-index := (drive-phase-index % lap-ticks) + 1.0
@@ -111,7 +113,7 @@ reduction make the corners smooth without position clamps.
   ~truth := [2.5
              2.5
              0.0]
-  simulation-time := @clock/tick * 0.05
+  simulation-time := next-simulation-step * 0.05
   target-heading := math/atan2(target-y - truth[2], target-x - truth[1])
   heading-error-raw := target-heading - truth[3]
   heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
@@ -130,6 +132,7 @@ reduction make the corners smooth without position clamps.
                          actual-omega * Δt]
 
   truth = next-truth
+  simulation-step = next-simulation-step
 
 
 3. Noisy Camera Observations

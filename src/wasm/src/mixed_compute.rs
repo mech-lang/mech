@@ -734,6 +734,7 @@ pub(crate) struct ComputeCommandHandle {
 #[derive(Default)]
 struct ComputeCommandState {
     changed_inputs: BTreeMap<String, Vec<f32>>,
+    completed_outputs: BTreeMap<String, Vec<f32>>,
     queued: Option<QueuedComputeCommand>,
     next_dispatch_id: u32,
     in_flight: BTreeSet<u32>,
@@ -761,6 +762,7 @@ struct QueuedComputeCommand {
 #[derive(Debug)]
 pub(crate) struct ComputeCommandData {
     pub(crate) changed_inputs: BTreeMap<String, Vec<f32>>,
+    pub(crate) completed_outputs: BTreeMap<String, Vec<f32>>,
     pub(crate) dispatch_id: Option<u32>,
     pub(crate) acknowledgement_required: bool,
 }
@@ -789,6 +791,7 @@ impl ComputeCommandHandle {
         }
         Ok(Some(ComputeCommandData {
             changed_inputs: std::mem::take(&mut state.changed_inputs),
+            completed_outputs: std::mem::take(&mut state.completed_outputs),
             dispatch_id: command.dispatch_id,
             acknowledgement_required: command.acknowledgement_required,
         }))
@@ -812,6 +815,7 @@ impl ComputeCommandHandle {
     fn commit_cpu(
         &self,
         changed_inputs: &mut BTreeMap<String, Vec<f32>>,
+        completed_outputs: &mut BTreeMap<String, Vec<f32>>,
     ) -> Result<(), ComputeExecutionError> {
         let mut state = self.state.lock().map_err(|_| {
             browser_execution_error(CPU_SCALAR_BACKEND, "dispatch", "command lock is poisoned")
@@ -824,6 +828,7 @@ impl ComputeCommandHandle {
             ));
         }
         state.changed_inputs.append(changed_inputs);
+        state.completed_outputs.append(completed_outputs);
         state.queued = Some(QueuedComputeCommand {
             dispatch_id: None,
             acknowledgement_required: false,
@@ -1013,6 +1018,14 @@ pub(crate) fn compute_command_value(
         inputs.push(&input);
     }
     set(&value, "inputs", inputs)?;
+    let outputs = Array::new();
+    for (name, values) in command.completed_outputs {
+        let output = Object::new();
+        set(&output, "name", name)?;
+        set(&output, "values", Float32Array::from(values.as_slice()))?;
+        outputs.push(&output);
+    }
+    set(&value, "outputs", outputs)?;
     Ok(value.into())
 }
 
@@ -1026,8 +1039,9 @@ impl BrowserOutputHandle {
         &self,
         program: &ComputeProgram,
         snapshot: &ComputeOutputSnapshot,
-    ) -> Result<(), ComputeExecutionError> {
+    ) -> Result<BTreeMap<String, Vec<f32>>, ComputeExecutionError> {
         let mut candidate = BTreeMap::new();
+        let mut completed = BTreeMap::new();
         for port in &program.interface().outputs {
             let value = snapshot.values.get(&port.id).ok_or_else(|| {
                 browser_execution_error(
@@ -1036,7 +1050,41 @@ impl BrowserOutputHandle {
                     format!("backend omitted output `{}`", port.name),
                 )
             })?;
-            candidate.insert(port.name.to_string(), value_elements(value));
+            let values = value_elements(value);
+            let completion_values = if let Some(storage) = program.fixed_shape_storage() {
+                let elements_per_instance = port.elements().map_err(|failure| {
+                    browser_execution_error(
+                        CPU_SCALAR_BACKEND,
+                        "publish outputs",
+                        format!("output `{}` has an invalid shape: {failure}", port.name),
+                    )
+                })?;
+                let expected_elements = elements_per_instance
+                    .checked_mul(storage.instances as usize)
+                    .ok_or_else(|| {
+                        browser_execution_error(
+                            CPU_SCALAR_BACKEND,
+                            "publish outputs",
+                            format!("output `{}` batch size overflowed", port.name),
+                        )
+                    })?;
+                if values.len() != expected_elements {
+                    return Err(browser_execution_error(
+                        CPU_SCALAR_BACKEND,
+                        "publish outputs",
+                        format!(
+                            "output `{}` contained {} values; expected {expected_elements}",
+                            port.name,
+                            values.len(),
+                        ),
+                    ));
+                }
+                values[..elements_per_instance].to_vec()
+            } else {
+                values.clone()
+            };
+            candidate.insert(port.name.to_string(), values);
+            completed.insert(port.name.to_string(), completion_values);
         }
         *self.values.lock().map_err(|_| {
             browser_execution_error(
@@ -1045,7 +1093,11 @@ impl BrowserOutputHandle {
                 "output lock is poisoned",
             )
         })? = candidate;
-        Ok(())
+        // Browser WebGPU only reads back lane zero for fixed-shape batches.
+        // Queue the same sampled output contract for the synchronous scalar
+        // backend so completion observers never pay for or depend on a full
+        // batch transfer.
+        Ok(completed)
     }
 
     fn output(&self, name: &str) -> MResult<Vec<f32>> {
@@ -1184,8 +1236,9 @@ impl ComputeSession for BrowserCpuSession {
         let result = (|| {
             let report = self.inner.dispatch(turns)?;
             let snapshot = self.inner.read_outputs(&ComputeOutputSelection::All)?;
-            self.outputs.publish(&self.program, &snapshot)?;
-            self.command.commit_cpu(&mut self.changed_inputs)?;
+            let mut completed_outputs = self.outputs.publish(&self.program, &snapshot)?;
+            self.command
+                .commit_cpu(&mut self.changed_inputs, &mut completed_outputs)?;
             Ok(report)
         })();
         if result.is_err() {
@@ -1783,6 +1836,8 @@ state
         let positions = outputs.output("result.0").unwrap();
         assert_eq!(positions.len(), 8);
         assert!(positions.iter().all(|value| value.is_finite()));
+        assert_eq!(state.completed_outputs["result.0"], positions);
+        assert_eq!(state.completed_outputs["result.1"].len(), 8);
     }
 
     #[test]

@@ -127,6 +127,29 @@ harness = r'''<script>
       root.dataset.mechPageError = diagnosticText(event.reason);
     });
 
+    const parityComputeTurn = 376;
+    let computeParitySample;
+    window.addEventListener("mech:compute-complete", (event) => {
+      root.dataset.mechObservedComputeCompletion = String(
+        event.detail?.completedTurns ?? "missing",
+      );
+      if (event.detail?.completedTurns !== parityComputeTurn) return;
+      root.dataset.mechObservedParityOutputs = (event.detail.outputs || [])
+        .map(output => `${output.name}:${output.values?.length ?? "missing"}`)
+        .join(",");
+      const output = event.detail.outputs?.find(candidate => candidate.name === "result.0");
+      const values = Array.from(output?.values || []);
+      // Both backends publish the first 15-value lane used by the document;
+      // the full 1,000-filter batch stays backend-local on every turn.
+      if (
+        event.detail?.backend === expectedComputeBackend &&
+        values.length === 15 &&
+        values.every(Number.isFinite)
+      ) {
+        computeParitySample = values.slice(0, 15);
+      }
+    });
+
     const originalSetTimeout = window.setTimeout.bind(window);
     let harnessFrames = 0;
     let firstTruth;
@@ -145,7 +168,6 @@ harness = r'''<script>
     let sawCamera = false;
     let maxVisibleCameras = 0;
     let previousVisibleCameraCount;
-    let paritySnapshot;
     const visibleCameraHistory = [];
     let stableCameraGeometry;
     let cameraGeometryStable = true;
@@ -411,18 +433,6 @@ harness = r'''<script>
       );
       const computeBackend = root.dataset.mechComputeBackend || "";
       const computeInstances = Number(root.dataset.mechComputeInstances || 0);
-      if (
-        paritySnapshot === undefined && observedLapComplete &&
-        finitePoint(truth) && finitePoint(estimate) && covarianceGeometry.finite
-      ) {
-        paritySnapshot = {
-          updates,
-          truth: [Number(truth.getAttribute("cx")), Number(truth.getAttribute("cy"))],
-          estimate: [Number(estimate.getAttribute("cx")), Number(estimate.getAttribute("cy"))],
-          covarianceExtent: covarianceGeometry.extent,
-        };
-      }
-
       root.dataset.mechObservedUpdates = String(updates);
       root.dataset.mechObservedSquareSides = ["east", "north", "west", "south"]
         .filter(side => squareSides.has(side)).join(",");
@@ -446,6 +456,7 @@ harness = r'''<script>
       root.dataset.mechObservedFinitePointContract = String(finitePointContract);
       root.dataset.mechObservedPredictionOnlyFailure = JSON.stringify(predictionOnlyFailure || null);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
+      root.dataset.mechObservedParityCaptured = String(computeParitySample !== undefined);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
       root.dataset.mechObservedDisplayIds = [...document.querySelectorAll('[data-mech-display-id]')]
@@ -456,6 +467,7 @@ harness = r'''<script>
         cameras.length === 4 && cameraRanges.length === 4 && cameraRays.length === 4 &&
         cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
         predictionOnlyComparisons > 0 &&
+        computeParitySample !== undefined &&
         sawInsideCameraRange && sawOutsideCameraRange &&
         sawNoCamera && sawCamera && maxVisibleCameras === 1 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
@@ -507,12 +519,8 @@ harness = r'''<script>
         root.dataset.mechTruthY = truth.getAttribute("cy");
         root.dataset.mechEstimateX = estimate.getAttribute("cx");
         root.dataset.mechEstimateY = estimate.getAttribute("cy");
-        root.dataset.mechParityUpdates = String(paritySnapshot.updates);
-        root.dataset.mechParityTruthX = String(paritySnapshot.truth[0]);
-        root.dataset.mechParityTruthY = String(paritySnapshot.truth[1]);
-        root.dataset.mechParityEstimateX = String(paritySnapshot.estimate[0]);
-        root.dataset.mechParityEstimateY = String(paritySnapshot.estimate[1]);
-        root.dataset.mechParityCovarianceExtent = String(paritySnapshot.covarianceExtent);
+        root.dataset.mechParityUpdates = String(parityComputeTurn);
+        root.dataset.mechParityOutput = computeParitySample.join(",");
         root.dataset.mechSceneVisible = String(sceneVisible);
         root.dataset.mechOutputPresentation = String(outputPresentation);
         root.dataset.mechVerifiedComputeBackend = computeBackend;
@@ -636,11 +644,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-estimate-x="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-estimate-y="[0-9]' "$dom_file" \
   || ! grep -qE 'data-mech-parity-updates="[3-9][0-9][0-9]"' "$dom_file" \
-  || ! grep -q 'data-mech-parity-truth-x="[0-9]' "$dom_file" \
-  || ! grep -q 'data-mech-parity-truth-y="[0-9]' "$dom_file" \
-  || ! grep -q 'data-mech-parity-estimate-x="[0-9]' "$dom_file" \
-  || ! grep -q 'data-mech-parity-estimate-y="[0-9]' "$dom_file" \
-  || ! grep -q 'data-mech-parity-covariance-extent="[0-9]' "$dom_file" \
+  || ! grep -q 'data-mech-parity-output="[-0-9.,eE+]*"' "$dom_file" \
   || [[ -z "$updates" || "$updates" -lt 376 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident EKF browser smoke test failed" >&2
@@ -651,12 +655,12 @@ import re
 import sys
 
 line = Path(sys.argv[1]).read_text(errors="replace").split("<head>", 1)[0]
+for match in re.finditer(r'(data-mech-observed-[a-z0-9-]+)="([^"]*)"', line):
+    print(f"{match.group(1)}: {unescape(match.group(2))}")
 for name in (
     "data-mech-document-error",
     "data-mech-console-error",
     "data-mech-page-error",
-    "data-mech-observed-error-text",
-    "data-mech-observed-prediction-only-failure",
 ):
     match = re.search(rf'{name}="([^"]*)"', line)
     if match:
@@ -681,26 +685,22 @@ truth_y="$(sed -n 's/.*data-mech-truth-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file"
 estimate_x="$(sed -n 's/.*data-mech-estimate-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 estimate_y="$(sed -n 's/.*data-mech-estimate-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 parity_updates="$(sed -n 's/.*data-mech-parity-updates="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
-parity_truth_x="$(sed -n 's/.*data-mech-parity-truth-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-parity_truth_y="$(sed -n 's/.*data-mech-parity-truth-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-parity_estimate_x="$(sed -n 's/.*data-mech-parity-estimate-x="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-parity_estimate_y="$(sed -n 's/.*data-mech-parity-estimate-y="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-parity_covariance_extent="$(sed -n 's/.*data-mech-parity-covariance-extent="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
+parity_output="$(sed -n 's/.*data-mech-parity-output="\([^"]*\)".*/\1/p' "$dom_file" | head -1)"
 if [[ -n "${MECH_EKF_RESULT_FILE:-}" ]]; then
   python3 - "$MECH_EKF_RESULT_FILE" "$compute_backend" "$parity_updates" \
-    "$parity_truth_x" "$parity_truth_y" "$parity_estimate_x" "$parity_estimate_y" \
-    "$parity_covariance_extent" "$tracking_error_pixels" <<'PY'
+    "$parity_output" "$tracking_error_pixels" <<'PY'
 import json
 from pathlib import Path
 import sys
 
-path, backend, updates, truth_x, truth_y, estimate_x, estimate_y, covariance, tracking = sys.argv[1:]
+path, backend, updates, output, tracking = sys.argv[1:]
+values = [float(value) for value in output.split(",") if value]
+if len(values) != 15:
+    raise SystemExit(f"expected 15 EKF checkpoint values, got {len(values)}")
 Path(path).write_text(json.dumps({
     "backend": backend,
     "updates": int(updates),
-    "truth": [float(truth_x), float(truth_y)],
-    "estimate": [float(estimate_x), float(estimate_y)],
-    "covariance_extent": float(covariance),
+    "output": values,
     "tracking_error": float(tracking),
 }, sort_keys=True))
 PY

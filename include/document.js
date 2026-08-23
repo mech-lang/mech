@@ -4060,8 +4060,32 @@ class DocumentComputeBridge {
     }
   }
 
+  publishCompletion(outputs) {
+    this.dispatches += 1;
+    document.documentElement.dataset.mechComputeDispatches = String(this.dispatches);
+    window.dispatchEvent(new CustomEvent("mech:compute-complete", {
+      detail: {
+        backend: this.backend,
+        completedTurns: this.dispatches,
+        outputs: (outputs || []).map(output => ({
+          name: output.name,
+          values: output.values instanceof Float32Array
+            ? output.values
+            : Float32Array.from(output.values || []),
+        })),
+      },
+    }));
+  }
+
   submit(command) {
-    if (!command?.dispatch || this.backend !== "wgpu") {
+    if (!command?.dispatch) {
+      return;
+    }
+    if (this.backend !== "wgpu") {
+      if (command.acknowledgementRequired === true) {
+        throw new Error("a synchronous browser compute command unexpectedly requires acknowledgement");
+      }
+      this.publishCompletion(command.outputs);
       return;
     }
     if (!this.isCurrent()) {
@@ -4153,8 +4177,7 @@ class DocumentComputeBridge {
       if (this.isCurrent()) {
         this.controller.completeComputeCommand(dispatchId, outputs);
         this.activeBuffer = outputIndex;
-        this.dispatches += 1;
-        document.documentElement.dataset.mechComputeDispatches = String(this.dispatches);
+        this.publishCompletion(outputs);
       }
     } catch (error) {
       if (this.readback.mapState === "mapped") {

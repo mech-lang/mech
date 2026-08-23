@@ -4465,7 +4465,11 @@ rows := |id<string> x<f64>|
                 / 2.0;
             let turn_fraction = commanded_omega.powi(2).sqrt() / turn_rate_limit;
             let commanded_speed = cruise_speed * (1.0 - 0.42 * turn_fraction);
-            let simulation_time = (turn * 5) as f64 * dt;
+            // The application advances simulation time once per accepted
+            // resident timer packet. Absolute timer values may skip when a
+            // latest-only host coalesces packets, but those scheduling gaps
+            // must not change the physical or measurement input sequence.
+            let simulation_time = turn as f64 * dt;
             let actual_speed = commanded_speed * (0.965 + 0.025 * (simulation_time * 0.73).sin());
             let actual_omega =
                 commanded_omega * (0.99 + 0.01 * (simulation_time * 0.51 + 0.8).sin());
