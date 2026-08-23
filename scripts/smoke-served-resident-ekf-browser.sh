@@ -115,6 +115,10 @@ harness = r'''<script>
     let curvedMotionSamples = 0;
     let maxHeadingStep = 0;
     let maxGuideDeviation = 0;
+    let observedLapComplete = false;
+    let sawNoCamera = false;
+    let sawCamera = false;
+    let maxVisibleCameras = 0;
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       harnessFrames += 1;
@@ -131,7 +135,10 @@ harness = r'''<script>
       const truthHeading = document.querySelector('[data-mech-scene-id="truth-heading"]');
       const squareGuide = document.querySelector('[data-mech-scene-id="square-guide"]');
       const title = document.querySelector('[data-mech-scene-id="title"]');
-      const cameras = document.querySelectorAll('[data-mech-scene-id^="camera-"]:not([data-mech-scene-id^="camera-label-"])');
+      const cameras = [...document.querySelectorAll('[data-mech-scene-id^="camera-"]')]
+        .filter(element => /^camera-[1-4]$/.test(element.dataset.mechSceneId || ""));
+      const cameraRanges = [...document.querySelectorAll('[data-mech-scene-id^="camera-range-"]')];
+      const cameraRays = [...document.querySelectorAll('[data-mech-scene-id^="ray-"]')];
       const host = document.querySelector('[data-mech-repl-host]');
       const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
       const errorPanel = document.querySelector('[data-mech-console-panel="errors"]');
@@ -183,6 +190,12 @@ harness = r'''<script>
         lastObservedUpdate = updates;
         if (firstTruth === undefined) firstTruth = truthPoint;
         maxGuideDeviation = Math.max(maxGuideDeviation, distanceToRenderedGuide(truthPoint));
+        const visibleCameraCount = cameraRays.filter(ray =>
+          Number(ray.getAttribute("opacity") || 0) > 0.001
+        ).length;
+        sawNoCamera ||= visibleCameraCount === 0;
+        sawCamera ||= visibleCameraCount > 0;
+        maxVisibleCameras = Math.max(maxVisibleCameras, visibleCameraCount);
       }
       if (truthPoint && previousTruth && updates === lastObservedUpdate) {
         const dx = truthPoint.x - previousTruth.x;
@@ -210,7 +223,7 @@ harness = r'''<script>
         : 0;
       departedStart ||= distanceFromStart > 100;
       const truthMoved = Boolean(departedStart);
-      const lapComplete = Boolean(
+      observedLapComplete ||= Boolean(
         departedStart && squareSides.size === 4 && updates >= 340 && distanceFromStart <= 60
       );
       const smoothTurning = turningSamples >= 20 && curvedMotionSamples >= 12 &&
@@ -257,7 +270,7 @@ harness = r'''<script>
       root.dataset.mechObservedSquareSides = ["east", "north", "west", "south"]
         .filter(side => squareSides.has(side)).join(",");
       root.dataset.mechObservedDistanceFromStart = distanceFromStart.toFixed(4);
-      root.dataset.mechObservedLapComplete = String(lapComplete);
+      root.dataset.mechObservedLapComplete = String(observedLapComplete);
       root.dataset.mechObservedTrackingErrorPixels = trackingError.toFixed(4);
       root.dataset.mechObservedCovariance = JSON.stringify(covarianceGeometry);
       root.dataset.mechObservedTruthPath = JSON.stringify(truthPathGeometry);
@@ -266,36 +279,45 @@ harness = r'''<script>
       root.dataset.mechObservedCurvedMotionSamples = String(curvedMotionSamples);
       root.dataset.mechObservedMaxHeadingStep = maxHeadingStep.toFixed(6);
       root.dataset.mechObservedMaxGuideDeviation = maxGuideDeviation.toFixed(4);
+      root.dataset.mechObservedSawNoCamera = String(sawNoCamera);
+      root.dataset.mechObservedSawCamera = String(sawCamera);
+      root.dataset.mechObservedMaxVisibleCameras = String(maxVisibleCameras);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
       root.dataset.mechObservedDisplayIds = [...document.querySelectorAll('[data-mech-display-id]')]
         .map(element => element.dataset.mechDisplayId).join(",");
       if (
-        updates >= 320 &&
-        cameras.length === 4 &&
+        updates >= 376 &&
+        cameras.length === 4 && cameraRanges.length === 4 && cameraRays.length === 4 &&
+        cameras.every(camera => Number(camera.getAttribute("opacity")) === 1) &&
+        sawNoCamera && sawCamera && maxVisibleCameras === 1 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
         trackingError <= 25 &&
         // The rounded v/ω-controlled corners intentionally leave the square's
         // one-pixel centerline, but every sample must remain inside the guide's
         // 50-pixel cornering corridor. A diagonal cut is roughly 135 pixels
         // from the nearest rendered side and therefore cannot satisfy this.
-        truthMoved && lapComplete && smoothTurning && maxGuideDeviation <= 50 &&
+        truthMoved && observedLapComplete && smoothTurning && maxGuideDeviation <= 50 &&
         covarianceGeometry.finite && covarianceGeometry.points >= 48 &&
-        covarianceGeometry.extent >= 18 &&
-        truthPathGeometry.finite && truthPathGeometry.points >= 64 &&
+        covarianceGeometry.extent >= 5 &&
+        truthPathGeometry.finite && truthPathGeometry.points >= 376 &&
         truthPathGeometry.extent > 100 &&
-        estimatePathGeometry.finite && estimatePathGeometry.points >= 64 &&
+        estimatePathGeometry.finite && estimatePathGeometry.points >= 376 &&
         estimatePathGeometry.extent > 100 &&
         title?.textContent === "Camera EKF Localization" &&
         sceneVisible && outputPresentation
       ) {
         root.dataset.mechUpdates = String(updates);
         root.dataset.mechCameras = String(cameras.length);
+        root.dataset.mechCameraRanges = String(cameraRanges.length);
+        root.dataset.mechSawNoCamera = String(sawNoCamera);
+        root.dataset.mechSawCamera = String(sawCamera);
+        root.dataset.mechMaxVisibleCameras = String(maxVisibleCameras);
         root.dataset.mechTruthMoved = String(truthMoved);
         root.dataset.mechSquareSides = ["east", "north", "west", "south"]
           .filter(side => squareSides.has(side)).join(",");
-        root.dataset.mechLapComplete = String(lapComplete);
+        root.dataset.mechLapComplete = String(observedLapComplete);
         root.dataset.mechSmoothTurning = String(smoothTurning);
         root.dataset.mechTurningSamples = String(turningSamples);
         root.dataset.mechCurvedMotionSamples = String(curvedMotionSamples);
@@ -394,12 +416,16 @@ updates="$(sed -n 's/.*data-mech-updates="\([0-9][0-9]*\)".*/\1/p' "$dom_file" |
 if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-done="true"' "$dom_file" \
   || ! grep -q 'data-mech-cameras="4"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-ranges="4"' "$dom_file" \
+  || ! grep -q 'data-mech-saw-no-camera="true"' "$dom_file" \
+  || ! grep -q 'data-mech-saw-camera="true"' "$dom_file" \
+  || ! grep -q 'data-mech-max-visible-cameras="1"' "$dom_file" \
   || ! grep -q 'data-mech-truth-moved="true"' "$dom_file" \
   || ! grep -q 'data-mech-square-sides="east,north,west,south"' "$dom_file" \
   || ! grep -q 'data-mech-lap-complete="true"' "$dom_file" \
   || ! grep -q 'data-mech-smooth-turning="true"' "$dom_file" \
-  || ! grep -q 'data-mech-turning-samples="[2-9][0-9]' "$dom_file" \
-  || ! grep -q 'data-mech-curved-motion-samples="[1-9][0-9]' "$dom_file" \
+  || ! grep -qE 'data-mech-turning-samples="([2-9][0-9]|[1-9][0-9]{2,})"' "$dom_file" \
+  || ! grep -qE 'data-mech-curved-motion-samples="([1-9][0-9]|[1-9][0-9]{2,})"' "$dom_file" \
   || ! grep -q 'data-mech-max-heading-step="0\.' "$dom_file" \
   || ! grep -q 'data-mech-max-guide-deviation="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-covariance-points="[4-9][0-9]' "$dom_file" \
@@ -410,7 +436,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
-  || [[ -z "$updates" || "$updates" -lt 320 ]] \
+  || [[ -z "$updates" || "$updates" -lt 376 ]] \
   || grep -qE 'data-mech-(console-error|page-error|timed-out)=' "$dom_file"; then
   echo "Served resident EKF browser smoke test failed" >&2
   echo "Server log:" >&2
@@ -427,4 +453,4 @@ turning_samples="$(sed -n 's/.*data-mech-turning-samples="\([0-9][0-9]*\)".*/\1/
 max_heading_step="$(sed -n 's/.*data-mech-max-heading-step="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 max_guide_deviation="$(sed -n 's/.*data-mech-max-guide-deviation="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
 covariance_extent="$(sed -n 's/.*data-mech-covariance-extent="\([0-9.][0-9.]*\)".*/\1/p' "$dom_file" | head -1)"
-printf 'EKF_E2E display_updates=%s cameras=4 square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"
+printf 'EKF_E2E display_updates=%s cameras=4 max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"

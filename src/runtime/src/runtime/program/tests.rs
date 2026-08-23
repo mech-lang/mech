@@ -2726,6 +2726,49 @@ fn resident_host_packets_coalesce_and_capture_the_latest_packet_value() {
 }
 
 #[test]
+fn resident_recurrence_advances_when_a_same_turn_parent_is_unchanged() {
+    let (mut runtime, _, _, _) = configured_external_runtime();
+    runtime
+        .load_source_program(
+            r#"
+@clock := test://clock/tick{:read(delta-seconds)}
+pulse := @clock/delta-seconds
+step := pulse * 0.0 + 1.0
+~state := 0.0
+next-state := state + step
+state = next-state
+state
+"#,
+            crate::ResidentDurabilityPolicy::Retained,
+        )
+        .unwrap();
+    let trigger = crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap();
+
+    for pulse in [7.0, 8.0] {
+        runtime
+            .ingress()
+            .submit(crate::RuntimeHostInput::single(
+                trigger.clone(),
+                crate::RuntimeHostInputValue::F64(pulse),
+            ))
+            .unwrap();
+        let outcome = runtime.drain_resident_host_inputs(1).unwrap();
+        assert!(matches!(
+            outcome.turn,
+            Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+        ));
+    }
+
+    let state = runtime
+        .root_symbol_value("state")
+        .unwrap()
+        .into_value()
+        .as_f64()
+        .unwrap();
+    assert_eq!(*state.borrow(), 2.0);
+}
+
+#[test]
 fn duplicate_observations_share_one_authoritative_host_update() {
     let plans = Arc::new(AtomicUsize::new(0));
     let reads = Arc::new(AtomicUsize::new(0));

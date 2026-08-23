@@ -2271,6 +2271,7 @@ fn build_topology(
     let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); steps.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
     let mut direct_input_consumers = Vec::<ActivatedNodeIndex>::new();
+    let mut prior_state_consumers = Vec::<ActivatedNodeIndex>::new();
     for node in artifact.nodes() {
         if !matches!(
             classes[node.node.get() as usize],
@@ -2295,7 +2296,11 @@ fn build_topology(
                 direct_input_consumers.push(current);
             }
             let parent = if slot.role == SlotRole::State {
-                latest_state_writer.get(&slot_id).copied()
+                let parent = latest_state_writer.get(&slot_id).copied();
+                if parent.is_none() && !prior_state_consumers.contains(&current) {
+                    prior_state_consumers.push(current);
+                }
+                parent
             } else {
                 match slot.producer {
                     ProducerReference::NodeOutput { node, .. } => {
@@ -2331,6 +2336,16 @@ fn build_topology(
         .map(|(index, _)| ActivatedNodeIndex(index as u32))
         .collect::<Vec<_>>();
     for consumer in direct_input_consumers {
+        if !roots.contains(&consumer) {
+            roots.push(consumer);
+        }
+    }
+    // A read from the published state is a next-turn dependency, not a
+    // same-turn edge. Its consumer must run at the start of every accepted
+    // turn even when its other (same-turn) inputs retain the same value. If it
+    // is seeded only by changed parents, a recurrence such as `x = x + dt`
+    // stalls whenever `dt` is constant.
+    for consumer in prior_state_consumers {
         if !roots.contains(&consumer) {
             roots.push(consumer);
         }

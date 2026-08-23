@@ -4040,6 +4040,14 @@ rows := |id<string> x<f64>|
         let cruise_speed = 1.15_f64;
         let turn_rate_limit = 1.75_f64;
         let heading_gain = 4.0_f64;
+        let low_bound = 2.5_f64;
+        let high_bound = 7.5_f64;
+        let field_span = high_bound - low_bound;
+        let side_ticks = 94_usize;
+        let lap_ticks = side_ticks * 4;
+        let camera_dwell_ticks = side_ticks / 2;
+        let camera_max_range = 3.6_f64;
+        let camera_range_fade = 0.18_f64;
         let mut expected_truth = [2.5_f64, 2.5_f64, 0.0_f64];
         let mut expected_estimate = SVector::<f64, 3>::new(2.9, 2.15, 0.16);
         let mut expected_covariance = SMatrix::<f64, 3, 3>::new(
@@ -4057,17 +4065,37 @@ rows := |id<string> x<f64>|
             SVector::<f64, 2>::new(1.0, 9.0),
         ];
 
+        let positive_part = |value: f64| (value + value.abs()) / 2.0;
+        let clamp_unit = |value: f64| positive_part(value) - positive_part(value - 1.0);
+        let camera_schedule = [0_usize, 1, 1, 2, 2, 3, 3, 0];
+        let mut saw_prediction_only_turn = false;
+        let mut saw_camera_update = false;
+        let mut saw_zero_camera_turn = false;
+        let mut maximum_visible_cameras = 0_usize;
+        let mut visited_sides = [false; 4];
+        let mut maximum_guide_deviation = 0.0_f64;
+
         // Publish five scheduler steps at a time. The configured latest-value
         // policy delivers only one packet, whose absolute tick jumps by five.
-        // Control phase and camera selection must nevertheless advance exactly
-        // once per accepted resident packet.
-        for turn in 1..=90 {
+        // The finite-state phase, camera schedule, and filter must nevertheless
+        // advance exactly once per accepted resident packet. A full lap plus
+        // part of the next side exercises every camera and every dead zone.
+        for turn in 1..=420 {
             assert_eq!(timer_driver.publish_steps(5).unwrap(), 1);
             let outcomes = runtime.drain_host_inputs(1).unwrap();
 
             let delivered_turn = (turn - 1) as usize;
-            let drive_phase = ((delivered_turn / 86) % 4) as f64;
-            let target_heading = drive_phase * pi / 2.0;
+            let drive_phase = ((delivered_turn / side_ticks) % 4) as f64;
+            let phase_progress = (delivered_turn % side_ticks) as f64 / side_ticks as f64;
+            let lookahead_parameter = (drive_phase + phase_progress + 0.15) % 4.0;
+            let target_x = low_bound
+                + field_span
+                    * (clamp_unit(lookahead_parameter) - clamp_unit(lookahead_parameter - 2.0));
+            let target_y = low_bound
+                + field_span
+                    * (clamp_unit(lookahead_parameter - 1.0)
+                        - clamp_unit(lookahead_parameter - 3.0));
+            let target_heading = (target_y - expected_truth[1]).atan2(target_x - expected_truth[0]);
             let heading_error = (target_heading - expected_truth[2])
                 .sin()
                 .atan2((target_heading - expected_truth[2]).cos());
@@ -4123,7 +4151,7 @@ rows := |id<string> x<f64>|
                 motion_jacobian * expected_covariance * motion_jacobian.transpose()
                     + control_jacobian * process_covariance * control_jacobian.transpose();
 
-            let camera_index = (turn - 1) % camera_positions.len();
+            let camera_index = camera_schedule[(delivered_turn % lap_ticks) / camera_dwell_ticks];
             let active_camera = camera_positions[camera_index];
             let truth_dx = active_camera[0] - expected_truth[0];
             let truth_dy = active_camera[1] - expected_truth[1];
@@ -4158,19 +4186,77 @@ rows := |id<string> x<f64>|
                 measured_range - predicted_range,
                 bearing_residual.sin().atan2(bearing_residual.cos()),
             );
-            expected_estimate = predicted_estimate + kalman_gain * innovation;
+            let observed_estimate = predicted_estimate + kalman_gain * innovation;
             let joseph_a = identity - kalman_gain * observation_jacobian;
-            let corrected_covariance = joseph_a * predicted_covariance * joseph_a.transpose()
+            let observed_covariance = joseph_a * predicted_covariance * joseph_a.transpose()
                 + kalman_gain * measurement_covariance * kalman_gain.transpose();
-            expected_covariance = 0.5 * (corrected_covariance + corrected_covariance.transpose());
+            let observed_covariance = 0.5 * (observed_covariance + observed_covariance.transpose());
+            let visibility = 1.0
+                - clamp_unit(
+                    ((camera_positions[camera_index]
+                        - SVector::<f64, 2>::new(expected_truth[0], expected_truth[1]))
+                    .norm()
+                        - camera_max_range)
+                        / camera_range_fade,
+                );
+            expected_estimate =
+                predicted_estimate + visibility * (observed_estimate - predicted_estimate);
+            expected_covariance =
+                predicted_covariance + visibility * (observed_covariance - predicted_covariance);
+            saw_prediction_only_turn |= visibility == 0.0;
+            saw_camera_update |= visibility == 1.0;
+
+            let actual_visibility_ref = runtime
+                .root_symbol_value("active-camera-visibility")
+                .unwrap()
+                .into_value()
+                .as_f64()
+                .unwrap();
+            let actual_visibility = *actual_visibility_ref.borrow();
+            assert!(
+                (actual_visibility - visibility).abs() < 1.0e-9,
+                "selected camera visibility diverged on delivered turn {turn}: actual={actual_visibility} expected={visibility}",
+            );
+            let actual_predicted = runtime
+                .root_symbol_value("predicted-estimate")
+                .unwrap()
+                .into_value()
+                .as_vecf64()
+                .unwrap();
+            let actual_observed = runtime
+                .root_symbol_value("observed-estimate")
+                .unwrap()
+                .into_value()
+                .as_vecf64()
+                .unwrap();
+            for component in 0..3 {
+                assert!(
+                    (actual_predicted[component] - predicted_estimate[component]).abs() < 1.0e-8,
+                    "EKF prediction component {component} diverged on delivered turn {turn}: actual={actual_predicted:?} expected={:?}",
+                    predicted_estimate.as_slice(),
+                );
+                assert!(
+                    (actual_observed[component] - observed_estimate[component]).abs() < 1.0e-8,
+                    "EKF observation component {component} diverged on delivered turn {turn}: actual={actual_observed:?} expected={:?}",
+                    observed_estimate.as_slice(),
+                );
+            }
 
             let snapshot = scene_backend.latest().unwrap();
             let actual_truth = rendered_truth(&snapshot);
             for (component, (actual, expected)) in
                 actual_truth.iter().zip(expected_truth).enumerate()
             {
+                let error = if component == 2 {
+                    (actual - expected)
+                        .sin()
+                        .atan2((actual - expected).cos())
+                        .abs()
+                } else {
+                    (actual - expected).abs()
+                };
                 assert!(
-                    (actual - expected).abs() < 1.0e-9,
+                    error < 1.0e-9,
                     "EKF truth component {component} diverged on delivered turn {turn}: actual={actual:?} expected={expected:?}; outcomes={outcomes:?}",
                 );
             }
@@ -4225,25 +4311,82 @@ rows := |id<string> x<f64>|
                 );
             }
 
-            let rendered_active_camera = snapshot
-                .circles
+            let expected_visibilities = camera_positions.map(|camera| {
+                1.0 - clamp_unit(
+                    ((camera - SVector::<f64, 2>::new(expected_truth[0], expected_truth[1]))
+                        .norm()
+                        - camera_max_range)
+                        / camera_range_fade,
+                )
+            });
+            let visible_camera_count = expected_visibilities
                 .iter()
-                .find(|circle| circle.id == "active-camera")
-                .unwrap();
-            let expected_camera = [
-                (182.0, 638.0),
-                (678.0, 638.0),
-                (678.0, 142.0),
-                (182.0, 142.0),
-            ][(turn - 1) % 4];
-            assert_eq!(
-                (rendered_active_camera.x, rendered_active_camera.y),
-                expected_camera,
-                "camera selection must follow delivered resident turn {turn}, not skipped absolute ticks",
-            );
+                .filter(|visibility| **visibility > 0.0)
+                .count();
+            saw_zero_camera_turn |= visible_camera_count == 0;
+            maximum_visible_cameras = maximum_visible_cameras.max(visible_camera_count);
+            for (camera, expected_visibility) in expected_visibilities.iter().enumerate() {
+                let ring = snapshot
+                    .circles
+                    .iter()
+                    .find(|circle| circle.id == format!("camera-range-{}", camera + 1))
+                    .unwrap();
+                let ray = snapshot
+                    .lines
+                    .iter()
+                    .find(|line| line.id == format!("ray-{}", camera + 1))
+                    .unwrap();
+                assert!(
+                    (ring.radius - camera_max_range * 62.0).abs() < 1.0e-9,
+                    "camera {} sensing footprint has the wrong rendered radius on delivered turn {turn}: actual={}",
+                    camera + 1,
+                    ring.radius,
+                );
+                assert!((ring.opacity - 0.16).abs() < 1.0e-9);
+                assert!((ray.opacity - 0.4 * expected_visibility).abs() < 1.0e-9);
+            }
+
+            let x = expected_truth[0];
+            let y = expected_truth[1];
+            let guide_deviation = [
+                (y - low_bound).abs(),
+                (x - high_bound).abs(),
+                (y - high_bound).abs(),
+                (x - low_bound).abs(),
+            ]
+            .into_iter()
+            .fold(f64::INFINITY, f64::min);
+            maximum_guide_deviation = maximum_guide_deviation.max(guide_deviation);
+            if delivered_turn < lap_ticks {
+                visited_sides[(delivered_turn / side_ticks) % 4] = true;
+            }
         }
-        assert_eq!(runtime.program_execution_info().resident_accepted_turns, 90);
-        assert_eq!(scene_backend.generation(), 90);
+        assert!(
+            saw_prediction_only_turn,
+            "the finite camera ranges must create a dead zone"
+        );
+        assert!(
+            saw_camera_update,
+            "at least one camera must reacquire the robot"
+        );
+        assert!(
+            saw_zero_camera_turn,
+            "the finite sensing footprints must leave part of the square unseen"
+        );
+        assert_eq!(
+            maximum_visible_cameras, 1,
+            "the four sensing footprints must not overlap on the driven square"
+        );
+        assert_eq!(visited_sides, [true; 4]);
+        assert!(
+            maximum_guide_deviation < 0.5,
+            "the closed-loop square controller drifted {maximum_guide_deviation} field units from its guide",
+        );
+        assert_eq!(
+            runtime.program_execution_info().resident_accepted_turns,
+            420
+        );
+        assert_eq!(scene_backend.generation(), 420);
     }
 
     #[cfg(all(

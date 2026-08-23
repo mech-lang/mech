@@ -22,7 +22,9 @@ camera locations, measurements, and covariance models.
 -------------------------------------------------------------------------------
 
 The robot drives between 2.5 and 7.5 field units. Cameras surround that square,
-so their range and bearing geometry changes throughout every lap.
+but each has a finite 3.6-unit sensing radius. The uncovered middle of every
+side is an intentional dead zone: covariance grows while no camera can see the
+robot and contracts after the next camera reacquires it.
 
 @clock := timer://clock/tick{:read(tick)}
 @scene := scene://localization/frame{:write(replace)}
@@ -35,6 +37,9 @@ so their range and bearing geometry changes throughout every lap.
   heading-gain := 4.0
   low-bound := 2.5
   high-bound := 7.5
+  field-span := high-bound - low-bound
+  camera-max-range := 3.6
+  camera-range-fade := 0.18
 
   cameras := [1.0 1.0
               9.0 1.0
@@ -47,13 +52,14 @@ so their range and bearing geometry changes throughout every lap.
 
 The controller is an explicit finite state machine with East, North, West, and
 South states. It emits the repeating phase program consumed once per delivered
-resident turn, independently of the timer's absolute tick values. Each state
-supplies a cardinal target heading, but the robot is a unicycle: its only control
-inputs are forward velocity `v` and angular velocity `ω`. A bounded heading
-controller slows the robot while turning, so the four corners are smooth arcs
-instead of instantaneous rotations or position clamps.
+resident turn, independently of the timer's absolute tick values. The phase and
+its within-side progress define a moving point on the requested square. A short
+look-ahead aims the unicycle toward that point, so accumulated motion error is
+corrected instead of being carried into every later side. Its only controls are
+forward velocity `v` and angular velocity `ω`; bounded steering and turn-speed
+reduction make the corners smooth without position clamps.
 
-#SquareDrive(side-ticks<f64>) => <[f64]:1,344>
+#SquareDrive(side-ticks<f64>) => <[f64]:1,376>
   ├ :East(remaining<f64>, side-ticks<f64>, phases<[f64]>)
   ├ :North(remaining<f64>, side-ticks<f64>, phases<[f64]>)
   ├ :West(remaining<f64>, side-ticks<f64>, phases<[f64]>)
@@ -75,17 +81,31 @@ instead of instantaneous rotations or position clamps.
     └ * -> :Done(phases)
   :Done(phases) => phases.
 
-  side-ticks := 86.0
-  drive-phases<[f64]:1,344> := #SquareDrive(side-ticks)
+  side-ticks := 94.0
+  drive-phases<[f64]:1,376> := #SquareDrive(side-ticks)
   lap-ticks := 4.0 * side-ticks
   ~drive-phase-index := 1.0
   drive-phase := drive-phases[1,drive-phase-index]
   next-drive-phase-index := (drive-phase-index % lap-ticks) + turn-pulse
-  target-heading := drive-phase * π / 2.0
+  phase-progress := ((drive-phase-index - 1.0) % side-ticks) / side-ticks
+  path-parameter := drive-phase + phase-progress
+  lookahead-parameter := (path-parameter + 0.15) % 4.0
+  lookahead-relu-0 := (lookahead-parameter + (lookahead-parameter ^ 2) ^ 0.5) / 2.0
+  lookahead-relu-1 := (lookahead-parameter - 1.0 + ((lookahead-parameter - 1.0) ^ 2) ^ 0.5) / 2.0
+  lookahead-relu-2 := (lookahead-parameter - 2.0 + ((lookahead-parameter - 2.0) ^ 2) ^ 0.5) / 2.0
+  lookahead-relu-3 := (lookahead-parameter - 3.0 + ((lookahead-parameter - 3.0) ^ 2) ^ 0.5) / 2.0
+  lookahead-relu-4 := (lookahead-parameter - 4.0 + ((lookahead-parameter - 4.0) ^ 2) ^ 0.5) / 2.0
+  lookahead-clamp-0 := lookahead-relu-0 - lookahead-relu-1
+  lookahead-clamp-1 := lookahead-relu-1 - lookahead-relu-2
+  lookahead-clamp-2 := lookahead-relu-2 - lookahead-relu-3
+  lookahead-clamp-3 := lookahead-relu-3 - lookahead-relu-4
+  target-x := low-bound + field-span * (lookahead-clamp-0 - lookahead-clamp-2)
+  target-y := low-bound + field-span * (lookahead-clamp-1 - lookahead-clamp-3)
   ~truth := [2.5
              2.5
              0.0]
   simulation-time := @clock/tick * Δt
+  target-heading := math/atan2(target-y - truth[2], target-x - truth[1])
   heading-error-raw := target-heading - truth[3]
   heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
   requested-omega := heading-gain * heading-error
@@ -108,14 +128,62 @@ instead of instantaneous rotations or position clamps.
 3. Noisy Camera Observations
 -------------------------------------------------------------------------------
 
-One camera is selected on each resident turn, so the filter continuously cycles
-through all four viewpoints without duplicating the same update graph four times.
-Each selected camera reports range and robot-relative bearing with deterministic
-noise that is unknown to the filter.
+The finite-state drive program also determines which nearby corner camera may
+report during each half-side. A camera outside its 3.6-unit range contributes
+exactly zero correction. This produces genuine prediction-only intervals rather
+than pretending that every camera sees through the entire field.
 
-  ~camera-index := 1.0
-  next-camera-index := (camera-index % 4.0) + turn-pulse
+#CameraSchedule(dwell-ticks<f64>) => <[f64]:1,376>
+  ├ :LowerLeft(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  ├ :LowerRight(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  ├ :RightLower(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  ├ :RightUpper(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  ├ :UpperRight(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  ├ :UpperLeft(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  ├ :LeftUpper(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  ├ :LeftLower(remaining<f64>, dwell-ticks<f64>, schedule<[f64]>)
+  └ :CameraScheduleDone(schedule<[f64]>).
+
+#CameraSchedule(dwell-ticks<u64>) -> :LowerLeft(dwell-ticks, dwell-ticks, [])
+  :LowerLeft(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :LowerLeft(remaining - 1, dwell-ticks, [schedule 1.0])
+    └ * -> :LowerRight(dwell-ticks, dwell-ticks, schedule)
+  :LowerRight(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :LowerRight(remaining - 1, dwell-ticks, [schedule 2.0])
+    └ * -> :RightLower(dwell-ticks, dwell-ticks, schedule)
+  :RightLower(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :RightLower(remaining - 1, dwell-ticks, [schedule 2.0])
+    └ * -> :RightUpper(dwell-ticks, dwell-ticks, schedule)
+  :RightUpper(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :RightUpper(remaining - 1, dwell-ticks, [schedule 3.0])
+    └ * -> :UpperRight(dwell-ticks, dwell-ticks, schedule)
+  :UpperRight(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :UpperRight(remaining - 1, dwell-ticks, [schedule 3.0])
+    └ * -> :UpperLeft(dwell-ticks, dwell-ticks, schedule)
+  :UpperLeft(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :UpperLeft(remaining - 1, dwell-ticks, [schedule 4.0])
+    └ * -> :LeftUpper(dwell-ticks, dwell-ticks, schedule)
+  :LeftUpper(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :LeftUpper(remaining - 1, dwell-ticks, [schedule 4.0])
+    └ * -> :LeftLower(dwell-ticks, dwell-ticks, schedule)
+  :LeftLower(remaining, dwell-ticks, schedule)
+    ├ remaining > 0 -> :LeftLower(remaining - 1, dwell-ticks, [schedule 1.0])
+    └ * -> :CameraScheduleDone(schedule)
+  :CameraScheduleDone(schedule) => schedule.
+
+  camera-dwell-ticks := side-ticks / 2.0
+  camera-schedule<[f64]:1,376> := #CameraSchedule(camera-dwell-ticks)
+  camera-index := camera-schedule[1,drive-phase-index]
   active-camera := cameras[camera-index,:]
+  camera-dx-all := cameras[:,1] - next-truth[1]
+  camera-dy-all := cameras[:,2] - next-truth[2]
+  camera-range-all := (camera-dx-all ^ 2 + camera-dy-all ^ 2) ^ 0.5
+  camera-outside-raw := (camera-range-all - camera-max-range) / camera-range-fade
+  camera-outside-relu := (camera-outside-raw + (camera-outside-raw ^ 2) ^ 0.5) / 2.0
+  camera-outside-one-relu := (camera-outside-raw - 1.0 + ((camera-outside-raw - 1.0) ^ 2) ^ 0.5) / 2.0
+  camera-outside-weight := camera-outside-relu - camera-outside-one-relu
+  camera-visibility := 1.0 - camera-outside-weight
+  active-camera-visibility := camera-visibility[camera-index]
   camera-dx := active-camera[1] - next-truth[1]
   camera-dy := active-camera[2] - next-truth[2]
   camera-range := (camera-dx ^ 2 + camera-dy ^ 2) ^ 0.5
@@ -129,9 +197,9 @@ noise that is unknown to the filter.
 -------------------------------------------------------------------------------
 
 The matrix equations below are the complete filter. The motion model predicts
-once per control interval, then one range-and-bearing camera observation corrects
-the state. The cameras rotate every turn. Covariance uses the numerically stable
-Joseph form and is symmetrized before becoming the next resident state.
+once per control interval, then the scheduled range-and-bearing observation may
+correct the state if that camera is in range. Covariance uses the numerically
+stable Joseph form and is symmetrized before becoming the next resident state.
 
   identity-3 := [1.0 0.0 0.0
                  0.0 1.0 0.0
@@ -177,10 +245,12 @@ Joseph form and is symmetrized before becoming the next resident state.
   bearing-residual := observation[2] - predicted-observation[2]
   innovation := [observation[1] - predicted-observation[1]
                  math/atan2(math/sin(bearing-residual), math/cos(bearing-residual))]
-  corrected-estimate := predicted-estimate + kalman-gain ** innovation
+  observed-estimate := predicted-estimate + kalman-gain ** innovation
   joseph-a := identity-3 - kalman-gain ** observation-jacobian
-  corrected-covariance-raw := joseph-a ** predicted-covariance ** joseph-a' + kalman-gain ** measurement-covariance ** kalman-gain'
-  corrected-covariance := 0.5 * (corrected-covariance-raw + corrected-covariance-raw')
+  observed-covariance-raw := joseph-a ** predicted-covariance ** joseph-a' + kalman-gain ** measurement-covariance ** kalman-gain'
+  observed-covariance := 0.5 * (observed-covariance-raw + observed-covariance-raw')
+  corrected-estimate := predicted-estimate + active-camera-visibility * (observed-estimate - predicted-estimate)
+  corrected-covariance := predicted-covariance + active-camera-visibility * (observed-covariance - predicted-covariance)
 
   estimate = corrected-estimate
   covariance = corrected-covariance
@@ -190,17 +260,16 @@ Joseph form and is symmetrized before becoming the next resident state.
 -------------------------------------------------------------------------------
 
 The covariance outline is the two-standard-deviation position ellipse calculated
-from the live 2x2 covariance block. Because four-camera fusion can make the
-physical ellipse smaller than a useful screen mark, display axes have a 0.16-unit
-quadrature floor; this changes only the drawing, never the filter covariance.
-Camera rays terminate at simulated truth; only their noisy range and bearing
-values enter the filter.
+from the live 2x2 covariance block. Because finite-range camera updates can make
+the physical ellipse smaller than a useful screen mark, display axes have a
+0.04-unit quadrature floor; this changes only the drawing, never the filter
+covariance. Steady footprint guides show each camera's real maximum range.
+Camera rays terminate at simulated truth and fade to exactly zero outside that
+range. Only the scheduled in-range camera's noisy values enter the filter.
 
   screen-scale := 62.0
   screen-origin-x := 120.0
   screen-origin-y := 700.0
-  active-camera-screen-x := screen-origin-x + active-camera[1] * screen-scale
-  active-camera-screen-y := screen-origin-y - active-camera[2] * screen-scale
   truth-screen-x := screen-origin-x + next-truth[1] * screen-scale
   truth-screen-y := screen-origin-y - next-truth[2] * screen-scale
   predicted-screen-x := screen-origin-x + predicted-estimate[1] * screen-scale
@@ -223,14 +292,14 @@ values enter the filter.
   ellipse-angle := ellipse-samples' * (2.0 * π / 64.0)
   ellipse-cos := math/cos(ellipse-angle)
   ellipse-sin := math/sin(ellipse-angle)
-  ellipse-display-floor := 0.16
+  ellipse-display-floor := 0.04
   display-ellipse-major := (ellipse-major ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
   display-ellipse-minor := (ellipse-minor ^ 2 + ellipse-display-floor ^ 2) ^ 0.5
   ellipse-x := estimate-screen-x + screen-scale * (display-ellipse-major * ellipse-cos * math/cos(ellipse-rotation) - display-ellipse-minor * ellipse-sin * math/sin(ellipse-rotation))
   ellipse-y := estimate-screen-y - screen-scale * (display-ellipse-major * ellipse-cos * math/sin(ellipse-rotation) + display-ellipse-minor * ellipse-sin * math/cos(ellipse-rotation))
   covariance-ellipse := [ellipse-x ellipse-y]
 
-  trail-samples := 1..=64
+  trail-samples := 1..=376
   initial-truth-path-x-row := [275.0 | sample <- trail-samples]
   initial-truth-path-y-row := [545.0 | sample <- trail-samples]
   initial-estimate-path-x-row := [299.8 | sample <- trail-samples]
@@ -243,8 +312,8 @@ values enter the filter.
   ~estimate-path := [initial-estimate-path-x initial-estimate-path-y]
   truth-screen-point := ([truth-screen-x truth-screen-y])
   estimate-screen-point := ([estimate-screen-x estimate-screen-y])
-  next-truth-path := matrix/vertcat(truth-path[2..=64,:], truth-screen-point)
-  next-estimate-path := matrix/vertcat(estimate-path[2..=64,:], estimate-screen-point)
+  next-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen-point)
+  next-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen-point)
   truth-path = next-truth-path
   estimate-path = next-estimate-path
 
@@ -255,7 +324,10 @@ values enter the filter.
                    275.0 545.0]
 
   scene-circles := (
-    {id: "active-camera", x: active-camera-screen-x, y: active-camera-screen-y, radius: 14, fill: "#f4c95d22", stroke: "#f4c95d", stroke-width: 2, opacity: 1},
+    {id: "camera-range-1", x: 182, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
+    {id: "camera-range-2", x: 678, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
+    {id: "camera-range-3", x: 678, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
+    {id: "camera-range-4", x: 182, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
     {id: "camera-1", x: 182, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
     {id: "camera-2", x: 678, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
     {id: "camera-3", x: 678, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
@@ -273,10 +345,10 @@ values enter the filter.
     {id: "frame-right", x1: 740, y1: 80, x2: 740, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "frame-bottom", x1: 740, y1: 700, x2: 120, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "frame-left", x1: 120, y1: 700, x2: 120, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-1", x1: 182, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-2", x1: 678, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-3", x1: 678, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-4", x1: 182, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.28, rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-1", x1: 182, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[1], rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-2", x1: 678, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[2], rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-3", x1: 678, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[3], rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-4", x1: 182, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[4], rotation: 0, origin-x: 0, origin-y: 0},
     {id: "truth-heading", x1: truth-screen-x, y1: truth-screen-y, x2: truth-screen-x + 18.0 * math/cos(next-truth[3]), y2: truth-screen-y - 18.0 * math/sin(next-truth[3]), stroke: "#d7fff8", stroke-width: 2, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "estimate-heading", x1: estimate-screen-x, y1: estimate-screen-y, x2: estimate-screen-x + 16.0 * math/cos(corrected-estimate[3]), y2: estimate-screen-y - 16.0 * math/sin(corrected-estimate[3]), stroke: "#ffe1ef", stroke-width: 1.5, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
   )
@@ -299,7 +371,7 @@ values enter the filter.
     {id: "legend-truth-label", x: 40, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "actual robot + path"},
     {id: "legend-prediction-label", x: 215, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "motion prediction"},
     {id: "legend-estimate-label", x: 415, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "EKF estimate + 2σ covariance"},
-    {id: "note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "Rotating range + bearing update · Joseph covariance · bounded v/ω cornering"}
+    {id: "note", x: 430, y: 750, fill: "#788a9c", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "middle", opacity: 1, value: "3.6-unit camera range · prediction-only dead zones · Joseph covariance · bounded v/ω cornering"}
   )
 
   field-presentation := {
@@ -313,6 +385,5 @@ values enter the filter.
   }
 
   drive-phase-index = next-drive-phase-index
-  camera-index = next-camera-index
   @scene/replace <- field-presentation
   position-error
