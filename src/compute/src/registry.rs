@@ -128,6 +128,12 @@ pub enum ComputeOutputSelection {
     #[default]
     All,
     Ports(BTreeSet<ComputePortId>),
+    /// Read only the first outer batch lane for the selected logical ports.
+    ///
+    /// Fixed-shape accelerators must honor this at the physical readback
+    /// boundary rather than transferring the full resident batch and slicing
+    /// it on the host. Non-batched programs treat samples like selected ports.
+    Samples(BTreeSet<ComputePortId>),
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -137,7 +143,7 @@ pub struct ComputeOutputSnapshot {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputeFaultEvidence {
-    pub attempted_turn: u64,
+    pub attempted_turn: u128,
     pub constraint: Box<str>,
     pub detail: Box<str>,
 }
@@ -148,6 +154,32 @@ pub struct ComputeDispatchReport {
     pub dispatch_milliseconds: f64,
     pub fault_count: u64,
     pub last_fault: Option<ComputeFaultEvidence>,
+}
+
+/// Resident-host context that accompanies one backend dispatch.
+///
+/// Synchronous backends may ignore it. Asynchronous backends must retain it
+/// with the command so completion can publish exactly the outputs requested by
+/// the coordinator and can report the Mech turn which actually failed.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct ComputeDispatchRequest {
+    pub outputs: BTreeSet<ComputePortId>,
+    pub logical_turn: u128,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ComputeCompletionOutcome {
+    Completed {
+        report: ComputeDispatchReport,
+        snapshot: ComputeOutputSnapshot,
+    },
+    IntegrityRejected {
+        report: ComputeDispatchReport,
+    },
+    TransportFailed {
+        attempted_turn: u128,
+        reason: Box<str>,
+    },
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -168,6 +200,17 @@ pub struct ComputeExecutionError {
     pub backend: BackendId,
     pub operation: &'static str,
     pub detail: Box<str>,
+    /// The backend accepted and may have mutated resident state before this
+    /// failure was reported. Callers must stop the session rather than retry
+    /// the same completion identity against an already-advanced state.
+    pub state_advanced: bool,
+}
+
+impl ComputeExecutionError {
+    pub fn after_state_advance(mut self) -> Self {
+        self.state_advanced = true;
+        self
+    }
 }
 
 pub trait ComputeBackendFactory {
@@ -179,27 +222,13 @@ pub trait ComputeBackendFactory {
         &self,
         program: &ComputeProgram,
     ) -> Result<Box<dyn ComputeExecutable>, ComputeBackendError>;
-
-    /// Connects an asynchronous backend to the resident host that owns its
-    /// published outputs. Synchronous backends use the default no-op because
-    /// their dispatch report and output snapshot are returned together.
-    fn bind_completion_target(
-        &self,
-        _target: Arc<dyn ComputeCompletionTarget>,
-    ) -> Result<(), ComputeBackendError> {
-        Ok(())
-    }
 }
 
 /// Atomic publication boundary for backends whose work completes after
 /// `ComputeSession::dispatch` returns. Implementations must validate and stage
 /// a whole snapshot before changing resident-visible state.
 pub trait ComputeCompletionTarget {
-    fn complete(
-        &self,
-        report: ComputeDispatchReport,
-        snapshot: ComputeOutputSnapshot,
-    ) -> Result<(), ComputeExecutionError>;
+    fn complete(&self, outcome: ComputeCompletionOutcome) -> Result<(), ComputeExecutionError>;
 }
 
 pub trait ComputeExecutable {
@@ -210,6 +239,17 @@ pub trait ComputeExecutable {
 }
 
 pub trait ComputeSession {
+    /// Connects this specific asynchronous session to the resident host that
+    /// owns its published outputs. The binding belongs to the session rather
+    /// than the reusable backend factory so one factory cannot cross-wire two
+    /// independently compiled or restarted runtimes.
+    fn bind_completion_target(
+        &mut self,
+        _target: Arc<dyn ComputeCompletionTarget>,
+    ) -> Result<(), ComputeBackendError> {
+        Ok(())
+    }
+
     fn update_inputs(
         &mut self,
         updates: &[ComputeInputUpdate],
@@ -219,6 +259,14 @@ pub trait ComputeSession {
         &mut self,
         turns: NonZeroU32,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError>;
+
+    fn dispatch_requested(
+        &mut self,
+        turns: NonZeroU32,
+        _request: &ComputeDispatchRequest,
+    ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        self.dispatch(turns)
+    }
 
     fn read_outputs(
         &mut self,

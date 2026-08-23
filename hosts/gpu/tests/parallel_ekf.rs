@@ -304,7 +304,12 @@ result
         .id;
     let registry = native_compute_backend_registry();
 
-    for backend in ["cpu-scalar", "cpu-simd", "cpu-jit", "wgpu"] {
+    let mut backends = vec!["cpu-scalar", "cpu-simd"];
+    if cfg!(feature = "jit") {
+        backends.push("cpu-jit");
+    }
+    backends.push("wgpu");
+    for backend in backends {
         let request = BackendRequest::parse(backend).unwrap();
         let factory = match registry.resolve(
             &request,
@@ -459,8 +464,8 @@ fn flattened_outputs(
 
 #[cfg(feature = "native")]
 #[test]
-fn registered_backends_share_one_fixed_shape_conformance_contract() {
-    let (program, inputs) = source_program(1);
+fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract() {
+    let (program, inputs) = source_program(1_000);
     let initializers = compute_initializers(&program, &inputs);
     let registry = native_compute_backend_registry();
     let bearing = program
@@ -471,7 +476,12 @@ fn registered_backends_share_one_fixed_shape_conformance_contract() {
         .id;
     let mut accepted = BTreeMap::new();
 
-    for backend in ["cpu-scalar", "cpu-simd", "cpu-jit", "wgpu"] {
+    let mut backends = vec!["cpu-scalar", "cpu-simd"];
+    if cfg!(feature = "jit") {
+        backends.push("cpu-jit");
+    }
+    backends.push("wgpu");
+    for backend in backends {
         let request = BackendRequest::parse(backend).unwrap();
         let factory = match registry.resolve(
             &request,
@@ -507,6 +517,23 @@ fn registered_backends_share_one_fixed_shape_conformance_contract() {
             .read_outputs(&ComputeOutputSelection::All)
             .expect("published outputs must be readable");
         assert!(!published.values.is_empty());
+        let sampled_port = program.compute_program().interface().outputs[0].clone();
+        let sampled = session
+            .read_outputs(&ComputeOutputSelection::Samples(BTreeSet::from([
+                sampled_port.id,
+            ])))
+            .expect("lane-zero output sampling must be readable");
+        assert_eq!(sampled.values.len(), 1);
+        let sampled_elements = match &sampled.values[&sampled_port.id] {
+            ComputeValue::ScalarF32(_) => 1,
+            ComputeValue::TensorF32 {
+                dimensions, values, ..
+            } => {
+                assert_eq!(dimensions.as_ref(), sampled_port.dimensions.as_ref());
+                values.len()
+            }
+        };
+        assert_eq!(sampled_elements, sampled_port.elements().unwrap());
 
         session
             .update_inputs(&[ComputeInputUpdate {

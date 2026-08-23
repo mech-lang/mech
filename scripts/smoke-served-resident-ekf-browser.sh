@@ -129,11 +129,20 @@ harness = r'''<script>
 
     const parityComputeTurn = 376;
     let computeParitySample;
+    let computeReadbackBytes = 0;
+    let sampledReadbackEfficient = true;
     window.addEventListener("mech:compute-complete", (event) => {
-      root.dataset.mechObservedComputeCompletion = String(
-        event.detail?.completedTurns ?? "missing",
-      );
-      if (event.detail?.completedTurns !== parityComputeTurn) return;
+      const completedTurns = event.detail?.completedTurns;
+      root.dataset.mechObservedComputeCompletion = String(completedTurns ?? "missing");
+      if (expectedComputeBackend === "wgpu") {
+        computeReadbackBytes = Number(root.dataset.mechComputeGpuToCpuReadbackBytes || 0);
+        sampledReadbackEfficient &&= Boolean(
+          Number(root.dataset.mechComputeLogicalOutputs || 0) === 1 &&
+          Number(root.dataset.mechComputePhysicalOutputBuffers || 0) === 1 &&
+          computeReadbackBytes === completedTurns * 15 * Float32Array.BYTES_PER_ELEMENT
+        );
+      }
+      if (completedTurns !== parityComputeTurn) return;
       root.dataset.mechObservedParityOutputs = (event.detail.outputs || [])
         .map(output => `${output.name}:${output.values?.length ?? "missing"}`)
         .join(",");
@@ -266,12 +275,7 @@ harness = r'''<script>
       if (truthPoint && updates > 0 && updates !== lastObservedUpdate) {
         lastObservedUpdate = updates;
         const computeDispatches = Number(root.dataset.mechComputeDispatches || 0);
-        const isComputeCompletionFrame = root.dataset.mechComputeBackend === "wgpu"
-          ? computeDispatches > lastObservedComputeDispatch
-          : Boolean(
-              previousTruth &&
-              Math.hypot(truthPoint.x - previousTruth.x, truthPoint.y - previousTruth.y) <= 1e-9
-            );
+        const isComputeCompletionFrame = computeDispatches > lastObservedComputeDispatch;
         lastObservedComputeDispatch = computeDispatches;
         if (firstTruth === undefined) firstTruth = truthPoint;
         maxGuideDeviation = Math.max(maxGuideDeviation, distanceToRenderedGuide(truthPoint));
@@ -457,6 +461,15 @@ harness = r'''<script>
       root.dataset.mechObservedPredictionOnlyFailure = JSON.stringify(predictionOnlyFailure || null);
       root.dataset.mechObservedSmoothTurning = String(smoothTurning);
       root.dataset.mechObservedParityCaptured = String(computeParitySample !== undefined);
+      root.dataset.mechObservedSampledReadbackEfficient = String(sampledReadbackEfficient);
+      root.dataset.mechObservedComputeReadbackBytes = String(computeReadbackBytes);
+      root.dataset.mechObservedComputeLogicalOutputs = root.dataset.mechComputeLogicalOutputs || "missing";
+      root.dataset.mechObservedComputePhysicalOutputBuffers =
+        root.dataset.mechComputePhysicalOutputBuffers || "missing";
+      root.dataset.mechObservedExpectedReadbackBytes = String(
+        Number(root.dataset.mechObservedComputeCompletion || 0) *
+          15 * Float32Array.BYTES_PER_ELEMENT
+      );
       root.dataset.mechObservedOutputPresentation = String(outputPresentation);
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
       root.dataset.mechObservedDisplayIds = [...document.querySelectorAll('[data-mech-display-id]')]
@@ -468,6 +481,7 @@ harness = r'''<script>
         cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
         predictionOnlyComparisons > 0 &&
         computeParitySample !== undefined &&
+        sampledReadbackEfficient &&
         sawInsideCameraRange && sawOutsideCameraRange &&
         sawNoCamera && sawCamera && maxVisibleCameras === 1 &&
         finitePoint(truth) && finitePoint(estimate) && finitePoint(prediction) &&
@@ -525,6 +539,8 @@ harness = r'''<script>
         root.dataset.mechOutputPresentation = String(outputPresentation);
         root.dataset.mechVerifiedComputeBackend = computeBackend;
         root.dataset.mechVerifiedComputeInstances = String(computeInstances);
+        root.dataset.mechSampledReadbackEfficient = String(sampledReadbackEfficient);
+        root.dataset.mechGpuToCpuReadbackBytes = String(computeReadbackBytes);
         root.dataset.mechDone = "true";
         globalThis.__MECH_STOP__?.();
         return;
@@ -639,6 +655,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q "data-mech-verified-compute-backend=\"$expected_compute_backend\"" "$dom_file" \
   || ! grep -q 'data-mech-verified-compute-instances="1000"' "$dom_file" \
+  || ! grep -q 'data-mech-sampled-readback-efficient="true"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-x="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-y="[0-9]' "$dom_file" \

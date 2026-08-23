@@ -34,12 +34,19 @@ robot and contracts after the next camera reacquires it.
   ~last-clock-tick := 0.0
   clock-delta := @clock/tick - last-clock-tick
   clock-delta-positive := (clock-delta + (clock-delta ^ 2) ^ 0.5) / 2.0
-  turn-pulse := clock-delta-positive - (clock-delta-positive - 1.0 + ((clock-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
+  clock-pulse := clock-delta-positive - (clock-delta-positive - 1.0 + ((clock-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
+  ~requested-compute-turn := 0.0
+  compute-inflight-gap := requested-compute-turn - @filters/turns
+  compute-inflight-gap-absolute := (compute-inflight-gap ^ 2) ^ 0.5
+  compute-idle-raw := 1.0 - compute-inflight-gap-absolute
+  compute-idle := (compute-idle-raw + (compute-idle-raw ^ 2) ^ 0.5) / 2.0
+  request-pulse := clock-pulse * compute-idle
+  next-requested-compute-turn := requested-compute-turn + request-pulse
   ~last-filter-turn := 0.0
   filter-turn-delta := @filters/turns - last-filter-turn
   filter-turn-delta-positive := (filter-turn-delta + (filter-turn-delta ^ 2) ^ 0.5) / 2.0
   sample-pulse := filter-turn-delta-positive - (filter-turn-delta-positive - 1.0 + ((filter-turn-delta-positive - 1.0) ^ 2) ^ 0.5) / 2.0
-  Δt := turn-pulse * 0.05
+  Δt := 0.05
   cruise-speed := 1.15
   turn-rate-limit := 1.75
   heading-gain := 4.0
@@ -96,11 +103,14 @@ reduction make the corners smooth without position clamps.
   drive-phases<[f64]:1,376> := #SquareDrive(side-ticks)
   lap-ticks := 4.0 * side-ticks
   ~simulation-step := 0.0
-  next-simulation-step := simulation-step + turn-pulse
+  ~pending-simulation-step := 1.0
+  attempted-simulation-step := simulation-step + 1.0
+  next-simulation-step := simulation-step + sample-pulse * (pending-simulation-step - simulation-step)
   ~drive-phase-index := 1.0
+  ~pending-drive-phase-index := 2.0
   drive-phase := drive-phases[1,drive-phase-index]
   advanced-drive-phase-index := (drive-phase-index % lap-ticks) + 1.0
-  next-drive-phase-index := drive-phase-index + turn-pulse * (advanced-drive-phase-index - drive-phase-index)
+  next-drive-phase-index := drive-phase-index + sample-pulse * (pending-drive-phase-index - drive-phase-index)
   phase-progress := ((drive-phase-index - 1.0) % side-ticks) / side-ticks
   path-parameter := drive-phase + phase-progress
   lookahead-parameter := (path-parameter + 0.15) % 4.0
@@ -118,7 +128,10 @@ reduction make the corners smooth without position clamps.
   ~truth := [2.5
              2.5
              0.0]
-  simulation-time := next-simulation-step * 0.05
+  ~pending-truth := [2.5
+                     2.5
+                     0.0]
+  simulation-time := attempted-simulation-step * 0.05
   target-heading := math/atan2(target-y - truth[2], target-x - truth[1])
   heading-error-raw := target-heading - truth[3]
   heading-error := math/atan2(math/sin(heading-error-raw), math/cos(heading-error-raw))
@@ -132,12 +145,18 @@ reduction make the corners smooth without position clamps.
   actual-omega := commanded-omega * actual-omega-scale
   truth-mid-heading := truth[3] + actual-omega * Δt / 2.0
 
-  next-truth := truth + [actual-speed * math/cos(truth-mid-heading) * Δt
-                         actual-speed * math/sin(truth-mid-heading) * Δt
-                         actual-omega * Δt]
+  attempted-truth := truth + [actual-speed * math/cos(truth-mid-heading) * Δt
+                              actual-speed * math/sin(truth-mid-heading) * Δt
+                              actual-omega * Δt]
+  next-truth := truth + sample-pulse * (pending-truth - truth)
 
   truth = next-truth
+  pending-truth = attempted-truth
   simulation-step = next-simulation-step
+  pending-simulation-step = attempted-simulation-step
+  drive-phase-index = next-drive-phase-index
+  pending-drive-phase-index = advanced-drive-phase-index
+  requested-compute-turn = next-requested-compute-turn
 
 
 3. Noisy Camera Observations
@@ -190,8 +209,8 @@ than pretending that every camera sees through the entire field.
   camera-schedule<[f64]:1,376> := #CameraSchedule(camera-dwell-ticks)
   camera-index := camera-schedule[1,drive-phase-index]
   active-camera := cameras[camera-index,:]
-  camera-dx-all := cameras[:,1] - next-truth[1]
-  camera-dy-all := cameras[:,2] - next-truth[2]
+  camera-dx-all := cameras[:,1] - attempted-truth[1]
+  camera-dy-all := cameras[:,2] - attempted-truth[2]
   camera-range-all := (camera-dx-all ^ 2 + camera-dy-all ^ 2) ^ 0.5
   camera-inside-fade-raw := (camera-max-range - camera-range-all) / camera-range-fade
   camera-inside-fade-relu := (camera-inside-fade-raw + (camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
@@ -217,11 +236,11 @@ than pretending that every camera sees through the entire field.
                                        13.0 + camera-boundary-probe-visibility[3] * (23.0 - 13.0)
                                        14.0 + camera-boundary-probe-visibility[4] * (24.0 - 14.0)]
   active-camera-visibility := camera-visibility[camera-index]
-  camera-dx := active-camera[1] - next-truth[1]
-  camera-dy := active-camera[2] - next-truth[2]
+  camera-dx := active-camera[1] - attempted-truth[1]
+  camera-dy := active-camera[2] - attempted-truth[2]
   camera-range := (camera-dx ^ 2 + camera-dy ^ 2) ^ 0.5
   measured-range := camera-range + 0.11 * math/sin(simulation-time * 1.57 + camera-index * 0.7)
-  measured-bearing := math/atan2(camera-dy, camera-dx) - next-truth[3] + 0.011 * math/sin(simulation-time * 1.91 + camera-index)
+  measured-bearing := math/atan2(camera-dy, camera-dx) - attempted-truth[3] + 0.011 * math/sin(simulation-time * 1.91 + camera-index)
   observation := [measured-range
                   measured-bearing]
 
@@ -265,7 +284,7 @@ one arithmetic result. Only lane zero is sampled back for the scene.
   @filters/input/control <- lane-control
   @filters/input/camera <- lane-camera
   @filters/input/measurement <- lane-measurement
-  @filters/turn <- @clock/tick
+  @filters/turn <- next-requested-compute-turn
 
   filter-sample := @filters/sample/result.0
   corrected-estimate := [filter-sample[1]
@@ -397,6 +416,13 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   screen-origin-y := 700.0
   truth-screen-x := screen-origin-x + next-truth[1] * screen-scale
   truth-screen-y := screen-origin-y - next-truth[2] * screen-scale
+  display-camera-dx-all := cameras[:,1] - next-truth[1]
+  display-camera-dy-all := cameras[:,2] - next-truth[2]
+  display-camera-range-all := (display-camera-dx-all ^ 2 + display-camera-dy-all ^ 2) ^ 0.5
+  display-camera-inside-fade-raw := (camera-max-range - display-camera-range-all) / camera-range-fade
+  display-camera-inside-fade-relu := (display-camera-inside-fade-raw + (display-camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
+  display-camera-inside-fade-one-relu := (display-camera-inside-fade-raw - 1.0 + ((display-camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
+  display-camera-visibility := display-camera-inside-fade-relu - display-camera-inside-fade-one-relu
   predicted-screen-x := screen-origin-x + predicted-estimate[1] * screen-scale
   predicted-screen-y := screen-origin-y - predicted-estimate[2] * screen-scale
   estimate-screen-x := screen-origin-x + corrected-estimate[1] * screen-scale
@@ -439,7 +465,7 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   estimate-screen-point := ([estimate-screen-x estimate-screen-y])
   advanced-truth-path := matrix/vertcat(truth-path[2..=376,:], truth-screen-point)
   advanced-estimate-path := matrix/vertcat(estimate-path[2..=376,:], estimate-screen-point)
-  next-truth-path := truth-path + turn-pulse * (advanced-truth-path - truth-path)
+  next-truth-path := truth-path + sample-pulse * (advanced-truth-path - truth-path)
   next-estimate-path := estimate-path + sample-pulse * (advanced-estimate-path - estimate-path)
   truth-path = next-truth-path
   estimate-path = next-estimate-path
@@ -472,10 +498,10 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
     {id: "frame-right", x1: 740, y1: 80, x2: 740, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "frame-bottom", x1: 740, y1: 700, x2: 120, y2: 700, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "frame-left", x1: 120, y1: 700, x2: 120, y2: 80, stroke: "#27313d", stroke-width: 1, line-cap: "butt", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-1", x1: 182, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[1], rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-2", x1: 678, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[2], rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-3", x1: 678, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[3], rotation: 0, origin-x: 0, origin-y: 0},
-    {id: "ray-4", x1: 182, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * camera-visibility[4], rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-1", x1: 182, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[1], rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-2", x1: 678, y1: 638, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[2], rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-3", x1: 678, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[3], rotation: 0, origin-x: 0, origin-y: 0},
+    {id: "ray-4", x1: 182, y1: 142, x2: truth-screen-x, y2: truth-screen-y, stroke: "#d9b652", stroke-width: 0.7, line-cap: "round", opacity: 0.4 * display-camera-visibility[4], rotation: 0, origin-x: 0, origin-y: 0},
     {id: "truth-heading", x1: truth-screen-x, y1: truth-screen-y, x2: truth-screen-x + 18.0 * math/cos(next-truth[3]), y2: truth-screen-y - 18.0 * math/sin(next-truth[3]), stroke: "#d7fff8", stroke-width: 2, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0},
     {id: "estimate-heading", x1: estimate-screen-x, y1: estimate-screen-y, x2: estimate-screen-x + 16.0 * math/cos(corrected-estimate[3]), y2: estimate-screen-y - 16.0 * math/sin(corrected-estimate[3]), stroke: "#ffe1ef", stroke-width: 1.5, line-cap: "round", opacity: 1, rotation: 0, origin-x: 0, origin-y: 0}
   )
@@ -511,6 +537,5 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
     texts: scene-text
   }
 
-  drive-phase-index = next-drive-phase-index
   @scene/replace <- field-presentation
   position-error

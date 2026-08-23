@@ -48,6 +48,8 @@ const state = {
   computeBridge: null,
   computeBridgeRefresh: null,
   computeBridgeGeneration: null,
+  computeBridgeBuildId: 0,
+  computeBridgeLifecycle: "absent",
   computeAdapter: undefined,
 };
 
@@ -734,6 +736,8 @@ function invalidateCooperativeOwnership() {
 function stopRuntime() {
   dismissInlineInspectors({ restoreFocus: false });
   state.running = false;
+  state.computeBridgeLifecycle = "stopped";
+  state.computeBridgeBuildId += 1;
   cancelFrame();
   state.computeBridge?.retire();
   state.computeBridge = null;
@@ -3858,12 +3862,7 @@ class DocumentComputeBridge {
     }
     const backend = controller.computeBackend();
     if (backend !== "wgpu") {
-      return new DocumentComputeBridge(controller, manifest, backend, null, null);
-    }
-    if (manifest.kernelKind !== "fixed-shape") {
-      throw new Error(
-        `document compute output sampling requires a fixed-shape kernel, got ${manifest.kernelKind}`,
-      );
+      return new DocumentComputeBridge(controller, manifest, backend, null);
     }
     const adapter = state.computeAdapter !== undefined
       ? state.computeAdapter
@@ -3873,66 +3872,17 @@ class DocumentComputeBridge {
     if (!adapter) {
       throw new Error("the document selected WebGPU but no compatible adapter is available");
     }
-    const bindingBytes = manifest.bindings.map(binding =>
-      Math.max(4, Number(binding.elements) * 4)
-    );
-    const readbackBytes = Math.max(
-      4,
-      manifest.outputs.reduce(
-        (total, output) => total + Number(output.elementsPerInstance) * 4,
-        0,
-      ) + (manifest.bindings.find(binding => binding.role === "integrity-fault")?.elements || 0) * 4,
-    );
-    const requiredLimits = {
-      maxStorageBuffersPerShaderStage: manifest.bindings.length,
-      maxComputeWorkgroupsPerDimension: Math.ceil(
-        manifest.dispatchElements / manifest.workgroupSize,
-      ),
-      maxStorageBufferBindingSize: Math.max(...bindingBytes, 4),
-      maxBufferSize: Math.max(...bindingBytes, readbackBytes, 4),
-    };
-    for (const [name, required] of Object.entries(requiredLimits)) {
-      if (!Number.isSafeInteger(required) || required <= 0) {
-        throw new Error(`Mech computed an invalid ${name} requirement: ${required}`);
-      }
-      const supported = Number(adapter.limits[name]);
-      if (!Number.isFinite(supported) || supported <= 0) {
-        throw new Error(`this WebGPU adapter does not report the required ${name} limit`);
-      }
-      if (required > supported) {
-        throw new Error(
-          `Mech requires ${required} for ${name}, but this adapter supports ${supported}`,
-        );
-      }
-    }
-    const device = await adapter.requestDevice({ requiredLimits });
-    const module = device.createShaderModule({ code: manifest.wgsl });
-    const compilation = await module.getCompilationInfo();
-    const errors = compilation.messages.filter(message => message.type === "error");
-    if (errors.length) {
-      throw new Error(errors.map(message => message.message).join("\n"));
-    }
-    const pipeline = device.createComputePipeline({
-      layout: "auto",
-      compute: { module, entryPoint: "main" },
-    });
-    const bridge = new DocumentComputeBridge(
-      controller,
-      manifest,
-      backend,
-      device,
-      pipeline,
-    );
-    bridge.createBuffers();
-    return bridge;
+    const resource = await globalThis.MechBrowserComputeDevice.create(manifest, adapter, []);
+    return new DocumentComputeBridge(controller, manifest, backend, resource);
   }
 
-  constructor(controller, manifest, backend, device, pipeline) {
+  constructor(controller, manifest, backend, resource) {
     this.controller = controller;
     this.manifest = manifest;
     this.backend = backend;
-    this.device = device;
-    this.pipeline = pipeline;
+    this.resource = resource;
+    this.device = resource?.device || null;
+    this.pipeline = resource?.pipeline || null;
     this.activeBuffer = 0;
     this.blocked = false;
     this.failure = null;
@@ -3940,7 +3890,14 @@ class DocumentComputeBridge {
     this.retired = false;
     this.generation = typeof controller.computeGeneration === "function"
       ? controller.computeGeneration()
-      : 0;
+      : "0";
+    this.device?.lost.then((info) => {
+      if (this.isCurrent()) {
+        const failure = new Error(`GPU device lost: ${info.message || info.reason || "unknown reason"}`);
+        failure.mechDeviceLost = true;
+        this.failure = failure;
+      }
+    });
     document.documentElement.dataset.mechComputeBackend = this.backend;
     document.documentElement.dataset.mechComputeInstances = String(
       this.manifest.dispatchElements,
@@ -3956,108 +3913,7 @@ class DocumentComputeBridge {
 
   retire() {
     this.retired = true;
-    for (const buffers of this.stateBuffers?.values() || []) {
-      buffers.forEach(buffer => buffer.destroy());
-    }
-    for (const buffer of this.fixedBuffers?.values() || []) {
-      buffer.destroy();
-    }
-    this.readback?.destroy();
-    this.device?.destroy();
-  }
-
-  createBuffers() {
-    this.stateBuffers = new Map();
-    for (const state of this.manifest.states) {
-      const buffers = [0, 1].map(() => this.device.createBuffer({
-        size: state.elements * Float32Array.BYTES_PER_ELEMENT,
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-      }));
-      this.device.queue.writeBuffer(buffers[0], 0, state.initialValues);
-      this.stateBuffers.set(state.slot, buffers);
-    }
-    this.fixedBuffers = new Map();
-    this.inputBindings = new Map();
-    for (const binding of this.manifest.bindings) {
-      if (binding.role === "state-read" || binding.role === "state-write") {
-        continue;
-      }
-      const buffer = this.device.createBuffer({
-        size: Math.max(4, binding.elements * 4),
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-      });
-      if (binding.initialValues) {
-        this.device.queue.writeBuffer(buffer, 0, binding.initialValues);
-      }
-      this.fixedBuffers.set(binding.binding, buffer);
-      if (binding.role === "input") {
-        this.inputBindings.set(binding.name, { binding, buffer });
-      }
-    }
-    this.bindGroups = [0, 1].map(sourceIndex => this.device.createBindGroup({
-      layout: this.pipeline.getBindGroupLayout(0),
-      entries: this.manifest.bindings.map(binding => ({
-        binding: binding.binding,
-        resource: { buffer: this.bufferForBinding(binding, sourceIndex) },
-      })),
-    }));
-    this.readbackPlan = [];
-    let byteLength = 0;
-    for (const output of this.manifest.outputs) {
-      const bytes = output.elementsPerInstance * 4;
-      this.readbackPlan.push({ output, offset: byteLength, bytes });
-      byteLength += bytes;
-    }
-    this.integrity = this.manifest.bindings.find(
-      binding => binding.role === "integrity-fault",
-    );
-    this.integrityOffset = this.integrity ? byteLength : null;
-    if (this.integrity) {
-      byteLength += this.integrity.elements * 4;
-    }
-    this.readbackBytes = Math.max(4, byteLength);
-    this.readback = this.device.createBuffer({
-      size: this.readbackBytes,
-      usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
-    });
-  }
-
-  bufferForBinding(binding, sourceIndex) {
-    if (binding.role === "state-read") {
-      return this.stateBuffers.get(binding.slot)[sourceIndex];
-    }
-    if (binding.role === "state-write") {
-      return this.stateBuffers.get(binding.slot)[1 - sourceIndex];
-    }
-    return this.fixedBuffers.get(binding.binding);
-  }
-
-  outputBuffer(index, output) {
-    if (this.stateBuffers.has(output.slot)) {
-      return this.stateBuffers.get(output.slot)[index];
-    }
-    const binding = this.manifest.bindings.find(
-      candidate => candidate.role === "output" && candidate.slot === output.slot,
-    );
-    if (!binding) {
-      throw new Error(`compute output ${output.name} has no physical buffer`);
-    }
-    return this.fixedBuffers.get(binding.binding);
-  }
-
-  applyInputs(command) {
-    for (const input of command.inputs) {
-      const target = this.inputBindings.get(input.name);
-      if (!target) {
-        throw new Error(`Mech wrote undeclared GPU input ${input.name}`);
-      }
-      if (input.values.length !== target.binding.elements) {
-        throw new Error(
-          `Mech wrote ${input.values.length} values to ${input.name}; expected ${target.binding.elements}`,
-        );
-      }
-      this.device.queue.writeBuffer(target.buffer, 0, input.values);
-    }
+    this.resource?.dispose();
   }
 
   publishCompletion(outputs) {
@@ -4096,99 +3952,46 @@ class DocumentComputeBridge {
     }
     if (
       command.acknowledgementRequired !== true ||
-      !Number.isSafeInteger(command.dispatchId) ||
-      command.dispatchId <= 0
+      typeof command.dispatchToken !== "string" ||
+      !/^[1-9][0-9]*:[1-9][0-9]*$/.test(command.dispatchToken)
     ) {
       throw new Error("the document compute command has no valid completion identity");
     }
-    this.applyInputs(command);
-    if (this.integrity) {
-      this.device.queue.writeBuffer(
-        this.fixedBuffers.get(this.integrity.binding),
-        0,
-        new Uint32Array([0, 0xffffffff]),
-      );
-    }
-    const outputIndex = 1 - this.activeBuffer;
-    const encoder = this.device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(this.pipeline);
-    pass.setBindGroup(0, this.bindGroups[this.activeBuffer]);
-    pass.dispatchWorkgroups(
-      Math.ceil(this.manifest.dispatchElements / this.manifest.workgroupSize),
-    );
-    pass.end();
-    for (const item of this.readbackPlan) {
-      encoder.copyBufferToBuffer(
-        this.outputBuffer(outputIndex, item.output),
-        0,
-        this.readback,
-        item.offset,
-        item.bytes,
-      );
-    }
-    if (this.integrity) {
-      encoder.copyBufferToBuffer(
-        this.fixedBuffers.get(this.integrity.binding),
-        0,
-        this.readback,
-        this.integrityOffset,
-        this.integrity.elements * 4,
-      );
-    }
-    this.device.queue.submit([encoder.finish()]);
+    this.resource.setRequestedOutputs(command.requestedOutputs || []);
+    const { outputIndex } = this.resource.submit(command, this.activeBuffer);
     this.blocked = true;
-    this.finish(command.dispatchId, outputIndex);
+    this.finish(command.dispatchToken, outputIndex);
   }
 
-  async finish(dispatchId, outputIndex) {
+  async finish(dispatchToken, outputIndex) {
     try {
-      await this.device.queue.onSubmittedWorkDone();
-      await this.readback.mapAsync(GPUMapMode.READ, 0, this.readbackBytes);
-      const mapped = this.readback.getMappedRange(0, this.readbackBytes);
-      if (this.integrity) {
-        const words = new Uint32Array(
-          mapped,
-          this.integrityOffset,
-          this.integrity.elements,
-        );
-        if (words[0] !== 0) {
-          const packed = words[1];
-          const code = packed & 0xff;
-          const instance = packed >>> 8;
-          const constraint = (this.manifest.constraints || [])
-            .find(candidate => candidate.code === code);
-          this.readback.unmap();
-          if (this.isCurrent()) {
-            this.controller.rejectIntegrityComputeCommand(
-              dispatchId,
-              constraint?.name || String(code),
-              instance,
-            );
-          }
-          return;
+      const { outputs, integrity } = await this.resource.finish();
+      if (integrity) {
+        if (this.isCurrent()) {
+          this.controller.rejectIntegrityComputeCommand(
+            dispatchToken,
+            integrity.constraint,
+            integrity.instance,
+          );
         }
+        return;
       }
-      const outputs = this.readbackPlan.map(({ output, offset, bytes }) => ({
-        name: output.name,
-        values: Float32Array.from(new Float32Array(mapped, offset, bytes / 4)),
-      }));
-      this.readback.unmap();
       if (this.isCurrent()) {
-        this.controller.completeComputeCommand(dispatchId, outputs);
+        if (outputs.length) {
+          this.controller.completeComputeCommand(dispatchToken, outputs);
+        } else {
+          this.controller.acknowledgeComputeCommand(dispatchToken);
+        }
         this.activeBuffer = outputIndex;
         this.publishCompletion(outputs);
       }
     } catch (error) {
-      if (this.readback.mapState === "mapped") {
-        this.readback.unmap();
-      }
       try {
         if (!this.isCurrent()) {
           return;
         }
         this.controller.rejectComputeCommand(
-          dispatchId,
+          dispatchToken,
           error instanceof Error ? error.message : String(error),
         );
       } catch (rejectionError) {
@@ -4205,7 +4008,7 @@ function refreshDocumentComputeBridge() {
   const bridge = state.computeBridge;
   const generation = typeof state.document?.computeGeneration === "function"
     ? state.document.computeGeneration()
-    : 0;
+    : "0";
   if (
     state.computeBridgeRefresh ||
     (state.computeBridgeGeneration === generation && (!bridge || bridge.isCurrent()))
@@ -4214,18 +4017,42 @@ function refreshDocumentComputeBridge() {
   }
   bridge?.retire();
   state.computeBridge = null;
-  state.computeBridgeRefresh = DocumentComputeBridge.create(state.document)
+  const buildId = ++state.computeBridgeBuildId;
+  const controller = state.document;
+  state.computeBridgeLifecycle = "building";
+  const refresh = createDocumentComputeBridgeWithFallback(controller)
     .then(next => {
+      const currentGeneration = typeof controller?.computeGeneration === "function"
+        ? controller.computeGeneration()
+        : "0";
+      if (
+        buildId !== state.computeBridgeBuildId ||
+        controller !== state.document ||
+        state.computeBridgeLifecycle === "stopped" ||
+        next?.generation !== currentGeneration
+      ) {
+        next?.retire();
+        return;
+      }
       state.computeBridge = next;
-      state.computeBridgeGeneration = generation;
+      state.computeBridgeGeneration = typeof controller?.computeGeneration === "function"
+        ? controller.computeGeneration()
+        : generation;
+      state.computeBridgeLifecycle = "ready";
     })
-    .catch(showFatalError)
+    .catch(error => {
+      if (buildId === state.computeBridgeBuildId) {
+        state.computeBridgeLifecycle = "fatal";
+        showFatalError(error);
+      }
+    })
     .finally(() => {
-      state.computeBridgeRefresh = null;
-      if (state.running) {
+      if (state.computeBridgeRefresh === refresh) state.computeBridgeRefresh = null;
+      if (state.running && buildId === state.computeBridgeBuildId) {
         state.animationFrame = requestAnimationFrame(frame);
       }
     });
+  state.computeBridgeRefresh = refresh;
   return true;
 }
 
@@ -4238,7 +4065,19 @@ function frame() {
       return;
     }
     if (state.computeBridge?.failure) {
-      throw state.computeBridge.failure;
+      const failure = state.computeBridge.failure;
+      const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
+      if (failure.mechDeviceLost && requestedBackend === "auto") {
+        state.computeBridge.failure = null;
+        state.computeBridge.retire();
+        state.computeBridge = null;
+        state.computeAdapter = null;
+        window.__MECH_GPU_AVAILABLE = false;
+        state.document.fallbackComputeToCpu();
+        refreshDocumentComputeBridge();
+        return;
+      }
+      throw failure;
     }
     if (state.computeBridge?.blocked) {
       state.animationFrame = requestAnimationFrame(frame);
@@ -4318,23 +4157,25 @@ function constructDocumentController(WasmDocument, documentSources) {
   return WasmDocument.fromEncoded(state.initialEncoded);
 }
 
-async function createDocumentComputeBridgeWithFallback(WasmDocument, documentSources) {
+async function createDocumentComputeBridgeWithFallback(controller = state.document) {
   try {
-    return await DocumentComputeBridge.create(state.document);
+    return await DocumentComputeBridge.create(controller);
   } catch (error) {
     const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
-    if (requestedBackend !== "auto" || state.document.computeBackend() !== "wgpu") {
+    if (requestedBackend !== "auto" || controller.computeBackend() !== "wgpu") {
       throw error;
-    }
-    try {
-      state.document.stop();
-    } catch (_stopError) {
-      // The provisional runtime never started; stopping is best-effort.
     }
     state.computeAdapter = null;
     window.__MECH_GPU_AVAILABLE = false;
-    state.document = constructDocumentController(WasmDocument, documentSources);
-    const bridge = await DocumentComputeBridge.create(state.document);
+    if (typeof controller.fallbackComputeToCpu !== "function") {
+      throw new Error(
+        "automatic WebGPU fallback requires a browser runtime that can rebuild the accepted generation",
+        { cause: error },
+      );
+    }
+    state.computeBridgeLifecycle = "falling-back";
+    controller.fallbackComputeToCpu();
+    const bridge = await DocumentComputeBridge.create(controller);
     if (bridge?.backend === "wgpu") {
       throw error;
     }
@@ -4377,13 +4218,17 @@ async function main() {
       "the browser WASM build does not include the document-backed resident REPL host",
     );
   }
-  state.computeBridge = await createDocumentComputeBridgeWithFallback(
-    WasmDocument,
-    documentSources,
-  );
+  state.computeBridgeLifecycle = "building";
+  const initialBuildId = ++state.computeBridgeBuildId;
+  state.computeBridge = await createDocumentComputeBridgeWithFallback(state.document);
+  if (initialBuildId !== state.computeBridgeBuildId) {
+    state.computeBridge?.retire();
+    return;
+  }
+  state.computeBridgeLifecycle = "ready";
   state.computeBridgeGeneration = typeof state.document.computeGeneration === "function"
     ? state.document.computeGeneration()
-    : 0;
+    : "0";
   state.repl = {
     invoke: source => state.document.replInvoke(source),
     continueStep: (count, requestId) => state.document.replContinueStep(count, requestId),

@@ -754,7 +754,12 @@ impl MechServer {
             full_address,
             stylesheet,
             html_shim,
-            include_str!("../include/project.js").to_string(),
+            concat!(
+                include_str!("../include/browser-compute.js"),
+                "\n",
+                include_str!("../include/project.js")
+            )
+            .to_string(),
             wasm,
             js,
             authority,

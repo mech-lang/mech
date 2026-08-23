@@ -12,10 +12,18 @@ pub(crate) static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm
 pub(crate) static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
 
 #[cfg(has_file_project_js)]
-pub(crate) static PROJECTJS: &str = include_str!("../../include/project.js");
+pub(crate) static PROJECTJS: &str = concat!(
+    include_str!("../../include/browser-compute.js"),
+    "\n",
+    include_str!("../../include/project.js")
+);
 
 #[cfg(has_file_document_js)]
-pub(crate) static DOCUMENTJS: &str = include_str!("../../include/document.js");
+pub(crate) static DOCUMENTJS: &str = concat!(
+    include_str!("../../include/browser-compute.js"),
+    "\n",
+    include_str!("../../include/document.js")
+);
 
 #[cfg(has_file_shim)]
 pub(crate) static SHIMHTML: &str = include_str!("../../include/index.html");

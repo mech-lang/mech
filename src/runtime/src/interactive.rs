@@ -396,6 +396,22 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
         self.replace_source_preserving(candidate_source, &std::collections::BTreeSet::new())
     }
 
+    /// Rebuild the currently accepted program through the normal candidate
+    /// handoff while preserving compatible resident state.
+    ///
+    /// Hosts use this when an execution backend becomes unavailable after the
+    /// source generation was accepted. Rebuilding the accepted tree avoids
+    /// falling back to an initial document snapshot and keeps the replacement
+    /// on the same source/state generation.
+    pub fn rebuild_runtime_preserving_state(&mut self) -> MResult<RuntimeValueSnapshot> {
+        let source = self.source.clone();
+        let unchanged = std::collections::BTreeSet::new();
+        match self.source_tree.clone() {
+            Some(tree) => self.replace_source_tree_preserving(source, tree, &unchanged),
+            None => self.replace_source_preserving(source, &unchanged),
+        }
+    }
+
     fn replace_source_preserving(
         &mut self,
         candidate_source: String,

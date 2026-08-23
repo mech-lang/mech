@@ -1603,9 +1603,8 @@ fn compute_initializers(
 
 #[cfg(feature = "compute")]
 fn narrow_compute_input_f64(port: &str, value: f64) -> MResult<f32> {
-    let narrowed = value as f32;
-    if value.is_finite() && !narrowed.is_finite() {
-        return Err(MechError::new(
+    mech_compute::narrow_compute_f64(value).map_err(|value| {
+        MechError::new(
             RuntimeInvalidOperationError {
                 operation: "compile_mixed_program",
                 reason: format!(
@@ -1613,9 +1612,8 @@ fn narrow_compute_input_f64(port: &str, value: f64) -> MResult<f32> {
                 ),
             },
             None,
-        ));
-    }
-    Ok(narrowed)
+        )
+    })
 }
 
 /// Preserve caller order for independent roots while promoting any requested

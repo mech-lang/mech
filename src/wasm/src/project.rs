@@ -384,7 +384,7 @@ struct SourceBackedDocumentBootstrap {
 struct DocumentRuntimeLifecycle {
     drivers_started: Rc<Cell<bool>>,
     #[cfg(feature = "browser_compute")]
-    compute_generation: Rc<Cell<u32>>,
+    compute_generation: Rc<Cell<u64>>,
     #[cfg(feature = "browser_host_scene")]
     scenes: Rc<RefCell<BrowserSceneRegistry>>,
     #[cfg(feature = "browser_host_scene")]
@@ -432,8 +432,16 @@ impl DocumentRuntimeLifecycle {
     }
 
     #[cfg(feature = "browser_compute")]
-    fn compute_generation(&self) -> u32 {
+    fn compute_generation(&self) -> u64 {
         self.compute_generation.get()
+    }
+
+    #[cfg(feature = "browser_compute")]
+    fn next_compute_generation(&self) -> MResult<u64> {
+        self.compute_generation
+            .get()
+            .checked_add(1)
+            .ok_or_else(|| document_runtime_error("browser compute generation space exhausted"))
     }
 
     #[cfg(feature = "browser_compute")]
@@ -443,9 +451,19 @@ impl DocumentRuntimeLifecycle {
 
     #[cfg(feature = "browser_compute")]
     fn commit_compute(&self) {
-        *self.compute.borrow_mut() = self.pending_compute.borrow_mut().take();
-        self.compute_generation
-            .set(self.compute_generation.get().wrapping_add(1));
+        let next = self
+            .compute_generation
+            .get()
+            .checked_add(1)
+            .expect("compute generation exhaustion is rejected while preparing the runtime");
+        let pending = self.pending_compute.borrow_mut().take();
+        debug_assert!(
+            pending
+                .as_ref()
+                .is_none_or(|bridge| bridge.generation() == next)
+        );
+        *self.compute.borrow_mut() = pending;
+        self.compute_generation.set(next);
     }
 
     #[cfg(feature = "browser_compute")]
@@ -675,6 +693,7 @@ fn build_document_repl_runtime_for_tree(
                     &document,
                     prepared,
                     browser_gpu_available(),
+                    source.lifecycle.next_compute_generation()?,
                 )?)
             } else {
                 None
@@ -1318,65 +1337,101 @@ mod document {
 
         #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = computeGeneration)]
-        pub fn compute_generation(&self) -> u32 {
-            self.bootstrap.source().lifecycle.compute_generation()
+        pub fn compute_generation(&self) -> String {
+            self.bootstrap
+                .source()
+                .lifecycle
+                .compute_generation()
+                .to_string()
+        }
+
+        /// Rebuild the accepted source generation after the browser has
+        /// withdrawn WebGPU availability. Compatible resident state is
+        /// migrated through the ordinary runtime handoff, so auto fallback
+        /// never reconstructs an obsolete initial document.
+        #[cfg(feature = "browser_compute")]
+        #[wasm_bindgen(js_name = fallbackComputeToCpu)]
+        pub fn fallback_compute_to_cpu(&mut self) -> Result<(), JsValue> {
+            if self.compute_backend() != mech_compute::WGPU_BACKEND {
+                return Ok(());
+            }
+            self.repl
+                .session
+                .rebuild_runtime_preserving_state()
+                .map_err(to_js_error)?;
+            self.refresh_document_output_ordinals()
+                .map_err(to_js_error)?;
+            if self.compute_backend() == mech_compute::WGPU_BACKEND {
+                return Err(js_error(
+                    "browser compute fallback rebuilt the accepted generation with WebGPU still selected",
+                ));
+            }
+            Ok(())
         }
 
         #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = acknowledgeComputeCommand)]
-        pub fn acknowledge_compute_command(&self, dispatch_id: u32) -> Result<(), JsValue> {
-            self.bootstrap
+        pub fn acknowledge_compute_command(&self, dispatch_token: &str) -> Result<(), JsValue> {
+            let bridge = self
+                .bootstrap
                 .source()
                 .lifecycle
                 .compute()
-                .ok_or_else(|| js_error("document has no compute region"))?
-                .acknowledge(dispatch_id)
+                .ok_or_else(|| js_error("document has no compute region"))?;
+            let token = bridge.validate_token(dispatch_token)?;
+            bridge.acknowledge(token)
         }
 
         #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = completeComputeCommand)]
         pub fn complete_compute_command(
             &self,
-            dispatch_id: u32,
+            dispatch_token: &str,
             outputs: Array,
         ) -> Result<(), JsValue> {
-            self.bootstrap
+            let bridge = self
+                .bootstrap
                 .source()
                 .lifecycle
                 .compute()
-                .ok_or_else(|| js_error("document has no compute region"))?
-                .complete(dispatch_id, completed_outputs_from_js(outputs)?)
+                .ok_or_else(|| js_error("document has no compute region"))?;
+            let token = bridge.validate_token(dispatch_token)?;
+            bridge.complete(token, completed_outputs_from_js(outputs)?)
         }
 
         #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = rejectComputeCommand)]
         pub fn reject_compute_command(
             &self,
-            dispatch_id: u32,
+            dispatch_token: &str,
             reason: &str,
         ) -> Result<(), JsValue> {
-            self.bootstrap
+            let bridge = self
+                .bootstrap
                 .source()
                 .lifecycle
                 .compute()
-                .ok_or_else(|| js_error("document has no compute region"))?
-                .reject(dispatch_id, reason)
+                .ok_or_else(|| js_error("document has no compute region"))?;
+            let token = bridge.validate_token(dispatch_token)?;
+            bridge.reject(token, reason)
         }
 
         #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = rejectIntegrityComputeCommand)]
         pub fn reject_integrity_compute_command(
             &self,
-            dispatch_id: u32,
+            dispatch_token: &str,
             constraint: &str,
             instance: u32,
         ) -> Result<(), JsValue> {
-            self.bootstrap
+            let bridge = self
+                .bootstrap
                 .source()
                 .lifecycle
                 .compute()
-                .ok_or_else(|| js_error("document has no compute region"))?
-                .reject_integrity(dispatch_id, constraint, instance)
+                .ok_or_else(|| js_error("document has no compute region"))?;
+            let token = bridge.validate_token(dispatch_token)?;
+            bridge.reject_integrity(token, constraint, instance)
         }
 
         pub fn frame(&mut self, max_inputs: usize) -> Result<JsValue, JsValue> {
@@ -3294,6 +3349,35 @@ phase"#;
         );
     }
 
+    #[cfg(feature = "browser_compute")]
+    #[test]
+    fn accepted_generation_rebuild_preserves_source_and_resident_state() {
+        let tree = mech_syntax::parser::parse("~answer := 0\nanswer += 41\nanswer").unwrap();
+        let encoded = mech_core::nodes::compress_and_encode(&tree).unwrap();
+        let mut document = WasmDocument::from_encoded(&encoded).unwrap();
+        document.repl.session.submit("answer += 1").unwrap();
+        let accepted_source = document.repl.session.source().to_owned();
+        let generation = document.compute_generation();
+
+        document
+            .repl
+            .session
+            .rebuild_runtime_preserving_state()
+            .unwrap();
+
+        assert_eq!(document.repl.session.source(), accepted_source);
+        assert_eq!(
+            document
+                .runtime()
+                .unwrap()
+                .root_symbol_value("answer")
+                .unwrap()
+                .to_string(),
+            "42",
+        );
+        assert_ne!(document.compute_generation(), generation);
+    }
+
     #[test]
     fn selecting_a_large_document_value_is_runtime_local_until_ans_is_consumed() {
         let tree =
@@ -4260,7 +4344,8 @@ rows := |id<string> x<f64>|
             let prepared =
                 crate::mixed_compute::prepare_compute_region(&mut compiler, &tree, 0.0, 0.0)
                     .unwrap();
-            let command = crate::mixed_compute::ComputeCommandHandle::new(prepared.region.clone());
+            let command =
+                crate::mixed_compute::ComputeCommandHandle::new(prepared.region.clone(), 1);
             let registry = crate::mixed_compute::browser_compute_backend_registry(
                 command.clone(),
                 crate::mixed_compute::BrowserOutputHandle::default(),

@@ -352,6 +352,19 @@ def main() -> None:
             expected_backend = "wgpu" if args.backend in ("auto", "gpu") else "cpu-scalar"
             if f'data-mech-compute-backend="{expected_backend}"' not in dom:
                 fail(f"page did not select {expected_backend} compute; artifacts: {work}")
+            if expected_backend == "wgpu":
+                marker = 'data-mech-gpu-smoke-max-completions-in-flight="1"'
+                if marker not in dom:
+                    fail(f"delayed GPU completion overlapped another dispatch; artifacts: {work}")
+                for name in ("delayed-completions", "pending-observations"):
+                    marker = f'data-mech-gpu-smoke-{name}="'
+                    if marker not in dom:
+                        fail(f"delayed completion evidence {name} is missing; artifacts: {work}")
+                    value = int(dom.split(marker, 1)[1].split('"', 1)[0])
+                    if value < 3:
+                        fail(f"delayed completion evidence {name} was only {value}; artifacts: {work}")
+                if 'data-mech-gpu-smoke-readback-bytes="0"' not in dom:
+                    fail(f"report-only elementwise dispatch copied output data to the CPU; artifacts: {work}")
             print("Compute particle browser smoke passed")
             print(f"browser: {browser}")
             print(f"backend: {expected_backend}")

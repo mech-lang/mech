@@ -2251,7 +2251,7 @@ fn generate_wgsl(
 #[cfg(feature = "native")]
 mod native {
     use std::{
-        collections::BTreeMap,
+        collections::{BTreeMap, BTreeSet},
         sync::{Arc, mpsc},
         time::{Duration, Instant},
     };
@@ -2275,6 +2275,7 @@ mod native {
         input_buffers: BTreeMap<CellSlotId, Arc<wgpu::Buffer>>,
         output_buffers: [BTreeMap<CellSlotId, Arc<wgpu::Buffer>>; 2],
         output_elements: BTreeMap<CellSlotId, usize>,
+        output_elements_per_instance: BTreeMap<CellSlotId, usize>,
         constraints: Box<[super::BatchedConstraint]>,
         integrity_fault: Option<Arc<wgpu::Buffer>>,
         integrity_readback: Option<wgpu::Buffer>,
@@ -2507,6 +2508,11 @@ mod native {
                 .iter()
                 .map(|state| (state.slot, state.shape.elements() * self.instances as usize))
                 .collect();
+            let output_elements_per_instance = self
+                .states
+                .iter()
+                .map(|state| (state.slot, state.shape.elements()))
+                .collect();
             Ok(BatchedResidentGpuSession {
                 adapter: adapter_name,
                 device,
@@ -2516,6 +2522,7 @@ mod native {
                 input_buffers,
                 output_buffers,
                 output_elements,
+                output_elements_per_instance,
                 constraints: self.constraints.clone().into_boxed_slice(),
                 integrity_fault,
                 integrity_readback,
@@ -2695,7 +2702,7 @@ mod native {
             let group = self.last_output_group.ok_or_else(|| {
                 BatchedExecutionError::Native("no batch turns have run".to_owned())
             })?;
-            self.read_state_group(group)
+            self.read_state_group(group, None, false)
         }
 
         /// Reads the currently published state, including the initial state or
@@ -2703,12 +2710,25 @@ mod native {
         pub fn read_published_state(
             &self,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
-            self.read_state_group(1 - self.next_group)
+            self.read_state_group(1 - self.next_group, None, false)
+        }
+
+        /// Reads lane zero for only the selected published state buffers.
+        /// This is the physical sampling boundary used by resident hosts: the
+        /// full outer batch never crosses from device memory to the CPU.
+        pub fn read_published_samples(
+            &self,
+            slots: &BTreeSet<CellSlotId>,
+        ) -> Result<BTreeMap<CellSlotId, Vec<f32>>, BatchedExecutionError> {
+            self.read_state_group(1 - self.next_group, Some(slots), true)
+                .map(|(_, state)| state)
         }
 
         fn read_state_group(
             &self,
             group: usize,
+            selected: Option<&BTreeSet<CellSlotId>>,
+            sample_first_lane: bool,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let started = Instant::now();
             let mut encoder = self
@@ -2718,7 +2738,15 @@ mod native {
                 });
             let mut readbacks = Vec::new();
             for (slot, buffer) in &self.output_buffers[group] {
-                let size = (self.output_elements[slot] * std::mem::size_of::<f32>()) as u64;
+                if selected.is_some_and(|selected| !selected.contains(slot)) {
+                    continue;
+                }
+                let elements = if sample_first_lane {
+                    self.output_elements_per_instance[slot]
+                } else {
+                    self.output_elements[slot]
+                };
+                let size = (elements * std::mem::size_of::<f32>()) as u64;
                 let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech fixed-shape batch readback"),
                     size,

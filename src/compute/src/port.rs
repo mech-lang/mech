@@ -33,6 +33,19 @@ pub enum TensorLayout {
     ColumnMajor,
 }
 
+/// The single host-to-compute numeric narrowing boundary.
+///
+/// Existing non-finite values retain IEEE semantics. A finite f64 that would
+/// become an infinity is rejected rather than silently changing meaning.
+pub fn narrow_compute_f64(value: f64) -> Result<f32, f64> {
+    let narrowed = value as f32;
+    if value.is_finite() && !narrowed.is_finite() {
+        Err(value)
+    } else {
+        Ok(narrowed)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputePort {
     pub id: ComputePortId,
@@ -118,10 +131,11 @@ impl ComputePort {
     /// Normalizes either one inner value or an outer batch of inner values.
     ///
     /// The source language only owns ordinary scalar and matrix values, so a
-    /// coordinator may express a scalar batch as a row/column matrix rather
-    /// than a rank-one tensor. Batch admission therefore follows element
-    /// count, while the returned compute value has the canonical
-    /// `[instances, ..inner_dimensions]` row-major shape.
+    /// coordinator may express a scalar batch as a row/column matrix and a
+    /// matrix batch as one row of flattened inner elements per instance. The
+    /// outer lane axis is nevertheless structural: values with the same total
+    /// element count but a transposed or unrelated shape are rejected before
+    /// storage is relabeled as `[instances, ..inner_dimensions]`.
     pub fn normalize_broadcast_value(
         &self,
         value: ComputeValue,
@@ -157,6 +171,34 @@ impl ComputePort {
             return Err(ComputeValueError::DimensionMismatch {
                 port: self.name.clone(),
                 expected: expected_dimensions.into_boxed_slice(),
+                actual: dimensions,
+            });
+        }
+        let mut canonical_dimensions = Vec::from(self.dimensions.as_ref());
+        canonical_dimensions.insert(0, instances as u64);
+        let shape_is_canonical = dimensions.as_ref() == canonical_dimensions.as_slice();
+        let shape_is_matrix_projection = !self.dimensions.is_empty()
+            && dimensions.as_ref() == [instances as u64, inner_elements as u64];
+        let shape_is_scalar_batch = self.dimensions.is_empty()
+            && matches!(
+                dimensions.as_ref(),
+                [extent] if *extent == instances as u64
+            );
+        let shape_is_scalar_row_or_column = self.dimensions.is_empty()
+            && matches!(
+                dimensions.as_ref(),
+                [rows, columns]
+                    if (*rows == instances as u64 && *columns == 1)
+                        || (*rows == 1 && *columns == instances as u64)
+            );
+        if !shape_is_canonical
+            && !shape_is_matrix_projection
+            && !shape_is_scalar_batch
+            && !shape_is_scalar_row_or_column
+        {
+            return Err(ComputeValueError::DimensionMismatch {
+                port: self.name.clone(),
+                expected: canonical_dimensions.into_boxed_slice(),
                 actual: dimensions,
             });
         }
@@ -617,6 +659,150 @@ fn dimensions_elements(dimensions: &[u64]) -> Result<usize, ComputeValueError> {
             .checked_mul(extent)
             .ok_or(ComputeValueError::ElementCountOverflow)
     })
+}
+
+#[cfg(test)]
+mod broadcast_tests {
+    use super::*;
+
+    fn matrix_port() -> ComputePort {
+        ComputePort {
+            id: ComputePortId::new(0),
+            name: "control".into(),
+            slot: CellSlotId::new(0),
+            schema: SchemaId::new(0),
+            element: ComputeElementType::F32,
+            dimensions: vec![3, 1].into_boxed_slice(),
+        }
+    }
+
+    #[test]
+    fn matrix_batch_requires_the_outer_lane_axis() {
+        let port = matrix_port();
+        let (value, instances) = port
+            .normalize_broadcast_value(
+                ComputeValue::TensorF32 {
+                    dimensions: vec![2, 3].into_boxed_slice(),
+                    layout: TensorLayout::ColumnMajor,
+                    values: Arc::from([1.0, 4.0, 2.0, 5.0, 3.0, 6.0]),
+                },
+                Some(2),
+            )
+            .unwrap();
+        assert_eq!(instances, 2);
+        assert_eq!(
+            value,
+            ComputeValue::TensorF32 {
+                dimensions: vec![2, 3, 1].into_boxed_slice(),
+                layout: TensorLayout::RowMajor,
+                values: Arc::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
+            }
+        );
+
+        let transposed = port.normalize_broadcast_value(
+            ComputeValue::TensorF32 {
+                dimensions: vec![3, 2].into_boxed_slice(),
+                layout: TensorLayout::RowMajor,
+                values: Arc::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
+            },
+            Some(2),
+        );
+        assert!(matches!(
+            transposed,
+            Err(ComputeValueError::DimensionMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn canonical_ranked_batch_is_not_reinterpreted() {
+        let port = matrix_port();
+        let values: Arc<[f32]> = Arc::from([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+        let (value, instances) = port
+            .normalize_broadcast_value(
+                ComputeValue::TensorF32 {
+                    dimensions: vec![2, 3, 1].into_boxed_slice(),
+                    layout: TensorLayout::RowMajor,
+                    values: Arc::clone(&values),
+                },
+                Some(2),
+            )
+            .unwrap();
+        assert_eq!(instances, 2);
+        assert_eq!(
+            value,
+            ComputeValue::TensorF32 {
+                dimensions: vec![2, 3, 1].into_boxed_slice(),
+                layout: TensorLayout::RowMajor,
+                values,
+            }
+        );
+    }
+
+    #[test]
+    fn thousand_lane_matrix_shapes_are_unambiguous() {
+        let port = matrix_port();
+        let values = Arc::<[f32]>::from(vec![0.0; 3_000]);
+        for layout in [TensorLayout::RowMajor, TensorLayout::ColumnMajor] {
+            let (_, instances) = port
+                .normalize_broadcast_value(
+                    ComputeValue::TensorF32 {
+                        dimensions: vec![1_000, 3].into_boxed_slice(),
+                        layout,
+                        values: Arc::clone(&values),
+                    },
+                    Some(1_000),
+                )
+                .unwrap();
+            assert_eq!(instances, 1_000);
+        }
+        for dimensions in [vec![3, 1_000], vec![30, 100], vec![1_000, 2]] {
+            assert!(
+                port.normalize_broadcast_value(
+                    ComputeValue::TensorF32 {
+                        dimensions: dimensions.into_boxed_slice(),
+                        layout: TensorLayout::RowMajor,
+                        values: Arc::clone(&values),
+                    },
+                    Some(1_000),
+                )
+                .is_err()
+            );
+        }
+    }
+
+    #[test]
+    fn single_matrix_and_scalar_batches_keep_their_declared_axes() {
+        let matrix = matrix_port();
+        let (_, instances) = matrix
+            .normalize_broadcast_value(
+                ComputeValue::TensorF32 {
+                    dimensions: vec![3, 1].into_boxed_slice(),
+                    layout: TensorLayout::ColumnMajor,
+                    values: Arc::from([1.0, 2.0, 3.0]),
+                },
+                Some(1_000),
+            )
+            .unwrap();
+        assert_eq!(instances, 1);
+
+        let scalar = ComputePort {
+            dimensions: Box::new([]),
+            ..matrix_port()
+        };
+        for dimensions in [vec![1_000], vec![1_000, 1], vec![1, 1_000]] {
+            let (_, instances) = scalar
+                .normalize_broadcast_value(
+                    ComputeValue::TensorF32 {
+                        dimensions: dimensions.into_boxed_slice(),
+                        layout: TensorLayout::RowMajor,
+                        values: Arc::from(vec![1.0; 1_000]),
+                    },
+                    Some(1_000),
+                )
+                .unwrap();
+            assert_eq!(instances, 1_000);
+        }
+    }
 }
 
 fn slot_produced_by_nodes(

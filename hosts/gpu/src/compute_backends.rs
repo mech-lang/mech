@@ -732,10 +732,24 @@ impl ComputeSession for FixedWgpuSession {
         &mut self,
         selection: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        let (_, state) = self
-            .session
-            .read_published_state()
-            .map_err(|error| execution_error(&self.backend, "read outputs", error.to_string()))?;
+        let state = match selection {
+            ComputeOutputSelection::Samples(ports) => {
+                let slots = self
+                    .program
+                    .compute_program()
+                    .interface()
+                    .outputs
+                    .iter()
+                    .filter(|port| ports.contains(&port.id))
+                    .map(|port| port.slot)
+                    .collect();
+                self.session.read_published_samples(&slots)
+            }
+            ComputeOutputSelection::All | ComputeOutputSelection::Ports(_) => {
+                self.session.read_published_state().map(|(_, state)| state)
+            }
+        }
+        .map_err(|error| execution_error(&self.backend, "read outputs", error.to_string()))?;
         fixed_output_snapshot(&self.program, selection, &state)
             .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
     }
@@ -880,7 +894,9 @@ fn output_snapshot(
 ) -> Result<ComputeOutputSnapshot, String> {
     let selected = |port: &ComputePort| match selection {
         ComputeOutputSelection::All => true,
-        ComputeOutputSelection::Ports(ports) => ports.contains(&port.id),
+        ComputeOutputSelection::Ports(ports) | ComputeOutputSelection::Samples(ports) => {
+            ports.contains(&port.id)
+        }
     };
     let values = program
         .compute_program()
@@ -921,8 +937,11 @@ fn fixed_output_snapshot(
 ) -> Result<ComputeOutputSnapshot, String> {
     let selected = |port: &ComputePort| match selection {
         ComputeOutputSelection::All => true,
-        ComputeOutputSelection::Ports(ports) => ports.contains(&port.id),
+        ComputeOutputSelection::Ports(ports) | ComputeOutputSelection::Samples(ports) => {
+            ports.contains(&port.id)
+        }
     };
+    let sampled = matches!(selection, ComputeOutputSelection::Samples(_));
     let values = program
         .compute_program()
         .interface()
@@ -933,12 +952,28 @@ fn fixed_output_snapshot(
             let physical = state
                 .get(&port.slot)
                 .ok_or_else(|| format!("backend did not publish output `{}`", port.name))?;
-            let logical = fixed_column_major_to_row_major(
-                physical,
-                &port.dimensions,
-                program.instances() as usize,
-            )?;
-            let value = if port.dimensions.is_empty() && program.instances() == 1 {
+            let instances = if sampled {
+                1
+            } else {
+                program.instances() as usize
+            };
+            let elements = port
+                .elements()
+                .map_err(|error| format!("output `{}` has an invalid shape: {error}", port.name))?;
+            let physical = if sampled {
+                physical.get(..elements).ok_or_else(|| {
+                    format!(
+                        "backend returned {} elements for sampled output `{}`, expected at least {elements}",
+                        physical.len(),
+                        port.name,
+                    )
+                })?
+            } else {
+                physical.as_slice()
+            };
+            let logical =
+                fixed_column_major_to_row_major(physical, &port.dimensions, instances)?;
+            let value = if port.dimensions.is_empty() && instances == 1 {
                 let [value] = logical.as_slice() else {
                     return Err(format!(
                         "scalar output `{}` returned {} elements",
@@ -949,8 +984,8 @@ fn fixed_output_snapshot(
                 ComputeValue::ScalarF32(*value)
             } else {
                 let mut dimensions = Vec::from(port.dimensions.as_ref());
-                if program.instances() > 1 {
-                    dimensions.insert(0, u64::from(program.instances()));
+                if instances > 1 {
+                    dimensions.insert(0, instances as u64);
                 }
                 ComputeValue::TensorF32 {
                     dimensions: dimensions.into_boxed_slice(),
@@ -1026,7 +1061,7 @@ fn fixed_dispatch_report(
 
 fn compute_fault_evidence(fault: &BatchedIntegrityFault) -> ComputeFaultEvidence {
     ComputeFaultEvidence {
-        attempted_turn: fault.attempted_turn,
+        attempted_turn: u128::from(fault.attempted_turn),
         constraint: fault.constraint_name.clone(),
         detail: format!("candidate rejected at batch instance {}", fault.instance).into_boxed_str(),
     }
@@ -1053,6 +1088,7 @@ fn execution_error(
         backend: backend.clone(),
         operation,
         detail: detail.into(),
+        state_advanced: false,
     }
 }
 

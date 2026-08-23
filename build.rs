@@ -33,6 +33,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("cargo::rustc-check-cfg=cfg(has_file_js)");
     println!("cargo::rerun-if-changed=include/project.js");
     println!("cargo::rerun-if-changed=include/document.js");
+    println!("cargo::rerun-if-changed=include/browser-compute.js");
     println!("cargo::rerun-if-changed=include/index.html");
     println!("cargo::rerun-if-changed=include/style.css");
     println!("cargo::rerun-if-changed=include/mech-source.css");
