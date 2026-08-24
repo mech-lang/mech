@@ -24,11 +24,10 @@ use mech_engine::{
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostInstanceConfig, InMemorySourceResolver,
-    MAX_RESIDENT_STEP_COUNT, MechConfigDocument, MechEvent, MechEventBuffer, MechEventBus,
-    MechRuntime, ModuleBuildOptions, ResidentDurabilityPolicy, ResidentRouteFailure,
-    ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig, RuntimeBuilder,
-    RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute, SourceKind,
-    SourceRequest, SourceResolutionEntry, parse_config_document, validate_resident_step_count,
+    MechConfigDocument, MechEvent, MechEventBuffer, MechEventBus, MechRuntime, ModuleBuildOptions,
+    ResidentRouteFailure, ResidentRouteFailureClass, ResolvedSource, RunResourceGrantConfig,
+    RuntimeBuilder, RuntimeProgramExecutionInfo, RuntimeProgramLoadOutcome, RuntimeProgramRoute,
+    SourceKind, SourceRequest, SourceResolutionEntry, parse_config_document,
     validate_source_resolution_entries,
 };
 #[cfg(feature = "served_project_authority")]
@@ -366,12 +365,12 @@ pub(crate) enum WasmDocumentBootstrap {
 }
 
 #[derive(Clone)]
-struct DetachedDocumentBootstrap {
+pub(crate) struct DetachedDocumentBootstrap {
     source: SourceBackedDocumentBootstrap,
 }
 
 #[derive(Clone)]
-struct SourceBackedDocumentBootstrap {
+pub(crate) struct SourceBackedDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
     resolutions: Vec<SourceResolutionEntry>,
@@ -474,7 +473,7 @@ impl DocumentRuntimeLifecycle {
 
 #[cfg(feature = "served_project_authority")]
 #[derive(Clone)]
-struct ServedDocumentBootstrap {
+pub(crate) struct ServedDocumentBootstrap {
     source: SourceBackedDocumentBootstrap,
     config_source: String,
     authority: BrowserRuntimeInjectionConfig,
@@ -2585,7 +2584,6 @@ fn runtime_route_name(route: RuntimeProgramRoute) -> &'static str {
         RuntimeProgramRoute::None => "none",
         RuntimeProgramRoute::ResidentPure => "resident-pure",
         RuntimeProgramRoute::ResidentExternal => "resident-external",
-        _ => "invalid-production-route",
     }
 }
 

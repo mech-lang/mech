@@ -1,7 +1,6 @@
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
 #![allow(dead_code)]
-#![allow(warnings)]
 #![feature(where_clause_attrs)]
 
 #[cfg(feature = "matrix")]

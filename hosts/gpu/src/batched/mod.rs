@@ -892,6 +892,7 @@ impl FixedShapeKernel {
         })
     }
 
+    #[cfg(feature = "jit")]
     fn failed_packed_constraint(
         &self,
         packed: u64,

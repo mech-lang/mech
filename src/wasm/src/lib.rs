@@ -1,5 +1,3 @@
-#![allow(warnings)]
-
 #[cfg(all(
     feature = "browser_project_core",
     not(feature = "browser_host_console")

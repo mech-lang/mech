@@ -926,6 +926,7 @@ impl ComputeCommandHandle {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn take_command_data(&self) -> Result<Option<ComputeCommandData>, JsValue> {
         let mut state = self
             .state

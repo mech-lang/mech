@@ -232,7 +232,7 @@ enum WasmReplTransitionResult {
 pub struct WasmRepl {
     pub(crate) session: ResidentReplSession<WasmReplRuntimeFactory>,
     availability: ReplHostAvailability,
-    pub(crate) state: WasmReplState,
+    state: WasmReplState,
     pending_host_request: Option<ReplHostRequest>,
     host_request_generation: u64,
     active_host_request_id: Option<u64>,

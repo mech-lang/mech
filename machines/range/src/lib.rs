@@ -1,5 +1,4 @@
 #![cfg_attr(not(test), no_main)]
-#![allow(warnings)]
 #![feature(step_trait)]
 #![feature(where_clause_attrs)]
 

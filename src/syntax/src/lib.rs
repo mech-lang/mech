@@ -4,7 +4,6 @@
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
 #![allow(dead_code)]
-#![allow(warnings)]
 
 extern crate mech_core;
 #[cfg(feature = "no-std")]

@@ -1,14 +1,5 @@
-#![allow(warnings)]
-use std::{
-    env,
-    error::Error,
-    fs::{self, File},
-    io::Write,
-    path::Path,
-};
+use std::{error::Error, path::Path};
 extern crate winres;
-
-const SOURCE_DIR: &str = r"project";
 
 fn main() -> Result<(), Box<dyn Error>> {
     if cfg!(target_os = "windows") {
