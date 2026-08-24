@@ -4437,6 +4437,8 @@ def assert_disposal_retires_established_fullscreen():
   const pane = document.querySelector('[data-mech-console-pane]');
   const toggle = document.querySelector('button[data-mech-output-fullscreen]');
   const native = { active: false, exitCalls: 0 };
+  root.dataset.mechPresentation = 'output';
+  root.dataset.mechPresentationView = 'output';
   Object.defineProperty(document, 'fullscreenElement', {
     configurable: true,
     get: () => native.active ? pane : null,
@@ -4470,6 +4472,7 @@ def assert_disposal_retires_established_fullscreen():
     nativeActive: native.active,
     consoleMode: root?.dataset.mechConsoleMode,
     outputActive: root?.dataset.mechOutputFullscreenActive,
+    presentationView: root?.dataset.mechPresentationView,
     bodyActive: document.body.classList.contains('output-fullscreen'),
     consolePressed:
       document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed'),
@@ -4483,6 +4486,7 @@ def assert_disposal_retires_established_fullscreen():
         "nativeActive": False,
         "consoleMode": "docked",
         "outputActive": "false",
+        "presentationView": "workspace",
         "bodyActive": False,
         "consolePressed": "false",
         "outputPressed": "false",

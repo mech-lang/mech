@@ -3394,6 +3394,9 @@ function retireFullscreenVisualState() {
   if (state.root) {
     state.root.dataset.mechConsoleMode = "docked";
     state.root.dataset.mechOutputFullscreenActive = "false";
+    if (state.root.dataset.mechPresentation === "output") {
+      state.root.dataset.mechPresentationView = "workspace";
+    }
   }
   document.body.classList.remove("output-fullscreen");
   delete pane?.dataset.mechFullscreenFallback;
