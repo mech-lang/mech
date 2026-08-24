@@ -272,12 +272,9 @@ class BrowserComputeProject {
     this.installPointerInput();
     if (
       this.backend === 'wgpu' &&
-      (typeof this.controller.acknowledgeComputeCommand !== 'function' ||
-        typeof this.controller.rejectComputeCommand !== 'function' ||
-        (this.manifest.kernelKind === 'fixed-shape' &&
-          typeof this.controller.completeComputeCommand !== 'function'))
+      typeof this.controller.completeComputeCommand !== 'function'
     ) {
-      throw new Error('WASM build-profile mismatch: the WebGPU command acknowledgement API is unavailable');
+      throw new Error('WASM build-profile mismatch: the WebGPU completion API is unavailable');
     }
     this.controller.start();
     await this.device.queue.onSubmittedWorkDone();
@@ -515,7 +512,12 @@ class BrowserComputeProject {
   rejectWgpuCommand(dispatchToken, error) {
     const failure = error instanceof Error ? error : new Error(String(error));
     try {
-      this.controller.rejectComputeCommand(dispatchToken, failure.message);
+      this.controller.completeComputeCommand({
+        version: 1,
+        token: dispatchToken,
+        status: 'failed',
+        failure: { reason: failure.message },
+      });
     } catch (rejectionError) {
       const detail = rejectionError instanceof Error
         ? rejectionError.message
@@ -531,15 +533,22 @@ class BrowserComputeProject {
         if (this.stopped) return;
         try {
           if (integrity) {
-            this.controller.rejectIntegrityComputeCommand(
-              dispatchToken,
-              integrity.constraint,
-              integrity.instance,
-            );
-          } else if (outputs.length) {
-            this.controller.completeComputeCommand(dispatchToken, outputs);
+            this.controller.completeComputeCommand({
+              version: 1,
+              token: dispatchToken,
+              status: 'integrity-rejected',
+              integrity: {
+                constraint: integrity.constraint,
+                instance: integrity.instance,
+              },
+            });
           } else {
-            this.controller.acknowledgeComputeCommand(dispatchToken);
+            this.controller.completeComputeCommand({
+              version: 1,
+              token: dispatchToken,
+              status: 'completed',
+              outputs,
+            });
           }
           // A successful return is the resident host acknowledgement boundary,
           // not merely completion of the browser GPU promise.

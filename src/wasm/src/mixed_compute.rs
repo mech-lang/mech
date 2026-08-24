@@ -183,42 +183,9 @@ impl WasmMixedComputeProject {
         self.compute.take_command_value()
     }
 
-    #[wasm_bindgen(js_name = acknowledgeComputeCommand)]
-    pub fn acknowledge_compute_command(&self, dispatch_token: &str) -> Result<(), JsValue> {
-        let token = self.compute.validate_token(dispatch_token)?;
-        self.compute.acknowledge(token)
-    }
-
     #[wasm_bindgen(js_name = completeComputeCommand)]
-    pub fn complete_compute_command(
-        &self,
-        dispatch_token: &str,
-        outputs: Array,
-    ) -> Result<(), JsValue> {
-        let token = self.compute.validate_token(dispatch_token)?;
-        self.compute
-            .complete(token, completed_outputs_from_js(outputs)?)
-    }
-
-    #[wasm_bindgen(js_name = rejectComputeCommand)]
-    pub fn reject_compute_command(
-        &self,
-        dispatch_token: &str,
-        reason: &str,
-    ) -> Result<(), JsValue> {
-        let token = self.compute.validate_token(dispatch_token)?;
-        self.compute.reject(token, reason)
-    }
-
-    #[wasm_bindgen(js_name = rejectIntegrityComputeCommand)]
-    pub fn reject_integrity_compute_command(
-        &self,
-        dispatch_token: &str,
-        constraint: &str,
-        instance: u32,
-    ) -> Result<(), JsValue> {
-        let token = self.compute.validate_token(dispatch_token)?;
-        self.compute.reject_integrity(token, constraint, instance)
+    pub fn complete_compute_command(&self, completion: JsValue) -> Result<(), JsValue> {
+        complete_command_from_js(&self.compute, &completion)
     }
 
     #[wasm_bindgen(js_name = cpuOutput)]
@@ -238,9 +205,7 @@ impl WasmMixedComputeProject {
     }
 }
 
-pub(crate) fn completed_outputs_from_js(
-    outputs: Array,
-) -> Result<BTreeMap<String, Vec<f32>>, JsValue> {
+fn completed_outputs_from_js(outputs: Array) -> Result<BTreeMap<String, Vec<f32>>, JsValue> {
     let mut completed = BTreeMap::new();
     for value in outputs.iter() {
         let name = Reflect::get(&value, &JsValue::from_str("name"))?
@@ -318,29 +283,70 @@ impl BrowserComputeBridge {
         self.command.validate_token(token)
     }
 
-    pub(crate) fn acknowledge(&self, token: ComputeDispatchToken) -> Result<(), JsValue> {
-        self.command.acknowledge(token)
+    pub(crate) fn complete_command(&self, completion: &JsValue) -> Result<(), JsValue> {
+        complete_command_from_js(&self.command, completion)
     }
+}
 
-    pub(crate) fn complete(
-        &self,
-        token: ComputeDispatchToken,
-        outputs: BTreeMap<String, Vec<f32>>,
-    ) -> Result<(), JsValue> {
-        self.command.complete(token, outputs)
+fn complete_command_from_js(
+    command: &ComputeCommandHandle,
+    completion: &JsValue,
+) -> Result<(), JsValue> {
+    let version = Reflect::get(completion, &JsValue::from_str("version"))?
+        .as_f64()
+        .ok_or_else(|| error("compute completion is missing numeric version 1"))?;
+    if version != 1.0 {
+        return Err(error(format!(
+            "unsupported compute completion protocol version {version}"
+        )));
     }
-
-    pub(crate) fn reject(&self, token: ComputeDispatchToken, reason: &str) -> Result<(), JsValue> {
-        self.command.reject(token, reason)
-    }
-
-    pub(crate) fn reject_integrity(
-        &self,
-        token: ComputeDispatchToken,
-        constraint: &str,
-        instance: u32,
-    ) -> Result<(), JsValue> {
-        self.command.reject_integrity(token, constraint, instance)
+    let token = Reflect::get(completion, &JsValue::from_str("token"))?
+        .as_string()
+        .ok_or_else(|| error("compute completion is missing its dispatch token"))?;
+    let token = command.validate_token(&token)?;
+    let status = Reflect::get(completion, &JsValue::from_str("status"))?
+        .as_string()
+        .ok_or_else(|| error("compute completion is missing its status"))?;
+    match status.as_str() {
+        "completed" => {
+            let outputs = Reflect::get(completion, &JsValue::from_str("outputs"))?;
+            let outputs = if outputs.is_undefined() || outputs.is_null() {
+                Array::new()
+            } else if Array::is_array(&outputs) {
+                Array::from(&outputs)
+            } else {
+                return Err(error("completed compute outputs must be an array"));
+            };
+            command.complete(token, completed_outputs_from_js(outputs)?)
+        }
+        "integrity-rejected" => {
+            let integrity = Reflect::get(completion, &JsValue::from_str("integrity"))?;
+            let constraint = Reflect::get(&integrity, &JsValue::from_str("constraint"))?
+                .as_string()
+                .ok_or_else(|| error("integrity rejection is missing its constraint"))?;
+            let instance = Reflect::get(&integrity, &JsValue::from_str("instance"))?
+                .as_f64()
+                .filter(|value| {
+                    value.is_finite()
+                        && value.fract() == 0.0
+                        && *value >= 0.0
+                        && *value <= u32::MAX as f64
+                })
+                .ok_or_else(|| {
+                    error("integrity rejection instance must be an unsigned 32-bit integer")
+                })? as u32;
+            command.reject_integrity(token, &constraint, instance)
+        }
+        "failed" => {
+            let failure = Reflect::get(completion, &JsValue::from_str("failure"))?;
+            let reason = Reflect::get(&failure, &JsValue::from_str("reason"))?
+                .as_string()
+                .ok_or_else(|| error("failed compute completion is missing its reason"))?;
+            command.reject(token, &reason)
+        }
+        _ => Err(error(format!(
+            "unsupported compute completion status `{status}`"
+        ))),
     }
 }
 
@@ -1147,32 +1153,6 @@ impl ComputeCommandHandle {
                 "compute dispatch {token} does not belong to the active runtime command"
             ))),
         }
-    }
-
-    pub(crate) fn acknowledge(&self, token: ComputeDispatchToken) -> Result<(), JsValue> {
-        self.acknowledge_native(token).map_err(js_execution_error)
-    }
-
-    fn acknowledge_native(&self, token: ComputeDispatchToken) -> Result<(), ComputeExecutionError> {
-        let request = self.begin_completion(token)?;
-        if !request.outputs.is_empty() {
-            let required = request.outputs.len();
-            self.restore_claimed(request);
-            return Err(command_completion_error(format!(
-                "compute dispatch {token} requires {} output value(s)",
-                required
-            )));
-        }
-        let attempted_turn = request.logical_turn;
-        self.publish_completion(
-            request,
-            ComputeCompletionOutcome::Completed {
-                attempted_turn,
-                report: self.success_report()?,
-                snapshot: ComputeOutputSnapshot::default(),
-            },
-            false,
-        )
     }
 
     pub(crate) fn complete(
@@ -2530,7 +2510,7 @@ state
                 .queue_wgpu(&mut second_inputs, &ComputeDispatchRequest::default())
                 .is_err()
         );
-        compute.acknowledge(dispatch_token).unwrap();
+        compute.complete(dispatch_token, BTreeMap::new()).unwrap();
         compute
             .queue_wgpu(&mut second_inputs, &ComputeDispatchRequest::default())
             .unwrap();
@@ -2740,7 +2720,7 @@ state
         let claimed = compute.ensure_source_replacement_ready().unwrap_err();
         assert!(claimed.display_message().contains("claimed"));
 
-        compute.acknowledge(token).unwrap();
+        compute.complete(token, BTreeMap::new()).unwrap();
         assert!(compute.ensure_source_replacement_ready().is_ok());
     }
 
@@ -2763,7 +2743,7 @@ state
             .dispatch_token
             .unwrap();
 
-        assert!(compute.acknowledge_native(token).is_err());
+        assert!(compute.complete_native(token, BTreeMap::new()).is_err());
         assert!(matches!(
             compute.state.lock().unwrap().phase,
             ComputeCommandPhase::Terminal(_)

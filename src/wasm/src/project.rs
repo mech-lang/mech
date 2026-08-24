@@ -48,8 +48,7 @@ use serde::Deserialize;
 use crate::host::WasmBrowserDomBackend;
 #[cfg(feature = "browser_compute")]
 use crate::mixed_compute::{
-    BrowserComputeBridge, completed_outputs_from_js, prepare_browser_compute_host,
-    prepare_compute_region,
+    BrowserComputeBridge, prepare_browser_compute_host, prepare_compute_region,
 };
 
 #[wasm_bindgen]
@@ -1401,68 +1400,15 @@ mod document {
         }
 
         #[cfg(feature = "browser_compute")]
-        #[wasm_bindgen(js_name = acknowledgeComputeCommand)]
-        pub fn acknowledge_compute_command(&self, dispatch_token: &str) -> Result<(), JsValue> {
-            let bridge = self
-                .bootstrap
-                .source()
-                .lifecycle
-                .compute()
-                .ok_or_else(|| js_error("document has no compute region"))?;
-            let token = bridge.validate_token(dispatch_token)?;
-            bridge.acknowledge(token)
-        }
-
-        #[cfg(feature = "browser_compute")]
         #[wasm_bindgen(js_name = completeComputeCommand)]
-        pub fn complete_compute_command(
-            &self,
-            dispatch_token: &str,
-            outputs: Array,
-        ) -> Result<(), JsValue> {
+        pub fn complete_compute_command(&self, completion: JsValue) -> Result<(), JsValue> {
             let bridge = self
                 .bootstrap
                 .source()
                 .lifecycle
                 .compute()
                 .ok_or_else(|| js_error("document has no compute region"))?;
-            let token = bridge.validate_token(dispatch_token)?;
-            bridge.complete(token, completed_outputs_from_js(outputs)?)
-        }
-
-        #[cfg(feature = "browser_compute")]
-        #[wasm_bindgen(js_name = rejectComputeCommand)]
-        pub fn reject_compute_command(
-            &self,
-            dispatch_token: &str,
-            reason: &str,
-        ) -> Result<(), JsValue> {
-            let bridge = self
-                .bootstrap
-                .source()
-                .lifecycle
-                .compute()
-                .ok_or_else(|| js_error("document has no compute region"))?;
-            let token = bridge.validate_token(dispatch_token)?;
-            bridge.reject(token, reason)
-        }
-
-        #[cfg(feature = "browser_compute")]
-        #[wasm_bindgen(js_name = rejectIntegrityComputeCommand)]
-        pub fn reject_integrity_compute_command(
-            &self,
-            dispatch_token: &str,
-            constraint: &str,
-            instance: u32,
-        ) -> Result<(), JsValue> {
-            let bridge = self
-                .bootstrap
-                .source()
-                .lifecycle
-                .compute()
-                .ok_or_else(|| js_error("document has no compute region"))?;
-            let token = bridge.validate_token(dispatch_token)?;
-            bridge.reject_integrity(token, constraint, instance)
+            bridge.complete_command(&completion)
         }
 
         #[cfg(feature = "browser_host_scene")]

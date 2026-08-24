@@ -4039,7 +4039,12 @@ class DocumentComputeBridge {
     if (!this.priorDispatchToken) return;
     let rejected = false;
     try {
-      this.controller.acknowledgeComputeCommand(this.priorDispatchToken);
+      this.controller.completeComputeCommand({
+        version: 1,
+        token: this.priorDispatchToken,
+        status: "completed",
+        outputs: [],
+      });
     } catch (_error) {
       rejected = true;
     }
@@ -4138,11 +4143,15 @@ class DocumentComputeBridge {
       const { outputs, integrity } = await this.resource.finish(completion);
       if (integrity) {
         if (this.isCurrent()) {
-          this.controller.rejectIntegrityComputeCommand(
-            dispatchToken,
-            integrity.constraint,
-            integrity.instance,
-          );
+          this.controller.completeComputeCommand({
+            version: 1,
+            token: dispatchToken,
+            status: "integrity-rejected",
+            integrity: {
+              constraint: integrity.constraint,
+              instance: integrity.instance,
+            },
+          });
           // Integrity rejection is a matching terminal completion: the
           // candidate state was not published, but the host is reusable for
           // the next independent turn.
@@ -4151,11 +4160,12 @@ class DocumentComputeBridge {
         return;
       }
       if (this.isCurrent()) {
-        if (outputs.length) {
-          this.controller.completeComputeCommand(dispatchToken, outputs);
-        } else {
-          this.controller.acknowledgeComputeCommand(dispatchToken);
-        }
+        this.controller.completeComputeCommand({
+          version: 1,
+          token: dispatchToken,
+          status: "completed",
+          outputs,
+        });
         this.lifecycle.markAccepted(dispatchToken);
         this.activeBuffer = outputIndex;
         this.publishIdentity();
@@ -4166,10 +4176,14 @@ class DocumentComputeBridge {
         if (!this.isCurrent()) {
           return;
         }
-        this.controller.rejectComputeCommand(
-          dispatchToken,
-          error instanceof Error ? error.message : String(error),
-        );
+        this.controller.completeComputeCommand({
+          version: 1,
+          token: dispatchToken,
+          status: "failed",
+          failure: {
+            reason: error instanceof Error ? error.message : String(error),
+          },
+        });
       } catch (rejectionError) {
         this.failure = rejectionError;
       }
