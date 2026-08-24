@@ -394,6 +394,7 @@ def assert_style_layer_contract():
     [...document.querySelectorAll('style[data-mech-style-layer]')]
       .map(style => [style.dataset.mechStyleLayer, style])
   );
+  const expectedStyles = ['palette', 'source', 'mechdown', 'page', 'repl'];
   const token = document.querySelector(
     '[data-mech-source] .mech-number, [data-mech-source].mech-number'
   );
@@ -410,7 +411,9 @@ def assert_style_layer_contract():
   const consolePane = document.querySelector('.console-pane');
   const prompt = document.querySelector('.repl-prompt');
   if (
-    Object.keys(styles).length !== 4 || !token || !heading || !header ||
+    Object.keys(styles).length !== expectedStyles.length ||
+    !expectedStyles.every(layer => styles[layer]) ||
+    !token || !heading || !header ||
     !consolePane || !prompt
   ) return null;
 
@@ -419,10 +422,14 @@ def assert_style_layer_contract():
   const sourceColor = getComputedStyle(token).color;
   const headingFont = getComputedStyle(heading).fontFamily;
   const headingDisplay = getComputedStyle(heading).display;
-  const headingBefore = getComputedStyle(heading, '::before').content;
-  const subheadingBefore = subheading
-    ? getComputedStyle(subheading, '::before').content
+  const headingBeforeStyle = getComputedStyle(heading, '::before');
+  const subheadingBeforeStyle = subheading
+    ? getComputedStyle(subheading, '::before')
     : null;
+  const headingBefore = headingBeforeStyle.content;
+  const headingBeforeDisplay = headingBeforeStyle.display;
+  const subheadingBefore = subheadingBeforeStyle?.content ?? null;
+  const subheadingBeforeDisplay = subheadingBeforeStyle?.display ?? null;
   const abstractStyle = abstract ? {
     borderWidth: parseFloat(getComputedStyle(abstract).borderTopWidth),
     paddingLeft: parseFloat(getComputedStyle(abstract).paddingLeft),
@@ -503,13 +510,16 @@ def assert_style_layer_contract():
   await new Promise(resolve => requestAnimationFrame(resolve));
 
   return {
+    shim: document.documentElement.dataset.mechShim || '',
     sourceMarkup,
     sourceText,
     sourceColor,
     headingFont,
     headingDisplay,
     headingBefore,
+    headingBeforeDisplay,
     subheadingBefore,
+    subheadingBeforeDisplay,
     abstractStyle,
     headerPosition,
     consoleDisplay,
@@ -527,23 +537,25 @@ def assert_style_layer_contract():
 """)
     if layers is None:
         fail("independent style-layer contract could not inspect the rendered layers")
-    editorial_numbering = "blog" in label
+    quiet_sections = layers["shim"] == "docs"
     numbering_regressed = (
         (
+            layers["headingDisplay"] != "block" or
+            layers["headingBeforeDisplay"] != "none" or
+            layers["subheadingBeforeDisplay"] not in {None, "none"}
+        ) if quiet_sections else (
             layers["headingDisplay"] != "flex" or
+            layers["headingBeforeDisplay"] == "none" or
             "section " not in layers["headingBefore"].lower() or
             "mechdown-section" not in layers["headingBefore"] or
             (
                 layers["subheadingBefore"] is not None and
                 (
+                    layers["subheadingBeforeDisplay"] == "none" or
                     "mechdown-section" not in layers["subheadingBefore"] or
                     "mechdown-subsection" not in layers["subheadingBefore"]
                 )
             )
-        ) if editorial_numbering else (
-            layers["headingDisplay"] != "block" or
-            layers["headingBefore"] not in {"none", "normal"} or
-            layers["subheadingBefore"] not in {None, "none", "normal"}
         )
     )
     if (
@@ -571,8 +583,7 @@ def assert_style_layer_contract():
         layers["pageOff"]["consoleHeight"] <= layers["consoleHeight"] or
         abs(layers["pageOff"]["consoleWidth"] - layers["consoleWidth"]) > 1 or
         layers["pageOff"]["promptColor"] != layers["promptColor"] or
-        layers["mechdownOff"]["headingDisplay"] !=
-            ("flex" if editorial_numbering else "block") or
+        layers["mechdownOff"]["headingDisplay"] != "block" or
         layers["mechdownOff"]["headingFont"] == layers["headingFont"] or
         layers["mechdownOff"]["sourceColor"] != layers["sourceColor"] or
         layers["sourceOff"]["color"] == layers["sourceColor"] or
