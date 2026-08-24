@@ -85,10 +85,10 @@ the same camera and measurement path.
   scene-pointer-hit-raw := 484.0 - scene-pointer-camera-distance-square
   scene-pointer-hit-relu := (scene-pointer-hit-raw + (scene-pointer-hit-raw ^ 2) ^ 0.5) / 2.0
   scene-pointer-hit := scene-pointer-hit-relu - (scene-pointer-hit-relu - 1.0 + ((scene-pointer-hit-relu - 1.0) ^ 2) ^ 0.5) / 2.0
-  -- A release may arrive on a later resident turn before every downstream
-  -- pulse-history consumer has settled. Gate the activation by the pressed
-  -- phase as well as the monotonic edge so release/cancel can never toggle.
-  camera-toggle := scene-pointer-edge * scene-pointer-hit * scene-pointer-pressed
+  -- The scene host publishes pulse + position as one activation payload and
+  -- publishes release/cancel as level-only updates. This edge therefore
+  -- survives a coalesced quick click without being replayed by a later release.
+  camera-toggle := scene-pointer-edge * scene-pointer-hit
   next-camera-enabled := camera-enabled + camera-toggle * (1.0 - 2.0 * camera-enabled)
   camera-enabled = next-camera-enabled
   last-scene-pointer-pulse = scene-pointer-pulse

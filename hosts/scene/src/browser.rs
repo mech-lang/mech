@@ -275,11 +275,14 @@ impl mech_runtime::RuntimeHostFactory for BrowserSceneHostFactory {
         let pointer = self.registry.register(instance_name, parsed.clone())?;
         Ok(mech_runtime::RuntimeHostInstallation {
             interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(crate::SceneResourceProvider::new_with_settings(
-                instance_name,
-                BrowserSceneBackend::new(instance_name, self.registry.clone()),
-                parsed,
-            ))],
+            resource_providers: vec![Box::new(
+                crate::SceneResourceProvider::new_with_settings_and_pointer(
+                    instance_name,
+                    BrowserSceneBackend::new(instance_name, self.registry.clone()),
+                    parsed,
+                    pointer.clone(),
+                ),
+            )],
             input_drivers: vec![pointer.input_driver(instance_name)],
         })
     }

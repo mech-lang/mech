@@ -57,6 +57,9 @@ pub struct ScenePointerHandle {
 struct ScenePointerDriverState {
     ingress: Option<RuntimeIngress>,
     pulse: u64,
+    position: [f64; 2],
+    pressed: bool,
+    delta_seconds: f64,
     live: bool,
 }
 
@@ -83,22 +86,28 @@ impl ScenePointerHandle {
         // packet into one turn. Count activations, not raw state packets, so
         // the final released state cannot erase the click and a separately
         // drained release cannot activate the target twice.
-        if pressed {
-            state.pulse = state.pulse.saturating_add(1);
-        }
-        let pulse = state.pulse;
+        let pulse = if pressed {
+            state.pulse.saturating_add(1)
+        } else {
+            state.pulse
+        };
         let ingress = state
             .ingress
             .clone()
             .ok_or_else(|| scene_error("ScenePointer", "scene pointer input is not attached"))?;
-        drop(state);
-        ingress.submit(RuntimeHostInput::new(vec![
-            scene_pointer_update(
+        let mut updates = Vec::with_capacity(if pressed { 4 } else { 2 });
+        if pressed {
+            // Pulse and position form one activation payload. A release only
+            // changes the pointer level; republishing the activation payload
+            // would dirty click consumers a second time when release is
+            // drained separately. If down and up coalesce, the activation
+            // payload remains in the merged turn while the level ends at 0.
+            updates.push(scene_pointer_update(
                 &self.base_uri,
                 "pointer-pulse",
                 RuntimeHostInputValue::F64(pulse as f64),
-            )?,
-            scene_pointer_update(
+            )?);
+            updates.push(scene_pointer_update(
                 &self.base_uri,
                 "pointer-position",
                 RuntimeHostInputValue::F64Matrix {
@@ -106,18 +115,54 @@ impl ScenePointerHandle {
                     columns: 1,
                     values: vec![x, y],
                 },
-            )?,
-            scene_pointer_update(
-                &self.base_uri,
-                "pointer-pressed",
-                RuntimeHostInputValue::F64(f64::from(pressed)),
-            )?,
-            scene_pointer_update(
-                &self.base_uri,
-                "pointer-delta-seconds",
-                RuntimeHostInputValue::F64(delta_seconds),
-            )?,
-        ])?)
+            )?);
+        }
+        updates.push(scene_pointer_update(
+            &self.base_uri,
+            "pointer-pressed",
+            RuntimeHostInputValue::F64(f64::from(pressed)),
+        )?);
+        updates.push(scene_pointer_update(
+            &self.base_uri,
+            "pointer-delta-seconds",
+            RuntimeHostInputValue::F64(delta_seconds),
+        )?);
+        // The readable provider snapshot and queued packet are one accepted
+        // input transition. Keep the prior snapshot if ingress rejects the
+        // packet so a later turn cannot observe an activation that was never
+        // admitted to the resident queue.
+        ingress.submit(RuntimeHostInput::new(updates)?)?;
+        state.pulse = pulse;
+        state.position = [x, y];
+        state.pressed = pressed;
+        state.delta_seconds = delta_seconds;
+        Ok(())
+    }
+
+    fn value(&self, path: &str) -> MResult<LegacyValue> {
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| scene_error("ScenePointer", "pointer state lock is poisoned"))?;
+        match path {
+            "pointer-pulse" => RuntimeHostInputValue::F64(state.pulse as f64).into_mech_value(),
+            "pointer-position" => RuntimeHostInputValue::F64Matrix {
+                rows: 2,
+                columns: 1,
+                values: state.position.to_vec(),
+            }
+            .into_mech_value(),
+            "pointer-pressed" => {
+                RuntimeHostInputValue::F64(f64::from(state.pressed)).into_mech_value()
+            }
+            "pointer-delta-seconds" => {
+                RuntimeHostInputValue::F64(state.delta_seconds).into_mech_value()
+            }
+            _ => Err(scene_error(
+                "ScenePointer",
+                format!("unknown scene pointer path `{path}`"),
+            )),
+        }
     }
 
     pub fn input_driver(&self, instance: impl Into<String>) -> Box<dyn RuntimeHostInputDriver> {
@@ -219,6 +264,7 @@ impl SceneBackend for RecordingSceneBackend {
 pub struct SceneResourceProvider<B: SceneBackend> {
     instance: String,
     settings: SceneHostSettings,
+    pointer: ScenePointerHandle,
     backend: Arc<Mutex<B>>,
     last_accepted: Arc<Mutex<Option<SceneSnapshot>>>,
 }
@@ -236,9 +282,21 @@ impl<B: SceneBackend> SceneResourceProvider<B> {
         backend: B,
         settings: SceneHostSettings,
     ) -> Self {
+        let instance = instance.into();
+        let pointer = ScenePointerHandle::new(&instance);
+        Self::new_with_settings_and_pointer(instance, backend, settings, pointer)
+    }
+
+    pub(crate) fn new_with_settings_and_pointer(
+        instance: impl Into<String>,
+        backend: B,
+        settings: SceneHostSettings,
+        pointer: ScenePointerHandle,
+    ) -> Self {
         Self {
             instance: instance.into(),
             settings,
+            pointer,
             backend: Arc::new(Mutex::new(backend)),
             last_accepted: Arc::new(Mutex::new(None)),
         }
@@ -343,16 +401,7 @@ impl<B: SceneBackend> SceneResourceProvider<B> {
                 ),
             ));
         }
-        if request.path == "pointer-position" {
-            RuntimeHostInputValue::F64Matrix {
-                rows: 2,
-                columns: 1,
-                values: vec![0.0, 0.0],
-            }
-            .into_mech_value()
-        } else {
-            RuntimeHostInputValue::F64(0.0).into_mech_value()
-        }
+        self.pointer.value(&request.path)
     }
 }
 
@@ -425,11 +474,14 @@ impl<B: SceneBackend> RuntimeHostFactory for SceneHostFactory<B> {
         let pointer = ScenePointerHandle::new(instance_name);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(SceneResourceProvider::new_with_settings(
-                instance_name,
-                self.backend.clone(),
-                settings,
-            ))],
+            resource_providers: vec![Box::new(
+                SceneResourceProvider::new_with_settings_and_pointer(
+                    instance_name,
+                    self.backend.clone(),
+                    settings,
+                    pointer.clone(),
+                ),
+            )],
             input_drivers: vec![pointer.input_driver(instance_name)],
         })
     }

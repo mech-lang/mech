@@ -115,11 +115,14 @@ impl RuntimeHostFactory for NativeSceneHostFactory {
         let pointer = ScenePointerHandle::new(instance_name);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
-            resource_providers: vec![Box::new(SceneResourceProvider::new_with_settings(
-                instance_name,
-                NativeSceneBackend::new(instance_name, self.registry.clone()),
-                settings,
-            ))],
+            resource_providers: vec![Box::new(
+                SceneResourceProvider::new_with_settings_and_pointer(
+                    instance_name,
+                    NativeSceneBackend::new(instance_name, self.registry.clone()),
+                    settings,
+                    pointer.clone(),
+                ),
+            )],
             input_drivers: vec![pointer.input_driver(instance_name)],
         })
     }

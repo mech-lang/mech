@@ -640,6 +640,13 @@ harness = r'''<script>
           cameraToggleDispatchBeforeDisable = logicalComputeTurn;
           cameraToggleDisableGesture = pressSceneCamera(orderedCameras[0]);
           cameraToggleDisableRequested = Boolean(cameraToggleDisableGesture);
+          // Deliver release before the next runtime frame. This is the common
+          // quick-click path where ingress coalesces the activation payload
+          // with the final released level.
+          if (cameraToggleDisableRequested) {
+            cameraToggleDisableReleased = releaseSceneCamera(cameraToggleDisableGesture);
+            cameraToggleDispatchAfterDisableRelease = logicalComputeTurn;
+          }
         }
         if (
           cameraToggleDisableRequested && !cameraToggleDisabled &&
@@ -656,12 +663,6 @@ harness = r'''<script>
           cameraToggleVisualStateValid = activeOpacity === 0 && disabledOpacity === 1 &&
             rangeOpacity === 0 && rayOpacity === 0 && labelOpacity === 0.32;
           cameraToggleDisabled = cameraToggleVisualStateValid;
-        }
-        if (
-          cameraToggleDisabled && !cameraToggleDisableReleased
-        ) {
-          cameraToggleDisableReleased = releaseSceneCamera(cameraToggleDisableGesture);
-          cameraToggleDispatchAfterDisableRelease = logicalComputeTurn;
         }
         const pointerPressed = renderedDocumentNumbers("scene-pointer-pressed");
         const pointerPulse = renderedDocumentNumbers("scene-pointer-pulse");

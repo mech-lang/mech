@@ -830,7 +830,7 @@ fn native_scene_instances_are_isolated() {
 
 #[cfg(feature = "browser")]
 #[test]
-fn browser_scene_pointer_activation_survives_a_later_release_turn() {
+fn browser_scene_pointer_activation_survives_coalesced_and_later_release() {
     let registry = BrowserSceneRegistry::new();
     let factory = BrowserSceneHostFactory::with_registry(registry.clone()).unwrap();
     let mut runtime = RuntimeBuilder::new()
@@ -863,7 +863,7 @@ position := @scene/pointer-position
 pressed := @scene/pointer-pressed
 ~enabled := 1.0
 ~last-pulse := 0.0
-delta := pressed * (pulse - last-pulse)
+delta := pulse - last-pulse
 next-enabled := enabled + delta * (1.0 - 2.0 * enabled)
 enabled = next-enabled
 last-pulse = pulse
@@ -876,7 +876,10 @@ last-pulse = pulse
     registry
         .submit_pointer("view", 0.25, -0.5, true, 0.0)
         .unwrap();
-    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    registry
+        .submit_pointer("view", 0.25, -0.5, false, 0.01)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
     runtime.drain_host_inputs(8).unwrap();
 
     let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
@@ -885,8 +888,28 @@ last-pulse = pulse
     };
     assert_eq!(*enabled.borrow(), 0.0);
 
+    let LegacyValue::F64(pressed) = runtime.root_symbol_value("pressed").unwrap().into_value()
+    else {
+        panic!("scene pointer pressed state must remain f64")
+    };
+    assert_eq!(*pressed.borrow(), 0.0);
+
+    // A second activation drains before its release. The release updates the
+    // level only and therefore cannot replay the already-consumed pulse.
     registry
-        .submit_pointer("view", 0.25, -0.5, false, 0.01)
+        .submit_pointer("view", -0.75, 0.5, true, 0.02)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    runtime.drain_host_inputs(8).unwrap();
+
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 1.0);
+
+    registry
+        .submit_pointer("view", -0.75, 0.5, false, 0.03)
         .unwrap();
     assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
     runtime.drain_host_inputs(8).unwrap();
@@ -894,7 +917,7 @@ last-pulse = pulse
     let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
         panic!("scene pointer pulse must remain f64")
     };
-    assert_eq!(*pulse.borrow(), 1.0);
+    assert_eq!(*pulse.borrow(), 2.0);
     let LegacyValue::F64(pressed) = runtime.root_symbol_value("pressed").unwrap().into_value()
     else {
         panic!("scene pointer pressed state must remain f64")
@@ -905,12 +928,12 @@ last-pulse = pulse
     else {
         panic!("scene pointer position must remain an f64 matrix")
     };
-    assert_eq!(position.as_vec(), [0.25, -0.5]);
+    assert_eq!(position.as_vec(), [-0.75, 0.5]);
     let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
     else {
         panic!("scene pointer toggle must remain f64")
     };
-    assert_eq!(*enabled.borrow(), 0.0);
+    assert_eq!(*enabled.borrow(), 1.0);
 }
 
 #[test]
