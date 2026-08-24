@@ -48,7 +48,8 @@ use serde::Deserialize;
 use crate::host::WasmBrowserDomBackend;
 #[cfg(feature = "browser_compute")]
 use crate::mixed_compute::{
-    BrowserComputeBridge, prepare_browser_compute_host, prepare_compute_region,
+    BrowserComputeBridge, BrowserComputePurpose, prepare_browser_compute_runtime,
+    prepare_compute_region,
 };
 
 #[wasm_bindgen]
@@ -718,12 +719,14 @@ fn build_document_repl_runtime_for_tree(
                 let catalog_setup = compiler_started.elapsed().as_secs_f64() * 1_000.0;
                 let prepared =
                     prepare_compute_region(&mut compiler, &candidate_tree, 0.0, catalog_setup)?;
-                Some(prepare_browser_compute_host(
+                Some(prepare_browser_compute_runtime(
                     &document,
                     prepared,
                     browser_gpu_available(),
-                    source.lifecycle.next_compute_generation()?,
-                    previous_compute.as_ref(),
+                    BrowserComputePurpose::ResidentDocument {
+                        generation: source.lifecycle.next_compute_generation()?,
+                        previous: previous_compute.as_ref(),
+                    },
                 )?)
             } else {
                 None

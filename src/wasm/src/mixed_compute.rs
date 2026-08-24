@@ -64,40 +64,23 @@ impl WasmMixedComputeProject {
         let tree = mech_syntax::parse(source.trim()).map_err(js_error)?;
         let parsing = milliseconds(parse_started);
         let pointer_index = configured_host_index(&document, "pointer").map_err(js_error)?;
-        let compute_index = configured_host_index(&document, "compute").map_err(js_error)?;
         let pointer = PointerInputHandle::new(document.hosts[pointer_index].name.as_str());
         let prepared = compile_named_compute_region(&document, &tree, parsing, pointer.clone())
             .map_err(js_error)?;
-        let compute = ComputeCommandHandle::new(prepared.region.clone(), 1);
         let outputs = BrowserOutputHandle::default();
-        let registry =
-            browser_compute_backend_registry(compute.clone(), outputs.clone(), gpu_available)
-                .map_err(js_error)?;
-        let mut compute_factory = ComputeHostFactory::new(
-            prepared.region.clone(),
-            prepared.placement,
-            prepared.program.clone(),
-            prepared.initializers.clone(),
-            registry,
-            ComputePlatform::Browser,
+        let prepared = prepare_browser_compute_runtime(
+            &document,
+            prepared,
+            gpu_available,
+            BrowserComputePurpose::StandalonePresentation {
+                outputs: outputs.clone(),
+                backend_override,
+            },
         )
-        .and_then(|factory| factory.with_retained_outputs(prepared.retained_outputs.clone()))
         .map_err(js_error)?;
-        if !backend_override.is_empty() {
-            compute_factory = compute_factory
-                .with_backend_override(BackendRequest::parse(backend_override).map_err(js_error)?);
-        }
-        let backend = compute_factory
-            .resolved_backend_id(&document.hosts[compute_index].settings)
-            .map_err(js_error)?
-            .to_string();
-        let manifest = gpu_program_manifest(
-            prepared.kernel.browser_program(),
-            &initializer_values(&prepared.program, &prepared.initializers).map_err(js_error)?,
-            &backend,
-            &prepared.retained_outputs,
-            prepared.timings,
-        )?;
+        let compute = prepared.bridge.command.clone();
+        let backend = prepared.bridge.backend.clone();
+        let manifest = prepared.bridge.manifest.clone();
         let mut builder = RuntimeBuilder::new()
             .function_catalog(mech_stdlib::source_native_plan_catalog())
             .config(
@@ -107,7 +90,7 @@ impl WasmMixedComputeProject {
             )
             .host_factory(Box::new(PointerHostFactory::new(pointer.clone())))
             .map_err(js_error)?
-            .host_factory(Box::new(compute_factory))
+            .host_factory(Box::new(prepared.factory))
             .map_err(js_error)?;
         for host in &document.hosts {
             builder = builder.host_instance(host.clone());
@@ -350,22 +333,45 @@ fn complete_command_from_js(
     }
 }
 
-pub(crate) struct PreparedBrowserComputeHost {
+pub(crate) struct PreparedBrowserComputeRuntime {
     pub(crate) factory: ComputeHostFactory,
     pub(crate) coordinator: ProgramArtifact,
     pub(crate) bridge: BrowserComputeBridge,
 }
 
-pub(crate) fn prepare_browser_compute_host(
+pub(crate) enum BrowserComputePurpose<'a> {
+    ResidentDocument {
+        generation: u64,
+        previous: Option<&'a BrowserComputeBridge>,
+    },
+    StandalonePresentation {
+        outputs: BrowserOutputHandle,
+        backend_override: &'a str,
+    },
+}
+
+pub(crate) fn prepare_browser_compute_runtime(
     document: &MechConfigDocument,
     prepared: PreparedComputeRegion,
     gpu_available: bool,
-    generation: u64,
-    previous: Option<&BrowserComputeBridge>,
-) -> MResult<PreparedBrowserComputeHost> {
+    purpose: BrowserComputePurpose<'_>,
+) -> MResult<PreparedBrowserComputeRuntime> {
     let compute_index = configured_host_index(document, "compute")?;
+    let (generation, previous, outputs, backend_override) = match purpose {
+        BrowserComputePurpose::ResidentDocument {
+            generation,
+            previous,
+        } => (generation, previous, None, None),
+        BrowserComputePurpose::StandalonePresentation {
+            outputs,
+            backend_override,
+        } => (1, None, Some(outputs), Some(backend_override)),
+    };
     let command = ComputeCommandHandle::new(prepared.region.clone(), generation);
-    let registry = browser_resident_compute_backend_registry(command.clone(), gpu_available)?;
+    let registry = match outputs {
+        Some(outputs) => browser_compute_backend_registry(command.clone(), outputs, gpu_available)?,
+        None => browser_resident_compute_backend_registry(command.clone(), gpu_available)?,
+    };
     let mut factory = ComputeHostFactory::new(
         prepared.region.clone(),
         prepared.placement,
@@ -375,6 +381,12 @@ pub(crate) fn prepare_browser_compute_host(
         ComputePlatform::Browser,
     )?
     .with_retained_outputs(prepared.retained_outputs.clone())?;
+    if let Some(backend_override) = backend_override.filter(|value| !value.is_empty()) {
+        factory = factory.with_backend_override(
+            BackendRequest::parse(backend_override)
+                .map_err(|failure| mixed_error(failure.to_string()))?,
+        );
+    }
     let backend = factory
         .resolved_backend_id(&document.hosts[compute_index].settings)?
         .to_string();
@@ -408,7 +420,7 @@ pub(crate) fn prepare_browser_compute_host(
         factory = factory.with_resume_state(resume);
     }
     let host_state = factory.state_snapshot_handle();
-    Ok(PreparedBrowserComputeHost {
+    Ok(PreparedBrowserComputeRuntime {
         factory,
         coordinator: prepared.coordinator,
         bridge: BrowserComputeBridge {
