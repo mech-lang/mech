@@ -275,10 +275,14 @@ class Device {
   }
 
   configureReadback(requestedOutputNames) {
-    this.metrics.logicalOutputs = requestedOutputNames.length;
-    this.readback?.destroy();
     const requested = new Set(requestedOutputNames);
-    this.readbackPlan = [];
+    for (const name of requested) {
+      if (!this.manifest.outputs.some((output) => output.name === name)) {
+        throw new Error(`GPU readback requested unknown logical output ${name}`);
+      }
+    }
+    const readbackPlan = [];
+    const planned = new Set();
     let byteLength = 0;
     for (const physical of this.manifest.physicalOutputs || []) {
       const aliases = physical.aliases
@@ -289,20 +293,32 @@ class Device {
         throw new Error(`GPU physical output ${physical.id} names an unknown logical alias`);
       }
       const bytes = physical.sampleElements * Float32Array.BYTES_PER_ELEMENT;
-      this.readbackPlan.push({
+      readbackPlan.push({
         output: aliases[0], physical, offset: byteLength, bytes, aliases,
       });
+      aliases.forEach((output) => planned.add(output.name));
       byteLength += bytes;
     }
-    this.metrics.uniquePhysicalOutputBuffers = this.readbackPlan.length;
-    this.integrityOffset = this.integrity ? byteLength : null;
+    for (const name of requested) {
+      if (!planned.has(name)) {
+        throw new Error(`GPU logical output ${name} has no physical readback allocation`);
+      }
+    }
+    const integrityOffset = this.integrity ? byteLength : null;
     if (this.integrity) byteLength += this.integrity.elements * Uint32Array.BYTES_PER_ELEMENT;
-    this.readbackBytes = byteLength;
-    this.readback = byteLength > 0 ? this.device.createBuffer({
+    const replacement = byteLength > 0 ? this.device.createBuffer({
       size: Math.max(4, byteLength),
       usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
     }) : null;
+    const previous = this.readback;
+    this.readback = replacement;
+    this.readbackPlan = readbackPlan;
+    this.integrityOffset = integrityOffset;
+    this.readbackBytes = byteLength;
     this.readbackSignature = [...requestedOutputNames].sort().join("\u0000");
+    this.metrics.logicalOutputs = requestedOutputNames.length;
+    this.metrics.uniquePhysicalOutputBuffers = readbackPlan.length;
+    previous?.destroy();
   }
 
   setRequestedOutputs(requestedOutputNames) {
@@ -512,6 +528,7 @@ class Session {
 
   validateCommand(command) {
     if (!command?.dispatch) return false;
+    if (this.failure) throw this.failure;
     if (!this.isCurrent()) {
       throw new Error("a retired browser compute session received a dispatch");
     }
@@ -567,8 +584,14 @@ class Session {
       this.pending = true;
       hooks.onSubmitted?.({ dispatchToken, ...submission });
     } catch (error) {
+      this.pending = false;
+      submission?.completion?.catch?.(() => {});
       this.failure = this.lifecycle.markFailed(this.reject(dispatchToken, error));
-      hooks.onFailure?.(this.failure);
+      try {
+        hooks.onFailure?.(this.failure);
+      } catch (hookError) {
+        console.error("browser compute failure hook failed", hookError);
+      }
       throw this.failure;
     }
     this.completion = this.finish(dispatchToken, submission, hooks);
@@ -607,7 +630,11 @@ class Session {
       if (!this.isCurrent()) return;
       const failure = completionSent ? error : this.reject(dispatchToken, error);
       this.failure = this.lifecycle.markFailed(failure);
-      hooks.onFailure?.(this.failure);
+      try {
+        hooks.onFailure?.(this.failure);
+      } catch (hookError) {
+        console.error("browser compute failure hook failed", hookError);
+      }
     } finally {
       this.pending = false;
     }

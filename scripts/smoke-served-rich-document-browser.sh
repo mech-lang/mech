@@ -1538,6 +1538,50 @@ def submit(command):
         fail(f"could not submit browser REPL command: {command}")
 
 
+def assert_controller_cooperative_lifecycle():
+    result = evaluate_json("""
+(async () => {
+  const controller = globalThis.MechDocumentController;
+  const terminal = response => Boolean(response) &&
+    response.pending !== true &&
+    response.hostPending !== true &&
+    !response.hostRequest;
+  const immediate = await controller.invoke('controller-probe := answer + 1');
+  const afterImmediate = await controller.invoke(':whos controller-probe');
+  const stepped = await controller.invoke(':step 256');
+  const afterStep = await controller.invoke(':whos controller-probe');
+  const documented = await controller.invoke(':docs');
+  const afterDocs = await controller.invoke(':whos controller-probe');
+  const commandSourceCounts = Object.fromEntries([
+    ':step 256',
+    ':docs',
+  ].map(source => [source, [...document.querySelectorAll('.mech-repl-source .repl-code')]
+    .filter(code => code.textContent.trim() === source).length]));
+  const value = controller.renderedValue('controller-probe')?.inlineHtml || '';
+  const cleaned = await controller.invoke(':clear controller-probe');
+  return {
+    terminal: [immediate, afterImmediate, stepped, afterStep, documented, afterDocs, cleaned]
+      .every(terminal),
+    commandSourceCounts,
+    ready:
+      document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'ready' &&
+      document.querySelector('.repl-input')?.readOnly === false,
+    value,
+  };
+})()
+""")
+    if result != {
+        "terminal": True,
+        "commandSourceCounts": {
+            ":step 256": 1,
+            ":docs": 1,
+        },
+        "ready": True,
+        "value": "42",
+    }:
+        fail(f"public controller did not share the terminal cooperative lifecycle: {result!r}")
+
+
 def assert_console_contract():
     resident = evaluate_json("""
 (() => {
@@ -4366,6 +4410,25 @@ def assert_stop_invalidates_pending_ownership():
     document.activeElement === window.__MECH_SHUTDOWN_INSPECTOR_ANCHOR__,
 }))()
 """)
+    disposed_api = evaluate_json("""
+(async () => {
+  const controller = globalThis.MechDocumentController;
+  const results = {};
+  for (const [name, call] of [
+    ['source', () => controller.source()],
+    ['renderedValue', () => controller.renderedValue('answer')],
+    ['replaceSource', () => controller.replaceSource('answer := 1')],
+  ]) {
+    try { call(); results[name] = 'accepted'; }
+    catch (error) { results[name] = error?.code || error?.name || String(error); }
+  }
+  try { await controller.invoke('1 + 1'); results.invoke = 'accepted'; }
+  catch (error) { results.invoke = error?.code || error?.name || String(error); }
+  controller.dispose();
+  controller.dispose();
+  return results;
+})()
+""")
     if (
         stopped_after["rootStatus"] != "error" or
         stopped_after["documentStatus"] != "error" or
@@ -4377,6 +4440,8 @@ def assert_stop_invalidates_pending_ownership():
         stopped_after["anchorFocused"]
     ):
         fail(f"stale async ownership changed a stopped/fatal document: {stopped_after!r}")
+    if set(disposed_api.values()) != {"MECH_DOCUMENT_DISPOSED"}:
+        fail(f"disposed controller APIs were not terminal and explicit: {disposed_api!r}")
 
 
 try:
@@ -4553,6 +4618,7 @@ try:
     assert_right_console_resize_direction()
     assert_layout_persistence()
     assert_real_pointer_capture_cleanup()
+    assert_controller_cooperative_lifecycle()
     assert_console_contract()
     assert_mobile_contract()
     assert_repl_termination()

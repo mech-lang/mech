@@ -57,6 +57,7 @@ const state = {
   scenePointerSession: null,
   scenePointerTimestamp: null,
   runtimeGeneration: 0,
+  runtimeLifecycle: "new",
   runtimeStopped: false,
 };
 
@@ -742,13 +743,45 @@ function invalidateCooperativeOwnership() {
   syncConsoleInputState();
 }
 
-function stopRuntime() {
+function stopRuntime(nextLifecycle = "stopped") {
+  if (state.runtimeLifecycle === "disposed" && nextLifecycle !== "disposed") {
+    return;
+  }
+  state.runtimeLifecycle = nextLifecycle;
   state.runtimeGeneration += 1;
   state.runtimeStopped = true;
+  state.fullscreenGeneration += 1;
+  state.fullscreenRequest = null;
+  state.outputFullscreenController = null;
+  state.scenePointerSession = null;
+  state.consolePointerSession?.cancel();
+  state.consolePointerSession = null;
+  if (state.pagePositionSaveTimer !== null) {
+    clearTimeout(state.pagePositionSaveTimer);
+    state.pagePositionSaveTimer = null;
+  }
+  state.pendingPagePosition = null;
+  finishPagePositionRestore();
+  state.consoleSizeObserver?.disconnect();
+  state.consoleSizeObserver = null;
+  state.errorBadgeObserver?.disconnect();
+  state.errorBadgeObserver = null;
+  state.replHostOffsetObserver?.disconnect();
+  state.replHostOffsetObserver = null;
+  state.replStyleObserver?.disconnect();
+  state.replStyleObserver = null;
+  state.tocEventCleanup?.();
+  state.tocEventCleanup = null;
+  if (state.tocUpdateFrame !== null) {
+    cancelAnimationFrame(state.tocUpdateFrame);
+    state.tocUpdateFrame = null;
+  }
   dismissInlineInspectors({ restoreFocus: false });
   state.running = false;
   setComputeBridgeLifecycle("stopped");
+  document.documentElement.dataset.mechComputeAdapterStatus = "stopped";
   state.computeBridgeBuildId += 1;
+  state.computeBridgeRefresh = null;
   cancelFrame();
   state.computeBridge?.retire();
   state.computeBridge = null;
@@ -767,7 +800,8 @@ function stopRuntime() {
 }
 
 function showFatalError(error) {
-  stopRuntime();
+  if (state.runtimeLifecycle === "disposed") return;
+  stopRuntime("failed");
   state.replTerminated = true;
   state.replBusy = false;
   syncConsoleInputState();
@@ -2008,40 +2042,74 @@ function renderValues() {
   dispatch("mech:document-rendered");
 }
 
+function documentControllerError(code, message) {
+  const error = new Error(message);
+  error.name = "MechDocumentControllerError";
+  error.code = code;
+  return error;
+}
+
+function activeDocumentController(operation, method = null) {
+  if (state.runtimeLifecycle === "disposed") {
+    throw documentControllerError(
+      "MECH_DOCUMENT_DISPOSED",
+      `cannot ${operation}: the document controller is disposed`,
+    );
+  }
+  if (state.runtimeLifecycle !== "ready" || !state.document) {
+    throw documentControllerError(
+      "MECH_DOCUMENT_NOT_READY",
+      `cannot ${operation}: the document runtime is not ready`,
+    );
+  }
+  if (method && typeof state.document[method] !== "function") {
+    throw documentControllerError(
+      "MECH_DOCUMENT_UNSUPPORTED",
+      `cannot ${operation}: the document runtime does not expose ${method}`,
+    );
+  }
+  return state.document;
+}
+
 globalThis.MechDocumentController = Object.freeze({
   // Reflection observes an ordinary retained resident symbol; it never
   // widens compute readback or routes scalar compute through JavaScript.
   renderedValue(name) {
-    return state.document?.renderedDocumentValue?.(String(name)) || null;
+    const controller = activeDocumentController("read a rendered value", "renderedDocumentValue");
+    return controller.renderedDocumentValue(String(name)) || null;
   },
   source() {
-    return state.document?.replSource?.() || "";
+    return activeDocumentController("read source", "replSource").replSource();
   },
   replaceSource(source) {
-    if (typeof state.document?.replReplaceSource !== "function") {
-      throw new Error("the document runtime does not expose transactional source replacement");
-    }
-    const response = state.document.replReplaceSource(String(source));
+    const controller = activeDocumentController(
+      "replace source",
+      "replReplaceSource",
+    );
+    const response = controller.replReplaceSource(String(source));
     consumeReplResponse(response);
     renderValues();
-    return state.document.replSource();
+    return controller.replSource();
   },
   async invoke(source) {
-    if (typeof state.document?.replInvoke !== "function") {
-      throw new Error("the document runtime does not expose interactive requests");
-    }
+    activeDocumentController("invoke an interactive request", "replInvoke");
     if (state.replBusy) {
-      throw new Error("the document runtime is already processing an interactive request");
+      throw documentControllerError(
+        "MECH_DOCUMENT_BUSY",
+        "the document runtime is already processing an interactive request",
+      );
     }
     if (state.replTerminated) {
-      throw new Error("the document runtime has terminated");
+      throw documentControllerError(
+        "MECH_DOCUMENT_TERMINATED",
+        "the document runtime has terminated",
+      );
     }
-    const response = state.document.replInvoke(String(source));
-    await consumeCooperativeResponse(response);
-    return response;
+    return invokeResidentRequest(String(source));
   },
   dispose() {
-    stopRuntime();
+    if (state.runtimeLifecycle === "disposed") return;
+    stopRuntime("disposed");
     if (document.documentElement.dataset.mechDocumentStatus !== "error") {
       setDocumentStatus("stopped");
     }
@@ -2291,124 +2359,155 @@ function namespaceDocumentationFragment(fragment, namespace) {
   }
 }
 
-async function fulfillReplHostRequest(requestId, request, signal) {
+function cooperativeCancellationError() {
+  const error = documentControllerError(
+    "MECH_DOCUMENT_CANCELLED",
+    "the interactive request was cancelled because its document runtime was replaced or disposed",
+  );
+  error.mechCooperativeCancellation = true;
+  return error;
+}
+
+async function fulfillReplHostRequest(requestId, request, signal, controller) {
   if (request?.kind !== "documentation") {
     throw new Error(`unsupported browser REPL host request: ${request?.kind || "unknown"}`);
   }
   const topic = request.data?.topic?.trim() || "";
   if (!topic) {
-    consumeReplResponse(state.document.replDocumentationIndex(requestId));
-    return;
+    return {
+      responses: [controller.replDocumentationIndex(requestId)],
+      error: null,
+    };
   }
-  const parts = topic.split("/").filter(Boolean);
-  if (parts.length !== 2 || parts.some(part => !/^[A-Za-z0-9._-]+$/.test(part))) {
-    throw new Error("Usage: :docs <machine>/<document>");
+  const responses = [];
+  let failure = null;
+  try {
+    const parts = topic.split("/").filter(Boolean);
+    if (parts.length !== 2 || parts.some(part => !/^[A-Za-z0-9._-]+$/.test(part))) {
+      throw new Error("Usage: :docs <machine>/<document>");
+    }
+    const [machine, documentName] = parts;
+    const url =
+      `https://raw.githubusercontent.com/mech-machines/${encodeURIComponent(machine)}` +
+      `/main/docs/${encodeURIComponent(documentName)}.mec`;
+    const fetched = await fetch(url, { signal });
+    if (!fetched.ok) {
+      throw new Error(
+        `failed to load documentation \`${topic}\`: ${fetched.status} ${fetched.statusText}`,
+      );
+    }
+    const source = await fetched.text();
+    if (signal.aborted) throw cooperativeCancellationError();
+    const loaded = controller.replLoadDocumentation(requestId, topic, source);
+    responses.push(loaded.response);
+    const panel = outputRegion("repl");
+    if (panel && loaded.accepted && loaded.html) {
+      const row = document.createElement("article");
+      row.className = "mech-repl-output-entry mech-repl-documentation";
+      row.dataset.mechdown = "";
+      row.dataset.mechDocumentationTopic = topic;
+      row.innerHTML = loaded.html;
+      namespaceDocumentationFragment(row, nextDocumentationFragmentNamespace());
+      panel.append(row);
+      activateConsolePanel("output");
+      panel.scrollTop = panel.scrollHeight;
+    }
+  } catch (error) {
+    failure = error;
   }
-  const [machine, documentName] = parts;
-  const url =
-    `https://raw.githubusercontent.com/mech-machines/${encodeURIComponent(machine)}` +
-    `/main/docs/${encodeURIComponent(documentName)}.mec`;
-  const fetched = await fetch(url, { signal });
-  if (!fetched.ok) {
-    throw new Error(
-      `failed to load documentation \`${topic}\`: ${fetched.status} ${fetched.statusText}`,
-    );
+  if (!signal.aborted) {
+    responses.push(controller.replFinishHostRequest(requestId));
   }
-  const loaded = state.document.replLoadDocumentation(
-    requestId,
-    topic,
-    await fetched.text(),
-  );
-  consumeReplResponse(loaded.response);
-  const panel = outputRegion("repl");
-  if (panel && loaded.accepted && loaded.html) {
-    const row = document.createElement("article");
-    row.className = "mech-repl-output-entry mech-repl-documentation";
-    row.dataset.mechdown = "";
-    row.dataset.mechDocumentationTopic = topic;
-    row.innerHTML = loaded.html;
-    namespaceDocumentationFragment(row, nextDocumentationFragmentNamespace());
-    panel.append(row);
-    activateConsolePanel("output");
-    panel.scrollTop = panel.scrollHeight;
-  }
-  renderValues();
+  return { responses, error: failure };
 }
 
 async function consumeCooperativeResponse(response) {
   const operation = ++state.cooperativeOperationSequence;
+  const runtimeGeneration = state.runtimeGeneration;
+  const controller = state.document;
   state.activeCooperativeOperation = operation;
-  consumeReplResponse(response);
-  state.console.pendingSubmission = null;
-  const stepRequestId = response?.pending ? response?.stepRequestId : null;
-  const ownsHostRequest = Boolean(response?.hostRequest);
-  const hostRequest = ownsHostRequest
-    ? {
-        controller: new AbortController(),
-        id: response.hostRequestId,
-        sequence: ++state.hostRequestSequence,
-      }
-    : null;
-  if (hostRequest) {
-    state.activeHostRequest = hostRequest;
-  } else if (!response?.hostPending) {
-    state.activeHostRequest = null;
-  }
-  state.replTerminated = Boolean(response?.terminated);
-  state.replBusy = Boolean(response?.pending || response?.hostPending || response?.hostRequest);
+  state.replBusy = true;
   syncConsoleInputState();
+  const operationIsCurrent = () =>
+    state.activeCooperativeOperation === operation &&
+    state.runtimeGeneration === runtimeGeneration &&
+    state.document === controller &&
+    state.runtimeLifecycle === "ready";
+  let responseAlreadyConsumed = false;
   try {
-    if (response?.pending && !stepRequestId) {
-      throw new Error("pending cooperative step response omitted its request id");
-    }
-    if (response?.hostRequest) {
-      await fulfillReplHostRequest(
-        hostRequest.id,
-        response.hostRequest,
-        hostRequest.controller.signal,
-      );
-    }
-    while (response?.pending) {
-      await nextBrowserTurn();
-      if (state.activeCooperativeOperation !== operation) {
-        return;
+    while (response) {
+      if (!operationIsCurrent()) throw cooperativeCancellationError();
+      if (!responseAlreadyConsumed) {
+        consumeReplResponse(response);
+        if (state.console) state.console.pendingSubmission = null;
+        state.replTerminated = Boolean(response?.terminated);
       }
+      responseAlreadyConsumed = false;
+      if (response?.terminated) break;
+      if (response?.hostRequest) {
+        const hostRequest = {
+          controller: new AbortController(),
+          id: response.hostRequestId,
+          sequence: ++state.hostRequestSequence,
+        };
+        state.activeHostRequest = hostRequest;
+        syncConsoleInputState();
+        const fulfilled = await fulfillReplHostRequest(
+          hostRequest.id,
+          response.hostRequest,
+          hostRequest.controller.signal,
+          controller,
+        );
+        if (!operationIsCurrent()) throw cooperativeCancellationError();
+        if (state.activeHostRequest?.sequence === hostRequest.sequence) {
+          state.activeHostRequest = null;
+        }
+        for (const hostResponse of fulfilled.responses) {
+          if (!operationIsCurrent()) throw cooperativeCancellationError();
+          consumeReplResponse(hostResponse);
+          state.replTerminated ||= Boolean(hostResponse?.terminated);
+          response = hostResponse;
+        }
+        responseAlreadyConsumed = fulfilled.responses.length > 0;
+        if (fulfilled.error) throw fulfilled.error;
+        if (state.replTerminated) break;
+        continue;
+      }
+      if (!response?.pending) break;
+      const stepRequestId = response.stepRequestId;
+      if (!stepRequestId) {
+        throw new Error("pending cooperative step response omitted its request id");
+      }
+      await nextBrowserTurn();
+      if (!operationIsCurrent()) throw cooperativeCancellationError();
       response = state.repl.continueStep(128, stepRequestId);
       if (response?.pending && response?.stepRequestId !== stepRequestId) {
         throw new Error("cooperative step response changed request ownership");
       }
-      consumeReplResponse(response);
-      state.replTerminated = Boolean(response?.terminated);
     }
-  } catch (error) {
-    if (!hostRequest?.controller.signal.aborted) {
-      throw error;
-    }
+    return response;
   } finally {
     const releasesActiveOperation = state.activeCooperativeOperation === operation;
-    const releasesActiveRequest =
-      !hostRequest || state.activeHostRequest?.sequence === hostRequest.sequence;
-    if (releasesActiveOperation && releasesActiveRequest) {
+    if (releasesActiveOperation) {
+      const completedCurrentOperation = operationIsCurrent();
       state.activeCooperativeOperation = null;
-      if (ownsHostRequest) {
-        state.activeHostRequest = null;
-      }
+      state.activeHostRequest?.controller.abort();
+      state.activeHostRequest = null;
       state.replBusy = false;
       syncConsoleInputState();
-      if (ownsHostRequest) {
-        const finished = state.repl.finishHostRequest(hostRequest.id);
-        consumeReplResponse(finished);
-        state.replTerminated ||= Boolean(finished?.terminated);
-      }
       if (state.replTerminated) {
-        stopRuntime();
+        stopRuntime("stopped");
         setDocumentStatus("stopped");
         dispatch("mech:document-stopped");
-      } else {
+      } else if (completedCurrentOperation) {
         renderValues();
       }
     }
   }
+}
+
+function invokeResidentRequest(source) {
+  return consumeCooperativeResponse(state.repl.invoke(source));
 }
 
 function runConsoleCommand(source) {
@@ -2416,7 +2515,7 @@ function runConsoleCommand(source) {
   if (!input) {
     return;
   }
-  return consumeCooperativeResponse(state.repl.invoke(source));
+  return invokeResidentRequest(source);
 }
 
 function submitConsoleInput(value, row, input) {
@@ -3959,24 +4058,25 @@ function documentComputeIdentity(controller, bridge = null) {
 
 const computeGeneration = controller => typeof controller?.computeGeneration === "function" ? controller.computeGeneration() : "0";
 
-async function probeServedComputeAdapter() {
+async function probeServedComputeAdapter(isCurrent = () => true) {
   const computeHost = servedComputeHostConfig();
-  if (!computeHost) {
-    return;
-  }
+  if (!computeHost || !isCurrent()) return null;
   const requestedBackend = computeHost.settings?.backend || "auto";
   document.documentElement.dataset.mechComputeAdapterStatus = "requesting";
+  let adapter = null;
   try {
-    state.computeAdapter = requestedBackend === "cpu-scalar" || !navigator.gpu
+    adapter = requestedBackend === "cpu-scalar" || !navigator.gpu
       ? null
       : await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
   } catch (error) {
-    document.documentElement.dataset.mechComputeAdapterStatus = "failed";
+    if (!isCurrent()) return null;
     if (requestedBackend !== "auto") {
+      document.documentElement.dataset.mechComputeAdapterStatus = "failed";
       throw error;
     }
-    state.computeAdapter = null;
   }
+  if (!isCurrent()) return null;
+  state.computeAdapter = adapter;
   // Runtime construction is synchronous. Publish the result of the actual
   // adapter probe so `auto` selects the same backend the bridge can execute,
   // including browsers that expose navigator.gpu but return no adapter.
@@ -3984,6 +4084,7 @@ async function probeServedComputeAdapter() {
   document.documentElement.dataset.mechComputeAdapterStatus = state.computeAdapter
     ? "ready"
     : "unavailable";
+  return state.computeAdapter;
 }
 
 class DocumentComputeBridge {
@@ -4211,6 +4312,7 @@ class DocumentComputeBridge {
 }
 
 function refreshDocumentComputeBridge() {
+  if (state.runtimeLifecycle !== "ready") return false;
   const bridge = state.computeBridge;
   let generation = computeGeneration(state.document);
   if (
@@ -4230,7 +4332,7 @@ function refreshDocumentComputeBridge() {
   const ownsBuild = () =>
     buildId === state.computeBridgeBuildId &&
     controller === state.document &&
-    state.computeBridgeLifecycle !== "stopped" &&
+    state.runtimeLifecycle === "ready" &&
     computeGeneration(controller) === generation;
   const acceptFallbackGeneration = () => { generation = computeGeneration(controller); };
   setComputeBridgeLifecycle("building");
@@ -4452,9 +4554,13 @@ async function createDocumentComputeBridgeWithFallback(
 }
 
 async function main() {
+  if (state.runtimeLifecycle === "disposed") return;
   const runtimeGeneration = state.runtimeGeneration;
+  state.runtimeLifecycle = "starting";
   state.runtimeStopped = false;
-  const startupIsCurrent = () => runtimeGeneration === state.runtimeGeneration;
+  const startupIsCurrent = () =>
+    runtimeGeneration === state.runtimeGeneration &&
+    state.runtimeLifecycle === "starting";
   state.root = documentRoot();
   if (!state.root) {
     throw new Error("the document controller requires a .mech-root element");
@@ -4485,11 +4591,16 @@ async function main() {
     embeddedDocumentSources || await loadDocumentSourceMap();
   if (!startupIsCurrent()) return;
   if (documentSources?.config) {
-    await probeServedComputeAdapter();
+    await probeServedComputeAdapter(startupIsCurrent);
     if (!startupIsCurrent()) return;
   }
-  state.document = constructDocumentController(WasmDocument, documentSources);
-  if (typeof state.document.replInvoke !== "function") {
+  const documentController = constructDocumentController(WasmDocument, documentSources);
+  if (!startupIsCurrent()) {
+    try { documentController.stop(); } catch (_error) {}
+    return;
+  }
+  state.document = documentController;
+  if (typeof documentController.replInvoke !== "function") {
     throw new Error(
       "the browser WASM build does not include the document-backed resident REPL host",
     );
@@ -4514,7 +4625,11 @@ async function main() {
     state.computeBridge?.retire();
     if (initialBuildId !== state.computeBridgeBuildId) return;
   }
-  if (!startupIsCurrent()) return;
+  if (!startupIsCurrent()) {
+    state.computeBridge?.retire();
+    state.computeBridge = null;
+    return;
+  }
   setComputeBridgeLifecycle("ready");
   state.computeBridgeGeneration = initialGeneration;
   document.documentElement.dataset.mechComputeGeneration =
@@ -4546,8 +4661,14 @@ async function main() {
   syncConsoleInputState();
   prepareVarPlaceholders();
   renderValues();
+  if (!startupIsCurrent()) return;
   state.document.start();
+  if (!startupIsCurrent()) {
+    try { state.document.stop(); } catch (_error) {}
+    return;
+  }
   state.running = true;
+  state.runtimeLifecycle = "ready";
   setDocumentStatus("ready");
   restorePagePosition();
   dispatch("mech:document-ready");
@@ -4556,14 +4677,11 @@ async function main() {
 
 window.addEventListener("beforeunload", () => {
   flushPagePositionSave();
-  stopRuntime();
-  if (document.documentElement.dataset.mechDocumentStatus !== "error") {
-    setDocumentStatus("stopped");
-  }
+  globalThis.MechDocumentController.dispose();
 });
 
 main().catch(error => {
-  if (!state.runtimeStopped) {
+  if (state.runtimeLifecycle !== "disposed" && !state.runtimeStopped) {
     showFatalError(error);
   }
 });

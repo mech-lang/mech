@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
 globalThis.GPUMapMode = { READ: 1 };
+globalThis.GPUBufferUsage = { COPY_DST: 1, MAP_READ: 2 };
 await import("../include/browser-compute.js");
 
 const { Device, ResetTracker, Session } = globalThis.MechBrowserCompute;
@@ -241,5 +242,135 @@ await assert.rejects(
   () => reportOnly.finish(),
   /exact submission promise/,
 );
+
+const staged = Object.create(Device.prototype);
+let previousReadbackDestroyed = 0;
+const previousReadback = { destroy() { previousReadbackDestroyed += 1; } };
+staged.readback = previousReadback;
+staged.readbackPlan = [{ previous: true }];
+staged.readbackBytes = 44;
+staged.readbackSignature = "previous";
+staged.integrityOffset = 36;
+staged.integrity = { elements: 2 };
+staged.manifest = manifest;
+staged.metrics = { logicalOutputs: 1, uniquePhysicalOutputBuffers: 1 };
+staged.device = {
+  createBuffer() { throw new Error("injected readback allocation failure"); },
+};
+assert.throws(
+  () => staged.configureReadback(["missing-output"]),
+  /unknown logical output missing-output/,
+);
+assert.equal(staged.readback, previousReadback);
+assert.equal(previousReadbackDestroyed, 0);
+assert.throws(
+  () => staged.configureReadback(["estimate"]),
+  /injected readback allocation failure/,
+);
+assert.equal(staged.readback, previousReadback);
+assert.deepEqual(staged.readbackPlan, [{ previous: true }]);
+assert.equal(staged.readbackBytes, 44);
+assert.equal(staged.readbackSignature, "previous");
+assert.equal(staged.integrityOffset, 36);
+assert.equal(previousReadbackDestroyed, 0);
+
+let replacementReadbackDestroyed = 0;
+const replacementReadback = { destroy() { replacementReadbackDestroyed += 1; } };
+staged.device.createBuffer = () => replacementReadback;
+staged.configureReadback(["estimate", "estimate-alias"]);
+assert.equal(staged.readback, replacementReadback);
+assert.equal(staged.readbackPlan.length, 1);
+assert.equal(staged.metrics.logicalOutputs, 2);
+assert.equal(staged.metrics.uniquePhysicalOutputBuffers, 1);
+assert.equal(previousReadbackDestroyed, 1);
+assert.equal(replacementReadbackDestroyed, 0);
+staged.disposed = false;
+staged.stateBuffers = new Map();
+staged.fixedBuffers = new Map();
+staged.device.destroy = () => {};
+staged.dispose();
+assert.equal(replacementReadbackDestroyed, 1);
+
+const command = (token) => ({
+  dispatch: true,
+  acknowledgementRequired: true,
+  dispatchToken: token,
+  requestedOutputs: ["estimate"],
+  inputs: [],
+});
+
+function failingSession(stage, failure) {
+  const completions = [];
+  let submissions = 0;
+  const resource = {
+    physicalRevision: "sha256:failure-injection",
+    device: { lost: new Promise(() => {}) },
+    setRequestedOutputs() {
+      if (stage === "readback") throw failure;
+    },
+    submit() {
+      submissions += 1;
+      if (stage === "submit") throw failure;
+      return { outputIndex: 1, completion: Promise.resolve() };
+    },
+    async finish() { return { outputs: [], integrity: null }; },
+  };
+  const session = new Session({
+    controller: { completeComputeCommand(payload) { completions.push(payload); } },
+    resource,
+    generation: 21,
+  });
+  return { session, completions, submissions: () => submissions };
+}
+
+for (const [stage, reason] of [
+  ["readback", "requested-output validation or allocation failed"],
+  ["submit", "input upload, encoder, or queue submission failed"],
+]) {
+  const injected = new Error(reason);
+  const fixture = failingSession(stage, injected);
+  assert.throws(() => fixture.session.submit(command("21:1")), injected);
+  assert.equal(fixture.session.pending, false);
+  assert.equal(fixture.session.failure, injected);
+  assert.equal(fixture.submissions(), stage === "readback" ? 0 : 1);
+  assert.deepEqual(fixture.completions, [{
+    version: 1,
+    token: "21:1",
+    status: "failed",
+    failure: { reason },
+  }]);
+  assert.throws(
+    () => fixture.session.submit(command("21:2")),
+    injected,
+    "terminal transport failure must reject later commands without a second completion",
+  );
+  assert.equal(fixture.completions.length, 1);
+}
+
+const publicationAttempts = [];
+const publicationSession = new Session({
+  generation: 22,
+  controller: {
+    completeComputeCommand(payload) {
+      publicationAttempts.push(payload);
+      if (payload.status === "completed") {
+        throw new Error("injected completion publication failure");
+      }
+    },
+  },
+  resource: {
+    physicalRevision: "sha256:publication-failure",
+    device: { lost: new Promise(() => {}) },
+    setRequestedOutputs() {},
+    submit() { return { outputIndex: 1, completion: Promise.resolve() }; },
+    async finish() { return { outputs: [], integrity: null }; },
+  },
+});
+publicationSession.submit(command("22:1"));
+await publicationSession.completion;
+assert.equal(publicationSession.pending, false);
+assert.match(publicationSession.failure.message, /completion publication failure/);
+assert.deepEqual(publicationAttempts.map(({ status }) => status), ["completed", "failed"]);
+assert.throws(() => publicationSession.submit(command("22:2")), publicationSession.failure);
 
 console.log("browser compute submission lifecycle tests passed");
