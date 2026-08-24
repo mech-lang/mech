@@ -25,14 +25,7 @@ pub enum GpuPlanKernelKind {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum GpuPlanBindingAccess {
-    Read,
-    ReadWrite,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum GpuPlanBindingRole {
+pub enum GpuExecutionBindingRole {
     Input,
     StateRead,
     StateWrite,
@@ -65,8 +58,8 @@ pub enum GpuPlanInitialValues {
 pub struct GpuPlanBinding {
     pub binding: u32,
     pub name: String,
-    pub access: GpuPlanBindingAccess,
-    pub role: GpuPlanBindingRole,
+    pub access: GpuBindingAccess,
+    pub role: GpuExecutionBindingRole,
     pub slot: u32,
     pub elements: u64,
     pub scalar: GpuPlanScalar,
@@ -263,8 +256,8 @@ impl GpuExecutionPlan {
                 )));
             }
             for role in [
-                GpuPlanBindingRole::StateRead,
-                GpuPlanBindingRole::StateWrite,
+                GpuExecutionBindingRole::StateRead,
+                GpuExecutionBindingRole::StateWrite,
             ] {
                 if !self.bindings.iter().any(|binding| {
                     binding.role == role
@@ -289,7 +282,7 @@ impl GpuExecutionPlan {
                 && !self
                     .bindings
                     .iter()
-                    .any(|binding| binding.role == GpuPlanBindingRole::IntegrityFault))
+                    .any(|binding| binding.role == GpuExecutionBindingRole::IntegrityFault))
         {
             return Err(GpuExecutionPlanError::Invalid(
                 "integrity constraints require unique nonzero codes and one fault binding"
@@ -409,7 +402,7 @@ fn build_elementwise_plan(
         bindings.push(GpuPlanBinding {
             binding: binding.binding,
             name: binding.name.clone(),
-            access: binding.access.into(),
+            access: binding.access,
             role: binding.role().into(),
             slot: binding.slot().get(),
             elements: binding.elements,
@@ -467,8 +460,8 @@ fn build_fixed_shape_plan(
         .map(|input| GpuPlanBinding {
             binding: input.binding,
             name: input.name.clone(),
-            access: GpuPlanBindingAccess::Read,
-            role: GpuPlanBindingRole::Input,
+            access: GpuBindingAccess::Read,
+            role: GpuExecutionBindingRole::Input,
             slot: input.slot.get(),
             elements: input.elements as u64,
             scalar: GpuPlanScalar::F32,
@@ -479,8 +472,8 @@ fn build_fixed_shape_plan(
         bindings.push(GpuPlanBinding {
             binding: state.read_binding,
             name: format!("state.{}.read", state.slot.get()),
-            access: GpuPlanBindingAccess::Read,
-            role: GpuPlanBindingRole::StateRead,
+            access: GpuBindingAccess::Read,
+            role: GpuExecutionBindingRole::StateRead,
             slot: state.slot.get(),
             elements: state.elements as u64,
             scalar: GpuPlanScalar::F32,
@@ -489,8 +482,8 @@ fn build_fixed_shape_plan(
         bindings.push(GpuPlanBinding {
             binding: state.write_binding,
             name: format!("state.{}.write", state.slot.get()),
-            access: GpuPlanBindingAccess::ReadWrite,
-            role: GpuPlanBindingRole::StateWrite,
+            access: GpuBindingAccess::ReadWrite,
+            role: GpuExecutionBindingRole::StateWrite,
             slot: state.slot.get(),
             elements: state.elements as u64,
             scalar: GpuPlanScalar::F32,
@@ -501,8 +494,8 @@ fn build_fixed_shape_plan(
         bindings.push(GpuPlanBinding {
             binding: integrity.binding,
             name: "integrity-fault".to_owned(),
-            access: GpuPlanBindingAccess::ReadWrite,
-            role: GpuPlanBindingRole::IntegrityFault,
+            access: GpuBindingAccess::ReadWrite,
+            role: GpuExecutionBindingRole::IntegrityFault,
             slot: 0,
             elements: integrity.words as u64,
             scalar: GpuPlanScalar::U32,
@@ -615,7 +608,7 @@ fn physical_outputs(
 ) -> Result<Vec<GpuPhysicalOutputPlan>, GpuExecutionPlanError> {
     let state_slots = bindings
         .iter()
-        .filter(|binding| binding.role == GpuPlanBindingRole::StateWrite)
+        .filter(|binding| binding.role == GpuExecutionBindingRole::StateWrite)
         .map(|binding| binding.slot)
         .collect::<BTreeSet<_>>();
     let mut physical = BTreeMap::<u32, GpuPhysicalOutputPlan>::new();
@@ -627,7 +620,8 @@ fn physical_outputs(
                 bindings
                     .iter()
                     .find(|binding| {
-                        binding.role == GpuPlanBindingRole::Output && binding.slot == output.slot
+                        binding.role == GpuExecutionBindingRole::Output
+                            && binding.slot == output.slot
                     })
                     .ok_or_else(|| {
                         GpuExecutionPlanError::Invalid(format!(
@@ -662,16 +656,7 @@ fn physical_outputs(
     Ok(physical.into_values().collect())
 }
 
-impl From<GpuBindingAccess> for GpuPlanBindingAccess {
-    fn from(access: GpuBindingAccess) -> Self {
-        match access {
-            GpuBindingAccess::Read => Self::Read,
-            GpuBindingAccess::ReadWrite => Self::ReadWrite,
-        }
-    }
-}
-
-impl From<GpuBindingRole> for GpuPlanBindingRole {
+impl From<GpuBindingRole> for GpuExecutionBindingRole {
     fn from(role: GpuBindingRole) -> Self {
         match role {
             GpuBindingRole::Input => Self::Input,
@@ -723,8 +708,8 @@ mod tests {
             bindings: vec![GpuPlanBinding {
                 binding: 0,
                 name: "input".to_owned(),
-                access: GpuPlanBindingAccess::Read,
-                role: GpuPlanBindingRole::Input,
+                access: GpuBindingAccess::Read,
+                role: GpuExecutionBindingRole::Input,
                 slot: 1,
                 elements: 2,
                 scalar: GpuPlanScalar::F32,
@@ -761,8 +746,8 @@ mod tests {
             bindings: vec![GpuPlanBinding {
                 binding: 0,
                 name: "input".to_owned(),
-                access: GpuPlanBindingAccess::Read,
-                role: GpuPlanBindingRole::Input,
+                access: GpuBindingAccess::Read,
+                role: GpuExecutionBindingRole::Input,
                 slot: 1,
                 elements: 2,
                 scalar: GpuPlanScalar::F32,

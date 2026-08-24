@@ -10,8 +10,8 @@ use mech_core::CellSlotId;
 use wgpu::util::DeviceExt;
 
 use super::{
-    ElementwiseKernel, GpuExecutionPlan, GpuKernelPlanSource, GpuPhysicalOutputPlan,
-    GpuPlanBindingAccess, GpuPlanBindingRole, GpuPlanInitialValues, GpuPlanScalar,
+    ElementwiseKernel, GpuBindingAccess, GpuExecutionBindingRole, GpuExecutionPlan,
+    GpuKernelPlanSource, GpuPhysicalOutputPlan, GpuPlanInitialValues, GpuPlanScalar,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -147,7 +147,7 @@ impl ElementwiseKernel {
             let usage = wgpu::BufferUsages::STORAGE
                 | if matches!(
                     binding.role,
-                    GpuPlanBindingRole::StateWrite | GpuPlanBindingRole::Output
+                    GpuExecutionBindingRole::StateWrite | GpuExecutionBindingRole::Output
                 ) {
                     wgpu::BufferUsages::COPY_SRC
                 } else {
@@ -186,7 +186,7 @@ impl ElementwiseKernel {
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage {
-                        read_only: binding.access == GpuPlanBindingAccess::Read,
+                        read_only: binding.access == GpuBindingAccess::Read,
                     },
                     has_dynamic_offset: false,
                     min_binding_size: None,
@@ -348,7 +348,7 @@ impl ElementwiseKernel {
             state_buffers.insert(slot, [initial, alternate]);
         }
         for binding in &execution_plan.bindings {
-            if binding.role != GpuPlanBindingRole::Input {
+            if binding.role != GpuExecutionBindingRole::Input {
                 continue;
             }
             let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
@@ -372,22 +372,22 @@ impl ElementwiseKernel {
             [BTreeMap::new(), BTreeMap::new()];
         for binding in &execution_plan.bindings {
             match binding.role {
-                GpuPlanBindingRole::Input => {
+                GpuExecutionBindingRole::Input => {
                     let buffer = fixed_buffers[&binding.binding].clone();
                     group_buffers[0].insert(binding.binding, buffer.clone());
                     group_buffers[1].insert(binding.binding, buffer);
                 }
-                GpuPlanBindingRole::StateRead => {
+                GpuExecutionBindingRole::StateRead => {
                     let slot = CellSlotId::new(binding.slot);
                     group_buffers[0].insert(binding.binding, state_buffers[&slot][0].clone());
                     group_buffers[1].insert(binding.binding, state_buffers[&slot][1].clone());
                 }
-                GpuPlanBindingRole::StateWrite => {
+                GpuExecutionBindingRole::StateWrite => {
                     let slot = CellSlotId::new(binding.slot);
                     group_buffers[0].insert(binding.binding, state_buffers[&slot][1].clone());
                     group_buffers[1].insert(binding.binding, state_buffers[&slot][0].clone());
                 }
-                GpuPlanBindingRole::Output => {
+                GpuExecutionBindingRole::Output => {
                     let buffer = Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
                         label: Some(&binding.name),
                         size: binding.elements * scalar_size(binding.scalar),
@@ -397,7 +397,7 @@ impl ElementwiseKernel {
                     group_buffers[0].insert(binding.binding, buffer.clone());
                     group_buffers[1].insert(binding.binding, buffer.clone());
                 }
-                GpuPlanBindingRole::IntegrityFault => {
+                GpuExecutionBindingRole::IntegrityFault => {
                     return Err(GpuExecutionError::InvalidPlan(
                         "elementwise plan unexpectedly contains an integrity binding".to_owned(),
                     ));
@@ -434,7 +434,7 @@ impl ElementwiseKernel {
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Storage {
-                        read_only: binding.access == GpuPlanBindingAccess::Read,
+                        read_only: binding.access == GpuBindingAccess::Read,
                     },
                     has_dynamic_offset: false,
                     min_binding_size: None,
@@ -510,7 +510,8 @@ fn physical_output_binding(
             plan.bindings
                 .iter()
                 .find(|binding| {
-                    binding.role == GpuPlanBindingRole::StateWrite && binding.slot == output.slot
+                    binding.role == GpuExecutionBindingRole::StateWrite
+                        && binding.slot == output.slot
                 })
                 .map(|binding| binding.binding)
         })

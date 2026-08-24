@@ -94,6 +94,15 @@ for path in rust_sources:
     if re.search(r"GpuExecutionPlan\s*\{", path.read_text(encoding="utf-8")):
         fail(f"physical GPU plans may only be constructed in execution_plan.rs ({relative})")
 
+gpu_and_wasm_sources = "\n".join(
+    path.read_text(encoding="utf-8")
+    for root in (ROOT / "hosts/gpu/src", ROOT / "src/wasm/src")
+    for path in root.rglob("*.rs")
+)
+for mirror in ("GpuPlanBindingAccess", "GpuPlanBindingRole", "BrowserGpuProgram"):
+    if mirror in gpu_and_wasm_sources:
+        fail(f"transitional GPU plan mirror `{mirror}` reappeared")
+
 if "prepare_browser_compute_host" in wasm_sources:
     fail("the transitional browser compute constructor reappeared")
 if wasm_sources.count("fn prepare_browser_compute_runtime(") != 1:

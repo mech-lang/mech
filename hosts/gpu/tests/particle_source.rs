@@ -11,7 +11,7 @@ use mech_core::{
 use mech_engine::{SlotRole, decode_program_artifact_sections, encode_program_artifact_sections};
 use mech_gpu::{
     ComputeHostFactory, ComputeLowerer, ElementwiseKernel, ExecutionTarget, GpuBindingRole,
-    GpuDiagnosticCode, GpuExecutionPlan, GpuKernelPlanSource, GpuPlanBindingRole,
+    GpuDiagnosticCode, GpuExecutionBindingRole, GpuExecutionPlan, GpuKernelPlanSource,
     GpuPlanKernelKind, SlotResidence, TransferDirection, native_compute_backend_registry,
 };
 use mech_runtime::{
@@ -553,7 +553,7 @@ fn particle_program_is_lowered_from_mech_to_fused_wgsl() {
     assert!(
         plan.bindings
             .iter()
-            .filter(|binding| binding.role == GpuPlanBindingRole::StateRead)
+            .filter(|binding| binding.role == GpuExecutionBindingRole::StateRead)
             .all(|binding| binding.initial_values.is_some()),
         "the physical plan must carry resident state initializers"
     );

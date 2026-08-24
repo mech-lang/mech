@@ -13,8 +13,8 @@ use mech_engine::{
     ProgramArtifact, decode_program_artifact_sections, encode_program_artifact_sections,
 };
 use mech_gpu::{
-    BatchedExecutionError, ComputeLowerer, FixedShapeKernel, GpuExecutionPlan, GpuKernelPlanSource,
-    GpuPlanBindingRole, GpuPlanKernelKind, native_compute_backend_registry,
+    BatchedExecutionError, ComputeLowerer, FixedShapeKernel, GpuExecutionBindingRole,
+    GpuExecutionPlan, GpuKernelPlanSource, GpuPlanKernelKind, native_compute_backend_registry,
 };
 use mech_runtime::{RuntimeBuilder, RuntimeHostInputValue};
 
@@ -527,7 +527,7 @@ fn fixed_shape_physical_plan_expands_one_thousand_lane_resident_buffers() {
     assert_eq!(
         plan.bindings
             .iter()
-            .filter(|binding| binding.role == GpuPlanBindingRole::IntegrityFault)
+            .filter(|binding| binding.role == GpuExecutionBindingRole::IntegrityFault)
             .map(|binding| binding.elements)
             .collect::<Vec<_>>(),
         vec![2]

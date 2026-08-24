@@ -17,7 +17,7 @@ use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
 use mech_gpu::{
     ComputeHostFactory, ComputeHostStateSnapshotHandle, ComputeLowerer, CpuScalarBackendFactory,
-    ElementwiseKernel, FixedShapeKernel, lower_elementwise_compute_program,
+    ElementwiseKernel, FixedShapeKernel, GpuKernelPlanSource, lower_elementwise_compute_program,
 };
 use mech_runtime::{
     ConfigProfileOptions, ConfigValue, HostContextManifest, HostManifestConfig, MechConfigDocument,
@@ -29,7 +29,7 @@ use mech_runtime::{
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 
-use crate::gpu::{BrowserGpuProgram, CompileTimings, gpu_program_manifest};
+use crate::gpu::{CompileTimings, gpu_program_manifest};
 
 const POINTER_PATHS: [&str; 4] = ["pulse", "position", "pressed", "delta-seconds"];
 
@@ -391,7 +391,7 @@ pub(crate) fn prepare_browser_compute_runtime(
         .resolved_backend_id(&document.hosts[compute_index].settings)?
         .to_string();
     let manifest = gpu_program_manifest(
-        prepared.kernel.browser_program(),
+        prepared.kernel.plan_source(),
         &initializer_values(&prepared.program, &prepared.initializers)?,
         &backend,
         &prepared.retained_outputs,
@@ -447,10 +447,10 @@ impl PreparedGpuKernel {
         }
     }
 
-    pub(crate) fn browser_program(&self) -> BrowserGpuProgram<'_> {
+    pub(crate) fn plan_source(&self) -> GpuKernelPlanSource<'_> {
         match self {
-            Self::Elementwise(program) => BrowserGpuProgram::Elementwise(program),
-            Self::FixedShape(program) => BrowserGpuProgram::FixedShape(program),
+            Self::Elementwise(program) => GpuKernelPlanSource::Elementwise(program),
+            Self::FixedShape(program) => GpuKernelPlanSource::FixedShape(program),
         }
     }
 }

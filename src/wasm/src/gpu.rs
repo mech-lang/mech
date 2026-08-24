@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use js_sys::{Array, Float32Array, Object, Reflect, Uint32Array};
 use mech_gpu::{
-    ElementwiseKernel, FixedShapeKernel, GpuExecutionPlan, GpuKernelPlanSource,
-    GpuPlanInitialValues, GpuPlanKernelKind, GpuPlanLayout, GpuPlanScalar,
+    GpuExecutionPlan, GpuKernelPlanSource, GpuPlanInitialValues, GpuPlanKernelKind, GpuPlanLayout,
+    GpuPlanScalar,
 };
 use wasm_bindgen::JsValue;
 use web_time::Instant;
@@ -17,14 +17,8 @@ pub(crate) struct CompileTimings {
     pub(crate) input_capture: f64,
 }
 
-#[derive(Clone, Copy)]
-pub(crate) enum BrowserGpuProgram<'a> {
-    Elementwise(&'a ElementwiseKernel),
-    FixedShape(&'a FixedShapeKernel),
-}
-
 pub(crate) fn gpu_program_manifest(
-    program: BrowserGpuProgram<'_>,
+    program: GpuKernelPlanSource<'_>,
     input_values: &BTreeMap<String, Vec<f32>>,
     backend: &str,
     retained_outputs: &std::collections::BTreeSet<String>,
@@ -33,14 +27,8 @@ pub(crate) fn gpu_program_manifest(
     let manifest_started = Instant::now();
 
     let manifest = Object::new();
-    let plan = GpuExecutionPlan::build(
-        match program {
-            BrowserGpuProgram::Elementwise(program) => GpuKernelPlanSource::Elementwise(program),
-            BrowserGpuProgram::FixedShape(program) => GpuKernelPlanSource::FixedShape(program),
-        },
-        input_values,
-    )
-    .map_err(|failure| error(failure.to_string()))?;
+    let plan = GpuExecutionPlan::build(program, input_values)
+        .map_err(|failure| error(failure.to_string()))?;
     set(
         &manifest,
         "physicalRevision",
@@ -66,15 +54,15 @@ pub(crate) fn gpu_program_manifest(
             binding.binding,
             &binding.name,
             match binding.access {
-                mech_gpu::GpuPlanBindingAccess::Read => "read",
-                mech_gpu::GpuPlanBindingAccess::ReadWrite => "read-write",
+                mech_gpu::GpuBindingAccess::Read => "read",
+                mech_gpu::GpuBindingAccess::ReadWrite => "read-write",
             },
             match binding.role {
-                mech_gpu::GpuPlanBindingRole::Input => "input",
-                mech_gpu::GpuPlanBindingRole::StateRead => "state-read",
-                mech_gpu::GpuPlanBindingRole::StateWrite => "state-write",
-                mech_gpu::GpuPlanBindingRole::Output => "output",
-                mech_gpu::GpuPlanBindingRole::IntegrityFault => "integrity-fault",
+                mech_gpu::GpuExecutionBindingRole::Input => "input",
+                mech_gpu::GpuExecutionBindingRole::StateRead => "state-read",
+                mech_gpu::GpuExecutionBindingRole::StateWrite => "state-write",
+                mech_gpu::GpuExecutionBindingRole::Output => "output",
+                mech_gpu::GpuExecutionBindingRole::IntegrityFault => "integrity-fault",
             },
             binding.slot,
             usize::try_from(binding.elements)

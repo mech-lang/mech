@@ -2483,7 +2483,7 @@ mod native {
         BatchedExecutionError, BatchedFaultRecorder, BatchedIntegrityFault, FixedShapeKernel,
     };
     use crate::{
-        GpuPlanBindingAccess, GpuPlanBindingRole, GpuPlanConstraint, GpuPlanInitialValues,
+        GpuBindingAccess, GpuExecutionBindingRole, GpuPlanConstraint, GpuPlanInitialValues,
     };
 
     const GPU_FAULT_WORDS: usize = 2;
@@ -2585,7 +2585,7 @@ mod native {
             for binding in execution_plan
                 .bindings
                 .iter()
-                .filter(|binding| binding.role == GpuPlanBindingRole::Input)
+                .filter(|binding| binding.role == GpuExecutionBindingRole::Input)
             {
                 let Some(GpuPlanInitialValues::F32(values)) = &binding.initial_values else {
                     return Err(BatchedExecutionError::Native(format!(
@@ -2627,7 +2627,7 @@ mod native {
             let integrity_binding = execution_plan
                 .bindings
                 .iter()
-                .find(|binding| binding.role == GpuPlanBindingRole::IntegrityFault);
+                .find(|binding| binding.role == GpuExecutionBindingRole::IntegrityFault);
             let integrity_fault = integrity_binding.map(|binding| {
                 Arc::new(device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech integrity-constraint fault"),
@@ -2655,7 +2655,7 @@ mod native {
                     visibility: wgpu::ShaderStages::COMPUTE,
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Storage {
-                            read_only: binding.access == GpuPlanBindingAccess::Read,
+                            read_only: binding.access == GpuBindingAccess::Read,
                         },
                         has_dynamic_offset: false,
                         min_binding_size: None,
@@ -2674,20 +2674,20 @@ mod native {
                     .iter()
                     .map(|binding| {
                         let resource = match binding.role {
-                            GpuPlanBindingRole::Input => {
+                            GpuExecutionBindingRole::Input => {
                                 input_buffers[&CellSlotId::new(binding.slot)].as_entire_binding()
                             }
-                            GpuPlanBindingRole::StateRead => state_buffers
+                            GpuExecutionBindingRole::StateRead => state_buffers
                                 [&CellSlotId::new(binding.slot)][group]
                                 .as_entire_binding(),
-                            GpuPlanBindingRole::StateWrite => state_buffers
+                            GpuExecutionBindingRole::StateWrite => state_buffers
                                 [&CellSlotId::new(binding.slot)][1 - group]
                                 .as_entire_binding(),
-                            GpuPlanBindingRole::IntegrityFault => integrity_fault
+                            GpuExecutionBindingRole::IntegrityFault => integrity_fault
                                 .as_ref()
                                 .expect("integrity plan has a fault buffer")
                                 .as_entire_binding(),
-                            GpuPlanBindingRole::Output => {
+                            GpuExecutionBindingRole::Output => {
                                 unreachable!("fixed-shape outputs alias resident state buffers")
                             }
                         };

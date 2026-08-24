@@ -30,6 +30,7 @@ use mech_engine::{
     ArtifactSource, BindingDeclaration, ComputeRegionDeclaration, ProducerReference,
     ProgramArtifact, SlotRole,
 };
+use serde::{Deserialize, Serialize};
 
 mod batched;
 pub use batched::*;
@@ -67,7 +68,8 @@ pub fn column_major_to_row_major<T: Copy + Default>(
         .map_err(|error| error.to_string())
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum GpuBindingAccess {
     Read,
     ReadWrite,
