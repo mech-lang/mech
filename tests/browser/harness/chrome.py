@@ -55,7 +55,7 @@ def find_browser(explicit: str | os.PathLike[str] | None = None) -> Path:
             ))
     else:
         candidates.extend(shutil.which(name) for name in (
-            "google-chrome", "google-chrome-stable", "chromium",
+            "google-chrome", "google-chrome-stable", "chromium", "chromium-browser",
             "microsoft-edge", "microsoft-edge-stable",
         ))
     for candidate in filter(None, candidates):
