@@ -435,8 +435,11 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("dataset.mechPagePositionRestore = \"waiting-owner\""));
     assert!(controller.contains("dataset.mechPagePositionRestore = \"settling\""));
     assert!(controller.contains("owner === window ? window.scrollY : owner.scrollTop"));
-    assert!(controller.contains("document.querySelector(\".content-shell\")?.addEventListener("));
-    assert!(controller.contains("scrollContainer?.addEventListener(\"scroll\", schedule"));
+    assert!(
+        controller
+            .contains("addRuntimeEventListener(\n    document.querySelector(\".content-shell\"),")
+    );
+    assert!(controller.contains("addRuntimeEventListener(scrollContainer, \"scroll\", schedule"));
     assert!(controller.contains("activeLink.classList.add(\"active\", \"active-path\")"));
     assert!(controller.contains("activeItem?.classList.add(\"expanded\")"));
     assert!(controller.contains("maximumScroll > 1 && metrics.top >= maximumScroll - 2"));
