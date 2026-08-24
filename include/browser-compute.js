@@ -1,5 +1,8 @@
 /* Shared WebGPU resource and completion protocol for Mech browser hosts. */
 globalThis.MechBrowserCompute ||= (() => {
+let resourceSequence = 0;
+let pipelineBuildCount = 0;
+
 class SubmissionLifecycle {
   constructor(generation) {
     this.generation = String(generation);
@@ -205,16 +208,14 @@ class Device {
     this.device = device;
     this.pipeline = pipeline;
     this.physicalRevision = String(manifest.physicalRevision || "");
-    globalThis.__MECH_COMPUTE_RESOURCE_SEQUENCE__ =
-      Number(globalThis.__MECH_COMPUTE_RESOURCE_SEQUENCE__ || 0) + 1;
-    globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__ =
-      Number(globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__ || 0) + 1;
-    this.resourceIdentity = String(globalThis.__MECH_COMPUTE_RESOURCE_SEQUENCE__);
+    resourceSequence += 1;
+    pipelineBuildCount += 1;
+    this.resourceIdentity = String(resourceSequence);
     this.deviceIdentity = `device-${this.resourceIdentity}`;
     this.pipelineIdentity =
-      `pipeline-${globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__}`;
+      `pipeline-${pipelineBuildCount}`;
     this.stateIdentity = `state-${this.resourceIdentity}`;
-    this.pipelineBuildCount = globalThis.__MECH_COMPUTE_PIPELINE_BUILD_COUNT__;
+    this.pipelineBuildCount = pipelineBuildCount;
     this.disposed = false;
     this.metrics = {
       cpuToGpuInputBytes: 0,

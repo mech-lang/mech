@@ -199,7 +199,7 @@ harness = r'''<script>
       dispatches: root.dataset.mechComputeDispatches || "",
     });
     const acceptedSource = () =>
-      globalThis.__MECH_ACCEPTED_REPL_SOURCE__?.() || "";
+      globalThis.MechDocumentController?.source() || "";
     const submitResidentSource = (source) => {
       const input = document.querySelector(".mech-repl-active-prompt .repl-input");
       if (!input || input.disabled || input.readOnly) return false;
@@ -213,7 +213,7 @@ harness = r'''<script>
       return true;
     };
     const renderedDocumentNumbers = (name) => {
-      const rendered = globalThis.__MECH_RENDERED_DOCUMENT_VALUE__?.(name);
+      const rendered = globalThis.MechDocumentController?.renderedValue(name);
       const text = document.createElement("span");
       text.innerHTML = rendered?.inlineHtml || "";
       return (text.textContent || "")
@@ -250,7 +250,7 @@ harness = r'''<script>
         !sourceAfter.includes("busy-replacement-probe")
       );
       busySymbolAbsent =
-        globalThis.__MECH_RENDERED_DOCUMENT_VALUE__?.("busy-replacement-probe") == null;
+        globalThis.MechDocumentController?.renderedValue("busy-replacement-probe") == null;
       busyLogicalProgressUnchanged = Boolean(
         after.generation === before.generation &&
         after.dispatches === before.dispatches &&
@@ -359,7 +359,7 @@ harness = r'''<script>
           );
         }
         incompatibleBefore = computeIdentity();
-        const accepted = globalThis.__MECH_REPLACE_ACCEPTED_REPL_SOURCE__?.(nextSource);
+        const accepted = globalThis.MechDocumentController?.replaceSource(nextSource);
         incompatibleEditRequested = accepted === nextSource;
       }
     });
@@ -1090,17 +1090,17 @@ harness = r'''<script>
         root.dataset.mechComputeStateResetsVerified =
           root.dataset.mechComputeStateResets || "0";
         root.dataset.mechDone = "true";
-        globalThis.__MECH_STOP__?.();
+        globalThis.MechDocumentController?.dispose();
         return;
       }
       if (updates >= 450 && !cameraToggleDisabled) {
         root.dataset.mechTimedOut = "true";
-        globalThis.__MECH_STOP__?.();
+        globalThis.MechDocumentController?.dispose();
         return;
       }
       if (harnessFrames >= 5000) {
         root.dataset.mechTimedOut = "true";
-        globalThis.__MECH_STOP__?.();
+        globalThis.MechDocumentController?.dispose();
       }
     }, 16);
   </script>'''

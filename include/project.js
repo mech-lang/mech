@@ -26,6 +26,7 @@ const script = findBootstrapScript(document, import.meta.url);
 const { projectBase, maxInputsPerFrame } = readBootstrapOptions(script, window.location.href);
 let project;
 let running = false;
+let lastFrame = null;
 
 async function fetchText(path) {
   const response = await fetch(new URL(path, projectBase));
@@ -558,7 +559,7 @@ class BrowserComputeProject {
       this.statsStarted = now;
       this.statsFrames = 0;
     }
-    globalThis.__MECH_GPU_RUNTIME__ = {
+    this.runtimeSnapshot = {
       pointer: { ...this.pointer },
       dispatched: dispatch,
       activeBuffer: this.activeBuffer,
@@ -570,7 +571,7 @@ class BrowserComputeProject {
       lastInputs: this.lastInputs,
       backend: this.backend,
     };
-    return globalThis.__MECH_GPU_RUNTIME__;
+    return this.runtimeSnapshot;
   }
 
   stop() {
@@ -703,7 +704,7 @@ function installComputeSmokeTest(target) {
   });
   const timer = setInterval(async () => {
     try {
-      const state = globalThis.__MECH_GPU_RUNTIME__;
+      const state = target.runtimeSnapshot;
       if (target.dispatchPending) pendingObservations += 1;
       if (performance.now() > deadline) {
         fail(`timed out waiting for compute convergence: ${JSON.stringify({
@@ -869,12 +870,14 @@ async function main() {
       : WasmProject.fromSources(config, sources);
   }
   project.start();
-  globalThis.__MECH_RUNTIME_INFO__ = () => project.runtimeInfo();
-  globalThis.__MECH_LAST_FRAME__ = null;
-  globalThis.__MECH_STOP__ = () => {
-    running = false;
-    project.stop();
-  };
+  globalThis.MechProjectController = Object.freeze({
+    runtimeInfo: () => project?.runtimeInfo?.() || null,
+    get lastFrame() { return lastFrame; },
+    stop() {
+      running = false;
+      project?.stop();
+    },
+  });
   running = true;
   requestAnimationFrame(frame);
 }
@@ -884,7 +887,7 @@ function frame(timestamp) {
     return;
   }
   try {
-    globalThis.__MECH_LAST_FRAME__ = project instanceof BrowserComputeProject
+    lastFrame = project instanceof BrowserComputeProject
       ? project.frame(timestamp)
       : project.frame(maxInputsPerFrame);
   } catch (error) {

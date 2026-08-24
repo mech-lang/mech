@@ -227,7 +227,7 @@ harness = r'''<script>
         root.dataset.mechPresentationRevealed = String(presentationRevealed);
         if (presentationRevealed) {
           root.dataset.mechDone = "true";
-          globalThis.__MECH_STOP__?.();
+          globalThis.MechDocumentController?.dispose();
           return;
         }
       }
@@ -299,7 +299,7 @@ harness = r'''<script>
         root.dataset.mechTimedOut = "true";
         root.dataset.mechSceneGeometryCorrect = String(sceneGeometryCorrect);
         root.dataset.mechSunCentered = String(sunCentered);
-        globalThis.__MECH_STOP__?.();
+        globalThis.MechDocumentController?.dispose();
       }
     }, 16);
   </script>'''

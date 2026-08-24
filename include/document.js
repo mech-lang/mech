@@ -2002,25 +2002,27 @@ function renderValues() {
   dispatch("mech:document-rendered");
 }
 
-// A read-only reflection seam for browser conformance harnesses and embedders.
-// It observes an ordinary retained resident symbol; it does not allocate a
-// compute presentation buffer or route scalar compute through JavaScript.
-globalThis.__MECH_RENDERED_DOCUMENT_VALUE__ = (name) =>
-  state.document?.renderedDocumentValue?.(String(name)) || null;
-
-// Complete-source reflection is the stable handoff used by the document
-// editor. It deliberately goes through the resident session instead of
-// mutating the browser bridge or its GPU resources directly.
-globalThis.__MECH_ACCEPTED_REPL_SOURCE__ = () =>
-  state.document?.replSource?.() || "";
-globalThis.__MECH_REPLACE_ACCEPTED_REPL_SOURCE__ = (source) => {
-  if (typeof state.document?.replReplaceSource !== "function") {
-    throw new Error("the document runtime does not expose transactional source replacement");
-  }
-  const response = state.document.replReplaceSource(String(source));
-  consumeReplResponse(response);
-  return state.document.replSource();
-};
+globalThis.MechDocumentController = Object.freeze({
+  // Reflection observes an ordinary retained resident symbol; it never
+  // widens compute readback or routes scalar compute through JavaScript.
+  renderedValue(name) {
+    return state.document?.renderedDocumentValue?.(String(name)) || null;
+  },
+  source() {
+    return state.document?.replSource?.() || "";
+  },
+  replaceSource(source) {
+    if (typeof state.document?.replReplaceSource !== "function") {
+      throw new Error("the document runtime does not expose transactional source replacement");
+    }
+    const response = state.document.replReplaceSource(String(source));
+    consumeReplResponse(response);
+    return state.document.replSource();
+  },
+  dispose() {
+    stopRuntime();
+  },
+});
 
 function transcript() {
   return state.console?.transcript || null;
