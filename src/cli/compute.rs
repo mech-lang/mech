@@ -130,7 +130,8 @@ fn compile_compute_application(
         mixed.compute.initializers,
         native_compute_backend_registry(),
         ComputePlatform::Native,
-    )?;
+    )?
+    .with_retained_outputs(mixed.retained_outputs)?;
     if let Some(request) = plan.backend_override.as_deref() {
         factory =
             factory.with_backend_override(BackendRequest::parse(request).map_err(|error| {

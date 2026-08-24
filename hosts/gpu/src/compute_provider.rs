@@ -41,6 +41,7 @@ pub struct ComputeHostFactory {
     installed_instance: Mutex<Option<String>>,
     state_snapshot: ComputeHostStateSnapshotHandle,
     resume_state: Option<ComputeHostResumeState>,
+    retained_outputs: BTreeSet<String>,
     manifest: HostManifestConfig,
 }
 
@@ -84,6 +85,7 @@ impl ComputeHostFactory {
             installed_instance: Mutex::new(None),
             state_snapshot: ComputeHostStateSnapshotHandle::default(),
             resume_state: None,
+            retained_outputs: BTreeSet::new(),
             manifest: compute_host_manifest(),
         })
     }
@@ -100,6 +102,25 @@ impl ComputeHostFactory {
     pub fn with_resume_state(mut self, state: ComputeHostResumeState) -> Self {
         self.resume_state = Some(state);
         self
+    }
+
+    pub fn with_retained_outputs(mut self, outputs: BTreeSet<String>) -> MResult<Self> {
+        for output in &outputs {
+            if !self
+                .program
+                .interface()
+                .outputs
+                .iter()
+                .any(|port| port.name.as_ref() == output)
+            {
+                return Err(compute_host_error(
+                    "ComputeHostConfiguration",
+                    format!("retained compute output `{output}` is not declared"),
+                ));
+            }
+        }
+        self.retained_outputs = outputs;
+        Ok(self)
     }
 
     pub fn resolved_backend_id(&self, settings: &ConfigValue) -> MResult<mech_compute::BackendId> {
@@ -212,17 +233,10 @@ impl RuntimeHostFactory for ComputeHostFactory {
         let base_uri = format!("compute://{instance_name}/kernel");
         let resume = self.resume_state.as_ref();
         let replay_on_start = resume.is_some();
-        // A compute output is a level-valued resource, not an edge subscription.
-        // Keep one lane-zero sample of every declared output current so a
-        // compatible outer-program replacement can begin observing any output
-        // without mixing the current turn counter with an initializer value.
-        let level_outputs = self
-            .program
-            .interface()
-            .outputs
-            .iter()
-            .map(|port| port.name.to_string())
-            .collect();
+        // Retained outputs come from the coordinator's explicit sample-read
+        // capability contract. They stay current across compatible source
+        // generations, while outputs absent from that contract remain entirely
+        // backend-resident and incur no CPU readback.
         let mut sampled_outputs = initial_sampled_outputs(&self.program)?;
         if let Some(resume) = resume {
             sampled_outputs.extend(resume.sampled_outputs.clone());
@@ -235,8 +249,13 @@ impl RuntimeHostFactory for ComputeHostFactory {
             fault_count: Ref::new(resume.map_or(0.0, |state| state.fault_count)),
             last_fault: Ref::new(resume.map_or_else(String::new, |state| state.last_fault.clone())),
             sampled_outputs,
-            sample_requests: BTreeSet::new(),
-            level_outputs,
+            // A declared sample read is both a retention contract and a
+            // persistent telemetry subscription. Compatible coordinator
+            // replacement does not necessarily repeat the non-planning read
+            // that dynamically registers a sample, so seed the subscription
+            // set from the source contract instead of depending on that
+            // lifecycle side effect.
+            sample_subscriptions: self.retained_outputs.clone(),
             phase: ComputeHostPhase::Ready {
                 last_submitted_turn: resume
                     .and_then(|state| state.last_submitted_turn)
@@ -387,8 +406,7 @@ struct ComputeHostState {
     fault_count: Ref<f64>,
     last_fault: Ref<String>,
     sampled_outputs: BTreeMap<String, LegacyValue>,
-    sample_requests: BTreeSet<String>,
-    level_outputs: BTreeSet<String>,
+    sample_subscriptions: BTreeSet<String>,
     phase: ComputeHostPhase,
     session: Box<dyn ComputeSession>,
 }
@@ -566,7 +584,7 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
             candidate_dispatch_ms,
             candidate_fault_count,
             &candidate_last_fault,
-            &state.sample_requests,
+            &state.sample_subscriptions,
             &candidate_outputs,
         )
         .map_err(|error| {
@@ -628,8 +646,7 @@ impl std::fmt::Debug for ComputeHostState {
             .field("dispatch_ms", &self.dispatch_ms)
             .field("fault_count", &self.fault_count)
             .field("last_fault", &self.last_fault)
-            .field("sample_requests", &self.sample_requests)
-            .field("level_outputs", &self.level_outputs)
+            .field("sample_subscriptions", &self.sample_subscriptions)
             .field("phase", &self.phase)
             .field("session", &"<dyn ComputeSession>")
             .finish()
@@ -679,7 +696,7 @@ impl ComputeResourceProvider {
             if planning {
                 return zero_sample_value(port);
             }
-            state.sample_requests.insert(port.name.to_string());
+            state.sample_subscriptions.insert(port.name.to_string());
             return state
                 .sampled_outputs
                 .get(port.name.as_ref())
@@ -921,7 +938,7 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             .interface()
             .outputs
             .iter()
-            .filter(|port| state.level_outputs.contains(port.name.as_ref()))
+            .filter(|port| state.sample_subscriptions.contains(port.name.as_ref()))
             .map(|port| port.id)
             .collect();
         let request = ComputeDispatchRequest {
@@ -952,13 +969,13 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             return Ok(());
         }
         let mut sampled = None;
-        if report.completed_turns > 0 && !state.level_outputs.is_empty() {
+        if report.completed_turns > 0 && !state.sample_subscriptions.is_empty() {
             let selected = state
                 .program
                 .interface()
                 .outputs
                 .iter()
-                .filter(|port| state.level_outputs.contains(port.name.as_ref()))
+                .filter(|port| state.sample_subscriptions.contains(port.name.as_ref()))
                 .map(|port| port.id)
                 .collect();
             let snapshot = match state
@@ -1002,7 +1019,7 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             candidate_dispatch_ms,
             candidate_fault_count,
             &candidate_last_fault,
-            &state.sample_requests,
+            &state.sample_subscriptions,
             &candidate_outputs,
         )
         .map_err(|error| {
@@ -1089,7 +1106,7 @@ fn telemetry_updates_from_values(
     dispatch_ms: f64,
     fault_count: f64,
     last_fault: &str,
-    sample_requests: &BTreeSet<String>,
+    sample_subscriptions: &BTreeSet<String>,
     sampled_outputs: &BTreeMap<String, LegacyValue>,
 ) -> MResult<Vec<RuntimeHostInputUpdate>> {
     let mut updates = vec![
@@ -1115,7 +1132,7 @@ fn telemetry_updates_from_values(
             RuntimeHostInputValue::String(last_fault.to_owned()),
         )?,
     ];
-    for name in sample_requests {
+    for name in sample_subscriptions {
         let value = sampled_outputs.get(name).ok_or_else(|| {
             compute_host_error(
                 "ComputeHostRead",
@@ -1213,7 +1230,7 @@ impl RuntimeHostInputDriver for ComputeTelemetryDriver {
                     *state.dispatch_ms.borrow(),
                     *state.fault_count.borrow(),
                     &state.last_fault.borrow(),
-                    &state.sample_requests,
+                    &state.sample_subscriptions,
                     &state.sampled_outputs,
                 )?)?
             };
@@ -1459,7 +1476,7 @@ fn materialize_sampled_outputs(
         .interface()
         .outputs
         .iter()
-        .filter(|port| state.level_outputs.contains(port.name.as_ref()))
+        .filter(|port| state.sample_subscriptions.contains(port.name.as_ref()))
         .cloned()
         .collect::<Vec<_>>();
     let mut sampled = BTreeMap::new();
@@ -1943,8 +1960,7 @@ mod tests {
             fault_count: Ref::new(0.0),
             last_fault: Ref::new(String::new()),
             sampled_outputs: BTreeMap::new(),
-            sample_requests: BTreeSet::new(),
-            level_outputs: BTreeSet::new(),
+            sample_subscriptions: BTreeSet::new(),
             phase,
             session: Box::new(FakeSession {
                 backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
@@ -2112,7 +2128,7 @@ mod tests {
     }
 
     #[test]
-    fn compatible_factory_preserves_current_sample_for_every_declared_output() {
+    fn compatible_factory_preserves_current_sample_for_retained_output_contract() {
         let current = RuntimeHostInputValue::F32(42.0).into_mech_value().unwrap();
         let resume = ComputeHostResumeState {
             turns: 120.0,
@@ -2130,6 +2146,8 @@ mod tests {
             registry(),
             ComputePlatform::Native,
         )
+        .unwrap()
+        .with_retained_outputs(BTreeSet::from(["result".to_owned()]))
         .unwrap()
         .with_resume_state(resume);
         let snapshot = factory.state_snapshot_handle();
@@ -2155,6 +2173,44 @@ mod tests {
             .unwrap(),
             RuntimeHostInputValue::F32(42.0)
         );
+    }
+
+    #[test]
+    fn report_only_dispatch_keeps_declared_outputs_backend_resident() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let program = Arc::new(program_with_sample_output());
+        let state = Arc::new(Mutex::new(ComputeHostState {
+            backend: CPU_SCALAR_BACKEND.to_owned(),
+            turns: Ref::new(0.0),
+            dispatch_ms: Ref::new(0.0),
+            fault_count: Ref::new(0.0),
+            last_fault: Ref::new(String::new()),
+            sampled_outputs: initial_sampled_outputs(&program).unwrap(),
+            sample_subscriptions: BTreeSet::new(),
+            phase: ComputeHostPhase::Ready {
+                last_submitted_turn: None,
+            },
+            session: Box::new(FakeSession {
+                backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
+                calls: Arc::clone(&calls),
+                result: Ok(ComputeDispatchReport {
+                    completed_turns: 1,
+                    ..Default::default()
+                }),
+            }),
+            program,
+        }));
+        let mut effect = ComputeDispatchEffect {
+            resource: "compute://particles/kernel".to_owned(),
+            region: "particle-field".into(),
+            turn: ComputeTurnToken(1),
+            state,
+            telemetry: Arc::new(Mutex::new(None)),
+        };
+
+        effect.deliver().unwrap();
+
+        assert_eq!(calls.lock().unwrap().as_slice(), [FakeCall::Dispatch(1)]);
     }
 
     #[test]

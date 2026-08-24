@@ -80,6 +80,7 @@ impl WasmMixedComputeProject {
             registry,
             ComputePlatform::Browser,
         )
+        .and_then(|factory| factory.with_retained_outputs(prepared.retained_outputs.clone()))
         .map_err(js_error)?;
         if !backend_override.is_empty() {
             compute_factory = compute_factory
@@ -93,6 +94,7 @@ impl WasmMixedComputeProject {
             prepared.kernel.browser_program(),
             &initializer_values(&prepared.program, &prepared.initializers).map_err(js_error)?,
             &backend,
+            &prepared.retained_outputs,
             prepared.timings,
         )?;
         let mut builder = RuntimeBuilder::new()
@@ -268,6 +270,7 @@ pub(crate) struct PreparedComputeRegion {
     pub(crate) coordinator: ProgramArtifact,
     pub(crate) program: ComputeProgram,
     pub(crate) initializers: ComputeInitializerSet,
+    pub(crate) retained_outputs: BTreeSet<String>,
     pub(crate) kernel: PreparedGpuKernel,
     pub(crate) timings: CompileTimings,
 }
@@ -363,7 +366,8 @@ pub(crate) fn prepare_browser_compute_host(
         prepared.initializers.clone(),
         registry,
         ComputePlatform::Browser,
-    )?;
+    )?
+    .with_retained_outputs(prepared.retained_outputs.clone())?;
     let backend = factory
         .resolved_backend_id(&document.hosts[compute_index].settings)?
         .to_string();
@@ -371,6 +375,7 @@ pub(crate) fn prepare_browser_compute_host(
         prepared.kernel.browser_program(),
         &initializer_values(&prepared.program, &prepared.initializers)?,
         &backend,
+        &prepared.retained_outputs,
         prepared.timings,
     )
     .map_err(|failure| mixed_error(format!("browser compute manifest failed: {failure:?}")))?;
@@ -498,6 +503,7 @@ pub(crate) fn prepare_compute_region(
         coordinator: mixed.coordinator.into_artifact(),
         program,
         initializers: mixed.compute.initializers,
+        retained_outputs: mixed.retained_outputs,
         kernel,
         timings: CompileTimings {
             catalog_setup,
@@ -2252,6 +2258,8 @@ state
             registry,
             ComputePlatform::Browser,
         )
+        .unwrap()
+        .with_retained_outputs(prepared.retained_outputs)
         .unwrap()
         .with_backend_override(request);
         let backend = factory

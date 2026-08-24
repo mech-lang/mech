@@ -1130,6 +1130,37 @@ fn mixed_tree_compilation_owns_partitioning_and_typed_initializers() {
 
 #[cfg(feature = "compute")]
 #[test]
+fn mixed_tree_retains_only_explicit_sample_read_capabilities() {
+    let tree = mech_syntax::parse(
+        r#"
+@compute := compute://worker/kernel{:read(sample/result), :write(input/x), :write(turn)}
+@compute/input/x <- 1f32
+@compute/turn <- 1
+
+calculation @compute
+-------------------------------------------------------------------------------
+x := 1f32
+result := x + 2f32
+unused := x + 3f32
+(result, unused)
+"#,
+    )
+    .unwrap();
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .build_compiler()
+        .unwrap();
+
+    let mixed = compiler.compile_mixed_tree(&tree).unwrap();
+
+    assert_eq!(
+        mixed.retained_outputs,
+        BTreeSet::from(["result".to_owned()])
+    );
+}
+
+#[cfg(feature = "compute")]
+#[test]
 fn mixed_tree_coordinator_retains_interactive_root_symbols() {
     let tree = mech_syntax::parse(
         r#"

@@ -89,6 +89,10 @@ pub struct MixedProgramCompilation {
     /// infer the outer broadcast extent; the inner compute interface remains
     /// the schema for one independent instance.
     pub activation_inputs: BTreeMap<String, ComputeValue>,
+    /// Concrete sampled outputs admitted by the coordinator's declared read
+    /// capability. These form the demand-retention contract across compatible
+    /// compute-host generations; undeclared outputs remain GPU-resident.
+    pub retained_outputs: BTreeSet<String>,
 }
 
 #[cfg(feature = "compute")]
@@ -585,6 +589,7 @@ impl<'a> ProgramCompilerView<'a> {
     fn compile_mixed_tree(&self, tree: &Program) -> MResult<MixedProgramCompilation> {
         let partition = partition_mixed_program(tree)?;
         let external_input_names = source_declared_compute_inputs(tree)?;
+        let retained_outputs = source_declared_compute_outputs(tree)?;
         let (compute, initial_inputs) = self.compile_tree_artifact_with_input_initializers(
             &partition.compute,
             &BTreeMap::new(),
@@ -603,6 +608,7 @@ impl<'a> ProgramCompilerView<'a> {
             coordinator,
             compute,
             activation_inputs,
+            retained_outputs,
         })
     }
 
@@ -619,6 +625,7 @@ impl<'a> ProgramCompilerView<'a> {
         let tree = declaration_tree(&modules[&root].source.source)?;
         let partition = partition_mixed_program(&tree)?;
         let external_input_names = source_declared_compute_inputs(&tree)?;
+        let retained_outputs = source_declared_compute_outputs(&tree)?;
         let (compute, initial_inputs, _) = self.compile_resolved_tree_artifact(
             &root,
             &modules,
@@ -640,6 +647,7 @@ impl<'a> ProgramCompilerView<'a> {
             coordinator,
             compute,
             activation_inputs,
+            retained_outputs,
         })
     }
 
@@ -1464,6 +1472,31 @@ fn source_declared_compute_inputs(tree: &Program) -> MResult<BTreeSet<String>> {
         .filter_map(|capability| match capability.scope {
             SourceContextCapabilityScope::Path(path) => (!path.contains('*'))
                 .then(|| path.strip_prefix("input/").map(str::to_owned))
+                .flatten(),
+            SourceContextCapabilityScope::Wildcard => None,
+        })
+        .collect())
+}
+
+#[cfg(feature = "compute")]
+fn source_declared_compute_outputs(tree: &Program) -> MResult<BTreeSet<String>> {
+    let index = SourceIndex::from_program(tree);
+    index.validate_address_targets()?;
+    Ok(index
+        .all_contexts()
+        .into_iter()
+        .filter(|context| {
+            matches!(
+                &context.base,
+                SourceContextBase::ResourceUri(uri)
+                    if uri.starts_with("compute://") && uri.ends_with("/kernel")
+            )
+        })
+        .flat_map(|context| context.capabilities)
+        .filter(|capability| capability.operation == "read")
+        .filter_map(|capability| match capability.scope {
+            SourceContextCapabilityScope::Path(path) => (!path.contains('*'))
+                .then(|| path.strip_prefix("sample/").map(str::to_owned))
                 .flatten(),
             SourceContextCapabilityScope::Wildcard => None,
         })

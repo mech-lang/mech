@@ -4489,6 +4489,8 @@ rows := |id<string> x<f64>|
                 registry,
                 mech_compute::ComputePlatform::Browser,
             )
+            .unwrap()
+            .with_retained_outputs(prepared.retained_outputs)
             .unwrap();
             (prepared.coordinator, factory, command)
         };

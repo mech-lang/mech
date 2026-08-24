@@ -304,14 +304,36 @@ impl GpuExecutionPlan {
     /// this digest: generations own commands and completions, while equal
     /// revisions may adopt the same device, pipeline, and state buffers.
     pub fn physical_revision(&self, backend: &str) -> Result<String, GpuExecutionPlanError> {
+        self.physical_revision_with_retained_outputs(backend, &BTreeSet::new())
+    }
+
+    /// Return the stable identity of the physical plan together with the
+    /// coordinator's CPU-observable sample contract. Changing that contract
+    /// must replace the physical generation: otherwise a newly observed
+    /// sample would begin at its initializer while the retained compute state
+    /// and turn counter belong to a later generation.
+    pub fn physical_revision_with_retained_outputs(
+        &self,
+        backend: &str,
+        retained_outputs: &BTreeSet<String>,
+    ) -> Result<String, GpuExecutionPlanError> {
         self.validate()?;
-        let encoded = serde_json::to_vec(self).map_err(|failure| {
+        let encoded = if retained_outputs.is_empty() {
+            serde_json::to_vec(self)
+        } else {
+            serde_json::to_vec(&(self, retained_outputs))
+        }
+        .map_err(|failure| {
             GpuExecutionPlanError::Invalid(format!(
                 "GPU execution plan revision serialization failed: {failure}"
             ))
         })?;
         let mut digest = Sha256::new();
-        digest.update(b"mech-gpu-physical-revision-v1\0");
+        digest.update(if retained_outputs.is_empty() {
+            b"mech-gpu-physical-revision-v1\0".as_slice()
+        } else {
+            b"mech-gpu-physical-revision-v2-retained-outputs\0".as_slice()
+        });
         digest.update(backend.as_bytes());
         digest.update(b"\0");
         digest.update(encoded);
@@ -764,5 +786,24 @@ mod tests {
         changed = plan.clone();
         changed.wgsl.push_str(" // changed kernel");
         assert_ne!(revision, changed.physical_revision("wgpu").unwrap());
+
+        let retained = BTreeSet::from(["estimate".to_owned()]);
+        let retained_revision = plan
+            .physical_revision_with_retained_outputs("wgpu", &retained)
+            .unwrap();
+        assert_ne!(revision, retained_revision);
+        assert_eq!(
+            retained_revision,
+            plan.physical_revision_with_retained_outputs("wgpu", &retained)
+                .unwrap()
+        );
+        assert_ne!(
+            retained_revision,
+            plan.physical_revision_with_retained_outputs(
+                "wgpu",
+                &BTreeSet::from(["other".to_owned()]),
+            )
+            .unwrap()
+        );
     }
 }
