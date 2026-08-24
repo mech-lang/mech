@@ -6,17 +6,7 @@ Status: accepted architecture for the portable resident REPL, served documents, 
 
 `ResidentReplSession` and the typed runtime request/event protocol are the authoritative interactive system. A frontend may collect input, satisfy host requests, schedule cooperative work, and render typed events. It must not reimplement command behavior, source transactions, symbol identity, retained output policy, diagnostic ownership, or undo/redo semantics.
 
-The request direction is:
-
-```text
-frontend input -> typed REPL request -> ResidentReplSession -> runtime
-```
-
-The presentation direction is:
-
-```text
-runtime -> typed program/REPL event -> frontend renderer
-```
+Requests flow `frontend input -> typed REPL request -> ResidentReplSession -> runtime`; presentation flows `runtime -> typed program/REPL event -> frontend renderer`.
 
 CLI, WASM document, standalone browser presentation, editor, and future native application integrations are adapters on those two directions.
 
@@ -34,24 +24,13 @@ The value returned by an accepted edit is recaptured after migration and output 
 
 ## Runtime generation and physical revision
 
-These are distinct identities:
-
-- runtime generation identifies commands, completions, logical ownership, and
-  stale-work rejection;
-- physical revision identifies compatible device, pipeline, binding layout,
-  buffers, and state resources.
+Runtime generation identifies commands, completions, logical ownership, and stale-work rejection. Physical revision independently identifies compatible devices, pipelines, binding layouts, buffers, and state resources.
 
 A compatible logical generation may inherit resources from the same physical revision. An incompatible revision reports an explicit reset. A completion from a retired generation is always rejected even when physical resources were transferred.
 
 ## Retained values
 
-The replacement contract distinguishes:
-
-- declared outputs;
-- statically retained outputs;
-- active sample subscriptions;
-- lazily materialized sample cache entries;
-- backend-resident unretained outputs.
+The replacement contract distinguishes declared outputs, statically retained outputs, active sample subscriptions, lazily materialized sample cache entries, and backend-resident unretained outputs.
 
 Compatible replacement migrates only state explicitly named by the replacement contract. Runtime-only observation must not enlarge that contract. Report-only compute keeps values on the backend unless an actual read is requested.
 
@@ -63,17 +42,7 @@ Browser compute has one session lifecycle: generation ownership, device and pipe
 
 ## Browser component contract
 
-Production controller and stylesheet code use the canonical component schema:
-
-```text
-data-mech-repl-host
-data-mech-console-pane
-data-mech-console-panel
-data-mech-console-tab
-data-mech-console-resizer
-data-mech-console-mode
-data-mech-presentation-view
-```
+Production controller and stylesheet code use one canonical component schema: `data-mech-repl-host`, `data-mech-console-pane`, `data-mech-console-panel`, `data-mech-console-tab`, `data-mech-console-resizer`, `data-mech-console-mode`, and `data-mech-presentation-view`.
 
 State is represented once. The `hidden` property owns ordinary visibility and `data-mech-console-mode` owns fullscreen workspace mode. Compatibility markup, if ever required for an external embed, is normalized before the canonical controller starts and is not queried by core controller or component CSS.
 
@@ -89,13 +58,9 @@ Real-browser scenarios share one Chrome/CDP/server harness. Scenario modules con
 
 ## Structural rules
 
-- No crate or build script uses crate-wide `allow(warnings)`.
-- `ComputeSession` exposes one request-based dispatch operation.
-- Browser compute exposes one versioned completion operation.
-- Sample selection names the sampled instance explicitly.
-- Physical-plan derivation occurs in Rust and crosses one wire encoder.
-- Core browser code queries only the canonical `data-mech-*` component schema.
-- Every browser-test source delegates browser process and CDP ownership to the canonical harness, independent of its filename.
-- Necessary lint allowances are local, named, and explained.
+- No crate or build script uses crate-wide `allow(warnings)`; necessary lint allowances are local, named, and explained.
+- `ComputeSession` exposes one request-based dispatch operation, and browser compute exposes one versioned completion operation.
+- Sample selection names the sampled instance explicitly; physical-plan derivation occurs in Rust and crosses one wire encoder.
+- Core browser code uses only the canonical `data-mech-*` schema, and every browser test delegates process and CDP ownership to the canonical harness.
 
 These rules are checked by the inexpensive interactive-architecture contract in CI. Changes that need a new compatibility path must update this record and add a removal boundary rather than reintroducing parallel semantics.

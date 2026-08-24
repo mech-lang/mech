@@ -2030,6 +2030,12 @@ globalThis.MechDocumentController = Object.freeze({
     if (typeof state.document?.replInvoke !== "function") {
       throw new Error("the document runtime does not expose interactive requests");
     }
+    if (state.replBusy) {
+      throw new Error("the document runtime is already processing an interactive request");
+    }
+    if (state.replTerminated) {
+      throw new Error("the document runtime has terminated");
+    }
     const response = state.document.replInvoke(String(source));
     await consumeCooperativeResponse(response);
     return response;
@@ -4208,8 +4214,12 @@ function refreshDocumentComputeBridge() {
   }
   const buildId = ++state.computeBridgeBuildId;
   const controller = state.document;
+  const ownsBuild = () =>
+    buildId === state.computeBridgeBuildId &&
+    controller === state.document &&
+    state.computeBridgeLifecycle !== "stopped";
   setComputeBridgeLifecycle("building");
-  const refresh = createDocumentComputeBridgeWithFallback(controller, bridge)
+  const refresh = createDocumentComputeBridgeWithFallback(controller, bridge, ownsBuild)
     .then(next => {
       const currentGeneration = typeof controller?.computeGeneration === "function"
         ? controller.computeGeneration()
@@ -4395,10 +4405,12 @@ function constructDocumentController(WasmDocument, documentSources) {
 async function createDocumentComputeBridgeWithFallback(
   controller = state.document,
   previous = null,
+  isCurrent,
 ) {
   try {
     return await DocumentComputeBridge.create(controller, previous);
   } catch (error) {
+    if (!isCurrent()) throw error;
     document.documentElement.dataset.mechComputeBridgeCreateError =
       error instanceof Error ? error.message : String(error);
     const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
@@ -4471,7 +4483,13 @@ async function main() {
   }
   setComputeBridgeLifecycle("building");
   const initialBuildId = ++state.computeBridgeBuildId;
-  state.computeBridge = await createDocumentComputeBridgeWithFallback(state.document);
+  const ownsInitialBuild = () =>
+    startupIsCurrent() && initialBuildId === state.computeBridgeBuildId;
+  state.computeBridge = await createDocumentComputeBridgeWithFallback(
+    state.document,
+    null,
+    ownsInitialBuild,
+  );
   if (initialBuildId !== state.computeBridgeBuildId) {
     state.computeBridge?.retire();
     return;

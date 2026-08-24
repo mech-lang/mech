@@ -169,9 +169,11 @@ def owns_browser_process(source: str) -> bool:
     browser_value = rf"{BROWSER_EXECUTABLE}|find_browser|args\.browser|(?:chrome|edge|firefox)_bin"
     browser_names: set[str] = set()
     for _ in assignments:
-        known = "|".join(map(re.escape, browser_names)) or r"(?!)"
-        browser_names.update(name for name, value in assignments
-                             if re.search(rf"{browser_value}|\b(?:{known})\b", value))
+        browser_names.update(
+            name for name, value in assignments
+            if re.search(browser_value, launched_executable(value))
+            or launched_executable(value) in browser_names
+        )
     launchers = {f"subprocess.{name}" for name in PY_LAUNCHERS[:5]}
     launchers |= {"asyncio.create_subprocess_exec", "os.system", "deno.command", "bun.spawn"}
     for imports in re.findall(r"from\s+(?:subprocess|asyncio|os)\s+import\s+([^\n]+)", source):
@@ -202,24 +204,42 @@ def owns_browser_process(source: str) -> bool:
 
 
 def discovers_browser(source: str) -> bool:
+    source = source.lower()
+    finders = {"find_browser"}
+    whiches = {"which", "shutil.which"}
+    for module, imports in re.findall(r"from\s+([\w.]+)\s+import\s+([^\n]+)", source):
+        for original, alias in re.findall(r"\b(find_browser|which)\b(?:\s+as\s+(\w+))?", imports):
+            if original == "find_browser" or module == "shutil":
+                (finders if original == "find_browser" else whiches).add(alias or original)
+    for module, alias in re.findall(r"import\s+([\w.]+)\s+as\s+(\w+)", source):
+        if module == "shutil":
+            whiches.add(f"{alias}.which")
+        if module.endswith("browser.harness"):
+            finders.add(f"{alias}.find_browser")
+    finder = "|".join(sorted(map(re.escape, finders), key=len, reverse=True))
+    which = "|".join(sorted(map(re.escape, whiches), key=len, reverse=True))
     return re.search(
-        rf"\bfind_browser\s*\(|\b(?:shutil\.)?which\s*\(\s*['\"]{BROWSER_EXECUTABLE}|"
+        rf"\b(?:{finder})\s*\(|\b(?:{which})\s*\(\s*['\"]{BROWSER_EXECUTABLE}|"
         rf"\b(?:command\s+-v|which)\s+{BROWSER_EXECUTABLE}|\b(?:chrome|edge|firefox)_bin\b",
-        source.lower(),
+        source,
     ) is not None
 
 
 ownership_probes = (
     ('subprocess.run(["python3", "verify.py", "--browser-family", "chromium"])', False),
+    ('cmd = ["python3", "verify.py", "chromium"]\nsubprocess.run(cmd)', False),
     ('browser = "/usr/bin/chromium"\nsubprocess.run(["timeout", "2s", browser])', True),
+    ('browser = args.browser\ncmd = [browser, "--headless"]\nsubprocess.run(cmd)', True),
     ('from subprocess import run as launch\nb = args.browser\nlaunch([b])', True),
     ('import { spawn as launch } from "node:child_process"; launch("firefox", [])', True),
 )
 for probe, expected in ownership_probes:
     if owns_browser_process(probe) is not expected:
         fail(f"browser executable-position detector failed its {expected=} probe: {probe}")
-if not discovers_browser('browser = shutil.which("chromium")'):
-    fail("browser discovery detector did not recognize executable discovery")
+for probe in ('browser = shutil.which("chromium")',
+              'from shutil import which as locate\nbrowser = locate("chromium")'):
+    if not discovers_browser(probe):
+        fail(f"browser discovery detector missed: {probe}")
 
 
 for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
