@@ -2019,6 +2019,7 @@ globalThis.MechDocumentController = Object.freeze({
     }
     const response = state.document.replReplaceSource(String(source));
     consumeReplResponse(response);
+    renderValues();
     return state.document.replSource();
   },
   invoke(source) {
@@ -2027,6 +2028,7 @@ globalThis.MechDocumentController = Object.freeze({
     }
     const response = state.document.replInvoke(String(source));
     consumeReplResponse(response);
+    renderValues();
     return response;
   },
   dispose() {

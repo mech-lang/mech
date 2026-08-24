@@ -744,57 +744,86 @@ def assert_output_fullscreen_control():
     if not all(fullscreen.values()):
         fail(f"output fullscreen did not remain an independent output-only surface: {fullscreen!r}")
 
-    evaluate("""
-(() => {
-  window.dispatchEvent(new CustomEvent('mech:output', { detail: {
-    stream: 'stdout', operation: 'create', display_id: 'fullscreen-fill-scene',
-    content: { kind: 'scene', data: { representations: { representations: [{
-      media_type: 'application/vnd.mech.scene+json',
-      data: { encoding: 'text', value: JSON.stringify({
-        width: 120, height: 80, background: '#080b12', circles: [], lines: [],
-      }) },
-    }] } } },
-  }}));
-  const canvasEntry = document.createElement('article');
-  canvasEntry.className = 'mech-repl-output-entry';
-  canvasEntry.dataset.mechDisplayId = 'fullscreen-fill-canvas';
-  canvasEntry.innerHTML = '<div class="mech-repl-output-content" data-mech-output-fill="true"><canvas width="120" height="80"></canvas></div>';
-  document.querySelector('[data-mech-output-region="repl"]')?.append(canvasEntry);
-})()
+    def render_fixed_surface(block_html):
+        rendered = json.dumps({
+            "name": None,
+            "kind": "scene/test",
+            "selectionToken": "selection:fullscreen-fill",
+            "inlineHtml": "scene/test",
+            "blockHtml": block_html,
+        })
+        return evaluate_json(f"""
+(async () => {{
+  const {{ WasmDocument }} = await import('/_mech/pkg/mech_wasm.js');
+  const prototype = WasmDocument.prototype;
+  window.__MECH_SMOKE_ORIGINAL_PROGRAM_OUTPUT__ ||=
+    prototype.renderedProgramOutput;
+  prototype.renderedProgramOutput = function() {{ return {rendered}; }};
+  const controller = globalThis.MechDocumentController;
+  controller.replaceSource(controller.source());
+  return true;
+}})()
 """)
-    wait_for(
-        "Boolean(document.querySelector('[data-mech-display-id=fullscreen-fill-scene] [data-mech-rich-scene=true]') && "
-        "document.querySelector('[data-mech-display-id=fullscreen-fill-canvas] canvas'))",
-        "SVG and canvas render surfaces in output fullscreen",
-    )
-    fill_geometry = evaluate_json("""
-(() => {
-  const measure = (displayId, surfaceSelector) => {
-    const entry = document.querySelector(`[data-mech-display-id="${displayId}"]`);
-    const body = entry?.querySelector('[data-mech-output-fill="true"]');
-    const surface = body?.querySelector(surfaceSelector);
-    const bodyRect = body?.getBoundingClientRect();
-    const surfaceRect = surface?.getBoundingClientRect();
-    return bodyRect && surfaceRect ? {
-      fillsBody: Math.abs(bodyRect.height - surfaceRect.height) <= 1,
-      fillsUsefulViewport: surfaceRect.height >= innerHeight * 0.8,
-      noNestedScroll: surface.scrollHeight <= surface.clientHeight && surface.scrollWidth <= surface.clientWidth,
-    } : null;
-  };
-  return {
-    svg: measure('fullscreen-fill-scene', '[data-mech-rich-scene="true"]'),
-    canvas: measure('fullscreen-fill-canvas', 'canvas'),
-  };
+
+    def measure_fixed_surface(selector):
+        return evaluate_json(f"""
+(() => {{
+  const panel = document.querySelector('[data-mech-output-panel]');
+  const entry = panel?.querySelector(
+    '[data-mech-output-region="document"] .mech-document-output-entry');
+  const body = entry?.querySelector('[data-mech-output-fill="true"]');
+  const surface = body?.querySelector({json.dumps(selector)});
+  const panelRect = panel?.getBoundingClientRect();
+  const entryRect = entry?.getBoundingClientRect();
+  const bodyRect = body?.getBoundingClientRect();
+  const surfaceRect = surface?.getBoundingClientRect();
+  return panelRect && entryRect && bodyRect && surfaceRect ? {{
+    entryFillsPanel: entryRect.height >= panelRect.height - 1,
+    fillsBody: Math.abs(bodyRect.height - surfaceRect.height) <= 1,
+    fillsUsefulViewport: surfaceRect.height >= innerHeight * 0.8,
+    noNestedScroll:
+      body.scrollHeight <= body.clientHeight + 1 &&
+      body.scrollWidth <= body.clientWidth + 1 &&
+      surface.scrollHeight <= surface.clientHeight + 1 &&
+      surface.scrollWidth <= surface.clientWidth + 1,
+  }} : null;
+}})()
+""")
+
+    fill_geometry = {}
+    try:
+        render_fixed_surface('<canvas width="120" height="80"></canvas>')
+        wait_for(
+            "Boolean(document.querySelector('[data-mech-output-region=document] "
+            ".mech-document-output-entry [data-mech-output-fill=true] canvas'))",
+            "a canvas-backed fixed program Output",
+        )
+        fill_geometry["canvas"] = measure_fixed_surface("canvas")
+        render_fixed_surface(
+            '<svg class="mech-repl-scene" viewBox="0 0 120 80" '
+            'width="120" height="80" role="img"></svg>',
+        )
+        wait_for(
+            "Boolean(document.querySelector('[data-mech-output-region=document] "
+            ".mech-document-output-entry [data-mech-output-fill=true] .mech-repl-scene'))",
+            "an SVG-backed fixed program Output",
+        )
+        fill_geometry["svg"] = measure_fixed_surface(".mech-repl-scene")
+    finally:
+        evaluate_json("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  const original = window.__MECH_SMOKE_ORIGINAL_PROGRAM_OUTPUT__;
+  if (!original) return false;
+  WasmDocument.prototype.renderedProgramOutput = original;
+  delete window.__MECH_SMOKE_ORIGINAL_PROGRAM_OUTPUT__;
+  const controller = globalThis.MechDocumentController;
+  controller.replaceSource(controller.source());
+  return true;
 })()
 """)
     if any(surface is None or not all(surface.values()) for surface in fill_geometry.values()):
-        fail(f"fullscreen fill geometry did not reach every render surface: {fill_geometry!r}")
-    evaluate("""
-window.dispatchEvent(new CustomEvent('mech:output', { detail: {
-  stream: 'stdout', operation: 'remove', display_id: 'fullscreen-fill-scene',
-}}));
-document.querySelector('[data-mech-display-id=fullscreen-fill-canvas]')?.remove()
-""")
+        fail(f"fullscreen fill geometry did not reach fixed program surfaces: {fill_geometry!r}")
 
     evaluate("""
 (() => {

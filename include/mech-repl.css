@@ -298,14 +298,18 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
 [data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] :is(
   .mech-output-region,
   .mech-repl-output-entry,
+  .mech-document-output-entry,
   .mech-repl-output-content,
+  .mech-document-output-html,
   .mech-repl-output-scene,
   .mech-repl-scene
 ),
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] :is(
   .mech-output-region,
   .mech-repl-output-entry,
+  .mech-document-output-entry,
   .mech-repl-output-content,
+  .mech-document-output-html,
   .mech-repl-output-scene,
   .mech-repl-scene
 ) {
@@ -321,16 +325,26 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
 [data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] :is(
   .mech-output-region,
   .mech-repl-output-entry,
-  .mech-repl-output-content
+  .mech-document-output-entry,
+  .mech-repl-output-content,
+  .mech-document-output-html
 ):has([data-mech-output-fill="true"]),
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] :is(
   .mech-output-region,
   .mech-repl-output-entry,
-  .mech-repl-output-content
+  .mech-document-output-entry,
+  .mech-repl-output-content,
+  .mech-document-output-html
 ):has([data-mech-output-fill="true"]),
 [data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] [data-mech-output-fill="true"],
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] [data-mech-output-fill="true"] {
   height: 100%;
+}
+
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-document-output-entry:has([data-mech-output-fill="true"]),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-document-output-entry:has([data-mech-output-fill="true"]) {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 [data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-fill="true"] :is(.mech-repl-scene, canvas),
@@ -342,8 +356,8 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
   width: 100%;
 }
 
-[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-repl-output-entry,
-[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-repl-output-entry {
+[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] :is(.mech-repl-output-entry, .mech-document-output-entry),
+[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] :is(.mech-repl-output-entry, .mech-document-output-entry) {
   padding: 0;
 }
 

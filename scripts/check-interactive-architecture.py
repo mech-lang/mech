@@ -144,8 +144,25 @@ for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
         ):
             continue
         source = path.read_text(encoding="utf-8")
-        if "websocket" in source.lower() or "sec-websocket" in source.lower():
+        lower_source = source.lower()
+        relative = path.relative_to(ROOT)
+        if "websocket" in lower_source or "sec-websocket" in lower_source:
             fail(f"scenario-specific CDP transport found in {path.relative_to(ROOT)}")
+        if "--remote-debugging-port" in lower_source or "--dump-dom" in lower_source:
+            fail(f"scenario-specific browser process ownership found in {relative}")
+        if (
+            "browser" in path.name
+            and (path.name.startswith("smoke-") or path.name.startswith("smoke_"))
+            and any(name in lower_source for name in ("chrome", "chromium", "edge_bin"))
+            and (
+                "tests.browser.harness" not in source
+                or (
+                    "ChromeSession" not in source
+                    and "-m tests.browser.harness" not in source
+                )
+            )
+        ):
+            fail(f"browser scenario does not use the canonical ChromeSession: {relative}")
 
 architecture = text("docs/architecture/interactive-runtime.md")
 if len(architecture.splitlines()) > 250:

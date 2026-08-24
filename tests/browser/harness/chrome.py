@@ -447,3 +447,35 @@ def visible_expression(selector: str) -> str:
     rect.width > 0 && rect.height > 0;
 }})()
 """
+
+
+def _snapshot_main() -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Capture one checked browser scenario DOM")
+    parser.add_argument("--url", required=True)
+    parser.add_argument("--profile", required=True)
+    parser.add_argument("--log", required=True)
+    parser.add_argument("--dom", required=True)
+    parser.add_argument("--wait", required=True)
+    parser.add_argument("--description", required=True)
+    parser.add_argument("--timeout", type=float, default=45)
+    parser.add_argument("--browser")
+    parser.add_argument("--flag", action="append", default=[])
+    args = parser.parse_args()
+    session = ChromeSession(
+        find_browser(args.browser), args.profile, args.log, flags=args.flag,
+    ).start()
+    try:
+        session.navigate(args.url)
+        session.wait_for(args.wait, args.description, timeout=args.timeout)
+        session.write_dom(args.dom)
+    except BaseException:
+        try:
+            session.write_dom(args.dom)
+        except BaseException:
+            pass
+        raise
+    finally:
+        session.close()
+    return 0
