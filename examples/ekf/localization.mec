@@ -75,8 +75,7 @@ the same camera and measurement path.
   scene-pointer-position := @scene/pointer-position
   scene-pointer-pressed := @scene/pointer-pressed
   scene-pointer-delta := scene-pointer-pulse - last-scene-pointer-pulse
-  scene-pointer-delta-relu := (scene-pointer-delta + (scene-pointer-delta ^ 2) ^ 0.5) / 2.0
-  scene-pointer-edge := scene-pointer-delta-relu - (scene-pointer-delta-relu - 1.0 + ((scene-pointer-delta-relu - 1.0) ^ 2) ^ 0.5) / 2.0
+  scene-pointer-toggle-parity := scene-pointer-delta % 2.0
   scene-pointer-screen-x := (scene-pointer-position[1] + 1.0) * 430.0
   scene-pointer-screen-y := (1.0 - scene-pointer-position[2]) * 385.0
   camera-screen-x := [182.0; 678.0; 678.0; 182.0]
@@ -85,10 +84,10 @@ the same camera and measurement path.
   scene-pointer-hit-raw := 484.0 - scene-pointer-camera-distance-square
   scene-pointer-hit-relu := (scene-pointer-hit-raw + (scene-pointer-hit-raw ^ 2) ^ 0.5) / 2.0
   scene-pointer-hit := scene-pointer-hit-relu - (scene-pointer-hit-relu - 1.0 + ((scene-pointer-hit-relu - 1.0) ^ 2) ^ 0.5) / 2.0
-  -- The scene host publishes pulse + position as one activation payload and
-  -- publishes release/cancel as level-only updates. This edge therefore
-  -- survives a coalesced quick click without being replayed by a later release.
-  camera-toggle := scene-pointer-edge * scene-pointer-hit
+  -- A gesture group coalesces down/up but never crosses into the next press.
+  -- Parity still preserves an even count jump if an activation history is
+  -- restored or replayed without exposing every intermediate turn.
+  camera-toggle := scene-pointer-toggle-parity * scene-pointer-hit
   next-camera-enabled := camera-enabled + camera-toggle * (1.0 - 2.0 * camera-enabled)
   camera-enabled = next-camera-enabled
   last-scene-pointer-pulse = scene-pointer-pulse

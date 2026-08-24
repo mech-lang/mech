@@ -13,6 +13,7 @@ use mech_runtime::{
 #[cfg(feature = "browser")]
 use mech_runtime::{
     HostInstanceConfig, ResidentDurabilityPolicy, RunResourceGrantConfig, RuntimeBuilder,
+    RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue,
 };
 use mech_scene::*;
 
@@ -863,7 +864,7 @@ position := @scene/pointer-position
 pressed := @scene/pointer-pressed
 ~enabled := 1.0
 ~last-pulse := 0.0
-delta := pulse - last-pulse
+delta := (pulse - last-pulse) % 2.0
 next-enabled := enabled + delta * (1.0 - 2.0 * enabled)
 enabled = next-enabled
 last-pulse = pulse
@@ -894,8 +895,8 @@ last-pulse = pulse
     };
     assert_eq!(*pressed.borrow(), 0.0);
 
-    // A second activation drains before its release. The release updates the
-    // level only and therefore cannot replay the already-consumed pulse.
+    // A second activation drains before its release. The release remains in
+    // the same gesture group and cannot replay the already-consumed pulse.
     registry
         .submit_pointer("view", -0.75, 0.5, true, 0.02)
         .unwrap();
@@ -934,6 +935,112 @@ last-pulse = pulse
         panic!("scene pointer toggle must remain f64")
     };
     assert_eq!(*enabled.borrow(), 1.0);
+
+    // Two complete clicks may already be queued when one drain begins. Each
+    // gesture is still a distinct resident turn even though its own down/up
+    // packets coalesce, so different activation identities cannot disappear.
+    for (x, y, delta) in [(0.5, 0.5, 0.04), (-0.5, -0.5, 0.06)] {
+        registry.submit_pointer("view", x, y, true, delta).unwrap();
+        registry
+            .submit_pointer("view", x, y, false, delta + 0.01)
+            .unwrap();
+    }
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 4);
+    assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
+    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
+        panic!("scene pointer pulse must remain f64")
+    };
+    assert_eq!(*pulse.borrow(), 3.0);
+    let LegacyValue::MatrixF64(position) =
+        runtime.root_symbol_value("position").unwrap().into_value()
+    else {
+        panic!("scene pointer position must remain an f64 matrix")
+    };
+    assert_eq!(position.as_vec(), [0.5, 0.5]);
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 0.0);
+    assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+
+    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
+        panic!("scene pointer pulse must remain f64")
+    };
+    assert_eq!(*pulse.borrow(), 4.0);
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 1.0);
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_pointer_count_jump_preserves_toggle_parity() {
+    let factory = BrowserSceneHostFactory::new().unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(Box::new(factory))
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "view".to_string(),
+            provider: "scene".to_string(),
+            settings: settings("output"),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "view/frame".to_string(),
+            operations: vec!["read".to_string()],
+            paths: vec!["pointer-pulse".to_string()],
+        })
+        .build()
+        .unwrap();
+    runtime
+        .load_interactive_source_program(
+            r#"
+@scene := scene://view/frame{:read(pointer-pulse)}
+pulse := @scene/pointer-pulse
+~enabled := 1.0
+~last-pulse := 0.0
+parity := (pulse - last-pulse) % 2.0
+next-enabled := enabled + parity * (1.0 - 2.0 * enabled)
+enabled = next-enabled
+last-pulse = pulse
+"#,
+            ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+
+    let pulse = RuntimeHostInputSource::new("scene://view/frame", "pointer-pulse").unwrap();
+    runtime
+        .ingress()
+        .submit(RuntimeHostInput::single(
+            pulse.clone(),
+            RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    runtime.drain_host_inputs(1).unwrap();
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 1.0);
+
+    runtime
+        .ingress()
+        .submit(RuntimeHostInput::single(
+            pulse,
+            RuntimeHostInputValue::F64(3.0),
+        ))
+        .unwrap();
+    runtime.drain_host_inputs(1).unwrap();
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 0.0);
 }
 
 #[test]

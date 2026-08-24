@@ -155,6 +155,7 @@ pub struct ResidentExternalCoordinator {
     artifact: Arc<ProgramArtifact>,
     live: bool,
     bound: BoundResidentExternalPlan,
+    latest_live_inputs: Vec<Option<Value>>,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
     published_state_hash: u64,
@@ -250,6 +251,7 @@ impl ResidentExternalCoordinator {
         let plan_generation = instance.plan.plan_generation;
         let layout_generation = instance.plan.layout_generation;
         let publication_authority = RuntimeResidentPublicationAuthority { _private: () };
+        let latest_live_inputs = vec![None; bound.observations().len()];
         Ok(Self {
             instance: Some(instance),
             publication_authority,
@@ -260,6 +262,7 @@ impl ResidentExternalCoordinator {
             artifact,
             live,
             bound,
+            latest_live_inputs,
             durability,
             health: ResidentExternalHealth::Healthy,
             published_state_hash,
@@ -367,9 +370,11 @@ impl ResidentExternalCoordinator {
     }
 
     /// Executes one live turn while using owned ingress values for matching
-    /// observations. Values absent from the update set are captured from their
-    /// bound providers. This keeps host packets as the authority for the event
-    /// they triggered instead of racing a separately updated provider snapshot.
+    /// observations. Values absent from the update set retain the last accepted
+    /// input snapshot; providers seed only observations that have not yet
+    /// appeared in an accepted batch. This keeps queue order authoritative and
+    /// prevents a future provider snapshot from leaking across the dequeue
+    /// boundary.
     pub fn execute_turn_with_host_updates(
         &mut self,
         updates: &[crate::RuntimeHostInputUpdate],
@@ -519,6 +524,7 @@ impl ResidentExternalCoordinator {
                             );
                         }
                         self.advance_input_identity(&prefix)?;
+                        self.remember_live_inputs(&prefix);
                         RejectedTurnEvidence::from_input(&prefix)
                     } else {
                         drop(input_permit);
@@ -549,6 +555,7 @@ impl ResidentExternalCoordinator {
                 );
             }
             self.advance_input_identity(&batch)?;
+            self.remember_live_inputs(&batch);
             Some(batch)
         } else {
             if host_updates.is_some_and(|updates| !updates.is_empty()) {
@@ -1067,25 +1074,37 @@ impl ResidentExternalCoordinator {
                             && update.source.path() == observation.request.path
                     })
                 });
-                let legacy = if let Some(update) = packet_value {
-                    update.value.clone().into_mech_value()?
+                let value = if let Some(update) = packet_value {
+                    let legacy = update.value.clone().into_mech_value()?;
+                    captured_value_from_legacy(
+                        &legacy,
+                        observation.input.schema,
+                        &observation.input.shape,
+                        self.artifact.schemas(),
+                    )?
+                } else if let Some(value) = host_updates.and_then(|_| {
+                    self.latest_live_inputs
+                        .get(ordinal)
+                        .and_then(|value| value.as_ref())
+                }) {
+                    value.clone()
                 } else {
                     let provider_binding =
                         observation.provider_binding.as_ref().ok_or_else(|| {
                             invalid_value("live observation has no provider binding".to_owned())
                         })?;
-                    provider_binding.read(RuntimeResourceReadRequest {
+                    let legacy = provider_binding.read(RuntimeResourceReadRequest {
                         base_uri: observation.request.base_uri.clone(),
                         path: observation.request.path.clone(),
                         context_name: observation.request.context_name.clone(),
-                    })?
+                    })?;
+                    captured_value_from_legacy(
+                        &legacy,
+                        observation.input.schema,
+                        &observation.input.shape,
+                        self.artifact.schemas(),
+                    )?
                 };
-                let value = captured_value_from_legacy(
-                    &legacy,
-                    observation.input.schema,
-                    &observation.input.shape,
-                    self.artifact.schemas(),
-                )?;
                 CapturedInputFact::new(
                     sequence,
                     observation.requirement,
@@ -1774,6 +1793,13 @@ impl ResidentExternalCoordinator {
             .checked_add(1)
             .ok_or_else(sequence_exhausted)?;
         Ok(())
+    }
+
+    fn remember_live_inputs(&mut self, batch: &CapturedInputBatch) {
+        debug_assert!(batch.facts.len() <= self.latest_live_inputs.len());
+        for (latest, fact) in self.latest_live_inputs.iter_mut().zip(batch.facts.iter()) {
+            *latest = Some(fact.value.clone());
+        }
     }
 }
 

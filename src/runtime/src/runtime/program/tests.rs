@@ -2848,6 +2848,34 @@ fn resident_host_packets_coalesce_and_capture_the_latest_packet_value() {
 }
 
 #[test]
+fn resident_host_packet_groups_preserve_activation_boundaries() {
+    let (mut runtime, _, _, _) = external_runtime(crate::ResidentDurabilityPolicy::Retained);
+    let trigger = crate::RuntimeHostInputSource::new("test://clock/tick", "delta-seconds").unwrap();
+    let ingress = runtime.ingress();
+    for (group, value) in [(1, 7.0), (1, 8.0), (2, 9.0), (2, 10.0)] {
+        ingress
+            .submit(
+                crate::RuntimeHostInput::single(
+                    trigger.clone(),
+                    crate::RuntimeHostInputValue::F64(value),
+                )
+                .with_coalescing_group(group),
+            )
+            .unwrap();
+    }
+
+    let first = runtime.drain_resident_host_inputs(64).unwrap();
+    assert_eq!(first.dequeued_packets, 2);
+    assert_eq!(first.coalesced_packets, 1);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
+
+    let second = runtime.drain_resident_host_inputs(64).unwrap();
+    assert_eq!(second.dequeued_packets, 2);
+    assert_eq!(second.coalesced_packets, 1);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+}
+
+#[test]
 fn resident_recurrence_advances_when_a_same_turn_parent_is_unchanged() {
     let (mut runtime, _, _, _) = configured_external_runtime();
     runtime
@@ -2957,7 +2985,7 @@ output := state
 }
 
 #[test]
-fn independent_observations_capture_absent_values_from_the_bound_provider() {
+fn independent_observations_seed_then_retain_the_accepted_host_snapshot() {
     let (mut runtime, reads) = independent_external_runtime();
     runtime
         .ingress()
@@ -2991,6 +3019,77 @@ fn independent_observations_capture_absent_values_from_the_bound_provider() {
         .collect::<Vec<_>>();
     values.sort_by(f64::total_cmp);
     assert_eq!(values, vec![3.0, 7.0]);
+
+    runtime
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(8.0),
+        ))
+        .unwrap();
+    let outcome = runtime.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        outcome.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(
+        reads.load(Ordering::SeqCst),
+        1,
+        "an unrelated provider snapshot must not overwrite accepted host state"
+    );
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        unreachable!()
+    };
+    let mut values = execution
+        .coordinator
+        .input_facts()
+        .last()
+        .unwrap()
+        .1
+        .facts
+        .iter()
+        .map(|fact| match fact.value.data() {
+            ValueData::F64(value) => value.to_f64(),
+            _ => panic!("clock observations must remain f64"),
+        })
+        .collect::<Vec<_>>();
+    values.sort_by(f64::total_cmp);
+    assert_eq!(values, vec![7.0, 8.0]);
+
+    let outcome = {
+        let ActiveProgramExecution::ResidentExternal(execution) = &mut runtime.active_program
+        else {
+            unreachable!()
+        };
+        execution.coordinator.execute_turn().unwrap()
+    };
+    assert!(matches!(
+        outcome,
+        crate::ResidentExternalTurnOutcome::Accepted { .. }
+    ));
+    assert_eq!(
+        reads.load(Ordering::SeqCst),
+        3,
+        "provider-driven turns must still refresh every live observation"
+    );
+    let ActiveProgramExecution::ResidentExternal(execution) = &runtime.active_program else {
+        unreachable!()
+    };
+    let mut values = execution
+        .coordinator
+        .input_facts()
+        .last()
+        .unwrap()
+        .1
+        .facts
+        .iter()
+        .map(|fact| match fact.value.data() {
+            ValueData::F64(value) => value.to_f64(),
+            _ => panic!("clock observations must remain f64"),
+        })
+        .collect::<Vec<_>>();
+    values.sort_by(f64::total_cmp);
+    assert_eq!(values, vec![2.0, 3.0]);
 }
 
 #[test]

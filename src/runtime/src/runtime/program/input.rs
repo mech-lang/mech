@@ -173,6 +173,7 @@ impl crate::runtime::MechRuntime {
             ));
         };
         let mut packets = Vec::new();
+        let mut coalescing_group = None::<Option<crate::input::RuntimeHostInputCoalescingGroup>>;
         for _ in 0..max_inputs {
             let packet = {
                 let mut guard = self.host_input_queue.lock().map_err(|_| {
@@ -181,9 +182,22 @@ impl crate::runtime::MechRuntime {
                         "host input queue lock is poisoned",
                     )
                 })?;
-                guard.queue.pop_front()
+                let may_join = guard
+                    .queue
+                    .front()
+                    .map(|packet| {
+                        coalescing_group
+                            .as_ref()
+                            .map(|group| group.as_ref() == packet.coalescing_group())
+                            .unwrap_or(true)
+                    })
+                    .unwrap_or(false);
+                may_join.then(|| guard.queue.pop_front()).flatten()
             };
             let Some(packet) = packet else { break };
+            if coalescing_group.is_none() {
+                coalescing_group = Some(packet.coalescing_group().cloned());
+            }
             packets.push(packet);
         }
 

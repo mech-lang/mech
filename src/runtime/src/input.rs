@@ -302,11 +302,21 @@ pub struct RuntimeHostInputUpdate {
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeHostInput {
     pub updates: Vec<RuntimeHostInputUpdate>,
+    coalescing_group: Option<RuntimeHostInputCoalescingGroup>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct RuntimeHostInputCoalescingGroup {
+    scope: String,
+    sequence: u64,
 }
 
 impl RuntimeHostInput {
     pub fn new(updates: Vec<RuntimeHostInputUpdate>) -> MResult<Self> {
-        let input = Self { updates };
+        let input = Self {
+            updates,
+            coalescing_group: None,
+        };
         input.validate()?;
         Ok(input)
     }
@@ -314,7 +324,33 @@ impl RuntimeHostInput {
     pub fn single(source: RuntimeHostInputSource, value: RuntimeHostInputValue) -> Self {
         Self {
             updates: vec![RuntimeHostInputUpdate { source, value }],
+            coalescing_group: None,
         }
+    }
+
+    /// Keep packets with the same group eligible for latest-value coalescing,
+    /// while preserving a resident-turn boundary between different groups.
+    /// Drivers use this for event gestures whose state packets may collapse
+    /// together, but whose distinct activations must never collapse together.
+    /// The group is scoped to the packet's resource base URI so equal sequence
+    /// numbers from independent host instances cannot merge.
+    pub fn with_coalescing_group(mut self, group: u64) -> Self {
+        let scope = self
+            .updates
+            .first()
+            .expect("validated host inputs contain at least one update")
+            .source
+            .base_uri()
+            .to_owned();
+        self.coalescing_group = Some(RuntimeHostInputCoalescingGroup {
+            scope,
+            sequence: group,
+        });
+        self
+    }
+
+    pub(crate) fn coalescing_group(&self) -> Option<&RuntimeHostInputCoalescingGroup> {
+        self.coalescing_group.as_ref()
     }
 
     pub fn validate(&self) -> MResult<()> {
@@ -330,6 +366,16 @@ impl RuntimeHostInput {
                 return Err(input_error(
                     "RuntimeHostInputDuplicateSource",
                     "host input packet contains duplicate sources",
+                ));
+            }
+            if self
+                .coalescing_group
+                .as_ref()
+                .is_some_and(|group| group.scope != update.source.base_uri())
+            {
+                return Err(input_error(
+                    "RuntimeHostInputCoalescingScopeInvalid",
+                    "coalesced host input packets must stay within one resource base URI",
                 ));
             }
         }
