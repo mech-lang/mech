@@ -321,52 +321,34 @@ fi
 
 run_chrome() {
   python3 - "$chrome_bin" "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" <<'PY'
-import os
-from pathlib import Path
-import signal
-import subprocess
 import sys
-import time
+
+from tests.browser.harness import ChromeSession
+
 
 chrome, page_url, profile, dom_file, chrome_log = sys.argv[1:]
-args = [
+browser = ChromeSession(
     chrome,
-    "--headless=new",
-    "--no-sandbox",
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
-    "--run-all-compositor-stages-before-draw",
-    "--virtual-time-budget=22000",
-    "--dump-dom",
-    f"--user-data-dir={profile}",
-    page_url,
-]
-with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
-    process = subprocess.Popen(args, stdout=stdout, stderr=stderr, start_new_session=True)
-    deadline = time.monotonic() + 90
-    while True:
-        return_code = process.poll()
-        if return_code is not None:
-            raise SystemExit(return_code)
-        try:
-            dom_bytes = Path(dom_file).read_bytes()
-            proof_emitted = (
-                b'data-mech-done="true"' in dom_bytes
-                or b'data-mech-timed-out="true"' in dom_bytes
-            )
-        except OSError:
-            proof_emitted = False
-        if proof_emitted:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
-            print("headless Chrome retained its process after emitting the browser DOM proof", file=sys.stderr)
-            raise SystemExit(124)
-        if time.monotonic() >= deadline:
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
-            print("headless Chrome did not emit the D4 DOM proof within 90 seconds", file=sys.stderr)
-            raise SystemExit(124)
-        time.sleep(0.25)
+    profile,
+    chrome_log,
+    flags=[
+        "--disable-gpu",
+        "--run-all-compositor-stages-before-draw",
+    ],
+).start()
+try:
+    browser.navigate(page_url)
+    browser.wait_for(
+        "document.documentElement?.dataset.mechDone === 'true' || "
+        "document.documentElement?.dataset.mechTimedOut === 'true'",
+        "the n-body browser proof",
+        timeout=90,
+        interval=0.25,
+    )
+    browser.write_dom(dom_file)
+finally:
+    browser.close()
+raise SystemExit(124)
 PY
 }
 

@@ -1126,192 +1126,37 @@ fi
 
 set +e
 python3 - "$chrome_bin" "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" <<'PY'
-import base64
 import json
-import os
 from pathlib import Path
-import signal
-import socket
-import struct
-import subprocess
 import sys
 import time
-import urllib.request
-from urllib.parse import urlparse
 
 from scripts.browser_webgpu_flags import chrome_webgpu_test_flags
+from tests.browser.harness import ChromeSession
+
 
 chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
-args = [
-    chrome,
-    "--headless=new",
-    "--no-sandbox",
-    "--disable-dev-shm-usage",
-    "--remote-debugging-port=0",
-    "--remote-allow-origins=*",
-    f"--user-data-dir={profile}",
-    page_url,
-]
+flags = []
 if compute_backend != "wgpu":
-    args.insert(-1, "--disable-gpu")
+    flags.append("--disable-gpu")
 else:
-    # The canary proves the browser WebGPU transport, not host-driver setup.
-    # Force Chromium's test adapter so headless macOS and GPU-less Linux CI do
-    # not hang while probing an unavailable presentation-capable device.
-    for flag in chrome_webgpu_test_flags(
+    # This canary proves the WebGPU transport independent of host-driver setup.
+    flags.extend(chrome_webgpu_test_flags(
         software_adapter=True,
         linux=sys.platform.startswith("linux"),
-    ):
-        args.insert(-1, flag)
-
-def read_exact(connection, length):
-    chunks = []
-    remaining = length
-    while remaining:
-        chunk = connection.recv(remaining)
-        if not chunk:
-            raise RuntimeError("Chrome closed the debugging socket")
-        chunks.append(chunk)
-        remaining -= len(chunk)
-    return b"".join(chunks)
-
-def send_frame(connection, payload, opcode=1):
-    payload = payload if isinstance(payload, bytes) else payload.encode()
-    mask = os.urandom(4)
-    length = len(payload)
-    header = bytearray([0x80 | opcode])
-    if length < 126:
-        header.append(0x80 | length)
-    elif length <= 0xffff:
-        header.append(0x80 | 126)
-        header.extend(struct.pack("!H", length))
-    else:
-        header.append(0x80 | 127)
-        header.extend(struct.pack("!Q", length))
-    header.extend(mask)
-    header.extend(byte ^ mask[index % 4] for index, byte in enumerate(payload))
-    connection.sendall(header)
-
-def receive_message(connection):
-    fragments = []
-    message_opcode = None
-    while True:
-        first, second = read_exact(connection, 2)
-        final = bool(first & 0x80)
-        opcode = first & 0x0f
-        length = second & 0x7f
-        if length == 126:
-            length = struct.unpack("!H", read_exact(connection, 2))[0]
-        elif length == 127:
-            length = struct.unpack("!Q", read_exact(connection, 8))[0]
-        mask = read_exact(connection, 4) if second & 0x80 else None
-        payload = read_exact(connection, length)
-        if mask:
-            payload = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
-        if opcode == 8:
-            raise RuntimeError("Chrome closed the debugging websocket")
-        if opcode == 9:
-            send_frame(connection, payload, opcode=10)
-            continue
-        if opcode in (1, 2):
-            message_opcode = opcode
-            fragments = [payload]
-        elif opcode == 0:
-            fragments.append(payload)
-        else:
-            continue
-        if final:
-            joined = b"".join(fragments)
-            return joined.decode() if message_opcode == 1 else joined
-
-def connect_debugger(process, deadline):
-    active_port = Path(profile) / "DevToolsActivePort"
-    while time.monotonic() < deadline:
-        if process.poll() is not None:
-            raise RuntimeError(f"Chrome exited during debugger startup ({process.returncode})")
-        try:
-            port = int(active_port.read_text().splitlines()[0])
-            targets = json.load(urllib.request.urlopen(
-                f"http://127.0.0.1:{port}/json/list", timeout=1,
-            ))
-            target = next(
-                (candidate for candidate in targets if candidate.get("type") == "page"),
-                None,
-            )
-            if target:
-                endpoint = urlparse(target["webSocketDebuggerUrl"])
-                connection = socket.create_connection((endpoint.hostname, endpoint.port), timeout=2)
-                key = base64.b64encode(os.urandom(16)).decode()
-                request = (
-                    f"GET {endpoint.path} HTTP/1.1\r\n"
-                    f"Host: {endpoint.hostname}:{endpoint.port}\r\n"
-                    "Upgrade: websocket\r\n"
-                    "Connection: Upgrade\r\n"
-                    f"Sec-WebSocket-Key: {key}\r\n"
-                    "Sec-WebSocket-Version: 13\r\n\r\n"
-                )
-                connection.sendall(request.encode())
-                response = b""
-                while b"\r\n\r\n" not in response:
-                    response += connection.recv(4096)
-                if not response.startswith(b"HTTP/1.1 101"):
-                    raise RuntimeError(f"debugging websocket rejected the upgrade: {response[:200]!r}")
-                connection.settimeout(5)
-                return connection
-        except (OSError, ValueError, StopIteration, urllib.error.URLError):
-            pass
-        time.sleep(0.1)
-    raise RuntimeError("Chrome did not expose its debugging target")
-
-next_command_id = 0
-def command(connection, method, params=None):
-    global next_command_id
-    next_command_id += 1
-    command_id = next_command_id
-    send_frame(connection, json.dumps({
-        "id": command_id,
-        "method": method,
-        "params": params or {},
-    }))
-    while True:
-        message = json.loads(receive_message(connection))
-        if message.get("id") == command_id:
-            if "error" in message:
-                raise RuntimeError(f"Chrome debugging command failed: {message['error']}")
-            return message.get("result", {})
-
-def evaluate(connection, expression):
-    result = command(connection, "Runtime.evaluate", {
-        "expression": expression,
-        "returnByValue": True,
-        "awaitPromise": True,
-    })
-    if "exceptionDetails" in result:
-        raise RuntimeError(f"browser evaluation failed: {result['exceptionDetails']}")
-    return result.get("result", {}).get("value")
-
-def stop(process):
-    if process.poll() is None:
-        os.killpg(process.pid, signal.SIGKILL)
-        process.wait()
+    ))
 
 deadline = time.monotonic() + 90
 milestones = {}
-connection = None
-with Path(chrome_log).open("wb") as stderr:
-    process = subprocess.Popen(
-        args,
-        stdout=subprocess.DEVNULL,
-        stderr=stderr,
-        start_new_session=True,
-    )
+browser = ChromeSession(chrome, profile, chrome_log, flags=flags).start()
 try:
-    connection = connect_debugger(process, deadline)
-    command(connection, "Runtime.enable")
+    browser.navigate(page_url)
     while time.monotonic() < deadline:
-        if process.poll() is not None:
-            raise RuntimeError(f"Chrome exited while running the canary ({process.returncode})")
-        snapshot = evaluate(connection, r'''(() => {
+        if browser.process.poll() is not None:
+            raise RuntimeError(
+                f"Chrome exited while running the canary ({browser.process.returncode})"
+            )
+        snapshot = browser.evaluate(r'''(() => {
           const root = document.documentElement;
           const data = root?.dataset || {};
           return {
@@ -1337,17 +1182,15 @@ try:
         )):
             break
         time.sleep(0.1)
-    html = evaluate(connection, "document.documentElement.outerHTML") or ""
-    Path(dom_file).write_text(html)
+    browser.write_dom(dom_file)
 finally:
-    if connection is not None:
-        try:
-            connection.close()
-        except OSError:
-            pass
-    stop(process)
+    browser.close()
     with Path(chrome_log).open("ab") as log:
-        log.write(("\nMech browser milestones: " + json.dumps(milestones, sort_keys=True) + "\n").encode())
+        log.write((
+            "\nMech browser milestones: "
+            + json.dumps(milestones, sort_keys=True)
+            + "\n"
+        ).encode())
 raise SystemExit(124)
 PY
 chrome_status="$?"

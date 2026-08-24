@@ -147,176 +147,26 @@ curl --fail --silent --output /dev/null "$page_url" || {
 }
 
 python3 - "$chrome_bin" "$page_url" "$work_dir/chrome-profile" "$work_dir/chrome.log" <<'PY'
-import base64
 import json
-import os
-from pathlib import Path
-import secrets
-import signal
-import socket
-import struct
-import subprocess
 import sys
-import time
-import urllib.request
+
+from tests.browser.harness import BrowserFailure, ChromeSession
+
 
 chrome, page_url, profile, chrome_log = sys.argv[1:]
 
+
 def fail(message):
-    raise AssertionError(message)
+    raise BrowserFailure(message)
 
-def free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
 
-class WebSocket:
-    def __init__(self, url):
-        authority, path = url.removeprefix("ws://").split("/", 1)
-        host, port = authority.rsplit(":", 1)
-        self.socket = socket.create_connection((host, int(port)), timeout=10)
-        self.socket.settimeout(20)
-        nonce = base64.b64encode(secrets.token_bytes(16)).decode("ascii")
-        request = (
-            f"GET /{path} HTTP/1.1\r\nHost: {authority}\r\nUpgrade: websocket\r\n"
-            f"Connection: Upgrade\r\nSec-WebSocket-Key: {nonce}\r\n"
-            "Sec-WebSocket-Version: 13\r\n\r\n"
-        ).encode("ascii")
-        self.socket.sendall(request)
-        response = bytearray()
-        while b"\r\n\r\n" not in response:
-            response.extend(self.socket.recv(1))
-        if not response.startswith(b"HTTP/1.1 101"):
-            fail(f"DevTools websocket handshake failed: {bytes(response)!r}")
-
-    def read_exact(self, count):
-        out = bytearray()
-        while len(out) < count:
-            part = self.socket.recv(count - len(out))
-            if not part:
-                fail("DevTools websocket closed unexpectedly")
-            out.extend(part)
-        return bytes(out)
-
-    def send(self, value, opcode=1):
-        payload = value.encode("utf-8") if isinstance(value, str) else value
-        header = bytearray([0x80 | opcode])
-        if len(payload) < 126:
-            header.append(0x80 | len(payload))
-        elif len(payload) <= 0xffff:
-            header.extend([0x80 | 126, *struct.pack("!H", len(payload))])
-        else:
-            header.extend([0x80 | 127, *struct.pack("!Q", len(payload))])
-        mask = os.urandom(4)
-        header.extend(mask)
-        header.extend(byte ^ mask[index % 4] for index, byte in enumerate(payload))
-        self.socket.sendall(header)
-
-    def receive(self):
-        first, second = self.read_exact(2)
-        opcode, length = first & 0x0f, second & 0x7f
-        if length == 126:
-            length = struct.unpack("!H", self.read_exact(2))[0]
-        elif length == 127:
-            length = struct.unpack("!Q", self.read_exact(8))[0]
-        mask = self.read_exact(4) if second & 0x80 else None
-        payload = self.read_exact(length)
-        if mask:
-            payload = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
-        if opcode == 9:
-            self.send(payload, opcode=10)
-            return self.receive()
-        if opcode != 1:
-            return self.receive()
-        return json.loads(payload.decode("utf-8"))
-
-    def close(self):
-        self.socket.close()
-
-class NavigationContextPending(Exception):
-    pass
-
-class DevTools:
-    def __init__(self, websocket):
-        self.websocket, self.next_id = websocket, 1
-
-    def call(self, method, params=None, session_id=None):
-        request_id = self.next_id
-        self.next_id += 1
-        request = {"id": request_id, "method": method}
-        if params is not None:
-            request["params"] = params
-        if session_id is not None:
-            request["sessionId"] = session_id
-        self.websocket.send(json.dumps(request))
-        while True:
-            response = self.websocket.receive()
-            if response.get("id") != request_id:
-                continue
-            if "error" in response:
-                message = str(response["error"].get("message", "")).lower()
-                if method == "Runtime.evaluate" and any(marker in message for marker in (
-                    "cannot find default execution context",
-                    "cannot find context with specified id",
-                    "execution context was destroyed",
-                    "inspected target navigated or closed",
-                )):
-                    raise NavigationContextPending(response["error"])
-                fail(f"DevTools {method} failed: {response['error']!r}")
-            return response.get("result", {})
-
-process = None
-websocket = None
+browser = ChromeSession(chrome, profile, chrome_log, flags=["--disable-gpu"]).start()
 try:
-    debug_port = free_port()
-    Path(profile).mkdir(parents=True, exist_ok=True)
-    with Path(chrome_log).open("wb") as stderr:
-        process = subprocess.Popen(
-            [chrome, "--headless=new", "--no-sandbox", "--disable-gpu",
-             "--remote-allow-origins=*", f"--remote-debugging-port={debug_port}",
-             f"--user-data-dir={profile}", "about:blank"],
-            stdout=subprocess.DEVNULL, stderr=stderr, start_new_session=True,
-        )
-    deadline = time.monotonic() + 25
-    version = None
-    while time.monotonic() < deadline:
-        try:
-            with urllib.request.urlopen(f"http://127.0.0.1:{debug_port}/json/version", timeout=2) as response:
-                version = json.loads(response.read())
-                break
-        except OSError:
-            time.sleep(0.1)
-    if version is None:
-        fail("headless Chrome did not expose its DevTools endpoint")
-
-    websocket = WebSocket(version["webSocketDebuggerUrl"])
-    devtools = DevTools(websocket)
-    target = devtools.call("Target.createTarget", {"url": "about:blank"})["targetId"]
-    session = devtools.call("Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
-    devtools.call("Page.enable", session_id=session)
-    devtools.call("Runtime.enable", session_id=session)
-    devtools.call("Page.navigate", {"url": page_url}, session)
-
-    def evaluate(expression):
-        result = devtools.call("Runtime.evaluate", {
-            "expression": expression, "returnByValue": True,
-            "awaitPromise": True, "userGesture": True,
-        }, session)
-        if "exceptionDetails" in result:
-            fail(f"browser expression failed: {result['exceptionDetails']!r}")
-        return result.get("result", {}).get("value")
+    browser.navigate(page_url)
+    evaluate = browser.evaluate
 
     def wait_for(expression, description):
-        deadline = time.monotonic() + 40
-        while time.monotonic() < deadline:
-            try:
-                if evaluate(expression):
-                    return
-            except NavigationContextPending:
-                pass
-            time.sleep(0.08)
-        fail(f"timed out waiting for {description}")
-
+        return browser.wait_for(expression, description, timeout=40)
     wait_for(
         "(() => { const html = document.documentElement; const root = document.querySelector('.mech-root'); "
         "const input = document.querySelector('.repl-input'); return Boolean(html && root && input && "
@@ -358,10 +208,10 @@ try:
     popup_state = evaluate("""
 (() => {
   const root = document.querySelector('.mech-root');
-  const pane = document.querySelector('#mech-console, .console-pane');
+  const pane = document.querySelector('[data-mech-console-pane]');
   const transcript = document.querySelector('.mech-repl-transcript');
   const value = [...document.querySelectorAll('.mech-var-name')].find(element =>
-    !element.closest('#mech-console, .console-pane') &&
+    !element.closest('[data-mech-console-pane]') &&
     (element.dataset.mechVarName || element.textContent.trim()) === 'answer');
   if (!root || !pane || !transcript || !value) return null;
   document.dispatchEvent(new KeyboardEvent('keydown', {
@@ -419,15 +269,7 @@ try:
         "the popup selection becoming ans",
     )
 finally:
-    if websocket is not None:
-        websocket.close()
-    if process is not None:
-        try:
-            os.killpg(process.pid, signal.SIGTERM)
-            process.wait(timeout=10)
-        except (OSError, subprocess.TimeoutExpired):
-            os.killpg(process.pid, signal.SIGKILL)
-            process.wait()
+    browser.close()
 PY
 
 for request in \

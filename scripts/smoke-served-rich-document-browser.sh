@@ -222,245 +222,47 @@ run_browser_case() {
     "$screenshot_file" \
     "$chrome_log" \
     "$label" <<'PY'
-import base64
 import json
-import os
 from pathlib import Path
-import secrets
-import signal
-import socket
-import struct
-import subprocess
 import sys
 import time
-import urllib.request
+
+from tests.browser.harness import BrowserFailure, ChromeSession, visible_expression
 
 
 chrome, page_url, profile, dom_path, screenshot_path, chrome_log, label = sys.argv[1:]
 
 
 def fail(message):
-    raise AssertionError(message)
+    raise BrowserFailure(message)
 
 
-def free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
-
-
-def json_url(url):
-    with urllib.request.urlopen(url, timeout=2) as response:
-        return json.loads(response.read().decode("utf-8"))
-
-
-class WebSocket:
-    def __init__(self, url):
-        if not url.startswith("ws://"):
-            fail(f"unsupported DevTools websocket URL: {url}")
-        authority, path = url[5:].split("/", 1)
-        host, port = authority.rsplit(":", 1)
-        self.socket = socket.create_connection((host, int(port)), timeout=10)
-        self.socket.settimeout(20)
-        nonce = base64.b64encode(secrets.token_bytes(16)).decode("ascii")
-        request = (
-            f"GET /{path} HTTP/1.1\r\n"
-            f"Host: {authority}\r\n"
-            "Upgrade: websocket\r\n"
-            "Connection: Upgrade\r\n"
-            f"Sec-WebSocket-Key: {nonce}\r\n"
-            "Sec-WebSocket-Version: 13\r\n\r\n"
-        ).encode("ascii")
-        self.socket.sendall(request)
-        response = self._read_headers()
-        if not response.startswith(b"HTTP/1.1 101"):
-            fail(f"DevTools websocket handshake failed: {response!r}")
-
-    def _read_headers(self):
-        data = bytearray()
-        while b"\r\n\r\n" not in data:
-            chunk = self.socket.recv(1)
-            if not chunk:
-                fail("DevTools websocket closed during handshake")
-            data.extend(chunk)
-            if len(data) > 65536:
-                fail("DevTools websocket sent oversized response headers")
-        return bytes(data)
-
-    def _read_exact(self, count):
-        chunks = bytearray()
-        while len(chunks) < count:
-            chunk = self.socket.recv(count - len(chunks))
-            if not chunk:
-                fail("DevTools websocket closed unexpectedly")
-            chunks.extend(chunk)
-        return bytes(chunks)
-
-    def send(self, payload, opcode=1):
-        data = payload.encode("utf-8") if isinstance(payload, str) else payload
-        header = bytearray([0x80 | opcode])
-        length = len(data)
-        if length < 126:
-            header.append(0x80 | length)
-        elif length <= 0xFFFF:
-            header.append(0x80 | 126)
-            header.extend(struct.pack("!H", length))
-        else:
-            header.append(0x80 | 127)
-            header.extend(struct.pack("!Q", length))
-        mask = os.urandom(4)
-        header.extend(mask)
-        masked = bytes(byte ^ mask[index % 4] for index, byte in enumerate(data))
-        self.socket.sendall(bytes(header) + masked)
-
-    def receive(self):
-        first, second = self._read_exact(2)
-        opcode = first & 0x0F
-        masked = bool(second & 0x80)
-        length = second & 0x7F
-        if length == 126:
-            length = struct.unpack("!H", self._read_exact(2))[0]
-        elif length == 127:
-            length = struct.unpack("!Q", self._read_exact(8))[0]
-        mask = self._read_exact(4) if masked else None
-        payload = self._read_exact(length)
-        if mask:
-            payload = bytes(byte ^ mask[index % 4] for index, byte in enumerate(payload))
-        if opcode == 0x9:
-            self.send(payload, opcode=0xA)
-            return self.receive()
-        if opcode == 0x8:
-            fail("DevTools websocket closed")
-        if opcode != 0x1:
-            return self.receive()
-        return json.loads(payload.decode("utf-8"))
-
-    def close(self):
-        try:
-            self.send(b"", opcode=0x8)
-        except OSError:
-            pass
-        self.socket.close()
-
-
-class NavigationContextPending(Exception):
-    pass
-
-
-def navigation_context_pending(error):
-    message = str(error.get("message", "")).lower()
-    return any(
-        marker in message
-        for marker in (
-            "cannot find default execution context",
-            "cannot find context with specified id",
-            "execution context was destroyed",
-            "inspected target navigated or closed",
-        )
-    )
-
-
-class DevTools:
-    def __init__(self, websocket):
-        self.websocket = websocket
-        self.next_id = 1
-
-    def call(self, method, params=None, session_id=None):
-        request_id = self.next_id
-        self.next_id += 1
-        request = {"id": request_id, "method": method}
-        if params is not None:
-            request["params"] = params
-        if session_id is not None:
-            request["sessionId"] = session_id
-        self.websocket.send(json.dumps(request))
-        while True:
-            response = self.websocket.receive()
-            if response.get("id") != request_id:
-                continue
-            if "error" in response:
-                if method == "Runtime.evaluate" and navigation_context_pending(response["error"]):
-                    raise NavigationContextPending(response["error"])
-                fail(f"DevTools {method} failed: {response['error']!r}")
-            return response.get("result", {})
-
-
-def visible_expression(selector):
-    return f"""
-(() => {{
-  const element = document.querySelector({json.dumps(selector)});
-  if (!element) return false;
-  const rect = element.getBoundingClientRect();
-  const style = getComputedStyle(element);
-  return !element.hidden && style.display !== "none" && style.visibility !== "hidden" &&
-    rect.width > 0 && rect.height > 0;
-}})()
-"""
-
-
-process = None
-websocket = None
+browser_session = None
 devtools = None
 session_id = None
 
 
 def evaluate(expression):
-    result = devtools.call(
-        "Runtime.evaluate",
-        {
-            "expression": expression,
-            "returnByValue": True,
-            "awaitPromise": True,
-            "userGesture": True,
-        },
-        session_id,
-    )
-    if "exceptionDetails" in result:
-        fail(f"browser expression failed: {result['exceptionDetails']!r}")
-    remote = result.get("result", {})
-    if remote.get("type") == "undefined":
-        return None
-    return remote.get("value")
+    return browser_session.evaluate(expression)
 
 
 def evaluate_json(expression):
-    value = evaluate(f"(async () => JSON.stringify(await ({expression})))()")
-    if not isinstance(value, str):
-        fail(f"browser expression did not produce JSON: {expression}")
-    return json.loads(value)
+    return browser_session.evaluate_json(expression)
 
 
 def wait_for(expression, description, timeout=35):
-    deadline = time.monotonic() + timeout
-    last = None
-    while time.monotonic() < deadline:
-        try:
-            last = evaluate(expression)
-        except NavigationContextPending:
-            last = None
-        if last:
-            return last
-        time.sleep(0.08)
-    fail(f"timed out waiting for {description}; last value was {last!r}")
+    return browser_session.wait_for(expression, description, timeout=timeout)
 
 
 def capture_artifacts():
-    if devtools is None or session_id is None:
+    if browser_session is None:
         return
     try:
-        html = evaluate("document.documentElement.outerHTML")
-        if isinstance(html, str):
-            Path(dom_path).write_text(html)
+        browser_session.write_dom(dom_path)
     except Exception as error:  # Diagnostics must not hide the original error.
         Path(dom_path).write_text(f"Could not collect DOM: {error!r}\n")
     try:
-        image = devtools.call(
-            "Page.captureScreenshot",
-            {"format": "png", "captureBeyondViewport": False},
-            session_id,
-        ).get("data")
-        if image:
-            Path(screenshot_path).write_bytes(base64.b64decode(image))
+        browser_session.capture_screenshot(screenshot_path)
     except Exception as error:  # Diagnostics must not hide the original error.
         Path(screenshot_path + ".error").write_text(
             f"Could not collect screenshot: {error!r}\n",
@@ -468,21 +270,10 @@ def capture_artifacts():
 
 
 def stop_browser():
-    global process
-    if websocket is not None:
-        websocket.close()
-    if process is None:
-        return
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-        process.wait(timeout=10)
-    except (OSError, subprocess.TimeoutExpired):
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except OSError:
-            pass
-        process.wait()
-    process = None
+    global browser_session
+    if browser_session is not None:
+        browser_session.close()
+        browser_session = None
 
 
 def assert_desktop_contract():
@@ -4443,47 +4234,19 @@ def assert_stop_invalidates_pending_ownership():
 
 
 try:
-    debugger_port = free_port()
-    Path(profile).mkdir(parents=True, exist_ok=True)
-    with Path(chrome_log).open("wb") as stderr:
-        process = subprocess.Popen(
-            [
-                chrome,
-                "--headless=new",
-                "--no-sandbox",
-                "--disable-gpu",
-                "--disable-dev-shm-usage",
-                "--run-all-compositor-stages-before-draw",
-                "--hide-scrollbars",
-                "--remote-allow-origins=*",
-                "--window-size=1680,900",
-                f"--remote-debugging-port={debugger_port}",
-                f"--user-data-dir={profile}",
-                "about:blank",
-            ],
-            stdout=subprocess.DEVNULL,
-            stderr=stderr,
-            start_new_session=True,
-        )
-    deadline = time.monotonic() + 25
-    version = None
-    while time.monotonic() < deadline:
-        try:
-            version = json_url(f"http://127.0.0.1:{debugger_port}/json/version")
-            break
-        except OSError:
-            time.sleep(0.1)
-    if not version:
-        fail("headless Chrome did not expose its DevTools endpoint")
-
-    websocket = WebSocket(version["webSocketDebuggerUrl"])
-    devtools = DevTools(websocket)
-    target = devtools.call("Target.createTarget", {"url": "about:blank"})["targetId"]
-    session_id = devtools.call(
-        "Target.attachToTarget", {"targetId": target, "flatten": True},
-    )["sessionId"]
-    devtools.call("Page.enable", session_id=session_id)
-    devtools.call("Runtime.enable", session_id=session_id)
+    browser_session = ChromeSession(
+        chrome,
+        profile,
+        chrome_log,
+        flags=[
+            "--disable-gpu",
+            "--run-all-compositor-stages-before-draw",
+            "--hide-scrollbars",
+        ],
+        window_size=(1680, 900),
+    ).start()
+    devtools = browser_session.devtools
+    session_id = browser_session.session_id
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
         {"width": 1680, "height": 900, "deviceScaleFactor": 1, "mobile": False},
