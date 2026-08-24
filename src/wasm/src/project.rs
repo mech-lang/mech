@@ -379,18 +379,36 @@ pub(crate) struct SourceBackedDocumentBootstrap {
 }
 
 #[derive(Clone, Default)]
+struct Staged<T> {
+    active: T,
+    pending: Option<T>,
+}
+
+impl<T> Staged<T> {
+    fn stage(&mut self, value: T) {
+        self.pending = Some(value);
+    }
+
+    fn commit(&mut self) {
+        if let Some(value) = self.pending.take() {
+            self.active = value;
+        }
+    }
+
+    fn abort(&mut self) {
+        self.pending = None;
+    }
+}
+
+#[derive(Clone, Default)]
 struct DocumentRuntimeLifecycle {
     drivers_started: Rc<Cell<bool>>,
     #[cfg(feature = "browser_compute")]
     compute_generation: Rc<Cell<u64>>,
     #[cfg(feature = "browser_host_scene")]
-    scenes: Rc<RefCell<BrowserSceneRegistry>>,
-    #[cfg(feature = "browser_host_scene")]
-    pending_scenes: Rc<RefCell<Option<BrowserSceneRegistry>>>,
+    scenes: Rc<RefCell<Staged<BrowserSceneRegistry>>>,
     #[cfg(feature = "browser_compute")]
-    compute: Rc<RefCell<Option<BrowserComputeBridge>>>,
-    #[cfg(feature = "browser_compute")]
-    pending_compute: Rc<RefCell<Option<BrowserComputeBridge>>>,
+    compute: Rc<RefCell<Staged<Option<BrowserComputeBridge>>>>,
 }
 
 impl DocumentRuntimeLifecycle {
@@ -404,29 +422,27 @@ impl DocumentRuntimeLifecycle {
 
     #[cfg(feature = "browser_host_scene")]
     fn scenes(&self) -> BrowserSceneRegistry {
-        self.scenes.borrow().clone()
+        self.scenes.borrow().active.clone()
     }
 
     #[cfg(feature = "browser_host_scene")]
     fn stage_scenes(&self, scenes: BrowserSceneRegistry) {
-        *self.pending_scenes.borrow_mut() = Some(scenes);
+        self.scenes.borrow_mut().stage(scenes);
     }
 
     #[cfg(feature = "browser_host_scene")]
     fn commit_scenes(&self) {
-        if let Some(scenes) = self.pending_scenes.borrow_mut().take() {
-            *self.scenes.borrow_mut() = scenes;
-        }
+        self.scenes.borrow_mut().commit();
     }
 
     #[cfg(feature = "browser_host_scene")]
     fn abort_scenes(&self) {
-        self.pending_scenes.borrow_mut().take();
+        self.scenes.borrow_mut().abort();
     }
 
     #[cfg(feature = "browser_compute")]
     fn compute(&self) -> Option<BrowserComputeBridge> {
-        self.compute.borrow().clone()
+        self.compute.borrow().active.clone()
     }
 
     #[cfg(feature = "browser_compute")]
@@ -444,7 +460,7 @@ impl DocumentRuntimeLifecycle {
 
     #[cfg(feature = "browser_compute")]
     fn stage_compute(&self, compute: Option<BrowserComputeBridge>) {
-        *self.pending_compute.borrow_mut() = compute;
+        self.compute.borrow_mut().stage(compute);
     }
 
     #[cfg(feature = "browser_compute")]
@@ -454,19 +470,24 @@ impl DocumentRuntimeLifecycle {
             .get()
             .checked_add(1)
             .expect("compute generation exhaustion is rejected while preparing the runtime");
-        let pending = self.pending_compute.borrow_mut().take();
         debug_assert!(
-            pending
+            self.compute
+                .borrow()
+                .pending
                 .as_ref()
-                .is_none_or(|bridge| bridge.generation() == next)
+                .is_some_and(|compute| {
+                    compute
+                        .as_ref()
+                        .is_none_or(|bridge| bridge.generation() == next)
+                })
         );
-        *self.compute.borrow_mut() = pending;
+        self.compute.borrow_mut().commit();
         self.compute_generation.set(next);
     }
 
     #[cfg(feature = "browser_compute")]
     fn abort_compute(&self) {
-        self.pending_compute.borrow_mut().take();
+        self.compute.borrow_mut().abort();
     }
 }
 
