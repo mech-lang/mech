@@ -58,7 +58,11 @@ const state = {
   scenePointerTimestamp: null,
   runtimeGeneration: 0,
   runtimeLifecycle: "new",
+  // Component controls remain available for stopped/failed programs so users
+  // can inspect Errors and resize the console. Runtime mutation channels have
+  // a shorter lifetime and are retired by every terminal transition.
   runtimeEventController: new AbortController(),
+  runtimeMutationEventController: new AbortController(),
   runtimeStopped: false,
 };
 
@@ -68,6 +72,32 @@ function addRuntimeEventListener(target, type, listener, options = {}) {
     ...options,
     signal: state.runtimeEventController.signal,
   });
+}
+
+function addRuntimeMutationEventListener(target, type, listener, options = {}) {
+  if (!target || state.runtimeMutationEventController.signal.aborted) return;
+  target.addEventListener(type, listener, {
+    ...options,
+    signal: state.runtimeMutationEventController.signal,
+  });
+}
+
+function captureReadyRuntimeOwnership() {
+  const generation = state.runtimeGeneration;
+  const controller = state.document;
+  return () =>
+    state.runtimeGeneration === generation &&
+    state.document === controller &&
+    state.runtimeLifecycle === "ready" &&
+    state.running;
+}
+
+function captureComponentOwnership() {
+  const generation = state.runtimeGeneration;
+  return () =>
+    state.runtimeGeneration === generation &&
+    state.runtimeLifecycle !== "disposed" &&
+    !state.runtimeEventController.signal.aborted;
 }
 
 const ERROR_PANEL_SELECTOR = "[data-mech-errors-panel]";
@@ -760,6 +790,7 @@ function stopRuntime(nextLifecycle = "stopped") {
   state.runtimeLifecycle = nextLifecycle;
   state.runtimeGeneration += 1;
   state.runtimeStopped = true;
+  state.runtimeMutationEventController.abort();
   if (nextLifecycle === "disposed") {
     state.runtimeEventController.abort();
   }
@@ -3375,7 +3406,12 @@ function releaseFullscreen(request) {
 
 async function relinquishUnownedNativeFullscreen(pane) {
   if (!state.fullscreenRequest && document.fullscreenElement === pane) {
-    await document.exitFullscreen();
+    // This is cleanup for an owner which has already lost publication rights.
+    // A browser rejection cannot be attributed to the retired component and
+    // must not escape as an unhandled promise rejection after disposal.
+    try {
+      await document.exitFullscreen();
+    } catch (_error) {}
   }
 }
 
@@ -3420,6 +3456,7 @@ function initializeFullscreen() {
   addRuntimeEventListener(document, "fullscreenchange", synchronize);
   synchronize();
   addRuntimeEventListener(toggle, "click", async () => {
+    const ownsOperation = captureComponentOwnership();
     if (
       buttonFullscreenState !== "idle" ||
       consoleMode() === "button"
@@ -3436,8 +3473,10 @@ function initializeFullscreen() {
         try {
           await document.exitFullscreen();
         } catch (error) {
+          if (!ownsOperation()) return;
           appendError(error);
         }
+        if (!ownsOperation()) return;
         synchronize();
       }
       return;
@@ -3452,6 +3491,10 @@ function initializeFullscreen() {
     if (pane.requestFullscreen) {
       try {
         await pane.requestFullscreen();
+        if (!ownsOperation()) {
+          await relinquishUnownedNativeFullscreen(pane);
+          return;
+        }
         if (!ownsFullscreen(request)) {
           buttonFullscreenState = "idle";
           await relinquishUnownedNativeFullscreen(pane);
@@ -3464,6 +3507,7 @@ function initializeFullscreen() {
           buttonFullscreenState = "fallback";
         }
       } catch (error) {
+        if (!ownsOperation()) return;
         if (ownsFullscreen(request)) {
           buttonFullscreenState = "fallback";
           pane.dataset.mechFullscreenFallback = "true";
@@ -3471,7 +3515,7 @@ function initializeFullscreen() {
         }
       }
     }
-    synchronize();
+    if (ownsOperation()) synchronize();
   });
 }
 
@@ -3510,6 +3554,7 @@ function initializeOutputFullscreen() {
   };
 
   const exit = async ({ revealWorkspace: shouldReveal = true } = {}) => {
+    const ownsOperation = captureComponentOwnership();
     buttonState = "idle";
     const ownedRequest = fullscreenRequest;
     const ownedFullscreen = ownsFullscreen(ownedRequest);
@@ -3519,9 +3564,11 @@ function initializeOutputFullscreen() {
       try {
         await document.exitFullscreen();
       } catch (error) {
+        if (!ownsOperation()) return;
         appendError(error);
       }
     }
+    if (!ownsOperation()) return;
     if (shouldReveal) {
       revealWorkspace();
     } else {
@@ -3530,6 +3577,7 @@ function initializeOutputFullscreen() {
   };
 
   const enter = async () => {
+    const ownsOperation = captureComponentOwnership();
     buttonState = "requesting";
     fullscreenRequest = claimFullscreen("output");
     const request = fullscreenRequest;
@@ -3540,6 +3588,10 @@ function initializeOutputFullscreen() {
     if (pane.requestFullscreen) {
       try {
         await pane.requestFullscreen();
+        if (!ownsOperation()) {
+          await relinquishUnownedNativeFullscreen(pane);
+          return;
+        }
         if (!ownsFullscreen(request)) {
           buttonState = "idle";
           await relinquishUnownedNativeFullscreen(pane);
@@ -3547,6 +3599,7 @@ function initializeOutputFullscreen() {
         }
         buttonState = document.fullscreenElement === pane ? "native" : "fallback";
       } catch (error) {
+        if (!ownsOperation()) return;
         if (ownsFullscreen(request)) {
           buttonState = "fallback";
           appendError(error);
@@ -3555,7 +3608,7 @@ function initializeOutputFullscreen() {
     } else {
       buttonState = "fallback";
     }
-    synchronize();
+    if (ownsOperation()) synchronize();
   };
 
   state.outputFullscreenController = { enter, exit };
@@ -3974,7 +4027,7 @@ function initializeScenePointerInput() {
   // Output presentation and fullscreen modes may place the drop-in REPL host
   // outside `.mech-root`. Delegate from the document so the same scene input
   // contract survives those layout moves.
-  addRuntimeEventListener(document, "pointerdown", event => {
+  addRuntimeMutationEventListener(document, "pointerdown", event => {
     if (event.button !== 0 || !(event.target instanceof Element)) return;
     const svg = event.target.closest("svg[data-mech-scene-pointer-surface]");
     if (!svg) return;
@@ -3985,13 +4038,13 @@ function initializeScenePointerInput() {
     event.preventDefault();
     event.stopPropagation();
   });
-  addRuntimeEventListener(window, "pointerup", event => {
+  addRuntimeMutationEventListener(window, "pointerup", event => {
     const session = state.scenePointerSession;
     if (!session) return;
     state.scenePointerSession = null;
     submit(session.instance, session.point, false, event.timeStamp);
   });
-  addRuntimeEventListener(window, "pointercancel", event => {
+  addRuntimeMutationEventListener(window, "pointercancel", event => {
     const session = state.scenePointerSession;
     if (!session) return;
     state.scenePointerSession = null;
@@ -4000,7 +4053,7 @@ function initializeScenePointerInput() {
 }
 
 function initializeLayout() {
-  addRuntimeEventListener(window, "mech:output", event => {
+  addRuntimeMutationEventListener(window, "mech:output", event => {
     if (event instanceof CustomEvent && event.detail) {
       appendProgramOutput(event.detail);
     }
@@ -4415,9 +4468,11 @@ function refreshDocumentComputeBridge() {
 }
 
 function frame() {
-  if (!state.running || !state.document) {
+  if (!state.running || !state.document || state.runtimeLifecycle !== "ready") {
     return;
   }
+  const ownsFrame = captureReadyRuntimeOwnership();
+  const controller = state.document;
   try {
     if (refreshDocumentComputeBridge()) {
       return;
@@ -4448,19 +4503,26 @@ function frame() {
       state.animationFrame = requestAnimationFrame(frame);
       return;
     }
-    const result = state.document.frame(8);
+    const result = controller.frame(8);
+    if (!ownsFrame()) return;
     state.computeBridge?.submit(result.computeCommand);
+    // Compute submission publishes synchronous lifecycle events. An embedder
+    // may dispose from one of those callbacks, so ownership must be proven
+    // again before consuming or rendering this frame's result.
+    if (!ownsFrame()) return;
     if (result.events?.length) {
       consumeReplResponse(result);
     }
+    if (!ownsFrame()) return;
     if (result.processed > 0) {
       renderValues();
     }
-    state.animationFrame = requestAnimationFrame(frame);
+    if (ownsFrame()) state.animationFrame = requestAnimationFrame(frame);
   } catch (error) {
+    if (!ownsFrame()) return;
     if (isRecoverableResidentTurnError(error)) {
       appendError(error);
-      state.animationFrame = requestAnimationFrame(frame);
+      if (ownsFrame()) state.animationFrame = requestAnimationFrame(frame);
       return;
     }
     showFatalError(error);

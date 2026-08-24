@@ -4101,6 +4101,49 @@ def assert_mobile_contract():
         fail(f"mobile console retained an overflowing desktop width: {pane_geometry!r}")
 
 
+def assert_terminal_runtime_mutations_retired(probe):
+    result = evaluate_json(f"""
+(async () => {{
+  const {{ WasmDocument }} = await import('/_mech/pkg/mech_wasm.js');
+  let pointerCalls = 0;
+  WasmDocument.prototype.scenePointerInput = function() {{ pointerCalls += 1; }};
+  const displayId = 'terminal-output-{probe}';
+  window.dispatchEvent(new CustomEvent('mech:output', {{ detail: {{
+    stream: 'stdout', operation: 'create', display_id: displayId,
+    content: {{ kind: 'text', data: {{ text: 'must not publish after {probe}' }} }},
+  }}}}));
+  const wrapper = document.createElement('div');
+  wrapper.dataset.mechDisplayId = 'scene-terminal-{probe}';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.dataset.mechScenePointerSurface = '';
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.style.cssText = 'position:fixed;left:0;top:0;width:100px;height:100px';
+  wrapper.append(svg);
+  document.body.append(wrapper);
+  svg.dispatchEvent(new PointerEvent('pointerdown', {{
+    bubbles: true, button: 0, pointerId: 71, clientX: 50, clientY: 50,
+  }}));
+  window.dispatchEvent(new PointerEvent('pointerup', {{
+    bubbles: true, button: 0, pointerId: 71, clientX: 50, clientY: 50,
+  }}));
+  wrapper.remove();
+  const outputTab = document.querySelector('[data-mech-console-tab="output"]');
+  const errorsTab = document.querySelector('[data-mech-console-tab="errors"]');
+  outputTab?.click();
+  const selectedOutput = outputTab?.getAttribute('aria-selected') === 'true';
+  errorsTab?.click();
+  return {{
+    outputAbsent: !document.querySelector(`[data-mech-display-id="${{displayId}}"]`),
+    pointerSilent: pointerCalls === 0,
+    controlsRemainInteractive:
+      selectedOutput && errorsTab?.getAttribute('aria-selected') === 'true',
+  }};
+}})()
+""")
+    if result is None or not all(result.values()):
+        fail(f"{probe} runtime retained mutation events or lost component controls: {result!r}")
+
+
 def assert_repl_termination():
     submit(":quit")
     wait_for(
@@ -4141,6 +4184,7 @@ def assert_repl_termination():
             "the document animation loop continued after :quit: "
             f"before={terminated_state['frameRequests']!r}, after={frame_requests_after!r}"
         )
+    assert_terminal_runtime_mutations_retired("stopped")
     direct_exports = evaluate("""
 (async () => {
   const { WasmDocument, WasmRepl } = await import('/_mech/pkg/mech_wasm.js');
@@ -4327,6 +4371,7 @@ def assert_fatal_error_is_visible():
         "a fatal document failure forcing a visible Errors surface",
         timeout=15,
     )
+    assert_terminal_runtime_mutations_retired("failed")
 
 
 def assert_stop_invalidates_pending_ownership():
@@ -4375,6 +4420,46 @@ def assert_stop_invalidates_pending_ownership():
         "window.__MECH_DOCUMENTATION_RELEASES__?.has('latency')",
         "documentation ownership before document stop",
     )
+    fullscreen_exit = evaluate_json("""
+(async () => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const toggle = document.querySelector('button[data-mech-output-fullscreen]');
+  const pending = { native: false, resolveExit: null };
+  window.__MECH_DISPOSED_FULLSCREEN_EXIT__ = pending;
+  Object.defineProperty(document, 'fullscreenElement', {
+    configurable: true,
+    get: () => pending.native ? pane : null,
+  });
+  Object.defineProperty(pane, 'requestFullscreen', {
+    configurable: true,
+    value: async () => {
+      pending.native = true;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
+  Object.defineProperty(document, 'exitFullscreen', {
+    configurable: true,
+    value: () => new Promise(resolve => {
+      pending.resolveExit = () => {
+        pending.native = false;
+        document.dispatchEvent(new Event('fullscreenchange'));
+        resolve();
+      };
+    }),
+  });
+  toggle?.click();
+  await Promise.resolve();
+  await Promise.resolve();
+  toggle?.click();
+  await Promise.resolve();
+  return {
+    native: pending.native,
+    exitPending: typeof pending.resolveExit === 'function',
+  };
+})()
+""")
+    if fullscreen_exit != {"native": True, "exitPending": True}:
+        fail(f"could not prepare pending fullscreen exit ownership: {fullscreen_exit!r}")
     evaluate("""
 (async () => {
   const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
@@ -4390,13 +4475,16 @@ def assert_stop_invalidates_pending_ownership():
   const pointerCalls = Number(window.__MECH_DISPOSED_POINTER_CALLS__ || 0);
   window.dispatchEvent(new Event('beforeunload'));
   document.documentElement.dataset.mechDocumentStatus = 'error';
-  document.querySelector('.mech-root').dataset.mechDocumentStatus = 'error';
+  const root = document.querySelector('.mech-root');
+  root.dataset.mechDocumentStatus = 'error';
+  root.dataset.mechOutputFullscreenActive = 'disposed-sentinel';
   return { renders, pointerCalls };
 })()
 """)
     evaluate("""
 (() => {
   window.__MECH_DOCUMENTATION_RELEASES__.get('latency')?.();
+  window.__MECH_DISPOSED_FULLSCREEN_EXIT__?.resolveExit?.();
   window.dispatchEvent(new CustomEvent('mech:output', { detail: {
     stream: 'stdout', operation: 'create', display_id: 'disposed-output-probe',
     content: { kind: 'text', data: { text: 'must not publish after disposal' } },
@@ -4441,6 +4529,8 @@ def assert_stop_invalidates_pending_ownership():
   )),
   anchorFocused:
     document.activeElement === window.__MECH_SHUTDOWN_INSPECTOR_ANCHOR__,
+  fullscreenState:
+    document.querySelector('.mech-root')?.dataset.mechOutputFullscreenActive,
 }))()
 """)
     disposed_api = evaluate_json("""
@@ -4472,7 +4562,8 @@ def assert_stop_invalidates_pending_ownership():
         stopped_after["pointerCalls"] != stopped["pointerCalls"] or
         stopped_after["appended"] or
         stopped_after["inspectorPresent"] or
-        stopped_after["anchorFocused"]
+        stopped_after["anchorFocused"] or
+        stopped_after["fullscreenState"] != "disposed-sentinel"
     ):
         fail(f"stale async ownership changed a stopped/fatal document: {stopped_after!r}")
     if set(disposed_api.values()) != {"MECH_DOCUMENT_DISPOSED"}:

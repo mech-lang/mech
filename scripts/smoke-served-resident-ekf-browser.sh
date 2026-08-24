@@ -174,6 +174,11 @@ harness = r'''<script>
     let displayParityTrackingError;
     let computeReadbackBytes = 0;
     let sampledReadbackEfficient = true;
+    let terminalSubmitCheckArmed = false;
+    let documentRenderEvents = 0;
+    window.addEventListener("mech:document-rendered", () => {
+      documentRenderEvents += 1;
+    });
     const computeIdentity = () => ({
       generation: root.dataset.mechComputeGeneration || "",
       revision: root.dataset.mechComputeRevision || "",
@@ -220,6 +225,19 @@ harness = r'''<script>
       return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
     };
     window.addEventListener("mech:compute-submit", () => {
+      if (terminalSubmitCheckArmed) {
+        terminalSubmitCheckArmed = false;
+        const rendersBeforeDispose = documentRenderEvents;
+        root.dataset.mechTerminalSubmitObserved = "true";
+        globalThis.MechDocumentController?.dispose();
+        setTimeout(() => {
+          root.dataset.mechTerminalSubmitRenderSuppressed = String(
+            documentRenderEvents === rendersBeforeDispose
+          );
+          root.dataset.mechDone = "true";
+        }, 50);
+        return;
+      }
       if (
         expectedComputeBackend !== "wgpu" || busyReplacementAttempted ||
         Number(root.dataset.mechComputeDispatches || 0) !== busyReplacementTurn
@@ -436,7 +454,8 @@ harness = r'''<script>
       // with a software adapter in CI. Start the simulation-frame budget only
       // after the document runtime is ready; the outer process deadline still
       // catches an initialization that actually hangs.
-      if (root.dataset.mechDocumentStatus === "ready") harnessFrames += 1;
+      if (root.dataset.mechDocumentStatus !== "ready") return;
+      harnessFrames += 1;
 
       const display = document.querySelector('[data-mech-display-id="scene-localization"]');
       const scene = document.querySelector('[data-mech-rich-scene="true"]');
@@ -1076,8 +1095,17 @@ harness = r'''<script>
           String(incompatibleResetDiagnostic);
         root.dataset.mechComputeStateResetsVerified =
           root.dataset.mechComputeStateResets || "0";
+        if (expectedComputeBackend === "wgpu") {
+          root.dataset.mechTerminalSubmitObserved = "pending";
+          terminalSubmitCheckArmed = true;
+          return;
+        }
+        // The scalar backend has no asynchronous compute submission boundary.
+        // Its frame lifecycle is covered by the ordinary terminal-state probes;
+        // the WGPU run below must prove disposal from the real submit event.
+        root.dataset.mechTerminalSubmitObserved = "true";
+        root.dataset.mechTerminalSubmitRenderSuppressed = "true";
         root.dataset.mechDone = "true";
-        globalThis.MechDocumentController?.dispose();
         return;
       }
       if (updates >= 450 && !cameraToggleDisabled) {
@@ -1241,6 +1269,8 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-incompatible-state-reset="true"' "$dom_file" \
   || ! grep -q 'data-mech-incompatible-reset-diagnostic="true"' "$dom_file" \
   || ! grep -q "data-mech-compute-state-resets-verified=\"$expected_compute_state_resets\"" "$dom_file" \
+  || ! grep -q 'data-mech-terminal-submit-observed="true"' "$dom_file" \
+  || ! grep -q 'data-mech-terminal-submit-render-suppressed="true"' "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-x="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-y="[0-9]' "$dom_file" \
