@@ -2331,6 +2331,25 @@ state
     }
 
     #[test]
+    fn browser_compute_lowers_ceil_to_wgsl() {
+        let source = SOURCE.replacen(
+            "acceleration := (0f32 - positions) * 0.435<f32> + offset * pointer-pull",
+            "acceleration := math/ceil((0f32 - positions) * 0.435<f32> + offset * pointer-pull)",
+            1,
+        );
+        let (_document, prepared) = compile_fixture(CONFIG, &source);
+        let PreparedGpuKernel::Elementwise(kernel) = prepared.kernel else {
+            panic!("elementwise ceil source must select the elementwise kernel")
+        };
+
+        assert!(
+            kernel.wgsl().contains("ceil("),
+            "generated WGSL did not contain ceil:\n{}",
+            kernel.wgsl()
+        );
+    }
+
+    #[test]
     fn one_document_runs_the_coordinator_and_wgpu_bridge_through_the_common_host() {
         let (document, prepared) = compile_fixture(CONFIG, SOURCE);
         let input_names = prepared

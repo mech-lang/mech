@@ -1202,7 +1202,12 @@ impl ResidentExternalCoordinator {
                 "replay input identities do not match the next admitted batch",
             );
         }
-        for (fact, observation) in canonical.facts.iter().zip(self.bound.observations()) {
+        for (ordinal, (fact, observation)) in canonical
+            .facts
+            .iter()
+            .zip(self.bound.observations())
+            .enumerate()
+        {
             if fact.requirement != observation.requirement
                 || fact.node != observation.node
                 || fact.slot != observation.input.artifact_slot
@@ -1216,6 +1221,18 @@ impl ResidentExternalCoordinator {
                 return invalid_coordinator(
                     "replay batch differs from the activated observation plan",
                 );
+            }
+            for (previous_fact, previous_observation) in canonical.facts[..ordinal]
+                .iter()
+                .zip(&self.bound.observations()[..ordinal])
+            {
+                if observations_share_snapshot(previous_observation, observation)
+                    && previous_fact.payload_hash != fact.payload_hash
+                {
+                    return invalid_coordinator(
+                        "replay batch contains conflicting snapshots for one source identity",
+                    );
+                }
             }
         }
         Ok(canonical)

@@ -1905,6 +1905,25 @@ fn shared_observations_capture_one_authoritative_provider_snapshot() -> MResult<
         batch.facts[0].value.resident_token(),
         batch.facts[1].value.resident_token()
     );
+    let second = &batch.facts[1];
+    let divergent_value = captured_value_from_legacy(
+        &LegacyValue::MatrixF64(ToMatrix::to_matrix(vec![9.0, 0.01, 5.0, -2.0], 4, 1)),
+        second.value.schema(),
+        &second.shape,
+        artifact.schemas(),
+    )?;
+    let divergent_second = CapturedInputFact::new(
+        second.sequence,
+        second.requirement,
+        second.node,
+        second.slot,
+        second.schema_key,
+        second.shape.clone(),
+        divergent_value,
+        artifact.schemas(),
+    )?;
+    let inconsistent_batch =
+        CapturedInputBatch::new(vec![batch.facts[0].clone(), divergent_second])?;
     drop(coordinator);
     drop(providers);
 
@@ -1922,6 +1941,20 @@ fn shared_observations_capture_one_authoritative_provider_snapshot() -> MResult<
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
+    let error = replay
+        .execute_replay_batch(Some(&inconsistent_batch), &record)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("conflicting snapshots for one source identity")
+    );
+    assert_eq!(replay.input_facts().count(), 0);
+    assert_eq!(replay.receipts().count(), 0);
+    assert_eq!(
+        replay.instance().published_epoch(),
+        mech_core::InstanceEpoch::ZERO
+    );
     assert!(matches!(
         replay.execute_replay_batch(Some(&batch), &record)?,
         ResidentExternalTurnOutcome::Accepted { .. }

@@ -81,7 +81,7 @@ browser_project = ["browser_project_core", "source", "sample_hold", "state_step"
 browser_compute = [
   "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
   "mech-runtime/compute",
-  "math_abs", "math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_sqrt", "math_atan2", "math_sin", "math_cos",
+  "math_abs", "math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_sqrt", "math_ceil", "math_atan2", "math_sin", "math_cos",
   "variables", "variable_define", "variable_assign", "tuple",
   "mech-stdlib/native-plan", "dep:mech-compute", "dep:mech-gpu", "mech-gpu/runtime-host",
 ]
