@@ -4375,18 +4375,47 @@ def assert_stop_invalidates_pending_ownership():
         "window.__MECH_DOCUMENTATION_RELEASES__?.has('latency')",
         "documentation ownership before document stop",
     )
+    evaluate("""
+(async () => {
+  const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
+  window.__MECH_DISPOSED_POINTER_CALLS__ = 0;
+  WasmDocument.prototype.scenePointerInput = function() {
+    window.__MECH_DISPOSED_POINTER_CALLS__ += 1;
+  };
+})()
+""")
     stopped = evaluate_json("""
 (() => {
   const renders = Number(window.__MECH_DOCUMENT_RENDERS__ || 0);
+  const pointerCalls = Number(window.__MECH_DISPOSED_POINTER_CALLS__ || 0);
   window.dispatchEvent(new Event('beforeunload'));
   document.documentElement.dataset.mechDocumentStatus = 'error';
   document.querySelector('.mech-root').dataset.mechDocumentStatus = 'error';
-  return { renders };
+  return { renders, pointerCalls };
 })()
 """)
     evaluate("""
 (() => {
   window.__MECH_DOCUMENTATION_RELEASES__.get('latency')?.();
+  window.dispatchEvent(new CustomEvent('mech:output', { detail: {
+    stream: 'stdout', operation: 'create', display_id: 'disposed-output-probe',
+    content: { kind: 'text', data: { text: 'must not publish after disposal' } },
+  }}));
+  const wrapper = document.createElement('div');
+  wrapper.dataset.mechDisplayId = 'scene-disposal-probe';
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.dataset.mechScenePointerSurface = '';
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.style.cssText = 'position:fixed;left:0;top:0;width:100px;height:100px';
+  wrapper.append(svg);
+  document.body.append(wrapper);
+  svg.dispatchEvent(new PointerEvent('pointerdown', {
+    bubbles: true, button: 0, pointerId: 73, clientX: 50, clientY: 50,
+  }));
+  window.dispatchEvent(new PointerEvent('pointerup', {
+    bubbles: true, button: 0, pointerId: 73, clientX: 50, clientY: 50,
+  }));
+  wrapper.remove();
   return new Promise(resolve => setTimeout(
     () => requestAnimationFrame(() => requestAnimationFrame(resolve)),
     0,
@@ -4400,6 +4429,10 @@ def assert_stop_invalidates_pending_ownership():
   consoleStatus: document.querySelector('.mech-root')?.dataset.mechConsoleStatus,
   hostRequestId: document.querySelector('.mech-root')?.dataset.mechHostRequestId || null,
   renders: Number(window.__MECH_DOCUMENT_RENDERS__ || 0),
+  disposedOutput: Boolean(document.querySelector(
+    '[data-mech-output-panel] [data-mech-display-id="disposed-output-probe"]'
+  )),
+  pointerCalls: Number(window.__MECH_DISPOSED_POINTER_CALLS__ || 0),
   appended: Boolean(document.querySelector(
     '[data-mech-documentation-topic="browser-smoke/latency"]'
   )),
@@ -4435,6 +4468,8 @@ def assert_stop_invalidates_pending_ownership():
         stopped_after["consoleStatus"] != "terminated" or
         stopped_after["hostRequestId"] is not None or
         stopped_after["renders"] != stopped["renders"] or
+        stopped_after["disposedOutput"] or
+        stopped_after["pointerCalls"] != stopped["pointerCalls"] or
         stopped_after["appended"] or
         stopped_after["inspectorPresent"] or
         stopped_after["anchorFocused"]

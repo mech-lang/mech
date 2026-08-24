@@ -58,8 +58,17 @@ const state = {
   scenePointerTimestamp: null,
   runtimeGeneration: 0,
   runtimeLifecycle: "new",
+  runtimeEventController: new AbortController(),
   runtimeStopped: false,
 };
+
+function addRuntimeEventListener(target, type, listener, options = {}) {
+  if (!target || state.runtimeEventController.signal.aborted) return;
+  target.addEventListener(type, listener, {
+    ...options,
+    signal: state.runtimeEventController.signal,
+  });
+}
 
 const ERROR_PANEL_SELECTOR = "[data-mech-errors-panel]";
 const OUTPUT_PANEL_SELECTOR = "[data-mech-output-panel]";
@@ -282,8 +291,8 @@ function restoreConsoleOpeningSize() {
       applyPersistedConsoleOpeningSize();
     }
   };
-  window.addEventListener("resize", refresh);
-  window.visualViewport?.addEventListener("resize", refresh);
+  addRuntimeEventListener(window, "resize", refresh);
+  addRuntimeEventListener(window.visualViewport, "resize", refresh);
   if (typeof ResizeObserver === "function" && state.root) {
     state.consoleSizeObserver?.disconnect();
     state.consoleSizeObserver = new ResizeObserver(refresh);
@@ -355,12 +364,12 @@ function restorePagePosition() {
     [window, "pointerdown"],
     [window, "keydown"],
   ]) {
-    target.addEventListener(type, cancel, { passive: true });
+    addRuntimeEventListener(target, type, cancel, { passive: true });
     restore.cancellations.push([target, type, cancel]);
   }
   if (activeOwner !== window) {
     for (const type of ["wheel", "touchstart", "pointerdown", "keydown"]) {
-      activeOwner.addEventListener(type, cancel, { passive: true });
+      addRuntimeEventListener(activeOwner, type, cancel, { passive: true });
       restore.cancellations.push([activeOwner, type, cancel]);
     }
   }
@@ -448,11 +457,11 @@ function restorePagePosition() {
   }
   for (const image of document.images) {
     if (!image.complete) {
-      image.addEventListener("load", attempt, { once: true });
-      image.addEventListener("error", attempt, { once: true });
+      addRuntimeEventListener(image, "load", attempt, { once: true });
+      addRuntimeEventListener(image, "error", attempt, { once: true });
     }
   }
-  window.addEventListener("load", attempt, { once: true });
+  addRuntimeEventListener(window, "load", attempt, { once: true });
   requestAnimationFrame(() => requestAnimationFrame(attempt));
 }
 
@@ -461,13 +470,14 @@ function initializeDocumentLayoutPersistence() {
     history.scrollRestoration = "manual";
   }
   restoreConsoleOpeningSize();
-  window.addEventListener("scroll", schedulePagePositionSave, { passive: true });
-  document.querySelector(".content-shell")?.addEventListener(
+  addRuntimeEventListener(window, "scroll", schedulePagePositionSave, { passive: true });
+  addRuntimeEventListener(
+    document.querySelector(".content-shell"),
     "scroll",
     schedulePagePositionSave,
     { passive: true },
   );
-  window.addEventListener("pagehide", flushPagePositionSave);
+  addRuntimeEventListener(window, "pagehide", flushPagePositionSave);
 }
 
 function truthySetting(value) {
@@ -750,6 +760,9 @@ function stopRuntime(nextLifecycle = "stopped") {
   state.runtimeLifecycle = nextLifecycle;
   state.runtimeGeneration += 1;
   state.runtimeStopped = true;
+  if (nextLifecycle === "disposed") {
+    state.runtimeEventController.abort();
+  }
   state.fullscreenGeneration += 1;
   state.fullscreenRequest = null;
   state.outputFullscreenController = null;
@@ -1769,14 +1782,14 @@ function showInlineInspector(identity, title, rendered, anchor, error = null) {
   inspector = { popup, dismiss, reclamp, raise, update, order: 0 };
   state.inlineInspectors.set(identity, inspector);
   raise();
-  close.addEventListener("click", dismiss);
-  popup.addEventListener("pointerdown", raise);
-  document.addEventListener("keydown", closeOnEscape);
-  window.addEventListener("resize", reclamp);
-  window.addEventListener("orientationchange", reclamp);
-  window.visualViewport?.addEventListener("resize", reclamp);
-  window.visualViewport?.addEventListener("scroll", reclamp);
-  header.addEventListener("pointerdown", event => {
+  addRuntimeEventListener(close, "click", dismiss);
+  addRuntimeEventListener(popup, "pointerdown", raise);
+  addRuntimeEventListener(document, "keydown", closeOnEscape);
+  addRuntimeEventListener(window, "resize", reclamp);
+  addRuntimeEventListener(window, "orientationchange", reclamp);
+  addRuntimeEventListener(window.visualViewport, "resize", reclamp);
+  addRuntimeEventListener(window.visualViewport, "scroll", reclamp);
+  addRuntimeEventListener(header, "pointerdown", event => {
     if (event.button !== 0 || event.target.closest("button")) {
       return;
     }
@@ -1784,9 +1797,9 @@ function showInlineInspector(identity, title, rendered, anchor, error = null) {
     dragging = true;
     dragOffsetX = event.clientX - rect.left;
     dragOffsetY = event.clientY - rect.top;
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stopDragging, { once: true });
-    window.addEventListener("pointercancel", stopDragging, { once: true });
+    addRuntimeEventListener(window, "pointermove", move);
+    addRuntimeEventListener(window, "pointerup", stopDragging, { once: true });
+    addRuntimeEventListener(window, "pointercancel", stopDragging, { once: true });
     event.preventDefault();
   });
 
@@ -1869,8 +1882,8 @@ function bindSymbolClick(element, name, selectionToken = null) {
       handleSelectionFailure(error, name, element, consoleIsOpen(), fallbackIdentity);
     }
   };
-  element.addEventListener("click", select);
-  element.addEventListener("keydown", event => {
+  addRuntimeEventListener(element, "click", select);
+  addRuntimeEventListener(element, "keydown", event => {
     if (event.key === "Enter" || event.key === " ") {
       select(event);
     }
@@ -1924,8 +1937,8 @@ function bindOutputClick(element, address) {
       handleSelectionFailure(error, "ans", element, consoleIsOpen(), fallbackIdentity);
     }
   };
-  element.addEventListener("click", select);
-  element.addEventListener("keydown", event => {
+  addRuntimeEventListener(element, "click", select);
+  addRuntimeEventListener(element, "keydown", event => {
     if (event.key === "Enter" || event.key === " ") {
       select(event);
     }
@@ -2669,8 +2682,8 @@ function appendActivePrompt() {
   input.className = "repl-input";
   input.dataset.mechInteractiveEvaluation = "resident";
   input.setAttribute("aria-label", "Mech resident REPL input");
-  input.addEventListener("input", () => resizeConsoleInput(input));
-  input.addEventListener("keydown", (event) => {
+  addRuntimeEventListener(input, "input", () => resizeConsoleInput(input));
+  addRuntimeEventListener(input, "keydown", (event) => {
     if (event.isComposing) {
       return;
     }
@@ -2766,7 +2779,7 @@ function attachConsole() {
     inputRow: null,
     pendingSubmission: null,
   };
-  mount.addEventListener("click", event => {
+  addRuntimeEventListener(mount, "click", event => {
     if (
       event.target.closest("button, a, input, textarea, select, [contenteditable='true']") ||
       !window.getSelection()?.isCollapsed
@@ -2976,7 +2989,7 @@ function initializeConsoleTabs() {
     return;
   }
   for (const tab of pane.querySelectorAll("[data-mech-console-tab]")) {
-    tab.addEventListener("click", () => {
+    addRuntimeEventListener(tab, "click", () => {
       const name = tab.dataset.mechConsoleTab;
       if (name) {
         activateConsolePanel(name, pane);
@@ -2988,7 +3001,7 @@ function initializeConsoleTabs() {
 
 function initializeConsoleToggle() {
   for (const toggle of documentConsoleToggles()) {
-    toggle.addEventListener("click", () => {
+    addRuntimeEventListener(toggle, "click", () => {
       const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
       setConsoleOpen(!isOpen);
     });
@@ -3042,7 +3055,7 @@ function initializeDocumentPresentation() {
 }
 
 function initializeConsoleKeyboardToggle() {
-  document.addEventListener("keydown", event => {
+  addRuntimeEventListener(document, "keydown", event => {
     if (
       event.isComposing ||
       event.key !== "`" ||
@@ -3124,10 +3137,10 @@ function beginConsolePointerSession(event, handle, axis, onMove, onFinish) {
   state.consolePointerSession = session;
   document.body.classList.add("is-resizing");
   document.body.dataset.mechResizeAxis = axis;
-  window.addEventListener("pointermove", move);
-  window.addEventListener("pointerup", complete);
-  window.addEventListener("pointercancel", cancel);
-  handle.addEventListener("lostpointercapture", cancel);
+  addRuntimeEventListener(window, "pointermove", move);
+  addRuntimeEventListener(window, "pointerup", complete);
+  addRuntimeEventListener(window, "pointercancel", cancel);
+  addRuntimeEventListener(handle, "lostpointercapture", cancel);
   try {
     handle.setPointerCapture?.(pointerId);
   } catch (_error) {
@@ -3142,7 +3155,7 @@ function initializeResizeHandles() {
     return;
   }
   for (const handle of documentConsoleResizers()) {
-    handle.addEventListener("pointerdown", (event) => {
+    addRuntimeEventListener(handle, "pointerdown", (event) => {
       const rect = pane.getBoundingClientRect();
       const horizontal = handle.dataset.mechConsoleResizeAxis === "width" ||
         pane.dataset.mechConsoleResizeAxis === "width";
@@ -3277,7 +3290,7 @@ function initializeWorkspaceResizers() {
   }
   for (const resizer of ensureConsoleWorkspaceResizers(pane)) {
     const axis = resizer.dataset.mechConsoleWorkspaceResizer;
-    resizer.addEventListener("pointerdown", event => {
+    addRuntimeEventListener(resizer, "pointerdown", event => {
       if (!consoleWorkspaceActive()) {
         return;
       }
@@ -3296,7 +3309,7 @@ function initializeWorkspaceResizers() {
         );
       }, () => {});
     });
-    resizer.addEventListener("keydown", event => {
+    addRuntimeEventListener(resizer, "keydown", event => {
       if (!consoleWorkspaceActive()) {
         return;
       }
@@ -3313,8 +3326,8 @@ function initializeWorkspaceResizers() {
     });
   }
   const refresh = () => refreshWorkspaceResizers(pane);
-  window.addEventListener("resize", refresh);
-  window.visualViewport?.addEventListener("resize", refresh);
+  addRuntimeEventListener(window, "resize", refresh);
+  addRuntimeEventListener(window.visualViewport, "resize", refresh);
 }
 
 function setFullscreenState(pane, toggle, active, mode = null) {
@@ -3404,9 +3417,9 @@ function initializeFullscreen() {
     setFullscreenState(pane, toggle, active, mode);
   };
 
-  document.addEventListener("fullscreenchange", synchronize);
+  addRuntimeEventListener(document, "fullscreenchange", synchronize);
   synchronize();
-  toggle.addEventListener("click", async () => {
+  addRuntimeEventListener(toggle, "click", async () => {
     if (
       buttonFullscreenState !== "idle" ||
       consoleMode() === "button"
@@ -3546,9 +3559,9 @@ function initializeOutputFullscreen() {
   };
 
   state.outputFullscreenController = { enter, exit };
-  document.addEventListener("fullscreenchange", synchronize);
+  addRuntimeEventListener(document, "fullscreenchange", synchronize);
   for (const control of controls) {
-    control.addEventListener("click", () => {
+    addRuntimeEventListener(control, "click", () => {
       if (outputFullscreenActive()) {
         void exit({ revealWorkspace: true });
       } else {
@@ -3620,7 +3633,7 @@ function initializeToc() {
       );
     };
     const activate = () => setOpen(!layout.classList.contains("is-toc-open"));
-    toggle.addEventListener("click", activate);
+    addRuntimeEventListener(toggle, "click", activate);
     controlCleanups.push(() => toggle.removeEventListener("click", activate));
     tocControls.set(toc, { layout, toggle, setOpen });
   }
@@ -3670,7 +3683,7 @@ function initializeToc() {
       }
     };
     state.tocLinkHandlers.set(link, handler);
-    link.addEventListener("click", handler);
+    addRuntimeEventListener(link, "click", handler);
   }
   const keepVisible = (link) => {
     if (!toc || toc.scrollHeight <= toc.clientHeight + 1) {
@@ -3813,10 +3826,10 @@ function initializeToc() {
   for (const { layout } of tocControls.values()) {
     resizeObserver?.observe(layout);
   }
-  window.addEventListener("scroll", schedule, { passive: true });
-  scrollContainer?.addEventListener("scroll", schedule, { passive: true });
-  window.addEventListener("resize", reconcileCompactState);
-  document.addEventListener("keydown", closeOnEscape);
+  addRuntimeEventListener(window, "scroll", schedule, { passive: true });
+  addRuntimeEventListener(scrollContainer, "scroll", schedule, { passive: true });
+  addRuntimeEventListener(window, "resize", reconcileCompactState);
+  addRuntimeEventListener(document, "keydown", closeOnEscape);
   state.tocEventCleanup = () => {
     resizeObserver?.disconnect();
     for (const cleanup of controlCleanups) cleanup();
@@ -3961,7 +3974,7 @@ function initializeScenePointerInput() {
   // Output presentation and fullscreen modes may place the drop-in REPL host
   // outside `.mech-root`. Delegate from the document so the same scene input
   // contract survives those layout moves.
-  document.addEventListener("pointerdown", event => {
+  addRuntimeEventListener(document, "pointerdown", event => {
     if (event.button !== 0 || !(event.target instanceof Element)) return;
     const svg = event.target.closest("svg[data-mech-scene-pointer-surface]");
     if (!svg) return;
@@ -3972,13 +3985,13 @@ function initializeScenePointerInput() {
     event.preventDefault();
     event.stopPropagation();
   });
-  window.addEventListener("pointerup", event => {
+  addRuntimeEventListener(window, "pointerup", event => {
     const session = state.scenePointerSession;
     if (!session) return;
     state.scenePointerSession = null;
     submit(session.instance, session.point, false, event.timeStamp);
   });
-  window.addEventListener("pointercancel", event => {
+  addRuntimeEventListener(window, "pointercancel", event => {
     const session = state.scenePointerSession;
     if (!session) return;
     state.scenePointerSession = null;
@@ -3987,19 +4000,19 @@ function initializeScenePointerInput() {
 }
 
 function initializeLayout() {
-  window.addEventListener("mech:output", event => {
+  addRuntimeEventListener(window, "mech:output", event => {
     if (event instanceof CustomEvent && event.detail) {
       appendProgramOutput(event.detail);
     }
   });
   const pageStyleProbe = initializePageStyleProbe();
   syncReplHostOffset();
-  window.addEventListener("resize", syncReplHostOffset);
-  window.addEventListener("scroll", syncReplHostOffset, { passive: true });
-  window.visualViewport?.addEventListener("scroll", syncReplHostOffset, {
+  addRuntimeEventListener(window, "resize", syncReplHostOffset);
+  addRuntimeEventListener(window, "scroll", syncReplHostOffset, { passive: true });
+  addRuntimeEventListener(window.visualViewport, "scroll", syncReplHostOffset, {
     passive: true,
   });
-  window.addEventListener("mech:styles-changed", syncReplHostOffset);
+  addRuntimeEventListener(window, "mech:styles-changed", syncReplHostOffset);
   const header = document.querySelector(".site-header, #header");
   if (typeof ResizeObserver === "function") {
     state.replHostOffsetObserver?.disconnect();
@@ -4033,10 +4046,10 @@ function initializeLayout() {
   initializeOutputFullscreen();
   initializeScenePointerInput();
   initializeBreadcrumb();
-  window.addEventListener("mech:document-layout-refresh", initializeToc);
+  addRuntimeEventListener(window, "mech:document-layout-refresh", initializeToc);
   initializeToc();
   initializeOptionalRenderers();
-  window.addEventListener("load", initializeOptionalRenderers, { once: true });
+  addRuntimeEventListener(window, "load", initializeOptionalRenderers, { once: true });
 }
 
 function servedComputeHostConfig() {
