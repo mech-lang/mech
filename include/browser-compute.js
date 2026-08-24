@@ -554,9 +554,11 @@ class Session {
   submit(command, hooks = {}) {
     if (!this.validateCommand(command)) return null;
     const dispatchToken = command.dispatchToken;
-    this.resource.setRequestedOutputs(command.requestedOutputs || []);
     let submission;
     try {
+      // Readback allocation is part of claiming this dispatch. Any failure
+      // must complete the claimed command before control leaves this method.
+      this.resource.setRequestedOutputs(command.requestedOutputs || []);
       submission = this.resource.submit(command, this.activeBuffer);
       // queue.submit() has succeeded. From here onward a device loss is a
       // terminal failure, never permission to replay this turn on the CPU.

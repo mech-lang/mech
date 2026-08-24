@@ -135,77 +135,91 @@ for name in test_only_globals:
         fail(f"test-only production global `{name}` reappeared")
 
 canonical_cdp_harness = ROOT / "tests/browser/harness/chrome.py"
+BROWSER_EXECUTABLE = (
+    r"(?<![\w-])(?:google-chrome|chromium(?:-browser)?|microsoft-edge(?:-stable)?|"
+    r"msedge(?:\.exe)?|chrome(?:\.exe)?|firefox(?:-esr)?|geckodriver|safaridriver|"
+    r"webkit2gtk-driver)(?![\w-])"
+)
+PY_LAUNCHERS = ("popen", "run", "call", "check_call", "check_output",
+                "create_subprocess_exec", "system")
+JS_LAUNCHERS = ("spawn", "exec", "execfile", "fork")
+
+
+def launched_executable(argv: str) -> str:
+    tokens = []
+    for _, literal, identifier, number in re.findall(
+            r"(['\"])(.*?)\1|([a-z_$][\w.$-]*)|(\d+(?:\.\d+)?)", argv):
+        path = literal and re.search(BROWSER_EXECUTABLE, literal) and re.search(r"[/\\]", literal)
+        tokens.extend([literal] if path else literal.split() if literal else [identifier or number])
+    while tokens and tokens[0] in {"str", "path", "os.fspath"}:
+        tokens.pop(0)
+    while tokens and tokens[0] in {"env", "exec", "command", "nohup", "xvfb-run", "timeout"}:
+        tokens.pop(0)
+        while tokens and (tokens[0].startswith("-") or "=" in tokens[0]
+                          or re.fullmatch(r"\d+(?:\.\d+)?[smhd]?", tokens[0])):
+            tokens.pop(0)
+    return tokens[0] if tokens else ""
 
 
 def owns_browser_process(source: str) -> bool:
-    """Track browser-valued commands into Python, JS, and shell launchers."""
     source = source.lower()
-    executable = (r"(?<![\w-])(?:google-chrome|chromium(?:-browser)?|microsoft-edge(?:-stable)?|"
-                  r"msedge(?:\.exe)?|chrome(?:\.exe)?|firefox(?:-esr)?|geckodriver|"
-                  r"safaridriver|webkit2gtk-driver)(?![\w-])")
     assignments = re.findall(
-        r"(?m)^\s*(?:const\s+|let\s+|var\s+)?([a-z_$]\w*)\s*=\s*([^\n;]+)",
-        source,
+        r"(?m)^\s*(?:const\s+|let\s+|var\s+)?([a-z_$]\w*)\s*=\s*([^\n;]+)", source,
     )
-    browser_value = rf"{executable}|find_browser|args\.browser|(?:chrome|edge|firefox)_bin"
+    browser_value = rf"{BROWSER_EXECUTABLE}|find_browser|args\.browser|(?:chrome|edge|firefox)_bin"
     browser_names: set[str] = set()
     for _ in assignments:
-        for name, value in assignments:
-            if re.search(browser_value, value) or any(
-                re.search(rf"\b{known}\b", value) for known in browser_names
-            ):
-                browser_names.add(name)
-    launchers = {
-        "subprocess.popen", "subprocess.run", "subprocess.call",
-        "subprocess.check_call", "subprocess.check_output",
-        "asyncio.create_subprocess_exec", "os.system", "child_process.spawn",
-        "child_process.exec", "child_process.execfile", "deno.command", "bun.spawn",
-    }
+        known = "|".join(map(re.escape, browser_names)) or r"(?!)"
+        browser_names.update(name for name, value in assignments
+                             if re.search(rf"{browser_value}|\b(?:{known})\b", value))
+    launchers = {f"subprocess.{name}" for name in PY_LAUNCHERS[:5]}
+    launchers |= {"asyncio.create_subprocess_exec", "os.system", "deno.command", "bun.spawn"}
     for imports in re.findall(r"from\s+(?:subprocess|asyncio|os)\s+import\s+([^\n]+)", source):
-        for item in imports.split(","):
-            original, _, alias = item.strip().partition(" as ")
-            if original in {"popen", "run", "call", "check_call", "check_output",
-                            "create_subprocess_exec", "system"}:
-                launchers.add(alias or original)
+        for original, alias in re.findall(rf"\b({'|'.join(PY_LAUNCHERS)})\b(?:\s+as\s+(\w+))?", imports):
+            launchers.add(alias or original)
     for module, alias in re.findall(r"import\s+(subprocess|asyncio|os)\s+as\s+(\w+)", source):
-        methods = {"subprocess": ("popen", "run", "call", "check_call", "check_output"),
-                   "asyncio": ("create_subprocess_exec",), "os": ("system",)}[module]
+        methods = PY_LAUNCHERS[:5] if module == "subprocess" else PY_LAUNCHERS[5:6] if module == "asyncio" else PY_LAUNCHERS[6:]
         launchers.update(f"{alias}.{method}" for method in methods)
-    for imports in re.findall(
-        r"(?:import\s*|(?:const|let|var)\s*)\{([^}]+)\}\s*(?:from|=\s*require\()\s*"
-        r"['\"](?:node:)?child_process['\"]",
-        source,
-    ):
-        for item in imports.split(","):
-            original, *aliases = re.split(r"\s+as\s+|\s*:\s*", item.strip(), maxsplit=1)
-            if original in {"spawn", "exec", "execfile", "fork"}:
-                launchers.add(aliases[-1] if aliases else original)
-    module_aliases = re.findall(
-        r"(?:import\s+(?:\*\s+as\s+)?|(?:const|let|var)\s+)([a-z_$]\w*)\s*"
-        r"(?:from\s*|=\s*require\()['\"](?:node:)?child_process['\"]",
-        source,
-    )
-    launchers.update(f"{alias}.{method}" for alias in module_aliases
-                     for method in ("spawn", "exec", "execfile", "fork"))
-    for alias, method in re.findall(
-        r"(?:const|let|var)\s+([a-z_$]\w*)\s*=\s*require\(['\"]"
-        r"(?:node:)?child_process['\"]\)\.(spawn|exec|execfile|fork)", source,
-    ):
-        launchers.add(alias)
+    child_imports = re.findall(
+        r"(?:import|const|let|var)[^\n]*?(?:node:)?child_process[^\n]*", source)
+    for imported in child_imports:
+        for original, alias in re.findall(rf"\b({'|'.join(JS_LAUNCHERS)})\b(?:\s*(?:as|:)\s*(\w+))?", imported):
+            launchers.add(alias or original)
+        for alias in re.findall(r"(?:\*\s+as\s+|(?:const|let|var)\s+)(\w+)", imported):
+            launchers.update(f"{alias}.{method}" for method in JS_LAUNCHERS)
+    launchers.update(f"child_process.{name}" for name in JS_LAUNCHERS)
     launcher = "|".join(sorted(map(re.escape, launchers), key=len, reverse=True))
     for match in re.finditer(rf"(?:{launcher})\s*\((?P<argv>.{{0,1000}}?)\)", source, re.DOTALL):
-        argv = match.group("argv")
-        if re.search(browser_value, argv) or any(
-            re.search(rf"\b{name}\b", argv) for name in browser_names
-        ):
+        executable = launched_executable(match.group("argv"))
+        if re.search(browser_value, executable) or executable in browser_names:
             return True
     if re.search(r"\b(?:chromium|firefox|webkit)\.launch\s*\(|"
                  r"\bwebdriver\.(?:chrome|firefox|safari|edge)\s*\(", source):
         return True
     names = "|".join(map(re.escape, browser_names | {"chrome_bin", "edge_bin", "firefox_bin"}))
-    wrappers = r"(?:(?:exec|command|nohup|xvfb-run|timeout)(?:\s+[-\w.]+)*\s+)*"
-    shell = rf"(?m)(?<!\\\n)^\s*(?:env\s+[^\n]*\s+)?{wrappers}(?:\"?\$\{{?(?:{names})\}}?\"?|{executable})(?=\s)"
+    shell = rf"(?m)(?<!\\\n)^\s*(?:env\s+[^\n]*\s+)?(?:(?:exec|command|nohup|xvfb-run|timeout)(?:\s+[-\w.]+)*\s+)*(?:\"?\$\{{?(?:{names})\}}?\"?|{BROWSER_EXECUTABLE})(?=\s)"
     return re.search(shell, source) is not None
+
+
+def discovers_browser(source: str) -> bool:
+    return re.search(
+        rf"\bfind_browser\s*\(|\b(?:shutil\.)?which\s*\(\s*['\"]{BROWSER_EXECUTABLE}|"
+        rf"\b(?:command\s+-v|which)\s+{BROWSER_EXECUTABLE}|\b(?:chrome|edge|firefox)_bin\b",
+        source.lower(),
+    ) is not None
+
+
+ownership_probes = (
+    ('subprocess.run(["python3", "verify.py", "--browser-family", "chromium"])', False),
+    ('browser = "/usr/bin/chromium"\nsubprocess.run(["timeout", "2s", browser])', True),
+    ('from subprocess import run as launch\nb = args.browser\nlaunch([b])', True),
+    ('import { spawn as launch } from "node:child_process"; launch("firefox", [])', True),
+)
+for probe, expected in ownership_probes:
+    if owns_browser_process(probe) is not expected:
+        fail(f"browser executable-position detector failed its {expected=} probe: {probe}")
+if not discovers_browser('browser = shutil.which("chromium")'):
+    fail("browser discovery detector did not recognize executable discovery")
 
 
 for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
@@ -229,6 +243,8 @@ for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
             fail(f"scenario-specific CDP transport found in {path.relative_to(ROOT)}")
         if "--remote-debugging-port" in lower_source or "--dump-dom" in lower_source:
             fail(f"scenario-specific browser process ownership found in {relative}")
+        if discovers_browser(source):
+            fail(f"scenario-specific browser executable discovery found in {relative}")
         if owns_browser_process(source):
             fail(f"browser scenario directly owns a process outside ChromeSession: {relative}")
 

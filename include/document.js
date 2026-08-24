@@ -56,6 +56,8 @@ const state = {
   computeAdapter: undefined,
   scenePointerSession: null,
   scenePointerTimestamp: null,
+  runtimeGeneration: 0,
+  runtimeStopped: false,
 };
 
 const ERROR_PANEL_SELECTOR = "[data-mech-errors-panel]";
@@ -741,6 +743,8 @@ function invalidateCooperativeOwnership() {
 }
 
 function stopRuntime() {
+  state.runtimeGeneration += 1;
+  state.runtimeStopped = true;
   dismissInlineInspectors({ restoreFocus: false });
   state.running = false;
   setComputeBridgeLifecycle("stopped");
@@ -2022,17 +2026,19 @@ globalThis.MechDocumentController = Object.freeze({
     renderValues();
     return state.document.replSource();
   },
-  invoke(source) {
+  async invoke(source) {
     if (typeof state.document?.replInvoke !== "function") {
       throw new Error("the document runtime does not expose interactive requests");
     }
     const response = state.document.replInvoke(String(source));
-    consumeReplResponse(response);
-    renderValues();
+    await consumeCooperativeResponse(response);
     return response;
   },
   dispose() {
     stopRuntime();
+    if (document.documentElement.dataset.mechDocumentStatus !== "error") {
+      setDocumentStatus("stopped");
+    }
   },
 });
 
@@ -4421,6 +4427,9 @@ async function createDocumentComputeBridgeWithFallback(
 }
 
 async function main() {
+  const runtimeGeneration = state.runtimeGeneration;
+  state.runtimeStopped = false;
+  const startupIsCurrent = () => runtimeGeneration === state.runtimeGeneration;
   state.root = documentRoot();
   if (!state.root) {
     throw new Error("the document controller requires a .mech-root element");
@@ -4435,8 +4444,10 @@ async function main() {
   const wasmModule =
     state.controllerElement?.dataset.mechWasmModule || "/_mech/pkg/mech_wasm.js";
   const wasmBindings = await import(wasmModule);
+  if (!startupIsCurrent()) return;
   const { default: initializeWasm, WasmDocument } = wasmBindings;
   await initializeWasm();
+  if (!startupIsCurrent()) return;
   state.replInputAction = typeof wasmBindings.replInputAction === "function"
     ? wasmBindings.replInputAction
     : null;
@@ -4444,10 +4455,13 @@ async function main() {
     ? wasmBindings.replStepLimit()
     : null;
   state.initialEncoded = await loadEncodedDocument();
+  if (!startupIsCurrent()) return;
   const documentSources =
     embeddedDocumentSources || await loadDocumentSourceMap();
+  if (!startupIsCurrent()) return;
   if (documentSources?.config) {
     await probeServedComputeAdapter();
+    if (!startupIsCurrent()) return;
   }
   state.document = constructDocumentController(WasmDocument, documentSources);
   if (typeof state.document.replInvoke !== "function") {
@@ -4511,4 +4525,8 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-main().catch(showFatalError);
+main().catch(error => {
+  if (!state.runtimeStopped) {
+    showFatalError(error);
+  }
+});
