@@ -301,30 +301,22 @@ impl ResidentExternalCoordinator {
     /// resident replacement. Observation node/slot identities are artifact
     /// local, so migration matches the stable resource request plus its schema
     /// and shape, then re-materializes the value against the candidate schema
-    /// table. Incompatible or newly introduced observations remain unseeded and
+    /// table. Every compatible candidate observation inherits that same
+    /// authoritative value, including duplicates introduced by the candidate.
+    /// Observations with a newly introduced source identity remain unseeded and
     /// will read their provider on first use.
     pub(crate) fn preserve_compatible_live_inputs_from(
         &mut self,
         previous: &ResidentExternalCoordinator,
     ) -> MResult<()> {
-        let mut previous_matches = vec![false; previous.bound.observations().len()];
         for (target_ordinal, target) in self.bound.observations().iter().enumerate() {
-            let Some(source_ordinal) = previous.bound.observations().iter().enumerate().position(
+            let Some(value) = previous.bound.observations().iter().enumerate().find_map(
                 |(source_ordinal, source)| {
-                    !previous_matches[source_ordinal]
-                        && source.request == target.request
-                        && source.input.schema_key == target.input.schema_key
-                        && source.input.shape == target.input.shape
+                    observations_share_snapshot(source, target)
+                        .then(|| previous.latest_live_inputs.get(source_ordinal)?.as_ref())
+                        .flatten()
                 },
             ) else {
-                continue;
-            };
-            previous_matches[source_ordinal] = true;
-            let Some(value) = previous
-                .latest_live_inputs
-                .get(source_ordinal)
-                .and_then(|value| value.as_ref())
-            else {
                 continue;
             };
             let legacy = provider_value_from_canonical(value, previous.artifact.schemas())?;
@@ -1102,7 +1094,7 @@ impl ResidentExternalCoordinator {
         &self,
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
     ) -> Result<CapturedInputBatch, CaptureFailure> {
-        let mut facts = Vec::with_capacity(self.bound.observations().len());
+        let mut facts: Vec<CapturedInputFact> = Vec::with_capacity(self.bound.observations().len());
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
             let fact = (|| -> MResult<CapturedInputFact> {
                 let sequence_value = self
@@ -1125,10 +1117,27 @@ impl ResidentExternalCoordinator {
                         self.artifact.schemas(),
                     )?
                 } else if let Some(value) = host_updates.and_then(|_| {
-                    self.latest_live_inputs
-                        .get(ordinal)
-                        .and_then(|value| value.as_ref())
+                    self.bound.observations().iter().enumerate().find_map(
+                        |(candidate_ordinal, candidate)| {
+                            observations_share_snapshot(candidate, observation)
+                                .then(|| {
+                                    self.latest_live_inputs
+                                        .get(candidate_ordinal)
+                                        .and_then(|value| value.as_ref())
+                                })
+                                .flatten()
+                        },
+                    )
                 }) {
+                    value.clone()
+                } else if let Some(value) = self.bound.observations()[..ordinal]
+                    .iter()
+                    .enumerate()
+                    .find(|(_, candidate)| observations_share_snapshot(candidate, observation))
+                    .and_then(|(candidate_ordinal, _)| {
+                        facts.get(candidate_ordinal).map(|fact| &fact.value)
+                    })
+                {
                     value.clone()
                 } else {
                     let provider_binding =
@@ -1843,6 +1852,15 @@ impl ResidentExternalCoordinator {
             *latest = Some(fact.value.clone());
         }
     }
+}
+
+fn observations_share_snapshot(
+    left: &super::BoundResidentObservation,
+    right: &super::BoundResidentObservation,
+) -> bool {
+    left.request == right.request
+        && left.input.schema_key == right.input.schema_key
+        && left.input.shape == right.input.shape
 }
 
 #[derive(Clone, Debug)]

@@ -589,7 +589,9 @@ fn external_runtime(
     (runtime, plans, reads, value_bits)
 }
 
-fn independent_external_runtime() -> (crate::MechRuntime, Arc<AtomicUsize>) {
+fn independent_external_runtime_with_source(
+    source: &str,
+) -> (crate::MechRuntime, Arc<AtomicUsize>) {
     let reads = Arc::new(AtomicUsize::new(0));
     let mut runtime = runtime();
     runtime
@@ -614,8 +616,14 @@ fn independent_external_runtime() -> (crate::MechRuntime, Arc<AtomicUsize>) {
             .unwrap();
     }
     runtime
-        .load_source_program(
-            r#"
+        .load_source_program(source, crate::ResidentDurabilityPolicy::Retained)
+        .unwrap();
+    (runtime, reads)
+}
+
+fn independent_external_runtime() -> (crate::MechRuntime, Arc<AtomicUsize>) {
+    independent_external_runtime_with_source(
+        r#"
 @fast := test://clock/fast{:read(delta-seconds)}
 @slow := test://clock/slow{:read(delta-seconds)}
 fast := @fast/delta-seconds
@@ -624,10 +632,7 @@ slow := @slow/delta-seconds
 state += fast + slow
 output := state
 "#,
-            crate::ResidentDurabilityPolicy::Retained,
-        )
-        .unwrap();
-    (runtime, reads)
+    )
 }
 
 fn unactivated_external_runtime(driver_count: usize) -> crate::MechRuntime {
@@ -3144,6 +3149,72 @@ fn compatible_replacement_migrates_the_accepted_host_snapshot() {
         .collect::<Vec<_>>();
     values.sort_by(f64::total_cmp);
     assert_eq!(values, vec![7.0, 8.0]);
+}
+
+#[test]
+fn compatible_replacement_expands_one_snapshot_to_new_duplicate_consumers() {
+    let (mut previous, previous_reads) = independent_external_runtime();
+    previous
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/fast", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(7.0),
+        ))
+        .unwrap();
+    previous.drain_resident_host_inputs(1).unwrap();
+    assert_eq!(previous_reads.load(Ordering::SeqCst), 1);
+
+    let (mut candidate, candidate_reads) = independent_external_runtime_with_source(
+        r#"
+@fast := test://clock/fast{:read(delta-seconds)}
+@fast-copy := test://clock/fast{:read(delta-seconds)}
+@slow := test://clock/slow{:read(delta-seconds)}
+fast := @fast/delta-seconds
+fast-copy := @fast-copy/delta-seconds
+slow := @slow/delta-seconds
+~state := 0.0
+state += fast + fast-copy + slow
+output := state
+"#,
+    );
+    candidate
+        .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+        .unwrap();
+    candidate
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(8.0),
+        ))
+        .unwrap();
+    let outcome = candidate.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        outcome.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(
+        candidate_reads.load(Ordering::SeqCst),
+        0,
+        "new duplicate consumers must inherit the accepted source snapshot"
+    );
+    let ActiveProgramExecution::ResidentExternal(execution) = &candidate.active_program else {
+        unreachable!()
+    };
+    let mut values = execution
+        .coordinator
+        .input_facts()
+        .last()
+        .unwrap()
+        .1
+        .facts
+        .iter()
+        .map(|fact| match fact.value.data() {
+            ValueData::F64(value) => value.to_f64(),
+            _ => panic!("clock observations must remain f64"),
+        })
+        .collect::<Vec<_>>();
+    values.sort_by(f64::total_cmp);
+    assert_eq!(values, vec![7.0, 7.0, 8.0]);
 }
 
 #[test]

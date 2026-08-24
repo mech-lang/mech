@@ -345,7 +345,7 @@ ekf-batch @compute
   -- active measurement's original equations unchanged.
   ekf-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>, camera<[f32]:2,1>, z<[f32]:3,1>, R<[f32]:2,2>) = (μ+<[f32]:3,1>, Σ+<[f32]:3,3>) :=
     Δ := camera - μ-[1..=2]
-    observation-guard := 1f32 - z[3]
+    observation-guard := 1f32 - math/ceil(z[3])
     q := Δ · Δ + observation-guard
     r := math/sqrt(q)
     ẑ := [r

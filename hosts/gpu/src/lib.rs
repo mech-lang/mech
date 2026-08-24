@@ -1836,6 +1836,7 @@ fn wgsl_elementwise_expression(operation: ElementwiseOperation, inputs: &[String
                 UnaryOperation::Sin => "sin",
                 UnaryOperation::Cos => "cos",
                 UnaryOperation::Sqrt => "sqrt",
+                UnaryOperation::Ceil => "ceil",
             };
             format!("{function}({})", inputs[0])
         }

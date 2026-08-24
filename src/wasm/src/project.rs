@@ -4424,6 +4424,10 @@ rows := |id<string> x<f64>|
             "the Kalman gain must use the language's matrix solve operation",
         );
         assert!(
+            source.contains("observation-guard := 1f32 - math/ceil(z[3])"),
+            "only a fully invisible camera may perturb singular observation geometry",
+        );
+        assert!(
             !source.contains("innovation-inverse") && !source.contains("innovation-determinant"),
             "the example must not expand a matrix inverse by hand",
         );
@@ -4562,8 +4566,8 @@ rows := |id<string> x<f64>|
         };
         assert_eq!(
             runtime.program_execution_info().observation_count,
-            3,
-            "the resident artifact must observe the timer, compute completion, and packed sample"
+            7,
+            "the resident artifact must observe the timer, four pointer fields, compute completion, and packed sample"
         );
         assert!(scene_backend.latest().is_none());
         let pi = 3.141592654_f64;
@@ -4607,6 +4611,7 @@ rows := |id<string> x<f64>|
         let camera_schedule = [0_usize, 1, 1, 2, 2, 3, 3, 0];
         let mut saw_prediction_only_turn = false;
         let mut saw_camera_update = false;
+        let mut saw_faded_camera_update = false;
         let mut saw_zero_camera_turn = false;
         let mut maximum_visible_cameras = 0_usize;
         let mut visited_sides = [false; 4];
@@ -4787,6 +4792,7 @@ rows := |id<string> x<f64>|
                 + filter_visibility * (observed_covariance - predicted_covariance);
             saw_prediction_only_turn |= visibility == 0.0;
             saw_camera_update |= visibility == 1.0;
+            saw_faded_camera_update |= visibility > 0.0 && visibility < 1.0;
 
             let snapshot = scene_backend.latest().unwrap();
             let actual_truth = rendered_truth(&snapshot);
@@ -4943,6 +4949,10 @@ rows := |id<string> x<f64>|
         assert!(
             saw_camera_update,
             "at least one camera must reacquire the robot"
+        );
+        assert!(
+            saw_faded_camera_update,
+            "the oracle must exercise a fractional camera fade update"
         );
         assert!(
             saw_zero_camera_turn,

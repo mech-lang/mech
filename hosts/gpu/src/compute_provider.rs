@@ -212,6 +212,21 @@ impl RuntimeHostFactory for ComputeHostFactory {
         let base_uri = format!("compute://{instance_name}/kernel");
         let resume = self.resume_state.as_ref();
         let replay_on_start = resume.is_some();
+        // A compute output is a level-valued resource, not an edge subscription.
+        // Keep one lane-zero sample of every declared output current so a
+        // compatible outer-program replacement can begin observing any output
+        // without mixing the current turn counter with an initializer value.
+        let level_outputs = self
+            .program
+            .interface()
+            .outputs
+            .iter()
+            .map(|port| port.name.to_string())
+            .collect();
+        let mut sampled_outputs = initial_sampled_outputs(&self.program)?;
+        if let Some(resume) = resume {
+            sampled_outputs.extend(resume.sampled_outputs.clone());
+        }
         let state = Arc::new(Mutex::new(ComputeHostState {
             backend: backend_id.to_string(),
             program: Arc::clone(&self.program),
@@ -219,13 +234,9 @@ impl RuntimeHostFactory for ComputeHostFactory {
             dispatch_ms: Ref::new(resume.map_or(0.0, |state| state.dispatch_ms)),
             fault_count: Ref::new(resume.map_or(0.0, |state| state.fault_count)),
             last_fault: Ref::new(resume.map_or_else(String::new, |state| state.last_fault.clone())),
-            sampled_outputs: match resume {
-                Some(state) => state.sampled_outputs.clone(),
-                None => initial_sampled_outputs(&self.program)?,
-            },
-            sample_requests: resume
-                .map(|state| state.sample_requests.clone())
-                .unwrap_or_default(),
+            sampled_outputs,
+            sample_requests: BTreeSet::new(),
+            level_outputs,
             phase: ComputeHostPhase::Ready {
                 last_submitted_turn: resume
                     .and_then(|state| state.last_submitted_turn)
@@ -300,7 +311,6 @@ pub struct ComputeHostResumeState {
     fault_count: f64,
     last_fault: String,
     sampled_outputs: BTreeMap<String, LegacyValue>,
-    sample_requests: BTreeSet<String>,
     last_submitted_turn: Option<u128>,
 }
 
@@ -364,7 +374,6 @@ impl ComputeHostStateSnapshotHandle {
             fault_count: *state.fault_count.borrow(),
             last_fault: state.last_fault.borrow().clone(),
             sampled_outputs,
-            sample_requests: state.sample_requests.clone(),
             last_submitted_turn,
         }))
     }
@@ -379,6 +388,7 @@ struct ComputeHostState {
     last_fault: Ref<String>,
     sampled_outputs: BTreeMap<String, LegacyValue>,
     sample_requests: BTreeSet<String>,
+    level_outputs: BTreeSet<String>,
     phase: ComputeHostPhase,
     session: Box<dyn ComputeSession>,
 }
@@ -619,6 +629,7 @@ impl std::fmt::Debug for ComputeHostState {
             .field("fault_count", &self.fault_count)
             .field("last_fault", &self.last_fault)
             .field("sample_requests", &self.sample_requests)
+            .field("level_outputs", &self.level_outputs)
             .field("phase", &self.phase)
             .field("session", &"<dyn ComputeSession>")
             .finish()
@@ -910,7 +921,7 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             .interface()
             .outputs
             .iter()
-            .filter(|port| state.sample_requests.contains(port.name.as_ref()))
+            .filter(|port| state.level_outputs.contains(port.name.as_ref()))
             .map(|port| port.id)
             .collect();
         let request = ComputeDispatchRequest {
@@ -941,13 +952,13 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             return Ok(());
         }
         let mut sampled = None;
-        if report.completed_turns > 0 && !state.sample_requests.is_empty() {
+        if report.completed_turns > 0 && !state.level_outputs.is_empty() {
             let selected = state
                 .program
                 .interface()
                 .outputs
                 .iter()
-                .filter(|port| state.sample_requests.contains(port.name.as_ref()))
+                .filter(|port| state.level_outputs.contains(port.name.as_ref()))
                 .map(|port| port.id)
                 .collect();
             let snapshot = match state
@@ -1108,7 +1119,7 @@ fn telemetry_updates_from_values(
         let value = sampled_outputs.get(name).ok_or_else(|| {
             compute_host_error(
                 "ComputeHostRead",
-                format!("requested sampled output `{name}` has no retained value"),
+                format!("level output `{name}` has no retained sample"),
             )
         })?;
         updates.push(RuntimeHostInputUpdate {
@@ -1448,7 +1459,7 @@ fn materialize_sampled_outputs(
         .interface()
         .outputs
         .iter()
-        .filter(|port| state.sample_requests.contains(port.name.as_ref()))
+        .filter(|port| state.level_outputs.contains(port.name.as_ref()))
         .cloned()
         .collect::<Vec<_>>();
     let mut sampled = BTreeMap::new();
@@ -1624,6 +1635,7 @@ mod tests {
     use mech_core::{CellSlotId, SchemaId};
     use mech_runtime::{
         HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder, RuntimeCapabilityOperation,
+        RuntimeResourceReadRequest,
     };
 
     #[derive(Clone, Debug, PartialEq)]
@@ -1732,6 +1744,25 @@ mod tests {
                     schema: SchemaId::new(0),
                     element: mech_compute::ComputeElementType::F32,
                     dimensions: vec![2, 3].into_boxed_slice(),
+                }]
+                .into_boxed_slice(),
+                ..Default::default()
+            },
+            ComputePhysicalPlan::default(),
+            ComputeKernel::Elementwise(ElementwiseIr::default()),
+        )
+    }
+
+    fn program_with_sample_output() -> ComputeProgram {
+        ComputeProgram::new(
+            ComputeRegionInterface {
+                outputs: vec![ComputePort {
+                    id: mech_compute::ComputePortId::new(1),
+                    name: "result".into(),
+                    slot: CellSlotId::new(1),
+                    schema: SchemaId::new(1),
+                    element: mech_compute::ComputeElementType::F32,
+                    dimensions: Vec::new().into_boxed_slice(),
                 }]
                 .into_boxed_slice(),
                 ..Default::default()
@@ -1913,6 +1944,7 @@ mod tests {
             last_fault: Ref::new(String::new()),
             sampled_outputs: BTreeMap::new(),
             sample_requests: BTreeSet::new(),
+            level_outputs: BTreeSet::new(),
             phase,
             session: Box::new(FakeSession {
                 backend: BackendId::new(CPU_SCALAR_BACKEND).unwrap(),
@@ -2055,7 +2087,6 @@ mod tests {
             fault_count: 2.0,
             last_fault: "retained diagnostic".to_owned(),
             sampled_outputs: BTreeMap::new(),
-            sample_requests: BTreeSet::new(),
             last_submitted_turn: Some(120),
         };
         let factory = ComputeHostFactory::new(
@@ -2078,6 +2109,52 @@ mod tests {
         assert_eq!(resumed.last_submitted_turn, Some(120));
         drop(installation);
         assert!(snapshot.snapshot().unwrap().is_none());
+    }
+
+    #[test]
+    fn compatible_factory_preserves_current_sample_for_every_declared_output() {
+        let current = RuntimeHostInputValue::F32(42.0).into_mech_value().unwrap();
+        let resume = ComputeHostResumeState {
+            turns: 120.0,
+            dispatch_ms: 3.25,
+            fault_count: 2.0,
+            last_fault: "retained diagnostic".to_owned(),
+            sampled_outputs: BTreeMap::from([("result".to_owned(), current)]),
+            last_submitted_turn: Some(120),
+        };
+        let factory = ComputeHostFactory::new(
+            "particle-field",
+            ComputePlacement::Compute,
+            program_with_sample_output(),
+            ComputeInitializerSet::default(),
+            registry(),
+            ComputePlatform::Native,
+        )
+        .unwrap()
+        .with_resume_state(resume);
+        let snapshot = factory.state_snapshot_handle();
+        let installation = factory.instantiate("particles", &settings()).unwrap();
+        let observed = installation.resource_providers[0]
+            .read(RuntimeResourceReadRequest {
+                base_uri: "compute://particles/kernel".to_owned(),
+                path: "sample/result".to_owned(),
+                context_name: "candidate".to_owned(),
+            })
+            .unwrap();
+        let resumed = snapshot.snapshot().unwrap().unwrap();
+
+        assert_eq!(
+            RuntimeHostInputValue::from_numeric_mech_value(&observed).unwrap(),
+            RuntimeHostInputValue::F32(42.0),
+            "a newly demanded candidate output must read the current generation",
+        );
+        assert_eq!(
+            RuntimeHostInputValue::from_numeric_mech_value(
+                resumed.sampled_outputs.get("result").unwrap()
+            )
+            .unwrap(),
+            RuntimeHostInputValue::F32(42.0)
+        );
     }
 
     #[test]

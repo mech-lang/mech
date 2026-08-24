@@ -31,6 +31,7 @@ pub enum UnaryOperation {
     Sin,
     Cos,
     Sqrt,
+    Ceil,
 }
 
 impl UnaryOperation {
@@ -39,6 +40,7 @@ impl UnaryOperation {
             Self::Sin => input.sin(),
             Self::Cos => input.cos(),
             Self::Sqrt => input.sqrt(),
+            Self::Ceil => input.ceil(),
         }
     }
 }
@@ -190,6 +192,9 @@ pub fn elementwise_lowering(operation: &OperationReference) -> Option<Elementwis
         "math/sqrt" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Unary(
             UnaryOperation::Sqrt,
         ))),
+        "math/ceil" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Unary(
+            UnaryOperation::Ceil,
+        ))),
         "math/atan2" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Atan2)),
         "matrix/horzcat" => Some(ElementwiseLowering::Apply(ElementwiseOperation::Identity)),
         "matrix/vertcat" => Some(ElementwiseLowering::Concat2),
@@ -285,6 +290,12 @@ mod tests {
             Some(ElementwiseLowering::Concat2)
         );
         assert_eq!(
+            elementwise_lowering(&operation("math/ceil")),
+            Some(ElementwiseLowering::Apply(ElementwiseOperation::Unary(
+                UnaryOperation::Ceil
+            )))
+        );
+        assert_eq!(
             elementwise_lowering(&operation("runtime/MulMDS<f32>")),
             None
         );
@@ -294,6 +305,9 @@ mod tests {
     fn elementwise_ir_has_backend_independent_scalar_semantics() {
         let multiply = ElementwiseOperation::Binary(BinaryOperation::Multiply);
         assert_eq!(multiply.apply(&[6.0, 7.0]), 42.0);
+        let ceil = ElementwiseOperation::Unary(UnaryOperation::Ceil);
+        assert_eq!(ceil.apply(&[0.25]), 1.0);
+        assert_eq!(ceil.apply(&[0.0]), 0.0);
         let concatenation = ElementwiseInstruction::Concat2 {
             left: ArtifactSource::Slot(CellSlotId::new(0)),
             right: ArtifactSource::Slot(CellSlotId::new(1)),
