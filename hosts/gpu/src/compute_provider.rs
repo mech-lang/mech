@@ -237,9 +237,16 @@ impl RuntimeHostFactory for ComputeHostFactory {
         // capability contract. They stay current across compatible source
         // generations, while outputs absent from that contract remain entirely
         // backend-resident and incur no CPU readback.
-        let mut sampled_outputs = initial_sampled_outputs(&self.program)?;
+        let mut sampled_outputs = initial_sampled_outputs(&self.program, &self.retained_outputs)?;
         if let Some(resume) = resume {
-            sampled_outputs.extend(resume.sampled_outputs.clone());
+            sampled_outputs.extend(
+                resume
+                    .sampled_outputs
+                    .iter()
+                    .filter(|(name, _)| self.retained_outputs.contains(name.as_str()))
+                    .map(|(name, value)| Ok((name.clone(), value.try_deep_snapshot()?)))
+                    .collect::<MResult<BTreeMap<_, _>>>()?,
+            );
         }
         let state = Arc::new(Mutex::new(ComputeHostState {
             backend: backend_id.to_string(),
@@ -348,6 +355,24 @@ impl std::fmt::Debug for ComputeHostStateSnapshotHandle {
 
 impl ComputeHostStateSnapshotHandle {
     pub fn snapshot(&self) -> MResult<Option<ComputeHostResumeState>> {
+        self.snapshot_retaining(None)
+    }
+
+    /// Captures host state for a compatible source replacement while copying
+    /// only the samples named by the replacement's static retention contract.
+    /// Runtime-only reads may populate other samples lazily, but those values
+    /// must not silently become persistent migration state.
+    pub fn snapshot_retained(
+        &self,
+        retained_outputs: &BTreeSet<String>,
+    ) -> MResult<Option<ComputeHostResumeState>> {
+        self.snapshot_retaining(Some(retained_outputs))
+    }
+
+    fn snapshot_retaining(
+        &self,
+        retained_outputs: Option<&BTreeSet<String>>,
+    ) -> MResult<Option<ComputeHostResumeState>> {
         let state = self
             .state
             .lock()
@@ -385,6 +410,9 @@ impl ComputeHostStateSnapshotHandle {
         let sampled_outputs = state
             .sampled_outputs
             .iter()
+            .filter(|(name, _)| {
+                retained_outputs.is_none_or(|outputs| outputs.contains(name.as_str()))
+            })
             .map(|(name, value)| Ok((name.clone(), value.try_deep_snapshot()?)))
             .collect::<MResult<_>>()?;
         Ok(Some(ComputeHostResumeState {
@@ -697,6 +725,10 @@ impl ComputeResourceProvider {
                 return zero_sample_value(port);
             }
             state.sample_subscriptions.insert(port.name.to_string());
+            if !state.sampled_outputs.contains_key(port.name.as_ref()) {
+                let initial = initial_sampled_output(&state.program, port)?;
+                state.sampled_outputs.insert(port.name.to_string(), initial);
+            }
             return state
                 .sampled_outputs
                 .get(port.name.as_ref())
@@ -1400,47 +1432,55 @@ fn compute_value_elements(value: &ComputeValue) -> u64 {
     }
 }
 
-fn initial_sampled_outputs(program: &ComputeProgram) -> MResult<BTreeMap<String, LegacyValue>> {
+fn initial_sampled_outputs(
+    program: &ComputeProgram,
+    retained_outputs: &BTreeSet<String>,
+) -> MResult<BTreeMap<String, LegacyValue>> {
     program
         .interface()
         .outputs
         .iter()
+        .filter(|port| retained_outputs.contains(port.name.as_ref()))
         .map(|port| {
-            let value = program
-                .fixed_shape_storage()
-                .and_then(|storage| storage.states.iter().find(|state| state.slot == port.slot))
-                .map(|state| ComputeValue::TensorF32 {
-                    dimensions: port.dimensions.clone(),
-                    layout: TensorLayout::ColumnMajor,
-                    values: Arc::clone(&state.initializer),
-                })
-                .or_else(|| {
-                    program.elementwise_storage().and_then(|storage| {
-                        storage
-                            .states
-                            .iter()
-                            .find(|state| state.slot == port.slot)
-                            .map(|state| ComputeValue::TensorF32 {
-                                dimensions: port.dimensions.clone(),
-                                layout: TensorLayout::RowMajor,
-                                values: Arc::clone(&state.initializer),
-                            })
-                    })
-                });
             Ok((
                 port.name.to_string(),
-                match value {
-                    Some(ComputeValue::TensorF32 { values, .. })
-                        if port.dimensions.is_empty() && values.len() == 1 =>
-                    {
-                        sampled_output_value(port, ComputeValue::ScalarF32(values[0]))?
-                    }
-                    Some(value) => sampled_output_value(port, value)?,
-                    None => zero_sample_value(port)?,
-                },
+                initial_sampled_output(program, port)?,
             ))
         })
         .collect()
+}
+
+fn initial_sampled_output(program: &ComputeProgram, port: &ComputePort) -> MResult<LegacyValue> {
+    let value = program
+        .fixed_shape_storage()
+        .and_then(|storage| storage.states.iter().find(|state| state.slot == port.slot))
+        .map(|state| ComputeValue::TensorF32 {
+            dimensions: port.dimensions.clone(),
+            layout: TensorLayout::ColumnMajor,
+            values: Arc::clone(&state.initializer),
+        })
+        .or_else(|| {
+            program.elementwise_storage().and_then(|storage| {
+                storage
+                    .states
+                    .iter()
+                    .find(|state| state.slot == port.slot)
+                    .map(|state| ComputeValue::TensorF32 {
+                        dimensions: port.dimensions.clone(),
+                        layout: TensorLayout::RowMajor,
+                        values: Arc::clone(&state.initializer),
+                    })
+            })
+        });
+    match value {
+        Some(ComputeValue::TensorF32 { values, .. })
+            if port.dimensions.is_empty() && values.len() == 1 =>
+        {
+            sampled_output_value(port, ComputeValue::ScalarF32(values[0]))
+        }
+        Some(value) => sampled_output_value(port, value),
+        None => zero_sample_value(port),
+    }
 }
 
 fn zero_sample_value(port: &ComputePort) -> MResult<LegacyValue> {
@@ -2176,6 +2216,91 @@ mod tests {
     }
 
     #[test]
+    fn report_only_factory_does_not_materialize_or_migrate_declared_outputs() {
+        let stale = RuntimeHostInputValue::F32(42.0).into_mech_value().unwrap();
+        let resume = ComputeHostResumeState {
+            turns: 120.0,
+            dispatch_ms: 3.25,
+            fault_count: 0.0,
+            last_fault: String::new(),
+            sampled_outputs: BTreeMap::from([("result".to_owned(), stale)]),
+            last_submitted_turn: Some(120),
+        };
+        let factory = ComputeHostFactory::new(
+            "particle-field",
+            ComputePlacement::Compute,
+            program_with_sample_output(),
+            ComputeInitializerSet::default(),
+            registry(),
+            ComputePlatform::Native,
+        )
+        .unwrap()
+        .with_resume_state(resume);
+        let snapshot = factory.state_snapshot_handle();
+        let _installation = factory.instantiate("particles", &settings()).unwrap();
+
+        assert!(
+            snapshot
+                .snapshot()
+                .unwrap()
+                .unwrap()
+                .sampled_outputs
+                .is_empty(),
+            "outputs absent from the retained contract must remain backend-resident",
+        );
+    }
+
+    #[test]
+    fn an_unplanned_actual_sample_read_materializes_only_that_output() {
+        let factory = ComputeHostFactory::new(
+            "particle-field",
+            ComputePlacement::Compute,
+            program_with_sample_output(),
+            ComputeInitializerSet::default(),
+            registry(),
+            ComputePlatform::Native,
+        )
+        .unwrap();
+        let snapshot = factory.state_snapshot_handle();
+        let installation = factory.instantiate("particles", &settings()).unwrap();
+        assert!(
+            snapshot
+                .snapshot()
+                .unwrap()
+                .unwrap()
+                .sampled_outputs
+                .is_empty(),
+        );
+
+        let observed = installation.resource_providers[0]
+            .read(RuntimeResourceReadRequest {
+                base_uri: "compute://particles/kernel".to_owned(),
+                path: "sample/result".to_owned(),
+                context_name: "candidate".to_owned(),
+            })
+            .unwrap();
+
+        assert_eq!(
+            RuntimeHostInputValue::from_numeric_mech_value(&observed).unwrap(),
+            RuntimeHostInputValue::F64(0.0),
+        );
+        let resumed = snapshot.snapshot().unwrap().unwrap();
+        assert_eq!(
+            resumed.sampled_outputs.keys().cloned().collect::<Vec<_>>(),
+            ["result"],
+        );
+        assert!(
+            snapshot
+                .snapshot_retained(&BTreeSet::new())
+                .unwrap()
+                .unwrap()
+                .sampled_outputs
+                .is_empty(),
+            "a runtime-only sample must not become replacement migration state",
+        );
+    }
+
+    #[test]
     fn report_only_dispatch_keeps_declared_outputs_backend_resident() {
         let calls = Arc::new(Mutex::new(Vec::new()));
         let program = Arc::new(program_with_sample_output());
@@ -2185,7 +2310,7 @@ mod tests {
             dispatch_ms: Ref::new(0.0),
             fault_count: Ref::new(0.0),
             last_fault: Ref::new(String::new()),
-            sampled_outputs: initial_sampled_outputs(&program).unwrap(),
+            sampled_outputs: BTreeMap::new(),
             sample_subscriptions: BTreeSet::new(),
             phase: ComputeHostPhase::Ready {
                 last_submitted_turn: None,

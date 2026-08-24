@@ -390,9 +390,14 @@ pub(crate) fn prepare_browser_compute_host(
     if let Some(previous) = previous.filter(|previous| {
         previous.backend == backend && previous.physical_revision() == physical_revision
     }) {
-        let resume = previous.host_state_snapshot().snapshot()?.ok_or_else(|| {
-            mixed_error("compatible browser compute state was retired before source replacement")
-        })?;
+        let resume = previous
+            .host_state_snapshot()
+            .snapshot_retained(&prepared.retained_outputs)?
+            .ok_or_else(|| {
+                mixed_error(
+                    "compatible browser compute state was retired before source replacement",
+                )
+            })?;
         factory = factory.with_resume_state(resume);
     }
     let host_state = factory.state_snapshot_handle();

@@ -67,6 +67,34 @@ globalThis.MechComputeStateResetLedger ||= class MechComputeStateResetLedger {
   }
 };
 
+// Tracks the physical compute identity independently of the WebGPU transport.
+// Scalar compute intentionally has no DocumentComputeBridge, but it still owns
+// persistent resident state and must report incompatible replacement exactly
+// like WebGPU does.
+globalThis.MechComputeStateResetTracker ||= class MechComputeStateResetTracker {
+  constructor(ledger = new globalThis.MechComputeStateResetLedger()) {
+    this.ledger = ledger;
+    this.previous = null;
+  }
+
+  advance(identity) {
+    const next = {
+      present: identity?.present === true,
+      generation: String(identity?.generation || "none"),
+      revision: String(identity?.revision || "none"),
+    };
+    const previous = this.previous;
+    this.previous = next;
+    if (!previous?.present) return null;
+    return this.ledger.record(
+      previous.generation,
+      next.generation,
+      previous.revision,
+      next.revision,
+    );
+  }
+};
+
 globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
   static logicalOutputValues(output, physicalValues) {
     const dimensions = (output.sampleDimensions || []).map(Number);

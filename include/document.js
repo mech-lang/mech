@@ -50,7 +50,7 @@ const state = {
   computeBridgeGeneration: null,
   computeBridgeBuildId: 0,
   computeBridgeLifecycle: "absent",
-  computeResetLedger: null,
+  computeResetTracker: null,
   computeAdapter: undefined,
   scenePointerSession: null,
   scenePointerTimestamp: null,
@@ -3948,6 +3948,19 @@ function servedComputeHostConfig() {
   return hosts.find(host => host?.provider === "compute") || null;
 }
 
+function documentComputeIdentity(controller, bridge = null) {
+  const manifest = typeof controller?.computeManifest === "function"
+    ? controller.computeManifest()
+    : null;
+  return {
+    present: Boolean(manifest),
+    generation: typeof controller?.computeGeneration === "function"
+      ? controller.computeGeneration()
+      : "0",
+    revision: bridge?.physicalRevision || manifest?.physicalRevision || "none",
+  };
+}
+
 async function probeServedComputeAdapter() {
   const computeHost = servedComputeHostConfig();
   if (!computeHost) {
@@ -4293,33 +4306,29 @@ function refreshDocumentComputeBridge() {
       document.documentElement.dataset.mechComputeGeneration =
         String(state.computeBridgeGeneration);
       setComputeBridgeLifecycle("ready");
-      if (bridge && !reused) {
-        const previousRevision = bridge.physicalRevision || "none";
-        const nextRevision = next?.physicalRevision ||
-          String(controller.computeManifest?.()?.physicalRevision || "none");
-        state.computeResetLedger ||= new globalThis.MechComputeStateResetLedger();
-        const reset = state.computeResetLedger.record(
-          bridge.generation,
-          state.computeBridgeGeneration,
-          previousRevision,
-          nextRevision,
-        );
-        if (reset) {
-          document.documentElement.dataset.mechComputeStateResets =
-            String(reset.resetCount);
-          if (typeof controller.reportComputeStateReset === "function") {
-            consumeReplResponse(
-              controller.reportComputeStateReset(previousRevision, nextRevision),
-            );
-          }
-          window.dispatchEvent(new CustomEvent("mech:compute-state-reset", {
-            detail: {
-              ...reset,
-              retiredResourceIdentity: retiredResource?.resourceIdentity || "",
-              retiredResourceDisposed: retiredResource?.disposed === true,
-            },
-          }));
+      state.computeResetTracker ||=
+        new globalThis.MechComputeStateResetTracker();
+      const reset = state.computeResetTracker.advance(
+        documentComputeIdentity(controller, next),
+      );
+      if (reset) {
+        document.documentElement.dataset.mechComputeStateResets =
+          String(reset.resetCount);
+        if (typeof controller.reportComputeStateReset === "function") {
+          consumeReplResponse(
+            controller.reportComputeStateReset(
+              reset.previousRevision,
+              reset.nextRevision,
+            ),
+          );
         }
+        window.dispatchEvent(new CustomEvent("mech:compute-state-reset", {
+          detail: {
+            ...reset,
+            retiredResourceIdentity: retiredResource?.resourceIdentity || "",
+            retiredResourceDisposed: retiredResource?.disposed === true,
+          },
+        }));
       }
     })
     .catch(error => {
@@ -4533,6 +4542,10 @@ async function main() {
     : "0";
   document.documentElement.dataset.mechComputeGeneration =
     String(state.computeBridgeGeneration);
+  state.computeResetTracker ||= new globalThis.MechComputeStateResetTracker();
+  state.computeResetTracker.advance(
+    documentComputeIdentity(state.document, state.computeBridge),
+  );
   state.repl = {
     invoke: source => state.document.replInvoke(source),
     continueStep: (count, requestId) => state.document.replContinueStep(count, requestId),

@@ -5,6 +5,7 @@ await import("../include/browser-compute.js");
 
 const Lifecycle = globalThis.MechComputeSubmissionLifecycle;
 const ResetLedger = globalThis.MechComputeStateResetLedger;
+const ResetTracker = globalThis.MechComputeStateResetTracker;
 const Device = globalThis.MechBrowserComputeDevice;
 
 const resets = new ResetLedger();
@@ -21,6 +22,39 @@ assert.equal(
   resets.record(2, 3, "sha256:old", "sha256:new"),
   null,
   "one physical plan transition must publish exactly one reset",
+);
+
+const scalarResets = new ResetTracker();
+assert.equal(
+  scalarResets.advance({
+    present: true,
+    generation: 1,
+    revision: "sha256:scalar-old",
+  }),
+  null,
+  "the first scalar generation seeds reset tracking",
+);
+assert.deepEqual(
+  scalarResets.advance({
+    present: true,
+    generation: 2,
+    revision: "sha256:scalar-new",
+  }),
+  {
+    previousRevision: "sha256:scalar-old",
+    nextRevision: "sha256:scalar-new",
+    resetCount: 1,
+  },
+  "scalar physical replacement must report the same reset as WebGPU",
+);
+assert.equal(
+  scalarResets.advance({
+    present: true,
+    generation: 3,
+    revision: "sha256:scalar-new",
+  }),
+  null,
+  "a compatible scalar replacement must preserve state without a reset",
 );
 
 const beforeSubmission = new Lifecycle(7);
