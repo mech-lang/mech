@@ -29,12 +29,12 @@ impl MechEnum {
                 .unwrap_or_else(|| format!("{}", id));
             let variant_html = match value {
                 Some(v) => format!(
-                    "<span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-payload\">(<span class=\"mech-enum-variant-value\">{}</span>)</span>",
+                    "<span class=\"mech-enum-variant-sigil\">:</span><span class=\"mech-enum-variant-name\">{}</span><span class=\"mech-enum-variant-payload\">(<span class=\"mech-enum-variant-value\">{}</span>)</span>",
                     variant_name,
                     v.to_html()
                 ),
                 None => format!(
-                    "<span class=\"mech-enum-variant-name\">:{}</span>",
+                    "<span class=\"mech-enum-variant-sigil\">:</span><span class=\"mech-enum-variant-name\">{}</span>",
                     variant_name
                 ),
             };

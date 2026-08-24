@@ -9,20 +9,23 @@
 [data-mech-repl-host],
 [data-mech-repl],
 [data-mech-repl-popup] {
-  --mech-repl-accent: var(--accent-primary, #f2b63d);
-  --mech-repl-accent-soft: var(--accent-secondary-purple-soft, #7d6fb2);
-  --mech-repl-background: var(--console-bg, #080b12);
-  --mech-repl-surface: var(--bg-secondary, #111827);
-  --mech-repl-surface-raised: var(--bg-tertiary, #1f2937);
-  --mech-repl-border: var(--border-strong, #35393d);
-  --mech-repl-border-soft: var(--border, #293140);
-  --mech-repl-text: var(--console-text, #d7e2e1);
-  --mech-repl-text-muted: var(--text-muted, #827f6b);
-  --mech-repl-kind: var(--kind-annotation-color, #f09fca);
+  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f4bd3e));
+  --mech-repl-accent-soft: var(--mech-syntax-machine-flow, var(--accent-secondary-purple-soft, #8e90bd));
+  --mech-repl-background: var(--mech-output-bg, var(--console-bg, #020303));
+  --mech-repl-surface: var(--mech-panel, var(--bg-secondary, #171c26));
+  --mech-repl-surface-raised: var(--mech-panel-raised, var(--bg-elevated, #1f2533));
+  --mech-repl-border: var(--mech-border, var(--border-strong, #4d5257));
+  --mech-repl-border-soft: var(--mech-border, var(--border, #4d5257));
+  --mech-repl-text: var(--mech-text-primary, var(--console-text, #f2ead9));
+  --mech-repl-text-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
+  --mech-repl-kind: var(--mech-syntax-kind, var(--kind-annotation-color, #f09fca));
+  --mech-repl-error: var(--mech-error, #ff8095);
+  --mech-repl-scrollbar: var(--mech-scrollbar, rgb(128 128 128 / 70%));
+  --mech-repl-scrollbar-hover: var(--mech-scrollbar-hover, rgb(160 160 160 / 85%));
   --mech-repl-tab-text: var(--nav-text-primary, var(--mech-repl-text));
-  --mech-repl-tab-text-hover: var(--nav-text-hover, #ecd7ad);
+  --mech-repl-tab-text-hover: var(--nav-text-hover, var(--mech-link, #f7ce6e));
   --mech-repl-tab-text-active: var(--nav-text-active, var(--mech-repl-text));
-  --mech-repl-tab-accent-hover: var(--nav-accent-hover, #ecd7ad);
+  --mech-repl-tab-accent-hover: var(--nav-accent-hover, var(--mech-link, #f7ce6e));
   --mech-repl-tab-accent-active: var(--nav-accent-active, var(--mech-repl-accent));
   --mech-repl-header-height: var(--mech-repl-top-offset, 0px);
   --mech-repl-size: var(--mech-repl-initial-size, clamp(320px, 50vw, 620px));
@@ -91,7 +94,7 @@
 
 [data-mech-console-resizer]::after {
   background: var(--mech-repl-accent);
-  border: 1px solid color-mix(in srgb, var(--mech-repl-accent) 70%, #000);
+  border: 1px solid color-mix(in srgb, var(--mech-repl-accent) 70%, var(--mech-output-bg, #020303));
   border-radius: 999px;
   content: "";
   height: var(--mech-repl-grip-height);
@@ -668,7 +671,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   font: 14px/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   overflow: auto;
   padding: 24px;
-  scrollbar-color: rgb(128 128 128 / 70%) transparent;
+  scrollbar-color: var(--mech-repl-scrollbar) transparent;
   scrollbar-width: thin;
 }
 
@@ -678,7 +681,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   [data-mech-repl] .mech-repl-logo,
   [data-mech-repl-popup] .mech-inline-popup__content
 ) {
-  scrollbar-color: rgb(128 128 128 / 70%) transparent;
+  scrollbar-color: var(--mech-repl-scrollbar) transparent;
   scrollbar-width: thin;
 }
 
@@ -707,7 +710,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   [data-mech-repl] .mech-repl-logo,
   [data-mech-repl-popup] .mech-inline-popup__content
 )::-webkit-scrollbar-thumb {
-  background: rgb(128 128 128 / 70%);
+  background: var(--mech-repl-scrollbar);
   border-radius: 999px;
 }
 
@@ -717,7 +720,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   [data-mech-repl] .mech-repl-logo,
   [data-mech-repl-popup] .mech-inline-popup__content
 )::-webkit-scrollbar-thumb:hover {
-  background: rgb(128 128 128 / 90%);
+  background: var(--mech-repl-scrollbar-hover);
 }
 
 [data-mech-repl] {
@@ -940,7 +943,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
 
 [data-mech-errors-panel] .mech-console-error,
 :is([data-mech-repl], [data-mech-repl-popup]) .mech-repl-error {
-  color: #ff9a9a;
+  color: var(--mech-repl-error);
 }
 
 :is([data-mech-repl], [data-mech-errors-panel]) .mech-repl-diagnostic {
@@ -958,16 +961,16 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
 }
 
 [data-mech-repl-popup] {
-  --mech-repl-accent: var(--accent-primary, #f2b63d);
-  --mech-repl-background: var(--console-bg, #080b12);
-  --mech-repl-surface: var(--bg-secondary, #111827);
-  --mech-repl-surface-raised: var(--bg-tertiary, #1f2937);
-  --mech-repl-border: var(--border-strong, #35393d);
-  --mech-repl-text: var(--console-text, #d7e2e1);
+  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f4bd3e));
+  --mech-repl-background: var(--mech-output-bg, var(--console-bg, #020303));
+  --mech-repl-surface: var(--mech-panel, var(--bg-secondary, #171c26));
+  --mech-repl-surface-raised: var(--mech-panel-raised, var(--bg-elevated, #1f2533));
+  --mech-repl-border: var(--mech-border, var(--border-strong, #4d5257));
+  --mech-repl-text: var(--mech-text-primary, var(--console-text, #f2ead9));
   background: var(--mech-repl-surface);
   border: 1px solid var(--mech-repl-border);
   border-radius: 8px;
-  box-shadow: 0 12px 28px rgb(0 0 0 / 45%);
+  box-shadow: var(--mech-shadow-large, 0 24px 52px rgb(0 0 0 / 72%));
   color: var(--mech-repl-text);
   font: 14px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   left: 24px;
@@ -984,7 +987,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
 }
 
 [data-mech-repl-popup].mech-inline-popup--error {
-  border-color: #c75b66;
+  border-color: var(--mech-repl-error);
 }
 
 [data-mech-repl-popup] .mech-inline-popup__header {
@@ -1047,7 +1050,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
 
   [data-mech-repl-host][data-mech-console-open="true"] [data-mech-console-pane] {
     bottom: 0;
-    box-shadow: -8px 0 28px rgb(0 0 0 / 45%);
+    box-shadow: var(--mech-shadow-side, -8px 0 28px rgb(0 0 0 / 45%));
     display: flex !important;
     height: min(70vh, 620px);
     position: fixed;

@@ -17,6 +17,40 @@ fn atom_expr(name: &str) -> Expression {
     Expression::Literal(Literal::Atom(Atom { name: ident(name) }))
 }
 
+#[test]
+fn formatter_splits_atom_structure_from_its_name() {
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+
+    assert_eq!(
+        formatter.atom(&Atom {
+            name: ident("ready")
+        }),
+        "<span class=\"mech-atom\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">ready</span></span>"
+    );
+}
+
+#[test]
+fn formatter_preserves_matrix_kind_dimension_punctuation() {
+    let kind = Kind::Matrix((
+        Box::new(Kind::Scalar(ident("u8"))),
+        vec![
+            Literal::Number(Number::from_integer(4)),
+            Literal::Number(Number::from_integer(4)),
+        ],
+    ));
+
+    let mut plain = Formatter::new();
+    assert_eq!(plain.kind(&kind), "[u8]:4,4");
+
+    let mut html = Formatter::new();
+    html.html = true;
+    let rendered = html.kind(&kind);
+    assert!(rendered.contains("mech-matrix-size-colon\">:</span>"));
+    assert!(rendered.contains("mech-matrix-size-separator\">,</span>"));
+    assert_eq!(rendered.matches("mech-matrix-size-value").count(), 2);
+}
+
 fn fsm_declare_fixture() -> FsmDeclare {
     let arg = (Some(ident("input")), atom_expr("start"));
     FsmDeclare {

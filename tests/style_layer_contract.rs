@@ -11,8 +11,16 @@ fn include(name: &str) -> String {
 
 #[test]
 fn shipped_shims_expose_the_four_independent_style_layers_in_order() {
-    for shim in ["index.html", "blog.html", "docs.html"] {
+    for (shim, identity) in [
+        ("index.html", "document"),
+        ("blog.html", "blog"),
+        ("docs.html", "docs"),
+    ] {
         let html = include(shim);
+        assert!(
+            html.contains(&format!("data-mech-shim=\"{identity}\"")),
+            "{shim} lost its shim identity"
+        );
         let mut previous = 0;
         for layer in ["source", "mechdown", "page", "repl"] {
             let marker = format!("data-mech-style-layer=\"{layer}\"");
@@ -27,6 +35,60 @@ fn shipped_shims_expose_the_four_independent_style_layers_in_order() {
         }
         assert!(html.contains("data-mech-repl-host"));
         assert!(html.contains("data-mechdown"));
+    }
+}
+
+#[test]
+fn shipped_shims_keep_distinct_presentation_contracts() {
+    let blog = include("blog.html");
+    let hero = blog.find("class=\"hero\"").unwrap();
+    let intro = blog.find("class=\"article-intro\"").unwrap();
+    let layout = blog.find("data-mech-toc-mode=\"after-intro\"").unwrap();
+    let toc = blog.find("{{TOC}}").unwrap();
+    assert!(hero < intro && intro < layout && layout < toc);
+    for contract in [
+        "{{KICKER}}",
+        "{{AUTHOR}}",
+        "{{DATE}}",
+        "{{SUMMARY}}",
+        "{{HERO}}",
+    ] {
+        assert!(blog.contains(contract), "blog shim lost {contract}");
+    }
+
+    let docs = include("docs.html");
+    let layout = docs.find("data-mech-toc-mode=\"persistent\"").unwrap();
+    let toc = docs.find("{{TOC}}").unwrap();
+    let header = docs.find("class=\"docs-header\"").unwrap();
+    assert!(layout < toc && toc < header);
+    assert!(docs.contains("data-mech-compact-toc=\"hidden\""));
+    assert!(docs.contains("data-mech-console-mode=\"docked\""));
+    for contract in [
+        "{{SECTION}}",
+        "{{TITLE}}",
+        "{{VERSION}}",
+        "{{ABSTRACT}}",
+        "{{INTRO}}",
+    ] {
+        assert!(docs.contains(contract), "docs shim lost {contract}");
+    }
+
+    let app = include("project.html");
+    assert!(app.contains("data-mech-shim=\"app\""));
+    assert!(app.contains("data-mech-app-host"));
+    assert!(app.contains("data-mech-project=\"/\""));
+    for document_surface in [
+        "data-mech-style-layer",
+        "data-mechdown",
+        "data-mech-source",
+        "data-mech-repl-host",
+        "katex",
+        "mermaid",
+    ] {
+        assert!(
+            !app.contains(document_surface),
+            "raw app shim loaded document surface {document_surface}"
+        );
     }
 }
 
@@ -51,7 +113,7 @@ fn source_layer_keeps_the_structured_syntax_highlighting_contract() {
 }
 
 #[test]
-fn page_variants_do_not_own_source_or_repl_components() {
+fn page_shell_and_variants_do_not_own_source_or_repl_components() {
     for stylesheet in ["style.css", "blog.css", "docs.css"] {
         let css = include(stylesheet);
         assert!(
@@ -67,8 +129,6 @@ fn page_variants_do_not_own_source_or_repl_components() {
             ".resize-handle",
             ".edge-handle",
             ".document-console-toggle",
-            ".mech-backmatter-heading",
-            "[data-mechdown]",
             "--mech-repl-",
             "--console-width",
         ] {
@@ -78,27 +138,227 @@ fn page_variants_do_not_own_source_or_repl_components() {
             );
         }
     }
+
+    let shared_page = include("style.css");
+    for portable_component in [".mech-backmatter-heading", "[data-mechdown]"] {
+        assert!(
+            !shared_page.contains(portable_component),
+            "shared page shell still owns {portable_component}"
+        );
+    }
 }
 
 #[test]
-fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
+fn mechdown_layer_owns_portable_content_without_blog_numbering() {
     let css = include("mechdown.css");
     for contract in [
-        "counter-reset: mechdown-section",
-        ".mechdown-section.mechdown-titled-section {\n  counter-increment: mechdown-section",
-        ".mechdown-section > h2::before",
-        "content: \"section \" counter(mechdown-section, decimal)",
-        ".mechdown-section > h3::before",
-        "counter(mechdown-subsection, decimal)",
+        ".mechdown-section {",
+        "padding: 0 0 30px",
         ".mech-abstract {",
         "border: 1px solid var(--mechdown-accent)",
-        "--mechdown-inline-code: var(--var-name-color, hsl(290, 45%, 90%))",
+        "--mechdown-inline-code: var(--mech-syntax-variable, var(--var-name-color, #eddaf1))",
         "color: var(--mechdown-inline-code)",
     ] {
         assert!(
             css.contains(contract),
             "Mechdown lost editorial style {contract}"
         );
+    }
+    for blog_only in [
+        "counter(mechdown-section",
+        "counter(mechdown-subsection",
+        "content: \"section \"",
+        "content: \"Eq. \"",
+        ".mech-block-quote::before",
+    ] {
+        assert!(
+            !css.contains(blog_only),
+            "portable Mechdown retained blog-only decoration {blog_only}"
+        );
+    }
+}
+
+#[test]
+fn canonical_palette_is_shared_by_every_style_layer_without_gradients() {
+    let page = include("style.css");
+    for token in [
+        "--mech-canvas: #0d1117",
+        "--mech-brand: #f4bd3e",
+        "--mech-selection-bg: rgb(244 189 62 / 24%)",
+        "--mech-syntax-function: #bbddc2",
+        "--mech-syntax-match: #d7c0a4",
+        "--mech-syntax-machine: #d8a5e4",
+        "--mech-syntax-context: #acc9d2",
+    ] {
+        assert!(page.contains(token), "page palette lost {token}");
+    }
+
+    for stylesheet in [
+        "style.css",
+        "blog.css",
+        "docs.css",
+        "mech-source.css",
+        "mechdown.css",
+        "mech-repl.css",
+    ] {
+        let css = include(stylesheet);
+        assert!(
+            !css.to_ascii_lowercase().contains("gradient("),
+            "{stylesheet} introduced a gradient",
+        );
+    }
+
+    assert!(include("mech-source.css").contains("var(--mech-syntax-function, #bbddc2)"));
+    assert!(include("mechdown.css").contains("var(--mech-brand, var(--accent-primary"));
+    assert!(include("mech-repl.css").contains("var(--mech-syntax-kind"));
+}
+
+#[test]
+fn mechdown_preserves_icons_and_portable_formatter_details() {
+    let css = include("mechdown.css");
+    for block in ["info", "question", "success", "warning", "error", "idea"] {
+        assert!(
+            css.contains(&format!(".mech-{block}-block::before")),
+            "Mechdown lost the {block} icon",
+        );
+        assert!(
+            css.contains(&format!("--mechdown-{block}")),
+            "Mechdown lost the {block} role",
+        );
+    }
+    for restored in [
+        ".mech-figure-table-cell",
+        ".mech-figure-panel",
+        ".mech-figure-grid-image",
+        ".mech-figure-caption-ref",
+        ".mech-citation-link-icon",
+        ".mech-reference",
+        ".mech-mika-section",
+        "a.mech-hyperlink .mech-inline-code",
+        ".mech-diagram :is(.edgePath path, .flowchart-link)",
+    ] {
+        assert!(css.contains(restored), "Mechdown lost {restored}");
+    }
+    assert!(css.contains("mask: url(\"data:image/svg+xml;base64,"));
+    assert!(
+        !css.contains("rotate(45deg)"),
+        "callouts must not become diamonds"
+    );
+
+    let page = include("blog.css");
+    for restored in [
+        ".mech-hero-img figure img",
+        ".article-intro > .mech-intro > p:first-of-type::first-letter",
+        ".backmatter-cited .backmatter-body",
+        ".mech-block-quote::before",
+        ".mech-equation::after",
+    ] {
+        assert!(page.contains(restored), "blog variant lost {restored}");
+    }
+}
+
+#[test]
+fn blog_and_docs_variants_do_not_collapse_into_one_visual_system() {
+    let blog = include("blog.css");
+    for editorial in [
+        "html[data-mech-shim=\"blog\"] .hero",
+        "counter-reset: mechdown-section equation",
+        "content: \"section \" counter(mechdown-section, decimal)",
+        ".mech-block-quote::before",
+        "content: \"Eq. \" counter(equation)",
+        "column-count: 2",
+    ] {
+        assert!(
+            blog.contains(editorial),
+            "blog lost editorial contract {editorial}"
+        );
+    }
+
+    let docs = include("docs.css");
+    for workspace in [
+        "html[data-mech-shim=\"docs\"] .docs-layout",
+        "grid-template-columns: var(--toc-width) minmax(0, 1fr)",
+        ".docs-layout > .toc {\n  display: block;",
+        ".docs-layout > .mech-toc-toggle",
+        "data-mech-shim=\"docs\"",
+        "@media (max-width: 900px)",
+        "@container (max-width: 720px)",
+        "display: none !important",
+    ] {
+        assert!(
+            docs.contains(workspace),
+            "docs lost workspace contract {workspace}"
+        );
+    }
+    for editorial in [
+        "counter(mechdown-section",
+        "content: \"section \"",
+        "content: \"Eq. \"",
+        "first-of-type::first-letter",
+        ".mech-block-quote::before",
+        "column-count: 2",
+    ] {
+        assert!(
+            !docs.contains(editorial),
+            "docs inherited blog decoration {editorial}"
+        );
+    }
+
+    let repl = include("mech-repl.css");
+    assert!(repl.contains(
+        "grid-template-columns: minmax(0, 1fr) 8px var(--mech-console-size, var(--mech-repl-size))"
+    ));
+}
+
+#[test]
+fn source_palette_follows_construct_roles_instead_of_literal_types() {
+    let css = include("mech-source.css");
+    for contract in [
+        "--mech-source-function: var(--mech-syntax-function, #bbddc2)",
+        "--mech-source-match: var(--mech-syntax-match, #d7c0a4)",
+        "--mech-source-atom: var(--mech-syntax-atom, #d7c0a4)",
+        "--mech-source-machine: var(--mech-syntax-machine, #d8a5e4)",
+        "--mech-source-context: var(--mech-syntax-context, #acc9d2)",
+        ".mech-match-guard-separator",
+        ".mech-match-guard",
+        ".mech-pattern-array-open",
+        ".mech-pattern-array-op",
+        ".mech-pattern-separator",
+        ".mech-state-variable-separator",
+        ".mech-fsm-start-op",
+        ".mech-matrix-size-separator",
+        ".mech-tuple-destructure .mech-tuple-vars",
+        ".mech-atom-sigil",
+        ".mech-context-provider",
+        ".mech-context-path",
+        "Guard rails are one sand-yellow signal",
+    ] {
+        assert!(css.contains(contract), "source palette lost {contract}");
+    }
+
+    let formatter = fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src")
+            .join("syntax")
+            .join("src")
+            .join("formatter.rs"),
+    )
+    .unwrap();
+    for markup in [
+        "mech-atom-sigil",
+        "mech-enum-variant-sigil",
+        "mech-match-guard-separator",
+        "mech-match-guard",
+        "mech-pattern-array-open",
+        "mech-pattern-array-op",
+        "mech-pattern-separator",
+        "mech-state-variable-separator",
+        "mech-fsm-start-op",
+        "mech-matrix-size-separator",
+        "mech-context-provider",
+        "mech-context-capability",
+    ] {
+        assert!(formatter.contains(markup), "formatter lost {markup}");
     }
 }
 
@@ -184,6 +444,8 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(controller.contains("const subsectionActivationLine = metrics.viewportTop +"));
     assert!(controller.contains("activationLine: subsectionActivationLine"));
     assert!(controller.contains("className = \"mech-toc-toggle\""));
+    assert!(controller.contains("layout.dataset.mechCompactToc === \"hidden\""));
+    assert!(controller.contains("toggle?.remove()"));
     assert!(controller.contains("layout.classList.toggle(\"is-toc-open\", open)"));
     assert!(controller.contains("new MutationObserver(updateConsoleErrorBadge)"));
     assert!(controller.contains("mech-console-error-count"));
@@ -192,7 +454,7 @@ fn document_controller_keeps_toc_and_error_activity_state_continuous() {
     assert!(page.contains(".toc li.expanded > .toc-sub"));
     assert!(page.contains("border-left: 1px dotted var(--toc-accent-soft)"));
     assert!(page.contains(".article-layout.is-toc-open > .main-content"));
-    assert!(page.contains("scrollbar-color: rgb(128 128 128 / 70%) transparent"));
+    assert!(page.contains("scrollbar-color: var(--mech-scrollbar) transparent"));
 
     let repl = include("mech-repl.css");
     assert!(repl.contains(".mech-console-error-count"));

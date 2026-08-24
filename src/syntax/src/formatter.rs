@@ -2257,7 +2257,7 @@ impl Formatter {
           <span class=\"mech-left-paren\">(</span>
           <span class=\"mech-fsm-input\">{}</span>
           <span class=\"mech-right-paren\">)</span>
-          <span class=\"mech-fsm-define-op\">→</span>
+          <span class=\"mech-fsm-start-op\">→</span>
           <span class=\"mech-fsm-start\">{}</span>
         </div>
         <div class=\"mech-fsm-arms\">
@@ -2403,7 +2403,14 @@ impl Formatter {
             if i == 0 {
                 patterns = format!("{}", p);
             } else {
-                patterns = format!("{}, {}", patterns, p);
+                patterns = if self.html {
+                    format!(
+                        "{}<span class=\"mech-pattern-separator\">,</span> {}",
+                        patterns, p
+                    )
+                } else {
+                    format!("{}, {}", patterns, p)
+                };
             }
         }
         if self.html {
@@ -2423,7 +2430,14 @@ impl Formatter {
             if i == 0 {
                 patterns = format!("{}", p);
             } else {
-                patterns = format!("{}, {}", patterns, p);
+                patterns = if self.html {
+                    format!(
+                        "{}<span class=\"mech-pattern-separator\">,</span> {}",
+                        patterns, p
+                    )
+                } else {
+                    format!("{}, {}", patterns, p)
+                };
             }
         }
         if self.html {
@@ -2681,7 +2695,14 @@ impl Formatter {
                     if i == 0 {
                         state_variables = format!("{}", v);
                     } else {
-                        state_variables = format!("{}, {}", state_variables, v);
+                        state_variables = if self.html {
+                            format!(
+                                "{}<span class=\"mech-state-variable-separator\">,</span> {}",
+                                state_variables, v
+                            )
+                        } else {
+                            format!("{}, {}", state_variables, v)
+                        };
                     }
                 }
             }
@@ -2814,11 +2835,11 @@ impl Formatter {
             Statement::SplitTable => self.split_table(),
             Statement::FlattenTable => self.flatten_table(),
             Statement::ContextDeclaration(context) => {
-                let base = match &context.base {
+                let base_text = match &context.base {
                     ContextBase::ResourceUri(uri) => uri.to_string(),
                     ContextBase::Context(name) => format!("@{}", name.to_string()),
                 };
-                let capabilities = context
+                let capabilities_text = context
                     .capabilities
                     .iter()
                     .map(|capability| {
@@ -2830,20 +2851,76 @@ impl Formatter {
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
-                let capabilities = if capabilities.is_empty() {
+                let capabilities_text = if capabilities_text.is_empty() {
                     String::new()
                 } else {
-                    format!(" {{ {} }}", capabilities)
+                    format!(" {{ {} }}", capabilities_text)
                 };
                 if self.html {
+                    let base_html = match &context.base {
+                        ContextBase::ResourceUri(uri) => {
+                            let uri = uri.to_string();
+                            if let Some((provider, path)) = uri.split_once("://") {
+                                format!(
+                                    "<span class=\"mech-context-provider\">{}</span><span class=\"mech-context-scheme-op\">://</span><span class=\"mech-context-path\">{}</span>",
+                                    escape_html_text(provider),
+                                    escape_html_text(path)
+                                )
+                            } else if let Some((provider, path)) = uri.split_once('/') {
+                                format!(
+                                    "<span class=\"mech-context-provider\">{}</span><span class=\"mech-context-path\">/{}</span>",
+                                    escape_html_text(provider),
+                                    escape_html_text(path)
+                                )
+                            } else {
+                                format!(
+                                    "<span class=\"mech-context-provider\">{}</span>",
+                                    escape_html_text(&uri)
+                                )
+                            }
+                        }
+                        ContextBase::Context(name) => format!(
+                            "<span class=\"mech-context-reference\">@{}</span>",
+                            name.to_string()
+                        ),
+                    };
+                    let capabilities_html = context
+                        .capabilities
+                        .iter()
+                        .map(|capability| {
+                            let scope = match &capability.scope {
+                                ContextCapabilityScope::Path(path) => path.to_string(),
+                                ContextCapabilityScope::Wildcard(_) => "*".to_string(),
+                            };
+                            format!(
+                                "<span class=\"mech-context-capability\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-context-path\">{}</span><span class=\"mech-right-paren\">)</span></span>",
+                                capability.operation.to_string(),
+                                escape_html_text(&scope)
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("<span class=\"mech-context-capability-separator\">, </span>");
+                    let capabilities_html = if capabilities_html.is_empty() {
+                        String::new()
+                    } else {
+                        format!(
+                            " <span class=\"mech-context-capabilities\"><span class=\"mech-context-capabilities-open\">{{</span>{}<span class=\"mech-context-capabilities-close\">}}</span></span>",
+                            capabilities_html
+                        )
+                    };
                     format!(
-                        "<span class=\"mech-context-declaration\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span><span class=\"mech-context-capabilities\">{}</span></span>",
+                        "<span class=\"mech-context-declaration\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span>{}</span>",
                         context.name.to_string(),
-                        base,
-                        capabilities
+                        base_html,
+                        capabilities_html
                     )
                 } else {
-                    format!("@{} := {}{}", context.name.to_string(), base, capabilities)
+                    format!(
+                        "@{} := {}{}",
+                        context.name.to_string(),
+                        base_text,
+                        capabilities_text
+                    )
                 }
             }
         };
@@ -2977,7 +3054,7 @@ impl Formatter {
         }
         if self.html {
             format!(
-                "<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",
+                "<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-sigil\">:</span><span class=\"mech-enum-variant-name\">{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",
                 name, kind
             )
         } else {
@@ -3003,7 +3080,7 @@ impl Formatter {
                 if self.html {
                     let id = format!("{}:{}", hash_str(&v), self.interpreter_id);
                     vars = format!(
-                        "{}, <span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>",
+                        "{}<span class=\"mech-tuple-separator\">,</span> <span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>",
                         vars, id, v
                     );
                 } else {
@@ -3014,7 +3091,7 @@ impl Formatter {
         let expression = self.expression(&node.expression);
         if self.html {
             format!(
-                "<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\">({})</span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",
+                "<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\"><span class=\"mech-start-paren\">(</span>{}<span class=\"mech-end-paren\">)</span></span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",
                 vars, expression
             )
         } else {
@@ -3103,11 +3180,16 @@ impl Formatter {
         } else {
             name.clone()
         };
+        let name_class = if node.context.is_some() {
+            "mech-var-name mech-context-reference mech-clickable"
+        } else {
+            "mech-var-name mech-clickable"
+        };
         let id = format!("{}:{}", hash_str(&name), self.interpreter_id);
         if self.html {
             format!(
-                "<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",
-                id, display_name, subscript
+                "<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"{}\">{}</span><span class=\"mech-subscript\">{}</span></span>",
+                id, name_class, display_name, subscript
             )
         } else {
             format!("{}{}", display_name, subscript)
@@ -3143,13 +3225,21 @@ impl Formatter {
         if let Some(spread) = &node.spread {
             match spread.kind {
                 PatternArraySpreadKind::Spread => {
-                    parts.push("…".to_string());
+                    parts.push(if self.html {
+                        "<span class=\"mech-pattern-array-op\">…</span>".to_string()
+                    } else {
+                        "…".to_string()
+                    });
                     if let Some(binding) = &spread.binding {
                         parts.push(self.pattern(binding));
                     }
                 }
                 PatternArraySpreadKind::Rest => {
-                    parts.push("|".to_string());
+                    parts.push(if self.html {
+                        "<span class=\"mech-pattern-array-op\">|</span>".to_string()
+                    } else {
+                        "|".to_string()
+                    });
                     if let Some(binding) = &spread.binding {
                         parts.push(self.pattern(binding));
                     }
@@ -3159,7 +3249,15 @@ impl Formatter {
         for p in &node.suffix {
             parts.push(self.pattern(p));
         }
-        format!("[{}]", parts.join(" "))
+        let patterns = parts.join(" ");
+        if self.html {
+            format!(
+                "<span class=\"mech-pattern-array\"><span class=\"mech-pattern-array-open\">[</span>{}<span class=\"mech-pattern-array-close\">]</span></span>",
+                patterns
+            )
+        } else {
+            format!("[{}]", patterns)
+        }
     }
 
     pub fn match_expression(&mut self, node: &MatchExpression) -> String {
@@ -3177,7 +3275,16 @@ impl Formatter {
             let guard = arm
                 .guard
                 .as_ref()
-                .map(|expr| format!(", {}", self.expression(expr)))
+                .map(|expr| {
+                    if self.html {
+                        format!(
+                            "<span class=\"mech-match-guard\"><span class=\"mech-match-guard-separator\">,</span> {}</span>",
+                            self.expression(expr)
+                        )
+                    } else {
+                        format!(", {}", self.expression(expr))
+                    }
+                })
                 .unwrap_or_default();
             let expr = self.expression(&arm.expression);
             if self.html {
@@ -3420,11 +3527,16 @@ impl Formatter {
         } else {
             name.clone()
         };
+        let name_class = if node.context.is_some() {
+            "mech-var-name mech-context-reference mech-clickable"
+        } else {
+            "mech-var-name mech-clickable"
+        };
         let id = format!("{}:{}", hash_str(&name), self.interpreter_id);
         if self.html {
             format!(
-                "<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",
-                id, display_name, subscript
+                "<span class=\"mech-slice\"><span id=\"{}\" class=\"{}\">{}</span><span class=\"mech-subscript\">{}</span></span>",
+                id, name_class, display_name, subscript
             )
         } else {
             format!("{}{}", display_name, subscript)
@@ -3841,11 +3953,16 @@ impl Formatter {
         } else {
             node.name.to_string()
         };
+        let name_class = if node.context.is_some() {
+            "mech-var-name mech-context-reference mech-clickable"
+        } else {
+            "mech-var-name mech-clickable"
+        };
         let id = format!("{}:{}", hash_str(&name), self.interpreter_id);
         if self.html {
             format!(
-                "<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}",
-                id, display_name, annotation
+                "<span class=\"{}\" id=\"{}\">{}</span>{}",
+                name_class, id, display_name, annotation
             )
         } else {
             format!("{}{}", display_name, annotation)
@@ -3954,7 +4071,7 @@ impl Formatter {
             Kind::Atom(ident) => {
                 if self.html {
                     format!(
-                        "<span class=\"mech-atom-kind\">{}</span>",
+                        "<span class=\"mech-atom-kind\"><span class=\"mech-kind-structure\">:</span>{}</span>",
                         ident.to_string()
                     )
                 } else {
@@ -3981,26 +4098,31 @@ impl Formatter {
                 }
             }
             Kind::Matrix((kind, literals)) => {
-                let mut src = "".to_string();
-                let k = self.kind(kind);
-                src = format!("{}", k);
-                let mut src2 = "".to_string();
-                for (i, literal) in literals.iter().enumerate() {
-                    let l = self.literal(literal);
-                    if i == 0 {
-                        src2 = if self.html {
-                            format!("<span class=\"mech-matrix-literal\">:{}</span>", l)
-                        } else {
-                            format!(":{}", l)
-                        };
-                    } else {
-                        src2 = if self.html {
-                            format!("{}<span class=\"mech-matrix-literal\">:{}</span>", src2, l)
-                        } else {
-                            format!("{},:{}", src2, l)
-                        };
-                    }
-                }
+                let src = self.kind(kind);
+                let dimensions = literals
+                    .iter()
+                    .map(|literal| self.literal(literal))
+                    .collect::<Vec<_>>();
+                let src2 = if dimensions.is_empty() {
+                    String::new()
+                } else if self.html {
+                    let dimensions = dimensions
+                        .into_iter()
+                        .map(|dimension| {
+                            format!(
+                                "<span class=\"mech-matrix-size-value\">{}</span>",
+                                dimension
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("<span class=\"mech-matrix-size-separator\">,</span>");
+                    format!(
+                        "<span class=\"mech-matrix-literal mech-matrix-size\"><span class=\"mech-matrix-size-colon\">:</span>{}</span>",
+                        dimensions
+                    )
+                } else {
+                    format!(":{}", dimensions.join(","))
+                };
                 if self.html {
                     format!(
                         "<span class=\"mech-matrix-kind\"><span class=\"mech-matrix-kind-open\">[</span><span class=\"mech-matrix-kind-inner\">{}</span><span class=\"mech-matrix-kind-close\">]</span>{}</span>",
@@ -4316,7 +4438,7 @@ impl Formatter {
     pub fn atom(&mut self, node: &Atom) -> String {
         if self.html {
             format!(
-                "<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",
+                "<span class=\"mech-atom\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">{}</span></span>",
                 node.name.to_string()
             )
         } else {

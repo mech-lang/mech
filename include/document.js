@@ -1282,14 +1282,35 @@ function formattedMechInline(value) {
     if (rest[0] === "<") {
       const close = rest.indexOf(">");
       if (close >= 0) {
-        append(rest.slice(0, close + 1), "mech-kind-annotation");
+        const kind = document.createElement("span");
+        kind.className = "mech-kind-annotation";
+        const open = document.createElement("span");
+        open.className = "mech-kind-structure";
+        open.textContent = "<";
+        const name = document.createElement("span");
+        name.className = "mech-kind";
+        name.textContent = rest.slice(1, close);
+        const end = document.createElement("span");
+        end.className = "mech-kind-structure";
+        end.textContent = ">";
+        kind.append(open, name, end);
+        fragment.append(kind);
         cursor += close + 1;
         continue;
       }
     }
     const atom = rest.match(/^:[A-Za-z_][A-Za-z0-9_./-]*/)?.[0];
     if (atom) {
-      append(atom, "mech-atom");
+      const wrapper = document.createElement("span");
+      wrapper.className = "mech-atom";
+      const sigil = document.createElement("span");
+      sigil.className = "mech-atom-sigil";
+      sigil.textContent = ":";
+      const name = document.createElement("span");
+      name.className = "mech-atom-name";
+      name.textContent = atom.slice(1);
+      wrapper.append(sigil, name);
+      fragment.append(wrapper);
       cursor += atom.length;
       continue;
     }
@@ -3694,8 +3715,12 @@ function initializeToc() {
     if (toc) {
       toc.hidden = empty;
     }
+    const compactTocHidden = layout.dataset.mechCompactToc === "hidden";
     let toggle = layout.querySelector(":scope > .mech-toc-toggle");
-    if (!toggle && toc) {
+    if (compactTocHidden) {
+      toggle?.remove();
+      toggle = null;
+    } else if (!toggle && toc) {
       toggle = document.createElement("button");
       toggle.type = "button";
       toggle.className = "mech-toc-toggle";

@@ -10,61 +10,92 @@
  */
 
 [data-mech-source] {
-  --bracket-color: hsl(288, 30%, 70%);
-  --op-color: hsl(288, 30%, 70%);
-  --function-signature-color: hsl(133, 33%, 80%);
-  --function-name-color: hsl(133, 33%, 80%);
-  --function-bracket-color: hsl(133, 33%, 70%);
-  --function-arrow-color: hsl(133, 33%, 60%);
-  --literal-color: hsl(210, 78%, 78%);
-  --contrast-color-high: hsl(288, 30%, 80%);
-  --contrast-color-mid:  hsl(288, 30%, 70%);
-  --contrast-color-low:  hsl(288, 30%, 60%);
-  --main-color-high: hsl(42, 89%, 80%);
-  --main-color-mid:  hsl(42, 89%, 70%);
-  --main-color-low:  hsl(42, 89%, 60%);
-  --atom-color-high: hsl(33, 43%, 80%);
-  --atom-color-mid: hsl(33, 43%, 70%);
-  --atom-color-low: hsl(33, 43%, 60%);
-  --out-bracket-color: hsl(288, 30%, 85%);
-  --sidebar-width: 300px;
-  --text-color-light: hsl(40, 100%, 95%);
-  --text-color: hsl(41, 49%, 90%);
-  --text-color-dark: hsl(41, 49%, 25%);
-  --code-border-color: #4d5257;
-  --inline-code-border-color: #4d5257;
-  --code-background-color: #090d11;
-  --code-output-background-color: #020303;
-  --var-name-color: hsl(290, 45%, 90%);
-  --field-name-color: #63abb7;
-  --invariant-name-color: hsl(130, 100%, 75%);
-  --kind-annotation-color: #f09fca;
-  --kind-annotation-color-dark: #d574a8;
-  --body-background-color: hsl(216, 28%, 7%);
-  --abstract-background-color: #171c26;
-  --mechdown-table-odd-row-background-color: hsl(222, 25%, 9%);
-  --mechdown-table-even-row-background-color: #171c26;
-  --mechdown-table-row-hover-background-color: hsl(222, 25%, 17%);
-  --h2-underline-color: #343b46;
-  --toc-heading-number-color: rgba(255, 255, 255, 0.55);
-  --toc-accent: hsl(308, 42%, 69%);
-  --toc-accent-soft: hsl(308, 42%, 59%);
-  --toc-text-secondary: hsl(308, 17%, 73%);
-  --toc-border: hsl(308, 17%, 73%);
-  --title-underline-color: hsl(42, 89%, 70%);
-  --callout-background-color: #1f2533;
-  --warning-color: hsl(20, 100%, 75%);
-  --error-color: hsl(350, 100%, 75%);
-  --info-color: hsl(230, 100%, 75%);
-  --success-color: hsl(130, 100%, 75%);
-  --idea-color: hsl(271, 100%, 75%);
-  --question-color: hsl(191, 100%, 75%);
-  --code-namespace-label-color: #f5a7d3;
-  --pattern-color: hsl(133, 33%, 70%);
-  --pattern-parent-color: hsl(133, 33%, 70%);
-  --logo-color: rgb(246,192,78);
+  /* Semantic bridges keep this component independently embeddable. */
+  --mech-source-operator: var(--mech-syntax-operator, #c09cc9);
+  --mech-source-bracket: var(--mech-syntax-bracket, #c09cc9);
+  --mech-source-tuple-structure: var(--mech-syntax-tuple-structure, #ab7ab8);
+  --mech-source-function: var(--mech-syntax-function, #bbddc2);
+  --mech-source-function-structure: var(--mech-syntax-function-structure, #99cca4);
+  --mech-source-function-flow: var(--mech-syntax-function-flow, #77bb86);
+  --mech-source-match: var(--mech-syntax-match, #d7c0a4);
+  --mech-source-match-flow: var(--mech-syntax-match-flow, #ad9273);
+  --mech-source-literal: var(--mech-syntax-literal, #9bc7f3);
+  --mech-source-variable: var(--mech-syntax-variable, #eddaf1);
+  --mech-source-field: var(--mech-syntax-field, #63abb7);
+  --mech-source-kind: var(--mech-syntax-kind, #f09fca);
+  --mech-source-kind-structure: var(--mech-syntax-kind-structure, #d574a8);
+  --mech-source-atom: var(--mech-syntax-atom, #d7c0a4);
+  --mech-source-atom-structure: var(--mech-syntax-atom-structure, #ad9273);
+  --mech-source-context: var(--mech-syntax-context, #acc9d2);
+  --mech-source-context-provider: var(--mech-syntax-context-provider, #cbdce2);
+  --mech-source-path: var(--mech-syntax-path, #84b4c2);
+  --mech-source-machine: var(--mech-syntax-machine, #d8a5e4);
+  --mech-source-machine-flow: var(--mech-syntax-machine-flow, #8e90bd);
+  --mech-source-invariant: var(--mech-syntax-invariant, #ffaa80);
+  --mech-source-namespace: var(--mech-syntax-namespace, #afb4d4);
+  --mech-source-comment: var(--mech-syntax-comment, #827f6b);
+  --mech-source-scrollbar: var(--mech-scrollbar, rgb(128 128 128 / 70%));
+  --mech-source-scrollbar-hover: var(--mech-scrollbar-hover, rgb(160 160 160 / 85%));
+  --mech-source-shadow-small: var(--mech-shadow-small, 0 2px 4px rgb(0 0 0 / 44%));
+  --mech-source-shadow-medium: var(--mech-shadow-medium, 0 10px 22px rgb(0 0 0 / 58%));
 
-  color: var(--text-color, hsl(41, 49%, 90%));
+  /* Compatibility aliases for existing embedders and downstream themes. */
+  --bracket-color: var(--mech-source-bracket);
+  --op-color: var(--mech-source-operator);
+  --function-signature-color: var(--mech-source-function);
+  --function-name-color: var(--mech-source-function);
+  --function-bracket-color: var(--mech-source-function-structure);
+  --function-arrow-color: var(--mech-source-function-flow);
+  --literal-color: var(--mech-source-literal);
+  --contrast-color-high: var(--mech-source-variable);
+  --contrast-color-mid: var(--mech-source-operator);
+  --contrast-color-low: var(--mech-source-tuple-structure);
+  --main-color-high: var(--mech-link, #f7ce6e);
+  --main-color-mid: var(--mech-brand-highlight, #f9de9f);
+  --main-color-low: var(--mech-brand, #f4bd3e);
+  --atom-color-high: var(--mech-source-atom);
+  --atom-color-mid: var(--mech-source-atom);
+  --atom-color-low: var(--mech-source-atom-structure);
+  --out-bracket-color: var(--mech-source-variable);
+  --sidebar-width: 300px;
+  --text-color-light: var(--mech-text-reading, #fff6e5);
+  --text-color: var(--mech-text-primary, #f2ead9);
+  --text-color-dark: var(--mech-text-muted, #827f6b);
+  --code-border-color: var(--mech-border, #4d5257);
+  --inline-code-border-color: var(--mech-border, #4d5257);
+  --code-background-color: var(--mech-code-bg, #090d11);
+  --code-output-background-color: var(--mech-output-bg, #020303);
+  --var-name-color: var(--mech-source-variable);
+  --field-name-color: var(--mech-source-field);
+  --invariant-name-color: var(--mech-source-invariant);
+  --kind-annotation-color: var(--mech-source-kind);
+  --kind-annotation-color-dark: var(--mech-source-kind-structure);
+  --body-background-color: var(--mech-canvas, #0d1117);
+  --abstract-background-color: var(--mech-panel, #171c26);
+  --mechdown-table-odd-row-background-color: var(--mech-code-bg, #090d11);
+  --mechdown-table-even-row-background-color: var(--mech-panel, #171c26);
+  --mechdown-table-row-hover-background-color: var(--mech-panel-raised, #1f2533);
+  --h2-underline-color: var(--mech-border, #4d5257);
+  --toc-heading-number-color: var(--mech-text-secondary, #bebcaa);
+  --toc-accent: var(--mech-source-kind);
+  --toc-accent-soft: var(--mech-source-kind-structure);
+  --toc-text-secondary: var(--mech-text-secondary, #bebcaa);
+  --toc-border: var(--mech-source-kind-structure);
+  --title-underline-color: var(--mech-link, #f7ce6e);
+  --callout-background-color: var(--mech-panel-raised, #1f2533);
+  --warning-color: var(--mech-warning, #ffaa80);
+  --error-color: var(--mech-error, #ff8095);
+  --info-color: var(--mech-info, #8095ff);
+  --success-color: var(--mech-success, #80ff95);
+  --idea-color: var(--mech-idea, #c180ff);
+  --question-color: var(--mech-question, #80e8ff);
+  --code-namespace-label-color: var(--mech-source-namespace);
+  --pattern-color: var(--mech-source-function-structure);
+  --pattern-paren-color: var(--mech-source-function-flow);
+  --pattern-parent-color: var(--pattern-paren-color);
+  --logo-color: var(--mech-brand, #f4bd3e);
+
+  color: var(--text-color);
   font-family: 'FiraCodeRegular', 'SFMono-Regular', Menlo, Consolas, monospace;
   min-width: 0;
 }
@@ -265,7 +296,7 @@
 :where([data-mech-source]) .mech-code-block {
     display: block;
     background-color: var(--code-background-color);
-    color: #e6dac2;
+    color: var(--text-color);
     font-family: 'FiraCodeLight', monospace;
     font-size: 1rem;
     line-height: 18px;
@@ -274,7 +305,7 @@
     border: 1px solid var(--code-border-color);
     margin-bottom: 20px;
     overflow-x: auto;
-    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--mech-source-shadow-small);
 }
 
 :where([data-mech-source]).mech-code-block::-webkit-scrollbar,
@@ -289,18 +320,18 @@
 
 :where([data-mech-source]).mech-code-block::-webkit-scrollbar-thumb,
 :where([data-mech-source]) .mech-code-block::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.7);
+    background: var(--mech-source-scrollbar);
     border-radius: 10px;
 }
 
 :where([data-mech-source]).mech-code-block::-webkit-scrollbar-thumb:hover,
 :where([data-mech-source]) .mech-code-block::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 128, 128, 0.9);
+    background: var(--mech-source-scrollbar-hover);
 }
 
 :where([data-mech-source]).mech-code-block,
 :where([data-mech-source]) .mech-code-block {
-    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-color: var(--mech-source-scrollbar) transparent;
     scrollbar-width: thin;
 }
 
@@ -317,7 +348,7 @@
     border: 1px solid var(--code-border-color);
     margin-bottom: 20px;
     overflow-x: auto;
-    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--mech-source-shadow-small);
 }
 
 :where([data-mech-source]).mech-grammar::-webkit-scrollbar,
@@ -332,18 +363,18 @@
 
 :where([data-mech-source]).mech-grammar::-webkit-scrollbar-thumb,
 :where([data-mech-source]) .mech-grammar::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.7);
+    background: var(--mech-source-scrollbar);
     border-radius: 10px;
 }
 
 :where([data-mech-source]).mech-grammar::-webkit-scrollbar-thumb:hover,
 :where([data-mech-source]) .mech-grammar::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 128, 128, 0.9);
+    background: var(--mech-source-scrollbar-hover);
 }
 
 :where([data-mech-source]).mech-grammar,
 :where([data-mech-source]) .mech-grammar {
-    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-color: var(--mech-source-scrollbar) transparent;
     scrollbar-width: thin;
 }
 
@@ -534,7 +565,7 @@
     padding: 0px 6px 0px 6px;
     margin: 0px 2px 0px 2px;
     border-radius: 3px;
-    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--mech-source-shadow-small);
 }
 
 :where([data-mech-source]).mech-inline-mech-code-formatted .mech-code-block,
@@ -543,7 +574,7 @@
     border-radius: 5px 5px 5px 5px !important;
     border-bottom: 1px solid var(--code-border-color) !important;
     margin-bottom: 0px;
-    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--mech-source-shadow-small);
 }
 
 :where([data-mech-source]).mech-fenced-mech-block .mech-code-block,
@@ -571,7 +602,7 @@
     padding: 0px 6px 0px 6px;
     margin: 0px 2px 0px 2px;
     border-radius: 3px;
-    box-shadow: 0 0px 2px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--mech-source-shadow-small);
 }
 
 :where([data-mech-source]).mech-formula-operator,
@@ -667,13 +698,13 @@
 
 :where([data-mech-source]).mech-clickable:hover,
 :where([data-mech-source]) .mech-clickable:hover {
-    background-color: #2a2b34;
+    background-color: var(--mech-panel-raised, #1f2533);
     cursor: pointer;
 }
 
 :where([data-mech-source]).mech-inline-expand,
 :where([data-mech-source]) .mech-inline-expand {
-    color: #eedd00;
+    color: var(--mech-brand, #f4bd3e);
     cursor: pointer;
     font-weight: 700;
 }
@@ -748,13 +779,13 @@
 
 :where([data-mech-source]).mech-fsm-input,
 :where([data-mech-source]) .mech-fsm-input {
-    color: #ccbbc2;
+    color: var(--mech-source-machine-flow);
     display: inline-flex;
 }
 
 :where([data-mech-source]).mech-fsm-name,
 :where([data-mech-source]) .mech-fsm-name {
-    color: #d8a5e4;
+    color: var(--mech-source-machine);
 }
 
 :where([data-mech-source]).mech-kind-annotation,
@@ -941,7 +972,7 @@
 
 :where([data-mech-source]).mech-comment,
 :where([data-mech-source]) .mech-comment {
-    color: #5c6467;
+    color: var(--mech-source-comment);
     font-style: italic;
     padding-top: 20px;
     display: flex; /* align contents horizontally */
@@ -951,7 +982,7 @@
 :where([data-mech-source]).mech-comment p,
 :where([data-mech-source]) .mech-comment p {
     margin: 0;
-    color: #939a9e;
+    color: var(--mech-source-comment);
     display: inline;
 }
 
@@ -973,7 +1004,7 @@
 
 :where([data-mech-source]).mech-table-header,
 :where([data-mech-source]) .mech-table-header {
-    color: #dbc3a5;
+    color: var(--mech-source-atom);
     text-align: center;
     font-weight: bold;
     border-bottom: 1px solid var(--code-border-color);
@@ -1017,7 +1048,7 @@
     padding: 0px;
     border-collapse: collapse;
     border: 1px solid var(--code-border-color);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--mech-source-shadow-small);
 }
 
 :where([data-mech-source]).mech-output-value .mech-table:last-child,
@@ -1076,7 +1107,7 @@
 
 :where([data-mech-source]).mech-table a:hover,
 :where([data-mech-source]) .mech-table a:hover {
-    color: #f18181;
+    color: var(--mech-link, #f7ce6e);
 }
 
 :where([data-mech-source]).mech-runtime-error,
@@ -1197,7 +1228,7 @@
 :where([data-mech-source]) .mech-fenced-mech-block {
     border-radius: 10px;
     margin-bottom: 20px;
-    box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.7);
+    box-shadow: var(--mech-source-shadow-medium);
 }
 
 :where([data-mech-source]).mech-code-block.hidden,
@@ -1216,7 +1247,7 @@
     position: absolute;
     top: -10px;
     right: 15px;
-    background: rgb(13 17 23);
+    background: var(--mech-canvas, #0d1117);
     padding: 2px 10px;
     border-radius: 10px;
     font-size: 0.7rem;
@@ -1254,18 +1285,18 @@
 
 :where([data-mech-source]).mech-block-output::-webkit-scrollbar-thumb,
 :where([data-mech-source]) .mech-block-output::-webkit-scrollbar-thumb {
-    background: rgba(128, 128, 128, 0.7);
+    background: var(--mech-source-scrollbar);
     border-radius: 10px;
 }
 
 :where([data-mech-source]).mech-block-output::-webkit-scrollbar-thumb:hover,
 :where([data-mech-source]) .mech-block-output::-webkit-scrollbar-thumb:hover {
-    background: rgba(128, 128, 128, 0.9);
+    background: var(--mech-source-scrollbar-hover);
 }
 
 :where([data-mech-source]).mech-block-output,
 :where([data-mech-source]) .mech-block-output {
-    scrollbar-color: rgba(128, 128, 128, 0.7) transparent;
+    scrollbar-color: var(--mech-source-scrollbar) transparent;
     scrollbar-width: thin;
 }
 
@@ -1600,4 +1631,426 @@
 :where([data-mech-source]).mech-matrix-kind-close,
 :where([data-mech-source]) .mech-matrix-kind-close {
     color: var(--kind-annotation-color-dark);
+}
+
+/*
+ * Semantic syntax palette.
+ *
+ * Color follows the Mech construct being read, not the runtime data type.
+ * These late rules intentionally leave the formatter's layout rules above
+ * intact while correcting the old global pattern/type color leakage.
+ */
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-var-name,
+  .mech-argument-name,
+  .mech-function-argument-name,
+  .mech-grammar-identifier,
+  .mech-grammar-definition
+) {
+  color: var(--mech-source-variable);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-field-name,
+  .mech-binding-name,
+  .mech-dot,
+  .mech-dot-int
+) {
+  color: var(--mech-source-field);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-literal,
+  .mech-number,
+  .mech-string,
+  .mech-boolean,
+  .mech-empty,
+  .mech-complex-number,
+  .mech-rational,
+  .mech-grammar-terminal
+) {
+  color: var(--mech-source-literal);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-variable-mutable,
+  .mech-variable-define-op,
+  .mech-variable-assign-op,
+  .mech-kind-define-op,
+  .mech-enum-define-op,
+  .mech-enum-variant-sep,
+  .mech-assign-op,
+  .mech-op-assign-op,
+  .mech-formula-operator,
+  .mech-range-operator,
+  .mech-range-increment,
+  .mech-negate-op,
+  .mech-not-op,
+  .mech-transpose-op,
+  .mech-all,
+  .mech-colon-op,
+  .mech-binding-colon-op,
+  .mech-set-bar,
+  .mech-comp-bar,
+  .mech-generator-arrow,
+  .mech-split-table,
+  .mech-flatten-table,
+  .mech-define-op,
+  .mech-fsm-define-op,
+  .mech-send-op,
+  .mech-code-terminal,
+  .mech-grammar-define-op,
+  .mech-grammar-choice-op,
+  .mech-grammar-repeat1-op,
+  .mech-grammar-repeat0-op,
+  .mech-grammar-not-op,
+  .mech-grammar-optional-op,
+  .mech-pattern-array-op,
+  .mech-pattern-separator,
+  .mech-state-variable-separator,
+  .mech-tuple-separator
+) {
+  color: var(--mech-source-operator);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-bracket,
+  .mech-start-brace,
+  .mech-end-brace,
+  .mech-set-open,
+  .mech-set-close,
+  .mech-pattern-array-open,
+  .mech-pattern-array-close
+) {
+  color: var(--mech-source-bracket);
+}
+
+:where([data-mech-source]) .mech-tuple > :is(
+  .mech-start-paren,
+  .mech-end-paren,
+  .mech-start-brace,
+  .mech-end-brace
+),
+:where([data-mech-source]) .mech-tuple-destructure .mech-tuple-vars > :is(
+  .mech-start-paren,
+  .mech-end-paren
+),
+:where([data-mech-source], [data-mech-source] *):is(.mech-parenthetical) {
+  color: var(--mech-source-tuple-structure);
+}
+
+:where([data-mech-source]) .mech-literal .mech-matrix .mech-bracket {
+  color: var(--mech-source-literal);
+}
+
+/* Kinds: pink bodies with darker rose structure. */
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-kind,
+  .mech-scalar-kind,
+  .mech-any-kind,
+  .mech-empty-kind,
+  .mech-atom-kind,
+  .mech-enum-name,
+  .mech-record-field-name,
+  .mech-output-kind,
+  .mech-repl-result-kind,
+  .mech-matrix-size-value
+) {
+  color: var(--mech-source-kind);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-kind-annotation,
+  .mech-kind-structure,
+  .mech-kind-annotation-open,
+  .mech-kind-annotation-close,
+  .mech-option-question,
+  .mech-set-kind-open,
+  .mech-set-kind-close,
+  .mech-tuple-kind-open,
+  .mech-tuple-kind-close,
+  .mech-matrix-kind-open,
+  .mech-matrix-kind-close,
+  .mech-record-kind-open,
+  .mech-record-kind-close,
+  .mech-table-kind-open,
+  .mech-table-kind-close,
+  .mech-map-kind-open,
+  .mech-map-kind-close,
+  .mech-map-kind-sep,
+  .mech-record-field-kind-open,
+  .mech-record-field-kind-close,
+  .mech-set-size,
+  .mech-matrix-literal,
+  .mech-matrix-size-colon,
+  .mech-matrix-size-separator,
+  .mech-table-kind-size
+) {
+  color: var(--mech-source-kind-structure);
+}
+
+:where([data-mech-source]) .mech-kind :is(.mech-number, .mech-empty),
+:where([data-mech-source]) .mech-kind-annotation :is(.mech-number, .mech-empty) {
+  color: var(--mech-source-kind);
+}
+
+/* A generic pattern has no construct color of its own. */
+:where([data-mech-source], [data-mech-source] *):is(.mech-pattern, .mech-pattern-wildcard) {
+  color: inherit;
+}
+
+:where([data-mech-source]) .mech-pattern .mech-var-name {
+  color: var(--mech-source-variable);
+}
+
+:where([data-mech-source]) .mech-pattern .mech-number {
+  color: var(--mech-source-literal);
+}
+
+:where([data-mech-source]) .mech-pattern :is(.mech-tuple-struct, .mech-pattern-tuple, .mech-pattern-array) {
+  color: var(--mech-source-tuple-structure);
+}
+
+:where([data-mech-source]) .mech-pattern .mech-pattern-tuple > :is(
+  .mech-left-paren,
+  .mech-right-paren
+) {
+  color: var(--mech-source-tuple-structure);
+}
+
+/* Functions stay green; identifiers and literals inside calls keep their roles. */
+:where([data-mech-source], [data-mech-source] *).mech-function-name {
+  color: var(--mech-source-function);
+  font-weight: 700;
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-function-input,
+  .mech-function-equals,
+  .mech-function-pattern
+),
+:where([data-mech-source]) .mech-function-call > .mech-argument-list,
+:where([data-mech-source]) :is(.mech-function-call, .mech-function-signature) > :is(.mech-left-paren, .mech-right-paren) {
+  color: var(--mech-source-function-structure);
+}
+
+:where([data-mech-source]) .mech-function-pattern :is(
+  .mech-pattern,
+  .mech-pattern-array,
+  .mech-pattern-tuple,
+  .mech-tuple-struct,
+  .mech-var-name,
+  .mech-number,
+  .mech-pattern-wildcard,
+  .mech-pattern-separator
+) {
+  color: var(--mech-source-function-structure);
+}
+
+:where([data-mech-source]) .mech-function-pattern :is(.mech-left-paren, .mech-right-paren) {
+  color: var(--mech-source-function-flow);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-function-arrow,
+  .mech-function-branch,
+  .mech-function-period
+) {
+  color: var(--mech-source-function-flow);
+  font-weight: 600;
+}
+
+/* Match rails and patterns share one sand family. */
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-match-branch,
+  .mech-match-pattern
+),
+:where([data-mech-source]) .mech-match-pattern > .mech-pattern,
+:where([data-mech-source]) .mech-match-pattern > .mech-pattern :is(
+  .mech-pattern,
+  .mech-pattern-array,
+  .mech-pattern-tuple,
+  .mech-tuple-struct,
+  .mech-var-name,
+  .mech-number,
+  .mech-pattern-wildcard
+) {
+  color: var(--mech-source-match);
+  font-weight: 600;
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-match-op,
+  .mech-match-arrow,
+  .mech-match-terminal,
+  .mech-match-guard-separator
+),
+:where([data-mech-source]) .mech-match-pattern > .mech-pattern :is(
+  .mech-left-paren,
+  .mech-right-paren,
+  .mech-atom-sigil,
+  .mech-enum-variant-sigil,
+  .mech-tuple-struct-sigil,
+  .mech-pattern-separator
+) {
+  color: var(--mech-source-match-flow);
+  font-weight: 600;
+}
+
+/* Atom and state names are the same yellow everywhere. */
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-atom,
+  .mech-atom-name,
+  .mech-enum-variant-name,
+  .mech-tuple-struct-name,
+  .mech-state-definition,
+  .mech-state-name
+) {
+  color: var(--mech-source-atom);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-atom-sigil,
+  .mech-enum-variant-sigil,
+  .mech-state-name-sigil,
+  .mech-tuple-struct-sigil,
+  .mech-enum-variant-payload
+),
+:where([data-mech-source]) :is(.mech-tuple-struct, .mech-state-definition) > :is(.mech-left-paren, .mech-right-paren) {
+  color: var(--mech-source-atom-structure);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-state-name,
+:where([data-mech-source]) :is(.mech-fsm-state, .mech-fsm-start, .mech-fsm-arm-pattern) .mech-tuple-struct-name {
+  font-weight: 700;
+}
+
+:where([data-mech-source]) .mech-function-pattern :is(.mech-atom-name, .mech-enum-variant-name, .mech-tuple-struct-name),
+:where([data-mech-source]) .mech-match-pattern :is(.mech-atom-name, .mech-enum-variant-name, .mech-tuple-struct-name) {
+  color: var(--mech-source-atom);
+}
+
+/* State-machine identity is orchid; machine motion and rails are periwinkle. */
+:where([data-mech-source], [data-mech-source] *):is(.mech-fsm-name, .mech-fsm-sigil) {
+  color: var(--mech-source-machine);
+  font-weight: 700;
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-fsm-input,
+  .mech-fsm-args,
+  .mech-fsm-output,
+  .mech-fsm-state,
+  .mech-fsm-arm-last,
+  .mech-fsm-start-op,
+  .mech-transition-next,
+  .mech-transition-output,
+  .mech-transition-async,
+  .mech-transition-statement,
+  .mech-transition-code,
+  .mech-fsm-pipe,
+  .mech-fsm-pipe-start,
+  .mech-fsm-pipe-transitions,
+  .mech-fsm-declare-pipe
+),
+:where([data-mech-source]) :is(
+  .mech-fsm,
+  .mech-fsm-instance,
+  .mech-fsm-specification-header,
+  .mech-fsm-implementation-header
+) > :is(.mech-left-paren, .mech-right-paren) {
+  color: var(--mech-source-machine-flow);
+}
+
+/* Guard rails are one sand-yellow signal in match and machine forms. */
+:where([data-mech-source], [data-mech-source] *).mech-fsm-guard-arm {
+  color: var(--mech-source-match);
+  font-weight: 600;
+}
+
+:where([data-mech-source]) .mech-fsm-guard-arm .mech-pattern-wildcard {
+  color: var(--mech-source-match);
+  font-weight: 600;
+}
+
+:where([data-mech-source]) .mech-fsm-arm-last .mech-pattern-wildcard {
+  color: var(--mech-source-machine-flow);
+  font-weight: 600;
+}
+
+:where([data-mech-source]) :is(.mech-fsm-state, .mech-fsm-start, .mech-fsm-arm-pattern) :is(
+  .mech-atom-name,
+  .mech-enum-variant-name,
+  .mech-tuple-struct-name,
+  .mech-state-name
+) {
+  color: var(--mech-source-atom);
+}
+
+/* Host contexts use one cool family with distinct provider/path steps. */
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-context-name,
+  .mech-context-reference
+),
+:where([data-mech-source]) .mech-context-send > .mech-target {
+  color: var(--mech-source-context);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-context-provider {
+  color: var(--mech-source-context-provider);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-context-path {
+  color: var(--mech-source-path);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(
+  .mech-context-scheme-op,
+  .mech-context-capabilities-open,
+  .mech-context-capabilities-close,
+  .mech-context-capability-separator
+) {
+  color: var(--mech-source-operator);
+}
+
+:where([data-mech-source]) .mech-context-capability .mech-atom-name {
+  color: var(--mech-source-atom);
+}
+
+:where([data-mech-source]) .mech-context-capability :is(
+  .mech-atom-sigil,
+  .mech-left-paren,
+  .mech-right-paren
+) {
+  color: var(--mech-source-atom-structure);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-invariant-name {
+  color: var(--mech-source-invariant);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-code-block-namespace {
+  background: var(--mech-canvas, #0d1117);
+  color: var(--mech-source-namespace);
+}
+
+:where([data-mech-source], [data-mech-source] *):is(.mech-comment, .mech-comment p) {
+  color: var(--mech-source-comment);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-code-block {
+  color: var(--text-color);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-clickable:hover {
+  background-color: var(--mech-panel-raised, #1f2533);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-inline-expand {
+  color: var(--mech-brand, #f4bd3e);
+}
+
+:where([data-mech-source]) .mech-table a:hover {
+  color: var(--mech-link, #f7ce6e);
 }

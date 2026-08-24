@@ -7,18 +7,27 @@
  */
 
 [data-mechdown] {
-  --mechdown-text: var(--text-primary, #d7e2e1);
-  --mechdown-text-secondary: var(--text-secondary, #aabebe);
-  --mechdown-muted: var(--text-muted, #827f6b);
-  --mechdown-accent: var(--accent-primary, #f2b63d);
-  --mechdown-link: var(--accent-secondary-teal, #5dd8c8);
-  --mechdown-purple: var(--accent-secondary-purple, #d89bd8);
-  --mechdown-inline-code: var(--var-name-color, hsl(290, 45%, 90%));
-  --mechdown-border: var(--border, #293140);
-  --mechdown-surface: var(--bg-secondary, #111827);
-  --mechdown-code-surface: var(--code-background-color, #080b12);
+  --mechdown-text: var(--mech-text-primary, var(--text-primary, #f2ead9));
+  --mechdown-text-secondary: var(--mech-text-secondary, var(--text-secondary, #bebcaa));
+  --mechdown-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
+  --mechdown-accent: var(--mech-brand, var(--accent-primary, #f4bd3e));
+  --mechdown-link: var(--mech-link, var(--accent-hover, #f7ce6e));
+  --mechdown-purple: var(--mech-idea, var(--accent-secondary-purple, #c180ff));
+  --mechdown-inline-code: var(--mech-syntax-variable, var(--var-name-color, #eddaf1));
+  --mechdown-border: var(--mech-border, var(--border, #4d5257));
+  --mechdown-surface: var(--mech-panel, var(--bg-secondary, #171c26));
+  --mechdown-callout-surface: var(--mech-panel-raised, var(--callout-background-color, #1f2533));
+  --mechdown-code-surface: var(--mech-code-bg, var(--code-background-color, #090d11));
+  --mechdown-highlight: var(--mech-selection-bg, rgb(244 189 62 / 24%));
+  --mechdown-highlight-text: var(--mech-selection-text, #fff6e5);
+  --mechdown-info: var(--mech-info, #8095ff);
+  --mechdown-warning: var(--mech-warning, #ffaa80);
+  --mechdown-error: var(--mech-error, #ff8095);
+  --mechdown-success: var(--mech-success, #80ff95);
+  --mechdown-idea: var(--mech-idea, #c180ff);
+  --mechdown-question: var(--mech-question, #80e8ff);
+  --mechdown-shadow: var(--mech-shadow-medium, 0 10px 22px rgb(0 0 0 / 58%));
   color: var(--mechdown-text);
-  counter-reset: mechdown-section;
   line-height: 1.7;
   min-width: 0;
 }
@@ -63,121 +72,20 @@
   margin: 1.5rem 0 0.6rem;
 }
 
-/*
- * Editorial section hierarchy. This is the blog's numbered heading language,
- * scoped to semantic Mechdown so it travels with a document independently of
- * whichever page shell embeds it.
- */
+/* Portable section structure. Page variants may add an editorial hierarchy. */
 [data-mechdown] .mechdown-section {
-  counter-reset: mechdown-subsection mechdown-subsubsection mechdown-h5 mechdown-h6;
   max-width: 100%;
   min-width: 0;
-  padding: 0 10px 30px;
+  padding: 0 0 30px;
   width: 100%;
-}
-
-[data-mechdown] .mechdown-section.mechdown-titled-section {
-  counter-increment: mechdown-section;
-}
-
-[data-mechdown] .mechdown-section > h2,
-[data-mechdown] .mechdown-section > h3 {
-  align-items: flex-start;
-  border-bottom: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25em;
-  padding-bottom: 10px;
-}
-
-[data-mechdown] .mechdown-section > h4,
-[data-mechdown] .mechdown-section > h5,
-[data-mechdown] .mechdown-section > h6 {
-  align-items: baseline;
-  border-bottom: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 0.5em;
-  padding-bottom: 0;
-}
-
-[data-mechdown] .mechdown-section > h2 {
-  font-size: 34px;
-  letter-spacing: 0.01em;
-  margin: 0 0 14px -20px;
 }
 
 [data-mechdown] .mech-section-annotations {
   color: var(--mechdown-purple);
-  font-size: 0.42em;
+  font-size: 0.55em;
   font-weight: 650;
   letter-spacing: 0.08em;
   line-height: 1.2;
-}
-
-[data-mechdown] .mechdown-section > h3 {
-  counter-increment: mechdown-subsection;
-  counter-reset: mechdown-subsubsection mechdown-h5 mechdown-h6;
-  font-size: 24px;
-  margin: 30px 0 12px;
-}
-
-[data-mechdown] .mechdown-section > h4 {
-  counter-increment: mechdown-subsubsection;
-  counter-reset: mechdown-h5 mechdown-h6;
-}
-
-[data-mechdown] .mechdown-section > h5 {
-  color: var(--accent-soft, var(--mechdown-text));
-  counter-increment: mechdown-h5;
-  counter-reset: mechdown-h6;
-}
-
-[data-mechdown] .mechdown-section > h6 {
-  color: var(--accent-soft, var(--mechdown-text));
-  counter-increment: mechdown-h6;
-}
-
-[data-mechdown] .mechdown-section > h2::before,
-[data-mechdown] .mechdown-section > h3::before,
-[data-mechdown] .mechdown-section > h4::before,
-[data-mechdown] .mechdown-section > h5::before,
-[data-mechdown] .mechdown-section > h6::before {
-  color: var(--mechdown-accent);
-  flex-shrink: 0;
-  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.4em;
-  font-weight: 700;
-  letter-spacing: 0.21em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-[data-mechdown] .mechdown-section > h2::before {
-  content: "section " counter(mechdown-section, decimal);
-  display: block;
-}
-
-[data-mechdown] .mechdown-section > h3::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal);
-  display: block;
-  font-size: 12px;
-}
-
-[data-mechdown] .mechdown-section > h4::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal);
-  font-size: 10px;
-}
-
-[data-mechdown] .mechdown-section > h5::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal);
-  display: none;
-  font-size: 10px;
-}
-
-[data-mechdown] .mechdown-section > h6::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal) "." counter(mechdown-h6, decimal);
-  font-size: 10px;
 }
 
 [data-mechdown] h1 a,
@@ -190,7 +98,11 @@
   text-decoration: none;
 }
 
-[data-mechdown] .mechdown-paragraph:not([data-mech-source] *) {
+[data-mechdown] .mechdown-paragraph:not([data-mech-source] *),
+[data-mechdown] .mech-paragraph:not([data-mech-source] *) {
+  color: var(--mechdown-text);
+  font-size: 1.06rem;
+  line-height: 1.85;
   margin: 0 0 1rem;
   overflow-wrap: anywhere;
 }
@@ -226,6 +138,19 @@
   padding: 0.08em 0.32em;
 }
 
+[data-mechdown] a.mech-hyperlink .mech-inline-code {
+  border-color: var(--mechdown-link);
+  border-style: dashed;
+  color: var(--mechdown-link);
+  display: inline-block;
+  text-decoration: none;
+}
+
+[data-mechdown] a.mech-hyperlink:hover .mech-inline-code {
+  border-color: var(--mechdown-accent);
+  color: var(--mechdown-accent);
+}
+
 [data-mechdown] pre.mech-code-block:not([data-mech-source]) {
   background: var(--mechdown-code-surface);
   border: 1px solid var(--mechdown-border);
@@ -240,11 +165,12 @@
 
 [data-mechdown] .mech-highlight,
 [data-mechdown] mark {
-  background: color-mix(in srgb, var(--mechdown-accent) 22%, transparent);
-  border: 1px solid color-mix(in srgb, var(--mechdown-accent) 55%, transparent);
-  border-radius: 4px;
-  color: var(--mechdown-text);
-  padding: 0.08em 0.28em;
+  background: var(--mechdown-highlight);
+  border: 0;
+  border-bottom: 1px solid var(--mechdown-accent);
+  border-radius: 0;
+  color: var(--mechdown-highlight-text);
+  padding: 0.05em 0.22em;
 }
 
 [data-mechdown] ul,
@@ -320,10 +246,17 @@
 }
 
 [data-mechdown] .mech-block-quote {
-  border-left: 3px solid var(--mechdown-purple);
-  color: var(--mechdown-text-secondary);
+  background: var(--mechdown-callout-surface);
+  border-left: 4px solid var(--mechdown-link);
+  border-radius: 3px;
+  color: var(--mechdown-text);
   margin: 1.5rem 0;
-  padding: 0.25rem 1.25rem;
+  padding: 1rem 1.25rem;
+  width: 100%;
+}
+
+[data-mechdown] .mech-block-quote p {
+  margin: 0.5rem 0 0;
 }
 
 [data-mechdown] .mech-block-quote > :last-child {
@@ -336,30 +269,84 @@
 [data-mechdown] .mech-warning-block,
 [data-mechdown] .mech-error-block,
 [data-mechdown] .mech-idea-block {
-  background: var(--mechdown-surface);
-  border: 1px solid var(--mechdown-border);
-  border-left: 4px solid var(--mechdown-link);
-  border-radius: 6px;
-  margin: 1.5rem 0;
-  padding: 1rem 1.1rem;
+  --mechdown-callout-color: var(--mechdown-info);
+  background: var(--mechdown-callout-surface);
+  border: 0;
+  border-left: 4px solid var(--mechdown-callout-color);
+  border-radius: 3px;
+  color: var(--mechdown-text);
+  font-style: normal;
+  margin: 1.25rem 0;
+  padding: 18px 18px 18px 50px;
   position: relative;
+  width: 100%;
 }
 
-[data-mechdown] .mech-question-block,
-[data-mechdown] .mech-idea-block {
-  border-left-color: var(--mechdown-purple);
+[data-mechdown] .mech-question-block {
+  --mechdown-callout-color: var(--mechdown-question);
 }
 
 [data-mechdown] .mech-success-block {
-  border-left-color: #65c687;
+  --mechdown-callout-color: var(--mechdown-success);
 }
 
 [data-mechdown] .mech-warning-block {
-  border-left-color: var(--mechdown-accent);
+  --mechdown-callout-color: var(--mechdown-warning);
 }
 
 [data-mechdown] .mech-error-block {
-  border-left-color: #d56a74;
+  --mechdown-callout-color: var(--mechdown-error);
+}
+
+[data-mechdown] .mech-idea-block {
+  --mechdown-callout-color: var(--mechdown-idea);
+}
+
+[data-mechdown] .mech-info-block::before,
+[data-mechdown] .mech-question-block::before,
+[data-mechdown] .mech-success-block::before,
+[data-mechdown] .mech-warning-block::before,
+[data-mechdown] .mech-error-block::before,
+[data-mechdown] .mech-idea-block::before {
+  background-color: var(--mechdown-callout-color);
+  border-radius: 50%;
+  content: " ";
+  height: 30px;
+  left: 10px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+}
+
+[data-mechdown] .mech-info-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWluZm8taWNvbiBsdWNpZGUtaW5mbyI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMTZ2LTQiLz48cGF0aCBkPSJNMTIgOGguMDEiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWluZm8taWNvbiBsdWNpZGUtaW5mbyI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMTZ2LTQiLz48cGF0aCBkPSJNMTIgOGguMDEiLz48L3N2Zz4=") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-warning-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0LWljb24gbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0Ij48cGF0aCBkPSJtMjEuNzMgMTgtOC0xNGEyIDIgMCAwIDAtMy40OCAwbC04IDE0QTIgMiAwIDAgMCA0IDIxaDE2YTIgMiAwIDAgMCAxLjczLTMiLz48cGF0aCBkPSJNMTIgOXY0Ii8+PHBhdGggZD0iTTEyIDE3aC4wMSIvPjwvc3ZnPg==") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0LWljb24gbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0Ij48cGF0aCBkPSJtMjEuNzMgMTgtOC0xNGEyIDIgMCAwIDAtMy40OCAwbC04IDE0QTIgMiAwIDAgMCA0IDIxaDE2YTIgMiAwIDAgMCAxLjczLTMiLz48cGF0aCBkPSJNMTIgOXY0Ii8+PHBhdGggZD0iTTEyIDE3aC4wMSIvPjwvc3ZnPg==") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-question-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrLWljb24gbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIvPjxwYXRoIGQ9Ik05LjA5IDlhMyAzIDAgMCAxIDUuODMgMWMwIDItMyAzLTMgMyIvPjxwYXRoIGQ9Ik0xMiAxN2guMDEiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrLWljb24gbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIvPjxwYXRoIGQ9Ik05LjA5IDlhMyAzIDAgMCAxIDUuODMgMWMwIDItMyAzLTMgMyIvPjxwYXRoIGQ9Ik0xMiAxN2guMDEiLz48L3N2Zz4=") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-error-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW9jdGFnb24tYWxlcnQtaWNvbiBsdWNpZGUtb2N0YWdvbi1hbGVydCI+PHBhdGggZD0iTTEyIDE2aC4wMSIvPjxwYXRoIGQ9Ik0xMiA4djQiLz48cGF0aCBkPSJNMTUuMzEyIDJhMiAyIDAgMCAxIDEuNDE0LjU4Nmw0LjY4OCA0LjY4OEEyIDIgMCAwIDEgMjIgOC42ODh2Ni42MjRhMiAyIDAgMCAxLS41ODYgMS40MTRsLTQuNjg4IDQuNjg4YTIgMiAwIDAgMS0xLjQxNC41ODZIOC42ODhhMiAyIDAgMCAxLTEuNDE0LS41ODZsLTQuNjg4LTQuNjg4QTIgMiAwIDAgMSAyIDE1LjMxMlY4LjY4OGEyIDIgMCAwIDEgLjU4Ni0xLjQxNGw0LjY4OC00LjY4OEEyIDIgMCAwIDEgOC42ODggMnoiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW9jdGFnb24tYWxlcnQtaWNvbiBsdWNpZGUtb2N0YWdvbi1hbGVydCI+PHBhdGggZD0iTTEyIDE2aC4wMSIvPjxwYXRoIGQ9Ik0xMiA4djQiLz48cGF0aCBkPSJNMTUuMzEyIDJhMiAyIDAgMCAxIDEuNDE0LjU4Nmw0LjY4OCA0LjY4OEEyIDIgMCAwIDEgMjIgOC42ODh2Ni42MjRhMiAyIDAgMCAxLS41ODYgMS40MTRsLTQuNjg4IDQuNjg4YTIgMiAwIDAgMS0xLjQxNC41ODZIOC42ODhhMiAyIDAgMCAxLTEuNDE0LS41ODZsLTQuNjg4LTQuNjg4QTIgMiAwIDAgMSAyIDE1LjMxMlY4LjY4OGEyIDIgMCAwIDEgLjU4Ni0xLjQxNGw0LjY4OC00LjY4OEEyIDIgMCAwIDEgOC42ODggMnoiLz48L3N2Zz4=") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-success-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1jaGVjay1pY29uIGx1Y2lkZS1jaXJjbGUtY2hlY2siPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0ibTkgMTIgMiAyIDQtNCIvPjwvc3ZnPg==") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1jaGVjay1pY29uIGx1Y2lkZS1jaXJjbGUtY2hlY2siPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0ibTkgMTIgMiAyIDQtNCIvPjwvc3ZnPg==") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-idea-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWxpZ2h0YnVsYi1pY29uIGx1Y2lkZS1saWdodGJ1bGIiPjxwYXRoIGQ9Ik0xNSAxNGMuMi0xIC43LTEuNyAxLjUtMi41IDEtLjkgMS41LTIuMiAxLjUtMy41QTYgNiAwIDAgMCA2IDhjMCAxIC4yIDIuMiAxLjUgMy41LjcuNyAxLjMgMS41IDEuNSAyLjUiLz48cGF0aCBkPSJNOSAxOGg2Ii8+PHBhdGggZD0iTTEwIDIyaDQiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWxpZ2h0YnVsYi1pY29uIGx1Y2lkZS1saWdodGJ1bGIiPjxwYXRoIGQ9Ik0xNSAxNGMuMi0xIC43LTEuNyAxLjUtMi41IDEtLjkgMS41LTIuMiAxLjUtMy41QTYgNiAwIDAgMCA2IDhjMCAxIC4yIDIuMiAxLjUgMy41LjcuNyAxLjMgMS41IDEuNSAyLjUiLz48cGF0aCBkPSJNOSAxOGg2Ii8+PHBhdGggZD0iTTEwIDIyaDQiLz48L3N2Zz4=") center/70% no-repeat;
 }
 
 [data-mechdown] .mech-info-block > :last-child,
@@ -382,7 +369,7 @@
   background: var(--mechdown-surface);
   border: 1px solid var(--mechdown-accent);
   border-radius: 8px;
-  box-shadow: 5px 5px 5px rgb(0 0 0 / 70%);
+  box-shadow: var(--mechdown-shadow);
   color: var(--mechdown-text);
   margin-inline: 2rem;
   padding: 2rem;
@@ -405,6 +392,13 @@
   max-width: 100%;
 }
 
+[data-mechdown] .mech-figure {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 10px;
+}
+
 [data-mechdown] .mech-image,
 [data-mechdown] .mech-figure img,
 [data-mechdown] .mech-figure-table img {
@@ -415,8 +409,14 @@
 
 [data-mechdown] .mech-figure-caption {
   color: var(--mechdown-text-secondary);
+  display: flex;
+  flex-direction: row;
   font-size: 0.9rem;
+  font-style: italic;
+  gap: 0.5em;
+  line-height: 1.4;
   margin-top: 0.65rem;
+  text-align: left;
 }
 
 [data-mechdown] .mech-figure-label,
@@ -432,14 +432,145 @@
 }
 
 [data-mechdown] .mech-figure-table-row {
+  align-items: end;
   display: grid;
   gap: 1rem;
+}
+
+[data-mechdown] .mech-figure-table-cell {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-mechdown] .mech-figure-panel {
+  max-width: 100%;
+  position: relative;
+  width: fit-content;
+}
+
+[data-mechdown] .mech-figure-grid-image {
+  display: block;
+  height: clamp(150px, 24vw, 260px);
+  max-width: 100%;
+  object-fit: contain;
+  width: auto;
+}
+
+[data-mechdown] .mech-figure-subfigure-label {
+  font-weight: 700;
+  left: 8px;
+  position: absolute;
+  text-shadow: var(--mech-shadow-small, 0 2px 4px rgb(0 0 0 / 44%));
+  text-transform: lowercase;
+  top: 8px;
+  z-index: 1;
+}
+
+[data-mechdown] .mech-figure-table-caption {
+  color: inherit;
+  display: block;
+  font-style: normal;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+[data-mechdown] .mech-figure-table-caption .mech-figure-label {
+  display: inline;
+  font-size: 1rem;
+  font-style: italic;
+  margin-right: 0.4em;
+  min-width: 0;
+  text-align: left;
+}
+
+[data-mechdown] .mech-figure-caption-ref {
+  color: var(--mechdown-accent);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  margin-right: 0.2em;
+}
+
+[data-mechdown] .mech-figure-caption-text {
+  color: inherit;
+  font-family: inherit;
+  margin-right: 0.8em;
+}
+
+[data-mechdown] .mech-figure-caption p {
+  margin: 0;
+}
+
+[data-mechdown] .mech-float .mech-figure-caption {
+  display: block;
+  line-height: 1.3;
+  margin-top: 0.5em;
+}
+
+[data-mechdown] .mech-reference {
+  align-items: baseline;
+  color: var(--mechdown-link);
+  font-family: "Fira Code", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+[data-mechdown] .mech-reference a {
+  color: inherit;
+  text-decoration: none;
+}
+
+[data-mechdown] .mech-reference a:hover {
+  color: var(--mechdown-accent);
+}
+
+[data-mechdown] .mech-citation-link-icon {
+  background-color: currentColor;
+  color: var(--mechdown-link);
+  display: inline-block;
+  height: 12px;
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  vertical-align: -0.08em;
+  width: 12px;
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+[data-mechdown] .mech-citation-external-link:hover .mech-citation-link-icon {
+  color: var(--mechdown-accent);
+}
+
+[data-mechdown] .mech-mika-section {
+  background: var(--mechdown-code-surface);
+  border: 1px dashed var(--mech-syntax-operator, #c09cc9);
+  border-radius: 10px;
+  padding-inline: 15px;
+}
+
+[data-mechdown] .mech-mika {
+  color: var(--mechdown-accent);
+  display: block;
+  float: left;
+  font-family: "Fira Code", "SFMono-Regular", Menlo, Consolas, monospace;
+  padding-right: 10px;
+  padding-top: 18px;
 }
 
 [data-mechdown] .mech-float.left {
   float: left;
   margin: 0.5rem 1.5rem 1rem 0;
   max-width: 45%;
+}
+
+[data-mechdown] .mech-float .mech-figure {
+  align-items: stretch;
+  margin: 0;
 }
 
 [data-mechdown] .mech-float.right {
@@ -466,6 +597,33 @@
   max-width: 100%;
   overflow-x: auto;
   text-align: center;
+}
+
+[data-mechdown] .mech-diagram :is(.edgePath path, .flowchart-link) {
+  fill: none !important;
+  stroke: var(--mech-syntax-path, #84b4c2) !important;
+  stroke-width: 2.5px !important;
+}
+
+[data-mechdown] .mech-diagram :is(.edgePath marker, marker) {
+  fill: var(--mech-syntax-path, #84b4c2) !important;
+  stroke: var(--mech-syntax-path, #84b4c2) !important;
+}
+
+[data-mechdown] .mech-diagram .edgeLabel,
+[data-mechdown] .mech-diagram text {
+  color: var(--mechdown-text) !important;
+  fill: var(--mechdown-text) !important;
+}
+
+[data-mechdown] .mech-diagram :is(.edgeLabel, .edgeLabel p, .edgeLabel rect, .labelBkg) {
+  background: transparent !important;
+  fill: transparent !important;
+}
+
+[data-mechdown] .mech-diagram .node :is(rect, circle, ellipse, polygon, path) {
+  fill: var(--mechdown-surface) !important;
+  stroke: var(--mech-syntax-machine-flow, #8e90bd) !important;
 }
 
 [data-mechdown] .mech-footnotes,
@@ -542,6 +700,16 @@
   [data-mechdown] .mech-abstract {
     margin-inline: 0;
     padding: 1.25rem;
+  }
+
+  [data-mechdown] .mech-block-quote,
+  [data-mechdown] .mech-info-block,
+  [data-mechdown] .mech-question-block,
+  [data-mechdown] .mech-success-block,
+  [data-mechdown] .mech-warning-block,
+  [data-mechdown] .mech-error-block,
+  [data-mechdown] .mech-idea-block {
+    width: 100%;
   }
 
   [data-mechdown] .mech-float.left,

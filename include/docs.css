@@ -1,47 +1,131 @@
-/* Documentation page variant over the canonical blog-derived page shell. */
+/*
+ * Documentation shim.
+ *
+ * Wide documentation is a stable TOC + article + REPL workspace. It keeps the
+ * portable Mechdown components and canonical palette, while omitting the blog's
+ * journal numbering, drop cap, quotation marks, and multi-column backmatter.
+ */
 
 :root {
   --mech-page-style-signal: 1px;
 }
 
-.docs-header {
-  border-bottom: 1px dotted var(--border);
-  margin: 0 0 32px;
-  padding-bottom: 20px;
+html[data-mech-shim="docs"] .docs-layout {
+  align-items: start;
+  display: grid;
+  gap: 40px;
+  grid-template-columns: var(--toc-width) minmax(0, 1fr);
+  min-width: 0;
 }
 
-.docs-kicker {
-  color: var(--kicker-accent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin: 0 0 12px;
+html[data-mech-shim="docs"] .docs-layout > .toc {
+  display: block;
+}
+
+html[data-mech-shim="docs"] .docs-layout > .mech-toc-toggle {
+  display: none !important;
+}
+
+html[data-mech-shim="docs"] .docs-layout > .main-content {
+  max-width: 76ch;
+  width: 100%;
+}
+
+html[data-mech-shim="docs"] .docs-header {
+  border-bottom: 1px dotted var(--border);
+  margin: 0 0 28px;
+  padding-bottom: 18px;
+}
+
+html[data-mech-shim="docs"] .docs-kicker {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.075em;
+  margin: 0 0 10px;
   text-transform: uppercase;
 }
 
-.docs-header h1 {
+html[data-mech-shim="docs"] .docs-header h1 {
   color: var(--text-primary);
   font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
-  font-size: clamp(34px, 4vw, 56px);
-  font-weight: 700;
-  line-height: 1.05;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 650;
+  line-height: 1.12;
   margin: 0;
 }
 
-.version-badge {
-  border: 1px solid var(--accent-coral);
-  border-radius: 5px;
-  color: var(--accent-coral);
+html[data-mech-shim="docs"] .version-badge {
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
   display: inline-block;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.7rem;
+  font-weight: 650;
   letter-spacing: 0.03em;
   line-height: 1;
-  margin-top: 1.2rem;
-  padding: 0.32rem 0.72rem;
+  margin-top: 1rem;
+  padding: 0.3rem 0.62rem;
 }
 
-.docs-intro {
-  margin: 0 0 40px;
+html[data-mech-shim="docs"] .docs-intro {
+  margin: 0 0 34px;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section {
+  padding: 0 0 24px;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > h2 {
+  margin-top: 2.25rem;
+}
+
+/* Keep the first two navigation levels visible; deeper detail follows focus. */
+html[data-mech-shim="docs"] .toc > ul,
+html[data-mech-shim="docs"] .toc > ul > li > .toc-sub {
+  display: block;
+}
+
+html[data-mech-shim="docs"] .toc > ul > li > .toc-sub > li > .toc-sub {
+  display: none;
+}
+
+html[data-mech-shim="docs"] .toc li.expanded > .toc-sub,
+html[data-mech-shim="docs"] .toc li.active-path > .toc-sub {
+  display: block;
+}
+
+/* Narrow docs prioritize the article. The TOC disappears instead of becoming
+ * the blog's reveal panel; the portable REPL independently becomes a drawer. */
+@media (max-width: 900px) {
+  html[data-mech-shim="docs"] .docs-layout {
+    display: block;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  html[data-mech-shim="docs"] .docs-layout > :is(.toc, .mech-toc-toggle) {
+    display: none !important;
+  }
+
+  html[data-mech-shim="docs"] .docs-layout > .main-content {
+    max-width: 100%;
+  }
+}
+
+@container (max-width: 720px) {
+  html[data-mech-shim="docs"] .docs-layout {
+    display: block;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  html[data-mech-shim="docs"] .docs-layout > :is(.toc, .mech-toc-toggle) {
+    display: none !important;
+  }
+
+  html[data-mech-shim="docs"] .docs-layout > .main-content {
+    max-width: 100%;
+  }
 }

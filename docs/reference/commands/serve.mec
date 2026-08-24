@@ -98,6 +98,18 @@ documentation shims opt into the shared safe document controller through
 bootstrap, or remain static. A standalone source document needs neither
 `mech.mcfg` nor `project.js`.
 
+The document shims intentionally have different page contracts. The blog shim
+uses `include/blog.css` for its hero, full-width opening, journal-style headings,
+and a TOC that begins beside the first numbered section. The documentation shim
+uses `include/docs.css` for a persistent wide-screen TOC + content + REPL
+workspace; the TOC is omitted at narrow widths instead of becoming an editorial
+reveal panel.
+
+A browser application is a different kind of shim. It supplies its own
+`index.html` or configured `serve.shim`, loads `project.js`, and owns its app DOM
+and styles directly. The minimal `/_mech/project.html` bootstrap does not load
+the source, Mechdown, page, or REPL document layers.
+
 8. Browser host config
 -------------------------------------------------------------------------------
 

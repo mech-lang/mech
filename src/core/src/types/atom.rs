@@ -56,7 +56,7 @@ impl MechAtom {
     }
     pub fn to_html(&self) -> String {
         format!(
-            "<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",
+            "<span class=\"mech-atom\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">{}</span></span>",
             self.name()
         )
     }
