@@ -283,6 +283,15 @@ class ChromeSession:
         self._log_handle: Any = None
 
     def start(self) -> "ChromeSession":
+        try:
+            return self._start()
+        except BaseException:
+            # Callers cannot own a session until start returns, so partial
+            # startup remains this object's responsibility.
+            self.close()
+            raise
+
+    def _start(self) -> "ChromeSession":
         self.profile.mkdir(parents=True, exist_ok=True)
         debug_port = free_port()
         args = [

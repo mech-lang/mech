@@ -134,12 +134,18 @@ for name in test_only_globals:
     if name in browser_sources:
         fail(f"test-only production global `{name}` reappeared")
 
-for path in (ROOT / "scripts").glob("*"):
-    if path.suffix not in {".py", ".sh"} or path.name == Path(__file__).name:
-        continue
-    source = path.read_text(encoding="utf-8")
-    if ("websocket" in source.lower() or "Sec-WebSocket" in source) and path.name != "chrome.py":
-        fail(f"scenario-specific CDP transport found in {path.relative_to(ROOT)}")
+canonical_cdp_harness = ROOT / "tests/browser/harness/chrome.py"
+for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
+    for path in browser_test_root.rglob("*"):
+        if (
+            not path.is_file()
+            or path.suffix not in {".js", ".mjs", ".py", ".sh"}
+            or path in {Path(__file__).resolve(), canonical_cdp_harness}
+        ):
+            continue
+        source = path.read_text(encoding="utf-8")
+        if "websocket" in source.lower() or "sec-websocket" in source.lower():
+            fail(f"scenario-specific CDP transport found in {path.relative_to(ROOT)}")
 
 architecture = text("docs/architecture/interactive-runtime.md")
 if len(architecture.splitlines()) > 250:

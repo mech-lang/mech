@@ -335,8 +335,10 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
 
 [data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-fill="true"] :is(.mech-repl-scene, canvas),
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-fill="true"] :is(.mech-repl-scene, canvas) {
+  display: block;
   height: 100%;
   min-height: 0;
+  object-fit: contain;
   width: 100%;
 }
 
@@ -348,12 +350,6 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
 [data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-output-region:empty,
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-output-region:empty {
   display: none;
-}
-
-[data-mech-repl-host][data-mech-output-fullscreen-active="true"] [data-mech-output-panel] .mech-repl-scene,
-[data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) [data-mech-output-panel] .mech-repl-scene {
-  display: block;
-  object-fit: contain;
 }
 
 .mech-repl-scene[data-mech-scene-pointer-surface="true"] {

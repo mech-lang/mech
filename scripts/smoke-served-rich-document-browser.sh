@@ -746,57 +746,54 @@ def assert_output_fullscreen_control():
 
     evaluate("""
 (() => {
-  const scene = JSON.stringify({
-    width: 120,
-    height: 80,
-    background: '#080b12',
-    circles: [
-      { id: 'fill-body', x: 60, y: 40, radius: 8, fill: '#ffd166', stroke: 'none', stroke_width: 0, opacity: 1 },
-    ],
-    lines: [],
-  });
   window.dispatchEvent(new CustomEvent('mech:output', { detail: {
     stream: 'stdout', operation: 'create', display_id: 'fullscreen-fill-scene',
-    content: {
-      kind: 'scene',
-      data: { representations: { representations: [
-        { media_type: 'application/vnd.mech.scene+json', data: { encoding: 'text', value: scene } },
-      ] } },
-    },
+    content: { kind: 'scene', data: { representations: { representations: [{
+      media_type: 'application/vnd.mech.scene+json',
+      data: { encoding: 'text', value: JSON.stringify({
+        width: 120, height: 80, background: '#080b12', circles: [], lines: [],
+      }) },
+    }] } } },
   }}));
+  const canvasEntry = document.createElement('article');
+  canvasEntry.className = 'mech-repl-output-entry';
+  canvasEntry.dataset.mechDisplayId = 'fullscreen-fill-canvas';
+  canvasEntry.innerHTML = '<div class="mech-repl-output-content" data-mech-output-fill="true"><canvas width="120" height="80"></canvas></div>';
+  document.querySelector('[data-mech-output-region="repl"]')?.append(canvasEntry);
 })()
 """)
     wait_for(
-        "document.querySelector('[data-mech-display-id=fullscreen-fill-scene] [data-mech-rich-scene=true]') !== null",
-        "a rich Scene in output fullscreen",
+        "Boolean(document.querySelector('[data-mech-display-id=fullscreen-fill-scene] [data-mech-rich-scene=true]') && "
+        "document.querySelector('[data-mech-display-id=fullscreen-fill-canvas] canvas'))",
+        "SVG and canvas render surfaces in output fullscreen",
     )
-    scene_fill = evaluate_json("""
+    fill_geometry = evaluate_json("""
 (() => {
-  const body = document.querySelector(
-    '[data-mech-display-id="fullscreen-fill-scene"] [data-mech-output-fill="true"]');
-  const scene = body?.querySelector('[data-mech-rich-scene="true"]');
-  const bodyRect = body?.getBoundingClientRect();
-  const sceneRect = scene?.getBoundingClientRect();
-  return bodyRect && sceneRect ? {
-    bodyHeight: bodyRect.height,
-    sceneHeight: sceneRect.height,
-    fillsBody: Math.abs(bodyRect.height - sceneRect.height) <= 1,
-    fillsUsefulViewport: sceneRect.height >= innerHeight * 0.8,
-    noNestedScroll: scene.scrollHeight <= scene.clientHeight && scene.scrollWidth <= scene.clientWidth,
-  } : null;
+  const measure = (displayId, surfaceSelector) => {
+    const entry = document.querySelector(`[data-mech-display-id="${displayId}"]`);
+    const body = entry?.querySelector('[data-mech-output-fill="true"]');
+    const surface = body?.querySelector(surfaceSelector);
+    const bodyRect = body?.getBoundingClientRect();
+    const surfaceRect = surface?.getBoundingClientRect();
+    return bodyRect && surfaceRect ? {
+      fillsBody: Math.abs(bodyRect.height - surfaceRect.height) <= 1,
+      fillsUsefulViewport: surfaceRect.height >= innerHeight * 0.8,
+      noNestedScroll: surface.scrollHeight <= surface.clientHeight && surface.scrollWidth <= surface.clientWidth,
+    } : null;
+  };
+  return {
+    svg: measure('fullscreen-fill-scene', '[data-mech-rich-scene="true"]'),
+    canvas: measure('fullscreen-fill-canvas', 'canvas'),
+  };
 })()
 """)
-    if (
-        scene_fill is None or
-        not scene_fill["fillsBody"] or
-        not scene_fill["fillsUsefulViewport"] or
-        not scene_fill["noNestedScroll"]
-    ):
-        fail(f"fullscreen Scene did not propagate fill geometry to the render surface: {scene_fill!r}")
+    if any(surface is None or not all(surface.values()) for surface in fill_geometry.values()):
+        fail(f"fullscreen fill geometry did not reach every render surface: {fill_geometry!r}")
     evaluate("""
 window.dispatchEvent(new CustomEvent('mech:output', { detail: {
   stream: 'stdout', operation: 'remove', display_id: 'fullscreen-fill-scene',
-}}))
+}}));
+document.querySelector('[data-mech-display-id=fullscreen-fill-canvas]')?.remove()
 """)
 
     evaluate("""
