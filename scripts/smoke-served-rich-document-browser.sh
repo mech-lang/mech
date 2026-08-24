@@ -953,6 +953,41 @@ def assert_output_fullscreen_control():
     if not all(fullscreen.values()):
         fail(f"output fullscreen did not remain an independent output-only surface: {fullscreen!r}")
 
+    evaluate("""
+(() => {
+  window.dispatchEvent(new CustomEvent('mech:output', { detail: {
+    stream: 'stdout', operation: 'create', display_id: 'fullscreen-long-text',
+    content: {kind: 'text', data: {text: Array.from(
+      {length: 240}, (_, index) => `text output line ${index + 1}`).join('\\n')}},
+  }}));
+})()
+""")
+    wait_for(
+        "document.querySelector('[data-mech-display-id=\"fullscreen-long-text\"]') !== null",
+        "long textual output in output fullscreen",
+    )
+    text_scroll = evaluate_json("""
+(() => {
+  const panel = document.querySelector('[data-mech-output-panel]');
+  const style = panel && getComputedStyle(panel);
+  return panel ? {
+    overflow: style.overflowY,
+    scrollable: panel.scrollHeight > panel.clientHeight,
+  } : null;
+})()
+""")
+    if (
+        text_scroll is None or
+        text_scroll["overflow"] not in {"auto", "scroll"} or
+        not text_scroll["scrollable"]
+    ):
+        fail(f"fullscreen textual output did not retain the panel scroll surface: {text_scroll!r}")
+    evaluate("""
+window.dispatchEvent(new CustomEvent('mech:output', { detail: {
+  stream: 'stdout', operation: 'remove', display_id: 'fullscreen-long-text',
+}}))
+""")
+
     captured = evaluate_json("""
 (() => {
   const input = document.querySelector('.repl-input');
@@ -971,6 +1006,108 @@ def assert_output_fullscreen_control():
         "document.querySelector(\"[data-mech-console-tab='output']\")?.getAttribute('aria-selected') === 'true' && "
         "getComputedStyle(document.querySelector('.content-shell, .content, #left-pane')).display !== 'none'",
         "backtick revealing the editor with Output selected",
+    )
+
+    evaluate("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const toggle = document.querySelector('button[data-mech-output-fullscreen]');
+  const pending = {native: false, exitCalls: 0, resolve: null};
+  window.__mechPendingOutputFullscreen = pending;
+  Object.defineProperty(document, 'fullscreenElement', {
+    configurable: true,
+    get: () => pending.native ? pane : null,
+  });
+  Object.defineProperty(document, 'exitFullscreen', {
+    configurable: true,
+    value: async () => {
+      pending.exitCalls += 1;
+      pending.native = false;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
+  Object.defineProperty(pane, 'requestFullscreen', {
+    configurable: true,
+    value: () => new Promise(resolve => {
+      pending.resolve = () => {
+        pending.native = true;
+        document.dispatchEvent(new Event('fullscreenchange'));
+        resolve();
+      };
+    }),
+  });
+  toggle.click();
+})()
+""")
+    wait_for(
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'true' && "
+        "typeof window.__mechPendingOutputFullscreen?.resolve === 'function'",
+        "a pending output fullscreen request",
+    )
+    evaluate("document.querySelector('button[data-mech-output-fullscreen]')?.click()")
+    wait_for(
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'false'",
+        "canceling a pending output fullscreen request",
+    )
+    evaluate("window.__mechPendingOutputFullscreen.resolve()")
+    wait_for(
+        "window.__mechPendingOutputFullscreen?.exitCalls === 1 && "
+        "document.fullscreenElement === null && "
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'false' && "
+        "!document.querySelector('[data-mech-console-pane]')?.classList.contains('is-fullscreen')",
+        "the stale fullscreen completion being relinquished",
+    )
+    evaluate("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  delete pane.requestFullscreen;
+  delete document.exitFullscreen;
+  delete document.fullscreenElement;
+  delete window.__mechPendingOutputFullscreen;
+})()
+""")
+
+    devtools.call(
+        "Emulation.setDeviceMetricsOverride",
+        {"width": 700, "height": 700, "deviceScaleFactor": 1, "mobile": False},
+        session_id,
+    )
+    evaluate("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  Object.defineProperty(pane, 'requestFullscreen', {
+    configurable: true,
+    value: undefined,
+  });
+  document.querySelector('button[data-mech-output-fullscreen]')?.click();
+})()
+""")
+    wait_for(
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'true'",
+        "compact output fullscreen fallback",
+    )
+    compact_fallback = evaluate_json("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const rect = pane?.getBoundingClientRect();
+  return rect ? {
+    fillsWidth: rect.left <= 1 && rect.right >= innerWidth - 1,
+    fillsHeight: rect.top <= 1 && rect.bottom >= innerHeight - 1,
+  } : null;
+})()
+""")
+    if compact_fallback is None or not all(compact_fallback.values()):
+        fail(f"compact output fullscreen fallback remained a drawer: {compact_fallback!r}")
+    evaluate("document.querySelector('button[data-mech-output-fullscreen]')?.click()")
+    wait_for(
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'false'",
+        "compact output fullscreen fallback exit",
+    )
+    evaluate("delete document.querySelector('[data-mech-console-pane]').requestFullscreen")
+    devtools.call(
+        "Emulation.setDeviceMetricsOverride",
+        {"width": 1680, "height": 900, "deviceScaleFactor": 1, "mobile": False},
+        session_id,
     )
     evaluate("document.querySelector(\"[data-mech-console-tab='console']\")?.click()")
 
@@ -1030,8 +1167,10 @@ def assert_fullscreen_accessibility():
     kindElided: (() => {
       const kind = document.querySelector(
         '[data-mech-display-id="unread-output"] [data-mech-kind-elided="true"]');
-      return Boolean(kind) && kind.textContent.length <= 96 &&
-        kind.textContent.endsWith('…') && (kind.title || '').length > 96;
+      const style = kind && getComputedStyle(kind);
+      return Boolean(kind) && kind.textContent === kind.title &&
+        kind.textContent.length > 96 && style.overflow === 'hidden' &&
+        style.textOverflow === 'ellipsis' && style.maxWidth !== 'none';
     })(),
   };
 })()

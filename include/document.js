@@ -1094,9 +1094,10 @@ function prepareVarPlaceholders() {
 function setKindAnnotation(element, kind) {
   const complete = String(kind || "");
   const elided = complete.length > KIND_ANNOTATION_MAX_CHARACTERS;
-  element.textContent = elided
-    ? `${complete.slice(0, KIND_ANNOTATION_MAX_CHARACTERS - 1)}…`
-    : complete;
+  // Keep the complete Kind in the DOM so keyboard, touch, copy, and assistive
+  // technology all observe the same semantic value. CSS owns visual elision;
+  // title remains only a mouse convenience rather than the accessible source.
+  element.textContent = complete;
   if (elided) {
     element.title = complete;
     element.dataset.mechKindElided = "true";
@@ -1133,6 +1134,9 @@ function createOutputEntry(address, rendered) {
   body.className = "mech-document-output-html mech-output-value";
   body.dataset.mechSource = "";
   body.innerHTML = rendered.blockHtml;
+  if (body.querySelector(".mech-repl-scene, canvas")) {
+    body.dataset.mechOutputFill = "true";
+  }
   row.append(heading, body);
   return row;
 }
@@ -1318,6 +1322,7 @@ function outputContentElement(content) {
   }
   const representations = data.representations?.representations || data.representations || [];
   if (content?.kind === "scene") {
+    body.dataset.mechOutputFill = "true";
     const sceneRepresentation = representations.find(
       entry => entry.media_type === "application/vnd.mech.scene+json",
     );
@@ -3437,10 +3442,18 @@ function initializeOutputFullscreen() {
     if (pane.requestFullscreen) {
       try {
         await pane.requestFullscreen();
+        if (buttonState === "idle") {
+          if (document.fullscreenElement === pane) {
+            await document.exitFullscreen();
+          }
+          return;
+        }
         buttonState = document.fullscreenElement === pane ? "native" : "fallback";
       } catch (error) {
-        buttonState = "fallback";
-        appendError(error);
+        if (buttonState !== "idle") {
+          buttonState = "fallback";
+          appendError(error);
+        }
       }
     } else {
       buttonState = "fallback";
