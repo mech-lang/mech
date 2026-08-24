@@ -1,89 +1,24 @@
 /*
- * Editorial blog shim.
- *
- * The shared page, Mechdown, source, and REPL layers provide the mechanics.
- * This late page variant owns the journal-like composition: hero, opening
- * treatment, numbered section display, quotations, and backmatter columns.
+ * Blog-only additions to the shared editorial design in style.css.
+ * This file extends the established blog; it does not redefine the shell.
  */
 
 :root {
   --mech-page-style-signal: 1px;
 }
 
-html[data-mech-shim="blog"] .hero {
-  color: var(--text-primary);
-  display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(280px, 0.78fr) minmax(380px, 1.45fr);
-  margin-bottom: 48px;
-}
-
-html[data-mech-shim="blog"] .hero-panel {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+.hero-visual {
   min-width: 0;
 }
 
-html[data-mech-shim="blog"] .hero-kicker {
-  color: var(--kicker-accent);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin: 0 0 16px;
-  text-transform: uppercase;
-}
-
-html[data-mech-shim="blog"] .hero h1 {
-  color: var(--text-primary);
-  font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
-  font-size: clamp(34px, 4vw, 64px);
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.04;
-  margin: 0;
-}
-
-html[data-mech-shim="blog"] .mech-meta {
-  align-items: center;
-  color: var(--hero-text-secondary);
-  display: flex;
-  font-size: 14px;
-  gap: 10px;
-  margin-top: 22px;
-}
-
-html[data-mech-shim="blog"] .mech-meta p {
-  color: inherit;
-  font-weight: 400;
-  margin: 0;
-}
-
-html[data-mech-shim="blog"] .hero-avatar {
-  align-items: center;
-  background: var(--hero-accent);
-  border-radius: 999px;
-  color: var(--bg-primary);
-  display: inline-flex;
-  font-size: 12px;
-  font-weight: 700;
-  height: 28px;
-  justify-content: center;
-  width: 28px;
-}
-
-html[data-mech-shim="blog"] .hero-visual {
-  min-width: 0;
-}
-
-html[data-mech-shim="blog"] .mech-hero-img {
+.mech-hero-img {
   border: 1px solid var(--border);
   border-radius: 12px;
   min-height: 320px;
   overflow: hidden;
 }
 
-html[data-mech-shim="blog"] .mech-hero-img figure {
+.mech-hero-img figure {
   display: block;
   height: 100%;
   margin: 0;
@@ -91,31 +26,30 @@ html[data-mech-shim="blog"] .mech-hero-img figure {
   width: 100%;
 }
 
-html[data-mech-shim="blog"] .mech-hero-img figure img {
+.mech-hero-img figure img {
   display: block;
   height: 100%;
   object-fit: cover;
   width: 100%;
 }
 
-html[data-mech-shim="blog"] .mech-hero-img figure figcaption {
+.mech-hero-img figure figcaption {
   display: none;
 }
 
-/* The opening reads at full width; the TOC begins beside Section 1 below it. */
-html[data-mech-shim="blog"] .article-intro {
+.article-intro {
   margin: 0 0 52px;
   max-width: 100%;
 }
 
-html[data-mech-shim="blog"] .article-intro > .mech-intro > p {
+.article-intro > .mech-intro > p {
   color: var(--body-primary);
   font-size: 1.06rem;
   line-height: 1.85;
   margin: 0 0 18px;
 }
 
-html[data-mech-shim="blog"] .article-intro > .mech-intro > p:first-of-type::first-letter {
+.article-intro > .mech-intro > p:first-of-type::first-letter {
   color: var(--accent-primary);
   float: left;
   font-size: 4.5em;
@@ -125,118 +59,17 @@ html[data-mech-shim="blog"] .article-intro > .mech-intro > p:first-of-type::firs
   padding-right: 12px;
 }
 
-html[data-mech-shim="blog"] .article-intro .mech-code .mech-comment p {
+.article-intro .mech-code .mech-comment p {
   font-size: inherit;
   line-height: inherit;
   margin: 0;
 }
 
-html[data-mech-shim="blog"] .main-content[data-mechdown] {
+.main-content[data-mechdown] {
   counter-reset: mechdown-section equation;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section {
-  counter-reset: mechdown-subsection mechdown-subsubsection mechdown-h5 mechdown-h6;
-  padding: 0 10px 30px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section.mechdown-titled-section {
-  counter-increment: mechdown-section;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h2,
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h3 {
-  align-items: flex-start;
-  border-bottom: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25em;
-  padding-bottom: 10px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h4,
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h5,
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h6 {
-  align-items: baseline;
-  border-bottom: 0;
-  display: flex;
-  flex-direction: row;
-  gap: 0.5em;
-  padding-bottom: 0;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h2 {
-  font-size: 34px;
-  letter-spacing: 0.01em;
-  margin: 0 0 14px -20px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h3 {
-  counter-increment: mechdown-subsection;
-  counter-reset: mechdown-subsubsection mechdown-h5 mechdown-h6;
-  font-size: 24px;
-  margin: 30px 0 12px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h4 {
-  counter-increment: mechdown-subsubsection;
-  counter-reset: mechdown-h5 mechdown-h6;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h5 {
-  color: var(--accent-soft, var(--mechdown-text));
-  counter-increment: mechdown-h5;
-  counter-reset: mechdown-h6;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h6 {
-  color: var(--accent-soft, var(--mechdown-text));
-  counter-increment: mechdown-h6;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h2::before,
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h3::before,
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h4::before,
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h5::before,
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h6::before {
-  color: var(--mechdown-accent);
-  flex-shrink: 0;
-  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.4em;
-  font-weight: 700;
-  letter-spacing: 0.21em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h2::before {
-  content: "section " counter(mechdown-section, decimal);
-  display: block;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h3::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal);
-  display: block;
-  font-size: 12px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h4::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal);
-  font-size: 10px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h5::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal);
-  display: none;
-  font-size: 10px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h6::before {
-  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal) "." counter(mechdown-h6, decimal);
-  font-size: 10px;
-}
-
-html[data-mech-shim="blog"] [data-mechdown] .mech-block-quote {
+[data-mechdown] .mech-block-quote {
   font-family: Georgia, serif;
   font-style: italic;
   margin: 40px auto;
@@ -245,34 +78,34 @@ html[data-mech-shim="blog"] [data-mechdown] .mech-block-quote {
   width: 80%;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] .mech-block-quote::before,
-html[data-mech-shim="blog"] [data-mechdown] .mech-block-quote::after {
+[data-mechdown] .mech-block-quote::before,
+[data-mechdown] .mech-block-quote::after {
   color: var(--mechdown-link);
   font-family: Georgia, serif;
   font-size: 32pt;
   position: absolute;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] .mech-block-quote::before {
+[data-mechdown] .mech-block-quote::before {
   content: "“";
   left: 15px;
   top: 5px;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] .mech-block-quote::after {
+[data-mechdown] .mech-block-quote::after {
   bottom: -17px;
   content: "”";
   right: 15px;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] .mech-block-quote p {
+[data-mechdown] .mech-block-quote p {
   font-size: 1.15rem;
   line-height: 1.6;
   margin: 10px 0 0;
   text-indent: 25px;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] :is(
+[data-mechdown] :is(
   .mech-info-block,
   .mech-question-block,
   .mech-success-block,
@@ -285,11 +118,11 @@ html[data-mech-shim="blog"] [data-mechdown] :is(
   width: 80%;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] .mech-equation {
+[data-mechdown] .mech-equation {
   counter-increment: equation;
 }
 
-html[data-mech-shim="blog"] [data-mechdown] .mech-equation::after {
+[data-mechdown] .mech-equation::after {
   color: var(--mechdown-link);
   content: "Eq. " counter(equation);
   float: right;
@@ -298,103 +131,28 @@ html[data-mech-shim="blog"] [data-mechdown] .mech-equation::after {
   line-height: 1.4;
 }
 
-html[data-mech-shim="blog"] .backmatter-cited .backmatter-body {
+.backmatter-cited .backmatter-body {
   column-count: 2;
   column-gap: 2rem;
 }
 
-html[data-mech-shim="blog"] .post-pagination {
-  border-top: 1px dotted var(--border);
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-  margin: 32px 0 20px;
-  padding-top: 14px;
-}
-
-html[data-mech-shim="blog"] :is(.post-pagination-prev, .post-pagination-next) {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 4px;
-}
-
-html[data-mech-shim="blog"] .post-pagination-next {
-  align-items: flex-end;
-  text-align: right;
-}
-
-html[data-mech-shim="blog"] .post-pagination-label {
-  color: var(--text-secondary);
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-html[data-mech-shim="blog"] .post-pagination-next .post-pagination-label {
-  margin-right: 25px;
-}
-
-html[data-mech-shim="blog"] .post-pagination-prev .post-pagination-label {
-  margin-left: 25px;
-}
-
-html[data-mech-shim="blog"] .post-pagination :is(.mech-previous, .mech-next) {
-  margin: 0;
-}
-
-html[data-mech-shim="blog"] .post-pagination a {
-  align-items: center;
-  color: var(--text-primary);
-  display: inline-flex;
-  font-size: 16px;
-  gap: 8px;
-  text-decoration: none;
-}
-
-html[data-mech-shim="blog"] .post-pagination-prev a::before,
-html[data-mech-shim="blog"] .post-pagination-next a::after {
-  color: var(--accent-primary);
-  font-size: 35px;
-  line-height: 1;
-  transform: translateY(-15px);
-}
-
-html[data-mech-shim="blog"] .post-pagination-prev a::before {
-  content: "⟨";
-  margin-right: 4px;
-}
-
-html[data-mech-shim="blog"] .post-pagination-next a::after {
-  content: "⟩";
-  margin-left: 4px;
-}
-
-html[data-mech-shim="blog"] .post-pagination a:hover {
-  color: var(--accent-soft);
-}
-
 @container (max-width: 900px) {
-  html[data-mech-shim="blog"] .hero {
+  .hero {
     gap: 14px;
     grid-template-columns: 1fr;
   }
 
-  html[data-mech-shim="blog"] .hero-visual {
+  .hero-visual {
     min-height: 280px;
   }
 
-  html[data-mech-shim="blog"] .mech-hero-img figure img {
+  .mech-hero-img figure img {
     aspect-ratio: 5 / 3;
   }
 }
 
 @media (max-width: 760px) {
-  html[data-mech-shim="blog"] [data-mechdown] .mechdown-section > h2 {
-    margin-left: 0;
-  }
-
-  html[data-mech-shim="blog"] [data-mechdown] :is(
+  [data-mechdown] :is(
     .mech-block-quote,
     .mech-info-block,
     .mech-question-block,
@@ -408,7 +166,7 @@ html[data-mech-shim="blog"] .post-pagination a:hover {
 }
 
 @media (max-width: 700px) {
-  html[data-mech-shim="blog"] .backmatter-cited .backmatter-body {
+  .backmatter-cited .backmatter-body {
     column-count: 1;
     column-gap: 0;
   }

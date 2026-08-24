@@ -7,7 +7,8 @@
  */
 
 [data-mechdown] {
-  --mechdown-text: var(--mech-text-primary, var(--text-primary, #f2ead9));
+  --mechdown-text: var(--mech-text-reading, var(--body-primary, #fff6e5));
+  --mechdown-heading: var(--mech-text-primary, var(--text-primary, #f2ead9));
   --mechdown-text-secondary: var(--mech-text-secondary, var(--text-secondary, #bebcaa));
   --mechdown-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
   --mechdown-accent: var(--mech-brand, var(--accent-primary, #f4bd3e));
@@ -28,6 +29,7 @@
   --mechdown-question: var(--mech-question, #80e8ff);
   --mechdown-shadow: var(--mech-shadow-medium, 0 10px 22px rgb(0 0 0 / 58%));
   color: var(--mechdown-text);
+  counter-reset: mechdown-section;
   line-height: 1.7;
   min-width: 0;
 }
@@ -42,7 +44,7 @@
 [data-mechdown] h4,
 [data-mechdown] h5,
 [data-mechdown] h6 {
-  color: var(--mechdown-text);
+  color: var(--mechdown-heading);
   font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
   line-height: 1.25;
   overflow-wrap: anywhere;
@@ -72,20 +74,120 @@
   margin: 1.5rem 0 0.6rem;
 }
 
-/* Portable section structure. Page variants may add an editorial hierarchy. */
+/*
+ * Editorial section hierarchy. This is part of the established blog-derived
+ * Mechdown language, so every document shim preserves it by default.
+ */
 [data-mechdown] .mechdown-section {
+  counter-reset: mechdown-subsection mechdown-subsubsection mechdown-h5 mechdown-h6;
   max-width: 100%;
   min-width: 0;
-  padding: 0 0 30px;
+  padding: 0 10px 30px;
   width: 100%;
+}
+
+[data-mechdown] .mechdown-section.mechdown-titled-section {
+  counter-increment: mechdown-section;
+}
+
+[data-mechdown] .mechdown-section > h2,
+[data-mechdown] .mechdown-section > h3 {
+  align-items: flex-start;
+  border-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  padding-bottom: 10px;
+}
+
+[data-mechdown] .mechdown-section > h4,
+[data-mechdown] .mechdown-section > h5,
+[data-mechdown] .mechdown-section > h6 {
+  align-items: baseline;
+  border-bottom: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+  padding-bottom: 0;
+}
+
+[data-mechdown] .mechdown-section > h2 {
+  font-size: 34px;
+  letter-spacing: 0.01em;
+  margin: 0 0 14px -20px;
 }
 
 [data-mechdown] .mech-section-annotations {
   color: var(--mechdown-purple);
-  font-size: 0.55em;
+  font-size: 0.42em;
   font-weight: 650;
   letter-spacing: 0.08em;
   line-height: 1.2;
+}
+
+[data-mechdown] .mechdown-section > h3 {
+  counter-increment: mechdown-subsection;
+  counter-reset: mechdown-subsubsection mechdown-h5 mechdown-h6;
+  font-size: 24px;
+  margin: 30px 0 12px;
+}
+
+[data-mechdown] .mechdown-section > h4 {
+  counter-increment: mechdown-subsubsection;
+  counter-reset: mechdown-h5 mechdown-h6;
+}
+
+[data-mechdown] .mechdown-section > h5 {
+  color: var(--accent-soft, var(--mechdown-text));
+  counter-increment: mechdown-h5;
+  counter-reset: mechdown-h6;
+}
+
+[data-mechdown] .mechdown-section > h6 {
+  color: var(--accent-soft, var(--mechdown-text));
+  counter-increment: mechdown-h6;
+}
+
+[data-mechdown] .mechdown-section > h2::before,
+[data-mechdown] .mechdown-section > h3::before,
+[data-mechdown] .mechdown-section > h4::before,
+[data-mechdown] .mechdown-section > h5::before,
+[data-mechdown] .mechdown-section > h6::before {
+  color: var(--mechdown-accent);
+  flex-shrink: 0;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.4em;
+  font-weight: 700;
+  letter-spacing: 0.21em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+[data-mechdown] .mechdown-section > h2::before {
+  content: "section " counter(mechdown-section, decimal);
+  display: block;
+}
+
+[data-mechdown] .mechdown-section > h3::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal);
+  display: block;
+  font-size: 12px;
+}
+
+[data-mechdown] .mechdown-section > h4::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal);
+  font-size: 10px;
+}
+
+[data-mechdown] .mechdown-section > h5::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal);
+  display: none;
+  font-size: 10px;
+}
+
+[data-mechdown] .mechdown-section > h6::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal) "." counter(mechdown-h6, decimal);
+  font-size: 10px;
 }
 
 [data-mechdown] h1 a,
@@ -100,9 +202,6 @@
 
 [data-mechdown] .mechdown-paragraph:not([data-mech-source] *),
 [data-mechdown] .mech-paragraph:not([data-mech-source] *) {
-  color: var(--mechdown-text);
-  font-size: 1.06rem;
-  line-height: 1.85;
   margin: 0 0 1rem;
   overflow-wrap: anywhere;
 }

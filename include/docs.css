@@ -75,12 +75,28 @@ html[data-mech-shim="docs"] .docs-intro {
   margin: 0 0 34px;
 }
 
+/* The shared layer carries the blog's established section hierarchy. Docs
+ * deliberately flatten that presentation while retaining the same content. */
 html[data-mech-shim="docs"] [data-mechdown] .mechdown-section {
   padding: 0 0 24px;
 }
 
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > :is(h2, h3, h4, h5, h6) {
+  display: block;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > :is(h2, h3, h4, h5, h6)::before {
+  display: none;
+}
+
 html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > h2 {
-  margin-top: 2.25rem;
+  font-size: 1.85rem;
+  margin: 2.25rem 0 0.85rem;
+}
+
+html[data-mech-shim="docs"] [data-mechdown] .mechdown-section > h3 {
+  font-size: 1.4rem;
+  margin: 1.8rem 0 0.7rem;
 }
 
 /* Keep the first two navigation levels visible; deeper detail follows focus. */

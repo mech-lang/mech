@@ -36,6 +36,11 @@ pub(crate) static STYLESHEET: &str = include_str!("../../include/style.css");
 pub(crate) static STYLESHEET: &str = "";
 
 #[cfg(has_file_stylesheet)]
+pub(crate) static PALETTE_STYLESHEET: &str = include_str!("../../include/palette.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static PALETTE_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
 pub(crate) static MECH_SOURCE_STYLESHEET: &str = include_str!("../../include/mech-source.css");
 #[cfg(not(has_file_stylesheet))]
 pub(crate) static MECH_SOURCE_STYLESHEET: &str = "";
@@ -174,6 +179,7 @@ pub(crate) struct LoadedStylesheets {
 
 pub(crate) fn html_style_sheets(page: String) -> mech_syntax::formatter::HtmlStyleSheets {
     mech_syntax::formatter::HtmlStyleSheets {
+        palette: PALETTE_STYLESHEET.to_string(),
         source: MECH_SOURCE_STYLESHEET.to_string(),
         mechdown: MECHDOWN_STYLESHEET.to_string(),
         page,

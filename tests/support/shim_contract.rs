@@ -79,6 +79,7 @@ pub fn assert_complete_slot_contract(html: &str, source_key: &str) {
 
     for slot in [
         "STYLESHEET",
+        "PALETTE_STYLESHEET",
         "MECH_SOURCE_STYLESHEET",
         "MECHDOWN_STYLESHEET",
         "PAGE_STYLESHEET",

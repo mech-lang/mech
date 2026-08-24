@@ -1,0 +1,1327 @@
+@font-face {
+  font-family: "Mech Mono";
+  src: local("Fira Code"), local("SFMono-Regular"), local("Consolas");
+  font-display: swap;
+}
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  color: var(--mech-text-reading);
+  background: var(--mech-canvas);
+  font-family: Lato, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.56;
+}
+
+::selection {
+  color: var(--mech-selection-text);
+  background: var(--mech-selection-bg);
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--mech-focus);
+  outline-offset: 3px;
+}
+
+code,
+pre,
+.token {
+  font-family: "Fira Code", "Mech Mono", monospace;
+}
+
+/* Blog header */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: 66px;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 0 max(20px, calc((100vw - 1180px) / 2));
+  color: var(--mech-text-secondary);
+  background: var(--mech-output-bg);
+  border-bottom: 1px solid var(--mech-border);
+  box-shadow: 0 3px 7px rgb(0 0 0 / 42%);
+}
+
+.wordmark {
+  flex: 0 0 auto;
+  margin-right: 12px;
+  text-decoration: none;
+}
+
+.wordmark img {
+  width: auto;
+  height: 37px;
+  display: block;
+}
+
+.blog-nav {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  gap: 22px;
+}
+
+.blog-nav a {
+  display: inline-flex;
+  align-items: center;
+  color: var(--mech-text-secondary);
+  border-bottom: 2px solid transparent;
+  font-family: "Fira Code", "Mech Mono", monospace;
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.blog-nav a::before {
+  color: var(--mech-text-muted);
+  content: ":";
+}
+
+.blog-nav a.active {
+  color: var(--mech-text-primary);
+  border-bottom-color: var(--mech-brand);
+}
+
+.blog-nav a.active::before {
+  color: var(--mech-brand);
+  content: ">:";
+}
+
+.blog-nav a:hover {
+  color: var(--mech-brand-highlight);
+  border-bottom-color: var(--mech-error);
+}
+
+.topbar-meta {
+  margin-left: auto;
+  color: var(--mech-text-muted);
+  font: 10px "Fira Code", "Mech Mono", monospace;
+  white-space: nowrap;
+}
+
+/* Editorial shell and table of contents */
+
+.page-shell {
+  width: min(1180px, 100%);
+  display: grid;
+  grid-template-columns: 170px minmax(0, 850px);
+  justify-content: center;
+  gap: 52px;
+  margin: 0 auto;
+  padding: 52px 24px 100px;
+}
+
+.rail {
+  position: sticky;
+  top: 100px;
+  height: max-content;
+  color: var(--mech-text-muted);
+  font: 11px "Fira Code", "Mech Mono", monospace;
+}
+
+.rail-label {
+  margin: 0 0 17px;
+  color: var(--mech-brand);
+  font-weight: 700;
+}
+
+.rail-nav {
+  display: grid;
+}
+
+.rail-nav a {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 7px;
+  padding: 7px 7px 7px 11px;
+  color: var(--mech-text-muted);
+  border-left: 1px dotted var(--mech-border);
+  line-height: 1.35;
+  text-decoration: none;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.rail-nav a span:first-child {
+  color: var(--mech-brand);
+}
+
+.rail-nav a:hover {
+  color: var(--mech-brand-highlight);
+  border-left-color: var(--mech-brand);
+}
+
+.rail-nav a.is-active {
+  padding-left: 9px;
+  color: var(--mech-text-primary);
+  border-left: 3px solid var(--mech-error);
+}
+
+.rail-note {
+  margin-top: 28px;
+  padding: 2px 0 2px 12px;
+  color: var(--mech-text-muted);
+  border-left: 2px dotted var(--mech-brand);
+  line-height: 1.45;
+}
+
+.rail-note strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--mech-text-secondary);
+  font-size: 12px;
+}
+
+.lookbook {
+  width: min(850px, 100%);
+  min-width: 0;
+  counter-reset: blog-section;
+}
+
+/* Article introduction */
+
+.hero {
+  padding: 10px 0 64px;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: var(--mech-text-muted);
+  font: 11px "Fira Code", "Mech Mono", monospace;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0;
+  padding-bottom: 13px;
+  color: var(--mech-text-primary);
+  border-bottom: 4px dashed var(--mech-link);
+  font: 700 clamp(29px, 4.2vw, 38px)/1.32 "Fira Code", "Mech Mono", monospace;
+  letter-spacing: 2px;
+  text-align: center;
+}
+
+.hero-deck {
+  max-width: 720px;
+  margin: 27px auto 0;
+  color: var(--mech-text-reading);
+  font-size: 16px;
+  line-height: 25px;
+}
+
+.hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 23px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  color: var(--mech-text-muted);
+  background: var(--mech-panel);
+  border: 1px solid var(--mech-border);
+  border-radius: 3px;
+  font: 9px "Fira Code", "Mech Mono", monospace;
+}
+
+.chip--accent {
+  color: var(--mech-brand-highlight);
+  border-color: var(--mech-brand);
+}
+
+.hero-specimen {
+  margin-top: 38px;
+  overflow: hidden;
+  background: var(--mech-code-bg);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+  box-shadow: var(--mech-shadow-small);
+}
+
+.specimen-bar,
+.code-window-header {
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 19px;
+  color: var(--mech-text-muted);
+  background: var(--mech-output-bg);
+  border-bottom: 1px solid var(--mech-border);
+  font: 9px "Fira Code", "Mech Mono", monospace;
+}
+
+.specimen-lights {
+  display: none;
+}
+
+.hero-code {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  color: var(--mech-text-code);
+  font: 13px/1.65 "Fira Code", "Mech Mono", monospace;
+  white-space: pre;
+}
+
+.line-number {
+  width: 29px;
+  display: inline-block;
+  color: var(--mech-text-muted);
+  user-select: none;
+}
+
+.specimen-output {
+  padding: 13px 20px;
+  color: var(--mech-text-secondary);
+  background: var(--mech-output-bg);
+  border-top: 1px solid var(--mech-border);
+  border-left: 4px solid var(--mech-syntax-function);
+  font: 11px "Fira Code", "Mech Mono", monospace;
+}
+
+.specimen-output strong {
+  color: var(--mech-syntax-function);
+  font-weight: 500;
+}
+
+/* Syntax roles */
+
+.syntax-op,
+.syntax-bracket { color: var(--mech-syntax-operator); }
+.syntax-tuple-structure { color: var(--mech-syntax-tuple-structure); }
+.syntax-function {
+  color: var(--mech-syntax-function);
+  font-weight: 700;
+}
+.syntax-function-structure,
+.syntax-function-pattern { color: var(--mech-syntax-function-structure); }
+.syntax-function-flow {
+  color: var(--mech-syntax-function-flow);
+  font-weight: 600;
+}
+.syntax-match {
+  color: var(--mech-syntax-match);
+  font-weight: 600;
+}
+.syntax-match-flow {
+  color: var(--mech-syntax-match-flow);
+  font-weight: 600;
+}
+.syntax-literal { color: var(--mech-syntax-literal); }
+.syntax-variable { color: var(--mech-syntax-variable); }
+.syntax-field { color: var(--mech-syntax-field); }
+.syntax-kind { color: var(--mech-syntax-kind); }
+.syntax-kind-structure { color: var(--mech-syntax-kind-structure); }
+.syntax-atom { color: var(--mech-syntax-atom); }
+.syntax-atom-structure,
+.syntax-atom-call { color: var(--mech-syntax-atom-structure); }
+.syntax-context { color: var(--mech-syntax-context); }
+.syntax-context-provider { color: var(--mech-syntax-context-provider); }
+.syntax-invariant { color: var(--mech-syntax-invariant); }
+.syntax-namespace { color: var(--mech-syntax-namespace); }
+.syntax-machine {
+  color: var(--mech-syntax-machine);
+  font-weight: 700;
+}
+.syntax-machine-call { color: var(--mech-syntax-machine-flow); }
+.syntax-state {
+  color: var(--mech-syntax-atom);
+  font-weight: 700;
+}
+.syntax-machine-flow {
+  color: var(--mech-syntax-machine-flow);
+  font-weight: 600;
+}
+.syntax-path { color: var(--mech-syntax-path); }
+.syntax-capability { color: var(--mech-syntax-capability); }
+.syntax-import { color: var(--mech-syntax-import); }
+.syntax-comment { color: var(--mech-syntax-comment); font-style: italic; }
+
+/* Blog sections */
+
+.lookbook-section {
+  padding: 31px 0 57px;
+  counter-increment: blog-section;
+}
+
+.section-heading {
+  margin-bottom: 34px;
+}
+
+.section-index {
+  display: none;
+}
+
+.section-heading h2 {
+  margin: 0 0 18px;
+  padding-bottom: 10px;
+  color: var(--mech-text-primary);
+  border-bottom: 1px solid var(--mech-border);
+  font: 700 clamp(20px, 2.7vw, 24px)/1.35 "Fira Code", "Mech Mono", monospace;
+  letter-spacing: 2px;
+}
+
+.section-heading h2::before {
+  color: var(--mech-brand);
+  content: counter(blog-section) ". ";
+}
+
+.section-heading p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--mech-text-reading);
+  font-size: 16px;
+  line-height: 25px;
+}
+
+.subheading {
+  margin: 37px 0 17px;
+  color: var(--mech-text-primary);
+  font: 700 16px/1.4 "Fira Code", "Mech Mono", monospace;
+  letter-spacing: 1px;
+}
+
+.subheading::before {
+  color: var(--mech-brand);
+  content: ">: ";
+}
+
+.palette-note {
+  max-width: 720px;
+  margin: -5px 0 18px;
+  color: var(--mech-text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.palette-group-label {
+  margin: 24px 0 11px;
+  color: var(--mech-text-secondary);
+  font: 600 10px/1.4 "Fira Code", "Mech Mono", monospace;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.palette-note + .palette-group-label {
+  margin-top: 0;
+}
+
+/* Palette */
+
+.swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.swatch {
+  min-width: 0;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  color: inherit;
+  text-align: left;
+  background: var(--mech-panel);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+  box-shadow: var(--mech-shadow-small);
+  cursor: copy;
+  font: inherit;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.swatch:hover {
+  border-color: var(--mech-brand-highlight);
+  box-shadow: var(--mech-shadow-medium);
+}
+
+.swatch-color {
+  height: 72px;
+  display: block;
+  background: var(--swatch);
+  border-bottom: 1px solid var(--mech-border);
+}
+
+.swatch-meta {
+  min-height: 91px;
+  display: block;
+  padding: 12px 13px;
+}
+
+.swatch-name {
+  display: block;
+  overflow: hidden;
+  color: var(--mech-text-primary);
+  font: 500 11px "Fira Code", "Mech Mono", monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.swatch-use {
+  display: block;
+  margin-top: 5px;
+  color: var(--mech-text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.swatch-value {
+  display: block;
+  margin-top: 7px;
+  color: var(--mech-brand-highlight);
+  font: 9px "Fira Code", "Mech Mono", monospace;
+}
+
+.decision-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.decision {
+  padding: 14px 17px;
+  background: var(--mech-panel);
+  border-left: 3px solid var(--mech-brand);
+  border-radius: 0 6px 6px 0;
+}
+
+.decision strong {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--mech-brand-highlight);
+  font: 600 11px "Fira Code", "Mech Mono", monospace;
+}
+
+.decision span {
+  color: var(--mech-text-reading);
+  font-size: 14px;
+}
+
+/* Surface and shadow specimens */
+
+.surface-stage {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+  padding: 17px;
+  background: var(--mech-output-bg);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+}
+
+.surface-stack {
+  display: grid;
+  grid-auto-rows: minmax(58px, 1fr);
+  gap: 8px;
+}
+
+.surface-layer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px;
+  background: var(--surface);
+  border: 1px solid var(--mech-border);
+  border-radius: 6px;
+  box-shadow: var(--shadow, none);
+}
+
+.surface-layer strong {
+  color: var(--mech-text-primary);
+  font-size: 14px;
+}
+
+.surface-layer span {
+  color: var(--mech-text-muted);
+  font: 9px "Fira Code", "Mech Mono", monospace;
+}
+
+.shadow-demo {
+  display: grid;
+  place-items: center;
+  padding: 25px;
+  background: var(--mech-panel);
+  border: 1px solid var(--mech-border);
+  border-radius: 6px;
+}
+
+.shadow-card {
+  width: min(280px, 100%);
+  padding: 23px;
+  background: var(--mech-panel-raised);
+  border: 1px solid var(--mech-border);
+  border-radius: 7px;
+  box-shadow: var(--mech-shadow-large);
+}
+
+.shadow-card .token {
+  color: var(--mech-brand);
+  font-size: 10px;
+}
+
+.shadow-card h3 {
+  margin: 10px 0 6px;
+  color: var(--mech-text-primary);
+  font: 700 18px "Fira Code", "Mech Mono", monospace;
+}
+
+.shadow-card p {
+  margin: 0;
+  color: var(--mech-text-secondary);
+  font-size: 13px;
+}
+
+.shadow-scale {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.shadow-sample {
+  min-height: 200px;
+  display: grid;
+  place-items: center;
+  padding: 28px 18px 22px;
+  background: var(--mech-output-bg);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+}
+
+.shadow-object {
+  width: 100%;
+  min-height: 116px;
+  display: grid;
+  align-content: center;
+  gap: 6px;
+  padding: 18px;
+  color: var(--mech-text-secondary);
+  background: var(--mech-panel-raised);
+  border: 1px solid var(--mech-border);
+  border-radius: 7px;
+  box-shadow: var(--demo-shadow);
+  font-size: 12px;
+  transform: translateY(var(--demo-lift, 0));
+}
+
+.shadow-object strong {
+  color: var(--mech-text-primary);
+  font: 700 13px "Fira Code", "Mech Mono", monospace;
+}
+
+.shadow-object span {
+  line-height: 1.35;
+}
+
+.shadow-object code {
+  margin-top: 5px;
+  color: var(--mech-brand-highlight);
+  font-size: 9px;
+}
+
+/* Type and editorial elements */
+
+.type-grid {
+  display: grid;
+  gap: 20px;
+}
+
+.type-specimen {
+  padding: 0;
+}
+
+.display-type {
+  margin: 0;
+  color: var(--mech-text-primary);
+  font: 700 clamp(27px, 4.5vw, 38px)/1.3 "Fira Code", "Mech Mono", monospace;
+  letter-spacing: 1px;
+}
+
+.display-type span {
+  color: var(--mech-brand);
+}
+
+.type-specimen h3 {
+  margin: 27px 0 10px;
+  color: var(--mech-text-primary);
+  font: 700 19px "Fira Code", "Mech Mono", monospace;
+  letter-spacing: 1px;
+}
+
+.type-specimen p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--mech-text-reading);
+  line-height: 25px;
+}
+
+.type-specimen mark {
+  padding: 0.05em 0.22em;
+  color: var(--mech-text-reading);
+  background: var(--mech-selection-bg);
+  border-bottom: 1px solid var(--mech-brand);
+}
+
+.text-ramp {
+  padding: 22px 25px;
+  background: var(--mech-panel);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+}
+
+.text-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 16px;
+  align-items: baseline;
+  padding: 15px 0;
+  color: var(--sample);
+  border-bottom: 1px solid var(--mech-border);
+}
+
+.text-row:first-child { padding-top: 0; }
+.text-row:last-child { padding-bottom: 0; border-bottom: 0; }
+.text-row code { color: var(--mech-text-muted); font-size: 9px; }
+.text-row span { font-size: 15px; }
+
+.component-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.component-card {
+  padding: 23px 25px;
+  background: var(--mech-panel);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+}
+
+.component-label {
+  display: block;
+  margin-bottom: 18px;
+  color: var(--mech-brand-highlight);
+  font: 10px "Fira Code", "Mech Mono", monospace;
+}
+
+.link-stack {
+  display: grid;
+  gap: 15px;
+  justify-items: start;
+}
+
+.text-link,
+.arrow-link {
+  color: var(--mech-link);
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.text-link:hover,
+.arrow-link:hover {
+  color: var(--mech-brand-highlight);
+}
+
+.arrow-link {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+}
+
+.arrow-link span {
+  color: var(--mech-brand);
+}
+
+.button-row,
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.button-row {
+  margin-top: 6px;
+}
+
+.button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 13px;
+  color: var(--mech-text-primary);
+  background: var(--mech-panel-raised);
+  border: 1px solid var(--mech-border);
+  border-radius: 4px;
+  font: 500 11px/1 "Fira Code", "Mech Mono", monospace;
+  text-decoration: none;
+}
+
+.button:hover {
+  border-color: var(--mech-brand);
+}
+
+.button--primary,
+.button--primary:hover {
+  color: var(--mech-output-bg);
+  background: var(--mech-brand);
+  border-color: var(--mech-brand-highlight);
+}
+
+.badge {
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  color: var(--badge-color, var(--mech-text-secondary));
+  background: var(--mech-panel-raised);
+  border: 1px solid var(--badge-color, var(--mech-border));
+  border-radius: 3px;
+  font: 9px "Fira Code", "Mech Mono", monospace;
+}
+
+.inline-code-demo {
+  margin: 22px 0 0;
+  color: var(--mech-text-reading);
+}
+
+.inline-code-demo code {
+  margin: 0 2px;
+  padding: 0 6px;
+  color: var(--mech-syntax-variable);
+  background: var(--mech-code-bg);
+  border: 1px solid var(--mech-border);
+  border-radius: 3px;
+  box-shadow: 0 0 2px rgb(0 0 0 / 70%);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+
+.list-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+}
+
+.specimen-list {
+  margin: 0;
+  padding: 0;
+  color: var(--mech-text-reading);
+  list-style: none;
+}
+
+.specimen-list li {
+  position: relative;
+  margin: 10px 0;
+  padding-left: 22px;
+}
+
+.specimen-list li::before {
+  position: absolute;
+  top: 0.75em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  content: "";
+  background: var(--mech-brand);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.specimen-list--numbered {
+  counter-reset: lookbook-list;
+}
+
+.specimen-list--numbered li {
+  padding-left: 31px;
+  counter-increment: lookbook-list;
+}
+
+.specimen-list--numbered li::before {
+  top: 0;
+  width: auto;
+  height: auto;
+  color: var(--mech-warning);
+  background: none;
+  content: "0" counter(lookbook-list) ".";
+  font: 10px "Fira Code", "Mech Mono", monospace;
+  transform: none;
+}
+
+/* Full Mech code surface */
+
+.code-gallery {
+  display: grid;
+  gap: 22px;
+}
+
+.code-window,
+.syntax-legend,
+.console-specimen {
+  overflow: hidden;
+  background: var(--mech-code-bg);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+  box-shadow: var(--mech-shadow-small);
+}
+
+.code-window-header > span:first-child {
+  color: var(--mech-brand-highlight);
+}
+
+.code-window-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.monochrome-toggle {
+  padding: 4px 8px;
+  color: var(--mech-text-secondary);
+  background: var(--mech-panel);
+  border: 1px solid var(--mech-border);
+  border-radius: 3px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.monochrome-toggle:hover,
+.monochrome-toggle[aria-pressed="true"] {
+  color: var(--mech-brand-highlight);
+  border-color: var(--mech-brand);
+}
+
+.state-machine-specimen.is-monochrome pre span {
+  color: var(--mech-text-primary);
+}
+
+.state-machine-specimen.is-monochrome pre .syntax-comment {
+  color: var(--mech-text-muted);
+}
+
+.code-window pre {
+  margin: 0;
+  padding: 20px;
+  overflow-x: auto;
+  color: var(--mech-text-code);
+  font: 13px/1.65 "Fira Code", "Mech Mono", monospace;
+  white-space: pre;
+}
+
+.code-output {
+  padding: 14px 20px;
+  color: var(--mech-text-secondary);
+  background: var(--mech-output-bg);
+  border-top: 1px solid var(--mech-border);
+  font: 11px/1.7 "Fira Code", "Mech Mono", monospace;
+}
+
+.code-output::before {
+  margin-right: 8px;
+  color: var(--mech-brand);
+  content: ">:";
+}
+
+.code-output--table {
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.syntax-legend-body {
+  padding: 12px 22px;
+}
+
+.syntax-row {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 0;
+  color: var(--mech-text-secondary);
+  border-bottom: 1px solid var(--mech-border);
+  font-size: 12px;
+}
+
+.syntax-row:last-child {
+  border-bottom: 0;
+}
+
+.syntax-dot {
+  width: 10px;
+  height: 10px;
+  background: var(--dot);
+  border-radius: 3px;
+}
+
+.syntax-row code {
+  color: var(--mech-text-muted);
+  font-size: 9px;
+}
+
+.console-line {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 22px 22px 8px;
+  color: var(--mech-text-code);
+  font: 13px "Fira Code", "Mech Mono", monospace;
+}
+
+.console-prompt {
+  color: var(--mech-brand);
+  font-weight: 700;
+}
+
+.console-result {
+  padding: 0 22px 22px 46px;
+  color: var(--mech-syntax-literal);
+  font: 13px "Fira Code", "Mech Mono", monospace;
+}
+
+.runtime-error {
+  padding: 20px 22px;
+  background: var(--mech-panel-raised);
+  border: 1px solid var(--mech-border);
+  border-left: 4px solid var(--mech-error);
+  border-radius: 0 7px 7px 0;
+  box-shadow: var(--mech-shadow-small);
+}
+
+.runtime-error-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--mech-error);
+  font: 700 12px "Fira Code", "Mech Mono", monospace;
+}
+
+.runtime-error-title span {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  color: var(--mech-output-bg);
+  background: var(--mech-error);
+  border-radius: 3px;
+}
+
+.runtime-error p {
+  margin: 14px 0;
+  color: var(--mech-text-reading);
+  font-size: 13px;
+}
+
+.runtime-error code {
+  color: var(--mech-syntax-variable);
+}
+
+.runtime-error dl {
+  margin: 0;
+  font: 10px/1.6 "Fira Code", "Mech Mono", monospace;
+}
+
+.runtime-error dl div {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 10px;
+}
+
+.runtime-error dt { color: var(--mech-text-muted); }
+.runtime-error dd { margin: 0; color: var(--mech-text-secondary); }
+
+/* Notices and tables */
+
+.callout-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.callout {
+  padding: 18px 21px;
+  background: var(--mech-panel-raised);
+  border: 1px solid var(--mech-border);
+  border-left: 4px solid var(--callout-color);
+  border-radius: 0 7px 7px 0;
+}
+
+.callout-kicker {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 7px;
+  color: var(--callout-color);
+  font: 700 10px "Fira Code", "Mech Mono", monospace;
+}
+
+.callout-kicker::before {
+  width: 7px;
+  height: 7px;
+  content: "";
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.callout p {
+  margin: 0;
+  color: var(--mech-text-reading);
+  font-size: 14px;
+}
+
+.table-shell {
+  overflow-x: auto;
+  background: var(--mech-panel);
+  border: 1px solid var(--mech-border);
+  border-radius: 10px;
+  box-shadow: var(--mech-shadow-small);
+}
+
+.data-table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--mech-border);
+}
+
+.data-table th {
+  color: var(--mech-brand-highlight);
+  background: var(--mech-output-bg);
+  font: 600 9px "Fira Code", "Mech Mono", monospace;
+}
+
+.data-table td {
+  color: var(--mech-text-reading);
+  font-size: 13px;
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: var(--mech-panel-raised);
+}
+
+.data-table tbody tr:hover {
+  background: var(--mech-code-bg);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table code {
+  color: var(--mech-syntax-variable);
+  font-size: 11px;
+}
+
+.mini-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--state);
+  font: 10px "Fira Code", "Mech Mono", monospace;
+}
+
+.mini-state::before {
+  width: 7px;
+  height: 7px;
+  content: "";
+  background: currentColor;
+  border-radius: 50%;
+}
+
+/* Footer and clipboard feedback */
+
+.lookbook-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  margin-top: 12px;
+  padding-top: 25px;
+  color: var(--mech-text-muted);
+  border-top: 2px dashed var(--mech-link);
+  font: 10px "Fira Code", "Mech Mono", monospace;
+}
+
+.lookbook-footer strong {
+  color: var(--mech-brand);
+  font-weight: 600;
+}
+
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+  padding: 10px 13px;
+  color: var(--mech-output-bg);
+  background: var(--mech-brand);
+  border: 1px solid var(--mech-brand-highlight);
+  border-radius: 3px;
+  box-shadow: var(--mech-shadow-medium);
+  font: 700 10px "Fira Code", "Mech Mono", monospace;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (max-width: 980px) {
+  .page-shell {
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 30px;
+  }
+
+  .blog-nav {
+    gap: 14px;
+  }
+
+  .topbar-meta {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    padding-inline: 16px;
+  }
+
+  .blog-nav a:nth-child(3),
+  .blog-nav a:nth-child(5) {
+    display: none;
+  }
+
+  .page-shell {
+    display: block;
+    padding: 38px 20px 74px;
+  }
+
+  .rail {
+    display: none;
+  }
+
+  .lookbook {
+    margin: 0 auto;
+  }
+
+  .surface-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .shadow-scale {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .topbar {
+    height: 58px;
+    gap: 15px;
+  }
+
+  .wordmark img {
+    height: 32px;
+  }
+
+  .blog-nav {
+    gap: 12px;
+  }
+
+  .blog-nav a {
+    font-size: 10px;
+  }
+
+  .page-shell {
+    padding-inline: 15px;
+  }
+
+  .hero {
+    padding-top: 3px;
+  }
+
+  .hero h1 {
+    font-size: 25px;
+    letter-spacing: 1px;
+  }
+
+  .section-heading h2 {
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+
+  .lookbook-section {
+    padding: 25px 0 48px;
+  }
+
+  .swatch-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .list-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .component-card {
+    padding: 20px;
+  }
+
+  .code-window pre,
+  .hero-code {
+    padding: 16px;
+    font-size: 12px;
+  }
+
+  .code-window-tools > span {
+    display: none;
+  }
+
+  .monochrome-toggle {
+    white-space: nowrap;
+  }
+
+  .lookbook-footer {
+    display: grid;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
+}

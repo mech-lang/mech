@@ -1,0 +1,137 @@
+/*
+ * Canonical Mech color roles.
+ *
+ * This file contains color, interaction, and depth tokens only. Component
+ * styles belong in style.css, mechdown.css, mech-source.css, and mech-repl.css.
+ * Names describe jobs rather than arbitrary shade ladders.
+ *
+ * Permanent rule: solid fills only. Never use gradients.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --mech-canvas: #0d1117;
+  --mech-code-bg: #090d11;
+  --mech-panel: #171c26;
+  --mech-panel-raised: #1f2533;
+  --mech-output-bg: #020303;
+  --mech-border: #4d5257;
+
+  /* Text */
+  --mech-text-reading: #fff6e5;
+  --mech-text-primary: #f2ead9;
+  --mech-text-secondary: #bebcaa;
+  --mech-text-muted: #827f6b;
+
+  /* Brand and interaction */
+  --mech-brand: #f4bd3e;
+  --mech-link: #f7ce6e;
+  --mech-brand-highlight: #f9de9f;
+  --mech-focus: var(--mech-brand);
+
+  /* Feedback */
+  --mech-info: #8095ff;
+  --mech-warning: #ffaa80;
+  --mech-error: #ff8095;
+  --mech-success: #80ff95;
+  --mech-idea: #c180ff;
+  --mech-question: #80e8ff;
+
+  /* Quiet syntax foundation */
+  --mech-syntax-operator: #c09cc9;
+  --mech-syntax-bracket: #c09cc9;
+  --mech-syntax-tuple-structure: #ab7ab8;
+  --mech-syntax-variable: #eddaf1;
+  --mech-syntax-literal: #9bc7f3;
+  --mech-syntax-field: #63abb7;
+  --mech-syntax-comment: var(--mech-text-muted);
+
+  /* Construct families */
+  --mech-syntax-function: #bbddc2;
+  --mech-syntax-function-structure: #99cca4;
+  --mech-syntax-function-flow: #77bb86;
+  --mech-syntax-kind: #f09fca;
+  --mech-syntax-kind-structure: #d574a8;
+  --mech-syntax-atom: #d7c0a4;
+  --mech-syntax-atom-structure: #ad9273;
+  --mech-syntax-match: var(--mech-syntax-atom);
+  --mech-syntax-match-flow: var(--mech-syntax-atom-structure);
+  --mech-syntax-machine: #d8a5e4;
+  --mech-syntax-machine-flow: #8e90bd;
+  --mech-syntax-context: #acc9d2;
+  --mech-syntax-context-provider: #cbdce2;
+  --mech-syntax-path: #84b4c2;
+  --mech-syntax-capability: var(--mech-syntax-atom);
+  --mech-syntax-invariant: var(--mech-warning);
+  --mech-syntax-namespace: #afb4d4;
+  --mech-syntax-import: var(--mech-syntax-operator);
+
+  /* Selection, scrolling, and depth */
+  --mech-selection-bg: rgb(244 189 62 / 24%);
+  --mech-selection-text: var(--mech-text-reading);
+  --mech-scrollbar: rgb(128 128 128 / 70%);
+  --mech-scrollbar-hover: rgb(160 160 160 / 85%);
+  --mech-shadow-small: 0 2px 4px rgb(0 0 0 / 44%);
+  --mech-shadow-medium: 0 10px 22px rgb(0 0 0 / 58%);
+  --mech-shadow-large: 0 24px 52px rgb(0 0 0 / 72%);
+  --mech-shadow-side: -8px 0 28px rgb(0 0 0 / 45%);
+  --mech-image-shadow: 0 10px 20px rgb(0 0 0 / 45%);
+  --mech-brand-glow: 0 0 18px rgb(244 189 62 / 22%);
+
+  /* Existing public names retained as compatibility aliases. */
+  --bg-primary: var(--mech-canvas);
+  --bg-secondary: var(--mech-panel);
+  --bg-accent: var(--mech-text-muted);
+  --bg-dark: var(--mech-output-bg);
+  --bg-elevated: var(--mech-panel-raised);
+  --bg-tertiary: var(--mech-panel-raised);
+  --mika-primary: var(--mech-brand);
+  --accent-primary: var(--mech-brand);
+  --accent-hover: var(--mech-link);
+  --accent-shadow: rgb(244 189 62 / 35%);
+  --accent-soft: var(--mech-brand-highlight);
+  --blue-primary: var(--mech-syntax-path);
+  --blue-bright: var(--mech-question);
+  --border: var(--mech-border);
+  --border-strong: var(--mech-border);
+  --text-primary: var(--mech-text-primary);
+  --text-secondary: var(--mech-text-secondary);
+  --text-muted: var(--mech-text-muted);
+  --body-primary: var(--mech-text-reading);
+  --success: var(--mech-success);
+  --error: var(--mech-error);
+  --console-bg: var(--mech-output-bg);
+  --console-text: var(--mech-text-primary);
+
+  --accent-secondary-teal-soft: var(--mech-syntax-function);
+  --accent-secondary-teal: var(--mech-syntax-function-structure);
+  --accent-secondary-teal-hover: var(--mech-syntax-function-flow);
+  --accent-secondary-coral-soft: var(--mech-warning);
+  --accent-secondary-coral: var(--mech-warning);
+  --accent-secondary-coral-hover: var(--mech-syntax-atom-structure);
+  --accent-secondary-purple-soft: var(--mech-syntax-namespace);
+  --accent-secondary-purple: var(--mech-idea);
+  --accent-secondary-purple-hover: var(--mech-syntax-machine-flow);
+
+  --title-underline-color: var(--mech-link);
+  --callout-background-color: var(--mech-panel-raised);
+  --accent-coral: var(--mech-warning);
+  --accent-orange: var(--mech-warning);
+  --accent-yellow: var(--mech-brand-highlight);
+  --accent-green: var(--mech-success);
+  --accent-teal: var(--mech-syntax-function);
+  --accent-cyan: var(--mech-question);
+  --accent-blue: var(--mech-info);
+  --accent-indigo: var(--mech-syntax-machine-flow);
+  --accent-purple: var(--mech-idea);
+  --accent-magenta: var(--mech-syntax-kind);
+  --accent-rose: var(--mech-error);
+  --accent-red: var(--mech-error);
+}
+
+::selection {
+  background: var(--mech-selection-bg);
+  color: var(--mech-selection-text);
+}

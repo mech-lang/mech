@@ -4,11 +4,9 @@
 
  *
 
- * This layer owns the shared palette and document-workspace primitives:
+ * This layer is derived from the blog visual language and owns only the
 
- * navigation, content columns, metadata, and footer. Blog and documentation
-
- * shims add their distinct presentation contracts in late variant layers.
+ * surrounding page: navigation, content columns, metadata, and footer.
 
  * Mech source, Mechdown, and the portable REPL are independent layers.
 
@@ -21,120 +19,6 @@
   --header-height: 0px;
   --toc-width: 260px;
   --content-max-width: 1200px;
-
-  /*
-   * Canonical Mech palette. Component styles consume these semantic roles;
-   * the older names below remain as compatibility bridges for embedders.
-   */
-  --mech-canvas: #0d1117;
-  --mech-code-bg: #090d11;
-  --mech-panel: #171c26;
-  --mech-panel-raised: #1f2533;
-  --mech-output-bg: #020303;
-  --mech-border: #4d5257;
-
-  --mech-text-reading: #fff6e5;
-  --mech-text-primary: #f2ead9;
-  --mech-text-secondary: #bebcaa;
-  --mech-text-muted: #827f6b;
-
-  --mech-brand: #f4bd3e;
-  --mech-link: #f7ce6e;
-  --mech-brand-highlight: #f9de9f;
-
-  --mech-info: #8095ff;
-  --mech-warning: #ffaa80;
-  --mech-error: #ff8095;
-  --mech-success: #80ff95;
-  --mech-idea: #c180ff;
-  --mech-question: #80e8ff;
-
-  --mech-syntax-operator: #c09cc9;
-  --mech-syntax-bracket: #c09cc9;
-  --mech-syntax-tuple-structure: #ab7ab8;
-  --mech-syntax-function: #bbddc2;
-  --mech-syntax-function-structure: #99cca4;
-  --mech-syntax-function-flow: #77bb86;
-  --mech-syntax-match: #d7c0a4;
-  --mech-syntax-match-flow: #ad9273;
-  --mech-syntax-literal: #9bc7f3;
-  --mech-syntax-variable: #eddaf1;
-  --mech-syntax-field: #63abb7;
-  --mech-syntax-kind: #f09fca;
-  --mech-syntax-kind-structure: #d574a8;
-  --mech-syntax-atom: #d7c0a4;
-  --mech-syntax-atom-structure: #ad9273;
-  --mech-syntax-context: #acc9d2;
-  --mech-syntax-context-provider: #cbdce2;
-  --mech-syntax-invariant: var(--mech-warning);
-  --mech-syntax-namespace: #afb4d4;
-  --mech-syntax-machine: #d8a5e4;
-  --mech-syntax-machine-flow: #8e90bd;
-  --mech-syntax-path: #84b4c2;
-  --mech-syntax-capability: var(--mech-syntax-atom);
-  --mech-syntax-import: var(--mech-syntax-operator);
-  --mech-syntax-comment: var(--mech-text-muted);
-
-  --mech-selection-bg: rgb(244 189 62 / 24%);
-  --mech-selection-text: var(--mech-text-reading);
-  --mech-scrollbar: rgb(128 128 128 / 70%);
-  --mech-scrollbar-hover: rgb(160 160 160 / 85%);
-  --mech-shadow-small: 0 2px 4px rgb(0 0 0 / 44%);
-  --mech-shadow-medium: 0 10px 22px rgb(0 0 0 / 58%);
-  --mech-shadow-large: 0 24px 52px rgb(0 0 0 / 72%);
-  --mech-shadow-side: -8px 0 28px rgb(0 0 0 / 45%);
-  --mech-image-shadow: 0 10px 20px rgb(0 0 0 / 45%);
-  --mech-brand-glow: 0 0 18px rgb(244 189 62 / 22%);
-
-  /* ── Compatibility palette ── */
-  --bg-primary: var(--mech-canvas);
-  --bg-secondary: var(--mech-panel);
-  --bg-accent: var(--mech-text-muted);
-  --bg-dark: var(--mech-output-bg);
-  --bg-elevated: var(--mech-panel-raised);
-  --bg-tertiary: var(--mech-panel-raised);
-  --mika-primary: var(--mech-brand);
-  --accent-primary: var(--mech-brand);
-  --accent-hover: var(--mech-link);
-  --accent-shadow: rgb(244 189 62 / 35%);
-  --accent-soft: var(--mech-brand-highlight);
-  --blue-primary: var(--mech-syntax-path);
-  --blue-bright: var(--mech-question);
-  --border: var(--mech-border);
-  --border-strong: var(--mech-border);
-  --text-primary: var(--mech-text-primary);
-  --text-secondary: var(--mech-text-secondary);
-  --text-muted: var(--mech-text-muted);
-  --body-primary: var(--mech-text-reading);
-  --success: var(--mech-success);
-  --error: var(--mech-error);
-  --console-bg: var(--mech-output-bg);
-  --console-text: var(--mech-text-primary);
-
-  --accent-secondary-teal-soft: var(--mech-syntax-function);
-  --accent-secondary-teal: var(--mech-syntax-function-structure);
-  --accent-secondary-teal-hover: var(--mech-syntax-function-flow);
-  --accent-secondary-coral-soft: var(--mech-warning);
-  --accent-secondary-coral: var(--mech-warning);
-  --accent-secondary-coral-hover: var(--mech-syntax-atom-structure);
-  --accent-secondary-purple-soft: var(--mech-syntax-namespace);
-  --accent-secondary-purple: var(--mech-idea);
-  --accent-secondary-purple-hover: var(--mech-syntax-machine-flow);
-
-  --title-underline-color: var(--mech-link);
-  --callout-background-color: var(--mech-panel-raised);
-  --accent-coral: var(--mech-warning);
-  --accent-orange: var(--mech-warning);
-  --accent-yellow: var(--mech-brand-highlight);
-  --accent-green: var(--mech-success);
-  --accent-teal: var(--mech-syntax-function);
-  --accent-cyan: var(--mech-question);
-  --accent-blue: var(--mech-info);
-  --accent-indigo: var(--mech-syntax-machine-flow);
-  --accent-purple: var(--mech-idea);
-  --accent-magenta: var(--mech-syntax-kind);
-  --accent-rose: var(--mech-error);
-  --accent-red: var(--mech-error);
 
   --nav-text-primary: var(--text-primary);
   --nav-text-active: var(--text-primary);
@@ -166,11 +50,6 @@
 }
 
 * { box-sizing: border-box; }
-
-::selection {
-  background: var(--mech-selection-bg);
-  color: var(--mech-selection-text);
-}
 
 html, body {
   margin: 0;
@@ -411,6 +290,22 @@ a { color: inherit; text-decoration: none; }
 
 .breadcrumbs a:hover { color: var(--accent-primary); }
 
+/* ── Hero ── */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.78fr) minmax(380px, 1.45fr);
+  gap: 18px;
+  margin-bottom: 48px;
+  color: var(--text-primary);
+}
+
+.hero-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+}
+
 .hero-kicker {
   margin: 0 0 16px;
   text-transform: uppercase;
@@ -420,10 +315,114 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
 }
 
-/* ── Intro / abstract (full-width) ── */
-.article-intro {
-  margin: 0 0 52px;
-  max-width: 100%;
+.hero h1 {
+  margin: 0;
+  font-size: clamp(34px, 4vw, 64px);
+  line-height: 1.04;
+  color: var(--text-primary);
+  font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.mech-meta {
+  margin-top: 22px;
+  color: var(--hero-text-secondary);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mech-meta p {
+  color: inherit;
+  margin: 0px;
+  font-weight: 400;
+}
+
+.post-pagination{
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  margin:32px 0 20px;
+  padding-top:14px;
+  border-top:1px dotted var(--border);
+}
+
+.post-pagination-prev,.post-pagination-next{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.post-pagination-next{
+  text-align:right;
+  align-items:flex-end;
+}
+
+.post-pagination-label{
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--text-secondary);
+}
+
+.post-pagination-next .post-pagination-label {
+  margin-right: 25px;
+}
+
+.post-pagination-prev .post-pagination-label {
+  margin-left: 25px;
+}
+
+.post-pagination .mech-previous,
+.post-pagination .mech-next{
+  margin:0;
+}
+
+.post-pagination a{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text-primary);
+  font-size:16px;
+  text-decoration:none;
+}
+
+.post-pagination-prev a::before{
+  content:"⟨";
+  color:var(--accent-primary);
+  font-size:35px;
+  line-height:1;
+  margin-right:4px;
+  transform: translateY(-15px);
+}
+
+.post-pagination-next a::after{
+  content:"⟩";
+  color:var(--accent-primary);
+  font-size:35px;
+  line-height:1;
+  margin-left:4px;
+  transform: translateY(-15px);
+}
+
+.post-pagination a:hover{
+  color:var(--accent-soft);
+}
+
+.hero-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hero-accent);
+  color: var(--bg-primary);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 /* ── Article layout ── */

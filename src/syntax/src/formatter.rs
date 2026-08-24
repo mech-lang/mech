@@ -24,6 +24,7 @@ pub struct HtmlShimExtraSlots {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct HtmlStyleSheets {
+    pub palette: String,
     pub source: String,
     pub mechdown: String,
     pub page: String,
@@ -39,12 +40,18 @@ impl HtmlStyleSheets {
     }
 
     pub fn bundle(&self) -> String {
-        [&self.source, &self.mechdown, &self.page, &self.repl]
-            .into_iter()
-            .filter(|stylesheet| !stylesheet.is_empty())
-            .map(String::as_str)
-            .collect::<Vec<_>>()
-            .join("\n")
+        [
+            &self.palette,
+            &self.source,
+            &self.mechdown,
+            &self.page,
+            &self.repl,
+        ]
+        .into_iter()
+        .filter(|stylesheet| !stylesheet.is_empty())
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .join("\n")
     }
 }
 
@@ -433,6 +440,7 @@ impl Formatter {
 
         let mut slots = BTreeMap::new();
         slots.insert("STYLESHEET".to_string(), styles.bundle());
+        slots.insert("PALETTE_STYLESHEET".to_string(), styles.palette);
         slots.insert("MECH_SOURCE_STYLESHEET".to_string(), styles.source);
         slots.insert("MECHDOWN_STYLESHEET".to_string(), styles.mechdown);
         slots.insert("PAGE_STYLESHEET".to_string(), styles.page);

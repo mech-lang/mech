@@ -1,0 +1,555 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The consolidated color palette and component lookbook for the Mech programming language.">
+  <title>Mech Color &amp; Interface Lookbook</title>
+  <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&amp;display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css">
+  <link rel="stylesheet" href="./palette.css">
+  <link rel="stylesheet" href="./palette-lookbook.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="wordmark" href="https://mech-lang.org" aria-label="Mech home">
+      <img src="https://mech-lang.org/img/logo.png" alt="Mech">
+    </a>
+    <nav class="blog-nav" aria-label="Primary">
+      <a href="https://about.mech-lang.org">About</a>
+      <a class="active" href="https://mech-lang.org/blog">Blog</a>
+      <a href="https://mech-lang.org/community">Community</a>
+      <a href="https://docs.mech-lang.org">Docs</a>
+      <a href="https://try.mech-lang.org">Explore</a>
+    </nav>
+    <div class="topbar-meta" aria-label="Lookbook status">
+      <span>Palette lookbook</span>
+    </div>
+  </header>
+
+  <div class="page-shell">
+    <aside class="rail" aria-label="Lookbook sections">
+      <p class="rail-label">Index / 00–07</p>
+      <nav class="rail-nav">
+        <a href="#overview"><span>00</span><span>Overview</span></a>
+        <a href="#palette"><span>01</span><span>Palette</span></a>
+        <a href="#surfaces"><span>02</span><span>Surfaces</span></a>
+        <a href="#type"><span>03</span><span>Type + text</span></a>
+        <a href="#elements"><span>04</span><span>Elements</span></a>
+        <a href="#code"><span>05</span><span>Code</span></a>
+        <a href="#notices"><span>06</span><span>Notices</span></a>
+        <a href="#data"><span>07</span><span>Data</span></a>
+      </nav>
+      <div class="rail-note">
+        <strong>Click any swatch</strong>
+        Copy its CSS value to the clipboard.
+      </div>
+    </aside>
+
+    <main class="lookbook mech-program">
+      <section class="hero" id="overview">
+        <div class="hero-copy">
+          <p class="eyebrow">Mech Blog / Design Note</p>
+          <h1>Mech Color &amp; Interface Lookbook</h1>
+          <p class="hero-deck">A crystallized version of the visual language already used by the Mech blog: warm technical typography, dark editorial surfaces, precise code color, and a small set of accents with clear jobs.</p>
+          <div class="hero-meta" aria-label="Palette sources">
+            <span class="chip chip--accent">Updated August 2026</span>
+            <span class="chip">v0.3 blog source</span>
+            <span class="chip">No gradients</span>
+          </div>
+        </div>
+
+        <div class="hero-specimen" aria-label="Mech source-code color specimen">
+          <div class="specimen-bar">
+            <span>power.mec</span>
+            <span class="specimen-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+          </div>
+          <pre class="hero-code"><span class="line-number">01</span><span class="syntax-function">power</span><span class="syntax-function-structure">(</span><span class="syntax-variable">x</span><span class="syntax-kind">&lt;u64&gt;</span><span class="syntax-function-structure">,</span> <span class="syntax-variable">n</span><span class="syntax-kind">&lt;u64&gt;</span><span class="syntax-function-structure">)</span> <span class="syntax-function-flow">=&gt;</span> <span class="syntax-kind">&lt;u64&gt;</span>
+<span class="line-number">02</span>  <span class="syntax-function-flow">├</span> <span class="syntax-function-pattern"><span class="syntax-function-flow">(</span>*, 0u64<span class="syntax-function-flow">)</span></span> <span class="syntax-function-flow">=&gt;</span> <span class="syntax-literal">1u64</span>
+<span class="line-number">03</span>  <span class="syntax-function-flow">└</span> <span class="syntax-function-pattern"><span class="syntax-function-flow">(</span>x, n<span class="syntax-function-flow">)</span></span> <span class="syntax-function-flow">=&gt;</span> <span class="syntax-variable">x</span> <span class="syntax-op">*</span> <span class="syntax-function">power</span><span class="syntax-function-structure">(</span><span class="syntax-variable">x</span><span class="syntax-function-structure">,</span> <span class="syntax-variable">n</span> <span class="syntax-op">-</span> <span class="syntax-literal">1u64</span><span class="syntax-function-structure">)</span><span class="syntax-function-flow">.</span>
+<span class="line-number">04</span>
+<span class="line-number">05</span><span class="syntax-function">power</span><span class="syntax-function-structure">(</span><span class="syntax-literal">2u64</span><span class="syntax-function-structure">,</span> <span class="syntax-literal">8u64</span><span class="syntax-function-structure">)</span></pre>
+          <div class="specimen-output"><strong>result</strong> / 256u64</div>
+        </div>
+      </section>
+
+      <section class="lookbook-section" id="palette">
+        <div class="section-heading">
+          <span class="section-index">01 /</span>
+          <h2>One color, one job</h2>
+          <p>This is the consolidated palette—not every color found in old CSS. Each retained color has a specific role and a plain-language name.</p>
+        </div>
+
+        <h3 class="subheading">Surfaces + structure</h3>
+        <div class="swatch-grid">
+          <button class="swatch" type="button" data-copy="#0d1117" aria-label="Copy page canvas color"><span class="swatch-color" style="--swatch: var(--mech-canvas)"></span><span class="swatch-meta"><span class="swatch-name">Page canvas</span><span class="swatch-use">The site background</span><span class="swatch-value">#0d1117</span></span></button>
+          <button class="swatch" type="button" data-copy="#090d11" aria-label="Copy code block color"><span class="swatch-color" style="--swatch: var(--mech-code-bg)"></span><span class="swatch-meta"><span class="swatch-name">Code block</span><span class="swatch-use">Source and inline code</span><span class="swatch-value">#090d11</span></span></button>
+          <button class="swatch" type="button" data-copy="#171c26" aria-label="Copy panel color"><span class="swatch-color" style="--swatch: var(--mech-panel)"></span><span class="swatch-meta"><span class="swatch-name">Panel</span><span class="swatch-use">Cards and normal boxes</span><span class="swatch-value">#171c26</span></span></button>
+          <button class="swatch" type="button" data-copy="#1f2533" aria-label="Copy raised panel color"><span class="swatch-color" style="--swatch: var(--mech-panel-raised)"></span><span class="swatch-meta"><span class="swatch-name">Raised panel</span><span class="swatch-use">Callouts, hover, elevation</span><span class="swatch-value">#1f2533</span></span></button>
+          <button class="swatch" type="button" data-copy="#020303" aria-label="Copy output and console color"><span class="swatch-color" style="--swatch: var(--mech-output-bg)"></span><span class="swatch-meta"><span class="swatch-name">Output + console</span><span class="swatch-use">Results and terminal output</span><span class="swatch-value">#020303</span></span></button>
+          <button class="swatch" type="button" data-copy="#4d5257" aria-label="Copy border color"><span class="swatch-color" style="--swatch: var(--mech-border)"></span><span class="swatch-meta"><span class="swatch-name">Border</span><span class="swatch-use">All dividers and outlines</span><span class="swatch-value">#4d5257</span></span></button>
+        </div>
+
+        <h3 class="subheading">Text</h3>
+        <div class="swatch-grid">
+          <button class="swatch" type="button" data-copy="#fff6e5" aria-label="Copy reading text color"><span class="swatch-color" style="--swatch: var(--mech-text-reading)"></span><span class="swatch-meta"><span class="swatch-name">Reading text</span><span class="swatch-use">Paragraphs and long-form prose</span><span class="swatch-value">#fff6e5</span></span></button>
+          <button class="swatch" type="button" data-copy="#f2ead9" aria-label="Copy heading text color"><span class="swatch-color" style="--swatch: var(--mech-text-primary)"></span><span class="swatch-meta"><span class="swatch-name">Heading text</span><span class="swatch-use">Titles and strong labels</span><span class="swatch-value">#f2ead9</span></span></button>
+          <button class="swatch" type="button" data-copy="#bebcaa" aria-label="Copy secondary text color"><span class="swatch-color" style="--swatch: var(--mech-text-secondary)"></span><span class="swatch-meta"><span class="swatch-name">Secondary text</span><span class="swatch-use">Supporting descriptions</span><span class="swatch-value">#bebcaa</span></span></button>
+          <button class="swatch" type="button" data-copy="#827f6b" aria-label="Copy muted text color"><span class="swatch-color" style="--swatch: var(--mech-text-muted)"></span><span class="swatch-meta"><span class="swatch-name">Muted text</span><span class="swatch-use">Labels and metadata</span><span class="swatch-value">#827f6b</span></span></button>
+        </div>
+
+        <h3 class="subheading">Brand + meaning</h3>
+        <div class="swatch-grid">
+          <button class="swatch" type="button" data-copy="#f4bd3e" aria-label="Copy Mech gold"><span class="swatch-color" style="--swatch: var(--mech-brand)"></span><span class="swatch-meta"><span class="swatch-name">Mech gold</span><span class="swatch-use">Brand and primary actions</span><span class="swatch-value">#f4bd3e</span></span></button>
+          <button class="swatch" type="button" data-copy="#f7ce6e" aria-label="Copy link gold"><span class="swatch-color" style="--swatch: var(--mech-link)"></span><span class="swatch-meta"><span class="swatch-name">Link gold</span><span class="swatch-use">Links and title rules</span><span class="swatch-value">#f7ce6e</span></span></button>
+          <button class="swatch" type="button" data-copy="#f9de9f" aria-label="Copy gold highlight"><span class="swatch-color" style="--swatch: var(--mech-brand-highlight)"></span><span class="swatch-meta"><span class="swatch-name">Gold highlight</span><span class="swatch-use">Hover and selected text</span><span class="swatch-value">#f9de9f</span></span></button>
+          <button class="swatch" type="button" data-copy="#8095ff" aria-label="Copy information color"><span class="swatch-color" style="--swatch: var(--mech-info)"></span><span class="swatch-meta"><span class="swatch-name">Information</span><span class="swatch-use">Explanatory notices</span><span class="swatch-value">#8095ff</span></span></button>
+          <button class="swatch" type="button" data-copy="#ffaa80" aria-label="Copy warning color"><span class="swatch-color" style="--swatch: var(--mech-warning)"></span><span class="swatch-meta"><span class="swatch-name">Warning</span><span class="swatch-use">Risk and caution</span><span class="swatch-value">#ffaa80</span></span></button>
+          <button class="swatch" type="button" data-copy="#ff8095" aria-label="Copy error color"><span class="swatch-color" style="--swatch: var(--mech-error)"></span><span class="swatch-meta"><span class="swatch-name">Error</span><span class="swatch-use">Failures and destructive actions</span><span class="swatch-value">#ff8095</span></span></button>
+          <button class="swatch" type="button" data-copy="#80ff95" aria-label="Copy success color"><span class="swatch-color" style="--swatch: var(--mech-success)"></span><span class="swatch-meta"><span class="swatch-name">Success</span><span class="swatch-use">Confirmed completion</span><span class="swatch-value">#80ff95</span></span></button>
+          <button class="swatch" type="button" data-copy="#c180ff" aria-label="Copy idea color"><span class="swatch-color" style="--swatch: var(--mech-idea)"></span><span class="swatch-meta"><span class="swatch-name">Idea</span><span class="swatch-use">Possibilities and experiments</span><span class="swatch-value">#c180ff</span></span></button>
+          <button class="swatch" type="button" data-copy="#80e8ff" aria-label="Copy question color"><span class="swatch-color" style="--swatch: var(--mech-question)"></span><span class="swatch-meta"><span class="swatch-name">Question</span><span class="swatch-use">Open decisions and prompts</span><span class="swatch-value">#80e8ff</span></span></button>
+        </div>
+
+        <h3 class="subheading">Expanded code syntax palette</h3>
+        <p class="palette-note">The background layer stays quiet: operators, brackets, and ordinary identifiers are pale purple; literals are blue; kinds are pink. Functions are green, matches are sand-yellow, and state-machine structure uses orchid and periwinkle. Delimiters stay inside their construct family but step darker: purple tuple parentheses, green function parentheses, rose kind brackets, and yellow atom/state colons and parentheses. Atom names remain the exact same yellow everywhere. Bold weight, indentation, and rails still carry the hierarchy when color is removed.</p>
+
+        <h4 class="palette-group-label">Base syntax / always underneath</h4>
+        <div class="swatch-grid">
+          <button class="swatch" type="button" data-copy="#c09cc9" aria-label="Copy background operator and bracket color"><span class="swatch-color" style="--swatch: var(--mech-syntax-operator)"></span><span class="swatch-meta"><span class="swatch-name">Background operators + brackets</span><span class="swatch-use">Quiet structure and punctuation</span><span class="swatch-value">#c09cc9</span></span></button>
+          <button class="swatch" type="button" data-copy="#ab7ab8" aria-label="Copy ordinary tuple parenthesis color"><span class="swatch-color" style="--swatch: var(--mech-syntax-tuple-structure)"></span><span class="swatch-meta"><span class="swatch-name">Tuple parentheses</span><span class="swatch-use">Darker purple around ordinary tuple contents</span><span class="swatch-value">#ab7ab8</span></span></button>
+          <button class="swatch" type="button" data-copy="#eddaf1" aria-label="Copy background identifier color"><span class="swatch-color" style="--swatch: var(--mech-syntax-variable)"></span><span class="swatch-meta"><span class="swatch-name">Background identifiers</span><span class="swatch-use">Ordinary bindings and references</span><span class="swatch-value">#eddaf1</span></span></button>
+          <button class="swatch" type="button" data-copy="#9bc7f3" aria-label="Copy literal color"><span class="swatch-color" style="--swatch: var(--mech-syntax-literal)"></span><span class="swatch-meta"><span class="swatch-name">Literals</span><span class="swatch-use">Same blue for true, 1, and "hello"</span><span class="swatch-value">#9bc7f3</span></span></button>
+          <button class="swatch" type="button" data-copy="#f09fca" aria-label="Copy kind body color"><span class="swatch-color" style="--swatch: var(--mech-syntax-kind)"></span><span class="swatch-meta"><span class="swatch-name">Kind body</span><span class="swatch-use">Pink kind names and contents</span><span class="swatch-value">#f09fca</span></span></button>
+          <button class="swatch" type="button" data-copy="#d574a8" aria-label="Copy kind delimiter color"><span class="swatch-color" style="--swatch: var(--mech-syntax-kind-structure)"></span><span class="swatch-meta"><span class="swatch-name">Kind brackets</span><span class="swatch-use">Darker rose &lt; and &gt;</span><span class="swatch-value">#d574a8</span></span></button>
+          <button class="swatch" type="button" data-copy="#827f6b" aria-label="Copy comment color"><span class="swatch-color" style="--swatch: var(--mech-syntax-comment)"></span><span class="swatch-meta"><span class="swatch-name">Comments</span><span class="swatch-use">Non-executable explanation</span><span class="swatch-value">#827f6b</span></span></button>
+        </div>
+
+        <h4 class="palette-group-label">Construct themes / semantic anchors</h4>
+        <div class="swatch-grid">
+          <button class="swatch" type="button" data-copy="#bbddc2" aria-label="Copy function identity color"><span class="swatch-color" style="--swatch: var(--mech-syntax-function)"></span><span class="swatch-meta"><span class="swatch-name">Function identity</span><span class="swatch-use">Green definitions and calls</span><span class="swatch-value">#bbddc2</span></span></button>
+          <button class="swatch" type="button" data-copy="#99cca4" aria-label="Copy function structure color"><span class="swatch-color" style="--swatch: var(--mech-syntax-function-structure)"></span><span class="swatch-meta"><span class="swatch-name">Function structure</span><span class="swatch-use">Green signatures and function patterns</span><span class="swatch-value">#99cca4</span></span></button>
+          <button class="swatch" type="button" data-copy="#77bb86" aria-label="Copy function flow color"><span class="swatch-color" style="--swatch: var(--mech-syntax-function-flow)"></span><span class="swatch-meta"><span class="swatch-name">Function guards + flow</span><span class="swatch-use">Green function rails, arrows, and terminals</span><span class="swatch-value">#77bb86</span></span></button>
+          <button class="swatch" type="button" data-copy="#d7c0a4" aria-label="Copy match pattern and guard color"><span class="swatch-color" style="--swatch: var(--mech-syntax-match)"></span><span class="swatch-meta"><span class="swatch-name">Match guards + patterns</span><span class="swatch-use">One sand-yellow for rails and arm patterns</span><span class="swatch-value">#d7c0a4</span></span></button>
+          <button class="swatch" type="button" data-copy="#ad9273" aria-label="Copy match and atom structure color"><span class="swatch-color" style="--swatch: var(--mech-syntax-match-flow)"></span><span class="swatch-meta"><span class="swatch-name">Match + atom structure</span><span class="swatch-use">Darker yellow flow, atom colons, and parentheses</span><span class="swatch-value">#ad9273</span></span></button>
+          <button class="swatch" type="button" data-copy="#d8a5e4" aria-label="Copy state machine identity color"><span class="swatch-color" style="--swatch: var(--mech-syntax-machine)"></span><span class="swatch-meta"><span class="swatch-name">Machine identity</span><span class="swatch-use">Bold orchid #machine names</span><span class="swatch-value">#d8a5e4</span></span></button>
+          <button class="swatch" type="button" data-copy="#8e90bd" aria-label="Copy state machine transition color"><span class="swatch-color" style="--swatch: var(--mech-syntax-machine-flow)"></span><span class="swatch-meta"><span class="swatch-name">State-machine flow</span><span class="swatch-use">Declaration rails and transition arrows</span><span class="swatch-value">#8e90bd</span></span></button>
+        </div>
+
+        <h4 class="palette-group-label">Other named language roles</h4>
+        <div class="swatch-grid">
+          <button class="swatch" type="button" data-copy="#63abb7" aria-label="Copy field color"><span class="swatch-color" style="--swatch: var(--mech-syntax-field)"></span><span class="swatch-meta"><span class="swatch-name">Fields</span><span class="swatch-use">Record and table fields</span><span class="swatch-value">#63abb7</span></span></button>
+          <button class="swatch" type="button" data-copy="#d7c0a4" aria-label="Copy atom, state, and capability color"><span class="swatch-color" style="--swatch: var(--mech-syntax-atom)"></span><span class="swatch-meta"><span class="swatch-name">Atoms + states + capabilities</span><span class="swatch-use">One yellow for :red, :Pass, :read, and :write</span><span class="swatch-value">#d7c0a4</span></span></button>
+          <button class="swatch" type="button" data-copy="#acc9d2" aria-label="Copy context binding and reference color"><span class="swatch-color" style="--swatch: var(--mech-syntax-context)"></span><span class="swatch-meta"><span class="swatch-name">Context binding + reference</span><span class="swatch-use">@out and the whole @out/line reference</span><span class="swatch-value">#acc9d2</span></span></button>
+          <button class="swatch" type="button" data-copy="#cbdce2" aria-label="Copy context provider color"><span class="swatch-color" style="--swatch: var(--mech-syntax-context-provider)"></span><span class="swatch-meta"><span class="swatch-name">Context provider</span><span class="swatch-use">Provider names such as time and cli</span><span class="swatch-value">#cbdce2</span></span></button>
+          <button class="swatch" type="button" data-copy="#84b4c2" aria-label="Copy context declaration path color"><span class="swatch-color" style="--swatch: var(--mech-syntax-path)"></span><span class="swatch-meta"><span class="swatch-name">Context declaration path</span><span class="swatch-use">clock/clock and its second capability</span><span class="swatch-value">#84b4c2</span></span></button>
+          <button class="swatch" type="button" data-copy="#ffaa80" aria-label="Copy invariant color"><span class="swatch-color" style="--swatch: var(--mech-syntax-invariant)"></span><span class="swatch-meta"><span class="swatch-name">Invariants</span><span class="swatch-use">Blog orange for checks such as ready!</span><span class="swatch-value">#ffaa80</span></span></button>
+          <button class="swatch" type="button" data-copy="#afb4d4" aria-label="Copy module and namespace color"><span class="swatch-color" style="--swatch: var(--mech-syntax-namespace)"></span><span class="swatch-meta"><span class="swatch-name">Modules + namespaces</span><span class="swatch-use">Soft periwinkle for browser/dom</span><span class="swatch-value">#afb4d4</span></span></button>
+        </div>
+
+        <h3 class="subheading">Consolidation decisions</h3>
+        <div class="decision-grid" aria-label="What was consolidated">
+          <div class="decision"><strong>10 neutral shades</strong><span>reduced to five named surfaces and one border</span></div>
+          <div class="decision"><strong>7 gold variations</strong><span>reduced to brand, link, and highlight roles</span></div>
+          <div class="decision"><strong>Generic accent families</strong><span>replaced by explicit notice and syntax jobs</span></div>
+          <div class="decision"><strong>Decorative spectrum</strong><span>removed; every retained color now explains its purpose</span></div>
+          <div class="decision"><strong>Monochrome hierarchy retained</strong><span>bold anchors, indentation, and rails remain readable without hue</span></div>
+        </div>
+      </section>
+
+      <section class="lookbook-section" id="surfaces">
+        <div class="section-heading">
+          <span class="section-index">02 /</span>
+          <h2>Surface + depth</h2>
+          <p>A shadow is not another color shade; it tells you how far an object sits above the page. The three roles below move from attached, to floating, to deliberately isolated.</p>
+        </div>
+        <div class="surface-stage">
+          <div class="surface-stack">
+            <div class="surface-layer" style="--surface:var(--mech-output-bg)"><strong>Output + console</strong><span>#020303</span></div>
+            <div class="surface-layer" style="--surface:var(--mech-code-bg)"><strong>Code block</strong><span>#090d11</span></div>
+            <div class="surface-layer" style="--surface:var(--mech-canvas)"><strong>Page canvas</strong><span>#0d1117</span></div>
+            <div class="surface-layer" style="--surface:var(--mech-panel);--shadow:var(--mech-shadow-small)"><strong>Panel</strong><span>#171c26 + small</span></div>
+            <div class="surface-layer" style="--surface:var(--mech-panel-raised);--shadow:var(--mech-shadow-large)"><strong>Raised panel</strong><span>#1f2533 + large</span></div>
+          </div>
+          <div class="shadow-demo">
+            <div class="shadow-card">
+              <span class="token">Focus shadow / large</span>
+              <h3>Focus the object.</h3>
+              <p>Deep black shadows ground elevated panels without turning the entire page glossy.</p>
+            </div>
+          </div>
+        </div>
+        <h3 class="subheading">Distance from the page</h3>
+        <div class="shadow-scale" aria-label="Card, floating, and focus shadow roles">
+          <div class="shadow-sample"><div class="shadow-object" style="--demo-shadow:var(--mech-shadow-small);--demo-lift:0"><strong>Card shadow</strong><span>Nearly attached to the page.</span><code>small / ordinary blocks</code></div></div>
+          <div class="shadow-sample"><div class="shadow-object" style="--demo-shadow:var(--mech-shadow-medium);--demo-lift:-6px"><strong>Floating shadow</strong><span>Clearly above nearby content.</span><code>medium / menus + popovers</code></div></div>
+          <div class="shadow-sample"><div class="shadow-object" style="--demo-shadow:var(--mech-shadow-large);--demo-lift:-12px"><strong>Focus shadow</strong><span>Separated as the one focal object.</span><code>large / modal + inspection</code></div></div>
+        </div>
+      </section>
+
+      <section class="lookbook-section" id="type">
+        <div class="section-heading">
+          <span class="section-index">03 /</span>
+          <h2>Type + text</h2>
+          <p>Four text roles: warm reading copy, quieter headings, secondary support, and muted metadata. Code keeps its own syntax colors.</p>
+        </div>
+        <div class="type-grid">
+          <div class="type-specimen">
+            <p class="display-type">Build the <span>machine.</span></p>
+            <h3>Reactive programs, readable systems.</h3>
+            <p>Primary prose uses a calm warm gray. <mark>Highlights carry Mika gold</mark> while inline emphasis stays brighter than surrounding copy without becoming pure white.</p>
+          </div>
+          <div class="text-ramp" aria-label="Text color ramp">
+            <div class="text-row" style="--sample:var(--mech-text-reading)"><code>Reading</code><span>Paragraphs and long-form copy</span></div>
+            <div class="text-row" style="--sample:var(--mech-text-primary)"><code>Heading</code><span>Titles and strong labels</span></div>
+            <div class="text-row" style="--sample:var(--mech-text-secondary)"><code>Secondary</code><span>Supporting prose</span></div>
+            <div class="text-row" style="--sample:var(--mech-text-muted)"><code>Muted</code><span>Metadata and labels</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lookbook-section" id="elements">
+        <div class="section-heading">
+          <span class="section-index">04 /</span>
+          <h2>Content elements</h2>
+          <p>Common editorial pieces in their real context: links, buttons, badges, lists, highlights, and inline code.</p>
+        </div>
+        <div class="component-grid">
+          <div class="component-card">
+            <span class="component-label">Links + actions</span>
+            <div class="link-stack">
+              <a class="text-link" href="#elements">A standard link within prose</a>
+              <a class="arrow-link" href="#code">Explore the code palette <span aria-hidden="true">→</span></a>
+              <div class="button-row">
+                <a class="button button--primary" href="#notices">Primary action</a>
+                <a class="button" href="#palette">Secondary action</a>
+              </div>
+            </div>
+          </div>
+          <div class="component-card">
+            <span class="component-label">Labels + state</span>
+            <div class="badge-row">
+              <span class="badge" style="--badge-color:var(--mech-brand)">Beta</span>
+              <span class="badge" style="--badge-color:var(--mech-accent-teal)">Running</span>
+              <span class="badge" style="--badge-color:var(--mech-accent-coral)">Changed</span>
+              <span class="badge" style="--badge-color:var(--mech-accent-blue)">Reference</span>
+              <span class="badge" style="--badge-color:var(--mech-accent-purple)">Experimental</span>
+            </div>
+            <p class="inline-code-demo">Use <code>mech serve</code> to inspect a document locally, or <code>mech build</code> to prepare a release.</p>
+          </div>
+          <div class="component-card component-card--wide">
+            <span class="component-label">Lists</span>
+            <div class="list-pair">
+              <ul class="specimen-list">
+                <li>Describe the system as data</li>
+                <li>Connect reactive transformations</li>
+                <li>Inspect values while they change</li>
+              </ul>
+              <ol class="specimen-list specimen-list--numbered">
+                <li>Install the Mech toolchain</li>
+                <li>Run the first program</li>
+                <li>Build a host around it</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="lookbook-section" id="code">
+        <div class="section-heading">
+          <span class="section-index">05 /</span>
+          <h2>Mech code forms</h2>
+          <p>These are current Mech forms taken from the repository—not pseudo-code. Green now belongs to functions, sand-brown to matches, and orchid/periwinkle to state machines; the pale-purple base, blue literals, and pink kinds continue underneath each construct.</p>
+        </div>
+        <div class="code-gallery">
+          <article class="code-window code-window--wide">
+            <div class="code-window-header"><span>values-and-structures.mec</span><span>Values / collections</span></div>
+            <pre><span class="syntax-comment">-- scalar values</span>
+<span class="syntax-variable">answer</span><span class="syntax-kind">&lt;u8&gt;</span> <span class="syntax-op">:=</span> <span class="syntax-literal">42u8</span>
+<span class="syntax-variable">greeting</span> <span class="syntax-op">:=</span> <span class="syntax-literal">"Hello, world!"</span>
+<span class="syntax-variable">color</span> <span class="syntax-op">:=</span> <span class="syntax-atom">:color/green</span>
+
+<span class="syntax-comment">-- matrix, tuple, record, map, and set</span>
+<span class="syntax-variable">matrix</span> <span class="syntax-op">:=</span> <span class="syntax-bracket">[</span><span class="syntax-literal">1 2 3</span><span class="syntax-op">;</span> <span class="syntax-literal">4 5 6</span><span class="syntax-bracket">]</span>
+<span class="syntax-variable">tuple</span> <span class="syntax-op">:=</span> <span class="syntax-tuple-structure">(</span><span class="syntax-literal">10</span><span class="syntax-op">,</span> <span class="syntax-literal">"b"</span><span class="syntax-op">,</span> <span class="syntax-literal">true</span><span class="syntax-tuple-structure">)</span>
+<span class="syntax-variable">record</span> <span class="syntax-op">:=</span> <span class="syntax-bracket">{</span> <span class="syntax-field">x</span><span class="syntax-op">:</span> <span class="syntax-literal">1</span><span class="syntax-op">,</span> <span class="syntax-field">y</span><span class="syntax-op">:</span> <span class="syntax-literal">true</span> <span class="syntax-bracket">}</span>
+<span class="syntax-variable">map</span> <span class="syntax-op">:=</span> <span class="syntax-bracket">{</span><span class="syntax-literal">"a"</span><span class="syntax-op">:</span> <span class="syntax-literal">10</span><span class="syntax-op">,</span> <span class="syntax-literal">"b"</span><span class="syntax-op">:</span> <span class="syntax-literal">20</span><span class="syntax-bracket">}</span>
+<span class="syntax-variable">set</span> <span class="syntax-op">:=</span> <span class="syntax-bracket">{</span><span class="syntax-literal">1</span><span class="syntax-op">,</span> <span class="syntax-literal">2</span><span class="syntax-op">,</span> <span class="syntax-literal">3</span><span class="syntax-bracket">}</span></pre>
+          </article>
+
+          <article class="code-window code-window--wide">
+            <div class="code-window-header"><span>contexts-and-invariants.mec</span><span>Host contexts + validation</span></div>
+            <pre><span class="syntax-comment">-- direct context declaration with a narrow capability</span>
+<span class="syntax-context">@clock</span> <span class="syntax-op">:=</span> <span class="syntax-context-provider">time</span><span class="syntax-op">://</span><span class="syntax-path">clock/clock</span><span class="syntax-bracket">{</span><span class="syntax-capability">:read</span><span class="syntax-atom-structure">(</span><span class="syntax-capability">second</span><span class="syntax-atom-structure">)</span><span class="syntax-bracket">}</span>
+
+<span class="syntax-comment">-- import host contexts through local @ bindings</span>
+<span class="syntax-import">+&gt;</span> <span class="syntax-context">@env</span> <span class="syntax-op">:=</span> <span class="syntax-context-provider">cli</span><span class="syntax-path">/env</span>
+<span class="syntax-import">+&gt;</span> <span class="syntax-context">@out</span> <span class="syntax-op">:=</span> <span class="syntax-context-provider">cli</span><span class="syntax-path">/stdout</span>
+
+<span class="syntax-comment">-- read a resource and send a value</span>
+<span class="syntax-variable">home</span> <span class="syntax-op">:=</span> <span class="syntax-context">@env/HOME</span>
+<span class="syntax-context">@out/line</span> <span class="syntax-op">&lt;-</span> <span class="syntax-variable">home</span>
+
+<span class="syntax-comment">-- an invariant is a named boolean check</span>
+<span class="syntax-invariant">home-present!</span> <span class="syntax-op">:=</span> <span class="syntax-variable">home</span> <span class="syntax-op">!=</span> <span class="syntax-literal">""</span></pre>
+            <div class="code-output"><span class="syntax-invariant">home-present!</span> / true</div>
+          </article>
+
+          <article class="code-window">
+            <div class="code-window-header"><span>function.mec</span><span>Branch function</span></div>
+            <pre><span class="syntax-function">power</span><span class="syntax-function-structure">(</span><span class="syntax-variable">x</span><span class="syntax-kind">&lt;u64&gt;</span><span class="syntax-function-structure">,</span> <span class="syntax-variable">n</span><span class="syntax-kind">&lt;u64&gt;</span><span class="syntax-function-structure">)</span> <span class="syntax-function-flow">=&gt;</span> <span class="syntax-kind">&lt;u64&gt;</span>
+  <span class="syntax-function-flow">├</span> <span class="syntax-function-pattern"><span class="syntax-function-flow">(</span>*, 0u64<span class="syntax-function-flow">)</span></span> <span class="syntax-function-flow">=&gt;</span> <span class="syntax-literal">1u64</span>
+  <span class="syntax-function-flow">└</span> <span class="syntax-function-pattern"><span class="syntax-function-flow">(</span>x, n<span class="syntax-function-flow">)</span></span> <span class="syntax-function-flow">=&gt;</span> <span class="syntax-variable">x</span> <span class="syntax-op">*</span> <span class="syntax-function">power</span><span class="syntax-function-structure">(</span><span class="syntax-variable">x</span><span class="syntax-function-structure">,</span> <span class="syntax-variable">n</span> <span class="syntax-op">-</span> <span class="syntax-literal">1u64</span><span class="syntax-function-structure">)</span><span class="syntax-function-flow">.</span>
+
+<span class="syntax-function">power</span><span class="syntax-function-structure">(</span><span class="syntax-literal">2u64</span><span class="syntax-function-structure">,</span> <span class="syntax-literal">8u64</span><span class="syntax-function-structure">)</span></pre>
+            <div class="code-output">256u64</div>
+          </article>
+
+          <article class="code-window code-window--wide">
+            <div class="code-window-header"><span>match-tuple.mec</span><span>One sand-yellow match theme</span></div>
+            <pre><span class="syntax-variable">triple</span> <span class="syntax-op">:=</span> <span class="syntax-tuple-structure">(</span><span class="syntax-literal">3</span><span class="syntax-op">,</span> <span class="syntax-literal">4</span><span class="syntax-op">,</span> <span class="syntax-literal">2</span><span class="syntax-tuple-structure">)</span>
+<span class="syntax-variable">max</span> <span class="syntax-op">:=</span> <span class="syntax-variable">triple</span><span class="syntax-match-flow">?</span>
+  <span class="syntax-match">|</span> <span class="syntax-match"><span class="syntax-atom-structure">(</span>a, b, c<span class="syntax-atom-structure">)</span></span><span class="syntax-match-flow">,</span> <span class="syntax-variable">a</span> <span class="syntax-op">&gt;</span> <span class="syntax-variable">b</span> <span class="syntax-op">&amp;&amp;</span> <span class="syntax-variable">a</span> <span class="syntax-op">&gt;</span> <span class="syntax-variable">c</span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-variable">a</span>
+  <span class="syntax-match">|</span> <span class="syntax-match"><span class="syntax-atom-structure">(</span>a, b, c<span class="syntax-atom-structure">)</span></span><span class="syntax-match-flow">,</span> <span class="syntax-variable">b</span> <span class="syntax-op">&gt;</span> <span class="syntax-variable">a</span> <span class="syntax-op">&amp;&amp;</span> <span class="syntax-variable">b</span> <span class="syntax-op">&gt;</span> <span class="syntax-variable">c</span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-variable">b</span>
+  <span class="syntax-match">|</span> <span class="syntax-match"><span class="syntax-atom-structure">(</span>a, b, c<span class="syntax-atom-structure">)</span></span><span class="syntax-match-flow">,</span> <span class="syntax-variable">c</span> <span class="syntax-op">&gt;</span> <span class="syntax-variable">a</span> <span class="syntax-op">&amp;&amp;</span> <span class="syntax-variable">c</span> <span class="syntax-op">&gt;</span> <span class="syntax-variable">b</span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-variable">c</span>
+  <span class="syntax-match">|</span> <span class="syntax-match">*</span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-literal">0</span><span class="syntax-match-flow">.</span>
+<span class="syntax-variable">max</span></pre>
+            <div class="code-output">4</div>
+          </article>
+
+          <article class="code-window code-window--wide">
+            <div class="code-window-header"><span>match-enum.mec</span><span>Enum patterns + guarded captures</span></div>
+            <pre><span class="syntax-kind">&lt;color&gt;</span> <span class="syntax-op">:=</span> <span class="syntax-atom">:red</span><span class="syntax-kind">&lt;f64&gt;</span> <span class="syntax-op">|</span> <span class="syntax-atom">:green</span><span class="syntax-kind">&lt;f64&gt;</span> <span class="syntax-op">|</span> <span class="syntax-atom">:blue</span><span class="syntax-kind">&lt;f64&gt;</span>
+<span class="syntax-variable">my-color</span><span class="syntax-kind">&lt;color&gt;</span> <span class="syntax-op">:=</span> <span class="syntax-atom-call"><span class="syntax-atom">:red</span>(<span class="syntax-literal">300</span>)</span>
+
+<span class="syntax-variable">string-color</span> <span class="syntax-op">:=</span> <span class="syntax-variable">my-color</span><span class="syntax-match-flow">?</span>
+  <span class="syntax-match">|</span> <span class="syntax-match">:red<span class="syntax-atom-structure">(</span>100<span class="syntax-atom-structure">)</span></span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-literal">"dark red"</span>
+  <span class="syntax-match">|</span> <span class="syntax-match">:red<span class="syntax-atom-structure">(</span>50<span class="syntax-atom-structure">)</span></span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-literal">"light red"</span>
+  <span class="syntax-match">|</span> <span class="syntax-match">:red<span class="syntax-atom-structure">(</span>x<span class="syntax-atom-structure">)</span></span><span class="syntax-match-flow">,</span> <span class="syntax-variable">x</span> <span class="syntax-op">&lt;</span> <span class="syntax-literal">50</span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-literal">"pink"</span>
+  <span class="syntax-match">|</span> <span class="syntax-match">:red<span class="syntax-atom-structure">(</span>x<span class="syntax-atom-structure">)</span></span><span class="syntax-match-flow">,</span> <span class="syntax-variable">x</span> <span class="syntax-op">&gt;</span> <span class="syntax-literal">100</span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-literal">"maroon"</span>
+  <span class="syntax-match">|</span> <span class="syntax-match">:green<span class="syntax-atom-structure">(</span>100<span class="syntax-atom-structure">)</span></span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-literal">"dark green"</span>
+  <span class="syntax-match">|</span> <span class="syntax-match">*</span> <span class="syntax-match-flow">=&gt;</span> <span class="syntax-literal">"unknown"</span><span class="syntax-match-flow">.</span>
+<span class="syntax-variable">string-color</span></pre>
+            <div class="code-output">"maroon"</div>
+          </article>
+
+          <article class="code-window code-window--wide state-machine-specimen">
+            <div class="code-window-header"><span>bubble-sort.mec</span><span class="code-window-tools"><span>4 states / long-form scan test</span><button class="monochrome-toggle" type="button" data-monochrome aria-pressed="false">View monochrome</button></span></div>
+            <pre><span class="syntax-machine-call"><span class="syntax-machine">#bubble-sort</span>(<span class="syntax-variable">arr</span><span class="syntax-kind">&lt;[u64]&gt;</span>)</span> <span class="syntax-machine-flow">⇒</span> <span class="syntax-kind">&lt;[u64]&gt;</span> <span class="syntax-op">:=</span>
+  <span class="syntax-machine-flow">├</span> <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-variable">arr</span><span class="syntax-kind">&lt;[u64]&gt;</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-kind">&lt;[u64]&gt;</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span><span class="syntax-kind">&lt;u64&gt;</span>)</span>
+  <span class="syntax-machine-flow">├</span> <span class="syntax-atom-call"><span class="syntax-state">:Next</span>(<span class="syntax-variable">arr</span><span class="syntax-kind">&lt;[u64]&gt;</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span><span class="syntax-kind">&lt;u64&gt;</span>)</span>
+  <span class="syntax-machine-flow">├</span> <span class="syntax-atom-call"><span class="syntax-state">:Reverse</span>(<span class="syntax-variable">arr</span><span class="syntax-kind">&lt;[u64]&gt;</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-kind">&lt;[u64]&gt;</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span><span class="syntax-kind">&lt;u64&gt;</span>)</span>
+  <span class="syntax-machine-flow">└</span> <span class="syntax-atom-call"><span class="syntax-state">:Done</span>(<span class="syntax-variable">arr</span><span class="syntax-kind">&lt;[u64]&gt;</span>)</span><span class="syntax-machine-flow">.</span>
+
+<span class="syntax-machine-call"><span class="syntax-machine">#bubble-sort</span>(<span class="syntax-variable">arr</span>)</span> <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-variable">arr</span><span class="syntax-op">,</span> <span class="syntax-literal">[]</span><span class="syntax-op">,</span> <span class="syntax-literal">0</span>)</span>
+  <span class="syntax-comment">-- Pass: compare adjacent elements and rebuild list in acc</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-bracket">[</span><span class="syntax-variable">a</span><span class="syntax-op">,</span> <span class="syntax-variable">b</span> <span class="syntax-op">|</span> <span class="syntax-variable">tail</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span>
+    <span class="syntax-match">├</span> <span class="syntax-variable">a</span> <span class="syntax-op">&gt;</span> <span class="syntax-variable">b</span> <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-bracket">[</span><span class="syntax-variable">a tail</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-bracket">[</span><span class="syntax-variable">b acc</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span> <span class="syntax-op">+</span> <span class="syntax-literal">1</span>)</span>
+    <span class="syntax-match">└ *</span>     <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-bracket">[</span><span class="syntax-variable">b tail</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-bracket">[</span><span class="syntax-variable">a acc</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-bracket">[</span><span class="syntax-variable">x</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span> <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Next</span>(<span class="syntax-bracket">[</span><span class="syntax-variable">x acc</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-bracket">[]</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span>  <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Next</span>(<span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span>
+  <span class="syntax-comment">-- Reverse the accumulator to restore order</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Next</span>(<span class="syntax-variable">arr</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span> <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Reverse</span>(<span class="syntax-variable">arr</span><span class="syntax-op">,</span> <span class="syntax-literal">[]</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Reverse</span>(<span class="syntax-bracket">[</span><span class="syntax-variable">x</span> <span class="syntax-op">|</span> <span class="syntax-variable">tail</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span> <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Reverse</span>(<span class="syntax-variable">tail</span><span class="syntax-op">,</span> <span class="syntax-bracket">[</span><span class="syntax-variable">x acc</span><span class="syntax-bracket">]</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Reverse</span>(<span class="syntax-bracket">[]</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-literal">0</span>)</span>     <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Done</span>(<span class="syntax-variable">acc</span>)</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Reverse</span>(<span class="syntax-bracket">[]</span><span class="syntax-op">,</span> <span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-variable">swaps</span>)</span> <span class="syntax-machine-flow">→</span> <span class="syntax-atom-call"><span class="syntax-state">:Pass</span>(<span class="syntax-variable">acc</span><span class="syntax-op">,</span> <span class="syntax-literal">[]</span><span class="syntax-op">,</span> <span class="syntax-literal">0</span>)</span>
+  <span class="syntax-atom-call"><span class="syntax-state">:Done</span>(<span class="syntax-variable">arr</span>)</span> <span class="syntax-machine-flow">⇒</span> <span class="syntax-variable">arr</span><span class="syntax-machine-flow">.</span>
+
+<span class="syntax-variable">a</span><span class="syntax-kind">&lt;[u64]&gt;</span> <span class="syntax-op">:=</span> <span class="syntax-literal">[4 2 1 3]</span>
+<span class="syntax-variable">sorted</span> <span class="syntax-op">:=</span> <span class="syntax-machine-call"><span class="syntax-machine">#bubble-sort</span>(<span class="syntax-variable">a</span>)</span>
+<span class="syntax-invariant">sorted!</span> <span class="syntax-op">:=</span> <span class="syntax-variable">sorted</span> <span class="syntax-op">===</span> <span class="syntax-literal">[1u64 2u64 3u64 4u64]</span></pre>
+            <div class="code-output"><span class="syntax-invariant">sorted!</span> / true</div>
+          </article>
+
+          <article class="code-window">
+            <div class="code-window-header"><span>table.mec</span><span>Table + filter</span></div>
+            <pre><span class="syntax-variable">data</span> <span class="syntax-op">:=</span> <span class="syntax-bracket">|</span> <span class="syntax-field">x</span><span class="syntax-kind">&lt;f64&gt;</span>  <span class="syntax-field">y</span><span class="syntax-kind">&lt;bool&gt;</span> <span class="syntax-bracket">|</span>
+        <span class="syntax-bracket">|</span>  <span class="syntax-literal">1.6</span>     <span class="syntax-literal">true</span>   <span class="syntax-bracket">|</span>
+        <span class="syntax-bracket">|</span>  <span class="syntax-literal">1.3</span>     <span class="syntax-literal">false</span>  <span class="syntax-bracket">|</span>
+        <span class="syntax-bracket">|</span>  <span class="syntax-literal">2.7</span>     <span class="syntax-literal">false</span>  <span class="syntax-bracket">|</span>
+
+<span class="syntax-variable">data</span><span class="syntax-bracket">[</span><span class="syntax-variable">data</span><span class="syntax-op">.</span><span class="syntax-field">x</span> <span class="syntax-op">&gt;</span> <span class="syntax-literal">1.5</span><span class="syntax-bracket">]</span></pre>
+            <div class="code-output code-output--table">╭────────┬─────────╮
+│ x&lt;f64&gt; │ y&lt;bool&gt; │
+├────────┼─────────┤
+│  1.6   │  true   │
+│  2.7   │  false  │
+╰────────┴─────────╯</div>
+          </article>
+
+          <article class="code-window">
+            <div class="code-window-header"><span>comprehension.mec</span><span>Generator + predicate</span></div>
+            <pre><span class="syntax-variable">A</span> <span class="syntax-op">:=</span> <span class="syntax-bracket">{</span><span class="syntax-literal">1</span><span class="syntax-op">,</span><span class="syntax-literal">2</span><span class="syntax-op">,</span><span class="syntax-literal">3</span><span class="syntax-op">,</span><span class="syntax-literal">4</span><span class="syntax-op">,</span><span class="syntax-literal">5</span><span class="syntax-op">,</span><span class="syntax-literal">6</span><span class="syntax-bracket">}</span>
+<span class="syntax-bracket">{</span><span class="syntax-variable">x</span> <span class="syntax-op">*</span> <span class="syntax-variable">x</span> <span class="syntax-op">|</span> <span class="syntax-variable">x</span> <span class="syntax-op">&lt;-</span> <span class="syntax-variable">A</span><span class="syntax-op">,</span> <span class="syntax-bracket">(</span><span class="syntax-variable">x</span> <span class="syntax-op">%</span> <span class="syntax-literal">2</span><span class="syntax-bracket">)</span> <span class="syntax-op">==</span> <span class="syntax-literal">0</span><span class="syntax-bracket">}</span></pre>
+            <div class="code-output">{4, 16, 36}</div>
+          </article>
+
+          <article class="code-window">
+            <div class="code-window-header"><span>assignment.mec</span><span>Mutable binding + access</span></div>
+            <pre><span class="syntax-op">~</span><span class="syntax-variable">r</span> <span class="syntax-op">:=</span> <span class="syntax-bracket">{</span> <span class="syntax-field">x</span><span class="syntax-op">:</span> <span class="syntax-literal">1</span><span class="syntax-op">,</span> <span class="syntax-field">y</span><span class="syntax-op">:</span> <span class="syntax-literal">2</span> <span class="syntax-bracket">}</span>
+<span class="syntax-variable">r</span><span class="syntax-op">.</span><span class="syntax-field">x</span> <span class="syntax-op">=</span> <span class="syntax-literal">42</span>
+<span class="syntax-variable">r</span></pre>
+            <div class="code-output">{x: 42, y: 2}</div>
+          </article>
+
+          <aside class="syntax-legend" aria-label="Syntax color roles">
+            <div class="code-window-header"><span>Syntax roles</span><span>Same palette</span></div>
+            <div class="syntax-legend-body">
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-operator)"></i><span>Background operator / bracket</span><code>pale purple</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-variable)"></i><span>Background identifier</span><code>pale lavender</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-tuple-structure)"></i><span>Tuple parentheses</span><code>deep purple</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-literal)"></i><span>Literal</span><code>powder blue</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-kind)"></i><span>Kind body</span><code>soft pink</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-kind-structure)"></i><span>Kind brackets</span><code>darker rose</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-function)"></i><span>Function identity</span><code>pale green</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-function-structure)"></i><span>Function structure</span><code>middle green</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-function-flow)"></i><span>Function guards / flow</span><code>deep green</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-match)"></i><span>Match guards / pattern</span><code>sand yellow</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-match-flow)"></i><span>Match / atom structure</span><code>darker yellow delimiters</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-machine)"></i><span>Machine identity</span><code>bold orchid</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-machine-flow)"></i><span>State-machine flow</span><code>slate violet</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-field)"></i><span>Field</span><code>dusty teal</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-atom)"></i><span>Atom / state / capability</span><code>one sand yellow</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-context)"></i><span>Context binding / reference</span><code>mist blue</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-context-provider)"></i><span>Context provider</span><code>light mist</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-path)"></i><span>Context declaration path</span><code>deep mist</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-invariant)"></i><span>Invariant</span><code>validation orange</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-namespace)"></i><span>Module / namespace</span><code>soft periwinkle</code></div>
+              <div class="syntax-row"><i class="syntax-dot" style="--dot:var(--mech-syntax-comment)"></i><span>Comment</span><code>muted text</code></div>
+            </div>
+          </aside>
+
+          <article class="console-specimen" aria-label="Mech console specimen">
+            <div class="code-window-header"><span>Console</span><span>Prompt + result</span></div>
+            <div class="console-line"><span class="console-prompt">&gt;:</span><code><span class="syntax-function">power</span><span class="syntax-function-structure">(</span><span class="syntax-literal">2u64</span><span class="syntax-function-structure">,</span> <span class="syntax-literal">8u64</span><span class="syntax-function-structure">)</span></code></div>
+            <div class="console-result">256u64</div>
+          </article>
+
+          <article class="runtime-error" aria-label="Runtime error specimen">
+            <div class="runtime-error-title"><span aria-hidden="true">!</span> Kind mismatch</div>
+            <p>Expected <code>&lt;u64&gt;</code>, but the transition produced <code>&lt;f64&gt;</code>.</p>
+            <dl><div><dt>Source</dt><dd>bubble-sort.mec:54</dd></div><div><dt>State</dt><dd>:Reverse</dd></div></dl>
+          </article>
+        </div>
+      </section>
+
+      <section class="lookbook-section" id="notices">
+        <div class="section-heading">
+          <span class="section-index">06 /</span>
+          <h2>Notices + feedback</h2>
+          <p>Notices reuse the five accent colors. Information and questions intentionally share blue instead of inventing another shade.</p>
+        </div>
+        <div class="callout-grid">
+          <aside class="callout" style="--callout-color:var(--mech-info)"><h3 class="callout-kicker">Information</h3><p>The runtime keeps reactive values synchronized after each accepted input.</p></aside>
+          <aside class="callout" style="--callout-color:var(--mech-warning)"><h3 class="callout-kicker">Warning</h3><p>This host capability can write to resources outside the current module.</p></aside>
+          <aside class="callout" style="--callout-color:var(--mech-success)"><h3 class="callout-kicker">Success</h3><p>The project built successfully and all required machines were resolved.</p></aside>
+          <aside class="callout" style="--callout-color:var(--mech-error)"><h3 class="callout-kicker">Error</h3><p>The matrix dimensions do not match the function's declared input kind.</p></aside>
+          <aside class="callout" style="--callout-color:var(--mech-idea)"><h3 class="callout-kicker">Idea</h3><p>Wrap repeated transformations in a function to keep the model legible.</p></aside>
+          <aside class="callout" style="--callout-color:var(--mech-question)"><h3 class="callout-kicker">Question</h3><p>Should this value be provided by the host or derived inside the program?</p></aside>
+        </div>
+      </section>
+
+      <section class="lookbook-section" id="data">
+        <div class="section-heading">
+          <span class="section-index">07 /</span>
+          <h2>Structured data</h2>
+          <p>Tables use alternating raised surfaces, a darker header, and compact state color—keeping dense information inside the same palette.</p>
+        </div>
+        <div class="table-shell">
+          <table class="data-table">
+            <thead><tr><th>Machine</th><th>Version</th><th>Role</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td><code>math</code></td><td>0.3.5</td><td>Scalar and matrix operations</td><td><span class="mini-state" style="--state:var(--mech-success)">Ready</span></td></tr>
+              <tr><td><code>matrix</code></td><td>0.3.5</td><td>Linear algebra and transforms</td><td><span class="mini-state" style="--state:var(--mech-success)">Ready</span></td></tr>
+              <tr><td><code>network</code></td><td>0.3.2</td><td>Host-provided resource effects</td><td><span class="mini-state" style="--state:var(--mech-warning)">Review</span></td></tr>
+              <tr><td><code>vision</code></td><td>preview</td><td>Image streams and tensors</td><td><span class="mini-state" style="--state:var(--mech-idea)">Experimental</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer class="lookbook-footer">
+        <span><strong>MECH / PALETTE</strong> — canonical dark system</span>
+        <span>role-based color / zero gradients / one job per color</span>
+      </footer>
+    </main>
+  </div>
+
+  <div class="toast" id="copy-toast" role="status" aria-live="polite">Copied</div>
+  <script>
+    const toast = document.querySelector("#copy-toast");
+    let toastTimer;
+
+    document.querySelectorAll(".syntax-kind").forEach((kind) => {
+      const value = kind.textContent;
+      if (!value.startsWith("<") || !value.endsWith(">")) return;
+
+      const opening = document.createElement("span");
+      opening.className = "syntax-kind-structure";
+      opening.textContent = "<";
+
+      const closing = document.createElement("span");
+      closing.className = "syntax-kind-structure";
+      closing.textContent = ">";
+
+      kind.replaceChildren(opening, value.slice(1, -1), closing);
+    });
+
+    document.querySelectorAll(".syntax-atom, .syntax-state, .syntax-capability, .syntax-match").forEach((atom) => {
+      const first = atom.firstChild;
+      if (!first || first.nodeType !== Node.TEXT_NODE || !first.nodeValue.startsWith(":")) return;
+
+      const colon = document.createElement("span");
+      colon.className = "syntax-atom-structure";
+      colon.textContent = ":";
+      first.nodeValue = first.nodeValue.slice(1);
+      atom.insertBefore(colon, first);
+    });
+
+    document.querySelectorAll("[data-copy]").forEach((swatch) => {
+      swatch.addEventListener("click", async () => {
+        const value = swatch.dataset.copy;
+        try {
+          await navigator.clipboard.writeText(value);
+          toast.textContent = `Copied ${value}`;
+        } catch (_) {
+          toast.textContent = value;
+        }
+        toast.classList.add("is-visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 1400);
+      });
+    });
+
+    document.querySelectorAll("[data-monochrome]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const specimen = button.closest(".state-machine-specimen");
+        const isMonochrome = specimen.classList.toggle("is-monochrome");
+        button.setAttribute("aria-pressed", String(isMonochrome));
+        button.textContent = isMonochrome ? "Restore color" : "View monochrome";
+      });
+    });
+
+    const links = [...document.querySelectorAll(".rail-nav a")];
+    const sections = links
+      .map((link) => document.querySelector(link.getAttribute("href")))
+      .filter(Boolean);
+
+    if ("IntersectionObserver" in window) {
+      const observer = new IntersectionObserver((entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (!visible) return;
+        links.forEach((link) => {
+          link.classList.toggle("is-active", link.getAttribute("href") === `#${visible.target.id}`);
+        });
+      }, { rootMargin: "-20% 0px -65%", threshold: [0, 0.15, 0.5] });
+      sections.forEach((section) => observer.observe(section));
+    }
+  </script>
+</body>
+</html>

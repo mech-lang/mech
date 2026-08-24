@@ -10,7 +10,7 @@ fn include(name: &str) -> String {
 }
 
 #[test]
-fn shipped_shims_expose_the_four_independent_style_layers_in_order() {
+fn shipped_shims_expose_the_five_independent_style_layers_in_order() {
     for (shim, identity) in [
         ("index.html", "document"),
         ("blog.html", "blog"),
@@ -22,7 +22,7 @@ fn shipped_shims_expose_the_four_independent_style_layers_in_order() {
             "{shim} lost its shim identity"
         );
         let mut previous = 0;
-        for layer in ["source", "mechdown", "page", "repl"] {
+        for layer in ["palette", "source", "mechdown", "page", "repl"] {
             let marker = format!("data-mech-style-layer=\"{layer}\"");
             assert_eq!(
                 html.matches(&marker).count(),
@@ -113,7 +113,7 @@ fn source_layer_keeps_the_structured_syntax_highlighting_contract() {
 }
 
 #[test]
-fn page_shell_and_variants_do_not_own_source_or_repl_components() {
+fn page_variants_do_not_own_source_or_repl_components() {
     for stylesheet in ["style.css", "blog.css", "docs.css"] {
         let css = include(stylesheet);
         assert!(
@@ -149,11 +149,15 @@ fn page_shell_and_variants_do_not_own_source_or_repl_components() {
 }
 
 #[test]
-fn mechdown_layer_owns_portable_content_without_blog_numbering() {
+fn mechdown_layer_owns_the_portable_editorial_hierarchy() {
     let css = include("mechdown.css");
     for contract in [
-        ".mechdown-section {",
-        "padding: 0 0 30px",
+        "counter-reset: mechdown-section",
+        ".mechdown-section.mechdown-titled-section {\n  counter-increment: mechdown-section",
+        ".mechdown-section > h2::before",
+        "content: \"section \" counter(mechdown-section, decimal)",
+        ".mechdown-section > h3::before",
+        "counter(mechdown-subsection, decimal)",
         ".mech-abstract {",
         "border: 1px solid var(--mechdown-accent)",
         "--mechdown-inline-code: var(--mech-syntax-variable, var(--var-name-color, #eddaf1))",
@@ -163,200 +167,6 @@ fn mechdown_layer_owns_portable_content_without_blog_numbering() {
             css.contains(contract),
             "Mechdown lost editorial style {contract}"
         );
-    }
-    for blog_only in [
-        "counter(mechdown-section",
-        "counter(mechdown-subsection",
-        "content: \"section \"",
-        "content: \"Eq. \"",
-        ".mech-block-quote::before",
-    ] {
-        assert!(
-            !css.contains(blog_only),
-            "portable Mechdown retained blog-only decoration {blog_only}"
-        );
-    }
-}
-
-#[test]
-fn canonical_palette_is_shared_by_every_style_layer_without_gradients() {
-    let page = include("style.css");
-    for token in [
-        "--mech-canvas: #0d1117",
-        "--mech-brand: #f4bd3e",
-        "--mech-selection-bg: rgb(244 189 62 / 24%)",
-        "--mech-syntax-function: #bbddc2",
-        "--mech-syntax-match: #d7c0a4",
-        "--mech-syntax-machine: #d8a5e4",
-        "--mech-syntax-context: #acc9d2",
-    ] {
-        assert!(page.contains(token), "page palette lost {token}");
-    }
-
-    for stylesheet in [
-        "style.css",
-        "blog.css",
-        "docs.css",
-        "mech-source.css",
-        "mechdown.css",
-        "mech-repl.css",
-    ] {
-        let css = include(stylesheet);
-        assert!(
-            !css.to_ascii_lowercase().contains("gradient("),
-            "{stylesheet} introduced a gradient",
-        );
-    }
-
-    assert!(include("mech-source.css").contains("var(--mech-syntax-function, #bbddc2)"));
-    assert!(include("mechdown.css").contains("var(--mech-brand, var(--accent-primary"));
-    assert!(include("mech-repl.css").contains("var(--mech-syntax-kind"));
-}
-
-#[test]
-fn mechdown_preserves_icons_and_portable_formatter_details() {
-    let css = include("mechdown.css");
-    for block in ["info", "question", "success", "warning", "error", "idea"] {
-        assert!(
-            css.contains(&format!(".mech-{block}-block::before")),
-            "Mechdown lost the {block} icon",
-        );
-        assert!(
-            css.contains(&format!("--mechdown-{block}")),
-            "Mechdown lost the {block} role",
-        );
-    }
-    for restored in [
-        ".mech-figure-table-cell",
-        ".mech-figure-panel",
-        ".mech-figure-grid-image",
-        ".mech-figure-caption-ref",
-        ".mech-citation-link-icon",
-        ".mech-reference",
-        ".mech-mika-section",
-        "a.mech-hyperlink .mech-inline-code",
-        ".mech-diagram :is(.edgePath path, .flowchart-link)",
-    ] {
-        assert!(css.contains(restored), "Mechdown lost {restored}");
-    }
-    assert!(css.contains("mask: url(\"data:image/svg+xml;base64,"));
-    assert!(
-        !css.contains("rotate(45deg)"),
-        "callouts must not become diamonds"
-    );
-
-    let page = include("blog.css");
-    for restored in [
-        ".mech-hero-img figure img",
-        ".article-intro > .mech-intro > p:first-of-type::first-letter",
-        ".backmatter-cited .backmatter-body",
-        ".mech-block-quote::before",
-        ".mech-equation::after",
-    ] {
-        assert!(page.contains(restored), "blog variant lost {restored}");
-    }
-}
-
-#[test]
-fn blog_and_docs_variants_do_not_collapse_into_one_visual_system() {
-    let blog = include("blog.css");
-    for editorial in [
-        "html[data-mech-shim=\"blog\"] .hero",
-        "counter-reset: mechdown-section equation",
-        "content: \"section \" counter(mechdown-section, decimal)",
-        ".mech-block-quote::before",
-        "content: \"Eq. \" counter(equation)",
-        "column-count: 2",
-    ] {
-        assert!(
-            blog.contains(editorial),
-            "blog lost editorial contract {editorial}"
-        );
-    }
-
-    let docs = include("docs.css");
-    for workspace in [
-        "html[data-mech-shim=\"docs\"] .docs-layout",
-        "grid-template-columns: var(--toc-width) minmax(0, 1fr)",
-        ".docs-layout:is(.hide-toc, .no-sections, .has-empty-toc)",
-        "data-mech-shim=\"docs\"",
-        "@media (max-width: 900px)",
-        "@container (max-width: 900px)",
-    ] {
-        assert!(
-            docs.contains(workspace),
-            "docs lost workspace contract {workspace}"
-        );
-    }
-    for editorial in [
-        "counter(mechdown-section",
-        "content: \"section \"",
-        "content: \"Eq. \"",
-        "first-of-type::first-letter",
-        ".mech-block-quote::before",
-        "column-count: 2",
-    ] {
-        assert!(
-            !docs.contains(editorial),
-            "docs inherited blog decoration {editorial}"
-        );
-    }
-
-    let repl = include("mech-repl.css");
-    assert!(repl.contains(
-        "grid-template-columns: minmax(0, 1fr) 8px var(--mech-console-size, var(--mech-repl-size))"
-    ));
-}
-
-#[test]
-fn source_palette_follows_construct_roles_instead_of_literal_types() {
-    let css = include("mech-source.css");
-    for contract in [
-        "--mech-source-function: var(--mech-syntax-function, #bbddc2)",
-        "--mech-source-match: var(--mech-syntax-match, #d7c0a4)",
-        "--mech-source-atom: var(--mech-syntax-atom, #d7c0a4)",
-        "--mech-source-machine: var(--mech-syntax-machine, #d8a5e4)",
-        "--mech-source-context: var(--mech-syntax-context, #acc9d2)",
-        ".mech-match-guard-separator",
-        ".mech-match-guard",
-        ".mech-pattern-array-open",
-        ".mech-pattern-array-op",
-        ".mech-pattern-separator",
-        ".mech-state-variable-separator",
-        ".mech-fsm-start-op",
-        ".mech-matrix-size-separator",
-        ".mech-tuple-destructure .mech-tuple-vars",
-        ".mech-atom-sigil",
-        ".mech-context-provider",
-        ".mech-context-path",
-        "Guard rails are one sand-yellow signal",
-    ] {
-        assert!(css.contains(contract), "source palette lost {contract}");
-    }
-
-    let formatter = fs::read_to_string(
-        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("src")
-            .join("syntax")
-            .join("src")
-            .join("formatter.rs"),
-    )
-    .unwrap();
-    for markup in [
-        "mech-atom-sigil",
-        "mech-enum-variant-sigil",
-        "mech-match-guard-separator",
-        "mech-match-guard",
-        "mech-pattern-array-open",
-        "mech-pattern-array-op",
-        "mech-pattern-separator",
-        "mech-state-variable-separator",
-        "mech-fsm-start-op",
-        "mech-matrix-size-separator",
-        "mech-context-provider",
-        "mech-context-capability",
-    ] {
-        assert!(formatter.contains(markup), "formatter lost {markup}");
     }
 }
 
@@ -515,4 +325,238 @@ fn mechdown_and_repl_layers_are_standalone_components() {
     assert!(repl.contains("text-overflow: ellipsis;"));
     assert!(!repl.contains(".site-header"));
     assert!(!repl.contains("[data-mechdown]"));
+}
+
+#[test]
+fn canonical_palette_is_a_single_token_layer_without_gradients() {
+    let palette = include("palette.css");
+    for token in [
+        "--mech-canvas: #0d1117",
+        "--mech-text-reading: #fff6e5",
+        "--mech-link: #f7ce6e",
+        "--mech-syntax-function: #bbddc2",
+        "--mech-syntax-kind: #f09fca",
+        "--mech-syntax-atom: #d7c0a4",
+        "--mech-syntax-machine: #d8a5e4",
+        "--mech-syntax-context: #acc9d2",
+        "--mech-syntax-invariant: var(--mech-warning)",
+    ] {
+        assert!(palette.contains(token), "palette lost {token}");
+    }
+
+    let page = include("style.css");
+    for canonical_definition in ["--mech-canvas:", "--mech-link:", "--mech-syntax-function:"] {
+        assert!(
+            !page.contains(canonical_definition),
+            "page shell duplicated palette definition {canonical_definition}"
+        );
+    }
+
+    for stylesheet in [
+        "palette.css",
+        "palette-lookbook.css",
+        "style.css",
+        "blog.css",
+        "docs.css",
+        "mech-source.css",
+        "mechdown.css",
+        "mech-repl.css",
+    ] {
+        let css = include(stylesheet);
+        assert!(
+            !css.to_ascii_lowercase().contains("gradient("),
+            "{stylesheet} introduced a gradient"
+        );
+    }
+}
+
+#[test]
+fn established_blog_design_remains_in_the_shared_layers() {
+    let page = include("style.css");
+    for selector in [
+        ".hero {",
+        ".hero-panel {",
+        ".hero h1 {",
+        ".mech-meta {",
+        ".post-pagination{",
+        ".hero-avatar {",
+    ] {
+        assert!(page.contains(selector), "shared blog shell lost {selector}");
+    }
+
+    let mechdown = include("mechdown.css");
+    for contract in [
+        "counter-reset: mechdown-section",
+        "counter-increment: mechdown-section",
+        "content: \"section \" counter(mechdown-section, decimal)",
+        "counter(mechdown-subsection, decimal)",
+        "padding: 0 10px 30px",
+    ] {
+        assert!(
+            mechdown.contains(contract),
+            "section design lost {contract}"
+        );
+    }
+
+    let blog = include("blog.css");
+    for addition in [
+        ".mech-hero-img figure img",
+        "p:first-of-type::first-letter",
+        ".mech-block-quote::before",
+        ".mech-equation::after",
+        ".backmatter-cited .backmatter-body",
+    ] {
+        assert!(blog.contains(addition), "blog addition lost {addition}");
+    }
+}
+
+#[test]
+fn docs_and_app_shims_keep_their_distinct_structure() {
+    let docs = include("docs.css");
+    for contract in [
+        ".docs-layout {",
+        "grid-template-columns: var(--toc-width) minmax(0, 1fr)",
+        ".docs-layout:is(.hide-toc, .no-sections, .has-empty-toc)",
+        ".mechdown-section > :is(h2, h3, h4, h5, h6)::before",
+        "font-size: clamp(2rem, 3vw, 2.75rem)",
+        "@media (max-width: 900px)",
+        "@container (max-width: 900px)",
+    ] {
+        assert!(docs.contains(contract), "docs shim lost {contract}");
+    }
+
+    let app = include("project.html");
+    assert!(app.contains("data-mech-project=\"/\""));
+    for document_surface in [
+        "data-mech-style-layer",
+        "data-mechdown",
+        "data-mech-repl-host",
+        "katex",
+        "mermaid",
+    ] {
+        assert!(
+            !app.contains(document_surface),
+            "raw app shim loaded {document_surface}"
+        );
+    }
+}
+
+#[test]
+fn mechdown_keeps_the_existing_icons_and_extended_formatter_surfaces() {
+    let css = include("mechdown.css");
+    for block in ["info", "question", "success", "warning", "error", "idea"] {
+        assert!(
+            css.contains(&format!(".mech-{block}-block::before")),
+            "Mechdown lost the {block} icon"
+        );
+        assert!(css.contains(&format!("--mechdown-{block}")));
+    }
+    for selector in [
+        ".mech-figure-table-cell",
+        ".mech-figure-panel",
+        ".mech-figure-caption-ref",
+        ".mech-citation-link-icon",
+        ".mech-reference",
+        ".mech-mika-section",
+        "a.mech-hyperlink .mech-inline-code",
+        ".mech-diagram :is(.edgePath path, .flowchart-link)",
+    ] {
+        assert!(css.contains(selector), "Mechdown lost {selector}");
+    }
+    assert!(css.contains("mask: url(\"data:image/svg+xml;base64,"));
+    assert!(!css.contains("rotate(45deg)"), "callouts became diamonds");
+}
+
+#[test]
+fn source_palette_follows_construct_roles_and_context_parts() {
+    let css = include("mech-source.css");
+    for contract in [
+        "--mech-source-function: var(--mech-syntax-function, #bbddc2)",
+        "--mech-source-match: var(--mech-syntax-match, #d7c0a4)",
+        "--mech-source-atom: var(--mech-syntax-atom, #d7c0a4)",
+        "--mech-source-machine: var(--mech-syntax-machine, #d8a5e4)",
+        "--mech-source-context: var(--mech-syntax-context, #acc9d2)",
+        ".mech-match-guard-separator",
+        ".mech-pattern-array-open",
+        ".mech-state-variable-separator",
+        ".mech-fsm-start-op",
+        ".mech-atom-sigil",
+        ".mech-context-provider",
+        ".mech-context-path",
+        ".mech-match-guard",
+        ".mech-pattern-array-op",
+        ".mech-pattern-separator",
+        ".mech-matrix-size-separator",
+        ".mech-tuple-destructure .mech-tuple-vars",
+        "Guard rails are one sand-yellow signal",
+    ] {
+        assert!(css.contains(contract), "source palette lost {contract}");
+    }
+
+    let formatter = fs::read_to_string(
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/syntax/src/formatter.rs"),
+    )
+    .unwrap();
+    for markup in [
+        "mech-atom-sigil",
+        "mech-enum-variant-sigil",
+        "mech-match-guard-separator",
+        "mech-pattern-array-open",
+        "mech-state-variable-separator",
+        "mech-fsm-start-op",
+        "mech-context-provider",
+        "mech-context-capability",
+        "mech-match-guard",
+        "mech-pattern-array-op",
+        "mech-pattern-separator",
+        "mech-matrix-size-separator",
+    ] {
+        assert!(formatter.contains(markup), "formatter lost {markup}");
+    }
+}
+
+#[test]
+fn blog_and_docs_do_not_collapse_into_one_presentation() {
+    let blog = include("blog.css");
+    for editorial in [
+        "counter-reset: mechdown-section equation",
+        ".mech-block-quote::before",
+        "content: \"Eq. \" counter(equation)",
+        "column-count: 2",
+    ] {
+        assert!(blog.contains(editorial), "blog lost {editorial}");
+    }
+
+    let docs = include("docs.css");
+    for quiet_contract in [
+        "data-mech-shim=\"docs\"",
+        ".mechdown-section > :is(h2, h3, h4, h5, h6)::before",
+        "font-size: clamp(2rem, 3vw, 2.75rem)",
+        "color: var(--text-secondary)",
+    ] {
+        assert!(docs.contains(quiet_contract), "docs lost {quiet_contract}");
+    }
+    for blog_only in [
+        "content: \"Eq. \"",
+        "first-of-type::first-letter",
+        ".mech-block-quote::before",
+        "column-count: 2",
+    ] {
+        assert!(!docs.contains(blog_only), "docs inherited {blog_only}");
+    }
+
+    let repl = include("mech-repl.css");
+    assert!(repl.contains(
+        "grid-template-columns: minmax(0, 1fr) 8px var(--mech-console-size, var(--mech-repl-size))"
+    ));
+}
+
+#[test]
+fn palette_lookbook_is_static_and_uses_the_canonical_tokens() {
+    let html = include("palette.html");
+    assert!(html.contains("href=\"./palette.css\""));
+    assert!(html.contains("href=\"./palette-lookbook.css\""));
+    assert!(html.contains("@clock"));
+    assert!(html.contains("match-tuple.mec"));
+    assert!(html.contains("bubble-sort.mec"));
 }

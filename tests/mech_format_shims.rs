@@ -182,7 +182,7 @@ fn mech_format_default_shim_restores_rich_shell() {
             "console-pane",
         ],
     );
-    for layer in ["source", "mechdown", "page", "repl"] {
+    for layer in ["palette", "source", "mechdown", "page", "repl"] {
         assert!(
             html.contains(&format!("data-mech-style-layer=\"{layer}\"")),
             "default output did not expose the {layer} style layer",

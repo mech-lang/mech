@@ -301,6 +301,28 @@ fn formatter_preserves_new_prefix_context_resource_read() {
     );
 }
 
+#[test]
+fn formatter_exposes_every_context_declaration_color_role() {
+    let statement = first_statement("@clock := time://clock/clock{:read(second)}");
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.statement(&statement);
+
+    for role in [
+        "mech-context-name",
+        "mech-context-provider",
+        "mech-context-scheme-op",
+        "mech-context-path",
+        "mech-context-capability",
+        "mech-atom-sigil",
+        "mech-atom-name",
+    ] {
+        assert!(html.contains(role), "context HTML lost {role}: {html}");
+    }
+    assert!(html.contains(">clock/clock</span>"), "{html}");
+    assert!(html.contains(">second</span>"), "{html}");
+}
+
 fn plain_paragraph(text: &str) -> Paragraph {
     Paragraph {
         elements: vec![ParagraphElement::Text(token(TokenKind::Text, text))],
@@ -416,12 +438,14 @@ fn html_shim_omits_an_empty_table_of_contents() {
 fn html_style_layers_are_independent_with_compatibility_shim() {
     let tree = html_fixture(&[("Fixture section", "Fixture content")]);
     let styles = HtmlStyleSheets {
+        palette: "/* palette */".to_string(),
         source: "/* source */".to_string(),
         mechdown: "/* mechdown */".to_string(),
         page: "/* page */".to_string(),
         repl: "/* repl */".to_string(),
     };
     let layered_shim = [
+        "{{PALETTE_STYLESHEET}}",
         "{{MECH_SOURCE_STYLESHEET}}",
         "{{MECHDOWN_STYLESHEET}}",
         "{{PAGE_STYLESHEET}}",
@@ -438,7 +462,7 @@ fn html_style_layers_are_independent_with_compatibility_shim() {
     );
     assert_eq!(
         layered.html,
-        "/* source */|/* mechdown */|/* page */|/* repl */"
+        "/* palette */|/* source */|/* mechdown */|/* page */|/* repl */"
     );
 
     let mut legacy_formatter = Formatter::new();
@@ -450,11 +474,12 @@ fn html_style_layers_are_independent_with_compatibility_shim() {
     );
     assert_eq!(
         legacy.html,
-        "/* source */\n/* mechdown */\n/* page */\n/* repl */"
+        "/* palette */\n/* source */\n/* mechdown */\n/* page */\n/* repl */"
     );
 
     let partially_migrated_shim = "{{STYLESHEET}}|{{MECH_SOURCE_STYLESHEET}}".to_string();
     let partial_styles = HtmlStyleSheets {
+        palette: "/* palette */".to_string(),
         source: "/* source */".to_string(),
         mechdown: "/* mechdown */".to_string(),
         page: "/* page */".to_string(),
@@ -469,7 +494,7 @@ fn html_style_layers_are_independent_with_compatibility_shim() {
     );
     assert_eq!(
         partial.html,
-        "/* source */\n/* mechdown */\n/* page */\n/* repl */|/* source */"
+        "/* palette */\n/* source */\n/* mechdown */\n/* page */\n/* repl */|/* source */"
     );
 }
 
