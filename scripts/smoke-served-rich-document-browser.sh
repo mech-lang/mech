@@ -746,6 +746,61 @@ def assert_output_fullscreen_control():
 
     evaluate("""
 (() => {
+  const scene = JSON.stringify({
+    width: 120,
+    height: 80,
+    background: '#080b12',
+    circles: [
+      { id: 'fill-body', x: 60, y: 40, radius: 8, fill: '#ffd166', stroke: 'none', stroke_width: 0, opacity: 1 },
+    ],
+    lines: [],
+  });
+  window.dispatchEvent(new CustomEvent('mech:output', { detail: {
+    stream: 'stdout', operation: 'create', display_id: 'fullscreen-fill-scene',
+    content: {
+      kind: 'scene',
+      data: { representations: { representations: [
+        { media_type: 'application/vnd.mech.scene+json', data: { encoding: 'text', value: scene } },
+      ] } },
+    },
+  }}));
+})()
+""")
+    wait_for(
+        "document.querySelector('[data-mech-display-id=fullscreen-fill-scene] [data-mech-rich-scene=true]') !== null",
+        "a rich Scene in output fullscreen",
+    )
+    scene_fill = evaluate_json("""
+(() => {
+  const body = document.querySelector(
+    '[data-mech-display-id="fullscreen-fill-scene"] [data-mech-output-fill="true"]');
+  const scene = body?.querySelector('[data-mech-rich-scene="true"]');
+  const bodyRect = body?.getBoundingClientRect();
+  const sceneRect = scene?.getBoundingClientRect();
+  return bodyRect && sceneRect ? {
+    bodyHeight: bodyRect.height,
+    sceneHeight: sceneRect.height,
+    fillsBody: Math.abs(bodyRect.height - sceneRect.height) <= 1,
+    fillsUsefulViewport: sceneRect.height >= innerHeight * 0.8,
+    noNestedScroll: scene.scrollHeight <= scene.clientHeight && scene.scrollWidth <= scene.clientWidth,
+  } : null;
+})()
+""")
+    if (
+        scene_fill is None or
+        not scene_fill["fillsBody"] or
+        not scene_fill["fillsUsefulViewport"] or
+        not scene_fill["noNestedScroll"]
+    ):
+        fail(f"fullscreen Scene did not propagate fill geometry to the render surface: {scene_fill!r}")
+    evaluate("""
+window.dispatchEvent(new CustomEvent('mech:output', { detail: {
+  stream: 'stdout', operation: 'remove', display_id: 'fullscreen-fill-scene',
+}}))
+""")
+
+    evaluate("""
+(() => {
   window.dispatchEvent(new CustomEvent('mech:output', { detail: {
     stream: 'stdout', operation: 'create', display_id: 'fullscreen-long-text',
     content: {kind: 'text', data: {text: Array.from(
@@ -858,6 +913,68 @@ window.dispatchEvent(new CustomEvent('mech:output', { detail: {
 })()
 """)
 
+    evaluate("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const outputToggle = document.querySelector('button[data-mech-output-fullscreen]');
+  const consoleToggle = document.querySelector('button[data-mech-console-fullscreen]');
+  const pending = {native: false, exitCalls: 0, resolves: []};
+  window.__mechCollidingFullscreen = pending;
+  Object.defineProperty(document, 'fullscreenElement', {
+    configurable: true,
+    get: () => pending.native ? pane : null,
+  });
+  Object.defineProperty(document, 'exitFullscreen', {
+    configurable: true,
+    value: async () => {
+      pending.exitCalls += 1;
+      pending.native = false;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
+  Object.defineProperty(pane, 'requestFullscreen', {
+    configurable: true,
+    value: () => new Promise(resolve => {
+      pending.resolves.push(() => {
+        pending.native = true;
+        document.dispatchEvent(new Event('fullscreenchange'));
+        resolve();
+      });
+    }),
+  });
+  outputToggle.click();
+  outputToggle.click();
+  consoleToggle.click();
+})()
+""")
+    wait_for(
+        "window.__mechCollidingFullscreen?.resolves.length === 2 && "
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'false'",
+        "a successor console request after canceling output fullscreen",
+    )
+    evaluate("window.__mechCollidingFullscreen.resolves[0]()")
+    wait_for(
+        "window.__mechCollidingFullscreen?.exitCalls === 0 && "
+        "document.fullscreenElement === document.querySelector('[data-mech-console-pane]') && "
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'button'",
+        "the stale output completion preserving its successor's fullscreen ownership",
+    )
+    evaluate("window.__mechCollidingFullscreen.resolves[1]()")
+    evaluate("document.querySelector('button[data-mech-console-fullscreen]')?.click()")
+    wait_for(
+        "window.__mechCollidingFullscreen?.exitCalls === 1 && document.fullscreenElement === null",
+        "the successor console owner exiting its own native fullscreen session",
+    )
+    evaluate("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  delete pane.requestFullscreen;
+  delete document.exitFullscreen;
+  delete document.fullscreenElement;
+  delete window.__mechCollidingFullscreen;
+})()
+""")
+
     devtools.call(
         "Emulation.setDeviceMetricsOverride",
         {"width": 700, "height": 700, "deviceScaleFactor": 1, "mobile": False},
@@ -919,7 +1036,13 @@ def assert_fullscreen_accessibility():
   });
   publish({
     stream: 'stderr', operation: 'create', display_id: 'unread-error',
-    content: { kind: 'text', data: { text: 'new error activity' } },
+    content: {
+      kind: 'value',
+      data: {
+        kind: `record<${'sensor-failure<f64> '.repeat(30)}>`,
+        text: 'new error activity',
+      },
+    },
   });
 })()
 """)
@@ -963,6 +1086,14 @@ def assert_fullscreen_accessibility():
         kind.textContent.length > 96 && style.overflow === 'hidden' &&
         style.textOverflow === 'ellipsis' && style.maxWidth !== 'none';
     })(),
+    errorKindElided: (() => {
+      const kind = document.querySelector(
+        '[data-mech-display-id="unread-error"] [data-mech-kind-elided="true"]');
+      const style = kind && getComputedStyle(kind);
+      return Boolean(kind) && kind.textContent === kind.title &&
+        kind.textContent.length > 96 && style.overflow === 'hidden' &&
+        style.textOverflow === 'ellipsis' && style.maxWidth !== 'none';
+    })(),
   };
 })()
 """)
@@ -972,7 +1103,8 @@ def assert_fullscreen_accessibility():
         not initial["unreadCreated"] or
         not initial["errorBadgeSynchronized"] or
         not initial["resizersInitialized"] or
-        not initial["kindElided"]
+        not initial["kindElided"] or
+        not initial["errorKindElided"]
     ):
         fail(f"fullscreen control did not begin with a collapsed accessible state: {initial!r}")
 

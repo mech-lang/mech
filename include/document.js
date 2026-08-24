@@ -45,6 +45,8 @@ const state = {
   tocLinkHandlers: new Map(),
   mermaidInitialized: false,
   outputFullscreenController: null,
+  fullscreenGeneration: 0,
+  fullscreenRequest: null,
   computeBridge: null,
   computeBridgeRefresh: null,
   computeBridgeGeneration: null,
@@ -3221,6 +3223,36 @@ function setFullscreenState(pane, toggle, active, mode = null) {
   }
 }
 
+function claimFullscreen(owner) {
+  state.fullscreenGeneration += 1;
+  const request = Object.freeze({ owner, generation: state.fullscreenGeneration });
+  state.fullscreenRequest = request;
+  return request;
+}
+
+function ownsFullscreen(request) {
+  return Boolean(
+    request &&
+    state.fullscreenRequest?.owner === request.owner &&
+    state.fullscreenRequest?.generation === request.generation
+  );
+}
+
+function releaseFullscreen(request) {
+  if (!ownsFullscreen(request)) {
+    return false;
+  }
+  state.fullscreenGeneration += 1;
+  state.fullscreenRequest = null;
+  return true;
+}
+
+async function relinquishUnownedNativeFullscreen(pane) {
+  if (!state.fullscreenRequest && document.fullscreenElement === pane) {
+    await document.exitFullscreen();
+  }
+}
+
 function initializeFullscreen() {
   const pane = documentConsolePane();
   const [toggle] = documentConsoleFullscreenControls();
@@ -3228,10 +3260,12 @@ function initializeFullscreen() {
     return;
   }
   let buttonFullscreenState = "idle";
+  let fullscreenRequest = null;
 
   const synchronize = () => {
     const nativeFullscreen =
-      document.fullscreenElement === pane && !outputFullscreenActive();
+      document.fullscreenElement === pane &&
+      state.fullscreenRequest?.owner === "console";
     if (nativeFullscreen) {
       buttonFullscreenState = "native";
       delete pane.dataset.mechFullscreenFallback;
@@ -3239,10 +3273,13 @@ function initializeFullscreen() {
       // Escape and browser-chrome exits are authoritative. Once an established
       // native session ends, the next button press must start a fresh entry.
       buttonFullscreenState = "idle";
+      releaseFullscreen(fullscreenRequest);
+      fullscreenRequest = null;
       delete pane.dataset.mechFullscreenFallback;
       state.root.dataset.mechConsoleMode = "docked";
     }
     const fallbackFullscreen =
+      ownsFullscreen(fullscreenRequest) &&
       ["requesting", "fallback"].includes(buttonFullscreenState) &&
       pane.dataset.mechFullscreenFallback === "true";
     const active = nativeFullscreen || fallbackFullscreen;
@@ -3262,10 +3299,14 @@ function initializeFullscreen() {
       consoleMode() === "button"
     ) {
       buttonFullscreenState = "idle";
+      const ownedRequest = fullscreenRequest;
+      const ownedFullscreen = ownsFullscreen(ownedRequest);
+      releaseFullscreen(ownedRequest);
+      fullscreenRequest = null;
       delete pane.dataset.mechFullscreenFallback;
       state.root.dataset.mechConsoleMode = "docked";
       synchronize();
-      if (document.fullscreenElement === pane) {
+      if (ownedFullscreen && document.fullscreenElement === pane) {
         try {
           await document.exitFullscreen();
         } catch (error) {
@@ -3277,16 +3318,17 @@ function initializeFullscreen() {
     }
 
     buttonFullscreenState = "requesting";
+    fullscreenRequest = claimFullscreen("console");
+    const request = fullscreenRequest;
     pane.dataset.mechFullscreenFallback = "true";
     state.root.dataset.mechConsoleMode = "button";
     synchronize();
     if (pane.requestFullscreen) {
       try {
         await pane.requestFullscreen();
-        if (buttonFullscreenState === "idle") {
-          if (document.fullscreenElement === pane) {
-            await document.exitFullscreen();
-          }
+        if (!ownsFullscreen(request)) {
+          buttonFullscreenState = "idle";
+          await relinquishUnownedNativeFullscreen(pane);
           return;
         }
         if (document.fullscreenElement === pane) {
@@ -3296,7 +3338,7 @@ function initializeFullscreen() {
           buttonFullscreenState = "fallback";
         }
       } catch (error) {
-        if (buttonFullscreenState !== "idle") {
+        if (ownsFullscreen(request)) {
           buttonFullscreenState = "fallback";
           pane.dataset.mechFullscreenFallback = "true";
           appendError(error);
@@ -3314,6 +3356,7 @@ function initializeOutputFullscreen() {
     return;
   }
   let buttonState = "idle";
+  let fullscreenRequest = null;
 
   const revealWorkspace = () => {
     setOutputFullscreenVisualState(false);
@@ -3327,11 +3370,14 @@ function initializeOutputFullscreen() {
 
   const synchronize = () => {
     const nativeFullscreen =
-      document.fullscreenElement === pane && outputFullscreenActive();
+      document.fullscreenElement === pane &&
+      state.fullscreenRequest?.owner === "output";
     if (nativeFullscreen) {
       buttonState = "native";
     } else if (buttonState === "native") {
       buttonState = "idle";
+      releaseFullscreen(fullscreenRequest);
+      fullscreenRequest = null;
       revealWorkspace();
     }
     setOutputFullscreenVisualState(outputFullscreenActive());
@@ -3339,7 +3385,11 @@ function initializeOutputFullscreen() {
 
   const exit = async ({ revealWorkspace: shouldReveal = true } = {}) => {
     buttonState = "idle";
-    if (document.fullscreenElement === pane) {
+    const ownedRequest = fullscreenRequest;
+    const ownedFullscreen = ownsFullscreen(ownedRequest);
+    releaseFullscreen(ownedRequest);
+    fullscreenRequest = null;
+    if (ownedFullscreen && document.fullscreenElement === pane) {
       try {
         await document.exitFullscreen();
       } catch (error) {
@@ -3355,6 +3405,8 @@ function initializeOutputFullscreen() {
 
   const enter = async () => {
     buttonState = "requesting";
+    fullscreenRequest = claimFullscreen("output");
+    const request = fullscreenRequest;
     if (isOutputPresentation()) {
       state.root.dataset.mechPresentationView = "output";
     }
@@ -3362,15 +3414,14 @@ function initializeOutputFullscreen() {
     if (pane.requestFullscreen) {
       try {
         await pane.requestFullscreen();
-        if (buttonState === "idle") {
-          if (document.fullscreenElement === pane) {
-            await document.exitFullscreen();
-          }
+        if (!ownsFullscreen(request)) {
+          buttonState = "idle";
+          await relinquishUnownedNativeFullscreen(pane);
           return;
         }
         buttonState = document.fullscreenElement === pane ? "native" : "fallback";
       } catch (error) {
-        if (buttonState !== "idle") {
+        if (ownsFullscreen(request)) {
           buttonState = "fallback";
           appendError(error);
         }
