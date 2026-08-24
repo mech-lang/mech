@@ -1162,6 +1162,12 @@ try:
     if compute_backend == "wgpu":
         separator = "&" if "?" in page_url else "?"
         browser.navigate(page_url + separator + "mech-terminal-submit-probe=1")
+        browser.wait_for(
+            "new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
+            "&& document.readyState !== 'loading'",
+            "the terminal-submit probe document to commit",
+            timeout=20,
+        )
         probe_deadline = time.monotonic() + 45
         probe = {}
         while time.monotonic() < probe_deadline:
@@ -1198,6 +1204,12 @@ try:
             )
 
     browser.navigate(page_url)
+    browser.wait_for(
+        "!new URLSearchParams(location.search).has('mech-terminal-submit-probe') "
+        "&& document.readyState !== 'loading'",
+        "the fresh numeric EKF document to commit",
+        timeout=20,
+    )
     deadline = time.monotonic() + 90
     while time.monotonic() < deadline:
         if browser.process.poll() is not None:

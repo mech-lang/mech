@@ -4421,6 +4421,76 @@ def assert_fatal_error_is_visible():
     assert_terminal_runtime_mutations_retired("failed")
 
 
+def assert_disposal_retires_established_fullscreen():
+    if label != "default":
+        return
+    devtools.call("Page.navigate", {"url": page_url}, session_id)
+    wait_for(
+        "document.documentElement?.dataset.mechDocumentStatus === 'ready' && "
+        "Boolean(document.querySelector('[data-mech-output-fullscreen]'))",
+        "the document reloading for native fullscreen disposal coverage",
+        timeout=45,
+    )
+    result = evaluate_json("""
+(async () => {
+  const root = document.querySelector('.mech-root');
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const toggle = document.querySelector('button[data-mech-output-fullscreen]');
+  const native = { active: false, exitCalls: 0 };
+  Object.defineProperty(document, 'fullscreenElement', {
+    configurable: true,
+    get: () => native.active ? pane : null,
+  });
+  Object.defineProperty(pane, 'requestFullscreen', {
+    configurable: true,
+    value: async () => {
+      native.active = true;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
+  Object.defineProperty(document, 'exitFullscreen', {
+    configurable: true,
+    value: async () => {
+      native.exitCalls += 1;
+      native.active = false;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
+  toggle?.click();
+  await Promise.resolve();
+  await Promise.resolve();
+  const established = native.active &&
+    root?.dataset.mechOutputFullscreenActive === 'true' &&
+    document.body.classList.contains('output-fullscreen');
+  window.dispatchEvent(new Event('beforeunload'));
+  await Promise.resolve();
+  return {
+    established,
+    exitCalls: native.exitCalls,
+    nativeActive: native.active,
+    consoleMode: root?.dataset.mechConsoleMode,
+    outputActive: root?.dataset.mechOutputFullscreenActive,
+    bodyActive: document.body.classList.contains('output-fullscreen'),
+    consolePressed:
+      document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed'),
+    outputPressed: toggle?.getAttribute('aria-pressed'),
+  };
+})()
+""")
+    expected = {
+        "established": True,
+        "exitCalls": 1,
+        "nativeActive": False,
+        "consoleMode": "docked",
+        "outputActive": "false",
+        "bodyActive": False,
+        "consolePressed": "false",
+        "outputPressed": "false",
+    }
+    if result != expected:
+        fail(f"disposal retained established fullscreen browser/UI state: {result!r}")
+
+
 def assert_stop_invalidates_pending_ownership():
     devtools.call("Page.navigate", {"url": page_url}, session_id)
     wait_for(
@@ -4802,6 +4872,7 @@ try:
     assert_mobile_contract()
     assert_repl_termination()
     assert_fatal_error_is_visible()
+    assert_disposal_retires_established_fullscreen()
     assert_stop_invalidates_pending_ownership()
     capture_artifacts()
 except Exception as error:

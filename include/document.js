@@ -791,6 +791,7 @@ function stopRuntime(nextLifecycle = "stopped") {
   // local coordinator was superseded while its request promise was settling.
   const ownsNativeFullscreen =
     document.fullscreenElement === documentConsolePane();
+  retireFullscreenVisualState();
   state.runtimeLifecycle = nextLifecycle;
   state.runtimeGeneration += 1;
   state.runtimeStopped = true;
@@ -3385,6 +3386,24 @@ function setFullscreenState(pane, toggle, active, mode = null) {
       clearConsoleTabUnread(tab);
     }
     refreshWorkspaceResizers(pane);
+  }
+}
+
+function retireFullscreenVisualState() {
+  const pane = documentConsolePane();
+  if (state.root) {
+    state.root.dataset.mechConsoleMode = "docked";
+    state.root.dataset.mechOutputFullscreenActive = "false";
+  }
+  document.body.classList.remove("output-fullscreen");
+  delete pane?.dataset.mechFullscreenFallback;
+  for (const toggle of documentConsoleFullscreenControls()) {
+    toggle.setAttribute("aria-pressed", "false");
+    toggle.setAttribute("aria-label", "Enter fullscreen workspace");
+  }
+  for (const toggle of documentOutputFullscreenControls()) {
+    toggle.setAttribute("aria-pressed", "false");
+    toggle.setAttribute("aria-label", "Enter fullscreen output");
   }
 }
 
