@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+#[cfg(test)]
 use std::num::NonZeroU32;
 use std::sync::{Arc, Mutex};
 
@@ -7,10 +8,10 @@ use mech_compute::{
     BackendClass, BackendId, BackendRequest, CPU_SCALAR_BACKEND, ComputeBackendCapabilities,
     ComputeBackendDescriptor, ComputeBackendError, ComputeBackendFactory, ComputeBackendRegistry,
     ComputeBackendRejection, ComputeCompletionOutcome, ComputeCompletionTarget,
-    ComputeDispatchReport, ComputeDispatchRequest, ComputeExecutable, ComputeExecutionError,
-    ComputeFaultEvidence, ComputeInitializerSet, ComputeInputUpdate, ComputeKernel,
-    ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePortId, ComputeProgram,
-    ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
+    ComputeDispatchDisposition, ComputeDispatchReport, ComputeDispatchRequest, ComputeExecutable,
+    ComputeExecutionError, ComputeFaultEvidence, ComputeInitializerSet, ComputeInputUpdate,
+    ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePortId,
+    ComputeProgram, ComputeSession, ComputeValue, TensorLayout, WGPU_BACKEND,
 };
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Program};
 use mech_engine::ProgramArtifact;
@@ -1233,6 +1234,7 @@ impl ComputeCommandHandle {
                 .map_err(|_| command_completion_error("compute command state lock is poisoned"))?;
             state.fault_count = state.fault_count.saturating_add(1);
             ComputeDispatchReport {
+                disposition: ComputeDispatchDisposition::Rejected,
                 completed_turns: 0,
                 fault_count: state.fault_count,
                 last_fault: Some(ComputeFaultEvidence {
@@ -1679,12 +1681,14 @@ impl ComputeSession for BrowserCpuSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
         self.command.reserve_cpu()?;
         let result = (|| {
-            let report = self.inner.dispatch(turns)?;
-            if report.completed_turns == 0 {
+            let report = self.inner.dispatch(request)?;
+            if report.disposition == ComputeDispatchDisposition::Rejected
+                && report.completed_turns == 0
+            {
                 // Integrity rejection preserves the backend's previously
                 // accepted state. There is no new snapshot or browser
                 // completion to publish for this attempted turn.
@@ -1865,17 +1869,9 @@ impl ComputeSession for BrowserWgpuSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
-    ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
-        self.dispatch_requested(turns, &ComputeDispatchRequest::default())
-    }
-
-    fn dispatch_requested(
-        &mut self,
-        turns: NonZeroU32,
         request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
-        if turns.get() != 1 {
+        if request.turns.get() != 1 {
             return Err(browser_execution_error(
                 WGPU_BACKEND,
                 "dispatch",
@@ -1884,6 +1880,7 @@ impl ComputeSession for BrowserWgpuSession {
         }
         self.command.queue_wgpu(&mut self.changed_inputs, request)?;
         Ok(ComputeDispatchReport {
+            disposition: ComputeDispatchDisposition::Submitted,
             completed_turns: 0,
             ..Default::default()
         })
@@ -2102,9 +2099,10 @@ mod tests {
 
         fn dispatch(
             &mut self,
-            _turns: NonZeroU32,
+            _request: &ComputeDispatchRequest,
         ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
             Ok(ComputeDispatchReport {
+                disposition: ComputeDispatchDisposition::Rejected,
                 completed_turns: 0,
                 fault_count: 1,
                 last_fault: Some(ComputeFaultEvidence {
@@ -2136,7 +2134,7 @@ mod tests {
 
         fn dispatch(
             &mut self,
-            _turns: NonZeroU32,
+            _request: &ComputeDispatchRequest,
         ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
             Ok(ComputeDispatchReport {
                 completed_turns: 1,
@@ -2464,9 +2462,12 @@ state
             changed_inputs: BTreeMap::from([("force-strength".to_owned(), vec![1.0])]),
         };
 
-        let report = session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+        let report = session
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::MIN))
+            .unwrap();
 
         assert_eq!(report.completed_turns, 0);
+        assert_eq!(report.disposition, ComputeDispatchDisposition::Rejected);
         assert_eq!(report.fault_count, 1);
         assert!(session.changed_inputs.is_empty());
         assert!(command.take_command_data().unwrap().is_none());
@@ -2489,7 +2490,9 @@ state
             changed_inputs: BTreeMap::new(),
         };
 
-        let error = session.dispatch(NonZeroU32::new(1).unwrap()).unwrap_err();
+        let error = session
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::MIN))
+            .unwrap_err();
 
         assert!(error.state_advanced);
         assert!(command.take_command_data().unwrap().is_none());
@@ -2511,6 +2514,7 @@ state
             .queue_wgpu(
                 &mut first_inputs,
                 &ComputeDispatchRequest {
+                    turns: NonZeroU32::MIN,
                     outputs: BTreeSet::new(),
                     logical_turn: 9,
                 },
@@ -2545,6 +2549,7 @@ state
             .queue_wgpu(
                 &mut inputs,
                 &ComputeDispatchRequest {
+                    turns: NonZeroU32::MIN,
                     outputs: BTreeSet::new(),
                     logical_turn: 41,
                 },
@@ -2585,6 +2590,7 @@ state
             .queue_wgpu(
                 &mut inputs,
                 &ComputeDispatchRequest {
+                    turns: NonZeroU32::MIN,
                     outputs: requested,
                     logical_turn: 17,
                 },

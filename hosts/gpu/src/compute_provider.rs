@@ -9,9 +9,10 @@ use std::{
 
 use mech_compute::{
     BackendId, BackendRequest, ComputeBackendRegistry, ComputeCompletionOutcome,
-    ComputeCompletionTarget, ComputeDispatchReport, ComputeDispatchRequest, ComputeExecutionError,
-    ComputeInitializerSet, ComputeInputUpdate, ComputeOutputSelection, ComputeOutputSnapshot,
-    ComputePlatform, ComputePort, ComputeProgram, ComputeSession, ComputeValue, TensorLayout,
+    ComputeCompletionTarget, ComputeDispatchDisposition, ComputeDispatchReport,
+    ComputeDispatchRequest, ComputeExecutionError, ComputeInitializerSet, ComputeInputUpdate,
+    ComputeOutputSelection, ComputeOutputSnapshot, ComputePlatform, ComputePort, ComputeProgram,
+    ComputeSession, ComputeValue, TensorLayout,
 };
 use mech_core::{
     ComputePlacement, LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration,
@@ -571,6 +572,7 @@ impl ComputeCompletionTarget for ComputeHostCompletionTarget {
                 (
                     turn,
                     ComputeDispatchReport {
+                        disposition: ComputeDispatchDisposition::Rejected,
                         completed_turns: 0,
                         fault_count: (*state.fault_count.borrow() as u64).saturating_add(1),
                         last_fault: Some(mech_compute::ComputeFaultEvidence {
@@ -974,14 +976,12 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
             .map(|port| port.id)
             .collect();
         let request = ComputeDispatchRequest {
+            turns: NonZeroU32::MIN,
             outputs,
             logical_turn: turn.0,
         };
         state.phase = ComputeHostPhase::InFlight { turn };
-        let report = match state
-            .session
-            .dispatch_requested(NonZeroU32::new(1).expect("one is nonzero"), &request)
-        {
+        let report = match state.session.dispatch(&request) {
             Ok(report) => report,
             Err(error) => {
                 if error.state_advanced {
@@ -997,7 +997,7 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
         // Asynchronous browser compute has accepted this exact logical turn
         // and will complete it through ComputeHostCompletionTarget. Do not
         // publish a speculative telemetry packet while the host is InFlight.
-        if report.completed_turns == 0 && report.last_fault.is_none() {
+        if report.disposition == ComputeDispatchDisposition::Submitted {
             return Ok(());
         }
         let mut sampled = None;
@@ -1012,8 +1012,10 @@ impl RuntimeAfterCommitEffect for ComputeDispatchEffect {
                 .collect();
             let snapshot = match state
                 .session
-                .read_outputs(&ComputeOutputSelection::Samples(selected))
-            {
+                .read_outputs(&ComputeOutputSelection::Samples {
+                    ports: selected,
+                    instance: 0,
+                }) {
                 Ok(snapshot) => snapshot,
                 Err(error) => {
                     state.fail(error.to_string());
@@ -1768,12 +1770,12 @@ mod tests {
 
         fn dispatch(
             &mut self,
-            turns: NonZeroU32,
+            request: &ComputeDispatchRequest,
         ) -> Result<ComputeDispatchReport, mech_compute::ComputeExecutionError> {
             self.calls
                 .lock()
                 .unwrap()
-                .push(FakeCall::Dispatch(turns.get()));
+                .push(FakeCall::Dispatch(request.turns.get()));
             self.result.clone()
         }
 
@@ -2424,6 +2426,7 @@ mod tests {
     fn runtime_delivers_committed_inputs_before_exactly_one_dispatch_and_ingests_telemetry() {
         let calls = Arc::new(Mutex::new(Vec::new()));
         let report = ComputeDispatchReport {
+            disposition: ComputeDispatchDisposition::Completed,
             completed_turns: 1,
             dispatch_milliseconds: 2.5,
             fault_count: 3,
@@ -2673,6 +2676,7 @@ mod tests {
             .complete(ComputeCompletionOutcome::IntegrityRejected {
                 attempted_turn: 9,
                 report: ComputeDispatchReport {
+                    disposition: ComputeDispatchDisposition::Rejected,
                     completed_turns: 0,
                     fault_count: 1,
                     last_fault: Some(ComputeFaultEvidence {

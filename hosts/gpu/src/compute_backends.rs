@@ -9,9 +9,10 @@ use mech_compute::CPU_JIT_BACKEND;
 use mech_compute::{
     BackendClass, BackendId, CPU_SCALAR_BACKEND, CPU_SIMD_BACKEND, ComputeBackendCapabilities,
     ComputeBackendDescriptor, ComputeBackendError, ComputeBackendFactory, ComputeBackendRejection,
-    ComputeDispatchReport, ComputeExecutable, ComputeExecutionError, ComputeFaultEvidence,
-    ComputeInitializerSet, ComputeInputUpdate, ComputeKernel, ComputeOutputSelection,
-    ComputeOutputSnapshot, ComputePort, ComputeProgram, ComputeSession, ComputeValue, TensorLayout,
+    ComputeDispatchDisposition, ComputeDispatchReport, ComputeDispatchRequest, ComputeExecutable,
+    ComputeExecutionError, ComputeFaultEvidence, ComputeInitializerSet, ComputeInputUpdate,
+    ComputeKernel, ComputeOutputSelection, ComputeOutputSnapshot, ComputePort, ComputeProgram,
+    ComputeSession, ComputeValue, TensorLayout,
 };
 #[cfg(feature = "native")]
 use mech_compute::{ComputeBackendRegistry, WGPU_BACKEND};
@@ -181,8 +182,9 @@ impl ComputeSession for CpuScalarSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
         let started = Instant::now();
         self.session
             .dispatch_turns(turns.get())
@@ -227,8 +229,9 @@ impl ComputeSession for FixedScalarSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
         let started = Instant::now();
         let attempted_before = self.session.attempted_turns();
         let result = self.session.dispatch_turns(turns.get());
@@ -409,8 +412,9 @@ impl ComputeSession for FixedSimdSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
         let started = Instant::now();
         let attempted_before = self.session.attempted_turns();
         let result = self.session.dispatch_turns(turns.get());
@@ -458,8 +462,9 @@ impl ComputeSession for FixedJitSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
         let started = Instant::now();
         let attempted_before = self.session.attempted_turns();
         let result = self.session.dispatch_turns(turns.get());
@@ -662,8 +667,9 @@ impl ComputeSession for WgpuSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
         let elapsed = self
             .session
             .dispatch_turns(turns.get())
@@ -710,8 +716,9 @@ impl ComputeSession for FixedWgpuSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
+        let turns = request.turns;
         let started = Instant::now();
         let attempted_before = self.session.attempted_turns();
         let result = self.session.dispatch_turns(turns.get()).map(|_| ());
@@ -732,8 +739,8 @@ impl ComputeSession for FixedWgpuSession {
         &mut self,
         selection: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        let state = match selection {
-            ComputeOutputSelection::Samples(ports) => {
+        let (state, snapshot_selection) = match selection {
+            ComputeOutputSelection::Samples { ports, instance } => {
                 let slots = self
                     .program
                     .compute_program()
@@ -743,14 +750,22 @@ impl ComputeSession for FixedWgpuSession {
                     .filter(|port| ports.contains(&port.id))
                     .map(|port| port.slot)
                     .collect();
-                self.session.read_published_samples(&slots)
+                (
+                    self.session.read_published_sample(&slots, *instance),
+                    ComputeOutputSelection::Samples {
+                        ports: ports.clone(),
+                        instance: 0,
+                    },
+                )
             }
-            ComputeOutputSelection::All | ComputeOutputSelection::Ports(_) => {
-                self.session.read_published_state().map(|(_, state)| state)
-            }
-        }
-        .map_err(|error| execution_error(&self.backend, "read outputs", error.to_string()))?;
-        fixed_output_snapshot(&self.program, selection, &state)
+            ComputeOutputSelection::All | ComputeOutputSelection::Ports(_) => (
+                self.session.read_published_state().map(|(_, state)| state),
+                selection.clone(),
+            ),
+        };
+        let state = state
+            .map_err(|error| execution_error(&self.backend, "read outputs", error.to_string()))?;
+        fixed_output_snapshot(&self.program, &snapshot_selection, &state)
             .map_err(|detail| execution_error(&self.backend, "read outputs", detail))
     }
 }
@@ -894,7 +909,7 @@ fn output_snapshot(
 ) -> Result<ComputeOutputSnapshot, String> {
     let selected = |port: &ComputePort| match selection {
         ComputeOutputSelection::All => true,
-        ComputeOutputSelection::Ports(ports) | ComputeOutputSelection::Samples(ports) => {
+        ComputeOutputSelection::Ports(ports) | ComputeOutputSelection::Samples { ports, .. } => {
             ports.contains(&port.id)
         }
     };
@@ -937,11 +952,14 @@ fn fixed_output_snapshot(
 ) -> Result<ComputeOutputSnapshot, String> {
     let selected = |port: &ComputePort| match selection {
         ComputeOutputSelection::All => true,
-        ComputeOutputSelection::Ports(ports) | ComputeOutputSelection::Samples(ports) => {
+        ComputeOutputSelection::Ports(ports) | ComputeOutputSelection::Samples { ports, .. } => {
             ports.contains(&port.id)
         }
     };
-    let sampled = matches!(selection, ComputeOutputSelection::Samples(_));
+    let sample_instance = match selection {
+        ComputeOutputSelection::Samples { instance, .. } => Some(*instance as usize),
+        ComputeOutputSelection::All | ComputeOutputSelection::Ports(_) => None,
+    };
     let values = program
         .compute_program()
         .interface()
@@ -952,7 +970,7 @@ fn fixed_output_snapshot(
             let physical = state
                 .get(&port.slot)
                 .ok_or_else(|| format!("backend did not publish output `{}`", port.name))?;
-            let instances = if sampled {
+            let instances = if sample_instance.is_some() {
                 1
             } else {
                 program.instances() as usize
@@ -960,19 +978,30 @@ fn fixed_output_snapshot(
             let elements = port
                 .elements()
                 .map_err(|error| format!("output `{}` has an invalid shape: {error}", port.name))?;
-            let physical = if sampled {
-                physical.get(..elements).ok_or_else(|| {
+            let physical = if let Some(instance) = sample_instance {
+                let start = instance.checked_mul(elements).ok_or_else(|| {
                     format!(
-                        "backend returned {} elements for sampled output `{}`, expected at least {elements}",
-                        physical.len(),
+                        "sample instance {instance} overflows output `{}`",
+                        port.name
+                    )
+                })?;
+                let end = start.checked_add(elements).ok_or_else(|| {
+                    format!(
+                        "sample instance {instance} overflows output `{}`",
+                        port.name
+                    )
+                })?;
+                physical.get(start..end).ok_or_else(|| {
+                    format!(
+                        "sample instance {instance} exceeds output `{}` with {} elements",
                         port.name,
+                        physical.len(),
                     )
                 })?
             } else {
                 physical.as_slice()
             };
-            let logical =
-                fixed_column_major_to_row_major(physical, &port.dimensions, instances)?;
+            let logical = fixed_column_major_to_row_major(physical, &port.dimensions, instances)?;
             let value = if port.dimensions.is_empty() && instances == 1 {
                 let [value] = logical.as_slice() else {
                     return Err(format!(
@@ -1042,12 +1071,14 @@ fn fixed_dispatch_report(
 ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
     match result {
         Ok(()) => Ok(ComputeDispatchReport {
+            disposition: ComputeDispatchDisposition::Completed,
             completed_turns: turns.get(),
             dispatch_milliseconds: started.elapsed().as_secs_f64() * 1_000.0,
             fault_count,
             last_fault: last_fault.map(compute_fault_evidence),
         }),
         Err(BatchedExecutionError::Integrity(fault)) => Ok(ComputeDispatchReport {
+            disposition: ComputeDispatchDisposition::Rejected,
             completed_turns: u32::try_from(attempted_turns.saturating_sub(1))
                 .unwrap_or(u32::MAX)
                 .min(turns.get()),

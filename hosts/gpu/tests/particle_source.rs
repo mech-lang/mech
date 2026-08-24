@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use mech_compute::{
-    BackendRequest, ComputeElementType, ComputeInitializerSet, ComputeOutputSelection,
-    ComputePlatform, ComputeValue, TensorLayout,
+    BackendRequest, ComputeDispatchRequest, ComputeElementType, ComputeInitializerSet,
+    ComputeOutputSelection, ComputePlatform, ComputeValue, TensorLayout,
 };
 use mech_core::{
     Body, ComputePlacement, LegacyValue, MechCode, ParsedProgram, Program,
@@ -224,7 +224,7 @@ fn compiler_product_runs_through_the_backend_neutral_cpu_session() {
         .create_session(&ComputeInitializerSet::default())
         .expect("static particle source needs no live-input initializers");
     let report = session
-        .dispatch(NonZeroU32::new(2).unwrap())
+        .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(2).unwrap()))
         .expect("resident CPU turns must execute");
     assert_eq!(report.completed_turns, 2);
     let outputs = session
@@ -263,7 +263,9 @@ fn particle_source_and_bytecode_share_cpu_and_wgpu_results() {
             let mut session = executable
                 .create_session(&ComputeInitializerSet::default())
                 .unwrap();
-            session.dispatch(NonZeroU32::new(2).unwrap()).unwrap();
+            session
+                .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(2).unwrap()))
+                .unwrap();
             Some(session.read_outputs(&ComputeOutputSelection::All).unwrap())
         };
         let Some(source_outputs) = run(source.compute_program()) else {

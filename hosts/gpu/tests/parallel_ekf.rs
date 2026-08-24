@@ -5,8 +5,8 @@ use std::{
 };
 
 use mech_compute::{
-    BackendRequest, ComputeInitializerSet, ComputeInputUpdate, ComputeOutputSelection,
-    ComputePlatform, ComputeValue, TensorLayout,
+    BackendRequest, ComputeDispatchDisposition, ComputeDispatchRequest, ComputeInitializerSet,
+    ComputeInputUpdate, ComputeOutputSelection, ComputePlatform, ComputeValue, TensorLayout,
 };
 use mech_core::{Body, ComputePlacement, MechCode, Program, Section, SectionElement};
 use mech_engine::{
@@ -324,7 +324,9 @@ result
         };
         let executable = factory.compile(program.compute_program()).unwrap();
         let mut session = executable.create_session(&initializers).unwrap();
-        session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+        session
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
+            .unwrap();
         let initial =
             flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
         assert!(
@@ -346,7 +348,9 @@ result
                 },
             }])
             .unwrap();
-        session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+        session
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
+            .unwrap();
         let updated =
             flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
         assert!(
@@ -438,7 +442,9 @@ result
         };
         let executable = factory.compile(program.compute_program()).unwrap();
         let mut session = executable.create_session(&initializers).unwrap();
-        session.dispatch(NonZeroU32::new(1).unwrap()).unwrap();
+        session
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
+            .unwrap();
         let outputs =
             flattened_outputs(&session.read_outputs(&ComputeOutputSelection::All).unwrap());
         assert!(
@@ -630,9 +636,10 @@ fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract(
         let mut session = executable.create_session(&initializers).unwrap();
 
         let first = session
-            .dispatch(NonZeroU32::new(1).unwrap())
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
             .expect("the declaration initializer turn must run");
         assert_eq!(first.completed_turns, 1);
+        assert_eq!(first.disposition, ComputeDispatchDisposition::Completed);
         assert_eq!(first.fault_count, 0);
 
         session
@@ -642,18 +649,20 @@ fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract(
             }])
             .expect("the live scalar update must preserve the session");
         let second = session
-            .dispatch(NonZeroU32::new(1).unwrap())
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
             .expect("the updated turn must run");
         assert_eq!(second.completed_turns, 1);
+        assert_eq!(second.disposition, ComputeDispatchDisposition::Completed);
         let published = session
             .read_outputs(&ComputeOutputSelection::All)
             .expect("published outputs must be readable");
         assert!(!published.values.is_empty());
         let sampled_port = program.compute_program().interface().outputs[0].clone();
         let sampled = session
-            .read_outputs(&ComputeOutputSelection::Samples(BTreeSet::from([
-                sampled_port.id,
-            ])))
+            .read_outputs(&ComputeOutputSelection::Samples {
+                ports: BTreeSet::from([sampled_port.id]),
+                instance: 0,
+            })
             .expect("lane-zero output sampling must be readable");
         assert_eq!(sampled.values.len(), 1);
         let sampled_elements = match &sampled.values[&sampled_port.id] {
@@ -666,6 +675,37 @@ fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract(
             }
         };
         assert_eq!(sampled_elements, sampled_port.elements().unwrap());
+        let instance = 731_u32;
+        let sampled = session
+            .read_outputs(&ComputeOutputSelection::Samples {
+                ports: BTreeSet::from([sampled_port.id]),
+                instance,
+            })
+            .expect("an explicit nonzero batch sample must be readable");
+        let sampled_values = match &sampled.values[&sampled_port.id] {
+            ComputeValue::ScalarF32(value) => vec![*value],
+            ComputeValue::TensorF32 { values, .. } => values.to_vec(),
+        };
+        let published_values = match &published.values[&sampled_port.id] {
+            ComputeValue::ScalarF32(value) => vec![*value],
+            ComputeValue::TensorF32 { values, .. } => values.to_vec(),
+        };
+        let elements = sampled_port.elements().unwrap();
+        let start = instance as usize * elements;
+        assert_close(
+            &sampled_values,
+            &published_values[start..start + elements],
+            1.0e-6,
+        );
+        assert!(
+            session
+                .read_outputs(&ComputeOutputSelection::Samples {
+                    ports: BTreeSet::from([sampled_port.id]),
+                    instance: 1_000,
+                })
+                .is_err(),
+            "{backend} accepted a sample outside the resident batch",
+        );
 
         session
             .update_inputs(&[ComputeInputUpdate {
@@ -674,9 +714,10 @@ fn registered_backends_share_one_thousand_lane_fixed_shape_conformance_contract(
             }])
             .unwrap();
         let rejected = session
-            .dispatch(NonZeroU32::new(1).unwrap())
+            .dispatch(&ComputeDispatchRequest::new(NonZeroU32::new(1).unwrap()))
             .expect("integrity rejection is a bounded compute result");
         assert_eq!(rejected.completed_turns, 0);
+        assert_eq!(rejected.disposition, ComputeDispatchDisposition::Rejected);
         assert_eq!(rejected.fault_count, 1);
         assert_eq!(
             rejected.last_fault.as_ref().unwrap().constraint.as_ref(),
@@ -892,8 +933,8 @@ fn native_gpu_lane_zero_is_independent_of_broadcast_extent() {
         batch.update_inputs(&batch_program, &batch_update).unwrap();
         single.dispatch_turns(1).unwrap();
         batch.dispatch_turns(1).unwrap();
-        let single_sample = single.read_published_samples(&state_slots).unwrap();
-        let batch_sample = batch.read_published_samples(&state_slots).unwrap();
+        let single_sample = single.read_published_sample(&state_slots, 0).unwrap();
+        let batch_sample = batch.read_published_sample(&state_slots, 0).unwrap();
         for slot in &state_slots {
             assert_close(&single_sample[slot], &batch_sample[slot], 1.0e-6);
         }

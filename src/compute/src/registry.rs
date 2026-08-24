@@ -128,12 +128,15 @@ pub enum ComputeOutputSelection {
     #[default]
     All,
     Ports(BTreeSet<ComputePortId>),
-    /// Read only the first outer batch lane for the selected logical ports.
+    /// Read one outer batch lane for the selected logical ports.
     ///
     /// Fixed-shape accelerators must honor this at the physical readback
     /// boundary rather than transferring the full resident batch and slicing
     /// it on the host. Non-batched programs treat samples like selected ports.
-    Samples(BTreeSet<ComputePortId>),
+    Samples {
+        ports: BTreeSet<ComputePortId>,
+        instance: u32,
+    },
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -148,8 +151,17 @@ pub struct ComputeFaultEvidence {
     pub detail: Box<str>,
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum ComputeDispatchDisposition {
+    #[default]
+    Completed,
+    Submitted,
+    Rejected,
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct ComputeDispatchReport {
+    pub disposition: ComputeDispatchDisposition,
     pub completed_turns: u32,
     pub dispatch_milliseconds: f64,
     pub fault_count: u64,
@@ -161,10 +173,30 @@ pub struct ComputeDispatchReport {
 /// Synchronous backends may ignore it. Asynchronous backends must retain it
 /// with the command so completion can publish exactly the outputs requested by
 /// the coordinator and can report the Mech turn which actually failed.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ComputeDispatchRequest {
+    pub turns: NonZeroU32,
     pub outputs: BTreeSet<ComputePortId>,
     pub logical_turn: u128,
+}
+
+impl ComputeDispatchRequest {
+    pub fn new(turns: NonZeroU32) -> Self {
+        Self {
+            turns,
+            ..Self::default()
+        }
+    }
+}
+
+impl Default for ComputeDispatchRequest {
+    fn default() -> Self {
+        Self {
+            turns: NonZeroU32::MIN,
+            outputs: BTreeSet::new(),
+            logical_turn: 0,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -259,16 +291,8 @@ pub trait ComputeSession {
 
     fn dispatch(
         &mut self,
-        turns: NonZeroU32,
+        request: &ComputeDispatchRequest,
     ) -> Result<ComputeDispatchReport, ComputeExecutionError>;
-
-    fn dispatch_requested(
-        &mut self,
-        turns: NonZeroU32,
-        _request: &ComputeDispatchRequest,
-    ) -> Result<ComputeDispatchReport, ComputeExecutionError> {
-        self.dispatch(turns)
-    }
 
     fn read_outputs(
         &mut self,

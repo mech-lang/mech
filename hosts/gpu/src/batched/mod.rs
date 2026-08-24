@@ -2934,7 +2934,7 @@ mod native {
             let group = self.last_output_group.ok_or_else(|| {
                 BatchedExecutionError::Native("no batch turns have run".to_owned())
             })?;
-            self.read_state_group(group, None, false)
+            self.read_state_group(group, None, None)
         }
 
         /// Reads the currently published state, including the initial state or
@@ -2942,17 +2942,18 @@ mod native {
         pub fn read_published_state(
             &self,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
-            self.read_state_group(1 - self.next_group, None, false)
+            self.read_state_group(1 - self.next_group, None, None)
         }
 
-        /// Reads lane zero for only the selected published state buffers.
+        /// Reads one lane for only the selected published state buffers.
         /// This is the physical sampling boundary used by resident hosts: the
         /// full outer batch never crosses from device memory to the CPU.
-        pub fn read_published_samples(
+        pub fn read_published_sample(
             &self,
             slots: &BTreeSet<CellSlotId>,
+            instance: u32,
         ) -> Result<BTreeMap<CellSlotId, Vec<f32>>, BatchedExecutionError> {
-            self.read_state_group(1 - self.next_group, Some(slots), true)
+            self.read_state_group(1 - self.next_group, Some(slots), Some(instance))
                 .map(|(_, state)| state)
         }
 
@@ -2960,7 +2961,7 @@ mod native {
             &self,
             group: usize,
             selected: Option<&BTreeSet<CellSlotId>>,
-            sample_first_lane: bool,
+            sample_instance: Option<u32>,
         ) -> Result<(Duration, BTreeMap<CellSlotId, Vec<f32>>), BatchedExecutionError> {
             let started = Instant::now();
             let mut encoder = self
@@ -2973,19 +2974,27 @@ mod native {
                 if selected.is_some_and(|selected| !selected.contains(slot)) {
                     continue;
                 }
-                let elements = if sample_first_lane {
+                let elements = if sample_instance.is_some() {
                     self.output_elements_per_instance[slot]
                 } else {
                     self.output_elements[slot]
                 };
                 let size = (elements * std::mem::size_of::<f32>()) as u64;
+                let source_offset =
+                    sample_instance.map_or(0, |instance| u64::from(instance) * size);
+                if source_offset.saturating_add(size) > buffer.size() {
+                    return Err(BatchedExecutionError::Native(format!(
+                        "sample instance {} exceeds the resident batch for slot {slot:?}",
+                        sample_instance.expect("sample instance is present"),
+                    )));
+                }
                 let readback = self.device.create_buffer(&wgpu::BufferDescriptor {
                     label: Some("Mech fixed-shape batch readback"),
                     size,
                     usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
                     mapped_at_creation: false,
                 });
-                encoder.copy_buffer_to_buffer(buffer, 0, &readback, 0, size);
+                encoder.copy_buffer_to_buffer(buffer, source_offset, &readback, 0, size);
                 readbacks.push((*slot, readback));
             }
             self.queue.submit(Some(encoder.finish()));
