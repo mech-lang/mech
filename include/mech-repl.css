@@ -52,9 +52,7 @@
   min-width: 0;
 }
 
-[data-mech-repl-host] > .content-shell,
-[data-mech-repl-host] > .content,
-[data-mech-repl-host] > #left-pane {
+[data-mech-repl-host] > .content-shell {
   grid-column: 1;
   grid-row: 1;
   min-width: 0;
@@ -148,7 +146,7 @@
   left: 0;
 }
 
-[data-mech-repl-host][data-mech-console-fullscreen="drag"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
+[data-mech-repl-host][data-mech-console-mode="drag"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]) {
   display: block;
   height: 100dvh;
   left: 0;
@@ -160,11 +158,11 @@
   z-index: 1100;
 }
 
-[data-mech-repl-host][data-mech-console-fullscreen="drag"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]):hover {
+[data-mech-repl-host][data-mech-console-mode="drag"] > [data-mech-console-resizer]:not([data-mech-console-edge-handle]):hover {
   left: 0;
 }
 
-[data-mech-repl-host][data-mech-console-fullscreen="button"] > [data-mech-console-resizer] {
+[data-mech-repl-host][data-mech-console-mode="button"] > [data-mech-console-resizer] {
   display: none !important;
 }
 
@@ -189,14 +187,11 @@ body.is-resizing[data-mech-resize-axis="width"] [data-mech-console-resizer] {
   width: 100%;
 }
 
-[data-mech-console-pane].hidden,
-[data-mech-console-pane].is-collapsed,
 [data-mech-console-pane][hidden] {
   display: none;
 }
 
-[data-mech-console-pane].is-fullscreen,
-body.console-fullscreen [data-mech-console-pane] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) > [data-mech-console-pane] {
   bottom: 0;
   height: auto !important;
   left: 0;
@@ -221,14 +216,10 @@ body.console-fullscreen [data-mech-console-pane] {
 
 [data-mech-repl-host][data-mech-output-fullscreen-active="true"] > :is(
   .content-shell,
-  .content,
-  #left-pane,
   [data-mech-console-resizer]
 ),
 [data-mech-repl-host][data-mech-presentation="output"]:not([data-mech-presentation-view="workspace"]) > :is(
   .content-shell,
-  .content,
-  #left-pane,
   [data-mech-console-resizer]
 ) {
   display: none !important;
@@ -406,7 +397,7 @@ body.console-fullscreen [data-mech-console-pane] {
   color: var(--mech-repl-tab-text-hover);
 }
 
-[data-mech-console-pane] [data-mech-console-tab].active {
+[data-mech-console-pane] [data-mech-console-tab][aria-selected="true"] {
   border-bottom-color: var(--mech-repl-tab-accent-active);
   color: var(--mech-repl-tab-text-active);
 }
@@ -420,10 +411,7 @@ body.console-fullscreen [data-mech-console-pane] {
   width: 6px;
 }
 
-[data-mech-console-pane] :is(
-  [data-mech-console-tab="errors"],
-  [data-tab="errors"]
-)[data-mech-console-unread="true"]::after {
+[data-mech-console-pane] [data-mech-console-tab="errors"][data-mech-console-unread="true"]::after {
   display: none;
 }
 
@@ -447,10 +435,7 @@ body.console-fullscreen [data-mech-console-pane] {
   display: none;
 }
 
-[data-mech-console-pane] :is(
-  [data-mech-console-tab="errors"],
-  [data-tab="errors"]
-)[data-mech-console-unread="true"] .mech-console-error-count {
+[data-mech-console-pane] [data-mech-console-tab="errors"][data-mech-console-unread="true"] .mech-console-error-count {
   background: var(--mech-repl-accent);
   color: var(--mech-repl-background);
 }
@@ -482,8 +467,7 @@ body.console-fullscreen [data-mech-console-pane] {
   color: var(--mech-repl-accent);
 }
 
-[data-mech-console-pane].is-fullscreen .console-topbar,
-body.console-fullscreen [data-mech-console-pane] .console-topbar {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] .console-topbar {
   border: 0;
   min-height: 0;
   padding: 0;
@@ -494,17 +478,15 @@ body.console-fullscreen [data-mech-console-pane] .console-topbar {
   z-index: 3;
 }
 
-[data-mech-console-pane].is-fullscreen .console-tabs,
-body.console-fullscreen [data-mech-console-pane] .console-tabs,
-[data-mech-console-pane].is-fullscreen [data-mech-output-fullscreen],
-body.console-fullscreen [data-mech-console-pane] [data-mech-output-fullscreen],
-[data-mech-console-pane].is-fullscreen [data-mech-console-tab],
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-tab] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] :is(
+  .console-tabs,
+  [data-mech-output-fullscreen],
+  [data-mech-console-tab]
+) {
   display: none;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-fullscreen],
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-fullscreen] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-fullscreen] {
   margin: 1px 0;
   pointer-events: auto;
 }
@@ -522,7 +504,7 @@ body.console-fullscreen [data-mech-console-pane] [data-mech-console-fullscreen] 
   min-width: 0;
 }
 
-[data-mech-console-pane] [data-mech-console-panel].is-active {
+[data-mech-console-pane] [data-mech-console-panel]:not([hidden]) {
   display: block;
 }
 
@@ -530,8 +512,7 @@ body.console-fullscreen [data-mech-console-pane] [data-mech-console-fullscreen] 
   display: none;
 }
 
-[data-mech-console-pane].is-fullscreen .console-panels,
-body.console-fullscreen [data-mech-console-pane] .console-panels {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] .console-panels {
   display: grid;
   grid-template-columns:
     clamp(
@@ -551,8 +532,7 @@ body.console-fullscreen [data-mech-console-pane] .console-panels {
     minmax(0, 1fr);
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-panel],
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel] {
   background: var(--mech-repl-background);
   border: 1px solid var(--mech-repl-border);
   display: flex;
@@ -562,8 +542,7 @@ body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel] {
   overflow: hidden;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-panel]::before,
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel]::before {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel]::before {
   align-items: center;
   background: color-mix(in srgb, var(--mech-repl-surface) 72%, var(--mech-repl-background));
   border-bottom: 1px solid var(--mech-repl-border);
@@ -577,37 +556,31 @@ body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel]::befo
   text-transform: uppercase;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-panel] > :is(.console-scroll, [data-mech-repl]),
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel] > :is(.console-scroll, [data-mech-repl]) {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel] > :is(.console-scroll, [data-mech-repl]) {
   flex: 1;
   width: 100%;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-panel="console"],
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel="console"] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="console"] {
   grid-column: 1;
   grid-row: 1 / -1;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-panel="output"],
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel="output"] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="output"] {
   grid-column: 3;
   grid-row: 1;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-panel="output"]::before,
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel="output"]::before {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="output"]::before {
   padding-right: 48px;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-panel="errors"],
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-panel="errors"] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-panel="errors"] {
   grid-column: 3;
   grid-row: 3;
 }
 
-[data-mech-console-pane].is-fullscreen [data-mech-console-workspace-resizer],
-body.console-fullscreen [data-mech-console-pane] [data-mech-console-workspace-resizer] {
+[data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] [data-mech-console-workspace-resizer] {
   background: color-mix(in srgb, var(--mech-repl-surface) 55%, var(--mech-repl-background));
   display: block;
   position: relative;
@@ -738,7 +711,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
   font: 14px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
-[data-mech-repl].hidden {
+[data-mech-repl][hidden] {
   display: none;
 }
 
@@ -1080,9 +1053,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
     width: 100vw !important;
   }
 
-  [data-mech-repl-host][data-mech-console-open="false"] [data-mech-console-pane],
-  [data-mech-repl-host] [data-mech-console-pane].hidden,
-  [data-mech-repl-host] [data-mech-console-pane].is-collapsed {
+  [data-mech-repl-host][data-mech-console-open="false"] [data-mech-console-pane] {
     display: none !important;
   }
 
@@ -1104,13 +1075,12 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
     right: min(94vw, 520px);
   }
 
-  [data-mech-repl-host][data-mech-console-fullscreen="drag"] [data-mech-console-edge-handle] {
+  [data-mech-repl-host][data-mech-console-mode="drag"] [data-mech-console-edge-handle] {
     left: -4px;
     right: auto;
   }
 
-  [data-mech-repl-host][data-mech-console-open="true"] [data-mech-console-pane].is-fullscreen,
-  body.console-fullscreen [data-mech-repl-host] [data-mech-console-pane] {
+  [data-mech-repl-host][data-mech-console-open="true"]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] {
     bottom: 0;
     height: 100dvh !important;
     max-width: none;
@@ -1119,8 +1089,7 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
     width: 100vw !important;
   }
 
-  [data-mech-console-pane].is-fullscreen .console-panels,
-  body.console-fullscreen [data-mech-console-pane] .console-panels {
+  [data-mech-repl-host]:not([data-mech-console-mode="docked"]) [data-mech-console-pane] .console-panels {
     grid-template-columns:
       clamp(
         min(180px, calc(50% - 4px)),

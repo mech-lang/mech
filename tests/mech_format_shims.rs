@@ -178,7 +178,7 @@ fn mech_format_default_shim_restores_rich_shell() {
             "articleIntro",
             "articleLayout",
             "main-content",
-            "id=\"resizer\"",
+            "data-mech-console-resizer",
             "console-pane",
         ],
     );

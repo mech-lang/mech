@@ -41,13 +41,20 @@ for selector in \
   'articleLayout' \
   'main-content' \
   'article-backmatter' \
-  'id="resizer"' \
+  'data-mech-repl-host' \
+  'data-mech-console-mode="docked"' \
+  'data-mech-console-resizer' \
+  'data-mech-console-edge-handle' \
   'console-pane' \
   'console-tabs' \
-  'console-tab' \
-  'console-panel' \
-  'id="mech-document-output"' \
-  'id="mech-document-errors"'; do
+  'data-mech-console-tab="output"' \
+  'data-mech-console-tab="console"' \
+  'data-mech-console-tab="errors"' \
+  'data-mech-console-panel="output"' \
+  'data-mech-console-panel="console"' \
+  'data-mech-console-panel="errors"' \
+  'data-mech-output-panel' \
+  'data-mech-errors-panel'; do
   require_literal include/index.html "$selector"
 done
 
@@ -80,6 +87,13 @@ for file in include/index.html include/blog.html include/docs.html; do
   reject_literal "$file" 'class="breadcrumbs"'
   reject_literal "$file" 'class="mika-separator"'
   reject_literal "$file" 'class="post-pagination"'
+  reject_literal "$file" 'data-tab='
+  reject_literal "$file" 'data-panel='
+  reject_literal "$file" 'id="resizer"'
+  reject_literal "$file" 'id="edgeHandle"'
+  reject_literal "$file" 'id="console-panel"'
+  reject_literal "$file" 'id="output-panel"'
+  reject_literal "$file" 'id="errors-panel"'
   for slot in \
     '{{DOCUMENT_SCRIPT}}' \
     '{{DOCUMENT_SOURCES}}' \
@@ -89,6 +103,21 @@ for file in include/index.html include/blog.html include/docs.html; do
     '{{CODE}}'; do
     require_literal "$file" "$slot"
   done
+done
+
+for legacy_selector in \
+  '[data-tab' \
+  '[data-panel' \
+  '#console-panel' \
+  '#output-panel' \
+  '#errors-panel' \
+  '#resizer' \
+  '#edgeHandle' \
+  'body.console-fullscreen' \
+  '.is-collapsed' \
+  '.is-fullscreen'; do
+  reject_literal include/document.js "$legacy_selector"
+  reject_literal include/mech-repl.css "$legacy_selector"
 done
 
 if grep -Ein -- \

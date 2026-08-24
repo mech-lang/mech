@@ -56,10 +56,8 @@ const state = {
   scenePointerTimestamp: null,
 };
 
-const ERROR_PANEL_SELECTOR =
-  "#mech-document-errors, [data-mech-document-errors], [data-mech-errors-panel]";
-const OUTPUT_PANEL_SELECTOR =
-  "#mech-document-output, [data-mech-document-output], [data-mech-output-panel]";
+const ERROR_PANEL_SELECTOR = "[data-mech-errors-panel]";
+const OUTPUT_PANEL_SELECTOR = "[data-mech-output-panel]";
 const DOCUMENT_LAYOUT_STORAGE_VERSION = 1;
 const KIND_ANNOTATION_MAX_CHARACTERS = 96;
 
@@ -275,7 +273,7 @@ function applyPersistedConsoleOpeningSize() {
 function restoreConsoleOpeningSize() {
   applyPersistedConsoleOpeningSize();
   const refresh = () => {
-    if (!documentConsolePane()?.classList.contains("is-fullscreen")) {
+    if (!consoleWorkspaceActive()) {
       applyPersistedConsoleOpeningSize();
     }
   };
@@ -605,9 +603,7 @@ function selectedConsolePanel(pane = documentConsolePane()) {
     return "";
   }
   return pane.dataset.mechConsoleActivePanel ||
-    pane.querySelector("[data-mech-console-tab][aria-selected='true'], .console-tab[aria-selected='true']")
-      ?.dataset.mechConsoleTab ||
-    pane.querySelector(".console-tab[aria-selected='true']")?.dataset.tab ||
+    pane.querySelector("[data-mech-console-tab][aria-selected='true']")?.dataset.mechConsoleTab ||
     "";
 }
 
@@ -619,7 +615,7 @@ function consoleTabBaseLabel(tab) {
       .join(" ")
       .trim();
     tab.dataset.mechConsoleBaseLabel = tab.getAttribute("aria-label") || text ||
-      tab.dataset.mechConsoleTab || tab.dataset.tab || "Console section";
+      tab.dataset.mechConsoleTab || "Console section";
   }
   return tab.dataset.mechConsoleBaseLabel;
 }
@@ -645,7 +641,7 @@ function updateConsoleErrorBadge() {
   ).length || 0;
   const pane = documentConsolePane();
   for (const tab of pane?.querySelectorAll(
-    "[data-mech-console-tab='errors'], [data-tab='errors']",
+    "[data-mech-console-tab='errors']",
   ) || []) {
     let badge = tab.querySelector(".mech-console-error-count");
     if (!badge) {
@@ -674,14 +670,10 @@ function initializeConsoleErrorBadge() {
 
 function markConsolePanelActivity(name) {
   const pane = documentConsolePane();
-  if (!pane || pane.classList.contains("is-fullscreen") || selectedConsolePanel(pane) === name) {
+  if (!pane || consoleWorkspaceActive() || selectedConsolePanel(pane) === name) {
     return;
   }
-  const tab = [...pane.querySelectorAll(
-    ".console-tab, [data-mech-console-tab], [data-tab]",
-  )].find(candidate =>
-    (candidate.dataset.mechConsoleTab || candidate.dataset.tab) === name
-  );
+  const tab = pane.querySelector(`[data-mech-console-tab="${name}"]`);
   if (tab) {
     tab.dataset.mechConsoleUnread = "true";
     updateConsoleTabAccessibleLabel(tab);
@@ -1932,7 +1924,7 @@ function bindReflectiveValues() {
     bindSymbolClick(placeholder, placeholder.dataset.mechVarName);
   }
   for (const variable of state.root?.querySelectorAll(".mech-var-name") || []) {
-    if (variable.closest("#mech-console, .console-pane")) {
+    if (variable.closest("[data-mech-console-pane]")) {
       continue;
     }
     bindSymbolClick(variable, variable.dataset.mechVarName || variable.textContent.trim());
@@ -2667,8 +2659,15 @@ function documentConsolePane() {
   if (!state.root) {
     return null;
   }
-  return state.root.querySelector("[data-mech-console-pane], #mech-console") ||
-    state.root.querySelector(".console-pane");
+  return state.root.querySelector("[data-mech-console-pane]");
+}
+
+function consoleMode() {
+  return state.root?.dataset.mechConsoleMode || "docked";
+}
+
+function consoleWorkspaceActive() {
+  return consoleMode() === "button" || consoleMode() === "drag";
 }
 
 function documentConsoleResizers() {
@@ -2679,7 +2678,6 @@ function documentConsoleResizers() {
   }
   return [...new Set([
     ...root.querySelectorAll(":scope > [data-mech-console-resizer]"),
-    ...root.querySelectorAll(":scope > #resizer, :scope > #edgeHandle"),
     ...(pane ? pane.querySelectorAll(":scope > [data-mech-console-resizer]") : []),
   ])];
 }
@@ -2728,9 +2726,7 @@ function documentConsoleFullscreenControls() {
     return [];
   }
   return pane
-    ? [...new Set(pane.querySelectorAll(
-        "[data-mech-console-fullscreen], #consoleFullscreenToggle",
-      ))]
+    ? [...pane.querySelectorAll("[data-mech-console-fullscreen]")]
     : [];
 }
 
@@ -2741,71 +2737,30 @@ function documentOutputFullscreenControls() {
     return [];
   }
   return pane
-    ? [...new Set(pane.querySelectorAll(
-        "[data-mech-output-fullscreen], #outputFullscreenToggle",
-      ))]
+    ? [...pane.querySelectorAll("[data-mech-output-fullscreen]")]
     : [];
 }
 
-function ensureOutputFullscreenControl(pane = documentConsolePane()) {
-  const existing = documentOutputFullscreenControls();
-  if (existing.length || !pane) {
-    return existing;
-  }
-  const topbar = pane.querySelector(":scope > .console-topbar");
-  if (!topbar) {
-    return [];
-  }
-  const control = document.createElement("button");
-  control.className = "output-fullscreen-toggle";
-  control.type = "button";
-  control.dataset.mechOutputFullscreen = "";
-  control.setAttribute("aria-pressed", "false");
-  control.setAttribute("aria-label", "Enter fullscreen output");
-  const icon = document.createElement("span");
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = "⛶";
-  control.append(icon);
-  topbar.insertBefore(control, documentConsoleFullscreenControls()[0] || null);
-  return [control];
-}
-
-function normalizeReplComponentContract() {
+function initializeReplComponentContract() {
   if (!state.root) {
     return;
   }
-  state.root.dataset.mechReplHost = "";
   const pane = documentConsolePane();
   if (pane) {
-    pane.dataset.mechConsolePane = "";
-    for (const tab of pane.querySelectorAll(
-      "[data-mech-console-tab], .console-tab[data-tab]",
-    )) {
-      tab.dataset.mechConsoleTab ||= tab.dataset.tab || "";
-    }
     const tablist = pane.querySelector(":scope > .console-topbar .console-tabs");
     if (tablist) {
       for (const name of ["output", "console", "errors"]) {
         const tab = [...tablist.querySelectorAll(
-          "[data-mech-console-tab], .console-tab[data-tab]",
+          "[data-mech-console-tab]",
         )].find(candidate =>
-          (candidate.dataset.mechConsoleTab || candidate.dataset.tab) === name
+          candidate.dataset.mechConsoleTab === name
         );
         if (tab) {
           tablist.append(tab);
         }
       }
     }
-    const legacyPanelNames = {
-      "console-panel": "console",
-      "output-panel": "output",
-      "errors-panel": "errors",
-    };
-    for (const panel of pane.querySelectorAll(
-      "[data-mech-console-panel], .console-panel[data-panel], #console-panel, #output-panel, #errors-panel",
-    )) {
-      panel.dataset.mechConsolePanel ||=
-        panel.dataset.panel || legacyPanelNames[panel.id] || "";
+    for (const panel of pane.querySelectorAll("[data-mech-console-panel]")) {
       const name = panel.dataset.mechConsolePanel;
       panel.dataset.mechConsoleLabel ||= name
         ? `${name.charAt(0).toUpperCase()}${name.slice(1)}`
@@ -2814,19 +2769,7 @@ function normalizeReplComponentContract() {
     ensureConsoleWorkspaceResizers(pane);
   }
   for (const resizer of documentConsoleResizers()) {
-    resizer.dataset.mechConsoleResizer = "";
-    if (resizer.id === "edgeHandle" || resizer.classList.contains("edge-handle")) {
-      resizer.dataset.mechConsoleEdgeHandle = "";
-    }
-  }
-  for (const toggle of documentConsoleToggles()) {
-    toggle.dataset.mechConsoleToggle = "";
-  }
-  for (const control of documentConsoleFullscreenControls()) {
-    control.dataset.mechConsoleFullscreen = "";
-  }
-  for (const control of ensureOutputFullscreenControl(pane)) {
-    control.dataset.mechOutputFullscreen = "";
+    resizer.dataset.mechConsoleResizeAxis ||= "width";
   }
   const mount = state.root.querySelector("#mech-output");
   if (mount) {
@@ -2849,8 +2792,6 @@ function setConsoleOpen(open) {
   const pane = documentConsolePane();
   if (pane) {
     pane.hidden = !open;
-    pane.classList.toggle("hidden", !open);
-    pane.classList.toggle("is-collapsed", !open);
   }
   state.root?.setAttribute("data-mech-console-open", String(open));
   for (const toggle of documentConsoleToggles()) {
@@ -2876,15 +2817,7 @@ function panelFor(name, pane = documentConsolePane()) {
   if (!pane) {
     return null;
   }
-  const known = {
-    console: "#mech-output",
-    output: "#mech-document-output",
-    errors: "#mech-document-errors",
-  };
-  const target = pane.querySelector(
-    `[data-mech-console-panel="${name}"], [data-panel="${name}"], ${known[name] || "[data-mech-console-panel]"}`,
-  );
-  return target?.closest(".console-panel, [data-mech-console-panel], [data-panel]") || target;
+  return pane.querySelector(`[data-mech-console-panel="${name}"]`);
 }
 
 function activateConsolePanel(name, pane = documentConsolePane()) {
@@ -2893,20 +2826,13 @@ function activateConsolePanel(name, pane = documentConsolePane()) {
     return;
   }
   pane.dataset.mechConsoleActivePanel = name;
-  const workspace = pane.classList.contains("is-fullscreen");
-  for (const candidate of pane.querySelectorAll(
-    ".console-panel, [data-mech-console-panel], [data-panel]",
-  )) {
+  const workspace = consoleWorkspaceActive();
+  for (const candidate of pane.querySelectorAll("[data-mech-console-panel]")) {
     const selected = candidate === panel;
     candidate.hidden = workspace ? false : !selected;
-    candidate.classList.toggle("active", selected);
-    candidate.classList.toggle("is-active", selected);
   }
-  for (const tab of pane.querySelectorAll(
-    ".console-tab, [data-mech-console-tab], [data-tab]",
-  )) {
-    const selected = (tab.dataset.mechConsoleTab || tab.dataset.tab) === name;
-    tab.classList.toggle("active", selected);
+  for (const tab of pane.querySelectorAll("[data-mech-console-tab]")) {
+    const selected = tab.dataset.mechConsoleTab === name;
     tab.setAttribute("aria-selected", String(selected));
     if (selected) {
       clearConsoleTabUnread(tab);
@@ -2924,11 +2850,9 @@ function initializeConsoleTabs() {
   if (!pane) {
     return;
   }
-  for (const tab of pane.querySelectorAll(
-    ".console-tab, [data-mech-console-tab], [data-tab]",
-  )) {
+  for (const tab of pane.querySelectorAll("[data-mech-console-tab]")) {
     tab.addEventListener("click", () => {
-      const name = tab.dataset.mechConsoleTab || tab.dataset.tab;
+      const name = tab.dataset.mechConsoleTab;
       if (name) {
         activateConsolePanel(name, pane);
       }
@@ -3096,9 +3020,7 @@ function initializeResizeHandles() {
     handle.addEventListener("pointerdown", (event) => {
       const rect = pane.getBoundingClientRect();
       const horizontal = handle.dataset.mechConsoleResizeAxis === "width" ||
-        pane.dataset.mechConsoleResizeAxis === "width" ||
-        handle.id === "resizer" ||
-        handle.id === "edgeHandle";
+        pane.dataset.mechConsoleResizeAxis === "width";
       const start = horizontal ? event.clientX : event.clientY;
       const initial = horizontal ? rect.width : rect.height;
       let ordinarySize = null;
@@ -3113,16 +3035,14 @@ function initializeResizeHandles() {
         if (horizontal && requested < minimum - overdrag) {
           ordinarySize = null;
           delete pane.dataset.mechFullscreenFallback;
-          delete pane.dataset.mechFullscreenMode;
+          state.root.dataset.mechConsoleMode = "docked";
           const controls = documentConsoleFullscreenControls();
           if (controls.length) {
             for (const toggle of controls) {
               setFullscreenState(pane, toggle, false, null);
             }
           } else {
-            pane.classList.remove("is-fullscreen");
-            document.body.classList.remove("console-fullscreen");
-            delete state.root.dataset.mechConsoleFullscreen;
+            state.root.dataset.mechConsoleMode = "docked";
           }
           setConsoleOpen(false);
           return;
@@ -3131,8 +3051,7 @@ function initializeResizeHandles() {
         if (horizontal && requested > maximum + overdrag) {
           ordinarySize = null;
           pane.dataset.mechFullscreenFallback = "true";
-          pane.dataset.mechFullscreenMode = "drag";
-          pane.classList.add("is-fullscreen");
+          state.root.dataset.mechConsoleMode = "drag";
           for (const toggle of documentConsoleFullscreenControls()) {
             setFullscreenState(pane, toggle, true, "drag");
           }
@@ -3141,11 +3060,10 @@ function initializeResizeHandles() {
         if (
           horizontal &&
           pane.dataset.mechFullscreenFallback === "true" &&
-          pane.dataset.mechFullscreenMode === "drag"
+          consoleMode() === "drag"
         ) {
           delete pane.dataset.mechFullscreenFallback;
-          delete pane.dataset.mechFullscreenMode;
-          pane.classList.remove("is-fullscreen");
+          state.root.dataset.mechConsoleMode = "docked";
           for (const toggle of documentConsoleFullscreenControls()) {
             setFullscreenState(pane, toggle, false, null);
           }
@@ -3157,11 +3075,11 @@ function initializeResizeHandles() {
       }, ({ cancelled, moved }) => {
         if (
           !cancelled && moved && ordinarySize !== null &&
-          !pane.classList.contains("is-fullscreen")
+          !consoleWorkspaceActive()
         ) {
           saveConsoleOpeningSize(horizontal ? "width" : "height", ordinarySize);
         }
-        if (handle.id === "edgeHandle" && !cancelled && !moved) {
+        if (handle.hasAttribute("data-mech-console-edge-handle") && !cancelled && !moved) {
           const isOpen = state.root?.dataset.mechConsoleOpen !== "false";
           setConsoleOpen(!isOpen);
         }
@@ -3212,7 +3130,7 @@ function setWorkspaceSize(pane, resizer, requested) {
 }
 
 function refreshWorkspaceResizers(pane) {
-  if (!pane.classList.contains("is-fullscreen")) {
+  if (!consoleWorkspaceActive()) {
     return;
   }
   for (const resizer of ensureConsoleWorkspaceResizers(pane)) {
@@ -3235,7 +3153,7 @@ function initializeWorkspaceResizers() {
   for (const resizer of ensureConsoleWorkspaceResizers(pane)) {
     const axis = resizer.dataset.mechConsoleWorkspaceResizer;
     resizer.addEventListener("pointerdown", event => {
-      if (!pane.classList.contains("is-fullscreen")) {
+      if (!consoleWorkspaceActive()) {
         return;
       }
       const panels = pane.querySelector(":scope > .console-panels");
@@ -3254,7 +3172,7 @@ function initializeWorkspaceResizers() {
       }, () => {});
     });
     resizer.addEventListener("keydown", event => {
-      if (!pane.classList.contains("is-fullscreen")) {
+      if (!consoleWorkspaceActive()) {
         return;
       }
       const backwards = axis === "column" ? event.key === "ArrowLeft" : event.key === "ArrowUp";
@@ -3276,14 +3194,8 @@ function initializeWorkspaceResizers() {
 
 function setFullscreenState(pane, toggle, active, mode = null) {
   const buttonFullscreen = active && mode === "button";
-  pane.classList.toggle("is-fullscreen", active);
-  document.body.classList.toggle("console-fullscreen", active);
-  if (active && mode) {
-    pane.dataset.mechFullscreenMode = mode;
-    state.root?.setAttribute("data-mech-console-fullscreen", mode);
-  } else if (!active) {
-    delete pane.dataset.mechFullscreenMode;
-    delete state.root?.dataset.mechConsoleFullscreen;
+  if (state.root) {
+    state.root.dataset.mechConsoleMode = active && mode ? mode : "docked";
   }
   toggle.setAttribute("aria-pressed", String(buttonFullscreen));
   toggle.setAttribute(
@@ -3292,9 +3204,7 @@ function setFullscreenState(pane, toggle, active, mode = null) {
   );
   activateConsolePanel(selectedConsolePanel(pane) || "console", pane);
   if (active) {
-    for (const tab of pane.querySelectorAll(
-      ".console-tab, [data-mech-console-tab], [data-tab]",
-    )) {
+    for (const tab of pane.querySelectorAll("[data-mech-console-tab]")) {
       clearConsoleTabUnread(tab);
     }
     refreshWorkspaceResizers(pane);
@@ -3320,7 +3230,7 @@ function initializeFullscreen() {
       // native session ends, the next button press must start a fresh entry.
       buttonFullscreenState = "idle";
       delete pane.dataset.mechFullscreenFallback;
-      delete pane.dataset.mechFullscreenMode;
+      state.root.dataset.mechConsoleMode = "docked";
     }
     const fallbackFullscreen =
       ["requesting", "fallback"].includes(buttonFullscreenState) &&
@@ -3329,7 +3239,7 @@ function initializeFullscreen() {
     const mode = nativeFullscreen
       ? "button"
       : fallbackFullscreen
-        ? pane.dataset.mechFullscreenMode || "button"
+        ? (consoleMode() === "docked" ? "button" : consoleMode())
         : null;
     setFullscreenState(pane, toggle, active, mode);
   };
@@ -3339,11 +3249,11 @@ function initializeFullscreen() {
   toggle.addEventListener("click", async () => {
     if (
       buttonFullscreenState !== "idle" ||
-      pane.dataset.mechFullscreenMode === "button"
+      consoleMode() === "button"
     ) {
       buttonFullscreenState = "idle";
       delete pane.dataset.mechFullscreenFallback;
-      delete pane.dataset.mechFullscreenMode;
+      state.root.dataset.mechConsoleMode = "docked";
       synchronize();
       if (document.fullscreenElement === pane) {
         try {
@@ -3358,7 +3268,7 @@ function initializeFullscreen() {
 
     buttonFullscreenState = "requesting";
     pane.dataset.mechFullscreenFallback = "true";
-    pane.dataset.mechFullscreenMode = "button";
+    state.root.dataset.mechConsoleMode = "button";
     synchronize();
     if (pane.requestFullscreen) {
       try {
@@ -4512,7 +4422,7 @@ async function main() {
   if (!state.root) {
     throw new Error("the document controller requires a .mech-root element");
   }
-  normalizeReplComponentContract();
+  initializeReplComponentContract();
   setDocumentStatus("loading");
   state.replBusy = true;
   attachConsole();

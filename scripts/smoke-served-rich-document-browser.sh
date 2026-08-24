@@ -539,14 +539,14 @@ def assert_desktop_contract():
     tabs: console?.querySelectorAll(".console-tab").length || 0,
     tabOrder: [...(console?.querySelectorAll('[data-mech-console-tab]') || [])]
       .map(tab => tab.dataset.mechConsoleTab),
-    consoleTabActive: Boolean(document.querySelector("#console-tab.console-tab.active[aria-selected='true']")),
+    consoleTabActive: Boolean(document.querySelector("[data-mech-console-tab='console'][aria-selected='true']")),
     promptVisible: visible(".repl-prompt"),
     inputVisible: visible(".repl-input"),
-    outputIsPlaceholder: /under construction/i.test(document.querySelector("#mech-document-output")?.textContent || ""),
-    errorsIsPlaceholder: /under construction/i.test(document.querySelector("#mech-document-errors")?.textContent || ""),
-    resizerVisible: visible("#resizer"),
-    fullscreenVisible: visible("#consoleFullscreenToggle"),
-    outputFullscreenVisible: visible("#outputFullscreenToggle, button[data-mech-output-fullscreen]"),
+    outputIsPlaceholder: /under construction/i.test(document.querySelector("[data-mech-output-panel]")?.textContent || ""),
+    errorsIsPlaceholder: /under construction/i.test(document.querySelector("[data-mech-errors-panel]")?.textContent || ""),
+    resizerVisible: visible("[data-mech-repl-host] > [data-mech-console-resizer]:not([data-mech-console-edge-handle])"),
+    fullscreenVisible: visible("[data-mech-console-fullscreen]"),
+    outputFullscreenVisible: visible("[data-mech-output-fullscreen]"),
     tocLinks: document.querySelectorAll(".mech-toc a[href], .toc a[href], [data-mech-toc] a[href]").length,
     numericToc,
     citationsVisible: visible(".mech-works-cited"),
@@ -822,7 +822,7 @@ def assert_desktop_console_controls():
     visible: visible(toggle),
     panels: Object.fromEntries(['console', 'output', 'errors'].map(name => [
       name,
-      document.querySelector(`#${name}-panel`)?.dataset.mechConsolePanel || null,
+      document.querySelector(`[data-mech-console-panel="${name}"]`)?.dataset.mechConsolePanel || null,
     ])),
   };
 })()
@@ -831,7 +831,7 @@ def assert_desktop_console_controls():
             "visible": True,
             "panels": {"console": "console", "output": "output", "errors": "errors"},
         }:
-            fail(f"custom REPL controls were not preserved and normalized: {custom!r}")
+            fail(f"custom REPL controls were not preserved alongside the canonical component: {custom!r}")
         evaluate("document.querySelector('#mech-smoke-custom-toggle')?.click()")
         wait_for(
             "document.querySelector('.mech-root')?.dataset.mechConsoleOpen === 'false'",
@@ -849,13 +849,13 @@ def assert_desktop_console_controls():
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleOpen === 'false' && "
         "document.querySelector('.console-pane')?.hidden === true && "
-        "getComputedStyle(document.querySelector('#edgeHandle')).display !== 'none' && "
-        "getComputedStyle(document.querySelector('#edgeHandle')).opacity === '1'",
+        "getComputedStyle(document.querySelector('[data-mech-console-edge-handle]')).display !== 'none' && "
+        "getComputedStyle(document.querySelector('[data-mech-console-edge-handle]')).opacity === '1'",
         "the desktop console closing with a visible edge affordance",
     )
     edge_before = evaluate_json("""
 (() => {
-  const edge = document.querySelector('#edgeHandle');
+  const edge = document.querySelector('[data-mech-console-edge-handle]');
   const rect = edge?.getBoundingClientRect();
   const style = edge && getComputedStyle(edge);
   return edge && rect && style ? {
@@ -879,7 +879,7 @@ def assert_desktop_console_controls():
         session_id,
     )
     time.sleep(0.15)
-    edge_after = evaluate("parseFloat(getComputedStyle(document.querySelector('#edgeHandle')).right)")
+    edge_after = evaluate("parseFloat(getComputedStyle(document.querySelector('[data-mech-console-edge-handle]')).right)")
     if edge_after <= edge_before["right"]:
         fail(
             "the collapsed console edge handle did not pop out on hover: "
@@ -945,7 +945,7 @@ def assert_output_fullscreen_control():
     outputExitVisible: visible(outputToggle) &&
       outputToggle.getAttribute('aria-label') === 'Exit fullscreen output',
     consoleFullscreenHidden: !visible(consoleToggle),
-    distinctFromWorkspace: !pane?.classList.contains('is-fullscreen') &&
+    distinctFromWorkspace: document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'docked' &&
       document.body.classList.contains('output-fullscreen'),
   };
 })()
@@ -1054,7 +1054,7 @@ window.dispatchEvent(new CustomEvent('mech:output', { detail: {
         "window.__mechPendingOutputFullscreen?.exitCalls === 1 && "
         "document.fullscreenElement === null && "
         "document.querySelector('[data-mech-repl-host]')?.dataset.mechOutputFullscreenActive === 'false' && "
-        "!document.querySelector('[data-mech-console-pane]')?.classList.contains('is-fullscreen')",
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'docked'",
         "the stale fullscreen completion being relinquished",
     )
     evaluate("""
@@ -1134,21 +1134,21 @@ def assert_fullscreen_accessibility():
 """)
     initial = evaluate_json("""
 (() => {
-  const toggle = document.querySelector("#consoleFullscreenToggle");
+  const toggle = document.querySelector("[data-mech-console-fullscreen]");
   const resizers = [...document.querySelectorAll('[data-mech-console-workspace-resizer]')];
   return {
     pressed: toggle?.getAttribute("aria-pressed"),
     label: toggle?.getAttribute("aria-label"),
     unreadCreated: ['output', 'errors'].every(name => {
-      const tab = document.querySelector(`#${name}-tab`);
+      const tab = document.querySelector(`[data-mech-console-tab="${name}"]`);
       return tab?.dataset.mechConsoleUnread === 'true' &&
         /new activity/.test(tab.getAttribute('aria-label') || '') &&
         'mechConsoleBaseLabel' in tab.dataset;
     }),
     errorBadgeSynchronized: (() => {
-      const tab = document.querySelector('#errors-tab');
+      const tab = document.querySelector('[data-mech-console-tab="errors"]');
       const badge = tab?.querySelector('.mech-console-error-count');
-      const panel = document.querySelector('#mech-document-errors');
+      const panel = document.querySelector('[data-mech-errors-panel]');
       const count = panel?.querySelectorAll(
         ".mech-console-error:not(.mech-repl-diagnostic), " +
         ".mech-repl-diagnostic[data-mech-diagnostic-severity='error'], " +
@@ -1185,23 +1185,23 @@ def assert_fullscreen_accessibility():
     ):
         fail(f"fullscreen control did not begin with a collapsed accessible state: {initial!r}")
 
-    evaluate("document.querySelector('#consoleFullscreenToggle')?.click()")
+    evaluate("document.querySelector('[data-mech-console-fullscreen]')?.click()")
     wait_for(
-        "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-pressed') === 'true' && "
-        "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-label') === 'Minimize console workspace'",
+        "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed') === 'true' && "
+        "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-label') === 'Minimize console workspace'",
         "the fullscreen control entering an accessible active state",
     )
     if evaluate("document.fullscreenElement === document.querySelector('[data-mech-console-pane]')"):
         evaluate("document.exitFullscreen()")
         wait_for(
-            "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-pressed') === 'false' && "
-            "!document.querySelector('[data-mech-console-pane]')?.classList.contains('is-fullscreen')",
+            "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed') === 'false' && "
+            "document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'docked'",
             "native fullscreen Escape/browser exit clearing button ownership",
         )
-        evaluate("document.querySelector('#consoleFullscreenToggle')?.click()")
+        evaluate("document.querySelector('[data-mech-console-fullscreen]')?.click()")
         wait_for(
-            "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-pressed') === 'true' && "
-            "document.querySelector('[data-mech-console-pane]')?.classList.contains('is-fullscreen')",
+            "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed') === 'true' && "
+            "document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'button'",
             "one click re-entering fullscreen after a native exit",
         )
 
@@ -1246,7 +1246,7 @@ def assert_fullscreen_accessibility():
     fillsViewport: paneRect.left <= 1 && paneRect.top <= 1 &&
       paneRect.right >= innerWidth - 1 && paneRect.bottom >= innerHeight - 1,
     buttonFullscreenOwnsState:
-      document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleFullscreen === 'button',
+      document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'button',
     exteriorHandlesHidden: [mainHandle, edgeHandle].every(handle =>
       !handle || getComputedStyle(handle).display === 'none'),
     consoleLeft: consoleRect.left < outputRect.left,
@@ -1265,7 +1265,7 @@ def assert_fullscreen_accessibility():
       handle.hasAttribute('aria-valuemax') && handle.hasAttribute('aria-valuenow')),
     unreadCleared: !document.querySelector('[data-mech-console-unread]'),
     unreadLabelsRestored: ['output', 'errors'].every(name => {
-      const tab = document.querySelector(`#${name}-tab`);
+      const tab = document.querySelector(`[data-mech-console-tab="${name}"]`);
       const base = tab?.dataset.mechConsoleBaseLabel || '';
       const expected = name === 'errors' ? `${base}, 1 error` : base;
       return tab && !tab.dataset.mechConsoleUnread &&
@@ -1352,10 +1352,10 @@ def assert_fullscreen_accessibility():
     if not responsive["contained"] or not responsive["ariaMatchesGeometry"]:
         fail(f"fullscreen workspace splits did not adapt to viewport pressure: {responsive!r}")
 
-    evaluate("document.querySelector('#consoleFullscreenToggle')?.click()")
+    evaluate("document.querySelector('[data-mech-console-fullscreen]')?.click()")
     wait_for(
-        "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-pressed') === 'false' && "
-        "document.querySelector('#consoleFullscreenToggle')?.getAttribute('aria-label') === 'Enter fullscreen workspace' && "
+        "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed') === 'false' && "
+        "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-label') === 'Enter fullscreen workspace' && "
         "document.querySelectorAll('[data-mech-console-panel]:not([hidden])').length === 1",
         "the fullscreen control restoring its accessible inactive state",
     )
@@ -1622,15 +1622,15 @@ def assert_console_contract():
     }:
         fail(f"the standard document console did not advertise resident evaluation: {resident!r}")
 
-    evaluate("document.querySelector('#output-tab')?.click()")
+    evaluate("document.querySelector('[data-mech-console-tab=output]')?.click()")
     wait_for(
-        "document.querySelector('#output-panel')?.classList.contains('is-active') && "
+        "!document.querySelector('[data-mech-console-panel=output]')?.hidden && "
         "Boolean(document.querySelector('.mech-document-output-entry'))",
         "the document output metadata panel",
     )
     metadata = evaluate_json("""
 (() => {
-  const panel = document.querySelector('#mech-document-output');
+  const panel = document.querySelector('[data-mech-output-panel]');
   const entry = panel?.querySelector('.mech-document-output-entry');
   const name = entry?.querySelector('.mech-document-output-name');
   const kind = entry?.querySelector('.mech-output-kind');
@@ -1670,7 +1670,7 @@ def assert_console_contract():
         metadata["bodyOverflow"] in {"auto", "scroll"}
     ):
         fail(f"document output metadata was not compact, typed, rose, contained, and scrollbar-free: {metadata!r}")
-    evaluate("document.querySelector('#console-tab')?.click()")
+    evaluate("document.querySelector('[data-mech-console-tab=console]')?.click()")
 
     multiline = evaluate_json("""
 (() => {
@@ -1750,7 +1750,7 @@ def assert_console_contract():
     )
     fixed_output = evaluate_json("""
 (() => {
-  const entry = document.querySelector('#mech-document-output .mech-document-output-entry');
+  const entry = document.querySelector('[data-mech-output-panel] .mech-document-output-entry');
   const body = entry?.querySelector('.mech-document-output-html');
   return entry && body ? {
     selectionToken: entry.dataset.mechSelectionToken,
@@ -1771,7 +1771,7 @@ def assert_console_contract():
     directed_lifecycle = evaluate_json("""
 (() => {
   const publish = detail => window.dispatchEvent(new CustomEvent('mech:output', { detail }));
-  const original = document.querySelector('#mech-document-output .mech-document-output-entry');
+  const original = document.querySelector('[data-mech-output-panel] .mech-document-output-entry');
   const originalToken = original?.dataset.mechSelectionToken;
   const originalText = original?.querySelector('.mech-document-output-html')?.textContent.trim();
   publish({
@@ -1964,7 +1964,7 @@ def assert_console_contract():
         )
     evaluate("""
 (() => {
-  const panel = document.querySelector('#mech-document-errors');
+  const panel = document.querySelector('[data-mech-errors-panel]');
   if (!panel) return false;
   let region = panel.querySelector('[data-mech-error-region=document]');
   if (!region) {
@@ -1984,7 +1984,7 @@ def assert_console_contract():
         "[...document.querySelectorAll('.mech-repl-transcript .mech-repl-diagnostic')].some((row) => "
         "/step count must be between 1 and 1000000/.test(row.textContent)) && "
         "!document.querySelector('[data-mech-error-region=repl]') && "
-        "document.querySelector('#console-tab')?.getAttribute('aria-selected') === 'true'",
+        "document.querySelector('[data-mech-console-tab=console]')?.getAttribute('aria-selected') === 'true'",
         "the portable resident step ceiling inline in the console",
     )
     prompt_ownership = evaluate_json("""
@@ -2163,7 +2163,7 @@ def assert_console_contract():
 (() => {
   const root = document.querySelector('.mech-root');
   const value = document.querySelector('#mech-smoke-large-var .mech-var-placeholder');
-  const pane = document.querySelector('#mech-console, .console-pane');
+  const pane = document.querySelector('[data-mech-console-pane]');
   const transcript = document.querySelector('.mech-repl-transcript');
   if (!root || !value || !pane || !transcript) return null;
   document.dispatchEvent(new KeyboardEvent('keydown', {
@@ -2263,7 +2263,7 @@ def assert_console_contract():
 (async () => {
   const { WasmDocument } = await import('/_mech/pkg/mech_wasm.js');
   const root = document.querySelector('.mech-root');
-  const pane = document.querySelector('#mech-console, .console-pane');
+  const pane = document.querySelector('[data-mech-console-pane]');
   const outputs = [...document.querySelectorAll(
     '.mech-inline-mech-code[id], .mech-block-output[id], ' +
     '.mech-document-output-entry[data-mech-output-id]'
@@ -2800,7 +2800,7 @@ def assert_console_contract():
         fail("resident program output did not expose its stable display id")
     evaluate("""
 (() => {
-  const panel = document.querySelector('#mech-document-output');
+  const panel = document.querySelector('[data-mech-output-panel]');
   if (!panel?.parentElement) return false;
   window.__MECH_DETACHED_OUTPUT_PANEL__ = {
     panel,
@@ -2836,7 +2836,7 @@ def assert_console_contract():
 """)
     submit(f":output {display_id}")
     wait_for(
-        f"document.querySelector('#output-tab')?.classList.contains('active') && "
+        f"document.querySelector('[data-mech-console-tab=output]')?.getAttribute('aria-selected') === 'true' && "
         f"/browser-output[\\s\\S]*continued[\\s\\S]*while-absent/.test(document.querySelector('[data-mech-display-id=\"{display_id}\"]')?.textContent || '')",
         "focus reconstruction for retained output published while its pane was absent",
     )
@@ -2877,8 +2877,8 @@ def assert_console_contract():
     root_isolation = evaluate_json("""
 (() => {
   const root = document.querySelector('.mech-root');
-  const localOutput = root?.querySelector('#mech-document-output');
-  const localErrors = root?.querySelector('#mech-document-errors');
+  const localOutput = root?.querySelector('[data-mech-output-panel]');
+  const localErrors = root?.querySelector('[data-mech-errors-panel]');
   if (!root || !localOutput || !localErrors) return null;
   const outputAnchor = document.createComment('mech-output-anchor');
   const errorsAnchor = document.createComment('mech-errors-anchor');
@@ -2945,7 +2945,7 @@ def assert_console_contract():
     )
     evaluate("""
 (() => {
-  const panel = document.querySelector('#mech-document-errors');
+  const panel = document.querySelector('[data-mech-errors-panel]');
   const parent = panel?.parentElement;
   const next = panel?.nextSibling;
   panel?.remove();
@@ -2966,7 +2966,7 @@ def assert_console_contract():
         "!document.querySelector('[data-mech-display-id=cross-stream-smoke]')",
         "display removal while the event's destination pane is absent",
     )
-    evaluate("document.querySelector('#console-tab')?.click()")
+    evaluate("document.querySelector('[data-mech-console-tab=console]')?.click()")
     repl_event_rejection = evaluate_json("""
 (() => {
   const controller = window.__MECH_SMOKE_DOCUMENT__;
@@ -3030,8 +3030,8 @@ def assert_console_contract():
     wait_for(
         "Boolean(document.querySelector('[data-mech-error-region=program-diagnostics] "
         ".mech-program-diagnostic[data-mech-diagnostic-id=program-browser-smoke]')) && "
-        "document.querySelector('#errors-tab')?.dataset.mechConsoleUnread === 'true' && "
-        "document.querySelector('#console-tab')?.getAttribute('aria-selected') === 'true'",
+        "document.querySelector('[data-mech-console-tab=errors]')?.dataset.mechConsoleUnread === 'true' && "
+        "document.querySelector('[data-mech-console-tab=console]')?.getAttribute('aria-selected') === 'true'",
         "a program-owned diagnostic routing into Errors without stealing Console focus",
     )
     evaluate("""
@@ -3066,11 +3066,11 @@ def assert_console_contract():
         ".mech-program-diagnostic[data-mech-diagnostic-id=program-browser-smoke]'))",
         "program stream clearing without deleting program diagnostics",
     )
-    evaluate("document.querySelector('#output-tab')?.click()")
+    evaluate("document.querySelector('[data-mech-console-tab=output]')?.click()")
     wait_for(
-        "document.querySelector('#output-tab')?.classList.contains('active') && "
-        "document.querySelector('#output-panel')?.classList.contains('is-active') && "
-        "Boolean(document.querySelector('#mech-document-output [data-mech-selection-token]'))",
+        "document.querySelector('[data-mech-console-tab=output]')?.getAttribute('aria-selected') === 'true' && "
+        "!document.querySelector('[data-mech-console-panel=output]')?.hidden && "
+        "Boolean(document.querySelector('[data-mech-output-panel] [data-mech-selection-token]'))",
         "the Output console tab restoring the fixed implicit program result after stream clearing",
     )
     submit(":clear")
@@ -3123,7 +3123,7 @@ def assert_console_contract():
   }));
   return {
     reopened: root.dataset.mechConsoleOpen,
-    consoleActive: document.querySelector('#console-tab')?.classList.contains('active'),
+    consoleActive: document.querySelector('[data-mech-console-tab=console]')?.getAttribute('aria-selected') === 'true',
   };
 })()
 """)
@@ -3135,7 +3135,7 @@ def assert_console_tab_isolation():
     state = evaluate_json("""
 (() => {
   const root = document.querySelector('.mech-root');
-  const outputTab = document.querySelector('#output-tab');
+  const outputTab = document.querySelector('[data-mech-console-tab=output]');
   if (!root || !outputTab) return null;
 
   const foreign = document.querySelector('#mech-smoke-unrelated-controls');
@@ -3144,7 +3144,7 @@ def assert_console_tab_isolation():
   const foreignPanel = foreign.querySelector('[data-panel="output"]');
   const foreignResize = foreign.querySelector('.resize-handle');
   const foreignButton = foreign.querySelector('[data-mech-like-but-not-owned-control]');
-  const pane = document.querySelector('#mech-console, .console-pane');
+  const pane = document.querySelector('[data-mech-console-pane]');
   if (!foreignTab || !foreignPanel || !foreignResize || !foreignButton || !pane) return null;
 
   outputTab.click();
@@ -3180,7 +3180,7 @@ def assert_console_tab_isolation():
     consoleSizeUnchanged: root.style.getPropertyValue('--mech-console-size') === before.consoleSize,
     consoleOpenUnchanged: root.dataset.mechConsoleOpen === before.consoleOpen,
     consoleTabAriaUnchanged: outputTab.getAttribute('aria-selected') === before.outputAria,
-    outputActive: document.querySelector('#output-panel')?.classList.contains('is-active'),
+    outputActive: !document.querySelector('[data-mech-console-panel=output]')?.hidden,
     foreignPanelDisplay: before.foreignPanelDisplay,
     foreignResizePosition: before.foreignResizePosition,
     foreignResizeCursor: before.foreignResizeCursor,
@@ -3210,8 +3210,8 @@ def assert_right_console_resize_direction():
     state = evaluate_json("""
 (() => {
   const root = document.querySelector('.mech-root');
-  const pane = document.querySelector('#mech-console, .console-pane');
-  const handle = root?.querySelector(':scope > #resizer, :scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const handle = root?.querySelector(':scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
   if (!root || !pane || !handle) return null;
   let pointerId = 80;
   const drag = (...deltaXs) => {
@@ -3229,9 +3229,8 @@ def assert_right_console_resize_direction():
       }));
       states.push({
         open: root.dataset.mechConsoleOpen,
-        fullscreen: pane.classList.contains('is-fullscreen'),
-        fallback: pane.dataset.mechFullscreenFallback,
-        mode: pane.dataset.mechFullscreenMode,
+        fullscreen: root.dataset.mechConsoleMode !== 'docked',
+        mode: root.dataset.mechConsoleMode,
         handleVisible: (() => {
           const rect = handle.getBoundingClientRect();
           return getComputedStyle(handle).display !== 'none' &&
@@ -3291,7 +3290,7 @@ def assert_right_console_resize_direction():
   drag(widened);
   const collapsed =
     root.dataset.mechConsoleOpen === 'false' &&
-    (pane.hidden || pane.classList.contains('is-collapsed'));
+    pane.hidden;
   document.dispatchEvent(new KeyboardEvent('keydown', {
     key: '`', bubbles: true, cancelable: true,
   }));
@@ -3306,15 +3305,13 @@ def assert_right_console_resize_direction():
   const exited = transitions[1];
   const fullscreen =
     entered?.fullscreen === true &&
-    entered?.fallback === 'true' &&
     entered?.mode === 'drag' &&
     entered?.handleVisible === true &&
     entered?.fillsViewport === true &&
     entered?.fallbackWorkspaceComplete === true;
   const returned =
     exited?.fullscreen === false &&
-    exited?.fallback !== 'true' &&
-    !exited?.mode &&
+    exited?.mode === 'docked' &&
     exited?.open === 'true';
   return {
     before, widened, collapsed, reopened, fullscreen, returned,
@@ -3341,8 +3338,8 @@ def assert_layout_persistence():
   const root = document.querySelector('[data-mech-repl-host]');
   const pane = document.querySelector('[data-mech-console-pane]');
   const handle = root?.querySelector(
-    ':scope > #resizer, :scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
-  if (!root || !pane || !handle || pane.classList.contains('is-fullscreen')) return null;
+    ':scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
+  if (!root || !pane || !handle || root.dataset.mechConsoleMode !== 'docked') return null;
   const rect = handle.getBoundingClientRect();
   const x = rect.left + rect.width / 2;
   const y = rect.top + rect.height / 2;
@@ -3902,7 +3899,7 @@ def assert_real_pointer_capture_cleanup():
     pointer = evaluate_json("""
 (() => {
   const root = document.querySelector('.mech-root');
-  const handle = root?.querySelector(':scope > #resizer, :scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
+  const handle = root?.querySelector(':scope > [data-mech-console-resizer]:not([data-mech-console-edge-handle])');
   if (!handle) return null;
   const rect = handle.getBoundingClientRect();
   window.__MECH_REAL_POINTER__ = { pointerId: null, got: 0, lost: 0 };
@@ -4036,8 +4033,8 @@ def assert_mobile_contract():
     return !element.hidden && style.display !== "none" && style.visibility !== "hidden" &&
       rect.width > 0 && rect.height > 0;
   };
-  const content = document.querySelector("#left-pane, .content-shell, .main-content");
-  const toggle = document.querySelector("#edgeHandle");
+  const content = document.querySelector(".content-shell, .main-content");
+  const toggle = document.querySelector("[data-mech-console-edge-handle]");
   return {
     contentVisible: visible(content),
     controlVisible: visible(toggle),
@@ -4055,7 +4052,7 @@ def assert_mobile_contract():
         return evaluate("""
 (() => {
   const root = document.querySelector(".mech-root");
-  const edge = document.querySelector("#edgeHandle");
+  const edge = document.querySelector("[data-mech-console-edge-handle]");
   if (!edge) return "";
   edge.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, clientX: 1, clientY: 1 }));
   window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, clientX: 1, clientY: 1 }));
@@ -4095,7 +4092,7 @@ def assert_mobile_contract():
   const collect = list => {
     for (const rule of list || []) {
       if (rule.cssRules) collect(rule.cssRules);
-      if (rule.selectorText?.includes('[data-mech-console-pane].is-fullscreen')) {
+      if (rule.selectorText?.includes(':not([data-mech-console-mode="docked"])')) {
         rules.push(rule);
       }
     }
@@ -4345,7 +4342,7 @@ def assert_fatal_error_is_visible():
         "document.documentElement?.dataset.mechDocumentStatus === 'error' && "
         "document.querySelector('.mech-root')?.dataset.mechConsoleOpen === 'true' && "
         "document.querySelector('[data-mech-console-tab=errors]')?.getAttribute('aria-selected') === 'true' && "
-        "/synthetic fatal frame failure/.test(document.querySelector('#mech-document-errors')?.textContent || '')",
+        "/synthetic fatal frame failure/.test(document.querySelector('[data-mech-errors-panel]')?.textContent || '')",
         "a fatal document failure forcing a visible Errors surface",
         timeout=15,
     )
@@ -4508,13 +4505,6 @@ try:
       toggle.textContent = 'Custom console control';
       Object.assign(toggle.style, { position: 'fixed', left: '8px', bottom: '8px', zIndex: '1200' });
       root.prepend(toggle);
-    }
-    for (const name of ['console', 'output', 'errors']) {
-      const panel = document.getElementById(`${name}-panel`);
-      if (!panel || 'mechSmokeLegacyContract' in panel.dataset) continue;
-      delete panel.dataset.mechConsolePanel;
-      delete panel.dataset.panel;
-      panel.dataset.mechSmokeLegacyContract = '';
     }
   };
   new MutationObserver(install).observe(document, { childList: true, subtree: true });

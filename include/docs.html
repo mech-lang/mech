@@ -19,6 +19,7 @@
     id="workspace"
     data-mech-document-status="loading"
     data-mech-presentation="{{PRESENTATION}}"
+    data-mech-console-mode="docked"
     mech-engine-id="0"
     data-mech-source-url-key="{{SOURCE_URL_KEY}}"
     aria-label="Documentation workspace"
@@ -53,32 +54,32 @@
       </div>
     </section>
 
-    <div class="resize-handle" id="resizer" role="separator" aria-orientation="vertical" aria-label="Resize console" data-mech-console-resizer></div>
-    <div class="edge-handle" id="edgeHandle" aria-hidden="true" data-mech-console-edge-handle data-mech-console-resizer></div>
+    <div class="resize-handle" role="separator" aria-orientation="vertical" aria-label="Resize console" data-mech-console-resizer data-mech-console-resize-axis="width"></div>
+    <div class="edge-handle" aria-hidden="true" data-mech-console-edge-handle data-mech-console-resizer data-mech-console-resize-axis="width"></div>
 
-    <aside class="console-pane" id="mech-console" aria-label="Document console" data-mech-console-pane>
+    <aside class="console-pane" aria-label="Document console" data-mech-console-pane>
       <div class="console-topbar">
         <div class="console-tabs" role="tablist" aria-label="Console sections">
-          <button class="console-tab" id="output-tab" type="button" role="tab" aria-selected="false" aria-controls="output-panel" data-tab="output" data-mech-console-tab="output">Output</button>
-          <button class="console-tab active" id="console-tab" type="button" role="tab" aria-selected="true" aria-controls="console-panel" data-tab="console" data-mech-console-tab="console">Console</button>
-          <button class="console-tab" id="errors-tab" type="button" role="tab" aria-selected="false" aria-controls="errors-panel" data-tab="errors" data-mech-console-tab="errors">Errors</button>
+          <button class="console-tab" id="mech-console-tab-output" type="button" role="tab" aria-selected="false" aria-controls="mech-console-panel-output" data-mech-console-tab="output">Output</button>
+          <button class="console-tab" id="mech-console-tab-console" type="button" role="tab" aria-selected="true" aria-controls="mech-console-panel-console" data-mech-console-tab="console">Console</button>
+          <button class="console-tab" id="mech-console-tab-errors" type="button" role="tab" aria-selected="false" aria-controls="mech-console-panel-errors" data-mech-console-tab="errors">Errors</button>
         </div>
-        <button class="output-fullscreen-toggle" id="outputFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen output" data-mech-output-fullscreen>
+        <button class="output-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen output" data-mech-output-fullscreen>
           <span aria-hidden="true">⛶</span>
         </button>
-        <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen workspace" data-mech-console-fullscreen>
+        <button class="console-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen workspace" data-mech-console-fullscreen>
           <span aria-hidden="true">⛶</span>
         </button>
       </div>
       <div class="console-panels">
-        <section class="console-panel is-active" id="console-panel" role="tabpanel" aria-labelledby="console-tab" data-panel="console" data-mech-console-panel="console">
+        <section class="console-panel" id="mech-console-panel-console" role="tabpanel" aria-labelledby="mech-console-tab-console" data-mech-console-panel="console">
           {{REPL}}
         </section>
-        <section class="console-panel" id="output-panel" role="tabpanel" aria-labelledby="output-tab" data-panel="output" data-mech-console-panel="output">
-          <div class="console-scroll" id="mech-document-output" data-mech-output-panel></div>
+        <section class="console-panel" id="mech-console-panel-output" role="tabpanel" aria-labelledby="mech-console-tab-output" data-mech-console-panel="output" hidden>
+          <div class="console-scroll" data-mech-output-panel></div>
         </section>
-        <section class="console-panel" id="errors-panel" role="tabpanel" aria-labelledby="errors-tab" data-panel="errors" data-mech-console-panel="errors">
-          <div class="console-scroll" id="mech-document-errors" data-mech-errors-panel aria-live="polite"></div>
+        <section class="console-panel" id="mech-console-panel-errors" role="tabpanel" aria-labelledby="mech-console-tab-errors" data-mech-console-panel="errors" hidden>
+          <div class="console-scroll" data-mech-errors-panel aria-live="polite"></div>
         </section>
       </div>
     </aside>
