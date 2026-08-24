@@ -2835,6 +2835,7 @@ dependencies = [
  "js-sys",
  "mech-core",
  "mech-runtime",
+ "mech-stdlib",
  "serde",
  "serde_json",
  "wasm-bindgen",

@@ -412,6 +412,14 @@ def main() -> None:
                     fail(f"report-only elementwise dispatch copied output data to the CPU; artifacts: {work}")
                 if 'data-mech-gpu-smoke-state-advanced="true"' not in dom:
                     fail(f"completion-backed turns did not advance rendered GPU state; artifacts: {work}")
+                marker = 'data-mech-gpu-smoke-accepted-dispatches="'
+                if marker not in dom:
+                    fail(f"resident acknowledgement evidence is missing; artifacts: {work}")
+                accepted = int(dom.split(marker, 1)[1].split('"', 1)[0])
+                if accepted < 2:
+                    fail(f"only {accepted} GPU completions reached the resident host; artifacts: {work}")
+                if 'data-mech-gpu-smoke-last-accepted-dispatch-token="' not in dom:
+                    fail(f"the accepted resident dispatch identity is missing; artifacts: {work}")
                 if 'data-mech-gpu-smoke-disposed="true"' not in dom:
                     fail(f"particle compute resources were not disposed during teardown; artifacts: {work}")
                 if 'data-mech-gpu-smoke-page-errors="0"' not in dom:

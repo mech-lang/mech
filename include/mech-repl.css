@@ -341,6 +341,11 @@ body.console-fullscreen [data-mech-console-pane] {
   object-fit: contain;
 }
 
+.mech-repl-scene[data-mech-scene-pointer-surface="true"] {
+  cursor: pointer;
+  touch-action: none;
+}
+
 [data-mech-console-pane] .console-topbar {
   align-items: center;
   border-bottom: 1px solid var(--mech-repl-border);

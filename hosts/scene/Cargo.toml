@@ -26,4 +26,5 @@ serde = { version = "1.0.228", features = ["derive"], optional = true }
 serde_json = { version = "1.0.150", optional = true }
 
 [dev-dependencies]
-mech-runtime = { version = "0.3.5", default-features = false, features = ["source"] }
+mech-runtime = { version = "0.3.5", default-features = false, features = ["resident-routing-source", "source_default"] }
+mech-stdlib = { version = "0.3.5", default-features = false, features = ["full_compiler", "native-plan"] }

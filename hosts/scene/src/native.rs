@@ -8,8 +8,9 @@ use mech_runtime::{
 };
 
 use crate::{
-    RecordingSceneBackend, SceneBackend, SceneHostSettings, SceneResourceProvider, SceneSnapshot,
-    scene_error, scene_host_manifest, scene_settings_from_config,
+    RecordingSceneBackend, SceneBackend, SceneHostSettings, ScenePointerHandle,
+    SceneResourceProvider, SceneSnapshot, scene_error, scene_host_manifest,
+    scene_settings_from_config,
 };
 
 #[derive(Clone, Debug, Default)]
@@ -111,6 +112,7 @@ impl RuntimeHostFactory for NativeSceneHostFactory {
     ) -> MResult<RuntimeHostInstallation> {
         let settings: SceneHostSettings = scene_settings_from_config(settings)?;
         self.registry.register(instance_name)?;
+        let pointer = ScenePointerHandle::new(instance_name);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
             resource_providers: vec![Box::new(SceneResourceProvider::new_with_settings(
@@ -118,7 +120,7 @@ impl RuntimeHostFactory for NativeSceneHostFactory {
                 NativeSceneBackend::new(instance_name, self.registry.clone()),
                 settings,
             ))],
-            input_drivers: Vec::new(),
+            input_drivers: vec![pointer.input_driver(instance_name)],
         })
     }
 }

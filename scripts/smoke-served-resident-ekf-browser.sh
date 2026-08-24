@@ -60,6 +60,14 @@ if [[ ! "$filter_count" =~ ^[1-9][0-9]*$ ]]; then
   echo "MECH_EKF_FILTER_COUNT must be a positive integer" >&2
   exit 1
 fi
+continuity_edit="${MECH_EKF_CONTINUITY_EDIT:-true}"
+case "$continuity_edit" in
+  true|false) ;;
+  *)
+    echo "MECH_EKF_CONTINUITY_EDIT must be true or false" >&2
+    exit 1
+    ;;
+esac
 python3 - "$project_dir/localization.mec" "$filter_count" <<'PY'
 from pathlib import Path
 import sys
@@ -121,19 +129,22 @@ if [[ ! -s "$project_dir/index.html" ]]; then
   exit 1
 fi
 
-python3 - "$project_dir/index.html" "$expected_compute_backend" "$filter_count" <<'PY'
+python3 - "$project_dir/index.html" "$expected_compute_backend" "$filter_count" \
+  "$continuity_edit" <<'PY'
 from pathlib import Path
 import sys
 
 path = Path(sys.argv[1])
 compute_backend = sys.argv[2]
 filter_count = sys.argv[3]
+continuity_edit = sys.argv[4]
 html = path.read_text()
 marker = "</head>"
 harness = r'''<script>
     const root = document.documentElement;
     const expectedComputeBackend = "__MECH_EXPECTED_COMPUTE_BACKEND__";
     const expectedComputeInstances = Number("__MECH_EXPECTED_COMPUTE_INSTANCES__");
+    const performContinuityEdit = "__MECH_PERFORM_CONTINUITY_EDIT__" === "true";
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
     console.error = (...args) => {
@@ -154,12 +165,25 @@ harness = r'''<script>
     let continuityNextSample;
     let continuityEditRequested = false;
     let continuityGenerationChanged = false;
-    let continuityResourcePreserved = expectedComputeBackend !== "wgpu";
-    let continuityActiveBufferPreserved = expectedComputeBackend !== "wgpu";
+    let continuityResourcePreserved =
+      expectedComputeBackend !== "wgpu" || !performContinuityEdit;
+    let continuityActiveBufferPreserved =
+      expectedComputeBackend !== "wgpu" || !performContinuityEdit;
     let continuityBefore;
     let busyReplacementAttempted = false;
     let busyReplacementRejected = expectedComputeBackend !== "wgpu";
-    let busyGeneration;
+    let busySourceUntouched = expectedComputeBackend !== "wgpu";
+    let busySymbolAbsent = expectedComputeBackend !== "wgpu";
+    let busyLogicalProgressUnchanged = expectedComputeBackend !== "wgpu";
+    let applicationQualifiedBeforeReset = false;
+    let incompatibleEditRequested = expectedComputeBackend !== "wgpu";
+    let incompatibleGenerationChanged = expectedComputeBackend !== "wgpu";
+    let incompatibleResourcesReplaced = expectedComputeBackend !== "wgpu";
+    let incompatibleOldResourceDisposed = expectedComputeBackend !== "wgpu";
+    let incompatibleStateReset = expectedComputeBackend !== "wgpu";
+    let incompatibleResetDiagnostic = expectedComputeBackend !== "wgpu";
+    let incompatibleBefore;
+    let computeStateResetEvents = 0;
     let displayParityTrackingError;
     let computeReadbackBytes = 0;
     let sampledReadbackEfficient = true;
@@ -172,7 +196,10 @@ harness = r'''<script>
       state: root.dataset.mechComputeStateIdentity || "",
       pipelineBuilds: root.dataset.mechComputePipelineBuildCount || "",
       activeBuffer: root.dataset.mechComputeActiveBuffer || "",
+      dispatches: root.dataset.mechComputeDispatches || "",
     });
+    const acceptedSource = () =>
+      globalThis.__MECH_ACCEPTED_REPL_SOURCE__?.() || "";
     const submitResidentSource = (source) => {
       const input = document.querySelector(".mech-repl-active-prompt .repl-input");
       if (!input || input.disabled || input.readOnly) return false;
@@ -211,8 +238,61 @@ harness = r'''<script>
         Number(root.dataset.mechComputeDispatches || 0) !== busyReplacementTurn
       ) return;
       busyReplacementAttempted = true;
-      busyGeneration = root.dataset.mechComputeGeneration || "";
-      submitResidentSource("busy-replacement-probe := 1");
+      const before = computeIdentity();
+      const logicalTurnBefore = renderedFilterTurn();
+      const sourceBefore = acceptedSource();
+      const submitted = submitResidentSource("busy-replacement-probe := 1");
+      const after = computeIdentity();
+      const logicalTurnAfter = renderedFilterTurn();
+      const sourceAfter = acceptedSource();
+      busySourceUntouched = Boolean(
+        submitted && sourceAfter === sourceBefore &&
+        !sourceAfter.includes("busy-replacement-probe")
+      );
+      busySymbolAbsent =
+        globalThis.__MECH_RENDERED_DOCUMENT_VALUE__?.("busy-replacement-probe") == null;
+      busyLogicalProgressUnchanged = Boolean(
+        after.generation === before.generation &&
+        after.dispatches === before.dispatches &&
+        after.activeBuffer === before.activeBuffer &&
+        logicalTurnAfter === logicalTurnBefore
+      );
+      busyReplacementRejected = Boolean(
+        busySourceUntouched && busySymbolAbsent && busyLogicalProgressUnchanged &&
+        document.querySelector(
+          '[data-mech-diagnostic-code="ComputeSourceReplacementBusy"]',
+        )
+      );
+    });
+    window.addEventListener("mech:compute-state-reset", (event) => {
+      computeStateResetEvents += 1;
+      const after = computeIdentity();
+      incompatibleGenerationChanged = Boolean(
+        incompatibleBefore && after.generation !== incompatibleBefore.generation
+      );
+      incompatibleResourcesReplaced = Boolean(
+        incompatibleBefore && after.revision !== incompatibleBefore.revision &&
+        after.resource !== incompatibleBefore.resource &&
+        after.device !== incompatibleBefore.device &&
+        after.pipeline !== incompatibleBefore.pipeline &&
+        after.state !== incompatibleBefore.state &&
+        Number(after.pipelineBuilds) === Number(incompatibleBefore.pipelineBuilds) + 1
+      );
+      incompatibleOldResourceDisposed = Boolean(
+        incompatibleBefore &&
+        event.detail?.retiredResourceIdentity === incompatibleBefore.resource &&
+        event.detail?.retiredResourceDisposed === true
+      );
+      incompatibleStateReset = Boolean(
+        after.activeBuffer === "0" && after.dispatches === "0"
+      );
+      incompatibleResetDiagnostic = Boolean(
+        computeStateResetEvents === 1 && event.detail?.resetCount === 1 &&
+        Number(root.dataset.mechComputeStateResets || 0) === 1 &&
+        document.querySelectorAll(
+          '[data-mech-diagnostic-code="ComputeStateReset"]',
+        ).length === 1
+      );
     });
     window.addEventListener("mech:compute-complete", (event) => {
       const completedTurns = event.detail?.completedTurns;
@@ -245,13 +325,17 @@ harness = r'''<script>
     });
     window.addEventListener("mech:compute-complete", (event) => {
       const completedTurns = event.detail?.completedTurns;
-      if (completedTurns === continuityEditTurn && !continuityEditRequested) {
+      if (
+        performContinuityEdit && completedTurns === continuityEditTurn &&
+        !continuityEditRequested
+      ) {
         continuityBefore = computeIdentity();
         continuityEditRequested = submitResidentSource("continuity-probe := 1");
         return;
       }
       if (
-        continuityEditRequested && continuityNextSample === undefined &&
+        (continuityEditRequested || !performContinuityEdit) &&
+        continuityNextSample === undefined &&
         completedTurns > continuityEditTurn
       ) {
         const output = event.detail.outputs?.find(candidate => candidate.name === "result.0");
@@ -259,6 +343,24 @@ harness = r'''<script>
         if (values.length === 15 && values.every(Number.isFinite)) {
           continuityNextSample = values;
         }
+      }
+      if (
+        expectedComputeBackend === "wgpu" && applicationQualifiedBeforeReset &&
+        !incompatibleEditRequested
+      ) {
+        const source = acceptedSource();
+        const nextSource = source.replace(
+          `filter-count := ${expectedComputeInstances}.0`,
+          `filter-count := ${expectedComputeInstances + 1}.0`,
+        );
+        if (nextSource === source) {
+          throw new Error(
+            "the incompatible EKF source probe could not change the compute storage shape",
+          );
+        }
+        incompatibleBefore = computeIdentity();
+        const accepted = globalThis.__MECH_REPLACE_ACCEPTED_REPL_SOURCE__?.(nextSource);
+        incompatibleEditRequested = accepted === nextSource;
       }
     });
 
@@ -290,6 +392,42 @@ harness = r'''<script>
     let predictionOnlyFailure;
     let sawInsideCameraRange = false;
     let sawOutsideCameraRange = false;
+    let cameraToggleDisableRequested = false;
+    let cameraToggleDisabled = false;
+    let cameraToggleMeasurementBlocked = false;
+    let cameraToggleEnableRequested = false;
+    let cameraToggleRestored = false;
+    let cameraToggleVisualStateValid = false;
+    let cameraToggleDispatchBeforeDisable = -1;
+    let cameraToggleDispatchBeforeEnable = -1;
+    // Keep the interaction proof outside the turn-121 continuity oracle and
+    // the turn-376 backend parity oracle. That makes the numerical baselines
+    // independent of browser presentation cadence while still exercising a
+    // real disabled measurement on the same resident application run.
+    const cameraToggleDisableTurn = 380;
+    const clickSceneCamera = camera => {
+      const rect = camera?.getBoundingClientRect();
+      if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+      const clientX = rect.left + rect.width / 2;
+      const clientY = rect.top + rect.height / 2;
+      const handled = !camera.dispatchEvent(new PointerEvent("pointerdown", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        buttons: 1,
+        clientX,
+        clientY,
+      }));
+      window.dispatchEvent(new PointerEvent("pointerup", {
+        bubbles: true,
+        cancelable: true,
+        button: 0,
+        buttons: 0,
+        clientX,
+        clientY,
+      }));
+      return handled;
+    };
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
       callback(performance.now());
@@ -315,8 +453,14 @@ harness = r'''<script>
       const title = document.querySelector('[data-mech-scene-id="title"]');
       const cameras = [...document.querySelectorAll('[data-mech-scene-id^="camera-"]')]
         .filter(element => /^camera-[1-4]$/.test(element.dataset.mechSceneId || ""));
+      const disabledCameras = [...document.querySelectorAll(
+        '[data-mech-scene-id^="camera-disabled-"]',
+      )];
       const cameraRanges = [...document.querySelectorAll('[data-mech-scene-id^="camera-range-"]')];
       const cameraRays = [...document.querySelectorAll('[data-mech-scene-id^="ray-"]')];
+      const cameraLabels = [...document.querySelectorAll(
+        '[data-mech-scene-id^="camera-label-"]',
+      )];
       const host = document.querySelector('[data-mech-repl-host]');
       const outputPanel = document.querySelector('[data-mech-console-panel="output"]');
       const errorPanel = document.querySelector('[data-mech-console-panel="errors"]');
@@ -329,21 +473,17 @@ harness = r'''<script>
         : undefined;
       if (
         expectedComputeBackend === "cpu-scalar" &&
+        performContinuityEdit &&
         completedFilterTurn === continuityEditTurn &&
         !continuityEditRequested
       ) {
         continuityBefore = computeIdentity();
         continuityEditRequested = submitResidentSource("continuity-probe := 1");
       }
-      if (busyReplacementAttempted && !busyReplacementRejected) {
-        busyReplacementRejected = Boolean(
-          root.dataset.mechComputeGeneration === busyGeneration &&
-          document.querySelector(
-            '[data-mech-diagnostic-code="ComputeSourceReplacementBusy"]',
-          )
-        );
-      }
-      if (continuityEditRequested && continuityBefore) {
+      if (
+        continuityEditRequested && continuityBefore &&
+        !continuityGenerationChanged
+      ) {
         const after = computeIdentity();
         if (after.generation && after.generation !== continuityBefore.generation) {
           continuityGenerationChanged = true;
@@ -362,7 +502,8 @@ harness = r'''<script>
         }
       }
       if (
-        expectedComputeBackend === "cpu-scalar" && continuityEditRequested &&
+        expectedComputeBackend === "cpu-scalar" &&
+        (continuityEditRequested || !performContinuityEdit) &&
         continuityNextSample === undefined &&
         completedFilterTurn === continuityEditTurn + 1
       ) {
@@ -430,6 +571,9 @@ harness = r'''<script>
       if (truthPoint && updates > 0 && updates !== lastObservedUpdate) {
         lastObservedUpdate = updates;
         const computeDispatches = Number(root.dataset.mechComputeDispatches || 0);
+        const logicalComputeTurn = expectedComputeBackend === "cpu-scalar"
+          ? Number(completedFilterTurn)
+          : computeDispatches;
         const isComputeCompletionFrame = expectedComputeBackend === "cpu-scalar"
           ? Number.isFinite(completedFilterTurn) &&
             completedFilterTurn !== lastObservedCpuFilterTurn
@@ -453,13 +597,12 @@ harness = r'''<script>
           const x = Number(camera?.getAttribute("cx"));
           const y = Number(camera?.getAttribute("cy"));
           const radius = Number(camera?.getAttribute("r"));
-          const opacity = Number(camera?.getAttribute("opacity"));
           const rangeX = Number(range?.getAttribute("cx"));
           const rangeY = Number(range?.getAttribute("cy"));
           const rangeRadius = Number(range?.getAttribute("r"));
           const rayX = Number(ray?.getAttribute("x1"));
           const rayY = Number(ray?.getAttribute("y1"));
-          return {x, y, radius, opacity, rangeX, rangeY, rangeRadius, rayX, rayY};
+          return {x, y, radius, rangeX, rangeY, rangeRadius, rayX, rayY};
         });
         if (stableCameraGeometry === undefined) {
           stableCameraGeometry = currentCameraGeometry;
@@ -470,10 +613,59 @@ harness = r'''<script>
         cameraGeometryStable &&= currentCameraGeometry.length === 4 &&
           currentCameraGeometry.every(sensor =>
             Object.values(sensor).every(Number.isFinite) &&
-            sensor.radius === 9 && sensor.opacity === 1 &&
+            sensor.radius === 9 &&
             sensor.x === sensor.rangeX && sensor.y === sensor.rangeY &&
             sensor.x === sensor.rayX && sensor.y === sensor.rayY
           );
+        const enabledMask = renderedDocumentNumbers("camera-enabled");
+        const cameraToggleStateReadable = enabledMask.length === 4 &&
+          enabledMask.every(value => value === 0 || value === 1);
+        const filterVisibility = renderedFilterVisibility();
+        if (
+          !cameraToggleDisableRequested && logicalComputeTurn === cameraToggleDisableTurn &&
+          cameraToggleStateReadable && enabledMask.every(value => value === 1) &&
+          Number.isFinite(filterVisibility) && filterVisibility > 0
+        ) {
+          cameraToggleDispatchBeforeDisable = logicalComputeTurn;
+          cameraToggleDisableRequested = clickSceneCamera(orderedCameras[0]);
+        }
+        if (
+          cameraToggleDisableRequested && !cameraToggleDisabled &&
+          cameraToggleStateReadable && enabledMask[0] === 0 &&
+          enabledMask.slice(1).every(value => value === 1)
+        ) {
+          const activeOpacity = Number(orderedCameras[0]?.getAttribute("opacity"));
+          const disabledOpacity = Number(indexed(disabledCameras, "camera-disabled-")[0]
+            ?.getAttribute("opacity"));
+          const rangeOpacity = Number(orderedRanges[0]?.getAttribute("opacity"));
+          const rayOpacity = Number(orderedRays[0]?.getAttribute("opacity"));
+          const labelOpacity = Number(indexed(cameraLabels, "camera-label-")[0]
+            ?.getAttribute("opacity"));
+          cameraToggleVisualStateValid = activeOpacity === 0 && disabledOpacity === 1 &&
+            rangeOpacity === 0 && rayOpacity === 0 && labelOpacity === 0.32;
+          cameraToggleDisabled = cameraToggleVisualStateValid;
+        }
+        if (
+          cameraToggleDisabled && !cameraToggleMeasurementBlocked &&
+          logicalComputeTurn > cameraToggleDispatchBeforeDisable && filterVisibility === 0
+        ) {
+          cameraToggleMeasurementBlocked = true;
+          cameraToggleDispatchBeforeEnable = logicalComputeTurn;
+          cameraToggleEnableRequested = clickSceneCamera(orderedCameras[0]);
+        }
+        if (
+          cameraToggleEnableRequested && cameraToggleStateReadable &&
+          enabledMask.every(value => value === 1) &&
+          logicalComputeTurn > cameraToggleDispatchBeforeEnable &&
+          Number.isFinite(filterVisibility) && filterVisibility > 0
+        ) {
+          const activeOpacity = Number(orderedCameras[0]?.getAttribute("opacity"));
+          const disabledOpacity = Number(indexed(disabledCameras, "camera-disabled-")[0]
+            ?.getAttribute("opacity"));
+          const rangeOpacity = Number(orderedRanges[0]?.getAttribute("opacity"));
+          cameraToggleRestored = activeOpacity === 1 && disabledOpacity === 0 &&
+            rangeOpacity === 0.16;
+        }
         let visibleCameraCount = 0;
         for (let index = 0; index < currentCameraGeometry.length; index += 1) {
           const sensor = currentCameraGeometry[index];
@@ -483,7 +675,8 @@ harness = r'''<script>
           const expectedVisibility = Math.max(0, Math.min(1,
             (sensor.rangeRadius - distance) / fadeWidth,
           ));
-          const expectedRayOpacity = 0.4 * expectedVisibility;
+          const cameraEnabled = cameraToggleStateReadable ? enabledMask[index] : 1;
+          const expectedRayOpacity = 0.4 * expectedVisibility * cameraEnabled;
           cameraRangeOracleValid &&= Number.isFinite(rayOpacity) &&
             Math.abs(rayOpacity - expectedRayOpacity) <= 1e-9;
           if (distance >= sensor.rangeRadius) {
@@ -500,7 +693,6 @@ harness = r'''<script>
         // Asynchronous WebGPU completion publishes the originating turn
         // directly, so its sampled estimate and camera visibility share one
         // resident snapshot just like the scalar backend.
-        const filterVisibility = renderedFilterVisibility();
         if (filterVisibility === 0 && isComputeCompletionFrame) {
           const predictionGap = finitePoint(estimate) && finitePoint(prediction)
             ? Math.hypot(
@@ -656,6 +848,10 @@ harness = r'''<script>
         String(busyReplacementAttempted);
       root.dataset.mechObservedBusyReplacementRejected =
         String(busyReplacementRejected);
+      root.dataset.mechObservedBusySourceUntouched = String(busySourceUntouched);
+      root.dataset.mechObservedBusySymbolAbsent = String(busySymbolAbsent);
+      root.dataset.mechObservedBusyLogicalProgressUnchanged =
+        String(busyLogicalProgressUnchanged);
       root.dataset.mechObservedComputeStateResets =
         root.dataset.mechComputeStateResets || "0";
       root.dataset.mechObservedStaleCompletionRejected =
@@ -669,20 +865,71 @@ harness = r'''<script>
       root.dataset.mechObservedErrorText = (errorPanel?.textContent || "").trim().slice(0, 1000);
       root.dataset.mechObservedDisplayIds = [...document.querySelectorAll('[data-mech-display-id]')]
         .map(element => element.dataset.mechDisplayId).join(",");
-      if (
+      root.dataset.mechObservedApplicationQualifiedBeforeReset =
+        String(applicationQualifiedBeforeReset);
+      root.dataset.mechObservedCameraToggleDisableRequested =
+        String(cameraToggleDisableRequested);
+      root.dataset.mechObservedCameraToggleDisabled = String(cameraToggleDisabled);
+      root.dataset.mechObservedCameraToggleMeasurementBlocked =
+        String(cameraToggleMeasurementBlocked);
+      root.dataset.mechObservedCameraToggleEnableRequested =
+        String(cameraToggleEnableRequested);
+      root.dataset.mechObservedCameraToggleRestored = String(cameraToggleRestored);
+      root.dataset.mechObservedCameraEnabled = JSON.stringify(
+        renderedDocumentNumbers("camera-enabled"),
+      );
+      root.dataset.mechObservedScenePointerPulse = JSON.stringify(
+        renderedDocumentNumbers("scene-pointer-pulse"),
+      );
+      root.dataset.mechObservedScenePointerSurface = String(Boolean(
+        scene?.dataset.mechScenePointerSurface,
+      ));
+      root.dataset.mechObservedScenePointerSubmissions =
+        document.querySelector(".mech-root")?.dataset.mechScenePointerSubmissions || "0";
+      root.dataset.mechObservedScenePointerPosition =
+        document.querySelector(".mech-root")?.dataset.mechScenePointerPosition || "";
+      root.dataset.mechObservedCameraOneOpacity =
+        document.querySelector('[data-mech-scene-id="camera-1"]')?.getAttribute("opacity") || "";
+      root.dataset.mechObservedCameraDisabledOneOpacity = document.querySelector(
+        '[data-mech-scene-id="camera-disabled-1"]',
+      )?.getAttribute("opacity") || "";
+      root.dataset.mechObservedIncompatibleEditRequested =
+        String(incompatibleEditRequested);
+      root.dataset.mechObservedIncompatibleGenerationChanged =
+        String(incompatibleGenerationChanged);
+      root.dataset.mechObservedIncompatibleResourcesReplaced =
+        String(incompatibleResourcesReplaced);
+      root.dataset.mechObservedIncompatibleOldResourceDisposed =
+        String(incompatibleOldResourceDisposed);
+      root.dataset.mechObservedIncompatibleStateReset = String(incompatibleStateReset);
+      root.dataset.mechObservedIncompatibleResetDiagnostic =
+        String(incompatibleResetDiagnostic);
+      root.dataset.mechObservedComputeStateResetEvents = String(computeStateResetEvents);
+      const continuityQualified = Boolean(
+        continuityNextSample !== undefined &&
+        (!performContinuityEdit || (
+          continuityEditRequested && continuityGenerationChanged &&
+          continuityResourcePreserved && continuityActiveBufferPreserved
+        ))
+      );
+      const preResetQualified = Boolean(
         updates >= 376 &&
         finitePointContract &&
         cameras.length === 4 && cameraRanges.length === 4 && cameraRays.length === 4 &&
         cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
         predictionOnlyComparisons > 0 &&
+        cameraToggleDisableRequested && cameraToggleDisabled &&
+        cameraToggleMeasurementBlocked && cameraToggleEnableRequested &&
+        cameraToggleRestored && cameraToggleVisualStateValid &&
+        cameraToggleDispatchBeforeDisable === cameraToggleDisableTurn &&
+        Number(document.querySelector(".mech-root")?.dataset.mechScenePointerSubmissions) === 4 &&
         computeParitySample !== undefined &&
         displayParityTrackingError !== undefined &&
         sampledReadbackEfficient &&
-        continuityEditRequested && continuityGenerationChanged &&
-        continuityResourcePreserved && continuityActiveBufferPreserved &&
-        continuityNextSample !== undefined &&
-        busyReplacementRejected &&
-        (expectedComputeBackend !== "wgpu" ||
+        continuityQualified &&
+        busyReplacementRejected && busySourceUntouched && busySymbolAbsent &&
+        busyLogicalProgressUnchanged &&
+        (expectedComputeBackend !== "wgpu" || !performContinuityEdit ||
           root.dataset.mechComputeStaleCompletionRejected === "true") &&
         Number(root.dataset.mechComputeStateResets || 0) === 0 &&
         sawInsideCameraRange && sawOutsideCameraRange &&
@@ -703,7 +950,22 @@ harness = r'''<script>
         title?.textContent === "Camera EKF Localization" &&
         sceneVisible && outputPresentation &&
         computeBackend === expectedComputeBackend && computeInstances === expectedComputeInstances
-      ) {
+      );
+      if (preResetQualified) applicationQualifiedBeforeReset = true;
+      const incompatibleQualified = Boolean(
+        incompatibleEditRequested && incompatibleGenerationChanged &&
+        incompatibleResourcesReplaced && incompatibleOldResourceDisposed &&
+        incompatibleStateReset &&
+        incompatibleResetDiagnostic &&
+        computeStateResetEvents === (expectedComputeBackend === "wgpu" ? 1 : 0) &&
+        Number(root.dataset.mechComputeStateResets || 0) ===
+          (expectedComputeBackend === "wgpu" ? 1 : 0) &&
+        (expectedComputeBackend !== "wgpu" ||
+          document.querySelectorAll(
+            '[data-mech-diagnostic-code="ComputeStateReset"]',
+          ).length === 1)
+      );
+      if (applicationQualifiedBeforeReset && incompatibleQualified) {
         root.dataset.mechUpdates = String(updates);
         root.dataset.mechCameras = String(cameras.length);
         root.dataset.mechCameraRanges = String(cameraRanges.length);
@@ -711,6 +973,12 @@ harness = r'''<script>
         root.dataset.mechSawCamera = String(sawCamera);
         root.dataset.mechMaxVisibleCameras = String(maxVisibleCameras);
         root.dataset.mechCameraGeometryStable = String(cameraGeometryStable);
+        root.dataset.mechCameraToggleDisabled = String(cameraToggleDisabled);
+        root.dataset.mechCameraToggleMeasurementBlocked =
+          String(cameraToggleMeasurementBlocked);
+        root.dataset.mechCameraToggleRestored = String(cameraToggleRestored);
+        root.dataset.mechCameraTogglePointerSubmissions =
+          document.querySelector(".mech-root")?.dataset.mechScenePointerSubmissions || "0";
         root.dataset.mechCameraRangeOracle = String(cameraRangeOracleValid);
         root.dataset.mechPredictionOnly = String(predictionOnlyValid);
         root.dataset.mechPredictionOnlyComparisons = String(predictionOnlyComparisons);
@@ -753,11 +1021,29 @@ harness = r'''<script>
           String(continuityActiveBufferPreserved);
         root.dataset.mechContinuityNextSample = continuityNextSample.join(",");
         root.dataset.mechBusyReplacementRejected = String(busyReplacementRejected);
+        root.dataset.mechBusySourceUntouched = String(busySourceUntouched);
+        root.dataset.mechBusySymbolAbsent = String(busySymbolAbsent);
+        root.dataset.mechBusyLogicalProgressUnchanged =
+          String(busyLogicalProgressUnchanged);
         root.dataset.mechStaleCompletionRejected =
           root.dataset.mechComputeStaleCompletionRejected || "true";
+        root.dataset.mechIncompatibleGenerationChanged =
+          String(incompatibleGenerationChanged);
+        root.dataset.mechIncompatibleResourcesReplaced =
+          String(incompatibleResourcesReplaced);
+        root.dataset.mechIncompatibleOldResourceDisposed =
+          String(incompatibleOldResourceDisposed);
+        root.dataset.mechIncompatibleStateReset = String(incompatibleStateReset);
+        root.dataset.mechIncompatibleResetDiagnostic =
+          String(incompatibleResetDiagnostic);
         root.dataset.mechComputeStateResetsVerified =
           root.dataset.mechComputeStateResets || "0";
         root.dataset.mechDone = "true";
+        globalThis.__MECH_STOP__?.();
+        return;
+      }
+      if (updates >= 450 && !cameraToggleDisabled) {
+        root.dataset.mechTimedOut = "true";
         globalThis.__MECH_STOP__?.();
         return;
       }
@@ -771,6 +1057,7 @@ if html.count(marker) != 1:
     raise SystemExit("could not find the head boundary in generated EKF HTML")
 harness = harness.replace("__MECH_EXPECTED_COMPUTE_BACKEND__", compute_backend)
 harness = harness.replace("__MECH_EXPECTED_COMPUTE_INSTANCES__", filter_count)
+harness = harness.replace("__MECH_PERFORM_CONTINUITY_EDIT__", continuity_edit)
 path.write_text(html.replace(marker, harness + "\n  " + marker, 1))
 PY
 
@@ -1016,6 +1303,13 @@ chrome_status="$?"
 set -e
 
 updates="$(sed -n 's/.*data-mech-updates="\([0-9][0-9]*\)".*/\1/p' "$dom_file" | head -1)"
+expected_continuity_generation_changed="$continuity_edit"
+expected_compute_state_resets=0
+verified_compute_instances="$filter_count"
+if [[ "$expected_compute_backend" == "wgpu" ]]; then
+  expected_compute_state_resets=1
+  verified_compute_instances="$((filter_count + 1))"
+fi
 if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-done="true"' "$dom_file" \
   || ! grep -q 'data-mech-cameras="4"' "$dom_file" \
@@ -1024,6 +1318,10 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-saw-camera="true"' "$dom_file" \
   || ! grep -q 'data-mech-max-visible-cameras="1"' "$dom_file" \
   || ! grep -q 'data-mech-camera-geometry-stable="true"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-toggle-disabled="true"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-toggle-measurement-blocked="true"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-toggle-restored="true"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-toggle-pointer-submissions="4"' "$dom_file" \
   || ! grep -q 'data-mech-camera-range-oracle="true"' "$dom_file" \
   || ! grep -q 'data-mech-prediction-only="true"' "$dom_file" \
   || ! grep -qE 'data-mech-prediction-only-comparisons="[1-9][0-9]*"' "$dom_file" \
@@ -1044,15 +1342,23 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-scene-visible="true"' "$dom_file" \
   || ! grep -q 'data-mech-output-presentation="true"' "$dom_file" \
   || ! grep -q "data-mech-verified-compute-backend=\"$expected_compute_backend\"" "$dom_file" \
-  || ! grep -q "data-mech-verified-compute-instances=\"$filter_count\"" "$dom_file" \
+  || ! grep -q "data-mech-verified-compute-instances=\"$verified_compute_instances\"" "$dom_file" \
   || ! grep -q 'data-mech-sampled-readback-efficient="true"' "$dom_file" \
-  || ! grep -q 'data-mech-continuity-generation-changed="true"' "$dom_file" \
+  || ! grep -q "data-mech-continuity-generation-changed=\"$expected_continuity_generation_changed\"" "$dom_file" \
   || ! grep -q 'data-mech-continuity-resource-preserved="true"' "$dom_file" \
   || ! grep -q 'data-mech-continuity-active-buffer-preserved="true"' "$dom_file" \
   || ! grep -q 'data-mech-continuity-next-sample="[-0-9.,eE+]*"' "$dom_file" \
   || ! grep -q 'data-mech-busy-replacement-rejected="true"' "$dom_file" \
+  || ! grep -q 'data-mech-busy-source-untouched="true"' "$dom_file" \
+  || ! grep -q 'data-mech-busy-symbol-absent="true"' "$dom_file" \
+  || ! grep -q 'data-mech-busy-logical-progress-unchanged="true"' "$dom_file" \
   || ! grep -q 'data-mech-stale-completion-rejected="true"' "$dom_file" \
-  || ! grep -q 'data-mech-compute-state-resets-verified="0"' "$dom_file" \
+  || ! grep -q 'data-mech-incompatible-generation-changed="true"' "$dom_file" \
+  || ! grep -q 'data-mech-incompatible-resources-replaced="true"' "$dom_file" \
+  || ! grep -q 'data-mech-incompatible-old-resource-disposed="true"' "$dom_file" \
+  || ! grep -q 'data-mech-incompatible-state-reset="true"' "$dom_file" \
+  || ! grep -q 'data-mech-incompatible-reset-diagnostic="true"' "$dom_file" \
+  || ! grep -q "data-mech-compute-state-resets-verified=\"$expected_compute_state_resets\"" "$dom_file" \
   || ! grep -q 'data-mech-tracking-error-pixels="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-x="[0-9]' "$dom_file" \
   || ! grep -q 'data-mech-truth-y="[0-9]' "$dom_file" \
@@ -1129,4 +1435,4 @@ Path(path).write_text(json.dumps({
 }, sort_keys=True))
 PY
 fi
-printf 'EKF_E2E display_updates=%s requested_compute_backend=%s compute_backend=%s compute_instances=%s cameras=4 max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$compute_backend" "$expected_compute_backend" "$filter_count" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"
+printf 'EKF_E2E display_updates=%s requested_compute_backend=%s compute_backend=%s initial_compute_instances=%s verified_compute_instances=%s cameras=4 camera_toggle_disabled=true camera_measurement_blocked=true camera_toggle_restored=true max_visible_cameras=1 saw_no_camera=true square_sides=4 lap_complete=true smooth_turning=true turning_samples=%s max_heading_step=%s max_guide_deviation_pixels=%s truth_moved=true covariance_finite=true covariance_extent_pixels=%s paths_finite=true tracking_error_pixels=%s output_presentation=true console_errors=0 page_errors=0\n' "$updates" "$compute_backend" "$expected_compute_backend" "$filter_count" "$verified_compute_instances" "$turning_samples" "$max_heading_step" "$max_guide_deviation" "$covariance_extent" "$tracking_error_pixels"

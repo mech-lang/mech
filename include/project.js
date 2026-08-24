@@ -218,6 +218,8 @@ class BrowserComputeProject {
     this.lastFrameTime = 0;
     this.lastInputs = {};
     this.totalDispatches = 0;
+    this.acceptedDispatches = 0;
+    this.lastAcceptedDispatchToken = null;
     this.bridgeFailure = null;
     this.dispatchPending = false;
     this.pointerListeners = [];
@@ -539,6 +541,10 @@ class BrowserComputeProject {
           } else {
             this.controller.acknowledgeComputeCommand(dispatchToken);
           }
+          // A successful return is the resident host acknowledgement boundary,
+          // not merely completion of the browser GPU promise.
+          this.acceptedDispatches += 1;
+          this.lastAcceptedDispatchToken = dispatchToken;
           if (!integrity) this.activeBuffer = outputIndex;
         } catch (error) {
           this.bridgeFailure = this.rejectWgpuCommand(dispatchToken, error);
@@ -628,6 +634,8 @@ class BrowserComputeProject {
       itemCount: this.itemCount,
       displayedCount: this.renderItemCount,
       totalDispatches: this.totalDispatches,
+      acceptedDispatches: this.acceptedDispatches,
+      lastAcceptedDispatchToken: this.lastAcceptedDispatchToken,
       lastInputs: this.lastInputs,
       backend: this.backend,
     };
@@ -794,6 +802,10 @@ function installComputeSmokeTest(target) {
       if (!state || state.itemCount !== expectedItemCount) {
         return;
       }
+      if (target.bridgeFailure) {
+        fail(`resident compute acknowledgement failed: ${describeError(target.bridgeFailure)}`);
+        return;
+      }
       // Change the input only while a submitted baseline turn owns the single
       // command slot. Recording the owning dispatch before delivering the
       // event makes this an explicit queued-input proof rather than an
@@ -811,6 +823,9 @@ function installComputeSmokeTest(target) {
         return;
       }
       if (pointerQueuedAt === null || state.totalDispatches < pointerQueuedAt + 1) {
+        return;
+      }
+      if (target.acceptedDispatches < pointerQueuedAt + 1) {
         return;
       }
       if (
@@ -839,6 +854,9 @@ function installComputeSmokeTest(target) {
       root.dataset.mechGpuSmokeDispatches = String(state.totalDispatches);
       root.dataset.mechGpuSmokeInputs = JSON.stringify(state.lastInputs);
       root.dataset.mechGpuSmokeDelayedCompletions = String(delayedCompletions);
+      root.dataset.mechGpuSmokeAcceptedDispatches = String(target.acceptedDispatches);
+      root.dataset.mechGpuSmokeLastAcceptedDispatchToken =
+        target.lastAcceptedDispatchToken || "missing";
       root.dataset.mechGpuSmokePendingObservations = String(pendingObservations);
       root.dataset.mechGpuSmokeMaxCompletionsInFlight = String(maxCompletionsInFlight);
       root.dataset.mechGpuSmokeReadbackBytes =

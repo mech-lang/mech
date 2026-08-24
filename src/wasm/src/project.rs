@@ -1466,6 +1466,24 @@ mod document {
             bridge.reject_integrity(token, constraint, instance)
         }
 
+        #[cfg(feature = "browser_host_scene")]
+        #[wasm_bindgen(js_name = scenePointerInput)]
+        pub fn scene_pointer_input(
+            &self,
+            instance: &str,
+            x: f64,
+            y: f64,
+            pressed: bool,
+            delta_seconds: f64,
+        ) -> Result<(), JsValue> {
+            self.bootstrap
+                .source()
+                .lifecycle
+                .scenes()
+                .submit_pointer(instance, x, y, pressed, delta_seconds)
+                .map_err(to_js_error)
+        }
+
         pub fn frame(&mut self, max_inputs: usize) -> Result<JsValue, JsValue> {
             if max_inputs == 0 {
                 return Err(js_error("max_inputs must be greater than zero"));
@@ -1564,6 +1582,28 @@ mod document {
         pub fn repl_invoke(&mut self, source: &str) -> Result<JsValue, JsValue> {
             let accepted_before = self.repl.session.source().to_string();
             let response = self.repl.invoke(source)?;
+            if self.repl.session.source() != accepted_before {
+                self.refresh_document_output_ordinals()
+                    .map_err(to_js_error)?;
+            }
+            Ok(response)
+        }
+
+        /// Return the complete source currently accepted by the resident
+        /// document session. This is the read side of the editor handoff; REPL
+        /// submissions continue to use `replInvoke`.
+        #[wasm_bindgen(js_name = replSource)]
+        pub fn repl_source(&self) -> String {
+            self.repl.source()
+        }
+
+        /// Transactionally replace the complete accepted document source.
+        /// Compatible hosts migrate resident state; incompatible hosts start
+        /// from their new plan initializers and report that reset explicitly.
+        #[wasm_bindgen(js_name = replReplaceSource)]
+        pub fn repl_replace_source(&mut self, source: &str) -> Result<JsValue, JsValue> {
+            let accepted_before = self.repl.session.source().to_string();
+            let response = self.repl.replace_source(source)?;
             if self.repl.session.source() != accepted_before {
                 self.refresh_document_output_ordinals()
                     .map_err(to_js_error)?;

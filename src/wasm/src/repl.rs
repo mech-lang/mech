@@ -517,6 +517,20 @@ impl WasmRepl {
         self.session.source().to_string()
     }
 
+    /// Replace the complete accepted source through the same transactional
+    /// runtime handoff used by document editors and source reloaders.
+    pub(crate) fn replace_source(&mut self, source: &str) -> Result<JsValue, JsValue> {
+        if self.transition_after_program_barrier(WasmReplTransition::Submit)?
+            == WasmReplTransitionResult::Rejected
+        {
+            return self.response(None);
+        }
+        self.session
+            .replace_source(source.to_string())
+            .map_err(to_js_error)?;
+        self.response(None)
+    }
+
     pub fn shutdown(&mut self) -> Result<JsValue, JsValue> {
         self.terminate_session().map_err(to_js_error)?;
         self.response(None)

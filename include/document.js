@@ -52,6 +52,8 @@ const state = {
   computeBridgeLifecycle: "absent",
   computeResetLedger: null,
   computeAdapter: undefined,
+  scenePointerSession: null,
+  scenePointerTimestamp: null,
 };
 
 const ERROR_PANEL_SELECTOR =
@@ -1327,6 +1329,7 @@ function outputContentElement(content) {
         const svg = document.createElementNS(namespace, "svg");
         svg.classList.add("mech-repl-scene");
         svg.dataset.mechRichScene = "true";
+        svg.dataset.mechScenePointerSurface = "true";
         svg.setAttribute("viewBox", `0 0 ${scene.width} ${scene.height}`);
         svg.setAttribute("width", String(scene.width));
         svg.setAttribute("height", String(scene.height));
@@ -2007,6 +2010,20 @@ function renderValues() {
 // compute presentation buffer or route scalar compute through JavaScript.
 globalThis.__MECH_RENDERED_DOCUMENT_VALUE__ = (name) =>
   state.document?.renderedDocumentValue?.(String(name)) || null;
+
+// Complete-source reflection is the stable handoff used by the document
+// editor. It deliberately goes through the resident session instead of
+// mutating the browser bridge or its GPU resources directly.
+globalThis.__MECH_ACCEPTED_REPL_SOURCE__ = () =>
+  state.document?.replSource?.() || "";
+globalThis.__MECH_REPLACE_ACCEPTED_REPL_SOURCE__ = (source) => {
+  if (typeof state.document?.replReplaceSource !== "function") {
+    throw new Error("the document runtime does not expose transactional source replacement");
+  }
+  const response = state.document.replReplaceSource(String(source));
+  consumeReplResponse(response);
+  return state.document.replSource();
+};
 
 function transcript() {
   return state.console?.transcript || null;
@@ -3788,6 +3805,90 @@ function initializePageStyleProbe() {
   return probe;
 }
 
+function initializeScenePointerInput() {
+  if (state.root?.dataset.mechScenePointerBound === "true") return;
+  state.root.dataset.mechScenePointerBound = "true";
+
+  const pointerSample = (event, svg) => {
+    const viewBox = svg.viewBox?.baseVal;
+    const transform = svg.getScreenCTM?.();
+    if (
+      viewBox && viewBox.width > 0 && viewBox.height > 0 && transform &&
+      typeof DOMPoint === "function"
+    ) {
+      try {
+        const point = new DOMPoint(event.clientX, event.clientY)
+          .matrixTransform(transform.inverse());
+        return {
+          x: Math.max(-1, Math.min(1, ((point.x - viewBox.x) / viewBox.width) * 2 - 1)),
+          y: Math.max(-1, Math.min(1, 1 - ((point.y - viewBox.y) / viewBox.height) * 2)),
+        };
+      } catch (_error) {
+        // Fall through to the rectangular mapping for older SVG engines.
+      }
+    }
+    const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
+    return {
+      x: Math.max(-1, Math.min(1, ((event.clientX - rect.left) / rect.width) * 2 - 1)),
+      y: Math.max(-1, Math.min(1, 1 - ((event.clientY - rect.top) / rect.height) * 2)),
+    };
+  };
+  const sceneInstance = svg => {
+    const displayId = svg.closest("[data-mech-display-id]")?.dataset.mechDisplayId || "";
+    return displayId.startsWith("scene-") ? displayId.slice("scene-".length) : "";
+  };
+  const submit = (instance, point, pressed, timestamp) => {
+    if (!instance || !point || typeof state.document?.scenePointerInput !== "function") {
+      return false;
+    }
+    const previous = state.scenePointerTimestamp;
+    const deltaSeconds = previous === null
+      ? 0
+      : Math.max(0, Math.min(1, (timestamp - previous) / 1000));
+    state.scenePointerTimestamp = timestamp;
+    state.document.scenePointerInput(
+      instance,
+      point.x,
+      point.y,
+      pressed,
+      deltaSeconds,
+    );
+    const submissions = Number(state.root.dataset.mechScenePointerSubmissions || 0) + 1;
+    state.root.dataset.mechScenePointerSubmissions = String(submissions);
+    state.root.dataset.mechScenePointerInstance = instance;
+    state.root.dataset.mechScenePointerPosition = `${point.x},${point.y}`;
+    state.root.dataset.mechScenePointerPressed = String(pressed);
+    return true;
+  };
+  // Output presentation and fullscreen modes may place the drop-in REPL host
+  // outside `.mech-root`. Delegate from the document so the same scene input
+  // contract survives those layout moves.
+  document.addEventListener("pointerdown", event => {
+    if (event.button !== 0 || !(event.target instanceof Element)) return;
+    const svg = event.target.closest("svg[data-mech-scene-pointer-surface]");
+    if (!svg) return;
+    const point = pointerSample(event, svg);
+    const instance = sceneInstance(svg);
+    if (!submit(instance, point, true, event.timeStamp)) return;
+    state.scenePointerSession = { instance, point };
+    event.preventDefault();
+    event.stopPropagation();
+  });
+  window.addEventListener("pointerup", event => {
+    const session = state.scenePointerSession;
+    if (!session) return;
+    state.scenePointerSession = null;
+    submit(session.instance, session.point, false, event.timeStamp);
+  });
+  window.addEventListener("pointercancel", event => {
+    const session = state.scenePointerSession;
+    if (!session) return;
+    state.scenePointerSession = null;
+    submit(session.instance, session.point, false, event.timeStamp);
+  });
+}
+
 function initializeLayout() {
   window.addEventListener("mech:output", event => {
     if (event instanceof CustomEvent && event.detail) {
@@ -3833,6 +3934,7 @@ function initializeLayout() {
   initializeWorkspaceResizers();
   initializeFullscreen();
   initializeOutputFullscreen();
+  initializeScenePointerInput();
   initializeBreadcrumb();
   window.addEventListener("mech:document-layout-refresh", initializeToc);
   initializeToc();
@@ -3909,11 +4011,17 @@ class DocumentComputeBridge {
         },
       );
     }
-    const adapter = state.computeAdapter !== undefined
-      ? state.computeAdapter
-      : navigator.gpu
-        ? await navigator.gpu.requestAdapter({ powerPreference: "high-performance" })
-        : null;
+    // A GPUAdapter may be consumed after requestDevice (notably by Dawn's
+    // deterministic test adapter). Physical-generation replacement therefore
+    // acquires a fresh adapter while the old resource remains live; compatible
+    // generations take the transfer path above and allocate neither one.
+    const adapter = previous && navigator.gpu
+      ? await navigator.gpu.requestAdapter({ powerPreference: "high-performance" })
+      : state.computeAdapter !== undefined
+        ? state.computeAdapter
+        : navigator.gpu
+          ? await navigator.gpu.requestAdapter({ powerPreference: "high-performance" })
+          : null;
     if (!adapter) {
       throw new Error("the document selected WebGPU but no compatible adapter is available");
     }
@@ -3981,21 +4089,34 @@ class DocumentComputeBridge {
     if (!previous || !previous.canTransferTo(this.manifest, this.backend)) {
       throw new Error("the compatible GPU resource is no longer transferable");
     }
-    if (
-      this.priorDispatchToken &&
-      typeof this.controller.isComputeCommandTokenCurrent === "function" &&
-      this.controller.isComputeCommandTokenCurrent(this.priorDispatchToken)
-    ) {
-      throw new Error("a stale compute completion token remained valid after generation handoff");
-    }
     previous.ownsResource = false;
     previous.retired = true;
     this.resource.adoptManifest(this.manifest);
     this.ownsResource = true;
     this.adoptionSource = null;
     document.documentElement.dataset.mechComputeStaleCompletionRejected =
-      String(Boolean(this.priorDispatchToken));
+      this.priorDispatchToken ? "pending" : "not-applicable";
     this.publishIdentity();
+  }
+
+  verifyPriorCompletionRejectedDuringActiveDispatch(dispatchToken) {
+    if (!this.priorDispatchToken) return;
+    let rejected = false;
+    try {
+      this.controller.acknowledgeComputeCommand(this.priorDispatchToken);
+    } catch (_error) {
+      rejected = true;
+    }
+    const currentIntact =
+      typeof this.controller.isComputeCommandTokenCurrent === "function" &&
+      this.controller.isComputeCommandTokenCurrent(dispatchToken);
+    if (!rejected || !currentIntact) {
+      throw new Error(
+        "a stale completion collided with the replacement generation active dispatch",
+      );
+    }
+    this.priorDispatchToken = null;
+    document.documentElement.dataset.mechComputeStaleCompletionRejected = "true";
   }
 
   publishIdentity() {
@@ -4009,6 +4130,7 @@ class DocumentComputeBridge {
     root.dataset.mechComputeStateIdentity = this.resource?.stateIdentity || "";
     root.dataset.mechComputePipelineBuildCount =
       String(this.resource?.pipelineBuildCount ?? 0);
+    root.dataset.mechComputeDispatches = String(this.dispatches);
   }
 
   retire() {
@@ -4060,6 +4182,10 @@ class DocumentComputeBridge {
     this.lifecycle.markSubmitted(command.dispatchToken);
     this.lastDispatchToken = command.dispatchToken;
     this.blocked = true;
+    // Exercise generation identity against an actually claimed replacement
+    // command. If an old `:1` token can alias the new generation's active
+    // `:1`, this check fails before the new command can be published.
+    this.verifyPriorCompletionRejectedDuringActiveDispatch(command.dispatchToken);
     window.dispatchEvent(new CustomEvent("mech:compute-submit", {
       detail: {
         dispatchToken: command.dispatchToken,
@@ -4153,9 +4279,11 @@ function refreshDocumentComputeBridge() {
         return;
       }
       const reused = Boolean(next?.adoptionSource === bridge);
+      let retiredResource = null;
       if (reused) {
         next.adoptCompatibleResource();
       } else {
+        retiredResource = bridge?.resource || null;
         bridge?.retire();
       }
       state.computeBridge = next;
@@ -4185,7 +4313,11 @@ function refreshDocumentComputeBridge() {
             );
           }
           window.dispatchEvent(new CustomEvent("mech:compute-state-reset", {
-            detail: reset,
+            detail: {
+              ...reset,
+              retiredResourceIdentity: retiredResource?.resourceIdentity || "",
+              retiredResourceDisposed: retiredResource?.disposed === true,
+            },
           }));
         }
       }
@@ -4326,8 +4458,13 @@ async function createDocumentComputeBridgeWithFallback(
   try {
     return await DocumentComputeBridge.create(controller, previous);
   } catch (error) {
+    document.documentElement.dataset.mechComputeBridgeCreateError =
+      error instanceof Error ? error.message : String(error);
     const requestedBackend = servedComputeHostConfig()?.settings?.backend || "auto";
-    if (requestedBackend !== "auto" || controller.computeBackend() !== "wgpu") {
+    if (
+      requestedBackend !== "auto" || controller.computeBackend() !== "wgpu" ||
+      (previous && !previous.lifecycle.canAutoFallback())
+    ) {
       throw error;
     }
     state.computeAdapter = null;

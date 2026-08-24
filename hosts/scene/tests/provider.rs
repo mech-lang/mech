@@ -10,6 +10,10 @@ use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
+#[cfg(feature = "browser")]
+use mech_runtime::{
+    HostInstanceConfig, ResidentDurabilityPolicy, RunResourceGrantConfig, RuntimeBuilder,
+};
 use mech_scene::*;
 
 fn deliver_write(
@@ -822,6 +826,82 @@ fn native_scene_instances_are_isolated() {
     .unwrap();
     assert_eq!(registry.latest("main").unwrap().width, 100.0);
     assert_eq!(registry.latest("hud").unwrap().width, 200.0);
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_pointer_activation_survives_a_coalesced_release() {
+    let registry = BrowserSceneRegistry::new();
+    let factory = BrowserSceneHostFactory::with_registry(registry.clone()).unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(Box::new(factory))
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "view".to_string(),
+            provider: "scene".to_string(),
+            settings: settings("output"),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "view/frame".to_string(),
+            operations: vec!["read".to_string(), "write".to_string()],
+            paths: vec![
+                "pointer-pulse".to_string(),
+                "pointer-position".to_string(),
+                "pointer-pressed".to_string(),
+                "replace".to_string(),
+            ],
+        })
+        .build()
+        .unwrap();
+    runtime
+        .load_interactive_source_program(
+            r#"
+@scene := scene://view/frame{:read(pointer-pulse), :read(pointer-position), :read(pointer-pressed), :write(replace)}
+pulse := @scene/pointer-pulse
+position := @scene/pointer-position
+pressed := @scene/pointer-pressed
+~enabled := 1.0
+~last-pulse := 0.0
+delta := pulse - last-pulse
+next-enabled := enabled + delta * (1.0 - 2.0 * enabled)
+enabled = next-enabled
+last-pulse = pulse
+"#,
+            ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    runtime.start_input_drivers().unwrap();
+
+    registry
+        .submit_pointer("view", 0.25, -0.5, true, 0.0)
+        .unwrap();
+    registry
+        .submit_pointer("view", 0.25, -0.5, false, 0.01)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
+    runtime.drain_host_inputs(8).unwrap();
+
+    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
+        panic!("scene pointer pulse must remain f64")
+    };
+    assert_eq!(*pulse.borrow(), 1.0);
+    let LegacyValue::F64(pressed) = runtime.root_symbol_value("pressed").unwrap().into_value()
+    else {
+        panic!("scene pointer pressed state must remain f64")
+    };
+    assert_eq!(*pressed.borrow(), 0.0);
+    let LegacyValue::MatrixF64(position) =
+        runtime.root_symbol_value("position").unwrap().into_value()
+    else {
+        panic!("scene pointer position must remain an f64 matrix")
+    };
+    assert_eq!(position.as_vec(), [0.25, -0.5]);
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 0.0);
 }
 
 #[test]

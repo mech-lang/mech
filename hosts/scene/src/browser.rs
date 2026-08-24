@@ -9,6 +9,7 @@ use mech_runtime::{
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{CanvasRenderingContext2d, Element, HtmlCanvasElement, SvgsvgElement};
 
+use crate::ScenePointerHandle;
 use crate::{SceneBackend, SceneHostSettings, SceneRendererKind, SceneSnapshot, scene_error};
 
 #[derive(Clone, Debug, Default)]
@@ -24,6 +25,7 @@ struct BrowserSceneTarget {
     generation: u64,
     rendered_generation: u64,
     published_generation: u64,
+    pointer: ScenePointerHandle,
 }
 
 #[derive(Clone, Debug)]
@@ -43,12 +45,14 @@ impl BrowserSceneRegistry {
         &self,
         instance: impl Into<String>,
         settings: SceneHostSettings,
-    ) -> MResult<()> {
+    ) -> MResult<ScenePointerHandle> {
+        let instance = instance.into();
+        let pointer = ScenePointerHandle::new(&instance);
         self.targets
             .lock()
             .map_err(|_| scene_error("BrowserSceneRegistry", "scene registry lock is poisoned"))?
             .insert(
-                instance.into(),
+                instance,
                 BrowserSceneTarget {
                     selector: settings.selector,
                     renderer: settings.renderer,
@@ -56,9 +60,10 @@ impl BrowserSceneRegistry {
                     generation: 0,
                     rendered_generation: 0,
                     published_generation: 0,
+                    pointer: pointer.clone(),
                 },
             );
-        Ok(())
+        Ok(pointer)
     }
     pub fn replace_scene(&self, instance: &str, scene: SceneSnapshot) -> MResult<()> {
         let mut guard = self
@@ -184,6 +189,29 @@ impl BrowserSceneRegistry {
                 .and_then(|target| target.latest.clone())
         })
     }
+
+    pub fn submit_pointer(
+        &self,
+        instance: &str,
+        x: f64,
+        y: f64,
+        pressed: bool,
+        delta_seconds: f64,
+    ) -> MResult<()> {
+        let pointer = self
+            .targets
+            .lock()
+            .map_err(|_| scene_error("BrowserSceneRegistry", "scene registry lock is poisoned"))?
+            .get(instance)
+            .map(|target| target.pointer.clone())
+            .ok_or_else(|| {
+                scene_error(
+                    "BrowserSceneRegistry",
+                    format!("unknown scene target `{instance}`"),
+                )
+            })?;
+        pointer.submit(x, y, pressed, delta_seconds)
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -244,7 +272,7 @@ impl mech_runtime::RuntimeHostFactory for BrowserSceneHostFactory {
         settings: &mech_runtime::ConfigValue,
     ) -> MResult<mech_runtime::RuntimeHostInstallation> {
         let parsed = crate::scene_settings_from_config(settings)?;
-        self.registry.register(instance_name, parsed.clone())?;
+        let pointer = self.registry.register(instance_name, parsed.clone())?;
         Ok(mech_runtime::RuntimeHostInstallation {
             interface: mech_runtime::materialize_host_manifest(instance_name, &self.manifest)?,
             resource_providers: vec![Box::new(crate::SceneResourceProvider::new_with_settings(
@@ -252,7 +280,7 @@ impl mech_runtime::RuntimeHostFactory for BrowserSceneHostFactory {
                 BrowserSceneBackend::new(instance_name, self.registry.clone()),
                 parsed,
             ))],
-            input_drivers: Vec::new(),
+            input_drivers: vec![pointer.input_driver(instance_name)],
         })
     }
 }

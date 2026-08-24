@@ -26,8 +26,12 @@ but each has a finite 3.6-unit sensing radius. The uncovered middle of every
 side is an intentional dead zone: covariance grows while no camera can see the
 robot and contracts after the next camera reacquires it.
 
+Click a camera to disable it. Its color mutes, its range ring disappears, and
+its measurements are removed before the EKF update. Click it again to restore
+the same camera and measurement path.
+
 @clock := timer://clock/tick{:read(tick)}
-@scene := scene://localization/frame{:write(replace)}
+@scene := scene://localization/frame{:read(pointer-pulse), :read(pointer-position), :read(pointer-pressed), :read(pointer-delta-seconds), :write(replace)}
 @filters := compute://filters/kernel{:read(sample/result.0), :read(sample/result.2), :read(turns), :write(input/control), :write(input/camera), :write(input/measurement), :write(turn)}
 
   π := 3.141592654
@@ -61,6 +65,29 @@ robot and contracts after the next camera reacquires it.
               9.0 1.0
               9.0 9.0
               1.0 9.0]
+
+  -- Scene pointer presses toggle the camera under the cursor. The enable mask
+  -- is resident Mech state: it gates the measurement before the EKF input and
+  -- drives the active, muted, range-ring, label, and ray presentation below.
+  ~camera-enabled := [1.0; 1.0; 1.0; 1.0]
+  ~last-scene-pointer-pulse := 0.0
+  scene-pointer-pulse := @scene/pointer-pulse
+  scene-pointer-position := @scene/pointer-position
+  scene-pointer-delta := scene-pointer-pulse - last-scene-pointer-pulse
+  scene-pointer-delta-relu := (scene-pointer-delta + (scene-pointer-delta ^ 2) ^ 0.5) / 2.0
+  scene-pointer-edge := scene-pointer-delta-relu - (scene-pointer-delta-relu - 1.0 + ((scene-pointer-delta-relu - 1.0) ^ 2) ^ 0.5) / 2.0
+  scene-pointer-screen-x := (scene-pointer-position[1] + 1.0) * 430.0
+  scene-pointer-screen-y := (1.0 - scene-pointer-position[2]) * 385.0
+  camera-screen-x := [182.0; 678.0; 678.0; 182.0]
+  camera-screen-y := [638.0; 638.0; 142.0; 142.0]
+  scene-pointer-camera-distance-square := (camera-screen-x - scene-pointer-screen-x) ^ 2 + (camera-screen-y - scene-pointer-screen-y) ^ 2
+  scene-pointer-hit-raw := 484.0 - scene-pointer-camera-distance-square
+  scene-pointer-hit-relu := (scene-pointer-hit-raw + (scene-pointer-hit-raw ^ 2) ^ 0.5) / 2.0
+  scene-pointer-hit := scene-pointer-hit-relu - (scene-pointer-hit-relu - 1.0 + ((scene-pointer-hit-relu - 1.0) ^ 2) ^ 0.5) / 2.0
+  camera-toggle := scene-pointer-edge * scene-pointer-hit
+  next-camera-enabled := camera-enabled + camera-toggle * (1.0 - 2.0 * camera-enabled)
+  camera-enabled = next-camera-enabled
+  last-scene-pointer-pulse = scene-pointer-pulse
 
   last-clock-tick = @clock/tick
   last-filter-turn = @filters/turns
@@ -210,7 +237,7 @@ than pretending that every camera sees through the entire field.
   camera-inside-fade-raw := (camera-max-range - camera-range-all) / camera-range-fade
   camera-inside-fade-relu := (camera-inside-fade-raw + (camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
   camera-inside-fade-one-relu := (camera-inside-fade-raw - 1.0 + ((camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
-  camera-visibility := camera-inside-fade-relu - camera-inside-fade-one-relu
+  camera-visibility := (camera-inside-fade-relu - camera-inside-fade-one-relu) * camera-enabled
 
   -- These boundary witnesses exercise the exact same resident visibility
   -- graph at the inner fade edge, the physical boundary, and two points
@@ -389,7 +416,7 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
   display-camera-inside-fade-raw := (camera-max-range - display-camera-range-all) / camera-range-fade
   display-camera-inside-fade-relu := (display-camera-inside-fade-raw + (display-camera-inside-fade-raw ^ 2) ^ 0.5) / 2.0
   display-camera-inside-fade-one-relu := (display-camera-inside-fade-raw - 1.0 + ((display-camera-inside-fade-raw - 1.0) ^ 2) ^ 0.5) / 2.0
-  display-camera-visibility := display-camera-inside-fade-relu - display-camera-inside-fade-one-relu
+  display-camera-visibility := (display-camera-inside-fade-relu - display-camera-inside-fade-one-relu) * camera-enabled
   predicted-screen-x := screen-origin-x + predicted-estimate[1] * screen-scale
   predicted-screen-y := screen-origin-y - predicted-estimate[2] * screen-scale
   estimate-screen-x := screen-origin-x + corrected-estimate[1] * screen-scale
@@ -444,14 +471,18 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
                    275.0 545.0]
 
   scene-circles := (
-    {id: "camera-range-1", x: 182, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
-    {id: "camera-range-2", x: 678, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
-    {id: "camera-range-3", x: 678, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
-    {id: "camera-range-4", x: 182, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16},
-    {id: "camera-1", x: 182, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
-    {id: "camera-2", x: 678, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
-    {id: "camera-3", x: 678, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
-    {id: "camera-4", x: 182, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: 1},
+    {id: "camera-range-1", x: 182, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[1]},
+    {id: "camera-range-2", x: 678, y: 638, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[2]},
+    {id: "camera-range-3", x: 678, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[3]},
+    {id: "camera-range-4", x: 182, y: 142, radius: camera-max-range * screen-scale, fill: "none", stroke: "#f4c95d", stroke-width: 0.8, opacity: 0.16 * camera-enabled[4]},
+    {id: "camera-disabled-1", x: 182, y: 638, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[1]},
+    {id: "camera-disabled-2", x: 678, y: 638, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[2]},
+    {id: "camera-disabled-3", x: 678, y: 142, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[3]},
+    {id: "camera-disabled-4", x: 182, y: 142, radius: 9, fill: "#59616b", stroke: "none", stroke-width: 0, opacity: 1.0 - camera-enabled[4]},
+    {id: "camera-1", x: 182, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[1]},
+    {id: "camera-2", x: 678, y: 638, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[2]},
+    {id: "camera-3", x: 678, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[3]},
+    {id: "camera-4", x: 182, y: 142, radius: 9, fill: "#f4c95d", stroke: "#fff1b8", stroke-width: 2, opacity: camera-enabled[4]},
     {id: "truth", x: truth-screen-x, y: truth-screen-y, radius: 8, fill: "#63d6c5", stroke: "#d7fff8", stroke-width: 1.5, opacity: 1},
     {id: "prediction", x: predicted-screen-x, y: predicted-screen-y, radius: 6, fill: "none", stroke: "#f2b84b", stroke-width: 2, opacity: 1},
     {id: "estimate", x: estimate-screen-x, y: estimate-screen-y, radius: 7, fill: "#f087b8", stroke: "#ffe1ef", stroke-width: 1.5, opacity: 1},
@@ -484,10 +515,10 @@ range. Only the scheduled in-range camera's noisy values enter the filter.
     {id: "eyebrow", x: 24, y: 26, fill: "#8fa3b8", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "650", text-anchor: "start", opacity: 1, value: "MECH RESIDENT SENSOR FUSION"},
     {id: "title", x: 24, y: 62, fill: "#edf2f7", font-size: 36, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "620", text-anchor: "start", opacity: 1, value: "Camera EKF Localization"},
     {id: "state-label", x: 602, y: 58, fill: "#f4c95d", font-size: 13, font-family: "ui-monospace, SFMono-Regular, Menlo, monospace", font-weight: "650", text-anchor: "start", opacity: 1, value: "V/Ω SQUARE-DRIVE FSM"},
-    {id: "camera-label-1", x: 195, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 1, value: "CAM 1"},
-    {id: "camera-label-2", x: 665, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 1, value: "CAM 2"},
-    {id: "camera-label-3", x: 665, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 1, value: "CAM 3"},
-    {id: "camera-label-4", x: 195, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 1, value: "CAM 4"},
+    {id: "camera-label-1", x: 195, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 0.32 + 0.68 * camera-enabled[1], value: "CAM 1"},
+    {id: "camera-label-2", x: 665, y: 636, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 0.32 + 0.68 * camera-enabled[2], value: "CAM 2"},
+    {id: "camera-label-3", x: 665, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "end", opacity: 0.32 + 0.68 * camera-enabled[3], value: "CAM 3"},
+    {id: "camera-label-4", x: 195, y: 140, fill: "#d7c27f", font-size: 11, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "500", text-anchor: "start", opacity: 0.32 + 0.68 * camera-enabled[4], value: "CAM 4"},
     {id: "legend-truth-label", x: 40, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "actual robot + path"},
     {id: "legend-prediction-label", x: 215, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "motion prediction"},
     {id: "legend-estimate-label", x: 415, y: 722, fill: "#bdc8d2", font-size: 12, font-family: "Inter, ui-sans-serif, system-ui, sans-serif", font-weight: "400", text-anchor: "start", opacity: 1, value: "EKF estimate + 2σ covariance"},

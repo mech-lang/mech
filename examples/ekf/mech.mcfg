@@ -57,8 +57,14 @@ config := {
 
       {
         target: "localization/frame"
-        operations: ["write"]
-        paths: ["replace"]
+        operations: ["read", "write"]
+        paths: [
+          "pointer-pulse"
+          "pointer-position"
+          "pointer-pressed"
+          "pointer-delta-seconds"
+          "replace"
+        ]
       }
 
       {
