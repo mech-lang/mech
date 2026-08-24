@@ -469,7 +469,14 @@ def _snapshot_main() -> int:
     ).start()
     try:
         session.navigate(args.url)
-        session.wait_for(args.wait, args.description, timeout=args.timeout)
+        # Page.navigate returns before Chrome has necessarily installed the new
+        # document root. Keep every snapshot probe in the lifecycle-safe part
+        # of navigation so callers can describe the state they actually need
+        # without each one having to guard document.documentElement.
+        wait_expression = (
+            f"Boolean(document.documentElement) && ({args.wait})"
+        )
+        session.wait_for(wait_expression, args.description, timeout=args.timeout)
         session.write_dom(args.dom)
     except BaseException:
         try:
