@@ -5049,6 +5049,7 @@ rows := |id<string> x<f64>|
 mod browser_tests {
     use super::*;
     use js_sys::{Array, Object};
+    use mech_runtime::MAX_RESIDENT_STEP_COUNT;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test_configure!(run_in_browser);

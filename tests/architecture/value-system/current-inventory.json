@@ -638,11 +638,8 @@
     "src/syntax/src/structures.rs",
     "src/syntax/src/submission.rs",
     "src/wasm/src/gpu.rs",
-    "src/wasm/src/host/authority.rs",
     "src/wasm/src/host/browser_host.rs",
-    "src/wasm/src/host/error.rs",
     "src/wasm/src/host/mod.rs",
-    "src/wasm/src/host/resource.rs",
     "src/wasm/src/lib.rs",
     "src/wasm/src/mixed_compute.rs",
     "src/wasm/src/project.rs",
@@ -2936,11 +2933,8 @@
     "src/syntax/tests/formatter.rs",
     "src/syntax/tests/module_imports.rs",
     "src/wasm/src/gpu.rs",
-    "src/wasm/src/host/authority.rs",
     "src/wasm/src/host/browser_host.rs",
-    "src/wasm/src/host/error.rs",
     "src/wasm/src/host/mod.rs",
-    "src/wasm/src/host/resource.rs",
     "src/wasm/src/lib.rs",
     "src/wasm/src/mixed_compute.rs",
     "src/wasm/src/project.rs",
@@ -5079,7 +5073,7 @@
           {
             "column": 22,
             "fingerprint": "7bfa45b92f78a1278308e563efa0a1764ad4054b2219244a92a25b12eec71772",
-            "line": 91
+            "line": 90
           }
         ]
       },
@@ -7989,7 +7983,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 221
+            "line": 220
           }
         ]
       },
@@ -8038,7 +8032,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 199
+            "line": 198
           }
         ]
       },
@@ -8260,7 +8254,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 359
+            "line": 358
           }
         ]
       },
@@ -8535,7 +8529,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 250
+            "line": 249
           }
         ]
       },
@@ -8557,7 +8551,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 199
+            "line": 198
           }
         ]
       },
@@ -9875,7 +9869,7 @@
           {
             "column": 56,
             "fingerprint": "f973071eeaff9297e21e801729fb9979deab66137ab2968e2c2e6405b7a5788d",
-            "line": 70
+            "line": 69
           }
         ]
       },
@@ -11274,7 +11268,7 @@
           {
             "column": 9,
             "fingerprint": "a52f58f237d661bf4ae2b281bfb7f57bb0b14a491a2f05a0ae5533a157c777ca",
-            "line": 91
+            "line": 90
           }
         ]
       },
@@ -14798,7 +14792,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 221
+              "line": 220
             }
           ]
         },
@@ -14847,7 +14841,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 199
+              "line": 198
             }
           ]
         },
@@ -15069,7 +15063,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 359
+              "line": 358
             }
           ]
         },
@@ -15344,7 +15338,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 250
+              "line": 249
             }
           ]
         },
@@ -15366,7 +15360,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 199
+              "line": 198
             }
           ]
         },
@@ -16409,7 +16403,7 @@
         },
         {
           "declaration": "pubuseself::program::*;",
-          "line": 154,
+          "line": 153,
           "path": "src/core/src/lib.rs"
         }
       ],
@@ -44573,7 +44567,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 91,
+      "line": 90,
       "path": "machines/set/src/lib.rs",
       "variant": "MutableReference"
     },
@@ -53092,7 +53086,7 @@
     {
       "column": 36,
       "enum": "ValueKind",
-      "line": 270,
+      "line": 269,
       "path": "src/engine/src/lib.rs",
       "variant": "Bool"
     },
@@ -53253,7 +53247,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 264,
+      "line": 263,
       "path": "src/engine/src/lib.rs",
       "variant": "C64"
     },
@@ -54205,7 +54199,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 260,
+      "line": 259,
       "path": "src/engine/src/lib.rs",
       "variant": "F32"
     },
@@ -54618,7 +54612,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 262,
+      "line": 261,
       "path": "src/engine/src/lib.rs",
       "variant": "F64"
     },
@@ -54933,7 +54927,7 @@
     {
       "column": 36,
       "enum": "ValueKind",
-      "line": 258,
+      "line": 257,
       "path": "src/engine/src/lib.rs",
       "variant": "I128"
     },
@@ -55248,7 +55242,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 252,
+      "line": 251,
       "path": "src/engine/src/lib.rs",
       "variant": "I16"
     },
@@ -55563,7 +55557,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 254,
+      "line": 253,
       "path": "src/engine/src/lib.rs",
       "variant": "I32"
     },
@@ -55878,7 +55872,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 256,
+      "line": 255,
       "path": "src/engine/src/lib.rs",
       "variant": "I64"
     },
@@ -56193,7 +56187,7 @@
     {
       "column": 34,
       "enum": "ValueKind",
-      "line": 250,
+      "line": 249,
       "path": "src/engine/src/lib.rs",
       "variant": "I8"
     },
@@ -58258,7 +58252,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 266,
+      "line": 265,
       "path": "src/engine/src/lib.rs",
       "variant": "R64"
     },
@@ -59133,7 +59127,7 @@
     {
       "column": 38,
       "enum": "ValueKind",
-      "line": 268,
+      "line": 267,
       "path": "src/engine/src/lib.rs",
       "variant": "String"
     },
@@ -59959,7 +59953,7 @@
     {
       "column": 36,
       "enum": "ValueKind",
-      "line": 248,
+      "line": 247,
       "path": "src/engine/src/lib.rs",
       "variant": "U128"
     },
@@ -60281,7 +60275,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 242,
+      "line": 241,
       "path": "src/engine/src/lib.rs",
       "variant": "U16"
     },
@@ -60603,7 +60597,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 244,
+      "line": 243,
       "path": "src/engine/src/lib.rs",
       "variant": "U32"
     },
@@ -60925,7 +60919,7 @@
     {
       "column": 35,
       "enum": "ValueKind",
-      "line": 246,
+      "line": 245,
       "path": "src/engine/src/lib.rs",
       "variant": "U64"
     },
@@ -61247,7 +61241,7 @@
     {
       "column": 34,
       "enum": "ValueKind",
-      "line": 240,
+      "line": 239,
       "path": "src/engine/src/lib.rs",
       "variant": "U8"
     },
@@ -61264,7 +61258,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 904
+      "rust_file_count": 901
     },
     {
       "directory": "hosts/browser",
@@ -61372,7 +61366,7 @@
       "directory": "src/wasm",
       "manifest": "src/wasm/Cargo.toml",
       "name": "mech-wasm",
-      "rust_file_count": 13
+      "rust_file_count": 10
     },
     {
       "directory": "tests/fixtures/native-live-host",
