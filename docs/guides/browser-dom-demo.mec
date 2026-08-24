@@ -19,7 +19,7 @@ examples/browser-dom-demo/
 -------------------------------------------------------------------------------
 
 ```sh
-bash scripts/build-mech-browser.sh
+python3 scripts/build-wasm.py --profile browser
 ```
 
 3. Bundle the project

@@ -5,7 +5,7 @@ This project is the executable static-web example for `mech bundle-web`. It demo
 Build the WASM package, then create and serve the static bundle:
 
 ```sh
-bash scripts/build-mech-browser.sh
+python3 scripts/build-wasm.py --profile browser
 mech bundle-web examples/browser-dom-demo --out dist/browser-dom-demo
 python -m http.server 9000 -d dist/browser-dom-demo
 ```

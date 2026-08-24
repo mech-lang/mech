@@ -1116,7 +1116,7 @@ jobs:
             --features "browser_project,browser_host_dom,browser_host_time,browser_host_console,browser_host_scene,statements_default,compare_default,logic_default,subscript_default,math_default,matrix_default,f64,bool,string_default,record,tuple,table,atom,enum,variables"
 
       - name: Build browser project package
-        run: bash scripts/build-mech-browser.sh
+        run: python3 scripts/build-wasm.py --profile browser
 
       - name: Build embedded browser server in dedicated target
         run: |

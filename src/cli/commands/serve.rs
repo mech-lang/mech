@@ -460,7 +460,7 @@ fn validate_configured_browser_profile(
     Err(MechError::new(
         GenericError {
             msg: format!(
-                "configured compute host requires the mixed compute browser package, but `{wasm_pkg}` does not export WasmMixedComputeProject.fromSource; run scripts/build-mech-gpu-browser.sh on macOS/Linux or scripts\\build-mech-gpu-browser.ps1 on Windows before serving this project"
+                "configured compute host requires the mixed compute browser package, but `{wasm_pkg}` does not export WasmMixedComputeProject.fromSource; run `python scripts/build-wasm.py --profile browser-compute` before serving this project"
             ),
         },
         None,
@@ -819,7 +819,10 @@ mod tests {
             error.contains("WasmMixedComputeProject.fromSource"),
             "{error}"
         );
-        assert!(error.contains("build-mech-gpu-browser"), "{error}");
+        assert!(
+            error.contains("build-wasm.py --profile browser-compute"),
+            "{error}"
+        );
     }
 
     #[test]

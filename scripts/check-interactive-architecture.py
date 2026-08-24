@@ -125,4 +125,17 @@ architecture = text("docs/architecture/interactive-runtime.md")
 if len(architecture.splitlines()) > 250:
     fail("interactive runtime architecture record must remain concise")
 
+obsolete_builders = (
+    "scripts/build-mech-browser.sh",
+    "scripts/build-mech-gpu-browser.sh",
+    "scripts/build-mech-gpu-browser.ps1",
+)
+for builder in obsolete_builders:
+    if (ROOT / builder).exists():
+        fail(f"obsolete WASM build wrapper `{builder}` reappeared")
+build_wasm = text("scripts/build-wasm.py")
+for profile in ("browser", "browser-compute"):
+    if f'"{profile}"' not in build_wasm:
+        fail(f"unified WASM builder is missing the `{profile}` profile")
+
 print("interactive architecture contract passed")

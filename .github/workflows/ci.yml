@@ -200,7 +200,7 @@ jobs:
           sudo install "/tmp/wasm-pack-$WASM_PACK_VERSION-x86_64-unknown-linux-musl/wasm-pack" /usr/local/bin/wasm-pack
       - name: Build standard WASM and the standard server
         run: |
-          bash scripts/build-mech-browser.sh
+          python3 scripts/build-wasm.py --profile browser
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           ! grep -q '^[[:space:]]*evaluate(source)' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech
@@ -216,7 +216,7 @@ jobs:
       - name: Build mixed compute WASM and refresh the server
         run: |
           node scripts/test-browser-compute-lifecycle.mjs
-          bash scripts/build-mech-gpu-browser.sh
+          python3 scripts/build-wasm.py --profile browser-compute
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           cargo build --locked --bin mech --features compute_backends_native

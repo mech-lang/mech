@@ -7,7 +7,7 @@ This guide shows the minimal flow for producing static web assets from a configu
 -------------------------------------------------------------------------------
 
 ```sh
-bash scripts/build-mech-browser.sh
+python3 scripts/build-wasm.py --profile browser
 ```
 
 2. Bundle the project

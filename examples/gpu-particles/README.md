@@ -81,8 +81,7 @@ the simulation starts; failures are shown in the page instead of falling back.
 
 The product scripts build the native CLI/runtime and the mixed CPU/WebGPU WASM
 package only. For a component-specific browser rebuild, use
-`scripts/build-mech-gpu-browser.sh` on macOS/Linux or
-`scripts\build-mech-gpu-browser.ps1` on Windows.
+`python scripts/build-wasm.py --profile browser-compute` on every supported platform.
 
 ## Browser acceptance
 

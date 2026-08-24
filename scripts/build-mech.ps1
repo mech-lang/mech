@@ -31,7 +31,7 @@ try {
   # Do not let a stale native executable make a failed build look complete.
   Remove-Item $nativeArtifact -Force -ErrorAction SilentlyContinue
 
-  & (Join-Path $PSScriptRoot "build-mech-gpu-browser.ps1")
+  python scripts/build-wasm.py --profile browser-compute
   if ($LASTEXITCODE -ne 0) {
     throw "Failed to build the Mech browser/WASM product."
   }

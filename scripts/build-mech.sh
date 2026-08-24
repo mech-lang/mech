@@ -32,7 +32,7 @@ esac
 # Do not let a stale native executable make a failed build look complete.
 rm -f "$native_artifact"
 
-./scripts/build-mech-gpu-browser.sh
+python3 scripts/build-wasm.py --profile browser-compute
 cargo build --locked --release --features compute_backends_native
 
 artifacts=(

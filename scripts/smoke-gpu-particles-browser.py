@@ -35,13 +35,11 @@ def fail(message: str) -> None:
 
 
 def build() -> None:
-    if os.name == "nt":
-        subprocess.run([
-            "powershell", "-ExecutionPolicy", "Bypass", "-File",
-            str(ROOT / "scripts/build-mech-gpu-browser.ps1"),
-        ], cwd=ROOT, check=True)
-    else:
-        subprocess.run([str(ROOT / "scripts/build-mech-gpu-browser.sh")], cwd=ROOT, check=True)
+    subprocess.run(
+        [sys.executable, str(ROOT / "scripts/build-wasm.py"), "--profile", "browser-compute"],
+        cwd=ROOT,
+        check=True,
+    )
     subprocess.run(
         ["cargo", "build", "--release", "--features", "compute_backends_native"],
         cwd=ROOT,
