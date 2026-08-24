@@ -154,7 +154,7 @@ fn fragment_main(input: VertexOutput) -> @location(0) vec4f {
 `;
 
 export function requiredWgpuLimits(manifest, adapterLimits) {
-  return globalThis.MechBrowserComputeDevice.requiredLimits(
+  return globalThis.MechBrowserCompute.Device.requiredLimits(
     manifest,
     adapterLimits,
     manifest.outputs.map((output) => output.name),
@@ -210,7 +210,7 @@ class BrowserComputeProject {
     this.canvas = document.querySelector('canvas[data-mech-gpu-renderer="points2d"]');
     this.status = document.querySelector('[data-mech-gpu-status]');
     this.message = document.querySelector('[data-mech-gpu-message]');
-    this.activeBuffer = 0;
+    this.computeSession = null;
     this.stopped = false;
     this.statsStarted = 0;
     this.statsFrames = 0;
@@ -218,12 +218,16 @@ class BrowserComputeProject {
     this.lastFrameTime = 0;
     this.lastInputs = {};
     this.totalDispatches = 0;
-    this.acceptedDispatches = 0;
-    this.lastAcceptedDispatchToken = null;
-    this.bridgeFailure = null;
-    this.dispatchPending = false;
     this.pointerListeners = [];
   }
+
+  get activeBuffer() { return this.computeSession?.activeBuffer ?? 0; }
+  get acceptedDispatches() { return this.computeSession?.acceptedDispatches ?? 0; }
+  get lastAcceptedDispatchToken() {
+    return this.computeSession?.lastAcceptedDispatchToken ?? null;
+  }
+  get bridgeFailure() { return this.computeSession?.failure ?? null; }
+  get dispatchPending() { return this.computeSession?.pending ?? false; }
 
   async start() {
     if (!(this.canvas instanceof HTMLCanvasElement)) {
@@ -254,7 +258,15 @@ class BrowserComputeProject {
     this.setStatus(`Preparing ${this.backend.toUpperCase()} compute`, '');
 
     this.computeResource = this.backend === 'wgpu'
-      ? await globalThis.MechBrowserComputeDevice.create(this.manifest, this.adapter, [])
+      ? await globalThis.MechBrowserCompute.Device.create(this.manifest, this.adapter, [])
+      : null;
+    this.computeSession = this.computeResource
+      ? new globalThis.MechBrowserCompute.Session({
+          controller: this.controller,
+          resource: this.computeResource,
+          generation: 'standalone',
+          isCurrent: () => !this.stopped,
+        })
       : null;
     this.device = this.computeResource?.device || await this.adapter.requestDevice({});
     this.device.lost.then((info) => {
@@ -482,17 +494,16 @@ class BrowserComputeProject {
     this.resize();
     const encoder = this.device.createCommandEncoder();
     let renderedBuffer = this.activeBuffer;
-    let computeCompletion = null;
+    let computePending = false;
     if (dispatch && this.backend === 'wgpu') {
       this.lastInputs = Object.fromEntries(
         command.inputs.map((input) => [input.name, Array.from(input.values)]),
       );
-      this.computeResource.setRequestedOutputs(command.requestedOutputs || []);
-      const submission = this.computeResource.submit(command, this.activeBuffer);
+      const submission = this.computeSession.submit(command);
       renderedBuffer = submission.outputIndex;
-      computeCompletion = submission.completion;
+      computePending = true;
     }
-    const displayBuffer = computeCompletion ? this.activeBuffer : renderedBuffer;
+    const displayBuffer = computePending ? this.activeBuffer : renderedBuffer;
     const render = encoder.beginRenderPass({
       colorAttachments: [{
         view: this.context.getCurrentTexture().createView(),
@@ -506,67 +517,7 @@ class BrowserComputeProject {
     render.draw(6, this.renderItemCount);
     render.end();
     this.device.queue.submit([encoder.finish()]);
-    return { renderedBuffer, computeCompletion };
-  }
-
-  rejectWgpuCommand(dispatchToken, error) {
-    const failure = error instanceof Error ? error : new Error(String(error));
-    try {
-      this.controller.completeComputeCommand({
-        version: 1,
-        token: dispatchToken,
-        status: 'failed',
-        failure: { reason: failure.message },
-      });
-    } catch (rejectionError) {
-      const detail = rejectionError instanceof Error
-        ? rejectionError.message
-        : String(rejectionError);
-      return new Error(`${failure.message}; rejecting dispatch ${dispatchToken} also failed: ${detail}`);
-    }
-    return failure;
-  }
-
-  trackWgpuCompletion(dispatchToken, completion, outputIndex) {
-    this.computeResource.finish(completion).then(
-      ({ outputs, integrity }) => {
-        if (this.stopped) return;
-        try {
-          if (integrity) {
-            this.controller.completeComputeCommand({
-              version: 1,
-              token: dispatchToken,
-              status: 'integrity-rejected',
-              integrity: {
-                constraint: integrity.constraint,
-                instance: integrity.instance,
-              },
-            });
-          } else {
-            this.controller.completeComputeCommand({
-              version: 1,
-              token: dispatchToken,
-              status: 'completed',
-              outputs,
-            });
-          }
-          // A successful return is the resident host acknowledgement boundary,
-          // not merely completion of the browser GPU promise.
-          this.acceptedDispatches += 1;
-          this.lastAcceptedDispatchToken = dispatchToken;
-          if (!integrity) this.activeBuffer = outputIndex;
-        } catch (error) {
-          this.bridgeFailure = this.rejectWgpuCommand(dispatchToken, error);
-        } finally {
-          this.dispatchPending = false;
-        }
-      },
-      (error) => {
-        if (this.stopped) return;
-        this.bridgeFailure = this.rejectWgpuCommand(dispatchToken, error);
-        this.dispatchPending = false;
-      },
-    );
+    return { renderedBuffer };
   }
 
   frame(timestamp = performance.now()) {
@@ -574,9 +525,7 @@ class BrowserComputeProject {
       return;
     }
     if (this.bridgeFailure) {
-      const failure = this.bridgeFailure;
-      this.bridgeFailure = null;
-      throw failure;
+      throw this.bridgeFailure;
     }
     const deltaSeconds = this.lastFrameTime === 0
       ? 1 / 60
@@ -592,34 +541,7 @@ class BrowserComputeProject {
           maxInputsPerFrame,
         );
     const dispatch = command?.dispatch === true;
-    let wgpuDispatchToken = null;
-    if (dispatch && this.backend === 'wgpu') {
-      if (
-        command.acknowledgementRequired !== true ||
-        typeof command.dispatchToken !== 'string' ||
-        !/^[1-9][0-9]*:[1-9][0-9]*$/.test(command.dispatchToken)
-      ) {
-        throw new Error('the WebGPU bridge received a command without a valid acknowledgement identity');
-      }
-      wgpuDispatchToken = command.dispatchToken;
-    }
-    let submission;
-    try {
-      submission = this.submitFrame(command, dispatch);
-    } catch (error) {
-      if (wgpuDispatchToken !== null) {
-        throw this.rejectWgpuCommand(wgpuDispatchToken, error);
-      }
-      throw error;
-    }
-    if (wgpuDispatchToken !== null) {
-      this.dispatchPending = true;
-      this.trackWgpuCompletion(
-        wgpuDispatchToken,
-        submission.computeCompletion,
-        submission.renderedBuffer,
-      );
-    }
+    this.submitFrame(command, dispatch);
     if (dispatch) {
       this.totalDispatches += 1;
     }
@@ -661,14 +583,14 @@ class BrowserComputeProject {
     try {
       this.controller.stop();
     } finally {
-      if (this.computeResource) {
-        this.computeResource.dispose();
+      this.renderUniform?.destroy();
+      if (this.computeSession) {
+        this.computeSession.retire();
       } else {
         for (const buffers of this.stateBuffers?.values() || []) {
           buffers.forEach((buffer) => buffer.destroy());
         }
         for (const buffer of this.fixedBuffers?.values() || []) buffer.destroy();
-        this.renderUniform?.destroy();
         this.device?.destroy();
       }
     }

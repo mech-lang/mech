@@ -3964,7 +3964,7 @@ class DocumentComputeBridge {
     document.documentElement.dataset.mechComputeDeviceStatus = "requesting";
     let resource;
     try {
-      resource = await globalThis.MechBrowserComputeDevice.create(manifest, adapter, []);
+      resource = await globalThis.MechBrowserCompute.Device.create(manifest, adapter, []);
     } catch (error) {
       document.documentElement.dataset.mechComputeDeviceStatus = "failed";
       throw error;
@@ -3977,29 +3977,24 @@ class DocumentComputeBridge {
     this.controller = controller;
     this.manifest = manifest;
     this.backend = backend;
-    this.resource = resource;
-    this.device = resource?.device || null;
-    this.pipeline = resource?.pipeline || null;
-    this.activeBuffer = options.activeBuffer ?? 0;
-    this.blocked = false;
-    this.failure = null;
     this.dispatches = options.dispatches ?? 0;
-    this.lastDispatchToken = null;
     this.priorDispatchToken = options.priorDispatchToken || null;
-    this.retired = false;
-    this.ownsResource = options.ownsResource ?? true;
     this.adoptionSource = options.adoptionSource || null;
     this.physicalRevision = String(manifest.physicalRevision || "");
     this.generation = typeof controller.computeGeneration === "function"
       ? controller.computeGeneration()
       : "0";
-    this.lifecycle = new globalThis.MechComputeSubmissionLifecycle(this.generation);
-    this.device?.lost.then((info) => {
-      if (this.isCurrent()) {
-        const failure = new Error(`GPU device lost: ${info.message || info.reason || "unknown reason"}`);
-        failure.mechDeviceLost = true;
-        this.failure = this.lifecycle.markFailed(failure);
-      }
+    this.session = new globalThis.MechBrowserCompute.Session({
+      controller,
+      resource,
+      generation: this.generation,
+      activeBuffer: options.activeBuffer ?? 0,
+      lastDispatchToken: options.priorDispatchToken || null,
+      ownsResource: options.ownsResource ?? true,
+      isCurrent: () => (
+        typeof controller.computeGeneration !== "function" ||
+        controller.computeGeneration() === this.generation
+      ),
     });
     document.documentElement.dataset.mechComputeBackend = this.backend;
     document.documentElement.dataset.mechComputeInstances = String(
@@ -4008,16 +4003,22 @@ class DocumentComputeBridge {
     this.publishIdentity();
   }
 
+  get resource() { return this.session.resource; }
+  get device() { return this.resource?.device || null; }
+  get pipeline() { return this.resource?.pipeline || null; }
+  get activeBuffer() { return this.session.activeBuffer; }
+  get blocked() { return this.session.pending; }
+  get failure() { return this.session.failure; }
+  set failure(value) { this.session.failure = value; }
+  get lifecycle() { return this.session.lifecycle; }
+  get lastDispatchToken() { return this.session.lastDispatchToken; }
+
   isCurrent() {
-    return !this.retired && (
-      typeof this.controller.computeGeneration !== "function" ||
-      this.controller.computeGeneration() === this.generation
-    );
+    return this.session.isCurrent();
   }
 
   canTransferTo(manifest, backend) {
-    return !this.retired && !this.blocked && !this.failure && this.ownsResource &&
-      this.backend === backend && this.resource?.compatibleWith(manifest);
+    return this.backend === backend && this.session.canTransferTo(manifest);
   }
 
   adoptCompatibleResource() {
@@ -4025,10 +4026,7 @@ class DocumentComputeBridge {
     if (!previous || !previous.canTransferTo(this.manifest, this.backend)) {
       throw new Error("the compatible GPU resource is no longer transferable");
     }
-    previous.ownsResource = false;
-    previous.retired = true;
-    this.resource.adoptManifest(this.manifest);
-    this.ownsResource = true;
+    this.session.adoptFrom(previous.session, this.manifest);
     this.adoptionSource = null;
     document.documentElement.dataset.mechComputeStaleCompletionRejected =
       this.priorDispatchToken ? "pending" : "not-applicable";
@@ -4075,9 +4073,7 @@ class DocumentComputeBridge {
   }
 
   retire() {
-    this.retired = true;
-    if (this.ownsResource) this.resource?.dispose();
-    this.ownsResource = false;
+    this.session.retire();
   }
 
   publishCompletion(outputs) {
@@ -4099,98 +4095,28 @@ class DocumentComputeBridge {
   }
 
   submit(command) {
-    if (!command?.dispatch) {
-      return;
-    }
-    if (!this.isCurrent()) {
-      throw new Error("a retired document compute bridge received a dispatch");
-    }
-    if (this.blocked) {
-      throw new Error("a checked document compute dispatch is already in flight");
-    }
-    if (
-      command.acknowledgementRequired !== true ||
-      typeof command.dispatchToken !== "string" ||
-      !/^[1-9][0-9]*:[1-9][0-9]*$/.test(command.dispatchToken)
-    ) {
-      throw new Error("the document compute command has no valid completion identity");
-    }
-    this.resource.setRequestedOutputs(command.requestedOutputs || []);
-    const { outputIndex, completion } = this.resource.submit(command, this.activeBuffer);
-    // queue.submit() has succeeded at this point. Record that fact before any
-    // promise continuation can observe device loss; this generation may no
-    // longer be rebuilt on scalar compute automatically.
-    this.lifecycle.markSubmitted(command.dispatchToken);
-    this.lastDispatchToken = command.dispatchToken;
-    this.blocked = true;
-    // Exercise generation identity against an actually claimed replacement
-    // command. If an old `:1` token can alias the new generation's active
-    // `:1`, this check fails before the new command can be published.
-    this.verifyPriorCompletionRejectedDuringActiveDispatch(command.dispatchToken);
-    window.dispatchEvent(new CustomEvent("mech:compute-submit", {
-      detail: {
-        dispatchToken: command.dispatchToken,
-        generation: this.generation,
-        revision: this.physicalRevision,
-        resourceIdentity: this.resource?.resourceIdentity || "",
+    return this.session.submit(command, {
+      onSubmitted: ({ dispatchToken }) => {
+        // Exercise generation identity against an actually claimed
+        // replacement command before publishing the new generation.
+        this.verifyPriorCompletionRejectedDuringActiveDispatch(dispatchToken);
+        window.dispatchEvent(new CustomEvent("mech:compute-submit", {
+          detail: {
+            dispatchToken,
+            generation: this.generation,
+            revision: this.physicalRevision,
+            resourceIdentity: this.resource?.resourceIdentity || "",
+          },
+        }));
       },
-    }));
-    this.finish(command.dispatchToken, outputIndex, completion);
-  }
-
-  async finish(dispatchToken, outputIndex, completion) {
-    try {
-      const { outputs, integrity } = await this.resource.finish(completion);
-      if (integrity) {
-        if (this.isCurrent()) {
-          this.controller.completeComputeCommand({
-            version: 1,
-            token: dispatchToken,
-            status: "integrity-rejected",
-            integrity: {
-              constraint: integrity.constraint,
-              instance: integrity.instance,
-            },
-          });
-          // Integrity rejection is a matching terminal completion: the
-          // candidate state was not published, but the host is reusable for
-          // the next independent turn.
-          this.lifecycle.markAccepted(dispatchToken);
-        }
-        return;
-      }
-      if (this.isCurrent()) {
-        this.controller.completeComputeCommand({
-          version: 1,
-          token: dispatchToken,
-          status: "completed",
-          outputs,
-        });
-        this.lifecycle.markAccepted(dispatchToken);
-        this.activeBuffer = outputIndex;
+      onAccepted: ({ outputs, integrity }) => {
+        // Integrity rejection completes the host turn without publishing the
+        // candidate physical buffer.
+        if (integrity) return;
         this.publishIdentity();
         this.publishCompletion(outputs);
-      }
-    } catch (error) {
-      try {
-        if (!this.isCurrent()) {
-          return;
-        }
-        this.controller.completeComputeCommand({
-          version: 1,
-          token: dispatchToken,
-          status: "failed",
-          failure: {
-            reason: error instanceof Error ? error.message : String(error),
-          },
-        });
-      } catch (rejectionError) {
-        this.failure = rejectionError;
-      }
-      this.failure = this.lifecycle.markFailed(this.failure || error);
-    } finally {
-      this.blocked = false;
-    }
+      },
+    });
   }
 }
 
@@ -4244,7 +4170,7 @@ function refreshDocumentComputeBridge() {
         String(state.computeBridgeGeneration);
       setComputeBridgeLifecycle("ready");
       state.computeResetTracker ||=
-        new globalThis.MechComputeStateResetTracker();
+        new globalThis.MechBrowserCompute.ResetTracker();
       const reset = state.computeResetTracker.advance(
         documentComputeIdentity(controller, next),
       );
@@ -4479,7 +4405,7 @@ async function main() {
     : "0";
   document.documentElement.dataset.mechComputeGeneration =
     String(state.computeBridgeGeneration);
-  state.computeResetTracker ||= new globalThis.MechComputeStateResetTracker();
+  state.computeResetTracker ||= new globalThis.MechBrowserCompute.ResetTracker();
   state.computeResetTracker.advance(
     documentComputeIdentity(state.document, state.computeBridge),
   );

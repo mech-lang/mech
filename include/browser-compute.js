@@ -1,5 +1,6 @@
 /* Shared WebGPU resource and completion protocol for Mech browser hosts. */
-globalThis.MechComputeSubmissionLifecycle ||= class MechComputeSubmissionLifecycle {
+globalThis.MechBrowserCompute ||= (() => {
+class SubmissionLifecycle {
   constructor(generation) {
     this.generation = String(generation);
     this.phase = "ready";
@@ -42,9 +43,9 @@ globalThis.MechComputeSubmissionLifecycle ||= class MechComputeSubmissionLifecyc
   canAutoFallback() {
     return !this.submitted;
   }
-};
+}
 
-globalThis.MechComputeStateResetLedger ||= class MechComputeStateResetLedger {
+class StateResetLedger {
   constructor() {
     this.transitions = new Set();
     this.count = 0;
@@ -65,14 +66,14 @@ globalThis.MechComputeStateResetLedger ||= class MechComputeStateResetLedger {
     this.count += 1;
     return { previousRevision: previous, nextRevision: next, resetCount: this.count };
   }
-};
+}
 
 // Tracks the physical compute identity independently of the WebGPU transport.
 // Scalar compute intentionally has no DocumentComputeBridge, but it still owns
 // persistent resident state and must report incompatible replacement exactly
 // like WebGPU does.
-globalThis.MechComputeStateResetTracker ||= class MechComputeStateResetTracker {
-  constructor(ledger = new globalThis.MechComputeStateResetLedger()) {
+class ResetTracker {
+  constructor(ledger = new StateResetLedger()) {
     this.ledger = ledger;
     this.previous = null;
   }
@@ -93,9 +94,9 @@ globalThis.MechComputeStateResetTracker ||= class MechComputeStateResetTracker {
       next.revision,
     );
   }
-};
+}
 
-globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
+class Device {
   static logicalOutputValues(output, physicalValues) {
     const dimensions = (output.sampleDimensions || []).map(Number);
     if (output.physicalLayout !== "column-major" || dimensions.length < 2) {
@@ -419,7 +420,7 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
       }
       const outputs = [];
       for (const item of this.readbackPlan) {
-        const values = MechBrowserComputeDevice.logicalOutputValues(
+        const values = Device.logicalOutputValues(
           item.output,
           new Float32Array(mapped, item.offset, item.bytes / Float32Array.BYTES_PER_ELEMENT),
         );
@@ -452,4 +453,169 @@ globalThis.MechBrowserComputeDevice ||= class MechBrowserComputeDevice {
     this.readback?.destroy();
     this.device.destroy();
   }
-};
+}
+
+class Session {
+  constructor({
+    controller,
+    resource,
+    generation = "0",
+    activeBuffer = 0,
+    acceptedDispatches = 0,
+    lastDispatchToken = null,
+    ownsResource = true,
+    isCurrent = () => true,
+  }) {
+    this.controller = controller;
+    this.resource = resource;
+    this.generation = String(generation);
+    this.physicalRevision = String(resource?.physicalRevision || "");
+    this.activeBuffer = activeBuffer;
+    this.acceptedDispatches = acceptedDispatches;
+    this.lastAcceptedDispatchToken = null;
+    this.lastDispatchToken = lastDispatchToken;
+    this.ownsResource = ownsResource;
+    this.isOwnedGeneration = isCurrent;
+    this.pending = false;
+    this.retired = false;
+    this.failure = null;
+    this.lifecycle = new SubmissionLifecycle(this.generation);
+    this.resource?.device?.lost.then((info) => {
+      if (!this.isCurrent()) return;
+      const reason = info?.message || info?.reason || "unknown reason";
+      const failure = new Error(`GPU device lost: ${reason}`);
+      failure.mechDeviceLost = true;
+      this.failure = this.lifecycle.markFailed(failure);
+    });
+  }
+
+  isCurrent() {
+    return !this.retired && this.isOwnedGeneration();
+  }
+
+  canTransferTo(manifest) {
+    return !this.retired && !this.pending && !this.failure && this.ownsResource &&
+      this.resource?.compatibleWith(manifest);
+  }
+
+  adoptFrom(previous, manifest) {
+    if (!previous?.canTransferTo(manifest) || previous.resource !== this.resource) {
+      throw new Error("the compatible GPU resource is no longer transferable");
+    }
+    previous.ownsResource = false;
+    previous.retired = true;
+    this.resource.adoptManifest(manifest);
+    this.physicalRevision = String(manifest.physicalRevision || "");
+    this.ownsResource = true;
+  }
+
+  validateCommand(command) {
+    if (!command?.dispatch) return false;
+    if (!this.isCurrent()) {
+      throw new Error("a retired browser compute session received a dispatch");
+    }
+    if (this.pending) {
+      throw new Error("a checked browser compute dispatch is already in flight");
+    }
+    if (
+      command.acknowledgementRequired !== true ||
+      typeof command.dispatchToken !== "string" ||
+      !/^[1-9][0-9]*:[1-9][0-9]*$/.test(command.dispatchToken)
+    ) {
+      throw new Error("the browser compute command has no valid completion identity");
+    }
+    return true;
+  }
+
+  complete(payload) {
+    this.controller.completeComputeCommand({ version: 1, ...payload });
+  }
+
+  reject(dispatchToken, error) {
+    const failure = error instanceof Error ? error : new Error(String(error));
+    try {
+      this.complete({
+        token: dispatchToken,
+        status: "failed",
+        failure: { reason: failure.message },
+      });
+    } catch (completionError) {
+      const detail = completionError instanceof Error
+        ? completionError.message
+        : String(completionError);
+      return new Error(
+        `${failure.message}; rejecting dispatch ${dispatchToken} also failed: ${detail}`,
+      );
+    }
+    return failure;
+  }
+
+  submit(command, hooks = {}) {
+    if (!this.validateCommand(command)) return null;
+    const dispatchToken = command.dispatchToken;
+    this.resource.setRequestedOutputs(command.requestedOutputs || []);
+    let submission;
+    try {
+      submission = this.resource.submit(command, this.activeBuffer);
+      // queue.submit() has succeeded. From here onward a device loss is a
+      // terminal failure, never permission to replay this turn on the CPU.
+      this.lifecycle.markSubmitted(dispatchToken);
+      this.lastDispatchToken = dispatchToken;
+      this.pending = true;
+      hooks.onSubmitted?.({ dispatchToken, ...submission });
+    } catch (error) {
+      this.failure = this.lifecycle.markFailed(this.reject(dispatchToken, error));
+      hooks.onFailure?.(this.failure);
+      throw this.failure;
+    }
+    this.completion = this.finish(dispatchToken, submission, hooks);
+    return submission;
+  }
+
+  async finish(dispatchToken, submission, hooks) {
+    let completionSent = false;
+    try {
+      const { outputs, integrity } = await this.resource.finish(submission.completion);
+      if (!this.isCurrent()) return;
+      if (integrity) {
+        this.complete({
+          token: dispatchToken,
+          status: "integrity-rejected",
+          integrity: {
+            constraint: integrity.constraint,
+            instance: integrity.instance,
+          },
+        });
+      } else {
+        this.complete({ token: dispatchToken, status: "completed", outputs });
+      }
+      completionSent = true;
+      this.lifecycle.markAccepted(dispatchToken);
+      this.acceptedDispatches += 1;
+      this.lastAcceptedDispatchToken = dispatchToken;
+      if (!integrity) this.activeBuffer = submission.outputIndex;
+      hooks.onAccepted?.({
+        dispatchToken,
+        outputIndex: submission.outputIndex,
+        outputs,
+        integrity,
+      });
+    } catch (error) {
+      if (!this.isCurrent()) return;
+      const failure = completionSent ? error : this.reject(dispatchToken, error);
+      this.failure = this.lifecycle.markFailed(failure);
+      hooks.onFailure?.(this.failure);
+    } finally {
+      this.pending = false;
+    }
+  }
+
+  retire() {
+    this.retired = true;
+    if (this.ownsResource) this.resource?.dispose();
+    this.ownsResource = false;
+  }
+}
+
+return Object.freeze({ Device, ResetTracker, Session });
+})();

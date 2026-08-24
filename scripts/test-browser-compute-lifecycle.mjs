@@ -3,23 +3,32 @@ import assert from "node:assert/strict";
 globalThis.GPUMapMode = { READ: 1 };
 await import("../include/browser-compute.js");
 
-const Lifecycle = globalThis.MechComputeSubmissionLifecycle;
-const ResetLedger = globalThis.MechComputeStateResetLedger;
-const ResetTracker = globalThis.MechComputeStateResetTracker;
-const Device = globalThis.MechBrowserComputeDevice;
+const { Device, ResetTracker, Session } = globalThis.MechBrowserCompute;
+assert.equal(Object.isFrozen(globalThis.MechBrowserCompute), true);
+assert.equal(globalThis.MechComputeSubmissionLifecycle, undefined);
+assert.equal(globalThis.MechComputeStateResetLedger, undefined);
+assert.equal(globalThis.MechComputeStateResetTracker, undefined);
+assert.equal(globalThis.MechBrowserComputeDevice, undefined);
 
-const resets = new ResetLedger();
-assert.equal(resets.record(1, 2, "sha256:same", "sha256:same"), null);
+const resets = new ResetTracker();
+assert.equal(
+  resets.advance({ present: true, generation: 1, revision: "sha256:same" }),
+  null,
+);
+assert.equal(
+  resets.advance({ present: true, generation: 2, revision: "sha256:same" }),
+  null,
+);
 assert.deepEqual(
-  resets.record(2, 3, "sha256:old", "sha256:new"),
+  resets.advance({ present: true, generation: 3, revision: "sha256:new" }),
   {
-    previousRevision: "sha256:old",
+    previousRevision: "sha256:same",
     nextRevision: "sha256:new",
     resetCount: 1,
   },
 );
 assert.equal(
-  resets.record(2, 3, "sha256:old", "sha256:new"),
+  resets.advance({ present: true, generation: 4, revision: "sha256:new" }),
   null,
   "one physical plan transition must publish exactly one reset",
 );
@@ -57,13 +66,19 @@ assert.equal(
   "a compatible scalar replacement must preserve state without a reset",
 );
 
-const beforeSubmission = new Lifecycle(7);
+const lifecycle = (generation) => new Session({
+  controller: { completeComputeCommand() {} },
+  resource: null,
+  generation,
+}).lifecycle;
+
+const beforeSubmission = lifecycle(7);
 assert.equal(beforeSubmission.canAutoFallback(), true);
 const constructionFailure = new Error("device lost before submission");
 assert.equal(beforeSubmission.markFailed(constructionFailure), constructionFailure);
 assert.equal(beforeSubmission.canAutoFallback(), true);
 
-const inFlight = new Lifecycle(8);
+const inFlight = lifecycle(8);
 inFlight.markSubmitted("8:1");
 assert.equal(inFlight.canAutoFallback(), false);
 const loss = new Error("device lost after submission");
@@ -71,7 +86,7 @@ assert.equal(inFlight.markFailed(loss), loss);
 assert.equal(inFlight.canAutoFallback(), false);
 assert.throws(() => inFlight.markAccepted("8:1"), loss);
 
-const accepted = new Lifecycle(9);
+const accepted = lifecycle(9);
 accepted.markSubmitted("9:1");
 accepted.markAccepted("9:1");
 assert.equal(accepted.canAutoFallback(), false);
@@ -79,7 +94,7 @@ const acceptedLoss = accepted.markFailed(new Error("device lost after acceptance
 assert.match(acceptedLoss.message, /after acceptance/);
 assert.equal(accepted.canAutoFallback(), false);
 
-const identity = new Lifecycle(10);
+const identity = lifecycle(10);
 identity.markSubmitted("10:2");
 assert.throws(
   () => identity.markAccepted("10:1"),
@@ -87,7 +102,7 @@ assert.throws(
 );
 identity.markAccepted("10:2");
 
-const firstFailure = new Lifecycle(11);
+const firstFailure = lifecycle(11);
 const first = firstFailure.markFailed(new Error("first"));
 assert.equal(firstFailure.markFailed(new Error("second")), first);
 assert.equal(firstFailure.failure.message, "first");
