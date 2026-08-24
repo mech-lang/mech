@@ -394,20 +394,27 @@ harness = r'''<script>
     let sawOutsideCameraRange = false;
     let cameraToggleDisableRequested = false;
     let cameraToggleDisabled = false;
+    let cameraToggleDisableReleased = false;
+    let cameraToggleDisableRetained = false;
     let cameraToggleMeasurementBlocked = false;
     let cameraToggleEnableRequested = false;
+    let cameraToggleEnableReleased = false;
     let cameraToggleRestored = false;
     let cameraToggleVisualStateValid = false;
     let cameraToggleDispatchBeforeDisable = -1;
+    let cameraToggleDispatchAfterDisableRelease = -1;
     let cameraToggleDispatchBeforeEnable = -1;
+    let cameraToggleDispatchAfterEnableRelease = -1;
+    let cameraToggleDisableGesture;
+    let cameraToggleEnableGesture;
     // Keep the interaction proof outside the turn-121 continuity oracle and
     // the turn-376 backend parity oracle. That makes the numerical baselines
     // independent of browser presentation cadence while still exercising a
     // real disabled measurement on the same resident application run.
     const cameraToggleDisableTurn = 380;
-    const clickSceneCamera = camera => {
+    const pressSceneCamera = camera => {
       const rect = camera?.getBoundingClientRect();
-      if (!rect || rect.width <= 0 || rect.height <= 0) return false;
+      if (!rect || rect.width <= 0 || rect.height <= 0) return null;
       const clientX = rect.left + rect.width / 2;
       const clientY = rect.top + rect.height / 2;
       const handled = !camera.dispatchEvent(new PointerEvent("pointerdown", {
@@ -418,15 +425,19 @@ harness = r'''<script>
         clientX,
         clientY,
       }));
+      return handled ? {clientX, clientY} : null;
+    };
+    const releaseSceneCamera = gesture => {
+      if (!gesture) return false;
       window.dispatchEvent(new PointerEvent("pointerup", {
         bubbles: true,
         cancelable: true,
         button: 0,
         buttons: 0,
-        clientX,
-        clientY,
+        clientX: gesture.clientX,
+        clientY: gesture.clientY,
       }));
-      return handled;
+      return true;
     };
     window.requestAnimationFrame = (callback) => originalSetTimeout(() => {
       if (root.dataset.mechDone === "true" || root.dataset.mechTimedOut === "true") return;
@@ -627,7 +638,8 @@ harness = r'''<script>
           Number.isFinite(filterVisibility) && filterVisibility > 0
         ) {
           cameraToggleDispatchBeforeDisable = logicalComputeTurn;
-          cameraToggleDisableRequested = clickSceneCamera(orderedCameras[0]);
+          cameraToggleDisableGesture = pressSceneCamera(orderedCameras[0]);
+          cameraToggleDisableRequested = Boolean(cameraToggleDisableGesture);
         }
         if (
           cameraToggleDisableRequested && !cameraToggleDisabled &&
@@ -646,17 +658,48 @@ harness = r'''<script>
           cameraToggleDisabled = cameraToggleVisualStateValid;
         }
         if (
-          cameraToggleDisabled && !cameraToggleMeasurementBlocked &&
+          cameraToggleDisabled && !cameraToggleDisableReleased
+        ) {
+          cameraToggleDisableReleased = releaseSceneCamera(cameraToggleDisableGesture);
+          cameraToggleDispatchAfterDisableRelease = logicalComputeTurn;
+        }
+        const pointerPressed = renderedDocumentNumbers("scene-pointer-pressed");
+        const pointerPulse = renderedDocumentNumbers("scene-pointer-pulse");
+        if (
+          cameraToggleDisableReleased && !cameraToggleDisableRetained &&
+          cameraToggleStateReadable && enabledMask[0] === 0 &&
+          enabledMask.slice(1).every(value => value === 1) &&
+          pointerPressed.length === 1 && pointerPressed[0] === 0 &&
+          pointerPulse.length === 1 && pointerPulse[0] === 1 &&
+          logicalComputeTurn > cameraToggleDispatchAfterDisableRelease
+        ) {
+          cameraToggleDisableRetained = true;
+        }
+        if (
+          cameraToggleDisableRetained && !cameraToggleMeasurementBlocked &&
           logicalComputeTurn > cameraToggleDispatchBeforeDisable && filterVisibility === 0
         ) {
           cameraToggleMeasurementBlocked = true;
           cameraToggleDispatchBeforeEnable = logicalComputeTurn;
-          cameraToggleEnableRequested = clickSceneCamera(orderedCameras[0]);
+          cameraToggleEnableGesture = pressSceneCamera(orderedCameras[0]);
+          cameraToggleEnableRequested = Boolean(cameraToggleEnableGesture);
         }
         if (
-          cameraToggleEnableRequested && cameraToggleStateReadable &&
+          cameraToggleEnableRequested && !cameraToggleEnableReleased &&
+          cameraToggleStateReadable &&
           enabledMask.every(value => value === 1) &&
           logicalComputeTurn > cameraToggleDispatchBeforeEnable &&
+          Number.isFinite(filterVisibility) && filterVisibility > 0
+        ) {
+          cameraToggleEnableReleased = releaseSceneCamera(cameraToggleEnableGesture);
+          cameraToggleDispatchAfterEnableRelease = logicalComputeTurn;
+        }
+        if (
+          cameraToggleEnableReleased && cameraToggleStateReadable &&
+          enabledMask.every(value => value === 1) &&
+          pointerPressed.length === 1 && pointerPressed[0] === 0 &&
+          pointerPulse.length === 1 && pointerPulse[0] === 2 &&
+          logicalComputeTurn > cameraToggleDispatchAfterEnableRelease &&
           Number.isFinite(filterVisibility) && filterVisibility > 0
         ) {
           const activeOpacity = Number(orderedCameras[0]?.getAttribute("opacity"));
@@ -870,6 +913,10 @@ harness = r'''<script>
       root.dataset.mechObservedCameraToggleDisableRequested =
         String(cameraToggleDisableRequested);
       root.dataset.mechObservedCameraToggleDisabled = String(cameraToggleDisabled);
+      root.dataset.mechObservedCameraToggleDisableReleased =
+        String(cameraToggleDisableReleased);
+      root.dataset.mechObservedCameraToggleDisableRetained =
+        String(cameraToggleDisableRetained);
       root.dataset.mechObservedCameraToggleMeasurementBlocked =
         String(cameraToggleMeasurementBlocked);
       root.dataset.mechObservedCameraToggleEnableRequested =
@@ -919,8 +966,9 @@ harness = r'''<script>
         cameraGeometryStable && cameraRangeOracleValid && predictionOnlyValid &&
         predictionOnlyComparisons > 0 &&
         cameraToggleDisableRequested && cameraToggleDisabled &&
+        cameraToggleDisableReleased && cameraToggleDisableRetained &&
         cameraToggleMeasurementBlocked && cameraToggleEnableRequested &&
-        cameraToggleRestored && cameraToggleVisualStateValid &&
+        cameraToggleEnableReleased && cameraToggleRestored && cameraToggleVisualStateValid &&
         cameraToggleDispatchBeforeDisable === cameraToggleDisableTurn &&
         Number(document.querySelector(".mech-root")?.dataset.mechScenePointerSubmissions) === 4 &&
         computeParitySample !== undefined &&
@@ -974,6 +1022,8 @@ harness = r'''<script>
         root.dataset.mechMaxVisibleCameras = String(maxVisibleCameras);
         root.dataset.mechCameraGeometryStable = String(cameraGeometryStable);
         root.dataset.mechCameraToggleDisabled = String(cameraToggleDisabled);
+        root.dataset.mechCameraToggleDisableRetained =
+          String(cameraToggleDisableRetained);
         root.dataset.mechCameraToggleMeasurementBlocked =
           String(cameraToggleMeasurementBlocked);
         root.dataset.mechCameraToggleRestored = String(cameraToggleRestored);
@@ -1319,6 +1369,7 @@ if [[ "$chrome_status" -ne 0 && "$chrome_status" -ne 124 ]] \
   || ! grep -q 'data-mech-max-visible-cameras="1"' "$dom_file" \
   || ! grep -q 'data-mech-camera-geometry-stable="true"' "$dom_file" \
   || ! grep -q 'data-mech-camera-toggle-disabled="true"' "$dom_file" \
+  || ! grep -q 'data-mech-camera-toggle-disable-retained="true"' "$dom_file" \
   || ! grep -q 'data-mech-camera-toggle-measurement-blocked="true"' "$dom_file" \
   || ! grep -q 'data-mech-camera-toggle-restored="true"' "$dom_file" \
   || ! grep -q 'data-mech-camera-toggle-pointer-submissions="4"' "$dom_file" \
