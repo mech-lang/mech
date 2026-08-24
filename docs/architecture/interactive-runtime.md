@@ -136,8 +136,7 @@ readback, and disposal proofs.
 - Sample selection names the sampled instance explicitly.
 - Physical-plan derivation occurs in Rust and crosses one wire encoder.
 - Core browser code queries only the canonical `data-mech-*` component schema.
-- Every browser-test source delegates browser process and CDP ownership to the
-  canonical harness, independent of its filename.
+- Every browser-test source delegates browser process and CDP ownership to the canonical harness, independent of its filename.
 - Necessary lint allowances are local, named, and explained.
 
 These rules are checked by the inexpensive interactive-architecture contract in

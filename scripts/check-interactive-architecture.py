@@ -141,13 +141,24 @@ def owns_browser_process(source: str) -> bool:
     """Return whether a scenario launches a browser outside the harness."""
     source = source.lower()
     executable = (r"google-chrome|chromium(?:-browser)?|microsoft-edge(?:-stable)?|"
-                  r"msedge(?:\.exe)?|chrome(?:\.exe)?|chrome_bin|edge_bin")
-    launcher = (r"subprocess\.(?:popen|run|call|check_call|check_output)|"
+                  r"msedge(?:\.exe)?|chrome(?:\.exe)?")
+    assignments = re.findall(r"(?m)^\s*([a-z_]\w*)\s*=\s*([^\n]+)", source)
+    browser_names = {
+        name for name, value in assignments
+        if re.search(executable, value) or re.search(r"browser|chrome|chromium|edge", name)
+    }
+    launcher = (r"(?:subprocess\.(?:popen|run|call|check_call|check_output)|\bpopen|"
                 r"asyncio\.create_subprocess_exec|os\.(?:system|spawn\w*)|"
-                r"child_process|deno\.command|bun\.spawn")
-    shell = rf"(?m)^\s*(?:env\s+[^\n]*\s+)?(?:\"?\$\{{?(?:chrome_bin|edge_bin)|{executable})\b"
-    return bool(re.search(executable, source) and
-                (re.search(launcher, source) or re.search(shell, source)))
+                r"child_process(?:\.\w+)?|deno\.command|bun\.spawn)\s*\("
+                r"(?P<argv>.{0,1000}?)\)")
+    for match in re.finditer(launcher, source, re.DOTALL):
+        argv = match.group("argv")
+        if re.search(executable, argv) or any(re.search(rf"\b{name}\b", argv)
+                                              for name in browser_names):
+            return True
+    names = "|".join(map(re.escape, browser_names)) or r"(?!)"
+    shell = rf"(?m)(?<!\\\n)^\s*(?:env\s+[^\n]*\s+)?(?:\"?\$\{{?(?:{names})\}}?\"?|{executable})(?=\s)"
+    return re.search(shell, source) is not None
 
 
 for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
@@ -165,14 +176,8 @@ for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
             fail(f"scenario-specific CDP transport found in {path.relative_to(ROOT)}")
         if "--remote-debugging-port" in lower_source or "--dump-dom" in lower_source:
             fail(f"scenario-specific browser process ownership found in {relative}")
-        if owns_browser_process(source) and (
-            "tests.browser.harness" not in source
-            or (
-                "ChromeSession" not in source
-                and "-m tests.browser.harness" not in source
-            )
-        ):
-            fail(f"browser scenario does not use the canonical ChromeSession: {relative}")
+        if owns_browser_process(source):
+            fail(f"browser scenario directly owns a process outside ChromeSession: {relative}")
 
 architecture = text("docs/architecture/interactive-runtime.md")
 if len(architecture.splitlines()) > 250:
