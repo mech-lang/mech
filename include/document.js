@@ -4047,16 +4047,21 @@ class DocumentComputeBridge {
     if (!adapter) {
       throw new Error("the document selected WebGPU but no compatible adapter is available");
     }
-    document.documentElement.dataset.mechComputeDeviceStatus = "requesting";
+    const publishDeviceStatus = status => {
+      if (ownsGeneration()) {
+        document.documentElement.dataset.mechComputeDeviceStatus = status;
+      }
+    };
+    publishDeviceStatus("requesting");
     let resource;
     try {
       resource = await globalThis.MechBrowserCompute.Device.create(manifest, adapter, []);
     } catch (error) {
-      document.documentElement.dataset.mechComputeDeviceStatus = "failed";
+      publishDeviceStatus("failed");
       throw error;
     }
     requireCurrent(resource);
-    document.documentElement.dataset.mechComputeDeviceStatus = "ready";
+    publishDeviceStatus("ready");
     return new DocumentComputeBridge(controller, manifest, backend, resource, { generation });
   }
 
