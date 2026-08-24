@@ -129,6 +129,24 @@ fn formatter_renders_context_qualified_var_with_prefix_context() {
 }
 
 #[test]
+fn formatter_keeps_a_context_reference_in_one_colored_span() {
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let var = Var {
+        name: ident("line"),
+        context: Some(ident("out")),
+        kind: None,
+    };
+
+    let html = formatter.var(&var);
+    assert!(
+        html.contains("class=\"mech-var-name mech-context-reference mech-clickable\""),
+        "{html}",
+    );
+    assert!(html.contains(">@out/line</span>"), "{html}");
+}
+
+#[test]
 fn formatter_renders_context_qualified_assignment_target_with_prefix_context() {
     let mut formatter = Formatter::new();
     let assign = VariableAssign {
@@ -321,6 +339,29 @@ fn formatter_exposes_every_context_declaration_color_role() {
     }
     assert!(html.contains(">clock/clock</span>"), "{html}");
     assert!(html.contains(">second</span>"), "{html}");
+}
+
+#[test]
+fn formatter_marks_inline_grammar_sequence_punctuation() {
+    let grammar = Grammar {
+        rules: vec![Rule {
+            name: GrammarIdentifier {
+                name: token(TokenKind::Identifier, "pair"),
+            },
+            expr: GrammarExpression::Sequence(vec![
+                GrammarExpression::Terminal(token(TokenKind::Text, "left")),
+                GrammarExpression::Terminal(token(TokenKind::Text, "right")),
+            ]),
+        }],
+    };
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.grammar(&grammar);
+
+    assert!(
+        html.contains("<span class=\"mech-grammar-sequence-op\">,</span>"),
+        "{html}",
+    );
 }
 
 fn plain_paragraph(text: &str) -> Paragraph {

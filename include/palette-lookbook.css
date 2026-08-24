@@ -59,7 +59,7 @@ pre,
   color: var(--mech-text-secondary);
   background: var(--mech-output-bg);
   border-bottom: 1px solid var(--mech-border);
-  box-shadow: 0 3px 7px rgb(0 0 0 / 42%);
+  box-shadow: var(--mech-shadow-header);
 }
 
 .wordmark {
@@ -259,7 +259,7 @@ pre,
   background: var(--mech-code-bg);
   border: 1px solid var(--mech-border);
   border-radius: 10px;
-  box-shadow: var(--mech-shadow-small);
+  box-shadow: var(--mech-shadow-content-block);
 }
 
 .specimen-bar,
@@ -311,8 +311,8 @@ pre,
 
 /* Syntax roles */
 
-.syntax-op,
-.syntax-bracket { color: var(--mech-syntax-operator); }
+.syntax-op { color: var(--mech-syntax-operator); }
+.syntax-bracket { color: var(--mech-syntax-bracket); }
 .syntax-tuple-structure { color: var(--mech-syntax-tuple-structure); }
 .syntax-function {
   color: var(--mech-syntax-function);
@@ -449,7 +449,7 @@ pre,
   background: var(--mech-panel);
   border: 1px solid var(--mech-border);
   border-radius: 10px;
-  box-shadow: var(--mech-shadow-small);
+  box-shadow: var(--mech-shadow-content-block);
   cursor: copy;
   font: inherit;
   transition: border-color 120ms ease, box-shadow 120ms ease;
@@ -457,7 +457,7 @@ pre,
 
 .swatch:hover {
   border-color: var(--mech-brand-highlight);
-  box-shadow: var(--mech-shadow-medium);
+  box-shadow: var(--mech-shadow-popover);
 }
 
 .swatch-color {
@@ -495,6 +495,28 @@ pre,
   margin-top: 7px;
   color: var(--mech-brand-highlight);
   font: 9px "Fira Code", "Mech Mono", monospace;
+}
+
+.accent-strip {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(28px, 1fr));
+  gap: 5px;
+  padding: 8px;
+  background: var(--mech-output-bg);
+  border: 1px solid var(--mech-border);
+  border-radius: 8px;
+}
+
+.accent-strip span {
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  color: var(--mech-output-bg);
+  background: var(--accent);
+  border-radius: 4px;
+  font: 700 8px "Fira Code", "Mech Mono", monospace;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
 }
 
 .decision-grid {
@@ -576,7 +598,7 @@ pre,
   background: var(--mech-panel-raised);
   border: 1px solid var(--mech-border);
   border-radius: 7px;
-  box-shadow: var(--mech-shadow-large);
+  box-shadow: var(--mech-shadow-modal);
 }
 
 .shadow-card .token {
@@ -733,6 +755,11 @@ pre,
   justify-items: start;
 }
 
+.prose-link-demo {
+  margin: 0;
+  color: var(--mech-text-reading);
+}
+
 .text-link,
 .arrow-link {
   color: var(--mech-link);
@@ -744,7 +771,99 @@ pre,
 
 .text-link:hover,
 .arrow-link:hover {
-  color: var(--mech-brand-highlight);
+  color: var(--mech-link-hover);
+}
+
+.inline-code-link {
+  color: var(--mech-link);
+  text-decoration: none;
+}
+
+.inline-code-link code {
+  padding: 0 6px;
+  color: inherit;
+  background: var(--mech-code-bg);
+  border: 1px dashed currentColor;
+  border-radius: 3px;
+  box-shadow: var(--mech-shadow-inline-code);
+}
+
+.inline-code-link:hover {
+  color: var(--mech-link-hover);
+}
+
+.reference-demo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px;
+  align-items: baseline;
+  font-family: "Fira Code", "Mech Mono", monospace;
+  font-size: 11px;
+}
+
+.reference-demo a {
+  color: var(--mech-link-hover);
+  text-decoration: none;
+}
+
+.reference-demo a:hover {
+  color: var(--mech-reference-hover);
+  text-decoration: underline;
+}
+
+.reference-demo .footnote-demo {
+  font-size: 0.75em;
+  font-weight: 700;
+  vertical-align: super;
+}
+
+.toc-specimen {
+  display: grid;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.toc-specimen a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 9px;
+  padding-left: 11px;
+  color: var(--mech-toc-text);
+  font: 11px/1.45 "Fira Code", "Mech Mono", monospace;
+  text-decoration: none;
+}
+
+.toc-specimen a:hover,
+.toc-specimen a:focus-visible {
+  color: var(--mech-toc-accent-soft);
+}
+
+.toc-specimen a.active,
+.toc-specimen a.active-path {
+  color: var(--mech-toc-accent);
+  font-weight: 650;
+}
+
+.toc-specimen > a.active::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  content: "";
+  background: var(--mech-toc-accent-soft);
+}
+
+.toc-specimen a span {
+  color: inherit;
+  opacity: 0.72;
+}
+
+.toc-branch {
+  display: grid;
+  gap: 7px;
+  margin-left: 11px;
+  padding-left: 11px;
+  border-left: 1px dotted var(--mech-toc-accent-soft);
 }
 
 .arrow-link {
@@ -816,7 +935,7 @@ pre,
   background: var(--mech-code-bg);
   border: 1px solid var(--mech-border);
   border-radius: 3px;
-  box-shadow: 0 0 2px rgb(0 0 0 / 70%);
+  box-shadow: var(--mech-shadow-inline-code);
   font-size: 0.9em;
   white-space: nowrap;
 }
@@ -885,7 +1004,7 @@ pre,
   background: var(--mech-code-bg);
   border: 1px solid var(--mech-border);
   border-radius: 10px;
-  box-shadow: var(--mech-shadow-small);
+  box-shadow: var(--mech-shadow-content-block);
 }
 
 .code-window-header > span:first-child {
@@ -1007,7 +1126,7 @@ pre,
   border: 1px solid var(--mech-border);
   border-left: 4px solid var(--mech-error);
   border-radius: 0 7px 7px 0;
-  box-shadow: var(--mech-shadow-small);
+  box-shadow: var(--mech-shadow-content-block);
 }
 
 .runtime-error-title {
@@ -1059,43 +1178,23 @@ pre,
   gap: 12px;
 }
 
-.callout {
-  padding: 18px 21px;
-  background: var(--mech-panel-raised);
-  border: 1px solid var(--mech-border);
-  border-left: 4px solid var(--callout-color);
-  border-radius: 0 7px 7px 0;
-}
-
-.callout-kicker {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin: 0 0 7px;
-  color: var(--callout-color);
-  font: 700 10px "Fira Code", "Mech Mono", monospace;
-}
-
-.callout-kicker::before {
-  width: 7px;
-  height: 7px;
-  content: "";
-  background: currentColor;
-  transform: rotate(45deg);
-}
-
-.callout p {
+.callout-grid[data-mechdown] > :is(
+  .mech-info-block,
+  .mech-warning-block,
+  .mech-success-block,
+  .mech-error-block,
+  .mech-idea-block,
+  .mech-question-block
+) {
   margin: 0;
-  color: var(--mech-text-reading);
-  font-size: 14px;
 }
 
 .table-shell {
   overflow-x: auto;
-  background: var(--mech-panel);
+  background: var(--mech-table-row-even);
   border: 1px solid var(--mech-border);
   border-radius: 10px;
-  box-shadow: var(--mech-shadow-small);
+  box-shadow: var(--mech-shadow-table);
 }
 
 .data-table {
@@ -1112,8 +1211,8 @@ pre,
 }
 
 .data-table th {
-  color: var(--mech-brand-highlight);
-  background: var(--mech-output-bg);
+  color: var(--mech-text-table-heading);
+  background: var(--mech-table-row-odd);
   font: 600 9px "Fira Code", "Mech Mono", monospace;
 }
 
@@ -1122,12 +1221,16 @@ pre,
   font-size: 13px;
 }
 
+.data-table tbody tr:nth-child(odd) {
+  background: var(--mech-table-row-odd);
+}
+
 .data-table tbody tr:nth-child(even) {
-  background: var(--mech-panel-raised);
+  background: var(--mech-table-row-even);
 }
 
 .data-table tbody tr:hover {
-  background: var(--mech-code-bg);
+  background: var(--mech-table-row-hover);
 }
 
 .data-table tbody tr:last-child td {
@@ -1183,7 +1286,7 @@ pre,
   background: var(--mech-brand);
   border: 1px solid var(--mech-brand-highlight);
   border-radius: 3px;
-  box-shadow: var(--mech-shadow-medium);
+  box-shadow: var(--mech-shadow-popover);
   font: 700 10px "Fira Code", "Mech Mono", monospace;
   opacity: 0;
   pointer-events: none;
@@ -1241,6 +1344,10 @@ pre,
   .shadow-scale {
     grid-template-columns: 1fr;
   }
+
+  .accent-strip {
+    grid-template-columns: repeat(6, minmax(28px, 1fr));
+  }
 }
 
 @media (max-width: 560px) {
@@ -1285,6 +1392,10 @@ pre,
 
   .swatch-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .accent-strip {
+    grid-template-columns: repeat(4, minmax(28px, 1fr));
   }
 
   .list-pair {

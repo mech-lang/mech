@@ -33,11 +33,13 @@
   --mech-source-machine-flow: var(--mech-syntax-machine-flow, #8e90bd);
   --mech-source-invariant: var(--mech-syntax-invariant, #ffaa80);
   --mech-source-namespace: var(--mech-syntax-namespace, #afb4d4);
-  --mech-source-comment: var(--mech-syntax-comment, #827f6b);
+  --mech-source-comment: var(--mech-syntax-comment, #939a9e);
+  --mech-source-comment-structure: var(--mech-syntax-comment-structure, #5c6467);
   --mech-source-scrollbar: var(--mech-scrollbar, rgb(128 128 128 / 70%));
   --mech-source-scrollbar-hover: var(--mech-scrollbar-hover, rgb(160 160 160 / 85%));
-  --mech-source-shadow-small: var(--mech-shadow-small, 0 2px 4px rgb(0 0 0 / 44%));
-  --mech-source-shadow-medium: var(--mech-shadow-medium, 0 10px 22px rgb(0 0 0 / 58%));
+  --mech-source-shadow-inline: var(--mech-shadow-inline-code, 0 0 2px rgb(0 0 0 / 70%));
+  --mech-source-shadow-block: var(--mech-shadow-content-block, 5px 5px 5px rgb(0 0 0 / 70%));
+  --mech-source-shadow-table: var(--mech-shadow-table, 0 1px 4px rgb(0 0 0 / 50%));
 
   /* Compatibility aliases for existing embedders and downstream themes. */
   --bracket-color: var(--mech-source-bracket);
@@ -50,17 +52,17 @@
   --contrast-color-high: var(--mech-source-variable);
   --contrast-color-mid: var(--mech-source-operator);
   --contrast-color-low: var(--mech-source-tuple-structure);
-  --main-color-high: var(--mech-link, #f7ce6e);
-  --main-color-mid: var(--mech-brand-highlight, #f9de9f);
-  --main-color-low: var(--mech-brand, #f4bd3e);
+  --main-color-high: var(--mech-link-hover, hsl(42 89% 80%));
+  --main-color-mid: var(--mech-link, hsl(42 89% 70%));
+  --main-color-low: var(--mech-brand-deep, hsl(42 89% 60%));
   --atom-color-high: var(--mech-source-atom);
   --atom-color-mid: var(--mech-source-atom);
   --atom-color-low: var(--mech-source-atom-structure);
   --out-bracket-color: var(--mech-source-variable);
   --sidebar-width: 300px;
-  --text-color-light: var(--mech-text-reading, #fff6e5);
-  --text-color: var(--mech-text-primary, #f2ead9);
-  --text-color-dark: var(--mech-text-muted, #827f6b);
+  --text-color-light: var(--mech-text-reading, hsl(40 100% 95%));
+  --text-color: var(--mech-text-code, hsl(41 49% 90%));
+  --text-color-dark: var(--mech-text-code-dark, hsl(41 49% 25%));
   --code-border-color: var(--mech-border, #4d5257);
   --inline-code-border-color: var(--mech-border, #4d5257);
   --code-background-color: var(--mech-code-bg, #090d11);
@@ -70,18 +72,18 @@
   --invariant-name-color: var(--mech-source-invariant);
   --kind-annotation-color: var(--mech-source-kind);
   --kind-annotation-color-dark: var(--mech-source-kind-structure);
-  --body-background-color: var(--mech-canvas, #0d1117);
+  --body-background-color: var(--mech-canvas, hsl(206 24% 6%));
   --abstract-background-color: var(--mech-panel, #171c26);
-  --mechdown-table-odd-row-background-color: var(--mech-code-bg, #090d11);
-  --mechdown-table-even-row-background-color: var(--mech-panel, #171c26);
-  --mechdown-table-row-hover-background-color: var(--mech-panel-raised, #1f2533);
-  --h2-underline-color: var(--mech-border, #4d5257);
-  --toc-heading-number-color: var(--mech-text-secondary, #bebcaa);
-  --toc-accent: var(--mech-source-kind);
-  --toc-accent-soft: var(--mech-source-kind-structure);
-  --toc-text-secondary: var(--mech-text-secondary, #bebcaa);
-  --toc-border: var(--mech-source-kind-structure);
-  --title-underline-color: var(--mech-link, #f7ce6e);
+  --mechdown-table-odd-row-background-color: var(--mech-table-row-odd, hsl(222 25% 9%));
+  --mechdown-table-even-row-background-color: var(--mech-table-row-even, #171c26);
+  --mechdown-table-row-hover-background-color: var(--mech-table-row-hover, hsl(222 25% 17%));
+  --h2-underline-color: var(--mech-heading-rule, #343b46);
+  --toc-heading-number-color: var(--mech-toc-text, hsl(308 17% 73%));
+  --toc-accent: var(--mech-toc-accent, hsl(308 42% 69%));
+  --toc-accent-soft: var(--mech-toc-accent-soft, hsl(308 42% 59%));
+  --toc-text-secondary: var(--mech-toc-text, hsl(308 17% 73%));
+  --toc-border: var(--mech-toc-border, hsl(308 17% 73%));
+  --title-underline-color: var(--mech-link, hsl(42 89% 70%));
   --callout-background-color: var(--mech-panel-raised, #1f2533);
   --warning-color: var(--mech-warning, #ffaa80);
   --error-color: var(--mech-error, #ff8095);
@@ -93,7 +95,7 @@
   --pattern-color: var(--mech-source-function-structure);
   --pattern-paren-color: var(--mech-source-function-flow);
   --pattern-parent-color: var(--pattern-paren-color);
-  --logo-color: var(--mech-brand, #f4bd3e);
+  --logo-color: var(--mech-logo, rgb(246 192 78));
 
   color: var(--text-color);
   font-family: 'FiraCodeRegular', 'SFMono-Regular', Menlo, Consolas, monospace;
@@ -305,7 +307,7 @@
     border: 1px solid var(--code-border-color);
     margin-bottom: 20px;
     overflow-x: auto;
-    box-shadow: var(--mech-source-shadow-small);
+    box-shadow: var(--mech-source-shadow-block);
 }
 
 :where([data-mech-source]).mech-code-block::-webkit-scrollbar,
@@ -348,7 +350,7 @@
     border: 1px solid var(--code-border-color);
     margin-bottom: 20px;
     overflow-x: auto;
-    box-shadow: var(--mech-source-shadow-small);
+    box-shadow: var(--mech-source-shadow-block);
 }
 
 :where([data-mech-source]).mech-grammar::-webkit-scrollbar,
@@ -565,7 +567,7 @@
     padding: 0px 6px 0px 6px;
     margin: 0px 2px 0px 2px;
     border-radius: 3px;
-    box-shadow: var(--mech-source-shadow-small);
+    box-shadow: var(--mech-source-shadow-inline);
 }
 
 :where([data-mech-source]).mech-inline-mech-code-formatted .mech-code-block,
@@ -574,7 +576,7 @@
     border-radius: 5px 5px 5px 5px !important;
     border-bottom: 1px solid var(--code-border-color) !important;
     margin-bottom: 0px;
-    box-shadow: var(--mech-source-shadow-small);
+    box-shadow: var(--mech-source-shadow-inline);
 }
 
 :where([data-mech-source]).mech-fenced-mech-block .mech-code-block,
@@ -602,7 +604,7 @@
     padding: 0px 6px 0px 6px;
     margin: 0px 2px 0px 2px;
     border-radius: 3px;
-    box-shadow: var(--mech-source-shadow-small);
+    box-shadow: var(--mech-source-shadow-inline);
 }
 
 :where([data-mech-source]).mech-formula-operator,
@@ -704,7 +706,7 @@
 
 :where([data-mech-source]).mech-inline-expand,
 :where([data-mech-source]) .mech-inline-expand {
-    color: var(--mech-brand, #f4bd3e);
+    color: var(--mech-brand, #f2b63d);
     cursor: pointer;
     font-weight: 700;
 }
@@ -972,7 +974,7 @@
 
 :where([data-mech-source]).mech-comment,
 :where([data-mech-source]) .mech-comment {
-    color: var(--mech-source-comment);
+    color: var(--mech-source-comment-structure);
     font-style: italic;
     padding-top: 20px;
     display: flex; /* align contents horizontally */
@@ -988,6 +990,7 @@
 
 :where([data-mech-source]).mech-comment-sigil,
 :where([data-mech-source]) .mech-comment-sigil {
+    color: var(--mech-source-comment-structure);
     white-space: nowrap;
 }
 
@@ -1004,7 +1007,7 @@
 
 :where([data-mech-source]).mech-table-header,
 :where([data-mech-source]) .mech-table-header {
-    color: var(--mech-source-atom);
+    color: var(--mech-text-table-heading, #dbc3a5);
     text-align: center;
     font-weight: bold;
     border-bottom: 1px solid var(--code-border-color);
@@ -1048,7 +1051,7 @@
     padding: 0px;
     border-collapse: collapse;
     border: 1px solid var(--code-border-color);
-    box-shadow: var(--mech-source-shadow-small);
+    box-shadow: var(--mech-source-shadow-table);
 }
 
 :where([data-mech-source]).mech-output-value .mech-table:last-child,
@@ -1107,7 +1110,7 @@
 
 :where([data-mech-source]).mech-table a:hover,
 :where([data-mech-source]) .mech-table a:hover {
-    color: var(--mech-link, #f7ce6e);
+    color: var(--mech-reference-hover, #f18181);
 }
 
 :where([data-mech-source]).mech-runtime-error,
@@ -1228,7 +1231,7 @@
 :where([data-mech-source]) .mech-fenced-mech-block {
     border-radius: 10px;
     margin-bottom: 20px;
-    box-shadow: var(--mech-source-shadow-medium);
+    box-shadow: var(--mech-source-shadow-block);
 }
 
 :where([data-mech-source]).mech-code-block.hidden,
@@ -1247,7 +1250,7 @@
     position: absolute;
     top: -10px;
     right: 15px;
-    background: var(--mech-canvas, #0d1117);
+    background: var(--mech-canvas, hsl(206 24% 6%));
     padding: 2px 10px;
     border-radius: 10px;
     font-size: 0.7rem;
@@ -1706,6 +1709,9 @@
   .mech-grammar-repeat0-op,
   .mech-grammar-not-op,
   .mech-grammar-optional-op,
+  .mech-grammar-peek-op,
+  .mech-grammar-range-op,
+  .mech-grammar-sequence-op,
   .mech-pattern-array-op,
   .mech-pattern-separator,
   .mech-state-variable-separator,
@@ -1716,6 +1722,9 @@
 
 :where([data-mech-source], [data-mech-source] *):is(
   .mech-bracket,
+  .mech-brace,
+  .mech-grammar-group,
+  .mech-grammar-list,
   .mech-start-brace,
   .mech-end-brace,
   .mech-set-open,
@@ -1864,7 +1873,8 @@
 /* Match rails and patterns share one sand family. */
 :where([data-mech-source], [data-mech-source] *):is(
   .mech-match-branch,
-  .mech-match-pattern
+  .mech-match-pattern,
+  .mech-match-guard-separator
 ),
 :where([data-mech-source]) .mech-match-pattern > .mech-pattern,
 :where([data-mech-source]) .mech-match-pattern > .mech-pattern :is(
@@ -1883,8 +1893,7 @@
 :where([data-mech-source], [data-mech-source] *):is(
   .mech-match-op,
   .mech-match-arrow,
-  .mech-match-terminal,
-  .mech-match-guard-separator
+  .mech-match-terminal
 ),
 :where([data-mech-source]) .mech-match-pattern > .mech-pattern :is(
   .mech-left-paren,
@@ -2031,11 +2040,15 @@
 }
 
 :where([data-mech-source], [data-mech-source] *).mech-code-block-namespace {
-  background: var(--mech-canvas, #0d1117);
+  background: var(--mech-canvas, hsl(206 24% 6%));
   color: var(--mech-source-namespace);
 }
 
-:where([data-mech-source], [data-mech-source] *):is(.mech-comment, .mech-comment p) {
+:where([data-mech-source], [data-mech-source] *).mech-comment {
+  color: var(--mech-source-comment-structure);
+}
+
+:where([data-mech-source], [data-mech-source] *).mech-comment p {
   color: var(--mech-source-comment);
 }
 
@@ -2048,9 +2061,9 @@
 }
 
 :where([data-mech-source], [data-mech-source] *).mech-inline-expand {
-  color: var(--mech-brand, #f4bd3e);
+  color: var(--mech-brand, #f2b63d);
 }
 
 :where([data-mech-source]) .mech-table a:hover {
-  color: var(--mech-link, #f7ce6e);
+  color: var(--mech-reference-hover, #f18181);
 }

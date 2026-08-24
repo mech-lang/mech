@@ -7,6 +7,158 @@
   --mech-page-style-signal: 1px;
 }
 
+/* Blog chrome keeps the exact editorial color and scrollbar behavior. */
+html[data-mech-shim="blog"],
+html[data-mech-shim="blog"] body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html[data-mech-shim="blog"]::-webkit-scrollbar,
+html[data-mech-shim="blog"] body::-webkit-scrollbar {
+  display: none;
+}
+
+html[data-mech-shim="blog"] .content-shell {
+  scrollbar-color: var(--mech-surface-accent) transparent;
+}
+
+html[data-mech-shim="blog"] .content-shell::-webkit-scrollbar {
+  width: 8px;
+}
+
+html[data-mech-shim="blog"] .content-shell::-webkit-scrollbar-thumb {
+  background: var(--mech-brand);
+  background-clip: content-box;
+  border: 2px solid transparent;
+}
+
+html[data-mech-shim="blog"] .content-shell::-webkit-scrollbar-thumb:hover {
+  background: var(--mech-nav-hover);
+  background-clip: content-box;
+}
+
+/* The summary is part of the hero, not a generic abstract block. */
+html[data-mech-shim="blog"] .hero-summary .mech-summary {
+  border-top: 1px dotted var(--hero-accent);
+  color: var(--hero-text-secondary);
+  line-height: 1.75;
+  margin: 22px 0 0;
+  padding-top: 18px;
+}
+
+html[data-mech-shim="blog"] .hero-summary .mech-summary p {
+  color: inherit;
+  font-weight: 400;
+  line-height: inherit;
+  margin: 0;
+}
+
+/* Preserve the blog's cool, open long-form reading treatment. */
+html[data-mech-shim="blog"]
+  [data-mechdown]
+  :is(.mech-paragraph, .mechdown-paragraph):not(
+    [data-mech-source] *,
+    :where(
+      .mech-summary,
+      .mech-abstract,
+      .mech-block-quote,
+      .mech-info-block,
+      .mech-question-block,
+      .mech-success-block,
+      .mech-warning-block,
+      .mech-error-block,
+      .mech-idea-block,
+      .mech-figure-caption,
+      .mech-footnote,
+      .mech-citation,
+      .mechdown-table,
+      .mech-prompt
+    ) *
+  ) {
+  color: var(--mech-text-body);
+  font-size: 1.06rem;
+  line-height: 1.85;
+}
+
+html[data-mech-shim="blog"] .article-intro li p {
+  margin: 0 0 5px;
+}
+
+/* The journal keeps the original fixed TOC/content rhythm on wide pages. */
+html[data-mech-shim="blog"] .article-layout {
+  display: grid;
+  grid-template-columns: var(--toc-width) minmax(0, 1fr);
+}
+
+html[data-mech-shim="blog"]
+  .article-layout:is(.hide-toc, .no-sections, .has-empty-toc) {
+  display: block;
+}
+
+html[data-mech-shim="blog"] .article-layout > .main-content {
+  width: 100%;
+}
+
+html[data-mech-shim="blog"] [data-mechdown] li {
+  padding-left: 3px;
+}
+
+html[data-mech-shim="blog"] [data-mechdown] li p {
+  margin-block: 2px;
+}
+
+html[data-mech-shim="blog"] [data-mechdown] .mech-image,
+html[data-mech-shim="blog"] [data-mechdown] .mech-figure-caption {
+  max-width: 110%;
+  width: 110%;
+}
+
+html[data-mech-shim="blog"] [data-mechdown] .mech-float :is(.mech-image, .mech-figure-caption) {
+  max-width: 100%;
+  width: 100%;
+}
+
+html[data-mech-shim="blog"] [data-mechdown] .mech-figure-caption .mech-paragraph {
+  color: var(--mech-text-reading);
+}
+
+html[data-mech-shim="blog"] .main-content .mech-float {
+  max-width: 100%;
+  width: min(48%, 520px);
+}
+
+html[data-mech-shim="blog"] .main-content .mech-float .mech-image {
+  height: auto;
+  width: 100%;
+}
+
+html[data-mech-shim="blog"] .backmatter-body :is(ol, ul) {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+html[data-mech-shim="blog"] .backmatter-body li + li {
+  margin-top: 8px;
+}
+
+html[data-mech-shim="blog"] body.narrow-content .mech-float,
+html[data-mech-shim="blog"] body.narrow-content .mech-float.left,
+html[data-mech-shim="blog"] body.narrow-content .mech-float.right {
+  clear: both;
+  display: block;
+  float: none !important;
+  margin: 12px 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+html[data-mech-shim="blog"] body.narrow-content .mech-float .mech-image {
+  max-height: min(60vh, 560px);
+  object-fit: contain;
+  width: auto;
+}
+
 .hero-visual {
   min-width: 0;
 }
@@ -99,7 +251,7 @@
 }
 
 [data-mechdown] .mech-block-quote p {
-  font-size: 1.15rem;
+  font-size: 14pt;
   line-height: 1.6;
   margin: 10px 0 0;
   text-indent: 25px;
@@ -136,7 +288,7 @@
   column-gap: 2rem;
 }
 
-@container (max-width: 900px) {
+@container (max-width: 980px) {
   .hero {
     gap: 14px;
     grid-template-columns: 1fr;
@@ -146,8 +298,24 @@
     min-height: 280px;
   }
 
+  .hero h1 {
+    font-size: clamp(34px, 7.5vw, 56px);
+  }
+
   .mech-hero-img figure img {
     aspect-ratio: 5 / 3;
+  }
+}
+
+@media (max-width: 900px) {
+  html[data-mech-shim="blog"] .article-layout {
+    display: block;
+  }
+}
+
+@container (max-width: 900px) {
+  html[data-mech-shim="blog"] .article-layout {
+    display: block;
   }
 }
 

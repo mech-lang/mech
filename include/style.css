@@ -26,14 +26,14 @@
   --nav-accent-active: var(--accent-primary);
   --nav-accent-hover: var(--accent-hover);
 
-  --kicker-accent: var(--mech-syntax-function);
-  --hero-accent: var(--mech-syntax-function);
-  --hero-text-secondary: var(--mech-text-secondary);
-  --hero-text-primary: var(--mech-text-reading);
-  --toc-accent: var(--mech-syntax-kind);
-  --toc-accent-soft: var(--mech-syntax-kind-structure);
-  --toc-text-secondary: var(--mech-text-secondary);
-  --toc-border: var(--mech-syntax-kind-structure);
+  --kicker-accent: var(--mech-hero-accent);
+  --hero-accent: var(--mech-hero-accent);
+  --hero-text-secondary: var(--mech-text-hero-secondary);
+  --hero-text-primary: var(--mech-text-hero-primary);
+  --toc-accent: var(--mech-toc-accent);
+  --toc-accent-soft: var(--mech-toc-accent-soft);
+  --toc-text-secondary: var(--mech-toc-text);
+  --toc-border: var(--mech-toc-border);
   /* ── Resize grip dimensions (non-color layout vars) ── */
   --grip-width:          8px;
   --grip-height:         50px;
@@ -113,7 +113,7 @@ a { color: inherit; text-decoration: none; }
   height: var(--header-height);
   background: var(--mech-code-bg);
   border-bottom: 1px solid var(--border);
-  box-shadow: var(--mech-shadow-medium);
+  box-shadow: var(--mech-shadow-header);
   display: flex;
   align-items: center;
   padding: 0 28px;
@@ -494,7 +494,7 @@ a { color: inherit; text-decoration: none; }
 .mech-toc-toggle:hover,
 .mech-toc-toggle:focus-visible {
   border-color: var(--toc-accent);
-  color: var(--accent-soft);
+  color: var(--toc-accent);
   outline: none;
 }
 
@@ -533,6 +533,12 @@ a { color: inherit; text-decoration: none; }
   display: block;
   padding: 4px 0 4px 10px;   /* add left padding to make room */
   position: relative;
+}
+
+.toc a:hover,
+.toc a:focus-visible {
+  color: var(--toc-accent-soft);
+  outline: none;
 }
 
 .toc a.active {
@@ -704,7 +710,7 @@ a { color: inherit; text-decoration: none; }
 .footer-heading-text {
   display: block;
   flex: 1;
-  border-bottom: 1px solid var(--mech-border);
+  border-bottom: 1px solid var(--mech-footer-heading-rule);
   padding-bottom: 2px;
 }
 
@@ -832,7 +838,7 @@ a { color: inherit; text-decoration: none; }
   width: 55%;
   height: 0;
   margin: 64px auto;
-  border-top: 1px dotted var(--mech-brand);
+  border-top: 1px dotted var(--mech-mika-divider);
 }
 
 .mika-separator::before {
@@ -842,7 +848,7 @@ a { color: inherit; text-decoration: none; }
   top: 0;
   transform: translate(-50%, -50%);
   font-family: SF Mono, SF Mono Regular, Consolas, "Liberation Mono", "Courier New", monospace;
-  color: var(--mech-brand);
+  color: var(--mech-mika-divider);
   background: var(--bg-primary);
   padding: 0 12px;
   font-size: 22px;
@@ -948,6 +954,7 @@ a { color: inherit; text-decoration: none; }
   }
 
   .mika-glyph-art--mini {
+    margin-top: 20px;
     opacity: 1;
     transform: scale(1);
   }
@@ -999,6 +1006,34 @@ a { color: inherit; text-decoration: none; }
   .article-layout.is-toc-open .toc .toc-sub,
   .docs-layout.is-toc-open .toc .toc-sub {
     display: block;
+  }
+}
+
+@container (max-width: 700px) {
+  .footer-main {
+    gap: 18px 20px;
+  }
+}
+
+@container (max-width: 680px) {
+  .footer-release {
+    margin-left: -75px;
+  }
+
+  .mika-glyph {
+    margin-left: 0;
+    padding: 8px 9px;
+  }
+
+  .mika-glyph-art--mini {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+
+  .mika-glyph-art--micro {
+    font-size: 20px;
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -1061,6 +1096,21 @@ a { color: inherit; text-decoration: none; }
     position: absolute;
     right: 0;
     top: 0;
+    z-index: 1;
+  }
+
+  .widget .btn,
+  .widget .social-count {
+    font-size: 12px;
+    height: 28px;
+  }
+
+  .widget .btn {
+    padding-inline: 9px;
+  }
+
+  .widget .social-count {
+    padding-inline: 8px;
   }
 }
 
@@ -1071,6 +1121,16 @@ a { color: inherit; text-decoration: none; }
 
   .brand img {
     max-width: 90vw;
+  }
+}
+
+@media (max-width: 500px) {
+  .mika-separator {
+    margin: 0 auto;
+  }
+
+  .footer-inner {
+    padding: 0;
   }
 }
 
@@ -1102,8 +1162,16 @@ a { color: inherit; text-decoration: none; }
   }
 
   .footer-links {
+    display: grid;
+    gap: 22px;
     grid-row: 2;
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .footer-group,
+  .footer-group a {
+    min-width: 0;
+    width: 100%;
   }
 
   .release-grid-row {
@@ -1119,5 +1187,13 @@ a { color: inherit; text-decoration: none; }
   .release-grid-value {
     overflow-wrap: anywhere;
     padding-top: 6px;
+  }
+
+  .footer-meta {
+    padding: 18px 0;
+  }
+
+  .footer-pride {
+    flex-wrap: wrap;
   }
 }

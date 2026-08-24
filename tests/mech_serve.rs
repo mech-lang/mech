@@ -479,6 +479,17 @@ fn assert_served_rich_shell(server: &mut RunningServer, selectors: &[&str]) {
     );
 }
 
+fn assert_served_styles(server: &mut RunningServer, contracts: &[&str]) {
+    let root = server.assert_route("/", 200, "text/html");
+    let html = String::from_utf8_lossy(&root.body);
+    for contract in contracts {
+        assert!(
+            html.contains(contract),
+            "served document lost stylesheet contract {contract}"
+        );
+    }
+}
+
 #[test]
 fn mech_serve_process_routes_work_for_sources_directories_and_projects() {
     let fixture = TestDirectory::new("real HTTP");
@@ -666,6 +677,18 @@ fn mech_serve_blog_shim_restores_rich_shell() {
             "console-pane",
         ],
     );
+    assert_served_styles(
+        &mut server,
+        &[
+            ".site-header {",
+            ".toc a {",
+            ".footer {",
+            "html[data-mech-shim=\"blog\"] .article-layout",
+            "html[data-mech-shim=\"blog\"] .hero-summary .mech-summary",
+            ".mech-hyperlink,",
+            "text-decoration-style: dotted",
+        ],
+    );
 }
 
 #[test]
@@ -690,6 +713,16 @@ fn mech_serve_docs_shim_restores_rich_shell() {
             "articleLayout",
             "docs-content",
             "console-pane",
+        ],
+    );
+    assert_served_styles(
+        &mut server,
+        &[
+            ".toc a {",
+            ".main-content {",
+            "html[data-mech-shim=\"docs\"] .docs-layout",
+            ".mech-hyperlink,",
+            "text-decoration-style: dotted",
         ],
     );
 }

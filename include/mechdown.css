@@ -7,27 +7,38 @@
  */
 
 [data-mechdown] {
-  --mechdown-text: var(--mech-text-reading, var(--body-primary, #fff6e5));
-  --mechdown-heading: var(--mech-text-primary, var(--text-primary, #f2ead9));
+  --mechdown-text: var(--mech-text-reading, var(--body-primary, hsl(40 100% 95%)));
+  --mechdown-heading: var(--mech-text-primary, var(--text-primary, #f3f3e6));
   --mechdown-text-secondary: var(--mech-text-secondary, var(--text-secondary, #bebcaa));
   --mechdown-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
-  --mechdown-accent: var(--mech-brand, var(--accent-primary, #f4bd3e));
-  --mechdown-link: var(--mech-link, var(--accent-hover, #f7ce6e));
-  --mechdown-purple: var(--mech-idea, var(--accent-secondary-purple, #c180ff));
+  --mechdown-accent: var(--mech-brand, var(--accent-primary, #f2b63d));
+  --mechdown-link: var(--mech-link, var(--accent-hover, hsl(42 89% 70%)));
+  --mechdown-link-hover: var(--mech-link-hover, hsl(42 89% 80%));
+  --mechdown-reference-hover: var(--mech-reference-hover, #f18181);
+  --mechdown-section-annotation: var(--mech-editorial-purple-soft, var(--accent-secondary-purple-soft, hsl(254 12% 58%)));
   --mechdown-inline-code: var(--mech-syntax-variable, var(--var-name-color, #eddaf1));
   --mechdown-border: var(--mech-border, var(--border, #4d5257));
   --mechdown-surface: var(--mech-panel, var(--bg-secondary, #171c26));
   --mechdown-callout-surface: var(--mech-panel-raised, var(--callout-background-color, #1f2533));
   --mechdown-code-surface: var(--mech-code-bg, var(--code-background-color, #090d11));
-  --mechdown-highlight: var(--mech-selection-bg, rgb(244 189 62 / 24%));
-  --mechdown-highlight-text: var(--mech-selection-text, #fff6e5);
+  --mechdown-highlight: var(--mech-selection-bg, rgb(242 182 61 / 24%));
+  --mechdown-highlight-text: var(--mech-selection-text, hsl(40 100% 95%));
   --mechdown-info: var(--mech-info, #8095ff);
   --mechdown-warning: var(--mech-warning, #ffaa80);
   --mechdown-error: var(--mech-error, #ff8095);
   --mechdown-success: var(--mech-success, #80ff95);
   --mechdown-idea: var(--mech-idea, #c180ff);
   --mechdown-question: var(--mech-question, #80e8ff);
-  --mechdown-shadow: var(--mech-shadow-medium, 0 10px 22px rgb(0 0 0 / 58%));
+  --mechdown-table-heading: var(--mech-text-table-heading, #dbc3a5);
+  --mechdown-table-row-odd: var(--mech-table-row-odd, hsl(222 25% 9%));
+  --mechdown-table-row-even: var(--mech-table-row-even, #171c26);
+  --mechdown-table-row-hover: var(--mech-table-row-hover, hsl(222 25% 17%));
+  --mechdown-caption: var(--mech-text-caption, #eadec2);
+  --mechdown-footnote: var(--mech-text-footnote, #ada594);
+  --mechdown-equation: var(--mech-text-equation, #efd5cd);
+  --mechdown-shadow: var(--mech-shadow-content-block, 5px 5px 5px rgb(0 0 0 / 70%));
+  --mechdown-inline-shadow: var(--mech-shadow-inline-code, 0 0 2px rgb(0 0 0 / 70%));
+  --mechdown-table-shadow: var(--mech-shadow-table, 0 1px 4px rgb(0 0 0 / 50%));
   color: var(--mechdown-text);
   counter-reset: mechdown-section;
   line-height: 1.7;
@@ -35,6 +46,19 @@
 }
 
 [data-mechdown] section {
+  min-width: 0;
+}
+
+/* Preserve the established long-form reading measure inside every document
+ * shim; the surrounding blog/docs shell still owns the outer columns. */
+[data-mechdown] .mech-content {
+  margin-top: 50px;
+  min-width: 0;
+}
+
+[data-mechdown] .mech-program {
+  margin-inline: auto;
+  max-width: 700px;
   min-width: 0;
 }
 
@@ -118,7 +142,7 @@
 }
 
 [data-mechdown] .mech-section-annotations {
-  color: var(--mechdown-purple);
+  color: var(--mechdown-section-annotation);
   font-size: 0.42em;
   font-weight: 650;
   letter-spacing: 0.08em;
@@ -200,6 +224,21 @@
   text-decoration: none;
 }
 
+[data-mechdown] :is(h2, h3, h4, h5, h6) a:is(:hover, :focus-visible) {
+  color: var(--mech-brand-deep, hsl(42 89% 60%));
+  outline: none;
+}
+
+[data-mechdown] .mech-program-subtitle > a {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+[data-mechdown] .mech-program-subtitle:hover > a {
+  color: var(--mech-syntax-tuple-structure, #ab7ab8);
+}
+
 [data-mechdown] .mechdown-paragraph:not([data-mech-source] *),
 [data-mechdown] .mech-paragraph:not([data-mech-source] *) {
   margin: 0 0 1rem;
@@ -208,33 +247,41 @@
 
 [data-mechdown] .mech-strong,
 [data-mechdown] strong {
-  color: var(--mechdown-text);
+  color: inherit;
   font-weight: 750;
 }
 
 [data-mechdown] .mech-em {
-  color: var(--mechdown-text-secondary);
+  color: inherit;
 }
 
 [data-mechdown] .mech-hyperlink,
-[data-mechdown] a:not([class]) {
+[data-mechdown] .mech-section-reference-link {
   color: var(--mechdown-link);
-  text-decoration-color: color-mix(in srgb, var(--mechdown-link) 45%, transparent);
-  text-underline-offset: 0.18em;
+  text-decoration-color: currentColor;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
-[data-mechdown] .mech-hyperlink:hover,
-[data-mechdown] a:not([class]):hover {
-  color: var(--mechdown-accent);
+[data-mechdown] .mech-hyperlink:is(:hover, :focus-visible),
+[data-mechdown] .mech-section-reference-link:is(:hover, :focus-visible) {
+  color: var(--mechdown-link-hover);
+  text-decoration-color: currentColor;
+  outline: none;
 }
 
 [data-mechdown] .mech-inline-code {
   background: var(--mechdown-code-surface);
   border: 1px solid var(--mechdown-border);
-  border-radius: 4px;
+  border-radius: 3px;
+  box-shadow: var(--mechdown-inline-shadow);
   color: var(--mechdown-inline-code);
-  font: 0.92em/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
-  padding: 0.08em 0.32em;
+  font: 1em/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  margin-inline: 2px;
+  padding: 0 6px;
+  white-space: nowrap;
 }
 
 [data-mechdown] a.mech-hyperlink .mech-inline-code {
@@ -242,23 +289,78 @@
   border-style: dashed;
   color: var(--mechdown-link);
   display: inline-block;
+  padding: 0 3px;
   text-decoration: none;
 }
 
-[data-mechdown] a.mech-hyperlink:hover .mech-inline-code {
-  border-color: var(--mechdown-accent);
+[data-mechdown] a.mech-hyperlink:is(:hover, :focus-visible) .mech-inline-code {
+  border-color: var(--mechdown-link-hover);
+  color: var(--mechdown-link-hover);
+}
+
+[data-mechdown] .mech-error {
+  color: var(--mechdown-error);
+}
+
+[data-mechdown] .mech-section-error {
+  background: var(--mechdown-callout-surface);
+  border-left: 4px solid var(--mechdown-error);
+  border-radius: 3px;
+  color: var(--mechdown-text);
+  margin: 20px 0;
+  padding: 16px 20px;
+}
+
+[data-mechdown] .mech-section-error strong {
+  color: var(--mechdown-error);
+}
+
+[data-mechdown] .mech-byline,
+[data-mechdown] .mech-program-byline {
+  color: var(--mechdown-muted);
+  font-size: 1em;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0 0 1em;
+  text-align: center;
+}
+
+[data-mechdown] :is(.mech-byline, .mech-program-byline) .mech-paragraph {
+  color: inherit;
+  margin: 0;
+}
+
+[data-mechdown] .mech-prompt {
+  align-items: baseline;
+  color: var(--mechdown-text);
+  display: flex;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  gap: 0.65em;
+  margin: 1rem 0;
+}
+
+[data-mechdown] .mech-prompt-sigil {
   color: var(--mechdown-accent);
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+[data-mechdown] .mech-prompt > .mech-paragraph {
+  margin: 0;
 }
 
 [data-mechdown] pre.mech-code-block:not([data-mech-source]) {
   background: var(--mechdown-code-surface);
   border: 1px solid var(--mechdown-border);
-  border-radius: 6px;
+  border-radius: 10px;
+  box-shadow: var(--mechdown-shadow);
   color: var(--mechdown-text);
   font: 0.9rem/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   max-width: 100%;
   overflow: auto;
-  padding: 1rem;
+  margin-bottom: 20px;
+  padding: 20px;
   white-space: pre;
 }
 
@@ -287,53 +389,131 @@
 }
 
 [data-mechdown] .mech-list-item-emoji {
+  color: var(--mech-list-emoji, #ee6262);
+  line-height: 0;
   list-style: none;
   position: relative;
 }
 
 [data-mechdown] .mech-list-item-emoji::before {
+  color: var(--mech-list-emoji, #ee6262);
   content: attr(data-bullet);
-  left: -1.5rem;
-  position: absolute;
+  font-size: 1rem;
+  left: auto;
+  position: relative;
+  right: 30px;
+  top: 13px;
 }
 
 [data-mechdown] .mech-check-list {
   list-style: none;
-  padding-left: 0;
+  margin-top: 0.5em;
+  padding-left: 9px;
 }
 
 [data-mechdown] .mech-check-list-item {
-  align-items: baseline;
+  align-items: flex-start;
+  color: var(--mech-text-abstract, #dcd4c9);
   display: flex;
-  gap: 0.65rem;
+  gap: 0.5em;
+  margin: 0;
 }
 
-[data-mechdown] .mech-check-list-item input {
-  accent-color: var(--mechdown-accent);
+[data-mechdown] .mech-check-list-item input[type="checkbox"] {
+  appearance: none;
+  background: var(--mech-control-surface, #171d21);
+  border: 2px solid var(--mech-control-border, #777);
+  border-radius: 3px;
+  cursor: pointer;
+  height: 16px;
+  margin-top: 3px;
+  position: relative;
+  width: 16px;
+}
+
+[data-mechdown] .mech-check-list-item input[type="checkbox"]:checked {
+  border-color: var(--mechdown-link);
+}
+
+[data-mechdown] .mech-check-list-item input[type="checkbox"]:checked::after {
+  color: var(--mechdown-link);
+  content: "✓";
+  font-size: 12px;
+  left: 1px;
+  line-height: 1;
+  position: absolute;
+  top: 0;
 }
 
 [data-mechdown] .mechdown-table {
+  background: var(--mechdown-table-row-even);
+  border: 1px solid var(--mechdown-border);
   border-collapse: collapse;
   display: block;
-  margin: 1.5rem 0;
+  margin: 1.5rem auto 20px;
   max-width: 100%;
   overflow-x: auto;
+  padding: 0;
+  box-shadow: var(--mechdown-table-shadow);
   width: max-content;
 }
 
 [data-mechdown] .mechdown-table th,
 [data-mechdown] .mechdown-table td {
   border-bottom: 1px solid var(--mechdown-border);
-  padding: 0.55rem 0.8rem;
+  padding: 5px;
   text-align: left;
   vertical-align: top;
 }
 
 [data-mechdown] .mechdown-table th {
-  color: var(--mechdown-accent);
+  background: var(--mechdown-table-row-odd);
+  color: var(--mechdown-table-heading);
   font: 650 0.82rem/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+[data-mechdown] .mechdown-table .mech-table-header-cell {
+  padding: 10px;
+  text-align: center;
+}
+
+[data-mechdown] .mechdown-table .mech-table-cell {
+  border-bottom: 1px solid var(--mechdown-border);
+  padding: 20px 10px;
+}
+
+[data-mechdown] .mechdown-table .mech-table-row-odd {
+  background: var(--mechdown-table-row-odd);
+}
+
+[data-mechdown] .mechdown-table .mech-table-row-even {
+  background: var(--mechdown-table-row-even);
+}
+
+[data-mechdown] .mechdown-table tbody tr:nth-child(odd) {
+  background: var(--mechdown-table-row-odd);
+}
+
+[data-mechdown] .mechdown-table tbody tr:nth-child(even) {
+  background: var(--mechdown-table-row-even);
+}
+
+[data-mechdown] .mechdown-table tbody tr:hover {
+  background: var(--mechdown-table-row-hover);
+}
+
+[data-mechdown] .mechdown-table a {
+  color: var(--mechdown-link-hover);
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-underline-offset: 2px;
+}
+
+[data-mechdown] .mechdown-table a:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
 }
 
 [data-mechdown] .mechdown-table .center {
@@ -342,6 +522,15 @@
 
 [data-mechdown] .mechdown-table .right {
   text-align: right;
+}
+
+[data-mechdown] :is(.mech-output-value, .mech-code-block) > .mechdown-table:last-child {
+  margin-bottom: 0;
+}
+
+[data-mechdown] .mechdown-table .mech-table-cell .mech-paragraph {
+  margin: 0;
+  padding: 0;
 }
 
 [data-mechdown] .mech-block-quote {
@@ -375,8 +564,8 @@
   border-radius: 3px;
   color: var(--mechdown-text);
   font-style: normal;
-  margin: 1.25rem 0;
-  padding: 18px 18px 18px 50px;
+  margin: 20px 0;
+  padding: 20px 20px 20px 50px;
   position: relative;
   width: 100%;
 }
@@ -457,6 +646,19 @@
   margin-bottom: 0;
 }
 
+[data-mechdown] :is(
+  .mech-info-block,
+  .mech-question-block,
+  .mech-success-block,
+  .mech-warning-block,
+  .mech-error-block,
+  .mech-idea-block
+) p {
+  font-size: 12pt;
+  line-height: 1.5;
+  margin: 0;
+}
+
 [data-mechdown] .mech-abstract,
 [data-mechdown] .mech-summary {
   color: var(--mechdown-text-secondary);
@@ -469,9 +671,15 @@
   border: 1px solid var(--mechdown-accent);
   border-radius: 8px;
   box-shadow: var(--mechdown-shadow);
-  color: var(--mechdown-text);
+  color: var(--mech-text-abstract, #dcd4c9);
   margin-inline: 2rem;
   padding: 2rem;
+}
+
+[data-mechdown] .mech-abstract p {
+  line-height: 25pt;
+  margin: 0;
+  text-align: justify;
 }
 
 [data-mechdown] .mech-abstract > :last-child {
@@ -480,9 +688,10 @@
 
 [data-mechdown] .mech-thematic-break {
   border: 0;
-  border-top: 1px dotted var(--mechdown-border);
-  margin: 2.5rem auto;
-  width: min(70%, 36rem);
+  border-top: 2px dotted var(--mech-divider, #7e8892);
+  margin: 30px 0;
+  opacity: 0.7;
+  width: 100%;
 }
 
 [data-mechdown] .mech-figure,
@@ -507,14 +716,14 @@
 }
 
 [data-mechdown] .mech-figure-caption {
-  color: var(--mechdown-text-secondary);
+  color: var(--mechdown-caption);
   display: flex;
   flex-direction: row;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-style: italic;
   gap: 0.5em;
   line-height: 1.4;
-  margin-top: 0.65rem;
+  margin-top: 1rem;
   text-align: left;
 }
 
@@ -524,16 +733,25 @@
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
+[data-mechdown] .mech-figure-label {
+  font-size: 1rem;
+  min-width: 60px;
+  text-align: right;
+}
+
 [data-mechdown] .mech-figure-grid {
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-width: 100%;
+  width: 100%;
 }
 
 [data-mechdown] .mech-figure-table-row {
   align-items: end;
   display: grid;
-  gap: 1rem;
+  gap: 10px;
+  width: 100%;
 }
 
 [data-mechdown] .mech-figure-table-cell {
@@ -563,7 +781,7 @@
   font-weight: 700;
   left: 8px;
   position: absolute;
-  text-shadow: var(--mech-shadow-small, 0 2px 4px rgb(0 0 0 / 44%));
+  text-shadow: var(--mech-shadow-label, 1px 1px 2px rgb(0 0 0 / 80%));
   text-transform: lowercase;
   top: 8px;
   z-index: 1;
@@ -603,15 +821,25 @@
   margin: 0;
 }
 
+[data-mechdown] .mech-figure-caption .mech-paragraph {
+  color: var(--mechdown-text);
+}
+
 [data-mechdown] .mech-float .mech-figure-caption {
   display: block;
   line-height: 1.3;
   margin-top: 0.5em;
 }
 
+[data-mechdown] .mech-float .mech-figure-label {
+  display: inline;
+  margin-right: 0.35em;
+  min-width: 0;
+}
+
 [data-mechdown] .mech-reference {
   align-items: baseline;
-  color: var(--mechdown-link);
+  color: var(--mechdown-link-hover);
   font-family: "Fira Code", "SFMono-Regular", Menlo, Consolas, monospace;
 }
 
@@ -620,13 +848,14 @@
   text-decoration: none;
 }
 
-[data-mechdown] .mech-reference a:hover {
-  color: var(--mechdown-accent);
+[data-mechdown] .mech-reference a:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
 }
 
 [data-mechdown] .mech-citation-link-icon {
   background-color: currentColor;
-  color: var(--mechdown-link);
+  color: var(--mech-brand-deep, hsl(42 89% 60%));
   display: inline-block;
   height: 12px;
   mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
@@ -641,8 +870,8 @@
   -webkit-mask-size: contain;
 }
 
-[data-mechdown] .mech-citation-external-link:hover .mech-citation-link-icon {
-  color: var(--mechdown-accent);
+[data-mechdown] .mech-citation-external-link:is(:hover, :focus-visible) .mech-citation-link-icon {
+  color: var(--mechdown-link-hover);
 }
 
 [data-mechdown] .mech-mika-section {
@@ -679,7 +908,7 @@
 }
 
 [data-mechdown] .mech-equation {
-  color: var(--mechdown-text);
+  color: var(--mechdown-equation);
   margin: 1.5rem 0;
   max-width: 100%;
   overflow-x: auto;
@@ -687,7 +916,8 @@
 }
 
 [data-mechdown] .mech-inline-equation {
-  color: var(--mechdown-text);
+  color: var(--mechdown-equation);
+  font-size: 10pt;
 }
 
 [data-mechdown] .mech-diagram {
@@ -713,6 +943,10 @@
 [data-mechdown] .mech-diagram text {
   color: var(--mechdown-text) !important;
   fill: var(--mechdown-text) !important;
+}
+
+[data-mechdown] .mech-diagram .edgeLabel {
+  font-size: 14px !important;
 }
 
 [data-mechdown] .mech-diagram :is(.edgeLabel, .edgeLabel p, .edgeLabel rect, .labelBkg) {
@@ -756,11 +990,34 @@
   margin: 0.6rem 0;
 }
 
+[data-mechdown] .mech-footnote {
+  align-items: flex-start;
+  color: var(--mechdown-footnote);
+  font-size: 0.9em;
+  gap: 0.75em;
+  margin-top: 1em;
+}
+
+[data-mechdown] .mech-citation {
+  color: var(--mech-text-code, hsl(41 49% 90%));
+}
+
 [data-mechdown] .mech-footnote-id,
 [data-mechdown] .mech-citation-id {
-  color: var(--mechdown-purple);
+  color: var(--mechdown-link);
   flex: 0 0 auto;
   font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+[data-mechdown] .mech-footnote-id {
+  font-weight: 700;
+  min-width: 2em;
+  text-align: right;
+}
+
+[data-mechdown] .mech-citation-id {
+  flex-shrink: 0;
+  padding: 3px 10px;
 }
 
 [data-mechdown] .mech-footnote-body,
@@ -768,17 +1025,53 @@
   min-width: 0;
 }
 
+[data-mechdown] .mech-footnote-body .mech-paragraph + .mech-paragraph {
+  margin-top: 10px;
+}
+
+[data-mechdown] .mech-footnote .mech-paragraph {
+  color: var(--mech-text-code, hsl(41 49% 90%));
+  line-height: 1.6;
+  margin: 0;
+}
+
+[data-mechdown] .mech-citation p {
+  margin: 0 0 10px;
+}
+
 [data-mechdown] .mech-footnote-reference {
-  color: var(--mechdown-purple);
-  font-size: 0.75em;
+  color: var(--mechdown-link-hover);
+  cursor: pointer;
+  font-size: 0.7em;
+  font-weight: 700;
+  margin-left: 0.1em;
+  min-width: 2em;
+  text-align: right;
   text-decoration: none;
+  transition: color 0.2s;
   vertical-align: super;
 }
 
+[data-mechdown] .mech-footnote-reference:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
+  text-decoration: underline;
+}
+
 [data-mechdown] .mech-citation-external-link {
-  color: inherit;
+  color: var(--mechdown-link-hover);
   overflow-wrap: anywhere;
-  text-decoration-color: var(--mechdown-border);
+  text-decoration: none;
+}
+
+[data-mechdown] .mech-citation-external-link:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
+  text-decoration: underline;
+}
+
+[data-mechdown] .mech-citation-link-text {
+  word-break: break-all;
 }
 
 [data-mechdown] .mech-error-source {

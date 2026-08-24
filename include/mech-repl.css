@@ -9,23 +9,23 @@
 [data-mech-repl-host],
 [data-mech-repl],
 [data-mech-repl-popup] {
-  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f4bd3e));
-  --mech-repl-accent-soft: var(--mech-syntax-machine-flow, var(--accent-secondary-purple-soft, #8e90bd));
+  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f2b63d));
+  --mech-repl-accent-soft: var(--mech-editorial-purple-soft, var(--accent-secondary-purple-soft, hsl(254 12% 58%)));
   --mech-repl-background: var(--mech-output-bg, var(--console-bg, #020303));
   --mech-repl-surface: var(--mech-panel, var(--bg-secondary, #171c26));
   --mech-repl-surface-raised: var(--mech-panel-raised, var(--bg-elevated, #1f2533));
   --mech-repl-border: var(--mech-border, var(--border-strong, #4d5257));
   --mech-repl-border-soft: var(--mech-border, var(--border, #4d5257));
-  --mech-repl-text: var(--mech-text-primary, var(--console-text, #f2ead9));
+  --mech-repl-text: var(--mech-console-text, var(--console-text, #e6edf3));
   --mech-repl-text-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
   --mech-repl-kind: var(--mech-syntax-kind, var(--kind-annotation-color, #f09fca));
   --mech-repl-error: var(--mech-error, #ff8095);
-  --mech-repl-scrollbar: var(--mech-scrollbar, rgb(128 128 128 / 70%));
-  --mech-repl-scrollbar-hover: var(--mech-scrollbar-hover, rgb(160 160 160 / 85%));
+  --mech-repl-scrollbar: var(--mech-repl-accent-soft);
+  --mech-repl-scrollbar-hover: var(--mech-repl-accent-soft);
   --mech-repl-tab-text: var(--nav-text-primary, var(--mech-repl-text));
-  --mech-repl-tab-text-hover: var(--nav-text-hover, var(--mech-link, #f7ce6e));
+  --mech-repl-tab-text-hover: var(--nav-text-hover, var(--mech-link, hsl(42 89% 70%)));
   --mech-repl-tab-text-active: var(--nav-text-active, var(--mech-repl-text));
-  --mech-repl-tab-accent-hover: var(--nav-accent-hover, var(--mech-link, #f7ce6e));
+  --mech-repl-tab-accent-hover: var(--nav-accent-hover, var(--mech-link, hsl(42 89% 70%)));
   --mech-repl-tab-accent-active: var(--nav-accent-active, var(--mech-repl-accent));
   --mech-repl-header-height: var(--mech-repl-top-offset, 0px);
   --mech-repl-size: var(--mech-repl-initial-size, clamp(320px, 50vw, 620px));
@@ -961,16 +961,16 @@ body.is-resizing[data-mech-resize-axis="row"] [data-mech-console-pane] * {
 }
 
 [data-mech-repl-popup] {
-  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f4bd3e));
+  --mech-repl-accent: var(--mech-brand, var(--accent-primary, #f2b63d));
   --mech-repl-background: var(--mech-output-bg, var(--console-bg, #020303));
   --mech-repl-surface: var(--mech-panel, var(--bg-secondary, #171c26));
   --mech-repl-surface-raised: var(--mech-panel-raised, var(--bg-elevated, #1f2533));
   --mech-repl-border: var(--mech-border, var(--border-strong, #4d5257));
-  --mech-repl-text: var(--mech-text-primary, var(--console-text, #f2ead9));
+  --mech-repl-text: var(--mech-console-text, var(--console-text, #e6edf3));
   background: var(--mech-repl-surface);
   border: 1px solid var(--mech-repl-border);
   border-radius: 8px;
-  box-shadow: var(--mech-shadow-large, 0 24px 52px rgb(0 0 0 / 72%));
+  box-shadow: var(--mech-shadow-focus, 0 24px 52px rgb(0 0 0 / 72%));
   color: var(--mech-repl-text);
   font: 14px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   left: 24px;

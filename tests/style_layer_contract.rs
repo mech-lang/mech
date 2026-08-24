@@ -41,20 +41,49 @@ fn shipped_shims_expose_the_five_independent_style_layers_in_order() {
 #[test]
 fn shipped_shims_keep_distinct_presentation_contracts() {
     let blog = include("blog.html");
+    let header = blog.find("class=\"site-header\"").unwrap();
+    let breadcrumbs = blog.find("class=\"breadcrumbs\"").unwrap();
     let hero = blog.find("class=\"hero\"").unwrap();
     let intro = blog.find("class=\"article-intro\"").unwrap();
     let layout = blog.find("data-mech-toc-mode=\"after-intro\"").unwrap();
     let toc = blog.find("{{TOC}}").unwrap();
-    assert!(hero < intro && intro < layout && layout < toc);
+    let separator = blog.find("class=\"mika-separator\"").unwrap();
+    let backmatter = blog.find("class=\"article-backmatter\"").unwrap();
+    let pagination = blog.find("class=\"post-pagination\"").unwrap();
+    let footer = blog.find("class=\"footer\"").unwrap();
+    assert!(
+        header < breadcrumbs
+            && breadcrumbs < hero
+            && hero < intro
+            && intro < layout
+            && layout < toc
+            && toc < separator
+            && separator < backmatter
+            && backmatter < pagination
+            && pagination < footer
+    );
     for contract in [
         "{{KICKER}}",
         "{{AUTHOR}}",
         "{{DATE}}",
         "{{SUMMARY}}",
         "{{HERO}}",
+        "{{PREVIOUS}}",
+        "{{NEXT}}",
+        "v{{VERSION}}-beta",
+        "class=\"top-nav\"",
+        "href=\"https://mech-lang.org/blog/announcements\">{{KICKER}}</a>",
+        "class=\"hero-heading\"",
+        "class=\"footer-robot\"",
+        "class=\"footer-release\"",
+        "class=\"footer-pride\"",
     ] {
         assert!(blog.contains(contract), "blog shim lost {contract}");
     }
+    assert!(
+        !blog.to_ascii_lowercase().contains("gradient"),
+        "blog shim reintroduced a gradient"
+    );
 
     let docs = include("docs.html");
     let layout = docs.find("data-mech-toc-mode=\"persistent\"").unwrap();
@@ -331,14 +360,45 @@ fn mechdown_and_repl_layers_are_standalone_components() {
 fn canonical_palette_is_a_single_token_layer_without_gradients() {
     let palette = include("palette.css");
     for token in [
-        "--mech-canvas: #0d1117",
-        "--mech-text-reading: #fff6e5",
-        "--mech-link: #f7ce6e",
+        "--mech-canvas: hsl(206 24% 6%)",
+        "--mech-surface-subtle: hsl(207 23% 8%)",
+        "--mech-surface-accent: hsl(205 10% 47%)",
+        "--mech-surface-dark: hsl(206 24% 3%)",
+        "--mech-code-bg: #090d11",
+        "--mech-output-bg: #020303",
+        "--mech-page-border: #35393d",
+        "--mech-border: #4d5257",
+        "--mech-control-surface: #171d21",
+        "--mech-control-border: #777",
+        "--mech-text-reading: hsl(40 100% 95%)",
+        "--mech-text-primary: #f3f3e6",
+        "--mech-text-body: hsl(206 24% 90%)",
+        "--mech-text-code: hsl(41 49% 90%)",
+        "--mech-console-text: #e6edf3",
+        "--mech-text-equation: #efd5cd",
+        "--mech-brand: #f2b63d",
+        "--mech-brand-deep: hsl(42 89% 60%)",
+        "--mech-link: hsl(42 89% 70%)",
+        "--mech-link-hover: hsl(42 89% 80%)",
+        "--mech-brand-highlight: #ffefc9",
+        "--mech-toc-accent: hsl(308 42% 69%)",
+        "--mech-toc-accent-soft: hsl(308 42% 59%)",
+        "--mech-toc-text: hsl(308 17% 73%)",
+        "--mech-status-success: #3fb950",
+        "--mech-status-error: #f85149",
+        "--mech-shadow-inline-code: 0 0 2px",
+        "--mech-shadow-content-block: 5px 5px 5px",
+        "--mech-shadow-table: 0 1px 4px",
+        "--mech-shadow-header: 0 4px 10px",
+        "--mech-shadow-label: 1px 1px 2px",
+        "--mech-shadow-modal: 0 1px 20px",
         "--mech-syntax-function: #bbddc2",
         "--mech-syntax-kind: #f09fca",
         "--mech-syntax-atom: #d7c0a4",
         "--mech-syntax-machine: #d8a5e4",
         "--mech-syntax-context: #acc9d2",
+        "--mech-syntax-comment: #939a9e",
+        "--mech-syntax-comment-structure: #5c6467",
         "--mech-syntax-invariant: var(--mech-warning)",
     ] {
         assert!(palette.contains(token), "palette lost {token}");
@@ -391,6 +451,10 @@ fn established_blog_design_remains_in_the_shared_layers() {
         "content: \"section \" counter(mechdown-section, decimal)",
         "counter(mechdown-subsection, decimal)",
         "padding: 0 10px 30px",
+        ".mech-content {",
+        "margin-top: 50px",
+        ".mech-program {",
+        "max-width: 700px",
     ] {
         assert!(
             mechdown.contains(contract),
@@ -408,6 +472,161 @@ fn established_blog_design_remains_in_the_shared_layers() {
     ] {
         assert!(blog.contains(addition), "blog addition lost {addition}");
     }
+}
+
+#[test]
+fn established_blog_color_and_component_details_are_preserved() {
+    let page = include("style.css");
+    for contract in [
+        "--kicker-accent: var(--mech-hero-accent)",
+        "--hero-text-primary: var(--mech-text-hero-primary)",
+        "--toc-accent: var(--mech-toc-accent)",
+        "--toc-accent-soft: var(--mech-toc-accent-soft)",
+        "--toc-text-secondary: var(--mech-toc-text)",
+        ".toc a:hover,",
+        "color: var(--toc-accent-soft)",
+        ".toc a.active-path",
+        "border-left: 1px dotted var(--toc-accent-soft)",
+        ".post-pagination a:hover",
+        "color:var(--accent-soft)",
+        "text-decoration: underline dotted",
+    ] {
+        assert!(page.contains(contract), "page shell lost {contract}");
+    }
+
+    let blog = include("blog.css");
+    for contract in [
+        ".hero-summary .mech-summary",
+        "border-top: 1px dotted var(--hero-accent)",
+        "color: var(--hero-text-secondary)",
+        "color: var(--mech-text-body)",
+        "font-size: 1.06rem",
+        "line-height: 1.85",
+        "scrollbar-color: var(--mech-surface-accent) transparent",
+        "background: var(--mech-brand)",
+        ".mech-image,",
+        "max-width: 110%",
+        "width: min(48%, 520px)",
+        "body.narrow-content .mech-float",
+        "@container (max-width: 980px)",
+        ".mech-summary,",
+        ".mechdown-table,",
+        ".mech-prompt",
+        "grid-template-columns: var(--toc-width) minmax(0, 1fr)",
+        ".article-layout:is(.hide-toc, .no-sections, .has-empty-toc)",
+        "@media (max-width: 900px)",
+    ] {
+        assert!(blog.contains(contract), "blog treatment lost {contract}");
+    }
+
+    let mechdown = include("mechdown.css");
+    for contract in [
+        ".mech-hyperlink,",
+        ".mech-section-reference-link",
+        "text-decoration-style: dotted",
+        "text-underline-offset: 3px",
+        ".mech-hyperlink:is(:hover, :focus-visible)",
+        ".mech-section-reference-link:is(:hover, :focus-visible)",
+        "a.mech-hyperlink .mech-inline-code",
+        "border-style: dashed",
+        "padding: 0 3px",
+        "box-shadow: var(--mechdown-inline-shadow)",
+        "box-shadow: var(--mechdown-shadow)",
+        "box-shadow: var(--mechdown-table-shadow)",
+        ".mechdown-table tbody tr:nth-child(odd)",
+        ".mechdown-table tbody tr:nth-child(even)",
+        ".mechdown-table tbody tr:hover",
+        ".mechdown-table .mech-table-header-cell",
+        ".mechdown-table .mech-table-cell",
+        ".mechdown-table .mech-table-row-odd",
+        ".mechdown-table .mech-table-row-even",
+        "margin: 1.5rem auto 20px",
+        "padding: 20px 10px",
+        "color: var(--mechdown-reference-hover)",
+        ".mech-check-list-item input[type=\"checkbox\"]:checked::after",
+        ".mech-list-item-emoji::before",
+        "color: var(--mech-list-emoji, #ee6262)",
+        ".mech-thematic-break",
+        "border-top: 2px dotted var(--mech-divider, #7e8892)",
+        ".mech-figure-caption",
+        "color: var(--mechdown-caption)",
+        "font-size: 1rem",
+        "min-width: 60px",
+        "text-shadow: var(--mech-shadow-label, 1px 1px 2px",
+        ".mech-footnote",
+        "color: var(--mechdown-footnote)",
+        ".mech-citation-external-link {",
+        "color: var(--mechdown-link-hover)",
+        ".mech-citation-external-link:is(:hover, :focus-visible)",
+        "color: var(--mechdown-equation)",
+        ".mech-inline-equation",
+        "font-size: 10pt",
+        ".mech-footnote .mech-paragraph",
+        "color: var(--mech-text-code, hsl(41 49% 90%))",
+        ".mech-prompt-sigil",
+        ".mech-byline,",
+        ".mech-error {",
+        ".mech-section-error",
+        ".mech-diagram .edgeLabel",
+        "font-size: 14px !important",
+        ".mech-abstract p",
+        ".mech-strong,",
+        "color: inherit",
+        "text-align: justify",
+    ] {
+        assert!(mechdown.contains(contract), "Mechdown lost {contract}");
+    }
+
+    let source = include("mech-source.css");
+    for contract in [
+        "--main-color-high: var(--mech-link-hover",
+        "--main-color-mid: var(--mech-link",
+        "--mech-source-comment: var(--mech-syntax-comment, #939a9e)",
+        "--mech-source-comment-structure: var(--mech-syntax-comment-structure, #5c6467)",
+        "box-shadow: var(--mech-source-shadow-block)",
+        "box-shadow: var(--mech-source-shadow-inline)",
+        "box-shadow: var(--mech-source-shadow-table)",
+        "color: var(--mech-text-table-heading, #dbc3a5)",
+        "color: var(--mech-reference-hover, #f18181)",
+    ] {
+        assert!(
+            source.contains(contract),
+            "source presentation lost {contract}"
+        );
+    }
+
+    let repl = include("mech-repl.css");
+    assert!(repl.contains("--mech-repl-accent-soft: var(--mech-editorial-purple-soft"));
+    assert!(repl.contains("--mech-repl-scrollbar: var(--mech-repl-accent-soft)"));
+}
+
+#[test]
+fn prose_links_keep_dots_without_recoloring_source_navigation() {
+    let mechdown = include("mechdown.css");
+    for selector in [".mech-hyperlink,", ".mech-section-reference-link {"] {
+        assert!(
+            mechdown.contains(selector),
+            "prose link treatment lost {selector}"
+        );
+    }
+    assert!(mechdown.contains("text-decoration-style: dotted"));
+    assert!(mechdown.contains("text-underline-offset: 3px"));
+    assert!(
+        !mechdown.contains("a:not([class])"),
+        "generic anchors would leak prose dots into code namespaces and grammars"
+    );
+
+    let source = include("mech-source.css");
+    for selector in [
+        ".mech-code-block-namespace a,",
+        ".mech-grammar-definition a,",
+    ] {
+        assert!(
+            source.contains(selector),
+            "source navigation lost {selector}"
+        );
+    }
+    assert!(source.contains("text-decoration: none"));
 }
 
 #[test]
@@ -478,11 +697,17 @@ fn source_palette_follows_construct_roles_and_context_parts() {
         "--mech-source-context: var(--mech-syntax-context, #acc9d2)",
         ".mech-match-guard-separator",
         ".mech-pattern-array-open",
+        ".mech-brace,",
         ".mech-state-variable-separator",
         ".mech-fsm-start-op",
         ".mech-atom-sigil",
         ".mech-context-provider",
         ".mech-context-path",
+        ".mech-grammar-group,",
+        ".mech-grammar-list,",
+        ".mech-grammar-peek-op,",
+        ".mech-grammar-range-op,",
+        ".mech-grammar-sequence-op,",
         ".mech-match-guard",
         ".mech-pattern-array-op",
         ".mech-pattern-separator",
@@ -506,6 +731,7 @@ fn source_palette_follows_construct_roles_and_context_parts() {
         "mech-fsm-start-op",
         "mech-context-provider",
         "mech-context-capability",
+        "mech-grammar-sequence-op",
         "mech-match-guard",
         "mech-pattern-array-op",
         "mech-pattern-separator",
@@ -555,8 +781,26 @@ fn blog_and_docs_do_not_collapse_into_one_presentation() {
 fn palette_lookbook_is_static_and_uses_the_canonical_tokens() {
     let html = include("palette.html");
     assert!(html.contains("href=\"./palette.css\""));
+    assert!(html.contains("href=\"./mechdown.css\""));
     assert!(html.contains("href=\"./palette-lookbook.css\""));
     assert!(html.contains("@clock"));
     assert!(html.contains("match-tuple.mec"));
     assert!(html.contains("bubble-sort.mec"));
+    assert!(html.contains("class=\"toc-specimen\""));
+    assert!(html.contains("class=\"mech-info-block\""));
+    assert!(html.contains("class=\"mech-warning-block\""));
+    assert!(html.contains("--mech-shadow-inline-code"));
+    assert!(html.contains("--mech-shadow-content-block"));
+    for role in [
+        "--mech-shadow-header",
+        "--mech-shadow-label",
+        "--mech-shadow-side",
+        "--mech-image-shadow",
+        "--mech-brand-glow",
+    ] {
+        assert!(html.contains(role), "lookbook lost {role}");
+    }
+    assert!(html.contains("mech-section-reference-link text-link"));
+    assert!(!html.contains("small / ordinary blocks"));
+    assert!(!html.contains("callout-kicker"));
 }

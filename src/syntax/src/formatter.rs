@@ -1959,7 +1959,10 @@ impl Formatter {
                     } else {
                         if self.html {
                             src = if inline {
-                                format!("{}, {}", src, factor_str)
+                                format!(
+                                    "{}<span class=\"mech-grammar-sequence-op\">,</span> {}",
+                                    src, factor_str
+                                )
                             } else {
                                 format!(
                                     "{}<div class=\"mech-grammar-sequence\"><span class=\"mech-grammar-sequence-op\">,</span> {}</div>",
