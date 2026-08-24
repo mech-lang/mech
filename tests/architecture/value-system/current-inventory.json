@@ -34248,7 +34248,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 442,
+      "line": 453,
       "path": "hosts/scene/src/provider.rs",
       "variant": "MatrixF64"
     },
