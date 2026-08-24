@@ -211,6 +211,7 @@ impl RuntimeHostFactory for ComputeHostFactory {
         let live = Arc::new(AtomicBool::new(false));
         let base_uri = format!("compute://{instance_name}/kernel");
         let resume = self.resume_state.as_ref();
+        let replay_on_start = resume.is_some();
         let state = Arc::new(Mutex::new(ComputeHostState {
             backend: backend_id.to_string(),
             program: Arc::clone(&self.program),
@@ -269,13 +270,15 @@ impl RuntimeHostFactory for ComputeHostFactory {
                 instance: instance_name.to_owned(),
                 region: self.region.clone(),
                 program: Arc::clone(&self.program),
-                state,
+                state: Arc::clone(&state),
                 telemetry: Arc::clone(&telemetry),
             })],
             input_drivers: vec![Box::new(ComputeTelemetryDriver {
                 base_uri,
                 ingress: telemetry,
                 live,
+                state,
+                replay_on_start,
                 sample_outputs: self
                     .program
                     .interface()
@@ -1132,6 +1135,8 @@ struct ComputeTelemetryDriver {
     base_uri: String,
     ingress: Arc<Mutex<Option<RuntimeIngress>>>,
     live: Arc<AtomicBool>,
+    state: Arc<Mutex<ComputeHostState>>,
+    replay_on_start: bool,
     sample_outputs: BTreeSet<String>,
 }
 
@@ -1165,7 +1170,7 @@ impl RuntimeHostInputDriver for ComputeTelemetryDriver {
     }
 
     fn start(&mut self) -> MResult<()> {
-        if self
+        let ingress = self
             .ingress
             .lock()
             .map_err(|_| {
@@ -1174,12 +1179,38 @@ impl RuntimeHostInputDriver for ComputeTelemetryDriver {
                     "compute telemetry ingress lock is poisoned",
                 )
             })?
-            .is_none()
-        {
-            return Err(compute_host_error(
-                "ComputeTelemetryDriver",
-                "compute telemetry driver must be attached before start",
-            ));
+            .clone()
+            .ok_or_else(|| {
+                compute_host_error(
+                    "ComputeTelemetryDriver",
+                    "compute telemetry driver must be attached before start",
+                )
+            })?;
+        if self.replay_on_start {
+            let packet = {
+                let state = self.state.lock().map_err(|_| {
+                    compute_host_error(
+                        "ComputeTelemetryDriver",
+                        "compute host state lock is poisoned while starting telemetry",
+                    )
+                })?;
+                state.require_ready("ComputeTelemetryDriver")?;
+                RuntimeHostInput::new(telemetry_updates_from_values(
+                    &self.base_uri,
+                    &state.backend,
+                    *state.turns.borrow(),
+                    *state.dispatch_ms.borrow(),
+                    *state.fault_count.borrow(),
+                    &state.last_fault.borrow(),
+                    &state.sample_requests,
+                    &state.sampled_outputs,
+                )?)?
+            };
+            // A resumed level-valued host may already be ahead of the last
+            // snapshot accepted by the replacement runtime. Publish that state
+            // as an explicit ingress packet instead of forcing the coordinator
+            // to synthesize absent fields from a future provider read.
+            ingress.submit_latest(packet)?;
         }
         self.live.store(true, Ordering::SeqCst);
         Ok(())
@@ -2047,6 +2078,56 @@ mod tests {
         assert_eq!(resumed.last_submitted_turn, Some(120));
         drop(installation);
         assert!(snapshot.snapshot().unwrap().is_none());
+    }
+
+    #[test]
+    fn telemetry_start_replays_the_resumed_level_snapshot() {
+        let state = provider_state(
+            ComputeHostPhase::Ready {
+                last_submitted_turn: Some(ComputeTurnToken(120)),
+            },
+            Arc::new(Mutex::new(Vec::new())),
+        );
+        *state.lock().unwrap().turns.borrow_mut() = 120.0;
+        let runtime = RuntimeBuilder::new().build().unwrap();
+        let mut driver = ComputeTelemetryDriver {
+            base_uri: "compute://particles/kernel".to_owned(),
+            ingress: Arc::new(Mutex::new(None)),
+            live: Arc::new(AtomicBool::new(false)),
+            state,
+            replay_on_start: true,
+            sample_outputs: BTreeSet::new(),
+        };
+
+        driver.attach(runtime.ingress()).unwrap();
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+        driver.start().unwrap();
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+        assert!(driver.is_live());
+    }
+
+    #[test]
+    fn telemetry_start_does_not_inject_a_fresh_host_turn() {
+        let state = provider_state(
+            ComputeHostPhase::Ready {
+                last_submitted_turn: None,
+            },
+            Arc::new(Mutex::new(Vec::new())),
+        );
+        let runtime = RuntimeBuilder::new().build().unwrap();
+        let mut driver = ComputeTelemetryDriver {
+            base_uri: "compute://particles/kernel".to_owned(),
+            ingress: Arc::new(Mutex::new(None)),
+            live: Arc::new(AtomicBool::new(false)),
+            state,
+            replay_on_start: false,
+            sample_outputs: BTreeSet::new(),
+        };
+
+        driver.attach(runtime.ingress()).unwrap();
+        driver.start().unwrap();
+        assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+        assert!(driver.is_live());
     }
 
     #[test]

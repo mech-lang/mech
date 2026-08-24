@@ -297,6 +297,48 @@ impl ResidentExternalCoordinator {
             .expect("resident instance is present")
     }
 
+    /// Transfers the latest dequeued live-input snapshot across a compatible
+    /// resident replacement. Observation node/slot identities are artifact
+    /// local, so migration matches the stable resource request plus its schema
+    /// and shape, then re-materializes the value against the candidate schema
+    /// table. Incompatible or newly introduced observations remain unseeded and
+    /// will read their provider on first use.
+    pub(crate) fn preserve_compatible_live_inputs_from(
+        &mut self,
+        previous: &ResidentExternalCoordinator,
+    ) -> MResult<()> {
+        let mut previous_matches = vec![false; previous.bound.observations().len()];
+        for (target_ordinal, target) in self.bound.observations().iter().enumerate() {
+            let Some(source_ordinal) = previous.bound.observations().iter().enumerate().position(
+                |(source_ordinal, source)| {
+                    !previous_matches[source_ordinal]
+                        && source.request == target.request
+                        && source.input.schema_key == target.input.schema_key
+                        && source.input.shape == target.input.shape
+                },
+            ) else {
+                continue;
+            };
+            previous_matches[source_ordinal] = true;
+            let Some(value) = previous
+                .latest_live_inputs
+                .get(source_ordinal)
+                .and_then(|value| value.as_ref())
+            else {
+                continue;
+            };
+            let legacy = provider_value_from_canonical(value, previous.artifact.schemas())?;
+            let migrated = captured_value_from_legacy(
+                &legacy,
+                target.input.schema,
+                &target.input.shape,
+                self.artifact.schemas(),
+            )?;
+            self.latest_live_inputs[target_ordinal] = Some(migrated);
+        }
+        Ok(())
+    }
+
     #[cfg(feature = "runtime_bench_gate_d3")]
     #[doc(hidden)]
     pub fn set_next_epoch_for_benchmark(&mut self, next: u64) {

@@ -339,12 +339,17 @@ ekf-batch @compute
                ω * δt]
     Σ- := G ** Σ ** G' + V ** Q ** V'.
 
-  ekf-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>, camera<[f32]:2,1>, z<[f32]:2,1>, R<[f32]:2,2>) = (μ+<[f32]:3,1>, Σ+<[f32]:3,3>) :=
+  -- Visibility is part of the numerical observation contract, not merely an
+  -- output mask. The inactive guard makes zero-visibility geometry
+  -- nonsingular before divisions and atan2 are evaluated while leaving every
+  -- active measurement's original equations unchanged.
+  ekf-correct(μ-<[f32]:3,1>, Σ-<[f32]:3,3>, camera<[f32]:2,1>, z<[f32]:3,1>, R<[f32]:2,2>) = (μ+<[f32]:3,1>, Σ+<[f32]:3,3>) :=
     Δ := camera - μ-[1..=2]
-    q := Δ · Δ
+    observation-guard := 1f32 - z[3]
+    q := Δ · Δ + observation-guard
     r := math/sqrt(q)
     ẑ := [r
-          math/atan2(Δ[2], Δ[1]) - μ-[3]]
+          math/atan2(Δ[2], Δ[1] + observation-guard) - μ-[3]]
     H := [-Δ[1] / r -Δ[2] / r 0f32
            Δ[2] / q -Δ[1] / q -1f32]
     S := H ** Σ- ** H' + R
@@ -364,12 +369,21 @@ ekf-batch @compute
   control := [0.05<f32>; 1f32; 0f32]
   camera := [1f32; 1f32]
   measurement := [1f32; 0f32; 0f32]
-  z := [measurement[1]; measurement[2]]
   γ := measurement[3]
   Q := [0.08<f32> 0f32
         0f32 0.018<f32>]
   R := [0.0225<f32> 0f32
         0f32 0.0004<f32>]
+
+  -- Qualify the inactive-measurement boundary directly: the camera and prior
+  -- position coincide while visibility is exactly zero. This used to evaluate
+  -- 0 / 0 before the later visibility interpolation could discard the result.
+  inactive-witness-state := [1f32; 1f32; 0f32]
+  inactive-witness-covariance := [0.45<f32> 0f32 0f32
+                                  0f32 0.45<f32> 0f32
+                                  0f32 0f32 0.08<f32>]
+  (inactive-witness-μ, inactive-witness-Σ) := ekf-correct(inactive-witness-state, inactive-witness-covariance, [1f32; 1f32], [0f32; 0f32; 0f32], R)
+  inactive-correction-finite! := math/abs(inactive-witness-μ[1]) <= 3.402823466e38<f32> && math/abs(inactive-witness-μ[2]) <= 3.402823466e38<f32> && math/abs(inactive-witness-μ[3]) <= 3.402823466e38<f32> && inactive-witness-Σ[1,1] > 0f32 && inactive-witness-Σ[2,2] > 0f32 && inactive-witness-Σ[3,3] > 0f32
 
   -- These two fixed-shape calls are the whole filter. The compute host maps
   -- them over the outer lane arrays supplied by the document; increasing the
@@ -383,7 +397,7 @@ ekf-batch @compute
   μ := filter-sample[:,1]
   Σ := filter-sample[:,2..=4]
   (μ-, Σ-) := ekf-predict(μ, Σ, control, Q)
-  (μ+, Σ+) := ekf-correct(μ-, Σ-, camera, z, R)
+  (μ+, Σ+) := ekf-correct(μ-, Σ-, camera, measurement, R)
   μ-next := μ- + γ * (μ+ - μ-)
   Σ-next := Σ- + γ * (Σ+ - Σ-)
 

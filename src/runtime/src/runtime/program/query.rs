@@ -28,38 +28,48 @@ impl MechRuntime {
         };
         let mappings =
             compatible_state_mappings(previous_artifact, candidate_artifact, changed_state_names);
-        if mappings.is_empty() {
-            return Ok(());
-        }
-        let mapped_targets = mappings
-            .iter()
-            .map(|mapping| mapping.target)
-            .collect::<std::collections::BTreeSet<_>>();
-        let projection_refresh_targets = candidate_artifact
-            .outputs()
-            .iter()
-            .map(|output| output.source)
-            .filter(|slot| {
-                !mapped_targets.contains(slot)
-                    && candidate_artifact
-                        .slots()
-                        .get(slot.get() as usize)
-                        .is_some_and(|declaration| declaration.role == SlotRole::Output)
-            })
-            .collect::<std::collections::BTreeSet<_>>();
+        if !mappings.is_empty() {
+            let mapped_targets = mappings
+                .iter()
+                .map(|mapping| mapping.target)
+                .collect::<std::collections::BTreeSet<_>>();
+            let projection_refresh_targets = candidate_artifact
+                .outputs()
+                .iter()
+                .map(|output| output.source)
+                .filter(|slot| {
+                    !mapped_targets.contains(slot)
+                        && candidate_artifact
+                            .slots()
+                            .get(slot.get() as usize)
+                            .is_some_and(|declaration| declaration.role == SlotRole::Output)
+                })
+                .collect::<std::collections::BTreeSet<_>>();
 
-        let candidate_artifact = std::sync::Arc::new(candidate_artifact.clone());
-        let (_, candidate_instance) = self
-            .resident_artifact_and_instance_mut()
-            .expect("candidate artifact was checked above");
-        candidate_instance
-            .migrate_compatible_state_from(previous_instance, &mappings)
-            .map_err(|error| {
-                super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
-            })?;
-        candidate_instance
-            .refresh_output_projections(&projection_refresh_targets)
-            .map_err(super::diagnostics::projection_refresh_failure)?;
+            let candidate_artifact = std::sync::Arc::new(candidate_artifact.clone());
+            let (_, candidate_instance) = self
+                .resident_artifact_and_instance_mut()
+                .expect("candidate artifact was checked above");
+            candidate_instance
+                .migrate_compatible_state_from(previous_instance, &mappings)
+                .map_err(|error| {
+                    super::diagnostics::activation_failure_for_artifact(&candidate_artifact, error)
+                })?;
+            candidate_instance
+                .refresh_output_projections(&projection_refresh_targets)
+                .map_err(super::diagnostics::projection_refresh_failure)?;
+        }
+
+        use crate::runtime::program::ActiveProgramExecution;
+        if let (
+            ActiveProgramExecution::ResidentExternal(candidate),
+            ActiveProgramExecution::ResidentExternal(previous),
+        ) = (&mut self.active_program, &previous.active_program)
+        {
+            candidate
+                .coordinator
+                .preserve_compatible_live_inputs_from(&previous.coordinator)?;
+        }
         Ok(())
     }
 

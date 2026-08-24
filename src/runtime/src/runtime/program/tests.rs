@@ -3093,6 +3093,60 @@ fn independent_observations_seed_then_retain_the_accepted_host_snapshot() {
 }
 
 #[test]
+fn compatible_replacement_migrates_the_accepted_host_snapshot() {
+    let (mut previous, previous_reads) = independent_external_runtime();
+    previous
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/fast", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(7.0),
+        ))
+        .unwrap();
+    previous.drain_resident_host_inputs(1).unwrap();
+    assert_eq!(previous_reads.load(Ordering::SeqCst), 1);
+
+    let (mut candidate, candidate_reads) = independent_external_runtime();
+    candidate
+        .preserve_compatible_resident_state_from(&previous, &BTreeSet::new())
+        .unwrap();
+    candidate
+        .ingress()
+        .submit(crate::RuntimeHostInput::single(
+            crate::RuntimeHostInputSource::new("test://clock/slow", "delta-seconds").unwrap(),
+            crate::RuntimeHostInputValue::F64(8.0),
+        ))
+        .unwrap();
+    let outcome = candidate.drain_resident_host_inputs(1).unwrap();
+    assert!(matches!(
+        outcome.turn,
+        Some(crate::ResidentExternalTurnOutcome::Accepted { .. })
+    ));
+    assert_eq!(
+        candidate_reads.load(Ordering::SeqCst),
+        0,
+        "a compatible replacement must not synthesize absent fields from providers"
+    );
+    let ActiveProgramExecution::ResidentExternal(execution) = &candidate.active_program else {
+        unreachable!()
+    };
+    let mut values = execution
+        .coordinator
+        .input_facts()
+        .last()
+        .unwrap()
+        .1
+        .facts
+        .iter()
+        .map(|fact| match fact.value.data() {
+            ValueData::F64(value) => value.to_f64(),
+            _ => panic!("clock observations must remain f64"),
+        })
+        .collect::<Vec<_>>();
+    values.sort_by(f64::total_cmp);
+    assert_eq!(values, vec![7.0, 8.0]);
+}
+
+#[test]
 fn public_host_drain_exposes_the_clean_resident_turn() {
     let (mut runtime, _, _, _) = external_runtime(crate::ResidentDurabilityPolicy::Volatile);
     runtime
