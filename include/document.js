@@ -787,6 +787,10 @@ function stopRuntime(nextLifecycle = "stopped") {
   if (state.runtimeLifecycle === "disposed" && nextLifecycle !== "disposed") {
     return;
   }
+  // The browser's established fullscreen element is authoritative even if a
+  // local coordinator was superseded while its request promise was settling.
+  const ownsNativeFullscreen =
+    document.fullscreenElement === documentConsolePane();
   state.runtimeLifecycle = nextLifecycle;
   state.runtimeGeneration += 1;
   state.runtimeStopped = true;
@@ -797,6 +801,7 @@ function stopRuntime(nextLifecycle = "stopped") {
   state.fullscreenGeneration += 1;
   state.fullscreenRequest = null;
   state.outputFullscreenController = null;
+  if (ownsNativeFullscreen) exitRetiredNativeFullscreen();
   state.scenePointerSession = null;
   state.consolePointerSession?.cancel();
   state.consolePointerSession = null;
@@ -2573,6 +2578,7 @@ function submitConsoleInput(value, row, input) {
   if (!source) {
     return;
   }
+  const ownsSubmission = captureReadyRuntimeOwnership();
   state.history.push(source);
   state.historyIndex = state.history.length;
   state.historyDraft = "";
@@ -2588,11 +2594,13 @@ function submitConsoleInput(value, row, input) {
     const result = runConsoleCommand(source);
     if (result && typeof result.catch === "function") {
       result.catch(error => {
+        if (!ownsSubmission()) return;
         state.console.pendingSubmission = null;
         appendConsoleError(error);
       });
     }
   } catch (error) {
+    if (!ownsSubmission()) return;
     state.console.pendingSubmission = null;
     appendConsoleError(error);
   }
@@ -3402,6 +3410,15 @@ function releaseFullscreen(request) {
   state.fullscreenGeneration += 1;
   state.fullscreenRequest = null;
   return true;
+}
+
+function exitRetiredNativeFullscreen() {
+  try {
+    const exit = document.exitFullscreen?.();
+    if (exit && typeof exit.catch === "function") {
+      exit.catch(() => {});
+    }
+  } catch (_error) {}
 }
 
 async function relinquishUnownedNativeFullscreen(pane) {

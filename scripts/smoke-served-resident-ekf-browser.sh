@@ -132,6 +132,8 @@ harness = r'''<script>
     const expectedComputeBackend = "__MECH_EXPECTED_COMPUTE_BACKEND__";
     const expectedComputeInstances = Number("__MECH_EXPECTED_COMPUTE_INSTANCES__");
     const performContinuityEdit = "__MECH_PERFORM_CONTINUITY_EDIT__" === "true";
+    const terminalSubmitProbe =
+      new URLSearchParams(location.search).has("mech-terminal-submit-probe");
     const originalConsoleError = console.error;
     const diagnosticText = (value) => value?.stack || value?.message || String(value);
     console.error = (...args) => {
@@ -174,7 +176,6 @@ harness = r'''<script>
     let displayParityTrackingError;
     let computeReadbackBytes = 0;
     let sampledReadbackEfficient = true;
-    let terminalSubmitCheckArmed = false;
     let documentRenderEvents = 0;
     window.addEventListener("mech:document-rendered", () => {
       documentRenderEvents += 1;
@@ -225,8 +226,7 @@ harness = r'''<script>
       return values.length === 1 && Number.isFinite(values[0]) ? values[0] : undefined;
     };
     window.addEventListener("mech:compute-submit", () => {
-      if (terminalSubmitCheckArmed) {
-        terminalSubmitCheckArmed = false;
+      if (terminalSubmitProbe) {
         const rendersBeforeDispose = documentRenderEvents;
         root.dataset.mechTerminalSubmitObserved = "true";
         globalThis.MechDocumentController?.dispose();
@@ -1095,14 +1095,9 @@ harness = r'''<script>
           String(incompatibleResetDiagnostic);
         root.dataset.mechComputeStateResetsVerified =
           root.dataset.mechComputeStateResets || "0";
-        if (expectedComputeBackend === "wgpu") {
-          root.dataset.mechTerminalSubmitObserved = "pending";
-          terminalSubmitCheckArmed = true;
-          return;
-        }
-        // The scalar backend has no asynchronous compute submission boundary.
-        // Its frame lifecycle is covered by the ordinary terminal-state probes;
-        // the WGPU run below must prove disposal from the real submit event.
+        // The WGPU invocation runs a dedicated first-page probe which disposes
+        // on a real submit. Keep the primary application DOM self-contained for
+        // the existing numeric and continuity assertions.
         root.dataset.mechTerminalSubmitObserved = "true";
         root.dataset.mechTerminalSubmitRenderSuppressed = "true";
         root.dataset.mechDone = "true";
@@ -1161,11 +1156,49 @@ else:
         linux=sys.platform.startswith("linux"),
     ))
 
-deadline = time.monotonic() + 90
 milestones = {}
 browser = ChromeSession(None, profile, chrome_log, flags=flags).start()
 try:
+    if compute_backend == "wgpu":
+        separator = "&" if "?" in page_url else "?"
+        browser.navigate(page_url + separator + "mech-terminal-submit-probe=1")
+        probe_deadline = time.monotonic() + 45
+        probe = {}
+        while time.monotonic() < probe_deadline:
+            if browser.process.poll() is not None:
+                raise RuntimeError(
+                    "Chrome exited while proving terminal compute submission"
+                )
+            probe = browser.evaluate(r'''(() => {
+              const data = document.documentElement?.dataset || {};
+              return {
+                done: data.mechDone === "true",
+                observed: data.mechTerminalSubmitObserved === "true",
+                renderSuppressed:
+                  data.mechTerminalSubmitRenderSuppressed === "true",
+                consoleError: data.mechConsoleError || "",
+                pageError: data.mechPageError || "",
+              };
+            })()''') or {}
+            if any((
+                probe.get("done"),
+                probe.get("consoleError"),
+                probe.get("pageError"),
+            )):
+                break
+            time.sleep(0.1)
+        if not all((
+            probe.get("done"),
+            probe.get("observed"),
+            probe.get("renderSuppressed"),
+        )) or probe.get("consoleError") or probe.get("pageError"):
+            browser.write_dom(dom_file)
+            raise RuntimeError(
+                f"terminal compute submission proof failed: {probe!r}"
+            )
+
     browser.navigate(page_url)
+    deadline = time.monotonic() + 90
     while time.monotonic() < deadline:
         if browser.process.poll() is not None:
             raise RuntimeError(

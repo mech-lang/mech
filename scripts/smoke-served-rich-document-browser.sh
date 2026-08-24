@@ -4145,13 +4145,60 @@ def assert_terminal_runtime_mutations_retired(probe):
 
 
 def assert_repl_termination():
+    native_fullscreen = evaluate_json("""
+(async () => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  const toggle = document.querySelector('button[data-mech-console-fullscreen]');
+  const native = { active: false, exitCalls: 0 };
+  window.__MECH_TERMINAL_NATIVE_FULLSCREEN__ = native;
+  Object.defineProperty(document, 'fullscreenElement', {
+    configurable: true,
+    get: () => native.active ? pane : null,
+  });
+  Object.defineProperty(pane, 'requestFullscreen', {
+    configurable: true,
+    value: async () => {
+      native.active = true;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
+  Object.defineProperty(document, 'exitFullscreen', {
+    configurable: true,
+    value: async () => {
+      native.exitCalls += 1;
+      native.active = false;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
+  toggle?.click();
+  await Promise.resolve();
+  await Promise.resolve();
+  return {
+    active: native.active,
+    pressed: toggle?.getAttribute('aria-pressed'),
+  };
+})()
+""")
+    if native_fullscreen != {"active": True, "pressed": "true"}:
+        fail(f"could not establish native fullscreen before termination: {native_fullscreen!r}")
     submit(":quit")
     wait_for(
         "document.querySelector('.mech-root')?.dataset.mechConsoleStatus === 'terminated' && "
         "document.querySelector('.repl-input')?.disabled === true && "
+        "window.__MECH_TERMINAL_NATIVE_FULLSCREEN__?.exitCalls === 1 && "
+        "document.fullscreenElement === null && "
         "[...document.querySelectorAll('.mech-repl-info')].some((row) => /REPL session terminated/.test(row.textContent))",
-        "browser REPL termination disabling further input",
+        "browser REPL termination disabling input and retiring native fullscreen",
     )
+    evaluate("""
+(() => {
+  const pane = document.querySelector('[data-mech-console-pane]');
+  delete pane.requestFullscreen;
+  delete document.exitFullscreen;
+  delete document.fullscreenElement;
+  delete window.__MECH_TERMINAL_NATIVE_FULLSCREEN__;
+})()
+""")
     terminated_state = evaluate_json("""
 (() => {
   const input = document.querySelector('.repl-input');
@@ -4478,6 +4525,8 @@ def assert_stop_invalidates_pending_ownership():
   const root = document.querySelector('.mech-root');
   root.dataset.mechDocumentStatus = 'error';
   root.dataset.mechOutputFullscreenActive = 'disposed-sentinel';
+  window.__MECH_DISPOSED_TRANSCRIPT__ =
+    document.querySelector('.mech-repl-transcript')?.innerHTML ?? null;
   return { renders, pointerCalls };
 })()
 """)
@@ -4531,6 +4580,9 @@ def assert_stop_invalidates_pending_ownership():
     document.activeElement === window.__MECH_SHUTDOWN_INSPECTOR_ANCHOR__,
   fullscreenState:
     document.querySelector('.mech-root')?.dataset.mechOutputFullscreenActive,
+  transcriptUnchanged:
+    document.querySelector('.mech-repl-transcript')?.innerHTML ===
+      window.__MECH_DISPOSED_TRANSCRIPT__,
 }))()
 """)
     disposed_api = evaluate_json("""
@@ -4563,7 +4615,8 @@ def assert_stop_invalidates_pending_ownership():
         stopped_after["appended"] or
         stopped_after["inspectorPresent"] or
         stopped_after["anchorFocused"] or
-        stopped_after["fullscreenState"] != "disposed-sentinel"
+        stopped_after["fullscreenState"] != "disposed-sentinel" or
+        not stopped_after["transcriptUnchanged"]
     ):
         fail(f"stale async ownership changed a stopped/fatal document: {stopped_after!r}")
     if set(disposed_api.values()) != {"MECH_DOCUMENT_DISPOSED"}:
