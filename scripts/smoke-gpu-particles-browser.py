@@ -21,7 +21,6 @@ sys.path.insert(0, str(ROOT))
 from tests.browser.harness import (
     ChromeSession,
     NavigationContextPending,
-    find_browser,
     free_port,
     wait_for_http,
 )
@@ -81,7 +80,6 @@ def main() -> None:
     if args.build:
         build()
     verify_package()
-    browser = find_browser(args.browser)
     configured_mech = os.environ.get("MECH_BIN")
     mech = Path(configured_mech) if configured_mech else (
         ROOT / "target" / "release" / ("mech.exe" if os.name == "nt" else "mech")
@@ -142,7 +140,7 @@ def main() -> None:
                 linux=sys.platform.startswith("linux"),
             ))
             browser_session = ChromeSession(
-                browser,
+                args.browser,
                 work / "profile",
                 work / "browser.log",
                 flags=flags,

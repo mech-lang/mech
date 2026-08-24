@@ -263,7 +263,7 @@ class ChromeSession:
 
     def __init__(
         self,
-        browser: str | os.PathLike[str],
+        browser: str | os.PathLike[str] | None,
         profile: str | os.PathLike[str],
         log: str | os.PathLike[str],
         *,
@@ -271,7 +271,7 @@ class ChromeSession:
         startup_timeout: float = 30,
         window_size: tuple[int, int] | None = None,
     ) -> None:
-        self.browser = Path(browser)
+        self.browser = find_browser(browser)
         self.profile = Path(profile)
         self.log = Path(log)
         self.flags = list(flags)
@@ -464,7 +464,7 @@ def _snapshot_main() -> int:
     parser.add_argument("--flag", action="append", default=[])
     args = parser.parse_args()
     session = ChromeSession(
-        find_browser(args.browser), args.profile, args.log, flags=args.flag,
+        args.browser, args.profile, args.log, flags=args.flag,
     ).start()
     try:
         session.navigate(args.url)

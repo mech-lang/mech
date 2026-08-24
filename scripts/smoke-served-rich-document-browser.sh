@@ -31,17 +31,6 @@ if [[ ! -f "$fixture" ]]; then
   exit 1
 fi
 
-if [[ -n "${CHROME_BIN:-}" ]]; then
-  chrome_bin="$CHROME_BIN"
-elif command -v google-chrome >/dev/null 2>&1; then
-  chrome_bin="$(command -v google-chrome)"
-elif [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
-  chrome_bin="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-else
-  echo "Google Chrome was not found" >&2
-  exit 1
-fi
-
 # The binary must be self-contained.  Deleting the generated directory before
 # serving catches an accidental runtime dependency on source-tree WASM assets.
 rm -rf "$repo_root/src/wasm/pkg"
@@ -215,7 +204,6 @@ run_browser_case() {
   local chrome_log="$case_dir/chrome.stderr"
 
   python3 - \
-    "$chrome_bin" \
     "$page_url" \
     "$chrome_profile" \
     "$dom_file" \
@@ -230,7 +218,7 @@ import time
 from tests.browser.harness import BrowserFailure, ChromeSession, visible_expression
 
 
-chrome, page_url, profile, dom_path, screenshot_path, chrome_log, label = sys.argv[1:]
+page_url, profile, dom_path, screenshot_path, chrome_log, label = sys.argv[1:]
 
 
 def fail(message):
@@ -4393,7 +4381,7 @@ def assert_stop_invalidates_pending_ownership():
 
 try:
     browser_session = ChromeSession(
-        chrome,
+        None,
         profile,
         chrome_log,
         flags=[

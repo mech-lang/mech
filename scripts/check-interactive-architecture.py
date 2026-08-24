@@ -138,26 +138,73 @@ canonical_cdp_harness = ROOT / "tests/browser/harness/chrome.py"
 
 
 def owns_browser_process(source: str) -> bool:
-    """Return whether a scenario launches a browser outside the harness."""
+    """Track browser-valued commands into Python, JS, and shell launchers."""
     source = source.lower()
-    executable = (r"google-chrome|chromium(?:-browser)?|microsoft-edge(?:-stable)?|"
-                  r"msedge(?:\.exe)?|chrome(?:\.exe)?")
-    assignments = re.findall(r"(?m)^\s*([a-z_]\w*)\s*=\s*([^\n]+)", source)
-    browser_names = {
-        name for name, value in assignments
-        if re.search(executable, value) or re.search(r"browser|chrome|chromium|edge", name)
+    executable = (r"(?<![\w-])(?:google-chrome|chromium(?:-browser)?|microsoft-edge(?:-stable)?|"
+                  r"msedge(?:\.exe)?|chrome(?:\.exe)?|firefox(?:-esr)?|geckodriver|"
+                  r"safaridriver|webkit2gtk-driver)(?![\w-])")
+    assignments = re.findall(
+        r"(?m)^\s*(?:const\s+|let\s+|var\s+)?([a-z_$]\w*)\s*=\s*([^\n;]+)",
+        source,
+    )
+    browser_value = rf"{executable}|find_browser|args\.browser|(?:chrome|edge|firefox)_bin"
+    browser_names: set[str] = set()
+    for _ in assignments:
+        for name, value in assignments:
+            if re.search(browser_value, value) or any(
+                re.search(rf"\b{known}\b", value) for known in browser_names
+            ):
+                browser_names.add(name)
+    launchers = {
+        "subprocess.popen", "subprocess.run", "subprocess.call",
+        "subprocess.check_call", "subprocess.check_output",
+        "asyncio.create_subprocess_exec", "os.system", "child_process.spawn",
+        "child_process.exec", "child_process.execfile", "deno.command", "bun.spawn",
     }
-    launcher = (r"(?:subprocess\.(?:popen|run|call|check_call|check_output)|\bpopen|"
-                r"asyncio\.create_subprocess_exec|os\.(?:system|spawn\w*)|"
-                r"child_process(?:\.\w+)?|deno\.command|bun\.spawn)\s*\("
-                r"(?P<argv>.{0,1000}?)\)")
-    for match in re.finditer(launcher, source, re.DOTALL):
+    for imports in re.findall(r"from\s+(?:subprocess|asyncio|os)\s+import\s+([^\n]+)", source):
+        for item in imports.split(","):
+            original, _, alias = item.strip().partition(" as ")
+            if original in {"popen", "run", "call", "check_call", "check_output",
+                            "create_subprocess_exec", "system"}:
+                launchers.add(alias or original)
+    for module, alias in re.findall(r"import\s+(subprocess|asyncio|os)\s+as\s+(\w+)", source):
+        methods = {"subprocess": ("popen", "run", "call", "check_call", "check_output"),
+                   "asyncio": ("create_subprocess_exec",), "os": ("system",)}[module]
+        launchers.update(f"{alias}.{method}" for method in methods)
+    for imports in re.findall(
+        r"(?:import\s*|(?:const|let|var)\s*)\{([^}]+)\}\s*(?:from|=\s*require\()\s*"
+        r"['\"](?:node:)?child_process['\"]",
+        source,
+    ):
+        for item in imports.split(","):
+            original, *aliases = re.split(r"\s+as\s+|\s*:\s*", item.strip(), maxsplit=1)
+            if original in {"spawn", "exec", "execfile", "fork"}:
+                launchers.add(aliases[-1] if aliases else original)
+    module_aliases = re.findall(
+        r"(?:import\s+(?:\*\s+as\s+)?|(?:const|let|var)\s+)([a-z_$]\w*)\s*"
+        r"(?:from\s*|=\s*require\()['\"](?:node:)?child_process['\"]",
+        source,
+    )
+    launchers.update(f"{alias}.{method}" for alias in module_aliases
+                     for method in ("spawn", "exec", "execfile", "fork"))
+    for alias, method in re.findall(
+        r"(?:const|let|var)\s+([a-z_$]\w*)\s*=\s*require\(['\"]"
+        r"(?:node:)?child_process['\"]\)\.(spawn|exec|execfile|fork)", source,
+    ):
+        launchers.add(alias)
+    launcher = "|".join(sorted(map(re.escape, launchers), key=len, reverse=True))
+    for match in re.finditer(rf"(?:{launcher})\s*\((?P<argv>.{{0,1000}}?)\)", source, re.DOTALL):
         argv = match.group("argv")
-        if re.search(executable, argv) or any(re.search(rf"\b{name}\b", argv)
-                                              for name in browser_names):
+        if re.search(browser_value, argv) or any(
+            re.search(rf"\b{name}\b", argv) for name in browser_names
+        ):
             return True
-    names = "|".join(map(re.escape, browser_names)) or r"(?!)"
-    shell = rf"(?m)(?<!\\\n)^\s*(?:env\s+[^\n]*\s+)?(?:\"?\$\{{?(?:{names})\}}?\"?|{executable})(?=\s)"
+    if re.search(r"\b(?:chromium|firefox|webkit)\.launch\s*\(|"
+                 r"\bwebdriver\.(?:chrome|firefox|safari|edge)\s*\(", source):
+        return True
+    names = "|".join(map(re.escape, browser_names | {"chrome_bin", "edge_bin", "firefox_bin"}))
+    wrappers = r"(?:(?:exec|command|nohup|xvfb-run|timeout)(?:\s+[-\w.]+)*\s+)*"
+    shell = rf"(?m)(?<!\\\n)^\s*(?:env\s+[^\n]*\s+)?{wrappers}(?:\"?\$\{{?(?:{names})\}}?\"?|{executable})(?=\s)"
     return re.search(shell, source) is not None
 
 
@@ -165,14 +212,20 @@ for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
     for path in browser_test_root.rglob("*"):
         if (
             not path.is_file()
-            or path.suffix not in {".js", ".mjs", ".py", ".sh"}
+            or path.suffix not in {".js", ".mjs", ".cjs", ".jsx",
+                                   ".ts", ".mts", ".cts", ".tsx",
+                                   ".py", ".sh", ".bash"}
             or path in {Path(__file__).resolve(), canonical_cdp_harness}
         ):
             continue
         source = path.read_text(encoding="utf-8")
         lower_source = source.lower()
         relative = path.relative_to(ROOT)
-        if "websocket" in lower_source or "sec-websocket" in lower_source:
+        if ("websocket" in lower_source or "sec-websocket" in lower_source) and any(
+            marker in lower_source for marker in (
+            "websocketdebuggerurl", "/devtools/", "/json/version",
+            "runtime.evaluate", "target.attach", "target.createtarget",
+        )):
             fail(f"scenario-specific CDP transport found in {path.relative_to(ROOT)}")
         if "--remote-debugging-port" in lower_source or "--dump-dom" in lower_source:
             fail(f"scenario-specific browser process ownership found in {relative}")

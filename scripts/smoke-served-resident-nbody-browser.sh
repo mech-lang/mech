@@ -20,19 +20,6 @@ if [[ ! -x "$MECH_BIN" ]]; then
   exit 1
 fi
 
-if [[ -n "${CHROME_BIN:-}" ]]; then
-  chrome_bin="$CHROME_BIN"
-elif command -v google-chrome >/dev/null 2>&1; then
-  chrome_bin="$(command -v google-chrome)"
-elif [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
-  chrome_bin="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-elif command -v chromium >/dev/null 2>&1; then
-  chrome_bin="$(command -v chromium)"
-else
-  echo "No supported headless Chrome executable was found" >&2
-  exit 1
-fi
-
 mkdir -p "$target_dir"
 project_dir="$(mktemp -d "$target_dir/served-resident-nbody.XXXXXX")"
 browser_dir="$(mktemp -d "$target_dir/served-resident-nbody-browser.XXXXXX")"
@@ -320,15 +307,15 @@ if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
 fi
 
 run_chrome() {
-  python3 - "$chrome_bin" "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" <<'PY'
+  python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" <<'PY'
 import sys
 
 from tests.browser.harness import ChromeSession
 
 
-chrome, page_url, profile, dom_file, chrome_log = sys.argv[1:]
+page_url, profile, dom_file, chrome_log = sys.argv[1:]
 browser = ChromeSession(
-    chrome,
+    None,
     profile,
     chrome_log,
     flags=[

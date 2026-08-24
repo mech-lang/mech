@@ -20,19 +20,6 @@ if [[ ! -x "$MECH_BIN" ]]; then
   exit 1
 fi
 
-if [[ -n "${CHROME_BIN:-}" ]]; then
-  chrome_bin="$CHROME_BIN"
-elif command -v google-chrome >/dev/null 2>&1; then
-  chrome_bin="$(command -v google-chrome)"
-elif [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
-  chrome_bin="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-elif command -v chromium >/dev/null 2>&1; then
-  chrome_bin="$(command -v chromium)"
-else
-  echo "No supported headless Chrome executable was found" >&2
-  exit 1
-fi
-
 mkdir -p "$target_dir"
 project_dir="$(mktemp -d "$target_dir/served-resident-ekf.XXXXXX")"
 browser_dir="$(mktemp -d "$target_dir/served-resident-ekf-browser.XXXXXX")"
@@ -1125,7 +1112,7 @@ if ! grep -q 'root.dataset.mechDone' "$browser_dir/preflight.html"; then
 fi
 
 set +e
-python3 - "$chrome_bin" "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" <<'PY'
+python3 - "$page_url" "$chrome_profile" "$dom_file" "$chrome_log" "$compute_backend" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -1135,7 +1122,7 @@ from scripts.browser_webgpu_flags import chrome_webgpu_test_flags
 from tests.browser.harness import ChromeSession
 
 
-chrome, page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
+page_url, profile, dom_file, chrome_log, compute_backend = sys.argv[1:]
 flags = []
 if compute_backend != "wgpu":
     flags.append("--disable-gpu")
@@ -1148,7 +1135,7 @@ else:
 
 deadline = time.monotonic() + 90
 milestones = {}
-browser = ChromeSession(chrome, profile, chrome_log, flags=flags).start()
+browser = ChromeSession(None, profile, chrome_log, flags=flags).start()
 try:
     browser.navigate(page_url)
     while time.monotonic() < deadline:

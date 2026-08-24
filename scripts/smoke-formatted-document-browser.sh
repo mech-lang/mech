@@ -14,17 +14,6 @@ fi
 MECH_BIN="${MECH_BIN:-$target_dir/debug/mech}"
 [[ -x "$MECH_BIN" ]] || { echo "Mech binary is not executable: $MECH_BIN" >&2; exit 1; }
 
-if [[ -n "${CHROME_BIN:-}" ]]; then
-  chrome_bin="$CHROME_BIN"
-elif command -v google-chrome >/dev/null 2>&1; then
-  chrome_bin="$(command -v google-chrome)"
-elif [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
-  chrome_bin="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-else
-  echo "Google Chrome was not found" >&2
-  exit 1
-fi
-
 work_dir="$(mktemp -d "$target_dir/formatted-document.XXXXXX")"
 server_pid=""
 
@@ -146,21 +135,21 @@ curl --fail --silent --output /dev/null "$page_url" || {
   exit 1
 }
 
-python3 - "$chrome_bin" "$page_url" "$work_dir/chrome-profile" "$work_dir/chrome.log" <<'PY'
+python3 - "$page_url" "$work_dir/chrome-profile" "$work_dir/chrome.log" <<'PY'
 import json
 import sys
 
 from tests.browser.harness import BrowserFailure, ChromeSession
 
 
-chrome, page_url, profile, chrome_log = sys.argv[1:]
+page_url, profile, chrome_log = sys.argv[1:]
 
 
 def fail(message):
     raise BrowserFailure(message)
 
 
-browser = ChromeSession(chrome, profile, chrome_log, flags=["--disable-gpu"]).start()
+browser = ChromeSession(None, profile, chrome_log, flags=["--disable-gpu"]).start()
 try:
     browser.navigate(page_url)
     evaluate = browser.evaluate
