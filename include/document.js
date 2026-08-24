@@ -2019,6 +2019,14 @@ globalThis.MechDocumentController = Object.freeze({
     consumeReplResponse(response);
     return state.document.replSource();
   },
+  invoke(source) {
+    if (typeof state.document?.replInvoke !== "function") {
+      throw new Error("the document runtime does not expose interactive requests");
+    }
+    const response = state.document.replInvoke(String(source));
+    consumeReplResponse(response);
+    return response;
+  },
   dispose() {
     stopRuntime();
   },
