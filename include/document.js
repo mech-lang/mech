@@ -3952,12 +3952,12 @@ function documentComputeIdentity(controller, bridge = null) {
     : null;
   return {
     present: Boolean(manifest),
-    generation: typeof controller?.computeGeneration === "function"
-      ? controller.computeGeneration()
-      : "0",
+    generation: computeGeneration(controller),
     revision: bridge?.physicalRevision || manifest?.physicalRevision || "none",
   };
 }
+
+const computeGeneration = controller => typeof controller?.computeGeneration === "function" ? controller.computeGeneration() : "0";
 
 async function probeServedComputeAdapter() {
   const computeHost = servedComputeHostConfig();
@@ -3987,14 +3987,22 @@ async function probeServedComputeAdapter() {
 }
 
 class DocumentComputeBridge {
-  static async create(controller, previous = null) {
+  static async create(controller, previous = null, isCurrent = () => true) {
     if (typeof controller.computeManifest !== "function") {
       return null;
     }
+    const generation = computeGeneration(controller);
+    const ownsGeneration = () => isCurrent() && computeGeneration(controller) === generation;
+    const requireCurrent = resource => {
+      if (ownsGeneration()) return;
+      resource?.dispose();
+      throw new Error("document compute generation changed during bridge construction");
+    };
     const manifest = controller.computeManifest();
     if (!manifest) {
       return null;
     }
+    requireCurrent();
     const backend = controller.computeBackend();
     if (backend !== "wgpu") {
       // Resident scalar compute completes inside the runtime. It has no
@@ -4008,6 +4016,7 @@ class DocumentComputeBridge {
       return null;
     }
     if (previous?.canTransferTo(manifest, backend)) {
+      requireCurrent();
       return new DocumentComputeBridge(
         controller,
         manifest,
@@ -4019,6 +4028,7 @@ class DocumentComputeBridge {
           priorDispatchToken: previous.lastDispatchToken,
           ownsResource: false,
           adoptionSource: previous,
+          generation,
         },
       );
     }
@@ -4033,6 +4043,7 @@ class DocumentComputeBridge {
         : navigator.gpu
           ? await navigator.gpu.requestAdapter({ powerPreference: "high-performance" })
           : null;
+    requireCurrent();
     if (!adapter) {
       throw new Error("the document selected WebGPU but no compatible adapter is available");
     }
@@ -4044,8 +4055,9 @@ class DocumentComputeBridge {
       document.documentElement.dataset.mechComputeDeviceStatus = "failed";
       throw error;
     }
+    requireCurrent(resource);
     document.documentElement.dataset.mechComputeDeviceStatus = "ready";
-    return new DocumentComputeBridge(controller, manifest, backend, resource);
+    return new DocumentComputeBridge(controller, manifest, backend, resource, { generation });
   }
 
   constructor(controller, manifest, backend, resource, options = {}) {
@@ -4056,9 +4068,7 @@ class DocumentComputeBridge {
     this.priorDispatchToken = options.priorDispatchToken || null;
     this.adoptionSource = options.adoptionSource || null;
     this.physicalRevision = String(manifest.physicalRevision || "");
-    this.generation = typeof controller.computeGeneration === "function"
-      ? controller.computeGeneration()
-      : "0";
+    this.generation = String(options.generation ?? "0");
     this.session = new globalThis.MechBrowserCompute.Session({
       controller,
       resource,
@@ -4197,9 +4207,7 @@ class DocumentComputeBridge {
 
 function refreshDocumentComputeBridge() {
   const bridge = state.computeBridge;
-  const generation = typeof state.document?.computeGeneration === "function"
-    ? state.document.computeGeneration()
-    : "0";
+  let generation = computeGeneration(state.document);
   if (
     state.computeBridgeRefresh ||
     (state.computeBridgeGeneration === generation && (!bridge || bridge.isCurrent()))
@@ -4217,19 +4225,18 @@ function refreshDocumentComputeBridge() {
   const ownsBuild = () =>
     buildId === state.computeBridgeBuildId &&
     controller === state.document &&
-    state.computeBridgeLifecycle !== "stopped";
+    state.computeBridgeLifecycle !== "stopped" &&
+    computeGeneration(controller) === generation;
+  const acceptFallbackGeneration = () => { generation = computeGeneration(controller); };
   setComputeBridgeLifecycle("building");
-  const refresh = createDocumentComputeBridgeWithFallback(controller, bridge, ownsBuild)
+  const refresh = createDocumentComputeBridgeWithFallback(
+    controller,
+    bridge,
+    ownsBuild,
+    acceptFallbackGeneration,
+  )
     .then(next => {
-      const currentGeneration = typeof controller?.computeGeneration === "function"
-        ? controller.computeGeneration()
-        : "0";
-      if (
-        buildId !== state.computeBridgeBuildId ||
-        controller !== state.document ||
-        state.computeBridgeLifecycle === "stopped" ||
-        (next && next.generation !== currentGeneration)
-      ) {
+      if (!ownsBuild() || (next && next.generation !== generation)) {
         next?.retire();
         return;
       }
@@ -4242,9 +4249,7 @@ function refreshDocumentComputeBridge() {
         bridge?.retire();
       }
       state.computeBridge = next;
-      state.computeBridgeGeneration = typeof controller?.computeGeneration === "function"
-        ? controller.computeGeneration()
-        : generation;
+      state.computeBridgeGeneration = generation;
       document.documentElement.dataset.mechComputeGeneration =
         String(state.computeBridgeGeneration);
       setComputeBridgeLifecycle("ready");
@@ -4274,7 +4279,7 @@ function refreshDocumentComputeBridge() {
       }
     })
     .catch(error => {
-      if (buildId === state.computeBridgeBuildId) {
+      if (ownsBuild()) {
         setComputeBridgeLifecycle("fatal");
         showFatalError(error);
       }
@@ -4406,9 +4411,10 @@ async function createDocumentComputeBridgeWithFallback(
   controller = state.document,
   previous = null,
   isCurrent,
+  acceptGeneration,
 ) {
   try {
-    return await DocumentComputeBridge.create(controller, previous);
+    return await DocumentComputeBridge.create(controller, previous, isCurrent);
   } catch (error) {
     if (!isCurrent()) throw error;
     document.documentElement.dataset.mechComputeBridgeCreateError =
@@ -4430,7 +4436,9 @@ async function createDocumentComputeBridgeWithFallback(
     }
     setComputeBridgeLifecycle("falling-back");
     controller.fallbackComputeToCpu();
-    const bridge = await DocumentComputeBridge.create(controller);
+    acceptGeneration();
+    if (!isCurrent()) throw error;
+    const bridge = await DocumentComputeBridge.create(controller, null, isCurrent);
     if (bridge?.backend === "wgpu") {
       throw error;
     }
@@ -4482,22 +4490,28 @@ async function main() {
     );
   }
   setComputeBridgeLifecycle("building");
-  const initialBuildId = ++state.computeBridgeBuildId;
-  const ownsInitialBuild = () =>
-    startupIsCurrent() && initialBuildId === state.computeBridgeBuildId;
-  state.computeBridge = await createDocumentComputeBridgeWithFallback(
-    state.document,
-    null,
-    ownsInitialBuild,
-  );
-  if (initialBuildId !== state.computeBridgeBuildId) {
+  let initialGeneration;
+  while (startupIsCurrent()) {
+    const initialBuildId = ++state.computeBridgeBuildId;
+    initialGeneration = computeGeneration(state.document);
+    const ownsInitialBuild = () => startupIsCurrent() &&
+      initialBuildId === state.computeBridgeBuildId &&
+      computeGeneration(state.document) === initialGeneration;
+    const acceptGeneration = () => { initialGeneration = computeGeneration(state.document); };
+    try {
+      state.computeBridge = await createDocumentComputeBridgeWithFallback(
+        state.document, null, ownsInitialBuild, acceptGeneration,
+      );
+    } catch (error) {
+      if (ownsInitialBuild()) throw error;
+    }
+    if (ownsInitialBuild()) break;
     state.computeBridge?.retire();
-    return;
+    if (initialBuildId !== state.computeBridgeBuildId) return;
   }
+  if (!startupIsCurrent()) return;
   setComputeBridgeLifecycle("ready");
-  state.computeBridgeGeneration = typeof state.document.computeGeneration === "function"
-    ? state.document.computeGeneration()
-    : "0";
+  state.computeBridgeGeneration = initialGeneration;
   document.documentElement.dataset.mechComputeGeneration =
     String(state.computeBridgeGeneration);
   state.computeResetTracker ||= new globalThis.MechBrowserCompute.ResetTracker();

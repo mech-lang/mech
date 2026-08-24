@@ -135,14 +135,16 @@ for name in test_only_globals:
         fail(f"test-only production global `{name}` reappeared")
 
 canonical_cdp_harness = ROOT / "tests/browser/harness/chrome.py"
-BROWSER_EXECUTABLE = (
-    r"(?<![\w-])(?:google-chrome|chromium(?:-browser)?|microsoft-edge(?:-stable)?|"
-    r"msedge(?:\.exe)?|chrome(?:\.exe)?|firefox(?:-esr)?|geckodriver|safaridriver|"
-    r"webkit2gtk-driver)(?![\w-])"
-)
-PY_LAUNCHERS = ("popen", "run", "call", "check_call", "check_output",
-                "create_subprocess_exec", "system")
+BROWSER_EXECUTABLE = (r"(?<![\w-])(?:google-chrome(?:-stable)?|chromium(?:-browser)?|microsoft-edge(?:-stable)?|msedge(?:\.exe)?|chrome(?:\.exe)?|firefox(?:-esr)?|geckodriver|safaridriver|webkit2gtk-driver)(?![\w-])")
+PY_LAUNCHERS = ("popen", "run", "call", "check_call", "check_output", "create_subprocess_exec", "system")
 JS_LAUNCHERS = ("spawn", "exec", "execfile", "fork")
+WRAPPER_OPTIONS = {
+    "env": {"-u", "--unset", "-c", "--chdir", "-s", "--split-string"},
+    "exec": {"-a"},
+    "xvfb-run": {"-e", "--error-file", "-f", "--auth-file", "-n", "--server-num", "-p", "--xauth-protocol", "-s", "--server-args", "-w", "--wait"},
+    "timeout": {"-k", "--kill-after", "-s", "--signal"},
+    "command": set(), "nohup": set(),
+}
 
 
 def launched_executable(argv: str) -> str:
@@ -153,27 +155,63 @@ def launched_executable(argv: str) -> str:
         tokens.extend([literal] if path else literal.split() if literal else [identifier or number])
     while tokens and tokens[0] in {"str", "path", "os.fspath"}:
         tokens.pop(0)
-    while tokens and tokens[0] in {"env", "exec", "command", "nohup", "xvfb-run", "timeout"}:
-        tokens.pop(0)
-        while tokens and (tokens[0].startswith("-") or "=" in tokens[0]
-                          or re.fullmatch(r"\d+(?:\.\d+)?[smhd]?", tokens[0])):
-            tokens.pop(0)
+    while tokens and tokens[0] in WRAPPER_OPTIONS:
+        wrapper = tokens.pop(0)
+        positional = 1 if wrapper == "timeout" else 0
+        while tokens:
+            token = tokens[0]
+            if token in WRAPPER_OPTIONS[wrapper]:
+                del tokens[:2]
+            elif token.startswith("-") or (wrapper == "env" and "=" in token):
+                tokens.pop(0)
+            elif positional:
+                tokens.pop(0)
+                positional -= 1
+            else:
+                break
     return tokens[0] if tokens else ""
 
 
-def owns_browser_process(source: str) -> bool:
-    source = source.lower()
+def discovery_aliases(source: str) -> tuple[set[str], set[str]]:
+    finders, whiches = {"find_browser"}, {"which", "shutil.which"}
+    for module, imports in re.findall(r"from\s+([\w.]+)\s+import\s+([^\n]+)", source):
+        for original, alias in re.findall(r"\b(find_browser|which)\b(?:\s+as\s+(\w+))?", imports):
+            if original == "find_browser" or module == "shutil":
+                (finders if original == "find_browser" else whiches).add(alias or original)
+    for module, alias in re.findall(r"import\s+([\w.]+)\s+as\s+(\w+)", source):
+        if module == "shutil":
+            whiches.add(f"{alias}.which")
+        if module.endswith("browser.harness"):
+            finders.add(f"{alias}.find_browser")
+    return finders, whiches
+
+
+def browser_value_names(source: str) -> set[str]:
     assignments = re.findall(
         r"(?m)^\s*(?:const\s+|let\s+|var\s+)?([a-z_$]\w*)\s*=\s*([^\n;]+)", source,
     )
     browser_value = rf"{BROWSER_EXECUTABLE}|find_browser|args\.browser|(?:chrome|edge|firefox)_bin"
+    finders, whiches = discovery_aliases(source)
+    finder = "|".join(sorted(map(re.escape, finders), key=len, reverse=True))
+    which = "|".join(sorted(map(re.escape, whiches), key=len, reverse=True))
     browser_names: set[str] = set()
     for _ in assignments:
-        browser_names.update(
-            name for name, value in assignments
-            if re.search(browser_value, launched_executable(value))
-            or launched_executable(value) in browser_names
-        )
+        for name, value in assignments:
+            executable = launched_executable(value)
+            discovery = re.search(rf"\b(?P<finder>{finder})\s*\(|"
+                                  rf"\b(?:{which})\s*\((?P<args>[^)]*)\)", value)
+            if (re.search(browser_value, executable) or executable in browser_names or
+                discovery and (discovery.group("finder") or
+                               re.search(BROWSER_EXECUTABLE, launched_executable(discovery.group("args"))) or
+                               launched_executable(discovery.group("args")) in browser_names)):
+                browser_names.add(name)
+    return browser_names
+
+
+def owns_browser_process(source: str) -> bool:
+    source = source.lower()
+    browser_value = rf"{BROWSER_EXECUTABLE}|find_browser|args\.browser|(?:chrome|edge|firefox)_bin"
+    browser_names = browser_value_names(source)
     launchers = {f"subprocess.{name}" for name in PY_LAUNCHERS[:5]}
     launchers |= {"asyncio.create_subprocess_exec", "os.system", "deno.command", "bun.spawn"}
     for imports in re.findall(r"from\s+(?:subprocess|asyncio|os)\s+import\s+([^\n]+)", source):
@@ -205,31 +243,28 @@ def owns_browser_process(source: str) -> bool:
 
 def discovers_browser(source: str) -> bool:
     source = source.lower()
-    finders = {"find_browser"}
-    whiches = {"which", "shutil.which"}
-    for module, imports in re.findall(r"from\s+([\w.]+)\s+import\s+([^\n]+)", source):
-        for original, alias in re.findall(r"\b(find_browser|which)\b(?:\s+as\s+(\w+))?", imports):
-            if original == "find_browser" or module == "shutil":
-                (finders if original == "find_browser" else whiches).add(alias or original)
-    for module, alias in re.findall(r"import\s+([\w.]+)\s+as\s+(\w+)", source):
-        if module == "shutil":
-            whiches.add(f"{alias}.which")
-        if module.endswith("browser.harness"):
-            finders.add(f"{alias}.find_browser")
+    finders, whiches = discovery_aliases(source)
     finder = "|".join(sorted(map(re.escape, finders), key=len, reverse=True))
     which = "|".join(sorted(map(re.escape, whiches), key=len, reverse=True))
-    return re.search(
-        rf"\b(?:{finder})\s*\(|\b(?:{which})\s*\(\s*['\"]{BROWSER_EXECUTABLE}|"
-        rf"\b(?:command\s+-v|which)\s+{BROWSER_EXECUTABLE}|\b(?:chrome|edge|firefox)_bin\b",
-        source,
-    ) is not None
+    if re.search(rf"\b(?:{finder})\s*\(", source):
+        return True
+    browser_names = browser_value_names(source)
+    for match in re.finditer(rf"\b(?:{which})\s*\((?P<args>[^)]*)\)", source):
+        candidate = launched_executable(match.group("args"))
+        if re.search(BROWSER_EXECUTABLE, candidate) or candidate in browser_names:
+            return True
+    return re.search(rf"\b(?:command\s+-v|which)\s+{BROWSER_EXECUTABLE}|"
+                     r"\b(?:chrome|edge|firefox)_bin\b", source) is not None
 
 
 ownership_probes = (
     ('subprocess.run(["python3", "verify.py", "--browser-family", "chromium"])', False),
     ('cmd = ["python3", "verify.py", "chromium"]\nsubprocess.run(cmd)', False),
     ('browser = "/usr/bin/chromium"\nsubprocess.run(["timeout", "2s", browser])', True),
+    ('browser = args.browser\nsubprocess.run(["timeout", "-s", "KILL", "2", browser])', True),
+    ('subprocess.run(["google-chrome-stable", "--headless"])', True),
     ('browser = args.browser\ncmd = [browser, "--headless"]\nsubprocess.run(cmd)', True),
+    ('candidate = "chromium"\nbrowser = shutil.which(candidate)\nsubprocess.run([browser])', True),
     ('from subprocess import run as launch\nb = args.browser\nlaunch([b])', True),
     ('import { spawn as launch } from "node:child_process"; launch("firefox", [])', True),
 )
@@ -237,7 +272,9 @@ for probe, expected in ownership_probes:
     if owns_browser_process(probe) is not expected:
         fail(f"browser executable-position detector failed its {expected=} probe: {probe}")
 for probe in ('browser = shutil.which("chromium")',
-              'from shutil import which as locate\nbrowser = locate("chromium")'):
+              'from shutil import which as locate\nbrowser = locate("chromium")',
+              'candidate = "chromium"\nfrom shutil import which as locate\nbrowser = locate(candidate)',
+              'browser = shutil.which("google-chrome-stable")'):
     if not discovers_browser(probe):
         fail(f"browser discovery detector missed: {probe}")
 
