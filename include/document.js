@@ -835,13 +835,15 @@ function stopRuntime(nextLifecycle = "stopped") {
   cancelFrame();
   state.computeBridge?.retire();
   state.computeBridge = null;
+  // A terminal lifecycle belongs to the console component even when startup
+  // has not constructed the WASM document yet. Mark it before invalidating
+  // cooperative ownership so that invalidation synchronizes a disabled,
+  // terminated prompt instead of briefly publishing a false ready state.
+  state.replTerminated = true;
   invalidateCooperativeOwnership();
   if (!state.document) {
     return;
   }
-  state.replTerminated = true;
-  state.replBusy = false;
-  syncConsoleInputState();
   try {
     state.document.stop();
   } catch (error) {

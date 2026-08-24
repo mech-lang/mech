@@ -18,17 +18,19 @@ html[data-mech-shim="docs"] .docs-layout {
   min-width: 0;
 }
 
-html[data-mech-shim="docs"] .docs-layout > .toc {
-  display: block;
-}
-
-html[data-mech-shim="docs"] .docs-layout > .mech-toc-toggle {
-  display: none !important;
-}
-
 html[data-mech-shim="docs"] .docs-layout > .main-content {
   max-width: 76ch;
   width: 100%;
+}
+
+html[data-mech-shim="docs"] .docs-layout:is(.hide-toc, .no-sections, .has-empty-toc) {
+  display: block;
+}
+
+html[data-mech-shim="docs"]
+  .docs-layout:is(.hide-toc, .no-sections, .has-empty-toc)
+  > .main-content {
+  margin-inline: auto;
 }
 
 html[data-mech-shim="docs"] .docs-header {
@@ -96,8 +98,9 @@ html[data-mech-shim="docs"] .toc li.active-path > .toc-sub {
   display: block;
 }
 
-/* Narrow docs prioritize the article. The TOC disappears instead of becoming
- * the blog's reveal panel; the portable REPL independently becomes a drawer. */
+/* The shared page shell owns the compact TOC reveal interaction. This variant
+ * only retires its wide grid so the shared toggle can replace the article in
+ * place instead of placing navigation above it. */
 @media (max-width: 900px) {
   html[data-mech-shim="docs"] .docs-layout {
     display: block;
@@ -105,24 +108,16 @@ html[data-mech-shim="docs"] .toc li.active-path > .toc-sub {
     width: 100%;
   }
 
-  html[data-mech-shim="docs"] .docs-layout > :is(.toc, .mech-toc-toggle) {
-    display: none !important;
-  }
-
   html[data-mech-shim="docs"] .docs-layout > .main-content {
     max-width: 100%;
   }
 }
 
-@container (max-width: 720px) {
+@container (max-width: 900px) {
   html[data-mech-shim="docs"] .docs-layout {
     display: block;
     max-width: 100%;
     width: 100%;
-  }
-
-  html[data-mech-shim="docs"] .docs-layout > :is(.toc, .mech-toc-toggle) {
-    display: none !important;
   }
 
   html[data-mech-shim="docs"] .docs-layout > .main-content {

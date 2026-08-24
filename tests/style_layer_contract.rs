@@ -61,7 +61,7 @@ fn shipped_shims_keep_distinct_presentation_contracts() {
     let toc = docs.find("{{TOC}}").unwrap();
     let header = docs.find("class=\"docs-header\"").unwrap();
     assert!(layout < toc && toc < header);
-    assert!(docs.contains("data-mech-compact-toc=\"hidden\""));
+    assert!(!docs.contains("data-mech-compact-toc=\"hidden\""));
     assert!(docs.contains("data-mech-console-mode=\"docked\""));
     for contract in [
         "{{SECTION}}",
@@ -278,12 +278,10 @@ fn blog_and_docs_variants_do_not_collapse_into_one_visual_system() {
     for workspace in [
         "html[data-mech-shim=\"docs\"] .docs-layout",
         "grid-template-columns: var(--toc-width) minmax(0, 1fr)",
-        ".docs-layout > .toc {\n  display: block;",
-        ".docs-layout > .mech-toc-toggle",
+        ".docs-layout:is(.hide-toc, .no-sections, .has-empty-toc)",
         "data-mech-shim=\"docs\"",
         "@media (max-width: 900px)",
-        "@container (max-width: 720px)",
-        "display: none !important",
+        "@container (max-width: 900px)",
     ] {
         assert!(
             docs.contains(workspace),

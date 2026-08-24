@@ -525,19 +525,30 @@ def assert_style_layer_contract():
   };
 })()
 """)
-    if (
-        layers is None or
-        layers["headerPosition"] != "sticky" or
-        layers["headingDisplay"] != "flex" or
-        "section " not in layers["headingBefore"].lower() or
-        "mechdown-section" not in layers["headingBefore"] or
+    if layers is None:
+        fail("independent style-layer contract could not inspect the rendered layers")
+    editorial_numbering = "blog" in label
+    numbering_regressed = (
         (
-            layers["subheadingBefore"] is not None and
+            layers["headingDisplay"] != "flex" or
+            "section " not in layers["headingBefore"].lower() or
+            "mechdown-section" not in layers["headingBefore"] or
             (
-                "mechdown-section" not in layers["subheadingBefore"] or
-                "mechdown-subsection" not in layers["subheadingBefore"]
+                layers["subheadingBefore"] is not None and
+                (
+                    "mechdown-section" not in layers["subheadingBefore"] or
+                    "mechdown-subsection" not in layers["subheadingBefore"]
+                )
             )
-        ) or
+        ) if editorial_numbering else (
+            layers["headingDisplay"] != "block" or
+            layers["headingBefore"] not in {"none", "normal"} or
+            layers["subheadingBefore"] not in {None, "none", "normal"}
+        )
+    )
+    if (
+        layers["headerPosition"] != "sticky" or
+        numbering_regressed or
         (
             layers["abstractStyle"] is not None and
             (
@@ -560,7 +571,8 @@ def assert_style_layer_contract():
         layers["pageOff"]["consoleHeight"] <= layers["consoleHeight"] or
         abs(layers["pageOff"]["consoleWidth"] - layers["consoleWidth"]) > 1 or
         layers["pageOff"]["promptColor"] != layers["promptColor"] or
-        layers["mechdownOff"]["headingDisplay"] != "block" or
+        layers["mechdownOff"]["headingDisplay"] !=
+            ("flex" if editorial_numbering else "block") or
         layers["mechdownOff"]["headingFont"] == layers["headingFont"] or
         layers["mechdownOff"]["sourceColor"] != layers["sourceColor"] or
         layers["sourceOff"]["color"] == layers["sourceColor"] or
@@ -4697,6 +4709,54 @@ def assert_stop_invalidates_pending_ownership():
         fail(f"disposed controller APIs were not terminal and explicit: {disposed_api!r}")
 
 
+def assert_pre_document_disposal_terminates_console():
+    if label != "default":
+        return
+    devtools.call(
+        "Page.navigate",
+        {"url": f"{page_url}?mech-smoke-startup-disposal=1"},
+        session_id,
+    )
+    wait_for(
+        "window.__MECH_STARTUP_DISPOSAL__?.disposed === true",
+        "disposal while the initial source request remains pending",
+        timeout=45,
+    )
+    result = evaluate_json("""
+(() => {
+  const root = document.querySelector('.mech-root');
+  const input = document.querySelector('.repl-input');
+  let sourceError = null;
+  try { globalThis.MechDocumentController.source(); }
+  catch (error) { sourceError = error?.code || error?.name || String(error); }
+  return {
+    fetchPending: window.__MECH_STARTUP_FETCH_PENDING__ === true,
+    beforeStatus: window.__MECH_STARTUP_DISPOSAL__?.beforeStatus,
+    documentReadyEvents: Number(window.__MECH_STARTUP_DOCUMENT_READY_EVENTS__ || 0),
+    documentStatus: document.documentElement.dataset.mechDocumentStatus,
+    rootStatus: root?.dataset.mechDocumentStatus,
+    consoleStatus: root?.dataset.mechConsoleStatus,
+    inputDisabled: input?.disabled,
+    inputReadOnly: input?.readOnly,
+    sourceError,
+  };
+})()
+""")
+    expected = {
+        "fetchPending": True,
+        "beforeStatus": "busy",
+        "documentReadyEvents": 0,
+        "documentStatus": "stopped",
+        "rootStatus": "stopped",
+        "consoleStatus": "terminated",
+        "inputDisabled": True,
+        "inputReadOnly": False,
+        "sourceError": "MECH_DOCUMENT_DISPOSED",
+    }
+    if result != expected:
+        fail(f"pre-document disposal left a false-ready console: {result!r}")
+
+
 try:
     browser_session = ChromeSession(
         None,
@@ -4757,12 +4817,29 @@ try:
   };
   window.__MECH_DOCUMENT_RENDERS__ = 0;
   window.__MECH_DOCUMENTATION_RELEASES__ = new Map();
+  window.__MECH_STARTUP_DOCUMENT_READY_EVENTS__ = 0;
+  window.addEventListener('mech:document-ready', () => {
+    window.__MECH_STARTUP_DOCUMENT_READY_EVENTS__ += 1;
+  });
   window.addEventListener('mech:document-rendered', () => {
     window.__MECH_DOCUMENT_RENDERS__ += 1;
   });
   const nativeFetch = window.fetch.bind(window);
   window.fetch = (input, init) => {
     const url = typeof input === 'string' ? input : input?.url || String(input);
+    if (
+      new URLSearchParams(location.search).has('mech-smoke-startup-disposal') &&
+      url.includes('/code/')
+    ) {
+      window.__MECH_STARTUP_FETCH_PENDING__ = true;
+      setTimeout(() => {
+        const root = document.querySelector('.mech-root');
+        const beforeStatus = root?.dataset.mechConsoleStatus || null;
+        globalThis.MechDocumentController?.dispose();
+        window.__MECH_STARTUP_DISPOSAL__ = { beforeStatus, disposed: true };
+      }, 0);
+      return new Promise(() => {});
+    }
     if (url.includes('raw.githubusercontent.com/mech-machines/browser-smoke/main/docs/latency.mec')) {
       return new Promise(resolve => {
         window.__MECH_DOCUMENTATION_RELEASES__.set('latency', () => resolve(new Response(
@@ -4878,6 +4955,7 @@ try:
     assert_fatal_error_is_visible()
     assert_disposal_retires_established_fullscreen()
     assert_stop_invalidates_pending_ownership()
+    assert_pre_document_disposal_terminates_console()
     capture_artifacts()
 except Exception as error:
     capture_artifacts()
