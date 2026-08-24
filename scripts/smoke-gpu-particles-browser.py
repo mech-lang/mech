@@ -198,7 +198,7 @@ def main() -> None:
                 if 'data-mech-gpu-smoke-page-errors="0"' not in dom:
                     fail(f"the particle page reported a console, page, or promise error; artifacts: {work}")
             print("Compute particle browser smoke passed")
-            print(f"browser: {browser}")
+            print(f"browser: {browser_session.browser}")
             print(f"backend: {expected_backend}")
             print(f"particles: {formatted_count}")
             print("compute frames: advanced")
