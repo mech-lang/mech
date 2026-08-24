@@ -135,6 +135,21 @@ for name in test_only_globals:
         fail(f"test-only production global `{name}` reappeared")
 
 canonical_cdp_harness = ROOT / "tests/browser/harness/chrome.py"
+
+
+def owns_browser_process(source: str) -> bool:
+    """Return whether a scenario launches a browser outside the harness."""
+    source = source.lower()
+    executable = (r"google-chrome|chromium(?:-browser)?|microsoft-edge(?:-stable)?|"
+                  r"msedge(?:\.exe)?|chrome(?:\.exe)?|chrome_bin|edge_bin")
+    launcher = (r"subprocess\.(?:popen|run|call|check_call|check_output)|"
+                r"asyncio\.create_subprocess_exec|os\.(?:system|spawn\w*)|"
+                r"child_process|deno\.command|bun\.spawn")
+    shell = rf"(?m)^\s*(?:env\s+[^\n]*\s+)?(?:\"?\$\{{?(?:chrome_bin|edge_bin)|{executable})\b"
+    return bool(re.search(executable, source) and
+                (re.search(launcher, source) or re.search(shell, source)))
+
+
 for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
     for path in browser_test_root.rglob("*"):
         if (
@@ -150,16 +165,11 @@ for browser_test_root in (ROOT / "scripts", ROOT / "tests/browser"):
             fail(f"scenario-specific CDP transport found in {path.relative_to(ROOT)}")
         if "--remote-debugging-port" in lower_source or "--dump-dom" in lower_source:
             fail(f"scenario-specific browser process ownership found in {relative}")
-        if (
-            "browser" in path.name
-            and (path.name.startswith("smoke-") or path.name.startswith("smoke_"))
-            and any(name in lower_source for name in ("chrome", "chromium", "edge_bin"))
-            and (
-                "tests.browser.harness" not in source
-                or (
-                    "ChromeSession" not in source
-                    and "-m tests.browser.harness" not in source
-                )
+        if owns_browser_process(source) and (
+            "tests.browser.harness" not in source
+            or (
+                "ChromeSession" not in source
+                and "-m tests.browser.harness" not in source
             )
         ):
             fail(f"browser scenario does not use the canonical ChromeSession: {relative}")
