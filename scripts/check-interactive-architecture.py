@@ -103,6 +103,17 @@ for mirror in ("GpuPlanBindingAccess", "GpuPlanBindingRole", "BrowserGpuProgram"
     if mirror in gpu_and_wasm_sources:
         fail(f"transitional GPU plan mirror `{mirror}` reappeared")
 
+project_source = text("src/wasm/src/project.rs")
+for bootstrap_variant in (
+    "DetachedDocumentBootstrap",
+    "SourceBackedDocumentBootstrap",
+    "WasmDocumentBootstrap::Detached",
+    "WasmDocumentBootstrap::SourceBacked",
+    "WasmDocumentBootstrap::Served",
+):
+    if bootstrap_variant in project_source:
+        fail(f"parallel document bootstrap path `{bootstrap_variant}` reappeared")
+
 if "prepare_browser_compute_host" in wasm_sources:
     fail("the transitional browser compute constructor reappeared")
 if wasm_sources.count("fn prepare_browser_compute_runtime(") != 1:

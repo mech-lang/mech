@@ -357,26 +357,15 @@ impl WasmProject {
 /// decodes and executes the shim's detached `{{CODE}}` payload, retains the
 /// runtime, and exposes detached render queries.
 #[derive(Clone)]
-pub(crate) enum WasmDocumentBootstrap {
-    Detached(DetachedDocumentBootstrap),
-    SourceBacked(SourceBackedDocumentBootstrap),
-    #[cfg(feature = "served_project_authority")]
-    Served(ServedDocumentBootstrap),
-}
-
-#[derive(Clone)]
-pub(crate) struct DetachedDocumentBootstrap {
-    source: SourceBackedDocumentBootstrap,
-}
-
-#[derive(Clone)]
-pub(crate) struct SourceBackedDocumentBootstrap {
+pub(crate) struct WasmDocumentBootstrap {
     root_specifier: String,
     source_map: HashMap<String, String>,
     resolutions: Vec<SourceResolutionEntry>,
     tree: mech_core::nodes::Program,
     console_instance: String,
     lifecycle: DocumentRuntimeLifecycle,
+    #[cfg(feature = "served_project_authority")]
+    served: Option<ServedDocumentBootstrap>,
 }
 
 #[derive(Clone, Default)]
@@ -495,19 +484,13 @@ impl DocumentRuntimeLifecycle {
 #[cfg(feature = "served_project_authority")]
 #[derive(Clone)]
 pub(crate) struct ServedDocumentBootstrap {
-    source: SourceBackedDocumentBootstrap,
     config_source: String,
     authority: BrowserRuntimeInjectionConfig,
 }
 
 impl WasmDocumentBootstrap {
-    fn source(&self) -> &SourceBackedDocumentBootstrap {
-        match self {
-            Self::Detached(detached) => &detached.source,
-            Self::SourceBacked(source) => source,
-            #[cfg(feature = "served_project_authority")]
-            Self::Served(served) => &served.source,
-        }
+    fn source(&self) -> &Self {
+        self
     }
 
     pub(crate) fn initial_repl_source(&self) -> String {
@@ -670,8 +653,8 @@ fn build_document_repl_runtime_for_tree(
     let candidate_scenes = BrowserSceneRegistry::new();
 
     #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
-    let prepared_compute = match bootstrap {
-        WasmDocumentBootstrap::Served(served) => {
+    let prepared_compute = match bootstrap.served.as_ref() {
+        Some(served) => {
             let document = parse_config_document(
                 "mech.mcfg",
                 &served.config_source,
@@ -732,7 +715,7 @@ fn build_document_repl_runtime_for_tree(
                 None
             }
         }
-        _ => None,
+        None => None,
     };
     #[cfg(all(feature = "browser_compute", feature = "served_project_authority"))]
     let (compute_factory, compute_coordinator, compute_bridge) = match prepared_compute {
@@ -757,14 +740,14 @@ fn build_document_repl_runtime_for_tree(
 
     let resolver = document_source_resolver(candidate_tree, source)?;
 
-    match bootstrap {
-        WasmDocumentBootstrap::Detached(_) | WasmDocumentBootstrap::SourceBacked(_) => {
+    match bootstrap.served.as_ref() {
+        None => {
             builder = builder
                 .config(mech_runtime::RuntimeConfig::new("wasm-document-repl"))
                 .source_resolver(resolver);
         }
         #[cfg(feature = "served_project_authority")]
-        WasmDocumentBootstrap::Served(served) => {
+        Some(served) => {
             let document = parse_config_document(
                 "mech.mcfg",
                 &served.config_source,
@@ -819,7 +802,7 @@ fn build_document_repl_runtime_for_tree(
 /// publish it at the original document boundary. Appended console sections
 /// remain after this boundary, so they cannot replace the fixed Output pane.
 fn document_runtime_tree(
-    source: &SourceBackedDocumentBootstrap,
+    source: &WasmDocumentBootstrap,
     mut candidate_tree: mech_core::nodes::Program,
 ) -> MResult<(mech_core::nodes::Program, Option<OutputId>)> {
     let boundary = source
@@ -988,26 +971,15 @@ mod document {
         #[wasm_bindgen(js_name = fromEncoded)]
         pub fn from_encoded(encoded: &str) -> Result<WasmDocument, JsValue> {
             let tree = decode_document_tree(encoded)?;
-            let document_output_ordinals = document_output_ordinals(&tree);
-            let source = SourceBackedDocumentBootstrap {
+            Self::from_bootstrap(WasmDocumentBootstrap {
                 root_specifier: "document.mec".to_string(),
                 source_map: HashMap::from([("document.mec".to_string(), String::new())]),
                 resolutions: Vec::new(),
                 tree,
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
-            };
-            let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
-            let mut repl =
-                crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&mut repl, &bootstrap)?;
-            Ok(Self {
-                repl,
-                bootstrap,
-                document_output_ordinals,
-                program_output,
-                started: false,
-                stopped: false,
+                #[cfg(feature = "served_project_authority")]
+                served: None,
             })
         }
 
@@ -1044,16 +1016,20 @@ mod document {
             source_map: HashMap<String, String>,
             resolutions: Vec<SourceResolutionEntry>,
         ) -> Result<WasmDocument, JsValue> {
-            let bootstrap = SourceBackedDocumentBootstrap {
+            Self::from_bootstrap(WasmDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
                 tree,
                 console_instance: "repl".to_string(),
                 lifecycle: DocumentRuntimeLifecycle::default(),
-            };
+                #[cfg(feature = "served_project_authority")]
+                served: None,
+            })
+        }
+
+        fn from_bootstrap(bootstrap: WasmDocumentBootstrap) -> Result<WasmDocument, JsValue> {
             let document_output_ordinals = document_output_ordinals(&bootstrap.tree);
-            let bootstrap = WasmDocumentBootstrap::SourceBacked(bootstrap);
             let mut repl =
                 crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
             let program_output = capture_program_output(&mut repl, &bootstrap)?;
@@ -1130,32 +1106,19 @@ mod document {
             resolutions: Vec<SourceResolutionEntry>,
             authority: BrowserRuntimeInjectionConfig,
         ) -> Result<WasmDocument, JsValue> {
-            let document_output_ordinals = document_output_ordinals(&tree);
-            let source = SourceBackedDocumentBootstrap {
+            validate_served_authority(&document, &authority).map_err(to_js_error)?;
+            validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
+            Self::from_bootstrap(WasmDocumentBootstrap {
                 root_specifier: root_specifier.to_string(),
                 source_map,
                 resolutions,
                 tree,
                 console_instance: internal_repl_console_instance(&document.hosts),
                 lifecycle: DocumentRuntimeLifecycle::default(),
-            };
-            validate_served_authority(&document, &authority).map_err(to_js_error)?;
-            validate_compiled_host_providers_for_hosts(&document.hosts).map_err(to_js_error)?;
-            let bootstrap = WasmDocumentBootstrap::Served(ServedDocumentBootstrap {
-                source,
-                config_source: config_source.to_string(),
-                authority,
-            });
-            let mut repl =
-                crate::repl::WasmRepl::from_document(bootstrap.clone()).map_err(to_js_error)?;
-            let program_output = capture_program_output(&mut repl, &bootstrap)?;
-            Ok(Self {
-                repl,
-                bootstrap,
-                document_output_ordinals,
-                program_output,
-                started: false,
-                stopped: false,
+                served: Some(ServedDocumentBootstrap {
+                    config_source: config_source.to_string(),
+                    authority,
+                }),
             })
         }
 
@@ -1248,32 +1211,9 @@ mod document {
         pub fn reset(&mut self, encoded: &str) -> Result<(), JsValue> {
             // Construct before touching the live project. A malformed replacement
             // must leave the current document usable.
-            let mut replacement = match &self.bootstrap {
-                WasmDocumentBootstrap::Detached(_) => Self::from_encoded(encoded)?,
-                WasmDocumentBootstrap::SourceBacked(bootstrap) => {
-                    let tree = decode_document_tree(encoded)?;
-                    Self::from_tree_with_sources(
-                        tree,
-                        &bootstrap.root_specifier,
-                        bootstrap.source_map.clone(),
-                        bootstrap.resolutions.clone(),
-                    )?
-                }
-                #[cfg(feature = "served_project_authority")]
-                WasmDocumentBootstrap::Served(bootstrap) => {
-                    let tree = decode_document_tree(encoded)?;
-                    let document = parse_project_config(&bootstrap.config_source)?;
-                    Self::from_served_tree(
-                        tree,
-                        &bootstrap.source.root_specifier,
-                        document,
-                        &bootstrap.config_source,
-                        bootstrap.source.source_map.clone(),
-                        bootstrap.source.resolutions.clone(),
-                        bootstrap.authority.clone(),
-                    )?
-                }
-            };
+            let mut replacement_bootstrap = self.bootstrap.clone();
+            replacement_bootstrap.tree = decode_document_tree(encoded)?;
+            let mut replacement = Self::from_bootstrap(replacement_bootstrap)?;
             // Request generations belong to the stable WasmDocument wrapper,
             // not to one replaceable runtime. Carry the clock forward before
             // retirement so callbacks from the old runtime can never match a
@@ -2470,7 +2410,7 @@ fn project_source_resolver_with_resolutions(
 
 fn document_source_resolver(
     tree: mech_core::nodes::Program,
-    source: &SourceBackedDocumentBootstrap,
+    source: &WasmDocumentBootstrap,
 ) -> MResult<InMemorySourceResolver> {
     if source.root_specifier.trim().is_empty() {
         return Err(document_runtime_error(
@@ -2841,15 +2781,16 @@ mod tests {
              pairs",
         )
         .unwrap();
-        let source = SourceBackedDocumentBootstrap {
+        let bootstrap = WasmDocumentBootstrap {
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::from([("document.mec".to_string(), String::new())]),
             resolutions: Vec::new(),
             tree: tree.clone(),
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
+            #[cfg(feature = "served_project_authority")]
+            served: None,
         };
-        let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
         let source = bootstrap.initial_repl_source();
         let (runtime, outcome) = activate_document_repl_runtime_tree(
             &bootstrap,
@@ -3311,15 +3252,16 @@ phase"#;
                 .is_some(),
             "the standard source catalog must install resident math/atan2",
         );
-        let source = SourceBackedDocumentBootstrap {
+        let bootstrap = WasmDocumentBootstrap {
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::from([("document.mec".to_string(), String::new())]),
             resolutions: Vec::new(),
             tree,
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
+            #[cfg(feature = "served_project_authority")]
+            served: None,
         };
-        let bootstrap = WasmDocumentBootstrap::Detached(DetachedDocumentBootstrap { source });
         let document = crate::repl::WasmRepl::from_document(bootstrap);
         assert!(document.is_ok(), "{:#?}", document.err());
         let document = document.unwrap();
@@ -3758,13 +3700,15 @@ phase"#;
             Some(&1),
         );
 
-        let source = SourceBackedDocumentBootstrap {
+        let source = WasmDocumentBootstrap {
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::new(),
             resolutions: Vec::new(),
             tree: baseline,
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
+            #[cfg(feature = "served_project_authority")]
+            served: None,
         };
         let (runtime_tree, program_output) = document_runtime_tree(&source, combined).unwrap();
         assert!(program_output.is_some());
@@ -3785,13 +3729,15 @@ phase"#;
         assert_eq!(source_output_ids.len(), 2);
         assert_eq!(source_output_ids[0], mech_core::hash_str("inline-eval:0:0"));
 
-        let source = SourceBackedDocumentBootstrap {
+        let source = WasmDocumentBootstrap {
             root_specifier: "document.mec".to_string(),
             source_map: HashMap::new(),
             resolutions: Vec::new(),
             tree: tree.clone(),
             console_instance: "repl".to_string(),
             lifecycle: DocumentRuntimeLifecycle::default(),
+            #[cfg(feature = "served_project_authority")]
+            served: None,
         };
         let (runtime_tree, program_output) = document_runtime_tree(&source, tree.clone()).unwrap();
         let mut expected = source_output_ids;
