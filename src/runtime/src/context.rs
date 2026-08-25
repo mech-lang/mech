@@ -626,7 +626,7 @@ impl RuntimeContext {
         self.events.finish_transaction_scope()
     }
 
-    #[cfg(any(feature = "source", feature = "runtime_bench_probes"))]
+    #[cfg(feature = "source")]
     pub(crate) fn prepare_event_checkpoint(&mut self) {
         self.events.prepare_checkpoint();
     }

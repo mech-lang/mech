@@ -104,7 +104,7 @@ impl RuntimeContextEvents {
     /// Marks protect the complete physical prefix that existed when they were
     /// captured. Entries hidden after the newest live mark are transaction-era
     /// history and can be removed without changing any rollback position.
-    #[cfg(any(test, feature = "source", feature = "runtime_bench_probes"))]
+    #[cfg(any(test, feature = "source"))]
     pub(crate) fn prepare_checkpoint(&mut self) {
         self.compact_after_active_marks();
     }
