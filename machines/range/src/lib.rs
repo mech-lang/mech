@@ -1,7 +1,8 @@
 #![cfg_attr(not(test), no_main)]
-#![allow(warnings)]
 #![feature(step_trait)]
 #![feature(where_clause_attrs)]
+
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[doc(hidden)]
 #[cfg(feature = "native-link")]

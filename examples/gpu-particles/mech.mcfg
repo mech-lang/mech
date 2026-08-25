@@ -1,0 +1,50 @@
+config := {
+  runtime: {
+    resident-durability: "volatile"
+
+    limits: {
+      max-turn-duration-ms: 10000
+    }
+  }
+
+  hosts: [
+    {
+      name: "pointer"
+      provider: "pointer"
+      settings: {}
+    }
+
+    {
+      name: "particles"
+      provider: "compute"
+      settings: {
+        region: "particle-field"
+        backend: "auto"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["particles.mec"]
+
+    grants: [
+      {
+        target: "pointer/frame"
+        operations: ["read"]
+        paths: ["pulse", "position", "pressed", "delta-seconds"]
+      }
+
+      {
+        target: "particles/kernel"
+        operations: ["write"]
+        paths: ["input/force-point", "input/force-strength", "input/dt", "turn"]
+      }
+    ]
+  }
+
+  serve: {
+    paths: ["index.html", "particles.css", "particles.mec"]
+    shim: "index.html"
+    wasm: "../../src/wasm/pkg"
+  }
+}

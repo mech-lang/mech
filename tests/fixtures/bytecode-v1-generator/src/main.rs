@@ -5,25 +5,11 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
-use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use mech_build::{
-    MECH_COMPONENT_VERSION, NativeApplicationBuilder, NativeBuildEnvironment, NativeBuildProfile,
-    NativeBuildRequest, NativeDependencySource, NativeEmit, NativeHostCatalog, NativeHostLinkage,
-    NativeRuntimeConfig, NativeTargetFamily, selected_native_host_catalog,
-};
 use mech_core::{
-    ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant, MResult,
-    MatrixStorage, ParsedProgram, RuntimeType, hash_str, write_bytecode,
-};
-use mech_native_live_host_fixture::{
-    TEST_LIVE_CONTEXT, TEST_LIVE_INSTANCE, TEST_LIVE_OUTPUT_CONTEXT, TEST_LIVE_PROVIDER,
-    TEST_LIVE_PATH, TEST_LIVE_RECORD_PATH, TEST_LIVE_TUPLE_PATH, TestLiveHostFactory,
-    empty_settings,
-};
-use mech_runtime::{
-    ConfigValue, HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, RuntimeHostFactory,
+    ApplicationRequirement, BytecodeInstruction, BytecodeProgram, EncodedConstant, MatrixStorage,
+    ParsedProgram, RuntimeType, hash_str, write_bytecode,
 };
 use serde_json::{Value as JsonValue, json};
 use sha2::{Digest, Sha256};
@@ -128,12 +114,6 @@ const LIVE_SOURCE: &str = concat!(
     "payload",
 );
 
-#[derive(Clone, Copy)]
-enum PlanCatalog {
-    Standard,
-    SyntheticLive,
-}
-
 struct Fixture {
     file: &'static str,
     source_file: Option<&'static str>,
@@ -141,8 +121,6 @@ struct Fixture {
     construction: Option<&'static str>,
     bytes: Vec<u8>,
     runtime_functions: Vec<String>,
-    runtime_config: Option<NativeRuntimeConfig>,
-    plan_catalog: PlanCatalog,
     expected_output: JsonValue,
 }
 
@@ -208,8 +186,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             ),
             runtime_functions: Vec::new(),
             bytes: scalars,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: json!("bytecode-v1 🦀"),
         },
         Fixture {
@@ -221,8 +197,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             ),
             runtime_functions: Vec::new(),
             bytes: matrices,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: matrix_json(2, 2, &[0.0, 1.0, 2.0, 3.0]),
         },
         Fixture {
@@ -234,8 +208,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             ),
             runtime_functions: Vec::new(),
             bytes: composites,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: json!([7, "mech"]),
         },
         Fixture {
@@ -245,8 +217,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: literal_functions,
             bytes: literal,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: json!(42.0),
         },
         Fixture {
@@ -256,8 +226,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: scalar_functions,
             bytes: scalar,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: json!(3.0),
         },
         Fixture {
@@ -267,8 +235,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: fixed_runtime_functions,
             bytes: fixed,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: matrix_json(2, 2, &fixed_output),
         },
         Fixture {
@@ -278,8 +244,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: dynamic_functions,
             bytes: dynamic,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: matrix_json(5, 5, &dynamic_output),
         },
         Fixture {
@@ -289,8 +253,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: variadic_functions,
             bytes: variadic,
-            runtime_config: None,
-            plan_catalog: PlanCatalog::Standard,
             expected_output: matrix_json(1, 5, &[1.0, 2.0, 3.0, 4.0, 5.0]),
         },
         source_fixture(
@@ -347,50 +309,43 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: cli_functions,
             bytes: cli,
-            runtime_config: Some(cli_runtime_config()),
-            plan_catalog: PlanCatalog::Standard,
             expected_output: json!("done"),
         },
-        hosted_fixture(
+        source_fixture(
             "console.mecb",
             "console.mec",
-            "console",
             CONSOLE_SOURCE,
             console,
             console_functions,
             json!("console-done"),
         )?,
-        hosted_fixture(
+        source_fixture(
             "time.mecb",
             "time.mec",
-            "time",
             TIME_SOURCE,
             time,
             time_functions,
             json!("time-done"),
         )?,
-        hosted_fixture(
+        source_fixture(
             "timer.mecb",
             "timer.mec",
-            "timer",
             TIMER_SOURCE,
             timer,
             timer_functions,
             json!("timer-done"),
         )?,
-        hosted_fixture(
+        source_fixture(
             "scene.mecb",
             "scene.mec",
-            "scene",
             SCENE_SOURCE,
             scene,
             scene_functions,
             json!("scene-done"),
         )?,
-        hosted_fixture(
+        source_fixture(
             "robot-arm.mecb",
             "robot-arm.mec",
-            "robot-arm",
             ROBOT_ARM_SOURCE,
             robot_arm,
             robot_arm_functions,
@@ -403,8 +358,6 @@ fn fixtures() -> AppResult<Vec<Fixture>> {
             construction: None,
             runtime_functions: live_functions,
             bytes: live,
-            runtime_config: Some(synthetic_live_runtime_config()),
-            plan_catalog: PlanCatalog::SyntheticLive,
             expected_output: json!([0.0, 0.0]),
         },
     ])
@@ -425,30 +378,6 @@ fn source_fixture(
         construction: None,
         runtime_functions,
         bytes,
-        runtime_config: None,
-        plan_catalog: PlanCatalog::Standard,
-        expected_output,
-    })
-}
-
-fn hosted_fixture(
-    file: &'static str,
-    source_file: &'static str,
-    provider: &'static str,
-    source: &'static str,
-    bytes: Vec<u8>,
-    runtime_functions: Vec<String>,
-    expected_output: JsonValue,
-) -> AppResult<Fixture> {
-    Ok(Fixture {
-        file,
-        source_file: Some(source_file),
-        source: Some(source),
-        construction: None,
-        runtime_functions,
-        bytes,
-        runtime_config: Some(host_runtime_config(provider)?),
-        plan_catalog: PlanCatalog::Standard,
         expected_output,
     })
 }
@@ -884,103 +813,6 @@ fn compile_source(
     Ok((bytes, runtime_functions))
 }
 
-fn cli_runtime_config() -> NativeRuntimeConfig {
-    NativeRuntimeConfig {
-        runtime: RuntimeConfig::new("bytecode-v1-cli"),
-        actor_bootstrap: None,
-        hosts: vec![HostInstanceConfig {
-            name: "cli".to_owned(),
-            provider: "cli".to_owned(),
-            settings: ConfigValue::Map(BTreeMap::new()),
-        }],
-        run_grants: vec![RunResourceGrantConfig {
-            target: "cli/stdout".to_owned(),
-            operations: vec!["write".to_owned()],
-            paths: vec!["line".to_owned()],
-        }],
-    }
-}
-
-fn host_runtime_config(provider: &str) -> AppResult<NativeRuntimeConfig> {
-    let empty = || ConfigValue::Map(BTreeMap::new());
-    let (instance, target, operations, paths, settings) = match provider {
-        "console" => (
-            "console",
-            "console/output",
-            vec!["write"],
-            vec!["line"],
-            empty(),
-        ),
-        "time" => (
-            "clock",
-            "clock/clock",
-            vec!["read"],
-            vec!["second"],
-            empty(),
-        ),
-        "timer" => ("timer", "timer/tick", vec!["read"], vec!["tick"], empty()),
-        "scene" => (
-            "scene",
-            "scene/frame",
-            vec!["write"],
-            vec!["replace"],
-            ConfigValue::Map(BTreeMap::from([
-                (
-                    "renderer".to_owned(),
-                    ConfigValue::String("canvas".to_owned()),
-                ),
-                (
-                    "selector".to_owned(),
-                    ConfigValue::String("#scene".to_owned()),
-                ),
-            ])),
-        ),
-        "robot-arm" => ("arm", "arm/commands", vec!["move"], vec!["move"], empty()),
-        _ => return Err(io::Error::other(format!("unsupported host provider {provider}")).into()),
-    };
-    Ok(NativeRuntimeConfig {
-        runtime: RuntimeConfig::new(format!("bytecode-v1-{provider}")),
-        actor_bootstrap: None,
-        hosts: vec![HostInstanceConfig {
-            name: instance.to_owned(),
-            provider: provider.to_owned(),
-            settings,
-        }],
-        run_grants: vec![RunResourceGrantConfig {
-            target: target.to_owned(),
-            operations: operations.into_iter().map(str::to_owned).collect(),
-            paths: paths.into_iter().map(str::to_owned).collect(),
-        }],
-    })
-}
-
-fn synthetic_live_runtime_config() -> NativeRuntimeConfig {
-    NativeRuntimeConfig {
-        runtime: RuntimeConfig::new("bytecode-v1-synthetic-live"),
-        actor_bootstrap: None,
-        hosts: vec![HostInstanceConfig {
-            name: TEST_LIVE_INSTANCE.to_owned(),
-            provider: TEST_LIVE_PROVIDER.to_owned(),
-            settings: empty_settings(),
-        }],
-        run_grants: vec![
-            RunResourceGrantConfig {
-                target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_CONTEXT}"),
-                operations: vec!["read".to_owned()],
-                paths: vec![TEST_LIVE_PATH.to_owned()],
-            },
-            RunResourceGrantConfig {
-                target: format!("{TEST_LIVE_INSTANCE}/{TEST_LIVE_OUTPUT_CONTEXT}"),
-                operations: vec!["write".to_owned()],
-                paths: vec![
-                    TEST_LIVE_TUPLE_PATH.to_owned(),
-                    TEST_LIVE_RECORD_PATH.to_owned(),
-                ],
-            },
-        ],
-    }
-}
-
 fn compile_fixed_source(source: &str) -> AppResult<(Vec<u8>, Vec<String>)> {
     let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
     let manifest = repository.join("tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml");
@@ -1018,76 +850,6 @@ fn compile_fixed_source(source: &str) -> AppResult<(Vec<u8>, Vec<String>)> {
         .map_err(|error| mech_error("fixed-matrix bytecode validation", error))?;
     let runtime_functions = serde_json::from_slice(&fs::read(functions)?)?;
     Ok((bytes, runtime_functions))
-}
-
-fn synthetic_live_host_catalog() -> AppResult<Arc<NativeHostCatalog>> {
-    fn planning_factory() -> MResult<Box<dyn RuntimeHostFactory>> {
-        Ok(Box::new(TestLiveHostFactory::native()?))
-    }
-
-    let mut catalog = NativeHostCatalog::new();
-    catalog
-        .insert_provider(NativeHostLinkage {
-            provider: TEST_LIVE_PROVIDER,
-            package: "mech-native-live-host-fixture",
-            crate_name: "mech_native_live_host_fixture",
-            cargo_features: &[],
-            factory_path: "mech_native_live_host_fixture::TestLiveHostFactory::native",
-            supported_targets: &[NativeTargetFamily::Unix, NativeTargetFamily::Windows],
-            manifest: mech_native_live_host_fixture::test_live_manifest,
-            validate_settings: mech_native_live_host_fixture::validate_settings,
-            planning_factory,
-        })
-        .map_err(|error| mech_error("synthetic live native host linkage", error))?;
-    Ok(Arc::new(catalog))
-}
-
-fn native_plan(fixture: &Fixture) -> AppResult<mech_build::NativeBuildPlan> {
-    let repository = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .canonicalize()?;
-    let function_catalog = match fixture.plan_catalog {
-        PlanCatalog::Standard | PlanCatalog::SyntheticLive => mech_stdlib::native_plan_catalog(),
-    };
-    let host_catalog = match fixture.plan_catalog {
-        PlanCatalog::SyntheticLive => synthetic_live_host_catalog()?,
-        PlanCatalog::Standard => selected_native_host_catalog()
-            .map_err(|error| mech_error("selected native host catalog", error))?,
-    };
-    let binary_name = fixture
-        .file
-        .strip_suffix(".mecb")
-        .expect("fixture filenames end in .mecb")
-        .replace('-', "_");
-    let request = NativeBuildRequest {
-        bytecode: fixture.bytes.clone(),
-        runtime_config: fixture.runtime_config.clone(),
-        // Corpus evidence must not depend on the host that regenerated it.
-        // Native planning accepts an explicit target without compiling the
-        // generated application, so use the CI reference target everywhere.
-        target: Some("x86_64-unknown-linux-gnu".to_owned()),
-        profile: NativeBuildProfile::Release,
-        binary_name: binary_name.clone(),
-        output: repository
-            .join("target/bytecode-v1-fixtures/native-plans")
-            .join(binary_name),
-        emit: NativeEmit::Plan,
-        keep_project: false,
-        offline: true,
-    };
-    let dependency_source = match fixture.plan_catalog {
-        PlanCatalog::Standard => NativeDependencySource::Workspace { root: repository },
-        PlanCatalog::SyntheticLive => NativeDependencySource::Registry {
-            version: MECH_COMPONENT_VERSION.to_owned(),
-        },
-    };
-    NativeApplicationBuilder::new(NativeBuildEnvironment {
-        function_catalog,
-        host_catalog,
-        dependency_source,
-    })
-    .plan(&request)
-    .map_err(|error| mech_error("fixture native planning", error).into())
 }
 
 fn mech_error(context: &str, error: impl std::fmt::Debug) -> io::Error {
@@ -1191,15 +953,6 @@ fn manifest_entry(fixture: &Fixture) -> AppResult<JsonValue> {
             })
         })
         .collect::<Vec<_>>();
-    let plan = native_plan(fixture)?;
-    if plan.bytecode_sha256 != sha256(&fixture.bytes) {
-        return Err(io::Error::other(format!(
-            "{} native plan bytecode digest drifted",
-            fixture.file,
-        ))
-        .into());
-    }
-
     Ok(json!({
         "file": fixture.file,
         "origin": if fixture.source.is_some() { "source-compiler" } else { "constructed-bytecode-program" },
@@ -1236,18 +989,6 @@ fn manifest_entry(fixture: &Fixture) -> AppResult<JsonValue> {
         "runtime_function_ids": runtime_functions,
         "runtime_types": runtime_types,
         "application_requirements": parsed.requirements.iter().map(requirement_json).collect::<Vec<_>>(),
-        "native_plan_sha256": plan.plan_sha256,
-        "packages": plan.packages.iter().map(|package| json!({
-            "package": package.package,
-            "crate_name": package.crate_name,
-            "source": package.source,
-            "cargo_features": package.cargo_features,
-        })).collect::<Vec<_>>(),
-        "cargo_features": {
-            "mech-core": plan.core_features,
-            "mech-engine": plan.engine_features,
-            "mech-runtime": plan.runtime_features,
-        },
         "expected_output": fixture.expected_output,
     }))
 }
@@ -1376,10 +1117,9 @@ fn check_corpus() -> AppResult<()> {
                 ))
             })?;
             if runs < 2 {
-                return Err(io::Error::other(
-                    "MECH_BYTECODE_DETERMINISM_RUNS must be at least 2",
-                )
-                .into());
+                return Err(
+                    io::Error::other("MECH_BYTECODE_DETERMINISM_RUNS must be at least 2").into(),
+                );
             }
             runs
         }

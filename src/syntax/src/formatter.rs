@@ -22,6 +22,63 @@ pub struct HtmlShimExtraSlots {
     slots: BTreeMap<String, String>,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct HtmlStyleSheets {
+    pub palette: String,
+    pub source: String,
+    pub mechdown: String,
+    pub page: String,
+    pub repl: String,
+}
+
+impl HtmlStyleSheets {
+    pub fn legacy(stylesheet: String) -> Self {
+        Self {
+            page: stylesheet,
+            ..Self::default()
+        }
+    }
+
+    pub fn bundle(&self) -> String {
+        [
+            &self.palette,
+            &self.source,
+            &self.mechdown,
+            &self.page,
+            &self.repl,
+        ]
+        .into_iter()
+        .filter(|stylesheet| !stylesheet.is_empty())
+        .map(String::as_str)
+        .collect::<Vec<_>>()
+        .join("\n")
+    }
+}
+
+impl From<String> for HtmlStyleSheets {
+    fn from(stylesheet: String) -> Self {
+        Self::legacy(stylesheet)
+    }
+}
+
+impl From<&str> for HtmlStyleSheets {
+    fn from(stylesheet: &str) -> Self {
+        Self::legacy(stylesheet.to_string())
+    }
+}
+
+impl From<&String> for HtmlStyleSheets {
+    fn from(stylesheet: &String) -> Self {
+        Self::legacy(stylesheet.clone())
+    }
+}
+
+impl From<&HtmlStyleSheets> for HtmlStyleSheets {
+    fn from(stylesheets: &HtmlStyleSheets) -> Self {
+        stylesheets.clone()
+    }
+}
+
 impl HtmlShimExtraSlots {
     pub fn insert(&mut self, name: impl Into<String>, value: impl Into<String>) {
         self.slots.insert(name.into(), value.into());
@@ -43,6 +100,12 @@ fn is_mech_slot_name(name: &str) -> bool {
     let mut bytes = name.bytes();
     matches!(bytes.next(), Some(b'A'..=b'Z'))
         && bytes.all(|byte| matches!(byte, b'A'..=b'Z' | b'0'..=b'9' | b'_'))
+}
+
+fn escape_html_text(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }
 
 fn render_html_shim(shim: &str, slots: &BTreeMap<String, String>) -> HtmlShimRender {
@@ -111,7 +174,7 @@ pub fn validate_shipped_shim_render(shim_name: &str, render: &HtmlShimRender) ->
         .with_compiler_loc());
     }
 
-    for slot in ["DOCUMENT_SCRIPT", "TITLE", "CODE", "REPL"] {
+    for slot in ["DOCUMENT_SCRIPT", "TITLE", "CODE", "REPL", "PRESENTATION"] {
         if !render.consumed_slots.contains(slot) {
             return Err(MechError::new(
                 GenericError {
@@ -204,6 +267,7 @@ impl Formatter {
         Ok((rendered, link))
     }
 
+    #[cfg(feature = "mika")]
     fn mika_interpreter_id(parent_id: u64, node: &(Mika, Option<MikaSection>)) -> u64 {
         hash_str(&format!("mika:{}:{:?}", parent_id, (&node.0, &node.1)))
     }
@@ -245,6 +309,12 @@ impl Formatter {
             interpreter_id: 0,
             inline_eval_counters: HashMap::new(),
         }
+    }
+
+    /// Continue the root document's inline-evaluation address sequence when
+    /// formatting a fragment that will be appended to an existing document.
+    pub fn set_root_inline_eval_offset(&mut self, offset: u64) {
+        self.inline_eval_counters.insert(0, offset);
     }
 
     pub fn format(&mut self, tree: &Program) -> String {
@@ -317,6 +387,21 @@ impl Formatter {
         shim: String,
         extra_slots: &HtmlShimExtraSlots,
     ) -> HtmlShimRender {
+        self.format_html_with_style_sheets_and_slots(
+            tree,
+            HtmlStyleSheets::legacy(style),
+            shim,
+            extra_slots,
+        )
+    }
+
+    pub fn format_html_with_style_sheets_and_slots(
+        &mut self,
+        tree: &Program,
+        styles: HtmlStyleSheets,
+        shim: String,
+        extra_slots: &HtmlShimExtraSlots,
+    ) -> HtmlShimRender {
         self.html = true;
         self.inline_eval_counters.clear();
 
@@ -335,7 +420,7 @@ impl Formatter {
 
         let title = match toc.title {
             Some(title) => title.to_string(),
-            None => "Mech Program".to_string(),
+            None => String::new(),
         };
 
         #[cfg(feature = "serde")]
@@ -349,11 +434,17 @@ impl Formatter {
   class="console-scroll mech-repl hidden"
   id="mech-output"
   data-mech-repl-mount
+  data-mech-repl
   aria-live="polite">
 </div>"#;
 
         let mut slots = BTreeMap::new();
-        slots.insert("STYLESHEET".to_string(), style);
+        slots.insert("STYLESHEET".to_string(), styles.bundle());
+        slots.insert("PALETTE_STYLESHEET".to_string(), styles.palette);
+        slots.insert("MECH_SOURCE_STYLESHEET".to_string(), styles.source);
+        slots.insert("MECHDOWN_STYLESHEET".to_string(), styles.mechdown);
+        slots.insert("PAGE_STYLESHEET".to_string(), styles.page);
+        slots.insert("MECH_REPL_STYLESHEET".to_string(), styles.repl);
         slots.insert("TITLE".to_string(), title);
         slots.insert("AUTHOR".to_string(), title_slots.author);
         slots.insert("DATE".to_string(), title_slots.date);
@@ -373,6 +464,7 @@ impl Formatter {
         slots.insert("FOOTNOTES".to_string(), formatted_footnotes);
         slots.insert("CODE".to_string(), encoded_tree);
         slots.insert("REPL".to_string(), repl_html.to_string());
+        slots.insert("PRESENTATION".to_string(), "document".to_string());
 
         for (ix, section_html) in self.section_slots(tree).into_iter().enumerate() {
             slots.insert(format!("SECTION{}", ix + 1), section_html);
@@ -504,6 +596,9 @@ impl Formatter {
     }
 
     pub fn table_of_contents(&mut self, toc: &TableOfContents) -> String {
+        if toc.sections.is_empty() {
+            return String::new();
+        }
         let mut h2_num = 0usize;
         let mut toc_items = String::new();
         for section in &toc.sections {
@@ -589,6 +684,9 @@ impl Formatter {
                 nested
             ));
         }
+        if toc_items.is_empty() {
+            return String::new();
+        }
         format!(
             "<aside class=\"toc mech-toc\"><div class=\"toc-title\">Contents</div><ul>{}</ul></aside>",
             toc_items
@@ -628,14 +726,58 @@ impl Formatter {
         if self.html {
             format!("<h1 class=\"mech-program-title\">{}</h1>", title)
         } else {
-            format!(
+            let mut front_matter = Vec::new();
+            for (name, value) in [
+                ("author", &node.author),
+                ("date", &node.date),
+                ("kicker", &node.kicker),
+                ("section", &node.section),
+                ("summary", &node.summary),
+                ("next", &node.next),
+                ("previous", &node.previous),
+            ] {
+                if let Some(value) = value {
+                    front_matter.push(format!("{name}: {}", value.to_string()));
+                }
+            }
+            if let Some(hero) = &node.hero {
+                let hero = match hero {
+                    SectionElement::FigureTable(table) => self.figure_table_source(table),
+                    _ => self.section_element(hero).trim().to_string(),
+                };
+                front_matter.push(format!("hero: {hero}"));
+            }
+            if !node.imports.is_empty() {
+                let imports = node
+                    .imports
+                    .iter()
+                    .cloned()
+                    .map(|(import, comment)| (MechCode::Import(import), comment))
+                    .collect::<Vec<_>>();
+                front_matter.push(self.mech_code(&imports).trim_end().to_string());
+            }
+
+            let opening = format!(
                 "{}\n===============================================================================\n",
                 title
-            )
+            );
+            if front_matter.is_empty() {
+                opening
+            } else {
+                format!(
+                    "{}{}\n===============================================================================\n",
+                    opening,
+                    front_matter.join("\n")
+                )
+            }
         }
     }
 
     pub fn subtitle(&mut self, node: &Subtitle) -> String {
+        self.subtitle_with_annotations(node, None)
+    }
+
+    fn subtitle_with_annotations(&mut self, node: &Subtitle, annotations: Option<&str>) -> String {
         let level = node.level;
         if level == 2 {
             self.h2_num += 1;
@@ -696,15 +838,28 @@ impl Formatter {
         };
 
         if self.html {
+            let annotation_attribute = annotations
+                .map(|annotations| format!(" data-mech-annotations=\"{}\"", annotations))
+                .unwrap_or_default();
+            let annotation_label = annotations
+                .map(|annotations| {
+                    format!(
+                        "<span class=\"mech-section-annotations\">{}</span>",
+                        escape_html_text(annotations),
+                    )
+                })
+                .unwrap_or_default();
             format!(
-                "<h{} id=\"{}\" {} class=\"mech-program-subtitle {}\"><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a></h{}>",
+                "<h{} id=\"{}\" {} class=\"mech-program-subtitle {}\"{}><a class=\"mech-program-subtitle-link {}\" href=\"#{}\">{}</a>{}</h{}>",
                 level,
                 title_id,
                 section,
                 toc,
+                annotation_attribute,
                 toc,
                 link_id,
                 node.to_string(),
+                annotation_label,
                 level
             )
         } else {
@@ -730,9 +885,21 @@ impl Formatter {
     }
 
     pub fn section(&mut self, node: &Section) -> String {
-        let mut src = match &node.subtitle {
-            Some(title) => self.subtitle(title),
-            None => "".to_string(),
+        let annotations = node
+            .annotations
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(" ");
+        let mut src = match (&node.subtitle, node.annotations.is_empty()) {
+            (Some(title), false) if !self.html => format!(
+                "{} {}\n-------------------------------------------------------------------------------\n",
+                title.to_string(),
+                annotations,
+            ),
+            (Some(title), false) => self.subtitle_with_annotations(title, Some(&annotations)),
+            (Some(title), true) => self.subtitle(title),
+            (None, _) => "".to_string(),
         };
         for el in node.elements.iter() {
             let el_str = self.section_element(el);
@@ -742,9 +909,19 @@ impl Formatter {
         let section_id = hash_str(&format!("section-{}", self.h2_num + 1));
         let id = hash_str(&format!("section-{}{}", self.h2_num + 1, toc));
         if self.html {
+            let titled = if node.subtitle.is_some() {
+                "mechdown-titled-section"
+            } else {
+                ""
+            };
+            let classes = ["mechdown-section", toc, titled]
+                .into_iter()
+                .filter(|class| !class.is_empty())
+                .collect::<Vec<_>>()
+                .join(" ");
             format!(
-                "<section id=\"{}\" section=\"{}\" class=\"mech-program-section {}\">{}</section>",
-                id, section_id, toc, src
+                "<section id=\"{}\" section=\"{}\" class=\"{}\">{}</section>",
+                id, section_id, classes, src
             )
         } else {
             src
@@ -758,7 +935,7 @@ impl Formatter {
             src = format!("{}{}", src, el_str);
         }
         let result = if self.html {
-            format!("<p class=\"mech-paragraph\">{}</p>", src)
+            format!("<p class=\"mech-paragraph mechdown-paragraph\">{}</p>", src)
         } else {
             format!("{}\n", src)
         };
@@ -805,9 +982,9 @@ impl Formatter {
         let id = hash_str(&format!("inline-equation-{}", node.to_string()));
         if self.html {
             format!(
-                "<span id=\"{}\" equation=\"{}\" class=\"mech-inline-equation\"></span>",
+                "<span id=\"{}\" class=\"mech-inline-equation\" data-mech-equation>{}</span>",
                 id,
-                node.to_string()
+                escape_html_text(&node.to_string())
             )
         } else {
             format!("$${}$$", node.to_string())
@@ -947,7 +1124,7 @@ impl Formatter {
                 let result = self.mech_code(&vec![(code.clone(), None)]);
                 if self.html {
                     format!(
-                        "<span class=\"mech-inline-mech-code-formatted\">{}</span>",
+                        "<span class=\"mech-inline-mech-code-formatted\" data-mech-source>{}</span>",
                         result
                     )
                 } else {
@@ -960,7 +1137,7 @@ impl Formatter {
                 if self.html {
                     let element_id = format!("{}:{}", code_id, self.interpreter_id);
                     format!(
-                        "<code id=\"{}\" class=\"mech-inline-mech-code\">{}</code>",
+                        "<code id=\"{}\" class=\"mech-inline-mech-code\" data-mech-source>{}</code>",
                         element_id, result
                     )
                 } else {
@@ -1034,13 +1211,13 @@ impl Formatter {
             };
             if block.config.disabled {
                 format!(
-                    "<div class=\"mech-code-block disabled\"{}>{}</div>",
+                    "<div class=\"mech-code-block disabled\" data-mech-source{}>{}</div>",
                     style_attr, src
                 )
             } else if block.config.hidden {
                 // Print it, but give it a hidden class so it can be toggled visible via JS
                 format!(
-                    "<div class=\"mech-code-block hidden\"{}>{}</div>",
+                    "<div class=\"mech-code-block hidden\" data-mech-source{}>{}</div>",
                     style_attr, src
                 )
             } else {
@@ -1066,7 +1243,7 @@ impl Formatter {
                     "mech-fenced-mech-block no-output"
                 };
                 format!(
-                    "<div id=\"{}\" class=\"{}\"{}>
+                    "<div id=\"{}\" class=\"{}\" data-mech-source{}>
           {}
           <div class=\"mech-code-block\">{}</div>
           {}
@@ -1182,30 +1359,46 @@ impl Formatter {
                 figure_id, rows_html, figure_label, caption_block
             )
         } else {
-            let mut lines: Vec<String> = vec![];
+            let table_source = self.figure_table_source(node);
             for row in &node.rows {
-                let mut line = String::from("|");
                 for figure in row {
-                    line.push(' ');
-                    line.push_str(&format!(
-                        "![{}]({})",
-                        self.paragraph(&figure.caption),
-                        figure.src.to_string()
-                    ));
-                    line.push_str(" |");
                     let label = ((b'a' + (figure_ix as u8)) as char).to_string();
                     captions.push(format!("({}) {}", label, self.paragraph(&figure.caption)));
                     figure_ix += 1;
                 }
-                lines.push(line);
             }
             format!(
                 "{}\n{} {}\n",
-                lines.join("\n"),
+                table_source,
                 figure_label,
                 captions.join(" ")
             )
         }
+    }
+
+    /// Serialize only the language-level figure-table syntax. Generated
+    /// figure numbers and caption summaries are presentation derivatives and
+    /// cannot appear inside title frontmatter, where the parser expects the
+    /// table to end at the next frontmatter field or title delimiter.
+    fn figure_table_source(&mut self, node: &FigureTable) -> String {
+        node.rows
+            .iter()
+            .map(|row| {
+                let figures = row
+                    .iter()
+                    .map(|figure| {
+                        format!(
+                            "![{}]({})",
+                            self.paragraph(&figure.caption).trim(),
+                            figure.src.to_string()
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(" | ");
+                format!("| {figures} |")
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     pub fn abstract_el(&mut self, node: &Vec<Paragraph>) -> String {
@@ -1224,9 +1417,9 @@ impl Formatter {
         let id = hash_str(&format!("equation-{}", node.to_string()));
         if self.html {
             format!(
-                "<div id=\"{}\" equation=\"{}\" class=\"mech-equation\"></div>",
+                "<div id=\"{}\" class=\"mech-equation\" data-mech-equation>{}</div>",
                 id,
-                node.to_string()
+                escape_html_text(&node.to_string())
             )
         } else {
             format!("$$ {}\n", node.to_string())
@@ -1237,9 +1430,9 @@ impl Formatter {
         let id = hash_str(&format!("diagram-{}", node.to_string()));
         if self.html {
             format!(
-                "<div id=\"{}\" class=\"mech-diagram mermaid\">{}</div>",
+                "<div id=\"{}\" class=\"mech-diagram mermaid\" data-mech-diagram>{}</div>",
                 id,
-                node.to_string()
+                escape_html_text(&node.to_string())
             )
         } else {
             format!("```{{diagram}}\n{}\n```", node.to_string())
@@ -1371,6 +1564,7 @@ impl Formatter {
         }
     }
 
+    #[cfg(feature = "mika")]
     pub fn mika(&mut self, node: &(Mika, Option<MikaSection>)) -> String {
         let (mika, section) = node;
         let mika_str = format!("<div class=\"mech-mika\">{}</div>", mika.to_string());
@@ -1470,6 +1664,7 @@ impl Formatter {
             SectionElement::Image(n) => self.image(n),
             SectionElement::List(n) => self.list(n),
             SectionElement::MechCode(n) => self.mech_code(n),
+            #[cfg(feature = "mika")]
             SectionElement::Mika(n) => self.mika(n),
             SectionElement::Paragraph(n) => self.paragraph(n),
             SectionElement::Subtitle(n) => self.subtitle(n),
@@ -1614,7 +1809,7 @@ impl Formatter {
 
     pub fn mechdown_table_html(&mut self, node: &MarkdownTable) -> String {
         let mut html = String::new();
-        html.push_str("<table class=\"mech-table\">");
+        html.push_str("<table class=\"mech-table mechdown-table\">");
 
         // Render the header
         if !node.header.is_empty() {
@@ -1764,7 +1959,10 @@ impl Formatter {
                     } else {
                         if self.html {
                             src = if inline {
-                                format!("{}, {}", src, factor_str)
+                                format!(
+                                    "{}<span class=\"mech-grammar-sequence-op\">,</span> {}",
+                                    src, factor_str
+                                )
                             } else {
                                 format!(
                                     "{}<div class=\"mech-grammar-sequence\"><span class=\"mech-grammar-sequence-op\">,</span> {}</div>",
@@ -2031,7 +2229,10 @@ impl Formatter {
             }
         }
         if self.html {
-            format!("<span class=\"mech-code-block\">{}</span>", src)
+            format!(
+                "<span class=\"mech-code-block\" data-mech-source>{}</span>",
+                src
+            )
         } else {
             src
         }
@@ -2067,7 +2268,7 @@ impl Formatter {
           <span class=\"mech-left-paren\">(</span>
           <span class=\"mech-fsm-input\">{}</span>
           <span class=\"mech-right-paren\">)</span>
-          <span class=\"mech-fsm-define-op\">→</span>
+          <span class=\"mech-fsm-start-op\">→</span>
           <span class=\"mech-fsm-start\">{}</span>
         </div>
         <div class=\"mech-fsm-arms\">
@@ -2213,7 +2414,14 @@ impl Formatter {
             if i == 0 {
                 patterns = format!("{}", p);
             } else {
-                patterns = format!("{}, {}", patterns, p);
+                patterns = if self.html {
+                    format!(
+                        "{}<span class=\"mech-pattern-separator\">,</span> {}",
+                        patterns, p
+                    )
+                } else {
+                    format!("{}, {}", patterns, p)
+                };
             }
         }
         if self.html {
@@ -2233,7 +2441,14 @@ impl Formatter {
             if i == 0 {
                 patterns = format!("{}", p);
             } else {
-                patterns = format!("{}, {}", patterns, p);
+                patterns = if self.html {
+                    format!(
+                        "{}<span class=\"mech-pattern-separator\">,</span> {}",
+                        patterns, p
+                    )
+                } else {
+                    format!("{}, {}", patterns, p)
+                };
             }
         }
         if self.html {
@@ -2491,7 +2706,14 @@ impl Formatter {
                     if i == 0 {
                         state_variables = format!("{}", v);
                     } else {
-                        state_variables = format!("{}, {}", state_variables, v);
+                        state_variables = if self.html {
+                            format!(
+                                "{}<span class=\"mech-state-variable-separator\">,</span> {}",
+                                state_variables, v
+                            )
+                        } else {
+                            format!("{}, {}", state_variables, v)
+                        };
                     }
                 }
             }
@@ -2509,7 +2731,6 @@ impl Formatter {
         }
     }
 
-    #[cfg(feature = "variable_define")]
     pub fn variable_define(&mut self, node: &VariableDefine) -> String {
         let mut mutable = if node.mutable {
             "~".to_string()
@@ -2612,7 +2833,6 @@ impl Formatter {
         let s = match node {
             Statement::ImportDeclaration(import) => format!("+> {}", import.specifier.to_string()),
             Statement::ExportDeclaration(export) => format!("<+ {}", export.name.to_string()),
-            #[cfg(feature = "variable_define")]
             Statement::VariableDefine(var_def) => self.variable_define(var_def),
             #[cfg(feature = "invariant_define")]
             Statement::InvariantDefine(inv_def) => self.invariant_define(inv_def),
@@ -2626,11 +2846,11 @@ impl Formatter {
             Statement::SplitTable => self.split_table(),
             Statement::FlattenTable => self.flatten_table(),
             Statement::ContextDeclaration(context) => {
-                let base = match &context.base {
+                let base_text = match &context.base {
                     ContextBase::ResourceUri(uri) => uri.to_string(),
                     ContextBase::Context(name) => format!("@{}", name.to_string()),
                 };
-                let capabilities = context
+                let capabilities_text = context
                     .capabilities
                     .iter()
                     .map(|capability| {
@@ -2642,20 +2862,76 @@ impl Formatter {
                     })
                     .collect::<Vec<_>>()
                     .join(", ");
-                let capabilities = if capabilities.is_empty() {
+                let capabilities_text = if capabilities_text.is_empty() {
                     String::new()
                 } else {
-                    format!(" {{ {} }}", capabilities)
+                    format!(" {{ {} }}", capabilities_text)
                 };
                 if self.html {
+                    let base_html = match &context.base {
+                        ContextBase::ResourceUri(uri) => {
+                            let uri = uri.to_string();
+                            if let Some((provider, path)) = uri.split_once("://") {
+                                format!(
+                                    "<span class=\"mech-context-provider\">{}</span><span class=\"mech-context-scheme-op\">://</span><span class=\"mech-context-path\">{}</span>",
+                                    escape_html_text(provider),
+                                    escape_html_text(path)
+                                )
+                            } else if let Some((provider, path)) = uri.split_once('/') {
+                                format!(
+                                    "<span class=\"mech-context-provider\">{}</span><span class=\"mech-context-path\">/{}</span>",
+                                    escape_html_text(provider),
+                                    escape_html_text(path)
+                                )
+                            } else {
+                                format!(
+                                    "<span class=\"mech-context-provider\">{}</span>",
+                                    escape_html_text(&uri)
+                                )
+                            }
+                        }
+                        ContextBase::Context(name) => format!(
+                            "<span class=\"mech-context-reference\">@{}</span>",
+                            name.to_string()
+                        ),
+                    };
+                    let capabilities_html = context
+                        .capabilities
+                        .iter()
+                        .map(|capability| {
+                            let scope = match &capability.scope {
+                                ContextCapabilityScope::Path(path) => path.to_string(),
+                                ContextCapabilityScope::Wildcard(_) => "*".to_string(),
+                            };
+                            format!(
+                                "<span class=\"mech-context-capability\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">{}</span><span class=\"mech-left-paren\">(</span><span class=\"mech-context-path\">{}</span><span class=\"mech-right-paren\">)</span></span>",
+                                capability.operation.to_string(),
+                                escape_html_text(&scope)
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("<span class=\"mech-context-capability-separator\">, </span>");
+                    let capabilities_html = if capabilities_html.is_empty() {
+                        String::new()
+                    } else {
+                        format!(
+                            " <span class=\"mech-context-capabilities\"><span class=\"mech-context-capabilities-open\">{{</span>{}<span class=\"mech-context-capabilities-close\">}}</span></span>",
+                            capabilities_html
+                        )
+                    };
                     format!(
-                        "<span class=\"mech-context-declaration\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span><span class=\"mech-context-capabilities\">{}</span></span>",
+                        "<span class=\"mech-context-declaration\"><span class=\"mech-context-name\">@{}</span><span class=\"mech-define-op\">:=</span><span class=\"mech-context-base\">{}</span>{}</span>",
                         context.name.to_string(),
-                        base,
-                        capabilities
+                        base_html,
+                        capabilities_html
                     )
                 } else {
-                    format!("@{} := {}{}", context.name.to_string(), base, capabilities)
+                    format!(
+                        "@{} := {}{}",
+                        context.name.to_string(),
+                        base_text,
+                        capabilities_text
+                    )
                 }
             }
         };
@@ -2789,7 +3065,7 @@ impl Formatter {
         }
         if self.html {
             format!(
-                "<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-name\">:{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",
+                "<span class=\"mech-enum-variant\"><span class=\"mech-enum-variant-sigil\">:</span><span class=\"mech-enum-variant-name\">{}</span><span class=\"mech-enum-variant-kind\">{}</span></span>",
                 name, kind
             )
         } else {
@@ -2815,7 +3091,7 @@ impl Formatter {
                 if self.html {
                     let id = format!("{}:{}", hash_str(&v), self.interpreter_id);
                     vars = format!(
-                        "{}, <span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>",
+                        "{}<span class=\"mech-tuple-separator\">,</span> <span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span>",
                         vars, id, v
                     );
                 } else {
@@ -2826,7 +3102,7 @@ impl Formatter {
         let expression = self.expression(&node.expression);
         if self.html {
             format!(
-                "<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\">({})</span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",
+                "<span class=\"mech-tuple-destructure\"><span class=\"mech-tuple-vars\"><span class=\"mech-start-paren\">(</span>{}<span class=\"mech-end-paren\">)</span></span><span class=\"mech-assign-op\">:=</span><span class=\"mech-tuple-expression\">{}</span></span>",
                 vars, expression
             )
         } else {
@@ -2915,11 +3191,16 @@ impl Formatter {
         } else {
             name.clone()
         };
+        let name_class = if node.context.is_some() {
+            "mech-var-name mech-context-reference mech-clickable"
+        } else {
+            "mech-var-name mech-clickable"
+        };
         let id = format!("{}:{}", hash_str(&name), self.interpreter_id);
         if self.html {
             format!(
-                "<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",
-                id, display_name, subscript
+                "<span class=\"mech-slice-ref\"><span id=\"{}\" class=\"{}\">{}</span><span class=\"mech-subscript\">{}</span></span>",
+                id, name_class, display_name, subscript
             )
         } else {
             format!("{}{}", display_name, subscript)
@@ -2955,13 +3236,21 @@ impl Formatter {
         if let Some(spread) = &node.spread {
             match spread.kind {
                 PatternArraySpreadKind::Spread => {
-                    parts.push("…".to_string());
+                    parts.push(if self.html {
+                        "<span class=\"mech-pattern-array-op\">…</span>".to_string()
+                    } else {
+                        "…".to_string()
+                    });
                     if let Some(binding) = &spread.binding {
                         parts.push(self.pattern(binding));
                     }
                 }
                 PatternArraySpreadKind::Rest => {
-                    parts.push("|".to_string());
+                    parts.push(if self.html {
+                        "<span class=\"mech-pattern-array-op\">|</span>".to_string()
+                    } else {
+                        "|".to_string()
+                    });
                     if let Some(binding) = &spread.binding {
                         parts.push(self.pattern(binding));
                     }
@@ -2971,7 +3260,15 @@ impl Formatter {
         for p in &node.suffix {
             parts.push(self.pattern(p));
         }
-        format!("[{}]", parts.join(" "))
+        let patterns = parts.join(" ");
+        if self.html {
+            format!(
+                "<span class=\"mech-pattern-array\"><span class=\"mech-pattern-array-open\">[</span>{}<span class=\"mech-pattern-array-close\">]</span></span>",
+                patterns
+            )
+        } else {
+            format!("[{}]", patterns)
+        }
     }
 
     pub fn match_expression(&mut self, node: &MatchExpression) -> String {
@@ -2989,7 +3286,16 @@ impl Formatter {
             let guard = arm
                 .guard
                 .as_ref()
-                .map(|expr| format!(", {}", self.expression(expr)))
+                .map(|expr| {
+                    if self.html {
+                        format!(
+                            "<span class=\"mech-match-guard\"><span class=\"mech-match-guard-separator\">,</span> {}</span>",
+                            self.expression(expr)
+                        )
+                    } else {
+                        format!(", {}", self.expression(expr))
+                    }
+                })
                 .unwrap_or_default();
             let expr = self.expression(&arm.expression);
             if self.html {
@@ -3232,11 +3538,16 @@ impl Formatter {
         } else {
             name.clone()
         };
+        let name_class = if node.context.is_some() {
+            "mech-var-name mech-context-reference mech-clickable"
+        } else {
+            "mech-var-name mech-clickable"
+        };
         let id = format!("{}:{}", hash_str(&name), self.interpreter_id);
         if self.html {
             format!(
-                "<span class=\"mech-slice\"><span id=\"{}\" class=\"mech-var-name mech-clickable\">{}</span><span class=\"mech-subscript\">{}</span></span>",
-                id, display_name, subscript
+                "<span class=\"mech-slice\"><span id=\"{}\" class=\"{}\">{}</span><span class=\"mech-subscript\">{}</span></span>",
+                id, name_class, display_name, subscript
             )
         } else {
             format!("{}{}", display_name, subscript)
@@ -3653,11 +3964,16 @@ impl Formatter {
         } else {
             node.name.to_string()
         };
+        let name_class = if node.context.is_some() {
+            "mech-var-name mech-context-reference mech-clickable"
+        } else {
+            "mech-var-name mech-clickable"
+        };
         let id = format!("{}:{}", hash_str(&name), self.interpreter_id);
         if self.html {
             format!(
-                "<span class=\"mech-var-name mech-clickable\" id=\"{}\">{}</span>{}",
-                id, display_name, annotation
+                "<span class=\"{}\" id=\"{}\">{}</span>{}",
+                name_class, id, display_name, annotation
             )
         } else {
             format!("{}{}", display_name, annotation)
@@ -3766,7 +4082,7 @@ impl Formatter {
             Kind::Atom(ident) => {
                 if self.html {
                     format!(
-                        "<span class=\"mech-atom-kind\">{}</span>",
+                        "<span class=\"mech-atom-kind\"><span class=\"mech-kind-structure\">:</span>{}</span>",
                         ident.to_string()
                     )
                 } else {
@@ -3793,26 +4109,31 @@ impl Formatter {
                 }
             }
             Kind::Matrix((kind, literals)) => {
-                let mut src = "".to_string();
-                let k = self.kind(kind);
-                src = format!("{}", k);
-                let mut src2 = "".to_string();
-                for (i, literal) in literals.iter().enumerate() {
-                    let l = self.literal(literal);
-                    if i == 0 {
-                        src2 = if self.html {
-                            format!("<span class=\"mech-matrix-literal\">:{}</span>", l)
-                        } else {
-                            format!(":{}", l)
-                        };
-                    } else {
-                        src2 = if self.html {
-                            format!("{}<span class=\"mech-matrix-literal\">:{}</span>", src2, l)
-                        } else {
-                            format!("{},:{}", src2, l)
-                        };
-                    }
-                }
+                let src = self.kind(kind);
+                let dimensions = literals
+                    .iter()
+                    .map(|literal| self.literal(literal))
+                    .collect::<Vec<_>>();
+                let src2 = if dimensions.is_empty() {
+                    String::new()
+                } else if self.html {
+                    let dimensions = dimensions
+                        .into_iter()
+                        .map(|dimension| {
+                            format!(
+                                "<span class=\"mech-matrix-size-value\">{}</span>",
+                                dimension
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join("<span class=\"mech-matrix-size-separator\">,</span>");
+                    format!(
+                        "<span class=\"mech-matrix-literal mech-matrix-size\"><span class=\"mech-matrix-size-colon\">:</span>{}</span>",
+                        dimensions
+                    )
+                } else {
+                    format!(":{}", dimensions.join(","))
+                };
                 if self.html {
                     format!(
                         "<span class=\"mech-matrix-kind\"><span class=\"mech-matrix-kind-open\">[</span><span class=\"mech-matrix-kind-inner\">{}</span><span class=\"mech-matrix-kind-close\">]</span>{}</span>",
@@ -4128,7 +4449,7 @@ impl Formatter {
     pub fn atom(&mut self, node: &Atom) -> String {
         if self.html {
             format!(
-                "<span class=\"mech-atom\"><span class=\"mech-atom-name\">:{}</span></span>",
+                "<span class=\"mech-atom\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">{}</span></span>",
                 node.name.to_string()
             )
         } else {

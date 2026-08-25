@@ -1,0 +1,195 @@
+# Parallel EKF backend and scalar-language comparison
+
+This benchmark produces two distinct comparisons from the high-level EKF in
+`../../fixtures/ekf-kernel.mec`.
+
+## Exact checkout and source map
+
+The complete spike is on branch `codex/mech-program-gpu` and is reviewed in
+[PR #757](https://github.com/mech-lang/mech/pull/757). It is not present in a
+plain `integration/value-executor-v0.4` checkout.
+
+```text
+git fetch origin codex/mech-program-gpu
+git switch --track origin/codex/mech-program-gpu
+```
+
+| Role | Checked-in source |
+| --- | --- |
+| High-level Mech EKF | `hosts/gpu/fixtures/ekf-kernel.mec` |
+| Mech artifact benchmark harness | `hosts/gpu/examples/parallel_ekf_benchmark.rs` |
+| Generic scalar, SIMD, and WGPU lowering/execution | `hosts/gpu/src/batched.rs` |
+| Cranelift lowering/execution | `hosts/gpu/src/batched/jit.rs` |
+| Optimized Rust control | `hosts/gpu/examples/parallel_ekf_rust_scalar.rs` |
+| NumPy control | `benchmarks/archive/compute/parallel-ekf/numpy_scalar.py` |
+| Julia control | `benchmarks/archive/compute/parallel-ekf/julia_scalar.jl` |
+| LuaJIT control | `benchmarks/archive/compute/parallel-ekf/luajit_scalar.lua` |
+| Controlled runner | `benchmarks/archive/compute/parallel-ekf/run.py` |
+| Correctness tests | `hosts/gpu/tests/parallel_ekf.rs` |
+
+## Mech physical backends
+
+The scalar CPU, four-lane SIMD CPU, Cranelift JIT, and GPU lanes execute the
+same compiler artifact and persistent per-filter state. The SIMD
+implementation changes only the physical value type of the scalarized
+instruction stream to `wide::f32x4`; it uses NEON on Apple Silicon and SSE
+where available. The JIT converts that instruction stream into one native SSA
+function containing the complete outer filter loop. The primary GPU lane
+submits and synchronizes one Mech turn at a time.
+
+The Mech source itself declares `finite-candidate!`,
+`positive-covariance!`, and `symmetric-covariance!` using generic numeric,
+comparison, Boolean, and matrix-index operations. There is no EKF validation
+primitive or separate Rust publication policy. Constraint names survive
+artifact and bytecode encoding, affect artifact identity, and are reported by
+structured faults. A failed candidate is rejected before the published buffer
+changes. The session records only a fault count and latest named fault, so
+fault evidence cannot grow an unbounded log. GPU turns read a compact device
+fault status before advancing the published ping-pong buffer; checked
+multi-turn calls therefore execute as repeated checked turns.
+
+The table below is the preserved **unchecked** Apple M1 baseline from commit
+`6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e`: five-process median after one
+discarded warmup, 100,000 filters, 2026-08-14. It predates the integrity policy
+and must not be presented as checked throughput.
+
+| Mech backend | Million EKF-turns/s | Scalar speedup |
+| --- | ---: | ---: |
+| Mech scalar artifact evaluator | 1.216 | 1.00x |
+| Mech SIMD (`4xf32`) | 4.414 | 3.63x |
+| Mech Cranelift JIT | 17.306 | 14.23x |
+| Mech GPU, one submission/turn | 53.557 | 44.04x |
+| Mech GPU, 120 turns/submission | 343.969 | 282.87x |
+
+Parsing, artifact compilation, scalarization, JIT compilation, input
+construction, allocation, GPU setup, warmup, final readback, and correctness
+checks are outside the timed regions. Cranelift `0.131.3` is pinned because it
+supports the repository's Rust `1.92` minimum. JIT preparation took `3.340 ms`
+in the first recorded hardware run. Its state matched the scalar evaluator
+bit-for-bit after four validation turns.
+
+## Initial checked evaluated artifact
+
+Commit `7605c5c9081a22d7bcba0b0c288570a7c3a41f41` compiles the three
+source-authored constraints into every backend. Five release-mode processes
+on Apple M1 Metal, with 100,000 filters, three scalar reference turns, 20
+single GPU samples, and 120 repeated checked GPU turns, produced these
+medians:
+
+| Checked Mech backend | Time/turn | Million EKF-turns/s | Unchecked reference | Relative change |
+| --- | ---: | ---: | ---: | ---: |
+| Scalar artifact evaluator | 122.212 ms | 0.818 | 1.216 | -32.7% |
+| SIMD (`4xf32`) | 31.702 ms | 3.154 | 4.414 | -28.5% |
+| Cranelift JIT | 8.105 ms | 12.339 | 17.306 | -28.7% |
+| GPU, one checked submission/turn | 1.942 ms | 51.497 | 53.557 | -3.8% |
+| GPU, repeated checked turns | 1.767 ms | 56.580 | not comparable | not comparable |
+
+Source parsing, artifact construction, and scalarization took a median
+`107.022 ms`; JIT preparation took `3.573 ms`. Maximum CPU/GPU absolute error
+was `6.866e-5`, and JIT output matched scalar output bit-for-bit. The Apple
+Metal correctness suite passed all nine tests, including injected finite,
+positive-diagonal, and symmetry failures and proof that an invalid GPU
+candidate leaves the previous state published.
+
+The old `343.969 M/s` GPU number is deliberately excluded from the overhead
+calculation: it publishes only after a 120-turn command batch, while the
+checked repeated lane validates before every publication. Comparing those
+numbers would attribute a guarantee-boundary change to constraint arithmetic.
+All five checked process samples are preserved in
+[`results/apple-m1-checked-integrity-2026-08-14.json`](results/apple-m1-checked-integrity-2026-08-14.json).
+
+## Optimized checked artifact
+
+Commit `efc85d48e562fe4ccc1af535e04f9bf4617e05a6` keeps the same source
+constraints, named faults, candidate rejection, bounded fault state, and
+previous-estimate retention. It changes their generic execution strategy:
+
+- constraint-only Boolean graphs compile as predicates rather than `f32`
+  result registers;
+- dead numeric instructions are removed after tracing state outputs and
+  predicate inputs;
+- `abs(x) <= f32::MAX` lowers to exact `f32` finiteness testing and
+  `abs(left - right) <= tolerance` lowers to one predicate;
+- SIMD comparisons remain native masks until the final fault decision; and
+- JIT code returns its first packed fault instead of writing and rescanning a
+  result for every filter.
+
+Five isolated release processes on the same Apple M1 Metal adapter, with
+100,000 filters, five scalar reference turns, 40 single GPU samples, and 120
+repeated checked GPU turns, produced:
+
+| Checked Mech backend | Time/turn | Million EKF-turns/s | Initial checked | Change | Unchecked reference | Remaining checked cost |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Scalar artifact evaluator | 106.286 ms | 0.941 | 0.818 | +15.0% | 1.216 | -22.6% |
+| SIMD (`4xf32`) | 26.233 ms | 3.812 | 3.154 | +20.9% | 4.414 | -13.6% |
+| Cranelift JIT | 6.849 ms | 14.600 | 12.339 | +18.3% | 17.306 | -15.6% |
+| GPU, one checked submission/turn | 1.630 ms | 61.348 | 51.497 | +19.1% | 53.557 | noisy |
+| GPU, repeated checked turns | 1.820 ms | 54.959 | 56.580 | -2.9% | not comparable | not comparable |
+
+Source parsing, artifact construction, and scalarization took a median
+`64.134 ms`; JIT preparation took `3.494 ms`. Maximum CPU/GPU absolute error
+remained `6.866e-5`, and JIT output remained bit-for-bit equal to scalar.
+All 27 package tests passed, including the three injected integrity failures
+and GPU publication retention. The generated WGSL shrank from 13,908 to
+11,733 bytes as dead constraint arithmetic disappeared.
+
+GPU one-turn samples ranged from `47.859` to `62.495 M/s`; per-turn host
+synchronization still dominates and makes this too noisy to attribute the
+median change to device predicate lowering. Raw samples, command parameters,
+implementation commit, and validation commands are preserved in
+[`results/apple-m1-checked-integrity-optimized-2026-08-14.json`](results/apple-m1-checked-integrity-optimized-2026-08-14.json).
+
+## Scalar outer-loop languages
+
+Every lane owns 10,000 persistent filters and executes one filter at a time
+for five warmup turns, a state reset, and 20 measured turns. Inputs, equations,
+`f32` state, Joseph covariance update, and checksums agree. "Scalar" here means
+the outer filter loop is sequential. It does not claim that a language's
+scalar math or small matrix library avoids every SIMD instruction internally.
+
+Apple M1 median of five processes after one discarded process warmup, except
+seven LuaJIT samples:
+
+| Scalar outer-loop lane | Million EKF-turns/s | Relative to Mech scalar |
+| --- | ---: | ---: |
+| Mech scalar artifact evaluator | 1.213 | 1.00x |
+| Mech Cranelift JIT | 17.390 | 14.34x |
+| Rust optimized fixed-shape | 20.299 | 16.73x |
+| NumPy sequential small matrices | 0.055 | 0.05x |
+| Julia sequential small matrices | 2.786 | 2.30x |
+| LuaJIT sequential FFI `f32` state | 1.089 | 0.90x |
+
+The Rust control permits inlining of the EKF step and its fixed-shape matrix
+helpers. The previous `#[inline(never)]` control measured `12.947 M/s`, but it
+was not a fair native-code ceiling once the JIT owned and fused the outer
+filter loop. Under identical 10,000-filter, 20-turn settings, the JIT reaches
+`85.7%` of the optimized Rust throughput.
+
+Versions were Rust `1.96.0-nightly`, Python `3.14.6`, NumPy `2.5.2`, Julia
+`1.12.6`, and LuaJIT `2.1.1785763465`. NumPy, Julia BLAS, and related native
+thread counts were pinned to one.
+
+The publication evidence is checked in as
+[`results/apple-m1-2026-08-14.json`](results/apple-m1-2026-08-14.json). It was
+generated from commit `6b27e4cdbcdd53ddb0c646169be0bb597bd2a39e` and contains
+all discarded warmups and measured stdout. This file is retained as pre-policy
+evidence rather than silently relabeled. The raw samples also show why these
+figures remain provisional: synchronized GPU samples ranged from `48.613` to
+`65.510 M/s`, while the JIT backend samples stayed between `17.225` and
+`17.343 M/s` at the 100,000-filter setting.
+
+Build the native Mech benchmark, then run the complete comparison:
+
+```text
+cargo build -p mech-gpu --release --features native,jit --example parallel_ekf_benchmark
+python3 benchmarks/archive/compute/parallel-ekf/run.py --python /path/to/python-with-numpy
+```
+
+Add `--evidence-output /path/to/results.json` to record the exact Git commit,
+platform, tool versions, thread environment, commands, discarded warmups,
+every measured process stdout, parsed checksums, and summary medians. Published
+results should include this generated JSON rather than only the tables above.
+
+The runner compiles the checked-in Rust control directly with
+`rustc -C opt-level=3 -C target-cpu=native`, validates every scalar and JIT
+checksum, and prints both Markdown tables.

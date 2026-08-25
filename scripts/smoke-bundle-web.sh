@@ -157,28 +157,13 @@ if manifest.get("roots") != ["demo.mec"]:
     raise SystemExit(f"unexpected source manifest roots: {manifest!r}")
 PY
 
-google-chrome \
-  --headless=new \
-  --no-sandbox \
-  --disable-gpu \
-  --disable-dev-shm-usage \
-  --run-all-compositor-stages-before-draw \
-  --virtual-time-budget=30000 \
-  --dump-dom \
-  --user-data-dir="$chrome_profile" \
-  "$page_url" >"$output_dir/chrome-warmup.dom" 2>"$output_dir/chrome-warmup.stderr"
-
 set +e
-google-chrome \
-  --headless=new \
-  --no-sandbox \
-  --disable-gpu \
-  --disable-dev-shm-usage \
-  --run-all-compositor-stages-before-draw \
-  --virtual-time-budget=20000 \
-  --dump-dom \
-  --user-data-dir="$chrome_profile" \
-  "$page_url" >"$dom_file" 2>"$chrome_log"
+python3 -m tests.browser.harness \
+  --url "$page_url" --profile "$chrome_profile" \
+  --dom "$dom_file" --log "$chrome_log" \
+  --wait "document.documentElement.dataset.mechBundleReady === 'true'" \
+  --description "the static browser bundle round trip" \
+  --flag=--disable-gpu --flag=--run-all-compositor-stages-before-draw
 chrome_status="$?"
 set -e
 

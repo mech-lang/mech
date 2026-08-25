@@ -10,6 +10,11 @@ use mech_runtime::{
     ConfigValue, PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeResourceProvider,
     RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
 };
+#[cfg(feature = "browser")]
+use mech_runtime::{
+    HostInstanceConfig, ResidentDurabilityPolicy, RunResourceGrantConfig, RuntimeBuilder,
+    RuntimeHostInput, RuntimeHostInputSource, RuntimeHostInputValue,
+};
 use mech_scene::*;
 
 fn deliver_write(
@@ -27,6 +32,9 @@ fn f(value: f64) -> LegacyValue {
 }
 fn s(value: &str) -> LegacyValue {
     LegacyValue::String(Ref::new(value.to_string()))
+}
+fn b(value: bool) -> LegacyValue {
+    LegacyValue::Bool(Ref::new(value))
 }
 fn record(fields: Vec<(&str, LegacyValue)>) -> LegacyValue {
     LegacyValue::Record(Ref::new(MechRecord::new(fields)))
@@ -107,6 +115,47 @@ fn line(id: &str) -> LegacyValue {
         ("origin-y", f(0.0)),
     ])
 }
+fn text(id: &str) -> LegacyValue {
+    record(vec![
+        ("id", s(id)),
+        ("x", f(10.0)),
+        ("y", f(20.0)),
+        ("fill", s("white")),
+        ("font-size", f(12.0)),
+        ("font-family", s("sans-serif")),
+        ("font-weight", s("600")),
+        ("text-anchor", s("start")),
+        ("opacity", f(1.0)),
+        ("value", s("Scene label")),
+    ])
+}
+fn point_set(id: &str) -> LegacyValue {
+    record(vec![
+        ("id", s(id)),
+        ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+        ("radius", f(3.0)),
+        ("first-radius", f(6.0)),
+        ("fills", tuple(vec![s("gold"), s("blue")])),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ])
+}
+fn line_strip(id: &str) -> LegacyValue {
+    record(vec![
+        ("id", s(id)),
+        (
+            "positions",
+            points(3, 2, vec![10.0, 20.0, 30.0, 40.0, 50.0, 60.0]),
+        ),
+        ("stroke", s("gray")),
+        ("stroke-width", f(0.75)),
+        ("line-cap", s("round")),
+        ("line-join", s("round")),
+        ("opacity", f(0.5)),
+        ("closed", b(true)),
+    ])
+}
 
 #[test]
 fn valid_empty_scene() {
@@ -135,6 +184,96 @@ fn valid_line_scene() {
         ("lines", tuple(vec![line("l1")])),
     ]);
     assert_eq!(SceneSnapshot::from_value(&scene).unwrap().lines.len(), 1);
+}
+
+#[test]
+fn valid_text_scene() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("texts", tuple(vec![text("title")])),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.texts[0].value, "Scene label");
+}
+
+#[test]
+fn point_set_expands_matrix_rows_into_stable_circles() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("point-sets", point_set("body")),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.circles.len(), 2);
+    assert_eq!(scene.circles[0].id, "body-0");
+    assert_eq!(scene.circles[0].radius, 6.0);
+    assert_eq!(scene.circles[0].fill, "gold");
+    assert_eq!((scene.circles[1].x, scene.circles[1].y), (20.0, 40.0));
+}
+
+#[test]
+fn line_strip_keeps_matrix_rows_as_one_closed_path() {
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("line-strips", tuple(vec![line_strip("orbit-earth")])),
+    ]);
+    let scene = SceneSnapshot::from_value(&scene).unwrap();
+    assert_eq!(scene.line_strips.len(), 1);
+    assert_eq!(scene.line_strips[0].id, "orbit-earth");
+    assert_eq!(
+        scene.line_strips[0].positions,
+        vec![[10.0, 40.0], [20.0, 50.0], [30.0, 60.0]]
+    );
+    assert!(scene.line_strips[0].closed);
+}
+
+#[test]
+fn point_set_rejects_a_palette_with_the_wrong_length() {
+    let bad = record(vec![
+        ("id", s("body")),
+        ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+        ("radius", f(3.0)),
+        ("first-radius", f(6.0)),
+        ("fills", tuple(vec![s("gold")])),
+        ("stroke", s("none")),
+        ("stroke-width", f(0.0)),
+        ("opacity", f(1.0)),
+    ]);
+    let scene = record(vec![
+        ("width", f(100.0)),
+        ("height", f(50.0)),
+        ("background", s("#000")),
+        ("point-sets", bad),
+    ]);
+    assert!(SceneSnapshot::from_value(&scene).is_err());
+}
+
+#[test]
+fn point_set_rejects_nonfinite_radii() {
+    for (radius, first_radius) in [(f64::NAN, 6.0), (3.0, f64::INFINITY)] {
+        let bad = record(vec![
+            ("id", s("body")),
+            ("positions", points(2, 2, vec![10.0, 20.0, 30.0, 40.0])),
+            ("radius", f(radius)),
+            ("first-radius", f(first_radius)),
+            ("fills", tuple(vec![s("gold"), s("blue")])),
+            ("stroke", s("none")),
+            ("stroke-width", f(0.0)),
+            ("opacity", f(1.0)),
+        ]);
+        let scene = record(vec![
+            ("width", f(100.0)),
+            ("height", f(50.0)),
+            ("background", s("#000")),
+            ("point-sets", bad),
+        ]);
+        assert!(SceneSnapshot::from_value(&scene).is_err());
+    }
 }
 
 #[test]
@@ -418,6 +557,33 @@ fn unknown_renderer() {
 }
 
 #[test]
+fn output_renderer_does_not_require_a_selector() {
+    let mut map = BTreeMap::new();
+    map.insert(
+        "renderer".to_string(),
+        ConfigValue::String("output".to_string()),
+    );
+
+    let settings = scene_settings_from_config(&ConfigValue::Map(map)).unwrap();
+
+    assert_eq!(settings.renderer, SceneRendererKind::Output);
+    assert!(settings.selector.is_empty());
+}
+
+#[test]
+fn dom_renderer_still_requires_a_selector() {
+    let mut map = BTreeMap::new();
+    map.insert(
+        "renderer".to_string(),
+        ConfigValue::String("svg".to_string()),
+    );
+
+    let error = scene_settings_from_config(&ConfigValue::Map(map)).unwrap_err();
+
+    assert!(format!("{error:?}").contains("scene selector is required"));
+}
+
+#[test]
 fn assignment_rejected() {
     let provider = SceneResourceProvider::new("view", RecordingSceneBackend::new());
     let err = provider
@@ -661,6 +827,220 @@ fn native_scene_instances_are_isolated() {
     .unwrap();
     assert_eq!(registry.latest("main").unwrap().width, 100.0);
     assert_eq!(registry.latest("hud").unwrap().width, 200.0);
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_pointer_activation_survives_coalesced_and_later_release() {
+    let registry = BrowserSceneRegistry::new();
+    let factory = BrowserSceneHostFactory::with_registry(registry.clone()).unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(Box::new(factory))
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "view".to_string(),
+            provider: "scene".to_string(),
+            settings: settings("output"),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "view/frame".to_string(),
+            operations: vec!["read".to_string(), "write".to_string()],
+            paths: vec![
+                "pointer-pulse".to_string(),
+                "pointer-position".to_string(),
+                "pointer-pressed".to_string(),
+                "replace".to_string(),
+            ],
+        })
+        .build()
+        .unwrap();
+    runtime
+        .load_interactive_source_program(
+            r#"
+@scene := scene://view/frame{:read(pointer-pulse), :read(pointer-position), :read(pointer-pressed), :write(replace)}
+pulse := @scene/pointer-pulse
+position := @scene/pointer-position
+pressed := @scene/pointer-pressed
+~enabled := 1.0
+~last-pulse := 0.0
+delta := (pulse - last-pulse) % 2.0
+next-enabled := enabled + delta * (1.0 - 2.0 * enabled)
+enabled = next-enabled
+last-pulse = pulse
+"#,
+            ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+    runtime.start_input_drivers().unwrap();
+
+    registry
+        .submit_pointer("view", 0.25, -0.5, true, 0.0)
+        .unwrap();
+    registry
+        .submit_pointer("view", 0.25, -0.5, false, 0.01)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
+    runtime.drain_host_inputs(8).unwrap();
+
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 0.0);
+
+    let LegacyValue::F64(pressed) = runtime.root_symbol_value("pressed").unwrap().into_value()
+    else {
+        panic!("scene pointer pressed state must remain f64")
+    };
+    assert_eq!(*pressed.borrow(), 0.0);
+
+    // A second activation drains before its release. The release remains in
+    // the same gesture group and cannot replay the already-consumed pulse.
+    registry
+        .submit_pointer("view", -0.75, 0.5, true, 0.02)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    runtime.drain_host_inputs(8).unwrap();
+
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 1.0);
+
+    registry
+        .submit_pointer("view", -0.75, 0.5, false, 0.03)
+        .unwrap();
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 1);
+    runtime.drain_host_inputs(8).unwrap();
+
+    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
+        panic!("scene pointer pulse must remain f64")
+    };
+    assert_eq!(*pulse.borrow(), 2.0);
+    let LegacyValue::F64(pressed) = runtime.root_symbol_value("pressed").unwrap().into_value()
+    else {
+        panic!("scene pointer pressed state must remain f64")
+    };
+    assert_eq!(*pressed.borrow(), 0.0);
+    let LegacyValue::MatrixF64(position) =
+        runtime.root_symbol_value("position").unwrap().into_value()
+    else {
+        panic!("scene pointer position must remain an f64 matrix")
+    };
+    assert_eq!(position.as_vec(), [-0.75, 0.5]);
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 1.0);
+
+    // Two complete clicks may already be queued when one drain begins. Each
+    // gesture is still a distinct resident turn even though its own down/up
+    // packets coalesce, so different activation identities cannot disappear.
+    for (x, y, delta) in [(0.5, 0.5, 0.04), (-0.5, -0.5, 0.06)] {
+        registry.submit_pointer("view", x, y, true, delta).unwrap();
+        registry
+            .submit_pointer("view", x, y, false, delta + 0.01)
+            .unwrap();
+    }
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 4);
+    assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 2);
+    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
+        panic!("scene pointer pulse must remain f64")
+    };
+    assert_eq!(*pulse.borrow(), 3.0);
+    let LegacyValue::MatrixF64(position) =
+        runtime.root_symbol_value("position").unwrap().into_value()
+    else {
+        panic!("scene pointer position must remain an f64 matrix")
+    };
+    assert_eq!(position.as_vec(), [0.5, 0.5]);
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 0.0);
+    assert_eq!(runtime.drain_host_inputs(8).unwrap().len(), 2);
+    assert_eq!(runtime.pending_host_input_count().unwrap(), 0);
+
+    let LegacyValue::F64(pulse) = runtime.root_symbol_value("pulse").unwrap().into_value() else {
+        panic!("scene pointer pulse must remain f64")
+    };
+    assert_eq!(*pulse.borrow(), 4.0);
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 1.0);
+}
+
+#[cfg(feature = "browser")]
+#[test]
+fn browser_scene_pointer_count_jump_preserves_toggle_parity() {
+    let factory = BrowserSceneHostFactory::new().unwrap();
+    let mut runtime = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_native_plan_catalog())
+        .host_factory(Box::new(factory))
+        .unwrap()
+        .host_instance(HostInstanceConfig {
+            name: "view".to_string(),
+            provider: "scene".to_string(),
+            settings: settings("output"),
+        })
+        .run_resource_grant(RunResourceGrantConfig {
+            target: "view/frame".to_string(),
+            operations: vec!["read".to_string()],
+            paths: vec!["pointer-pulse".to_string()],
+        })
+        .build()
+        .unwrap();
+    runtime
+        .load_interactive_source_program(
+            r#"
+@scene := scene://view/frame{:read(pointer-pulse)}
+pulse := @scene/pointer-pulse
+~enabled := 1.0
+~last-pulse := 0.0
+parity := (pulse - last-pulse) % 2.0
+next-enabled := enabled + parity * (1.0 - 2.0 * enabled)
+enabled = next-enabled
+last-pulse = pulse
+"#,
+            ResidentDurabilityPolicy::Volatile,
+        )
+        .unwrap();
+
+    let pulse = RuntimeHostInputSource::new("scene://view/frame", "pointer-pulse").unwrap();
+    runtime
+        .ingress()
+        .submit(RuntimeHostInput::single(
+            pulse.clone(),
+            RuntimeHostInputValue::F64(2.0),
+        ))
+        .unwrap();
+    runtime.drain_host_inputs(1).unwrap();
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 1.0);
+
+    runtime
+        .ingress()
+        .submit(RuntimeHostInput::single(
+            pulse,
+            RuntimeHostInputValue::F64(3.0),
+        ))
+        .unwrap();
+    runtime.drain_host_inputs(1).unwrap();
+    let LegacyValue::F64(enabled) = runtime.root_symbol_value("enabled").unwrap().into_value()
+    else {
+        panic!("scene pointer toggle must remain f64")
+    };
+    assert_eq!(*enabled.borrow(), 0.0);
 }
 
 #[test]

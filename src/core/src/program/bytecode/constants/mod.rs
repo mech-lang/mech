@@ -96,6 +96,20 @@ pub fn decode_constants(
     Ok(values)
 }
 
+/// Decodes compiler-owned constants before bytecode section framing.
+///
+/// This keeps semantic artifact construction independent from file-size read
+/// limits. The final bytecode writer still applies all framing and read limits.
+pub fn decode_encoded_constants(constants: &[EncodedConstant]) -> MResult<Vec<LegacyValue>> {
+    constants
+        .iter()
+        .map(|constant| {
+            let mut context = ConstantCodecContext::new();
+            decode_value_payload(&constant.runtime_type, &constant.bytes, &mut context)
+        })
+        .collect()
+}
+
 pub(crate) fn referenced_runtime_types(
     types: &[RuntimeType],
     entries: &[ConstantEntry],
@@ -1173,6 +1187,35 @@ fn decode_matrix_constant(
 ) -> MResult<LegacyValue> {
     #[cfg(feature = "matrix")]
     validate_matrix_payload_feasibility(element, rows, cols, bytes)?;
+    #[cfg(feature = "matrix")]
+    if matches!(element, RuntimeType::Any) {
+        let mut reader = ByteReader::new(bytes);
+        if (
+            reader.read_u32("empty value-matrix rows")?,
+            reader.read_u32("empty value-matrix columns")?,
+        ) != (rows, cols)
+            || !storage.validate_dimensions(rows, cols)
+        {
+            return invalid("empty value-matrix shape disagrees with RuntimeType");
+        }
+        let (_, _, element_count) = matrix::element_count(rows, cols)?;
+        if element_count != 0 || !reader.is_empty() {
+            return invalid(
+                "Any-element matrix constants are reserved for empty value matrices in bytecode v1",
+            );
+        }
+        return Ok(LegacyValue::MatrixValue(
+            crate::structures::Matrix::from_vec(
+                Vec::new(),
+                usize::try_from(rows).map_err(|_| {
+                    invalid::<()>("empty value-matrix row count exceeds usize").unwrap_err()
+                })?,
+                usize::try_from(cols).map_err(|_| {
+                    invalid::<()>("empty value-matrix column count exceeds usize").unwrap_err()
+                })?,
+            ),
+        ));
+    }
     #[cfg(feature = "matrix")]
     match element {
         #[cfg(feature = "bool")]

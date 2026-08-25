@@ -193,13 +193,7 @@ impl ModuleLoader for DynamicModuleLoader {
 
     fn load(&self, module: &str) -> MResult<DynamicFunctionModuleFragment> {
         let path = Self::find_library(module).ok_or_else(|| {
-            MechError::new(
-                MissingFunctionError {
-                    function_id: hash_str(module),
-                },
-                None,
-            )
-            .with_compiler_loc()
+            MechError::new(MissingFunctionError::named(module), None).with_compiler_loc()
         })?;
 
         dynamic_trace(format!(
@@ -1655,20 +1649,12 @@ impl ModuleRegistry {
 }
 
 fn missing_module(module: &str) -> MechError {
-    MechError::new(
-        MissingFunctionError {
-            function_id: hash_str(module),
-        },
-        None,
-    )
-    .with_compiler_loc()
+    MechError::new(MissingFunctionError::named(module), None).with_compiler_loc()
 }
 
 fn missing_module_item(module: &str, item: &str) -> MechError {
     MechError::new(
-        MissingFunctionError {
-            function_id: hash_str(&format!("{module}/{item}")),
-        },
+        MissingFunctionError::named(format!("{module}/{item}")),
         None,
     )
     .with_compiler_loc()

@@ -26989,6 +26989,66 @@
       "owner": "mech-matrix"
     },
     {
+      "name": "MatMulRDVDMD<f32>",
+      "id_hex": "005518b3797b24ed",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<f64>",
+      "id_hex": "00e2f2ee22b93858",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<i128>",
+      "id_hex": "00c93844c6e52059",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<i16>",
+      "id_hex": "0073939168fd0595",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<i32>",
+      "id_hex": "00a038bcdfc26d6e",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<i64>",
+      "id_hex": "00215e3b6eeb6acf",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<i8>",
+      "id_hex": "003b103d987b3304",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<u128>",
+      "id_hex": "0082114e10efbf76",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<u16>",
+      "id_hex": "007cde064b0c6f4b",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<u32>",
+      "id_hex": "0066d81fe18498d1",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<u64>",
+      "id_hex": "0091d092d3cefbad",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatMulRDVDMD<u8>",
+      "id_hex": "006cbda508406ec9",
+      "owner": "mech-matrix"
+    },
+    {
       "name": "MatMulScalar<f32>",
       "id_hex": "005aac4b189a1470",
       "owner": "mech-matrix"
@@ -28907,6 +28967,21 @@
       "name": "MathY1F64VD",
       "id_hex": "00be353e6537d780",
       "owner": "mech-math"
+    },
+    {
+      "name": "MatrixSolveMDMD<f32>",
+      "id_hex": "00405178b4b50d2f",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatrixSolveMDMD<f64>",
+      "id_hex": "003ec4f968646717",
+      "owner": "mech-matrix"
+    },
+    {
+      "name": "MatrixSolveMDVD<f32>",
+      "id_hex": "00c3def1222b905d",
+      "owner": "mech-matrix"
     },
     {
       "name": "MatrixSolveMDVD<f64>",

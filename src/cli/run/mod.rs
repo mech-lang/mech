@@ -2,7 +2,7 @@ use clap::{Arg, ArgAction};
 use mech_core::*;
 use mech_runtime::{
     ConfigValue, HostInstanceConfig, MechRuntime, ModuleBuildOptions, RunResourceGrantConfig,
-    RuntimeBuilder, RuntimeConfig, SourceResolver,
+    RuntimeBuilder, RuntimeConfig, RuntimeHostFactory, SourceResolver,
 };
 use std::ffi::OsStr;
 use std::path::Path;
@@ -134,7 +134,7 @@ pub fn new_cli_runtime(
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
 ) -> MResult<MechRuntime> {
-    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants)?.build()
+    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants, Vec::new())?.build()
 }
 
 pub fn new_cli_runtime_with_source_resolver(
@@ -144,22 +144,87 @@ pub fn new_cli_runtime_with_source_resolver(
     run_grants: &[RunResourceGrantConfig],
     source_resolver: impl SourceResolver + 'static,
 ) -> MResult<MechRuntime> {
-    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants)?
+    cli_runtime_builder(config, cli_grants, configured_hosts, run_grants, Vec::new())?
         .source_resolver(source_resolver)
         .build()
 }
 
-fn cli_runtime_builder(
+pub fn new_cli_runtime_with_source_resolver_and_host_factories(
     config: RuntimeConfig,
     cli_grants: &host_grants::EffectiveCliHostGrants,
     configured_hosts: &[HostInstanceConfig],
     run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+    source_resolver: impl SourceResolver + 'static,
+) -> MResult<MechRuntime> {
+    cli_runtime_builder(
+        config,
+        cli_grants,
+        configured_hosts,
+        run_grants,
+        host_factories,
+    )?
+    .source_resolver(source_resolver)
+    .build()
+}
+
+pub(crate) fn cli_runtime_builder(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+) -> MResult<RuntimeBuilder> {
+    cli_runtime_builder_with_cli_factory(
+        config,
+        cli_grants,
+        configured_hosts,
+        run_grants,
+        host_factories,
+        None,
+    )
+}
+
+pub(crate) fn cli_runtime_builder_with_cli_host_factory(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+    cli_host_factory: Box<dyn RuntimeHostFactory>,
+) -> MResult<RuntimeBuilder> {
+    cli_runtime_builder_with_cli_factory(
+        config,
+        cli_grants,
+        configured_hosts,
+        run_grants,
+        host_factories,
+        Some(cli_host_factory),
+    )
+}
+
+fn cli_runtime_builder_with_cli_factory(
+    config: RuntimeConfig,
+    cli_grants: &host_grants::EffectiveCliHostGrants,
+    configured_hosts: &[HostInstanceConfig],
+    run_grants: &[RunResourceGrantConfig],
+    host_factories: Vec<Box<dyn RuntimeHostFactory>>,
+    cli_host_factory: Option<Box<dyn RuntimeHostFactory>>,
 ) -> MResult<RuntimeBuilder> {
     let builder = RuntimeBuilder::new()
         .function_catalog(mech_stdlib::source_catalog())
         .config(config);
-    let (mut builder, registered_providers) =
-        crate::cli::host_factories::register_cli_host_factories(builder)?;
+    let (mut builder, mut registered_providers) = match cli_host_factory {
+        Some(factory) => crate::cli::host_factories::register_cli_host_factories_with_cli_factory(
+            builder, factory,
+        )?,
+        None => crate::cli::host_factories::register_cli_host_factories(builder)?,
+    };
+    for factory in host_factories {
+        let provider = factory.provider_name().to_owned();
+        builder = builder.host_factory(factory)?;
+        registered_providers.insert(provider);
+    }
 
     let (next_builder, mut registered_cli_instances) =
         crate::cli::host_configuration::materialize_host_configuration(

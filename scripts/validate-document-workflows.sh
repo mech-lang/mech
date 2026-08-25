@@ -45,7 +45,7 @@ cargo test -p mech \
 bash scripts/check-shipped-document-shims.sh
 
 rm -rf src/wasm/pkg
-bash scripts/build-mech-browser.sh
+python3 scripts/build-wasm.py --profile browser
 cargo build \
   --bin mech \
   --no-default-features \
@@ -78,7 +78,9 @@ for attempt in $(seq 1 "$repeat"); do
     bash scripts/smoke-served-analog-clock-browser.sh
   MECH_BIN="$target_dir/embedded-browser-mech" \
     bash scripts/smoke-served-resident-nbody-browser.sh
-  bash scripts/build-mech-browser.sh
+  MECH_BIN="$target_dir/embedded-browser-mech" \
+    bash scripts/smoke-served-resident-ekf-browser.sh
+  python3 scripts/build-wasm.py --profile browser
   MECH_BIN="$target_dir/embedded-browser-mech" \
     bash scripts/smoke-bundle-web.sh
 done

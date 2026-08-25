@@ -14,7 +14,7 @@ use super::{
     ActivatedExternalNode, ActivatedNodeIndex, ActivatedTurnStep, F64_STATE_ARENA_BASE,
     F64_STATE_SLOT_BIT, F64ReadTapeEntry, ReactiveInstance, ResidentEffectIntent,
     ResidentExternalPublicationAuthority, ResidentIntegrityMode, ResidentReadLocation,
-    ResidentRegion, ResidentStorageClass, StateArena, StateVersion, TypedResidentArena,
+    ResidentRegion, ResidentStorageClass, SlotRole, StateArena, StateVersion, TypedResidentArena,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -259,6 +259,97 @@ impl ReactiveInstance {
     /// Hash the currently published resident state without beginning a candidate.
     pub fn published_state_hash(&self) -> u64 {
         state_hash(self, self.published_epoch())
+    }
+
+    /// Recompute selected materialized outputs from the currently published
+    /// state without executing state transitions or staging external effects.
+    /// Replacement runtimes use this after migrating compatible live cells so
+    /// every non-migrated projection describes the installed state epoch.
+    pub fn refresh_output_projections(
+        &mut self,
+        targets: &std::collections::BTreeSet<CellSlotId>,
+    ) -> Result<(), ResidentExecutionError> {
+        if targets.is_empty() {
+            return Ok(());
+        }
+        if self.candidate_active {
+            return Err(ResidentExecutionError::ActiveCandidate);
+        }
+        for target in targets {
+            if self
+                .plan
+                .slots
+                .get(target.get() as usize)
+                .is_none_or(|slot| slot.role != SlotRole::Output)
+                || !self
+                    .plan
+                    .output_materializations
+                    .iter()
+                    .any(|materialization| materialization.target == *target)
+            {
+                return Err(ResidentExecutionError::InvalidOutputMaterialization { slot: *target });
+            }
+        }
+
+        let epoch = self.published_epoch();
+        self.refresh_f64_state_arenas(epoch);
+        let execution_order = self.plan.execution_node_order.to_vec();
+        let mut probe = ResidentStructuralProbe::default();
+        for node_index in execution_order {
+            let execute = matches!(
+                &self.plan.steps[node_index.get() as usize],
+                ActivatedTurnStep::Kernel(node)
+                    if node.write.storage == ResidentStorageClass::Scratch
+            );
+            if execute {
+                self.execute_kernel(node_index, epoch, epoch, &mut probe)?;
+            }
+        }
+
+        let materializations = self.plan.output_materializations.to_vec();
+        for materialization in materializations {
+            if !targets.contains(&materialization.target) {
+                continue;
+            }
+            let target = materialization.target;
+            let target_region = self.plan.slots[target.get() as usize].region;
+            match materialization.source {
+                ResidentReadLocation::Constant(source) => {
+                    self.state.overwrite_published_from_arena(
+                        target,
+                        target_region,
+                        epoch,
+                        &self.activation,
+                        source,
+                    )
+                }
+                ResidentReadLocation::Input(source) => self.state.overwrite_published_from_arena(
+                    target,
+                    target_region,
+                    epoch,
+                    &self.workspace.input,
+                    source,
+                ),
+                ResidentReadLocation::Scratch(source) => self.state.overwrite_published_from_arena(
+                    target,
+                    target_region,
+                    epoch,
+                    &self.workspace.scratch,
+                    source,
+                ),
+                ResidentReadLocation::State {
+                    slot: source_slot,
+                    region: source_region,
+                } => self.state.overwrite_published_from_state_slot(
+                    target,
+                    target_region,
+                    source_slot,
+                    source_region,
+                    epoch,
+                ),
+            }
+        }
+        self.validate_constraints(epoch)
     }
 
     fn external_node(&self, ordinal: u32) -> Option<&ActivatedExternalNode> {
@@ -1375,6 +1466,39 @@ impl StateArena {
 
     fn select_buffer(&self, slot: CellSlotId, epoch: InstanceEpoch) -> usize {
         select_version(self.version(slot), epoch)
+    }
+
+    fn overwrite_published_from_arena(
+        &mut self,
+        target_slot: CellSlotId,
+        target_region: ResidentRegion,
+        epoch: InstanceEpoch,
+        source: &TypedResidentArena,
+        source_region: ResidentRegion,
+    ) {
+        let target_buffer = self.published_buffer(target_slot, epoch);
+        self.buffers[target_buffer].copy_region_from(target_region, source, source_region);
+    }
+
+    fn overwrite_published_from_state_slot(
+        &mut self,
+        target_slot: CellSlotId,
+        target_region: ResidentRegion,
+        source_slot: CellSlotId,
+        source_region: ResidentRegion,
+        epoch: InstanceEpoch,
+    ) {
+        let target_buffer = self.published_buffer(target_slot, epoch);
+        let source_buffer = self.published_buffer(source_slot, epoch);
+        if source_buffer == target_buffer {
+            self.buffers[target_buffer].copy_region_within(target_region, source_region);
+        } else if target_buffer == 0 {
+            let [target, source] = &mut self.buffers;
+            target.copy_region_from(target_region, source, source_region);
+        } else {
+            let [source, target] = &mut self.buffers;
+            target.copy_region_from(target_region, source, source_region);
+        }
     }
 
     fn candidate_buffer(&self, slot: CellSlotId, before: InstanceEpoch) -> usize {

@@ -1,5 +1,6 @@
 use super::*;
-use mech_core::MechSourceCode;
+use mech_core::{MechSourceCode, Program};
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct RuntimeWorkspaceTargetSnapshot {
@@ -17,6 +18,7 @@ pub struct RuntimeWorkspaceSourceSnapshot {
     /// Filesystem-backed Mech text already contains recursively expanded
     /// Mechdown includes.
     pub source: Option<MechSourceCode>,
+    pub syntax_tree: Option<Arc<Program>>,
     pub module_version: Option<ModuleVersionId>,
     pub content_hash: u64,
     pub modified_time: Option<SystemTime>,

@@ -592,6 +592,7 @@ fn artifact_with_effect(artifact: &ProgramArtifact, protocol: ProviderProtocol) 
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: constraints.into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .unwrap()
@@ -660,6 +661,7 @@ fn artifact_with_duplicate_observation(artifact: &ProgramArtifact) -> ProgramArt
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("duplicate observation artifact")
@@ -707,6 +709,7 @@ fn artifact_with_duplicate_effect(
         bindings: bindings.into_boxed_slice(),
         outputs: artifact.outputs().to_vec().into_boxed_slice(),
         constraints: artifact.constraints().to_vec().into_boxed_slice(),
+        compute_regions: artifact.compute_regions().to_vec().into_boxed_slice(),
     }
     .finalize()
     .expect("duplicate effect artifact")
@@ -1868,7 +1871,7 @@ fn retained_turn_batches_allow_distinct_nodes_to_share_a_requirement() -> MResul
 }
 
 #[test]
-fn shared_observations_record_a_successful_prefix_before_a_later_read_failure() -> MResult<()> {
+fn shared_observations_capture_one_authoritative_provider_snapshot() -> MResult<()> {
     let trace = Arc::new(Mutex::new(ProviderTrace {
         fail_read_at: Some(2),
         ..ProviderTrace::default()
@@ -1892,33 +1895,35 @@ fn shared_observations_record_a_successful_prefix_before_a_later_read_failure() 
     )?;
     assert!(matches!(
         coordinator.execute_turn()?,
-        ResidentExternalTurnOutcome::Rejected {
-            phase: TurnFailurePhase::InputInstallation,
-            ..
-        }
-    ));
-    assert_eq!(trace.lock().unwrap().reads, 2);
-    let (_, prefix) = coordinator.input_facts().next().expect("captured prefix");
-    assert_eq!(prefix.facts.len(), 1);
-    let receipt = coordinator.receipts().next().unwrap().1;
-    assert_eq!(receipt.header.input_range, Some(prefix.range));
-    assert_eq!(receipt.body.input_batch_hash, prefix.batch_hash);
-    trace.lock().unwrap().fail_read_at = None;
-    assert!(matches!(
-        coordinator.execute_turn()?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
-    let batches = coordinator
-        .input_facts()
-        .map(|(_, batch)| batch.clone())
-        .collect::<Vec<_>>();
-    let records = coordinator
-        .receipts()
-        .map(|(_, record)| record.clone())
-        .collect::<Vec<_>>();
-    assert_eq!(batches[0].facts.len(), 1);
-    assert_eq!(batches[1].facts.len(), 2);
-    assert_eq!(batches[1].range.first().get(), 2);
+    assert_eq!(trace.lock().unwrap().reads, 1);
+    let batch = coordinator.input_facts().next().unwrap().1.clone();
+    let record = coordinator.receipts().next().unwrap().1.clone();
+    assert_eq!(batch.facts.len(), 2);
+    assert_eq!(
+        batch.facts[0].value.resident_token(),
+        batch.facts[1].value.resident_token()
+    );
+    let second = &batch.facts[1];
+    let divergent_value = captured_value_from_legacy(
+        &LegacyValue::MatrixF64(ToMatrix::to_matrix(vec![9.0, 0.01, 5.0, -2.0], 4, 1)),
+        second.value.schema(),
+        &second.shape,
+        artifact.schemas(),
+    )?;
+    let divergent_second = CapturedInputFact::new(
+        second.sequence,
+        second.requirement,
+        second.node,
+        second.slot,
+        second.schema_key,
+        second.shape.clone(),
+        divergent_value,
+        artifact.schemas(),
+    )?;
+    let inconsistent_batch =
+        CapturedInputBatch::new(vec![batch.facts[0].clone(), divergent_second])?;
     drop(coordinator);
     drop(providers);
 
@@ -1936,19 +1941,22 @@ fn shared_observations_record_a_successful_prefix_before_a_later_read_failure() 
         ResidentDurabilityPolicy::Retained,
         ResidentExternalLimits::default(),
     )?;
-    assert!(matches!(
-        replay.execute_replay_batch(Some(&batches[0]), &records[0])?,
-        ResidentExternalTurnOutcome::Rejected {
-            phase: TurnFailurePhase::InputInstallation,
-            ..
-        }
-    ));
+    let error = replay
+        .execute_replay_batch(Some(&inconsistent_batch), &record)
+        .unwrap_err();
+    assert!(
+        error
+            .display_message()
+            .contains("conflicting snapshots for one source identity")
+    );
+    assert_eq!(replay.input_facts().count(), 0);
+    assert_eq!(replay.receipts().count(), 0);
     assert_eq!(
         replay.instance().published_epoch(),
         mech_core::InstanceEpoch::ZERO
     );
     assert!(matches!(
-        replay.execute_replay_batch(Some(&batches[1]), &records[1])?,
+        replay.execute_replay_batch(Some(&batch), &record)?,
         ResidentExternalTurnOutcome::Accepted { .. }
     ));
     assert_eq!(replay.instance().published_epoch().get(), 1);

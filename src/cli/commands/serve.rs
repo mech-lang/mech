@@ -5,7 +5,7 @@ use mech_core::*;
 use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
     LoadedResource, LoadedStylesheets, ResourceEvent, ResourceFallback, ResourceSource,
-    Utf8ConversionError, WebResourceDefaults, load_resource, load_stylesheets,
+    Utf8ConversionError, WebResourceDefaults, html_style_sheets, load_resource, load_stylesheets,
 };
 use crate::cli::{capabilities, config, serve_options};
 use crate::{
@@ -163,6 +163,13 @@ pub(crate) fn command() -> Command {
                 .help("Sets the the path to the wasm package"),
         )
         .arg(
+            Arg::new("backend")
+                .long("backend")
+                .value_name("BACKEND")
+                .value_parser(crate::cli::STABLE_COMPUTE_BACKEND_SELECTORS)
+                .help("Selects the backend for neutral @compute regions"),
+        )
+        .arg(
             Arg::new("address")
                 .short('a')
                 .long("address")
@@ -220,6 +227,7 @@ pub(crate) struct ServePlan {
     pub stylesheet_paths: Vec<String>,
     pub shim_path: String,
     pub wasm_pkg: String,
+    pub compute_backend: Option<String>,
     pub loaded_config: Option<crate::LoadedMechConfig>,
     pub runtime_config: mech_runtime::RuntimeConfig,
     pub host_config: Option<mech_browser::BrowserRuntimeInjectionConfig>,
@@ -229,6 +237,7 @@ pub(crate) struct ServePlan {
     pub capability_events: Vec<capabilities::FilesystemCapabilityEvent>,
     pub config_event: config::ConfigLoadEvent,
     pub resources: WebResourceDefaults,
+    pub presentation: mech_runtime::ServePresentation,
 }
 
 pub(crate) fn prepare(
@@ -239,6 +248,23 @@ pub(crate) fn prepare(
     let loaded = config::load_cli_config_report_with_inputs(matches, &args.paths)?;
     let loaded_config = loaded.config;
     let effective = serve_options::effective_serve_options(&args, loaded_config.as_ref())?;
+    if effective.compute_backend.is_some()
+        && !loaded_config.as_ref().is_some_and(|loaded| {
+            loaded
+                .document
+                .hosts
+                .iter()
+                .any(|host| host.provider == "compute")
+        })
+    {
+        return Err(MechError::new(
+            GenericError {
+                msg: "--backend requires a configured `compute` host".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
     let project_root = effective.project_root.clone();
     let project_overlay = if effective.uses_configured_paths {
         let loaded = loaded_config.as_ref().ok_or_else(|| {
@@ -338,6 +364,7 @@ pub(crate) fn prepare(
         stylesheet_paths: effective.stylesheet_paths,
         shim_path: effective.shim_path,
         wasm_pkg: effective.wasm_pkg,
+        compute_backend: effective.compute_backend,
         loaded_config,
         runtime_config,
         host_config,
@@ -347,6 +374,7 @@ pub(crate) fn prepare(
         capability_events: authority_build.events,
         config_event: loaded.event,
         resources,
+        presentation: effective.presentation,
     })
 }
 
@@ -403,6 +431,50 @@ async fn load_browser_assets(
         wasm,
         js,
     })
+}
+
+fn validate_configured_browser_profile(
+    document: Option<&mech_runtime::MechConfigDocument>,
+    wasm_pkg: &str,
+    javascript: &[u8],
+) -> MResult<()> {
+    let requires_mixed_compute = document
+        .is_some_and(|document| document.hosts.iter().any(|host| host.provider == "compute"));
+    if !requires_mixed_compute {
+        return Ok(());
+    }
+    let javascript = std::str::from_utf8(javascript).map_err(|error| {
+        MechError::new(
+            Utf8ConversionError {
+                source_error: error.to_string(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+    })?;
+    if javascript.contains("export class WasmMixedComputeProject")
+        && javascript.contains("static fromSource(")
+    {
+        return Ok(());
+    }
+    Err(MechError::new(
+        GenericError {
+            msg: format!(
+                "configured compute host requires the mixed compute browser package, but `{wasm_pkg}` does not export WasmMixedComputeProject.fromSource; run `python scripts/build-wasm.py --profile browser-compute` before serving this project"
+            ),
+        },
+        None,
+    )
+    .with_compiler_loc())
+}
+
+fn project_javascript_with_backend(source: &str, backend: Option<&str>) -> String {
+    match backend {
+        Some(backend) => {
+            format!("globalThis.__MECH_COMPUTE_BACKEND_OVERRIDE = '{backend}';\n{source}")
+        }
+        None => source.to_owned(),
+    }
 }
 
 pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
@@ -472,6 +544,14 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         wasm,
         js,
     } = load_browser_assets(&options.authority, &options.wasm_pkg, resources).await?;
+    validate_configured_browser_profile(
+        options
+            .loaded_config
+            .as_ref()
+            .map(|loaded| &loaded.document),
+        &options.wasm_pkg,
+        &js.bytes,
+    )?;
     render_resource_events(&badge.to_string(), "WASM", &wasm.events);
     let wasm_backing_paths = match &wasm.source {
         ResourceSource::LocalPath(path) => vec![path.clone()],
@@ -488,9 +568,12 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
     let mut server = MechServer::new_with_runtime_config_and_host_config(
         "Mech Server".to_string(),
         full_address,
-        stylesheet_str,
+        html_style_sheets(stylesheet_str),
         shim_str,
-        project_js.unwrap_or_default().to_string(),
+        project_javascript_with_backend(
+            project_js.unwrap_or_default(),
+            options.compute_backend.as_deref(),
+        ),
         wasm.bytes,
         js.bytes,
         options.authority,
@@ -507,6 +590,7 @@ pub(crate) async fn run(options: ServePlan) -> MResult<CliOutcome> {
         js_backing_paths,
     );
     server.set_document_controller(document_controller, shipped_document_shim);
+    server.set_document_presentation(options.presentation);
     server.init().await?;
 
     server.load_serve_plan(options.workspace_plan, options.project_overlay)?;
@@ -603,8 +687,8 @@ fn serve_host_delegation_injection(
 mod tests {
     use super::*;
     use mech_runtime::{
-        DefaultIdGenerator, FS_READ, HostFilesystemAuthority, MECH_TOOL_SUBJECT,
-        SharedCapabilityKernel,
+        ConfigProfileOptions, DefaultIdGenerator, FS_READ, HostFilesystemAuthority,
+        MECH_TOOL_SUBJECT, SharedCapabilityKernel, parse_config_document,
     };
 
     fn authority_for(path: &std::path::Path) -> HostFilesystemAuthority {
@@ -712,5 +796,71 @@ mod tests {
                 .unwrap_err()
         );
         assert!(error.contains("raw WebAssembly"), "{error}");
+    }
+
+    #[test]
+    fn configured_compute_host_rejects_generic_browser_profile_before_serving() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {hosts: [{name: "particles" provider: "compute" settings: {}}]}"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        let error = format!(
+            "{:?}",
+            validate_configured_browser_profile(
+                Some(&document),
+                "src/wasm/pkg",
+                b"export class WasmProject {}",
+            )
+            .unwrap_err()
+        );
+        assert!(
+            error.contains("WasmMixedComputeProject.fromSource"),
+            "{error}"
+        );
+        assert!(
+            error.contains("build-wasm.py --profile browser-compute"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn configured_compute_host_accepts_mixed_browser_profile() {
+        let document = parse_config_document(
+            "test.mcfg",
+            r#"config := {hosts: [{name: "particles" provider: "compute" settings: {}}]}"#,
+            ConfigProfileOptions::default(),
+        )
+        .unwrap();
+        validate_configured_browser_profile(
+            Some(&document),
+            "src/wasm/pkg",
+            b"export class WasmMixedComputeProject { static fromSource() {} }",
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn selected_compute_backend_is_injected_into_project_javascript() {
+        let javascript = project_javascript_with_backend("export {};", Some("cpu"));
+        assert!(javascript.contains("__MECH_COMPUTE_BACKEND_OVERRIDE = 'cpu'"));
+        assert!(javascript.ends_with("export {};"));
+    }
+
+    #[test]
+    fn serve_command_uses_the_stable_compute_selector_policy() {
+        let matches = command()
+            .try_get_matches_from(["serve", "--backend", "wgpu"])
+            .unwrap();
+        assert_eq!(
+            matches.get_one::<String>("backend").map(String::as_str),
+            Some("wgpu")
+        );
+
+        let error = command()
+            .try_get_matches_from(["serve", "--backend", "cpu-simd"])
+            .expect_err("shipping serve command must reject experimental backends");
+        assert_eq!(error.kind(), clap::error::ErrorKind::InvalidValue);
     }
 }

@@ -176,7 +176,7 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         BytecodeSectionKind::ArtifactOperations,
         BytecodeSectionKind::ArtifactOperationContracts,
     ];
-    let mut artifact_bytes = Vec::with_capacity(artifact_kinds.len());
+    let mut artifact_bytes = Vec::with_capacity(artifact_kinds.len() + 1);
     let mut total_artifact_bytes = 0_usize;
     for kind in artifact_kinds {
         let entry = section(kind);
@@ -195,6 +195,27 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         }
         artifact_bytes.push(bytes.to_vec());
     }
+    let compute_region_bytes = if let Some(entry) = sections
+        .iter()
+        .find(|entry| entry.kind == BytecodeSectionKind::ArtifactComputeRegions)
+    {
+        let bytes = section_bytes(bytes, entry)?;
+        if bytes.len() > limits.max_artifact_section_bytes {
+            return invalid("ProgramArtifact section exceeds read limit");
+        }
+        total_artifact_bytes = total_artifact_bytes
+            .checked_add(bytes.len())
+            .ok_or_else(|| invalid::<()>("ProgramArtifact byte count overflow").unwrap_err())?;
+        if total_artifact_bytes > limits.max_artifact_bytes {
+            return invalid("ProgramArtifact sections exceed total read limit");
+        }
+        if entry.item_count != u32::from(!bytes.is_empty()) {
+            return invalid("ProgramArtifact section item count must describe presence");
+        }
+        bytes.to_vec()
+    } else {
+        Vec::new()
+    };
     let mut artifact_bytes = artifact_bytes.into_iter();
     let artifact = BytecodeArtifactSections {
         schemas: artifact_bytes.next().unwrap(),
@@ -208,9 +229,21 @@ fn parse_program(bytes: &[u8], limits: &BytecodeReadLimits) -> MResult<ParsedPro
         integrity_constraints: artifact_bytes.next().unwrap(),
         operations: artifact_bytes.next().unwrap(),
         operation_contracts: artifact_bytes.next().unwrap(),
+        compute_regions: compute_region_bytes,
     };
-    if artifact.ordered().iter().any(|section| section.is_empty()) && !artifact.is_empty() {
+    let base_artifact_sections = &artifact.ordered()[..11];
+    let base_artifact_is_empty = base_artifact_sections
+        .iter()
+        .all(|section| section.is_empty());
+    if base_artifact_sections
+        .iter()
+        .any(|section| section.is_empty())
+        && !base_artifact_is_empty
+    {
         return invalid("ProgramArtifact bytecode sections must be all present or all absent");
+    }
+    if base_artifact_is_empty && !artifact.compute_regions.is_empty() {
+        return invalid("compute-region metadata requires a ProgramArtifact");
     }
 
     for (id, _) in &symbols {
@@ -413,10 +446,12 @@ fn validate_header(
     {
         return invalid("bytecode header count exceeds read limit");
     }
-    if usize::from(header.section_count) != BYTECODE_SECTION_COUNT
-        || header.section_table_offset != BYTECODE_SECTION_TABLE_OFFSET
+    if !matches!(
+        usize::from(header.section_count),
+        BYTECODE_SECTION_COUNT | BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS
+    ) || header.section_table_offset != BYTECODE_SECTION_TABLE_OFFSET
     {
-        return invalid("bytecode must contain the exact seven-entry section table at offset 64");
+        return invalid("bytecode must contain a supported section table at offset 64");
     }
     let actual_len = u64::try_from(actual_len)
         .map_err(|_| invalid::<()>("actual bytecode length exceeds u64").unwrap_err())?;
@@ -455,16 +490,20 @@ fn validate_checksum(bytes: &[u8], checksum_offset: u64) -> MResult<()> {
 
 fn parse_sections(bytes: &[u8], header: &BytecodeHeader) -> MResult<Vec<BytecodeSectionEntry>> {
     let start = checked_usize(header.section_table_offset, "section table offset")?;
+    let section_count = usize::from(header.section_count);
     let end = start
-        .checked_add(BYTECODE_SECTION_COUNT * BYTECODE_SECTION_ENTRY_SIZE)
+        .checked_add(section_count * BYTECODE_SECTION_ENTRY_SIZE)
         .ok_or_else(|| invalid::<()>("section table overflow").unwrap_err())?;
     let mut r = ByteReader::new(
         bytes
             .get(start..end)
             .ok_or_else(|| invalid::<()>("truncated section table").unwrap_err())?,
     );
-    let mut sections = Vec::with_capacity(BYTECODE_SECTION_COUNT);
-    for expected in BytecodeSectionKind::ALL {
+    let mut sections = Vec::with_capacity(section_count);
+    for expected in BytecodeSectionKind::ALL_WITH_COMPUTE_REGIONS
+        .into_iter()
+        .take(section_count)
+    {
         let raw_kind = r.read_u16("section kind")?;
         let kind = BytecodeSectionKind::from_u16(raw_kind)
             .ok_or_else(|| invalid::<()>("unknown bytecode section kind").unwrap_err())?;
@@ -488,10 +527,15 @@ fn validate_sections(
     sections: &[BytecodeSectionEntry],
     checksum_offset: u64,
 ) -> MResult<()> {
-    if sections.first().map(|section| section.offset) != Some(BYTECODE_CONTENT_OFFSET) {
-        return invalid("first bytecode content section must begin at offset 288");
+    let content_offset = match sections.len() {
+        BYTECODE_SECTION_COUNT => BYTECODE_CONTENT_OFFSET,
+        BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS => BYTECODE_CONTENT_OFFSET_WITH_COMPUTE_REGIONS,
+        _ => return invalid("bytecode contains an unsupported section count"),
+    };
+    if sections.first().map(|section| section.offset) != Some(content_offset) {
+        return invalid("first bytecode content section has the wrong offset");
     }
-    let mut previous_end = BYTECODE_CONTENT_OFFSET;
+    let mut previous_end = content_offset;
     let checksum_end = checked_usize(checksum_offset, "checksum offset")?;
     for section in sections {
         if section.flags != 0 || section.reserved != 0 {

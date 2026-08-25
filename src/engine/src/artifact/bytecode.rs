@@ -6,7 +6,7 @@ use core::fmt;
 use mech_core::snapshot::SnapshotValidationContext;
 use mech_core::{
     ApplicationRequirement, ApplicationRequirementId, BindingId, BytecodeArtifactSections,
-    BytecodeProgram, CellSlotId, ConstantId, ConstantStore, ConstantStoreBuilder,
+    BytecodeProgram, CellSlotId, ComputePlacement, ConstantId, ConstantStore, ConstantStoreBuilder,
     DimensionParameterDeclaration, DimensionParameterId, DimensionParameterOrigin,
     ExecutionHostFunctionRequest, ExecutionResourceRequest, InputId, IntegrityConstraintId,
     MechError, NodeId, OperationContractId, OperationContractTable, OutputId, ParsedProgram,
@@ -21,9 +21,10 @@ use serde::{
 use super::snapshot::data_draft;
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
-    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration, NodeDeclaration,
-    OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
-    ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ComputeRegionDeclaration, InitializerReference, InputDeclaration,
+    IntegrityConstraintDeclaration, InteractiveSymbolBinding, NodeDeclaration, OperationReference,
+    OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
+    SlotRole,
 };
 
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
@@ -44,6 +45,7 @@ pub struct ArtifactDecodeLimits {
     pub max_constraints: usize,
     pub max_operations: usize,
     pub max_contracts: usize,
+    pub max_compute_regions: usize,
 }
 
 impl Default for ArtifactDecodeLimits {
@@ -62,6 +64,7 @@ impl Default for ArtifactDecodeLimits {
             max_constraints: 1_000_000,
             max_operations: 1_000_000,
             max_contracts: 100_000,
+            max_compute_regions: 100_000,
         }
     }
 }
@@ -212,11 +215,25 @@ struct WireOutput {
     name: String,
     source: u32,
     schema: u32,
+    // Keep optional extensions at the end so ordinary JSON output declarations
+    // retain their canonical field order; the default admits older artifacts.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    interactive_binding: Option<WireInteractiveSymbolBinding>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireInteractiveSymbolBinding {
+    lexical_name: String,
+    artifact_source: WireSource,
+    storage: u32,
+    output: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct WireConstraint {
     constraint: u32,
+    #[serde(default)]
+    name: String,
     operation: u32,
     contract: u32,
     inputs: Box<[WireSource]>,
@@ -226,6 +243,13 @@ struct WireConstraint {
 struct WireOperation {
     module_path: Box<[String]>,
     operation_name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct WireComputeRegion {
+    name: String,
+    placement: u8,
+    nodes: Box<[u32]>,
 }
 
 pub fn encode_program_artifact_bytecode_v1(
@@ -343,6 +367,14 @@ pub fn encode_program_artifact_sections(
                 .map(|output| WireOutput {
                     output: output.output.get(),
                     name: output.name.clone(),
+                    interactive_binding: output.interactive_binding.as_ref().map(|binding| {
+                        WireInteractiveSymbolBinding {
+                            lexical_name: binding.lexical_name.clone(),
+                            artifact_source: wire_source(binding.artifact_source),
+                            storage: binding.storage.get(),
+                            output: binding.output.get(),
+                        }
+                    }),
                     source: output.source.get(),
                     schema: output.schema.get(),
                 })
@@ -354,6 +386,7 @@ pub fn encode_program_artifact_sections(
                 .iter()
                 .map(|constraint| WireConstraint {
                     constraint: constraint.constraint.get(),
+                    name: constraint.name.clone(),
                     operation: operation_ids[&constraint.operation],
                     contract: constraint.contract.get(),
                     inputs: constraint.inputs.iter().copied().map(wire_source).collect(),
@@ -366,6 +399,25 @@ pub fn encode_program_artifact_sections(
             .canonical_bytes()
             .map_err(ArtifactBuildError::from)?
             .into_vec(),
+        compute_regions: if artifact.compute_regions().is_empty() {
+            Vec::new()
+        } else {
+            encode(
+                &artifact
+                    .compute_regions()
+                    .iter()
+                    .map(|region| WireComputeRegion {
+                        name: region.name.to_string(),
+                        placement: match region.placement {
+                            ComputePlacement::Compute => 1,
+                            ComputePlacement::Cpu => 2,
+                            ComputePlacement::Gpu => 3,
+                        },
+                        nodes: region.nodes.iter().map(|node| node.get()).collect(),
+                    })
+                    .collect::<Vec<_>>(),
+            )?
+        },
     })
 }
 
@@ -394,6 +446,14 @@ pub fn decode_program_artifact_sections_with_limits(
 }
 
 fn decode_program_artifact_sections_with_requirements(
+    sections: &BytecodeArtifactSections,
+    requirements: Option<Vec<ApplicationRequirement>>,
+    limits: ArtifactDecodeLimits,
+) -> Result<ProgramArtifact, ArtifactBytecodeError> {
+    decode_program_artifact_sections_owned(sections, requirements, limits)
+}
+
+fn decode_program_artifact_sections_owned(
     sections: &BytecodeArtifactSections,
     requirements: Option<Vec<ApplicationRequirement>>,
     limits: ArtifactDecodeLimits,
@@ -483,7 +543,7 @@ fn decode_program_artifact_sections_with_requirements(
             })
             .ok_or(ArtifactBytecodeError::UnknownOperation { operation: id })
     };
-    ProgramArtifactDraft {
+    let mut draft = ProgramArtifactDraft {
         schemas,
         constants,
         contracts,
@@ -562,6 +622,14 @@ fn decode_program_artifact_sections_with_requirements(
             .map(|output| OutputDeclaration {
                 output: OutputId(output.output),
                 name: output.name,
+                interactive_binding: output.interactive_binding.map(|binding| {
+                    InteractiveSymbolBinding {
+                        lexical_name: binding.lexical_name,
+                        artifact_source: source_from_wire(binding.artifact_source),
+                        storage: CellSlotId(binding.storage),
+                        output: OutputId(binding.output),
+                    }
+                }),
                 source: CellSlotId(output.source),
                 schema: SchemaId::new(output.schema),
             })
@@ -572,6 +640,7 @@ fn decode_program_artifact_sections_with_requirements(
             .map(|constraint| {
                 Ok(IntegrityConstraintDeclaration {
                     constraint: IntegrityConstraintId(constraint.constraint),
+                    name: constraint.name,
                     operation: operation(constraint.operation)?,
                     contract: OperationContractId::new(constraint.contract),
                     inputs: constraint
@@ -585,9 +654,68 @@ fn decode_program_artifact_sections_with_requirements(
             })
             .collect::<Result<Vec<_>, ArtifactBytecodeError>>()?
             .into_boxed_slice(),
+        compute_regions: Box::new([]),
+    };
+
+    let wire_regions: Vec<WireComputeRegion> = if sections.compute_regions.is_empty() {
+        Vec::new()
+    } else {
+        decode_vec(
+            "compute regions",
+            &sections.compute_regions,
+            limits.max_compute_regions,
+        )?
+    };
+    let mut names = BTreeSet::new();
+    let mut assigned_nodes = BTreeSet::new();
+    let mut compute_regions = Vec::with_capacity(wire_regions.len());
+    for (region_index, region) in wire_regions.into_iter().enumerate() {
+        if region.name.is_empty() || !names.insert(region.name.clone()) {
+            return Err(ArtifactBytecodeError::InvalidWireTag {
+                section: "compute regions",
+                tag: 0,
+            });
+        }
+        let placement = match region.placement {
+            1 => ComputePlacement::Compute,
+            2 => ComputePlacement::Cpu,
+            3 => ComputePlacement::Gpu,
+            tag => {
+                return Err(ArtifactBytecodeError::InvalidWireTag {
+                    section: "compute regions",
+                    tag,
+                });
+            }
+        };
+        let mut previous = None;
+        let nodes = region
+            .nodes
+            .into_vec()
+            .into_iter()
+            .map(|node| {
+                if node as usize >= draft.nodes.len()
+                    || previous.is_some_and(|previous| previous >= node)
+                    || !assigned_nodes.insert(node)
+                {
+                    return Err(ArtifactBytecodeError::InvalidWireTag {
+                        section: "compute regions",
+                        tag: 0,
+                    });
+                }
+                previous = Some(node);
+                Ok(NodeId(node))
+            })
+            .collect::<Result<Vec<_>, _>>()?
+            .into_boxed_slice();
+        compute_regions.push(ComputeRegionDeclaration {
+            id: mech_core::ComputeRegionId::new(region_index as u32),
+            name: region.name.into_boxed_str(),
+            placement,
+            nodes,
+        });
     }
-    .finalize()
-    .map_err(Into::into)
+    draft.compute_regions = compute_regions.into_boxed_slice();
+    draft.finalize().map_err(ArtifactBytecodeError::from)
 }
 
 fn validate_operation_table(
@@ -624,7 +752,7 @@ fn validate_operation_table(
     Ok(())
 }
 
-fn artifact_section_bytes(sections: &BytecodeArtifactSections) -> [(&'static str, &[u8]); 11] {
+fn artifact_section_bytes(sections: &BytecodeArtifactSections) -> [(&'static str, &[u8]); 12] {
     [
         ("schemas", &sections.schemas),
         ("constants", &sections.constants),
@@ -637,6 +765,7 @@ fn artifact_section_bytes(sections: &BytecodeArtifactSections) -> [(&'static str
         ("integrity constraints", &sections.integrity_constraints),
         ("operations", &sections.operations),
         ("operation contracts", &sections.operation_contracts),
+        ("compute regions", &sections.compute_regions),
     ]
 }
 

@@ -6,6 +6,8 @@ pub mod bundle_web;
 pub mod capabilities;
 #[cfg(feature = "cli_core")]
 pub mod commands;
+#[cfg(feature = "compute_backends_native")]
+pub(crate) mod compute;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 pub mod config;
 #[cfg(any(feature = "build", feature = "run"))]
@@ -33,6 +35,14 @@ pub mod serve_options;
 pub(crate) fn rounds_per_step_value_parser() -> clap::builder::RangedU64ValueParser<usize> {
     clap::builder::RangedU64ValueParser::<usize>::new().range(1..)
 }
+
+/// Stable compute selectors accepted by shipping CLI products.
+///
+/// Experimental backend IDs remain available to library and benchmark callers,
+/// but `run` and `serve` share this product-facing admission policy.
+#[cfg(feature = "cli_core")]
+pub(crate) const STABLE_COMPUTE_BACKEND_SELECTORS: [&str; 5] =
+    ["auto", "cpu", "gpu", "cpu-scalar", "wgpu"];
 
 #[cfg(all(
     test,

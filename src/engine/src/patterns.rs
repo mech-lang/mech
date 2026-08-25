@@ -1019,7 +1019,7 @@ pub fn pattern_to_value(
 // Mutable reference unwrapper. Recursively follows LegacyValue::MutableReference
 // chains until it reaches a plain value, then clones it. Ensures the pattern
 // matcher always works on an owned, non-reference value.
-fn deep_detach_value(value: &LegacyValue) -> LegacyValue {
+pub(crate) fn deep_detach_value(value: &LegacyValue) -> LegacyValue {
     match value {
         LegacyValue::MutableReference(reference) => deep_detach_value(&reference.borrow()),
         _ => value.clone(),

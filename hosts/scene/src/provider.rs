@@ -8,9 +8,10 @@ use mech_core::{
 use mech_runtime::{
     ConfigValue, HostManifestConfig, PreparedRuntimeEffect, RuntimeAfterCommitEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource, RuntimeHostFactory,
-    RuntimeHostInstallation, RuntimeResourceProvider, RuntimeResourceReadRequest,
-    RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest, RuntimeResourceWriteRequest,
-    materialize_host_manifest,
+    RuntimeHostInput, RuntimeHostInputDriver, RuntimeHostInputSource, RuntimeHostInputUpdate,
+    RuntimeHostInputValue, RuntimeHostInstallation, RuntimeIngress, RuntimeResourceProvider,
+    RuntimeResourceReadRequest, RuntimeResourceWriteIntent, RuntimeResourceWritePreflightRequest,
+    RuntimeResourceWriteRequest, materialize_host_manifest, resource_observation_contract,
 };
 
 use crate::{
@@ -38,6 +39,157 @@ static SCENE_EFFECT_CONTRACT: LazyLock<OperationContractDeclaration> =
             idempotency: IdempotencyRequirement::NotRequired,
         }),
     });
+
+const POINTER_PATHS: [&str; 4] = [
+    "pointer-pulse",
+    "pointer-position",
+    "pointer-pressed",
+    "pointer-delta-seconds",
+];
+
+#[derive(Clone, Debug)]
+pub struct ScenePointerHandle {
+    base_uri: Arc<str>,
+    state: Arc<Mutex<ScenePointerDriverState>>,
+}
+
+#[derive(Debug, Default)]
+struct ScenePointerDriverState {
+    ingress: Option<RuntimeIngress>,
+    pulse: u64,
+    live: bool,
+}
+
+impl ScenePointerHandle {
+    pub fn new(instance: impl AsRef<str>) -> Self {
+        Self {
+            base_uri: format!("scene://{}/frame", instance.as_ref()).into(),
+            state: Arc::new(Mutex::new(ScenePointerDriverState::default())),
+        }
+    }
+
+    pub fn submit(&self, x: f64, y: f64, pressed: bool, delta_seconds: f64) -> MResult<()> {
+        let mut state = self
+            .state
+            .lock()
+            .map_err(|_| scene_error("ScenePointer", "pointer state lock is poisoned"))?;
+        if !state.live {
+            return Err(scene_error(
+                "ScenePointer",
+                "scene pointer input is not running",
+            ));
+        }
+        // Resident input draining may coalesce a pointer-down and pointer-up
+        // packet into one turn. Count activations, not raw state packets, so
+        // the final released state cannot erase the click and a separately
+        // drained release cannot activate the target twice.
+        let pulse = if pressed {
+            state.pulse.checked_add(1).ok_or_else(|| {
+                scene_error(
+                    "ScenePointerSequenceExhausted",
+                    "scene pointer activation sequence is exhausted",
+                )
+            })?
+        } else {
+            state.pulse
+        };
+        let ingress = state
+            .ingress
+            .clone()
+            .ok_or_else(|| scene_error("ScenePointer", "scene pointer input is not attached"))?;
+        let packet = RuntimeHostInput::new(vec![
+            scene_pointer_update(
+                &self.base_uri,
+                "pointer-pulse",
+                RuntimeHostInputValue::F64(pulse as f64),
+            )?,
+            scene_pointer_update(
+                &self.base_uri,
+                "pointer-position",
+                RuntimeHostInputValue::F64Matrix {
+                    rows: 2,
+                    columns: 1,
+                    values: vec![x, y],
+                },
+            )?,
+            scene_pointer_update(
+                &self.base_uri,
+                "pointer-pressed",
+                RuntimeHostInputValue::F64(f64::from(pressed)),
+            )?,
+            scene_pointer_update(
+                &self.base_uri,
+                "pointer-delta-seconds",
+                RuntimeHostInputValue::F64(delta_seconds),
+            )?,
+        ])?
+        .with_coalescing_group(pulse);
+        // The pulse counter advances only after the complete gesture packet is
+        // accepted. Down and up share a group; the next down starts a new one.
+        ingress.submit(packet)?;
+        state.pulse = pulse;
+        Ok(())
+    }
+
+    pub fn input_driver(&self, instance: impl Into<String>) -> Box<dyn RuntimeHostInputDriver> {
+        Box::new(ScenePointerInputDriver {
+            instance: instance.into(),
+            state: self.state.clone(),
+        })
+    }
+}
+
+fn scene_pointer_update(
+    base_uri: &str,
+    path: &str,
+    value: RuntimeHostInputValue,
+) -> MResult<RuntimeHostInputUpdate> {
+    Ok(RuntimeHostInputUpdate {
+        source: RuntimeHostInputSource::new(base_uri, path)?,
+        value,
+    })
+}
+
+#[derive(Debug)]
+struct ScenePointerInputDriver {
+    instance: String,
+    state: Arc<Mutex<ScenePointerDriverState>>,
+}
+
+impl RuntimeHostInputDriver for ScenePointerInputDriver {
+    fn drives(&self, source: &RuntimeHostInputSource) -> bool {
+        source.base_uri() == format!("scene://{}/frame", self.instance)
+            && POINTER_PATHS.contains(&source.path())
+    }
+
+    fn attach(&mut self, ingress: RuntimeIngress) -> MResult<()> {
+        self.state
+            .lock()
+            .map_err(|_| scene_error("ScenePointer", "pointer state lock is poisoned"))?
+            .ingress = Some(ingress);
+        Ok(())
+    }
+
+    fn start(&mut self) -> MResult<()> {
+        self.state
+            .lock()
+            .map_err(|_| scene_error("ScenePointer", "pointer state lock is poisoned"))?
+            .live = true;
+        Ok(())
+    }
+
+    fn stop(&mut self) -> MResult<()> {
+        self.state
+            .lock()
+            .map_err(|_| scene_error("ScenePointer", "pointer state lock is poisoned"))?
+            .live = false;
+        Ok(())
+    }
+
+    fn is_live(&self) -> bool {
+        self.state.lock().map(|state| state.live).unwrap_or(false)
+    }
+}
 
 pub trait SceneBackend: Clone + std::fmt::Debug + 'static {
     fn replace_scene(&mut self, scene: SceneSnapshot) -> MResult<()>;
@@ -119,11 +271,14 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
     ) -> Option<&'static OperationContractDeclaration> {
         (intent == RuntimeResourceWriteIntent::Send).then_some(&SCENE_EFFECT_CONTRACT)
     }
+    fn semantic_read_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(resource_observation_contract())
+    }
+    fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        self.pointer_value(request)
+    }
     fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
-        Err(scene_error(
-            "SceneResourceProvider",
-            format!("scene resource `{}` is write-only", request.base_uri),
-        ))
+        self.pointer_value(request)
     }
     fn preflight_write(&self, request: RuntimeResourceWritePreflightRequest) -> MResult<()> {
         if request.base_uri != self.base() {
@@ -185,6 +340,30 @@ impl<B: SceneBackend> RuntimeResourceProvider for SceneResourceProvider<B> {
                 operation: request.path,
             },
         )))
+    }
+}
+
+impl<B: SceneBackend> SceneResourceProvider<B> {
+    fn pointer_value(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
+        if request.base_uri != self.base() || !POINTER_PATHS.contains(&request.path.as_str()) {
+            return Err(scene_error(
+                "SceneResourceProvider",
+                format!(
+                    "unknown scene pointer input `{}/{}`",
+                    request.base_uri, request.path
+                ),
+            ));
+        }
+        if request.path == "pointer-position" {
+            RuntimeHostInputValue::F64Matrix {
+                rows: 2,
+                columns: 1,
+                values: vec![0.0, 0.0],
+            }
+            .into_mech_value()
+        } else {
+            RuntimeHostInputValue::F64(0.0).into_mech_value()
+        }
     }
 }
 
@@ -254,6 +433,7 @@ impl<B: SceneBackend> RuntimeHostFactory for SceneHostFactory<B> {
         settings: &ConfigValue,
     ) -> MResult<RuntimeHostInstallation> {
         let settings: SceneHostSettings = scene_settings_from_config(settings)?;
+        let pointer = ScenePointerHandle::new(instance_name);
         Ok(RuntimeHostInstallation {
             interface: materialize_host_manifest(instance_name, &self.manifest)?,
             resource_providers: vec![Box::new(SceneResourceProvider::new_with_settings(
@@ -261,7 +441,7 @@ impl<B: SceneBackend> RuntimeHostFactory for SceneHostFactory<B> {
                 self.backend.clone(),
                 settings,
             ))],
-            input_drivers: Vec::new(),
+            input_drivers: vec![pointer.input_driver(instance_name)],
         })
     }
 }
@@ -319,5 +499,7 @@ pub fn scene_snapshot_from_points(
         background: settings.background.clone(),
         circles,
         lines: Vec::new(),
+        line_strips: Vec::new(),
+        texts: Vec::new(),
     })
 }

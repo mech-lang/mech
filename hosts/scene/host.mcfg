@@ -5,7 +5,7 @@ config := {
       {
         name: "frame"
         base-uri: "scene://{instance}/frame"
-        operations: ["write"]
+        operations: ["read", "write"]
       }
     ]
   }

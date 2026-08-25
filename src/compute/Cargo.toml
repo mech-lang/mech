@@ -1,0 +1,18 @@
+[package]
+name = "mech-compute"
+version = "0.3.5"
+authors = ["Corey Montella <corey@mech-lang.org>"]
+description = "Backend-neutral planning and intermediate representations for resident Mech compute regions."
+documentation = "https://docs.mech-lang.org"
+homepage = "https://mech-lang.org"
+repository = "https://github.com/mech-lang/mech"
+license = "Apache-2.0"
+edition = "2024"
+rust-version = "1.92"
+
+[features]
+default = []
+
+[dependencies]
+mech-core = { version = "0.3.5", default-features = false, features = ["f32", "matrixd"] }
+mech-engine = { version = "0.3.5", default-features = false, features = ["resident-artifact"] }

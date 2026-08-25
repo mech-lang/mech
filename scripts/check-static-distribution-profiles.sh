@@ -296,7 +296,7 @@ if set(profiles) != expected_profiles:
     raise SystemExit(
         "static distribution profile contract failed: deterministic profile set mismatch"
     )
-expected_digest = "5911e5e418816f2e2647f9b694d42fe6bd291cd229b55b7483683c22fa4ff1b0"
+expected_digest = "29efa79d9ce1c2f10626775a1f3dab7274a42b747856fb3ef10f293bb70bf2e1"
 selected_digest = "a006c5b25aa925939f4973273e2aea9cac2897fbcca32dc25edd6be74631445d"
 runtime_surface = json.loads(runtime_surface_path.read_text(encoding="utf-8"))
 runtime_factories = runtime_surface.get("runtime_factories")
@@ -318,9 +318,9 @@ if actual_digest != expected_digest:
     )
 expected_surface = {
     "selected-runtime": (3, 0, 0, 0, 0, selected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-runtime": (9016, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
-    "full-source": (9017, 119, 10, 52, 50, "4fd1c8c9fd0af61f904e8f1cbb862c693d92dd563b76e287f2e87163f79e41a3", "sha256-canonical-id-tab-name-lf-v1"),
-    "full-compiler": (9017, 119, 10, 52, 50, "4fd1c8c9fd0af61f904e8f1cbb862c693d92dd563b76e287f2e87163f79e41a3", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-runtime": (9031, 0, 0, 0, 0, expected_digest, "sha256-canonical-id-tab-name-lf-v1"),
+    "full-source": (9032, 119, 10, 52, 50, "427478979de64b5ad5d05a0c7ccda8718b8bfbe8be78bc3213785b6eec6f8daf", "sha256-canonical-id-tab-name-lf-v1"),
+    "full-compiler": (9032, 119, 10, 52, 50, "427478979de64b5ad5d05a0c7ccda8718b8bfbe8be78bc3213785b6eec6f8daf", "sha256-canonical-id-tab-name-lf-v1"),
 }
 surface_keys = (
     "catalog_factory_count", "source_specializer_count", "intrinsic_count",
@@ -605,7 +605,7 @@ check_wasm_source() {
     --no-default-features \
     --features browser_project \
     -e features,no-dev > "$scratch/wasm-source.tree"
-  for package in mech-engine mech-stdlib mech-syntax mech-compare mech-logic mech-math mech-matrix mech-range mech-string
+  for package in mech-engine mech-stdlib mech-syntax mech-combinatorics mech-compare mech-logic mech-math mech-matrix mech-range mech-stats mech-string
   do
     cargo_nightly tree \
       --manifest-path "$repository_root/Cargo.toml" \
@@ -623,11 +623,12 @@ check_wasm_source() {
     "require=mech-math v" \
     "require=mech-matrix v" \
     "require=mech-range v" \
+    "require=mech-stats v" \
     "require=mech-string v" \
-    "forbid=mech-combinatorics v" \
+    "require=mech-combinatorics v" \
     "forbid=mech-set v" \
-    "forbid=mech-stats v" \
     'require=mech-engine feature "source"' \
+    'require=mech-engine feature "state_machines"' \
     'require=mech-stdlib feature "source"' \
     "forbid=mech-bytecode v" \
     'forbid=mech-wasm feature "compiler"' \
@@ -639,7 +640,7 @@ check_wasm_source() {
     'forbid=mech-stdlib feature "full_source"' \
     'forbid=mech-stdlib feature "full_values"' \
     'forbid=mech-core feature "compiler"'
-  for package in mech-compare mech-logic mech-math mech-matrix mech-range mech-string
+  for package in mech-combinatorics mech-compare mech-logic mech-math mech-matrix mech-range mech-stats mech-string
   do
     check_graph "$scratch/wasm-source.tree" "WASM source" \
       "require=$package feature \"runtime\"" \

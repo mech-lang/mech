@@ -64,7 +64,7 @@ impl ResourcePathScope {
         }
     }
 
-    fn matches(&self, path: &str) -> bool {
+    pub(crate) fn matches(&self, path: &str) -> bool {
         match self {
             Self::Exact(exact) => exact == path,
             Self::Prefix(prefix) => {

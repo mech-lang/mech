@@ -12,7 +12,9 @@ use mech_runtime::{FS_LIST, FS_READ, MECH_TOOL_SUBJECT};
 use crate::cli::capabilities;
 use crate::cli::config;
 use crate::cli::outcome::CliOutcome;
-use crate::cli::run::{RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver};
+use crate::cli::run::{
+    RunInputMode, cli_module_options, new_cli_runtime_with_source_resolver_and_host_factories,
+};
 use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
     DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
@@ -66,6 +68,12 @@ pub(crate) fn command() -> Command {
       .value_name("TURNS")
       .value_parser(crate::cli::rounds_per_step_value_parser())
       .help("Stop after this many accepted live turns")
+      .required(false))
+    .arg(Arg::new("backend")
+      .long("backend")
+      .value_name("BACKEND")
+      .value_parser(crate::cli::STABLE_COMPUTE_BACKEND_SELECTORS)
+      .help("Override the configured compute-host backend")
       .required(false));
     command
 }
@@ -93,7 +101,7 @@ pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
     collect_run_targets_with_capabilities(path, authority.kernel())
 }
 
-fn collect_run_targets_with_capabilities(
+pub(crate) fn collect_run_targets_with_capabilities(
     path: &Path,
     kernel: &mech_runtime::SharedCapabilityKernel,
 ) -> MResult<Vec<PathBuf>> {
@@ -240,15 +248,6 @@ fn print_value(value: &RuntimeValueSnapshot) {
 fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     render_config_event(&plan.config_event);
     render_capability_events(&plan.filesystem_access.events);
-    let mut runtime = new_cli_runtime_with_source_resolver(
-        plan.runtime_config,
-        &plan.cli_grants,
-        &plan.configured_hosts,
-        &plan.configured_run_grants,
-        mech_runtime::FileSourceResolver::new(&std::env::current_dir()?)
-            .with_capabilities(plan.filesystem_access.kernel.clone(), MECH_TOOL_SUBJECT),
-    )?;
-
     if plan.missing_run_options {
         return Err(MechError::new(
             mech_runtime::ResidentRouteFailure {
@@ -259,39 +258,130 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
         ));
     }
 
-    let result: MResult<RuntimeValueSnapshot> = match &plan.input_mode {
-        RunInputMode::InlineSource(source) => runtime
-            .load_source_program(source.trim(), plan.resident_durability)
-            .map(|outcome| outcome.initial_value),
-        _ => {
-            if plan.run_paths.is_empty() {
-                Ok(RuntimeValueSnapshot::empty())
-            } else {
-                let fs_kernel = plan.filesystem_access.kernel.clone();
-                let mut targets = Vec::new();
-                for p in &plan.run_paths {
-                    targets.extend(collect_run_targets_with_capabilities(
-                        Path::new(p),
-                        &fs_kernel,
-                    )?);
-                }
-                enforce_production_resident_target_shape(&targets)?;
-                let canonical_target = targets[0].canonicalize().map_err(|error| {
-                    MechError::new(
+    let resolver = mech_runtime::FileSourceResolver::new(&std::env::current_dir()?)
+        .with_capabilities(plan.filesystem_access.kernel.clone(), MECH_TOOL_SUBJECT);
+    let targets = collect_execution_targets(&plan)?;
+    let configured_compute_hosts = plan
+        .configured_hosts
+        .iter()
+        .filter(|host| host.provider == "compute")
+        .count();
+    if plan.backend_override.is_some() && configured_compute_hosts == 0 {
+        return Err(MechError::new(
+            CliRunError {
+                operation: "select_compute_backend".to_owned(),
+                reason: "--backend requires one configured compute host".to_owned(),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    }
+
+    #[cfg(feature = "compute_backends_native")]
+    let compiled_compute = if crate::cli::compute::configured_compute_host(&plan)?.is_some() {
+        Some(match &plan.input_mode {
+            RunInputMode::InlineSource(source) => {
+                crate::cli::compute::compile_inline_compute_application(
+                    &plan,
+                    source,
+                    resolver.clone(),
+                )?
+            }
+            RunInputMode::Paths(_) | RunInputMode::Empty => {
+                let target = targets
+                    .as_ref()
+                    .and_then(|targets| targets.first())
+                    .ok_or_else(|| {
+                        MechError::new(
+                            CliRunError {
+                                operation: "compile_compute_application".to_owned(),
+                                reason: "a configured compute host requires one source root"
+                                    .to_owned(),
+                            },
+                            None,
+                        )
+                    })?;
+                if SourceKind::from_path(target) == SourceKind::MechBytecode {
+                    return Err(MechError::new(
                         CliRunError {
-                            operation: "canonicalize_run_target".to_string(),
-                            reason: format!("{}: {}", targets[0].display(), error),
+                            operation: "compile_compute_application".to_owned(),
+                            reason: "mixed compute bytecode loading is not available in this build"
+                                .to_owned(),
                         },
                         None,
                     )
-                })?;
-                runtime
-                    .load_root_program(
-                        SourceRequest::from_filesystem_path(&canonical_target)?,
-                        cli_module_options(),
-                        plan.resident_durability,
-                    )
-                    .map(|outcome| outcome.initial_value)
+                    .with_compiler_loc());
+                }
+                let canonical_target = canonical_run_target(target)?;
+                crate::cli::compute::compile_root_compute_application(
+                    &plan,
+                    SourceRequest::from_filesystem_path(canonical_target)?,
+                    resolver.clone(),
+                )?
+            }
+        })
+    } else {
+        None
+    };
+    #[cfg(not(feature = "compute_backends_native"))]
+    let compiled_compute: Option<mech_engine::ProgramArtifact> = {
+        if configured_compute_hosts != 0
+            || plan
+                .configured_hosts
+                .iter()
+                .any(|host| host.provider == "gpu")
+        {
+            return Err(MechError::new(
+                CliRunError {
+                    operation: "initialize_compute_host".to_owned(),
+                    reason: "this project configures a compute host; rebuild Mech with `--features compute_backends_native`".to_owned(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        None
+    };
+
+    #[cfg(feature = "compute_backends_native")]
+    let (host_factories, coordinator) = match compiled_compute {
+        Some(compiled) => (vec![compiled.factory], Some(compiled.coordinator)),
+        None => (Vec::new(), None),
+    };
+    #[cfg(not(feature = "compute_backends_native"))]
+    let (host_factories, coordinator) = (Vec::new(), compiled_compute);
+    let mut runtime = new_cli_runtime_with_source_resolver_and_host_factories(
+        plan.runtime_config.clone(),
+        &plan.cli_grants,
+        &plan.configured_hosts,
+        &plan.configured_run_grants,
+        host_factories,
+        resolver,
+    )?;
+
+    let result: MResult<RuntimeValueSnapshot> = if let Some(coordinator) = coordinator {
+        runtime
+            .load_compiled_program(coordinator, plan.resident_durability)
+            .map(|outcome| outcome.initial_value)
+    } else {
+        match &plan.input_mode {
+            RunInputMode::InlineSource(source) => runtime
+                .load_source_program(source.trim(), plan.resident_durability)
+                .map(|outcome| outcome.initial_value),
+            _ => {
+                if targets.is_none() {
+                    Ok(RuntimeValueSnapshot::empty())
+                } else {
+                    let targets = targets.as_ref().expect("target presence was checked");
+                    let canonical_target = canonical_run_target(&targets[0])?;
+                    runtime
+                        .load_root_program(
+                            SourceRequest::from_filesystem_path(canonical_target)?,
+                            cli_module_options(),
+                            plan.resident_durability,
+                        )
+                        .map(|outcome| outcome.initial_value)
+                }
             }
         }
     };
@@ -299,7 +389,9 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     match result {
         Ok(value) => {
             if should_run_live(&runtime)? {
-                run_live_runtime(&mut runtime, plan.max_live_turns)?;
+                if let Some(value) = run_live_runtime(&mut runtime, plan.max_live_turns)? {
+                    print_value(&value);
+                }
             } else {
                 print_value(&value);
             }
@@ -312,6 +404,34 @@ fn execute_plan(plan: RunExecutionPlan) -> MResult<CliOutcome> {
     }
 }
 
+fn collect_execution_targets(plan: &RunExecutionPlan) -> MResult<Option<Vec<PathBuf>>> {
+    if matches!(plan.input_mode, RunInputMode::InlineSource(_)) || plan.run_paths.is_empty() {
+        return Ok(None);
+    }
+    let fs_kernel = plan.filesystem_access.kernel.clone();
+    let mut targets = Vec::new();
+    for path in &plan.run_paths {
+        targets.extend(collect_run_targets_with_capabilities(
+            Path::new(path),
+            &fs_kernel,
+        )?);
+    }
+    enforce_production_resident_target_shape(&targets)?;
+    Ok(Some(targets))
+}
+
+fn canonical_run_target(target: &Path) -> MResult<PathBuf> {
+    target.canonicalize().map_err(|error| {
+        MechError::new(
+            CliRunError {
+                operation: "canonicalize_run_target".to_string(),
+                reason: format!("{}: {error}", target.display()),
+            },
+            None,
+        )
+    })
+}
+
 fn should_run_live(runtime: &mech_runtime::MechRuntime) -> MResult<bool> {
     runtime.has_driven_live_input_bindings()
 }
@@ -319,7 +439,7 @@ fn should_run_live(runtime: &mech_runtime::MechRuntime) -> MResult<bool> {
 fn run_live_runtime(
     runtime: &mut mech_runtime::MechRuntime,
     max_live_turns: Option<usize>,
-) -> MResult<()> {
+) -> MResult<Option<RuntimeValueSnapshot>> {
     let stop = Arc::new(AtomicBool::new(false));
     let stop_for_handler = Arc::clone(&stop);
     ctrlc::set_handler(move || {
@@ -337,14 +457,19 @@ fn run_live_runtime(
 
     runtime.start_input_drivers()?;
     let run_result = run_live_loop(runtime, &stop, max_live_turns);
+    let output_result = match &run_result {
+        Ok(()) => runtime.program_output_value(),
+        Err(_) => Ok(None),
+    };
     let stop_result = runtime.stop_input_drivers();
     let shutdown_result = runtime.shutdown();
 
-    match (run_result, stop_result, shutdown_result) {
-        (Err(error), _, _) => Err(error),
-        (Ok(()), Err(error), _) => Err(error),
-        (Ok(()), Ok(()), Err(error)) => Err(error),
-        (Ok(()), Ok(()), Ok(())) => Ok(()),
+    match (run_result, output_result, stop_result, shutdown_result) {
+        (Err(error), _, _, _) => Err(error),
+        (Ok(()), Err(error), _, _) => Err(error),
+        (Ok(()), Ok(_), Err(error), _) => Err(error),
+        (Ok(()), Ok(_), Ok(()), Err(error)) => Err(error),
+        (Ok(()), Ok(value), Ok(()), Ok(())) => Ok(value),
     }
 }
 
@@ -435,6 +560,25 @@ mod command_outcome_tests {
                 .expect_err("shipping run command must not expose executor selection");
             assert_eq!(error.kind(), clap::error::ErrorKind::UnknownArgument);
         }
+    }
+
+    #[test]
+    fn run_command_accepts_compute_backend_override() {
+        let matches = command()
+            .try_get_matches_from(["run", "--backend", "cpu-scalar", "program.mec"])
+            .unwrap();
+        assert_eq!(
+            matches.get_one::<String>("backend").map(String::as_str),
+            Some("cpu-scalar")
+        );
+    }
+
+    #[test]
+    fn run_command_rejects_experimental_compute_backend_override() {
+        let error = command()
+            .try_get_matches_from(["run", "--backend", "cpu-jit", "program.mec"])
+            .expect_err("shipping run command must reject experimental backends");
+        assert_eq!(error.kind(), clap::error::ErrorKind::InvalidValue);
     }
 
     #[test]
@@ -560,6 +704,7 @@ mod command_outcome_tests {
             rounds_per_step: None,
             runtime_info: false,
             max_live_turns: None,
+            backend_override: None,
             loaded_config: None,
             config_event: ConfigLoadEvent::NotFound,
             cli_capability_selection: CliHostCapabilitySelection::default(),

@@ -1,7 +1,6 @@
 #![cfg_attr(feature = "no-std", no_std)]
 #![cfg_attr(feature = "no-std", alloc)]
 #![allow(dead_code)]
-#![allow(warnings)]
 #![feature(where_clause_attrs)]
 
 #[cfg(feature = "matrix")]
@@ -106,6 +105,7 @@ pub mod literals;
 pub mod mechdown;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
+mod portable_index;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
 mod resident;

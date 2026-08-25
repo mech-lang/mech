@@ -39,7 +39,7 @@ pub trait CliBackend: std::fmt::Debug {
     fn write_stderr(&mut self, text: &str) -> MResult<()>;
 }
 
-#[derive(Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct StdCliBackend;
 
 impl CliBackend for StdCliBackend {
@@ -364,19 +364,27 @@ impl MechErrorKind for CliResourceProviderError {
 }
 
 #[derive(Debug)]
-pub struct CliHostFactory {
+pub struct CliHostFactory<B = StdCliBackend> {
     manifest: HostManifestConfig,
+    backend: B,
 }
 
-impl CliHostFactory {
+impl CliHostFactory<StdCliBackend> {
     pub fn new() -> MResult<Self> {
+        Self::with_backend(StdCliBackend)
+    }
+}
+
+impl<B> CliHostFactory<B> {
+    pub fn with_backend(backend: B) -> MResult<Self> {
         Ok(Self {
             manifest: crate::cli_host_manifest()?,
+            backend,
         })
     }
 }
 
-impl RuntimeHostFactory for CliHostFactory {
+impl<B: CliBackend + Clone + 'static> RuntimeHostFactory for CliHostFactory<B> {
     fn provider_name(&self) -> &str {
         "cli"
     }
@@ -403,7 +411,7 @@ impl RuntimeHostFactory for CliHostFactory {
             input_drivers: Vec::new(),
             resource_providers: vec![Box::new(CliResourceProvider::for_instance(
                 instance_name,
-                StdCliBackend,
+                self.backend.clone(),
             ))],
         })
     }

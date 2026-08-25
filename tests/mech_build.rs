@@ -3,6 +3,8 @@
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
+use mech_core::ParsedProgram;
+
 fn temp_root(label: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
         "mech-build-cli-{label}-{}",
@@ -177,6 +179,51 @@ fn bytecode_only_build_accepts_a_non_cargo_input_stem() {
         .unwrap();
     assert_success(output, "bytecode-only build with a non-Cargo input stem");
     assert!(bytecode.is_file());
+
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn compute_metadata_round_trips_but_native_package_products_fail_before_writing() {
+    let root = temp_root("compute-product-admission");
+    let source = root.join("mixed.mec");
+    let bytecode = root.join("mixed.mecb");
+    std::fs::write(
+        &source,
+        concat!(
+            "+> math\n\n",
+            "seed := 1\n\n",
+            "kernel @compute\n",
+            "-------------------------------------------------------------------------------\n\n",
+            "answer := seed + 1\n",
+            "answer\n",
+        ),
+    )
+    .unwrap();
+
+    assert_success(
+        run_build(&root, &source, "bytecode", &bytecode, false),
+        "compute source to metadata bytecode",
+    );
+    let parsed = ParsedProgram::from_bytes(&std::fs::read(&bytecode).unwrap()).unwrap();
+    assert!(!parsed.artifact.compute_regions.is_empty());
+
+    for (emit, keep, output) in [
+        ("native", false, root.join("mixed-native")),
+        ("cargo-project", false, root.join("mixed.cargo")),
+        ("plan", false, root.join("mixed.build-plan.json")),
+        ("bytecode", true, root.join("mixed-copy.mecb")),
+    ] {
+        let result = run_build(&root, &bytecode, emit, &output, keep);
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        assert!(!result.status.success(), "{emit} unexpectedly succeeded");
+        assert!(
+            stderr.contains("cannot package named compute regions"),
+            "{stderr}"
+        );
+        assert!(!output.exists(), "{emit} wrote {}", output.display());
+        assert!(!PathBuf::from(format!("{}.project", output.display())).exists());
+    }
 
     std::fs::remove_dir_all(root).unwrap();
 }

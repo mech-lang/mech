@@ -7,6 +7,9 @@ use crate::scene_error;
 pub enum SceneRendererKind {
     Canvas,
     Svg,
+    /// Publish the scene through the portable output protocol without
+    /// requiring an application-owned DOM target.
+    Output,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -73,6 +76,7 @@ pub fn scene_settings_from_config(settings: &ConfigValue) -> MResult<SceneHostSe
                 renderer = Some(match raw.as_str() {
                     "canvas" => SceneRendererKind::Canvas,
                     "svg" => SceneRendererKind::Svg,
+                    "output" => SceneRendererKind::Output,
                     other => {
                         return Err(scene_error(
                             "SceneHostConfig",
@@ -113,10 +117,13 @@ pub fn scene_settings_from_config(settings: &ConfigValue) -> MResult<SceneHostSe
             }
         }
     }
-    parsed.selector =
-        selector.ok_or_else(|| scene_error("SceneHostConfig", "scene selector is required"))?;
     parsed.renderer =
         renderer.ok_or_else(|| scene_error("SceneHostConfig", "scene renderer is required"))?;
+    parsed.selector = match (parsed.renderer, selector) {
+        (SceneRendererKind::Output, selector) => selector.unwrap_or_default(),
+        (_, Some(selector)) => selector,
+        _ => return Err(scene_error("SceneHostConfig", "scene selector is required")),
+    };
     Ok(parsed)
 }
 

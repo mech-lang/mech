@@ -1,15 +1,15 @@
 //! Semantic source-plan recorder shared by artifact compilation and bytecode v1 production.
 
-use core::cmp::Ordering;
+use core::{cmp::Ordering, ops::Range};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::LazyLock;
 
 use crate::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
-    DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout, InputPortPolicy,
-    LegacyValue, MResult, MechError, OperationContractDeclaration, OutputConstruction,
-    OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueKind,
+    ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout,
+    InputPortPolicy, LegacyValue, MResult, MechError, OperationContractDeclaration,
+    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueKind,
     compare_application_requirements, compile_value_register, hash_str,
     value_kind_from_runtime_type, write_bytecode,
 };
@@ -68,9 +68,18 @@ pub struct CompiledSymbolDefinition {
     pub ordinal: u32,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CompiledIntegrityConstraint {
+    pub name: String,
     pub result_register: Register,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CompiledComputeRegion {
+    pub name: String,
+    pub placement: ComputePlacement,
+    /// Dense source-plan node identities covered by this named section.
+    pub source_nodes: Range<u32>,
 }
 
 #[derive(Clone, Debug)]
@@ -86,6 +95,9 @@ pub struct CompiledBytecode {
     /// Portable semantic declaration captured from each specialized source
     /// node, parallel to `program.instructions`.
     pub instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
+    /// Canonical source-level operation, parallel to `program.instructions`.
+    /// Runtime factory identities remain in executable bytecode only.
+    pub instruction_operations: Vec<Option<String>>,
     /// Dense source-plan node identity, parallel to `program.instructions`.
     pub instruction_source_nodes: Vec<Option<u32>>,
     /// Dense and parallel to the register space. `None` is permitted only for
@@ -102,6 +114,7 @@ pub struct CompiledBytecode {
     pub symbol_definitions: Vec<CompiledSymbolDefinition>,
     pub return_register: Register,
     pub integrity_constraints: Vec<CompiledIntegrityConstraint>,
+    pub compute_regions: Vec<CompiledComputeRegion>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -133,6 +146,7 @@ pub struct CompileCtx {
     instructions: Vec<BytecodeInstruction>,
     instruction_roles: Vec<Option<CompiledInstructionRole>>,
     instruction_contracts: Vec<Option<&'static OperationContractDeclaration>>,
+    instruction_operations: Vec<Option<String>>,
     instruction_source_nodes: Vec<Option<u32>>,
     register_kinds: BTreeMap<Register, ValueKind>,
     register_collection_cardinalities: BTreeMap<Register, usize>,
@@ -141,9 +155,11 @@ pub struct CompileCtx {
     symbol_definitions: Vec<CompiledSymbolDefinition>,
     current_node_kind: Option<CompiledNodeKind>,
     current_node_contract: Option<&'static OperationContractDeclaration>,
+    current_node_operation: Option<String>,
     current_source_node: Option<u32>,
     next_source_node: u32,
     integrity_constraints: Vec<CompiledIntegrityConstraint>,
+    compute_regions: Vec<CompiledComputeRegion>,
     next_register: Register,
 }
 
@@ -162,6 +178,7 @@ impl Default for CompileCtx {
             instructions: Vec::new(),
             instruction_roles: Vec::new(),
             instruction_contracts: Vec::new(),
+            instruction_operations: Vec::new(),
             instruction_source_nodes: Vec::new(),
             register_kinds: BTreeMap::new(),
             register_collection_cardinalities: BTreeMap::new(),
@@ -170,9 +187,11 @@ impl Default for CompileCtx {
             symbol_definitions: Vec::new(),
             current_node_kind: None,
             current_node_contract: None,
+            current_node_operation: None,
             current_source_node: None,
             next_source_node: 0,
             integrity_constraints: Vec::new(),
+            compute_regions: Vec::new(),
             next_register: 0,
         }
     }
@@ -240,6 +259,7 @@ impl CompileCtx {
         self.instructions.remove(index);
         self.instruction_roles.remove(index);
         self.instruction_contracts.remove(index);
+        self.instruction_operations.remove(index);
         self.instruction_source_nodes.remove(index);
     }
 
@@ -287,7 +307,7 @@ impl CompileCtx {
     }
 
     pub fn begin_plan_node(&mut self, kind: CompiledNodeKind) -> MResult<()> {
-        self.begin_plan_node_with_contract(kind, None)
+        self.begin_plan_node_with_semantics(kind, None, None)
     }
 
     pub fn begin_plan_node_with_contract(
@@ -295,10 +315,20 @@ impl CompileCtx {
         kind: CompiledNodeKind,
         contract: Option<&'static OperationContractDeclaration>,
     ) -> MResult<()> {
+        self.begin_plan_node_with_semantics(kind, None, contract)
+    }
+
+    pub fn begin_plan_node_with_semantics(
+        &mut self,
+        kind: CompiledNodeKind,
+        operation: Option<&str>,
+        contract: Option<&'static OperationContractDeclaration>,
+    ) -> MResult<()> {
         if self.current_node_kind.is_some() {
             return invalid("cannot begin a bytecode plan node while another node is active");
         }
         self.current_node_kind = Some(kind);
+        self.current_node_operation = operation.map(str::to_owned);
         self.current_node_contract = contract;
         self.current_source_node = Some(self.next_source_node);
         self.next_source_node = self
@@ -310,11 +340,16 @@ impl CompileCtx {
 
     pub fn end_plan_node(&mut self) {
         self.current_node_kind = None;
+        self.current_node_operation = None;
         self.current_node_contract = None;
         self.current_source_node = None;
     }
 
-    pub fn record_integrity_constraint(&mut self, result_register: Register) -> MResult<()> {
+    pub fn record_integrity_constraint(
+        &mut self,
+        name: String,
+        result_register: Register,
+    ) -> MResult<()> {
         if result_register >= self.next_register {
             return invalid(format!(
                 "integrity result register {result_register} is outside register count {}",
@@ -322,7 +357,52 @@ impl CompileCtx {
             ));
         }
         self.integrity_constraints
-            .push(CompiledIntegrityConstraint { result_register });
+            .push(CompiledIntegrityConstraint {
+                name,
+                result_register,
+            });
+        Ok(())
+    }
+
+    pub fn record_compute_region(
+        &mut self,
+        name: String,
+        placement: ComputePlacement,
+        source_nodes: Range<u32>,
+    ) -> MResult<()> {
+        if name.is_empty() {
+            return invalid("compute region name cannot be empty");
+        }
+        if source_nodes.is_empty() {
+            return invalid(format!("compute region `{name}` cannot be empty"));
+        }
+        if source_nodes.end > self.next_source_node {
+            return invalid(format!(
+                "compute region `{name}` ends at source node {}, but only {} source nodes exist",
+                source_nodes.end, self.next_source_node,
+            ));
+        }
+        if self
+            .compute_regions
+            .iter()
+            .any(|region| region.name == name)
+        {
+            return invalid(format!("compute region `{name}` is defined more than once"));
+        }
+        if let Some(region) = self.compute_regions.iter().find(|region| {
+            source_nodes.start < region.source_nodes.end
+                && region.source_nodes.start < source_nodes.end
+        }) {
+            return invalid(format!(
+                "compute region `{name}` overlaps compute region `{}`",
+                region.name,
+            ));
+        }
+        self.compute_regions.push(CompiledComputeRegion {
+            name,
+            placement,
+            source_nodes,
+        });
         Ok(())
     }
 
@@ -341,6 +421,7 @@ impl CompileCtx {
         self.instruction_roles
             .push(Some(CompiledInstructionRole::IntegrityMarker));
         self.instruction_contracts.push(None);
+        self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
     }
 
@@ -363,6 +444,13 @@ impl CompileCtx {
             return invalid(format!(
                 "instruction contract count {} does not match instruction count {}",
                 self.instruction_contracts.len(),
+                self.instructions.len(),
+            ));
+        }
+        if self.instruction_operations.len() != self.instructions.len() {
+            return invalid(format!(
+                "instruction operation count {} does not match instruction count {}",
+                self.instruction_operations.len(),
                 self.instructions.len(),
             ));
         }
@@ -408,6 +496,8 @@ impl CompileCtx {
         instruction_roles.push(None);
         let mut instruction_contracts = self.instruction_contracts.clone();
         instruction_contracts.push(None);
+        let mut instruction_operations = self.instruction_operations.clone();
+        instruction_operations.push(None);
         let mut instruction_source_nodes = self.instruction_source_nodes.clone();
         instruction_source_nodes.push(None);
 
@@ -471,6 +561,7 @@ impl CompileCtx {
             runtime_function_names: self.runtime_function_names.clone(),
             instruction_roles,
             instruction_contracts,
+            instruction_operations,
             instruction_source_nodes,
             register_kinds,
             register_collection_cardinalities,
@@ -478,6 +569,7 @@ impl CompileCtx {
             symbol_definitions: self.symbol_definitions.clone(),
             return_register,
             integrity_constraints: self.integrity_constraints.clone(),
+            compute_regions: self.compute_regions.clone(),
         })
     }
 
@@ -760,6 +852,7 @@ impl BytecodeCompilerContext for CompileCtx {
         });
         self.instruction_roles.push(None);
         self.instruction_contracts.push(None);
+        self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
     }
 
@@ -783,6 +876,8 @@ impl BytecodeCompilerContext for CompileCtx {
             )));
         self.instruction_contracts
             .push(Some(&PURE_COMPOSITE_PACK_CONTRACT));
+        self.instruction_operations
+            .push(Some("core/composite-pack".to_owned()));
         // This is a compiler-owned record/tuple/etc. construction node, not a
         // second lowering of the source plan node whose input requested it.
         self.instruction_source_nodes.push(None);
@@ -796,6 +891,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -808,6 +905,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -821,6 +920,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -840,6 +941,7 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(Some(CompiledInstructionRole::DeclarationMarker));
         self.instruction_contracts.push(None);
+        self.instruction_operations.push(None);
         self.instruction_source_nodes.push(None);
     }
 
@@ -861,6 +963,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -885,6 +989,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -898,6 +1004,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -915,6 +1023,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -926,6 +1036,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -938,6 +1050,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 
@@ -950,6 +1064,8 @@ impl BytecodeCompilerContext for CompileCtx {
         self.instruction_roles
             .push(self.current_node_kind.map(CompiledInstructionRole::Node));
         self.instruction_contracts.push(self.current_node_contract);
+        self.instruction_operations
+            .push(self.current_node_operation.clone());
         self.instruction_source_nodes.push(self.current_source_node);
     }
 }
@@ -1395,6 +1511,10 @@ mod tests {
         let compiled = context.finish_program(registers[1]).unwrap();
         assert_eq!(
             compiled.instruction_contracts.len(),
+            compiled.program.instructions.len()
+        );
+        assert_eq!(
+            compiled.instruction_operations.len(),
             compiled.program.instructions.len()
         );
         assert_eq!(

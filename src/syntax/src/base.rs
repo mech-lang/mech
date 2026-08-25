@@ -399,8 +399,12 @@ pub fn punctuation(input: ParseString) -> ParseResult<Token> {
     Ok((input, punctuation))
 }
 
-// escaped-char := "\" ,  alpha | symbol | punctuation ;
+// escaped-char := simple-escaped-char | zero-escaped-char | unicode-escaped-char ;
 pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
+    alt((unicode_escaped_char, zero_escaped_char, simple_escaped_char))(input)
+}
+
+fn simple_escaped_char(input: ParseString) -> ParseResult<Token> {
     let (input, _) = backslash(input)?;
     let (input, mut symbol) = alt((alpha_token, symbol, punctuation))(input)?;
     // Update kind
@@ -417,6 +421,47 @@ pub fn escaped_char(input: ParseString) -> ParseResult<Token> {
         })
         .collect();
     Ok((input, symbol))
+}
+
+fn zero_escaped_char(input: ParseString) -> ParseResult<Token> {
+    let start = input.loc();
+    let (input, _) = backslash(input)?;
+    let (input, _) = tag("0")(input)?;
+    let end = input.loc();
+    Ok((
+        input,
+        Token {
+            kind: TokenKind::EscapedChar,
+            chars: vec!['\0'],
+            src_range: SourceRange { start, end },
+        },
+    ))
+}
+
+fn unicode_escaped_char(input: ParseString) -> ParseResult<Token> {
+    let start = input.loc();
+    let (input, _) = backslash(input)?;
+    let (input, _) = tag("u")(input)?;
+    let (input, _) = left_brace(input)?;
+    let (input, digits) = many1(alt((digit_token, alpha_token)))(input)?;
+    let (input, _) = right_brace(input)?;
+    let encoded = digits
+        .iter()
+        .flat_map(|token| token.chars.iter())
+        .collect::<String>();
+    let scalar = u32::from_str_radix(&encoded, 16)
+        .ok()
+        .and_then(char::from_u32)
+        .ok_or_else(|| nom::Err::Error(ParseError::new(input.clone(), "Invalid Unicode escape")))?;
+    let end = input.loc();
+    Ok((
+        input,
+        Token {
+            kind: TokenKind::EscapedChar,
+            chars: vec![scalar],
+            src_range: SourceRange { start, end },
+        },
+    ))
 }
 
 // symbol := ampersand | dollar | bar | percent | at | slash | hashtag | equal | backslash | tilde | plus | dash | asterisk | caret | underscore ;

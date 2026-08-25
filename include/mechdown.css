@@ -1,0 +1,1118 @@
+/*
+ * Mechdown document presentation layer.
+ *
+ * Every rule is rooted at data-mechdown. Omitting this stylesheet leaves the
+ * formatter semantic HTML: headings, paragraphs, lists, tables, figures,
+ * blockquotes, pre/code, citations, and footnotes remain ordinary elements.
+ */
+
+[data-mechdown] {
+  --mechdown-text: var(--mech-text-reading, var(--body-primary, hsl(40 100% 95%)));
+  --mechdown-heading: var(--mech-text-primary, var(--text-primary, #f3f3e6));
+  --mechdown-text-secondary: var(--mech-text-secondary, var(--text-secondary, #bebcaa));
+  --mechdown-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
+  --mechdown-accent: var(--mech-brand, var(--accent-primary, #f2b63d));
+  --mechdown-link: var(--mech-link, var(--accent-hover, hsl(42 89% 70%)));
+  --mechdown-link-hover: var(--mech-link-hover, hsl(42 89% 80%));
+  --mechdown-reference-hover: var(--mech-reference-hover, #f18181);
+  --mechdown-section-annotation: var(--mech-editorial-purple-soft, var(--accent-secondary-purple-soft, hsl(254 12% 58%)));
+  --mechdown-inline-code: var(--mech-syntax-variable, var(--var-name-color, #eddaf1));
+  --mechdown-border: var(--mech-border, var(--border, #4d5257));
+  --mechdown-surface: var(--mech-panel, var(--bg-secondary, #171c26));
+  --mechdown-callout-surface: var(--mech-panel-raised, var(--callout-background-color, #1f2533));
+  --mechdown-code-surface: var(--mech-code-bg, var(--code-background-color, #090d11));
+  --mechdown-highlight: var(--mech-selection-bg, rgb(242 182 61 / 24%));
+  --mechdown-highlight-text: var(--mech-selection-text, hsl(40 100% 95%));
+  --mechdown-info: var(--mech-info, #8095ff);
+  --mechdown-warning: var(--mech-warning, #ffaa80);
+  --mechdown-error: var(--mech-error, #ff8095);
+  --mechdown-success: var(--mech-success, #80ff95);
+  --mechdown-idea: var(--mech-idea, #c180ff);
+  --mechdown-question: var(--mech-question, #80e8ff);
+  --mechdown-table-heading: var(--mech-text-table-heading, #dbc3a5);
+  --mechdown-table-row-odd: var(--mech-table-row-odd, hsl(222 25% 9%));
+  --mechdown-table-row-even: var(--mech-table-row-even, #171c26);
+  --mechdown-table-row-hover: var(--mech-table-row-hover, hsl(222 25% 17%));
+  --mechdown-caption: var(--mech-text-caption, #eadec2);
+  --mechdown-footnote: var(--mech-text-footnote, #ada594);
+  --mechdown-equation: var(--mech-text-equation, #efd5cd);
+  --mechdown-shadow: var(--mech-shadow-content-block, 5px 5px 5px rgb(0 0 0 / 70%));
+  --mechdown-inline-shadow: var(--mech-shadow-inline-code, 0 0 2px rgb(0 0 0 / 70%));
+  --mechdown-table-shadow: var(--mech-shadow-table, 0 1px 4px rgb(0 0 0 / 50%));
+  color: var(--mechdown-text);
+  counter-reset: mechdown-section;
+  line-height: 1.7;
+  min-width: 0;
+}
+
+[data-mechdown] section {
+  min-width: 0;
+}
+
+/* Preserve the established long-form reading measure inside every document
+ * shim; the surrounding blog/docs shell still owns the outer columns. */
+[data-mechdown] .mech-content {
+  margin-top: 50px;
+  min-width: 0;
+}
+
+[data-mechdown] .mech-program {
+  margin-inline: auto;
+  max-width: 700px;
+  min-width: 0;
+}
+
+[data-mechdown] h1,
+[data-mechdown] h2,
+[data-mechdown] h3,
+[data-mechdown] h4,
+[data-mechdown] h5,
+[data-mechdown] h6 {
+  color: var(--mechdown-heading);
+  font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+[data-mechdown] h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin: 0 0 1.5rem;
+}
+
+[data-mechdown] h2 {
+  border-bottom: 1px dotted var(--mechdown-border);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  margin: 2.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+}
+
+[data-mechdown] h3 {
+  font-size: 1.35rem;
+  margin: 2rem 0 0.8rem;
+}
+
+[data-mechdown] h4,
+[data-mechdown] h5,
+[data-mechdown] h6 {
+  font-size: 1rem;
+  margin: 1.5rem 0 0.6rem;
+}
+
+/*
+ * Editorial section hierarchy. This is part of the established blog-derived
+ * Mechdown language, so every document shim preserves it by default.
+ */
+[data-mechdown] .mechdown-section {
+  counter-reset: mechdown-subsection mechdown-subsubsection mechdown-h5 mechdown-h6;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0 10px 30px;
+  width: 100%;
+}
+
+[data-mechdown] .mechdown-section.mechdown-titled-section {
+  counter-increment: mechdown-section;
+}
+
+[data-mechdown] .mechdown-section > h2,
+[data-mechdown] .mechdown-section > h3 {
+  align-items: flex-start;
+  border-bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  padding-bottom: 10px;
+}
+
+[data-mechdown] .mechdown-section > h4,
+[data-mechdown] .mechdown-section > h5,
+[data-mechdown] .mechdown-section > h6 {
+  align-items: baseline;
+  border-bottom: 0;
+  display: flex;
+  flex-direction: row;
+  gap: 0.5em;
+  padding-bottom: 0;
+}
+
+[data-mechdown] .mechdown-section > h2 {
+  font-size: 34px;
+  letter-spacing: 0.01em;
+  margin: 0 0 14px -20px;
+}
+
+[data-mechdown] .mech-section-annotations {
+  color: var(--mechdown-section-annotation);
+  font-size: 0.42em;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+}
+
+[data-mechdown] .mechdown-section > h3 {
+  counter-increment: mechdown-subsection;
+  counter-reset: mechdown-subsubsection mechdown-h5 mechdown-h6;
+  font-size: 24px;
+  margin: 30px 0 12px;
+}
+
+[data-mechdown] .mechdown-section > h4 {
+  counter-increment: mechdown-subsubsection;
+  counter-reset: mechdown-h5 mechdown-h6;
+}
+
+[data-mechdown] .mechdown-section > h5 {
+  color: var(--accent-soft, var(--mechdown-text));
+  counter-increment: mechdown-h5;
+  counter-reset: mechdown-h6;
+}
+
+[data-mechdown] .mechdown-section > h6 {
+  color: var(--accent-soft, var(--mechdown-text));
+  counter-increment: mechdown-h6;
+}
+
+[data-mechdown] .mechdown-section > h2::before,
+[data-mechdown] .mechdown-section > h3::before,
+[data-mechdown] .mechdown-section > h4::before,
+[data-mechdown] .mechdown-section > h5::before,
+[data-mechdown] .mechdown-section > h6::before {
+  color: var(--mechdown-accent);
+  flex-shrink: 0;
+  font-family: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.4em;
+  font-weight: 700;
+  letter-spacing: 0.21em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+[data-mechdown] .mechdown-section > h2::before {
+  content: "section " counter(mechdown-section, decimal);
+  display: block;
+}
+
+[data-mechdown] .mechdown-section > h3::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal);
+  display: block;
+  font-size: 12px;
+}
+
+[data-mechdown] .mechdown-section > h4::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal);
+  font-size: 10px;
+}
+
+[data-mechdown] .mechdown-section > h5::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal);
+  display: none;
+  font-size: 10px;
+}
+
+[data-mechdown] .mechdown-section > h6::before {
+  content: counter(mechdown-section, decimal) "." counter(mechdown-subsection, decimal) "." counter(mechdown-subsubsection, decimal) "." counter(mechdown-h5, decimal) "." counter(mechdown-h6, decimal);
+  font-size: 10px;
+}
+
+[data-mechdown] h1 a,
+[data-mechdown] h2 a,
+[data-mechdown] h3 a,
+[data-mechdown] h4 a,
+[data-mechdown] h5 a,
+[data-mechdown] h6 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+[data-mechdown] :is(h2, h3, h4, h5, h6) a:is(:hover, :focus-visible) {
+  color: var(--mech-brand-deep, hsl(42 89% 60%));
+  outline: none;
+}
+
+[data-mechdown] .mech-program-subtitle > a {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+[data-mechdown] .mech-program-subtitle:hover > a {
+  color: var(--mech-syntax-tuple-structure, #ab7ab8);
+}
+
+[data-mechdown] .mechdown-paragraph:not([data-mech-source] *),
+[data-mechdown] .mech-paragraph:not([data-mech-source] *) {
+  margin: 0 0 1rem;
+  overflow-wrap: anywhere;
+}
+
+[data-mechdown] .mech-strong,
+[data-mechdown] strong {
+  color: inherit;
+  font-weight: 750;
+}
+
+[data-mechdown] .mech-em {
+  color: inherit;
+}
+
+[data-mechdown] .mech-hyperlink,
+[data-mechdown] .mech-section-reference-link {
+  color: var(--mechdown-link);
+  text-decoration-color: currentColor;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+[data-mechdown] .mech-hyperlink:is(:hover, :focus-visible),
+[data-mechdown] .mech-section-reference-link:is(:hover, :focus-visible) {
+  color: var(--mechdown-link-hover);
+  text-decoration-color: currentColor;
+  outline: none;
+}
+
+[data-mechdown] .mech-inline-code {
+  background: var(--mechdown-code-surface);
+  border: 1px solid var(--mechdown-border);
+  border-radius: 3px;
+  box-shadow: var(--mechdown-inline-shadow);
+  color: var(--mechdown-inline-code);
+  font: 1em/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  margin-inline: 2px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+[data-mechdown] a.mech-hyperlink .mech-inline-code {
+  border-color: var(--mechdown-link);
+  border-style: dashed;
+  color: var(--mechdown-link);
+  display: inline-block;
+  padding: 0 3px;
+  text-decoration: none;
+}
+
+[data-mechdown] a.mech-hyperlink:is(:hover, :focus-visible) .mech-inline-code {
+  border-color: var(--mechdown-link-hover);
+  color: var(--mechdown-link-hover);
+}
+
+[data-mechdown] .mech-error {
+  color: var(--mechdown-error);
+}
+
+[data-mechdown] .mech-section-error {
+  background: var(--mechdown-callout-surface);
+  border-left: 4px solid var(--mechdown-error);
+  border-radius: 3px;
+  color: var(--mechdown-text);
+  margin: 20px 0;
+  padding: 16px 20px;
+}
+
+[data-mechdown] .mech-section-error strong {
+  color: var(--mechdown-error);
+}
+
+[data-mechdown] .mech-byline,
+[data-mechdown] .mech-program-byline {
+  color: var(--mechdown-muted);
+  font-size: 1em;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.2;
+  margin: 0 0 1em;
+  text-align: center;
+}
+
+[data-mechdown] :is(.mech-byline, .mech-program-byline) .mech-paragraph {
+  color: inherit;
+  margin: 0;
+}
+
+[data-mechdown] .mech-prompt {
+  align-items: baseline;
+  color: var(--mechdown-text);
+  display: flex;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  gap: 0.65em;
+  margin: 1rem 0;
+}
+
+[data-mechdown] .mech-prompt-sigil {
+  color: var(--mechdown-accent);
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+[data-mechdown] .mech-prompt > .mech-paragraph {
+  margin: 0;
+}
+
+[data-mechdown] pre.mech-code-block:not([data-mech-source]) {
+  background: var(--mechdown-code-surface);
+  border: 1px solid var(--mechdown-border);
+  border-radius: 10px;
+  box-shadow: var(--mechdown-shadow);
+  color: var(--mechdown-text);
+  font: 0.9rem/1.6 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  max-width: 100%;
+  overflow: auto;
+  margin-bottom: 20px;
+  padding: 20px;
+  white-space: pre;
+}
+
+[data-mechdown] .mech-highlight,
+[data-mechdown] mark {
+  background: var(--mechdown-highlight);
+  border: 0;
+  border-bottom: 1px solid var(--mechdown-accent);
+  border-radius: 0;
+  color: var(--mechdown-highlight-text);
+  padding: 0.05em 0.22em;
+}
+
+[data-mechdown] ul,
+[data-mechdown] ol {
+  margin: 0 0 1rem;
+  padding-left: 1.6rem;
+}
+
+[data-mechdown] li + li {
+  margin-top: 0.35rem;
+}
+
+[data-mechdown] li::marker {
+  color: var(--mechdown-accent);
+}
+
+[data-mechdown] .mech-list-item-emoji {
+  color: var(--mech-list-emoji, #ee6262);
+  line-height: 0;
+  list-style: none;
+  position: relative;
+}
+
+[data-mechdown] .mech-list-item-emoji::before {
+  color: var(--mech-list-emoji, #ee6262);
+  content: attr(data-bullet);
+  font-size: 1rem;
+  left: auto;
+  position: relative;
+  right: 30px;
+  top: 13px;
+}
+
+[data-mechdown] .mech-check-list {
+  list-style: none;
+  margin-top: 0.5em;
+  padding-left: 9px;
+}
+
+[data-mechdown] .mech-check-list-item {
+  align-items: flex-start;
+  color: var(--mech-text-abstract, #dcd4c9);
+  display: flex;
+  gap: 0.5em;
+  margin: 0;
+}
+
+[data-mechdown] .mech-check-list-item input[type="checkbox"] {
+  appearance: none;
+  background: var(--mech-control-surface, #171d21);
+  border: 2px solid var(--mech-control-border, #777);
+  border-radius: 3px;
+  cursor: pointer;
+  height: 16px;
+  margin-top: 3px;
+  position: relative;
+  width: 16px;
+}
+
+[data-mechdown] .mech-check-list-item input[type="checkbox"]:checked {
+  border-color: var(--mechdown-link);
+}
+
+[data-mechdown] .mech-check-list-item input[type="checkbox"]:checked::after {
+  color: var(--mechdown-link);
+  content: "✓";
+  font-size: 12px;
+  left: 1px;
+  line-height: 1;
+  position: absolute;
+  top: 0;
+}
+
+[data-mechdown] .mechdown-table {
+  background: var(--mechdown-table-row-even);
+  border: 1px solid var(--mechdown-border);
+  border-collapse: collapse;
+  display: block;
+  margin: 1.5rem auto 20px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 0;
+  box-shadow: var(--mechdown-table-shadow);
+  width: max-content;
+}
+
+[data-mechdown] .mechdown-table th,
+[data-mechdown] .mechdown-table td {
+  border-bottom: 1px solid var(--mechdown-border);
+  padding: 5px;
+  text-align: left;
+  vertical-align: top;
+}
+
+[data-mechdown] .mechdown-table th {
+  background: var(--mechdown-table-row-odd);
+  color: var(--mechdown-table-heading);
+  font: 650 0.82rem/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+[data-mechdown] .mechdown-table .mech-table-header-cell {
+  padding: 10px;
+  text-align: center;
+}
+
+[data-mechdown] .mechdown-table .mech-table-cell {
+  border-bottom: 1px solid var(--mechdown-border);
+  padding: 20px 10px;
+}
+
+[data-mechdown] .mechdown-table .mech-table-row-odd {
+  background: var(--mechdown-table-row-odd);
+}
+
+[data-mechdown] .mechdown-table .mech-table-row-even {
+  background: var(--mechdown-table-row-even);
+}
+
+[data-mechdown] .mechdown-table tbody tr:nth-child(odd) {
+  background: var(--mechdown-table-row-odd);
+}
+
+[data-mechdown] .mechdown-table tbody tr:nth-child(even) {
+  background: var(--mechdown-table-row-even);
+}
+
+[data-mechdown] .mechdown-table tbody tr:hover {
+  background: var(--mechdown-table-row-hover);
+}
+
+[data-mechdown] .mechdown-table a {
+  color: var(--mechdown-link-hover);
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-underline-offset: 2px;
+}
+
+[data-mechdown] .mechdown-table a:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
+}
+
+[data-mechdown] .mechdown-table .center {
+  text-align: center;
+}
+
+[data-mechdown] .mechdown-table .right {
+  text-align: right;
+}
+
+[data-mechdown] :is(.mech-output-value, .mech-code-block) > .mechdown-table:last-child {
+  margin-bottom: 0;
+}
+
+[data-mechdown] .mechdown-table .mech-table-cell .mech-paragraph {
+  margin: 0;
+  padding: 0;
+}
+
+[data-mechdown] .mech-block-quote {
+  background: var(--mechdown-callout-surface);
+  border-left: 4px solid var(--mechdown-link);
+  border-radius: 3px;
+  color: var(--mechdown-text);
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  width: 100%;
+}
+
+[data-mechdown] .mech-block-quote p {
+  margin: 0.5rem 0 0;
+}
+
+[data-mechdown] .mech-block-quote > :last-child {
+  margin-bottom: 0;
+}
+
+[data-mechdown] .mech-info-block,
+[data-mechdown] .mech-question-block,
+[data-mechdown] .mech-success-block,
+[data-mechdown] .mech-warning-block,
+[data-mechdown] .mech-error-block,
+[data-mechdown] .mech-idea-block {
+  --mechdown-callout-color: var(--mechdown-info);
+  background: var(--mechdown-callout-surface);
+  border: 0;
+  border-left: 4px solid var(--mechdown-callout-color);
+  border-radius: 3px;
+  color: var(--mechdown-text);
+  font-style: normal;
+  margin: 20px 0;
+  padding: 20px 20px 20px 50px;
+  position: relative;
+  width: 100%;
+}
+
+[data-mechdown] .mech-question-block {
+  --mechdown-callout-color: var(--mechdown-question);
+}
+
+[data-mechdown] .mech-success-block {
+  --mechdown-callout-color: var(--mechdown-success);
+}
+
+[data-mechdown] .mech-warning-block {
+  --mechdown-callout-color: var(--mechdown-warning);
+}
+
+[data-mechdown] .mech-error-block {
+  --mechdown-callout-color: var(--mechdown-error);
+}
+
+[data-mechdown] .mech-idea-block {
+  --mechdown-callout-color: var(--mechdown-idea);
+}
+
+[data-mechdown] .mech-info-block::before,
+[data-mechdown] .mech-question-block::before,
+[data-mechdown] .mech-success-block::before,
+[data-mechdown] .mech-warning-block::before,
+[data-mechdown] .mech-error-block::before,
+[data-mechdown] .mech-idea-block::before {
+  background-color: var(--mechdown-callout-color);
+  border-radius: 50%;
+  content: " ";
+  height: 30px;
+  left: 10px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+}
+
+[data-mechdown] .mech-info-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWluZm8taWNvbiBsdWNpZGUtaW5mbyI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMTZ2LTQiLz48cGF0aCBkPSJNMTIgOGguMDEiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWluZm8taWNvbiBsdWNpZGUtaW5mbyI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiLz48cGF0aCBkPSJNMTIgMTZ2LTQiLz48cGF0aCBkPSJNMTIgOGguMDEiLz48L3N2Zz4=") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-warning-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0LWljb24gbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0Ij48cGF0aCBkPSJtMjEuNzMgMTgtOC0xNGEyIDIgMCAwIDAtMy40OCAwbC04IDE0QTIgMiAwIDAgMCA0IDIxaDE2YTIgMiAwIDAgMCAxLjczLTMiLz48cGF0aCBkPSJNMTIgOXY0Ii8+PHBhdGggZD0iTTEyIDE3aC4wMSIvPjwvc3ZnPg==") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0LWljb24gbHVjaWRlLXRyaWFuZ2xlLWFsZXJ0Ij48cGF0aCBkPSJtMjEuNzMgMTgtOC0xNGEyIDIgMCAwIDAtMy40OCAwbC04IDE0QTIgMiAwIDAgMCA0IDIxaDE2YTIgMiAwIDAgMCAxLjczLTMiLz48cGF0aCBkPSJNMTIgOXY0Ii8+PHBhdGggZD0iTTEyIDE3aC4wMSIvPjwvc3ZnPg==") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-question-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrLWljb24gbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIvPjxwYXRoIGQ9Ik05LjA5IDlhMyAzIDAgMCAxIDUuODMgMWMwIDItMyAzLTMgMyIvPjxwYXRoIGQ9Ik0xMiAxN2guMDEiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrLWljb24gbHVjaWRlLWNpcmNsZS1xdWVzdGlvbi1tYXJrIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIvPjxwYXRoIGQ9Ik05LjA5IDlhMyAzIDAgMCAxIDUuODMgMWMwIDItMyAzLTMgMyIvPjxwYXRoIGQ9Ik0xMiAxN2guMDEiLz48L3N2Zz4=") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-error-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW9jdGFnb24tYWxlcnQtaWNvbiBsdWNpZGUtb2N0YWdvbi1hbGVydCI+PHBhdGggZD0iTTEyIDE2aC4wMSIvPjxwYXRoIGQ9Ik0xMiA4djQiLz48cGF0aCBkPSJNMTUuMzEyIDJhMiAyIDAgMCAxIDEuNDE0LjU4Nmw0LjY4OCA0LjY4OEEyIDIgMCAwIDEgMjIgOC42ODh2Ni42MjRhMiAyIDAgMCAxLS41ODYgMS40MTRsLTQuNjg4IDQuNjg4YTIgMiAwIDAgMS0xLjQxNC41ODZIOC42ODhhMiAyIDAgMCAxLTEuNDE0LS41ODZsLTQuNjg4LTQuNjg4QTIgMiAwIDAgMSAyIDE1LjMxMlY4LjY4OGEyIDIgMCAwIDEgLjU4Ni0xLjQxNGw0LjY4OC00LjY4OEEyIDIgMCAwIDEgOC42ODggMnoiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW9jdGFnb24tYWxlcnQtaWNvbiBsdWNpZGUtb2N0YWdvbi1hbGVydCI+PHBhdGggZD0iTTEyIDE2aC4wMSIvPjxwYXRoIGQ9Ik0xMiA4djQiLz48cGF0aCBkPSJNMTUuMzEyIDJhMiAyIDAgMCAxIDEuNDE0LjU4Nmw0LjY4OCA0LjY4OEEyIDIgMCAwIDEgMjIgOC42ODh2Ni42MjRhMiAyIDAgMCAxLS41ODYgMS40MTRsLTQuNjg4IDQuNjg4YTIgMiAwIDAgMS0xLjQxNC41ODZIOC42ODhhMiAyIDAgMCAxLTEuNDE0LS41ODZsLTQuNjg4LTQuNjg4QTIgMiAwIDAgMSAyIDE1LjMxMlY4LjY4OGEyIDIgMCAwIDEgLjU4Ni0xLjQxNGw0LjY4OC00LjY4OEEyIDIgMCAwIDEgOC42ODggMnoiLz48L3N2Zz4=") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-success-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1jaGVjay1pY29uIGx1Y2lkZS1jaXJjbGUtY2hlY2siPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0ibTkgMTIgMiAyIDQtNCIvPjwvc3ZnPg==") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNpcmNsZS1jaGVjay1pY29uIGx1Y2lkZS1jaXJjbGUtY2hlY2siPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjEwIi8+PHBhdGggZD0ibTkgMTIgMiAyIDQtNCIvPjwvc3ZnPg==") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-idea-block::before {
+  mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWxpZ2h0YnVsYi1pY29uIGx1Y2lkZS1saWdodGJ1bGIiPjxwYXRoIGQ9Ik0xNSAxNGMuMi0xIC43LTEuNyAxLjUtMi41IDEtLjkgMS41LTIuMiAxLjUtMy41QTYgNiAwIDAgMCA2IDhjMCAxIC4yIDIuMiAxLjUgMy41LjcuNyAxLjMgMS41IDEuNSAyLjUiLz48cGF0aCBkPSJNOSAxOGg2Ii8+PHBhdGggZD0iTTEwIDIyaDQiLz48L3N2Zz4=") center/70% no-repeat;
+  -webkit-mask: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWxpZ2h0YnVsYi1pY29uIGx1Y2lkZS1saWdodGJ1bGIiPjxwYXRoIGQ9Ik0xNSAxNGMuMi0xIC43LTEuNyAxLjUtMi41IDEtLjkgMS41LTIuMiAxLjUtMy41QTYgNiAwIDAgMCA2IDhjMCAxIC4yIDIuMiAxLjUgMy41LjcuNyAxLjMgMS41IDEuNSAyLjUiLz48cGF0aCBkPSJNOSAxOGg2Ii8+PHBhdGggZD0iTTEwIDIyaDQiLz48L3N2Zz4=") center/70% no-repeat;
+}
+
+[data-mechdown] .mech-info-block > :last-child,
+[data-mechdown] .mech-question-block > :last-child,
+[data-mechdown] .mech-success-block > :last-child,
+[data-mechdown] .mech-warning-block > :last-child,
+[data-mechdown] .mech-error-block > :last-child,
+[data-mechdown] .mech-idea-block > :last-child {
+  margin-bottom: 0;
+}
+
+[data-mechdown] :is(
+  .mech-info-block,
+  .mech-question-block,
+  .mech-success-block,
+  .mech-warning-block,
+  .mech-error-block,
+  .mech-idea-block
+) p {
+  font-size: 12pt;
+  line-height: 1.5;
+  margin: 0;
+}
+
+[data-mechdown] .mech-abstract,
+[data-mechdown] .mech-summary {
+  color: var(--mechdown-text-secondary);
+  font-size: 1.05rem;
+  margin: 1.5rem 0 2rem;
+}
+
+[data-mechdown] .mech-abstract {
+  background: var(--mechdown-surface);
+  border: 1px solid var(--mechdown-accent);
+  border-radius: 8px;
+  box-shadow: var(--mechdown-shadow);
+  color: var(--mech-text-abstract, #dcd4c9);
+  margin-inline: 2rem;
+  padding: 2rem;
+}
+
+[data-mechdown] .mech-abstract p {
+  line-height: 25pt;
+  margin: 0;
+  text-align: justify;
+}
+
+[data-mechdown] .mech-abstract > :last-child {
+  margin-bottom: 0;
+}
+
+[data-mechdown] .mech-thematic-break {
+  border: 0;
+  border-top: 2px dotted var(--mech-divider, #7e8892);
+  margin: 30px 0;
+  opacity: 0.7;
+  width: 100%;
+}
+
+[data-mechdown] .mech-figure,
+[data-mechdown] .mech-figure-table {
+  margin: 2rem auto;
+  max-width: 100%;
+}
+
+[data-mechdown] .mech-figure {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 10px;
+}
+
+[data-mechdown] .mech-image,
+[data-mechdown] .mech-figure img,
+[data-mechdown] .mech-figure-table img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+[data-mechdown] .mech-figure-caption {
+  color: var(--mechdown-caption);
+  display: flex;
+  flex-direction: row;
+  font-size: 1rem;
+  font-style: italic;
+  gap: 0.5em;
+  line-height: 1.4;
+  margin-top: 1rem;
+  text-align: left;
+}
+
+[data-mechdown] .mech-figure-label,
+[data-mechdown] .mech-figure-subfigure-label {
+  color: var(--mechdown-accent);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+[data-mechdown] .mech-figure-label {
+  font-size: 1rem;
+  min-width: 60px;
+  text-align: right;
+}
+
+[data-mechdown] .mech-figure-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+  width: 100%;
+}
+
+[data-mechdown] .mech-figure-table-row {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+
+[data-mechdown] .mech-figure-table-cell {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-mechdown] .mech-figure-panel {
+  max-width: 100%;
+  position: relative;
+  width: fit-content;
+}
+
+[data-mechdown] .mech-figure-grid-image {
+  display: block;
+  height: clamp(150px, 24vw, 260px);
+  max-width: 100%;
+  object-fit: contain;
+  width: auto;
+}
+
+[data-mechdown] .mech-figure-subfigure-label {
+  font-weight: 700;
+  left: 8px;
+  position: absolute;
+  text-shadow: var(--mech-shadow-label, 1px 1px 2px rgb(0 0 0 / 80%));
+  text-transform: lowercase;
+  top: 8px;
+  z-index: 1;
+}
+
+[data-mechdown] .mech-figure-table-caption {
+  color: inherit;
+  display: block;
+  font-style: normal;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+[data-mechdown] .mech-figure-table-caption .mech-figure-label {
+  display: inline;
+  font-size: 1rem;
+  font-style: italic;
+  margin-right: 0.4em;
+  min-width: 0;
+  text-align: left;
+}
+
+[data-mechdown] .mech-figure-caption-ref {
+  color: var(--mechdown-accent);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  margin-right: 0.2em;
+}
+
+[data-mechdown] .mech-figure-caption-text {
+  color: inherit;
+  font-family: inherit;
+  margin-right: 0.8em;
+}
+
+[data-mechdown] .mech-figure-caption p {
+  margin: 0;
+}
+
+[data-mechdown] .mech-figure-caption .mech-paragraph {
+  color: var(--mechdown-text);
+}
+
+[data-mechdown] .mech-float .mech-figure-caption {
+  display: block;
+  line-height: 1.3;
+  margin-top: 0.5em;
+}
+
+[data-mechdown] .mech-float .mech-figure-label {
+  display: inline;
+  margin-right: 0.35em;
+  min-width: 0;
+}
+
+[data-mechdown] .mech-reference {
+  align-items: baseline;
+  color: var(--mechdown-link-hover);
+  font-family: "Fira Code", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+[data-mechdown] .mech-reference a {
+  color: inherit;
+  text-decoration: none;
+}
+
+[data-mechdown] .mech-reference a:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
+}
+
+[data-mechdown] .mech-citation-link-icon {
+  background-color: currentColor;
+  color: var(--mech-brand-deep, hsl(42 89% 60%));
+  display: inline-block;
+  height: 12px;
+  mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  vertical-align: -0.08em;
+  width: 12px;
+  -webkit-mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PHBhdGggZD0iTTEwIDE0IDIxIDMiLz48cGF0aCBkPSJNMTggMTN2NmEyIDIgMCAwIDEtMiAySDVhMiAyIDAgMCAxLTItMlY4YTIgMiAwIDAgMSAyLTJoNiIvPjwvc3ZnPg==");
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+[data-mechdown] .mech-citation-external-link:is(:hover, :focus-visible) .mech-citation-link-icon {
+  color: var(--mechdown-link-hover);
+}
+
+[data-mechdown] .mech-mika-section {
+  background: var(--mechdown-code-surface);
+  border: 1px dashed var(--mech-syntax-operator, #c09cc9);
+  border-radius: 10px;
+  padding-inline: 15px;
+}
+
+[data-mechdown] .mech-mika {
+  color: var(--mechdown-accent);
+  display: block;
+  float: left;
+  font-family: "Fira Code", "SFMono-Regular", Menlo, Consolas, monospace;
+  padding-right: 10px;
+  padding-top: 18px;
+}
+
+[data-mechdown] .mech-float.left {
+  float: left;
+  margin: 0.5rem 1.5rem 1rem 0;
+  max-width: 45%;
+}
+
+[data-mechdown] .mech-float .mech-figure {
+  align-items: stretch;
+  margin: 0;
+}
+
+[data-mechdown] .mech-float.right {
+  float: right;
+  margin: 0.5rem 0 1rem 1.5rem;
+  max-width: 45%;
+}
+
+[data-mechdown] .mech-equation {
+  color: var(--mechdown-equation);
+  margin: 1.5rem 0;
+  max-width: 100%;
+  overflow-x: auto;
+  text-align: center;
+}
+
+[data-mechdown] .mech-inline-equation {
+  color: var(--mechdown-equation);
+  font-size: 10pt;
+}
+
+[data-mechdown] .mech-diagram {
+  display: block;
+  margin: 1.5rem auto;
+  max-width: 100%;
+  overflow-x: auto;
+  text-align: center;
+}
+
+[data-mechdown] .mech-diagram :is(.edgePath path, .flowchart-link) {
+  fill: none !important;
+  stroke: var(--mech-syntax-path, #84b4c2) !important;
+  stroke-width: 2.5px !important;
+}
+
+[data-mechdown] .mech-diagram :is(.edgePath marker, marker) {
+  fill: var(--mech-syntax-path, #84b4c2) !important;
+  stroke: var(--mech-syntax-path, #84b4c2) !important;
+}
+
+[data-mechdown] .mech-diagram .edgeLabel,
+[data-mechdown] .mech-diagram text {
+  color: var(--mechdown-text) !important;
+  fill: var(--mechdown-text) !important;
+}
+
+[data-mechdown] .mech-diagram .edgeLabel {
+  font-size: 14px !important;
+}
+
+[data-mechdown] .mech-diagram :is(.edgeLabel, .edgeLabel p, .edgeLabel rect, .labelBkg) {
+  background: transparent !important;
+  fill: transparent !important;
+}
+
+[data-mechdown] .mech-diagram .node :is(rect, circle, ellipse, polygon, path) {
+  fill: var(--mechdown-surface) !important;
+  stroke: var(--mech-syntax-machine-flow, #8e90bd) !important;
+}
+
+[data-mechdown] .mech-footnotes,
+[data-mechdown] .mech-works-cited {
+  margin-top: 2.5rem;
+}
+
+[data-mechdown] .mech-backmatter-heading {
+  border-bottom: 0;
+  color: var(--mechdown-text);
+  column-span: all;
+  counter-increment: none;
+  counter-reset: none;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: normal;
+  margin: 30px 0 12px;
+  padding: 0;
+  text-transform: none;
+}
+
+[data-mechdown] .mech-backmatter-heading::before {
+  content: none !important;
+}
+
+[data-mechdown] .mech-footnote,
+[data-mechdown] .mech-citation {
+  align-items: baseline;
+  display: flex;
+  gap: 0.65rem;
+  margin: 0.6rem 0;
+}
+
+[data-mechdown] .mech-footnote {
+  align-items: flex-start;
+  color: var(--mechdown-footnote);
+  font-size: 0.9em;
+  gap: 0.75em;
+  margin-top: 1em;
+}
+
+[data-mechdown] .mech-citation {
+  color: var(--mech-text-code, hsl(41 49% 90%));
+}
+
+[data-mechdown] .mech-footnote-id,
+[data-mechdown] .mech-citation-id {
+  color: var(--mechdown-link);
+  flex: 0 0 auto;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+[data-mechdown] .mech-footnote-id {
+  font-weight: 700;
+  min-width: 2em;
+  text-align: right;
+}
+
+[data-mechdown] .mech-citation-id {
+  flex-shrink: 0;
+  padding: 3px 10px;
+}
+
+[data-mechdown] .mech-footnote-body,
+[data-mechdown] .mech-citation-text {
+  min-width: 0;
+}
+
+[data-mechdown] .mech-footnote-body .mech-paragraph + .mech-paragraph {
+  margin-top: 10px;
+}
+
+[data-mechdown] .mech-footnote .mech-paragraph {
+  color: var(--mech-text-code, hsl(41 49% 90%));
+  line-height: 1.6;
+  margin: 0;
+}
+
+[data-mechdown] .mech-citation p {
+  margin: 0 0 10px;
+}
+
+[data-mechdown] .mech-footnote-reference {
+  color: var(--mechdown-link-hover);
+  cursor: pointer;
+  font-size: 0.7em;
+  font-weight: 700;
+  margin-left: 0.1em;
+  min-width: 2em;
+  text-align: right;
+  text-decoration: none;
+  transition: color 0.2s;
+  vertical-align: super;
+}
+
+[data-mechdown] .mech-footnote-reference:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
+  text-decoration: underline;
+}
+
+[data-mechdown] .mech-citation-external-link {
+  color: var(--mechdown-link-hover);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+[data-mechdown] .mech-citation-external-link:is(:hover, :focus-visible) {
+  color: var(--mechdown-reference-hover);
+  outline: none;
+  text-decoration: underline;
+}
+
+[data-mechdown] .mech-citation-link-text {
+  word-break: break-all;
+}
+
+[data-mechdown] .mech-error-source {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 760px) {
+  [data-mechdown] .mechdown-section {
+    padding-inline: 0;
+  }
+
+  [data-mechdown] .mechdown-section > h2 {
+    margin-left: 0;
+  }
+
+  [data-mechdown] .mech-abstract {
+    margin-inline: 0;
+    padding: 1.25rem;
+  }
+
+  [data-mechdown] .mech-block-quote,
+  [data-mechdown] .mech-info-block,
+  [data-mechdown] .mech-question-block,
+  [data-mechdown] .mech-success-block,
+  [data-mechdown] .mech-warning-block,
+  [data-mechdown] .mech-error-block,
+  [data-mechdown] .mech-idea-block {
+    width: 100%;
+  }
+
+  [data-mechdown] .mech-float.left,
+  [data-mechdown] .mech-float.right {
+    float: none;
+    margin: 1.5rem 0;
+    max-width: 100%;
+  }
+
+  [data-mechdown] .mech-footnote,
+  [data-mechdown] .mech-citation {
+    align-items: flex-start;
+  }
+}

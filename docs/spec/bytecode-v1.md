@@ -554,9 +554,16 @@ All reserved fields and alignment bytes are zero. Equivalent programs
 therefore produce identical bytes.
 
 The corpus under `tests/architecture/bytecode-v1/` records source or
-construction origin, bytecode SHA-256, decoded structure, native-plan digest,
-graph, and expected output. `scripts/check-bytecode-v1-format.py` checks it
+construction origin, bytecode SHA-256, decoded structure, runtime-function
+identity, and expected output. `scripts/check-bytecode-v1-format.py` checks it
 independently of the Rust reader.
+
+Native-build plans are deliberately outside this frozen corpus. Their digest
+includes the selected implementation, dependency-resolution seed, and
+workspace fingerprint, so it must change when build ownership or workspace
+content changes without altering bytecode v1. Native-plan determinism and
+generated dependency graphs are enforced by the dedicated `mech-build` tests
+and native-plan CI job.
 
 ## Unsupported constants
 

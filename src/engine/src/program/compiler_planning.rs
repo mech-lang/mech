@@ -52,6 +52,25 @@ pub struct ProgramCompilationProduct {
     bytecode: Vec<u8>,
 }
 
+/// Immutable source-compilation product for hosts that immediately activate
+/// an artifact and do not need a second durable bytecode representation.
+#[cfg(feature = "semantic-compiler")]
+#[derive(Debug)]
+pub struct ProgramArtifactCompilationProduct {
+    artifact: ProgramArtifact,
+}
+
+#[cfg(feature = "semantic-compiler")]
+impl ProgramArtifactCompilationProduct {
+    pub const fn artifact(&self) -> &ProgramArtifact {
+        &self.artifact
+    }
+
+    pub fn into_artifact(self) -> ProgramArtifact {
+        self.artifact
+    }
+}
+
 /// Compiler-only instruction for preserving a source-declared custom send
 /// operation in the canonical application requirement. It does not grant
 /// authority or change interpreter execution.
@@ -85,6 +104,13 @@ pub struct ProgramArtifactCompilationError {
 }
 
 #[cfg(feature = "semantic-compiler")]
+#[derive(Clone, Copy)]
+enum ProgramBytecodeEncoding {
+    Semantic,
+    FrozenV1ImplementationIdentities,
+}
+
+#[cfg(feature = "semantic-compiler")]
 impl MechErrorKind for ProgramArtifactCompilationError {
     fn name(&self) -> &str {
         "ProgramArtifactCompilationError"
@@ -98,7 +124,12 @@ impl MechErrorKind for ProgramArtifactCompilationError {
 pub struct CompilerPlanningProgram {
     pub config: CompilerPlanningConfig,
     pub(crate) interpreter: Interpreter,
-    published_outputs: Vec<LegacyValue>,
+    published_outputs: Vec<PublishedPlanningOutput>,
+}
+
+struct PublishedPlanningOutput {
+    name: Option<String>,
+    value: LegacyValue,
 }
 
 impl CompilerPlanningProgram {
@@ -244,6 +275,22 @@ impl CompilerPlanningProgram {
         self.interpreter.interpret_with_services(tree, services)
     }
 
+    /// Plans source for an executable artifact, retaining user-function call
+    /// graphs in the caller plan so artifact lowering can inline their ordinary
+    /// operations and preserve dependencies on caller-owned inputs.
+    ///
+    /// Interactive evaluation keeps the normal call-local plan boundary; only
+    /// compilation needs the expanded graph after the function frame returns.
+    pub fn plan_artifact_tree_with_services(
+        &mut self,
+        tree: &mech_core::Program,
+        services: &mut dyn MechExecutionServices,
+    ) -> MResult<LegacyValue> {
+        let _persistent_user_function_plan =
+            crate::function::PersistentUserFunctionPlanScope::enter(&self.interpreter);
+        self.interpreter.interpret_with_services(tree, services)
+    }
+
     #[cfg(test)]
     pub(crate) fn plan_source_for_test(&mut self, source: &str) -> MResult<LegacyValue> {
         let tree = mech_syntax::parser::parse(source.trim())?;
@@ -310,7 +357,30 @@ impl CompilerPlanningProgram {
     /// Dependency-only planning never calls this method, so multi-root
     /// products publish each requested root exactly once in caller order.
     pub fn publish_compiler_root_output(&mut self, value: LegacyValue) {
-        self.published_outputs.push(value);
+        self.published_outputs
+            .push(PublishedPlanningOutput { name: None, value });
+    }
+
+    /// Retain a document-addressed output whose ordinal is part of the host
+    /// rendering contract, even when its register aliases a named symbol.
+    pub fn publish_compiler_document_output(&mut self, value: LegacyValue) {
+        self.published_outputs
+            .push(PublishedPlanningOutput { name: None, value });
+    }
+
+    /// Retain every named root symbol as a live artifact output for an
+    /// interactive host. The ordinary result remains first, while explicit
+    /// names may alias one shared register without losing lexical identity.
+    pub fn publish_compiler_root_symbols(&mut self) {
+        self.published_outputs
+            .extend(
+                self.compiler_root_symbol_values_all()
+                    .into_iter()
+                    .map(|(name, value)| PublishedPlanningOutput {
+                        name: Some(name),
+                        value,
+                    }),
+            );
     }
 
     /// Installs one compiler-resolved source import in the ephemeral planning
@@ -325,10 +395,82 @@ impl CompilerPlanningProgram {
         Ok(())
     }
 
+    /// Compiles the in-memory executable artifact and its compute-region
+    /// metadata without also serializing a durable bytecode container.
+    ///
+    /// Hosts that immediately lower an artifact for the current process do not
+    /// need the duplicate bytecode representation. This is especially
+    /// important for large initialized device state, which would otherwise be
+    /// copied into both representations before execution begins.
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_program_artifact(&mut self) -> MResult<ProgramArtifact> {
+        let compiled = compile_bytecode(self)?;
+        compile_executable_program_artifact_with_named_outputs_and_external_inputs(
+            &compiled.bytecode,
+            &compiled.published_outputs,
+            &compiled.published_output_names,
+            self.interpreter.function_catalog().as_ref(),
+            &BTreeSet::new(),
+        )
+        .map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })
+    }
+
+    /// Finalizes an activation-only artifact while preserving configured
+    /// external contracts and explicit compute-boundary input declarations.
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_program_artifact_product_with_resource_send_operations(
+        &mut self,
+        resolver: &dyn ExternalRequirementContractResolver,
+        operations: &[CompiledResourceSendOperation],
+        external_input_names: &BTreeSet<String>,
+    ) -> MResult<ProgramArtifactCompilationProduct> {
+        let mut compiled = compile_bytecode(self)?;
+        preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
+        resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
+        let artifact = compile_executable_program_artifact_with_named_outputs_and_external_inputs(
+            &compiled.bytecode,
+            &compiled.published_outputs,
+            &compiled.published_output_names,
+            self.interpreter.function_catalog().as_ref(),
+            external_input_names,
+        )
+        .map_err(|error| {
+            MechError::new(
+                ProgramArtifactCompilationError {
+                    reason: format!("unable to finalize source ProgramArtifact: {error:?}"),
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        Ok(ProgramArtifactCompilationProduct { artifact })
+    }
+
     #[cfg(feature = "semantic-compiler")]
     pub fn compile_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
         let compiled = compile_bytecode(self)?;
-        self.finalize_program_product(compiled)
+        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
+    }
+
+    /// Reproduces the pre-semantic-operation bytecode-v1 encoding for the
+    /// checked-in compatibility corpus. Product compilation must otherwise
+    /// use [`Self::compile_program_product`].
+    #[doc(hidden)]
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_frozen_v1_program_product(&mut self) -> MResult<ProgramCompilationProduct> {
+        let compiled = compile_bytecode(self)?;
+        self.finalize_program_product(
+            compiled,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
+        )
     }
 
     #[cfg(feature = "semantic-compiler")]
@@ -338,7 +480,7 @@ impl CompilerPlanningProgram {
     ) -> MResult<ProgramCompilationProduct> {
         let mut compiled = compile_bytecode(self)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        self.finalize_program_product(compiled)
+        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
     }
 
     /// Finalizes a source compiler product after replacing generic send names
@@ -354,18 +496,39 @@ impl CompilerPlanningProgram {
         let mut compiled = compile_bytecode(self)?;
         preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
         resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
-        self.finalize_program_product(compiled)
+        self.finalize_program_product(compiled, ProgramBytecodeEncoding::Semantic)
+    }
+
+    /// Compatibility-corpus counterpart to
+    /// [`Self::compile_program_product_with_resource_send_operations`].
+    #[doc(hidden)]
+    #[cfg(feature = "semantic-compiler")]
+    pub fn compile_frozen_v1_program_product_with_resource_send_operations(
+        &mut self,
+        resolver: &dyn ExternalRequirementContractResolver,
+        operations: &[CompiledResourceSendOperation],
+    ) -> MResult<ProgramCompilationProduct> {
+        let mut compiled = compile_bytecode(self)?;
+        preserve_compiled_resource_send_operations(&mut compiled.bytecode, operations)?;
+        resolve_compiled_external_contracts(&mut compiled.bytecode, resolver)?;
+        self.finalize_program_product(
+            compiled,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities,
+        )
     }
 
     #[cfg(feature = "semantic-compiler")]
     fn finalize_program_product(
         &self,
         compiled: CompilerPlanningBytecode,
+        bytecode_encoding: ProgramBytecodeEncoding,
     ) -> MResult<ProgramCompilationProduct> {
-        let artifact = compile_executable_program_artifact_with_outputs(
+        let artifact = compile_executable_program_artifact_with_named_outputs_and_external_inputs(
             &compiled.bytecode,
             &compiled.published_outputs,
+            &compiled.published_output_names,
             self.interpreter.function_catalog().as_ref(),
+            &BTreeSet::new(),
         )
         .map_err(|error| {
             MechError::new(
@@ -376,15 +539,53 @@ impl CompilerPlanningProgram {
             )
             .with_compiler_loc()
         })?;
-        let sections = encode_program_artifact_sections(&artifact).map_err(|error| {
-            MechError::new(
+        if matches!(
+            bytecode_encoding,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities
+        ) && !artifact.compute_regions().is_empty()
+        {
+            return Err(MechError::new(
                 ProgramArtifactCompilationError {
-                    reason: format!("unable to encode source ProgramArtifact: {error:?}"),
+                    reason:
+                        "frozen bytecode-v1 compatibility encoding does not support compute regions"
+                            .to_owned(),
                 },
                 None,
             )
-            .with_compiler_loc()
-        })?;
+            .with_compiler_loc());
+        }
+        let bytecode_artifact = match bytecode_encoding {
+            ProgramBytecodeEncoding::Semantic => None,
+            ProgramBytecodeEncoding::FrozenV1ImplementationIdentities => Some(
+                compile_legacy_bytecode_program_artifact_with_outputs(
+                    &compiled.bytecode,
+                    &compiled.published_outputs,
+                    self.interpreter.function_catalog().as_ref(),
+                )
+                .map_err(|error| {
+                    MechError::new(
+                        ProgramArtifactCompilationError {
+                            reason: format!(
+                                "unable to finalize frozen v1 bytecode projection: {error:?}"
+                            ),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?,
+            ),
+        };
+        let sections =
+            encode_program_artifact_sections(bytecode_artifact.as_ref().unwrap_or(&artifact))
+                .map_err(|error| {
+                    MechError::new(
+                        ProgramArtifactCompilationError {
+                            reason: format!("unable to encode source ProgramArtifact: {error:?}"),
+                        },
+                        None,
+                    )
+                    .with_compiler_loc()
+                })?;
         let bytecode = write_bytecode_with_artifact(&compiled.bytecode.program, &sections)?;
         Ok(ProgramCompilationProduct { artifact, bytecode })
     }
@@ -505,6 +706,7 @@ struct RetainedIntegrityMarkerMetadata {
 struct CompilerPlanningBytecode {
     bytecode: CompiledBytecode,
     published_outputs: Box<[Register]>,
+    published_output_names: Box<[Option<String>]>,
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -513,17 +715,50 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     let plan = state.plan.borrow();
     let mut context = CompileCtx::new();
 
+    // State declarations retain their declaration-time initializer even when
+    // source execution has already advanced the corresponding reactive cell.
     for step in plan.iter() {
-        context.begin_plan_node_with_contract(
+        step.reserve_bytecode_registers(&mut context)?;
+    }
+
+    for step in plan.iter() {
+        context.begin_plan_node_with_semantics(
             match step.reactive_node_kind() {
                 ReactiveNodeKind::Combinational => CompiledNodeKind::Combinational,
                 ReactiveNodeKind::Register => CompiledNodeKind::Register,
             },
+            step.semantic_operation_name(),
             step.semantic_operation_contract(),
         )?;
         let compile_result = step.compile(&mut context);
         context.end_plan_node();
         compile_result?;
+    }
+
+    for region in &state.compute_regions {
+        let start = u32::try_from(region.plan_nodes.start).map_err(|_| {
+            MechError::new(
+                BytecodeValidationError {
+                    reason: format!(
+                        "compute region `{}` start exceeds source node identity space",
+                        region.name,
+                    ),
+                },
+                None,
+            )
+        })?;
+        let end = u32::try_from(region.plan_nodes.end).map_err(|_| {
+            MechError::new(
+                BytecodeValidationError {
+                    reason: format!(
+                        "compute region `{}` end exceeds source node identity space",
+                        region.name,
+                    ),
+                },
+                None,
+            )
+        })?;
+        context.record_compute_region(region.name.clone(), region.placement, start..end)?;
     }
 
     #[cfg(feature = "invariant_define")]
@@ -532,7 +767,7 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
         for constraint in state.integrity_constraints.values() {
             let result = LegacyValue::MutableReference(constraint.result.clone());
             let result_register = context.resolve_value_register(&result)?;
-            context.record_integrity_constraint(result_register)?;
+            context.record_integrity_constraint(constraint.name.clone(), result_register)?;
             let name = LegacyValue::String(Ref::new(constraint.name.clone()));
             let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
             let operator = match &constraint.operator {
@@ -616,13 +851,28 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
         }
     }
 
-    let published_outputs = program
-        .published_outputs
-        .iter()
-        .map(|value| context.resolve_value_register(value))
-        .collect::<MResult<Vec<_>>>()?
-        .into_boxed_slice();
-    let return_register = context.resolve_value_register(&program.interpreter.out)?;
+    let mut resolved_outputs = Vec::with_capacity(program.published_outputs.len());
+    for output in &program.published_outputs {
+        resolved_outputs.push((
+            output.name.clone(),
+            context.resolve_value_register(&output.value)?,
+        ));
+    }
+    let mut published_outputs = Vec::with_capacity(resolved_outputs.len());
+    let mut published_output_names = Vec::with_capacity(resolved_outputs.len());
+    for (name, register) in &resolved_outputs {
+        published_outputs.push(*register);
+        published_output_names.push(name.clone());
+    }
+    let published_outputs = published_outputs.into_boxed_slice();
+    let published_output_names = published_output_names.into_boxed_slice();
+    // Materializing a composite return can emit CompositePack. Give any such
+    // instruction normal source-node metadata instead of leaving it outside
+    // the compiler's semantic plan boundary.
+    context.begin_plan_node(CompiledNodeKind::Combinational)?;
+    let return_result = context.resolve_value_register(&program.interpreter.out);
+    context.end_plan_node();
+    let return_register = return_result?;
     let bytecode = context.finish_program(return_register)?;
 
     #[cfg(feature = "invariant_define")]
@@ -634,6 +884,7 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     Ok(CompilerPlanningBytecode {
         bytecode,
         published_outputs,
+        published_output_names,
     })
 }
 

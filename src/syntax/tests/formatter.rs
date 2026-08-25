@@ -1,7 +1,7 @@
 #![cfg(feature = "formatter")]
 
 use mech_core::{hash_str, nodes::*};
-use mech_syntax::{Formatter, HtmlShimExtraSlots};
+use mech_syntax::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets};
 
 fn token(kind: TokenKind, text: &str) -> Token {
     Token::new(kind, SourceRange::default(), text.chars().collect())
@@ -15,6 +15,40 @@ fn ident(name: &str) -> Identifier {
 
 fn atom_expr(name: &str) -> Expression {
     Expression::Literal(Literal::Atom(Atom { name: ident(name) }))
+}
+
+#[test]
+fn formatter_splits_atom_structure_from_its_name() {
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+
+    assert_eq!(
+        formatter.atom(&Atom {
+            name: ident("ready")
+        }),
+        "<span class=\"mech-atom\"><span class=\"mech-atom-sigil\">:</span><span class=\"mech-atom-name\">ready</span></span>"
+    );
+}
+
+#[test]
+fn formatter_preserves_matrix_kind_dimension_punctuation() {
+    let kind = Kind::Matrix((
+        Box::new(Kind::Scalar(ident("u8"))),
+        vec![
+            Literal::Number(Number::from_integer(4)),
+            Literal::Number(Number::from_integer(4)),
+        ],
+    ));
+
+    let mut plain = Formatter::new();
+    assert_eq!(plain.kind(&kind), "[u8]:4,4");
+
+    let mut html = Formatter::new();
+    html.html = true;
+    let rendered = html.kind(&kind);
+    assert!(rendered.contains("mech-matrix-size-colon\">:</span>"));
+    assert!(rendered.contains("mech-matrix-size-separator\">,</span>"));
+    assert_eq!(rendered.matches("mech-matrix-size-value").count(), 2);
 }
 
 fn fsm_declare_fixture() -> FsmDeclare {
@@ -95,6 +129,24 @@ fn formatter_renders_context_qualified_var_with_prefix_context() {
 }
 
 #[test]
+fn formatter_keeps_a_context_reference_in_one_colored_span() {
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let var = Var {
+        name: ident("line"),
+        context: Some(ident("out")),
+        kind: None,
+    };
+
+    let html = formatter.var(&var);
+    assert!(
+        html.contains("class=\"mech-var-name mech-context-reference mech-clickable\""),
+        "{html}",
+    );
+    assert!(html.contains(">@out/line</span>"), "{html}");
+}
+
+#[test]
 fn formatter_renders_context_qualified_assignment_target_with_prefix_context() {
     let mut formatter = Formatter::new();
     let assign = VariableAssign {
@@ -121,7 +173,7 @@ fn formatter_uses_the_stable_root_namespace_for_inline_output_addresses() {
             .unwrap();
     let html = Formatter::new().format_html(&tree, String::new(), "{{INTRO}}".to_string());
     let expected = format!(
-        "id=\"{}:0\" class=\"mech-inline-mech-code\"",
+        "id=\"{}:0\" class=\"mech-inline-mech-code\" data-mech-source",
         hash_str("inline-eval:0:0"),
     );
 
@@ -148,6 +200,115 @@ fn first_statement(src: &str) -> Statement {
 }
 
 #[test]
+fn formatter_preserves_named_compute_region_metadata() {
+    let source = "particle update @gpu @required(:finite)\n-------------------------------------------------------------------------------\n\nx := 1\n";
+    let program = mech_syntax::parser::parse(source).unwrap();
+    let formatted = Formatter::new().format(&program);
+
+    assert!(formatted.contains("particle update @gpu @required(:finite)"));
+    let reparsed = mech_syntax::parser::parse(&formatted).unwrap();
+    let annotations = &reparsed.body.sections[0].annotations;
+    assert_eq!(annotations.len(), 2);
+    assert_eq!(annotations[0].name.as_ref(), "gpu");
+    assert_eq!(annotations[1].name.as_ref(), "required");
+}
+
+#[test]
+fn formatter_keeps_figure_table_hero_frontmatter_parseable() {
+    let source = "Gallery\n===============================================================================\nhero: | ![First](first.svg) | ![Second](second.svg) |\n===============================================================================\n";
+    let program = mech_syntax::parser::parse(source).unwrap();
+    let formatted = Formatter::new().format(&program);
+
+    assert!(
+        formatted.contains("hero: | ![First](first.svg) | ![Second](second.svg) |"),
+        "{formatted}",
+    );
+    assert!(!formatted.contains("Fig 0.1"));
+    let reparsed = mech_syntax::parser::parse(&formatted).unwrap();
+    assert!(matches!(
+        reparsed.title.and_then(|title| title.hero),
+        Some(SectionElement::FigureTable(_))
+    ));
+}
+
+#[test]
+fn formatter_emits_renderer_ready_equations_and_diagrams_with_safe_source_text() {
+    let source = token(TokenKind::Text, "x < y & z > 0");
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+
+    let equation = formatter.equation(&source);
+    assert!(equation.contains("class=\"mech-equation\" data-mech-equation"));
+    assert!(equation.contains("x &lt; y &amp; z &gt; 0"));
+    assert!(!equation.contains("equation=\""));
+
+    let diagram = formatter.diagram(&source);
+    assert!(diagram.contains("class=\"mech-diagram mermaid\" data-mech-diagram"));
+    assert!(diagram.contains("x &lt; y &amp; z &gt; 0"));
+}
+
+#[test]
+fn formatter_marks_only_heading_owned_sections_for_editorial_numbering() {
+    let program = Program {
+        title: None,
+        body: Body {
+            sections: vec![
+                Section {
+                    subtitle: None,
+                    annotations: Vec::new(),
+                    elements: vec![SectionElement::Paragraph(plain_paragraph(
+                        "Introductory prose.",
+                    ))],
+                },
+                Section {
+                    subtitle: Some(Subtitle {
+                        text: plain_paragraph("First section"),
+                        level: 2,
+                    }),
+                    annotations: Vec::new(),
+                    elements: Vec::new(),
+                },
+            ],
+        },
+    };
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.program(&program);
+
+    assert_eq!(
+        html.matches("class=\"mechdown-section\"").count(),
+        1,
+        "{html}"
+    );
+    assert_eq!(
+        html.matches("class=\"mechdown-section mechdown-titled-section\"")
+            .count(),
+        1,
+        "{html}",
+    );
+}
+
+#[test]
+fn formatter_shows_compute_annotation_without_polluting_the_section_title() {
+    let program = mech_syntax::parser::parse(
+        "ekf-batch @cpu\n-------------------------------------------------------------------------------\nx := 1\n",
+    )
+    .expect("unnumbered compute region must parse");
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.program(&program);
+
+    assert!(html.contains("class=\"mechdown-section mechdown-titled-section\""));
+    assert!(html.contains(">ekf-batch</a>"), "{html}");
+    assert!(
+        html.contains("class=\"mech-section-annotations\">@cpu</span>"),
+        "{html}",
+    );
+    assert!(html.contains("data-mech-annotations=\"@cpu\""), "{html}");
+    assert!(!html.contains(">5. ekf-batch</a>"), "{html}");
+}
+
+#[test]
 fn formatter_preserves_new_prefix_context_resource_read() {
     let mut formatter = Formatter::new();
     let statement = first_statement("name := @browser/body/content/input/_value");
@@ -155,6 +316,51 @@ fn formatter_preserves_new_prefix_context_resource_read() {
     assert_eq!(
         formatter.statement(&statement),
         "name := @browser/body/content/input/_value"
+    );
+}
+
+#[test]
+fn formatter_exposes_every_context_declaration_color_role() {
+    let statement = first_statement("@clock := time://clock/clock{:read(second)}");
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.statement(&statement);
+
+    for role in [
+        "mech-context-name",
+        "mech-context-provider",
+        "mech-context-scheme-op",
+        "mech-context-path",
+        "mech-context-capability",
+        "mech-atom-sigil",
+        "mech-atom-name",
+    ] {
+        assert!(html.contains(role), "context HTML lost {role}: {html}");
+    }
+    assert!(html.contains(">clock/clock</span>"), "{html}");
+    assert!(html.contains(">second</span>"), "{html}");
+}
+
+#[test]
+fn formatter_marks_inline_grammar_sequence_punctuation() {
+    let grammar = Grammar {
+        rules: vec![Rule {
+            name: GrammarIdentifier {
+                name: token(TokenKind::Identifier, "pair"),
+            },
+            expr: GrammarExpression::Sequence(vec![
+                GrammarExpression::Terminal(token(TokenKind::Text, "left")),
+                GrammarExpression::Terminal(token(TokenKind::Text, "right")),
+            ]),
+        }],
+    };
+    let mut formatter = Formatter::new();
+    formatter.html = true;
+    let html = formatter.grammar(&grammar);
+
+    assert!(
+        html.contains("<span class=\"mech-grammar-sequence-op\">,</span>"),
+        "{html}",
     );
 }
 
@@ -169,6 +375,7 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
     Program {
         title: Some(Title {
             text: token(TokenKind::Title, "Slot Fixture"),
+            imports: Vec::new(),
             author: Some(plain_paragraph("Fixture Author")),
             date: Some(plain_paragraph("Fixture Date")),
             hero: None,
@@ -186,11 +393,27 @@ fn html_fixture(sections: &[(&str, &str)]) -> Program {
                         text: plain_paragraph(heading),
                         level: 2,
                     }),
+                    annotations: Vec::new(),
                     elements: vec![SectionElement::Paragraph(plain_paragraph(content))],
                 })
                 .collect(),
         },
     }
+}
+
+#[test]
+fn html_shim_leaves_title_empty_when_the_document_has_no_title() {
+    let mut tree = html_fixture(&[]);
+    tree.title = None;
+    let mut formatter = Formatter::new();
+    let render = formatter.format_html_with_slots(
+        &tree,
+        String::new(),
+        "{{TITLE}}".to_string(),
+        &HtmlShimExtraSlots::default(),
+    );
+
+    assert_eq!(render.html, "");
 }
 
 #[test]
@@ -233,6 +456,86 @@ fn html_shim_static_slots_render_once() {
     assert_eq!(
         wrapper_formatter.format_html(&tree, String::new(), "{{TITLE}}".to_string()),
         "Slot Fixture"
+    );
+}
+
+#[test]
+fn html_shim_omits_an_empty_table_of_contents() {
+    let tree = html_fixture(&[]);
+    let html = Formatter::new().format_html(
+        &tree,
+        String::new(),
+        "<div class=\"article-layout\">{{TOC}}<article>{{CONTENTS}}</article></div>".to_string(),
+    );
+
+    assert!(!html.contains("class=\"toc mech-toc\""), "{html}");
+    assert!(
+        html.contains("<div class=\"article-layout\"><article>"),
+        "{html}"
+    );
+}
+
+#[test]
+fn html_style_layers_are_independent_with_compatibility_shim() {
+    let tree = html_fixture(&[("Fixture section", "Fixture content")]);
+    let styles = HtmlStyleSheets {
+        palette: "/* palette */".to_string(),
+        source: "/* source */".to_string(),
+        mechdown: "/* mechdown */".to_string(),
+        page: "/* page */".to_string(),
+        repl: "/* repl */".to_string(),
+    };
+    let layered_shim = [
+        "{{PALETTE_STYLESHEET}}",
+        "{{MECH_SOURCE_STYLESHEET}}",
+        "{{MECHDOWN_STYLESHEET}}",
+        "{{PAGE_STYLESHEET}}",
+        "{{MECH_REPL_STYLESHEET}}",
+    ]
+    .join("|");
+
+    let mut formatter = Formatter::new();
+    let layered = formatter.format_html_with_style_sheets_and_slots(
+        &tree,
+        styles.clone(),
+        layered_shim,
+        &HtmlShimExtraSlots::default(),
+    );
+    assert_eq!(
+        layered.html,
+        "/* palette */|/* source */|/* mechdown */|/* page */|/* repl */"
+    );
+
+    let mut legacy_formatter = Formatter::new();
+    let legacy = legacy_formatter.format_html_with_style_sheets_and_slots(
+        &tree,
+        styles,
+        "{{STYLESHEET}}".to_string(),
+        &HtmlShimExtraSlots::default(),
+    );
+    assert_eq!(
+        legacy.html,
+        "/* palette */\n/* source */\n/* mechdown */\n/* page */\n/* repl */"
+    );
+
+    let partially_migrated_shim = "{{STYLESHEET}}|{{MECH_SOURCE_STYLESHEET}}".to_string();
+    let partial_styles = HtmlStyleSheets {
+        palette: "/* palette */".to_string(),
+        source: "/* source */".to_string(),
+        mechdown: "/* mechdown */".to_string(),
+        page: "/* page */".to_string(),
+        repl: "/* repl */".to_string(),
+    };
+    let mut partial_formatter = Formatter::new();
+    let partial = partial_formatter.format_html_with_style_sheets_and_slots(
+        &tree,
+        partial_styles,
+        partially_migrated_shim,
+        &HtmlShimExtraSlots::default(),
+    );
+    assert_eq!(
+        partial.html,
+        "/* palette */\n/* source */\n/* mechdown */\n/* page */\n/* repl */|/* source */"
     );
 }
 

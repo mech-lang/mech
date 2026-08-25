@@ -249,6 +249,9 @@ impl RecordValue {
 
 #[derive(Clone, Debug)]
 pub struct MatrixValue {
+    /// Canonical snapshot payload in row-major order. Materializers translate
+    /// this representation when an executor uses another physical layout,
+    /// such as Mech's column-major runtime matrices.
     pub(super) elements: SequenceStorage,
 }
 
@@ -294,6 +297,7 @@ impl MatrixValue {
         }
     }
 
+    /// Returns canonical row-major snapshot elements.
     pub fn elements(&self) -> SequenceView<'_> {
         self.elements.view()
     }

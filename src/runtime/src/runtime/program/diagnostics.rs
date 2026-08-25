@@ -1,6 +1,16 @@
-use mech_engine::{ProgramArtifact, resident::ResidentActivationError};
+use mech_engine::{
+    ProgramArtifact,
+    resident::{ResidentActivationError, ResidentExecutionError},
+};
 
 use super::{ResidentRouteFailureClass, route_failure};
+
+pub(crate) fn projection_refresh_failure(error: ResidentExecutionError) -> mech_core::MechError {
+    route_failure(
+        ResidentRouteFailureClass::ActivationFailure,
+        format!("resident projection refresh failed: {error:?}"),
+    )
+}
 
 pub(crate) fn activation_failure(error: ResidentActivationError) -> mech_core::MechError {
     use ResidentActivationError::*;

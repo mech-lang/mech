@@ -1,5 +1,7 @@
 #![forbid(unsafe_code)]
 
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 pub mod config;
 pub mod module;
 pub mod provider;
@@ -13,10 +15,10 @@ pub mod native;
 pub use config::{SceneHostSettings, SceneRendererKind, scene_settings_from_config};
 pub use module::scene_host_manifest;
 pub use provider::{
-    RecordingSceneBackend, SceneBackend, SceneHostFactory, SceneResourceProvider,
-    scene_snapshot_from_points,
+    RecordingSceneBackend, SceneBackend, SceneHostFactory, ScenePointerHandle,
+    SceneResourceProvider, scene_snapshot_from_points,
 };
-pub use schema::{CircleElement, LineElement, SceneSnapshot};
+pub use schema::{CircleElement, LineElement, LineStripElement, SceneSnapshot, TextElement};
 
 #[cfg(feature = "browser")]
 pub use browser::{BrowserSceneBackend, BrowserSceneHostFactory, BrowserSceneRegistry};

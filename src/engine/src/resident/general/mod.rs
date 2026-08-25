@@ -816,6 +816,61 @@ impl ReactiveInstance {
         })
     }
 
+    /// Install compatible persistent storage from another live instance
+    /// without changing this instance's already-validated plan.
+    ///
+    /// Interactive hosts activate replacement programs in isolation before
+    /// calling this method. Mutable state and materialized output projections
+    /// share the state arena and migrate together, keeping the replacement's
+    /// published snapshot coherent. Migration is staged in a cloned arena, so
+    /// an invalid or incompatible mapping cannot partially mutate the candidate.
+    pub fn migrate_compatible_state_from(
+        &mut self,
+        source: &ReactiveInstance,
+        state_map: &[StateMigrationMapping],
+    ) -> Result<(), ResidentActivationError> {
+        if self.candidate_active || source.candidate_active {
+            return Err(ResidentActivationError::ActiveCandidate);
+        }
+
+        let mut targets = BTreeSet::<CellSlotId>::new();
+        let mut sources = BTreeSet::<CellSlotId>::new();
+        let mut migrated = self.state.clone();
+        let target_epoch = self.published_epoch();
+        let source_epoch = source.published_epoch();
+
+        for mapping in state_map {
+            if !targets.insert(mapping.target) || !sources.insert(mapping.source) {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            }
+            let Some(target) = self.plan.slots.get(mapping.target.get() as usize) else {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            };
+            let Some(source_slot) = source.plan.slots.get(mapping.source.get() as usize) else {
+                return Err(ResidentActivationError::InvalidStateMigration);
+            };
+            if target.role != source_slot.role
+                || !matches!(target.role, SlotRole::State | SlotRole::Output)
+                || target.schema_key != source_slot.schema_key
+                || target.shape != source_slot.shape
+            {
+                return Err(ResidentActivationError::IncompatibleState {
+                    slot: mapping.target,
+                });
+            }
+            migrated.install_migrated(
+                mapping.target,
+                target_epoch,
+                &source.state,
+                mapping.source,
+                source_epoch,
+            );
+        }
+
+        self.state = migrated;
+        Ok(())
+    }
+
     pub fn reactivate(
         &mut self,
         artifact: &ProgramArtifact,
@@ -2216,6 +2271,7 @@ fn build_topology(
     let mut downstream = vec![Vec::<ActivatedNodeIndex>::new(); steps.len()];
     let mut latest_state_writer = BTreeMap::<CellSlotId, ActivatedNodeIndex>::new();
     let mut direct_input_consumers = Vec::<ActivatedNodeIndex>::new();
+    let mut prior_state_consumers = Vec::<ActivatedNodeIndex>::new();
     for node in artifact.nodes() {
         if !matches!(
             classes[node.node.get() as usize],
@@ -2240,7 +2296,11 @@ fn build_topology(
                 direct_input_consumers.push(current);
             }
             let parent = if slot.role == SlotRole::State {
-                latest_state_writer.get(&slot_id).copied()
+                let parent = latest_state_writer.get(&slot_id).copied();
+                if parent.is_none() && !prior_state_consumers.contains(&current) {
+                    prior_state_consumers.push(current);
+                }
+                parent
             } else {
                 match slot.producer {
                     ProducerReference::NodeOutput { node, .. } => {
@@ -2276,6 +2336,16 @@ fn build_topology(
         .map(|(index, _)| ActivatedNodeIndex(index as u32))
         .collect::<Vec<_>>();
     for consumer in direct_input_consumers {
+        if !roots.contains(&consumer) {
+            roots.push(consumer);
+        }
+    }
+    // A read from the published state is a next-turn dependency, not a
+    // same-turn edge. Its consumer must run at the start of every accepted
+    // turn even when its other (same-turn) inputs retain the same value. If it
+    // is seeded only by changed parents, a recurrence such as `x = x + dt`
+    // stalls whenever `dt` is constant.
+    for consumer in prior_state_consumers {
         if !roots.contains(&consumer) {
             roots.push(consumer);
         }

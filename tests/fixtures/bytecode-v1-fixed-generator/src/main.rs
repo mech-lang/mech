@@ -22,7 +22,7 @@ fn main() {
         .function_catalog(mech_stdlib::source_catalog())
         .build_compiler()
         .expect("fixed-matrix source compiler construction failed")
-        .compile_source(&source)
+        .compile_source_frozen_v1(&source)
         .expect("fixed-matrix bytecode compilation failed")
         .into_parts()
         .1;

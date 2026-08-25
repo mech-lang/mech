@@ -1,4 +1,7 @@
-use mech_core::{ConstantId, ProgramRevision, SchemaId, canonical_application_requirement_bytes};
+use mech_core::{
+    ComputePlacement, ConstantId, ProgramRevision, SchemaId,
+    canonical_application_requirement_bytes,
+};
 use sha2::{Digest, Sha256};
 
 use super::{
@@ -210,11 +213,54 @@ pub(super) fn program_revision(
     writer.u32(draft.constraints.len() as u32);
     for constraint in &draft.constraints {
         writer.u32(constraint.constraint.get());
+        writer.string(&constraint.name);
         writer.operation(&constraint.operation);
         writer.u32(constraint.contract.get());
         writer.u32(constraint.inputs.len() as u32);
         for source in &constraint.inputs {
             writer.source(*source);
+        }
+    }
+
+    // Preserve revision identity for ordinary bytecode-v1 artifacts while
+    // making explicit interactive query identity part of artifacts that use
+    // the optional extension.
+    let interactive_output_count = draft
+        .outputs
+        .iter()
+        .filter(|output| output.interactive_binding.is_some())
+        .count();
+    if interactive_output_count != 0 {
+        writer.bytes(b"interactive-output-symbols-v1");
+        writer.u32(interactive_output_count as u32);
+        for output in &draft.outputs {
+            if let Some(binding) = &output.interactive_binding {
+                writer.u32(output.output.get());
+                writer.string(&binding.lexical_name);
+                writer.source(binding.artifact_source);
+                writer.u32(binding.storage.get());
+                writer.u32(binding.output.get());
+            }
+        }
+    }
+
+    // Preserve revision identity for ordinary bytecode-v1 artifacts while
+    // making the optional compute extension part of region-bearing identity.
+    if !draft.compute_regions.is_empty() {
+        writer.bytes(b"compute-regions-v1");
+        writer.u32(draft.compute_regions.len() as u32);
+        for region in &draft.compute_regions {
+            writer.u32(region.id.get());
+            writer.string(&region.name);
+            writer.u8(match region.placement {
+                ComputePlacement::Compute => 1,
+                ComputePlacement::Cpu => 2,
+                ComputePlacement::Gpu => 3,
+            });
+            writer.u32(region.nodes.len() as u32);
+            for node in &region.nodes {
+                writer.u32(node.get());
+            }
         }
     }
 

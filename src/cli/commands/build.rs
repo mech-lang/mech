@@ -226,7 +226,6 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     let (bytecode, loaded_config) = if bytecode_count == 1 {
         let path = PathBuf::from(&options.paths[0]);
         let bytecode = fs::read(&path)?;
-        ParsedProgram::from_bytes(&bytecode)?;
         let config = load_build_config(&options, Some(&path))?;
         validate_production_build_config(config.as_ref(), &binary_name)?;
         (bytecode, config)
@@ -244,6 +243,7 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
                 None,
             ));
         }
+        enforce_production_build_source_shape(&source_roots)?;
         let configured_hosts = configured_hosts(loaded_config.as_ref());
         let run_grants = configured_run_grants(loaded_config.as_ref());
         let cli_grants = crate::cli::host_grants::effective_cli_host_grants(
@@ -283,6 +283,13 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         (bytecode, loaded_config)
     };
 
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    validate_build_product_capabilities(
+        !parsed.artifact.compute_regions.is_empty(),
+        options.emit,
+        options.keep_project,
+    )?;
+
     let requested_output = options
         .output_path
         .clone()
@@ -306,7 +313,6 @@ pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         }
     }
 
-    let parsed = ParsedProgram::from_bytes(&bytecode)?;
     let runtime_config = native_runtime_config(
         loaded_config.as_ref(),
         &binary_name,
@@ -416,6 +422,35 @@ fn build_error<T>(message: impl Into<String>) -> MResult<T> {
     .with_compiler_loc())
 }
 
+fn validate_build_product_capabilities(
+    has_compute_regions: bool,
+    emit: BuildEmit,
+    keep_project: bool,
+) -> MResult<()> {
+    if !has_compute_regions || (emit == BuildEmit::Bytecode && !keep_project) {
+        return Ok(());
+    }
+    Err(MechError::new(
+        mech_runtime::ResidentRouteFailure {
+            class: mech_runtime::ResidentRouteFailureClass::SemanticUnsupported,
+            reason: format!(
+                "`mech build --emit {}` cannot package named compute regions yet; use `--emit bytecode` without `--keep-project` to preserve their metadata, or run the mixed source with a configured compute host",
+                build_emit_name(emit),
+            ),
+        },
+        None,
+    ))
+}
+
+fn build_emit_name(emit: BuildEmit) -> &'static str {
+    match emit {
+        BuildEmit::Native => "native",
+        BuildEmit::Bytecode => "bytecode",
+        BuildEmit::CargoProject => "cargo-project",
+        BuildEmit::Plan => "plan",
+    }
+}
+
 fn parse_emit(value: &str) -> MResult<BuildEmit> {
     match value {
         "native" => Ok(BuildEmit::Native),
@@ -507,6 +542,19 @@ fn discover_source_roots(inputs: &[String]) -> MResult<Vec<PathBuf>> {
         return build_error("no Mech source files were found in the supplied build roots");
     }
     Ok(sources)
+}
+
+fn enforce_production_build_source_shape(source_roots: &[PathBuf]) -> MResult<()> {
+    if source_roots.len() > 1 {
+        return Err(MechError::new(
+            mech_runtime::ResidentRouteFailure {
+                class: mech_runtime::ResidentRouteFailureClass::MultipleRootsUnsupported,
+                reason: "production builds accept exactly one resident program root".to_string(),
+            },
+            None,
+        ));
+    }
+    Ok(())
 }
 
 fn load_build_config(
@@ -696,5 +744,29 @@ mod tests {
     fn inferred_names_are_deterministic() {
         assert_eq!(inferred_binary_name("src/demo.mec"), "demo");
         assert_eq!(inferred_binary_name("artifacts/demo.mecb"), "demo");
+    }
+
+    #[test]
+    fn compute_region_admission_matches_build_product_capabilities() {
+        assert!(validate_build_product_capabilities(true, BuildEmit::Bytecode, false).is_ok());
+        for (emit, keep_project) in [
+            (BuildEmit::Native, false),
+            (BuildEmit::Native, true),
+            (BuildEmit::CargoProject, false),
+            (BuildEmit::Plan, false),
+            (BuildEmit::Plan, true),
+            (BuildEmit::Bytecode, true),
+        ] {
+            let error = validate_build_product_capabilities(true, emit, keep_project)
+                .expect_err("native-package products must reject compute regions");
+            let failure = error
+                .kind_as::<mech_runtime::ResidentRouteFailure>()
+                .unwrap();
+            assert_eq!(
+                failure.class,
+                mech_runtime::ResidentRouteFailureClass::SemanticUnsupported
+            );
+        }
+        assert!(validate_build_product_capabilities(false, BuildEmit::Native, false).is_ok());
     }
 }

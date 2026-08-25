@@ -6,7 +6,7 @@
   "position_writer_chain": [
     "WholeValue ReadModifyWrite"
   ],
-  "program_revision": "edffc787828e08ee2f809fdcff2f2377d9317391955768a616d8780a9980ef4f",
+  "program_revision": "a2bfb2e41aedb0afbc5795fcbd73e30ae841b736d771c0a741b6303d4ab4242b",
   "schema_version": 1,
   "source_bytecode_revision_equal": true,
   "source_sha256": "5a3a5a703d4db5a28e07acf40b9da8262b7056ffc9167cd3efd3b638b88054f7",

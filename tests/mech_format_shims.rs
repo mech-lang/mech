@@ -174,13 +174,27 @@ fn mech_format_default_shim_restores_rich_shell() {
     shim_contract::assert_rich_shell(
         &html,
         &[
-            "id=\"header\"",
-            "id=\"logo\"",
-            "id=\"nav\"",
-            "id=\"github\"",
-            "id=\"resizer\"",
-            "id=\"toggle-repl\"",
+            "contentShell",
+            "articleIntro",
+            "articleLayout",
+            "main-content",
+            "data-mech-console-resizer",
+            "console-pane",
         ],
+    );
+    for layer in ["palette", "source", "mechdown", "page", "repl"] {
+        assert!(
+            html.contains(&format!("data-mech-style-layer=\"{layer}\"")),
+            "default output did not expose the {layer} style layer",
+        );
+    }
+    assert!(
+        html.contains("data-mech-source"),
+        "formatted Mech source lost its presentation boundary",
+    );
+    assert!(
+        html.contains("mechdown-paragraph"),
+        "formatted prose lost its Mechdown presentation hook",
     );
 }
 
@@ -196,14 +210,25 @@ fn mech_format_blog_shim_restores_rich_shell() {
     shim_contract::assert_rich_shell(
         &html,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "console-pane",
-            "footer",
         ],
     );
+    for retained_style in [
+        ".site-header {",
+        ".toc a {",
+        ".footer {",
+        "html[data-mech-shim=\"blog\"] .hero-summary .mech-summary",
+        ".mech-hyperlink,",
+        "text-decoration-style: dotted",
+    ] {
+        assert!(
+            html.contains(retained_style),
+            "formatted blog lost shared or variant style {retained_style}"
+        );
+    }
 }
 
 #[cfg(has_file_wasm)]
@@ -218,14 +243,24 @@ fn mech_format_docs_shim_restores_rich_shell() {
     shim_contract::assert_rich_shell(
         &html,
         &[
-            "site-header",
             "contentShell",
             "articleIntro",
             "articleLayout",
             "console-pane",
-            "footer",
         ],
     );
+    for retained_style in [
+        ".toc a {",
+        ".main-content {",
+        "html[data-mech-shim=\"docs\"] .docs-layout",
+        ".mech-hyperlink,",
+        "text-decoration-style: dotted",
+    ] {
+        assert!(
+            html.contains(retained_style),
+            "formatted docs lost shared or variant style {retained_style}"
+        );
+    }
 }
 
 #[cfg(has_file_wasm)]

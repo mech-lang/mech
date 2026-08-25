@@ -45,7 +45,8 @@ pub use errors::{
     ArityMismatchError, ComprehensionGeneratorError, InvalidGuardExpressionError,
     InvalidIndexKindError, MatchArmKindMismatchError, MatchNoArmMatchedError,
     MatchNonExhaustiveError, MatchNonExhaustiveVariantsError, PatternExpectedTupleError,
-    PatternMatchError, UndefinedVariableError, UnhandledFormulaOperatorError,
+    PatternMatchError, ReactiveComprehensionStructureUnsupported, UndefinedVariableError,
+    UnhandledFormulaOperatorError,
 };
 pub use formulas::{factor, term};
 #[cfg(feature = "functions")]

@@ -15,7 +15,7 @@ use nom::{
     IResult,
     branch::alt,
     bytes::complete::{take_until, take_while},
-    combinator::{eof, opt, peek},
+    combinator::{cut, eof, opt, peek},
     multi::{many_till, many0, many1, separated_list0, separated_list1},
     sequence::{pair, tuple as nom_tuple},
 };
@@ -27,6 +27,7 @@ use crate::*;
 
 #[derive(Default)]
 pub struct TitleFrontMatter {
+    pub imports: Vec<(ModuleImport, Option<Comment>)>,
     pub author: Option<Paragraph>,
     pub date: Option<Paragraph>,
     pub hero: Option<SectionElement>,
@@ -54,6 +55,7 @@ pub fn title(input: ParseString) -> ParseResult<Title> {
         input,
         Title {
             text: title,
+            imports: front_matter.imports,
             author: front_matter.author,
             date: front_matter.date,
             hero: front_matter.hero,
@@ -71,6 +73,13 @@ pub fn title_front_matter(input: ParseString) -> ParseResult<TitleFrontMatter> {
     let mut front_matter = TitleFrontMatter::default();
 
     while many1(equal)(input.clone()).is_err() {
+        if let Ok((next_input, import)) = module_import(input.clone()) {
+            let (next_input, comment) = code_terminal(next_input)?;
+            front_matter.imports.push((import, comment));
+            input = next_input;
+            continue;
+        }
+
         let (next_input, key) = identifier(input.clone())?;
         let (next_input, _) = many0(space_tab)(next_input)?;
         let (next_input, _) = colon(next_input)?;
@@ -238,6 +247,121 @@ pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
     let (input, _) = many0(space_tab)(input)?;
     let (input, _) = whitespace0(input)?;
     Ok((input, Subtitle { text, level: 2 }))
+}
+
+// section-annotation := "@", identifier, ?("(", atom, *(comma, atom), ")") ;
+pub fn section_annotation(input: ParseString) -> ParseResult<SectionAnnotation> {
+    let (input, _) = at(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, arguments) = opt(|input| {
+        let (input, _) = left_parenthesis(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, arguments) = separated_list1(
+            |input| {
+                let (input, _) = many0(space_tab)(input)?;
+                let (input, _) = comma(input)?;
+                many0(space_tab)(input)
+            },
+            |input| atom(input).map(|(input, atom)| (input, SectionAnnotationArgument::Atom(atom))),
+        )(input)?;
+        let (input, _) = many0(space_tab)(input)?;
+        let (input, _) = right_parenthesis(input)?;
+        Ok((input, arguments))
+    })(input)?;
+    Ok((
+        input,
+        SectionAnnotation {
+            name: name.to_string().into_boxed_str(),
+            arguments: arguments.unwrap_or_default().into_boxed_slice(),
+        },
+    ))
+}
+
+// annotated-subtitle := +(!"@", text), +space-tab, section-annotation,
+//                       *(+space-tab, section-annotation), newline, +dash, newline ;
+pub fn annotated_subtitle(input: ParseString) -> ParseResult<(Subtitle, Vec<SectionAnnotation>)> {
+    let rest = input.rest();
+    let is_annotated_heading = rest
+        .split_once('\n')
+        .and_then(|(_, after_title)| after_title.split_once('\n'))
+        .map(|(separator, _)| separator.trim_end_matches(['\r', ' ', '\t']))
+        .is_some_and(|separator| {
+            !separator.is_empty() && separator.bytes().all(|byte| byte == b'-')
+        });
+    if !is_annotated_heading {
+        return Err(nom::Err::Error(ParseError::new(
+            input,
+            "Expected an annotated section heading",
+        )));
+    }
+    // A source ordinal is authoring metadata, just as it is for an ordinary
+    // underlined subtitle. Rendering assigns the editorial section counter
+    // from document order, so never retain `5.` as part of the semantic title.
+    let (input, _) = opt(tuple((
+        many1(alt((digit_token, alpha_token))),
+        period,
+        many0(space_tab),
+    )))(input)?;
+    let (input, title_tokens) = many1(nom_tuple((is_not(at), text)))(input)?;
+    if !title_tokens
+        .last()
+        .is_some_and(|(_, token)| matches!(token.kind, TokenKind::Space | TokenKind::Tab))
+    {
+        return if input.current() == Some("@") {
+            Err(nom::Err::Failure(ParseError::new(
+                input,
+                "Section annotations must be separated from the title by whitespace",
+            )))
+        } else {
+            Err(nom::Err::Error(ParseError::new(
+                input,
+                "Expected an annotated section heading",
+            )))
+        };
+    }
+    let (input, first) = cut(section_annotation)(input)?;
+    let (input, rest) = many0(|input| {
+        let (input, _) = many1(space_tab)(input)?;
+        section_annotation(input)
+    })(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, _) = cut(new_line)(input)?;
+    let (input, _) = cut(many1(dash))(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, _) = cut(new_line)(input)?;
+    let (input, _) = many0(space_tab)(input)?;
+    let (input, _) = whitespace0(input)?;
+
+    let mut title_tokens = title_tokens
+        .into_iter()
+        .map(|(_, token)| token)
+        .collect::<Vec<_>>();
+    while title_tokens
+        .last()
+        .is_some_and(|token| matches!(token.kind, TokenKind::Space | TokenKind::Tab))
+    {
+        title_tokens.pop();
+    }
+    if title_tokens.is_empty() {
+        return Err(nom::Err::Failure(ParseError::new(
+            input,
+            "Annotated section name cannot be empty",
+        )));
+    }
+    let title = Paragraph::from_tokens(title_tokens);
+    let mut annotations = Vec::with_capacity(rest.len() + 1);
+    annotations.push(first);
+    annotations.extend(rest);
+    Ok((
+        input,
+        (
+            Subtitle {
+                text: title,
+                level: 2,
+            },
+            annotations,
+        ),
+    ))
 }
 
 // subtitle := *(space-tab), "(", +(alpha | digit | period), ")", *(space-tab), paragraph-newline, *(space-tab), whitespace* ;
@@ -1272,7 +1396,13 @@ pub fn section_element(input: ParseString) -> ParseResult<SectionElement> {
 
 // section := ?ul-subtitle, +section-element ;
 pub fn section(input: ParseString) -> ParseResult<Section> {
-    let (input, subtitle) = opt(ul_subtitle)(input)?;
+    let (input, heading) = opt(alt((annotated_subtitle, |input| {
+        ul_subtitle(input).map(|(input, title)| (input, (title, Vec::new())))
+    })))(input)?;
+    let (subtitle, annotations) = match heading {
+        Some((title, annotations)) => (Some(title), annotations),
+        None => (None, Vec::new()),
+    };
 
     let mut elements = vec![];
 
@@ -1286,7 +1416,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
         }
 
         // Stop if the next thing is a new section (peek, do not consume)
-        if ul_subtitle(new_input.clone()).is_ok() {
+        if annotated_subtitle(new_input.clone()).is_ok() || ul_subtitle(new_input.clone()).is_ok() {
             //println!("Next section detected, ending current section");
             break;
         }
@@ -1345,7 +1475,14 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
             }
         }
     }
-    Ok((new_input, Section { subtitle, elements }))
+    Ok((
+        new_input,
+        Section {
+            subtitle,
+            annotations,
+            elements,
+        },
+    ))
 }
 
 // body := whitespace0, +(section, eof), eof ;
@@ -1417,6 +1554,24 @@ mod tests {
         assert!(html.contains(env!("CARGO_PKG_VERSION")));
         assert!(!html.contains("{{SECTION}}"));
         assert!(!html.contains("{{VERSION}}"));
+    }
+
+    #[test]
+    fn title_front_matter_accepts_module_imports() {
+        let src = "N-Body Simulation\n===============================================================================\nsection: Examples\n+> combinatorics\n+> stats\n===============================================================================\n\nanswer := combinatorics/n-choose-k(5, 2)\n";
+        let tree = parser::parse(src).unwrap();
+        let title = tree.title.as_ref().unwrap();
+
+        assert_eq!(title.imports.len(), 2);
+        assert_eq!(title.imports[0].0.module.to_string(), "combinatorics");
+        assert_eq!(title.imports[1].0.module.to_string(), "stats");
+
+        let formatted = Formatter::new().format(&tree);
+        assert!(formatted.contains("section: Examples"));
+        assert!(formatted.contains("+> combinatorics"));
+        assert!(formatted.contains("+> stats"));
+        let reparsed = parser::parse(&formatted).unwrap();
+        assert_eq!(reparsed.title.unwrap().imports.len(), 2);
     }
 
     #[test]

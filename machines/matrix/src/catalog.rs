@@ -192,6 +192,7 @@ declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "vectord"), operation: "matmul", module: matmul, factory: MatMulMDVD, features: ["matrixd", "vectord"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "row_vectord"), operation: "matmul", module: matmul, factory: MatMulMDRD, features: ["matrixd", "row_vectord"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord", feature = "matrix1"), operation: "matmul", module: matmul, factory: MatMulRDVD, features: ["matrix1", "row_vectord", "vectord"] }
+declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord", feature = "matrixd", not(feature = "matrix1")), operation: "matmul", module: matmul, factory: MatMulRDVDMD, features: ["matrixd", "row_vectord", "vectord"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "matrixd"), operation: "matmul", module: matmul, factory: MatMulRDMD, features: ["matrixd", "row_vectord"] }
 declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord", feature = "row_vectord", feature = "matrixd"), operation: "matmul", module: matmul, factory: MatMulVDRD, features: ["matrixd", "row_vectord", "vectord"] }
 
@@ -374,6 +375,18 @@ macro_rules! export_matrix_transpose_fixed_family {
 }
 
 mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "solve", feature = "matrixd", feature = "vectord", feature = "f32"),
+    registration: register_matrix_solve_mdvd_f32,
+    installer: install_matrix_solve_mdvd_f32,
+    name: "MatrixSolveMDVD<f32>",
+    factory_type: crate::solve::MatrixSolveMDVD<f32>,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-matrix", crate_name: "mech_matrix",
+    installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f32",
+    extra_cargo_features: ["solve"],
+}
+
+mech_core::declare_native_runtime_factory! {
     cfg: all(feature = "solve", feature = "matrixd", feature = "vectord", feature = "f64"),
     registration: register_matrix_solve_mdvd_f64,
     installer: install_matrix_solve_mdvd_f64,
@@ -382,6 +395,30 @@ mech_core::declare_native_runtime_factory! {
     contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
     package: "mech-matrix", crate_name: "mech_matrix",
     installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdvd_f64",
+    extra_cargo_features: ["solve"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "solve", feature = "matrixd", feature = "f32"),
+    registration: register_matrix_solve_mdmd_f32,
+    installer: install_matrix_solve_mdmd_f32,
+    name: "MatrixSolveMDMD<f32>",
+    factory_type: crate::solve::MatrixSolveMDMD<f32>,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-matrix", crate_name: "mech_matrix",
+    installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdmd_f32",
+    extra_cargo_features: ["solve"],
+}
+
+mech_core::declare_native_runtime_factory! {
+    cfg: all(feature = "solve", feature = "matrixd", feature = "f64"),
+    registration: register_matrix_solve_mdmd_f64,
+    installer: install_matrix_solve_mdmd_f64,
+    name: "MatrixSolveMDMD<f64>",
+    factory_type: crate::solve::MatrixSolveMDMD<f64>,
+    contract: RuntimeFunctionContract::linear_solve(RuntimeOutputAliasPolicy::DisallowInputAlias),
+    package: "mech-matrix", crate_name: "mech_matrix",
+    installer_path: "mech_matrix::__mech_native::install_matrix_solve_mdmd_f64",
     extra_cargo_features: ["solve"],
 }
 
@@ -460,6 +497,13 @@ fn install_matmul_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         feature = "matrix1"
     ))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulRDVD);
+    #[cfg(all(
+        feature = "row_vectord",
+        feature = "vectord",
+        feature = "matrixd",
+        not(feature = "matrix1")
+    ))]
+    install_declared_matrix_numeric_family!(builder, matmul, MatMulRDVDMD);
     #[cfg(all(feature = "row_vectord", feature = "matrixd"))]
     install_declared_matrix_numeric_family!(builder, matmul, MatMulRDMD);
 
@@ -574,9 +618,20 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         feature = "solve",
         feature = "matrixd",
         feature = "vectord",
+        feature = "f32"
+    ))]
+    register_matrix_solve_mdvd_f32(builder)?;
+    #[cfg(all(
+        feature = "solve",
+        feature = "matrixd",
+        feature = "vectord",
         feature = "f64"
     ))]
     register_matrix_solve_mdvd_f64(builder)?;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f32"))]
+    register_matrix_solve_mdmd_f32(builder)?;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f64"))]
+    register_matrix_solve_mdmd_f64(builder)?;
     #[cfg(feature = "transpose")]
     install_transpose_runtime(builder)?;
     Ok(())
@@ -604,6 +659,7 @@ pub mod __mech_native {
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "vectord"), module: matmul, factory: MatMulMDVD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "matrixd", feature = "row_vectord"), module: matmul, factory: MatMulMDRD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord", feature = "matrix1"), module: matmul, factory: MatMulRDVD }
+    export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord", feature = "matrixd", not(feature = "matrix1")), module: matmul, factory: MatMulRDVDMD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulRDMD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulVDRD }
     for_each_matrix_matmul_fixed_family!(export_matrix_matmul_fixed_family, ());
@@ -615,9 +671,20 @@ pub mod __mech_native {
         feature = "solve",
         feature = "matrixd",
         feature = "vectord",
+        feature = "f32"
+    ))]
+    pub use super::install_matrix_solve_mdvd_f32;
+    #[cfg(all(
+        feature = "solve",
+        feature = "matrixd",
+        feature = "vectord",
         feature = "f64"
     ))]
     pub use super::install_matrix_solve_mdvd_f64;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f32"))]
+    pub use super::install_matrix_solve_mdmd_f32;
+    #[cfg(all(feature = "solve", feature = "matrixd", feature = "f64"))]
+    pub use super::install_matrix_solve_mdmd_f64;
 }
 
 #[cfg(all(test, feature = "source"))]
@@ -738,6 +805,39 @@ mod runtime_signature_tests {
         let catalog = builder.build().unwrap();
         let entry = catalog
             .runtime_entry(mech_core::RuntimeFunctionId::from_name("MatMulRDVD<f64>"))
+            .unwrap();
+        assert_eq!(entry.signature(), expected);
+    }
+
+    #[cfg(all(
+        feature = "matmul",
+        feature = "f64",
+        feature = "row_vectord",
+        feature = "vectord",
+        feature = "matrixd",
+        not(feature = "matrix1")
+    ))]
+    #[test]
+    fn dynamic_row_by_vector_matmul_has_a_dynamic_matrix_fallback() {
+        use nalgebra::{DMatrix, DVector, RowDVector};
+
+        let expected = RuntimeFunctionSignature::binary(
+            <DMatrix<f64> as FunctionRuntimeType>::REPRESENTATION,
+            <RowDVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+            <DVector<f64> as FunctionRuntimeType>::REPRESENTATION,
+        );
+        assert_eq!(
+            <crate::matmul::MatMulRDVDMD<f64> as MechFunctionFactory>::SIGNATURE,
+            expected,
+        );
+
+        let mut builder = FunctionCatalogBuilder::new();
+        install_runtime(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let entry = catalog
+            .runtime_entry(mech_core::RuntimeFunctionId::from_name(
+                "MatMulRDVDMD<f64>",
+            ))
             .unwrap();
         assert_eq!(entry.signature(), expected);
     }

@@ -396,6 +396,11 @@ impl PrettyPrint for Program {
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Title {
     pub text: Token,
+    /// Module imports written in the title's front-matter block. They are
+    /// executable declarations, but remain presentation-neutral metadata in
+    /// rendered Mechdown documents.
+    #[cfg_attr(feature = "serde", serde(default))]
+    pub imports: Vec<(ModuleImport, Option<Comment>)>,
     pub author: Option<Paragraph>,
     pub date: Option<Paragraph>,
     pub hero: Option<SectionElement>,
@@ -459,9 +464,70 @@ impl Subtitle {
 }
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum ComputePlacement {
+    /// Compile the region as a numeric unit and let the executor select a backend.
+    Compute,
+    /// Require execution on the CPU.
+    Cpu,
+    /// Require execution on a GPU provider.
+    Gpu,
+}
+
+impl ComputePlacement {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Compute => "compute",
+            Self::Cpu => "cpu",
+            Self::Gpu => "gpu",
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub enum SectionAnnotationArgument {
+    Atom(Atom),
+}
+
+impl fmt::Display for SectionAnnotationArgument {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Atom(atom) => write!(formatter, ":{}", atom.name.to_string()),
+        }
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
+pub struct SectionAnnotation {
+    pub name: Box<str>,
+    pub arguments: Box<[SectionAnnotationArgument]>,
+}
+
+impl fmt::Display for SectionAnnotation {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "@{}", self.name)?;
+        if !self.arguments.is_empty() {
+            write!(formatter, "(")?;
+            for (index, argument) in self.arguments.iter().enumerate() {
+                if index != 0 {
+                    write!(formatter, ", ")?;
+                }
+                write!(formatter, "{argument}")?;
+            }
+            write!(formatter, ")")?;
+        }
+        Ok(())
+    }
+}
+
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Section {
     pub subtitle: Option<Subtitle>,
+    /// Ordered compiler metadata attached to this Mechdown section heading.
+    pub annotations: Vec<SectionAnnotation>,
     pub elements: Vec<SectionElement>,
 }
 
@@ -475,6 +541,7 @@ impl Section {
             .collect();
         Section {
             subtitle: self.subtitle.clone(),
+            annotations: self.annotations.clone(),
             elements,
         }
     }

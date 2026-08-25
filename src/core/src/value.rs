@@ -201,6 +201,74 @@ pub fn escape_html_text(input: &str) -> String {
 }
 
 impl ValueKind {
+    fn format_with_budget(&self, budget: &mut InlineFormatBudget) -> String {
+        match self {
+            ValueKind::Matrix(element, shape) => format!(
+                "[{}]:{}",
+                element.format_with_budget(budget),
+                shape
+                    .iter()
+                    .map(|dimension| dimension.to_string())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
+            ValueKind::Set(element, size) => format!(
+                "{{{}}}{}",
+                element.format_with_budget(budget),
+                size.map_or(String::new(), |size| format!(":{size}")),
+            ),
+            ValueKind::Map(key, value) => format!(
+                "{{{}:{}}}",
+                key.format_with_budget(budget),
+                value.format_with_budget(budget),
+            ),
+            ValueKind::Record(fields) => {
+                let mut rendered = Vec::new();
+                for (name, kind) in fields {
+                    if !budget.consume() {
+                        rendered.push("…<*>".to_string());
+                        break;
+                    }
+                    rendered.push(format!("{}<{}>", name, kind.format_with_budget(budget)));
+                }
+                format!("{{{}}}", rendered.join(" "))
+            }
+            ValueKind::Table(columns, rows) => {
+                let mut rendered = Vec::new();
+                for (name, kind) in columns {
+                    if !budget.consume() {
+                        rendered.push("…<*>".to_string());
+                        break;
+                    }
+                    rendered.push(format!("{}<{}>", name, kind.format_with_budget(budget)));
+                }
+                let size = (*rows > 0).then(|| format!(":{rows}")).unwrap_or_default();
+                format!("|{}|{size}", rendered.join(" "))
+            }
+            ValueKind::Tuple(elements) => {
+                let mut rendered = Vec::new();
+                for kind in elements {
+                    if !budget.consume() {
+                        rendered.push("…".to_string());
+                        break;
+                    }
+                    rendered.push(kind.format_with_budget(budget));
+                }
+                format!("({})", rendered.join(","))
+            }
+            ValueKind::Reference(inner) => inner.format_with_budget(budget),
+            ValueKind::Option(inner) => format!("{}?", inner.format_with_budget(budget)),
+            ValueKind::Kind(inner) => format!("<{}>", inner.format_with_budget(budget)),
+            scalar => scalar.to_string(),
+        }
+    }
+
+    /// Formats a structural kind without allowing record, table, or tuple
+    /// schemas to grow beyond the shared interactive element budget.
+    pub fn format_with_element_limit(&self, limit: usize) -> String {
+        self.format_with_budget(&mut InlineFormatBudget::bounded(limit))
+    }
+
     pub fn collection_kind(&self) -> Option<ValueKind> {
         match self {
             ValueKind::Matrix(x, _) => Some(*x.clone()),
@@ -725,6 +793,45 @@ pub enum LegacyValue {
     Empty,
 }
 
+/// Shared traversal budget for portable inline projections. A single budget
+/// follows nested values so a small outer container cannot hide an unbounded
+/// table, map, tuple, or matrix inside one of its entries.
+#[derive(Clone, Copy, Debug)]
+struct InlineFormatBudget {
+    remaining: Option<usize>,
+    elided: bool,
+}
+
+impl InlineFormatBudget {
+    fn unlimited() -> Self {
+        Self {
+            remaining: None,
+            elided: false,
+        }
+    }
+
+    fn bounded(limit: usize) -> Self {
+        Self {
+            remaining: Some(limit),
+            elided: false,
+        }
+    }
+
+    fn consume(&mut self) -> bool {
+        match &mut self.remaining {
+            Some(0) => {
+                self.elided = true;
+                false
+            }
+            Some(remaining) => {
+                *remaining -= 1;
+                true
+            }
+            None => true,
+        }
+    }
+}
+
 impl Eq for LegacyValue {}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -752,7 +859,7 @@ impl fmt::Display for LegacyValue {
             return fmt::Display::fmt(&self.pretty_print(), f);
             fmt::Display::fmt(&"".to_string(), f) // kind of a hack to assuage the compiler
         } else {
-            f.write_str(&self.format_value_inline())
+            f.write_str(&self.format_canonical_inline())
         }
     }
 }
@@ -2445,7 +2552,163 @@ impl LegacyValue {
         }
     }
 
-    pub fn format_value_inline(&self) -> String {
+    fn format_kind_with_budget(&self, budget: &mut InlineFormatBudget) -> String {
+        match self {
+            #[cfg(feature = "matrix")]
+            LegacyValue::MatrixValue(matrix) => format!(
+                "[*]:{}",
+                matrix
+                    .shape()
+                    .iter()
+                    .map(|dimension| dimension.to_string())
+                    .collect::<Vec<_>>()
+                    .join(","),
+            ),
+            #[cfg(feature = "table")]
+            LegacyValue::Table(table) => {
+                let table = table.borrow();
+                let mut columns = Vec::new();
+                for (key, (kind, _)) in &table.data {
+                    if !budget.consume() {
+                        columns.push("…<*>".to_string());
+                        break;
+                    }
+                    let name = table
+                        .col_names
+                        .get(key)
+                        .cloned()
+                        .unwrap_or_else(|| key.to_string());
+                    columns.push(format!("{}<{}>", name, kind.format_with_budget(budget)));
+                }
+                let size = (table.rows > 0)
+                    .then(|| format!(":{}", table.rows))
+                    .unwrap_or_default();
+                format!("|{}|{size}", columns.join(" "))
+            }
+            #[cfg(feature = "record")]
+            LegacyValue::Record(record) => {
+                let record = record.borrow();
+                let mut fields = Vec::new();
+                for (key, value) in &record.data {
+                    if !budget.consume() {
+                        fields.push("…<*>".to_string());
+                        break;
+                    }
+                    let name = record
+                        .field_names
+                        .get(key)
+                        .cloned()
+                        .unwrap_or_else(|| key.to_string());
+                    fields.push(format!(
+                        "{}<{}>",
+                        name,
+                        value.format_kind_with_budget(budget)
+                    ));
+                }
+                format!("{{{}}}", fields.join(" "))
+            }
+            #[cfg(feature = "tuple")]
+            LegacyValue::Tuple(tuple) => {
+                let tuple = tuple.borrow();
+                let mut elements = Vec::new();
+                for value in &tuple.elements {
+                    if !budget.consume() {
+                        elements.push("…".to_string());
+                        break;
+                    }
+                    elements.push(value.format_kind_with_budget(budget));
+                }
+                format!("({})", elements.join(","))
+            }
+            #[cfg(feature = "set")]
+            LegacyValue::Set(set) => {
+                let set = set.borrow();
+                format!(
+                    "{{{}}}{}",
+                    set.kind.format_with_budget(budget),
+                    set.max_elements
+                        .map_or(String::new(), |size| format!(":{size}")),
+                )
+            }
+            #[cfg(feature = "map")]
+            LegacyValue::Map(map) => {
+                let map = map.borrow();
+                format!(
+                    "{{{}:{}}}",
+                    map.key_kind.format_with_budget(budget),
+                    map.value_kind.format_with_budget(budget),
+                )
+            }
+            #[cfg(feature = "enum")]
+            LegacyValue::Enum(enm) => {
+                let enm = enm.borrow();
+                let names = enm.names.borrow();
+                if let [(variant_id, payload)] = enm.variants.as_slice() {
+                    let variant_name = names
+                        .get(variant_id)
+                        .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+                        .unwrap_or_else(|| variant_id.to_string());
+                    if let Some(value) = payload
+                        && !matches!(value, LegacyValue::Kind(_))
+                    {
+                        return format!(
+                            ":{}({})",
+                            variant_name,
+                            value.format_kind_with_budget(budget),
+                        );
+                    }
+                    return format!(":{variant_name}");
+                }
+                let name = names
+                    .get(&enm.id)
+                    .cloned()
+                    .unwrap_or_else(|| enm.id.to_string());
+                format!(":{name}")
+            }
+            LegacyValue::MutableReference(reference) => {
+                reference.borrow().format_kind_with_budget(budget)
+            }
+            LegacyValue::Typed(_, kind) => kind.format_with_budget(budget),
+            LegacyValue::EmptyKind(kind) | LegacyValue::Kind(kind) => {
+                kind.format_with_budget(budget)
+            }
+            value => value.kind().format_with_budget(budget),
+        }
+    }
+
+    /// Formats the kind shown beside a browser or terminal value without
+    /// reconstructing an unbounded aggregate schema from the retained value.
+    pub fn format_kind_with_element_limit(&self, limit: usize) -> String {
+        self.format_kind_with_budget(&mut InlineFormatBudget::bounded(limit))
+    }
+
+    /// Render rich HTML without allowing an aggregate projection to traverse
+    /// more elements than the portable REPL budget. Small values retain their
+    /// structured renderer; elided values use their bounded canonical form so
+    /// nested containers and schema-only tables cannot bypass the limit.
+    #[cfg(feature = "pretty_print")]
+    pub fn to_html_with_element_limit(&self, limit: usize) -> String {
+        let mut budget = InlineFormatBudget::bounded(limit);
+        let canonical = self.format_canonical_inline_with_budget(&mut budget);
+        if budget.elided {
+            format!(
+                "<pre class=\"mech-value-preview mech-value-elided\">{}</pre>",
+                escape_html_text(&canonical),
+            )
+        } else {
+            self.to_html()
+        }
+    }
+
+    /// Formats this value as a single-line, language-valid Mech value.
+    ///
+    /// String escaping and recursive container formatting belong here so
+    /// every host publishes the same canonical representation.
+    pub fn format_canonical_inline(&self) -> String {
+        self.format_canonical_inline_with_budget(&mut InlineFormatBudget::unlimited())
+    }
+
+    fn format_canonical_inline_with_budget(&self, budget: &mut InlineFormatBudget) -> String {
         match self {
             #[cfg(feature = "u8")]
             LegacyValue::U8(n) => format!("{}", n.borrow()),
@@ -2472,7 +2735,7 @@ impl LegacyValue {
             #[cfg(feature = "f64")]
             LegacyValue::F64(n) => format!("{}", n.borrow()),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            LegacyValue::String(s) => format!("\"{}\"", s.borrow()),
+            LegacyValue::String(s) => Self::format_string_inline(s.borrow().as_str()),
             #[cfg(any(feature = "bool", feature = "variable_define"))]
             LegacyValue::Bool(b) => format!("{}", b.borrow()),
             #[cfg(feature = "complex")]
@@ -2480,186 +2743,620 @@ impl LegacyValue {
             #[cfg(feature = "rational")]
             LegacyValue::R64(r) => format!("{}", r.borrow()),
             #[cfg(feature = "matrix")]
-            LegacyValue::MatrixIndex(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixIndex(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "bool"))]
-            LegacyValue::MatrixBool(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixBool(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u8"))]
-            LegacyValue::MatrixU8(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU8(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u16"))]
-            LegacyValue::MatrixU16(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU16(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u32"))]
-            LegacyValue::MatrixU32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU32(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u64"))]
-            LegacyValue::MatrixU64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "u128"))]
-            LegacyValue::MatrixU128(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixU128(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i8"))]
-            LegacyValue::MatrixI8(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI8(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i16"))]
-            LegacyValue::MatrixI16(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI16(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i32"))]
-            LegacyValue::MatrixI32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI32(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i64"))]
-            LegacyValue::MatrixI64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "i128"))]
-            LegacyValue::MatrixI128(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixI128(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "f32"))]
-            LegacyValue::MatrixF32(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixF32(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "f64"))]
-            LegacyValue::MatrixF64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixF64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "string"))]
-            LegacyValue::MatrixString(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixString(m) => {
+                Self::format_matrix_inline_with(m, budget, |value, _| {
+                    Self::format_string_inline(&value)
+                })
+            }
             #[cfg(all(feature = "matrix", feature = "rational"))]
-            LegacyValue::MatrixR64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixR64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(all(feature = "matrix", feature = "complex"))]
-            LegacyValue::MatrixC64(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixC64(m) => Self::format_matrix_inline(m, budget),
             #[cfg(feature = "matrix")]
-            LegacyValue::MatrixValue(m) => Self::format_matrix_inline(m),
+            LegacyValue::MatrixValue(m) => {
+                Self::format_matrix_inline_with(m, budget, |value, budget| {
+                    value.format_canonical_inline_with_budget(budget)
+                })
+            }
             #[cfg(feature = "atom")]
             LegacyValue::Atom(a) => format!("{}", a.borrow()),
             #[cfg(feature = "set")]
             LegacyValue::Set(s) => {
-                let vals = s
-                    .borrow()
-                    .set
-                    .iter()
-                    .map(|v| v.format_value_inline())
-                    .collect::<Vec<_>>();
+                let set = s.borrow();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for value in &set.set {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    vals.push(value.format_canonical_inline_with_budget(budget));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "map")]
             LegacyValue::Map(m) => {
-                let vals = m
-                    .borrow()
-                    .map
-                    .iter()
-                    .map(|(k, v)| {
-                        format!("{}: {}", k.format_value_inline(), v.format_value_inline())
-                    })
-                    .collect::<Vec<_>>();
+                let map = m.borrow();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for (key, value) in &map.map {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    vals.push(format!(
+                        "{}: {}",
+                        key.format_canonical_inline_with_budget(budget),
+                        value.format_canonical_inline_with_budget(budget)
+                    ));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "record")]
             LegacyValue::Record(r) => {
                 let record = r.borrow();
-                let vals = record
-                    .data
-                    .iter()
-                    .map(|(k, v)| {
-                        let name = record
-                            .field_names
-                            .get(k)
-                            .cloned()
-                            .unwrap_or_else(|| format!("{}", k));
-                        format!("{}: {}", name, v.format_value_inline())
-                    })
-                    .collect::<Vec<_>>();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for (key, value) in &record.data {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    let name = record
+                        .field_names
+                        .get(key)
+                        .cloned()
+                        .unwrap_or_else(|| format!("{}", key));
+                    vals.push(format!(
+                        "{}: {}",
+                        name,
+                        value.format_canonical_inline_with_budget(budget)
+                    ));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("{{{}}}", vals.join(", "))
             }
             #[cfg(feature = "tuple")]
             LegacyValue::Tuple(t) => {
-                let vals = t
-                    .borrow()
-                    .elements
-                    .iter()
-                    .map(|v| v.format_value_inline())
-                    .collect::<Vec<_>>();
+                let tuple = t.borrow();
+                let mut vals = Vec::new();
+                let mut elided = false;
+                for value in &tuple.elements {
+                    if !budget.consume() {
+                        elided = true;
+                        break;
+                    }
+                    vals.push(value.format_canonical_inline_with_budget(budget));
+                }
+                if elided {
+                    vals.push("…".to_string());
+                }
                 format!("({})", vals.join(", "))
             }
             #[cfg(feature = "enum")]
             LegacyValue::Enum(e) => {
                 let enm = e.borrow();
-                let dict = enm.names.borrow();
-                if enm.variants.len() == 1 {
-                    let (variant_id, payload) = &enm.variants[0];
-                    let variant_name = dict
-                        .get(variant_id)
-                        .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
-                        .unwrap_or_else(|| format!("{}", variant_id));
-                    return match payload {
-                        Some(value) => {
-                            format!(":{}({})", variant_name, value.format_value_inline())
-                        }
-                        None => format!(":{}", variant_name),
-                    };
+                // A multi-variant MechEnum is the retained nominal definition,
+                // not one active variant. Project that descriptor through the
+                // language's kind-literal syntax instead of inventing an enum
+                // value grammar that the parser does not support.
+                if enm.variants.len() != 1 {
+                    return format!("<:{}>", enm.name());
                 }
-                let name = dict
-                    .get(&enm.id)
-                    .cloned()
-                    .unwrap_or_else(|| format!("{}", enm.id));
-                let vals = enm
-                    .variants
-                    .iter()
-                    .map(|(id, v)| {
-                        let variant_name =
-                            dict.get(id).cloned().unwrap_or_else(|| format!("{}", id));
-                        match v {
-                            Some(value) => {
-                                format!("{}: {}", variant_name, value.format_value_inline())
-                            }
-                            None => variant_name,
-                        }
-                    })
-                    .collect::<Vec<_>>();
-                format!(":{}{{{}}}", name, vals.join(" | "))
+                let dict = enm.names.borrow();
+                let (variant_id, payload) = &enm.variants[0];
+                let variant_name = dict
+                    .get(variant_id)
+                    .map(|name| name.rsplit('/').next().unwrap_or(name).to_string())
+                    .unwrap_or_else(|| format!("{}", variant_id));
+                match payload {
+                    Some(value) => {
+                        let payload = if budget.consume() {
+                            value.format_canonical_inline_with_budget(budget)
+                        } else {
+                            "…".to_string()
+                        };
+                        format!(":{}({})", variant_name, payload)
+                    }
+                    None => format!(":{}", variant_name),
+                }
             }
             #[cfg(feature = "table")]
             LegacyValue::Table(t) => {
                 let table = t.borrow();
-                let headers = table
-                    .data
-                    .iter()
-                    .map(|(k, (kind, _))| {
+                // Mech has no zero-row table value literal. Preserve its
+                // schema as a valid kind literal instead of emitting a header
+                // that the table grammar cannot terminate.
+                if table.data.is_empty() {
+                    return "<*>".to_string();
+                }
+                if table.rows == 0 {
+                    let mut columns = Vec::new();
+                    let mut elided = false;
+                    for (key, (kind, _)) in &table.data {
+                        if !budget.consume() {
+                            elided = true;
+                            break;
+                        }
                         let name = table
                             .col_names
-                            .get(k)
+                            .get(key)
                             .cloned()
-                            .unwrap_or_else(|| format!("{}", k));
+                            .unwrap_or_else(|| format!("{}", key));
+                        columns.push(format!("{}<{}>", name, kind));
+                    }
+                    if elided {
+                        columns.push("…<*>".to_string());
+                    }
+                    return format!("<|{}|>", columns.join(" "));
+                }
+                let mut visible_columns = Vec::new();
+                let mut columns_elided = false;
+                for column in &table.data {
+                    if !budget.consume() {
+                        columns_elided = true;
+                        break;
+                    }
+                    visible_columns.push(column);
+                }
+                let mut headers = visible_columns
+                    .iter()
+                    .map(|(key, (kind, _))| {
+                        let name = table
+                            .col_names
+                            .get(key)
+                            .cloned()
+                            .unwrap_or_else(|| format!("{}", key));
                         format!("{}<{}>", name, kind)
                     })
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                let rows = (0..table.rows)
-                    .map(|r| {
-                        table
-                            .data
-                            .iter()
-                            .map(|(_, (_, col))| col.index2d(r + 1, 1).format_value_inline())
-                            .collect::<Vec<_>>()
-                            .join(" ")
-                    })
-                    .collect::<Vec<_>>()
-                    .join("; ");
-                format!("|{}| {}", headers, rows)
+                    .collect::<Vec<_>>();
+                if columns_elided {
+                    headers.push("…<*>".to_string());
+                }
+                let headers = headers.join(" ");
+                let mut rows = Vec::new();
+                let mut values_elided = false;
+                if visible_columns.is_empty() {
+                    // A zero budget still needs one structural elision marker;
+                    // emitting an empty row for every retained row would make
+                    // the supposedly bounded projection scale with the table.
+                    rows.push("…".to_string());
+                } else {
+                    'rows: for row in 0..table.rows {
+                        let mut cells = Vec::new();
+                        for (_, (_, column)) in &visible_columns {
+                            if !budget.consume() {
+                                values_elided = true;
+                                if !cells.is_empty() {
+                                    cells.push("…".to_string());
+                                    rows.push(cells.join(" "));
+                                }
+                                break 'rows;
+                            }
+                            cells.push(
+                                column
+                                    .index2d(row + 1, 1)
+                                    .format_canonical_table_cell_inline(budget),
+                            );
+                        }
+                        rows.push(cells.join(" "));
+                    }
+                    if values_elided || rows.len() < table.rows {
+                        rows.push("…".to_string());
+                    }
+                }
+                format!("|{}| {} |", headers, rows.join(" | "))
             }
             LegacyValue::Id(x) => format!("{}", humanize(x)),
             LegacyValue::Index(x) => format!("{}", x.borrow()),
             LegacyValue::Kind(k) => format!("<{}>", k),
-            LegacyValue::Typed(value, _) => value.format_value_inline(),
-            LegacyValue::MutableReference(m) => m.borrow().format_value_inline(),
+            LegacyValue::Typed(value, _) => value.format_canonical_inline_with_budget(budget),
+            LegacyValue::MutableReference(m) => {
+                m.borrow().format_canonical_inline_with_budget(budget)
+            }
             LegacyValue::IndexAll => ":".to_string(),
             LegacyValue::EmptyKind(_) => "_".to_string(),
             LegacyValue::Empty => "_".to_string(),
         }
     }
 
+    /// Formats a canonical REPL projection while bounding aggregate traversal.
+    /// The accepted runtime value remains complete; only its interactive
+    /// presentation is elided, including nested aggregates of every kind.
+    pub fn format_canonical_inline_with_element_limit(&self, limit: usize) -> String {
+        self.format_canonical_inline_with_budget(&mut InlineFormatBudget::bounded(limit))
+    }
+
+    /// Formats one cell for the inline-table grammar. A table literal uses
+    /// the same bar token as its enclosing row terminator, so a directly
+    /// nested table must be parenthesized to give both the parser and preview
+    /// scanner an unambiguous structural boundary. Inspecting the canonical
+    /// prefix also covers typed and referenced table values transparently.
+    fn format_canonical_table_cell_inline(&self, budget: &mut InlineFormatBudget) -> String {
+        let canonical = self.format_canonical_inline_with_budget(budget);
+        if canonical.starts_with('|') {
+            format!("({canonical})")
+        } else {
+            canonical
+        }
+    }
+
+    /// Formats a bounded preview without splitting encoded string characters
+    /// or discarding delimiters that were opened before the elision point.
+    pub fn format_preview_inline(&self, limit: usize) -> String {
+        Self::preview_canonical_inline(
+            &self.format_canonical_inline_with_element_limit(limit),
+            limit,
+        )
+    }
+
+    /// Compatibility alias for callers that require the complete canonical
+    /// inline representation. New preview surfaces should use
+    /// [`Self::format_preview_inline`] explicitly.
+    pub fn format_value_inline(&self) -> String {
+        self.format_canonical_inline()
+    }
+
+    fn preview_canonical_inline(canonical: &str, limit: usize) -> String {
+        #[derive(Clone)]
+        struct Checkpoint {
+            bytes: usize,
+            chars: usize,
+            closers: Vec<char>,
+        }
+
+        let canonical_chars = canonical.chars().count();
+        if canonical_chars <= limit {
+            return canonical.to_string();
+        }
+        if limit == 0 {
+            return String::new();
+        }
+
+        let mut prefix = String::new();
+        let mut prefix_chars = 0;
+        let mut closers = Vec::new();
+        let mut table_closing_bytes = Vec::new();
+        let mut in_string = false;
+        let mut byte = 0;
+        let mut checkpoint: Option<Checkpoint> = None;
+
+        while byte < canonical.len() {
+            let character = canonical[byte..]
+                .chars()
+                .next()
+                .expect("byte offset remains on a character boundary");
+            let mut next_closers = closers.clone();
+            let mut next_table_closing_bytes = table_closing_bytes.clone();
+            let mut next_in_string = in_string;
+            let mut safe_cut = false;
+
+            let end = if in_string {
+                match character {
+                    '"' => {
+                        if next_closers.last() == Some(&'"') {
+                            next_closers.pop();
+                        }
+                        next_in_string = false;
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                    '\\' => {
+                        safe_cut = true;
+                        Self::inline_escape_end(canonical, byte)
+                    }
+                    _ => {
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                }
+            } else {
+                match character {
+                    '"' => {
+                        next_closers.push('"');
+                        next_in_string = true;
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                    '[' => {
+                        next_closers.push(']');
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                    '{' => {
+                        next_closers.push('}');
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                    '(' => {
+                        next_closers.push(')');
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                    '<' => {
+                        next_closers.push('>');
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                    ']' | '}' | ')' | '>' => {
+                        if next_closers.last() == Some(&character) {
+                            next_closers.pop();
+                        }
+                        safe_cut = true;
+                        byte + character.len_utf8()
+                    }
+                    '|' if next_closers.last() != Some(&'|') => {
+                        let after = byte + character.len_utf8();
+                        let surrounding_closer = next_closers.last().copied();
+                        next_closers.push('|');
+                        next_table_closing_bytes.push(Self::inline_table_closing_bar(
+                            canonical,
+                            after,
+                            surrounding_closer,
+                        ));
+                        safe_cut = true;
+                        after
+                    }
+                    '|' if next_closers.last() == Some(&'|') => {
+                        let after = byte + character.len_utf8();
+                        if next_table_closing_bytes.last().copied().flatten() == Some(byte) {
+                            next_closers.pop();
+                            next_table_closing_bytes.pop();
+                        }
+                        safe_cut = true;
+                        after
+                    }
+                    character
+                        if character.is_whitespace() || matches!(character, ',' | ';' | '|') =>
+                    {
+                        byte + character.len_utf8()
+                    }
+                    _ => {
+                        let mut end = byte;
+                        for (offset, character) in canonical[byte..].char_indices() {
+                            if offset > 0
+                                && (character.is_whitespace()
+                                    || matches!(
+                                        character,
+                                        '"' | '['
+                                            | ']'
+                                            | '{'
+                                            | '}'
+                                            | '('
+                                            | ')'
+                                            | '<'
+                                            | '>'
+                                            | ','
+                                            | ';'
+                                            | '|'
+                                    ))
+                            {
+                                break;
+                            }
+                            end = byte + offset + character.len_utf8();
+                        }
+                        safe_cut = !canonical[byte..end].ends_with(':');
+                        end
+                    }
+                }
+            };
+
+            let token = &canonical[byte..end];
+            let token_chars = token.chars().count();
+            let next_chars = prefix_chars + token_chars;
+            if next_chars + 1 + next_closers.len() > limit {
+                break;
+            }
+
+            prefix.push_str(token);
+            prefix_chars = next_chars;
+            closers = next_closers;
+            table_closing_bytes = next_table_closing_bytes;
+            in_string = next_in_string;
+            byte = end;
+
+            if safe_cut {
+                checkpoint = Some(Checkpoint {
+                    bytes: prefix.len(),
+                    chars: prefix_chars,
+                    closers: closers.clone(),
+                });
+            }
+        }
+
+        let Some(checkpoint) = checkpoint else {
+            return "…".chars().take(limit).collect();
+        };
+
+        let mut preview = prefix[..checkpoint.bytes].to_string();
+        preview.push('…');
+        for closer in checkpoint.closers.iter().rev() {
+            preview.push(*closer);
+        }
+        debug_assert!(checkpoint.chars + 1 + checkpoint.closers.len() <= limit);
+        preview
+    }
+
+    /// Locates the final bar before the active table's enclosing value ends.
+    /// Bars inside strings or nested delimiters belong to nested values. This
+    /// lookahead runs once per table opener, rather than once per table row.
+    fn inline_table_closing_bar(
+        value: &str,
+        start: usize,
+        surrounding_closer: Option<char>,
+    ) -> Option<usize> {
+        let mut closers = Vec::new();
+        let mut in_string = false;
+        let mut byte = start;
+        let mut closing_bar = None;
+
+        while byte < value.len() {
+            let character = value[byte..]
+                .chars()
+                .next()
+                .expect("byte offset remains on a character boundary");
+
+            if in_string {
+                match character {
+                    '"' => in_string = false,
+                    '\\' => {
+                        byte = Self::inline_escape_end(value, byte);
+                        continue;
+                    }
+                    _ => {}
+                }
+                byte += character.len_utf8();
+                continue;
+            }
+
+            match character {
+                '"' => in_string = true,
+                '[' => closers.push(']'),
+                '{' => closers.push('}'),
+                '(' => closers.push(')'),
+                '<' => closers.push('>'),
+                ']' | '}' | ')' | '>' if closers.last() == Some(&character) => {
+                    closers.pop();
+                }
+                character if closers.is_empty() && surrounding_closer == Some(character) => {
+                    return closing_bar;
+                }
+                '|' if closers.is_empty() => closing_bar = Some(byte),
+                ',' | ';' if closers.is_empty() => return closing_bar,
+                _ => {}
+            }
+            byte += character.len_utf8();
+        }
+
+        closing_bar
+    }
+
+    fn inline_escape_end(value: &str, start: usize) -> usize {
+        let mut characters = value[start..].char_indices();
+        let Some((_, '\\')) = characters.next() else {
+            return start;
+        };
+        let Some((offset, escaped)) = characters.next() else {
+            return value.len();
+        };
+        let mut end = start + offset + escaped.len_utf8();
+
+        if escaped == 'u' && value[end..].starts_with('{') {
+            end += '{'.len_utf8();
+            for character in value[end..].chars() {
+                end += character.len_utf8();
+                if character == '}' {
+                    break;
+                }
+            }
+        } else if escaped == 'x' {
+            for character in value[end..].chars().take(2) {
+                end += character.len_utf8();
+            }
+        }
+        end
+    }
+
     #[cfg(feature = "matrix")]
-    fn format_matrix_inline<T>(matrix: &Matrix<T>) -> String
+    fn format_matrix_inline<T>(matrix: &Matrix<T>, budget: &mut InlineFormatBudget) -> String
     where
         T: Clone + std::fmt::Display + std::fmt::Debug + PartialEq + 'static,
+    {
+        Self::format_matrix_inline_with(matrix, budget, |value, _| value.to_string())
+    }
+
+    #[cfg(feature = "matrix")]
+    fn format_matrix_inline_with<T, F>(
+        matrix: &Matrix<T>,
+        budget: &mut InlineFormatBudget,
+        mut format_element: F,
+    ) -> String
+    where
+        T: Clone + std::fmt::Debug + PartialEq + 'static,
+        F: FnMut(T, &mut InlineFormatBudget) -> String,
     {
         let shape = matrix.shape();
         let rows = shape[0];
         let cols = shape[1];
-        let row_strings = (0..rows)
-            .map(|r| {
-                (0..cols)
-                    .map(|c| matrix.index2d(r + 1, c + 1).to_string())
-                    .collect::<Vec<_>>()
-                    .join(" ")
-            })
-            .collect::<Vec<_>>();
-        format!("[{}]", row_strings.join("; "))
+        let total = rows.saturating_mul(cols);
+        let mut rendered = String::from("[");
+        let mut visible = 0;
+        for index in 0..total {
+            if !budget.consume() {
+                break;
+            }
+            let row = index / cols;
+            let column = index % cols;
+            if index > 0 {
+                rendered.push_str(if column == 0 { "; " } else { " " });
+            }
+            rendered.push_str(&format_element(matrix.index2d(row + 1, column + 1), budget));
+            visible += 1;
+        }
+        if visible < total {
+            if visible > 0 {
+                rendered.push(' ');
+            }
+            rendered.push('…');
+        }
+        rendered.push(']');
+        rendered
+    }
+
+    #[cfg(any(feature = "string", feature = "variable_define"))]
+    fn format_string_inline(value: &str) -> String {
+        let mut encoded = String::with_capacity(value.len() + 2);
+        encoded.push('"');
+        for character in value.chars() {
+            match character {
+                '\\' => encoded.push_str("\\\\"),
+                '"' => encoded.push_str("\\\""),
+                '\n' => encoded.push_str("\\n"),
+                '\r' => encoded.push_str("\\r"),
+                '\t' => encoded.push_str("\\t"),
+                '\u{2028}' | '\u{2029}' => encoded.extend(character.escape_default()),
+                character if character.is_control() => encoded.extend(character.escape_default()),
+                character => encoded.push(character),
+            }
+        }
+        encoded.push('"');
+        encoded
     }
 
     pub fn shape(&self) -> Vec<usize> {
@@ -3719,7 +4416,7 @@ impl PrettyPrint for LegacyValue {
             #[cfg(feature = "map")]
             LegacyValue::Map(x) => x.borrow().pretty_print(),
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            LegacyValue::String(x) => format!("\"{}\"", x.borrow().escape_default()),
+            LegacyValue::String(x) => Self::format_string_inline(x.borrow().as_str()),
             #[cfg(feature = "table")]
             LegacyValue::Table(x) => x.borrow().pretty_print(),
             #[cfg(feature = "tuple")]
@@ -4162,6 +4859,332 @@ mod reactive_cell_tests {
         assert_eq!(LegacyValue::F64(Ref::new(3.0)).to_string(), "3");
     }
 
+    #[cfg(feature = "string")]
+    #[test]
+    fn canonical_inline_strings_escape_recursively_across_value_containers() {
+        let string = LegacyValue::String(Ref::new(
+            "a\"b\\c\nnext\r\t\u{2028}line\u{2029}paragraph".to_string(),
+        ));
+        let expected = "\"a\\\"b\\\\c\\nnext\\r\\t\\u{2028}line\\u{2029}paragraph\"";
+        assert_eq!(string.format_canonical_inline(), expected);
+
+        #[cfg(feature = "tuple")]
+        {
+            let tuple = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(vec![string.clone()])));
+            assert_eq!(tuple.format_canonical_inline(), format!("({expected})"));
+        }
+
+        #[cfg(feature = "set")]
+        {
+            let set = LegacyValue::Set(Ref::new(MechSet::from_vec(vec![string.clone()])));
+            assert_eq!(set.format_canonical_inline(), format!("{{{expected}}}"));
+        }
+
+        #[cfg(feature = "map")]
+        {
+            let key = LegacyValue::String(Ref::new("key".to_string()));
+            let map = LegacyValue::Map(Ref::new(MechMap::from_vec(vec![(key, string.clone())])));
+            assert_eq!(
+                map.format_canonical_inline(),
+                format!("{{\"key\": {expected}}}")
+            );
+        }
+
+        #[cfg(feature = "record")]
+        {
+            let record =
+                LegacyValue::Record(Ref::new(MechRecord::new(vec![("message", string.clone())])));
+            assert_eq!(
+                record.format_canonical_inline(),
+                format!("{{message: {expected}}}")
+            );
+        }
+
+        #[cfg(feature = "enum")]
+        {
+            let variant_id = hash_str("message/value");
+            let enum_id = hash_str("message");
+            let mut names = Dictionary::new();
+            names.insert(enum_id, "message".to_string());
+            names.insert(variant_id, "message/value".to_string());
+            let enm = LegacyValue::Enum(Ref::new(MechEnum {
+                id: enum_id,
+                variants: vec![(variant_id, Some(string.clone()))],
+                names: Ref::new(names),
+            }));
+            assert_eq!(enm.format_canonical_inline(), format!(":value({expected})"));
+
+            let mut names = Dictionary::new();
+            names.insert(enum_id, "message".to_string());
+            names.insert(hash_str("message/ready"), "message/ready".to_string());
+            names.insert(hash_str("message/error"), "message/error".to_string());
+            let definition = LegacyValue::Enum(Ref::new(MechEnum {
+                id: enum_id,
+                variants: vec![
+                    (hash_str("message/ready"), None),
+                    (
+                        hash_str("message/error"),
+                        Some(LegacyValue::Kind(ValueKind::String)),
+                    ),
+                ],
+                names: Ref::new(names),
+            }));
+            assert_eq!(definition.format_canonical_inline(), "<:message>");
+        }
+    }
+
+    #[cfg(all(feature = "string", feature = "table", feature = "matrixd"))]
+    #[test]
+    fn canonical_inline_tables_terminate_every_row() {
+        let column_id = hash_str("message");
+        let column = Matrix::from_vec(
+            vec![
+                LegacyValue::String(Ref::new("first".to_string())),
+                LegacyValue::String(Ref::new("second".to_string())),
+            ],
+            2,
+            1,
+        );
+        let table = LegacyValue::Table(Ref::new(MechTable::from_parts(
+            2,
+            1,
+            vec![(column_id, ValueKind::String, column)],
+            vec![(column_id, "message".to_string())],
+        )));
+        assert_eq!(
+            table.format_canonical_inline(),
+            "|message<string>| \"first\" | \"second\" |"
+        );
+    }
+
+    #[cfg(all(feature = "string", feature = "table", feature = "matrixd"))]
+    #[test]
+    fn zero_row_table_previews_close_nested_kind_and_table_delimiters() {
+        let mut columns = Vec::new();
+        let mut names = Vec::new();
+        for index in 0..10 {
+            let name = format!("column{index}");
+            let column_id = hash_str(&name);
+            columns.push((
+                column_id,
+                ValueKind::String,
+                Matrix::from_vec(Vec::<LegacyValue>::new(), 0, 1),
+            ));
+            names.push((column_id, name));
+        }
+        let table = LegacyValue::Table(Ref::new(MechTable::from_parts(
+            0,
+            columns.len(),
+            columns,
+            names,
+        )));
+
+        let canonical = table.format_canonical_inline();
+        assert!(canonical.starts_with("<|"), "{canonical}");
+        assert!(canonical.ends_with("|>"), "{canonical}");
+        assert_eq!(
+            table.format_canonical_inline_with_element_limit(2),
+            "<|column0<string> column1<string> …<*>|>",
+        );
+        assert_eq!(
+            table.format_kind_with_element_limit(2),
+            "|column0<string> column1<string> …<*>|",
+        );
+        #[cfg(feature = "pretty_print")]
+        {
+            let html = table.to_html_with_element_limit(2);
+            assert!(html.contains("mech-value-elided"), "{html}");
+            assert!(html.contains("column0&lt;string&gt;"), "{html}");
+            assert!(!html.contains("column9"), "{html}");
+        }
+        let preview = table.format_preview_inline(96);
+        assert!(preview.starts_with("<|"), "{preview}");
+        assert!(preview.ends_with("|>"), "{preview}");
+        assert!(preview.contains('…'), "{preview}");
+        assert!(preview.chars().count() <= 96, "{preview}");
+    }
+
+    #[cfg(all(feature = "string", feature = "table", feature = "matrixd"))]
+    #[test]
+    fn table_valued_cells_have_unambiguous_canonical_and_preview_boundaries() {
+        let inner_column_id = hash_str("message");
+        let inner = LegacyValue::Table(Ref::new(MechTable::from_parts(
+            1,
+            1,
+            vec![(
+                inner_column_id,
+                ValueKind::String,
+                Matrix::from_vec(vec![LegacyValue::String(Ref::new("x".repeat(100)))], 1, 1),
+            )],
+            vec![(inner_column_id, "message".to_string())],
+        )));
+        let outer_column_id = hash_str("nested");
+        let outer = LegacyValue::Table(Ref::new(MechTable::from_parts(
+            1,
+            1,
+            vec![(
+                outer_column_id,
+                inner.kind(),
+                Matrix::from_vec(vec![inner], 1, 1),
+            )],
+            vec![(outer_column_id, "nested".to_string())],
+        )));
+
+        let canonical = outer.format_canonical_inline();
+        assert!(
+            canonical.starts_with("|nested<|message<string>|:1>| (|message<string>| \""),
+            "{canonical}"
+        );
+        assert!(canonical.ends_with("\" |) |"), "{canonical}");
+
+        let preview = outer.format_preview_inline(64);
+        assert!(preview.starts_with("|nested<"), "{preview}");
+        assert!(preview.ends_with("\"|)|"), "{preview}");
+        assert!(preview.contains('…'), "{preview}");
+        assert!(preview.chars().count() <= 64, "{preview}");
+    }
+
+    #[cfg(all(feature = "string", feature = "matrixd"))]
+    #[test]
+    fn inline_string_matrices_quote_and_escape_every_element() {
+        let matrix = Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
+            1,
+            2,
+            &["a\"b".to_string(), "c\\d\nnext".to_string()],
+        )));
+        assert_eq!(
+            LegacyValue::MatrixString(matrix).format_canonical_inline(),
+            "[\"a\\\"b\" \"c\\\\d\\nnext\"]"
+        );
+    }
+
+    #[cfg(all(feature = "string", feature = "matrixd"))]
+    #[test]
+    fn inline_value_matrices_use_recursive_value_formatting() {
+        let matrix = Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
+            1,
+            2,
+            &[
+                LegacyValue::String(Ref::new("a\"b".to_string())),
+                LegacyValue::String(Ref::new("c\\d".to_string())),
+            ],
+        )));
+        assert_eq!(
+            LegacyValue::MatrixValue(matrix).format_canonical_inline(),
+            "[\"a\\\"b\" \"c\\\\d\"]"
+        );
+    }
+
+    #[cfg(feature = "string")]
+    #[test]
+    fn bounded_inline_previews_preserve_quotes_escapes_and_unicode_boundaries() {
+        let escaped = LegacyValue::String(Ref::new("aa\"bbbb".to_string()));
+        assert_eq!(escaped.format_preview_inline(5), "\"aa…\"");
+        assert_eq!(escaped.format_preview_inline(7), "\"aa\\\"…\"");
+
+        let unicode = LegacyValue::String(Ref::new("αβ\"γδεζη".to_string()));
+        let preview = unicode.format_preview_inline(8);
+        assert_eq!(preview, "\"αβ\\\"γ…\"");
+        assert_eq!(preview.chars().count(), 8);
+        assert!(!preview.ends_with("\\…\""), "split escape: {preview}");
+
+        let separators =
+            LegacyValue::String(Ref::new("left\u{2028}middle\u{2029}right".to_string()));
+        assert_eq!(
+            separators.format_preview_inline(usize::MAX),
+            "\"left\\u{2028}middle\\u{2029}right\""
+        );
+
+        assert_eq!(unicode.format_preview_inline(0), "");
+        assert_eq!(
+            unicode.format_preview_inline(usize::MAX),
+            unicode.format_canonical_inline()
+        );
+    }
+
+    #[cfg(all(feature = "string", feature = "f64", feature = "matrixd"))]
+    #[test]
+    fn bounded_inline_previews_close_nested_string_and_matrix_delimiters() {
+        let strings = Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
+            1,
+            2,
+            &["αβ\"γδεζη".to_string(), "tail".to_string()],
+        )));
+        let preview = LegacyValue::MatrixString(strings).format_preview_inline(12);
+        assert_eq!(preview, "[\"αβ\\\"γδε…\"]");
+        assert_eq!(preview.chars().count(), 12);
+
+        let numbers = Matrix::DMatrix(Ref::new(na::DMatrix::from_row_slice(
+            1,
+            8,
+            &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0],
+        )));
+        let preview = LegacyValue::MatrixF64(numbers).format_preview_inline(12);
+        assert!(preview.starts_with('['), "{preview}");
+        assert!(preview.ends_with(']'), "{preview}");
+        assert!(preview.contains('…'), "{preview}");
+        assert!(preview.chars().count() <= 12, "{preview}");
+
+        for canonical in [
+            "\"text\"",
+            "[1 2]",
+            "(1, 2)",
+            "{1, 2}",
+            "|x<f64>| 1 |",
+            "<:message>",
+            "<|x<f64>|>",
+        ] {
+            assert_eq!(LegacyValue::preview_canonical_inline(canonical, 1), "…");
+            assert_eq!(LegacyValue::preview_canonical_inline(canonical, 2), "…");
+        }
+
+        let table = LegacyValue::preview_canonical_inline("|x<f64>| 1 2 3 4 5 6 |", 12);
+        assert!(table.starts_with('|'), "{table}");
+        assert!(table.ends_with('|'), "{table}");
+        assert!(table.contains('…'), "{table}");
+        assert!(table.chars().count() <= 12, "{table}");
+
+        let table_with_string_bar = LegacyValue::preview_canonical_inline(
+            "|message<string>| \"left|right\" | \"tail\" |",
+            28,
+        );
+        assert!(
+            table_with_string_bar.starts_with('|'),
+            "{table_with_string_bar}"
+        );
+        assert!(
+            table_with_string_bar.ends_with('|'),
+            "{table_with_string_bar}"
+        );
+        assert!(
+            table_with_string_bar.contains('…'),
+            "{table_with_string_bar}"
+        );
+        assert!(table_with_string_bar.chars().count() <= 28);
+
+        let enum_kind = LegacyValue::preview_canonical_inline(
+            "<:a_very_long_retained_nominal_enum_definition>",
+            16,
+        );
+        assert!(enum_kind.starts_with('<'), "{enum_kind}");
+        assert!(enum_kind.ends_with('>'), "{enum_kind}");
+        assert!(enum_kind.contains('…'), "{enum_kind}");
+
+        let matrix_kind = LegacyValue::preview_canonical_inline("<[string]:1000,1000>", 12);
+        assert!(matrix_kind.starts_with("<["), "{matrix_kind}");
+        assert!(matrix_kind.ends_with('>'), "{matrix_kind}");
+        assert!(matrix_kind.contains('…'), "{matrix_kind}");
+
+        let nested_kind = LegacyValue::preview_canonical_inline(
+            "(<|column0<string> column1<string> column2<string>|>, 1)",
+            28,
+        );
+        assert!(nested_kind.starts_with("(<|"), "{nested_kind}");
+        assert!(nested_kind.ends_with("|>)"), "{nested_kind}");
+        assert!(nested_kind.contains('…'), "{nested_kind}");
+        assert!(nested_kind.chars().count() <= 28, "{nested_kind}");
+    }
+
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     #[test]
     fn matrix_display_preserves_row_major_value_order() {
@@ -4171,8 +5194,147 @@ mod reactive_cell_tests {
             &[1.0, 2.0, 3.0, 4.0],
         )));
         assert_eq!(
-            LegacyValue::MatrixF64(matrix).format_value_inline(),
+            LegacyValue::MatrixF64(matrix).format_canonical_inline(),
             "[1 2; 3 4]"
+        );
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrixd"))]
+    #[test]
+    fn bounded_matrix_formatting_crosses_transparent_value_wrappers() {
+        let matrix = LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(
+            na::DMatrix::from_row_slice(2, 3, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]),
+        )));
+        let typed = LegacyValue::Typed(
+            Box::new(matrix),
+            ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 3]),
+        );
+        let referenced = LegacyValue::MutableReference(Ref::new(typed));
+
+        assert_eq!(
+            referenced.format_canonical_inline_with_element_limit(3),
+            "[1 2 3 …]"
+        );
+        assert_eq!(referenced.format_canonical_inline(), "[1 2 3; 4 5 6]");
+    }
+
+    #[cfg(all(feature = "enum", feature = "tuple", feature = "f64"))]
+    #[test]
+    fn bounded_kind_formatting_traverses_enum_and_reference_wrappers_in_place() {
+        let payload = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(
+            (0..32).map(|_| LegacyValue::F64(Ref::new(0.0))).collect(),
+        )));
+        let enum_id = hash_str("message");
+        let variant_id = hash_str("message/value");
+        let mut names = Dictionary::new();
+        names.insert(enum_id, "message".to_string());
+        names.insert(variant_id, "message/value".to_string());
+        let value =
+            LegacyValue::MutableReference(Ref::new(LegacyValue::Enum(Ref::new(MechEnum {
+                id: enum_id,
+                variants: vec![(variant_id, Some(payload))],
+                names: Ref::new(names),
+            }))));
+
+        assert_eq!(
+            value.format_kind_with_element_limit(2),
+            ":value((f64,f64,…))",
+        );
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "string",
+        feature = "tuple",
+        feature = "set",
+        feature = "map",
+        feature = "record",
+        feature = "enum",
+        feature = "table",
+        feature = "matrixd"
+    ))]
+    #[test]
+    fn bounded_inline_formatting_caps_every_aggregate_family() {
+        let numbers = (1..=5)
+            .map(|number| LegacyValue::F64(Ref::new(number as f64)))
+            .collect::<Vec<_>>();
+
+        let tuple = LegacyValue::Tuple(Ref::new(MechTuple::from_vec(numbers.clone())));
+        assert_eq!(
+            tuple.format_canonical_inline_with_element_limit(2),
+            "(1, 2, …)"
+        );
+
+        let set = LegacyValue::Set(Ref::new(MechSet::from_vec(numbers.clone())));
+        assert_eq!(
+            set.format_canonical_inline_with_element_limit(2),
+            "{1, 2, …}"
+        );
+
+        let map = LegacyValue::Map(Ref::new(MechMap::from_vec(
+            numbers
+                .iter()
+                .enumerate()
+                .map(|(index, value)| {
+                    (
+                        LegacyValue::String(Ref::new(format!("key{index}"))),
+                        value.clone(),
+                    )
+                })
+                .collect(),
+        )));
+        assert_eq!(
+            map.format_canonical_inline_with_element_limit(2),
+            "{\"key0\": 1, \"key1\": 2, …}"
+        );
+
+        let record = LegacyValue::Record(Ref::new(MechRecord::new(vec![
+            ("one", numbers[0].clone()),
+            ("two", numbers[1].clone()),
+            ("three", numbers[2].clone()),
+        ])));
+        assert_eq!(
+            record.format_canonical_inline_with_element_limit(2),
+            "{one: 1, two: 2, …}"
+        );
+
+        let enum_id = hash_str("answer");
+        let variant_id = hash_str("answer/value");
+        let mut names = Dictionary::new();
+        names.insert(enum_id, "answer".to_string());
+        names.insert(variant_id, "answer/value".to_string());
+        let enm = LegacyValue::Enum(Ref::new(MechEnum {
+            id: enum_id,
+            variants: vec![(variant_id, Some(tuple))],
+            names: Ref::new(names),
+        }));
+        assert_eq!(
+            enm.format_canonical_inline_with_element_limit(0),
+            ":value(…)"
+        );
+
+        let column_id = hash_str("message");
+        let column = Matrix::from_vec(
+            vec![
+                LegacyValue::String(Ref::new("first".to_string())),
+                LegacyValue::String(Ref::new("second".to_string())),
+            ],
+            2,
+            1,
+        );
+        let table = LegacyValue::Table(Ref::new(MechTable::from_parts(
+            2,
+            1,
+            vec![(column_id, ValueKind::String, column)],
+            vec![(column_id, "message".to_string())],
+        )));
+        assert_eq!(
+            table.format_canonical_inline_with_element_limit(2),
+            "|message<string>| \"first\" | … |"
+        );
+        assert_eq!(
+            table.format_canonical_inline_with_element_limit(0),
+            "|…<*>| … |"
         );
     }
 

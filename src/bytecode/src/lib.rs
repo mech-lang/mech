@@ -5,6 +5,6 @@
 // bytecode producer package. This crate remains the public bytecode-v1 producer
 // facade selected by full compiler distributions.
 pub use mech_core::{
-    CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
-    CompiledNodeKind, CompiledSymbolDefinition,
+    CompileCtx, CompiledBytecode, CompiledComputeRegion, CompiledInstructionRole,
+    CompiledIntegrityConstraint, CompiledNodeKind, CompiledSymbolDefinition,
 };

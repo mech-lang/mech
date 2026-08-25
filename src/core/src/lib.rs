@@ -1,5 +1,4 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
-#![allow(warnings)]
 #![allow(dead_code)]
 #![feature(where_clause_attrs)]
 

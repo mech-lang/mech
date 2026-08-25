@@ -5,6 +5,8 @@ pub(crate) mod bundle_web;
 #[cfg(feature = "formatter")]
 pub(crate) mod format;
 #[cfg(feature = "run")]
+pub(crate) mod repl;
+#[cfg(feature = "run")]
 pub(crate) mod run;
 #[cfg(feature = "serve")]
 pub(crate) mod serve;

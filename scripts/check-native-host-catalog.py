@@ -121,7 +121,7 @@ def main() -> int:
             "mech-console": ["runtime", "string"],
             "mech-time": ["f64", "runtime"],
             "mech-timer": ["f64", "runtime"],
-            "mech-scene": ["f64", "runtime", "string"],
+            "mech-scene": ["f64", "matrixd", "record", "runtime", "string", "table"],
             "mech-robot-arm": ["bool", "runtime", "string"],
         }
         metadata = json.loads(

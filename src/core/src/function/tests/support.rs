@@ -19,6 +19,7 @@ pub(super) struct TestFunction {
     dependency_kinds: Option<Vec<ReactiveDependencyKind>>,
     dependency_scopes: Option<Vec<ReactiveDependencyScope>>,
     node_kind: ReactiveNodeKind,
+    description_calls: Option<Rc<RefCell<usize>>>,
 }
 
 impl TestFunction {
@@ -29,6 +30,7 @@ impl TestFunction {
             dependency_kinds: None,
             dependency_scopes: None,
             node_kind: ReactiveNodeKind::Combinational,
+            description_calls: None,
         }
     }
 
@@ -40,6 +42,7 @@ impl TestFunction {
             dependency_kinds: None,
             dependency_scopes: None,
             node_kind: ReactiveNodeKind::Combinational,
+            description_calls: None,
         }
     }
 
@@ -61,6 +64,11 @@ impl TestFunction {
 
     pub(super) fn with_node_kind(mut self, node_kind: ReactiveNodeKind) -> Self {
         self.node_kind = node_kind;
+        self
+    }
+
+    pub(super) fn with_description_counter(mut self, calls: Rc<RefCell<usize>>) -> Self {
+        self.description_calls = Some(calls);
         self
     }
 }
@@ -93,6 +101,9 @@ impl MechFunctionImpl for TestFunction {
     }
 
     fn to_string(&self) -> String {
+        if let Some(calls) = &self.description_calls {
+            *calls.borrow_mut() += 1;
+        }
         self.name.to_string()
     }
 

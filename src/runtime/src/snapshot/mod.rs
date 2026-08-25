@@ -49,6 +49,34 @@ impl RuntimeValueSnapshot {
         self.value.kind()
     }
 
+    /// Returns the portable, single-line Mech representation used by value
+    /// events in every interactive host.
+    pub fn format_canonical_inline(&self) -> String {
+        self.value.format_canonical_inline()
+    }
+
+    /// Returns the bounded canonical representation used by interactive
+    /// hosts. Elision never mutates or replaces the detached value.
+    pub fn format_repl_inline(&self, max_elements: usize) -> String {
+        self.value
+            .format_canonical_inline_with_element_limit(max_elements)
+    }
+
+    /// Returns the detached value's rich HTML projection without cloning its
+    /// owned value graph. Browser inspection can therefore publish `ans` and
+    /// render a popup from one captured snapshot.
+    #[cfg(feature = "pretty_print")]
+    pub fn format_html(&self) -> String {
+        self.value.to_html()
+    }
+
+    /// Returns the rich browser projection governed by the same aggregate
+    /// traversal budget as textual REPL output and inline document values.
+    #[cfg(feature = "pretty_print")]
+    pub fn format_repl_html(&self, max_elements: usize) -> String {
+        self.value.to_html_with_element_limit(max_elements)
+    }
+
     pub fn to_value(&self) -> LegacyValue {
         self.value
             .try_deep_snapshot()

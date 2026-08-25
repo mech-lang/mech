@@ -1,101 +1,88 @@
 <!doctype html>
-<html lang="en" data-mech-document-status="loading">
+<html lang="en" data-mech-document-status="loading" data-mech-shim="document">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
   <title>{{TITLE}}</title>
   <link rel="icon" href="https://gitlab.com/mech-lang/assets/-/raw/main/images/icons/favicon.ico?ref_type=heads" type="image/x-icon">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" crossorigin="anonymous">
   <script defer src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" crossorigin="anonymous"></script>
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
-  <style>
-{{STYLESHEET}}
-  </style>
+  <style data-mech-style-layer="palette">{{PALETTE_STYLESHEET}}</style>
+  <style data-mech-style-layer="source">{{MECH_SOURCE_STYLESHEET}}</style>
+  <style data-mech-style-layer="mechdown">{{MECHDOWN_STYLESHEET}}</style>
+  <style data-mech-style-layer="page">{{PAGE_STYLESHEET}}</style>
+  <style data-mech-style-layer="repl">{{MECH_REPL_STYLESHEET}}</style>
 </head>
 <body>
-  <header id="header">
-    <div id="logo">
-      <a href="https://mech-lang.org" aria-label="Mech home">
-        <img src="https://mech-lang.org/img/logo.png" alt="Mech">
-      </a>
-    </div>
-    <nav id="nav" aria-label="Primary">
-      <span><a href="https://about.mech-lang.org">About</a></span>
-      <span><a href="https://mech-lang.org/blog">Blog</a></span>
-      <span><a href="https://mech-lang.org/community">Community</a></span>
-      <span class="active"><a href="https://docs.mech-lang.org">Docs</a></span>
-      <span><a href="https://try.mech-lang.org">Explore</a></span>
-    </nav>
-    <div id="github">
-      <a class="github-button" href="https://github.com/mech-lang/mech" data-size="large" data-show-count="true" aria-label="Star mech-lang/mech on GitHub">Star</a>
-    </div>
-  </header>
-
   <main
-    class="container mech-root"
+    class="workspace mech-root"
+    id="workspace"
     data-mech-document-status="loading"
+    data-mech-presentation="{{PRESENTATION}}"
+    data-mech-console-mode="docked"
     mech-engine-id="0"
     data-mech-source-url-key="{{SOURCE_URL_KEY}}"
-    aria-label="Mech document">
-    <div class="mech-toc" data-mech-toc-shell aria-label="Table of contents">
-      {{TOC}}
-    </div>
+    aria-label="Mech document workspace"
+    data-mech-repl-host>
+    <section class="content-shell" id="contentShell">
+      <div class="content-column">
+        <div class="article-layout" id="articleLayout">
+          {{TOC}}
+          <article class="main-content" aria-label="Mech document" data-mechdown>
+            <header>
+              <p class="hero-kicker">{{SECTION}}</p>
+              <h1>{{TITLE}}</h1>
+            </header>
+            <section class="article-intro" id="articleIntro" aria-label="Introduction">
+              {{ABSTRACT}}
+              {{INTRO}}
+            </section>
+            {{CONTENTS}}
+          </article>
+        </div>
 
-    <section class="content" id="left-pane" aria-label="Document content">
-      <nav id="breadcrumb" class="mech-breadcrumb" aria-label="Breadcrumb"></nav>
-      <article class="mech-document-content">
-        <h1>{{TITLE}}</h1>
-        {{ABSTRACT}}
-        {{INTRO}}
-        {{CONTENTS}}
-        {{CITED}}
-        {{FOOTNOTES}}
-      </article>
+        <section class="article-backmatter" aria-label="Notes and works cited">
+          <div class="backmatter-row backmatter-notes">
+            <div class="backmatter-body" data-mechdown>{{FOOTNOTES}}</div>
+          </div>
+          <div class="backmatter-row backmatter-cited">
+            <div class="backmatter-body" data-mechdown>{{CITED}}</div>
+          </div>
+        </section>
+
+      </div>
     </section>
 
-    <div
-      class="resizer"
-      id="resizer"
-      role="separator"
-      aria-orientation="vertical"
-      aria-label="Resize console"
-      data-mech-console-resizer>
-      <button
-        class="toggle-button"
-        id="toggle-repl"
-        type="button"
-        aria-controls="mech-console"
-        aria-expanded="true"
-        aria-label="Toggle document console"
-        data-mech-console-toggle>‹</button>
-    </div>
+    <div class="resize-handle" role="separator" aria-orientation="vertical" aria-label="Resize console" data-mech-console-resizer data-mech-console-resize-axis="width"></div>
+    <div class="edge-handle" aria-hidden="true" data-mech-console-edge-handle data-mech-console-resizer data-mech-console-resize-axis="width"></div>
 
-    <aside class="console-pane" id="mech-console" aria-label="Document console" data-mech-console-pane>
+    <aside class="console-pane" aria-label="Document console" data-mech-console-pane>
       <div class="console-topbar">
         <div class="console-tabs" role="tablist" aria-label="Console sections">
-          <button class="console-tab active" id="console-tab" type="button" role="tab" aria-selected="true" aria-controls="console-panel" data-tab="console" data-mech-console-tab="console">Console</button>
-          <button class="console-tab" id="output-tab" type="button" role="tab" aria-selected="false" aria-controls="output-panel" data-tab="output" data-mech-console-tab="output">Output</button>
-          <button class="console-tab" id="errors-tab" type="button" role="tab" aria-selected="false" aria-controls="errors-panel" data-tab="errors" data-mech-console-tab="errors">Errors</button>
+          <button class="console-tab" id="mech-console-tab-output" type="button" role="tab" aria-selected="false" aria-controls="mech-console-panel-output" data-mech-console-tab="output">Output</button>
+          <button class="console-tab" id="mech-console-tab-console" type="button" role="tab" aria-selected="true" aria-controls="mech-console-panel-console" data-mech-console-tab="console">Console</button>
+          <button class="console-tab" id="mech-console-tab-errors" type="button" role="tab" aria-selected="false" aria-controls="mech-console-panel-errors" data-mech-console-tab="errors">Errors</button>
         </div>
-        <button class="console-fullscreen-toggle" id="consoleFullscreenToggle" type="button" aria-pressed="false" aria-label="Enter fullscreen" data-mech-console-fullscreen>
+        <button class="output-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen output" data-mech-output-fullscreen>
+          <span aria-hidden="true">⛶</span>
+        </button>
+        <button class="console-fullscreen-toggle" type="button" aria-pressed="false" aria-label="Enter fullscreen workspace" data-mech-console-fullscreen>
           <span aria-hidden="true">⛶</span>
         </button>
       </div>
       <div class="console-panels">
-        <section class="console-panel is-active" id="console-panel" role="tabpanel" aria-labelledby="console-tab" data-panel="console" data-mech-console-panel="console">
+        <section class="console-panel" id="mech-console-panel-console" role="tabpanel" aria-labelledby="mech-console-tab-console" data-mech-console-panel="console">
           {{REPL}}
         </section>
-        <section class="console-panel" id="output-panel" role="tabpanel" aria-labelledby="output-tab" data-panel="output" data-mech-console-panel="output">
-          <div class="console-scroll" id="mech-document-output" data-mech-output-panel></div>
+        <section class="console-panel" id="mech-console-panel-output" role="tabpanel" aria-labelledby="mech-console-tab-output" data-mech-console-panel="output" hidden>
+          <div class="console-scroll" data-mech-output-panel></div>
         </section>
-        <section class="console-panel" id="errors-panel" role="tabpanel" aria-labelledby="errors-tab" data-panel="errors" data-mech-console-panel="errors">
-          <div class="console-scroll" id="mech-document-errors" data-mech-errors-panel aria-live="polite"></div>
+        <section class="console-panel" id="mech-console-panel-errors" role="tabpanel" aria-labelledby="mech-console-tab-errors" data-mech-console-panel="errors" hidden>
+          <div class="console-scroll" data-mech-errors-panel aria-live="polite"></div>
         </section>
       </div>
     </aside>
-    <div class="edge-handle" id="edgeHandle" aria-hidden="true" data-mech-console-edge-handle data-mech-console-resizer></div>
   </main>
 
   <script type="application/x-mech-code" id="mech-document-code" data-mech-document-code>
@@ -104,12 +91,10 @@
   <script>
     window.addEventListener("error", event => {
       if (!event.error) return;
-      document.documentElement.dataset.mechWindowError =
-        event.message || String(event.error);
+      document.documentElement.dataset.mechWindowError = event.message || String(event.error);
     });
     window.addEventListener("unhandledrejection", event => {
-      document.documentElement.dataset.mechUnhandledRejection =
-        String(event.reason);
+      document.documentElement.dataset.mechUnhandledRejection = String(event.reason);
     });
   </script>
   <script

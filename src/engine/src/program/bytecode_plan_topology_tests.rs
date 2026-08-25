@@ -10,6 +10,8 @@ use crate::{
     CompileCtx, CompiledBytecode, CompiledInstructionRole, CompiledIntegrityConstraint,
     CompiledNodeKind, CompiledSymbolDefinition,
 };
+#[cfg(feature = "native-plan")]
+use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, ApplicationRequirement, BytecodeCompilerContext, BytecodeInstruction,
     BytecodeProgram, ChangeDetectionPolicy, DeliveryMode, DimensionExpr, EncodedConstant,
@@ -21,7 +23,7 @@ use mech_core::{
     ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState,
     Ref, Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
     RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
-    SchemaBody, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
+    SchemaBody, SchemaId, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -146,6 +148,50 @@ fn source_program() -> CompilerPlanningProgram {
     )
 }
 
+fn assert_frozen_v1_topology_parity(artifact_a: &ProgramArtifact, artifact_b: &ProgramArtifact) {
+    let artifact = artifact_a;
+    assert_eq!(artifact.contracts(), artifact_b.contracts());
+    assert_eq!(artifact.inputs(), artifact_b.inputs());
+    assert_eq!(artifact.slots(), artifact_b.slots());
+    assert_eq!(artifact.bindings(), artifact_b.bindings());
+    assert_eq!(artifact.outputs(), artifact_b.outputs());
+    assert_eq!(artifact.constraints(), artifact_b.constraints());
+    assert_eq!(artifact.schemas().len(), artifact_b.schemas().len());
+    for index in 0..artifact.schemas().len() {
+        let schema = SchemaId::new(index as u32);
+        assert_eq!(
+            artifact.schemas().entry(schema).unwrap().canonical_bytes(),
+            artifact_b
+                .schemas()
+                .entry(schema)
+                .unwrap()
+                .canonical_bytes(),
+        );
+    }
+    assert_eq!(artifact.constants().len(), artifact_b.constants().len());
+    assert_eq!(artifact.nodes().len(), artifact_b.nodes().len());
+
+    let mut projected_implementation = false;
+    for (source, bytecode) in artifact.nodes().iter().zip(artifact_b.nodes()) {
+        assert_eq!(source.node, bytecode.node);
+        assert_eq!(source.contract, bytecode.contract);
+        assert_eq!(source.requirement, bytecode.requirement);
+        assert_eq!(source.input_bindings, bytecode.input_bindings);
+        assert_eq!(source.output_bindings, bytecode.output_bindings);
+        if source.operation != bytecode.operation {
+            projected_implementation = true;
+            assert_ne!(source.operation.module_path.as_ref(), ["runtime"]);
+            assert_eq!(bytecode.operation.module_path.as_ref(), ["runtime"]);
+        }
+    }
+
+    if projected_implementation {
+        assert_ne!(artifact_a.revision(), artifact_b.revision());
+    } else {
+        assert_eq!(artifact_a.revision(), artifact_b.revision());
+    }
+}
+
 #[test]
 fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> MResult<()> {
     for source in [
@@ -181,15 +227,9 @@ fn ordinary_mech_sources_emit_equivalent_program_artifacts_in_bytecode_v1() -> M
         );
         let artifact_b = decode_program_artifact_sections(&parsed.artifact)
             .expect("normal bytecode-v1 artifact sections must decode");
+        assert_frozen_v1_topology_parity(artifact_a, &artifact_b);
         assert_eq!(artifact_a.revision(), artifact_b.revision());
-        assert_eq!(artifact_a.contracts(), artifact_b.contracts());
-        assert_eq!(artifact_a.inputs(), artifact_b.inputs());
-        assert_eq!(artifact_a.slots(), artifact_b.slots());
-        assert_eq!(artifact_a.nodes(), artifact_b.nodes());
-        assert_eq!(artifact_a.bindings(), artifact_b.bindings());
-        assert_eq!(artifact_a.outputs(), artifact_b.outputs());
         assert!(!artifact_a.schemas().is_empty());
-        assert!(!artifact_a.constants().is_empty());
     }
     Ok(())
 }
@@ -201,18 +241,63 @@ fn compile_artifact_fixture(source: &str) -> MResult<(ProgramArtifact, ProgramAr
     let parsed = ParsedProgram::from_bytes(&bytecode)?;
     let bytecode_artifact = decode_program_artifact_sections(&parsed.artifact)
         .expect("fixture bytecode artifact sections must decode");
+    assert_frozen_v1_topology_parity(&source_artifact, &bytecode_artifact);
     assert_eq!(source_artifact.revision(), bytecode_artifact.revision());
-    assert_eq!(source_artifact.contracts(), bytecode_artifact.contracts());
-    assert_eq!(source_artifact.inputs(), bytecode_artifact.inputs());
-    assert_eq!(source_artifact.slots(), bytecode_artifact.slots());
-    assert_eq!(source_artifact.nodes(), bytecode_artifact.nodes());
-    assert_eq!(source_artifact.bindings(), bytecode_artifact.bindings());
-    assert_eq!(source_artifact.outputs(), bytecode_artifact.outputs());
-    assert_eq!(
-        source_artifact.constraints(),
-        bytecode_artifact.constraints()
-    );
     Ok((source_artifact, bytecode_artifact))
+}
+
+#[test]
+fn frozen_v1_compatibility_product_preserves_implementation_operation_ids() -> MResult<()> {
+    let mut program = source_program();
+    program.plan_source_for_test("lhs := 1.0\nrhs := 2.0\nlhs < rhs")?;
+    let (artifact, bytecode) = program.compile_frozen_v1_program_product()?.into_parts();
+    let parsed = ParsedProgram::from_bytes(&bytecode)?;
+    let decoded = decode_program_artifact_sections(&parsed.artifact)
+        .expect("frozen-v1 compatibility artifact sections must decode");
+
+    assert_frozen_v1_topology_parity(&artifact, &decoded);
+    assert_ne!(artifact.revision(), decoded.revision());
+    assert!(decoded.nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["runtime"]
+            && node.operation.operation_name == TEST_LESS_RUNTIME
+    }));
+    Ok(())
+}
+
+#[test]
+fn composite_return_materialization_has_semantic_node_metadata() -> MResult<()> {
+    let (artifact, decoded) = compile_artifact_fixture("(1.0, 2.0)")?;
+    let composite = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack"
+        })
+        .expect("direct tuple return must retain its composite-pack node");
+    assert_eq!(composite.input_bindings.len(), 3);
+    assert_eq!(composite.output_bindings.len(), 1);
+    assert_eq!(artifact.outputs().len(), 1);
+    assert_eq!(artifact.outputs(), decoded.outputs());
+    Ok(())
+}
+
+#[test]
+fn immutable_composite_definitions_remain_reactive_packs() -> MResult<()> {
+    let (artifact, _) =
+        compile_artifact_fixture("first := 1.0\nsecond := 2.0\npair := (first, second)\npair")?;
+    let composite = artifact
+        .nodes()
+        .iter()
+        .find(|node| {
+            node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "composite-pack"
+        })
+        .expect("an immutable composite definition must not be frozen as a startup constant");
+    assert!(composite.input_bindings.len() >= 2);
+    assert_eq!(composite.output_bindings.len(), 1);
+    assert_eq!(artifact.outputs().len(), 1);
+    Ok(())
 }
 
 fn assert_f64_schema(artifact: &ProgramArtifact, schema: mech_core::SchemaId) {
@@ -361,29 +446,16 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
     for schema in comparison_input_schemas {
         assert_f64_schema(&comparison, schema);
     }
-    let catalog = source_catalog();
-    for node in comparison.nodes() {
-        let exact_name = if node.operation.module_path.as_ref() == ["runtime"] {
-            node.operation.operation_name.clone()
-        } else {
-            node.operation
-                .module_path
-                .iter()
-                .chain(std::iter::once(&node.operation.operation_name))
-                .cloned()
-                .collect::<Vec<_>>()
-                .join("/")
-        };
-        assert!(
-            catalog
-                .runtime_entries()
-                .any(|entry| entry.name == exact_name),
-            "artifact operation {exact_name:?} must preserve an installed runtime entry name"
-        );
-        assert!(!exact_name.starts_with("runtime-"));
-        assert!(!exact_name.starts_with("host-"));
-        assert!(!exact_name.starts_with("resource-"));
-    }
+    assert!(comparison.nodes().iter().any(|node| {
+        node.operation.module_path.as_ref() == ["compare"] && node.operation.operation_name == "lt"
+    }));
+    assert!(
+        comparison
+            .nodes()
+            .iter()
+            .all(|node| node.operation.module_path.as_ref() != ["runtime"]),
+        "artifact nodes must name semantic operations, not runtime implementations"
+    );
 
     let (integrity, decoded_integrity) = compile_artifact_fixture(include_str!(
         "../../tests/fixtures/program-artifact/integrity-constraint.mec"
@@ -417,11 +489,45 @@ fn ordinary_source_artifacts_preserve_exact_semantics() -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "native-plan")]
+#[test]
+fn mutable_matrix_state_retains_its_declaration_time_initializer() -> MResult<()> {
+    let mut program = source_program();
+    program.plan_source_for_test(
+        "~state := [1.0 2.0; 3.0 4.0]\nreplacement := [0.0 0.0; 0.0 0.0]\nstate = replacement\nstate",
+    )?;
+    let product = program.compile_program_product()?;
+    let artifact = product.artifact();
+    let state = artifact
+        .slots()
+        .iter()
+        .find(|slot| slot.role == SlotRole::State)
+        .expect("mutable matrix must produce a state slot");
+    let InitializerReference::Constant(initializer) = state
+        .initializer
+        .expect("mutable matrix state must retain an initializer");
+    let ValueData::Matrix(initializer) = artifact.constants().get(initializer).unwrap().data()
+    else {
+        panic!("matrix state initializer must remain a matrix")
+    };
+    let SequenceView::F64(values) = initializer.elements() else {
+        panic!("matrix state initializer must retain f64 elements")
+    };
+    assert_eq!(
+        values
+            .iter()
+            .map(|value| value.to_f64())
+            .collect::<Vec<_>>(),
+        vec![1.0, 2.0, 3.0, 4.0]
+    );
+    Ok(())
+}
+
 #[test]
 fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
     let (artifact, decoded) =
         compile_artifact_fixture("input := 1.0\n~state := 1.0\nstate = input\noutput := state")?;
-    assert_eq!(artifact.revision(), decoded.revision());
+    assert_frozen_v1_topology_parity(&artifact, &decoded);
     assert!(
         artifact.inputs().is_empty(),
         "the immutable local constant must not become a host observation input"
@@ -432,6 +538,21 @@ fn equal_interned_constants_keep_distinct_register_roles() -> MResult<()> {
         .find(|slot| slot.role == SlotRole::State)
         .expect("equal state initializer must retain its state role");
     assert!(state.initializer.is_some());
+    Ok(())
+}
+
+#[test]
+fn multiple_full_state_writers_fail_closed() -> MResult<()> {
+    let mut program = source_program();
+    program.plan_source_for_test(
+        "~state := 1.0\nlimit := 2.0\nbefore := state < limit\nstate = limit\nstate = 3.0\nstate",
+    )?;
+
+    let error = program
+        .compile_program_product()
+        .expect_err("multiple full writers must not produce an ambiguous state artifact");
+    assert_eq!(error.kind_name(), "ProgramArtifactCompilationError");
+    assert!(error.kind_message().contains("InvalidStateWriterChain"));
     Ok(())
 }
 
@@ -586,6 +707,23 @@ fn compiled_fixture(
     requirements: Vec<ApplicationRequirement>,
     return_register: Register,
 ) -> CompiledBytecode {
+    let instruction_operations = instructions
+        .iter()
+        .zip(&instruction_roles)
+        .map(|(instruction, role)| {
+            (matches!(role, Some(CompiledInstructionRole::Node(_)))
+                && matches!(
+                    instruction,
+                    BytecodeInstruction::RuntimeNullary { .. }
+                        | BytecodeInstruction::RuntimeUnary { .. }
+                        | BytecodeInstruction::RuntimeBinary { .. }
+                        | BytecodeInstruction::RuntimeTernary { .. }
+                        | BytecodeInstruction::RuntimeQuaternary { .. }
+                        | BytecodeInstruction::RuntimeVariadic { .. }
+                ))
+            .then(|| "compare/lt".to_owned())
+        })
+        .collect();
     CompiledBytecode {
         program: BytecodeProgram {
             register_count: register_kinds.len() as u32,
@@ -598,6 +736,7 @@ fn compiled_fixture(
         },
         runtime_function_names: BTreeMap::new(),
         instruction_contracts: vec![None; instruction_roles.len()],
+        instruction_operations,
         instruction_source_nodes: vec![None; instruction_roles.len()],
         instruction_roles,
         register_collection_cardinalities: vec![None; register_kinds.len()],
@@ -606,6 +745,7 @@ fn compiled_fixture(
         symbol_definitions: Vec::new(),
         return_register,
         integrity_constraints: Vec::new(),
+        compute_regions: Vec::new(),
     }
 }
 
@@ -731,6 +871,16 @@ fn catalog_contract_fills_an_empty_specialized_function_sidecar() {
 #[test]
 fn malformed_compiled_sidecars_fail_closed() {
     let catalog = source_catalog();
+
+    let mut missing_operation = valid_compiled_fixture();
+    missing_operation.instruction_operations[2] = None;
+    assert!(matches!(
+        crate::compile_executable_program_artifact(&missing_operation, &catalog),
+        Err(crate::ArtifactBuildError::MissingSemanticOperation {
+            instruction: 2,
+            implementation,
+        }) if implementation == TEST_LESS_RUNTIME
+    ));
 
     let mut missing_role = valid_compiled_fixture();
     missing_role.instruction_roles[2] = None;
@@ -981,8 +1131,10 @@ fn malformed_compiled_sidecars_fail_closed() {
         Vec::new(),
         0,
     );
-    non_boolean_integrity.integrity_constraints =
-        vec![CompiledIntegrityConstraint { result_register: 0 }];
+    non_boolean_integrity.integrity_constraints = vec![CompiledIntegrityConstraint {
+        name: "constraint-0".to_owned(),
+        result_register: 0,
+    }];
     assert!(matches!(
         crate::compile_executable_program_artifact(&non_boolean_integrity, &catalog),
         Err(crate::ArtifactBuildError::IntegrityConstraintSchemaMismatch { constraint: 0, .. })
@@ -1002,8 +1154,10 @@ fn malformed_compiled_sidecars_fail_closed() {
     ));
 
     let mut wrong_integrity_register = non_boolean_integrity.clone();
-    wrong_integrity_register.integrity_constraints =
-        vec![CompiledIntegrityConstraint { result_register: 1 }];
+    wrong_integrity_register.integrity_constraints = vec![CompiledIntegrityConstraint {
+        name: "constraint-1".to_owned(),
+        result_register: 1,
+    }];
     assert!(matches!(
         crate::compile_executable_program_artifact(&wrong_integrity_register, &catalog),
         Err(

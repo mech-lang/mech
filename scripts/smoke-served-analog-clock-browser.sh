@@ -220,28 +220,13 @@ if pairs != expected_pairs:
     fail("project source manifest has unexpected source pairs")
 PY
 
-google-chrome \
-  --headless=new \
-  --no-sandbox \
-  --disable-gpu \
-  --disable-dev-shm-usage \
-  --run-all-compositor-stages-before-draw \
-  --virtual-time-budget=30000 \
-  --dump-dom \
-  --user-data-dir="$chrome_profile" \
-  "$page_url" >"$project_dir/chrome-warmup.dom" 2>"$project_dir/chrome-warmup.stderr"
-
 set +e
-google-chrome \
-  --headless=new \
-  --no-sandbox \
-  --disable-gpu \
-  --disable-dev-shm-usage \
-  --run-all-compositor-stages-before-draw \
-  --virtual-time-budget=7000 \
-  --dump-dom \
-  --user-data-dir="$chrome_profile" \
-  "$page_url" >"$dom_file" 2>"$chrome_log"
+python3 -m tests.browser.harness \
+  --url "$page_url" --profile "$chrome_profile" \
+  --dom "$dom_file" --log "$chrome_log" \
+  --wait "document.documentElement.dataset.mechLiveUpdated === 'true'" \
+  --description "the resident analog clock to advance" \
+  --flag=--disable-gpu --flag=--run-all-compositor-stages-before-draw
 chrome_status="$?"
 set -e
 

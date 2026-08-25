@@ -44,6 +44,30 @@ pub(crate) fn build_cli() -> Command {
                 .action(ArgAction::Append),
         )
         .arg(
+            Arg::new("repl")
+                .long("repl")
+                .help("Start the interactive Mech REPL")
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("nofun")
+                .long("nofun")
+                .help("Use a plain inline REPL (also MECH_NOFUN=1 or MECH_REPL_STYLE=plain)")
+                .long_help(
+                    "Use a bare inline REPL without colors, decorative formatting, animations, Mika, or the Mech logo. Also selected by MECH_NOFUN=1, MECH_REPL_STYLE=plain, or TERM=dumb. Rich mode respects NO_COLOR, CLICOLOR=0, and CI.",
+                )
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
+            Arg::new("quiet")
+                .long("quiet")
+                .help("Suppress automatic REPL source and value echo")
+                .long_help(
+                    "Suppress automatic REPL source and value echo for every entry. Explicit commands, program output, and diagnostics remain visible. Also selected by MECH_REPL_QUIET=1 or MECH_QUIET=1. A trailing semicolon suppresses one entry without enabling quiet mode.",
+                )
+                .action(ArgAction::SetTrue),
+        )
+        .arg(
             Arg::new("debug")
                 .short('d')
                 .long("debug")
@@ -104,7 +128,7 @@ async fn async_main() -> MResult<()> {
 pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     let flags = root_flags(&cli_matches);
     #[cfg(any(feature = "formatter", feature = "serve"))]
-    let resources = WebResourceDefaults::new(VERSION);
+    let resources = WebResourceDefaults::for_current_package();
 
     #[cfg(feature = "bundle_web")]
     if let Some(bundle_matches) = cli_matches.subcommand_matches("bundle-web") {
@@ -142,8 +166,17 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
         return crate::cli::commands::format::run(options).await;
     }
 
-    // Historical CLI behavior treats unmatched root arguments as run inputs. When the run feature
-    // is enabled, dispatch falls through to the run command before considering bare REPL startup.
+    // A targetless invocation is the interactive resident REPL. It must be
+    // recognized before root arguments fall through to the production run command.
+    #[cfg(feature = "run")]
+    if is_repl_invocation(&cli_matches) {
+        return crate::cli::commands::repl::run(
+            cli_matches.get_flag("nofun"),
+            cli_matches.get_flag("quiet"),
+        );
+    }
+
+    // Historical CLI behavior treats unmatched root arguments as run inputs.
     #[cfg(feature = "run")]
     {
         let args = crate::cli::run_options::RunCliArgs::from_matches(
@@ -163,6 +196,12 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     }
 
     Ok(CliOutcome::success())
+}
+
+#[cfg(feature = "run")]
+fn is_repl_invocation(cli_matches: &ArgMatches) -> bool {
+    cli_matches.subcommand_name().is_none()
+        && cli_matches.get_many::<String>("mech_paths").is_none()
 }
 
 #[cfg(any(feature = "serve", feature = "run"))]

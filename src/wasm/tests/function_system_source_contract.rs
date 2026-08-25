@@ -167,6 +167,12 @@ fn enabled_standard_profile_is_fully_catalog_owned() {
     );
 }
 
+#[cfg(feature = "browser_compute")]
+#[wasm_bindgen_test]
+fn browser_compute_feature_closure_includes_ceil() {
+    assert!(source_catalog().module_export("math", "ceil").is_some());
+}
+
 #[wasm_bindgen_test]
 fn scalar_source_addition_uses_the_explicit_catalog() {
     let mut runtime = browser_runtime_builder()

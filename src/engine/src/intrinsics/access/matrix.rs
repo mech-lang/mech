@@ -8,6 +8,9 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::sync::LazyLock;
 
+#[cfg(feature = "subscript_formula")]
+use crate::portable_index::ToPortableIndex;
+
 fn matrix_selection_contract(
     input_count: usize,
     _postcondition_name: &'static str,
@@ -4039,4 +4042,202 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     );
 
     Ok(())
+}
+
+#[cfg(feature = "subscript_formula")]
+declare_matrix_selection_contract!(PURE_UNARY_INDEX_CONVERSION_CONTRACT, 1, "scalar-index");
+
+#[cfg(feature = "subscript_formula")]
+macro_rules! define_reactive_scalar_index {
+    ($name:ident, $source_type:ty, $runtime_name:literal) => {
+        #[derive(Debug)]
+        struct $name {
+            source: Ref<$source_type>,
+            out: Ref<usize>,
+        }
+
+        impl $name {
+            fn from_source(source: Ref<$source_type>) -> MResult<Self> {
+                let value = (*source.borrow()).to_portable_index().ok_or_else(|| {
+                    MechError::new(
+                        CannotConvertToTypeError {
+                            target_type: "portable index",
+                        },
+                        None,
+                    )
+                })? as usize;
+                Ok(Self {
+                    source,
+                    out: Ref::new(value),
+                })
+            }
+        }
+
+        impl MechFunctionImpl for $name {
+            fn solve_result(&self) -> MResult<()> {
+                *self.out.borrow_mut() =
+                    (*self.source.borrow()).to_portable_index().ok_or_else(|| {
+                        MechError::new(
+                            CannotConvertToTypeError {
+                                target_type: "portable index",
+                            },
+                            None,
+                        )
+                    })? as usize;
+                Ok(())
+            }
+
+            fn out(&self) -> LegacyValue {
+                LegacyValue::Index(self.out.clone())
+            }
+
+            fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+                Some(&PURE_UNARY_INDEX_CONVERSION_CONTRACT)
+            }
+
+            fn semantic_operation_name(&self) -> Option<&str> {
+                Some("access/index")
+            }
+
+            fn to_string(&self) -> String {
+                format!("{self:#?}")
+            }
+
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+                Ok(self.reactive_output_values())
+            }
+        }
+
+        #[cfg(feature = "semantic-compiler")]
+        impl MechFunctionCompiler for $name {
+            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+                compile_unop!($runtime_name, self.out, self.source, ctx);
+            }
+        }
+    };
+}
+
+#[cfg(all(feature = "subscript_formula", feature = "u8"))]
+define_reactive_scalar_index!(ReactiveScalarIndexU8, u8, "ReactiveScalarIndex<u8>");
+#[cfg(all(feature = "subscript_formula", feature = "u16"))]
+define_reactive_scalar_index!(ReactiveScalarIndexU16, u16, "ReactiveScalarIndex<u16>");
+#[cfg(all(feature = "subscript_formula", feature = "u32"))]
+define_reactive_scalar_index!(ReactiveScalarIndexU32, u32, "ReactiveScalarIndex<u32>");
+#[cfg(all(feature = "subscript_formula", feature = "u64"))]
+define_reactive_scalar_index!(ReactiveScalarIndexU64, u64, "ReactiveScalarIndex<u64>");
+#[cfg(all(feature = "subscript_formula", feature = "u128"))]
+define_reactive_scalar_index!(ReactiveScalarIndexU128, u128, "ReactiveScalarIndex<u128>");
+#[cfg(all(feature = "subscript_formula", feature = "i8"))]
+define_reactive_scalar_index!(ReactiveScalarIndexI8, i8, "ReactiveScalarIndex<i8>");
+#[cfg(all(feature = "subscript_formula", feature = "i16"))]
+define_reactive_scalar_index!(ReactiveScalarIndexI16, i16, "ReactiveScalarIndex<i16>");
+#[cfg(all(feature = "subscript_formula", feature = "i32"))]
+define_reactive_scalar_index!(ReactiveScalarIndexI32, i32, "ReactiveScalarIndex<i32>");
+#[cfg(all(feature = "subscript_formula", feature = "i64"))]
+define_reactive_scalar_index!(ReactiveScalarIndexI64, i64, "ReactiveScalarIndex<i64>");
+#[cfg(all(feature = "subscript_formula", feature = "i128"))]
+define_reactive_scalar_index!(ReactiveScalarIndexI128, i128, "ReactiveScalarIndex<i128>");
+#[cfg(all(feature = "subscript_formula", feature = "f32"))]
+define_reactive_scalar_index!(ReactiveScalarIndexF32, f32, "ReactiveScalarIndex<f32>");
+#[cfg(all(feature = "subscript_formula", feature = "f64"))]
+define_reactive_scalar_index!(ReactiveScalarIndexF64, f64, "ReactiveScalarIndex<f64>");
+#[cfg(feature = "subscript_formula")]
+define_reactive_scalar_index!(
+    ReactiveScalarIndexUsize,
+    usize,
+    "ReactiveScalarIndex<usize>"
+);
+
+#[cfg(feature = "subscript_formula")]
+macro_rules! append_reactive_scalar_index {
+    ($plan:expr, $source:expr, $function_type:ident) => {{
+        let function = $function_type::from_source($source)?;
+        let output = function.out();
+        $plan.borrow_mut().push(Box::new(function));
+        Ok(output)
+    }};
+}
+
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
+fn append_reactive_scalar_index_for_value(
+    value: &LegacyValue,
+    plan: &Plan,
+) -> MResult<LegacyValue> {
+    let value = crate::patterns::deep_detach_value(value);
+    match &value {
+        LegacyValue::Index(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexUsize)
+        }
+        #[cfg(feature = "bool")]
+        LegacyValue::Bool(_) => Ok(value.clone()),
+        #[cfg(feature = "u8")]
+        LegacyValue::U8(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU8)
+        }
+        #[cfg(feature = "u16")]
+        LegacyValue::U16(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU16)
+        }
+        #[cfg(feature = "u32")]
+        LegacyValue::U32(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU32)
+        }
+        #[cfg(feature = "u64")]
+        LegacyValue::U64(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU64)
+        }
+        #[cfg(feature = "u128")]
+        LegacyValue::U128(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexU128)
+        }
+        #[cfg(feature = "i8")]
+        LegacyValue::I8(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI8)
+        }
+        #[cfg(feature = "i16")]
+        LegacyValue::I16(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI16)
+        }
+        #[cfg(feature = "i32")]
+        LegacyValue::I32(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI32)
+        }
+        #[cfg(feature = "i64")]
+        LegacyValue::I64(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI64)
+        }
+        #[cfg(feature = "i128")]
+        LegacyValue::I128(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexI128)
+        }
+        #[cfg(feature = "f32")]
+        LegacyValue::F32(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexF32)
+        }
+        #[cfg(feature = "f64")]
+        LegacyValue::F64(source) => {
+            append_reactive_scalar_index!(plan, source.clone(), ReactiveScalarIndexF64)
+        }
+        _ => value.as_index(),
+    }
+}
+
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
+pub(crate) fn reactive_scalar_index(
+    value: &LegacyValue,
+    execution: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
+    let plan = execution.plan();
+    let cells = value.reactive_cell_ids();
+    let produced_by_plan = {
+        let plan = plan.borrow();
+        (0..plan.len()).any(|index| {
+            plan.node(index)
+                .is_some_and(|node| node.outputs.iter().any(|output| cells.contains(output)))
+        })
+    };
+    if !crate::expressions::string_access_input_is_live(value, execution) && !produced_by_plan {
+        return value.as_index();
+    }
+    append_reactive_scalar_index_for_value(value, &plan)
 }

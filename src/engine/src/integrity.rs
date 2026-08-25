@@ -547,6 +547,11 @@ fn stable_value_kind(value: &LegacyValue) -> Result<ValueKind, ()> {
             let value = reference.try_borrow().map_err(|_| ())?;
             stable_value_kind(&value)
         }
+        // Cargo may unify additional mech-core value features without enabling
+        // the corresponding local mech-engine feature. Ask the defining crate
+        // for the kind of those otherwise-unnameable variants.
+        #[allow(unreachable_patterns)]
+        _ => Ok(value.kind()),
     }
 }
 

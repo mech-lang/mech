@@ -47,6 +47,12 @@ class ObsoleteProgramReachabilityTests(unittest.TestCase):
         findings = self.scan({"src/lib.rs": "mech_program::execute(program);\n"})
         self.assertEqual(len(findings), 1)
 
+    def test_mech_program_css_selector_literal_is_allowed(self):
+        findings = self.scan(
+            {"tests/style_contract.rs": 'assert!(css.contains(".mech-program {"));\n'}
+        )
+        self.assertEqual(findings, [])
+
     def test_obsolete_feature_or_package_path_is_rejected(self):
         for content in (
             '[features]\nmech-program = []\n',

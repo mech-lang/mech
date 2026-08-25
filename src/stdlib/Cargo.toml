@@ -127,6 +127,7 @@ standard_operations = [
   "mech-engine/math_standard", "mech-engine/compare_default", "mech-engine/logic_default",
   "mech-engine/range_default", "mech-engine/matrix_default", "mech-engine/set_standard",
   "mech-engine/string_default", "mech-engine/stats_default",
+  "mech-engine/combinatorics_default",
   "mech-math", "mech-math/standard_runtime",
   "mech-compare", "mech-compare/standard_runtime",
   "mech-logic", "mech-logic/standard_runtime",
@@ -135,6 +136,7 @@ standard_operations = [
   "mech-set", "mech-set/standard_runtime",
   "mech-string", "mech-string/standard_runtime",
   "mech-stats", "mech-stats/standard_runtime",
+  "mech-combinatorics", "mech-combinatorics/standard_runtime",
 ]
 
 full_operations = [
@@ -181,7 +183,7 @@ math_default = [
   "mech-math", "mech-math/math_default",
   "math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_mod",
   "math_neg", "math_add_assign", "math_sub_assign", "math_mul_assign",
-  "math_div_assign", "math_sqrt", "math_acos", "math_acosh", "math_acot",
+  "math_div_assign", "math_sqrt", "math_ceil", "math_acos", "math_acosh", "math_acot",
   "math_acsc", "math_asec", "math_asin", "math_asinh", "math_atan",
   "math_atan2", "math_atanh", "math_cos", "math_cosh", "math_cot",
   "math_csc", "math_sec", "math_sin", "math_sinh", "math_tan", "math_tanh",
@@ -211,6 +213,7 @@ combinatorics_default = ["combinatorics_n_choose_k"]
 
 # Machine-owned leaf operations select the owning crate's concrete runtime
 # implementation and, where syntax has a dedicated branch, its engine marker.
+math_abs = ["mech-math", "mech-math/abs"]
 math_add = ["mech-math", "mech-math/add", "mech-engine/math_add"]
 math_sub = ["mech-math", "mech-math/sub", "mech-engine/math_sub"]
 math_mul = ["mech-math", "mech-math/mul", "mech-engine/math_mul"]
@@ -223,6 +226,7 @@ math_sub_assign = ["mech-math", "mech-math/sub_assign", "mech-engine/math_sub_as
 math_mul_assign = ["mech-math", "mech-math/mul_assign", "mech-engine/math_mul_assign"]
 math_div_assign = ["mech-math", "mech-math/div_assign", "mech-engine/math_div_assign"]
 math_sqrt = ["mech-math", "mech-math/sqrt", "mech-engine/math_sqrt"]
+math_ceil = ["mech-math", "mech-math/ceil"]
 math_acos = ["mech-math", "mech-math/acos", "mech-engine/math_acos"]
 math_acosh = ["mech-math", "mech-math/acosh", "mech-engine/math_acosh"]
 math_acot = ["mech-math", "mech-math/acot", "mech-engine/math_acot"]

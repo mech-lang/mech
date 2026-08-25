@@ -7,6 +7,11 @@ use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
 pub const DEFAULT_HOST_INPUT_CAPACITY: usize = 1024;
 
+/// Detached host or compiler-initialization value.
+///
+/// Matrix variants use Mech's column-major runtime order. Serialized
+/// `ProgramArtifact` matrix constants use canonical row-major order and must
+/// be translated by an executor when materialized into one of these values.
 #[derive(Clone, Debug, PartialEq)]
 pub enum RuntimeHostInputValue {
     Empty,
@@ -40,9 +45,44 @@ pub enum RuntimeHostInputValue {
         columns: usize,
         values: Vec<f64>,
     },
+    F32Matrix {
+        rows: usize,
+        columns: usize,
+        values: Vec<f32>,
+    },
 }
 
 impl RuntimeHostInputValue {
+    pub fn from_numeric_mech_value(value: &LegacyValue) -> MResult<Self> {
+        let value =
+            crate::host_arg_resolved("runtime compiler input", std::slice::from_ref(value), 0)?;
+        match value {
+            #[cfg(feature = "f32")]
+            LegacyValue::F32(value) => Ok(Self::F32(*value.borrow())),
+            #[cfg(feature = "f64")]
+            LegacyValue::F64(value) => Ok(Self::F64(*value.borrow())),
+            #[cfg(all(feature = "matrix", feature = "f32"))]
+            LegacyValue::MatrixF32(value) => Ok(Self::F32Matrix {
+                rows: value.rows(),
+                columns: value.cols(),
+                values: value.as_vec(),
+            }),
+            #[cfg(all(feature = "matrix", feature = "f64"))]
+            LegacyValue::MatrixF64(value) => Ok(Self::F64Matrix {
+                rows: value.rows(),
+                columns: value.cols(),
+                values: value.as_vec(),
+            }),
+            _ => Err(input_error(
+                "RuntimeNumericValueUnsupported",
+                format!(
+                    "compiler value kind `{}` cannot become a detached runtime input",
+                    value.kind()
+                ),
+            )),
+        }
+    }
+
     pub fn into_mech_value(self) -> MResult<LegacyValue> {
         match self {
             RuntimeHostInputValue::Empty => Ok(LegacyValue::Empty),
@@ -177,7 +217,7 @@ impl RuntimeHostInputValue {
                 "RuntimeHostInputValueUnsupported",
                 "index matrix host input values require the `matrix` feature",
             )),
-            #[cfg(feature = "matrix")]
+            #[cfg(all(feature = "matrix", feature = "f64"))]
             RuntimeHostInputValue::F64Matrix {
                 rows,
                 columns,
@@ -188,10 +228,26 @@ impl RuntimeHostInputValue {
                     values, rows, columns,
                 )))
             }
-            #[cfg(not(feature = "matrix"))]
+            #[cfg(all(feature = "matrix", feature = "f32"))]
+            RuntimeHostInputValue::F32Matrix {
+                rows,
+                columns,
+                values,
+            } => {
+                validate_matrix_input(rows, columns, values.len())?;
+                Ok(LegacyValue::MatrixF32(ValueMatrix::from_vec(
+                    values, rows, columns,
+                )))
+            }
+            #[cfg(not(all(feature = "matrix", feature = "f32")))]
+            RuntimeHostInputValue::F32Matrix { .. } => Err(input_error(
+                "RuntimeHostInputValueUnsupported",
+                "f32 matrix host input values require the `matrix` and `f32` features",
+            )),
+            #[cfg(not(all(feature = "matrix", feature = "f64")))]
             RuntimeHostInputValue::F64Matrix { .. } => Err(input_error(
                 "RuntimeHostInputValueUnsupported",
-                "f64 matrix host input values require the `matrix` feature",
+                "f64 matrix host input values require the `matrix` and `f64` features",
             )),
         }
     }
@@ -246,11 +302,21 @@ pub struct RuntimeHostInputUpdate {
 #[derive(Clone, Debug, PartialEq)]
 pub struct RuntimeHostInput {
     pub updates: Vec<RuntimeHostInputUpdate>,
+    coalescing_group: Option<RuntimeHostInputCoalescingGroup>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct RuntimeHostInputCoalescingGroup {
+    scope: String,
+    sequence: u64,
 }
 
 impl RuntimeHostInput {
     pub fn new(updates: Vec<RuntimeHostInputUpdate>) -> MResult<Self> {
-        let input = Self { updates };
+        let input = Self {
+            updates,
+            coalescing_group: None,
+        };
         input.validate()?;
         Ok(input)
     }
@@ -258,7 +324,33 @@ impl RuntimeHostInput {
     pub fn single(source: RuntimeHostInputSource, value: RuntimeHostInputValue) -> Self {
         Self {
             updates: vec![RuntimeHostInputUpdate { source, value }],
+            coalescing_group: None,
         }
+    }
+
+    /// Keep packets with the same group eligible for latest-value coalescing,
+    /// while preserving a resident-turn boundary between different groups.
+    /// Drivers use this for event gestures whose state packets may collapse
+    /// together, but whose distinct activations must never collapse together.
+    /// The group is scoped to the packet's resource base URI so equal sequence
+    /// numbers from independent host instances cannot merge.
+    pub fn with_coalescing_group(mut self, group: u64) -> Self {
+        let scope = self
+            .updates
+            .first()
+            .expect("validated host inputs contain at least one update")
+            .source
+            .base_uri()
+            .to_owned();
+        self.coalescing_group = Some(RuntimeHostInputCoalescingGroup {
+            scope,
+            sequence: group,
+        });
+        self
+    }
+
+    pub(crate) fn coalescing_group(&self) -> Option<&RuntimeHostInputCoalescingGroup> {
+        self.coalescing_group.as_ref()
     }
 
     pub fn validate(&self) -> MResult<()> {
@@ -274,6 +366,16 @@ impl RuntimeHostInput {
                 return Err(input_error(
                     "RuntimeHostInputDuplicateSource",
                     "host input packet contains duplicate sources",
+                ));
+            }
+            if self
+                .coalescing_group
+                .as_ref()
+                .is_some_and(|group| group.scope != update.source.base_uri())
+            {
+                return Err(input_error(
+                    "RuntimeHostInputCoalescingScopeInvalid",
+                    "coalesced host input packets must stay within one resource base URI",
                 ));
             }
         }

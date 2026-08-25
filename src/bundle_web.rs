@@ -228,7 +228,7 @@ pub(crate) fn validate_static_bundle_wasm_package(path: &Path) -> MResult<()> {
 
 fn static_wasm_profile_error() -> MechError {
     validation_error(
-        "configuration error: serve.wasm was built without static served-project support; rebuild it with `bash scripts/build-mech-browser.sh` or the `browser_project` feature",
+        "configuration error: serve.wasm was built without static served-project support; rebuild it with `python scripts/build-wasm.py --profile browser` or the `browser_project` feature",
     )
 }
 

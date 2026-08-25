@@ -231,14 +231,8 @@ impl FrozenEkfArtifactClosure {
                 continue;
             }
 
-            if node.operation.module_path.as_ref() == ["runtime"]
-                && matches!(
-                    node.operation.operation_name.as_str(),
-                    "Assign<f64DVector>"
-                        | "Assign<f64DMatrix>"
-                        | "Assign<f64Vector3>"
-                        | "Assign<f64Matrix3>"
-                )
+            if node.operation.module_path.as_ref() == ["core"]
+                && node.operation.operation_name == "assign"
             {
                 if inputs.len() != 1 || outputs.len() != 1 || !is_state_update_contract(declared) {
                     return Err(FrozenEkfArtifactClosureError::InvalidStateUpdate);

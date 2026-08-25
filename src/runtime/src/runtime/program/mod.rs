@@ -35,6 +35,8 @@ mod query_tests;
 pub(crate) use compiler::ProgramCompilerView;
 #[cfg(feature = "resident-routing-source")]
 pub use compiler::{CompilerImportValueUnsupported, ProgramCompiler};
+#[cfg(feature = "compute")]
+pub use compiler::{ComputeRegionCompilation, MixedProgramCompilation};
 #[cfg(feature = "resident-external")]
 pub use external::*;
 #[cfg(feature = "resident-routing")]

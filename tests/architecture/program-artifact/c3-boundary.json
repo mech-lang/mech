@@ -14,7 +14,8 @@
     "ArtifactOutputs",
     "ArtifactIntegrityConstraints",
     "ArtifactOperations",
-    "ArtifactOperationContracts"
+    "ArtifactOperationContracts",
+    "ArtifactComputeRegions"
   ],
   "artifact_fields": [
     "revision",
@@ -26,7 +27,8 @@
     "nodes",
     "bindings",
     "outputs",
-    "constraints"
+    "constraints",
+    "compute_regions"
   ],
   "forbidden_artifact_tokens": [
     "LegacyValue",

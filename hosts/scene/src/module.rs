@@ -4,7 +4,7 @@ pub fn scene_host_manifest() -> mech_core::MResult<mech_runtime::HostManifestCon
         contexts: vec![mech_runtime::HostContextManifest {
             name: "frame".to_string(),
             base_uri_template: "scene://{instance}/frame".to_string(),
-            operations: vec!["write".to_string()],
+            operations: vec!["read".to_string(), "write".to_string()],
         }],
     })
 }

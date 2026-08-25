@@ -479,6 +479,8 @@ struct ProgramStateCheckpoint {
     plan: Plan,
     #[cfg(feature = "functions")]
     plan_checkpoint: PlanCheckpoint,
+    #[cfg(feature = "functions")]
+    compute_regions: Vec<ProgramComputeRegion>,
     kinds: KindTable,
     #[cfg(feature = "enum")]
     enums: EnumTable,
@@ -533,6 +535,8 @@ impl ProgramStateCheckpoint {
         }
         #[cfg(feature = "functions")]
         let plan_checkpoint = plan.checkpoint();
+        #[cfg(feature = "functions")]
+        let compute_regions = state.compute_regions.clone();
 
         #[cfg(feature = "enum")]
         let enums = state.enums.clone();
@@ -578,6 +582,8 @@ impl ProgramStateCheckpoint {
             plan,
             #[cfg(feature = "functions")]
             plan_checkpoint,
+            #[cfg(feature = "functions")]
+            compute_regions,
             kinds: state.kinds.clone(),
             #[cfg(feature = "enum")]
             enums,
@@ -625,6 +631,7 @@ impl ProgramStateCheckpoint {
                 state.function_extensions = self.function_extensions.clone();
                 state.user_functions = self.user_functions.table.clone();
                 state.plan = self.plan.clone();
+                state.compute_regions = self.compute_regions.clone();
             }
             state.kinds = self.kinds.clone();
             #[cfg(feature = "enum")]
@@ -1464,7 +1471,17 @@ impl Interpreter {
 
     #[cfg(feature = "functions")]
     pub fn clear_plan(&mut self) {
-        self.state.borrow_mut().plan.borrow_mut().clear();
+        let mut state = self.state.borrow_mut();
+        // `Interpreter::clone` intentionally shares reactive cells and plan
+        // storage. Planning scopes such as comprehensions clone the enclosing
+        // interpreter so they can see lexical values, but their executable
+        // graph must be isolated. Mutating the shared `Plan` here erased every
+        // node accumulated by the enclosing program before the nested scope.
+        // Install fresh plan storage instead so clearing one interpreter never
+        // truncates another interpreter's program.
+        state.plan = Plan::new();
+        state.compute_regions.clear();
+        drop(state);
         self.reactive_turn_state = ReactiveTurnState::default();
     }
 
@@ -1776,6 +1793,40 @@ impl<'a> InterpreterExecution<'a> {
 
     pub(crate) fn presentation_namespace(&self) -> u64 {
         self.presentation_namespace
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn plan_len(&self) -> usize {
+        self.interpreter.state.borrow().plan.len()
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn record_compute_region(
+        &self,
+        name: String,
+        placement: ComputePlacement,
+        plan_nodes: core::ops::Range<usize>,
+    ) -> MResult<()> {
+        if plan_nodes.is_empty() {
+            return Err(MechError::new(EmptyComputeRegionError { name }, None));
+        }
+        let mut state = self.interpreter.state.borrow_mut();
+        if state
+            .compute_regions
+            .iter()
+            .any(|region| region.name == name)
+        {
+            return Err(MechError::new(
+                ComputeRegionNameConflictError { name },
+                None,
+            ));
+        }
+        state.compute_regions.push(ProgramComputeRegion {
+            name,
+            placement,
+            plan_nodes,
+        });
+        Ok(())
     }
 
     #[cfg(feature = "functions")]

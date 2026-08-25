@@ -1,9 +1,9 @@
 use mech_core::{
-    LegacyMaterializationContext, LegacySnapshotError, LegacyValue, MResult, MechError,
-    MechErrorKind, NominalKey, NominalKind, SchemaBody, SchemaId, SchemaTable, ShapeInstance,
-    Value, legacy_from_snapshot,
+    IntegerWidth, LegacyMaterializationContext, LegacySnapshotError, LegacyValue, MResult,
+    MechError, MechErrorKind, NominalKey, NominalKind, SchemaBody, SchemaId, SchemaTable,
+    ShapeInstance, Value, legacy_from_snapshot,
     matrix::ToMatrix,
-    snapshot::{F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft},
+    snapshot::{F32Bits, F64Bits, SnapshotValidationContext, ValueDataDraft, ValueDraft},
 };
 
 pub fn captured_value_from_legacy(
@@ -37,28 +37,40 @@ pub fn provider_value_from_canonical(value: &Value, schemas: &SchemaTable) -> MR
     let Some(schema) = schemas.entry(value.schema()) else {
         return Err(unsupported("resident provider schema is absent"));
     };
-    if matches!(
-        schema.schema().body(),
-        SchemaBody::Matrix { element, .. }
-            if matches!(element.as_ref(), SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
-    ) {
+    if let SchemaBody::Matrix { element, .. } = schema.schema().body() {
         let LegacyValue::MatrixValue(matrix) = legacy else {
             return Ok(legacy);
         };
         let shape = matrix.shape();
         let [rows, columns] = shape.as_slice() else {
             return Err(unsupported(
-                "resident provider f64 matrix must have exactly two dimensions",
+                "resident provider matrix must have exactly two dimensions",
             ));
         };
-        let values = matrix
-            .as_vec()
-            .into_iter()
-            .map(|value| value.expect_f64().map(|value| *value.borrow()))
-            .collect::<MResult<Vec<_>>>()?;
-        return Ok(LegacyValue::MatrixF64(ToMatrix::to_matrixd(
-            values, *rows, *columns,
-        )));
+        return match element.as_ref() {
+            #[cfg(feature = "f32")]
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+                let values = matrix
+                    .as_vec()
+                    .into_iter()
+                    .map(|value| legacy_f32(&value))
+                    .collect::<MResult<Vec<_>>>()?;
+                Ok(LegacyValue::MatrixF32(ToMatrix::to_matrixd(
+                    values, *rows, *columns,
+                )))
+            }
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
+                let values = matrix
+                    .as_vec()
+                    .into_iter()
+                    .map(|value| value.expect_f64().map(|value| *value.borrow()))
+                    .collect::<MResult<Vec<_>>>()?;
+                Ok(LegacyValue::MatrixF64(ToMatrix::to_matrixd(
+                    values, *rows, *columns,
+                )))
+            }
+            _ => Ok(LegacyValue::MatrixValue(matrix)),
+        };
     }
     Ok(legacy)
 }
@@ -70,11 +82,45 @@ fn legacy_data(
 ) -> MResult<ValueDataDraft> {
     match body {
         SchemaBody::Bool => legacy_bool(value).map(ValueDataDraft::Bool),
+        SchemaBody::UnsignedInteger(width) => match width {
+            IntegerWidth::W8 => legacy_u8(value).map(ValueDataDraft::U8),
+            IntegerWidth::W16 => legacy_u16(value).map(ValueDataDraft::U16),
+            IntegerWidth::W32 => legacy_u32(value).map(ValueDataDraft::U32),
+            IntegerWidth::W64 => legacy_u64(value).map(ValueDataDraft::U64),
+            IntegerWidth::W128 => legacy_u128(value).map(ValueDataDraft::U128),
+        },
+        SchemaBody::SignedInteger(width) => match width {
+            IntegerWidth::W8 => legacy_i8(value).map(ValueDataDraft::I8),
+            IntegerWidth::W16 => legacy_i16(value).map(ValueDataDraft::I16),
+            IntegerWidth::W32 => legacy_i32(value).map(ValueDataDraft::I32),
+            IntegerWidth::W64 => legacy_i64(value).map(ValueDataDraft::I64),
+            IntegerWidth::W128 => legacy_i128(value).map(ValueDataDraft::I128),
+        },
+        SchemaBody::FloatingPoint(mech_core::FloatWidth::W32) => {
+            legacy_f32(value).map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
+        }
         SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) => {
             legacy_f64(value).map(|value| ValueDataDraft::F64(F64Bits::from_f64(value)))
         }
         SchemaBody::Index => legacy_index(value).map(ValueDataDraft::Index),
         SchemaBody::String => legacy_string(value).map(ValueDataDraft::String),
+        SchemaBody::Matrix {
+            element,
+            dimensions,
+        } if matches!(
+            element.as_ref(),
+            SchemaBody::FloatingPoint(mech_core::FloatWidth::W32)
+        ) =>
+        {
+            let values = canonical_matrix_values(value, dimensions, shape, legacy_f32_values)?;
+            Ok(ValueDataDraft::Matrix(
+                values
+                    .into_iter()
+                    .map(|value| ValueDataDraft::F32(F32Bits::from_f32(value)))
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+            ))
+        }
         SchemaBody::Matrix {
             element,
             dimensions,
@@ -122,6 +168,54 @@ fn legacy_data(
             "resident provider adapter does not support this schema yet",
         )),
     }
+}
+
+macro_rules! legacy_integer_adapter {
+    ($function:ident, $feature:literal, $variant:ident, $type:ty) => {
+        #[cfg(feature = $feature)]
+        fn $function(value: &LegacyValue) -> MResult<$type> {
+            match value {
+                LegacyValue::$variant(value) => Ok(*value.borrow()),
+                _ => Err(unsupported(concat!(
+                    "provider returned a non-",
+                    $feature,
+                    " value"
+                ))),
+            }
+        }
+
+        #[cfg(not(feature = $feature))]
+        fn $function(_value: &LegacyValue) -> MResult<$type> {
+            Err(unsupported(concat!(
+                $feature,
+                " provider adapter feature is disabled"
+            )))
+        }
+    };
+}
+
+legacy_integer_adapter!(legacy_u8, "u8", U8, u8);
+legacy_integer_adapter!(legacy_u16, "u16", U16, u16);
+legacy_integer_adapter!(legacy_u32, "u32", U32, u32);
+legacy_integer_adapter!(legacy_u64, "u64", U64, u64);
+legacy_integer_adapter!(legacy_u128, "u128", U128, u128);
+legacy_integer_adapter!(legacy_i8, "i8", I8, i8);
+legacy_integer_adapter!(legacy_i16, "i16", I16, i16);
+legacy_integer_adapter!(legacy_i32, "i32", I32, i32);
+legacy_integer_adapter!(legacy_i64, "i64", I64, i64);
+legacy_integer_adapter!(legacy_i128, "i128", I128, i128);
+
+#[cfg(feature = "f32")]
+fn legacy_f32(value: &LegacyValue) -> MResult<f32> {
+    match value {
+        LegacyValue::F32(value) => Ok(*value.borrow()),
+        _ => Err(unsupported("provider returned a non-f32 value")),
+    }
+}
+
+#[cfg(not(feature = "f32"))]
+fn legacy_f32(_value: &LegacyValue) -> MResult<f32> {
+    Err(unsupported("f32 provider adapter feature is disabled"))
 }
 
 fn canonical_matrix_values<T>(
@@ -255,6 +349,18 @@ fn legacy_index_values(_value: &LegacyValue) -> MResult<Vec<u64>> {
 #[cfg(all(feature = "matrix", feature = "f64"))]
 fn legacy_f64_values(value: &LegacyValue) -> MResult<Vec<f64>> {
     value.as_vecf64()
+}
+
+#[cfg(all(feature = "matrix", feature = "f32"))]
+fn legacy_f32_values(value: &LegacyValue) -> MResult<Vec<f32>> {
+    value.as_vecf32()
+}
+
+#[cfg(not(all(feature = "matrix", feature = "f32")))]
+fn legacy_f32_values(_value: &LegacyValue) -> MResult<Vec<f32>> {
+    Err(unsupported(
+        "f32 matrix provider adapter feature is disabled",
+    ))
 }
 
 #[cfg(not(all(feature = "matrix", feature = "f64")))]

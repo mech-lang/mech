@@ -216,18 +216,44 @@ impl InMemorySourceResolver {
         let specifier = specifier.into();
         let source = source.into();
 
-        let resolved = ResolvedSource::new(
+        #[cfg(feature = "source")]
+        let syntax_tree = mech_syntax::parser::parse(source.trim())?;
+
+        let mut resolved = ResolvedSource::new(
             specifier.clone(),
             Self::default_canonical_uri(&specifier),
             MechSourceCode::String(source),
         )
         .with_kind(SourceKind::Mech);
 
+        #[cfg(feature = "source")]
+        {
+            resolved = resolved.with_syntax_tree(syntax_tree);
+        }
+
         self.insert_source(specifier, resolved)
     }
 
     pub fn with_string(mut self, specifier: impl Into<String>, source: impl Into<String>) -> Self {
-        let _ = self.insert_string(specifier, source);
+        let specifier = specifier.into();
+        let source = source.into();
+        let mut resolved = ResolvedSource::new(
+            specifier.clone(),
+            Self::default_canonical_uri(&specifier),
+            MechSourceCode::String(source.clone()),
+        )
+        .with_kind(SourceKind::Mech);
+
+        // The builder cannot return a parse error without breaking its fluent
+        // API. Preserve malformed source without a cache so the compiler's
+        // canonical fallback parse reports the real syntax diagnostic instead
+        // of turning it into a misleading missing-source error.
+        #[cfg(feature = "source")]
+        if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
+            resolved = resolved.with_syntax_tree(syntax_tree);
+        }
+
+        let _ = self.insert_source(specifier, resolved);
         self
     }
 
@@ -477,6 +503,23 @@ mod tests {
         let resolved = resolver.resolve(&request).unwrap().unwrap();
 
         assert_eq!(resolved.name, "main.mec");
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn builder_preserves_invalid_source_for_canonical_parse_diagnostics() {
+        let resolver = InMemorySourceResolver::new().with_string("broken.mec", "x := [");
+
+        let resolved = resolver
+            .resolve(&SourceRequest::new("broken.mec"))
+            .unwrap()
+            .expect("malformed source must remain resolvable");
+
+        assert!(resolved.syntax_tree.is_none());
+        assert!(matches!(
+            resolved.source,
+            MechSourceCode::String(ref source) if source == "x := ["
+        ));
     }
 
     #[test]

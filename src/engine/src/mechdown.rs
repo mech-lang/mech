@@ -1,6 +1,87 @@
 use crate::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum SectionAnnotationSemanticError {
+    Unsupported { name: Box<str> },
+    DuplicatePlacement { name: Box<str> },
+    ConflictingPlacement { first: Box<str>, second: Box<str> },
+    PlacementArgumentsUnsupported { name: Box<str> },
+}
+
+impl MechErrorKind for SectionAnnotationSemanticError {
+    fn name(&self) -> &str {
+        match self {
+            Self::Unsupported { .. } => "UnsupportedSectionAnnotation",
+            Self::DuplicatePlacement { .. } => "DuplicateSectionPlacementAnnotation",
+            Self::ConflictingPlacement { .. } => "ConflictingSectionPlacementAnnotations",
+            Self::PlacementArgumentsUnsupported { .. } => {
+                "SectionPlacementAnnotationArgumentsUnsupported"
+            }
+        }
+    }
+
+    fn message(&self) -> String {
+        match self {
+            Self::Unsupported { name } => {
+                format!("section annotation `@{name}` is not supported")
+            }
+            Self::DuplicatePlacement { name } => {
+                format!("section placement annotation `@{name}` is duplicated")
+            }
+            Self::ConflictingPlacement { first, second } => {
+                format!("section placement annotations `@{first}` and `@{second}` conflict")
+            }
+            Self::PlacementArgumentsUnsupported { name } => {
+                format!("section placement annotation `@{name}` does not accept arguments")
+            }
+        }
+    }
+}
+
+pub fn section_compute_placement(section: &Section) -> MResult<Option<ComputePlacement>> {
+    let mut selected = None::<(&str, ComputePlacement)>;
+    for annotation in &section.annotations {
+        let placement = match annotation.name.as_ref() {
+            "compute" => ComputePlacement::Compute,
+            "cpu" => ComputePlacement::Cpu,
+            "gpu" => ComputePlacement::Gpu,
+            crate::program::PROGRAM_OUTPUT_PUBLICATION_ANNOTATION => continue,
+            name => {
+                return Err(MechError::new(
+                    SectionAnnotationSemanticError::Unsupported { name: name.into() },
+                    None,
+                )
+                .with_compiler_loc());
+            }
+        };
+        if !annotation.arguments.is_empty() {
+            return Err(MechError::new(
+                SectionAnnotationSemanticError::PlacementArgumentsUnsupported {
+                    name: annotation.name.clone(),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        if let Some((previous_name, previous)) = selected {
+            let error = if previous == placement {
+                SectionAnnotationSemanticError::DuplicatePlacement {
+                    name: annotation.name.clone(),
+                }
+            } else {
+                SectionAnnotationSemanticError::ConflictingPlacement {
+                    first: previous_name.into(),
+                    second: annotation.name.clone(),
+                }
+            };
+            return Err(MechError::new(error, None).with_compiler_loc());
+        }
+        selected = Some((&annotation.name, placement));
+    }
+    Ok(selected.map(|(_, placement)| placement))
+}
+
 // Mechdown
 // ----------------------------------------------------------------------------
 
@@ -24,6 +105,14 @@ fn update_ans_symbol(value: &LegacyValue, p: &InterpreterExecution<'_>) {
 }
 
 pub fn program(program: &Program, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    if let Some(title) = &program.title {
+        for (import, comment) in &title.imports {
+            module_import_runtime(import, p)?;
+            if let Some(comment) = comment {
+                self::comment(comment, p)?;
+            }
+        }
+    }
     body(&program.body, p)
 }
 
@@ -36,9 +125,21 @@ pub fn body(body: &Body, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
 }
 
 pub fn section(section: &Section, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    #[cfg(feature = "functions")]
+    let plan_start = p.plan_len();
+    let compute = section_compute_placement(section)?;
     let mut result = Ok(LegacyValue::Empty);
     for el in &section.elements {
         result = Ok(section_element(&el, p)?);
+    }
+    #[cfg(feature = "functions")]
+    if let Some(placement) = compute {
+        let name = section
+            .subtitle
+            .as_ref()
+            .map(Subtitle::to_string)
+            .unwrap_or_default();
+        p.record_compute_region(name, placement, plan_start..p.plan_len())?;
     }
     result
 }
@@ -68,7 +169,10 @@ pub fn section_element(
         SectionElement::Diagram(x) => x.hash(&mut hasher),
         SectionElement::MechCode(code) => {
             for (c, cmmnt) in code {
-                out = mech_code(&c, p)?;
+                let value = mech_code(&c, p)?;
+                if crate::program::code_is_program_value(c) {
+                    out = value;
+                }
                 match cmmnt {
                     Some(cmmnt) => {
                         let cmmnt_value = comment(cmmnt, p)?;
@@ -88,8 +192,8 @@ pub fn section_element(
                 out = eval_fenced_code_block(&block.code, p, false)?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let (last_code, _) = block.code.last().unwrap();
-                let out_id = hash_str(&format!("{:?}", last_code));
+                let out_id = crate::program::fenced_document_output_id(block)
+                    .expect("an executable fenced block has an output identity");
                 p.out_values.borrow_mut().insert(out_id, out.clone());
             } else {
                 let mut sub_interpreters = p.sub_interpreters.borrow_mut();
@@ -107,9 +211,15 @@ pub fn section_element(
                 })?;
                 // Save the output of the last code block in the parent interpreter
                 // so we can reference it later.
-                let (last_code, _) = block.code.last().unwrap();
-                let out_id = hash_str(&format!("{:?}", last_code));
+                let out_id = crate::program::fenced_document_output_id(block)
+                    .expect("an executable fenced block has an output identity");
                 pp.out_values.borrow_mut().insert(out_id, out.clone());
+                // A named fence is a scoped evaluator, but its returned value is
+                // still the latest document result. Mirror it into the parent
+                // `ans` projection so the document-boundary capture observes the
+                // same value the enclosing Mechdown program returns.
+                #[cfg(feature = "symbol_table")]
+                update_ans_symbol(&out, p);
             }
             return Ok(out);
         }
@@ -207,6 +317,82 @@ pub fn section_element(
     Ok(LegacyValue::Id(hash))
 }
 
+#[cfg(test)]
+mod section_annotation_tests {
+    use super::*;
+
+    fn annotation(name: &str, with_argument: bool) -> SectionAnnotation {
+        let arguments = with_argument
+            .then(|| {
+                SectionAnnotationArgument::Atom(Atom {
+                    name: Identifier {
+                        name: Token::new(
+                            TokenKind::Identifier,
+                            SourceRange::default(),
+                            "finite".chars().collect(),
+                        ),
+                    },
+                })
+            })
+            .into_iter()
+            .collect();
+        SectionAnnotation {
+            name: name.into(),
+            arguments,
+        }
+    }
+
+    fn section(annotations: Vec<SectionAnnotation>) -> Section {
+        Section {
+            subtitle: None,
+            annotations,
+            elements: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn placement_annotations_normalize_to_semantic_placement() {
+        for (name, expected) in [
+            ("compute", ComputePlacement::Compute),
+            ("cpu", ComputePlacement::Cpu),
+            ("gpu", ComputePlacement::Gpu),
+        ] {
+            assert_eq!(
+                section_compute_placement(&section(vec![annotation(name, false)])).unwrap(),
+                Some(expected)
+            );
+        }
+    }
+
+    #[test]
+    fn unsupported_duplicate_conflicting_and_argument_placements_are_structured_errors() {
+        let cases = [
+            (
+                section(vec![annotation("required", true)]),
+                "UnsupportedSectionAnnotation",
+            ),
+            (
+                section(vec![annotation("gpu", false), annotation("gpu", false)]),
+                "DuplicateSectionPlacementAnnotation",
+            ),
+            (
+                section(vec![annotation("cpu", false), annotation("gpu", false)]),
+                "ConflictingSectionPlacementAnnotations",
+            ),
+            (
+                section(vec![annotation("gpu", true)]),
+                "SectionPlacementAnnotationArgumentsUnsupported",
+            ),
+        ];
+        for (section, expected) in cases {
+            assert_eq!(
+                section_compute_placement(&section).unwrap_err().kind_name(),
+                expected
+            );
+        }
+    }
+}
+
 #[cfg(feature = "functions")]
 fn eval_fenced_code_block(
     code: &Vec<(MechCode, Option<Comment>)>,
@@ -216,7 +402,8 @@ fn eval_fenced_code_block(
     let mut out = LegacyValue::Empty;
     for (c, cmmnt) in code {
         match mech_code(c, interpreter) {
-            Ok(value) => out = value,
+            Ok(value) if crate::program::code_is_program_value(c) => out = value,
+            Ok(_) => {}
             Err(err) => {
                 #[cfg(feature = "string")]
                 if isolate_errors {
@@ -338,13 +525,7 @@ pub fn module_import_runtime(
         }
         ModuleImportKind::Item => {
             let item = import.item.as_ref().ok_or_else(|| {
-                MechError::new(
-                    MissingFunctionError {
-                        function_id: hash_str(&module),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
+                MechError::new(MissingFunctionError::named(&module), None).with_compiler_loc()
             })?;
             let item = module_import_item_path(item);
             match &import.alias {
@@ -396,13 +577,7 @@ pub fn module_import_runtime(
         }
         ModuleImportKind::Group => {
             let group_items = import.group_items.as_ref().ok_or_else(|| {
-                MechError::new(
-                    MissingFunctionError {
-                        function_id: hash_str(&module),
-                    },
-                    None,
-                )
-                .with_compiler_loc()
+                MechError::new(MissingFunctionError::named(&module), None).with_compiler_loc()
             })?;
 
             let items = group_items
@@ -457,7 +632,9 @@ pub fn mech_code(code: &MechCode, p: &InterpreterExecution<'_>) -> MResult<Legac
             .with_tokens(x.tokens())),
     }?;
     #[cfg(feature = "symbol_table")]
-    update_ans_symbol(&out, p);
+    if crate::program::code_is_program_value(code) {
+        update_ans_symbol(&out, p);
+    }
     Ok(out)
 }
 

@@ -12,10 +12,18 @@ pub(crate) static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm
 pub(crate) static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
 
 #[cfg(has_file_project_js)]
-pub(crate) static PROJECTJS: &str = include_str!("../../include/project.js");
+pub(crate) static PROJECTJS: &str = concat!(
+    include_str!("../../include/browser-compute.js"),
+    "\n",
+    include_str!("../../include/project.js")
+);
 
 #[cfg(has_file_document_js)]
-pub(crate) static DOCUMENTJS: &str = include_str!("../../include/document.js");
+pub(crate) static DOCUMENTJS: &str = concat!(
+    include_str!("../../include/browser-compute.js"),
+    "\n",
+    include_str!("../../include/document.js")
+);
 
 #[cfg(has_file_shim)]
 pub(crate) static SHIMHTML: &str = include_str!("../../include/index.html");
@@ -25,7 +33,27 @@ pub(crate) static SHIMHTML: &str = "No Embedded Shim";
 #[cfg(has_file_stylesheet)]
 pub(crate) static STYLESHEET: &str = include_str!("../../include/style.css");
 #[cfg(not(has_file_stylesheet))]
-pub(crate) static STYLESHEET: &str = "No Embedded Stylesheet";
+pub(crate) static STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static PALETTE_STYLESHEET: &str = include_str!("../../include/palette.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static PALETTE_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECH_SOURCE_STYLESHEET: &str = include_str!("../../include/mech-source.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECH_SOURCE_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECHDOWN_STYLESHEET: &str = include_str!("../../include/mechdown.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECHDOWN_STYLESHEET: &str = "";
+
+#[cfg(has_file_stylesheet)]
+pub(crate) static MECH_REPL_STYLESHEET: &str = include_str!("../../include/mech-repl.css");
+#[cfg(not(has_file_stylesheet))]
+pub(crate) static MECH_REPL_STYLESHEET: &str = "";
 
 #[cfg(has_file_wasm)]
 fn embedded_wasm() -> Option<&'static [u8]> {
@@ -77,7 +105,11 @@ pub(crate) struct WebResourceDefaults {
 }
 
 impl WebResourceDefaults {
-    pub(crate) fn new(version: &str) -> Self {
+    pub(crate) fn for_current_package() -> Self {
+        Self::for_package_version(env!("CARGO_PKG_VERSION"))
+    }
+
+    fn for_package_version(version: &str) -> Self {
         Self {
             shim_backup_url:
                 "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html"
@@ -143,6 +175,16 @@ pub(crate) struct LoadedStylesheets {
     pub css: String,
     pub events: Vec<ResourceEvent>,
     pub local_paths: Vec<PathBuf>,
+}
+
+pub(crate) fn html_style_sheets(page: String) -> mech_syntax::formatter::HtmlStyleSheets {
+    mech_syntax::formatter::HtmlStyleSheets {
+        palette: PALETTE_STYLESHEET.to_string(),
+        source: MECH_SOURCE_STYLESHEET.to_string(),
+        mechdown: MECHDOWN_STYLESHEET.to_string(),
+        page,
+        repl: MECH_REPL_STYLESHEET.to_string(),
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -304,11 +346,21 @@ pub(crate) async fn load_stylesheets(
         combined.push_str(&stylesheet_str);
         events.push(event);
     }
+    let css = compose_stylesheets(STYLESHEET, &combined);
     Ok(LoadedStylesheets {
-        css: combined,
+        css,
         events,
         local_paths,
     })
+}
+
+fn compose_stylesheets(embedded: &str, custom: &str) -> String {
+    match (embedded.is_empty(), custom.is_empty()) {
+        (true, true) => String::new(),
+        (true, false) => custom.to_string(),
+        (false, true) => embedded.to_string(),
+        (false, false) => format!("{embedded}\n{custom}"),
+    }
 }
 
 #[cfg(test)]
@@ -438,9 +490,21 @@ mod tests {
             "unused",
         ))
         .unwrap();
-        assert_eq!(loaded.css, "body{}");
+        assert_eq!(loaded.css, compose_stylesheets(STYLESHEET, "body{}"));
+        assert!(loaded.css.ends_with("body{}"));
         assert_eq!(loaded.local_paths, vec![css.canonicalize().unwrap()]);
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn stylesheet_composition_handles_absent_embedded_assets_without_invalid_css() {
+        assert_eq!(compose_stylesheets("", "custom{}"), "custom{}");
+        assert_eq!(compose_stylesheets("embedded{}", ""), "embedded{}");
+        assert_eq!(
+            compose_stylesheets("embedded{}", "custom{}"),
+            "embedded{}\ncustom{}"
+        );
+        assert_eq!(compose_stylesheets("", ""), "");
     }
 
     #[test]
@@ -455,10 +519,23 @@ mod tests {
 
     #[test]
     fn default_shim_fallback_points_at_the_shipped_index_shell() {
-        let defaults = WebResourceDefaults::new("0.0.0");
+        let defaults = WebResourceDefaults::for_package_version("0.0.0");
         assert_eq!(
             defaults.shim_backup_url,
             "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html",
+        );
+    }
+
+    #[test]
+    fn web_release_fallbacks_use_an_exact_package_version() {
+        let defaults = WebResourceDefaults::for_package_version("0.3.6");
+        assert_eq!(
+            defaults.wasm_backup_url,
+            "https://github.com/mech-lang/mech/releases/download/v0.3.6-beta/mech_wasm_bg.wasm",
+        );
+        assert_eq!(
+            defaults.js_backup_url,
+            "https://github.com/mech-lang/mech/releases/download/v0.3.6-beta/mech_wasm.js",
         );
     }
 }

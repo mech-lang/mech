@@ -1,0 +1,85 @@
+config := {
+  runtime: {
+    name: "ekf-localization"
+
+    resident-durability: "volatile"
+
+    limits: {
+      max-turn-duration-ms: 2000
+    }
+  }
+
+  serve: {
+    address: "127.0.0.1"
+    port: 8081
+    paths: ["."]
+    presentation: "output"
+  }
+
+  hosts: [
+    {
+      name: "clock"
+      provider: "timer"
+      settings: {
+        frequency-hz: 60
+        max-catch-up-steps: 1
+        queue-policy: "latest"
+      }
+    }
+
+    {
+      name: "localization"
+      provider: "scene"
+      settings: {
+        renderer: "output"
+      }
+    }
+
+    {
+      name: "filters"
+      provider: "compute"
+      settings: {
+        region: "ekf-batch"
+        backend: "auto"
+      }
+    }
+  ]
+
+  run: {
+    paths: ["localization.mec"]
+
+    grants: [
+      {
+        target: "clock/tick"
+        operations: ["read"]
+        paths: ["tick"]
+      }
+
+      {
+        target: "localization/frame"
+        operations: ["read", "write"]
+        paths: [
+          "pointer-pulse"
+          "pointer-position"
+          "pointer-pressed"
+          "pointer-delta-seconds"
+          "replace"
+        ]
+      }
+
+      {
+        target: "filters/kernel"
+        operations: ["read", "write"]
+        paths: [
+          "input/control"
+          "input/camera"
+          "input/measurement"
+          "sample/result.0"
+          "sample/result.2"
+          "turns"
+          "turn"
+        ]
+      }
+    ]
+  }
+}

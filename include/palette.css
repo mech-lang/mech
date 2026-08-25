@@ -1,0 +1,214 @@
+/*
+ * Canonical Mech color roles.
+ *
+ * This file contains color, interaction, and depth tokens only. Component
+ * styles belong in style.css, mechdown.css, mech-source.css, and mech-repl.css.
+ * Names describe jobs rather than arbitrary shade ladders.
+ *
+ * Permanent rule: solid fills only. Never use gradients.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* Surfaces: keep the established page, content, and code depths distinct. */
+  --mech-canvas: hsl(206 24% 6%);
+  --mech-surface-subtle: hsl(207 23% 8%);
+  --mech-surface-accent: hsl(205 10% 47%);
+  --mech-surface-dark: hsl(206 24% 3%);
+  --mech-surface-elevated: #151b21;
+  --mech-code-bg: #090d11;
+  --mech-panel: #171c26;
+  --mech-panel-raised: #1f2533;
+  --mech-output-bg: #020303;
+  --mech-border: #4d5257;
+  --mech-page-border: #35393d;
+  --mech-heading-rule: #343b46;
+  --mech-divider: #7e8892;
+  --mech-table-row-odd: hsl(222 25% 9%);
+  --mech-table-row-even: #171c26;
+  --mech-table-row-hover: hsl(222 25% 17%);
+  --mech-control-surface: #171d21;
+  --mech-control-border: #777;
+
+  /* Text: prose, shell chrome, code, and captions are separate blog roles. */
+  --mech-text-reading: hsl(40 100% 95%);
+  --mech-text-primary: #f3f3e6;
+  --mech-text-body: hsl(206 24% 90%);
+  --mech-text-code: hsl(41 49% 90%);
+  --mech-text-code-dark: hsl(41 49% 25%);
+  --mech-text-secondary: #bebcaa;
+  --mech-text-muted: #827f6b;
+  --mech-text-hero-secondary: #aabebe;
+  --mech-text-hero-primary: hsl(168 97% 95%);
+  --mech-text-caption: #eadec2;
+  --mech-text-abstract: #dcd4c9;
+  --mech-text-footnote: #ada594;
+  --mech-text-table-heading: #dbc3a5;
+  --mech-text-equation: #efd5cd;
+  --mech-console-text: #e6edf3;
+
+  /* Brand and interaction: the blog's gold roles, in their original order. */
+  --mech-brand: #f2b63d;
+  --mech-brand-deep: hsl(42 89% 60%);
+  --mech-link: hsl(42 89% 70%);
+  --mech-link-hover: hsl(42 89% 80%);
+  --mech-brand-highlight: #ffefc9;
+  --mech-reference-hover: #f18181;
+  --mech-logo: rgb(246 192 78);
+  --mech-mika: #f3c15c;
+  --mech-nav-hover: #ecd7ad;
+  --mech-blue-primary: #2f6fa3;
+  --mech-blue-bright: #3e86c1;
+  --mech-focus: var(--mech-brand);
+
+  /* Editorial families used by the shell, TOC, and supporting furniture. */
+  --mech-editorial-teal-soft: hsl(163 39% 71%);
+  --mech-editorial-teal: hsl(164 47% 45%);
+  --mech-editorial-teal-deep: hsl(164 47% 35%);
+  --mech-editorial-coral-soft: rgb(205 159 141);
+  --mech-editorial-coral: rgb(224 122 82);
+  --mech-editorial-coral-deep: #c96840;
+  --mech-editorial-purple-soft: hsl(254 12% 58%);
+  --mech-editorial-purple: hsl(255 22% 54%);
+  --mech-editorial-purple-deep: hsl(255 21% 46%);
+  --mech-hero-accent: hsl(168 100% 75%);
+  --mech-toc-accent: hsl(308 42% 69%);
+  --mech-toc-accent-soft: hsl(308 42% 59%);
+  --mech-toc-text: hsl(308 17% 73%);
+  --mech-toc-border: var(--mech-toc-text);
+  --mech-list-emoji: #ee6262;
+  --mech-footer-heading-rule: #7f7f7f;
+  --mech-mika-divider: #d29a2e;
+
+  /* Supporting accents retained for diagrams, badges, and illustrations. */
+  --mech-accent-coral: hsl(10 100% 75%);
+  --mech-accent-orange: hsl(29 100% 75%);
+  --mech-accent-yellow: hsl(55 100% 75%);
+  --mech-accent-green: hsl(128 100% 75%);
+  --mech-accent-teal: hsl(168 100% 75%);
+  --mech-accent-cyan: hsl(206 100% 75%);
+  --mech-accent-blue: hsl(240 100% 75%);
+  --mech-accent-indigo: hsl(253 100% 75%);
+  --mech-accent-purple: hsl(272 100% 75%);
+  --mech-accent-magenta: hsl(312 100% 75%);
+  --mech-accent-rose: hsl(338 100% 75%);
+  --mech-accent-red: hsl(0 100% 75%);
+
+  /* Feedback */
+  --mech-info: hsl(230 100% 75%);
+  --mech-warning: hsl(20 100% 75%);
+  --mech-error: hsl(350 100% 75%);
+  --mech-success: hsl(130 100% 75%);
+  --mech-idea: hsl(271 100% 75%);
+  --mech-question: hsl(191 100% 75%);
+  --mech-status-success: #3fb950;
+  --mech-status-error: #f85149;
+
+  /* Quiet syntax foundation */
+  --mech-syntax-operator: #c09cc9;
+  --mech-syntax-bracket: #c09cc9;
+  --mech-syntax-tuple-structure: #ab7ab8;
+  --mech-syntax-variable: #eddaf1;
+  --mech-syntax-literal: #9bc7f3;
+  --mech-syntax-field: #63abb7;
+  --mech-syntax-comment: #939a9e;
+  --mech-syntax-comment-structure: #5c6467;
+
+  /* Construct families */
+  --mech-syntax-function: #bbddc2;
+  --mech-syntax-function-structure: #99cca4;
+  --mech-syntax-function-flow: #77bb86;
+  --mech-syntax-kind: #f09fca;
+  --mech-syntax-kind-structure: #d574a8;
+  --mech-syntax-atom: #d7c0a4;
+  --mech-syntax-atom-structure: #ad9273;
+  --mech-syntax-match: var(--mech-syntax-atom);
+  --mech-syntax-match-flow: var(--mech-syntax-atom-structure);
+  --mech-syntax-machine: #d8a5e4;
+  --mech-syntax-machine-flow: #8e90bd;
+  --mech-syntax-context: #acc9d2;
+  --mech-syntax-context-provider: #cbdce2;
+  --mech-syntax-path: #84b4c2;
+  --mech-syntax-capability: var(--mech-syntax-atom);
+  --mech-syntax-invariant: var(--mech-warning);
+  --mech-syntax-namespace: #afb4d4;
+  --mech-syntax-import: var(--mech-syntax-operator);
+
+  /* Selection, scrolling, and depth */
+  --mech-selection-bg: rgb(242 182 61 / 24%);
+  --mech-selection-text: var(--mech-text-reading);
+  --mech-scrollbar: rgb(128 128 128 / 70%);
+  --mech-scrollbar-hover: rgb(160 160 160 / 85%);
+  --mech-shadow-inline-code: 0 0 2px rgb(0 0 0 / 70%);
+  --mech-shadow-content-block: 5px 5px 5px rgb(0 0 0 / 70%);
+  --mech-shadow-table: 0 1px 4px rgb(0 0 0 / 50%);
+  --mech-shadow-header: 0 4px 10px rgb(0 0 0);
+  --mech-shadow-popover: 0 10px 22px rgb(0 0 0 / 58%);
+  --mech-shadow-modal: 0 1px 20px rgb(0 0 0);
+  --mech-shadow-focus: 0 24px 52px rgb(0 0 0 / 72%);
+  --mech-shadow-label: 1px 1px 2px rgb(0 0 0 / 80%);
+  --mech-shadow-side: -8px 0 28px rgb(0 0 0 / 45%);
+  --mech-image-shadow: 0 10px 20px rgb(0 0 0 / 45%);
+  --mech-brand-glow: 0 0 18px rgb(246 202 93 / 22%);
+
+  /* Older size names remain aliases; components use the job-based names. */
+  --mech-shadow-small: var(--mech-shadow-inline-code);
+  --mech-shadow-medium: var(--mech-shadow-popover);
+  --mech-shadow-large: var(--mech-shadow-focus);
+
+  /* Existing public names retained as compatibility aliases. */
+  --bg-primary: var(--mech-canvas);
+  --bg-secondary: var(--mech-surface-subtle);
+  --bg-accent: var(--mech-surface-accent);
+  --bg-dark: var(--mech-surface-dark);
+  --bg-elevated: var(--mech-surface-elevated);
+  --bg-tertiary: var(--mech-panel-raised);
+  --mika-primary: var(--mech-mika);
+  --accent-primary: var(--mech-brand);
+  --accent-hover: var(--mech-nav-hover);
+  --accent-shadow: rgb(195 146 39);
+  --accent-soft: var(--mech-brand-highlight);
+  --blue-primary: var(--mech-blue-primary);
+  --blue-bright: var(--mech-blue-bright);
+  --border: var(--mech-page-border);
+  --border-strong: var(--mech-page-border);
+  --text-primary: var(--mech-text-primary);
+  --text-secondary: var(--mech-text-secondary);
+  --text-muted: var(--mech-text-muted);
+  --body-primary: var(--mech-text-body);
+  --success: var(--mech-status-success);
+  --error: var(--mech-status-error);
+  --console-bg: var(--mech-output-bg);
+  --console-text: var(--mech-console-text);
+
+  --accent-secondary-teal-soft: var(--mech-editorial-teal-soft);
+  --accent-secondary-teal: var(--mech-editorial-teal);
+  --accent-secondary-teal-hover: var(--mech-editorial-teal-deep);
+  --accent-secondary-coral-soft: var(--mech-editorial-coral-soft);
+  --accent-secondary-coral: var(--mech-editorial-coral);
+  --accent-secondary-coral-hover: var(--mech-editorial-coral-deep);
+  --accent-secondary-purple-soft: var(--mech-editorial-purple-soft);
+  --accent-secondary-purple: var(--mech-editorial-purple);
+  --accent-secondary-purple-hover: var(--mech-editorial-purple-deep);
+
+  --title-underline-color: var(--mech-link);
+  --callout-background-color: var(--mech-panel-raised);
+  --accent-coral: var(--mech-accent-coral);
+  --accent-orange: var(--mech-accent-orange);
+  --accent-yellow: var(--mech-accent-yellow);
+  --accent-green: var(--mech-accent-green);
+  --accent-teal: var(--mech-accent-teal);
+  --accent-cyan: var(--mech-accent-cyan);
+  --accent-blue: var(--mech-accent-blue);
+  --accent-indigo: var(--mech-accent-indigo);
+  --accent-purple: var(--mech-accent-purple);
+  --accent-magenta: var(--mech-accent-magenta);
+  --accent-rose: var(--mech-accent-rose);
+  --accent-red: var(--mech-accent-red);
+}
+
+::selection {
+  background: var(--mech-selection-bg);
+  color: var(--mech-selection-text);
+}

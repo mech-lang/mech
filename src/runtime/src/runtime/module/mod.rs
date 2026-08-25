@@ -43,7 +43,11 @@ pub(in crate::runtime) fn validate_module_import_edges(
 
 fn source_index_for_module_record_source(
     source: &mech_core::MechSourceCode,
+    syntax_tree: Option<&mech_core::Program>,
 ) -> MResult<Option<SourceIndex>> {
+    if let Some(tree) = syntax_tree {
+        return Ok(Some(SourceIndex::from_program(tree)));
+    }
     match source {
         mech_core::MechSourceCode::Tree(tree) => Ok(Some(SourceIndex::from_program(tree))),
         #[cfg(feature = "source")]
@@ -60,7 +64,9 @@ fn index_unindexed_module_source(resolved: &mut ResolvedSource) -> MResult<()> {
         return Ok(());
     }
 
-    let Some(index) = source_index_for_module_record_source(&resolved.source)? else {
+    let Some(index) =
+        source_index_for_module_record_source(&resolved.source, resolved.syntax_tree.as_deref())?
+    else {
         return Ok(());
     };
 
@@ -200,7 +206,9 @@ impl MechRuntime {
         &mut self,
         record: &mut crate::RuntimeModuleRecord,
     ) -> MResult<()> {
-        let Some(index) = source_index_for_module_record_source(&record.source)? else {
+        let Some(index) =
+            source_index_for_module_record_source(&record.source, record.syntax_tree.as_deref())?
+        else {
             return self.materialize_manifest_context_imports_legacy(record);
         };
 
@@ -597,6 +605,7 @@ impl MechRuntime {
             let module_version = record.module_version;
             let version = ModuleVersionRecord::new(module_version, module, 1)
                 .with_source(record.source)
+                .with_syntax_tree(record.syntax_tree)
                 .with_exports(record.exports)
                 .with_imports(record.imports)
                 .with_contexts(record.contexts)

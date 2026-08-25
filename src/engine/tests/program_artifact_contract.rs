@@ -232,6 +232,7 @@ fn single_node_fixture(
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "result".to_owned(),
+            interactive_symbol: None,
             source: SourceValue::NodeOutput {
                 node: 0,
                 output_ordinal: 0,
@@ -295,6 +296,7 @@ fn stateful_register(data: &FixtureData) -> SourceProgram {
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "state".to_owned(),
+            interactive_symbol: None,
             source: SourceValue::State(0),
             schema: data.schema.f64_,
         }]
@@ -436,11 +438,13 @@ fn ekf(data: &FixtureData) -> SourceProgram {
         outputs: vec![
             SourceOutput {
                 name: "state".to_owned(),
+                interactive_symbol: None,
                 source: SourceValue::State(0),
                 schema: data.schema.vector3,
             },
             SourceOutput {
                 name: "covariance".to_owned(),
+                interactive_symbol: None,
                 source: SourceValue::State(1),
                 schema: data.schema.matrix3,
             },
@@ -458,6 +462,109 @@ fn build_both(data: &FixtureData, graph: SourceProgram) -> (ProgramArtifact, Pro
     assert!(!parsed.artifact.is_empty());
     let bytecode = decode_program_artifact_sections(&parsed.artifact).unwrap();
     (source, bytecode)
+}
+
+#[test]
+fn output_aliases_share_one_materialized_source_slot() {
+    let data = fixture_data();
+    let graph = SourceProgram {
+        outputs: vec![
+            SourceOutput {
+                name: "first".to_owned(),
+                interactive_symbol: None,
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+            SourceOutput {
+                name: "second".to_owned(),
+                interactive_symbol: None,
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+
+    let (source, bytecode) = build_both(&data, graph);
+    for artifact in [&source, &bytecode] {
+        assert_eq!(artifact.outputs()[0].source, artifact.outputs()[1].source);
+        assert_eq!(
+            artifact
+                .slots()
+                .iter()
+                .filter(|slot| slot.role == SlotRole::Output)
+                .count(),
+            1,
+            "one semantic source must materialize through one output slot"
+        );
+    }
+}
+
+#[test]
+fn interactive_symbol_interface_encoding_is_canonical_and_reversible() {
+    for lexical in ["odd/name", r"odd\name", "café", "mech-repl-symbol-61"] {
+        let encoded = encode_interactive_symbol_output_name(lexical);
+        assert!(!encoded.contains(['/', '\\']));
+        assert_eq!(
+            decode_interactive_symbol_output_name(&encoded).as_deref(),
+            Some(lexical)
+        );
+    }
+}
+
+#[test]
+fn interactive_symbol_identity_is_explicit_and_survives_bytecode() {
+    let data = fixture_data();
+    let lexical = "odd/name";
+    let graph = SourceProgram {
+        outputs: vec![
+            SourceOutput {
+                name: "query-1".to_owned(),
+                interactive_symbol: Some(lexical.to_owned()),
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+            SourceOutput {
+                name: "query-2".to_owned(),
+                interactive_symbol: Some(r"odd\name".to_owned()),
+                source: SourceValue::Constant(data.constant.one),
+                schema: data.schema.f64_,
+            },
+            SourceOutput {
+                name: "mech-repl-symbol-61".to_owned(),
+                interactive_symbol: None,
+                source: SourceValue::Constant(data.constant.two),
+                schema: data.schema.f64_,
+            },
+        ]
+        .into_boxed_slice(),
+        ..SourceProgram::default()
+    };
+
+    let (source, bytecode) = build_both(&data, graph);
+    for artifact in [&source, &bytecode] {
+        assert_eq!(
+            artifact.outputs()[0]
+                .interactive_binding
+                .as_ref()
+                .map(|binding| binding.lexical_name.as_str()),
+            Some(lexical)
+        );
+        assert_eq!(artifact.outputs()[2].name, "mech-repl-symbol-61");
+        assert_eq!(artifact.outputs()[2].interactive_binding, None);
+        let bindings = artifact.interactive_symbol_bindings().collect::<Vec<_>>();
+        assert_eq!(bindings.len(), 2);
+        assert_eq!(bindings[0].output, artifact.outputs()[0].output);
+        assert_eq!(bindings[0].storage, artifact.outputs()[0].source);
+        assert_eq!(
+            bindings[0].artifact_source,
+            ArtifactSource::Constant(data.constant.one)
+        );
+        assert_eq!(bindings[1].lexical_name, r"odd\name");
+        assert_eq!(bindings[1].artifact_source, bindings[0].artifact_source);
+        assert_eq!(bindings[1].storage, bindings[0].storage);
+    }
 }
 
 fn pure_full_write_contract(
@@ -948,6 +1055,7 @@ fn malformed_artifacts_reject_reviewed_validation_gaps() {
         bindings: Box::new([]),
         outputs: Box::new([]),
         constraints: Box::new([]),
+        compute_regions: Box::new([]),
     };
     assert!(matches!(
         missing_binding.finalize(),
@@ -1300,6 +1408,51 @@ fn program_revision_changes_with_semantic_graph_order() {
 }
 
 #[test]
+fn compute_regions_are_intrinsic_revision_bearing_artifact_declarations() {
+    let data = fixture_data();
+    let (ordinary, _) = build_both(&data, scalar_add(&data));
+    let region = ComputeRegionDeclaration {
+        id: mech_core::ComputeRegionId::new(0),
+        name: "scalar-add".into(),
+        placement: mech_core::ComputePlacement::Compute,
+        nodes: ordinary
+            .nodes()
+            .iter()
+            .map(|node| node.node)
+            .collect::<Vec<_>>()
+            .into_boxed_slice(),
+    };
+    let with_region = ProgramArtifactDraft {
+        schemas: ordinary.schemas().clone(),
+        constants: ordinary.constants().clone(),
+        contracts: ordinary.contracts().clone(),
+        requirements: ordinary.requirements().clone(),
+        inputs: ordinary.inputs().to_vec().into_boxed_slice(),
+        slots: ordinary.slots().to_vec().into_boxed_slice(),
+        nodes: ordinary.nodes().to_vec().into_boxed_slice(),
+        bindings: ordinary.bindings().to_vec().into_boxed_slice(),
+        outputs: ordinary.outputs().to_vec().into_boxed_slice(),
+        constraints: ordinary.constraints().to_vec().into_boxed_slice(),
+        compute_regions: vec![region].into_boxed_slice(),
+    }
+    .finalize()
+    .unwrap();
+
+    assert_ne!(ordinary.revision(), with_region.revision());
+    assert!(
+        encode_program_artifact_sections(&ordinary)
+            .unwrap()
+            .compute_regions
+            .is_empty()
+    );
+    let sections = encode_program_artifact_sections(&with_region).unwrap();
+    assert!(!sections.compute_regions.is_empty());
+    let decoded = decode_program_artifact_sections(&sections).unwrap();
+    assert_eq!(decoded.revision(), with_region.revision());
+    assert_eq!(decoded.compute_regions(), with_region.compute_regions());
+}
+
+#[test]
 fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() {
     let data = fixture_data();
     let requirements = ApplicationRequirementTable::from_canonical_entries(vec![
@@ -1347,6 +1500,7 @@ fn external_requirements_are_artifact_authority_and_round_trip_in_bytecode_v1() 
         .into_boxed_slice(),
         outputs: vec![SourceOutput {
             name: "output".to_owned(),
+            interactive_symbol: None,
             source: SourceValue::NodeOutput {
                 node: 0,
                 output_ordinal: 0,
@@ -1651,6 +1805,7 @@ fn contract_insertion_order_does_not_change_program_revision() {
             bindings: base.bindings().to_vec().into_boxed_slice(),
             outputs: base.outputs().to_vec().into_boxed_slice(),
             constraints: base.constraints().to_vec().into_boxed_slice(),
+            compute_regions: base.compute_regions().to_vec().into_boxed_slice(),
         }
     };
     let first_id = first.resolve(first_exact).unwrap();
@@ -1982,6 +2137,7 @@ fn bytecode_v1_round_trips_every_c2_snapshot_family() {
         bindings: Box::new([]),
         outputs: Box::new([]),
         constraints: Box::new([]),
+        compute_regions: Box::new([]),
     }
     .finalize()
     .unwrap();

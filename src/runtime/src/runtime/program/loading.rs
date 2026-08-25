@@ -34,6 +34,38 @@ use super::{
     RuntimeProgramRoute, invalid_active_program, route_failure,
 };
 
+#[derive(Clone, Copy)]
+enum InitialValueProjection {
+    FirstPublishedOutput,
+    InteractiveRootResult,
+}
+
+fn initial_output_index(
+    artifact: &ProgramArtifact,
+    projection: InitialValueProjection,
+) -> Option<usize> {
+    match projection {
+        InitialValueProjection::FirstPublishedOutput => {
+            (!artifact.outputs().is_empty()).then_some(0)
+        }
+        // Interactive compilation publishes formatted-document outputs, then
+        // the program's root result, then named-symbol aliases. The aliases
+        // carry `interactive_binding`; the root result is therefore the final
+        // ordinary, non-constraint output even when a rich document precedes
+        // the REPL entry. Integrity constraints have their own projection and
+        // must not replace the program's implicit display value.
+        InitialValueProjection::InteractiveRootResult => {
+            artifact.outputs().iter().rposition(|output| {
+                output.interactive_binding.is_none()
+                    && !artifact
+                        .constraints()
+                        .iter()
+                        .any(|constraint| constraint.name == output.name)
+            })
+        }
+    }
+}
+
 impl MechRuntime {
     #[cfg(feature = "resident-routing-source")]
     pub fn load_source_program(
@@ -47,6 +79,31 @@ impl MechRuntime {
                 runtime.plan_source_product(source)?.into_parts().0,
             ))
         })
+    }
+
+    /// Compile and activate source with every named root symbol retained as a
+    /// live resident output. Interactive hosts use this projection so symbol
+    /// inspection reads the active instance instead of reconstructing a
+    /// planning-time candidate.
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_interactive_source_program(
+        &mut self,
+        source: &str,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.enforce_source_byte_limit(u64::try_from(source.len()).unwrap_or(u64::MAX))?;
+        self.load_production_with_projection(
+            durability,
+            InitialValueProjection::InteractiveRootResult,
+            |runtime| {
+                Ok(Arc::new(
+                    runtime
+                        .plan_interactive_source_product(source)?
+                        .into_parts()
+                        .0,
+                ))
+            },
+        )
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -70,14 +127,14 @@ impl MechRuntime {
                     )?;
                     Ok(Arc::new(
                         runtime
-                            .plan_root_source_product(request.clone(), module_options)?
+                            .plan_resolved_root_source_product(resolved, module_options)?
                             .into_parts()
                             .0,
                     ))
                 }
                 MechSourceCode::Tree(_) => Ok(Arc::new(
                     runtime
-                        .plan_root_source_product(request.clone(), module_options)?
+                        .plan_resolved_root_source_product(resolved, module_options)?
                         .into_parts()
                         .0,
                 )),
@@ -95,6 +152,64 @@ impl MechRuntime {
         })
     }
 
+    /// Compile and activate a rooted source graph with every root symbol
+    /// retained for live interactive inspection.
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_interactive_root_program(
+        &mut self,
+        request: SourceRequest,
+        module_options: ModuleBuildOptions<'_>,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with_projection(
+            durability,
+            InitialValueProjection::InteractiveRootResult,
+            |runtime| {
+                let resolved = runtime.resolve_source(request.clone())?.ok_or_else(|| {
+                    route_failure(
+                        ResidentRouteFailureClass::InvalidArtifact,
+                        format!("root source `{}` was not found", request.specifier),
+                    )
+                })?;
+                match &resolved.source {
+                    MechSourceCode::String(source) => {
+                        runtime.enforce_source_byte_limit(
+                            u64::try_from(source.len()).unwrap_or(u64::MAX),
+                        )?;
+                        Ok(Arc::new(
+                            runtime
+                                .plan_interactive_resolved_root_source_product(
+                                    resolved,
+                                    module_options,
+                                )?
+                                .into_parts()
+                                .0,
+                        ))
+                    }
+                    MechSourceCode::Tree(_) => Ok(Arc::new(
+                        runtime
+                            .plan_interactive_resolved_root_source_product(
+                                resolved,
+                                module_options,
+                            )?
+                            .into_parts()
+                            .0,
+                    )),
+                    MechSourceCode::ByteCode(bytecode) => {
+                        runtime.enforce_source_byte_limit(
+                            u64::try_from(bytecode.len()).unwrap_or(u64::MAX),
+                        )?;
+                        runtime.decode_artifact(bytecode)
+                    }
+                    _ => Err(route_failure(
+                        ResidentRouteFailureClass::SemanticUnsupported,
+                        "root source kind is not resident-routable",
+                    )),
+                }
+            },
+        )
+    }
+
     #[cfg(feature = "resident-routing")]
     pub fn load_bytecode_program(
         &mut self,
@@ -105,6 +220,53 @@ impl MechRuntime {
         self.load_production_with(durability, |runtime| runtime.decode_artifact(bytecode))
     }
 
+    /// Activates an immutable compiler product through the same resident
+    /// validation, authority, transaction, and publication path as source and
+    /// bytecode loading.
+    ///
+    /// This is used when an application compiler must first install a host
+    /// derived from a sibling artifact, such as a resident compute region.
+    #[cfg(feature = "resident-routing")]
+    pub fn load_compiled_program(
+        &mut self,
+        artifact: ProgramArtifact,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with(durability, |_| Ok(Arc::new(artifact)))
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    /// Plans and loads an already parsed Mech program through the resident
+    /// route. This entry point never falls back to another executor.
+    pub fn load_tree_program(
+        &mut self,
+        tree: &mech_core::Program,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with(durability, |runtime| {
+            Ok(Arc::new(runtime.plan_tree_product(tree)?.into_parts().0))
+        })
+    }
+
+    /// Activates an already parsed document while retaining its root symbols
+    /// for an interactive host. Encoded browser documents use this path so
+    /// execution never depends on formatter/parser round-tripping.
+    #[cfg(feature = "resident-routing-source")]
+    pub fn load_interactive_tree_program(
+        &mut self,
+        tree: &mech_core::Program,
+        durability: crate::ResidentDurabilityPolicy,
+    ) -> MResult<RuntimeProgramLoadOutcome> {
+        self.load_production_with_projection(
+            durability,
+            InitialValueProjection::InteractiveRootResult,
+            |runtime| {
+                Ok(Arc::new(
+                    runtime.plan_interactive_tree_product(tree)?.into_parts().0,
+                ))
+            },
+        )
+    }
     fn load_production_with<Resident>(
         &mut self,
         durability: crate::ResidentDurabilityPolicy,
@@ -113,10 +275,27 @@ impl MechRuntime {
     where
         Resident: FnOnce(&mut Self) -> MResult<Arc<ProgramArtifact>>,
     {
+        self.load_production_with_projection(
+            durability,
+            InitialValueProjection::FirstPublishedOutput,
+            resident,
+        )
+    }
+
+    fn load_production_with_projection<Resident>(
+        &mut self,
+        durability: crate::ResidentDurabilityPolicy,
+        initial_value_projection: InitialValueProjection,
+        resident: Resident,
+    ) -> MResult<RuntimeProgramLoadOutcome>
+    where
+        Resident: FnOnce(&mut Self) -> MResult<Arc<ProgramArtifact>>,
+    {
         self.ensure_program_slot_available()?;
         super::ensure_supported_durability(durability)?;
-        let result = resident(self)
-            .and_then(|artifact| self.install_resident_artifact(artifact, durability));
+        let result = resident(self).and_then(|artifact| {
+            self.install_resident_artifact(artifact, durability, initial_value_projection)
+        });
         if result.is_err() {
             debug_assert!(matches!(self.active_program, ActiveProgramExecution::None));
             self.program_execution_info = RuntimeProgramExecutionInfo::default();
@@ -125,17 +304,36 @@ impl MechRuntime {
     }
 
     #[cfg(feature = "resident-routing-source")]
-    fn plan_root_source_product(
+    fn plan_resolved_root_source_product(
         &mut self,
-        request: SourceRequest,
+        resolved: crate::ResolvedSource,
         module_options: ModuleBuildOptions<'_>,
     ) -> MResult<ProgramCompilationProduct> {
-        self.compiler_view()?.compile_root(request, module_options)
+        self.compiler_view()?
+            .compile_resolved_root(resolved, module_options)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_interactive_resolved_root_source_product(
+        &mut self,
+        resolved: crate::ResolvedSource,
+        module_options: ModuleBuildOptions<'_>,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?
+            .compile_interactive_resolved_root(resolved, module_options)
     }
 
     #[cfg(feature = "resident-routing-source")]
     fn plan_source_product(&mut self, source: &str) -> MResult<ProgramCompilationProduct> {
         self.compiler_view()?.compile_source(source)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_interactive_source_product(
+        &mut self,
+        source: &str,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_interactive_source(source)
     }
 
     #[cfg(feature = "resident-routing-source")]
@@ -155,6 +353,22 @@ impl MechRuntime {
             &self.module_manifests,
             program_config,
         ))
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_tree_product(
+        &mut self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_tree(tree)
+    }
+
+    #[cfg(feature = "resident-routing-source")]
+    fn plan_interactive_tree_product(
+        &mut self,
+        tree: &mech_core::Program,
+    ) -> MResult<ProgramCompilationProduct> {
+        self.compiler_view()?.compile_interactive_tree(tree)
     }
 
     #[cfg(feature = "resident-routing")]
@@ -179,7 +393,13 @@ impl MechRuntime {
         &mut self,
         artifact: Arc<ProgramArtifact>,
         durability: crate::ResidentDurabilityPolicy,
+        initial_value_projection: InitialValueProjection,
     ) -> MResult<RuntimeProgramLoadOutcome> {
+        if !artifact.compute_regions().is_empty() {
+            return Err(super::unsupported_route(
+                "a program with a compute region must be compiled as a mixed application and installed with a configured compute host",
+            ));
+        }
         let external = !artifact.requirements().is_empty();
         let activation_options = ResidentActivationOptions {
             integrity: ResidentIntegrityMode::Checked,
@@ -285,7 +505,10 @@ impl MechRuntime {
                 }
                 info.resident_accepted_turns = 1;
             }
-            initial_snapshot = initial_value(coordinator.instance())?;
+            initial_snapshot = initial_value(
+                coordinator.instance(),
+                initial_output_index(&artifact, initial_value_projection),
+            )?;
             ActiveProgramExecution::ResidentExternal(ResidentExternalExecution {
                 artifact,
                 coordinator,
@@ -315,7 +538,10 @@ impl MechRuntime {
                 )
             })?;
             info.resident_accepted_turns = 1;
-            initial_snapshot = initial_value(&instance)?;
+            initial_snapshot = initial_value(
+                &instance,
+                initial_output_index(&artifact, initial_value_projection),
+            )?;
             ActiveProgramExecution::ResidentPure(ResidentPureExecution { artifact, instance })
         };
         self.active_program = active;

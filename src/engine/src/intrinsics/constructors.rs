@@ -1,5 +1,35 @@
 #[macro_use]
 use crate::intrinsics::*;
+#[cfg(feature = "matrix_comprehensions")]
+use std::sync::LazyLock;
+
+#[cfg(feature = "matrix_comprehensions")]
+static PURE_MATRIX_COMPREHENSION_CONTRACT: LazyLock<OperationContractDeclaration> =
+    LazyLock::new(|| OperationContractDeclaration {
+        inputs: InputPortLayout::Variadic {
+            prefix: Box::new([]),
+            repeated: InputPortPolicy {
+                access: AccessMode::Read,
+                delivery: DeliveryMode::Signal,
+            },
+            min_repetitions: 0,
+        },
+        outputs: vec![OutputPortPolicy {
+            access: AccessMode::Write,
+            delivery: DeliveryMode::Signal,
+            construction: OutputConstruction::Build {
+                postcondition: ShapeContractReference {
+                    module_path: vec!["matrix".to_owned(), "concatenate".to_owned()]
+                        .into_boxed_slice(),
+                    contract_name: "horizontal-output".to_owned(),
+                },
+            },
+            alias: AliasPolicy::NoAlias,
+            change_detection: ChangeDetectionPolicy::KernelReported,
+        }]
+        .into_boxed_slice(),
+        interaction: ExternalInteraction::Pure,
+    });
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn detach_comprehension_value(value: &LegacyValue) -> LegacyValue {
@@ -215,6 +245,10 @@ impl MechFunctionImpl for ValueMatrixComprehension {
         self.out.borrow().clone()
     }
 
+    fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
+        Some(&PURE_MATRIX_COMPREHENSION_CONTRACT)
+    }
+
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         Ok(vec![LegacyValue::MutableReference(self.out.clone())])
     }
@@ -233,6 +267,14 @@ impl MechFunctionFactory for ValueMatrixComprehension {
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
+            // Bytecode v1 represents a zero-input variadic operation as a
+            // nullary call. Empty comprehensions are valid 0x0 matrices, so
+            // retain that canonical encoding instead of imposing an
+            // accidental one-element minimum at reconstruction time.
+            FunctionArgs::Nullary(out) => Ok(Box::new(ValueMatrixComprehension {
+                arguments: Vec::new(),
+                out: Ref::new(out),
+            })),
             FunctionArgs::Variadic(out, arguments) => Ok(Box::new(ValueMatrixComprehension {
                 arguments,
                 out: Ref::new(out),

@@ -19,7 +19,7 @@ PROFILE_ARGUMENTS = {
     "standard": [],
     "full": ["--no-default-features", "--features", "distribution-full"],
 }
-NATIVE_PLANNING_OWNER_COUNTS = {"standard": 5, "full": 6}
+NATIVE_PLANNING_OWNER_COUNTS = {"standard": 6, "full": 6}
 MACHINE_OPERATION_FEATURES = {
     "mech-combinatorics": {"n_choose_k"},
     "mech-compare": {"eq", "gt", "gte", "lt", "lte", "max", "min", "neq", "seq", "sneq"},
@@ -54,7 +54,7 @@ HOST_PACKAGES = {
     "mech-time",
     "mech-timer",
 }
-STANDARD_FORBIDDEN_PACKAGES = {"mech-combinatorics", "mech-robot-arm"}
+STANDARD_FORBIDDEN_PACKAGES = {"mech-robot-arm"}
 STANDARD_FORBIDDEN_FEATURES = {
     "c64", "complex", "f32", "r64", "rational",
     "u8", "u16", "u32", "u64", "u128",
@@ -63,7 +63,7 @@ STANDARD_FORBIDDEN_FEATURES = {
     "row_vector2", "row_vector3", "row_vector4",
     "vector2", "vector3", "vector4", "fixed_matrix",
     "bessel", "bessel_default", "gamma", "gamma_default", "stat_error",
-    "stat_error_default", "combinatorics_default", "n_choose_k", "cartesian_product",
+    "stat_error_default", "cartesian_product",
     "powerset", "experimental-actors", "full_operations", "full_runtime", "full_source",
     "full_compiler", "full_values", "full-hosts", "full-language", "distribution-full",
 }

@@ -999,6 +999,50 @@ fn official_v1_layout_is_deterministic_and_round_trips() {
     );
 }
 
+#[test]
+fn checked_in_eighteen_section_v1_artifact_remains_readable() {
+    let bytes = include_bytes!("../../../../../tests/architecture/bytecode-v1/scalar-add-f64.mecb");
+    let parsed = ParsedProgram::from_bytes(bytes).unwrap();
+
+    assert_eq!(parsed.header.section_count as usize, BYTECODE_SECTION_COUNT);
+    assert_eq!(parsed.sections.len(), BYTECODE_SECTION_COUNT);
+    assert!(parsed.artifact.compute_regions.is_empty());
+}
+
+#[test]
+fn compute_regions_use_the_optional_v1_extension_section() {
+    let artifact = BytecodeArtifactSections {
+        schemas: vec![1],
+        constants: vec![2],
+        inputs: vec![3],
+        slots: vec![4],
+        producers: vec![5],
+        nodes: vec![6],
+        bindings: vec![7],
+        outputs: vec![8],
+        integrity_constraints: vec![9],
+        operations: vec![10],
+        operation_contracts: vec![11],
+        compute_regions: vec![12],
+    };
+    let bytes = write_bytecode_with_artifact(&program(vec![empty_constant()]), &artifact).unwrap();
+    let parsed = ParsedProgram::from_bytes(&bytes).unwrap();
+
+    assert_eq!(
+        parsed.header.section_count as usize,
+        BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS
+    );
+    assert_eq!(
+        parsed.sections.len(),
+        BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS
+    );
+    assert_eq!(
+        parsed.sections[0].offset,
+        BYTECODE_CONTENT_OFFSET_WITH_COMPUTE_REGIONS
+    );
+    assert_eq!(parsed.artifact, artifact);
+}
+
 #[cfg(feature = "matrixd")]
 #[test]
 fn maximum_index_scan_is_pointer_independent_for_scalars_and_matrices() {
@@ -1602,7 +1646,7 @@ fn rejects_duplicate_missing_unknown_overlapping_and_oob_sections() {
     let mut missing = original.clone();
     write_u16(&mut missing, HEADER_SECTION_COUNT, 6);
     refresh_crc(&mut missing);
-    assert_validation_reason(&missing, "exact seven-entry");
+    assert_validation_reason(&missing, "supported section table");
 
     let mut unknown = original.clone();
     write_u16(&mut unknown, section_entry_offset(0), u16::MAX);
@@ -1632,7 +1676,7 @@ fn rejects_duplicate_missing_unknown_overlapping_and_oob_sections() {
 }
 
 #[test]
-fn rejects_a_first_content_section_after_offset_288() {
+fn rejects_a_noncanonical_first_content_section_offset() {
     let mut bytes = write_bytecode(&program(vec![empty_constant()])).unwrap();
     let content_offset = usize::try_from(BYTECODE_CONTENT_OFFSET).unwrap();
     bytes.splice(content_offset..content_offset, [0; 8]);
@@ -1649,7 +1693,7 @@ fn rejects_a_first_content_section_after_offset_288() {
 
     assert_validation_reason(
         &bytes,
-        "first bytecode content section must begin at offset 288",
+        "first bytecode content section has the wrong offset",
     );
 }
 
@@ -3405,6 +3449,23 @@ mod compiler_tests {
             decode_one(&constant),
             LegacyValue::EmptyKind(ValueKind::Option(_))
         ));
+    }
+
+    #[cfg(feature = "f64")]
+    #[test]
+    fn absent_matrix_option_rejects_an_unspecified_shape() {
+        for dimensions in [vec![], vec![2], vec![2, 2, 2]] {
+            let value = LegacyValue::EmptyKind(ValueKind::Option(Box::new(ValueKind::Matrix(
+                Box::new(ValueKind::F64),
+                dimensions,
+            ))));
+            let error = value
+                .compile_const(&mut ConstantContext::default())
+                .unwrap_err();
+            assert_eq!(error.kind_name(), "BytecodeConstantUnsupported");
+            let detail = error.kind_as::<BytecodeConstantUnsupported>().unwrap();
+            assert!(detail.reason.contains("explicit two-dimensional shape"));
+        }
     }
 
     #[cfg(all(

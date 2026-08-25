@@ -1,18 +1,71 @@
-use super::{ComprehensionGeneratorError, Environment, expression};
+use super::{
+    ComprehensionGeneratorError, Environment, ReactiveComprehensionStructureUnsupported, expression,
+};
 #[cfg(feature = "matrix_comprehensions")]
 pub use crate::intrinsics::constructors::ValueMatrixComprehension;
 #[cfg(feature = "set_comprehensions")]
 pub use crate::intrinsics::constructors::ValueSetComprehension;
 use crate::patterns::PatternBindingSink;
 use crate::{
-    ComprehensionQualifier, FunctionSpecializer, Interpreter, InterpreterExecution, LegacyValue,
-    MResult, MechError, MechFunction, Ref, ToValue, execute_catalog_operation, hash_str,
+    ComprehensionQualifier, ExternalInteraction, FunctionSpecializer, Interpreter,
+    InterpreterExecution, LegacyValue, MResult, MechError, MechFunction, ReactiveNodeKind, Ref,
+    ToValue, execute_catalog_operation, hash_str, val_ref_reactive_cell_ids,
 };
 #[cfg(feature = "matrix_comprehensions")]
 use crate::{Matrix, MatrixComprehension};
 #[cfg(feature = "set_comprehensions")]
 use crate::{MechSet, SetComprehension};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
+
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+fn value_depends_on_reactive_turn(value: &LegacyValue, p: &InterpreterExecution<'_>) -> bool {
+    let mut turn_cells = {
+        let state = p.state.borrow();
+        let symbols = state.symbol_table.borrow();
+        symbols
+            .mutable_variables
+            .values()
+            .flat_map(val_ref_reactive_cell_ids)
+            .collect::<HashSet<_>>()
+    };
+    let plan = p.plan();
+    let plan = plan.borrow();
+    for node in &plan.nodes {
+        let external = node
+            .function
+            .semantic_operation_contract()
+            .is_some_and(|contract| contract.interaction != ExternalInteraction::Pure);
+        let depends_on_turn = node.kind == ReactiveNodeKind::Register
+            || external
+            || node
+                .inputs
+                .iter()
+                .any(|input| turn_cells.contains(&input.cell));
+        if depends_on_turn {
+            turn_cells.extend(node.outputs.iter().copied());
+        }
+    }
+    value
+        .reactive_cell_ids()
+        .iter()
+        .any(|cell| turn_cells.contains(cell))
+}
+
+#[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
+fn reject_reactive_structure(
+    value: &LegacyValue,
+    qualifier: &'static str,
+    p: &InterpreterExecution<'_>,
+) -> MResult<()> {
+    if value_depends_on_reactive_turn(value, p) {
+        return Err(MechError::new(
+            ReactiveComprehensionStructureUnsupported { qualifier },
+            None,
+        )
+        .with_compiler_loc());
+    }
+    Ok(())
+}
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]
 fn comprehension_environments(
@@ -23,7 +76,10 @@ fn comprehension_environments(
     let mut envs: Vec<Environment> = vec![HashMap::new()];
     let mut new_p: Interpreter = (**p).clone();
     new_p.id = comprehension_id;
-    new_p.clear_plan();
+    // A comprehension has its own lexical environment, not its own reactive
+    // lifetime. Keep the enclosing plan shared so operations compiled inside
+    // generators, filters, lets, and the result expression remain live and
+    // precede the final comprehension node in the same dependency graph.
     for qual in qualifiers {
         envs = match qual {
             ComprehensionQualifier::Generator((pttrn, expr)) => {
@@ -33,6 +89,7 @@ fn comprehension_environments(
                     let collection = p.with_interpreter(&new_p, |execution| {
                         expression(expr, Some(env), execution)
                     })?;
+                    reject_reactive_structure(&collection, "generator", p)?;
                     for elmnt in comprehension_generator_values(&collection)? {
                         let mut new_env = env.clone();
                         let pattern_match = p.with_interpreter(&new_p, |execution| {
@@ -49,19 +106,19 @@ fn comprehension_environments(
                 }
                 new_envs
             }
-            ComprehensionQualifier::Filter(expr) => envs
-                .into_iter()
-                .filter(|env| {
+            ComprehensionQualifier::Filter(expr) => {
+                let mut filtered = Vec::new();
+                for env in envs {
                     let result = p.with_interpreter(&new_p, |execution| {
-                        expression(expr, Some(env), execution)
-                    });
-                    match result {
-                        Ok(LegacyValue::Bool(v)) => v.borrow().clone(),
-                        Ok(_) => false,
-                        Err(_) => false,
+                        expression(expr, Some(&env), execution)
+                    })?;
+                    reject_reactive_structure(&result, "filter", p)?;
+                    if matches!(result, LegacyValue::Bool(value) if *value.borrow()) {
+                        filtered.push(env);
                     }
-                })
-                .collect(),
+                }
+                filtered
+            }
             ComprehensionQualifier::Let(var_def) => envs
                 .into_iter()
                 .map(|mut env| -> MResult<_> {

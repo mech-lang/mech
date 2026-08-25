@@ -117,6 +117,15 @@ full-hosts = [
       "dep:mech-robot-arm", "mech-robot-arm/provider",
       "mech-build?/full-hosts",
       ]
+compute_backends_native = [
+      "dep:mech-compute", "dep:mech-gpu", "mech-gpu/native", "mech-gpu/jit",
+      "mech-runtime/compute",
+      "mech-runtime/f32", "mech-runtime/f64", "mech-runtime/string", "mech-runtime/matrixd",
+      "f32", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
+      "math_add", "math_sub", "math_mul", "math_div", "math_mod", "math_sin", "math_cos",
+      "math_ceil",
+      "mech-stdlib/native-plan",
+      ]
 base = ["baselib", "pretty_print", "serde", "compiler", "program", "mika",
       "statements_default", "subscript_default", "state_machines",
       "cli", "async", "trace",
@@ -238,6 +247,7 @@ math_sub_assign = ["mech-stdlib/math_sub_assign"]
 math_mul_assign = ["mech-stdlib/math_mul_assign"]
 math_div_assign = ["mech-stdlib/math_div_assign"]
 math_sqrt = ["mech-stdlib/math_sqrt"]
+math_ceil = ["mech-stdlib/math_ceil"]
 math_acos = ["mech-stdlib/math_acos"]
 math_acosh = ["mech-stdlib/math_acosh"]
 math_acot = ["mech-stdlib/math_acot"]
@@ -416,9 +426,6 @@ tempfile = "3.26.0"
 # smaller value surface. Keep that additional closure test-owned.
 mech-stdlib = { version = "0.3.5", default-features = false, features = ["u8", "u64"] }
 
-[target.'cfg(unix)'.dev-dependencies]
-libc = "0.2"
-
 [target.'cfg(windows)'.dev-dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
 
@@ -436,13 +443,17 @@ mech-console = { version = "0.3.5", path = "hosts/console", default-features = f
 mech-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
 mech-robot-arm = { version = "0.3.5", default-features = false, optional = true }
+mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
+mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
 
 sevenz-rust = "0.6.1"
 colored = "3.1.1"
+chrono = { version = "0.4.44", default-features = false, features = ["clock"] }
 serde = "1.0.228"
 serde_derive = "1.0.228"
 crossbeam-channel = "0.5.15"
+crossterm = "0.29.0"
 serde_json = "1.0.149"
 nom = "7.1.3"
 ctrlc = "3.5.2"
@@ -464,6 +475,7 @@ members = [
   "src/abi",
   "src/bytecode",
   "src/build",
+  "src/compute",
   "src/core",
   "src/syntax",
   "src/engine",
@@ -477,6 +489,7 @@ members = [
   "hosts/time",
   "hosts/timer",
   "hosts/scene",
+  "hosts/gpu",
   "tests/fixtures/native-live-host",
 ]
 
@@ -490,6 +503,7 @@ LegalCopyright = "Copyright © 2026"
 [patch.crates-io]
 mech-bytecode = { path = 'src/bytecode' }
 mech-build = { path = 'src/build' }
+mech-compute = { path = 'src/compute' }
 mech-core = { path = 'src/core' }
 mech-syntax = { path = 'src/syntax'}
 mech-engine = { path = 'src/engine'}

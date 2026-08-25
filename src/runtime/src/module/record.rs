@@ -1,4 +1,5 @@
-use mech_core::MechSourceCode;
+use mech_core::{MechSourceCode, Program};
+use std::sync::Arc;
 
 use crate::{
     CapabilityRequest, ModuleId, ModuleScopeMetadata, ModuleVersionId, SourceAddressReference,
@@ -13,6 +14,7 @@ pub struct RuntimeModuleRecord {
     pub canonical_uri: String,
     pub kind: SourceKind,
     pub source: MechSourceCode,
+    pub syntax_tree: Option<Arc<Program>>,
     pub compiler_version: String,
     pub language_edition: String,
     pub target: String,
@@ -35,6 +37,7 @@ impl RuntimeModuleRecord {
         canonical_uri: impl Into<String>,
         kind: SourceKind,
         source: MechSourceCode,
+        syntax_tree: Option<Arc<Program>>,
         compiler_version: impl Into<String>,
         language_edition: impl Into<String>,
         target: impl Into<String>,
@@ -55,6 +58,7 @@ impl RuntimeModuleRecord {
             canonical_uri: canonical_uri.into(),
             kind,
             source,
+            syntax_tree,
             compiler_version: compiler_version.into(),
             language_edition: language_edition.into(),
             target: target.into(),

@@ -1,17 +1,109 @@
+#[cfg(test)]
+use crate::portable_index::PORTABLE_INDEX_MAX;
+use crate::portable_index::ToPortableIndex;
 use mech_core::{
     AccessMode, AliasPolicy, BoundResidentKernel, ChangeDetectionPolicy, DeliveryMode,
     ExternalInteraction, FunctionCatalogBuilder, MResult, OutputConstruction, RegionPolicy,
     ResidentKernelBindError, ResidentKernelBindRequest, ResidentKernelError, ResidentKernelInputs,
     ResidentShape, ResidentValueKind, ResidentValueMut, ResidentValueRef,
-    ResolvedOperationContract, SchemaBody, ShapeContractReference, ShapeRule,
+    ResolvedOperationContract, SchemaBody, ShapeContractReference, ShapeRule, ValueData,
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     let runtime = ["runtime"];
+
+    // ProgramArtifact nodes carry semantic identities. These factories select
+    // the resident implementation from the resolved contract and layouts.
+    register(builder, &["math"], "add", bind_add)?;
+    register(builder, &["math"], "add-assign", bind_semantic_add_assign)?;
+    register(
+        builder,
+        &["math", "add-assign"],
+        "range-all",
+        bind_add_indexed_rows,
+    )?;
+    register(
+        builder,
+        &["math", "sub-assign"],
+        "range-all",
+        bind_sub_indexed_rows,
+    )?;
+    register(builder, &["math"], "sub", bind_sub)?;
+    register(builder, &["math"], "mul", bind_semantic_mul)?;
+    register(builder, &["math"], "div", bind_div)?;
+    register(builder, &["math"], "mod", bind_remainder)?;
+    register(builder, &["math"], "neg", bind_negate)?;
+    register(builder, &["math"], "pow", bind_pow)?;
+    register(builder, &["math"], "atan2", bind_atan2)?;
+    register(builder, &["math"], "cos", bind_cos)?;
+    register(builder, &["math"], "sin", bind_sin)?;
+    register(builder, &["logic"], "and", bind_semantic_bool_and)?;
+    register(builder, &["logic"], "or", bind_bool_or)?;
+    register(builder, &["logic"], "xor", bind_bool_xor)?;
+    register(builder, &["logic"], "not", bind_bool_not)?;
+    register(builder, &["compare"], "eq", bind_semantic_equal)?;
+    register(builder, &["compare"], "neq", bind_f64_not_equal)?;
+    register(builder, &["compare"], "lt", bind_f64_less)?;
+    register(builder, &["compare"], "lte", bind_f64_less_equal)?;
+    register(builder, &["compare"], "gt", bind_f64_greater)?;
+    register(builder, &["compare"], "gte", bind_f64_greater_equal)?;
+    register(builder, &["compare"], "seq", bind_strict_equal)?;
+    register(builder, &["compare"], "sneq", bind_strict_not_equal)?;
+    register(builder, &["access"], "scalar", bind_semantic_scalar_access)?;
+    register(builder, &["access"], "index", bind_scalar_index)?;
+    register(builder, &["access"], "range", bind_semantic_range_access)?;
+    register(builder, &["matrix"], "horzcat", bind_horizontal)?;
+    register(builder, &["matrix"], "vertcat", bind_vertical)?;
+    register(
+        builder,
+        &["matrix"],
+        "comprehension",
+        bind_matrix_comprehension,
+    )?;
+    register(builder, &["matrix"], "multiply", bind_matmul)?;
+    register(builder, &["matrix"], "transpose", bind_semantic_transpose)?;
+    register(builder, &["core"], "assign", bind_semantic_assign)?;
+    register(builder, &["range"], "exclusive", bind_range_exclusive)?;
+    register(
+        builder,
+        &["range"],
+        "exclusive-increment",
+        bind_range_increment_exclusive,
+    )?;
+    register(builder, &["range"], "inclusive", bind_range_inclusive)?;
+    register(
+        builder,
+        &["range"],
+        "inclusive-increment",
+        bind_range_increment_inclusive,
+    )?;
+    register(builder, &["combinatorics"], "n-choose-k", bind_n_choose_k)?;
+    register(builder, &["stats", "sum"], "column", bind_sum_columns)?;
+    register(builder, &["stats", "sum"], "row", bind_sum_rows)?;
+
+    // Frozen bytecode may still refer to the selected implementation identity.
     register(builder, &runtime, "Access1DSRD<f64>", bind_scalar_access_1d)?;
     register(builder, &runtime, "Access1DSVD<f64>", bind_scalar_access_1d)?;
     register(builder, &runtime, "Access1DSMD<f64>", bind_scalar_access_1d)?;
     register(builder, &runtime, "Access1DVDVD<f64>", bind_gather_1d)?;
+    for name in [
+        "Access2DSSM2<f64>",
+        "Access2DSSM3<f64>",
+        "Access2DSSM4<f64>",
+        "Access2DSSM2x3<f64>",
+        "Access2DSSM3x2<f64>",
+        "Access2DSSMD<f64>",
+        "Access2DSSV2<f64>",
+        "Access2DSSV3<f64>",
+        "Access2DSSV4<f64>",
+        "Access2DSSVD<f64>",
+        "Access2DSSR2<f64>",
+        "Access2DSSR3<f64>",
+        "Access2DSSR4<f64>",
+        "Access2DSSRD<f64>",
+    ] {
+        register(builder, &runtime, name, bind_scalar_access_2d)?;
+    }
     register(
         builder,
         &runtime,
@@ -136,25 +228,42 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "MathCosF64VD", bind_cos)?;
     register(builder, &runtime, "MathSinF64S", bind_sin)?;
     register(builder, &runtime, "MathSinF64VD", bind_sin)?;
+    register(builder, &runtime, "Atan2F64", bind_atan2)?;
+    register(builder, &runtime, "Atan2RDF64", bind_atan2)?;
+    register(builder, &runtime, "Atan2VDF64", bind_atan2)?;
+    register(builder, &runtime, "Atan2MDF64", bind_atan2)?;
     register(builder, &runtime, "MatMulMDMD<f64>", bind_matmul)?;
     register(builder, &runtime, "NChooseKMatrix<f64>", bind_n_choose_k)?;
     register(builder, &runtime, "NegateS<f64>", bind_negate)?;
     register(builder, &runtime, "PowMDS<f64>", bind_pow)?;
     register(builder, &runtime, "PowSS<f64>", bind_pow)?;
     register(builder, &runtime, "PowVDS<f64>", bind_pow)?;
-    register(
+    register_range_implementations(
         builder,
         &runtime,
-        "RangeInclusiveScalar<f64RowDVector>",
+        "RangeExclusiveScalar",
+        bind_range_exclusive,
+    )?;
+    register_range_implementations(
+        builder,
+        &runtime,
+        "RangeIncrementExclusiveScalar",
+        bind_range_increment_exclusive,
+    )?;
+    register_range_implementations(
+        builder,
+        &runtime,
+        "RangeInclusiveScalar",
         bind_range_inclusive,
     )?;
-    register(
+    register_range_implementations(
         builder,
         &runtime,
-        "RangeIncrementInclusiveScalar<f64RowDVector>",
+        "RangeIncrementInclusiveScalar",
         bind_range_increment_inclusive,
     )?;
     register(builder, &runtime, "StatsSumColumnMD<f64>", bind_sum_columns)?;
+    register(builder, &runtime, "StatsSumRowMD<f64>", bind_sum_rows)?;
     register(
         builder,
         &runtime,
@@ -166,8 +275,6 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register(builder, &runtime, "TransposeMD<f64>", bind_transpose)?;
     register(builder, &runtime, "TransposeRD<f64>", bind_transpose)?;
     register(builder, &runtime, "XorSS<bool>", bind_bool_xor)?;
-    register(builder, &["compare"], "seq", bind_strict_equal)?;
-    register(builder, &["compare"], "sneq", bind_strict_not_equal)?;
     register(
         builder,
         &runtime,
@@ -269,6 +376,28 @@ fn register(
     factory: mech_core::ResidentKernelFactory,
 ) -> MResult<()> {
     builder.insert_resident_factory(module.iter().copied(), operation, factory)
+}
+
+fn register_range_implementations(
+    builder: &mut FunctionCatalogBuilder,
+    module: &[&str],
+    family: &str,
+    factory: mech_core::ResidentKernelFactory,
+) -> MResult<()> {
+    // The source range factories select fixed or dynamic matrix identities by
+    // cardinality. Frozen artifacts must be able to resolve every identity the
+    // compiler can emit, independent of the feature closure doing the load.
+    for shape in [
+        "Matrix1",
+        "DMatrix",
+        "RowVector2",
+        "RowVector3",
+        "RowVector4",
+        "RowDVector",
+    ] {
+        register(builder, module, &format!("{family}<f64{shape}>"), factory)?;
+    }
+    Ok(())
 }
 
 fn bound(
@@ -702,7 +831,14 @@ fn bind_assign(
     if request.inputs[0].shape != request.output.shape {
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
-    bound(assign, Vec::<u64>::new().into_boxed_slice())
+    bind_hold_state(request)
+}
+
+fn bind_semantic_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    // The semantic operation is contract-dispatched; frozen runtime IDs remain type-specific.
+    bind_hold_state(request).or_else(|_| super::text::bind_semantic_string_assign(request))
 }
 
 fn bind_hold_state(
@@ -769,6 +905,12 @@ fn bind_sin(
     bind_unary_f64(request, sine)
 }
 
+fn bind_atan2(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_binary(request, atan2)
+}
+
 fn bind_sub(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -785,6 +927,12 @@ fn bind_mul(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_binary(request, multiply)
+}
+
+fn bind_semantic_mul(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_mul(request).or_else(|_| bind_mul_rows(request))
 }
 
 fn bind_div(
@@ -829,6 +977,14 @@ fn bind_f64_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_f64_comparison(request, f64_equal)
+}
+
+fn bind_semantic_equal(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_f64_equal(request)
+        .or_else(|_| bind_f64_vector_equal(request))
+        .or_else(|_| super::text::bind_string_equal(request))
 }
 
 fn bind_f64_vector_equal(
@@ -921,6 +1077,12 @@ fn bind_bool_and(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     bind_bool_binary(request, bool_and)
+}
+
+fn bind_semantic_bool_and(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_bool_and(request).or_else(|_| bind_bool_vector_and(request))
 }
 
 fn bind_bool_vector_and(
@@ -1137,6 +1299,12 @@ fn bind_add_assign(
     bound(add_assign, Vec::<u64>::new().into_boxed_slice())
 }
 
+fn bind_semantic_add_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_add_assign(request).or_else(|_| bind_add_indexed_rows(request))
+}
+
 fn bind_transpose(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -1161,6 +1329,12 @@ fn bind_transpose(
     )
 }
 
+fn bind_semantic_transpose(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_transpose(request).or_else(|_| super::text::bind_string_transpose(request))
+}
+
 fn bind_sum_columns(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
@@ -1179,6 +1353,28 @@ fn bind_sum_columns(
     }
     bound(
         sum_columns,
+        vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
+    )
+}
+
+fn bind_sum_rows(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    require_kind(request, &[ResidentValueKind::F64], ResidentValueKind::F64)?;
+    let [input] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if request.output.shape.len() != Some(input.shape.columns as usize) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        sum_rows,
         vec![input.shape.rows as u64, input.shape.columns as u64].into_boxed_slice(),
     )
 }
@@ -1218,6 +1414,22 @@ fn bind_horizontal(
         parameters.push(input.shape.columns as u64);
     }
     bound(concatenate_horizontal, parameters.into_boxed_slice())
+}
+
+fn bind_matrix_comprehension(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if !request.inputs.is_empty() {
+        return bind_horizontal(request);
+    }
+    validate_build(request, 0, &["matrix", "concatenate"], "horizontal-output")?;
+    if request.output.shape.len() != Some(0) {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        retain_empty_matrix_comprehension,
+        Vec::<u64>::new().into_boxed_slice(),
+    )
 }
 
 fn bind_vertical(
@@ -1266,14 +1478,21 @@ fn bind_range_inclusive(
         &[ResidentValueKind::F64, ResidentValueKind::F64],
         ResidentValueKind::F64,
     )?;
-    if request
-        .inputs
-        .iter()
-        .any(|input| input.shape != ResidentShape::SCALAR)
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    require_f64_scalar_range_layout(request)?;
     bound(range_inclusive, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_range_exclusive(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_build(request, 2, &["range"], "exclusive-output")?;
+    require_kind(
+        request,
+        &[ResidentValueKind::F64, ResidentValueKind::F64],
+        ResidentValueKind::F64,
+    )?;
+    require_f64_scalar_range_layout(request)?;
+    bound(range_exclusive, Vec::<u64>::new().into_boxed_slice())
 }
 
 fn bind_range_increment_inclusive(
@@ -1289,22 +1508,81 @@ fn bind_range_increment_inclusive(
         ],
         ResidentValueKind::F64,
     )?;
-    if request
-        .inputs
-        .iter()
-        .any(|input| input.shape != ResidentShape::SCALAR)
-    {
-        return Err(ResidentKernelBindError::UnsupportedLayout);
-    }
+    require_f64_scalar_range_layout(request)?;
     bound(
         range_increment_inclusive,
         Vec::<u64>::new().into_boxed_slice(),
     )
 }
 
+fn bind_range_increment_exclusive(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_build(request, 3, &["range"], "exclusive-increment-output")?;
+    require_kind(
+        request,
+        &[
+            ResidentValueKind::F64,
+            ResidentValueKind::F64,
+            ResidentValueKind::F64,
+        ],
+        ResidentValueKind::F64,
+    )?;
+    require_f64_scalar_range_layout(request)?;
+    bound(
+        range_increment_exclusive,
+        Vec::<u64>::new().into_boxed_slice(),
+    )
+}
+
+fn require_f64_scalar_range_layout(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<(), ResidentKernelBindError> {
+    let scalar = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+    let inputs_are_scalars = request.inputs.iter().all(|input| {
+        input.shape == ResidentShape::SCALAR
+            && request
+                .schemas
+                .get(input.schema_id)
+                .is_some_and(|schema| schema.body() == &scalar)
+    });
+    let output_is_matrix = request
+        .schemas
+        .get(request.output.schema_id)
+        .is_some_and(|schema| {
+            matches!(
+                schema.body(),
+                SchemaBody::Matrix { element, dimensions }
+                    if dimensions.len() == 2 && element.as_ref() == &scalar
+            )
+        });
+    if !inputs_are_scalars || !output_is_matrix || request.output.shape.rows != 1 {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    Ok(())
+}
+
 fn bind_n_choose_k(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    if matches!(
+        request.contract,
+        ResolvedOperationContract::Declared(contract)
+            if matches!(
+                contract.outputs.first().map(|output| &output.construction),
+                Some(OutputConstruction::FullWrite { .. })
+            )
+    ) {
+        validate_full_write(
+            request,
+            2,
+            ShapeRule::Declared,
+            ChangeDetectionPolicy::ExactScalar,
+        )?;
+        require_f64_lengths(request, &[1, 1], 1)?;
+        return bound(n_choose_k_scalar, Vec::<u64>::new().into_boxed_slice());
+    }
+
     validate_build(request, 2, &["combinatorics"], "n-choose-k-matrix-output")?;
     require_kind(
         request,
@@ -1389,6 +1667,80 @@ fn bind_scalar_access_1d(
         return Err(ResidentKernelBindError::UnsupportedLayout);
     }
     bound(scalar_access_1d, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_scalar_index(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        1,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    if request.inputs.len() != 1
+        || !matches!(
+            request.inputs[0].kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index | ResidentValueKind::Snapshot
+        )
+        || request.inputs[0].shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::Index
+        || request.output.shape != ResidentShape::SCALAR
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(scalar_index, Vec::<u64>::new().into_boxed_slice())
+}
+
+fn bind_semantic_scalar_access(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_scalar_access_1d(request)
+        .or_else(|_| bind_scalar_access_2d(request))
+        .or_else(|_| bind_all_rows_column(request))
+        .or_else(|_| bind_row_all_columns(request))
+        .or_else(|_| super::text::bind_string_scalar_access(request))
+}
+
+fn bind_scalar_access_2d(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    validate_full_write(
+        request,
+        3,
+        ShapeRule::Declared,
+        ChangeDetectionPolicy::KernelReported,
+    )?;
+    let [source, row, column] = request.inputs else {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    };
+    if source.kind != ResidentValueKind::F64
+        || !matches!(row.kind, ResidentValueKind::F64 | ResidentValueKind::Index)
+        || !matches!(
+            column.kind,
+            ResidentValueKind::F64 | ResidentValueKind::Index
+        )
+        || row.shape != ResidentShape::SCALAR
+        || column.shape != ResidentShape::SCALAR
+        || request.output.kind != ResidentValueKind::F64
+        || request.output.shape != ResidentShape::SCALAR
+        || source.shape.len().is_none()
+    {
+        return Err(ResidentKernelBindError::UnsupportedLayout);
+    }
+    bound(
+        scalar_access_2d,
+        vec![source.shape.rows as u64, source.shape.columns as u64].into_boxed_slice(),
+    )
+}
+
+fn bind_semantic_range_access(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_gather_1d(request)
+        .or_else(|_| bind_all_rows_columns(request))
+        .or_else(|_| bind_rows_all_columns(request))
+        .or_else(|_| super::text::bind_string_gather(request))
 }
 
 fn bind_matmul(
@@ -1696,27 +2048,6 @@ fn write_bool(output: ResidentValueMut<'_>, next: bool) -> Result<bool, Resident
     Ok(changed)
 }
 
-fn assign(
-    _kernel: &BoundResidentKernel,
-    inputs: &dyn ResidentKernelInputs,
-    output: ResidentValueMut<'_>,
-) -> Result<bool, ResidentKernelError> {
-    if inputs.len() != 1 {
-        return Err(ResidentKernelError::InvalidInput);
-    }
-    let source = f64_input(inputs, 0)?;
-    let output = f64_output(output)?;
-    if source.len() != output.len() {
-        return Err(ResidentKernelError::InvalidShape);
-    }
-    let changed = output
-        .iter()
-        .zip(source)
-        .any(|(left, right)| left.to_bits() != right.to_bits());
-    output.copy_from_slice(source);
-    Ok(changed)
-}
-
 fn hold_state(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -1777,6 +2108,24 @@ fn hold_state(
             target.clone_from_slice(source);
             Ok(changed)
         }
+        _ => Err(ResidentKernelError::InvalidShape),
+    }
+}
+
+fn retain_empty_matrix_comprehension(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if !inputs.is_empty() {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    match output {
+        ResidentValueMut::Bool(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::Index(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::F64(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::String(values) if values.is_empty() => Ok(false),
+        ResidentValueMut::Snapshot(values) if values.is_empty() => Ok(false),
         _ => Err(ResidentKernelError::InvalidShape),
     }
 }
@@ -2089,6 +2438,14 @@ fn sine(
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
     unary_f64(inputs, output, f64::sin)
+}
+
+fn atan2(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    binary_f64(inputs, output, f64::atan2)
 }
 
 fn binary_f64(
@@ -2502,6 +2859,26 @@ fn sum_columns(
     }))
 }
 
+fn sum_rows(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let input = f64_input(inputs, 0)?;
+    let output = f64_output(output)?;
+    let rows = kernel.parameters()[0] as usize;
+    let columns = kernel.parameters()[1] as usize;
+    if input.len() != rows * columns || output.len() != columns {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64(output, |column| {
+        (0..rows).map(|row| input[row + column * rows]).sum()
+    }))
+}
+
 fn concatenate_horizontal(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -2595,7 +2972,29 @@ fn range_inclusive(
     if output.len() != expected_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    Ok(replace_f64(output, |index| start + index as f64))
+    Ok(replace_f64_range(output, start, 1.0))
+}
+
+fn range_exclusive(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let start = *f64_input(inputs, 0)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let end = *f64_input(inputs, 1)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let output = f64_output(output)?;
+    let expected_len = exclusive_range_len(start, 1.0, end)?;
+    if output.len() != expected_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64_range(output, start, 1.0))
 }
 
 fn range_increment_inclusive(
@@ -2638,7 +3037,59 @@ fn range_increment_inclusive(
     if output.len() != expected_len {
         return Err(ResidentKernelError::InvalidShape);
     }
-    Ok(replace_f64(output, |index| start + step * index as f64))
+    Ok(replace_f64_range(output, start, step))
+}
+
+fn range_increment_exclusive(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 3 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let start = *f64_input(inputs, 0)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let step = *f64_input(inputs, 1)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let end = *f64_input(inputs, 2)?
+        .first()
+        .ok_or(ResidentKernelError::InvalidInput)?;
+    let output = f64_output(output)?;
+    let expected_len = exclusive_range_len(start, step, end)?;
+    if output.len() != expected_len {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(replace_f64_range(output, start, step))
+}
+
+fn replace_f64_range(output: &mut [f64], start: f64, step: f64) -> bool {
+    let mut current = start;
+    let last = output.len().saturating_sub(1);
+    replace_f64(output, |index| {
+        let value = current;
+        if index < last {
+            current += step;
+        }
+        value
+    })
+}
+
+fn exclusive_range_len(start: f64, step: f64, end: f64) -> Result<usize, ResidentKernelError> {
+    if !start.is_finite() || !step.is_finite() || !end.is_finite() || step == 0.0 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let difference = end - start;
+    if difference == 0.0 || (difference > 0.0 && step < 0.0) || (difference < 0.0 && step > 0.0) {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let length = (difference / step).ceil();
+    if !length.is_finite() || length <= 0.0 || length >= usize::MAX as f64 {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok(length as usize)
 }
 
 fn n_choose_k(
@@ -2702,6 +3153,47 @@ fn n_choose_k(
     Ok(previous != output)
 }
 
+fn n_choose_k_scalar(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let [n] = f64_input(inputs, 0)? else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let [k] = f64_input(inputs, 1)? else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    if !n.is_finite()
+        || !k.is_finite()
+        || *n < 0.0
+        || *k < 0.0
+        || n.fract() != 0.0
+        || k.fract() != 0.0
+        || *n > u128::MAX as f64
+        || *k > u128::MAX as f64
+    {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    if *k > *n {
+        return write_f64_array(f64_output(output)?, [0.0]);
+    }
+    let iterations = k.min(*n - *k);
+    if iterations > 1_000_000.0 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let mut result = 1.0;
+    let mut index = 0.0;
+    while index < iterations {
+        result = result * (*n - index) / (index + 1.0);
+        index += 1.0;
+    }
+    write_f64_array(f64_output(output)?, [result])
+}
+
 fn gather_1d(
     _kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -2736,6 +3228,85 @@ fn scalar_access_1d(
     }
     let source = f64_input(inputs, 0)?;
     let index = checked_one_based(index_at(inputs, 1, 0)?, source.len())?;
+    let output = f64_output(output)?;
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let next = source[index];
+    let changed = target.to_bits() != next.to_bits();
+    *target = next;
+    Ok(changed)
+}
+
+fn scalar_index(
+    _kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 1 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let next = match inputs.get(0).ok_or(ResidentKernelError::InvalidInput)? {
+        ResidentValueRef::F64([value]) => value
+            .to_portable_index()
+            .ok_or(ResidentKernelError::InvalidInput)?,
+        ResidentValueRef::Index([value]) => value
+            .to_portable_index()
+            .ok_or(ResidentKernelError::InvalidInput)?,
+        ResidentValueRef::Snapshot([Some(value)]) => match value.data() {
+            ValueData::U8(value) => value.to_portable_index(),
+            ValueData::U16(value) => value.to_portable_index(),
+            ValueData::U32(value) => value.to_portable_index(),
+            ValueData::U64(value) => value.to_portable_index(),
+            ValueData::U128(value) => value.to_portable_index(),
+            ValueData::I8(value) => value.to_portable_index(),
+            ValueData::I16(value) => value.to_portable_index(),
+            ValueData::I32(value) => value.to_portable_index(),
+            ValueData::I64(value) => value.to_portable_index(),
+            ValueData::I128(value) => value.to_portable_index(),
+            ValueData::F32(value) => value.to_f32().to_portable_index(),
+            ValueData::F64(value) => value.to_f64().to_portable_index(),
+            ValueData::Index(value) => value.to_portable_index(),
+            _ => return Err(ResidentKernelError::InvalidInput),
+        }
+        .ok_or(ResidentKernelError::InvalidInput)?,
+        ResidentValueRef::F64(_) | ResidentValueRef::Index(_) | ResidentValueRef::Snapshot(_) => {
+            return Err(ResidentKernelError::InvalidShape);
+        }
+        ResidentValueRef::Bool(_) | ResidentValueRef::String(_) => {
+            return Err(ResidentKernelError::InvalidInput);
+        }
+    };
+    let ResidentValueMut::Index(output) = output else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let [target] = output else {
+        return Err(ResidentKernelError::InvalidShape);
+    };
+    let changed = *target != next;
+    *target = next;
+    Ok(changed)
+}
+
+fn scalar_access_2d(
+    kernel: &BoundResidentKernel,
+    inputs: &dyn ResidentKernelInputs,
+    output: ResidentValueMut<'_>,
+) -> Result<bool, ResidentKernelError> {
+    if inputs.len() != 3 || kernel.parameters().len() != 2 {
+        return Err(ResidentKernelError::InvalidInput);
+    }
+    let source = f64_input(inputs, 0)?;
+    let rows =
+        usize::try_from(kernel.parameters()[0]).map_err(|_| ResidentKernelError::InvalidShape)?;
+    let columns =
+        usize::try_from(kernel.parameters()[1]).map_err(|_| ResidentKernelError::InvalidShape)?;
+    if rows.checked_mul(columns) != Some(source.len()) {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    let row = checked_one_based(index_at(inputs, 1, 0)?, rows)?;
+    let column = checked_one_based(index_at(inputs, 2, 0)?, columns)?;
+    let index = row + column * rows;
     let output = f64_output(output)?;
     let [target] = output else {
         return Err(ResidentKernelError::InvalidShape);
@@ -2930,6 +3501,234 @@ mod tests {
 
         fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
             self.0.get(index).copied()
+        }
+    }
+
+    #[test]
+    fn frozen_range_catalog_resolves_every_compiler_output_identity() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        let runtime = vec!["runtime".to_owned()];
+
+        for family in [
+            "RangeExclusiveScalar",
+            "RangeIncrementExclusiveScalar",
+            "RangeInclusiveScalar",
+            "RangeIncrementInclusiveScalar",
+        ] {
+            for shape in [
+                "Matrix1",
+                "DMatrix",
+                "RowVector2",
+                "RowVector3",
+                "RowVector4",
+                "RowDVector",
+            ] {
+                let identity = format!("{family}<f64{shape}>");
+                assert!(
+                    catalog.resident_factory(&runtime, &identity).is_some(),
+                    "missing frozen range identity {identity}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn statistical_reduction_resident_kernels_cover_both_axes() {
+        let mut builder = FunctionCatalogBuilder::new();
+        install(&mut builder).unwrap();
+        let catalog = builder.build().unwrap();
+        assert!(
+            catalog
+                .resident_factory(&["stats".to_owned(), "sum".to_owned()], "column")
+                .is_some()
+        );
+        assert!(
+            catalog
+                .resident_factory(&["stats".to_owned(), "sum".to_owned()], "row")
+                .is_some()
+        );
+        assert!(
+            catalog
+                .resident_factory(&["runtime".to_owned()], "StatsSumColumnMD<f64>")
+                .is_some()
+        );
+        assert!(
+            catalog
+                .resident_factory(&["runtime".to_owned()], "StatsSumRowMD<f64>")
+                .is_some()
+        );
+
+        // Resident matrix storage is column-major: [1 2; 3 4] is [1, 3, 2, 4].
+        let matrix = [1.0, 3.0, 2.0, 4.0];
+        let inputs = [ResidentValueRef::F64(&matrix)];
+        let columns = BoundResidentKernel::new(sum_columns, Box::new([2, 2]));
+        let rows = BoundResidentKernel::new(sum_rows, Box::new([2, 2]));
+        let mut column_output = [0.0; 2];
+        let mut row_output = [0.0; 2];
+
+        assert_eq!(
+            columns.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut column_output)),
+            Ok(true)
+        );
+        assert_eq!(
+            rows.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut row_output)),
+            Ok(true)
+        );
+        assert_eq!(column_output, [3.0, 7.0]);
+        assert_eq!(row_output, [4.0, 6.0]);
+    }
+
+    #[test]
+    fn range_binders_require_scalar_f64_inputs_and_row_matrix_f64_outputs() {
+        fn schema(body: SchemaBody) -> mech_core::Schema {
+            mech_core::SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body,
+            }
+            .finalize()
+            .unwrap()
+        }
+
+        fn contract(
+            inputs: &[mech_core::SchemaId],
+            output: mech_core::SchemaId,
+            postcondition: &str,
+        ) -> ResolvedOperationContract {
+            ResolvedOperationContract::Declared(mech_core::DeclaredOperationContract {
+                inputs: inputs
+                    .iter()
+                    .map(|schema| mech_core::ResolvedInputPort {
+                        schema: *schema,
+                        access: AccessMode::Read,
+                        delivery: DeliveryMode::Signal,
+                    })
+                    .collect::<Vec<_>>()
+                    .into_boxed_slice(),
+                outputs: vec![mech_core::ResolvedOutputPort {
+                    schema: output,
+                    access: AccessMode::Write,
+                    delivery: DeliveryMode::Signal,
+                    construction: OutputConstruction::Build {
+                        postcondition: ShapeContractReference {
+                            module_path: vec!["range".to_owned()].into_boxed_slice(),
+                            contract_name: postcondition.to_owned(),
+                        },
+                    },
+                    alias: AliasPolicy::NoAlias,
+                    change_detection: ChangeDetectionPolicy::KernelReported,
+                }]
+                .into_boxed_slice(),
+                interaction: ExternalInteraction::Pure,
+            })
+        }
+
+        let f64_body = SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
+        let matrix = |rows, columns| SchemaBody::Matrix {
+            element: Box::new(f64_body.clone()),
+            dimensions: vec![
+                mech_core::DimensionExpr::Constant(rows),
+                mech_core::DimensionExpr::Constant(columns),
+            ]
+            .into_boxed_slice(),
+        };
+        let mut builder = mech_core::SchemaTableBuilder::new();
+        let scalar_handle = builder.insert(schema(f64_body.clone())).unwrap();
+        let matrix_one_handle = builder.insert(schema(matrix(1, 1))).unwrap();
+        let row_handle = builder.insert(schema(matrix(1, 4))).unwrap();
+        let non_row_handle = builder.insert(schema(matrix(2, 2))).unwrap();
+        let build = builder.finish().unwrap();
+        let scalar = build.resolve(scalar_handle).unwrap();
+        let matrix_one = build.resolve(matrix_one_handle).unwrap();
+        let row = build.resolve(row_handle).unwrap();
+        let non_row = build.resolve(non_row_handle).unwrap();
+        let (schemas, _) = build.into_parts();
+        let port = |schema_id, shape| mech_core::ResidentPortLayout {
+            schema_id,
+            schema_key: schemas.entry(schema_id).unwrap().key(),
+            kind: ResidentValueKind::F64,
+            shape,
+        };
+        let row_shape = ResidentShape {
+            rows: 1,
+            columns: 4,
+        };
+        let non_row_shape = ResidentShape {
+            rows: 2,
+            columns: 2,
+        };
+
+        let families: [(mech_core::ResidentKernelFactory, usize, &str); 4] = [
+            (bind_range_exclusive, 2, "exclusive-output"),
+            (
+                bind_range_increment_exclusive,
+                3,
+                "exclusive-increment-output",
+            ),
+            (bind_range_inclusive, 2, "inclusive-output"),
+            (
+                bind_range_increment_inclusive,
+                3,
+                "inclusive-increment-output",
+            ),
+        ];
+        for (binder, arity, postcondition) in families {
+            let valid_inputs = vec![port(scalar, ResidentShape::SCALAR); arity];
+            let valid_contract = contract(&vec![scalar; arity], row, postcondition);
+            assert!(
+                binder(&ResidentKernelBindRequest {
+                    contract: &valid_contract,
+                    schemas: &schemas,
+                    inputs: &valid_inputs,
+                    output: port(row, row_shape),
+                })
+                .is_ok(),
+                "valid {postcondition} layout was rejected"
+            );
+
+            let invalid_inputs = vec![port(matrix_one, ResidentShape::SCALAR); arity];
+            let invalid_contract = contract(&vec![matrix_one; arity], row, postcondition);
+            assert!(
+                matches!(
+                    binder(&ResidentKernelBindRequest {
+                        contract: &invalid_contract,
+                        schemas: &schemas,
+                        inputs: &invalid_inputs,
+                        output: port(row, row_shape),
+                    }),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ),
+                "matrix schemas were accepted as scalar range inputs"
+            );
+
+            let invalid_contract = contract(&vec![scalar; arity], scalar, postcondition);
+            assert!(
+                matches!(
+                    binder(&ResidentKernelBindRequest {
+                        contract: &invalid_contract,
+                        schemas: &schemas,
+                        inputs: &valid_inputs,
+                        output: port(scalar, row_shape),
+                    }),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ),
+                "a scalar schema was accepted as a range matrix output"
+            );
+
+            let invalid_contract = contract(&vec![scalar; arity], non_row, postcondition);
+            assert!(
+                matches!(
+                    binder(&ResidentKernelBindRequest {
+                        contract: &invalid_contract,
+                        schemas: &schemas,
+                        inputs: &valid_inputs,
+                        output: port(non_row, non_row_shape),
+                    }),
+                    Err(ResidentKernelBindError::UnsupportedLayout)
+                ),
+                "a non-row matrix was accepted as a range output"
+            );
         }
     }
 
@@ -3287,6 +4086,106 @@ mod tests {
     }
 
     #[test]
+    fn exclusive_range_fills_the_declared_resident_output() {
+        let start = [1.0];
+        let end = [5.0];
+        let inputs = [ResidentValueRef::F64(&start), ResidentValueRef::F64(&end)];
+        let mut output = [0.0; 4];
+        let kernel = BoundResidentKernel::new(range_exclusive, Box::new([]));
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1.0, 2.0, 3.0, 4.0]);
+
+        let mut wrong_shape = [11.0; 3];
+        let previous = wrong_shape;
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut wrong_shape)),
+            Err(ResidentKernelError::InvalidShape)
+        );
+        assert_eq!(wrong_shape, previous);
+    }
+
+    #[test]
+    fn exclusive_increment_range_stops_before_the_terminal_value() {
+        let start = [1.0];
+        let step = [2.0];
+        let end = [6.0];
+        let inputs = [
+            ResidentValueRef::F64(&start),
+            ResidentValueRef::F64(&step),
+            ResidentValueRef::F64(&end),
+        ];
+        let mut output = [0.0; 3];
+        let kernel = BoundResidentKernel::new(range_increment_exclusive, Box::new([]));
+
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1.0, 3.0, 5.0]);
+    }
+
+    #[test]
+    fn resident_increment_ranges_match_machine_repeated_addition_bits() {
+        let start = [0.0_f64];
+        let step = [0.1_f64];
+        let end = [1.0_f64];
+        let inputs = [
+            ResidentValueRef::F64(&start),
+            ResidentValueRef::F64(&step),
+            ResidentValueRef::F64(&end),
+        ];
+        let mut expected = Vec::with_capacity(11);
+        let mut current = start[0];
+        for _ in 0..11 {
+            expected.push(current);
+            current += step[0];
+        }
+        assert_ne!(
+            expected[6].to_bits(),
+            (start[0] + step[0] * 6.0).to_bits(),
+            "test values must distinguish recurrence from index multiplication"
+        );
+
+        let mut exclusive = vec![0.0; 10];
+        let kernel = BoundResidentKernel::new(range_increment_exclusive, Box::new([]));
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut exclusive)),
+            Ok(true)
+        );
+        assert_eq!(
+            exclusive
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            expected[..10]
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>()
+        );
+
+        let mut inclusive = vec![0.0; 11];
+        let kernel = BoundResidentKernel::new(range_increment_inclusive, Box::new([]));
+        assert_eq!(
+            kernel.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut inclusive)),
+            Ok(true)
+        );
+        assert_eq!(
+            inclusive
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>(),
+            expected
+                .iter()
+                .map(|value| value.to_bits())
+                .collect::<Vec<_>>()
+        );
+    }
+
+    #[test]
     fn n_choose_k_accepts_every_declared_selection_size() {
         let values = [1.0, 2.0, 3.0];
         for (k, combinations, expected) in [
@@ -3351,6 +4250,20 @@ mod tests {
         );
         assert_eq!(selected, [3.0]);
 
+        let row = [2_u64];
+        let column = [1_u64];
+        let inputs = [
+            ResidentValueRef::F64(&source),
+            ResidentValueRef::Index(&row),
+            ResidentValueRef::Index(&column),
+        ];
+        let access = BoundResidentKernel::new(scalar_access_2d, vec![2, 2].into_boxed_slice());
+        assert_eq!(
+            access.execute(&Inputs(&inputs), ResidentValueMut::F64(&mut selected)),
+            Ok(true)
+        );
+        assert_eq!(selected, [2.0]);
+
         let lhs = [1.0, 3.0, 2.0, 4.0];
         let rhs = [5.0, 7.0, 6.0, 8.0];
         let inputs = [ResidentValueRef::F64(&lhs), ResidentValueRef::F64(&rhs)];
@@ -3361,5 +4274,42 @@ mod tests {
             Ok(true)
         );
         assert_eq!(product, [19.0, 43.0, 22.0, 50.0]);
+    }
+
+    #[test]
+    fn scalar_index_matches_existing_f64_index_conversion() {
+        let input = [2.0];
+        let inputs = [ResidentValueRef::F64(&input)];
+        let mut output = [0_u64];
+        let conversion = BoundResidentKernel::new(scalar_index, Box::new([]));
+        assert_eq!(
+            conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [2]);
+
+        let fractional = [1.5];
+        let inputs = [ResidentValueRef::F64(&fractional)];
+        assert_eq!(
+            conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+            Ok(true)
+        );
+        assert_eq!(output, [1]);
+
+        for rejected in [-1.0, f64::NAN, PORTABLE_INDEX_MAX as f64 + 1.0] {
+            let input = [rejected];
+            let inputs = [ResidentValueRef::F64(&input)];
+            assert_eq!(
+                conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+                Err(ResidentKernelError::InvalidInput)
+            );
+        }
+
+        let input = [PORTABLE_INDEX_MAX + 1];
+        let inputs = [ResidentValueRef::Index(&input)];
+        assert_eq!(
+            conversion.execute(&Inputs(&inputs), ResidentValueMut::Index(&mut output)),
+            Err(ResidentKernelError::InvalidInput)
+        );
     }
 }

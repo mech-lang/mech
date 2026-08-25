@@ -1,0 +1,116 @@
++> math
+
+EKF array inputs
+-------------------------------------------------------------------------------
+
+-- This ordinary Mech section constructs the outer arrays. The accelerator
+-- derives the broadcast extent from these values; no host API supplies a
+-- filter count to the kernel compiler.
+filter-count := 100000f32
+filter-index := 1f32..=filter-count
+filter-phase := 6.283185307179586<f32> * (filter-index - 1f32) / filter-count
+lane-dt := 0.1<f32>
+lane-linear-velocity := 1f32 + 0.05<f32> * math/sin(filter-phase * 3f32)
+lane-angular-velocity := 0.015<f32> * (1f32 + 0.1<f32> * math/sin(filter-phase * 2f32))
+lane-bearing := -0.55<f32> + 0.01<f32> * math/sin(filter-phase * 7f32) + 0.005<f32> * math/sin(filter-phase * 11f32)
+lane-measurement-noise := 0.25<f32>
+finite-limit := 3.402823466e38<f32>
+covariance-symmetry-tolerance := 0.0001<f32>
+dt := lane-dt
+linear-velocity := lane-linear-velocity
+angular-velocity := lane-angular-velocity
+bearing := lane-bearing
+measurement-noise := lane-measurement-noise
+
+EKF step @compute
+-------------------------------------------------------------------------------
+
+-- This region is one filter. Array-valued activation inputs broadcast this
+-- fixed-shape body over their common outer extent.
+dt := lane-dt
+linear-velocity := lane-linear-velocity
+angular-velocity := lane-angular-velocity
+bearing := lane-bearing
+measurement-noise := lane-measurement-noise
+landmark := [140f32; 12f32]
+
+process-noise := [0.01<f32> 0f32
+                  0f32      0.0025<f32>]
+identity := [1f32 0f32 0f32
+             0f32 1f32 0f32
+             0f32 0f32 1f32]
+position-projection := [1f32 0f32 0f32
+                        0f32 1f32 0f32]
+basis-x := [1f32; 0f32; 0f32]
+basis-y := [0f32; 1f32; 0f32]
+basis-theta := [0f32; 0f32; 1f32]
+
+~state := [55f32; 25f32; 0.4<f32>]
+~covariance := [100f32 0f32   0f32
+                0f32   100f32 0f32
+                0f32   0f32   0.15<f32>]
+
+theta := state · basis-theta
+sin-theta := math/sin(theta)
+cos-theta := math/cos(theta)
+distance := linear-velocity * dt
+
+predicted-state := state + [distance * cos-theta
+                            distance * sin-theta
+                            angular-velocity * dt]
+
+motion-jacobian := [1f32 0f32 (0f32 - distance * sin-theta)
+                    0f32 1f32 distance * cos-theta
+                    0f32 0f32 1f32]
+
+control-jacobian := [cos-theta * dt 0f32
+                     sin-theta * dt 0f32
+                     0f32            dt]
+
+predicted-covariance := motion-jacobian ** covariance ** motion-jacobian' + control-jacobian ** process-noise ** control-jacobian'
+
+delta := landmark - position-projection ** predicted-state
+delta-x := delta · [1f32; 0f32]
+delta-y := delta · [0f32; 1f32]
+squared-range := delta · delta
+
+predicted-bearing := math/atan2(delta-y, delta-x) - (predicted-state · basis-theta)
+raw-innovation := bearing - predicted-bearing
+innovation := math/atan2(math/sin(raw-innovation), math/cos(raw-innovation))
+
+observation-jacobian := [delta-y / squared-range, (0f32 - delta-x) / squared-range, -1f32]
+innovation-variance := observation-jacobian ** predicted-covariance · observation-jacobian + measurement-noise
+gain := predicted-covariance ** observation-jacobian' / innovation-variance
+
+corrected-state := predicted-state + gain * innovation
+correction := identity - gain ** observation-jacobian
+corrected-covariance := correction ** predicted-covariance ** correction' + (gain ** gain') * measurement-noise
+
+-- Robot-oriented publication constraints are ordinary Mech expressions. The
+-- fixed-shape compiler fuses these predicates with the candidate calculation;
+-- no EKF-specific validation operation or host-side covariance discovery is
+-- involved.
+candidate-x := corrected-state · basis-x
+candidate-y := corrected-state · basis-y
+candidate-theta := corrected-state · basis-theta
+
+p00 := corrected-covariance[1,1]
+p10 := corrected-covariance[2,1]
+p20 := corrected-covariance[3,1]
+p01 := corrected-covariance[1,2]
+p11 := corrected-covariance[2,2]
+p21 := corrected-covariance[3,2]
+p02 := corrected-covariance[1,3]
+p12 := corrected-covariance[2,3]
+p22 := corrected-covariance[3,3]
+
+finite-state := math/abs(candidate-x) <= finite-limit && math/abs(candidate-y) <= finite-limit && math/abs(candidate-theta) <= finite-limit
+finite-covariance := math/abs(p00) <= finite-limit && math/abs(p10) <= finite-limit && math/abs(p20) <= finite-limit && math/abs(p01) <= finite-limit && math/abs(p11) <= finite-limit && math/abs(p21) <= finite-limit && math/abs(p02) <= finite-limit && math/abs(p12) <= finite-limit && math/abs(p22) <= finite-limit
+
+finite-candidate! := finite-state && finite-covariance
+positive-covariance! := p00 > 0f32 && p11 > 0f32 && p22 > 0f32
+symmetric-covariance! := math/abs(p01 - p10) <= covariance-symmetry-tolerance && math/abs(p02 - p20) <= covariance-symmetry-tolerance && math/abs(p12 - p21) <= covariance-symmetry-tolerance
+
+state = corrected-state
+covariance = corrected-covariance
+(state, covariance)

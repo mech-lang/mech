@@ -4,7 +4,7 @@
 //! and its decoder reconstructs and validates the same artifact; it does not
 //! feed a separate compatibility graph back into this compiler.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 #[cfg(feature = "semantic-compiler")]
 use std::sync::LazyLock;
 
@@ -30,14 +30,15 @@ use mech_core::{
     LegacySemanticContext, LegacySnapshotContext, LegacyValue, NamedKindPathResolver, NominalKind,
     OperationContractError, OutputConstruction, OutputPortPolicy, Register, SchemaBody,
     SchemaHandle, SchemaTableBuilder, SemanticModelError, ShapeRule, ValueKind,
-    schema_from_legacy_value_kind, snapshot_from_legacy, write_bytecode,
+    schema_from_legacy_value_kind, snapshot_from_legacy,
 };
 
 use super::{
     ApplicationRequirementTable, ArtifactBuildError, ArtifactSource, BindingDeclaration,
-    InitializerReference, InputDeclaration, IntegrityConstraintDeclaration, NodeDeclaration,
-    OperationReference, OutputDeclaration, ProducerReference, ProgramArtifact,
-    ProgramArtifactDraft, SlotDeclaration, SlotRole,
+    ComputeRegionDeclaration, InitializerReference, InputDeclaration,
+    IntegrityConstraintDeclaration, InteractiveSymbolBinding, NodeDeclaration, OperationReference,
+    OutputDeclaration, ProducerReference, ProgramArtifact, ProgramArtifactDraft, SlotDeclaration,
+    SlotRole,
 };
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -102,12 +103,14 @@ static COMPILER_STATE_HOLD_CONTRACT: LazyLock<OperationContractDeclaration> =
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceOutput {
     pub name: String,
+    pub interactive_symbol: Option<String>,
     pub source: SourceValue,
     pub schema: SchemaId,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SourceIntegrityConstraint {
+    pub name: String,
     pub operation: OperationReference,
     pub inputs: Box<[SourceValue]>,
 }
@@ -345,15 +348,20 @@ pub fn compile_source_program_with_contracts(
         });
     }
 
-    let mut published_sources = BTreeMap::<CellSlotId, CellSlotId>::new();
+    // Output aliases are identified by their semantic source, not by the
+    // source's storage class. Constants, transient slots, and input slots all
+    // publish through one materialized output slot; state/output slots are
+    // already persistent and can be addressed directly.
+    let mut published_sources = BTreeMap::<ArtifactSource, CellSlotId>::new();
     let outputs = graph
         .outputs
         .iter()
         .enumerate()
         .map(|(index, output)| {
             let output_id = OutputId(checked_u32(index, "OutputId")?);
-            let source = resolve_source(output.source, &input_slots, &state_slots, &output_slots)?;
-            let persistent = match source {
+            let artifact_source =
+                resolve_source(output.source, &input_slots, &state_slots, &output_slots)?;
+            let persistent = match artifact_source {
                 ArtifactSource::Slot(source) => matches!(
                     slots[source.get() as usize].role,
                     SlotRole::State | SlotRole::Output
@@ -361,15 +369,9 @@ pub fn compile_source_program_with_contracts(
                 .then_some(source),
                 ArtifactSource::Constant(_) => None,
             };
-            let source_slot = match source {
-                ArtifactSource::Slot(source) => Some(source),
-                ArtifactSource::Constant(_) => None,
-            };
             let source = if let Some(source) = persistent {
                 source
-            } else if let Some(target) =
-                source_slot.and_then(|source| published_sources.get(&source).copied())
-            {
+            } else if let Some(target) = published_sources.get(&artifact_source).copied() {
                 target
             } else {
                 let target = CellSlotId(next_slot);
@@ -384,23 +386,29 @@ pub fn compile_source_program_with_contracts(
                     role: SlotRole::Output,
                     producer: ProducerReference::Output {
                         output: output_id,
-                        source,
+                        source: artifact_source,
                     },
-                    initializer: match source {
+                    initializer: match artifact_source {
                         ArtifactSource::Constant(constant) => {
                             Some(InitializerReference::Constant(constant))
                         }
                         ArtifactSource::Slot(_) => None,
                     },
                 });
-                if let Some(source) = source_slot {
-                    published_sources.insert(source, target);
-                }
+                published_sources.insert(artifact_source, target);
                 target
             };
             Ok(OutputDeclaration {
                 output: output_id,
                 name: output.name.clone(),
+                interactive_binding: output.interactive_symbol.clone().map(|lexical_name| {
+                    InteractiveSymbolBinding {
+                        lexical_name,
+                        artifact_source,
+                        storage: source,
+                        output: output_id,
+                    }
+                }),
                 source,
                 schema: output.schema,
             })
@@ -414,6 +422,7 @@ pub fn compile_source_program_with_contracts(
         .map(|(index, constraint)| {
             Ok(IntegrityConstraintDeclaration {
                 constraint: IntegrityConstraintId(checked_u32(index, "IntegrityConstraintId")?),
+                name: constraint.name.clone(),
                 operation: constraint.operation.clone(),
                 contract: OperationContractId::new(0),
                 inputs: constraint
@@ -439,6 +448,7 @@ pub fn compile_source_program_with_contracts(
         bindings: bindings.into_boxed_slice(),
         outputs: outputs.into_boxed_slice(),
         constraints: constraints.into_boxed_slice(),
+        compute_regions: Box::new([]),
     };
     if node_contracts.is_empty() {
         draft.attach_legacy_contracts()?.finalize()
@@ -531,7 +541,12 @@ pub fn compile_executable_program_artifact(
     compiled: &CompiledBytecode,
     catalog: &FunctionCatalog,
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
-    compile_executable_program_artifact_with_outputs(compiled, &[], catalog)
+    compile_executable_program_artifact_with_outputs_and_external_inputs(
+        compiled,
+        &[],
+        catalog,
+        &BTreeSet::new(),
+    )
 }
 
 /// Compiles a source product while publishing every explicitly requested root
@@ -543,6 +558,129 @@ pub fn compile_executable_program_artifact_with_outputs(
     published_outputs: &[Register],
     catalog: &FunctionCatalog,
 ) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_executable_program_artifact_with_outputs_and_external_inputs(
+        compiled,
+        published_outputs,
+        catalog,
+        &BTreeSet::new(),
+    )
+}
+
+/// Compiles an executable source product while treating the named immutable
+/// declarations as activation inputs. This is used only when an enclosing
+/// compute boundary explicitly supplies those values; ordinary source
+/// literals remain artifact constants.
+#[cfg(feature = "semantic-compiler")]
+pub fn compile_executable_program_artifact_with_outputs_and_external_inputs(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    catalog: &FunctionCatalog,
+    external_input_names: &BTreeSet<String>,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_executable_program_artifact_with_identity(
+        compiled,
+        published_outputs,
+        &[],
+        catalog,
+        external_input_names,
+        RuntimeOperationIdentity::Semantic,
+    )
+}
+
+/// Namespace used to carry an interactive lexical symbol through the durable
+/// artifact interface without weakening canonical interface-name validation.
+pub const INTERACTIVE_SYMBOL_OUTPUT_PREFIX: &str = "mech-repl-symbol-";
+
+/// Encode an arbitrary UTF-8 lexical symbol as one canonical artifact output
+/// name. Encoding every interactive name (rather than only invalid names)
+/// makes the mapping injective and keeps query identity independent from the
+/// artifact interface grammar.
+pub fn encode_interactive_symbol_output_name(name: &str) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
+    let mut encoded =
+        String::with_capacity(INTERACTIVE_SYMBOL_OUTPUT_PREFIX.len() + name.len() * 2);
+    encoded.push_str(INTERACTIVE_SYMBOL_OUTPUT_PREFIX);
+    for byte in name.bytes() {
+        encoded.push(HEX[(byte >> 4) as usize] as char);
+        encoded.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    encoded
+}
+
+/// Decode an interactive artifact output name back to its lexical query name.
+pub fn decode_interactive_symbol_output_name(name: &str) -> Option<String> {
+    let encoded = name.strip_prefix(INTERACTIVE_SYMBOL_OUTPUT_PREFIX)?;
+    if encoded.len() % 2 != 0 {
+        return None;
+    }
+    let bytes = encoded
+        .as_bytes()
+        .chunks_exact(2)
+        .map(|pair| {
+            let high = (pair[0] as char).to_digit(16)? as u8;
+            let low = (pair[1] as char).to_digit(16)? as u8;
+            Some((high << 4) | low)
+        })
+        .collect::<Option<Vec<_>>>()?;
+    String::from_utf8(bytes).ok()
+}
+
+/// Compiles explicitly named source outputs. Multiple names may intentionally
+/// address the same register; the artifact retains each alias while resident
+/// activation continues to share the underlying cell slot.
+#[cfg(feature = "semantic-compiler")]
+pub fn compile_executable_program_artifact_with_named_outputs_and_external_inputs(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    published_output_names: &[Option<String>],
+    catalog: &FunctionCatalog,
+    external_input_names: &BTreeSet<String>,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    validate_compiled_metadata_length(
+        "published_output_names",
+        published_outputs.len(),
+        published_output_names.len(),
+    )?;
+    compile_executable_program_artifact_with_identity(
+        compiled,
+        published_outputs,
+        published_output_names,
+        catalog,
+        external_input_names,
+        RuntimeOperationIdentity::Semantic,
+    )
+}
+
+/// Produces the frozen ordinary-bytecode projection used before semantic
+/// operation identities were introduced. The source product remains the
+/// canonical semantic artifact; this projection exists only so existing v1
+/// files retain their byte-for-byte encoding.
+#[cfg(feature = "semantic-compiler")]
+pub(crate) fn compile_legacy_bytecode_program_artifact_with_outputs(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    catalog: &FunctionCatalog,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
+    compile_executable_program_artifact_with_identity(
+        compiled,
+        published_outputs,
+        &[],
+        catalog,
+        &BTreeSet::new(),
+        RuntimeOperationIdentity::Implementation,
+    )
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn compile_executable_program_artifact_with_identity(
+    compiled: &CompiledBytecode,
+    published_outputs: &[Register],
+    published_output_names: &[Option<String>],
+    catalog: &FunctionCatalog,
+    external_input_names: &BTreeSet<String>,
+    operation_identity: RuntimeOperationIdentity,
+) -> Result<ProgramArtifact, ArtifactBuildError> {
     validate_compiled_metadata_length(
         "instruction_roles",
         compiled.program.instructions.len(),
@@ -552,6 +690,11 @@ pub fn compile_executable_program_artifact_with_outputs(
         "instruction_contracts",
         compiled.program.instructions.len(),
         compiled.instruction_contracts.len(),
+    )?;
+    validate_compiled_metadata_length(
+        "instruction_operations",
+        compiled.program.instructions.len(),
+        compiled.instruction_operations.len(),
     )?;
     validate_compiled_metadata_length(
         "instruction_source_nodes",
@@ -575,9 +718,7 @@ pub fn compile_executable_program_artifact_with_outputs(
     )?;
     validate_compiled_instruction_roles(compiled, catalog)?;
 
-    let legacy_bytes = write_bytecode(&compiled.program)?;
-    let legacy_constants =
-        mech_core::ParsedProgram::from_bytes(&legacy_bytes)?.decode_constants()?;
+    let legacy_constants = mech_core::decode_encoded_constants(&compiled.program.constants)?;
 
     struct PendingRegisterSchema {
         handle: SchemaHandle,
@@ -696,12 +837,16 @@ pub fn compile_executable_program_artifact_with_outputs(
                     if *dst == register
             )
         });
+        let explicitly_external = definitions
+            .iter()
+            .any(|definition| external_input_names.contains(&definition.name));
         register_constant_roles[register_index] = Some(if has_mutable {
             CompilerConstantRole::StateInitializer
-        } else if pending_schema.contains_reference
-            && has_immutable
-            && !computed_registers[register_index]
-            && !has_constant_seed
+        } else if explicitly_external
+            || (pending_schema.contains_reference
+                && has_immutable
+                && !computed_registers[register_index]
+                && !has_constant_seed)
         {
             CompilerConstantRole::ExternalInput
         } else {
@@ -959,6 +1104,7 @@ pub fn compile_executable_program_artifact_with_outputs(
 
     let mut registers = vec![None::<RegisterSemantic>; compiled.program.register_count as usize];
     let mut nodes = Vec::<SourceNode>::new();
+    let mut source_node_origins = Vec::<Option<u32>>::new();
     let mut node_contracts = Vec::<Option<&'static OperationContractDeclaration>>::new();
     let mut lowered_declared_source_nodes = std::collections::BTreeSet::new();
 
@@ -1081,7 +1227,10 @@ pub fn compile_executable_program_artifact_with_outputs(
                     }
                 };
                 let semantics = instruction_semantics(
+                    instruction_id,
                     instruction,
+                    compiled.instruction_operations[instruction_id as usize].as_deref(),
+                    operation_identity,
                     catalog,
                     &compiled.runtime_function_names,
                     &compiled.program.requirements,
@@ -1091,7 +1240,6 @@ pub fn compile_executable_program_artifact_with_outputs(
                     role: "node",
                 })?;
                 let dst = semantics.destination;
-                let prior = register(&registers, dst)?;
                 let schema = register_schemas.get(dst as usize).copied().flatten();
                 let pseudo_destination = compiled
                     .register_kinds
@@ -1103,6 +1251,46 @@ pub fn compile_executable_program_artifact_with_outputs(
                         instruction: instruction_id,
                         register: dst,
                     });
+                }
+                if register_constant_roles[dst as usize]
+                    == Some(CompilerConstantRole::ExternalInput)
+                {
+                    let input = input_indexes[dst as usize].ok_or(
+                        ArtifactBuildError::MissingRegisterSource {
+                            instruction: instruction_id,
+                            register: dst,
+                            role: "external input",
+                        },
+                    )?;
+                    set_register(
+                        &mut registers,
+                        dst,
+                        Some(RegisterSemantic {
+                            source: SourceValue::Input(input),
+                            schema: schema.expect("external input has a validated schema"),
+                        }),
+                    )?;
+                    continue;
+                }
+                let prior = register(&registers, dst)?;
+                if is_variable_definition_instruction(instruction, catalog) {
+                    if prior.is_none() && !pseudo_destination {
+                        return Err(ArtifactBuildError::MissingRegisterSource {
+                            instruction: instruction_id,
+                            register: dst,
+                            role: "variable definition",
+                        });
+                    }
+                    continue;
+                }
+                if matches!(instruction, BytecodeInstruction::CompositePack { .. })
+                    && register_state_indexes
+                        .get(dst as usize)
+                        .copied()
+                        .flatten()
+                        .is_some()
+                {
+                    continue;
                 }
                 let declaration = compiled.instruction_contracts[instruction_index].or_else(|| {
                     instruction
@@ -1228,24 +1416,14 @@ pub fn compile_executable_program_artifact_with_outputs(
                     }
                     .into_boxed_slice(),
                 });
+                source_node_origins.push(compiled.instruction_source_nodes[instruction_index]);
                 node_contracts.push(declaration);
                 if schema.is_none() {
                     set_register(&mut registers, dst, None)?;
                     continue;
                 }
-                let preserves_destination =
-                    is_variable_definition_instruction(instruction, catalog);
                 let source = match state_index {
                     Some(state) => SourceValue::State(state),
-                    None if preserves_destination => {
-                        prior
-                            .ok_or(ArtifactBuildError::MissingRegisterSource {
-                                instruction: instruction_id,
-                                register: dst,
-                                role: "preserved destination",
-                            })?
-                            .source
-                    }
                     None if prior
                         .is_some_and(|value| matches!(value.source, SourceValue::State(_))) =>
                     {
@@ -1280,6 +1458,14 @@ pub fn compile_executable_program_artifact_with_outputs(
     } else {
         published_outputs.to_vec()
     };
+    let encoded_output_names = published_output_names
+        .iter()
+        .map(|name| name.as_deref().map(encode_interactive_symbol_output_name))
+        .collect::<Vec<_>>();
+    let explicit_output_names = encoded_output_names
+        .iter()
+        .filter_map(Clone::clone)
+        .collect::<BTreeSet<_>>();
     let mut output_names = BTreeMap::<String, usize>::new();
     let mut outputs = Vec::with_capacity(output_registers.len());
     for (ordinal, output_register) in output_registers.into_iter().enumerate() {
@@ -1298,17 +1484,33 @@ pub fn compile_executable_program_artifact_with_outputs(
                 role: "published root output",
             });
         };
-        let base_name = definitions_by_register[output_register as usize]
-            .iter()
-            .max_by_key(|definition| definition.ordinal)
-            .map(|definition| definition.name.clone())
-            .unwrap_or_else(|| {
-                if ordinal == 0 {
-                    "result".to_owned()
-                } else {
-                    format!("result-{}", ordinal + 1)
+        let explicit_name = encoded_output_names.get(ordinal).and_then(Clone::clone);
+        let mut base_name = explicit_name.clone().unwrap_or_else(|| {
+            definitions_by_register[output_register as usize]
+                .iter()
+                .max_by_key(|definition| definition.ordinal)
+                .map(|definition| definition.name.clone())
+                .unwrap_or_else(|| {
+                    if ordinal == 0 {
+                        "result".to_owned()
+                    } else {
+                        format!("result-{}", ordinal + 1)
+                    }
+                })
+        });
+        if explicit_name.is_none() && explicit_output_names.contains(&base_name) {
+            let mut suffix = 2;
+            loop {
+                let candidate = format!("{base_name}-{suffix}");
+                if !explicit_output_names.contains(&candidate)
+                    && !output_names.contains_key(&candidate)
+                {
+                    base_name = candidate;
+                    break;
                 }
-            });
+                suffix += 1;
+            }
+        }
         let occurrence = output_names.entry(base_name.clone()).or_default();
         *occurrence += 1;
         let name = if *occurrence == 1 {
@@ -1318,6 +1520,7 @@ pub fn compile_executable_program_artifact_with_outputs(
         };
         outputs.push(SourceOutput {
             name,
+            interactive_symbol: published_output_names.get(ordinal).and_then(Clone::clone),
             source: returned.source,
             schema: returned.schema,
         });
@@ -1345,6 +1548,7 @@ pub fn compile_executable_program_artifact_with_outputs(
             });
         }
         constraints.push(SourceIntegrityConstraint {
+            name: constraint.name.clone(),
             operation: OperationReference {
                 module_path: vec!["integrity".to_owned()].into_boxed_slice(),
                 operation_name: "assert".to_owned(),
@@ -1364,20 +1568,43 @@ pub fn compile_executable_program_artifact_with_outputs(
         &mut constraints,
     )?;
 
-    compile_source_program_with_contracts(
-        &SourceProgram {
-            requirements: ApplicationRequirementTable::from_canonical_entries(
-                compiled.program.requirements.clone(),
-            )?,
-            inputs: inputs.into_boxed_slice(),
-            states: states.into_boxed_slice(),
-            nodes: nodes.into_boxed_slice(),
-            outputs: outputs.into_boxed_slice(),
-            constraints: constraints.into_boxed_slice(),
-        },
+    let source = SourceProgram {
+        requirements: ApplicationRequirementTable::from_canonical_entries(
+            compiled.program.requirements.clone(),
+        )?,
+        inputs: inputs.into_boxed_slice(),
+        states: states.into_boxed_slice(),
+        nodes: nodes.into_boxed_slice(),
+        outputs: outputs.into_boxed_slice(),
+        constraints: constraints.into_boxed_slice(),
+    };
+    let artifact = compile_source_program_with_contracts(
+        &source,
         &mut ArtifactBuildContext::new(&schemas, &constant_store),
         &node_contracts,
-    )
+    )?;
+    let compute_regions = compiled
+        .compute_regions
+        .iter()
+        .enumerate()
+        .map(|(region_index, region)| ComputeRegionDeclaration {
+            id: mech_core::ComputeRegionId::new(region_index as u32),
+            name: region.name.clone().into_boxed_str(),
+            placement: region.placement,
+            nodes: source_node_origins
+                .iter()
+                .enumerate()
+                .filter_map(|(node, source_node)| {
+                    source_node
+                        .filter(|source_node| region.source_nodes.contains(source_node))
+                        .map(|_| artifact.nodes()[node].node)
+                })
+                .collect::<Vec<_>>()
+                .into_boxed_slice(),
+        })
+        .collect::<Vec<_>>()
+        .into_boxed_slice();
+    artifact.with_compute_regions(compute_regions)
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -1495,6 +1722,8 @@ fn is_literal_constructor_operation(operation: &OperationReference) -> bool {
             .operation_name
             .starts_with("HorizontalConcatenate")
             || operation.operation_name.starts_with("VerticalConcatenate")))
+        || (operation.module_path.as_ref() == ["matrix"]
+            && matches!(operation.operation_name.as_str(), "horzcat" | "vertcat"))
         || (operation.module_path.as_ref() == ["set"] && operation.operation_name == "define")
 }
 
@@ -1788,7 +2017,10 @@ fn validate_compiled_instruction_roles(
             _ => match role {
                 Some(CompiledInstructionRole::Node(_)) => {
                     instruction_semantics(
+                        instruction_id,
                         instruction,
+                        compiled.instruction_operations[index].as_deref(),
+                        RuntimeOperationIdentity::Semantic,
                         catalog,
                         &compiled.runtime_function_names,
                         &compiled.program.requirements,
@@ -1944,6 +2176,25 @@ fn operation_reference_from_name(
 }
 
 #[cfg(feature = "semantic-compiler")]
+#[derive(Clone, Copy)]
+enum RuntimeOperationIdentity {
+    Semantic,
+    Implementation,
+}
+
+#[cfg(feature = "semantic-compiler")]
+fn semantic_operation_reference(
+    canonical_name: &str,
+) -> Result<OperationReference, ArtifactBuildError> {
+    let canonical_name = match canonical_name {
+        "matrix/matmul" => "matrix/multiply",
+        "assign" => "core/assign",
+        name => name,
+    };
+    operation_reference_from_name("core", canonical_name)
+}
+
+#[cfg(feature = "semantic-compiler")]
 fn resource_operation_reference(
     requirement: u32,
     requirements: &[ApplicationRequirement],
@@ -1971,19 +2222,31 @@ fn resource_operation_reference(
 
 #[cfg(feature = "semantic-compiler")]
 fn instruction_semantics(
+    instruction_id: u32,
     instruction: &BytecodeInstruction,
+    semantic_operation: Option<&str>,
+    operation_identity: RuntimeOperationIdentity,
     catalog: &FunctionCatalog,
     runtime_function_names: &BTreeMap<u64, String>,
     requirements: &[ApplicationRequirement],
 ) -> Result<Option<CompiledInstructionSemantics>, ArtifactBuildError> {
     let runtime = |function: u64| {
-        if let Some(entry) = catalog.runtime_entry_by_raw(function) {
-            return operation_reference_from_name("runtime", &entry.name);
-        }
-        let name = runtime_function_names
-            .get(&function)
+        let implementation = catalog
+            .runtime_entry_by_raw(function)
+            .map(|entry| entry.name.as_str())
+            .or_else(|| runtime_function_names.get(&function).map(String::as_str))
             .ok_or(ArtifactBuildError::UnknownRuntimeFunction { function })?;
-        operation_reference_from_name("runtime", name)
+        match operation_identity {
+            RuntimeOperationIdentity::Semantic => semantic_operation
+                .ok_or_else(|| ArtifactBuildError::MissingSemanticOperation {
+                    instruction: instruction_id,
+                    implementation: implementation.to_owned(),
+                })
+                .and_then(semantic_operation_reference),
+            RuntimeOperationIdentity::Implementation => {
+                operation_reference_from_name("runtime", implementation)
+            }
+        }
     };
     let semantics = match instruction {
         BytecodeInstruction::ConstLoad { .. } | BytecodeInstruction::Return { .. } => {

@@ -20,17 +20,6 @@ if [[ ! -x "$MECH_BIN" ]]; then
   exit 1
 fi
 
-if [[ -n "${CHROME_BIN:-}" ]]; then
-  chrome_bin="$CHROME_BIN"
-elif command -v google-chrome >/dev/null 2>&1; then
-  chrome_bin="$(command -v google-chrome)"
-elif [[ -x "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]]; then
-  chrome_bin="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-else
-  echo "Google Chrome was not found" >&2
-  exit 1
-fi
-
 # The server binary must have embedded the package at compile time.
 rm -rf "$repo_root/src/wasm/pkg"
 
@@ -184,53 +173,6 @@ if cells[:15] != expected:
 PY
 }
 
-run_chrome() {
-  local page_url="$1"
-  local chrome_profile="$2"
-  local dom_file="$3"
-  local chrome_log="$4"
-  python3 - \
-    "$chrome_bin" \
-    "$page_url" \
-    "$chrome_profile" \
-    "$dom_file" \
-    "$chrome_log" <<'PY'
-import os
-from pathlib import Path
-import signal
-import subprocess
-import sys
-
-chrome, page_url, profile, dom_file, chrome_log = sys.argv[1:]
-args = [
-    chrome,
-    "--headless=new",
-    "--no-sandbox",
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
-    "--run-all-compositor-stages-before-draw",
-    "--virtual-time-budget=20000",
-    "--dump-dom",
-    f"--user-data-dir={profile}",
-    page_url,
-]
-with Path(dom_file).open("wb") as stdout, Path(chrome_log).open("wb") as stderr:
-    process = subprocess.Popen(
-        args,
-        stdout=stdout,
-        stderr=stderr,
-        start_new_session=True,
-    )
-    try:
-        raise SystemExit(process.wait(timeout=45))
-    except subprocess.TimeoutExpired:
-        os.killpg(process.pid, signal.SIGKILL)
-        process.wait()
-        print("headless Chrome exceeded the 45-second smoke deadline", file=sys.stderr)
-        raise SystemExit(124)
-PY
-}
-
 run_case() {
   local label="$1"
   shift
@@ -264,7 +206,12 @@ if not Path(sys.argv[1]).read_bytes().startswith(b"\0asm"):
 PY
 
   set +e
-  run_chrome "$page_url" "$chrome_profile" "$dom_file" "$chrome_log"
+  python3 -m tests.browser.harness \
+    --url "$page_url" --profile "$chrome_profile" \
+    --dom "$dom_file" --log "$chrome_log" \
+    --wait "document.documentElement.dataset.mechDocumentStatus === 'ready' && Boolean(document.querySelector('.mech-block-output'))" \
+    --description "the FizzBuzz document and its output" \
+    --flag=--disable-gpu --flag=--run-all-compositor-stages-before-draw
   local chrome_status="$?"
   set -e
 

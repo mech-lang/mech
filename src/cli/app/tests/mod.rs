@@ -369,7 +369,7 @@ mod build_input_tests {
     }
 
     #[test]
-    fn build_multiple_source_roots_in_caller_order() {
+    fn build_rejects_multiple_production_source_roots() {
         let root = temp_root("multiple-roots");
         let first = root.join("first.mec");
         let second = root.join("second.mec");
@@ -377,9 +377,19 @@ mod build_input_tests {
         std::fs::write(&first, "marker := 1\n").unwrap();
         std::fs::write(&second, "answer := marker + 1\n").unwrap();
 
-        run_build(build_options(vec![first, second], output.clone())).unwrap();
+        let error = match run_build(build_options(vec![first, second], output.clone())) {
+            Ok(_) => panic!("build unexpectedly accepted multiple production roots"),
+            Err(error) => error,
+        };
+        let failure = error
+            .kind_as::<mech_runtime::ResidentRouteFailure>()
+            .expect("multiple roots must retain the resident route failure class");
 
-        assert!(output.join("output.mecb").metadata().unwrap().len() > 0);
+        assert_eq!(
+            failure.class,
+            mech_runtime::ResidentRouteFailureClass::MultipleRootsUnsupported
+        );
+        assert!(!output.join("output.mecb").exists());
         std::fs::remove_dir_all(root).unwrap();
     }
 }
@@ -748,6 +758,30 @@ fn root_command_parses_available_subcommands() {
     super::build_cli()
         .try_get_matches_from(["mech", "bundle-web", "--help"])
         .unwrap_err();
+}
+
+#[cfg(feature = "run")]
+#[test]
+fn targetless_root_invocation_selects_the_resident_repl() {
+    let matches = super::build_cli().try_get_matches_from(["mech"]).unwrap();
+    assert!(super::is_repl_invocation(&matches));
+
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "run", "program.mec"])
+        .unwrap();
+    assert!(!super::is_repl_invocation(&matches));
+
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "--nofun"])
+        .unwrap();
+    assert!(super::is_repl_invocation(&matches));
+    assert!(matches.get_flag("nofun"));
+
+    let matches = super::build_cli()
+        .try_get_matches_from(["mech", "--quiet"])
+        .unwrap();
+    assert!(super::is_repl_invocation(&matches));
+    assert!(matches.get_flag("quiet"));
 }
 
 #[test]

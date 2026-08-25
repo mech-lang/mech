@@ -69,7 +69,7 @@ fn compile_source_fixture(builder: RuntimeBuilder, source: &str) -> Vec<u8> {
         .build_compiler()
         .expect("program compiler construction failed");
     compiler
-        .compile_source(source)
+        .compile_source_frozen_v1(source)
         .map(|product| product.into_parts().1)
         .expect("source fixture bytecode compilation failed")
 }

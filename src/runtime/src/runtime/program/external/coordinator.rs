@@ -93,6 +93,11 @@ pub enum ResidentExternalTurnOutcome {
         turn: TurnId,
         receipt_sequence: LedgerSequence,
         phase: TurnFailurePhase,
+        /// The durable rejection evidence written to the turn receipt.
+        ///
+        /// Keeping it on the immediate outcome prevents host-facing callers
+        /// from replacing the actual cause with a count-only summary.
+        failure: TurnFailureRecord,
     },
     PublishedIndeterminate {
         turn: TurnId,
@@ -150,6 +155,7 @@ pub struct ResidentExternalCoordinator {
     artifact: Arc<ProgramArtifact>,
     live: bool,
     bound: BoundResidentExternalPlan,
+    latest_live_inputs: Vec<Option<Value>>,
     durability: ResidentDurabilityPolicy,
     health: ResidentExternalHealth,
     published_state_hash: u64,
@@ -245,6 +251,7 @@ impl ResidentExternalCoordinator {
         let plan_generation = instance.plan.plan_generation;
         let layout_generation = instance.plan.layout_generation;
         let publication_authority = RuntimeResidentPublicationAuthority { _private: () };
+        let latest_live_inputs = vec![None; bound.observations().len()];
         Ok(Self {
             instance: Some(instance),
             publication_authority,
@@ -255,6 +262,7 @@ impl ResidentExternalCoordinator {
             artifact,
             live,
             bound,
+            latest_live_inputs,
             durability,
             health: ResidentExternalHealth::Healthy,
             published_state_hash,
@@ -281,6 +289,46 @@ impl ResidentExternalCoordinator {
         self.instance
             .as_ref()
             .expect("resident instance is present")
+    }
+
+    pub(crate) fn instance_mut(&mut self) -> &mut ReactiveInstance {
+        self.instance
+            .as_mut()
+            .expect("resident instance is present")
+    }
+
+    /// Transfers the latest dequeued live-input snapshot across a compatible
+    /// resident replacement. Observation node/slot identities are artifact
+    /// local, so migration matches the stable resource request plus its schema
+    /// and shape, then re-materializes the value against the candidate schema
+    /// table. Every compatible candidate observation inherits that same
+    /// authoritative value, including duplicates introduced by the candidate.
+    /// Observations with a newly introduced source identity remain unseeded and
+    /// will read their provider on first use.
+    pub(crate) fn preserve_compatible_live_inputs_from(
+        &mut self,
+        previous: &ResidentExternalCoordinator,
+    ) -> MResult<()> {
+        for (target_ordinal, target) in self.bound.observations().iter().enumerate() {
+            let Some(value) = previous.bound.observations().iter().enumerate().find_map(
+                |(source_ordinal, source)| {
+                    observations_share_snapshot(source, target)
+                        .then(|| previous.latest_live_inputs.get(source_ordinal)?.as_ref())
+                        .flatten()
+                },
+            ) else {
+                continue;
+            };
+            let legacy = provider_value_from_canonical(value, previous.artifact.schemas())?;
+            let migrated = captured_value_from_legacy(
+                &legacy,
+                target.input.schema,
+                &target.input.shape,
+                self.artifact.schemas(),
+            )?;
+            self.latest_live_inputs[target_ordinal] = Some(migrated);
+        }
+        Ok(())
     }
 
     #[cfg(feature = "runtime_bench_gate_d3")]
@@ -356,9 +404,11 @@ impl ResidentExternalCoordinator {
     }
 
     /// Executes one live turn while using owned ingress values for matching
-    /// observations. Values absent from the update set are captured from their
-    /// bound providers. This keeps host packets as the authority for the event
-    /// they triggered instead of racing a separately updated provider snapshot.
+    /// observations. Values absent from the update set retain the last accepted
+    /// input snapshot; providers seed only observations that have not yet
+    /// appeared in an accepted batch. This keeps queue order authoritative and
+    /// prevents a future provider snapshot from leaking across the dequeue
+    /// boundary.
     pub fn execute_turn_with_host_updates(
         &mut self,
         updates: &[crate::RuntimeHostInputUpdate],
@@ -508,6 +558,7 @@ impl ResidentExternalCoordinator {
                             );
                         }
                         self.advance_input_identity(&prefix)?;
+                        self.remember_live_inputs(&prefix);
                         RejectedTurnEvidence::from_input(&prefix)
                     } else {
                         drop(input_permit);
@@ -538,6 +589,7 @@ impl ResidentExternalCoordinator {
                 );
             }
             self.advance_input_identity(&batch)?;
+            self.remember_live_inputs(&batch);
             Some(batch)
         } else {
             if host_updates.is_some_and(|updates| !updates.is_empty()) {
@@ -660,12 +712,13 @@ impl ResidentExternalCoordinator {
 
         match record.header.status {
             TurnRecordStatus::Rejected => {
-                let phase = record
+                let failure = record
                     .header
                     .failure
                     .as_ref()
                     .expect("validated rejected replay receipt")
-                    .phase;
+                    .clone();
+                let phase = failure.phase;
                 if let Some(prepared) = prepared_input {
                     self.append_prepared_input(prepared);
                 }
@@ -679,6 +732,7 @@ impl ResidentExternalCoordinator {
                     turn,
                     receipt_sequence,
                     phase,
+                    failure,
                 })
             }
             TurnRecordStatus::Accepted => self.execute_replay_accepted(
@@ -1040,7 +1094,7 @@ impl ResidentExternalCoordinator {
         &self,
         host_updates: Option<&[crate::RuntimeHostInputUpdate]>,
     ) -> Result<CapturedInputBatch, CaptureFailure> {
-        let mut facts = Vec::with_capacity(self.bound.observations().len());
+        let mut facts: Vec<CapturedInputFact> = Vec::with_capacity(self.bound.observations().len());
         for (ordinal, observation) in self.bound.observations().iter().enumerate() {
             let fact = (|| -> MResult<CapturedInputFact> {
                 let sequence_value = self
@@ -1054,25 +1108,54 @@ impl ResidentExternalCoordinator {
                             && update.source.path() == observation.request.path
                     })
                 });
-                let legacy = if let Some(update) = packet_value {
-                    update.value.clone().into_mech_value()?
+                let value = if let Some(update) = packet_value {
+                    let legacy = update.value.clone().into_mech_value()?;
+                    captured_value_from_legacy(
+                        &legacy,
+                        observation.input.schema,
+                        &observation.input.shape,
+                        self.artifact.schemas(),
+                    )?
+                } else if let Some(value) = host_updates.and_then(|_| {
+                    self.bound.observations().iter().enumerate().find_map(
+                        |(candidate_ordinal, candidate)| {
+                            observations_share_snapshot(candidate, observation)
+                                .then(|| {
+                                    self.latest_live_inputs
+                                        .get(candidate_ordinal)
+                                        .and_then(|value| value.as_ref())
+                                })
+                                .flatten()
+                        },
+                    )
+                }) {
+                    value.clone()
+                } else if let Some(value) = self.bound.observations()[..ordinal]
+                    .iter()
+                    .enumerate()
+                    .find(|(_, candidate)| observations_share_snapshot(candidate, observation))
+                    .and_then(|(candidate_ordinal, _)| {
+                        facts.get(candidate_ordinal).map(|fact| &fact.value)
+                    })
+                {
+                    value.clone()
                 } else {
                     let provider_binding =
                         observation.provider_binding.as_ref().ok_or_else(|| {
                             invalid_value("live observation has no provider binding".to_owned())
                         })?;
-                    provider_binding.read(RuntimeResourceReadRequest {
+                    let legacy = provider_binding.read(RuntimeResourceReadRequest {
                         base_uri: observation.request.base_uri.clone(),
                         path: observation.request.path.clone(),
                         context_name: observation.request.context_name.clone(),
-                    })?
+                    })?;
+                    captured_value_from_legacy(
+                        &legacy,
+                        observation.input.schema,
+                        &observation.input.shape,
+                        self.artifact.schemas(),
+                    )?
                 };
-                let value = captured_value_from_legacy(
-                    &legacy,
-                    observation.input.schema,
-                    &observation.input.shape,
-                    self.artifact.schemas(),
-                )?;
                 CapturedInputFact::new(
                     sequence,
                     observation.requirement,
@@ -1119,7 +1202,12 @@ impl ResidentExternalCoordinator {
                 "replay input identities do not match the next admitted batch",
             );
         }
-        for (fact, observation) in canonical.facts.iter().zip(self.bound.observations()) {
+        for (ordinal, (fact, observation)) in canonical
+            .facts
+            .iter()
+            .zip(self.bound.observations())
+            .enumerate()
+        {
             if fact.requirement != observation.requirement
                 || fact.node != observation.node
                 || fact.slot != observation.input.artifact_slot
@@ -1133,6 +1221,18 @@ impl ResidentExternalCoordinator {
                 return invalid_coordinator(
                     "replay batch differs from the activated observation plan",
                 );
+            }
+            for (previous_fact, previous_observation) in canonical.facts[..ordinal]
+                .iter()
+                .zip(&self.bound.observations()[..ordinal])
+            {
+                if observations_share_snapshot(previous_observation, observation)
+                    && previous_fact.payload_hash != fact.payload_hash
+                {
+                    return invalid_coordinator(
+                        "replay batch contains conflicting snapshots for one source identity",
+                    );
+                }
             }
         }
         Ok(canonical)
@@ -1559,17 +1659,18 @@ impl ResidentExternalCoordinator {
         error: MechError,
     ) -> MResult<ResidentExternalTurnOutcome> {
         let message = bounded_failure_message(&error);
+        let failure = TurnFailureRecord {
+            phase,
+            kind: error.kind_name(),
+            message,
+        };
         let record = OwnedTurnRecord {
             header: TurnRecordHeader {
                 turn_id: turn,
                 transaction_id: transaction,
                 input_range: evidence.input_range,
                 status: TurnRecordStatus::Rejected,
-                failure: Some(TurnFailureRecord {
-                    phase,
-                    kind: "ResidentExternalTurnRejected".to_owned(),
-                    message,
-                }),
+                failure: Some(failure.clone()),
             },
             body: ResidentTurnReceiptV1 {
                 version: ResidentTurnReceiptV1::VERSION,
@@ -1599,6 +1700,7 @@ impl ResidentExternalCoordinator {
             turn,
             receipt_sequence,
             phase,
+            failure,
         })
     }
 
@@ -1760,6 +1862,22 @@ impl ResidentExternalCoordinator {
             .ok_or_else(sequence_exhausted)?;
         Ok(())
     }
+
+    fn remember_live_inputs(&mut self, batch: &CapturedInputBatch) {
+        debug_assert!(batch.facts.len() <= self.latest_live_inputs.len());
+        for (latest, fact) in self.latest_live_inputs.iter_mut().zip(batch.facts.iter()) {
+            *latest = Some(fact.value.clone());
+        }
+    }
+}
+
+fn observations_share_snapshot(
+    left: &super::BoundResidentObservation,
+    right: &super::BoundResidentObservation,
+) -> bool {
+    left.request == right.request
+        && left.input.schema_key == right.input.schema_key
+        && left.input.shape == right.input.shape
 }
 
 #[derive(Clone, Debug)]

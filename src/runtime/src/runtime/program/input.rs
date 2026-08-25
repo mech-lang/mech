@@ -20,6 +20,36 @@ pub struct ResidentHostTurnFailed {
     pub status: &'static str,
     pub failure_count: usize,
     pub phase: Option<crate::TurnFailurePhase>,
+    pub failures: Vec<String>,
+}
+
+impl ResidentHostTurnFailed {
+    /// A rejected candidate never published state and may be followed by a
+    /// later turn. Outcomes that advanced or indeterminately published state
+    /// require host intervention instead.
+    pub fn is_recoverable(&self) -> bool {
+        self.status == "rejected"
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ResidentHostTurnCause {
+    pub phase: crate::TurnFailurePhase,
+    pub kind: String,
+    pub detail: String,
+}
+
+impl MechErrorKind for ResidentHostTurnCause {
+    fn name(&self) -> &str {
+        &self.kind
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "resident turn failed during {:?}: {}",
+            self.phase, self.detail
+        )
+    }
 }
 
 impl MechErrorKind for ResidentHostTurnFailed {
@@ -28,14 +58,20 @@ impl MechErrorKind for ResidentHostTurnFailed {
     }
 
     fn message(&self) -> String {
+        let details = if self.failures.is_empty() {
+            String::new()
+        } else {
+            format!(": {}", self.failures.join("; "))
+        };
         format!(
-            "resident host turn {} completed as {}{} with {} reported failures",
+            "resident host turn {} completed as {}{} with {} reported failures{}",
             self.turn.get(),
             self.status,
             self.phase
                 .map(|phase| format!(" during {phase:?}"))
                 .unwrap_or_default(),
             self.failure_count,
+            details,
         )
     }
 }
@@ -43,7 +79,7 @@ impl MechErrorKind for ResidentHostTurnFailed {
 pub(crate) fn resident_host_turn_error(
     outcome: &crate::ResidentExternalTurnOutcome,
 ) -> Option<MechError> {
-    let failure = match outcome {
+    let (failure, source) = match outcome {
         crate::ResidentExternalTurnOutcome::Accepted {
             delivery_failures, ..
         } if delivery_failures.is_empty() => return None,
@@ -51,30 +87,60 @@ pub(crate) fn resident_host_turn_error(
             turn,
             delivery_failures,
             ..
-        } => ResidentHostTurnFailed {
-            turn: *turn,
-            status: "accepted-with-delivery-failures",
-            failure_count: delivery_failures.len(),
-            phase: None,
-        },
-        crate::ResidentExternalTurnOutcome::Rejected { turn, phase, .. } => {
+        } => (
+            ResidentHostTurnFailed {
+                turn: *turn,
+                status: "accepted-with-delivery-failures",
+                failure_count: delivery_failures.len(),
+                phase: None,
+                failures: delivery_failures
+                    .iter()
+                    .map(|failure| failure.message.clone())
+                    .collect(),
+            },
+            None,
+        ),
+        crate::ResidentExternalTurnOutcome::Rejected {
+            turn,
+            phase,
+            failure,
+            ..
+        } => (
             ResidentHostTurnFailed {
                 turn: *turn,
                 status: "rejected",
                 failure_count: 1,
                 phase: Some(*phase),
-            }
-        }
-        crate::ResidentExternalTurnOutcome::PublishedIndeterminate { turn, failures, .. } => {
+                failures: vec![format!("{}: {}", failure.kind, failure.message)],
+            },
+            Some(MechError::new(
+                ResidentHostTurnCause {
+                    phase: failure.phase,
+                    kind: failure.kind.clone(),
+                    detail: failure.message.clone(),
+                },
+                None,
+            )),
+        ),
+        crate::ResidentExternalTurnOutcome::PublishedIndeterminate { turn, failures, .. } => (
             ResidentHostTurnFailed {
                 turn: *turn,
                 status: "published-indeterminate",
                 failure_count: failures.len(),
                 phase: None,
-            }
-        }
+                failures: failures
+                    .iter()
+                    .map(|failure| failure.message.clone())
+                    .collect(),
+            },
+            None,
+        ),
     };
-    Some(MechError::new(failure, None))
+    let error = MechError::new(failure, None);
+    Some(match source {
+        Some(source) => error.with_source(source),
+        None => error,
+    })
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -107,6 +173,7 @@ impl crate::runtime::MechRuntime {
             ));
         };
         let mut packets = Vec::new();
+        let mut coalescing_group = None::<Option<crate::input::RuntimeHostInputCoalescingGroup>>;
         for _ in 0..max_inputs {
             let packet = {
                 let mut guard = self.host_input_queue.lock().map_err(|_| {
@@ -115,9 +182,22 @@ impl crate::runtime::MechRuntime {
                         "host input queue lock is poisoned",
                     )
                 })?;
-                guard.queue.pop_front()
+                let may_join = guard
+                    .queue
+                    .front()
+                    .map(|packet| {
+                        coalescing_group
+                            .as_ref()
+                            .map(|group| group.as_ref() == packet.coalescing_group())
+                            .unwrap_or(true)
+                    })
+                    .unwrap_or(false);
+                may_join.then(|| guard.queue.pop_front()).flatten()
             };
             let Some(packet) = packet else { break };
+            if coalescing_group.is_none() {
+                coalescing_group = Some(packet.coalescing_group().cloned());
+            }
             packets.push(packet);
         }
 

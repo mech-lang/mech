@@ -7,6 +7,17 @@ use mech_core::{
 };
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    builder.insert_resident_factory(["string"], "concat", bind_concat)?;
+    builder.insert_resident_factory(["convert"], "kind", bind_f64_vector_to_string)?;
+    builder.insert_resident_factory(["matrix"], "assign-range-all", bind_string_all_assign)?;
+    builder.insert_resident_factory(["matrix"], "assign-scalar", bind_string_index_assign)?;
+    builder.insert_resident_factory(
+        ["matrix"],
+        "assign-range",
+        bind_semantic_string_range_assign,
+    )?;
+
+    // Frozen bytecode may still refer to the selected implementation identity.
     builder.insert_resident_factory(["runtime"], "ConcatSS<string>", bind_concat)?;
     builder.insert_resident_factory(["runtime"], "EQSS<string>", bind_string_equal)?;
     builder.insert_resident_factory(["runtime"], "TransposeVD<string>", bind_string_transpose)?;
@@ -49,7 +60,7 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-fn bind_string_transpose(
+pub(super) fn bind_string_transpose(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
@@ -121,7 +132,7 @@ fn string_transpose(
     Ok(changed)
 }
 
-fn bind_string_gather(
+pub(super) fn bind_string_gather(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
@@ -201,7 +212,7 @@ fn string_gather(
     Ok(changed)
 }
 
-fn bind_string_equal(
+pub(super) fn bind_string_equal(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
@@ -262,7 +273,7 @@ fn string_equal(
     Ok(changed)
 }
 
-fn bind_string_scalar_access(
+pub(super) fn bind_string_scalar_access(
     request: &ResidentKernelBindRequest<'_>,
 ) -> Result<BoundResidentKernel, ResidentKernelBindError> {
     let ResolvedOperationContract::Declared(contract) = request.contract else {
@@ -484,6 +495,20 @@ fn bind_string_indices_assign(
         string_indices_assign,
         Box::new([]),
     ))
+}
+
+fn bind_semantic_string_range_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_string_mask_assign(request).or_else(|_| bind_string_indices_assign(request))
+}
+
+pub(super) fn bind_semantic_string_assign(
+    request: &ResidentKernelBindRequest<'_>,
+) -> Result<BoundResidentKernel, ResidentKernelBindError> {
+    bind_string_all_assign(request)
+        .or_else(|_| bind_string_index_assign(request))
+        .or_else(|_| bind_semantic_string_range_assign(request))
 }
 
 fn bind_string_all_assign(

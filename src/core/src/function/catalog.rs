@@ -632,6 +632,10 @@ impl FunctionCatalogBuilder {
         }
     }
 
+    pub fn contains_runtime_factory(&self, id: RuntimeFunctionId) -> bool {
+        self.runtime_factories.contains_key(&id)
+    }
+
     pub fn insert_runtime_factory<F>(
         &mut self,
         name: impl Into<String>,

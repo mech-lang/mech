@@ -14,7 +14,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
-EXPECTED_MANIFEST_SHA256 = "306a33ca2226553e733e2b2d3ffb73e9a49aaaea2ef1283652141b8995152b4b"
+# This manual seal covers only durable bytecode wire and semantic evidence.
+# Native-build plans have their own content-addressed contract and are excluded.
+EXPECTED_MANIFEST_SHA256 = "310f04e2d5dee8553a1ce0f1c340180838f4e3adda6784c4d635df4750d81d04"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
@@ -59,6 +61,20 @@ EXPECTED_FILES = [
     "robot-arm.mecb",
     "synthetic-live-read.mecb",
 ]
+EXPECTED_MANIFEST_ENTRY_KEYS = {
+    "application_requirements",
+    "construction",
+    "expected_output",
+    "file",
+    "header",
+    "origin",
+    "runtime_function_ids",
+    "runtime_types",
+    "sections",
+    "sha256",
+    "source",
+    "source_file",
+}
 SOURCE_DIRECTORY = "sources"
 EXPECTED_SOURCE_FILES = [
     "cli-stdout.mec",
@@ -741,6 +757,10 @@ def decode_instructions(
 def validate_fixture(entry: dict[str, object]) -> None:
     name = entry.get("file")
     require(isinstance(name, str), "manifest fixture is missing a file name")
+    require(
+        set(entry) == EXPECTED_MANIFEST_ENTRY_KEYS,
+        f"{name}: manifest metadata is outside the bytecode-v1 contract",
+    )
     expected_sha256 = EXPECTED_FIXTURE_SHA256.get(name)
     require(expected_sha256 is not None, f"{name}: fixture is not in the frozen corpus")
     origin = entry.get("origin")
@@ -768,65 +788,6 @@ def validate_fixture(entry: dict[str, object]) -> None:
         raise ContractError(f"{name}: invalid fixture origin {origin!r}")
 
     require("expected_output" in entry, f"{name}: expected output is missing")
-    native_plan_sha256 = entry.get("native_plan_sha256")
-    require(
-        isinstance(native_plan_sha256, str)
-        and len(native_plan_sha256) == 64
-        and all(character in "0123456789abcdef" for character in native_plan_sha256),
-        f"{name}: native plan SHA-256 is malformed",
-    )
-    cargo_features = entry.get("cargo_features")
-    require(isinstance(cargo_features, dict), f"{name}: Cargo feature metadata is missing")
-    for package, features in cargo_features.items():
-        require(isinstance(package, str) and package, f"{name}: Cargo feature package is malformed")
-        require(
-            isinstance(features, list)
-            and all(isinstance(feature, str) and feature for feature in features)
-            and features == sorted(set(features)),
-            f"{name}: Cargo features for {package} are not sorted and unique",
-        )
-    packages = entry.get("packages")
-    require(isinstance(packages, list), f"{name}: native package metadata is missing")
-    package_names: list[str] = []
-    for package in packages:
-        require(isinstance(package, dict), f"{name}: native package metadata is malformed")
-        package_name = package.get("package")
-        crate_name = package.get("crate_name")
-        package_features = package.get("cargo_features")
-        package_source = package.get("source")
-        require(
-            isinstance(package_name, str) and package_name,
-            f"{name}: native package name is malformed",
-        )
-        require(
-            isinstance(crate_name, str) and crate_name,
-            f"{name}: native crate name is malformed",
-        )
-        require(
-            isinstance(package_features, list)
-            and all(isinstance(feature, str) and feature for feature in package_features)
-            and package_features == sorted(set(package_features)),
-            f"{name}: native package features are not sorted and unique",
-        )
-        if package_name in cargo_features:
-            require(
-                package_features == cargo_features[package_name],
-                f"{name}: native package features disagree with the feature map",
-            )
-        require(
-            isinstance(package_source, dict)
-            and package_source.get("source") in {"workspace", "registry"}
-            and (
-                isinstance(package_source.get("path"), str)
-                or isinstance(package_source.get("version"), str)
-            ),
-            f"{name}: native package source is malformed",
-        )
-        package_names.append(package_name)
-    require(
-        package_names == sorted(set(package_names)),
-        f"{name}: native packages are not sorted and unique",
-    )
 
     path = CORPUS / name
     data = path.read_bytes()

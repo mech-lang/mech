@@ -29,7 +29,7 @@ full = ["base",
       "f32", "f64", "c64", "r64",
       ]
 
-base = ["baselib", "pretty_print", "serde", "program", "formatter", "mika", "browser_project_runner",
+base = ["baselib", "pretty_print", "serde", "program", "formatter", "mika", "browser_project_core",
       "statements_default", "subscript_default", "state_machines", "string_default",
       "math_default", "matrix_default", "logic_default", "compare_default", "range_default", "set_default", "stats_default", "combinatorics_default",
       ]
@@ -73,8 +73,18 @@ host_delegation_signing = ["host_delegation", "mech-runtime/host_delegation_sign
 # Served `/code/...` documents are encoded by a native formatter with Mika
 # nodes enabled. Keep that feature-gated Program schema identical in the
 # prebuilt browser package so serialized enum indices remain compatible.
-browser_project = ["source", "browser_project_runner", "resident-routing-source", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_console", "browser_host_scene", "baselib", "mika", "statements_default", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
-browser_project_runner = ["resident-routing-source", "program", "pretty_print", "serde"]
+# Every document controller exports both WasmDocument and WasmRepl. Keep the
+# console provider in this smallest document closure so reduced, base, full,
+# and compiler-inferred builds all satisfy the same controller contract.
+browser_project_core = ["resident-routing-source", "program", "pretty_print", "formatter", "serde", "browser_host_console"]
+browser_project = ["browser_project_core", "source", "sample_hold", "state_step", "served_project_authority", "browser_host_dom", "browser_host_time", "browser_host_timer", "browser_host_scene", "baselib", "mika", "statements_default", "state_machines", "compare_default", "logic_default", "subscript_default", "range_default", "math_default", "matrix_default", "stats_default", "combinatorics_default", "f64", "bool", "string_default", "record", "tuple", "table", "atom", "enum", "variables"]
+browser_compute = [
+  "compiler", "f32", "f64", "row_vectord", "matrixd", "kind_annotation", "convert", "matrix_horzcat", "range_inclusive",
+  "mech-runtime/compute",
+  "math_abs", "math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_sqrt", "math_ceil", "math_atan2", "math_sin", "math_cos",
+  "variables", "variable_define", "variable_assign", "tuple",
+  "mech-stdlib/native-plan", "dep:mech-compute", "dep:mech-gpu", "mech-gpu/runtime-host",
+]
 served_project_authority = ["host_delegation_signing"]
 browser_host_dom = ["dep:mech-browser", "mech-browser/provider", "mech-browser/serde"]
 browser_host_time = ["dep:mech-time", "mech-time/browser"]
@@ -212,16 +222,18 @@ range_inclusive_increment = ["range_inclusive", "mech-stdlib/range_inclusive_inc
 range_exclusive_increment = ["range_exclusive", "mech-stdlib/range_exclusive_increment"]
 
 # Math
-math_default = ["math_ops_default", "math_root_default", "math_ops_assign_default", "math_trig_default"]
+math_default = ["math_ops_default", "math_root_default", "math_rounding_default", "math_ops_assign_default", "math_trig_default"]
 math = ["formulas", "functions"]
 math_ops_default = ["math_add", "math_sub", "math_mul", "math_div", "math_pow", "math_mod", "math_neg"]
 math_root_default = ["math_sqrt"]
+math_rounding_default = ["math_ceil"]
 math_ops_assign_default = ["math_add_assign", "math_sub_assign", "math_mul_assign", "math_div_assign"]
 math_trig_default = ["math_acos", "math_acosh", "math_acot", "math_acsc", "math_asec", "math_asin", "math_asinh", "math_atan", "math_atan2", "math_atanh", "math_cos", "math_cosh", "math_cot", "math_csc", "math_sec", "math_sin", "math_sinh", "math_tan", "math_tanh"]
 math_trig = ["math"]
 math_root = ["math"]
 math_ops = ["math"]
 math_op_assign = ["math"]
+math_abs = ["math", "mech-stdlib/math_abs"]
 math_add_assign = ["math_op_assign", "mech-stdlib/math_add_assign"]
 math_sub_assign = ["math_op_assign", "mech-stdlib/math_sub_assign"]
 math_mul_assign = ["math_op_assign", "mech-stdlib/math_mul_assign"]
@@ -253,6 +265,7 @@ math_pow = ["math_ops", "mech-stdlib/math_pow"]
 math_mod = ["math_ops", "mech-stdlib/math_mod"]
 math_neg = ["math_ops", "mech-stdlib/math_neg"]
 math_sqrt = ["math_root", "mech-stdlib/math_sqrt"]
+math_ceil = ["math", "mech-stdlib/math_ceil"]
 
 # Set
 set_default = ["set_membership_default", "set_modify_default",
@@ -303,6 +316,8 @@ mech-time = { version = "0.3.5", path = "../../hosts/time", default-features = f
 mech-console = { version = "0.3.5", path = "../../hosts/console", default-features = false, optional = true }
 mech-timer = { version = "0.3.5", path = "../../hosts/timer", default-features = false, optional = true }
 mech-scene = { version = "0.3.5", path = "../../hosts/scene", default-features = false, optional = true }
+mech-compute = { version = "0.3.5", path = "../compute", optional = true }
+mech-gpu = { version = "0.3.5", path = "../../hosts/gpu", default-features = false, optional = true }
 
 wasm-bindgen = "0.2.100"
 serde-wasm-bindgen = "0.6.5"
@@ -314,9 +329,11 @@ base64 = "0.22.1"
 brotli = "8.0.1"
 gloo-net = {version = "0.6.0", features = ["http"]}
 wasm-bindgen-futures = "0.4.50"
+web-time = "1.1.0"
 
 [dev-dependencies]
 mech-runtime = { path = "../runtime", default-features = false }
+nalgebra = "0.34.2"
 serde_json = "1"
 wasm-bindgen-test = "0.3.50"
 

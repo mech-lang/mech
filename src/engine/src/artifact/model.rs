@@ -1,14 +1,22 @@
 use core::ops::Range;
 
 use mech_core::{
-    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ConstantId, ConstantStore,
-    DeclaredOperationContract, DeliveryMode, ExternalInteraction, InputId, IntegrityConstraintId,
-    LegacyOpaqueOperationContract, LegacySnapshotError, MechError, NodeId,
-    OperationContractDeclaration, OperationContractError, OperationContractId,
+    AccessMode, ApplicationRequirementId, BindingId, CellSlotId, ComputePlacement, ComputeRegionId,
+    ConstantId, ConstantStore, DeclaredOperationContract, DeliveryMode, ExternalInteraction,
+    InputId, IntegrityConstraintId, LegacyOpaqueOperationContract, LegacySnapshotError, MechError,
+    NodeId, OperationContractDeclaration, OperationContractError, OperationContractId,
     OperationContractTable, OperationContractTableBuilder, OutputId, PortDirection,
     ProgramRevision, ResolvedInputPort, ResolvedOperationContract, ResolvedOutputPort, SchemaId,
     SchemaTable, SemanticModelError, SnapshotValueError, validate_declaration,
 };
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ComputeRegionDeclaration {
+    pub id: ComputeRegionId,
+    pub name: Box<str>,
+    pub placement: ComputePlacement,
+    pub nodes: Box<[NodeId]>,
+}
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct OperationReference {
@@ -51,7 +59,7 @@ pub struct SlotDeclaration {
     pub initializer: Option<InitializerReference>,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub enum ArtifactSource {
     Constant(ConstantId),
     Slot(CellSlotId),
@@ -115,13 +123,32 @@ pub struct InputDeclaration {
 pub struct OutputDeclaration {
     pub output: OutputId,
     pub name: String,
+    /// Explicit interactive identity and storage mapping. Ordinary artifact
+    /// interfaces leave this unset, even when their canonical name happens to
+    /// resemble the compiler's collision-safe transport encoding.
+    pub interactive_binding: Option<InteractiveSymbolBinding>,
     pub source: CellSlotId,
     pub schema: SchemaId,
+}
+
+/// First-class identity for a lexical symbol exported to an interactive host.
+///
+/// `lexical_name` is never constrained by artifact-interface syntax.
+/// `artifact_source` identifies the semantic producer, while `storage` is the
+/// live resident cell used to inspect it. Several lexical names may therefore
+/// share the same source and storage without sharing an interface name.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct InteractiveSymbolBinding {
+    pub lexical_name: String,
+    pub artifact_source: ArtifactSource,
+    pub storage: CellSlotId,
+    pub output: OutputId,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntegrityConstraintDeclaration {
     pub constraint: IntegrityConstraintId,
+    pub name: String,
     pub operation: OperationReference,
     pub contract: OperationContractId,
     pub inputs: Box<[ArtifactSource]>,
@@ -140,6 +167,7 @@ pub struct ProgramArtifact {
     bindings: Box<[BindingDeclaration]>,
     outputs: Box<[OutputDeclaration]>,
     constraints: Box<[IntegrityConstraintDeclaration]>,
+    compute_regions: Box<[ComputeRegionDeclaration]>,
 }
 
 impl ProgramArtifact {
@@ -183,8 +211,38 @@ impl ProgramArtifact {
         &self.outputs
     }
 
+    pub fn interactive_symbol_bindings(&self) -> impl Iterator<Item = &InteractiveSymbolBinding> {
+        self.outputs
+            .iter()
+            .filter_map(|output| output.interactive_binding.as_ref())
+    }
+
     pub const fn constraints(&self) -> &[IntegrityConstraintDeclaration] {
         &self.constraints
+    }
+
+    pub const fn compute_regions(&self) -> &[ComputeRegionDeclaration] {
+        &self.compute_regions
+    }
+
+    pub(crate) fn with_compute_regions(
+        self,
+        compute_regions: Box<[ComputeRegionDeclaration]>,
+    ) -> Result<Self, ArtifactBuildError> {
+        ProgramArtifactDraft {
+            schemas: self.schemas,
+            constants: self.constants,
+            contracts: self.contracts,
+            requirements: self.requirements,
+            inputs: self.inputs,
+            slots: self.slots,
+            nodes: self.nodes,
+            bindings: self.bindings,
+            outputs: self.outputs,
+            constraints: self.constraints,
+            compute_regions,
+        }
+        .finalize()
     }
 }
 
@@ -200,6 +258,7 @@ pub struct ProgramArtifactDraft {
     pub bindings: Box<[BindingDeclaration]>,
     pub outputs: Box<[OutputDeclaration]>,
     pub constraints: Box<[IntegrityConstraintDeclaration]>,
+    pub compute_regions: Box<[ComputeRegionDeclaration]>,
 }
 
 impl ProgramArtifactDraft {
@@ -218,6 +277,7 @@ impl ProgramArtifactDraft {
             bindings: self.bindings,
             outputs: self.outputs,
             constraints: self.constraints,
+            compute_regions: self.compute_regions,
         })
     }
 }
@@ -405,6 +465,10 @@ pub enum ArtifactBuildError {
     UnknownRuntimeFunction {
         function: u64,
     },
+    MissingSemanticOperation {
+        instruction: u32,
+        implementation: String,
+    },
     UnknownApplicationRequirement {
         requirement: u32,
     },
@@ -473,6 +537,24 @@ pub enum ArtifactBuildError {
     InvalidInterfaceName {
         interface: &'static str,
         name: String,
+    },
+    InvalidInteractiveBinding {
+        name: String,
+    },
+    InvalidComputeRegionName {
+        region: ComputeRegionId,
+    },
+    DuplicateComputeRegionName {
+        name: Box<str>,
+    },
+    EmptyComputeRegion {
+        region: ComputeRegionId,
+    },
+    NonCanonicalComputeRegionNodes {
+        region: ComputeRegionId,
+    },
+    DuplicateComputeRegionNode {
+        node: NodeId,
     },
     UnknownSchema {
         schema: SchemaId,

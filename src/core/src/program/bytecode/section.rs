@@ -4,9 +4,13 @@ use alloc::vec::Vec;
 use std::vec::Vec;
 
 pub const BYTECODE_SECTION_ENTRY_SIZE: usize = 32;
+// The frozen v1 layout remains the default. Compute-region metadata is an
+// optional trailing extension so existing 18-section artifacts stay readable.
 pub const BYTECODE_SECTION_COUNT: usize = 18;
+pub const BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS: usize = 19;
 pub const BYTECODE_SECTION_TABLE_OFFSET: u64 = 64;
 pub const BYTECODE_CONTENT_OFFSET: u64 = 640;
+pub const BYTECODE_CONTENT_OFFSET_WITH_COMPUTE_REGIONS: u64 = 672;
 
 #[repr(u16)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -29,6 +33,7 @@ pub enum BytecodeSectionKind {
     ArtifactIntegrityConstraints = 16,
     ArtifactOperations = 17,
     ArtifactOperationContracts = 18,
+    ArtifactComputeRegions = 19,
 }
 
 impl BytecodeSectionKind {
@@ -53,8 +58,32 @@ impl BytecodeSectionKind {
         Self::ArtifactOperationContracts,
     ];
 
+    pub const ALL_WITH_COMPUTE_REGIONS: [Self; BYTECODE_SECTION_COUNT_WITH_COMPUTE_REGIONS] = [
+        Self::Types,
+        Self::ConstantTable,
+        Self::ConstantBlob,
+        Self::Symbols,
+        Self::Instructions,
+        Self::Dictionary,
+        Self::ApplicationRequirements,
+        Self::ArtifactSchemas,
+        Self::ArtifactConstants,
+        Self::ArtifactInputs,
+        Self::ArtifactSlots,
+        Self::ArtifactProducers,
+        Self::ArtifactNodes,
+        Self::ArtifactBindings,
+        Self::ArtifactOutputs,
+        Self::ArtifactIntegrityConstraints,
+        Self::ArtifactOperations,
+        Self::ArtifactOperationContracts,
+        Self::ArtifactComputeRegions,
+    ];
+
     pub fn from_u16(value: u16) -> Option<Self> {
-        Self::ALL.into_iter().find(|kind| *kind as u16 == value)
+        Self::ALL_WITH_COMPUTE_REGIONS
+            .into_iter()
+            .find(|kind| *kind as u16 == value)
     }
 }
 
@@ -76,6 +105,7 @@ pub struct BytecodeArtifactSections {
     pub integrity_constraints: Vec<u8>,
     pub operations: Vec<u8>,
     pub operation_contracts: Vec<u8>,
+    pub compute_regions: Vec<u8>,
 }
 
 impl BytecodeArtifactSections {
@@ -91,9 +121,10 @@ impl BytecodeArtifactSections {
             && self.integrity_constraints.is_empty()
             && self.operations.is_empty()
             && self.operation_contracts.is_empty()
+            && self.compute_regions.is_empty()
     }
 
-    pub(crate) fn ordered(&self) -> [&[u8]; 11] {
+    pub(crate) fn ordered(&self) -> [&[u8]; 12] {
         [
             &self.schemas,
             &self.constants,
@@ -106,6 +137,7 @@ impl BytecodeArtifactSections {
             &self.integrity_constraints,
             &self.operations,
             &self.operation_contracts,
+            &self.compute_regions,
         ]
     }
 }

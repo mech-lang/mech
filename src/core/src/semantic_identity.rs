@@ -92,6 +92,7 @@ artifact_id!(NodeId);
 artifact_id!(BindingId);
 artifact_id!(InputId);
 artifact_id!(OutputId);
+artifact_id!(ComputeRegionId);
 artifact_id!(IntegrityConstraintId);
 artifact_id!(OperationContractId);
 artifact_id!(ApplicationRequirementId);

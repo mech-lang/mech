@@ -74,6 +74,7 @@ struct ServerSourceRegistry {
     listing_asset: Option<ServerAsset>,
     document_controller: Option<String>,
     shipped_document_shim: Option<String>,
+    document_presentation: mech_runtime::ServePresentation,
     capability_kernel: Option<mech_runtime::SharedCapabilityKernel>,
     capability_subject: Option<String>,
 }
@@ -86,6 +87,10 @@ impl ServerSourceRegistry {
     ) {
         self.document_controller = document_controller;
         self.shipped_document_shim = shipped_document_shim;
+    }
+
+    fn set_document_presentation(&mut self, presentation: mech_runtime::ServePresentation) {
+        self.document_presentation = presentation;
     }
 
     fn with_capabilities(
@@ -360,10 +365,11 @@ impl ServerSourceRegistry {
         &mut self,
         root: &Path,
         snapshot: &RuntimeWorkspaceSnapshot,
-        stylesheet: &str,
+        stylesheets: impl Into<HtmlStyleSheets>,
         shim: &str,
         generated_html_backing_paths: &[PathBuf],
     ) -> MResult<()> {
+        let stylesheets = stylesheets.into();
         let root = root.canonicalize()?;
         for key in self.workspace_keys.drain() {
             self.raw_sources.remove(&key);
@@ -432,10 +438,23 @@ impl ServerSourceRegistry {
                     backing_paths: vec![path.clone()],
                 },
             );
-            match parser::parse(&source_text) {
+            let fallback_tree = source
+                .syntax_tree
+                .is_none()
+                .then(|| parser::parse(&source_text));
+            let tree = match (source.syntax_tree.as_deref(), fallback_tree.as_ref()) {
+                (Some(tree), _) => Ok(tree),
+                (None, Some(tree)) => tree.as_ref(),
+                (None, None) => unreachable!("missing parsed-tree fallback"),
+            };
+            match tree {
                 Ok(tree) => {
                     let mut extra_slots = HtmlShimExtraSlots::default();
                     extra_slots.insert("SOURCE_URL_KEY", escape_html(&key));
+                    extra_slots.insert(
+                        "PRESENTATION",
+                        self.document_presentation.as_str().to_string(),
+                    );
                     if shim.contains("{{DOCUMENT_SCRIPT}}") {
                         let document_controller = self.document_controller.as_deref().ok_or_else(|| {
               MechError::new(
@@ -454,9 +473,9 @@ impl ServerSourceRegistry {
                         extra_slots.insert("DOCUMENT_SOURCES", "");
                     }
                     let mut formatter = Formatter::new();
-                    let render = formatter.format_html_with_slots(
+                    let render = formatter.format_html_with_style_sheets_and_slots(
                         &tree,
-                        stylesheet.to_string(),
+                        stylesheets.clone(),
                         shim.to_string(),
                         &extra_slots,
                     );
@@ -659,7 +678,7 @@ fn display_fs_resource(path: &Path) -> String {
 pub struct MechServer {
     name: String,
     init: bool,
-    stylesheet: String,
+    stylesheets: HtmlStyleSheets,
     html_shim: String,
     project_html: String,
     project_js: String,
@@ -735,7 +754,12 @@ impl MechServer {
             full_address,
             stylesheet,
             html_shim,
-            include_str!("../include/project.js").to_string(),
+            concat!(
+                include_str!("../include/browser-compute.js"),
+                "\n",
+                include_str!("../include/project.js")
+            )
+            .to_string(),
             wasm,
             js,
             authority,
@@ -773,7 +797,7 @@ impl MechServer {
     pub fn new_with_runtime_config_and_host_config(
         name: String,
         full_address: String,
-        stylesheet: String,
+        stylesheets: impl Into<HtmlStyleSheets>,
         html_shim: String,
         project_js: String,
         wasm: Vec<u8>,
@@ -787,7 +811,7 @@ impl MechServer {
         Self::new_with_project_html_and_host_config(
             name,
             full_address,
-            stylesheet,
+            stylesheets,
             html_shim,
             include_str!("../include/project.html").to_string(),
             project_js,
@@ -804,7 +828,7 @@ impl MechServer {
     pub(crate) fn new_with_project_html_and_host_config(
         name: String,
         full_address: String,
-        stylesheet: String,
+        stylesheets: impl Into<HtmlStyleSheets>,
         html_shim: String,
         project_html: String,
         project_js: String,
@@ -819,7 +843,7 @@ impl MechServer {
         Self {
             name,
             init: false,
-            stylesheet,
+            stylesheets: stylesheets.into(),
             html_shim,
             project_html,
             project_js,
@@ -871,6 +895,14 @@ impl MechServer {
             .write()
             .unwrap()
             .set_document_controller(document_controller, shipped_document_shim);
+    }
+
+    /// Selects the initial presentation of generated source documents.
+    pub fn set_document_presentation(&mut self, presentation: mech_runtime::ServePresentation) {
+        self.registry
+            .write()
+            .unwrap()
+            .set_document_presentation(presentation);
     }
 
     fn generated_html_backing_paths(&self) -> Vec<PathBuf> {
@@ -941,8 +973,9 @@ impl MechServer {
             None,
             self.html_shim_backing_paths.clone(),
         );
+        let stylesheet_bundle = self.stylesheets.bundle();
         let css = asset(
-            self.stylesheet.as_bytes(),
+            stylesheet_bundle.as_bytes(),
             "text/css",
             None,
             self.stylesheet_backing_paths.clone(),
@@ -1165,7 +1198,7 @@ impl MechServer {
             self.registry.write().unwrap().sync_workspace_snapshot(
                 &root,
                 snapshot,
-                &self.stylesheet,
+                &self.stylesheets,
                 &html_shim,
                 &generated_html_backing_paths,
             )?;
@@ -1301,7 +1334,7 @@ impl MechServer {
             let requested = loop {
                 tokio::select! {
                   _ = interval.tick() => {
-                    if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheet, &html_shim, &generated_html_backing_paths, project_overlay.as_ref(), server_event_retention(&self.runtime_config)) {
+                    if let Err(error) = poll_workspace_once(session, &self.registry, &self.events, &root, &self.stylesheets, &html_shim, &generated_html_backing_paths, project_overlay.as_ref(), server_event_retention(&self.runtime_config)) {
                       eprintln!("[Mech Server] Workspace poll failed: {:?}", error);
                     }
                   }
@@ -1370,7 +1403,7 @@ fn poll_workspace_once(
     registry: &Arc<RwLock<ServerSourceRegistry>>,
     events: &Arc<RwLock<Vec<RuntimeEvent>>>,
     root: &Path,
-    stylesheet: &str,
+    stylesheets: &HtmlStyleSheets,
     shim: &str,
     generated_html_backing_paths: &[PathBuf],
     project_overlay: Option<&ConfiguredProjectOverlay>,
@@ -1424,7 +1457,7 @@ fn poll_workspace_once(
                 candidate.sync_workspace_snapshot(
                     root,
                     snapshot,
-                    stylesheet,
+                    stylesheets,
                     shim,
                     generated_html_backing_paths,
                 )?;
@@ -1484,7 +1517,11 @@ fn plan_serve_inputs_with_root(
     paths: &[String],
     fixed_root: Option<&Path>,
 ) -> MResult<ServeInputPlan> {
-    let current_dir = std::env::current_dir()?.canonicalize()?;
+    // Resolve user-relative selectors before canonicalization. On Windows,
+    // `canonicalize` returns a verbatim `\\?\` path; joining a subsequently
+    // supplied relative selector onto that namespace can make an existing
+    // directory fail `exists()` and leave the common-root planner empty.
+    let current_dir = std::env::current_dir()?;
     if paths.is_empty() {
         let root = fixed_root
             .map(Path::to_path_buf)
@@ -1648,7 +1685,9 @@ fn relative_specifier(root: &Path, path: &Path) -> Option<String> {
 }
 
 fn log_skipped_serve_inputs(paths: &[String]) -> MResult<()> {
-    let current_dir = std::env::current_dir()?.canonicalize()?;
+    // Keep this resolution identical to `plan_serve_inputs_with_root`: append
+    // relative user input before Windows introduces a verbatim path prefix.
+    let current_dir = std::env::current_dir()?;
     for input in paths {
         let path = Path::new(input);
         let path = if path.is_absolute() {
@@ -2273,6 +2312,7 @@ mod tests {
         assert!(html.contains("/_mech/pkg/mech_wasm.js"));
         assert!(html.contains("fetch(`/code/${sourceUrlKey}`)"));
         assert!(html.contains("data-mech-source-url-key=\"main.mec\""));
+        assert!(html.contains("data-mech-presentation=\"document\""));
         assert!(!html.contains("{{CODE}}"));
         assert!(!html.contains("{{SOURCE_URL_KEY}}"));
         assert!(!html.contains("/_mech/project.js"));
@@ -2280,6 +2320,33 @@ mod tests {
             registry.get_route("/code/main.mec").unwrap().content_type,
             "text/plain",
         );
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn configured_output_presentation_reaches_generated_documents() {
+        let root = temp_root("output-document-presentation");
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        let snapshot = snapshot(&root, "main.mec");
+        let mut registry = ServerSourceRegistry::default();
+        registry.set_document_controller(
+            Some(include_str!("../include/document.js").to_string()),
+            Some("include/index.html".to_string()),
+        );
+        registry.set_document_presentation(mech_runtime::ServePresentation::Output);
+        registry
+            .sync_workspace_snapshot(
+                &root,
+                &snapshot,
+                "",
+                include_str!("../include/index.html"),
+                &[],
+            )
+            .unwrap();
+
+        let html = String::from_utf8(registry.get_route("/main.mec").unwrap().bytes).unwrap();
+        assert!(html.contains("data-mech-presentation=\"output\""));
+        assert!(!html.contains("{{PRESENTATION}}"));
         std::fs::remove_dir_all(root).unwrap();
     }
 
@@ -3621,7 +3688,7 @@ mod tests {
                 .sync_workspace_snapshot(
                     &root,
                     session.snapshot().unwrap(),
-                    &server.stylesheet,
+                    &server.stylesheets,
                     &html_shim,
                     &server.generated_html_backing_paths(),
                 )
@@ -3695,6 +3762,29 @@ mod tests {
         assert!(registry.get_route("ROADMAP.mec").is_none());
         assert!(registry.get_route("mech.mcfg").is_none());
         drop(registry);
+        drop(guard);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_relative_project_directory_is_resolved_before_verbatim_canonicalization() {
+        let root = temp_root("windows-relative-project-directory");
+        let project = root.join("examples").join("ekf");
+        std::fs::create_dir_all(&project).unwrap();
+        std::fs::write(project.join("localization.mec"), "x := 1\n").unwrap();
+        let guard = CurrentDirGuard::enter(&root);
+
+        let plan = plan_serve_inputs(&["examples/ekf".to_owned()]).unwrap();
+
+        assert_eq!(plan.root, project.canonicalize().unwrap());
+        assert_eq!(
+            plan.folders,
+            vec![RuntimeWorkspaceFolder {
+                specifier: ".".to_owned(),
+                recursive: true,
+            }]
+        );
         drop(guard);
         std::fs::remove_dir_all(root).unwrap();
     }
@@ -4156,6 +4246,7 @@ mod tests {
                     canonical_uri: "missing".to_string(),
                     path: Some(root.join("missing.mec")),
                     source: None,
+                    syntax_tree: None,
                     module_version: None,
                     content_hash: 0,
                     modified_time: None,

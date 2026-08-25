@@ -35,7 +35,7 @@ pub(super) fn access(
                     let index_arg = if matches!(val.deref_kind(), ValueKind::String) {
                         string_access_index_argument(raw_index, &subs[0], env, p)?
                     } else {
-                        raw_index.as_index()?
+                        super::subscript_formula_index(&raw_index, p)?
                     };
                     if matches!(val.deref_kind(), ValueKind::String)
                         && matches!(fxn_input.first(), Some(LegacyValue::String(_)))
