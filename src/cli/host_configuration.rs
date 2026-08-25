@@ -5,6 +5,7 @@ use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeBuilder};
 
 /// Returns configured providers in deterministic order so execute and planning
 /// runtimes select factories from the same host configuration surface.
+#[cfg(feature = "build")]
 pub(crate) fn configured_provider_names(
     configured_hosts: &[HostInstanceConfig],
 ) -> BTreeSet<String> {

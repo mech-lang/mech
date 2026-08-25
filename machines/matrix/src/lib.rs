@@ -15,6 +15,7 @@ extern crate paste;
 
 use mech_core::*;
 
+#[cfg(feature = "source")]
 use paste::paste;
 
 #[cfg(feature = "matrixd")]
@@ -412,13 +413,13 @@ pub mod solve;
 pub mod transpose;
 //pub mod cross;
 
-#[cfg(feature = "dot")]
+#[cfg(all(feature = "dot", feature = "source"))]
 pub use self::dot::*;
-#[cfg(feature = "matmul")]
+#[cfg(all(feature = "matmul", feature = "source"))]
 pub use self::matmul::*;
-#[cfg(feature = "solve")]
+#[cfg(all(feature = "solve", feature = "source"))]
 pub use self::solve::*;
-#[cfg(feature = "transpose")]
+#[cfg(all(feature = "transpose", feature = "source"))]
 pub use self::transpose::*;
 //pub use self::cross::*;
 

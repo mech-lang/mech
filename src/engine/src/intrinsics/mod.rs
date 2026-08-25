@@ -56,17 +56,11 @@ use na::Vector4;
 #[cfg(any(feature = "access", feature = "assign"))]
 use std::fmt::Debug;
 
-#[cfg(any(
-    all(feature = "access", feature = "string"),
-    feature = "semantic-compiler"
-))]
+#[cfg(feature = "semantic-compiler")]
 #[derive(Debug, Clone)]
 pub(crate) struct IndexOutOfBoundsError;
 
-#[cfg(any(
-    all(feature = "access", feature = "string"),
-    feature = "semantic-compiler"
-))]
+#[cfg(feature = "semantic-compiler")]
 impl MechErrorKind for IndexOutOfBoundsError {
     fn name(&self) -> &str {
         "IndexOutOfBounds"

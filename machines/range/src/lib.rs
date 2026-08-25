@@ -13,13 +13,14 @@ pub mod __mech_native {
 extern crate nalgebra as na;
 extern crate paste;
 
+#[cfg(feature = "source")]
 use paste::paste;
 
-#[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
+#[cfg(all(feature = "source", feature = "matrixd", not(feature = "matrix1")))]
 use nalgebra::DMatrix;
 #[cfg(feature = "matrix1")]
 use nalgebra::Matrix1;
-#[cfg(feature = "row_vectord")]
+#[cfg(all(feature = "source", feature = "row_vectord"))]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vector2")]
 use nalgebra::RowVector2;
@@ -29,7 +30,9 @@ use nalgebra::RowVector3;
 use nalgebra::RowVector4;
 
 #[cfg(feature = "range")]
-use num_traits::{One, Zero};
+use num_traits::One;
+#[cfg(all(feature = "range", feature = "source"))]
+use num_traits::Zero;
 use std::fmt::Debug;
 use std::ops::*;
 

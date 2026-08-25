@@ -16,16 +16,22 @@ pub mod symmetric_difference;
 pub mod union;
 
 #[cfg(feature = "cartesian_product")]
+#[cfg(feature = "source")]
 pub use self::cartesian_product::*;
 //#[cfg(feature = "complement")]
 //pub use self::complement::*;
 #[cfg(feature = "difference")]
+#[cfg(feature = "source")]
 pub use self::difference::*;
 #[cfg(feature = "intersection")]
+#[cfg(feature = "source")]
 pub use self::intersection::*;
 #[cfg(feature = "powerset")]
+#[cfg(feature = "source")]
 pub use self::powerset::*;
 #[cfg(feature = "symmetric_difference")]
+#[cfg(feature = "source")]
 pub use self::symmetric_difference::*;
 #[cfg(feature = "union")]
+#[cfg(feature = "source")]
 pub use self::union::*;

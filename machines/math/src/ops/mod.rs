@@ -5,11 +5,56 @@ static PURE_BINARY_FULL_WRITE_EXACT_SCALAR: LazyLock<OperationContractDeclaratio
     LazyLock::new(|| pure_binary_full_write(ChangeDetectionPolicy::ExactScalar));
 static PURE_BINARY_FULL_WRITE_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_binary_full_write(ChangeDetectionPolicy::KernelReported));
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 static PURE_UNARY_FULL_WRITE_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_unary_full_write(ChangeDetectionPolicy::ExactScalar));
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 static PURE_UNARY_FULL_WRITE_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_unary_full_write(ChangeDetectionPolicy::KernelReported));
 
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 fn pure_unary_full_write(
     change_detection: ChangeDetectionPolicy,
 ) -> OperationContractDeclaration {
@@ -35,6 +80,21 @@ fn pure_unary_full_write(
     }
 }
 
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 pub(crate) fn unary_full_write_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {
@@ -406,19 +466,19 @@ pub mod pow;
 #[cfg(feature = "sub")]
 pub mod sub;
 
-#[cfg(feature = "add")]
+#[cfg(all(feature = "add", feature = "source"))]
 pub use self::add::*;
-#[cfg(feature = "div")]
+#[cfg(all(feature = "div", feature = "source"))]
 pub use self::div::*;
-#[cfg(feature = "mod")]
+#[cfg(all(feature = "mod", feature = "source"))]
 pub use self::modulus::*;
-#[cfg(feature = "mul")]
+#[cfg(all(feature = "mul", feature = "source"))]
 pub use self::mul::*;
-#[cfg(feature = "neg")]
+#[cfg(all(feature = "neg", feature = "source"))]
 pub use self::negate::*;
-#[cfg(feature = "pow")]
+#[cfg(all(feature = "pow", feature = "source"))]
 pub use self::pow::*;
-#[cfg(feature = "sub")]
+#[cfg(all(feature = "sub", feature = "source"))]
 pub use self::sub::*;
 
 #[cfg(all(test, feature = "rational"))]

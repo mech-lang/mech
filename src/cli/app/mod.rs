@@ -16,6 +16,7 @@ const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (standard)");
 #[cfg(not(any(feature = "distribution-standard", feature = "distribution-full")))]
 const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (custom)");
 const ROOT_LOGO: &str = "Mech";
+#[cfg(feature = "serve")]
 const FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED: &str = "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
 
 pub(crate) fn terminate_process(code: i32) -> ! {
@@ -204,7 +205,7 @@ fn is_repl_invocation(cli_matches: &ArgMatches) -> bool {
         && cli_matches.get_many::<String>("mech_paths").is_none()
 }
 
-#[cfg(any(feature = "serve", feature = "run"))]
+#[cfg(feature = "serve")]
 fn reject_filesystem_capability_args(matches: &ArgMatches) -> MResult<()> {
     if capabilities::filesystem_capability_args_present(matches) {
         return Err(MechError::new(
@@ -217,7 +218,10 @@ fn reject_filesystem_capability_args(matches: &ArgMatches) -> MResult<()> {
     Ok(())
 }
 
-#[cfg(not(any(feature = "serve", feature = "run")))]
+#[cfg(all(
+    not(feature = "serve"),
+    any(feature = "build", feature = "bundle_web", feature = "formatter")
+))]
 fn reject_filesystem_capability_args(_matches: &ArgMatches) -> MResult<()> {
     Ok(())
 }

@@ -1,7 +1,6 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use paste::paste;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use std::ops::Not;

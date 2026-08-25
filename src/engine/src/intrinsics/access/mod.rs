@@ -8,7 +8,7 @@ pub mod map;
 pub mod matrix;
 #[cfg(feature = "record")]
 pub mod record;
-#[cfg(feature = "string")]
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
 pub mod string;
 #[cfg(feature = "table")]
 pub mod table;
@@ -21,7 +21,7 @@ pub use self::map::*;
 pub use self::matrix::*;
 #[cfg(feature = "record")]
 pub use self::record::*;
-#[cfg(feature = "string")]
+#[cfg(all(feature = "string", feature = "semantic-compiler"))]
 pub use self::string::*;
 #[cfg(feature = "table")]
 pub use self::table::*;
@@ -238,7 +238,7 @@ impl FunctionSpecializer for AccessScalar {
             ValueKind::Table(..) => TableAccessScalar {}.specialize(arguments),
             #[cfg(feature = "map")]
             ValueKind::Map(..) => MapAccess {}.specialize(arguments),
-            #[cfg(feature = "string")]
+            #[cfg(all(feature = "string", feature = "semantic-compiler"))]
             ValueKind::String => StringAccessScalar {}.specialize(arguments),
             #[cfg(feature = "tuple")]
             ValueKind::Tuple(..) => TupleAccess {}.specialize(arguments),

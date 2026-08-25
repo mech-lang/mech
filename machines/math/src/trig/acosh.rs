@@ -3,8 +3,9 @@ use crate::*;
 use libm::acosh;
 #[cfg(feature = "f32")]
 use libm::acoshf;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
+#[cfg(feature = "source")]
 use num_traits::*;
 
 // Acosh Macros

@@ -3,7 +3,7 @@ use num_traits::*;
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
 
 fn checked_runtime_add<T: RuntimeCheckedArithmetic>(lhs: T, rhs: T) -> MResult<T> {
@@ -22,6 +22,23 @@ macro_rules! add_op {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "matrixd",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "row_vectord",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord"
+))]
 macro_rules! add_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -64,6 +81,17 @@ macro_rules! add_md_m1_op {
     };
 }
 
+#[cfg(any(
+    all(feature = "matrix2", feature = "vector2"),
+    all(feature = "matrix3", feature = "vector3"),
+    all(feature = "matrix4", feature = "vector4"),
+    all(feature = "matrix2x3", feature = "vector2"),
+    all(feature = "matrix3x2", feature = "vector3"),
+    all(feature = "matrixd", feature = "vectord"),
+    all(feature = "matrixd", feature = "vector2"),
+    all(feature = "matrixd", feature = "vector3"),
+    all(feature = "matrixd", feature = "vector4")
+))]
 macro_rules! add_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -80,6 +108,17 @@ macro_rules! add_mat_vec_op {
     };
 }
 
+#[cfg(any(
+    all(feature = "vector2", feature = "matrix2"),
+    all(feature = "vector3", feature = "matrix3"),
+    all(feature = "vector4", feature = "matrix4"),
+    all(feature = "vector2", feature = "matrix2x3"),
+    all(feature = "vector3", feature = "matrix3x2"),
+    all(feature = "vectord", feature = "matrixd"),
+    all(feature = "vector2", feature = "matrixd"),
+    all(feature = "vector3", feature = "matrixd"),
+    all(feature = "vector4", feature = "matrixd")
+))]
 macro_rules! add_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -96,6 +135,17 @@ macro_rules! add_vec_mat_op {
     };
 }
 
+#[cfg(any(
+    all(feature = "matrix2", feature = "row_vector2"),
+    all(feature = "matrix3", feature = "row_vector3"),
+    all(feature = "matrix4", feature = "row_vector4"),
+    all(feature = "matrix2x3", feature = "row_vector3"),
+    all(feature = "matrix3x2", feature = "row_vector2"),
+    all(feature = "matrixd", feature = "row_vectord"),
+    all(feature = "matrixd", feature = "row_vector2"),
+    all(feature = "matrixd", feature = "row_vector3"),
+    all(feature = "matrixd", feature = "row_vector4")
+))]
 macro_rules! add_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -112,6 +162,17 @@ macro_rules! add_mat_row_op {
     };
 }
 
+#[cfg(any(
+    all(feature = "row_vector2", feature = "matrix2"),
+    all(feature = "row_vector3", feature = "matrix3"),
+    all(feature = "row_vector4", feature = "matrix4"),
+    all(feature = "row_vector3", feature = "matrix2x3"),
+    all(feature = "row_vector2", feature = "matrix3x2"),
+    all(feature = "row_vectord", feature = "matrixd"),
+    all(feature = "row_vector2", feature = "matrixd"),
+    all(feature = "row_vector3", feature = "matrixd"),
+    all(feature = "row_vector4", feature = "matrixd")
+))]
 macro_rules! add_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -128,6 +189,23 @@ macro_rules! add_row_mat_op {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "matrixd",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "row_vectord",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord"
+))]
 macro_rules! add_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -140,6 +218,23 @@ macro_rules! add_scalar_lhs_op {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "matrixd",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "row_vectord",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord"
+))]
 macro_rules! add_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -354,6 +449,7 @@ macro_rules! register_add_matrix1_dynamic_native_factories {
     };
 }
 
+#[cfg(feature = "source")]
 macro_rules! specialize_add_matrix1_dynamic {
     ($lhs:expr, $rhs:expr; $(($value_kind:ident, $target_type:ty, $value_feature:literal)),+ $(,)?) => {
         paste! {

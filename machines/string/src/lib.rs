@@ -100,7 +100,7 @@ pub use self::catalog::*;
 #[cfg(feature = "concat")]
 pub mod concat;
 
-#[cfg(feature = "concat")]
+#[cfg(all(feature = "concat", feature = "source"))]
 pub use self::concat::*;
 
 // ----------------------------------------------------------------------------

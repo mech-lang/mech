@@ -12,15 +12,15 @@ pub mod roundeven;
 #[cfg(feature = "trunc")]
 pub mod trunc;
 
-#[cfg(feature = "ceil")]
+#[cfg(all(feature = "ceil", feature = "source"))]
 pub use self::ceil::*;
-#[cfg(feature = "floor")]
+#[cfg(all(feature = "floor", feature = "source"))]
 pub use self::floor::*;
-#[cfg(feature = "rint")]
+#[cfg(all(feature = "rint", feature = "source"))]
 pub use self::rint::*;
-#[cfg(feature = "round")]
+#[cfg(all(feature = "round", feature = "source"))]
 pub use self::round::*;
-#[cfg(feature = "roundeven")]
+#[cfg(all(feature = "roundeven", feature = "source"))]
 pub use self::roundeven::*;
-#[cfg(feature = "trunc")]
+#[cfg(all(feature = "trunc", feature = "source"))]
 pub use self::trunc::*;

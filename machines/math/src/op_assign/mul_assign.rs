@@ -1,5 +1,5 @@
 use super::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
 use num_traits::*;
 

@@ -56,7 +56,6 @@ serde_json = "1"
 
 [patch.crates-io]
 mech-build = { path = "../../../src/build" }
-mech-bytecode = { path = "../../../src/bytecode" }
 mech-core = { path = "../../../src/core" }
 mech-syntax = { path = "../../../src/syntax" }
 mech-engine = { path = "../../../src/engine" }

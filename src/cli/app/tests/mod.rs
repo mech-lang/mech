@@ -1,3 +1,4 @@
+#[cfg(feature = "serve")]
 use super::*;
 #[cfg(feature = "build")]
 use crate::cli::commands::build::{

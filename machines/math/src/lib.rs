@@ -44,6 +44,7 @@ use na::Vector3;
 use na::Vector4;
 
 use std::fmt::{Debug, Display};
+#[cfg(any(feature = "neg", feature = "op_assign"))]
 use std::marker::PhantomData;
 use std::ops::*;
 
@@ -110,25 +111,27 @@ pub mod trig;
 #[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
 pub mod catalog;
 
-#[cfg(feature = "arithmetic")]
+#[cfg(all(feature = "arithmetic", feature = "source"))]
 pub use self::arithmetic::*;
-#[cfg(feature = "bessel")]
+#[cfg(all(feature = "bessel", feature = "source"))]
 pub use self::bessel::*;
-#[cfg(feature = "gamma")]
+#[cfg(all(feature = "gamma", feature = "source"))]
 pub use self::gamma::*;
-#[cfg(feature = "logarithm")]
+#[cfg(all(feature = "logarithm", feature = "source"))]
 pub use self::logarithm::*;
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "source"))]
 pub use self::op_assign::*;
-#[cfg(feature = "ops")]
+#[cfg(all(feature = "ops", feature = "source"))]
 pub use self::ops::*;
-#[cfg(feature = "root")]
+#[cfg(all(feature = "ops", feature = "runtime", not(feature = "source")))]
+pub(crate) use self::ops::*;
+#[cfg(all(feature = "root", feature = "source"))]
 pub use self::root::*;
-#[cfg(feature = "rounding")]
+#[cfg(all(feature = "rounding", feature = "source"))]
 pub use self::rounding::*;
-#[cfg(feature = "stat_error")]
+#[cfg(all(feature = "stat_error", feature = "source"))]
 pub use self::stat_error::*;
-#[cfg(feature = "trig")]
+#[cfg(all(feature = "trig", feature = "source"))]
 pub use self::trig::*;
 
 #[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]

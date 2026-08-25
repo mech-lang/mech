@@ -1,6 +1,49 @@
-use mech_core::{
-    FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy,
-};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(any(
+    feature = "abs",
+    feature = "neg",
+    feature = "op_assign",
+    feature = "atan2",
+    feature = "j0",
+    feature = "j1",
+    feature = "y0",
+    feature = "y1",
+    feature = "lgamma",
+    feature = "tgamma",
+    feature = "log",
+    feature = "log10",
+    feature = "log1p",
+    feature = "log2",
+    feature = "cbrt",
+    feature = "sqrt",
+    feature = "ceil",
+    feature = "floor",
+    feature = "rint",
+    feature = "round",
+    feature = "roundeven",
+    feature = "trunc",
+    feature = "erf",
+    feature = "erfc",
+    feature = "acos",
+    feature = "acosh",
+    feature = "acot",
+    feature = "acsc",
+    feature = "asec",
+    feature = "asin",
+    feature = "asinh",
+    feature = "atan",
+    feature = "atanh",
+    feature = "cos",
+    feature = "cosh",
+    feature = "cot",
+    feature = "csc",
+    feature = "sec",
+    feature = "sin",
+    feature = "sinh",
+    feature = "tan",
+    feature = "tanh"
+))]
+use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(all(feature = "op_assign", feature = "matrix"))]
 use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
 #[cfg(feature = "source")]
@@ -478,6 +521,20 @@ macro_rules! declare_math_float_unop_factory {
     };
 }
 
+#[cfg(any(
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 macro_rules! register_math_float_unop_factory {
     (($builder:ident; $operation:ident; $_operation_feature:literal; $scalar:ident; $_scalar_feature:literal), $suffix:ident, $_shape_feature:tt) => {
         mech_core::paste::paste! { [<register_ $operation:snake _ $suffix:lower _ $scalar:lower>]($builder)?; }
@@ -498,6 +555,20 @@ macro_rules! declare_math_float_unop {
     };
 }
 
+#[cfg(any(
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 macro_rules! install_math_float_unop {
     ($builder:ident, $operation:ident, $operation_feature:literal) => {
         #[cfg(feature = "f32")]
@@ -685,6 +756,7 @@ macro_rules! declare_math_neg_families_for_scalar {
 
 for_each_math_neg_scalar!(declare_math_neg_families_for_scalar,);
 
+#[cfg(feature = "neg")]
 macro_rules! install_math_neg_for_scalar {
     ($builder:ident; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
         #[cfg(feature = $scalar_cfg)]
@@ -695,12 +767,27 @@ macro_rules! install_math_neg_for_scalar {
     };
 }
 
+#[cfg(feature = "neg")]
 macro_rules! install_math_neg {
     ($builder:ident) => {
         for_each_math_neg_scalar!(install_math_neg_for_scalar, $builder);
     };
 }
 
+#[cfg(any(
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 macro_rules! install_float_unop {
     ($builder:ident, $family:ident) => {
         install_math_float_unop!($builder, $family, "");
@@ -1158,6 +1245,7 @@ macro_rules! declare_atan2_factory {
     };
 }
 
+#[cfg(feature = "atan2")]
 macro_rules! atan2_runtime_contract {
     ([]) => {
         RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
@@ -1367,7 +1455,7 @@ pub mod __mech_native {
 /// Installs every enabled concrete runtime factory owned by `mech-math`.
 pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "add")]
-    crate::install_math_add_runtime(builder)?;
+    crate::ops::add::install_math_add_runtime(builder)?;
     #[cfg(feature = "add_assign")]
     install_add_assign_runtime(builder)?;
     #[cfg(feature = "div")]

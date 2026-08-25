@@ -6,6 +6,8 @@ pub mod insert;
 pub mod remove;
 
 #[cfg(feature = "insert")]
+#[cfg(feature = "source")]
 pub use self::insert::*;
 #[cfg(feature = "remove")]
+#[cfg(feature = "source")]
 pub use self::remove::*;

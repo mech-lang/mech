@@ -3,8 +3,9 @@ use crate::*;
 use libm::cosh;
 #[cfg(feature = "f32")]
 use libm::coshf;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
+#[cfg(feature = "source")]
 use num_traits::*;
 
 // Cosh ------------------------------------------------------------------------

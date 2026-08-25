@@ -722,6 +722,7 @@ fn impl_conversion_fxn(
     )
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub(crate) fn convert_literal_value(
     source_value: LegacyValue,
     target_kind: LegacyValue,

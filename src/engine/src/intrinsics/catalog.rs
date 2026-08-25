@@ -14,12 +14,14 @@ use crate::intrinsics::define::VarDefine;
     feature = "matrix_comprehensions"
 ))]
 use crate::*;
+#[cfg(feature = "matrix_comprehensions")]
+use mech_core::FunctionArgumentRole;
 #[cfg(any(
     feature = "invariant_define",
     feature = "matrix_comprehensions",
     feature = "set_comprehensions"
 ))]
-use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
+use mech_core::{FunctionArgs, function_shape_contract_violation};
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};

@@ -57,7 +57,10 @@ pub mod literals;
 pub mod mechdown;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
-#[cfg(any(all(feature = "access", feature = "matrix"), feature = "resident-ekf"))]
+#[cfg(any(
+    all(feature = "subscript_formula", feature = "semantic-compiler"),
+    feature = "resident-artifact"
+))]
 mod portable_index;
 pub mod program;
 #[cfg(all(feature = "resident-ekf", not(feature = "resident-artifact")))]
@@ -122,7 +125,7 @@ pub mod __mech_native {
     pub use crate::intrinsics::access::matrix::__mech_native::*;
     #[cfg(all(feature = "access", feature = "tuple"))]
     pub use crate::intrinsics::access::tuple::install_tuple_access_element;
-    #[cfg(feature = "access")]
+    #[cfg(all(feature = "access", feature = "native-plan"))]
     pub use crate::intrinsics::access::{
         install_record_access_field, install_record_access_swizzle, install_table_access_swizzle,
     };
@@ -182,7 +185,7 @@ pub use crate::intrinsics::access::map::*;
 pub use crate::intrinsics::access::matrix::*;
 #[cfg(all(feature = "access", feature = "record"))]
 pub use crate::intrinsics::access::record::*;
-#[cfg(all(feature = "access", feature = "string"))]
+#[cfg(all(feature = "access", feature = "string", feature = "semantic-compiler"))]
 pub use crate::intrinsics::access::string::*;
 #[cfg(all(feature = "access", feature = "table"))]
 pub use crate::intrinsics::access::table::*;

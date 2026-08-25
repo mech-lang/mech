@@ -13,6 +13,9 @@ extern crate paste;
 
 use mech_core::*;
 
+#[cfg(feature = "source")]
+use paste::paste;
+
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
 #[cfg(feature = "vectord")]
@@ -44,7 +47,6 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
-use paste::paste;
 use std::fmt::Debug;
 use std::ops::*;
 use std::sync::LazyLock;
@@ -148,9 +150,9 @@ pub mod sum_column;
 #[cfg(feature = "sum")]
 pub mod sum_row;
 
-#[cfg(feature = "sum")]
+#[cfg(all(feature = "sum", feature = "source"))]
 pub use self::sum_column::*;
-#[cfg(feature = "sum")]
+#[cfg(all(feature = "sum", feature = "source"))]
 pub use self::sum_row::*;
 
 #[macro_export]

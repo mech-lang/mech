@@ -191,6 +191,40 @@ work does not belong in this file.
   support decision: implement and test their lowering, or feature-gate the
   compiler trait implementation and catalog metadata out together.
 
+### Dormant documented math operations
+
+- Locations: `machines/math/src/logarithm/ilogb.rs`,
+  `machines/math/src/trig/hypot.rs`, and `machines/math/src/trig/sincos.rs`, plus
+  their user documentation.
+- Finding: none of these implementation files is declared by its parent module,
+  and the frozen source catalog explicitly requires all three operations to be
+  absent. `ilogb` and `sincos` do not have Cargo features; `hypot` has a feature
+  included in the full distribution contract, but enabling it currently adds no
+  implementation or catalog entry. The documentation nevertheless describes all
+  three as available operations.
+- Why they were not deleted here: deletion would preserve current compiled
+  behavior but make an unresolved product-contract conflict permanent. Decide
+  whether each operation is supported; then either reconnect its module,
+  lowering, catalog entry, and tests as a unit, or delete its implementation,
+  documentation, unsafe-boundary entry, and (where compatible) feature promise
+  as a unit. This cleanup does not move the frozen catalog to accommodate either
+  outcome.
+
+### Function-local definition scope metadata
+
+- Location: `src/engine/src/intrinsics/define.rs` and the semantic compiler's
+  `var/define` specialization path.
+- Preserved behavior: the compiler distinguishes root-visible definitions from
+  function-local definitions so bytecode execution cannot leak local symbols
+  into the program root. The specializer currently receives that distinction as
+  a fourth compile-time `LegacyValue::Bool`; it is not emitted as a runtime
+  function input.
+- Deeper question: move specialization context such as symbol visibility out of
+  the legacy runtime-value argument channel. A compiler-owned specialization
+  context would express this metadata directly, but changing that interface is
+  broader than warning removal and must preserve the repeated-function local
+  scope regression test.
+
 ### Best-effort cleanup and failure-path telemetry
 
 - Locations: runtime transaction failure handling in

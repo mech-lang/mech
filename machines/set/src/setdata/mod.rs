@@ -4,4 +4,5 @@
 pub mod size;
 
 #[cfg(all(feature = "size", feature = "u64"))]
+#[cfg(feature = "source")]
 pub use self::size::*;

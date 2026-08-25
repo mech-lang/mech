@@ -26,6 +26,7 @@ fn define_compiler_symbol(
 #[derive(Debug)]
 pub struct BytecodeIntegrityConstraintMarker {
     out: LegacyValue,
+    #[cfg(feature = "semantic-compiler")]
     arguments: Vec<LegacyValue>,
 }
 
@@ -38,9 +39,11 @@ impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Variadic(out, arguments) if arguments.len() == 6 => {
-                Ok(Box::new(Self { out, arguments }))
-            }
+            FunctionArgs::Variadic(out, arguments) if arguments.len() == 6 => Ok(Box::new(Self {
+                out,
+                #[cfg(feature = "semantic-compiler")]
+                arguments,
+            })),
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 6,
@@ -222,10 +225,14 @@ macro_rules! impl_variable_define_fxn {
         paste! {
           #[derive(Debug, Clone)]
           pub struct [<VariableDefine $kind:camel>] {
+            #[cfg(feature = "semantic-compiler")]
             name: Ref<String>,
+            #[cfg(feature = "semantic-compiler")]
             mutable: Ref<bool>,
             var: Ref<$kind>,
+            #[cfg(feature = "semantic-compiler")]
             initial: $kind,
+            #[cfg(feature = "semantic-compiler")]
             root_visible: bool,
           }
           impl MechFunctionFactory for [<VariableDefine $kind:camel>] {
@@ -241,8 +248,24 @@ macro_rules! impl_variable_define_fxn {
                   let var: Ref<$kind> = out.try_function_ref(FunctionArgumentRole::Output)?;
                   let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
                   let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                  #[cfg(feature = "semantic-compiler")]
                   let initial = var.borrow().clone();
-                  Ok(Box::new(Self { name, mutable, var, initial, root_visible: true }))
+                  #[cfg(not(feature = "semantic-compiler"))]
+                  {
+                    drop(name);
+                    drop(mutable);
+                  }
+                  Ok(Box::new(Self {
+                    #[cfg(feature = "semantic-compiler")]
+                    name,
+                    #[cfg(feature = "semantic-compiler")]
+                    mutable,
+                    var,
+                    #[cfg(feature = "semantic-compiler")]
+                    initial,
+                    #[cfg(feature = "semantic-compiler")]
+                    root_visible: true,
+                  }))
                 },
                 _ => Err(MechError::new(
                     IncorrectNumberOfArguments { expected: 3, found: args.len() },
@@ -604,10 +627,14 @@ pub mod __mech_native_matrix {
 
 #[derive(Debug, Clone)]
 pub struct VariableDefineEmpty {
+    #[cfg(feature = "semantic-compiler")]
     name: Ref<String>,
+    #[cfg(feature = "semantic-compiler")]
     mutable: Ref<bool>,
     var: Ref<LegacyValue>,
+    #[cfg(feature = "semantic-compiler")]
     initial: LegacyValue,
+    #[cfg(feature = "semantic-compiler")]
     root_visible: bool,
 }
 
@@ -624,12 +651,22 @@ impl MechFunctionFactory for VariableDefineEmpty {
                 let var: Ref<LegacyValue> = var.try_function_ref(FunctionArgumentRole::Output)?;
                 let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
                 let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                #[cfg(feature = "semantic-compiler")]
                 let initial = var.borrow().clone();
+                #[cfg(not(feature = "semantic-compiler"))]
+                {
+                    drop(name);
+                    drop(mutable);
+                }
                 Ok(Box::new(Self {
+                    #[cfg(feature = "semantic-compiler")]
                     name,
+                    #[cfg(feature = "semantic-compiler")]
                     mutable,
                     var,
+                    #[cfg(feature = "semantic-compiler")]
                     initial,
+                    #[cfg(feature = "semantic-compiler")]
                     root_visible: true,
                 }))
             }
@@ -699,7 +736,7 @@ impl MechFunctionCompiler for VariableDefineEmpty {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "semantic-compiler"))]
 mod empty_transaction_state_tests {
     use super::*;
 
@@ -802,6 +839,7 @@ macro_rules! impl_variable_define_match_arms {
   };
 }
 
+#[cfg(feature = "semantic-compiler")]
 fn impl_var_define_fxn(
     var: LegacyValue,
     name: LegacyValue,
@@ -1074,7 +1112,9 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     Ok(())
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub struct VarDefine {}
+#[cfg(feature = "semantic-compiler")]
 impl FunctionSpecializer for VarDefine {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
         if arguments.len() != 4 {

@@ -15,7 +15,7 @@ macro_rules! optional_operation_contract {
 }
 use std::sync::LazyLock;
 
-#[cfg(feature = "subscript_formula")]
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 use crate::portable_index::ToPortableIndex;
 
 fn matrix_selection_contract(
@@ -3960,10 +3960,10 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     Ok(())
 }
 
-#[cfg(feature = "subscript_formula")]
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 declare_matrix_selection_contract!(PURE_UNARY_INDEX_CONVERSION_CONTRACT, 1, "scalar-index");
 
-#[cfg(feature = "subscript_formula")]
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 macro_rules! define_reactive_scalar_index {
     ($name:ident, $source_type:ty, $runtime_name:literal) => {
         #[derive(Debug)]
@@ -4024,7 +4024,6 @@ macro_rules! define_reactive_scalar_index {
             }
         }
 
-        #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $name {
             fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 compile_unop!($runtime_name, self.out, self.source, ctx);
@@ -4033,38 +4032,86 @@ macro_rules! define_reactive_scalar_index {
     };
 }
 
-#[cfg(all(feature = "subscript_formula", feature = "u8"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "u8"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexU8, u8, "ReactiveScalarIndex<u8>");
-#[cfg(all(feature = "subscript_formula", feature = "u16"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "u16"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexU16, u16, "ReactiveScalarIndex<u16>");
-#[cfg(all(feature = "subscript_formula", feature = "u32"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "u32"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexU32, u32, "ReactiveScalarIndex<u32>");
-#[cfg(all(feature = "subscript_formula", feature = "u64"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "u64"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexU64, u64, "ReactiveScalarIndex<u64>");
-#[cfg(all(feature = "subscript_formula", feature = "u128"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "u128"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexU128, u128, "ReactiveScalarIndex<u128>");
-#[cfg(all(feature = "subscript_formula", feature = "i8"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "i8"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexI8, i8, "ReactiveScalarIndex<i8>");
-#[cfg(all(feature = "subscript_formula", feature = "i16"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "i16"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexI16, i16, "ReactiveScalarIndex<i16>");
-#[cfg(all(feature = "subscript_formula", feature = "i32"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "i32"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexI32, i32, "ReactiveScalarIndex<i32>");
-#[cfg(all(feature = "subscript_formula", feature = "i64"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "i64"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexI64, i64, "ReactiveScalarIndex<i64>");
-#[cfg(all(feature = "subscript_formula", feature = "i128"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "i128"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexI128, i128, "ReactiveScalarIndex<i128>");
-#[cfg(all(feature = "subscript_formula", feature = "f32"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "f32"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexF32, f32, "ReactiveScalarIndex<f32>");
-#[cfg(all(feature = "subscript_formula", feature = "f64"))]
+#[cfg(all(
+    feature = "subscript_formula",
+    feature = "semantic-compiler",
+    feature = "f64"
+))]
 define_reactive_scalar_index!(ReactiveScalarIndexF64, f64, "ReactiveScalarIndex<f64>");
-#[cfg(feature = "subscript_formula")]
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 define_reactive_scalar_index!(
     ReactiveScalarIndexUsize,
     usize,
     "ReactiveScalarIndex<usize>"
 );
 
-#[cfg(feature = "subscript_formula")]
+#[cfg(all(feature = "subscript_formula", feature = "semantic-compiler"))]
 macro_rules! append_reactive_scalar_index {
     ($plan:expr, $source:expr, $function_type:ident) => {{
         let function = $function_type::from_source($source)?;

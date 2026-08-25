@@ -3,7 +3,7 @@ use crate::*;
 use libm::atan2;
 #[cfg(feature = "f32")]
 use libm::atan2f;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
 
 // Atan2 ------------------------------------------------------------------------

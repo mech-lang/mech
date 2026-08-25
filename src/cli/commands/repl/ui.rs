@@ -16,6 +16,7 @@ pub(super) enum ReplRenderMode {
 pub(super) struct ReplUi {
     mode: ReplRenderMode,
     color: bool,
+    #[cfg(feature = "mika")]
     animation: bool,
     quiet: bool,
     value_element_limit: usize,
@@ -34,6 +35,7 @@ impl ReplUi {
             term: env::var("TERM").ok(),
             no_color: env::var_os("NO_COLOR").is_some(),
             clicolor: env::var("CLICOLOR").ok(),
+            #[cfg(feature = "mika")]
             ci: env::var_os("CI").is_some(),
         })
     }
@@ -43,6 +45,7 @@ impl ReplUi {
         Self {
             mode: ReplRenderMode::Rich,
             color: true,
+            #[cfg(feature = "mika")]
             animation: true,
             quiet: false,
             value_element_limit: mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
@@ -54,6 +57,7 @@ impl ReplUi {
         Self {
             mode: ReplRenderMode::Plain,
             color: false,
+            #[cfg(feature = "mika")]
             animation: false,
             quiet: false,
             value_element_limit: mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT,
@@ -72,6 +76,7 @@ impl ReplUi {
         self.color
     }
 
+    #[cfg(feature = "mika")]
     pub(super) const fn animation(self) -> bool {
         self.animation
     }
@@ -113,6 +118,7 @@ impl ReplUi {
             return Self {
                 mode: ReplRenderMode::Plain,
                 color: false,
+                #[cfg(feature = "mika")]
                 animation: false,
                 quiet,
                 value_element_limit,
@@ -122,6 +128,7 @@ impl ReplUi {
         Self {
             mode: ReplRenderMode::Rich,
             color: !settings.no_color && settings.clicolor.as_deref() != Some("0"),
+            #[cfg(feature = "mika")]
             animation: !settings.ci,
             quiet,
             value_element_limit,
@@ -141,6 +148,7 @@ struct EnvironmentSettings {
     term: Option<String>,
     no_color: bool,
     clicolor: Option<String>,
+    #[cfg(feature = "mika")]
     ci: bool,
 }
 
@@ -187,14 +195,19 @@ mod tests {
         });
         assert_eq!(no_color.mode(), ReplRenderMode::Rich);
         assert!(!no_color.color());
+        #[cfg(feature = "mika")]
         assert!(no_color.animation());
 
+        #[cfg(feature = "mika")]
         let ci = ReplUi::resolve(EnvironmentSettings {
             ci: true,
             ..EnvironmentSettings::default()
         });
+        #[cfg(feature = "mika")]
         assert_eq!(ci.mode(), ReplRenderMode::Rich);
+        #[cfg(feature = "mika")]
         assert!(ci.color());
+        #[cfg(feature = "mika")]
         assert!(!ci.animation());
     }
 

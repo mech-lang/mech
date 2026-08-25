@@ -118,13 +118,13 @@ pub mod or;
 #[cfg(feature = "xor")]
 pub mod xor;
 
-#[cfg(feature = "and")]
+#[cfg(all(feature = "and", feature = "source"))]
 pub use self::and::*;
-#[cfg(feature = "not")]
+#[cfg(all(feature = "not", feature = "source"))]
 pub use self::not::*;
-#[cfg(feature = "or")]
+#[cfg(all(feature = "or", feature = "source"))]
 pub use self::or::*;
-#[cfg(feature = "xor")]
+#[cfg(all(feature = "xor", feature = "source"))]
 pub use self::xor::*;
 
 // ----------------------------------------------------------------------------
