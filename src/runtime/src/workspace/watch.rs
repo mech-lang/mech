@@ -2,7 +2,10 @@ use std::{
     collections::BTreeSet,
     ffi::OsStr,
     path::{Path, PathBuf},
-    sync::mpsc::{self, Receiver},
+    sync::{
+        Arc, Mutex,
+        mpsc::{self, Receiver},
+    },
 };
 
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -12,9 +15,13 @@ use super::*;
 pub struct RuntimeWorkspaceWatcher {
     watcher: RecommendedWatcher,
     receiver: Receiver<notify::Result<Event>>,
+    event_notifier: SharedWatchEventNotifier,
     watched_paths: BTreeSet<RuntimeWorkspaceWatchedPath>,
     watched_keys: BTreeSet<RuntimeWorkspaceWatchKey>,
 }
+
+type WatchEventNotifier = Arc<dyn Fn() + Send + Sync + 'static>;
+type SharedWatchEventNotifier = Arc<Mutex<Option<WatchEventNotifier>>>;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 struct RuntimeWorkspaceWatchedPath {
@@ -60,15 +67,26 @@ pub enum RuntimeWorkspaceWatchEventKind {
 impl RuntimeWorkspaceWatcher {
     pub fn open(workspace: &RuntimeWorkspace, runtime: &mut MechRuntime) -> MResult<Self> {
         let (sender, receiver) = mpsc::channel();
+        let event_notifier = SharedWatchEventNotifier::default();
+        let callback_notifier = event_notifier.clone();
 
         let watcher = notify::recommended_watcher(move |event| {
-            let _ = sender.send(event);
+            let notifier = callback_notifier
+                .lock()
+                .ok()
+                .and_then(|notifier| notifier.clone());
+            if sender.send(event).is_ok()
+                && let Some(notifier) = notifier
+            {
+                notifier();
+            }
         })
         .map_err(|error| watch_error(format!("could not create watcher: {}", error)))?;
 
         let mut watcher = Self {
             watcher,
             receiver,
+            event_notifier,
             watched_paths: BTreeSet::new(),
             watched_keys: BTreeSet::new(),
         };
@@ -76,6 +94,16 @@ impl RuntimeWorkspaceWatcher {
         watcher.sync(workspace, runtime)?;
 
         Ok(watcher)
+    }
+
+    /// Registers a lightweight wake-up callback for newly queued filesystem events.
+    ///
+    /// The callback runs on the platform watcher's thread, so callers should only
+    /// use it to signal their own event loop and perform the actual refresh there.
+    pub fn set_event_notifier(&mut self, notifier: impl Fn() + Send + Sync + 'static) {
+        if let Ok(mut current) = self.event_notifier.lock() {
+            *current = Some(Arc::new(notifier));
+        }
     }
 
     pub fn poll(
