@@ -169,6 +169,10 @@ impl ServerWorkspaceSession {
         &self.watcher
     }
 
+    pub fn set_watch_event_notifier(&mut self, notifier: impl Fn() + Send + Sync + 'static) {
+        self.watcher.set_event_notifier(notifier);
+    }
+
     pub fn snapshot(&self) -> Option<&RuntimeWorkspaceSnapshot> {
         self.workspace.snapshot()
     }
@@ -454,6 +458,52 @@ mod tests {
 
         assert!(poll.events.is_empty());
         assert!(poll.refresh.is_none());
+    }
+
+    #[test]
+    fn server_workspace_session_notifies_when_a_watch_event_is_queued() {
+        let root = setup_session_root();
+        let main = root.join("main.mec");
+        std::fs::write(&main, "result := false\n").unwrap();
+        let main = main.canonicalize().unwrap();
+
+        let mut session = ServerWorkspaceSession::open(
+            &root,
+            vec![main_target()],
+            vec![recursive_root_folder()],
+            module_options(),
+        )
+        .unwrap();
+        let _ = session.poll(module_options()).unwrap();
+
+        let (sender, receiver) = std::sync::mpsc::sync_channel(1);
+        session.set_watch_event_notifier(move || {
+            let _ = sender.try_send(());
+        });
+        std::fs::write(&main, "result := true\n").unwrap();
+
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        let saw_main_event = loop {
+            let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+            if remaining.is_zero() || receiver.recv_timeout(remaining).is_err() {
+                break false;
+            }
+            let poll = session.poll(module_options()).unwrap();
+            if poll
+                .events
+                .iter()
+                .any(|event| event.path.canonicalize().ok().as_ref() == Some(&main))
+            {
+                break true;
+            }
+        };
+        assert!(
+            saw_main_event,
+            "filesystem event did not wake the workspace session"
+        );
+
+        drop(session);
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
