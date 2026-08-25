@@ -236,7 +236,7 @@ class ReviewedContractsTests(unittest.TestCase):
             for site in row["sites"]
         }
         self.assertEqual(
-            sites[("src/engine/src/structures.rs", 742, 19)],
+            sites[("src/engine/src/structures.rs", 811, 19)],
             "homogeneous-matrix-snapshot",
         )
         self.assertEqual(

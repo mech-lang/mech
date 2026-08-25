@@ -3753,22 +3753,22 @@
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1139
+            "line": 1141
           },
           {
             "column": 65,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1139
+            "line": 1141
           },
           {
             "column": 34,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1144
+            "line": 1146
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1148
+            "line": 1150
           }
         ]
       },
@@ -5001,7 +5001,7 @@
           {
             "column": 22,
             "fingerprint": "7bfa45b92f78a1278308e563efa0a1764ad4054b2219244a92a25b12eec71772",
-            "line": 83
+            "line": 101
           }
         ]
       },
@@ -7804,12 +7804,12 @@
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 633
+            "line": 635
           },
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 838
+            "line": 840
           }
         ]
       },
@@ -7836,7 +7836,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 236
+            "line": 237
           }
         ]
       },
@@ -7885,7 +7885,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 192
+            "line": 247
           }
         ]
       },
@@ -8393,7 +8393,7 @@
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 141
+            "line": 165
           }
         ]
       },
@@ -9808,22 +9808,22 @@
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1139
+            "line": 1141
           },
           {
             "column": 52,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1139
+            "line": 1141
           },
           {
             "column": 21,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1144
+            "line": 1146
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1148
+            "line": 1150
           }
         ]
       },
@@ -11056,7 +11056,7 @@
           {
             "column": 9,
             "fingerprint": "a52f58f237d661bf4ae2b281bfb7f57bb0b14a491a2f05a0ae5533a157c777ca",
-            "line": 83
+            "line": 101
           }
         ]
       },
@@ -14458,12 +14458,12 @@
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 633
+              "line": 635
             },
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 838
+              "line": 840
             }
           ]
         },
@@ -14490,7 +14490,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 236
+              "line": 237
             }
           ]
         },
@@ -14539,7 +14539,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 192
+              "line": 247
             }
           ]
         },
@@ -15047,7 +15047,7 @@
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 141
+              "line": 165
             }
           ]
         },
@@ -18460,28 +18460,28 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 317,
+      "line": 319,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1074,
+      "line": 1076,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1074,
+      "line": 1076,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1106,
+      "line": 1108,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "C64"
     },
@@ -20427,28 +20427,28 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 294,
+      "line": 296,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1056,
+      "line": 1058,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1056,
+      "line": 1058,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1100,
+      "line": 1102,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F32"
     },
@@ -20567,7 +20567,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 120,
+      "line": 121,
       "path": "machines/range/src/catalog.rs",
       "variant": "F32"
     },
@@ -21071,28 +21071,28 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 303,
+      "line": 305,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1062,
+      "line": 1064,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1062,
+      "line": 1064,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1102,
+      "line": 1104,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "F64"
     },
@@ -21211,7 +21211,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 122,
+      "line": 123,
       "path": "machines/range/src/catalog.rs",
       "variant": "F64"
     },
@@ -21911,42 +21911,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 264,
+      "line": 266,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 292,
+      "line": 294,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1050,
+      "line": 1052,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 32,
       "enum": "LegacyValue",
-      "line": 1050,
+      "line": 1052,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 1098,
+      "line": 1100,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I128"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 118,
+      "line": 119,
       "path": "machines/range/src/catalog.rs",
       "variant": "I128"
     },
@@ -22408,42 +22408,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 258,
+      "line": 260,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 286,
+      "line": 288,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1032,
+      "line": 1034,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1032,
+      "line": 1034,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1092,
+      "line": 1094,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I16"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 112,
+      "line": 113,
       "path": "machines/range/src/catalog.rs",
       "variant": "I16"
     },
@@ -22905,35 +22905,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 260,
+      "line": 262,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 288,
+      "line": 290,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1038,
+      "line": 1040,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1038,
+      "line": 1040,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1094,
+      "line": 1096,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I32"
     },
@@ -22947,7 +22947,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 114,
+      "line": 115,
       "path": "machines/range/src/catalog.rs",
       "variant": "I32"
     },
@@ -23409,42 +23409,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 262,
+      "line": 264,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 290,
+      "line": 292,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1044,
+      "line": 1046,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1044,
+      "line": 1046,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1096,
+      "line": 1098,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 116,
+      "line": 117,
       "path": "machines/range/src/catalog.rs",
       "variant": "I64"
     },
@@ -23976,42 +23976,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 256,
+      "line": 258,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 284,
+      "line": 286,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1026,
+      "line": 1028,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 1026,
+      "line": 1028,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 1090,
+      "line": 1092,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "I8"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 110,
+      "line": 111,
       "path": "machines/range/src/catalog.rs",
       "variant": "I8"
     },
@@ -24732,7 +24732,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 391,
+      "line": 393,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "Index"
     },
@@ -31564,7 +31564,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1106,
+      "line": 1108,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixC64"
     },
@@ -31830,7 +31830,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1100,
+      "line": 1102,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixF32"
     },
@@ -33825,7 +33825,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1102,
+      "line": 1104,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixF64"
     },
@@ -36058,7 +36058,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1098,
+      "line": 1100,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI128"
     },
@@ -36345,7 +36345,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1092,
+      "line": 1094,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI16"
     },
@@ -36632,7 +36632,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1094,
+      "line": 1096,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI32"
     },
@@ -36919,7 +36919,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1096,
+      "line": 1098,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI64"
     },
@@ -37206,7 +37206,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1090,
+      "line": 1092,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixI8"
     },
@@ -40293,7 +40293,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1104,
+      "line": 1106,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixR64"
     },
@@ -40846,7 +40846,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1088,
+      "line": 1090,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU128"
     },
@@ -41133,7 +41133,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1082,
+      "line": 1084,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU16"
     },
@@ -41420,7 +41420,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1084,
+      "line": 1086,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU32"
     },
@@ -41707,7 +41707,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1086,
+      "line": 1088,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU64"
     },
@@ -42001,7 +42001,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1080,
+      "line": 1082,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MatrixU8"
     },
@@ -42799,28 +42799,28 @@
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1139,
+      "line": 1141,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
     {
       "column": 52,
       "enum": "LegacyValue",
-      "line": 1139,
+      "line": 1141,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 1144,
+      "line": 1146,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1148,
+      "line": 1150,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "MutableReference"
     },
@@ -44017,7 +44017,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 83,
+      "line": 101,
       "path": "machines/set/src/lib.rs",
       "variant": "MutableReference"
     },
@@ -45949,35 +45949,35 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 266,
+      "line": 268,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 312,
+      "line": 314,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1068,
+      "line": 1070,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1068,
+      "line": 1070,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1104,
+      "line": 1106,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "R64"
     },
@@ -49470,42 +49470,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 254,
+      "line": 256,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 282,
+      "line": 284,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1020,
+      "line": 1022,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 32,
       "enum": "LegacyValue",
-      "line": 1020,
+      "line": 1022,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 1088,
+      "line": 1090,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U128"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 108,
+      "line": 109,
       "path": "machines/range/src/catalog.rs",
       "variant": "U128"
     },
@@ -49953,42 +49953,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 248,
+      "line": 250,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 276,
+      "line": 278,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1002,
+      "line": 1004,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1002,
+      "line": 1004,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1082,
+      "line": 1084,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U16"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 102,
+      "line": 103,
       "path": "machines/range/src/catalog.rs",
       "variant": "U16"
     },
@@ -50436,42 +50436,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 250,
+      "line": 252,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 278,
+      "line": 280,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1008,
+      "line": 1010,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1008,
+      "line": 1010,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1084,
+      "line": 1086,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U32"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 104,
+      "line": 105,
       "path": "machines/range/src/catalog.rs",
       "variant": "U32"
     },
@@ -50919,42 +50919,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 252,
+      "line": 254,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 280,
+      "line": 282,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 1014,
+      "line": 1016,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 1014,
+      "line": 1016,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1086,
+      "line": 1088,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U64"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 106,
+      "line": 107,
       "path": "machines/range/src/catalog.rs",
       "variant": "U64"
     },
@@ -51451,42 +51451,42 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 246,
+      "line": 248,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 274,
+      "line": 276,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 996,
+      "line": 998,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 30,
       "enum": "LegacyValue",
-      "line": 996,
+      "line": 998,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 1080,
+      "line": 1082,
       "path": "machines/combinatorics/src/n_choose_k.rs",
       "variant": "U8"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 100,
+      "line": 101,
       "path": "machines/range/src/catalog.rs",
       "variant": "U8"
     },
