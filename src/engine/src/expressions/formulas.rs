@@ -8,11 +8,40 @@ use super::{
     current_string_access_expression_live, mark_current_string_access_expression_live,
     mark_string_access_value_live, string_access_input_is_live,
 };
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of"),
+    feature = "enum",
+    feature = "atom"
+))]
+use crate::ProgramState;
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of")
+))]
+use crate::Ref;
+#[cfg(any(
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+))]
+use crate::SetOp;
 use crate::{
     AddSubOp, ComparisonOp, Factor, FormulaOperator, InterpreterExecution, LegacyValue, LogicOp,
-    MResult, MechError, MechFunction, MulDivOp, OperationId, PowerOp, ProgramState, Ref, SetOp,
-    TableOp, Term, ValueKind, VecOp, detach_value,
+    MResult, MechError, MechFunction, MulDivOp, OperationId, PowerOp, TableOp, Term, VecOp,
 };
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of")
+))]
+use crate::{ValueKind, detach_value};
 
 fn specialize_formula_operation(
     p: &InterpreterExecution<'_>,
@@ -314,7 +343,12 @@ pub fn term(
     Ok(lhs)
 }
 
-#[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of"),
+    feature = "enum",
+    feature = "atom"
+))]
 fn enum_value_matches_kind(value: &LegacyValue, enum_id: u64, state: &ProgramState) -> bool {
     let enum_def = match state.enums.get(&enum_id) {
         Some(enm) => enm,
@@ -418,7 +452,10 @@ fn enum_value_matches_kind(value: &LegacyValue, enum_id: u64, state: &ProgramSta
     }
 }
 
-#[cfg(feature = "kind_annotation")]
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of")
+))]
 fn value_in_kind(value: &LegacyValue, kind: &ValueKind, p: &InterpreterExecution<'_>) -> bool {
     let detached = detach_value(value);
     #[cfg(all(feature = "enum", feature = "atom"))]

@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Ceil ------------------------------------------------------------------------
 
-use libm::{ceil, ceilf};
+#[cfg(feature = "f64")]
+use libm::ceil;
+#[cfg(feature = "f32")]
+use libm::ceilf;
+#[cfg(feature = "f64")]
 macro_rules! ceil_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! ceil_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! ceil_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! ceil_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! ceilf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! ceilf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! ceilf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

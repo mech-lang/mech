@@ -1,10 +1,14 @@
 use crate::*;
-use libm::{sinh, sinhf};
+#[cfg(feature = "f64")]
+use libm::sinh;
+#[cfg(feature = "f32")]
+use libm::sinhf;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Sinh ------------------------------------------------------------------------
+#[cfg(feature = "f64")]
 macro_rules! sinh_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -13,6 +17,7 @@ macro_rules! sinh_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! sinh_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -23,6 +28,7 @@ macro_rules! sinh_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! sinhf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -31,6 +37,7 @@ macro_rules! sinhf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! sinhf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

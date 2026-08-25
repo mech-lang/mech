@@ -23,6 +23,13 @@ use crate::{
 ))]
 use crate::{subscript_formula, subscript_formula_ix};
 
+#[cfg(any(
+    feature = "variable_assign",
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 pub(super) fn assignment_registration_operand(value: &LegacyValue) -> LegacyValue {
     match value {
         LegacyValue::MutableReference(reference) => {

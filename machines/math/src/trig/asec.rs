@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Asec ------------------------------------------------------------------------
 
-use libm::{acos, acosf};
+#[cfg(feature = "f64")]
+use libm::acos;
+#[cfg(feature = "f32")]
+use libm::acosf;
+#[cfg(feature = "f64")]
 macro_rules! asec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! asec_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! asec_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! asec_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asecf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! asecf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asecf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

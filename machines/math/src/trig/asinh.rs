@@ -1,10 +1,14 @@
 use crate::*;
-use libm::{asinh, asinhf};
+#[cfg(feature = "f64")]
+use libm::asinh;
+#[cfg(feature = "f32")]
+use libm::asinhf;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Asinh Macros
+#[cfg(feature = "f64")]
 macro_rules! asinh_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -13,6 +17,7 @@ macro_rules! asinh_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! asinh_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -23,6 +28,7 @@ macro_rules! asinh_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asinhf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -31,6 +37,7 @@ macro_rules! asinhf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asinhf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

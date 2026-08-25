@@ -175,7 +175,7 @@ serde = "1.0.228"
 serde_derive = "1.0.228"
 colored = "3.1.1"
 indexmap = "2.13.0"
-tabled = "0.20.0"
+tabled = { version = "0.20.0", default-features = false, features = ["std"] }
 paste = "1.0.15"
 
 [dependencies.num-traits]

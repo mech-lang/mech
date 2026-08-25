@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Asin ------------------------------------------------------------------------
 
-use libm::{asin, asinf};
+#[cfg(feature = "f64")]
+use libm::asin;
+#[cfg(feature = "f32")]
+use libm::asinf;
+#[cfg(feature = "f64")]
 macro_rules! asin_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! asin_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! asin_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! asin_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asinf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! asinf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asinf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

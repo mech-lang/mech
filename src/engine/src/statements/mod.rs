@@ -37,7 +37,21 @@ pub use kinds::kind_define;
 #[cfg(feature = "state_machines")]
 pub use state_machines::fsm_declare;
 
+#[cfg(any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 mod op_assign;
+#[cfg(any(
+    feature = "variable_assign",
+    all(feature = "subscript", feature = "assign"),
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 mod variable_assign;
 mod variable_define;
 
@@ -68,7 +82,24 @@ pub use variable_define::variable_define;
 
 pub fn statement(
     stmt: &Statement,
+    #[cfg(any(
+        feature = "variable_assign",
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign",
+        feature = "state_machines"
+    ))]
     env: Option<&Environment>,
+    #[cfg(not(any(
+        feature = "variable_assign",
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign",
+        feature = "state_machines"
+    )))]
+    _: Option<&Environment>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
     match stmt {

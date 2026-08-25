@@ -1,10 +1,14 @@
 use crate::*;
-use libm::{acosh, acoshf};
+#[cfg(feature = "f64")]
+use libm::acosh;
+#[cfg(feature = "f32")]
+use libm::acoshf;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Acosh Macros
+#[cfg(feature = "f64")]
 macro_rules! acosh_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -13,6 +17,7 @@ macro_rules! acosh_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! acosh_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -23,6 +28,7 @@ macro_rules! acosh_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! acoshf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -31,6 +37,7 @@ macro_rules! acoshf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! acoshf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

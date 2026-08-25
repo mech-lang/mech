@@ -1,10 +1,14 @@
 use crate::*;
-use libm::{tanh, tanhf};
+#[cfg(feature = "f64")]
+use libm::tanh;
+#[cfg(feature = "f32")]
+use libm::tanhf;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Tanh ------------------------------------------------------------------------
+#[cfg(feature = "f64")]
 macro_rules! tanh_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -13,6 +17,7 @@ macro_rules! tanh_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! tanh_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -23,6 +28,7 @@ macro_rules! tanh_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! tanhf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -31,6 +37,7 @@ macro_rules! tanhf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! tanhf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Tan ------------------------------------------------------------------------
 
-use libm::{tan, tanf};
+#[cfg(feature = "f64")]
+use libm::tan;
+#[cfg(feature = "f32")]
+use libm::tanf;
+#[cfg(feature = "f64")]
 macro_rules! tan_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! tan_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! tan_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! tan_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! tanf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! tanf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! tanf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

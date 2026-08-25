@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Acos ------------------------------------------------------------------------
 
-use libm::{acos, acosf};
+#[cfg(feature = "f64")]
+use libm::acos;
+#[cfg(feature = "f32")]
+use libm::acosf;
+#[cfg(feature = "f64")]
 macro_rules! acos_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! acos_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! acos_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! acos_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! acosf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! acosf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! acosf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

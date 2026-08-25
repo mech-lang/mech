@@ -1,5 +1,4 @@
 #![cfg_attr(not(test), no_main)]
-#![feature(step_trait)]
 #![feature(where_clause_attrs)]
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

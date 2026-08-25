@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Sec ------------------------------------------------------------------------
 
-use libm::{cos, cosf};
+#[cfg(feature = "f64")]
+use libm::cos;
+#[cfg(feature = "f32")]
+use libm::cosf;
+#[cfg(feature = "f64")]
 macro_rules! sec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! sec_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! sec_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! sec_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! secf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! secf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! secf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

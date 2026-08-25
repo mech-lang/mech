@@ -87,7 +87,15 @@ use nalgebra::Vector3;
 use nalgebra::Vector4;
 #[cfg(feature = "rational")]
 use num_rational::Rational64;
-#[cfg(feature = "pretty_print")]
+#[cfg(all(
+    feature = "pretty_print",
+    any(
+        feature = "symbol_table",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple"
+    )
+))]
 use tabled::{builder::Builder, settings::Style};
 
 pub mod element;

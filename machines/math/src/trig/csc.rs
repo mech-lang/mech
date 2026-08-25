@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Csc ------------------------------------------------------------------------
 
-use libm::{sin, sinf};
+#[cfg(feature = "f64")]
+use libm::sin;
+#[cfg(feature = "f32")]
+use libm::sinf;
+#[cfg(feature = "f64")]
 macro_rules! csc_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! csc_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! csc_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! csc_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! cscf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! cscf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! cscf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

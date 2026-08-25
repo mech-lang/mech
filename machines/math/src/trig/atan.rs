@@ -5,7 +5,11 @@ use num_traits::*;
 
 // Atan ------------------------------------------------------------------------
 
-use libm::{atan, atanf};
+#[cfg(feature = "f64")]
+use libm::atan;
+#[cfg(feature = "f32")]
+use libm::atanf;
+#[cfg(feature = "f64")]
 macro_rules! atan_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! atan_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! atan_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! atan_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atanf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! atanf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atanf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

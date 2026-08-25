@@ -809,7 +809,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             return Ok(token);
         }
         let selection_token = NEXT_SELECTION_TOKEN
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
                 next.checked_add(1)
             })
             .map_err(|_| interactive_error("resident selection token space exhausted"))?;

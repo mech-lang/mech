@@ -17,7 +17,15 @@ struct ConstantCodecContext {
     depth: usize,
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 enum AnnotatedChild {
     Concrete(EncodedConstant),
     AbsentOption { declared: RuntimeType },
@@ -47,7 +55,15 @@ impl ConstantCodecContext {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 fn encode_annotated_child(
     value: &LegacyValue,
     declared: &RuntimeType,
@@ -100,7 +116,15 @@ fn encode_annotated_child(
     Ok(AnnotatedChild::Concrete(context.encode_child(value)?))
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 fn encode_absent_option(runtime_type: RuntimeType) -> MResult<EncodedConstant> {
     if !matches!(runtime_type, RuntimeType::Option(_)) {
         return Err(unsupported_constant(
@@ -112,7 +136,15 @@ fn encode_absent_option(runtime_type: RuntimeType) -> MResult<EncodedConstant> {
     Ok(encoded_constant(runtime_type, 1, vec![0]))
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table"
+    )
+))]
 fn finalize_annotated_children(
     declared: &RuntimeType,
     children: Vec<AnnotatedChild>,
@@ -443,12 +475,12 @@ pub trait CompileConst {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32>;
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
 struct CapturingConstantContext {
     constant: Option<EncodedConstant>,
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
 impl BytecodeCompilerContext for CapturingConstantContext {
     fn register_for_ptr_with_initialization_status(&mut self, _pointer: usize) -> (Register, bool) {
         (0, false)
@@ -532,7 +564,7 @@ impl BytecodeCompilerContext for CapturingConstantContext {
     }
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
 fn capture_constant<T: CompileConst + ?Sized>(value: &T) -> MResult<EncodedConstant> {
     let mut context = CapturingConstantContext { constant: None };
     value.compile_const(&mut context)?;
@@ -793,7 +825,17 @@ fn append_child_payload(payload: &mut Vec<u8>, child: &EncodedConstant) -> MResu
     Ok(())
 }
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "tuple",
+        feature = "record",
+        feature = "map",
+        feature = "set",
+        feature = "table",
+        feature = "enum"
+    )
+))]
 fn checked_count(
     count: usize,
     runtime_type: RuntimeType,
@@ -1643,6 +1685,23 @@ fn encode_matrix_element<T: 'static>(
     }
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "matrixd",
+    feature = "vectord",
+    feature = "row_vectord"
+))]
 macro_rules! impl_compile_const_matrix {
     ($matrix_type:ty, $storage:expr) => {
         #[cfg(feature = "semantic-compiler")]

@@ -1,10 +1,14 @@
 use crate::*;
-use libm::{atanh, atanhf};
+#[cfg(feature = "f64")]
+use libm::atanh;
+#[cfg(feature = "f32")]
+use libm::atanhf;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Atanh Macros
+#[cfg(feature = "f64")]
 macro_rules! atanh_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -13,6 +17,7 @@ macro_rules! atanh_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! atanh_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -23,6 +28,7 @@ macro_rules! atanh_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atanhf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -31,6 +37,7 @@ macro_rules! atanhf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atanhf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {

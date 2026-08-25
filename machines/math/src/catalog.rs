@@ -1,12 +1,13 @@
 use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy, function_shape_contract_violation,
+    FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy,
 };
+#[cfg(all(feature = "op_assign", feature = "matrix"))]
+use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
-#[cfg(feature = "matrixd")]
+#[cfg(all(feature = "op_assign", feature = "matrixd"))]
 use nalgebra::DMatrix;
-#[cfg(feature = "vectord")]
+#[cfg(all(feature = "op_assign", feature = "vectord"))]
 use nalgebra::DVector;
 #[cfg(feature = "matrix1")]
 use nalgebra::Matrix1;
@@ -20,7 +21,7 @@ use nalgebra::Matrix3;
 use nalgebra::Matrix3x2;
 #[cfg(feature = "matrix4")]
 use nalgebra::Matrix4;
-#[cfg(feature = "row_vectord")]
+#[cfg(all(feature = "op_assign", feature = "row_vectord"))]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vector2")]
 use nalgebra::RowVector2;
@@ -614,6 +615,7 @@ macro_rules! declare_math_abs_for_scalar {
 
 for_each_math_abs_scalar!(declare_math_abs_for_scalar,);
 
+#[cfg(feature = "abs")]
 macro_rules! register_math_abs_factory {
     (($builder:ident; $scalar_token:ident), $suffix:ident, $_shape_feature:tt) => {
         mech_core::paste::paste! { [<register_math_abs_ $scalar_token _ $suffix:lower>]($builder)?; }
@@ -627,6 +629,7 @@ macro_rules! export_math_abs_factory {
     };
 }
 
+#[cfg(feature = "abs")]
 macro_rules! install_math_abs_for_scalar {
     ($builder:ident; $scalar_token:ident; $_scalar:ty; $scalar_cfg:literal; $_scalar_feature:literal) => {
         #[cfg(feature = $scalar_cfg)]
@@ -634,6 +637,7 @@ macro_rules! install_math_abs_for_scalar {
     };
 }
 
+#[cfg(feature = "abs")]
 macro_rules! install_math_abs {
     ($builder:ident) => {
         for_each_math_abs_scalar!(install_math_abs_for_scalar, $builder);

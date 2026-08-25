@@ -672,6 +672,7 @@ fn windows_file_uri_component(path: &Path, component: &std::ffi::OsStr) -> MResu
     Ok(percent_encode_path_segment(text.as_bytes()))
 }
 
+#[cfg(not(windows))]
 fn percent_encode_path(bytes: &[u8]) -> String {
     let mut out = String::new();
     for &byte in bytes {
@@ -701,6 +702,7 @@ fn percent_encode_path_segment(bytes: &[u8]) -> String {
     out
 }
 
+#[cfg(not(windows))]
 fn is_file_uri_path_byte_unreserved(byte: u8) -> bool {
     byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':')
 }

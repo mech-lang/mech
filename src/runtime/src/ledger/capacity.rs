@@ -69,7 +69,7 @@ impl CapacityController {
             ));
         }
         let identity = NEXT_LEDGER_IDENTITY
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |identity| {
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |identity| {
                 identity.checked_add(1)
             })
             .map_err(|_| {

@@ -15,7 +15,7 @@ static NEXT_OWNER_ID: AtomicU64 = AtomicU64::new(1);
 
 fn next_owner_id() -> NonZeroU64 {
     let owner_id = NEXT_OWNER_ID
-        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+        .try_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
             current.checked_add(1)
         })
         .expect("runtime context event owner IDs exhausted");

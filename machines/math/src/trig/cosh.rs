@@ -1,10 +1,14 @@
 use crate::*;
-use libm::{cosh, coshf};
+#[cfg(feature = "f64")]
+use libm::cosh;
+#[cfg(feature = "f32")]
+use libm::coshf;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
 use num_traits::*;
 
 // Cosh ------------------------------------------------------------------------
+#[cfg(feature = "f64")]
 macro_rules! cosh_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -13,6 +17,7 @@ macro_rules! cosh_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! cosh_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -23,6 +28,7 @@ macro_rules! cosh_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! coshf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -31,6 +37,7 @@ macro_rules! coshf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! coshf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
