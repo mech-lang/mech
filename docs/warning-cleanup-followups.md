@@ -96,6 +96,24 @@ work does not belong in this file.
 - Deeper question: model distribution and platform profiles outside additive
   Cargo features if a literal `cargo check --all-features` contract is desired.
 
+### Advertised `no_std` profile
+
+- Locations: the root `no_std` feature and `mech-core`'s function, reactive
+  transaction, and symbol-table modules.
+- Finding: the root facade now correctly omits the std-only
+  `print_err_report` export, but an exact
+  `cargo check --no-default-features --features no_std` still fails inside
+  `mech-core`. The core crate unconditionally compiles reactive planning code
+  that imports `std`, uses allocation-backed strings without the corresponding
+  `alloc` imports, and constructs hashbrown maps through the std-only default
+  hasher API. These failures are already present on the integration baseline;
+  they are not a consequence of narrowing the root facade.
+- Deeper question: decide whether `no_std` remains a supported product. If it
+  does, give the reactive execution surface an explicit `std`/`alloc` ownership
+  model and add the exact profile to CI. If it does not, remove the advertised
+  feature and its partial compatibility branches as one product-contract
+  change. This cleanup does not claim that broken profile as warning-clean.
+
 ### Cross-crate resident publication authority
 
 - Location: `src/runtime/src/runtime/program/external/coordinator.rs`

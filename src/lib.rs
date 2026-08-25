@@ -18,9 +18,12 @@ pub extern crate mech_stdlib as stdlib;
 pub extern crate mech_syntax as syntax;
 
 pub use mech_engine::*;
+#[cfg(not(feature = "no_std"))]
+pub use mech_syntax::print_err_report;
 pub use mech_syntax::{
     ParseError, ParseErrorDetail, ParseResult, ParseString, ParserErrorContext, ParserErrorReport,
-    TextFormatter, alt_best, graphemes, parse, parse_grammar, parse_mech, parser, print_err_report,
+    SubmissionTerminal, TextFormatter, alt_best, graphemes, parse, parse_grammar, parse_mech,
+    parser, submission_terminal,
 };
 
 extern crate colored;
