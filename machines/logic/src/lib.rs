@@ -9,7 +9,10 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrix"
+))]
 extern crate nalgebra as na;
 extern crate paste;
 
@@ -20,46 +23,96 @@ pub mod catalog;
 #[cfg(feature = "runtime")]
 pub use self::catalog::*;
 
-#[cfg(feature = "matrixd")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrixd"
+))]
 use nalgebra::DMatrix;
-#[cfg(feature = "vectord")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "vectord"
+))]
 use nalgebra::DVector;
-#[cfg(feature = "matrix1")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrix1"
+))]
 use nalgebra::Matrix1;
-#[cfg(feature = "matrix2")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrix2"
+))]
 use nalgebra::Matrix2;
-#[cfg(feature = "matrix2x3")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrix2x3"
+))]
 use nalgebra::Matrix2x3;
-#[cfg(feature = "matrix3")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrix3"
+))]
 use nalgebra::Matrix3;
-#[cfg(feature = "matrix3x2")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrix3x2"
+))]
 use nalgebra::Matrix3x2;
-#[cfg(feature = "matrix4")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "matrix4"
+))]
 use nalgebra::Matrix4;
-#[cfg(feature = "row_vectord")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "row_vectord"
+))]
 use nalgebra::RowDVector;
-#[cfg(feature = "row_vector2")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "row_vector2"
+))]
 use nalgebra::RowVector2;
-#[cfg(feature = "row_vector3")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "row_vector3"
+))]
 use nalgebra::RowVector3;
-#[cfg(feature = "row_vector4")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "row_vector4"
+))]
 use nalgebra::RowVector4;
-#[cfg(feature = "vector2")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "vector2"
+))]
 use nalgebra::Vector2;
-#[cfg(feature = "vector3")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "vector3"
+))]
 use nalgebra::Vector3;
-#[cfg(feature = "vector4")]
+#[cfg(all(
+    any(feature = "and", feature = "or", feature = "xor"),
+    feature = "vector4"
+))]
 use nalgebra::Vector4;
 
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 use paste::paste;
 use std::sync::LazyLock;
 
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 static PURE_LOGIC_BINARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| logic_full_write_contract(2, ChangeDetectionPolicy::ExactScalar));
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 static PURE_LOGIC_BINARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| logic_full_write_contract(2, ChangeDetectionPolicy::KernelReported));
+#[cfg(feature = "not")]
 static PURE_LOGIC_UNARY_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| logic_full_write_contract(1, ChangeDetectionPolicy::ExactScalar));
+#[cfg(feature = "not")]
 static PURE_LOGIC_UNARY_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| logic_full_write_contract(1, ChangeDetectionPolicy::KernelReported));
 
@@ -91,6 +144,7 @@ fn logic_full_write_contract(
     }
 }
 
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 fn logic_binary_full_write_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {
@@ -100,6 +154,7 @@ fn logic_binary_full_write_contract(
     }
 }
 
+#[cfg(feature = "not")]
 fn logic_unary_full_write_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {

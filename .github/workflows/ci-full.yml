@@ -62,6 +62,8 @@ jobs:
             sudo apt-get update
             sudo apt-get install --yes ripgrep
           fi
+      - name: Fetch locked architecture dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
       - name: Validate permanent architecture contracts
         run: |
           python3 scripts/generate-value-system-inventory.py --check

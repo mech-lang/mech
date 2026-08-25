@@ -10,6 +10,14 @@ use std::sync::Arc;
 #[cfg(all(feature = "source", feature = "sum"))]
 use crate::{StatsSumColumn, StatsSumRow};
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord",
+    all(feature = "matrixd", feature = "row_vectord")
+))]
 fn validate_sum_column(args: &FunctionArgs) -> MResult<()> {
     validate_statistical_reduction(args, true)
 }

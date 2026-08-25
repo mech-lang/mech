@@ -44,6 +44,7 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
+#[cfg(any(feature = "eq", feature = "gt", feature = "gte", feature = "lt", feature = "lte", feature = "max", feature = "min", feature = "neq"))]
 use paste::paste;
 use std::sync::LazyLock;
 

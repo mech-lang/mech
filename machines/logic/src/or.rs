@@ -12,6 +12,7 @@ macro_rules! or_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -22,6 +23,7 @@ macro_rules! or_vec_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -32,6 +34,7 @@ macro_rules! or_scalar_rhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -42,6 +45,7 @@ macro_rules! or_scalar_lhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -57,6 +61,7 @@ macro_rules! or_mat_vec_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -72,6 +77,7 @@ macro_rules! or_vec_mat_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -87,6 +93,7 @@ macro_rules! or_mat_row_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {

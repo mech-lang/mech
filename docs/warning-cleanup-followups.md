@@ -63,6 +63,22 @@ work does not belong in this file.
   new value model directly, the adapter module and its contract tests can be
   removed as one unit.
 
+### Legacy matrix NOT factory surface
+
+- Location: `machines/logic/src/not.rs`, specifically the public `NotV` factory.
+- Finding: the current source and native NOT catalogs select only the Boolean
+  scalar `NotS` factory. `NotV` still exposes public fields and implements the
+  runtime and semantic-compiler traits, but no in-workspace catalog or module
+  instantiates it.
+- Cleanup performed here: matrix type imports now belong to the binary
+  AND/OR/XOR features, so a NOT-only build no longer compiles unrelated matrix
+  vocabulary or emits warnings.
+- Why `NotV` was not deleted: although it is not selected by the current
+  catalogs, it remains a constructible public Rust type. Removing it is a
+  source-compatibility decision and should be paired with a product decision:
+  either restore matrix NOT to the catalog with exact linkage tests, or remove
+  the public factory as an explicit legacy API break.
+
 ### Clippy-wide `MechError` representation decision
 
 - Location: `src/core/src/error.rs` and the public `MResult<T>` alias.

@@ -9,13 +9,25 @@ pub mod __mech_native {
 }
 
 use mech_core::*;
+#[cfg(any(
+    feature = "union",
+    feature = "element_of",
+    feature = "not_element_of"
+))]
 use std::sync::LazyLock;
 
+#[cfg(feature = "union")]
 static PURE_SET_BINARY_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| set_full_write_contract(ChangeDetectionPolicy::AlwaysChanged));
+#[cfg(any(feature = "element_of", feature = "not_element_of"))]
 static PURE_SET_MEMBERSHIP_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| set_full_write_contract(ChangeDetectionPolicy::ExactScalar));
 
+#[cfg(any(
+    feature = "union",
+    feature = "element_of",
+    feature = "not_element_of"
+))]
 fn set_full_write_contract(
     change_detection: ChangeDetectionPolicy,
 ) -> OperationContractDeclaration {
@@ -78,6 +90,12 @@ pub use self::setdata::*;
 // Set Library
 // ----------------------------------------------------------------------------
 
+#[cfg(any(
+    feature = "element_of",
+    feature = "not_element_of",
+    feature = "insert",
+    feature = "remove"
+))]
 fn normalize_set_element(value: LegacyValue) -> LegacyValue {
     match value {
         LegacyValue::MutableReference(reference) => reference.borrow().clone(),

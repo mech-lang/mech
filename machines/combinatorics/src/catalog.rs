@@ -102,6 +102,7 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
             mech_core::paste::paste! { [<register_n_choose_k_ $scalar_token>](builder)?; }
         };
     }
+    #[cfg(all(feature = "n_choose_k", feature = "matrixd"))]
     macro_rules! register_n_choose_k_matrix {
         (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
             #[cfg(all(feature = "matrix", feature = "matrixd", $cfg))]
@@ -131,6 +132,7 @@ pub mod __mech_native {
             mech_core::paste::paste! { pub use super::[<install_n_choose_k_ $scalar_token>]; }
         };
     }
+    #[cfg(all(feature = "n_choose_k", feature = "matrixd"))]
     macro_rules! export_n_choose_k_matrix {
         (; $cfg:meta; $_scalar:ty; $_scalar_name:literal; $scalar_token:ident) => {
             #[cfg(all(feature = "matrix", feature = "matrixd", $cfg))]

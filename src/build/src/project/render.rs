@@ -491,7 +491,6 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
         mech_runtime::RuntimeProgramRoute::None => "none",
         mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
         mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
-        _ => "invalid-production-route",
     };
     let revision = info.program_revision.map(|revision| {
         format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())
@@ -657,7 +656,6 @@ fn runtime_info_json(runtime: &mech_runtime::MechRuntime) -> String {
         mech_runtime::RuntimeProgramRoute::None => "none",
         mech_runtime::RuntimeProgramRoute::ResidentPure => "resident-pure",
         mech_runtime::RuntimeProgramRoute::ResidentExternal => "resident-external",
-        _ => "invalid-production-route",
     };
     let revision = info.program_revision.map(|revision| {
         format!("\"{}\"", revision.as_bytes().iter().map(|byte| format!("{byte:02x}")).collect::<String>())

@@ -251,20 +251,23 @@ declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord
 // as the dynamic families above.  Keep its complete shape matrix in one
 // declaration traversal so registration, linkage metadata, and native exports
 // cannot diverge.
-#[cfg(any(
-    feature = "native-link",
-    feature = "matrix1",
-    feature = "matrix2",
-    feature = "matrix3",
-    feature = "matrix4",
-    feature = "matrix2x3",
-    feature = "matrix3x2",
-    feature = "vector2",
-    feature = "vector3",
-    feature = "vector4",
-    feature = "row_vector2",
-    feature = "row_vector3",
-    feature = "row_vector4",
+#[cfg(all(
+    feature = "matmul",
+    any(
+        feature = "native-link",
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+    )
 ))]
 macro_rules! for_each_matrix_matmul_fixed_family {
     ($callback:ident, ($($context:tt)*)) => {
@@ -306,19 +309,22 @@ macro_rules! for_each_matrix_matmul_fixed_family {
     };
 }
 
-#[cfg(any(
-    feature = "matrix1",
-    feature = "matrix2",
-    feature = "matrix3",
-    feature = "matrix4",
-    feature = "matrix2x3",
-    feature = "matrix3x2",
-    feature = "vector2",
-    feature = "vector3",
-    feature = "vector4",
-    feature = "row_vector2",
-    feature = "row_vector3",
-    feature = "row_vector4",
+#[cfg(all(
+    feature = "matmul",
+    any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+    )
 ))]
 macro_rules! declare_matrix_matmul_fixed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
@@ -330,19 +336,22 @@ macro_rules! declare_matrix_matmul_fixed_family {
     };
 }
 
-#[cfg(any(
-    feature = "matrix1",
-    feature = "matrix2",
-    feature = "matrix3",
-    feature = "matrix4",
-    feature = "matrix2x3",
-    feature = "matrix3x2",
-    feature = "vector2",
-    feature = "vector3",
-    feature = "vector4",
-    feature = "row_vector2",
-    feature = "row_vector3",
-    feature = "row_vector4",
+#[cfg(all(
+    feature = "matmul",
+    any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+    )
 ))]
 for_each_matrix_matmul_fixed_family!(declare_matrix_matmul_fixed_family, ());
 
@@ -361,7 +370,24 @@ macro_rules! export_matrix_numeric_family {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(
+    feature = "native-link",
+    feature = "matmul",
+    any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+    )
+))]
 macro_rules! export_matrix_matmul_fixed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         export_matrix_numeric_family! {
@@ -778,6 +804,7 @@ pub mod __mech_native {
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "vectord", feature = "matrixd", not(feature = "matrix1")), module: matmul, factory: MatMulRDVDMD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulRDMD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulVDRD }
+    #[cfg(feature = "matmul")]
     for_each_matrix_matmul_fixed_family!(export_matrix_matmul_fixed_family, ());
     #[cfg(feature = "transpose")]
     export_matrix_transpose_family!(TransposeMD; ["matrixd"]);

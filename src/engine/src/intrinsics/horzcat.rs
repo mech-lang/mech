@@ -6929,6 +6929,7 @@ macro_rules! for_each_horzcat_scalar {
     };
 }
 
+#[cfg(feature = "row_vectord")]
 fn validate_nullary_horizontal_concatenation(args: &FunctionArgs) -> MResult<()> {
     let contract = "horizontal_concatenation_nullary";
     if args.input_count() != 0 {
@@ -7001,6 +7002,7 @@ macro_rules! install_horzcat_linked_factories {
     }};
 }
 
+#[cfg(any(feature = "row_vectord", feature = "row_vector2"))]
 macro_rules! register_horzcat_scalar_except_f64 {
     ($builder:ident, $factory:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($builder:ident, $factory:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
@@ -7008,6 +7010,7 @@ macro_rules! register_horzcat_scalar_except_f64 {
     };
 }
 
+#[cfg(any(feature = "row_vectord", feature = "row_vector2"))]
 macro_rules! install_horzcat_linked_factories_except_f64 {
     ($builder:ident, $factory:ident) => {{
         for_each_horzcat_scalar!(register_horzcat_scalar_except_f64, ($builder, $factory));

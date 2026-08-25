@@ -91,6 +91,7 @@ enum RangeContractNumber {
         feature = "i128"
     ))]
     Signed(i128),
+    #[cfg(any(feature = "f32", feature = "f64"))]
     Float(f64),
 }
 
@@ -146,6 +147,7 @@ fn integer_range_size(magnitude: u128, step: u128, inclusive: bool) -> Option<us
     usize::try_from(size).ok()
 }
 
+#[cfg(any(feature = "f32", feature = "f64"))]
 fn float_range_size(from: f64, step: f64, to: f64, inclusive: bool) -> Option<usize> {
     if !from.is_finite() || !step.is_finite() || !to.is_finite() || step == 0.0 {
         return None;
@@ -169,7 +171,16 @@ fn float_range_size(from: f64, step: f64, to: f64, inclusive: bool) -> Option<us
     Some(size as usize)
 }
 
-#[cfg(all(test, feature = "u64", feature = "u128", feature = "matrixd"))]
+#[cfg(all(
+    test,
+    feature = "u64",
+    feature = "u128",
+    feature = "matrixd",
+    feature = "exclusive",
+    feature = "exclusive_increment",
+    feature = "inclusive",
+    feature = "inclusive_increment"
+))]
 mod exact_range_contract_tests {
     use super::*;
     use mech_core::{Ref, matrix::Matrix};
@@ -260,6 +271,7 @@ fn range_contract_size(
                 integer_range_size(to.abs_diff(*from), 1, inclusive)
             }
         }
+        #[cfg(any(feature = "f32", feature = "f64"))]
         ([RangeContractNumber::Float(from), RangeContractNumber::Float(to)], false) => {
             float_range_size(*from, 1.0, *to, inclusive)
         }
@@ -312,6 +324,7 @@ fn range_contract_size(
             }
             integer_range_size(to.abs_diff(*from), step.unsigned_abs(), inclusive)
         }
+        #[cfg(any(feature = "f32", feature = "f64"))]
         (
             [
                 RangeContractNumber::Float(from),
@@ -382,18 +395,22 @@ fn validate_range_contract(args: &FunctionArgs, inclusive: bool, incremented: bo
     Ok(())
 }
 
+#[cfg(feature = "exclusive")]
 pub(crate) fn validate_range_exclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, false, false)
 }
 
+#[cfg(feature = "inclusive")]
 pub(crate) fn validate_range_inclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, true, false)
 }
 
+#[cfg(feature = "exclusive")]
 pub(crate) fn validate_range_increment_exclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, false, true)
 }
 
+#[cfg(feature = "inclusive")]
 pub(crate) fn validate_range_increment_inclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, true, true)
 }

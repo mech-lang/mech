@@ -5,6 +5,7 @@ use mech_core::*;
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
 
+#[cfg(feature = "matrixd")]
 use itertools::Itertools;
 use num_traits::{One, Zero};
 use std::fmt::Debug;
@@ -39,6 +40,7 @@ static PURE_N_CHOOSE_K_SCALAR_CONTRACT: LazyLock<OperationContractDeclaration> =
         interaction: ExternalInteraction::Pure,
     });
 
+#[cfg(feature = "matrixd")]
 static PURE_N_CHOOSE_K_MATRIX_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(

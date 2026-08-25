@@ -1111,6 +1111,22 @@ where
                 }
                 Ok(())
             }
+            #[cfg(any(
+                all(feature = "vectord", feature = "row_vectord"),
+                feature = "matrixd",
+                feature = "matrix1",
+                feature = "matrix2",
+                feature = "matrix3",
+                feature = "matrix4",
+                feature = "matrix2x3",
+                feature = "matrix3x2",
+                feature = "row_vector2",
+                feature = "row_vector3",
+                feature = "row_vector4",
+                feature = "vector2",
+                feature = "vector3",
+                feature = "vector4",
+            ))]
             _ => {
                 return Err(MechError::new(
                     IncompatibleMatrixAppendToTableError {

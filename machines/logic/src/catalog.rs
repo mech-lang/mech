@@ -1,6 +1,6 @@
-use mech_core::{
-    FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy,
-};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(feature = "not")]
+use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 #[cfg(feature = "source")]
@@ -87,6 +87,7 @@ macro_rules! declare_logic_native_factory {
     };
 }
 
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 macro_rules! register_logic_native_factory {
     (
         ($builder:ident; $_module:ident; $operation:ident; $_operation_feature:literal),
@@ -139,6 +140,7 @@ mech_core::declare_native_runtime_factory! {
     extra_cargo_features: ["not"],
 }
 
+#[cfg(any(feature = "and", feature = "or", feature = "xor"))]
 macro_rules! install_native_logic_binop_runtime {
     ($builder:ident, $module:ident, $operation:ident, $operation_feature:literal) => {
         mech_core::__mech_for_each_binop_runtime_factory_for_type!(

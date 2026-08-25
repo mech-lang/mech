@@ -266,7 +266,7 @@ macro_rules! register_assign_value_matrix_for_scalar {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(feature = "native-link", feature = "matrix"))]
 macro_rules! export_assign_value_matrix_shape {
     (($scalar_token:ident), $shape:ident, $_shape_feature:literal) => {
         mech_core::paste::paste! {

@@ -4,6 +4,7 @@ use mech_core::matrix::Matrix;
 
 // Min ------------------------------------------------------------------------
 
+#[cfg(feature = "matrix")]
 macro_rules! min_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -20,6 +21,7 @@ macro_rules! min_scalar_lhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! min_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -36,6 +38,7 @@ macro_rules! min_scalar_rhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! min_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -66,6 +69,7 @@ macro_rules! min_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! min_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -87,6 +91,7 @@ macro_rules! min_mat_vec_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! min_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -108,6 +113,7 @@ macro_rules! min_vec_mat_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! min_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -129,6 +135,7 @@ macro_rules! min_mat_row_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! min_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
