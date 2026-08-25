@@ -13,7 +13,7 @@ use mech_runtime::{
     OutputContent, OutputEvent, REPL_COMMAND_SPECS, ReplComponentKind, ReplDispatchControl,
     ReplEvent, ReplHostAvailability, ReplHostRequest, ReplHostRequirement, ReplResponse,
     ReplResponseKind, ReplResponseStatus, ReplStepMode, ResidentReplRuntimeFactory,
-    ResidentReplSession, RunResourceGrantConfig, RuntimeConfig, Severity, TableOutput, TextOutput,
+    ResidentReplSession, RunResourceGrantConfig, RuntimeConfig, TableOutput, TextOutput,
     ValueOutput, dispatch_repl_request, emit_host_response, emit_step_complete, parse_repl_request,
 };
 
@@ -604,13 +604,14 @@ impl WasmRepl {
         Ok(response.into())
     }
 
+    #[cfg(feature = "browser_compute")]
     pub(crate) fn report_compute_state_reset(
         &mut self,
         previous_revision: &str,
         next_revision: &str,
     ) -> Result<JsValue, JsValue> {
         self.session.emit_message_diagnostic(
-            Severity::Warning,
+            mech_runtime::Severity::Warning,
             DiagnosticPhase::Host,
             "ComputeStateReset",
             format!(

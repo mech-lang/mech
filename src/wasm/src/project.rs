@@ -4235,6 +4235,7 @@ rows := |id<string> x<f64>|
             self.0.lock().unwrap().snapshot()
         }
 
+        #[cfg(feature = "browser_compute")]
         fn publish_steps(&self, count: usize) -> mech_core::MResult<usize> {
             self.0.lock().unwrap().publish_steps(count)
         }

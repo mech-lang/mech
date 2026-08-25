@@ -17,6 +17,26 @@ work does not belong in this file.
 
 ## Open investigations
 
+### Versioned Rust names in the open dynamic-module ABI
+
+- Location: `src/abi/src/lib.rs`, specifically `MechStatusV1` and
+  `MechKernelKindV1`.
+- Preserved behavior: both remain transparent integer newtypes, keep every v1
+  numeric value, and continue to admit unknown values from independently built
+  dynamic modules. Their associated constants now use Rust's warning-clean
+  uppercase spelling.
+- Compatibility issue: the former CamelCase associated-constant spellings were
+  public Rust source API, but Rust diagnoses those spellings unless the
+  `non_upper_case_globals` warning is suppressed. Keeping them would therefore
+  violate the project's no-suppression contract. Turning the newtypes into
+  enums would keep CamelCase names warning-clean, but would make unknown FFI
+  discriminants invalid and remove the forward-compatible `MechStatusV1(99)`
+  representation.
+- Deeper question: decide whether the Rust-facing API needs an explicitly
+  versioned compatibility layer distinct from the open integer wire ABI. That
+  decision should be made as an ABI/API migration, not hidden behind another
+  warning exemption.
+
 ### `LegacyValue` execution-model cutover
 
 - Locations: the type currently lives in `src/core/src/value.rs` (published as

@@ -1,3 +1,4 @@
+#[cfg(panic = "unwind")]
 use std::any::Any;
 
 use mech_core::{MResult, MechError, MechErrorKind};
@@ -109,6 +110,7 @@ pub(crate) fn invoke_extension_value<T>(
     }
 }
 
+#[cfg(panic = "unwind")]
 fn panic_payload(payload: &(dyn Any + Send)) -> String {
     if let Some(message) = payload.downcast_ref::<&str>() {
         return (*message).to_string();

@@ -2,7 +2,7 @@
 
 #[cfg(feature = "source")]
 use super::{RuntimeContextCheckpoint, RuntimeOperationSavepoint};
-#[cfg(any(feature = "source", feature = "runtime_bench_probes"))]
+#[cfg(feature = "source")]
 use crate::RuntimeContext;
 use crate::runtime::MechRuntime;
 #[cfg(feature = "source")]
@@ -18,22 +18,6 @@ use mech_core::{MResult, MechError};
 use std::collections::HashSet;
 
 impl MechRuntime {
-    #[cfg(feature = "runtime_bench_probes")]
-    #[doc(hidden)]
-    pub fn gate_a_capture_runtime_operation_savepoint(
-        &self,
-        context: &mut RuntimeContext,
-    ) -> MResult<()> {
-        context.prepare_event_checkpoint();
-        let transaction_id = Self::context_transaction_id(context)?;
-        let transaction = self.active_runtime_transaction(transaction_id)?;
-        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
-            transaction.store.gate_a_staged_item_count(),
-        );
-        drop(transaction.store.clone());
-        Ok(())
-    }
-
     pub(in crate::runtime) fn ensure_runtime_healthy(
         &self,
         operation: &'static str,

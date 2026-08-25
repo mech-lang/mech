@@ -18,6 +18,7 @@ pub extern crate mech_stdlib as stdlib;
 pub extern crate mech_syntax as syntax;
 
 pub use mech_engine::*;
+pub use mech_syntax::*;
 
 extern crate colored;
 use colored::*;
