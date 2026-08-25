@@ -1,3 +1,5 @@
+#![cfg(any(feature = "distribution-standard", feature = "distribution-full"))]
+
 use std::fs;
 use std::io::Write;
 use std::process::{Command, Stdio};

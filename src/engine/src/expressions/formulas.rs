@@ -89,6 +89,11 @@ pub fn factor(
             }
             Ok(out)
         }
+        #[cfg(not(all(
+            feature = "math_neg",
+            feature = "logic_not",
+            feature = "matrix_transpose"
+        )))]
         _ => todo!(),
     }
 }
@@ -148,8 +153,6 @@ pub fn term(
             FormulaOperator::Vec(VecOp::Solve) => {
                 specialize_formula_operation(p, "matrix/solve", &[lhs, rhs])?
             }
-            #[cfg(feature = "matrix_cross")]
-            FormulaOperator::Vec(VecOp::Cross) => todo!(),
             #[cfg(feature = "matrix_dot")]
             FormulaOperator::Vec(VecOp::Dot) => {
                 specialize_formula_operation(p, "matrix/dot", &[lhs, rhs])?
@@ -250,8 +253,6 @@ pub fn term(
             FormulaOperator::Set(SetOp::SymmetricDifference) => {
                 specialize_formula_operation(p, "set/symmetric-difference", &[lhs, rhs])?
             }
-            #[cfg(feature = "set_complement")]
-            FormulaOperator::Set(SetOp::Complement) => todo!(),
             #[cfg(feature = "set_subset")]
             FormulaOperator::Set(SetOp::Subset) => {
                 specialize_formula_operation(p, "set/subset", &[lhs, rhs])?

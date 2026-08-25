@@ -1,23 +1,72 @@
+#[cfg(any(
+    feature = "access",
+    feature = "assign",
+    feature = "set",
+    feature = "set_comprehensions",
+    feature = "matrix_comprehensions",
+    feature = "convert",
+    feature = "variable_define",
+    feature = "matrix_horzcat",
+    feature = "table",
+    feature = "matrix_vertcat"
+))]
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 
+#[cfg(any(
+    feature = "access",
+    feature = "convert",
+    feature = "variable_define",
+    feature = "matrix_horzcat",
+    feature = "matrix_vertcat",
+    feature = "table"
+))]
+use mech_core::paste::paste;
 #[cfg(feature = "matrix")]
-use na::{
-    DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix3x2, Matrix4, Matrix6, Rotation3,
-    RowDVector, RowVector2, RowVector3, RowVector4, Vector2, Vector3, Vector4,
-};
-#[cfg(any(feature = "num-traits"))]
-use num_traits::*;
-use paste::paste;
+use na::DMatrix;
+#[cfg(feature = "vectord")]
+use na::DVector;
+#[cfg(feature = "matrix1")]
+use na::Matrix1;
+#[cfg(feature = "matrix2")]
+use na::Matrix2;
+#[cfg(feature = "matrix2x3")]
+use na::Matrix2x3;
+#[cfg(feature = "matrix3")]
+use na::Matrix3;
+#[cfg(feature = "matrix3x2")]
+use na::Matrix3x2;
+#[cfg(feature = "matrix4")]
+use na::Matrix4;
+#[cfg(feature = "row_vectord")]
+use na::RowDVector;
+#[cfg(feature = "row_vector2")]
+use na::RowVector2;
+#[cfg(feature = "row_vector3")]
+use na::RowVector3;
+#[cfg(feature = "row_vector4")]
+use na::RowVector4;
+#[cfg(feature = "vector2")]
+use na::Vector2;
+#[cfg(feature = "vector3")]
+use na::Vector3;
+#[cfg(feature = "vector4")]
+use na::Vector4;
+#[cfg(any(feature = "access", feature = "assign"))]
 use std::fmt::Debug;
-use std::marker::PhantomData;
-use std::ops::*;
 
+#[cfg(any(
+    all(feature = "access", feature = "string"),
+    feature = "semantic-compiler"
+))]
 #[derive(Debug, Clone)]
 pub(crate) struct IndexOutOfBoundsError;
 
+#[cfg(any(
+    all(feature = "access", feature = "string"),
+    feature = "semantic-compiler"
+))]
 impl MechErrorKind for IndexOutOfBoundsError {
     fn name(&self) -> &str {
         "IndexOutOfBounds"
@@ -68,7 +117,7 @@ macro_rules! impl_range_range_fxn_v {
             pub source: Ref<MatB>,
             pub ixes: (Ref<IxVec1>, Ref<IxVec2>),
             pub sink: Ref<MatA>,
-            pub _marker: PhantomData<T>,
+            pub _marker: std::marker::PhantomData<T>,
         }
         impl<
             T,
@@ -137,7 +186,7 @@ macro_rules! impl_range_range_fxn_v {
                             sink,
                             source,
                             ixes: (ix1, ix2),
-                            _marker: PhantomData::default(),
+                            _marker: std::marker::PhantomData::default(),
                         }))
                     }
                     _ => Err(MechError::new(
@@ -220,7 +269,7 @@ macro_rules! impl_all_fxn_v {
             pub source: Ref<MatB>,
             pub ixes: Ref<IxVec>,
             pub sink: Ref<MatA>,
-            pub _marker: PhantomData<T>,
+            pub _marker: std::marker::PhantomData<T>,
         }
         impl<
             T,
@@ -282,7 +331,7 @@ macro_rules! impl_all_fxn_v {
                             sink,
                             source,
                             ixes,
-                            _marker: PhantomData::default(),
+                            _marker: std::marker::PhantomData::default(),
                         }))
                     }
                     _ => Err(MechError::new(
@@ -322,9 +371,7 @@ macro_rules! impl_all_fxn_v {
                 self.sink.to_value()
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                let contract: Option<&'static OperationContractDeclaration> = None;
-                $(let contract = Some(&*$semantic_contract);)?
-                contract
+                optional_operation_contract!($($semantic_contract)?)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)

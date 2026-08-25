@@ -10,8 +10,6 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug)]
 pub(crate) struct SourceEntry {
     pub logical_path: PathBuf,
-    pub read_path: PathBuf,
-    pub canonical_path: PathBuf,
     pub relative_path: PathBuf,
 }
 
@@ -44,20 +42,12 @@ pub(crate) struct DiscoveryOptions {
     pub follow_file_symlinks: bool,
     pub follow_dir_symlinks: bool,
     pub missing_path_policy: MissingPathPolicy,
-    pub dedupe_policy: DedupePolicy,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum MissingPathPolicy {
     Error,
     SkipBrokenSymlink,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum DedupePolicy {
-    LogicalPath,
-    CanonicalPath,
-    None,
 }
 
 pub(crate) fn collect_sources(
@@ -171,8 +161,6 @@ fn collect_one(
         }
         return collect_file(
             logical_path,
-            &canonical,
-            &canonical,
             base_dir,
             project_dir,
             options,
@@ -195,11 +183,9 @@ fn collect_one(
             visited_dirs,
         );
     }
-    let canonical = canonicalize_for_read(read_path)?;
+    canonicalize_for_read(read_path)?;
     collect_file(
         logical_path,
-        read_path,
-        &canonical,
         base_dir,
         project_dir,
         options,
@@ -313,8 +299,6 @@ fn collect_dir(
 
 fn collect_file(
     logical_path: &Path,
-    read_path: &Path,
-    canonical_path: &Path,
     base_dir: &Path,
     project_dir: &Path,
     options: &DiscoveryOptions,
@@ -343,18 +327,11 @@ fn collect_file(
         return Ok(());
     }
     let relative_path = relative_to_base(logical_path, base_dir, project_dir)?;
-    let key = match options.dedupe_policy {
-        DedupePolicy::LogicalPath => logical_path.to_path_buf(),
-        DedupePolicy::CanonicalPath => canonical_path.to_path_buf(),
-        DedupePolicy::None => PathBuf::new(),
-    };
-    if !matches!(options.dedupe_policy, DedupePolicy::None) && !seen.insert(key) {
+    if !seen.insert(logical_path.to_path_buf()) {
         return Ok(());
     }
     entries.push(SourceEntry {
         logical_path: logical_path.to_path_buf(),
-        read_path: read_path.to_path_buf(),
-        canonical_path: canonical_path.to_path_buf(),
         relative_path,
     });
     Ok(())

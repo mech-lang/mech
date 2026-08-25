@@ -130,9 +130,10 @@ where
                 if let Ok(mut guard) = snapshot.lock() {
                     *guard = next;
                 }
-                let _ = next
-                    .into_host_input(&instance)
-                    .and_then(|packet| ingress.submit(packet));
+                drop(
+                    next.into_host_input(&instance)
+                        .and_then(|packet| ingress.submit(packet)),
+                );
             }
         }) as Box<dyn FnMut()>);
         let handle = window
@@ -168,7 +169,7 @@ where
     B: TimeBackend,
 {
     fn drop(&mut self) {
-        let _ = self.stop();
+        drop(self.stop());
     }
 }
 

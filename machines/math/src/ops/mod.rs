@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 use std::sync::LazyLock;
 
@@ -250,6 +249,17 @@ impl_checked_matrix_neg!(feature = "matrixd", DMatrix);
 /// Fallible counterpart to the legacy generic binop factory. The operation
 /// macro computes into staged storage and may use `?`; output replacement only
 /// occurs after every element succeeds.
+macro_rules! arithmetic_semantic_contract {
+    ($output:ty) => {
+        None
+    };
+    ($output:ty, $semantic_contract:path) => {
+        Some($semantic_contract(
+            <$output as FunctionRuntimeType>::REPRESENTATION,
+        ))
+    };
+}
+
 macro_rules! impl_checked_arithmetic_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
@@ -356,11 +366,7 @@ macro_rules! impl_checked_arithmetic_binop {
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                let contract: Option<&'static OperationContractDeclaration> = None;
-                $(let contract = Some($semantic_contract(
-                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
-                ));)?
-                contract
+                arithmetic_semantic_contract!($out_type $(, $semantic_contract)?)
             }
 
             fn to_string(&self) -> String {

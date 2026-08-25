@@ -2,7 +2,6 @@ use crate::*;
 use libm::{yn, ynf};
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Yn ------------------------------------------------------------------------
@@ -20,7 +19,7 @@ macro_rules! yn_vec_op {
         unsafe {
             let arg1_deref = &(*$arg1);
             let arg2_deref = &(*$arg2);
-            let mut out_deref = (&mut *$out);
+            let out_deref = &mut *$out;
             for i in 0..arg1_deref.len() {
                 (out_deref[i]) = yn(arg1_deref[i] as i32, arg2_deref[i]);
             }
@@ -41,7 +40,7 @@ macro_rules! ynf_vec_op {
         unsafe {
             let arg1_deref = &(*$arg1);
             let arg2_deref = &(*$arg2);
-            let mut out_deref = (&mut *$out);
+            let out_deref = &mut *$out;
             for i in 0..arg1_deref.len() {
                 (out_deref[i]) = ynf(arg1_deref[i] as i32, arg2_deref[i]);
             }
@@ -78,7 +77,7 @@ macro_rules! impl_two_arg_fxn {
         }
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 todo!();
             }
         }

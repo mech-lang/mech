@@ -76,22 +76,6 @@ impl MechErrorKind for VariableAlreadyDefinedError {
 }
 
 #[derive(Debug, Clone)]
-pub struct UndefinedVariableError {
-    pub id: u64,
-    pub name: String,
-}
-
-impl MechErrorKind for UndefinedVariableError {
-    fn name(&self) -> &str {
-        "UndefinedVariable"
-    }
-
-    fn message(&self) -> String {
-        format!("Undefined variable `{}` (id: {})", self.name, self.id)
-    }
-}
-
-#[derive(Debug, Clone)]
 pub struct NotMutableError {
     pub id: u64,
 }

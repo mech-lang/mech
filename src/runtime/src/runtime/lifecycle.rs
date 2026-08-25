@@ -49,12 +49,16 @@ impl MechRuntime {
 impl Drop for MechRuntime {
     fn drop(&mut self) {
         if self.input_driver_cleanup_armed {
-            let _ = self.close_ingress();
+            drop(self.close_ingress());
             for driver in self.input_drivers[..self.attached_input_driver_count]
                 .iter_mut()
                 .rev()
             {
-                let _ = extension::catch_extension("host input driver", "stop", || driver.stop());
+                drop(extension::catch_extension(
+                    "host input driver",
+                    "stop",
+                    || driver.stop(),
+                ));
             }
             self.input_driver_cleanup_armed = false;
         }

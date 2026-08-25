@@ -1,6 +1,5 @@
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
 // Superset ------------------------------------------------------------------------
@@ -41,7 +40,7 @@ impl MechFunctionImpl for SetSupersetFxn {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
-            let mut out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
+            let out_ptr: &mut bool = &mut *(self.out.as_mut_ptr());
 
             // Get references to lhs and rhs sets
             let lhs_ptr: &MechSet = &*(self.lhs.as_ptr());
@@ -109,7 +108,7 @@ impl FunctionSpecializer for SetSuperset {
         let rhs = arguments[1].clone();
         match set_superset_fxn(lhs.clone(), rhs.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (lhs, rhs) {
+            Err(_) => match (lhs, rhs) {
                 (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                     set_superset_fxn(lhs.borrow().clone(), rhs.borrow().clone())
                 }

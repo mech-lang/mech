@@ -8,19 +8,17 @@ use crate::{
     NamedKindPathResolver, NominalKey, SchemaKey, canonical_closed_kind_bytes,
 };
 
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use alloc::{
     borrow::ToOwned,
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
-    string::String,
     vec::Vec,
 };
-#[cfg(not(feature = "no_std"))]
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
 use std::{
     boxed::Box,
     collections::{BTreeMap, BTreeSet},
-    string::String,
 };
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]

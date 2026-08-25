@@ -1,5 +1,5 @@
 pub mod api;
-pub mod constants;
+mod constants;
 pub mod context;
 
 pub use self::api::*;

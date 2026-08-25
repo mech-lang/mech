@@ -4,12 +4,10 @@ use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
 use mech_core::{
-    FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy,
+    FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
-use paste::paste;
 #[cfg(feature = "source")]
 use std::sync::Arc;
 

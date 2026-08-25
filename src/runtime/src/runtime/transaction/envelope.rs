@@ -1,5 +1,7 @@
+#[cfg(feature = "source")]
+use super::RuntimeModuleJournal;
 use super::{
-    RuntimeCapabilityOverlay, RuntimeContextCheckpoint, RuntimeEffectJournal, RuntimeModuleJournal,
+    RuntimeCapabilityOverlay, RuntimeContextCheckpoint, RuntimeEffectJournal,
     RuntimeTransactionContextIdentity,
 };
 use crate::runtime::MechRuntime;
@@ -9,6 +11,7 @@ use mech_core::{MResult, MechError};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(in crate::runtime) enum RuntimeTransactionScope {
     Explicit,
+    #[cfg(feature = "source")]
     ImplicitModuleOperation,
     ImplicitResourceOperation,
 }
@@ -21,6 +24,7 @@ pub(in crate::runtime) enum ActiveRuntimeTransactionState {
 
 pub(in crate::runtime) struct ActiveRuntimeTransaction {
     pub(in crate::runtime) store: RuntimeTransaction,
+    #[cfg(feature = "source")]
     pub(in crate::runtime) modules: RuntimeModuleJournal,
     pub(in crate::runtime) scope: RuntimeTransactionScope,
     pub(in crate::runtime) context_identity: RuntimeTransactionContextIdentity,
@@ -39,6 +43,7 @@ impl ActiveRuntimeTransaction {
     ) -> Self {
         Self {
             store,
+            #[cfg(feature = "source")]
             modules: RuntimeModuleJournal::new(),
             scope,
             context_identity,

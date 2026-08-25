@@ -7,7 +7,6 @@ use nalgebra::DMatrix;
 
 use itertools::Itertools;
 use num_traits::{One, Zero};
-use paste::paste;
 use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Div, Mul, Sub};
 use std::sync::LazyLock;

@@ -17,7 +17,7 @@ use crate::cli::run::{
 };
 use crate::cli::runtime_plan::RunExecutionPlan;
 use crate::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
+    DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
     collect_sources_with_events,
 };
 use mech_runtime::{RuntimeValueSnapshot, SourceKind, SourceRequest};
@@ -86,6 +86,7 @@ const RUN_EXTENSIONS: &[&str] = &["mec", "🤖", "mecb"];
 const RUN_DIRECTORY_EXTENSIONS: &[&str] = &["mec", "🤖"];
 const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
+#[cfg(test)]
 pub(crate) fn collect_run_targets(path: &Path) -> MResult<Vec<PathBuf>> {
     let mut ids = mech_runtime::DefaultIdGenerator::new();
     let mut authority = mech_runtime::HostFilesystemAuthority::new(
@@ -122,7 +123,6 @@ pub(crate) fn collect_run_targets_with_capabilities(
             follow_file_symlinks: true,
             follow_dir_symlinks: false,
             missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
-            dedupe_policy: DedupePolicy::LogicalPath,
         },
     )?;
     render_discovery_events(&discovery.events);

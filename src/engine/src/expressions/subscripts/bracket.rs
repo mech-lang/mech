@@ -30,7 +30,7 @@ pub(super) fn access(
             };
             match &subs[..] {
                 #[cfg(feature = "subscript_formula")]
-                [Subscript::Formula(ix)] => {
+                [Subscript::Formula(_)] => {
                     let raw_index = subscript_formula(&subs[0], env, p)?;
                     let index_arg = if matches!(val.deref_kind(), ValueKind::String) {
                         string_access_index_argument(raw_index, &subs[0], env, p)?
@@ -62,7 +62,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => {
+                        [1, _] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -70,7 +70,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => {
+                        [_, 1] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -81,7 +81,7 @@ pub(super) fn access(
                     }
                 }
                 #[cfg(feature = "subscript_range")]
-                [Subscript::Range(ix)] => {
+                [Subscript::Range(_)] => {
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
                     plan.borrow_mut()
@@ -98,7 +98,7 @@ pub(super) fn access(
                 }
                 [Subscript::All, Subscript::All] => todo!(),
                 #[cfg(feature = "subscript_formula")]
-                [Subscript::Formula(ix1), Subscript::Formula(ix2)] => {
+                [Subscript::Formula(_), Subscript::Formula(_)] => {
                     let result = subscript_formula_ix(&subs[0], env, p)?;
                     let shape1 = result.shape();
                     fxn_input.push(result);
@@ -115,7 +115,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        ((1, 1), (m, 1)) => {
+                        ((1, 1), (_, 1)) => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -123,7 +123,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (1, 1)) => {
+                        ((_, 1), (1, 1)) => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -131,7 +131,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        ((n, 1), (m, 1)) => {
+                        ((_, 1), (_, 1)) => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -142,7 +142,7 @@ pub(super) fn access(
                     }
                 }
                 #[cfg(feature = "subscript_range")]
-                [Subscript::Range(ix1), Subscript::Range(ix2)] => {
+                [Subscript::Range(_), Subscript::Range(_)] => {
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
                     let result = subscript_range(&subs[1], env, p)?;
@@ -152,7 +152,7 @@ pub(super) fn access(
                         .push(catalog_access_function(p, "access/range", &fxn_input)?);
                 }
                 #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::All, Subscript::Formula(ix2)] => {
+                [Subscript::All, Subscript::Formula(_)] => {
                     fxn_input.push(LegacyValue::IndexAll);
                     let result = subscript_formula_ix(&subs[1], env, p)?;
                     let shape = result.shape();
@@ -167,7 +167,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [1, n] => {
+                        [1, _] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -175,7 +175,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => {
+                        [_, 1] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -186,7 +186,7 @@ pub(super) fn access(
                     }
                 }
                 #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::Formula(ix1), Subscript::All] => {
+                [Subscript::Formula(_), Subscript::All] => {
                     let result = subscript_formula_ix(&subs[0], env, p)?;
                     let shape = result.shape();
                     fxn_input.push(result);
@@ -201,7 +201,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [1, n] => {
+                        [1, _] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -209,7 +209,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => {
+                        [_, 1] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -220,7 +220,7 @@ pub(super) fn access(
                     }
                 }
                 #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::Range(ix1), Subscript::Formula(ix2)] => {
+                [Subscript::Range(_), Subscript::Formula(_)] => {
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
                     let result = subscript_formula_ix(&subs[1], env, p)?;
@@ -236,7 +236,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [1, n] => {
+                        [1, _] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -244,7 +244,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => {
+                        [_, 1] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -255,7 +255,7 @@ pub(super) fn access(
                     }
                 }
                 #[cfg(all(feature = "subscript_range", feature = "subscript_formula"))]
-                [Subscript::Formula(ix1), Subscript::Range(ix2)] => {
+                [Subscript::Formula(_), Subscript::Range(_)] => {
                     let result = subscript_formula_ix(&subs[0], env, p)?;
                     let shape = result.shape();
                     fxn_input.push(result);
@@ -271,7 +271,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [1, n] => {
+                        [1, _] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -279,7 +279,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "matrix")]
-                        [n, 1] => {
+                        [_, 1] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -290,7 +290,7 @@ pub(super) fn access(
                     }
                 }
                 #[cfg(feature = "subscript_range")]
-                [Subscript::All, Subscript::Range(ix2)] => {
+                [Subscript::All, Subscript::Range(_)] => {
                     fxn_input.push(LegacyValue::IndexAll);
                     let result = subscript_range(&subs[1], env, p)?;
                     fxn_input.push(result);
@@ -299,7 +299,7 @@ pub(super) fn access(
                         .push(catalog_access_function(p, "access/range", &fxn_input)?);
                 }
                 #[cfg(feature = "subscript_range")]
-                [Subscript::Range(ix1), Subscript::All] => {
+                [Subscript::Range(_), Subscript::All] => {
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
                     fxn_input.push(LegacyValue::IndexAll);
@@ -310,7 +310,7 @@ pub(super) fn access(
                 _ => unreachable!(),
             };
             let plan_brrw = plan.borrow();
-            let mut new_fxn = &plan_brrw.last().unwrap();
+            let new_fxn = &plan_brrw.last().unwrap();
             if !expression_solves_deferred(p) {
                 new_fxn.solve_result()?;
             }

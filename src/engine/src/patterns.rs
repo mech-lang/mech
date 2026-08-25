@@ -1,4 +1,6 @@
 use crate::*;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 use std::collections::HashMap;
 
 // Patterns
@@ -1012,6 +1014,7 @@ pub fn pattern_to_value(
             }
             return Ok(LegacyValue::Tuple(Ref::new(MechTuple::from_vec(values))));
         }
+        #[cfg(not(all(feature = "tuple", feature = "matrix", feature = "atom")))]
         _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
     }
 }

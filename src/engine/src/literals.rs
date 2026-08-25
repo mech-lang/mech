@@ -1,4 +1,6 @@
 use crate::*;
+use mech_core::kind::Kind;
+use mech_core::nodes::Kind as NodeKind;
 
 // Literals
 // ----------------------------------------------------------------------------
@@ -17,6 +19,13 @@ pub fn literal(ltrl: &Literal, p: &InterpreterExecution<'_>) -> MResult<LegacyVa
         Literal::Kind(knd) => kind_value(knd, p),
         #[cfg(feature = "convert")]
         Literal::TypedLiteral((ltrl, kind)) => typed_literal(ltrl, kind, p),
+        #[cfg(not(all(
+            feature = "bool",
+            feature = "string",
+            feature = "atom",
+            feature = "kind_annotation",
+            feature = "convert"
+        )))]
         _ => Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc()),
     }
 }
@@ -153,6 +162,7 @@ pub fn number(num: &Number, p: &InterpreterExecution<'_>) -> MResult<LegacyValue
         Number::Real(num) => real(num, p),
         #[cfg(feature = "complex")]
         Number::Complex(num) => complex(num, p),
+        #[cfg(not(feature = "complex"))]
         _ => panic!("Number type not supported."),
     }
 }
@@ -201,6 +211,14 @@ pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<LegacyValu
             let num: Literal = Literal::Number(Number::Real(RealNumber::Integer(num_tkn.clone())));
             typed_literal(&num, kind, p)?
         }
+        #[cfg(not(all(
+            feature = "math_neg",
+            feature = "f64",
+            feature = "floats",
+            feature = "i64",
+            feature = "rational",
+            feature = "convert"
+        )))]
         _ => panic!("Number type not supported."),
     };
     Ok(result)

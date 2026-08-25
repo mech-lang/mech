@@ -1,16 +1,39 @@
 use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, function_shape_contract_violation,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
+    RuntimeOutputAliasPolicy, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
-#[cfg(feature = "matrix")]
-use nalgebra::{
-    DMatrix, DVector, Matrix1, Matrix2, Matrix2x3, Matrix3, Matrix3x2, Matrix4, RowDVector,
-    RowVector2, RowVector3, RowVector4, Vector2, Vector3, Vector4,
-};
-#[cfg(feature = "op_assign")]
-use paste::paste;
+#[cfg(feature = "matrixd")]
+use nalgebra::DMatrix;
+#[cfg(feature = "vectord")]
+use nalgebra::DVector;
+#[cfg(feature = "matrix1")]
+use nalgebra::Matrix1;
+#[cfg(feature = "matrix2")]
+use nalgebra::Matrix2;
+#[cfg(feature = "matrix2x3")]
+use nalgebra::Matrix2x3;
+#[cfg(feature = "matrix3")]
+use nalgebra::Matrix3;
+#[cfg(feature = "matrix3x2")]
+use nalgebra::Matrix3x2;
+#[cfg(feature = "matrix4")]
+use nalgebra::Matrix4;
+#[cfg(feature = "row_vectord")]
+use nalgebra::RowDVector;
+#[cfg(feature = "row_vector2")]
+use nalgebra::RowVector2;
+#[cfg(feature = "row_vector3")]
+use nalgebra::RowVector3;
+#[cfg(feature = "row_vector4")]
+use nalgebra::RowVector4;
+#[cfg(feature = "vector2")]
+use nalgebra::Vector2;
+#[cfg(feature = "vector3")]
+use nalgebra::Vector3;
+#[cfg(feature = "vector4")]
+use nalgebra::Vector4;
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -460,6 +483,7 @@ macro_rules! register_math_float_unop_factory {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_math_float_unop_factory {
     (($operation:ident; $_operation_feature:literal; $scalar:ident; $_scalar_feature:literal), $suffix:ident, $_shape_feature:tt) => {
         mech_core::paste::paste! { pub use super::[<install_ $operation:snake _ $suffix:lower _ $scalar:lower>]; }
@@ -596,6 +620,7 @@ macro_rules! register_math_abs_factory {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_math_abs_factory {
     (($scalar_token:ident), $suffix:ident, $_shape_feature:tt) => {
         mech_core::paste::paste! { pub use super::[<install_math_abs_ $scalar_token _ $suffix:lower>]; }
@@ -675,15 +700,6 @@ macro_rules! install_math_neg {
 macro_rules! install_float_unop {
     ($builder:ident, $family:ident) => {
         install_math_float_unop!($builder, $family, "");
-    };
-}
-
-macro_rules! install_exact_runtime {
-    ($builder:expr, $factory:ident) => {
-        $builder.insert_runtime_factory::<$factory>(
-            stringify!($factory),
-            RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
-        )?;
     };
 }
 
@@ -1000,7 +1016,7 @@ macro_rules! install_native_op_assign_runtime_factories {
     }};
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_ss {
     (($operation:ident; $operation_feature:literal); $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal) => {
         #[cfg(all(feature = $operation_feature, feature = $scalar_cfg))]
@@ -1008,7 +1024,7 @@ macro_rules! export_op_assign_ss {
     };
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_vv {
     (($operation:ident; $operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal); $shape:ident; $shape_feature:literal; $_shape_name:literal) => {
         #[cfg(all(feature = $operation_feature, feature = $scalar_cfg, feature = $shape_feature))]
@@ -1016,7 +1032,7 @@ macro_rules! export_op_assign_vv {
     };
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_range_s {
     (($operation:ident; $operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $index:ident; $index_feature:literal) => {
         #[cfg(all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, feature = $index_feature))]
@@ -1024,7 +1040,7 @@ macro_rules! export_op_assign_range_s {
     };
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_range_v {
     (($operation:ident; $operation_feature:literal; $scalar_token:ident; $_scalar:ty; $_scalar_name:literal; $scalar_cfg:literal; $_scalar_feature:literal; $sink:ident; $sink_feature:literal; $family:ident); $source_cfg:meta; $source:ident; $_source_feature:literal; $index:ident; $_index_feature:literal) => {
         #[cfg(all(feature = $operation_feature, feature = $scalar_cfg, feature = $sink_feature, $source_cfg))]
@@ -1032,7 +1048,7 @@ macro_rules! export_op_assign_range_v {
     };
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_ranges_for_sink {
     (($operation:ident; $operation_feature:literal; $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal); $sink:ident; $sink_feature:literal; $_sink_name:literal) => {
         for_each_op_assign_index_shape!(export_op_assign_range_s, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature; $sink; $sink_feature; Assign1DRS));
@@ -1042,7 +1058,7 @@ macro_rules! export_op_assign_ranges_for_sink {
     };
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_value_for_scalar {
     (($operation:ident; $operation_feature:literal); i128; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
         export_op_assign_ss!(($operation; $operation_feature); i128; $scalar; $scalar_name; $scalar_cfg; $scalar_feature);
@@ -1054,579 +1070,18 @@ macro_rules! export_op_assign_value_for_scalar {
     };
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_op_assign_range_for_scalar {
     (($operation:ident; $operation_feature:literal); $scalar_token:ident; $scalar:ty; $scalar_name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
         for_each_op_assign_shape!(export_op_assign_ranges_for_sink, ($operation; $operation_feature; $scalar_token; $scalar; $scalar_name; $scalar_cfg; $scalar_feature));
     };
 }
 
-#[cfg(feature = "op_assign")]
+#[cfg(all(feature = "op_assign", feature = "native-link"))]
 macro_rules! export_native_op_assign_runtime_factories {
     ($operation:ident; $operation_feature:literal) => {
         for_each_op_assign_scalar!(export_op_assign_value_for_scalar, ($operation; $operation_feature));
         for_each_op_assign_range_scalar!(export_op_assign_range_for_scalar, ($operation; $operation_feature));
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_vv {
-    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $shape:ident, $shape_name:literal) => {
-        $builder.insert_runtime_factory::<$factory<$scalar, $shape<$scalar>, $shape<$scalar>>>(
-            concat!(
-                stringify!($factory),
-                "<[",
-                $scalar_name,
-                "]:",
-                $shape_name,
-                ">"
-            ),
-            RuntimeFunctionContract::same_shape(RuntimeOutputAliasPolicy::DisallowInputAlias),
-        )?;
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_vv_for_type {
-    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal) => {
-        #[cfg(feature = "row_vector4")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, RowVector4, "1,4");
-        #[cfg(feature = "row_vector3")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, RowVector3, "1,3");
-        #[cfg(feature = "row_vector2")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, RowVector2, "1,2");
-        #[cfg(feature = "vector2")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Vector2, "2,1");
-        #[cfg(feature = "vector3")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Vector3, "3,1");
-        #[cfg(feature = "vector4")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Vector4, "4,1");
-        #[cfg(feature = "matrix1")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Matrix1, "1,1");
-        #[cfg(feature = "matrix2")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Matrix2, "2,2");
-        #[cfg(feature = "matrix3")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Matrix3, "3,3");
-        #[cfg(feature = "matrix4")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Matrix4, "4,4");
-        #[cfg(feature = "matrix2x3")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Matrix2x3, "2,3");
-        #[cfg(feature = "matrix3x2")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, Matrix3x2, "3,2");
-        #[cfg(feature = "vectord")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, DVector, "0,1");
-        #[cfg(feature = "matrixd")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, DMatrix, "0,0");
-        #[cfg(feature = "row_vectord")]
-        install_op_assign_vv!($builder, $factory, $scalar, $scalar_name, RowDVector, "1,0");
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_values {
-    ($builder:expr, $operation:ident) => {
-        paste! {
-            mech_core::install_typed_runtime_factories!(
-                $builder,
-                [<$operation AssignSS>],
-                contract: RuntimeFunctionContract::no_matrix(
-                    RuntimeOutputAliasPolicy::DisallowInputAlias,
-                );
-                ("u8", u8, "u8"),
-                ("u16", u16, "u16"),
-                ("u32", u32, "u32"),
-                ("u64", u64, "u64"),
-                ("u128", u128, "u128"),
-                ("i8", i8, "i8"),
-                ("i16", i16, "i16"),
-                ("i32", i32, "i32"),
-                ("i64", i64, "i64"),
-                ("i128", i128, "i128"),
-                ("f32", f32, "f32"),
-                ("f64", f64, "f64"),
-                ("r64", crate::R64, "r64"),
-                ("c64", crate::C64, "c64"),
-            )?;
-
-            #[cfg(feature = "u8")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], u8, "u8");
-            #[cfg(feature = "u16")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], u16, "u16");
-            #[cfg(feature = "u32")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], u32, "u32");
-            #[cfg(feature = "u64")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], u64, "u64");
-            #[cfg(feature = "u128")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], u128, "u128");
-            #[cfg(feature = "i8")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], i8, "i8");
-            #[cfg(feature = "i16")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], i16, "i16");
-            #[cfg(feature = "i32")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], i32, "i32");
-            #[cfg(feature = "i64")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], i64, "i64");
-            #[cfg(feature = "i128")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], i128, "i128");
-            #[cfg(feature = "f32")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], f32, "f32");
-            #[cfg(feature = "f64")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], f64, "f64");
-            #[cfg(feature = "r64")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], crate::R64, "r64");
-            #[cfg(feature = "c64")]
-            install_op_assign_vv_for_type!($builder, [<$operation AssignVV>], crate::C64, "c64");
-        }
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_range_s {
-    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $sink:ident, $index:ident) => {
-        $builder.insert_runtime_factory::<$factory<$scalar, $sink<$scalar>, $index<usize>>>(
-            concat!(
-                stringify!($factory),
-                "<",
-                $scalar_name,
-                stringify!($sink),
-                stringify!($index),
-                ">"
-            ),
-            RuntimeFunctionContract::custom(
-                "op_assign_slice",
-                RuntimeOutputAliasPolicy::DisallowInputAlias,
-                validate_op_assign_slice,
-            ),
-        )?;
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_range_v {
-    ($builder:expr, $factory:ident, $scalar:ty, $scalar_name:literal, $sink:ident, $source:ident, $index:ident) => {
-        $builder.insert_runtime_factory::<$factory<$scalar, $sink<$scalar>, $source<$scalar>, $index<usize>>>(
-            concat!(
-                stringify!($factory),
-                "<",
-                $scalar_name,
-                stringify!($sink),
-                stringify!($source),
-                stringify!($index),
-                ">"
-            ),
-            RuntimeFunctionContract::custom(
-                "op_assign_slice",
-                RuntimeOutputAliasPolicy::DisallowInputAlias,
-                validate_op_assign_slice,
-            ),
-        )?;
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_ranges_for_sink {
-    ($builder:expr, $scalar_factory:ident, $vector_factory:ident, $scalar:ty, $scalar_name:literal, $sink:ident) => {
-        #[cfg(feature = "matrix1")]
-        install_op_assign_range_s!(
-            $builder,
-            $scalar_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Matrix1
-        );
-        #[cfg(feature = "vector2")]
-        install_op_assign_range_s!(
-            $builder,
-            $scalar_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Vector2
-        );
-        #[cfg(feature = "vector3")]
-        install_op_assign_range_s!(
-            $builder,
-            $scalar_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Vector3
-        );
-        #[cfg(feature = "vector4")]
-        install_op_assign_range_s!(
-            $builder,
-            $scalar_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Vector4
-        );
-        #[cfg(feature = "vectord")]
-        install_op_assign_range_s!(
-            $builder,
-            $scalar_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            DVector
-        );
-
-        #[cfg(feature = "matrix1")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Matrix1,
-            Matrix1
-        );
-        #[cfg(all(feature = "matrix2", feature = "vector4"))]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Matrix2,
-            Vector4
-        );
-        #[cfg(feature = "matrix3")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Matrix3,
-            DVector
-        );
-        #[cfg(feature = "matrix4")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Matrix4,
-            DVector
-        );
-        #[cfg(feature = "matrix2x3")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Matrix2x3,
-            DVector
-        );
-        #[cfg(feature = "matrix3x2")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Matrix3x2,
-            DVector
-        );
-        #[cfg(feature = "matrixd")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            DMatrix,
-            DVector
-        );
-        #[cfg(feature = "vectord")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            DVector,
-            DVector
-        );
-        #[cfg(feature = "row_vectord")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            RowDVector,
-            DVector
-        );
-        #[cfg(feature = "vector2")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Vector2,
-            Vector2
-        );
-        #[cfg(feature = "vector3")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Vector3,
-            Vector3
-        );
-        #[cfg(feature = "vector4")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            Vector4,
-            Vector4
-        );
-        #[cfg(feature = "row_vector2")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            RowVector2,
-            Vector2
-        );
-        #[cfg(feature = "row_vector3")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            RowVector3,
-            Vector3
-        );
-        #[cfg(feature = "row_vector4")]
-        install_op_assign_range_v!(
-            $builder,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            $sink,
-            RowVector4,
-            Vector4
-        );
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_ranges_for_type {
-    ($builder:expr, $scalar_factory:ident, $vector_factory:ident, $scalar:ty, $scalar_name:literal) => {
-        #[cfg(feature = "row_vector2")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            RowVector2
-        );
-        #[cfg(feature = "row_vector3")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            RowVector3
-        );
-        #[cfg(feature = "row_vector4")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            RowVector4
-        );
-        #[cfg(feature = "vector2")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Vector2
-        );
-        #[cfg(feature = "vector3")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Vector3
-        );
-        #[cfg(feature = "vector4")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Vector4
-        );
-        #[cfg(feature = "matrix1")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Matrix1
-        );
-        #[cfg(feature = "matrix2")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Matrix2
-        );
-        #[cfg(feature = "matrix3")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Matrix3
-        );
-        #[cfg(feature = "matrix4")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Matrix4
-        );
-        #[cfg(feature = "matrix2x3")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Matrix2x3
-        );
-        #[cfg(feature = "matrix3x2")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            Matrix3x2
-        );
-        #[cfg(feature = "matrixd")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            DMatrix
-        );
-        #[cfg(feature = "row_vectord")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            RowDVector
-        );
-        #[cfg(feature = "vectord")]
-        install_op_assign_ranges_for_sink!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            $scalar,
-            $scalar_name,
-            DVector
-        );
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_ranges {
-    ($builder:expr, $scalar_factory:ident, $vector_factory:ident) => {
-        #[cfg(feature = "u8")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, u8, "u8");
-        #[cfg(feature = "u16")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, u16, "u16");
-        #[cfg(feature = "u32")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, u32, "u32");
-        #[cfg(feature = "u64")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, u64, "u64");
-        #[cfg(feature = "u128")]
-        install_op_assign_ranges_for_type!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            u128,
-            "u128"
-        );
-        #[cfg(feature = "i8")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, i8, "i8");
-        #[cfg(feature = "i16")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, i16, "i16");
-        #[cfg(feature = "i32")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, i32, "i32");
-        #[cfg(feature = "i64")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, i64, "i64");
-        #[cfg(feature = "f32")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, f32, "f32");
-        #[cfg(feature = "f64")]
-        install_op_assign_ranges_for_type!($builder, $scalar_factory, $vector_factory, f64, "f64");
-        #[cfg(feature = "rational")]
-        install_op_assign_ranges_for_type!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            crate::R64,
-            "rational"
-        );
-        #[cfg(feature = "complex")]
-        install_op_assign_ranges_for_type!(
-            $builder,
-            $scalar_factory,
-            $vector_factory,
-            crate::C64,
-            "complex"
-        );
-    };
-}
-
-#[cfg(feature = "op_assign")]
-macro_rules! install_op_assign_runtime {
-    ($builder:expr, $operation:ident) => {
-        paste! {
-            install_op_assign_values!($builder, $operation);
-            #[cfg(feature = "matrix")]
-            {
-                install_op_assign_ranges!($builder, [<$operation Assign1DRS>], [<$operation Assign1DRV>]);
-                install_op_assign_ranges!($builder, [<$operation Assign2DRAS>], [<$operation Assign2DRAV>]);
-            }
-        }
     };
 }
 
@@ -1648,87 +1103,6 @@ fn install_mul_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 #[cfg(feature = "sub_assign")]
 fn install_sub_assign_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_native_op_assign_runtime_factories!(builder, Sub; "sub_assign")
-}
-
-#[cfg(feature = "atan2")]
-fn install_legacy_atan2_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    use crate::trig::atan2::*;
-
-    #[cfg(feature = "f32")]
-    {
-        install_exact_runtime!(builder, Atan2F32);
-        #[cfg(feature = "matrix1")]
-        install_exact_runtime!(builder, Atan2M1F32);
-        #[cfg(feature = "matrix2")]
-        install_exact_runtime!(builder, Atan2M2F32);
-        #[cfg(feature = "matrix3")]
-        {
-            install_exact_runtime!(builder, Atan2M3F32);
-        }
-        #[cfg(feature = "matrix3x2")]
-        install_exact_runtime!(builder, Atan2M3x2F32);
-        #[cfg(feature = "matrix2x3")]
-        install_exact_runtime!(builder, Atan2M2x3F32);
-        #[cfg(feature = "matrix4")]
-        install_exact_runtime!(builder, Atan2M4F32);
-        #[cfg(feature = "vector2")]
-        install_exact_runtime!(builder, Atan2V2F32);
-        #[cfg(feature = "vector3")]
-        install_exact_runtime!(builder, Atan2V3F32);
-        #[cfg(feature = "vector4")]
-        install_exact_runtime!(builder, Atan2V4F32);
-        #[cfg(feature = "row_vector2")]
-        install_exact_runtime!(builder, Atan2R2F32);
-        #[cfg(feature = "row_vector3")]
-        install_exact_runtime!(builder, Atan2R3F32);
-        #[cfg(feature = "row_vector4")]
-        install_exact_runtime!(builder, Atan2R4F32);
-        #[cfg(feature = "row_vectord")]
-        install_exact_runtime!(builder, Atan2RDF32);
-        #[cfg(feature = "vectord")]
-        install_exact_runtime!(builder, Atan2VDF32);
-        #[cfg(feature = "matrixd")]
-        install_exact_runtime!(builder, Atan2MDF32);
-    }
-
-    #[cfg(feature = "f64")]
-    {
-        install_exact_runtime!(builder, Atan2F64);
-        #[cfg(feature = "matrix1")]
-        install_exact_runtime!(builder, Atan2M1F64);
-        #[cfg(feature = "matrix2")]
-        install_exact_runtime!(builder, Atan2M2F64);
-        #[cfg(feature = "matrix3")]
-        {
-            install_exact_runtime!(builder, Atan2M3F64);
-        }
-        #[cfg(feature = "matrix3x2")]
-        install_exact_runtime!(builder, Atan2M3x2F64);
-        #[cfg(feature = "matrix2x3")]
-        install_exact_runtime!(builder, Atan2M2x3F64);
-        #[cfg(feature = "matrix4")]
-        install_exact_runtime!(builder, Atan2M4F64);
-        #[cfg(feature = "vector2")]
-        install_exact_runtime!(builder, Atan2V2F64);
-        #[cfg(feature = "vector3")]
-        install_exact_runtime!(builder, Atan2V3F64);
-        #[cfg(feature = "vector4")]
-        install_exact_runtime!(builder, Atan2V4F64);
-        #[cfg(feature = "row_vector2")]
-        install_exact_runtime!(builder, Atan2R2F64);
-        #[cfg(feature = "row_vector3")]
-        install_exact_runtime!(builder, Atan2R3F64);
-        #[cfg(feature = "row_vector4")]
-        install_exact_runtime!(builder, Atan2R4F64);
-        #[cfg(feature = "row_vectord")]
-        install_exact_runtime!(builder, Atan2RDF64);
-        #[cfg(feature = "vectord")]
-        install_exact_runtime!(builder, Atan2VDF64);
-        #[cfg(feature = "matrixd")]
-        install_exact_runtime!(builder, Atan2MDF64);
-    }
-
-    Ok(())
 }
 
 macro_rules! for_each_atan2_factory {
@@ -2178,7 +1552,11 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 #[cfg(feature = "native-plan")]
 pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     install_runtime(builder)?;
-    #[cfg(feature = "add")]
+    #[cfg(all(
+        feature = "add",
+        feature = "matrixd",
+        any(feature = "matrix1", feature = "matrix1_interop")
+    ))]
     crate::install_math_add_native_plan(builder)?;
     Ok(())
 }

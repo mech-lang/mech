@@ -19,25 +19,29 @@ impl MechRuntime {
     }
 
     pub fn driven_live_input_binding_count(&self) -> MResult<usize> {
-        let mut count = 0;
         #[cfg(feature = "resident-routing")]
-        if let crate::runtime::program::ActiveProgramExecution::ResidentExternal(execution) =
-            &self.active_program
         {
-            for source in execution.trigger_sources.iter() {
-                let mut driven = false;
-                for driver in &self.input_drivers[..self.attached_input_driver_count] {
-                    if extension::invoke_extension_value("host input driver", "drives", || {
-                        driver.drives(source)
-                    })? {
-                        driven = true;
-                        break;
+            let mut count = 0;
+            if let crate::runtime::program::ActiveProgramExecution::ResidentExternal(execution) =
+                &self.active_program
+            {
+                for source in execution.trigger_sources.iter() {
+                    let mut driven = false;
+                    for driver in &self.input_drivers[..self.attached_input_driver_count] {
+                        if extension::invoke_extension_value("host input driver", "drives", || {
+                            driver.drives(source)
+                        })? {
+                            driven = true;
+                            break;
+                        }
                     }
+                    count += usize::from(driven);
                 }
-                count += usize::from(driven);
             }
+            return Ok(count);
         }
-        Ok(count)
+        #[cfg(not(feature = "resident-routing"))]
+        Ok(0)
     }
 
     pub fn has_driven_live_input_bindings(&self) -> MResult<bool> {
@@ -116,10 +120,13 @@ impl MechRuntime {
             })? {
                 continue;
             }
-            let has_driven_input = {
-                let driver = &self.input_drivers[index];
-                #[cfg(feature = "resident-routing")]
-                let resident = match &self.active_program {
+            let has_driven_input =
+                {
+                    #[cfg(feature = "resident-routing")]
+                    let resident =
+                        {
+                            let driver = &self.input_drivers[index];
+                            match &self.active_program {
                     crate::runtime::program::ActiveProgramExecution::ResidentExternal(
                         execution,
                     ) => execution
@@ -133,12 +140,13 @@ impl MechRuntime {
                                 driver.drives(source)
                             })
                         })?,
-                    _ => false,
+                        _ => false,
+                    }
+                        };
+                    #[cfg(not(feature = "resident-routing"))]
+                    let resident = false;
+                    resident
                 };
-                #[cfg(not(feature = "resident-routing"))]
-                let resident = false;
-                resident
-            };
             if !has_driven_input {
                 continue;
             }

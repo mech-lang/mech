@@ -9,8 +9,6 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-#[macro_use]
-extern crate mech_core;
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 extern crate paste;
@@ -35,8 +33,6 @@ use nalgebra::Matrix3;
 use nalgebra::Matrix3x2;
 #[cfg(feature = "matrix4")]
 use nalgebra::Matrix4;
-#[cfg(feature = "rowdvector")]
-use nalgebra::RowDVector;
 #[cfg(feature = "row_vectord")]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vector2")]
@@ -52,8 +48,6 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
 #[cfg(any(feature = "dot", feature = "matmul"))]
 use num_traits::*;
 use std::fmt::Debug;
@@ -115,7 +109,21 @@ pub trait RuntimeMatrixArithmetic:
     fn runtime_checked_mul(self, rhs: Self) -> Option<Self>;
 }
 
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(all(
+    any(feature = "dot", feature = "matmul"),
+    any(
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+    ),
+))]
 macro_rules! impl_checked_matrix_arithmetic {
     ($($type:ty),+ $(,)?) => {
         $(
@@ -153,7 +161,15 @@ impl_checked_matrix_arithmetic!(u64);
 #[cfg(all(any(feature = "dot", feature = "matmul"), feature = "u128"))]
 impl_checked_matrix_arithmetic!(u128);
 
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(all(
+    any(feature = "dot", feature = "matmul"),
+    any(
+        feature = "f32",
+        feature = "f64",
+        feature = "rational",
+        feature = "complex"
+    ),
+))]
 macro_rules! impl_unchecked_matrix_arithmetic {
     ($($type:ty),+ $(,)?) => {
         $(
@@ -280,6 +296,18 @@ fn product_contract(
 /// macro computes a complete staged result and may use `?`; it publishes only
 /// after every multiplication and accumulation succeeds.
 #[cfg(any(feature = "dot", feature = "matmul"))]
+macro_rules! matrix_semantic_contract {
+    ($output:ty) => {
+        None
+    };
+    ($output:ty, $semantic_contract:path) => {
+        Some($semantic_contract(
+            <$output as FunctionRuntimeType>::REPRESENTATION,
+        ))
+    };
+}
+
+#[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! impl_checked_matrix_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
@@ -344,11 +372,7 @@ macro_rules! impl_checked_matrix_binop {
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                let contract: Option<&'static OperationContractDeclaration> = None;
-                $(let contract = Some($semantic_contract(
-                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
-                ));)?
-                contract
+                matrix_semantic_contract!($out_type $(, $semantic_contract)?)
             }
 
             fn to_string(&self) -> String {

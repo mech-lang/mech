@@ -43,15 +43,6 @@ pub fn gate_a_cost_snapshot() -> GateACostSnapshot {
     GATE_A_COSTS.with(|costs| *costs.borrow())
 }
 
-pub(crate) fn record_context_event_snapshot(items: usize) {
-    add(|costs| {
-        costs.context_event_snapshot_count = costs.context_event_snapshot_count.saturating_add(1);
-        costs.context_event_snapshot_items = costs
-            .context_event_snapshot_items
-            .saturating_add(items as u64);
-    });
-}
-
 pub(crate) fn record_context_event_compaction(moved_items: usize) {
     add(|costs| {
         costs.context_event_compaction_count =
@@ -59,13 +50,6 @@ pub(crate) fn record_context_event_compaction(moved_items: usize) {
         costs.context_event_compaction_moved_items = costs
             .context_event_compaction_moved_items
             .saturating_add(moved_items as u64);
-    });
-}
-
-pub(crate) fn record_context_event_lengths(visible: usize, physical: usize) {
-    add(|costs| {
-        costs.context_event_visible_len = visible as u64;
-        costs.context_event_physical_len = physical as u64;
     });
 }
 
@@ -77,15 +61,6 @@ pub(crate) fn record_runtime_transaction_savepoint_clone(items: usize) {
         costs.runtime_transaction_savepoint_items = costs
             .runtime_transaction_savepoint_items
             .saturating_add(items as u64);
-    });
-}
-
-pub(crate) fn record_in_memory_store_clone(records: usize) {
-    add(|costs| {
-        costs.in_memory_store_clone_count = costs.in_memory_store_clone_count.saturating_add(1);
-        costs.in_memory_store_cloned_records = costs
-            .in_memory_store_cloned_records
-            .saturating_add(records as u64);
     });
 }
 
@@ -113,20 +88,6 @@ pub(crate) fn record_commit_runtime_call() {
     });
 }
 
-pub(crate) fn record_program_checkpoint() {
-    add(|costs| {
-        costs.program_checkpoint_count = costs.program_checkpoint_count.saturating_add(1);
-    });
-}
-
-pub(crate) fn record_reactive_journal_cells(cells: usize) {
-    add(|costs| {
-        costs.reactive_journal_cell_count = costs
-            .reactive_journal_cell_count
-            .saturating_add(cells as u64);
-    });
-}
-
 pub(crate) fn record_event_appended() {
     add(|costs| {
         costs.events_appended = costs.events_appended.saturating_add(1);
@@ -143,50 +104,36 @@ pub(crate) fn record_transaction_committed() {
 mod tests {
     use super::{
         GateACostSnapshot, gate_a_cost_snapshot, record_commit_runtime_call,
-        record_context_event_compaction, record_context_event_lengths,
-        record_context_event_snapshot, record_event_appended,
-        record_in_memory_store_apply_duration, record_in_memory_store_clone,
-        record_in_memory_store_prepare_duration, record_program_checkpoint,
-        record_reactive_journal_cells, record_runtime_transaction_savepoint_clone,
-        record_transaction_committed, reset_gate_a_costs,
+        record_context_event_compaction, record_event_appended,
+        record_in_memory_store_apply_duration, record_in_memory_store_prepare_duration,
+        record_runtime_transaction_savepoint_clone, record_transaction_committed,
+        reset_gate_a_costs,
     };
 
     #[test]
     fn counters_are_thread_local_and_resettable() {
         reset_gate_a_costs();
-        record_context_event_snapshot(3);
         record_context_event_compaction(2);
-        record_context_event_lengths(5, 7);
         record_runtime_transaction_savepoint_clone(5);
-        record_in_memory_store_clone(7);
         record_in_memory_store_prepare_duration(std::time::Duration::from_nanos(13));
         record_in_memory_store_apply_duration(std::time::Duration::from_nanos(17));
         record_commit_runtime_call();
-        record_program_checkpoint();
-        record_reactive_journal_cells(11);
         record_event_appended();
         record_transaction_committed();
 
         assert_eq!(
             gate_a_cost_snapshot(),
             GateACostSnapshot {
-                context_event_snapshot_count: 1,
-                context_event_snapshot_items: 3,
                 context_event_compaction_count: 1,
                 context_event_compaction_moved_items: 2,
-                context_event_visible_len: 5,
-                context_event_physical_len: 7,
                 runtime_transaction_savepoint_clone_count: 1,
                 runtime_transaction_savepoint_items: 5,
-                in_memory_store_clone_count: 1,
-                in_memory_store_cloned_records: 7,
                 in_memory_store_prepare_duration_ns: 13,
                 in_memory_store_apply_duration_ns: 17,
                 commit_runtime_call_count: 1,
-                program_checkpoint_count: 1,
-                reactive_journal_cell_count: 11,
                 events_appended: 1,
                 transactions_committed: 1,
+                ..GateACostSnapshot::default()
             },
         );
 

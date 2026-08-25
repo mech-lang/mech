@@ -66,6 +66,7 @@ jobs:
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract
           python3 scripts/check-production-resident-routing.py
+          python3 scripts/check-warning-policy.py
           python3 scripts/check-interactive-architecture.py
           python3 scripts/check-compiler-planning-quarantine.py
           scripts/check-unsafe-boundaries.sh

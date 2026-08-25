@@ -13,7 +13,9 @@ use crate::{
     turn_record::{AccountedRecord, TurnId},
 };
 
-pub use retained::{PreparedOutboxBatch, RetainedEffectOutbox};
+#[cfg(any(feature = "runtime_bench_probes", feature = "resident-external"))]
+pub use retained::PreparedOutboxBatch;
+pub use retained::RetainedEffectOutbox;
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -92,18 +94,6 @@ impl<P: AccountedRecord> AccountedRecord for OwnedEffectIntent<P> {
 #[derive(Debug)]
 pub struct OutboxPermit {
     pub(crate) inner: Option<LedgerPermit>,
-}
-
-impl OutboxPermit {
-    pub fn reserved_effects(&self) -> usize {
-        self.inner
-            .as_ref()
-            .map_or(0, LedgerPermit::reserved_records)
-    }
-
-    pub fn reserved_bytes(&self) -> usize {
-        self.inner.as_ref().map_or(0, LedgerPermit::reserved_bytes)
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -8,14 +8,7 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-use indexmap::set::IndexSet;
-
 use mech_core::*;
-
-use paste::paste;
-
-use std::fmt::{Debug, Display};
-use std::marker::PhantomData;
 use std::sync::LazyLock;
 
 static PURE_SET_BINARY_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -78,7 +71,7 @@ pub use self::modify::*;
 pub use self::operations::*;
 #[cfg(feature = "relations")]
 pub use self::relations::*;
-#[cfg(feature = "setdata")]
+#[cfg(all(feature = "setdata", feature = "size", feature = "u64"))]
 pub use self::setdata::*;
 
 // ----------------------------------------------------------------------------

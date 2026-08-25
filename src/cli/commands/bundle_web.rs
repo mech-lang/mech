@@ -8,6 +8,7 @@ pub(crate) fn command() -> Command {
     crate::cli::bundle_web::bundle_web_command()
 }
 
+#[cfg(not(feature = "serve"))]
 pub(crate) fn add_config_args(command: Command) -> Command {
     crate::cli::bundle_web::add_config_args(command)
 }

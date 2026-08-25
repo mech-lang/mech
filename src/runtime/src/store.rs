@@ -19,9 +19,9 @@ use serde::{Deserialize, Serialize};
 
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 use std::sync::Mutex;
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use mech_core::{MResult, MechError, MechErrorKind, MechSourceCode, Program};
@@ -148,8 +148,7 @@ pub trait MechStore: std::fmt::Debug + Send {
 
     fn list_events(&self, limit: Option<usize>) -> MResult<Vec<RuntimeEvent>>;
 
-    fn configure_event_retention(&mut self, max_events: Option<usize>) -> MResult<()> {
-        let _ = max_events;
+    fn configure_event_retention(&mut self, _: Option<usize>) -> MResult<()> {
         Ok(())
     }
 
@@ -860,14 +859,14 @@ pub struct RuntimeStoreCommit {
     pub events: Vec<RuntimeEvent>,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum InMemoryAppendEventFailureKind {
     TransactionAborted,
     EffectAborted,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 impl InMemoryAppendEventFailureKind {
     fn matches(self, kind: &RuntimeEventKind) -> bool {
         matches!(
@@ -887,13 +886,13 @@ impl InMemoryAppendEventFailureKind {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 #[derive(Debug, Clone)]
 struct InMemoryAppendEventFailure {
     event: &'static str,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "source"))]
 impl MechErrorKind for InMemoryAppendEventFailure {
     fn name(&self) -> &str {
         "InMemoryAppendEventFailure"
@@ -938,11 +937,11 @@ pub struct InMemoryStore {
 
     #[cfg(test)]
     panic_on_get_object: bool,
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     panic_on_commit_runtime: bool,
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     commit_runtime_calls: Option<Arc<AtomicUsize>>,
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     append_event_failures: Option<Arc<Mutex<VecDeque<InMemoryAppendEventFailureKind>>>>,
 }
 
@@ -951,7 +950,7 @@ impl InMemoryStore {
         Self::default()
     }
 
-    #[cfg(any(test, feature = "runtime_bench_probes"))]
+    #[cfg(test)]
     fn gate_a_cloned_record_count(&self) -> usize {
         self.modules.len()
             + self.module_versions.len()
@@ -980,12 +979,12 @@ impl InMemoryStore {
         self.panic_on_get_object = true;
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     pub(crate) fn panic_on_commit_runtime_for_test(&mut self) {
         self.panic_on_commit_runtime = true;
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     pub(crate) fn with_commit_runtime_counter_for_test(
         mut self,
         counter: Arc<AtomicUsize>,
@@ -994,7 +993,7 @@ impl InMemoryStore {
         self
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "source"))]
     pub(crate) fn with_append_event_failures_for_test(
         mut self,
         failures: Arc<Mutex<VecDeque<InMemoryAppendEventFailureKind>>>,
@@ -1450,7 +1449,7 @@ impl MechStore for InMemoryStore {
     fn append_event(&mut self, event: RuntimeEvent) -> MResult<EventId> {
         event.validate()?;
 
-        #[cfg(test)]
+        #[cfg(all(test, feature = "source"))]
         if let Some(failures) = &self.append_event_failures {
             let mut failures = failures
                 .lock()
@@ -1516,11 +1515,11 @@ impl MechStore for InMemoryStore {
     fn commit_runtime(&mut self, commit: RuntimeStoreCommit) -> MResult<TransactionId> {
         #[cfg(any(test, feature = "runtime_bench_probes"))]
         crate::runtime::gate_a_probe::record_commit_runtime_call();
-        #[cfg(test)]
+        #[cfg(all(test, feature = "source"))]
         if let Some(counter) = &self.commit_runtime_calls {
             counter.fetch_add(1, Ordering::SeqCst);
         }
-        #[cfg(test)]
+        #[cfg(all(test, feature = "source"))]
         if self.panic_on_commit_runtime {
             panic!("deliberate store commit panic");
         }

@@ -1,12 +1,10 @@
 #[cfg(feature = "matrix")]
 use crate::matrix::Matrix;
-use crate::nodes::Matrix as Mat;
+#[cfg(feature = "matrix")]
 #[cfg(feature = "complex")]
 use crate::types::complex_numbers::C64;
 use crate::*;
-#[cfg(feature = "rational")]
-use num_rational::Rational64;
-
+#[cfg(any(feature = "functions", feature = "matrix"))]
 use core::any::Any;
 #[cfg(feature = "no_std")]
 use core::hash::BuildHasherDefault;
@@ -180,8 +178,8 @@ impl Display for ValueKind {
             ValueKind::Id => write!(f, "id"),
             ValueKind::Index => write!(f, "ix"),
             ValueKind::Reference(x) => write!(f, "{}", x),
-            ValueKind::Enum(x, name) => write!(f, ":{}", name),
-            ValueKind::Atom(x, name) => write!(f, ":{}", name),
+            ValueKind::Enum(_, name) => write!(f, ":{}", name),
+            ValueKind::Atom(_, name) => write!(f, ":{}", name),
             ValueKind::Empty => write!(f, "_"),
             ValueKind::Any => write!(f, "*"),
             ValueKind::None => write!(f, "none"),
@@ -559,6 +557,7 @@ pub trait AsNaKind {
     fn as_na_kind() -> String;
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_as_na_kind {
     ($type:ty, $kind:expr) => {
         impl<T> AsNaKind for $type {
@@ -649,6 +648,7 @@ impl_as_value_kind!(R64, ValueKind::R64);
 #[cfg(feature = "complex")]
 impl_as_value_kind!(C64, ValueKind::C64);
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_as_value_kind_for_matrix {
     ($type:ty, $dims:expr) => {
         impl<T: AsValueKind> AsValueKind for $type {
@@ -854,13 +854,10 @@ impl ReactiveCellId {
 
 impl fmt::Display for LegacyValue {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if cfg!(feature = "pretty_print") {
-            #[cfg(feature = "pretty_print")]
-            return fmt::Display::fmt(&self.pretty_print(), f);
-            fmt::Display::fmt(&"".to_string(), f) // kind of a hack to assuage the compiler
-        } else {
-            f.write_str(&self.format_canonical_inline())
-        }
+        #[cfg(feature = "pretty_print")]
+        return fmt::Display::fmt(&self.pretty_print(), f);
+        #[cfg(not(feature = "pretty_print"))]
+        f.write_str(&self.format_canonical_inline())
     }
 }
 
@@ -1422,11 +1419,8 @@ impl LegacyValue {
         }
     }
 
-    pub fn from_kind(kind: &ValueKind) -> Self {
-        todo!();
-    }
-
     /// Returns the exact `Ref<_>` stored by this value, if it has one.
+    #[cfg(feature = "functions")]
     pub(crate) fn exact_ref_any(&self) -> Option<&dyn Any> {
         match self {
             #[cfg(feature = "u8")]
@@ -2358,35 +2352,35 @@ impl LegacyValue {
     pub fn size_of(&self) -> usize {
         match self {
             #[cfg(feature = "rational")]
-            LegacyValue::R64(x) => 16,
+            LegacyValue::R64(_) => 16,
             #[cfg(feature = "u8")]
-            LegacyValue::U8(x) => 1,
+            LegacyValue::U8(_) => 1,
             #[cfg(feature = "u16")]
-            LegacyValue::U16(x) => 2,
+            LegacyValue::U16(_) => 2,
             #[cfg(feature = "u32")]
-            LegacyValue::U32(x) => 4,
+            LegacyValue::U32(_) => 4,
             #[cfg(feature = "u64")]
-            LegacyValue::U64(x) => 8,
+            LegacyValue::U64(_) => 8,
             #[cfg(feature = "u128")]
-            LegacyValue::U128(x) => 16,
+            LegacyValue::U128(_) => 16,
             #[cfg(feature = "i8")]
-            LegacyValue::I8(x) => 1,
+            LegacyValue::I8(_) => 1,
             #[cfg(feature = "i16")]
-            LegacyValue::I16(x) => 2,
+            LegacyValue::I16(_) => 2,
             #[cfg(feature = "i32")]
-            LegacyValue::I32(x) => 4,
+            LegacyValue::I32(_) => 4,
             #[cfg(feature = "i64")]
-            LegacyValue::I64(x) => 8,
+            LegacyValue::I64(_) => 8,
             #[cfg(feature = "i128")]
-            LegacyValue::I128(x) => 16,
+            LegacyValue::I128(_) => 16,
             #[cfg(feature = "f32")]
-            LegacyValue::F32(x) => 4,
+            LegacyValue::F32(_) => 4,
             #[cfg(feature = "f64")]
-            LegacyValue::F64(x) => 8,
+            LegacyValue::F64(_) => 8,
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            LegacyValue::Bool(x) => 1,
+            LegacyValue::Bool(_) => 1,
             #[cfg(feature = "complex")]
-            LegacyValue::C64(x) => 16,
+            LegacyValue::C64(_) => 16,
             #[cfg(all(feature = "matrix"))]
             LegacyValue::MatrixIndex(x) => x.size_of(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
@@ -2426,7 +2420,7 @@ impl LegacyValue {
             #[cfg(any(feature = "string", feature = "variable_define"))]
             LegacyValue::String(x) => x.borrow().len(),
             #[cfg(feature = "atom")]
-            LegacyValue::Atom(x) => 8,
+            LegacyValue::Atom(_) => 8,
             #[cfg(feature = "set")]
             LegacyValue::Set(x) => x.borrow().size_of(),
             #[cfg(feature = "map")]
@@ -2441,7 +2435,7 @@ impl LegacyValue {
             LegacyValue::Enum(x) => x.borrow().size_of(),
             LegacyValue::MutableReference(x) => x.borrow().size_of(),
             LegacyValue::Id(_) => 8,
-            LegacyValue::Index(x) => 8,
+            LegacyValue::Index(_) => 8,
             LegacyValue::Kind(_) => 0, // Kind is not a value, so it has no size
             LegacyValue::Typed(value, _) => value.size_of(),
             LegacyValue::EmptyKind(_) => 0,
@@ -2465,8 +2459,6 @@ impl LegacyValue {
             LegacyValue::U128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i8")]
             LegacyValue::I8(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
-            #[cfg(feature = "i128")]
-            LegacyValue::I128(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i16")]
             LegacyValue::I16(n) => format!("<span class='mech-number'>{}</span>", n.borrow()),
             #[cfg(feature = "i32")]
@@ -3008,6 +3000,7 @@ impl LegacyValue {
     /// nested table must be parenthesized to give both the parser and preview
     /// scanner an unambiguous structural boundary. Inspecting the canonical
     /// prefix also covers typed and referenced table values transparently.
+    #[cfg(feature = "table")]
     fn format_canonical_table_cell_inline(&self, budget: &mut InlineFormatBudget) -> String {
         let canonical = self.format_canonical_inline_with_budget(budget);
         if canonical.starts_with('|') {
@@ -3362,39 +3355,39 @@ impl LegacyValue {
     pub fn shape(&self) -> Vec<usize> {
         match self {
             #[cfg(feature = "rational")]
-            LegacyValue::R64(x) => vec![1, 1],
+            LegacyValue::R64(_) => vec![1, 1],
             #[cfg(feature = "complex")]
-            LegacyValue::C64(x) => vec![1, 1],
+            LegacyValue::C64(_) => vec![1, 1],
             #[cfg(feature = "u8")]
-            LegacyValue::U8(x) => vec![1, 1],
+            LegacyValue::U8(_) => vec![1, 1],
             #[cfg(feature = "u16")]
-            LegacyValue::U16(x) => vec![1, 1],
+            LegacyValue::U16(_) => vec![1, 1],
             #[cfg(feature = "u32")]
-            LegacyValue::U32(x) => vec![1, 1],
+            LegacyValue::U32(_) => vec![1, 1],
             #[cfg(feature = "u64")]
-            LegacyValue::U64(x) => vec![1, 1],
+            LegacyValue::U64(_) => vec![1, 1],
             #[cfg(feature = "u128")]
-            LegacyValue::U128(x) => vec![1, 1],
+            LegacyValue::U128(_) => vec![1, 1],
             #[cfg(feature = "i8")]
-            LegacyValue::I8(x) => vec![1, 1],
+            LegacyValue::I8(_) => vec![1, 1],
             #[cfg(feature = "i16")]
-            LegacyValue::I16(x) => vec![1, 1],
+            LegacyValue::I16(_) => vec![1, 1],
             #[cfg(feature = "i32")]
-            LegacyValue::I32(x) => vec![1, 1],
+            LegacyValue::I32(_) => vec![1, 1],
             #[cfg(feature = "i64")]
-            LegacyValue::I64(x) => vec![1, 1],
+            LegacyValue::I64(_) => vec![1, 1],
             #[cfg(feature = "i128")]
-            LegacyValue::I128(x) => vec![1, 1],
+            LegacyValue::I128(_) => vec![1, 1],
             #[cfg(feature = "f32")]
-            LegacyValue::F32(x) => vec![1, 1],
+            LegacyValue::F32(_) => vec![1, 1],
             #[cfg(feature = "f64")]
-            LegacyValue::F64(x) => vec![1, 1],
+            LegacyValue::F64(_) => vec![1, 1],
             #[cfg(any(feature = "string", feature = "variable_define"))]
-            LegacyValue::String(x) => vec![1, 1],
+            LegacyValue::String(_) => vec![1, 1],
             #[cfg(any(feature = "bool", feature = "variable_define"))]
-            LegacyValue::Bool(x) => vec![1, 1],
+            LegacyValue::Bool(_) => vec![1, 1],
             #[cfg(feature = "atom")]
-            LegacyValue::Atom(x) => vec![1, 1],
+            LegacyValue::Atom(_) => vec![1, 1],
             #[cfg(feature = "matrix")]
             LegacyValue::MatrixIndex(x) => x.shape(),
             #[cfg(all(feature = "matrix", feature = "bool"))]
@@ -3432,7 +3425,7 @@ impl LegacyValue {
             #[cfg(all(feature = "matrix", feature = "complex"))]
             LegacyValue::MatrixC64(x) => x.shape(),
             #[cfg(feature = "enum")]
-            LegacyValue::Enum(x) => vec![1, 1],
+            LegacyValue::Enum(_) => vec![1, 1],
             #[cfg(feature = "table")]
             LegacyValue::Table(x) => x.borrow().shape(),
             #[cfg(feature = "set")]
@@ -3443,13 +3436,13 @@ impl LegacyValue {
             LegacyValue::Record(x) => x.borrow().shape(),
             #[cfg(feature = "tuple")]
             LegacyValue::Tuple(x) => vec![1, x.borrow().size()],
-            LegacyValue::Index(x) => vec![1, 1],
+            LegacyValue::Index(_) => vec![1, 1],
             LegacyValue::MutableReference(x) => x.borrow().shape(),
             LegacyValue::Typed(x, _) => x.shape(),
             LegacyValue::Empty | LegacyValue::EmptyKind(_) => vec![1, 1],
             LegacyValue::IndexAll => vec![0, 0],
             LegacyValue::Kind(_) => vec![0, 0],
-            LegacyValue::Id(x) => vec![0, 0],
+            LegacyValue::Id(_) => vec![0, 0],
         }
     }
 
@@ -3553,8 +3546,8 @@ impl LegacyValue {
             LegacyValue::EmptyKind(k) => k.clone(),
             LegacyValue::Empty => ValueKind::Empty,
             LegacyValue::IndexAll => ValueKind::Empty,
-            LegacyValue::Id(x) => ValueKind::Id,
-            LegacyValue::Index(x) => ValueKind::Index,
+            LegacyValue::Id(_) => ValueKind::Id,
+            LegacyValue::Index(_) => ValueKind::Index,
             LegacyValue::Kind(x) => x.clone(),
         }
     }
@@ -4242,7 +4235,7 @@ impl LegacyValue {
                 None,
             )
             .with_compiler_loc()),
-            #[cfg(any(feature = "bool", feature = "[usize]"))]
+            #[cfg(feature = "bool")]
             LegacyValue::Bool(_) => Err(MechError::new(
                 CannotConvertToTypeError {
                     target_type: "[usize]",
@@ -4264,6 +4257,11 @@ impl LegacyValue {
     pub fn as_index(&self) -> MResult<LegacyValue> {
         match self.as_usize() {
             Ok(ix) => Ok(LegacyValue::Index(Ref::new(ix))),
+            #[cfg(not(feature = "matrix"))]
+            Err(_) => Err(
+                MechError::new(CannotConvertToTypeError { target_type: "ix" }, None)
+                    .with_compiler_loc(),
+            ),
             #[cfg(feature = "matrix")]
             Err(_) => match self.as_vecusize() {
                 #[cfg(feature = "matrix")]
@@ -4279,17 +4277,10 @@ impl LegacyValue {
                         let out = match (shape[0], shape[1]) {
                             (1, 1) => LegacyValue::Bool(Ref::new(x[0])),
                             #[cfg(all(feature = "vectord", feature = "bool"))]
-                            (1, n) => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
+                            _ => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
                                 DVector::from_vec(x),
                             ))),
-                            #[cfg(all(feature = "vectord", feature = "bool"))]
-                            (m, 1) => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
-                                DVector::from_vec(x),
-                            ))),
-                            #[cfg(all(feature = "vectord", feature = "bool"))]
-                            (m, n) => LegacyValue::MatrixBool(Matrix::DVector(Ref::new(
-                                DVector::from_vec(x),
-                            ))),
+                            #[cfg(not(all(feature = "vectord", feature = "bool")))]
                             _ => todo!(),
                         };
                         Ok(out)
@@ -4303,12 +4294,7 @@ impl LegacyValue {
                         .with_compiler_loc()),
                     },
                 },
-                x => Err(
-                    MechError::new(CannotConvertToTypeError { target_type: "ix" }, None)
-                        .with_compiler_loc(),
-                ),
             },
-            _ => todo!(),
         }
     }
 
@@ -4453,8 +4439,6 @@ impl PrettyPrint for LegacyValue {
             LegacyValue::MatrixF32(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "f64"))]
             LegacyValue::MatrixF64(x) => x.pretty_print(),
-            #[cfg(all(feature = "matrix", feature = "any"))]
-            LegacyValue::MatrixValue(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "string"))]
             LegacyValue::MatrixString(x) => x.pretty_print(),
             #[cfg(all(feature = "matrix", feature = "rational"))]
@@ -4470,9 +4454,6 @@ impl PrettyPrint for LegacyValue {
             LegacyValue::IndexAll => ":".to_string(),
             LegacyValue::Id(x) => format!("{}", humanize(x)),
             LegacyValue::Kind(x) => format!("<{}>", x),
-            x => {
-                todo!("{x:#?}");
-            }
         }
     }
 }
@@ -4514,9 +4495,10 @@ impl ToValue for Vec<usize> {
                 LegacyValue::MatrixIndex(Matrix::Vector4(Ref::new(Vector4::from_vec(self.clone()))))
             }
             #[cfg(feature = "vectord")]
-            n => {
+            _ => {
                 LegacyValue::MatrixIndex(Matrix::DVector(Ref::new(DVector::from_vec(self.clone()))))
             }
+            #[cfg(not(feature = "vectord"))]
             _ => todo!(),
         }
     }
@@ -4751,11 +4733,29 @@ pub trait ToUsize {
     fn to_usize(&self) -> usize;
 }
 
-macro_rules! impl_to_usize_for {
+macro_rules! impl_unsigned_to_usize_for {
     ($t:ty) => {
         impl ToUsize for $t {
             fn to_usize(&self) -> usize {
-                #[allow(unused_comparisons)]
+                *self as usize
+            }
+        }
+    };
+}
+
+#[cfg(any(
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128",
+    feature = "f32",
+    feature = "f64"
+))]
+macro_rules! impl_signed_to_usize_for {
+    ($t:ty) => {
+        impl ToUsize for $t {
+            fn to_usize(&self) -> usize {
                 if *self < 0 as $t {
                     panic!("Cannot convert negative number to usize");
                 }
@@ -4766,32 +4766,32 @@ macro_rules! impl_to_usize_for {
 }
 
 #[cfg(feature = "u8")]
-impl_to_usize_for!(u8);
+impl_unsigned_to_usize_for!(u8);
 #[cfg(feature = "u16")]
-impl_to_usize_for!(u16);
+impl_unsigned_to_usize_for!(u16);
 #[cfg(feature = "u32")]
-impl_to_usize_for!(u32);
+impl_unsigned_to_usize_for!(u32);
 #[cfg(feature = "u64")]
-impl_to_usize_for!(u64);
+impl_unsigned_to_usize_for!(u64);
 #[cfg(feature = "u128")]
-impl_to_usize_for!(u128);
-impl_to_usize_for!(usize);
+impl_unsigned_to_usize_for!(u128);
+impl_unsigned_to_usize_for!(usize);
 
 #[cfg(feature = "i8")]
-impl_to_usize_for!(i8);
+impl_signed_to_usize_for!(i8);
 #[cfg(feature = "i16")]
-impl_to_usize_for!(i16);
+impl_signed_to_usize_for!(i16);
 #[cfg(feature = "i32")]
-impl_to_usize_for!(i32);
+impl_signed_to_usize_for!(i32);
 #[cfg(feature = "i64")]
-impl_to_usize_for!(i64);
+impl_signed_to_usize_for!(i64);
 #[cfg(feature = "i128")]
-impl_to_usize_for!(i128);
+impl_signed_to_usize_for!(i128);
 
 #[cfg(feature = "f64")]
-impl_to_usize_for!(f64);
+impl_signed_to_usize_for!(f64);
 #[cfg(feature = "f32")]
-impl_to_usize_for!(f32);
+impl_signed_to_usize_for!(f32);
 
 #[cfg(feature = "table")]
 impl ToValue for Ref<MechTable> {

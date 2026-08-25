@@ -1,5 +1,4 @@
 use crate::*;
-use mech_core::*;
 use libm::{hypot,hypotf};
 use num_traits::*;
 #[cfg(feature = "matrix")]
@@ -17,7 +16,7 @@ macro_rules! hypot_vec_op {
     unsafe {
       let arg1_deref = &(*$arg1);
       let arg2_deref = &(*$arg2);
-      let mut out_deref = (&mut *$out);
+      let out_deref = &mut *$out;
       for i in 0..arg1_deref.len() {
         (out_deref[i]) = hypot(arg1_deref[i].0,arg2_deref[i].0);
       }}};}
@@ -32,7 +31,7 @@ macro_rules! hypotf_vec_op {
     unsafe {
       let arg1_deref = &(*$arg1);
       let arg2_deref = &(*$arg2);
-      let mut out_deref = (&mut *$out);
+      let out_deref = &mut *$out;
       for i in 0..arg1_deref.len() {
         (out_deref[i]) = hypotf(arg1_deref[i].0,arg2_deref[i].0);
       }}};}
@@ -63,7 +62,7 @@ macro_rules! impl_two_arg_fxn {
     }
     #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for $struct_name {
-      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+      fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         todo!();
       }
     }};}

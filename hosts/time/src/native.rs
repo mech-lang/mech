@@ -116,7 +116,9 @@ where
         self.live.store(false, Ordering::SeqCst);
 
         if let Some(sender) = stop_sender {
-            let _ = sender.send(());
+            if sender.send(()).is_err() {
+                // A finished worker has already reached the requested state.
+            }
         }
 
         if let Some(handle) = worker {
@@ -244,7 +246,9 @@ where
             .map_err(|_| time_error("TimeDriverStop", "time stop-signal lock is poisoned"))?
             .take();
         if let Some(sender) = stop_sender {
-            let _ = sender.send(());
+            if sender.send(()).is_err() {
+                // A finished worker has already reached the requested state.
+            }
         }
         let handle = self
             .worker
@@ -272,7 +276,7 @@ where
     B: TimeBackend + Send + Sync,
 {
     fn drop(&mut self) {
-        let _ = self.stop();
+        drop(self.stop());
     }
 }
 

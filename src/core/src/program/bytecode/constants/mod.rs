@@ -58,16 +58,12 @@ fn validate_table_payload_shape(rows: usize, columns: usize, remaining: usize) -
 }
 
 struct ConstantCodecContext {
-    active_references: BTreeSet<usize>,
     depth: usize,
 }
 
 impl ConstantCodecContext {
     fn new() -> Self {
-        Self {
-            active_references: BTreeSet::new(),
-            depth: 0,
-        }
+        Self { depth: 0 }
     }
 
     fn decode_child(&mut self, ty: &RuntimeType, bytes: &[u8]) -> MResult<LegacyValue> {
@@ -1179,11 +1175,16 @@ fn decode_constant(
 }
 
 fn decode_matrix_constant(
-    element: &RuntimeType,
-    storage: MatrixStorage,
-    rows: u32,
-    cols: u32,
-    bytes: &[u8],
+    #[cfg(feature = "matrix")] element: &RuntimeType,
+    #[cfg(not(feature = "matrix"))] _: &RuntimeType,
+    #[cfg(feature = "matrix")] storage: MatrixStorage,
+    #[cfg(not(feature = "matrix"))] _: MatrixStorage,
+    #[cfg(feature = "matrix")] rows: u32,
+    #[cfg(not(feature = "matrix"))] _: u32,
+    #[cfg(feature = "matrix")] cols: u32,
+    #[cfg(not(feature = "matrix"))] _: u32,
+    #[cfg(feature = "matrix")] bytes: &[u8],
+    #[cfg(not(feature = "matrix"))] _: &[u8],
 ) -> MResult<LegacyValue> {
     #[cfg(feature = "matrix")]
     validate_matrix_payload_feasibility(element, rows, cols, bytes)?;
@@ -1362,7 +1363,6 @@ fn decode_matrix_constant(
     }
     #[cfg(not(feature = "matrix"))]
     {
-        let _ = (element, storage, rows, cols, bytes);
         invalid("matrix constants are unavailable in this runtime")
     }
 }
@@ -1489,6 +1489,23 @@ where
         MatrixStorage::MatrixD => Ok(crate::matrix::Matrix::DMatrix(Ref::new(
             na::DMatrix::from_row_slice(row_count, column_count, &elements),
         ))),
+        #[cfg(not(all(
+            feature = "matrix1",
+            feature = "matrix2",
+            feature = "matrix3",
+            feature = "matrix4",
+            feature = "matrix2x3",
+            feature = "matrix3x2",
+            feature = "row_vector2",
+            feature = "row_vector3",
+            feature = "row_vector4",
+            feature = "vector2",
+            feature = "vector3",
+            feature = "vector4",
+            feature = "row_vectord",
+            feature = "vectord",
+            feature = "matrixd",
+        )))]
         _ => invalid(format!(
             "matrix storage {storage:?} is unavailable in this runtime"
         )),

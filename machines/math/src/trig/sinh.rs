@@ -2,7 +2,6 @@ use crate::*;
 use libm::{sinh, sinhf};
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Sinh ------------------------------------------------------------------------
@@ -51,7 +50,7 @@ impl_math_unop!(MathSinh, f64, sinh);
 fn impl_sinh_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathSinh,
-      (lhs_value),
+      lhs_value,
       F32 => MatrixF32, F32, f32::zero(), "f32";
       F64 => MatrixF64, F64, f64::zero(), "f64";
     )

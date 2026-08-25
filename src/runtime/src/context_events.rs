@@ -104,6 +104,7 @@ impl RuntimeContextEvents {
     /// Marks protect the complete physical prefix that existed when they were
     /// captured. Entries hidden after the newest live mark are transaction-era
     /// history and can be removed without changing any rollback position.
+    #[cfg(any(test, feature = "source", feature = "runtime_bench_probes"))]
     pub(crate) fn prepare_checkpoint(&mut self) {
         self.compact_after_active_marks();
     }
@@ -116,6 +117,7 @@ impl RuntimeContextEvents {
         self.storage.len() - self.visible_start
     }
 
+    #[cfg(test)]
     pub(crate) fn is_empty(&self) -> bool {
         self.visible_len() == 0
     }
@@ -130,6 +132,7 @@ impl RuntimeContextEvents {
         self.bump_local_generation();
     }
 
+    #[cfg(test)]
     pub(crate) fn drain_visible(&mut self) -> Vec<RuntimeEvent> {
         let visible_start = self.visible_start;
         let mut storage = std::mem::take(&mut self.storage);
@@ -165,6 +168,7 @@ impl RuntimeContextEvents {
         Ok(())
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub(crate) fn physical_len(&self) -> usize {
         self.storage.len()
     }

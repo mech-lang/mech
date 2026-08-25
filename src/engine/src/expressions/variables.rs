@@ -33,7 +33,6 @@ fn maybe_cast_variable_to_kind(
 
     #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
     {
-        let _ = value;
         Err(MechError::new(FeatureNotEnabledError, None)
             .with_compiler_loc()
             .with_tokens(annotation.tokens()))
@@ -62,26 +61,22 @@ pub fn var(
 ) -> MResult<LegacyValue> {
     let id = addressed_identifier_hash(&v.name, &v.context);
     let name = addressed_identifier_name(&v.name, &v.context);
+    #[cfg(feature = "subscript_formula")]
     let mark_if_live_symbol = |value: &MutableReference| {
-        #[cfg(feature = "subscript_formula")]
-        {
-            use super::{
-                mark_current_string_access_expression_live, string_access_value_is_marked_live,
-            };
+        use super::{
+            mark_current_string_access_expression_live, string_access_value_is_marked_live,
+        };
 
-            let state_brrw = p.state.borrow();
-            let symbols_brrw = state_brrw.symbol_table.borrow();
-            if symbols_brrw.get_mutable(id).is_some()
-                || string_access_value_is_marked_live(p, &value.borrow())
-            {
-                mark_current_string_access_expression_live(p);
-            }
-        }
-        #[cfg(not(feature = "subscript_formula"))]
+        let state_brrw = p.state.borrow();
+        let symbols_brrw = state_brrw.symbol_table.borrow();
+        if symbols_brrw.get_mutable(id).is_some()
+            || string_access_value_is_marked_live(p, &value.borrow())
         {
-            let _ = value;
+            mark_current_string_access_expression_live(p);
         }
     };
+    #[cfg(not(feature = "subscript_formula"))]
+    let mark_if_live_symbol = |_: &MutableReference| {};
     if let Some(value) = env.and_then(|env| env.get(&id)) {
         return maybe_cast_variable_to_kind(v, value.clone(), p);
     }

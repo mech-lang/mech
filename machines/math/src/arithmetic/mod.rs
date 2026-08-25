@@ -1,4 +1,3 @@
-#[macro_use]
 pub use crate::*;
 #[cfg(feature = "abs")]
 pub mod abs;

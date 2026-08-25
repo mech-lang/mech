@@ -4,7 +4,9 @@ use std::sync::{Arc, Mutex};
 
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration};
 
-use crate::extension::{catch_extension, invoke_extension, invoke_extension_value};
+#[cfg(feature = "resident-external")]
+use crate::extension::invoke_extension_value;
+use crate::extension::{catch_extension, invoke_extension};
 use crate::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
@@ -170,11 +172,13 @@ struct RuntimeResourceProviderEntry {
 }
 
 #[derive(Clone)]
+#[cfg(feature = "resident-external")]
 pub(crate) struct RuntimeResidentProviderBinding {
     scheme: String,
     provider: Rc<dyn RuntimeResourceProvider>,
 }
 
+#[cfg(feature = "resident-external")]
 impl std::fmt::Debug for RuntimeResidentProviderBinding {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -184,6 +188,7 @@ impl std::fmt::Debug for RuntimeResidentProviderBinding {
     }
 }
 
+#[cfg(feature = "resident-external")]
 impl RuntimeResidentProviderBinding {
     pub(crate) fn scheme(&self) -> &str {
         &self.scheme
@@ -381,6 +386,7 @@ impl RuntimeResourceRegistry {
             })
     }
 
+    #[cfg(feature = "resident-external")]
     pub(crate) fn resident_provider_binding(
         &self,
         base_uri: &str,
@@ -417,6 +423,7 @@ impl RuntimeResourceRegistry {
         })
     }
 
+    #[cfg(feature = "resident-routing-source")]
     pub(crate) fn plan_read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
@@ -433,6 +440,7 @@ impl RuntimeResourceRegistry {
         })
     }
 
+    #[cfg(feature = "resident-routing-source")]
     pub(crate) fn plan_write(&self, request: RuntimeResourceWriteRequest) -> MResult<()> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {

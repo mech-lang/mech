@@ -10,15 +10,13 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-#[macro_use]
-extern crate mech_core;
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 extern crate paste;
 
 use paste::paste;
 
-#[cfg(feature = "matrixd")]
+#[cfg(all(feature = "matrixd", not(feature = "matrix1")))]
 use nalgebra::DMatrix;
 #[cfg(feature = "matrix1")]
 use nalgebra::Matrix1;
@@ -31,8 +29,6 @@ use nalgebra::RowVector3;
 #[cfg(feature = "row_vector4")]
 use nalgebra::RowVector4;
 
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
 #[cfg(feature = "range")]
 use num_traits::{One, Zero};
 use std::fmt::Debug;

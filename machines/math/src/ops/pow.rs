@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
@@ -321,7 +320,7 @@ impl MechFunctionImpl for PowRational {
         let rhs_ptr = self.rhs.as_ptr();
         let out_ptr = self.out.as_mut_ptr();
         unsafe {
-            (*out_ptr).0 = (*lhs_ptr).0.pow((*rhs_ptr));
+            (*out_ptr).0 = (*lhs_ptr).0.pow(*rhs_ptr);
         };
         Ok(())
     }

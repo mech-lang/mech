@@ -1,19 +1,30 @@
+#[cfg(feature = "source")]
 mod analyze;
+#[cfg(feature = "source")]
 mod compile;
 mod error;
 mod eval;
+#[cfg(feature = "source")]
 mod extract;
+#[cfg(feature = "source")]
 mod ir;
 mod lower;
 
+#[cfg(feature = "source")]
 use self::analyze::ConfigAnalyzer;
+#[cfg(feature = "source")]
 use self::compile::ConfigCompiler;
 pub use self::error::InvalidConfigField;
+#[cfg(feature = "source")]
 use self::error::*;
+#[cfg(feature = "source")]
 use self::eval::ConfigEvaluator;
 pub use self::eval::ConfigValue;
+#[cfg(feature = "source")]
 use self::extract::{ConfigExtractor, ExtractedConfigProgram};
+#[cfg(feature = "source")]
 use self::ir::{ConfigExpr, ConfigFunction, ConfigItem, ConfigLet, ConfigProgram};
+#[cfg(feature = "source")]
 use self::lower::ConfigLowerer;
 pub use self::lower::{
     ActorBootstrapConfig, BuildHostConfig, ConfigCapabilityGrant, ConfigCapabilityKind,
@@ -21,6 +32,7 @@ pub use self::lower::{
     RuntimeLimitsPatch, ServeHostConfig, ServePresentation,
 };
 
+#[cfg(feature = "source")]
 use mech_core::MResult;
 
 pub const DEFAULT_CONFIG_FILENAME: &str = "mech.mcfg";

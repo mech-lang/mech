@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;

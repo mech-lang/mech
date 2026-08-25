@@ -6,28 +6,6 @@ use crate::{
     ResourcePathCapability, ResourcePathScope, RuntimeCapabilityOperation, SharedCapabilityKernel,
 };
 
-pub(crate) fn grant_read(runtime: &mut MechRuntime, resource: &str, path: &str) {
-    let subject = runtime.runtime_context().unwrap().subject;
-    grant_resource(
-        runtime,
-        &subject,
-        resource,
-        RuntimeCapabilityOperation::Read,
-        &[path],
-    );
-}
-
-pub(crate) fn grant_write(runtime: &mut MechRuntime, resource: &str, path: &str) {
-    let subject = runtime.runtime_context().unwrap().subject;
-    grant_resource(
-        runtime,
-        &subject,
-        resource,
-        RuntimeCapabilityOperation::Write,
-        &[path],
-    );
-}
-
 pub(crate) fn grant_resource(
     runtime: &mut MechRuntime,
     subject: &str,

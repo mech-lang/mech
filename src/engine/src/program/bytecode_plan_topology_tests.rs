@@ -1,6 +1,5 @@
 #![cfg(feature = "compiler")]
 
-use crate::Interpreter;
 use crate::{
     ArtifactSource, BindingDeclaration, CompilerPlanningConfig, CompilerPlanningProgram,
     InitializerReference, ProducerReference, ProgramArtifact, SlotRole,
@@ -19,11 +18,10 @@ use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionSpecializer,
     GuardFunctionSafety, IncorrectNumberOfArguments, InputPortLayout, InputPortPolicy, LegacyValue,
     MResult, MechError, MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ParsedProgram, Plan,
-    ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState,
-    Ref, Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
-    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
-    SchemaBody, SchemaId, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ParsedProgram, Ref,
+    Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, SchemaBody, SchemaId,
+    ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},

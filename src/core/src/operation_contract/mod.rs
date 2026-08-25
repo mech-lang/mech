@@ -10,6 +10,5 @@ mod resolved;
 mod validation;
 
 pub use declaration::*;
-pub use encoding::*;
 pub use resolved::*;
 pub use validation::*;

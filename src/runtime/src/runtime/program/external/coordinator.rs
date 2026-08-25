@@ -142,7 +142,6 @@ struct RuntimeResidentPublicationAuthority {
 // accepted-receipt and ordinary-outbox preparation, transactional preparation,
 // and compensatable application all succeed. Its only post-publication work is
 // infallible local append, transactional commit, and after-commit delivery.
-#[allow(unsafe_code)]
 unsafe impl ResidentExternalPublicationAuthority for RuntimeResidentPublicationAuthority {}
 
 pub struct ResidentExternalCoordinator {
@@ -291,6 +290,7 @@ impl ResidentExternalCoordinator {
             .expect("resident instance is present")
     }
 
+    #[cfg(feature = "resident-routing-source")]
     pub(crate) fn instance_mut(&mut self) -> &mut ReactiveInstance {
         self.instance
             .as_mut()
@@ -305,6 +305,7 @@ impl ResidentExternalCoordinator {
     /// authoritative value, including duplicates introduced by the candidate.
     /// Observations with a newly introduced source identity remain unseeded and
     /// will read their provider on first use.
+    #[cfg(feature = "resident-routing-source")]
     pub(crate) fn preserve_compatible_live_inputs_from(
         &mut self,
         previous: &ResidentExternalCoordinator,
@@ -426,6 +427,7 @@ impl ResidentExternalCoordinator {
         self.reserve_live_turn()
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn execute_admitted_host_turn<F>(
         &mut self,
         updates: &[crate::RuntimeHostInputUpdate],
@@ -438,6 +440,7 @@ impl ResidentExternalCoordinator {
         self.execute_live_turn(Some(updates), admission, prepublication)
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn execute_admitted_turn<F>(
         &mut self,
         admission: ResidentExternalTurnAdmission,
@@ -449,6 +452,7 @@ impl ResidentExternalCoordinator {
         self.execute_live_turn(None, admission, prepublication)
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn admit_turn(&mut self) -> MResult<ResidentExternalTurnAdmission> {
         self.ensure_live_bindings()?;
         self.reserve_live_turn()
@@ -898,7 +902,6 @@ impl ResidentExternalCoordinator {
         Ok(())
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn prepare_and_publish<F>(
         &mut self,
         prepared_turn: PreparedResidentTurn<'_>,
@@ -1631,7 +1634,7 @@ impl ResidentExternalCoordinator {
         })
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, feature = "semantic-compiler"))]
     pub(super) fn accepted_record_without_materialized_effects_for_test(
         &self,
         summary: ResidentTurnSummary,
@@ -1647,7 +1650,6 @@ impl ResidentExternalCoordinator {
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn append_rejected(
         &mut self,
         permit: LedgerPermit,
@@ -1704,7 +1706,6 @@ impl ResidentExternalCoordinator {
         })
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn reject_with_cleanup(
         &mut self,
         permit: LedgerPermit,

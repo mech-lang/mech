@@ -1,6 +1,5 @@
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 use std::sync::LazyLock;
 
@@ -70,7 +69,7 @@ impl MechFunctionImpl for SetRemoveFxn {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
             // Get mutable reference to the output set
-            let mut out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
+            let out_ptr: &mut MechSet = &mut *(self.out.as_mut_ptr());
 
             // Get references to arg1 and arg2 sets
             let set_ptr: &MechSet = &*(self.arg1.as_ptr());
@@ -80,7 +79,7 @@ impl MechFunctionImpl for SetRemoveFxn {
             out_ptr.set.clear();
 
             // Remove arg2 into arg1
-            if (set_ptr.kind == elem_ptr.kind()) {
+            if set_ptr.kind == elem_ptr.kind() {
                 out_ptr.set = set_ptr.set.clone();
                 out_ptr.set.shift_remove(elem_ptr);
             }
@@ -157,7 +156,7 @@ impl FunctionSpecializer for SetRemove {
         let arg2 = arguments[1].clone();
         match set_remove_fxn(arg1.clone(), arg2.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (arg1, arg2) {
+            Err(_) => match (arg1, arg2) {
                 (LegacyValue::MutableReference(arg1), LegacyValue::MutableReference(arg2)) => {
                     set_remove_fxn(arg1.borrow().clone(), arg2.borrow().clone())
                 }

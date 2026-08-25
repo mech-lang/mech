@@ -1,6 +1,5 @@
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
 // Size --------------------------------------------------------------------------
@@ -108,9 +107,9 @@ impl FunctionSpecializer for SetSize {
             Ok(fxn) => Ok(fxn),
             Err(_) => match input {
                 LegacyValue::MutableReference(r) => set_size_fxn(r.borrow().clone()),
-                x => Err(MechError::new(
+                input => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
-                        arg: arguments[0].kind(),
+                        arg: input.kind(),
                         fxn_name: "set/size".to_string(),
                     },
                     None,

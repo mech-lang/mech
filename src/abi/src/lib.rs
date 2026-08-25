@@ -1,20 +1,17 @@
-#![allow(non_camel_case_types)]
-
 pub const MECH_MODULE_ABI_VERSION_V1: u32 = 1;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct MechStatusV1(pub i32);
 
-#[allow(non_upper_case_globals)]
 impl MechStatusV1 {
-    pub const Ok: Self = Self(0);
-    pub const InvalidIndex: Self = Self(1);
-    pub const NullPointer: Self = Self(2);
-    pub const WrongType: Self = Self(3);
-    pub const WrongShape: Self = Self(4);
-    pub const Unsupported: Self = Self(5);
-    pub const Panic: Self = Self(6);
+    pub const OK: Self = Self(0);
+    pub const INVALID_INDEX: Self = Self(1);
+    pub const NULL_POINTER: Self = Self(2);
+    pub const WRONG_TYPE: Self = Self(3);
+    pub const WRONG_SHAPE: Self = Self(4);
+    pub const UNSUPPORTED: Self = Self(5);
+    pub const PANIC: Self = Self(6);
 }
 
 /// Borrowed UTF-8 string view owned by the dynamic module.
@@ -77,11 +74,10 @@ impl MechStrV1 {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct MechKernelKindV1(pub u32);
 
-#[allow(non_upper_case_globals)]
 impl MechKernelKindV1 {
-    pub const UnaryF64ToF64: Self = Self(1);
-    pub const BinaryF64F64ToF64: Self = Self(2);
-    pub const UnaryF64ViewToF64View: Self = Self(3);
+    pub const UNARY_F64_TO_F64: Self = Self(1);
+    pub const BINARY_F64_F64_TO_F64: Self = Self(2);
+    pub const UNARY_F64_VIEW_TO_F64_VIEW: Self = Self(3);
 }
 
 /// Kernel for a unary scalar f64 function.
@@ -156,14 +152,14 @@ macro_rules! mech_dynamic_module_v1 {
             out: *mut $crate::MechStrV1,
         ) -> $crate::MechStatusV1 {
             if out.is_null() {
-                return $crate::MechStatusV1::NullPointer;
+                return $crate::MechStatusV1::NULL_POINTER;
             }
 
             unsafe {
                 *out = $crate::MechStrV1::from_static($module_name);
             }
 
-            $crate::MechStatusV1::Ok
+            $crate::MechStatusV1::OK
         }
 
         #[unsafe(no_mangle)]
@@ -177,7 +173,7 @@ macro_rules! mech_dynamic_module_v1 {
             out: *mut $crate::MechExportV1,
         ) -> $crate::MechStatusV1 {
             if out.is_null() {
-                return $crate::MechStatusV1::NullPointer;
+                return $crate::MechStatusV1::NULL_POINTER;
             }
 
             let exports: &[$crate::MechExportV1] = &[
@@ -189,14 +185,14 @@ macro_rules! mech_dynamic_module_v1 {
             ];
 
             let Some(export) = exports.get(index).copied() else {
-                return $crate::MechStatusV1::InvalidIndex;
+                return $crate::MechStatusV1::INVALID_INDEX;
             };
 
             unsafe {
                 *out = export;
             }
 
-            $crate::MechStatusV1::Ok
+            $crate::MechStatusV1::OK
         }
     };
 
@@ -205,7 +201,7 @@ macro_rules! mech_dynamic_module_v1 {
     (@export unary_f64_to_f64, $export_name:expr, $function:path) => {
         $crate::MechExportV1 {
             name: $crate::MechStrV1::from_static($export_name),
-            kind: $crate::MechKernelKindV1::UnaryF64ToF64,
+            kind: $crate::MechKernelKindV1::UNARY_F64_TO_F64,
             function: $crate::MechKernelFnV1 {
                 unary_f64_to_f64: $function,
             },
@@ -215,7 +211,7 @@ macro_rules! mech_dynamic_module_v1 {
     (@export binary_f64_f64_to_f64, $export_name:expr, $function:path) => {
         $crate::MechExportV1 {
             name: $crate::MechStrV1::from_static($export_name),
-            kind: $crate::MechKernelKindV1::BinaryF64F64ToF64,
+            kind: $crate::MechKernelKindV1::BINARY_F64_F64_TO_F64,
             function: $crate::MechKernelFnV1 {
                 binary_f64_f64_to_f64: $function,
             },
@@ -225,7 +221,7 @@ macro_rules! mech_dynamic_module_v1 {
     (@export unary_f64_view_to_f64_view, $export_name:expr, $function:path) => {
         $crate::MechExportV1 {
             name: $crate::MechStrV1::from_static($export_name),
-            kind: $crate::MechKernelKindV1::UnaryF64ViewToF64View,
+            kind: $crate::MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
             function: $crate::MechKernelFnV1 {
                 unary_f64_view_to_f64_view: $function,
             },
@@ -239,15 +235,15 @@ mod tests {
 
     #[test]
     fn dynamic_abi_constants_retain_numeric_values() {
-        assert_eq!(MechStatusV1::Ok.0, 0);
-        assert_eq!(MechStatusV1::InvalidIndex.0, 1);
-        assert_eq!(MechStatusV1::NullPointer.0, 2);
-        assert_eq!(MechStatusV1::WrongType.0, 3);
-        assert_eq!(MechStatusV1::WrongShape.0, 4);
-        assert_eq!(MechStatusV1::Unsupported.0, 5);
-        assert_eq!(MechStatusV1::Panic.0, 6);
-        assert_eq!(MechKernelKindV1::UnaryF64ToF64.0, 1);
-        assert_eq!(MechKernelKindV1::BinaryF64F64ToF64.0, 2);
-        assert_eq!(MechKernelKindV1::UnaryF64ViewToF64View.0, 3);
+        assert_eq!(MechStatusV1::OK.0, 0);
+        assert_eq!(MechStatusV1::INVALID_INDEX.0, 1);
+        assert_eq!(MechStatusV1::NULL_POINTER.0, 2);
+        assert_eq!(MechStatusV1::WRONG_TYPE.0, 3);
+        assert_eq!(MechStatusV1::WRONG_SHAPE.0, 4);
+        assert_eq!(MechStatusV1::UNSUPPORTED.0, 5);
+        assert_eq!(MechStatusV1::PANIC.0, 6);
+        assert_eq!(MechKernelKindV1::UNARY_F64_TO_F64.0, 1);
+        assert_eq!(MechKernelKindV1::BINARY_F64_F64_TO_F64.0, 2);
+        assert_eq!(MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW.0, 3);
     }
 }

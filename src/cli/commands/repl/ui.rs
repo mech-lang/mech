@@ -38,6 +38,7 @@ impl ReplUi {
         })
     }
 
+    #[cfg(test)]
     pub(super) const fn rich() -> Self {
         Self {
             mode: ReplRenderMode::Rich,

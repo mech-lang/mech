@@ -2,7 +2,7 @@ use crate::{
     ActivationArm, ActivationArmBody, ActivationScope, CompiledPattern, ComprehensionQualifier,
     Expression, Factor, FunctionDefinition, FunctionResolver, GuardFunctionSafety, Interpreter,
     LegacyValue, MResult, MechCode, MechError, MechErrorKind, Pattern, RangeExpression,
-    ReactiveCellId, ResolvedNamedFunction, Slice, SliceRef, Statement, Structure, Subscript, Token,
+    ReactiveCellId, ResolvedNamedFunction, Slice, Statement, Structure, Subscript, Token,
     ValueKind, compile_pattern,
 };
 use std::collections::HashSet;
@@ -11,8 +11,7 @@ use super::{
     ActivationPatternArmsNonExhaustive, ActivationPatternCapture,
     ActivationPatternCaptureKindUnsupported, ActivationPatternContextEffectUnsupported,
     ActivationPatternDefinitionUnsupported, ActivationPatternGuardMustBePure,
-    ActivationPatternRegisterWriteUnsupported, ActivationPatternTriggerInvariant,
-    ActivationPatternWildcardMustBeLast, ActivationScopeTriggerWriteUnsupported,
+    ActivationPatternTriggerInvariant, ActivationPatternWildcardMustBeLast,
     arms::{PreflightActivationArm, PreflightPatternedActivation},
     create_capture_slot_for_kind,
     registers::validate_patterned_register_write,

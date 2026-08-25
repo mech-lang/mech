@@ -121,7 +121,7 @@ pub fn variable_define(
             }
             // Atoms can't convert into anything else.
             #[cfg(feature = "atom")]
-            (LegacyValue::Atom(given_variant_id), target_kind) => {
+            (LegacyValue::Atom(given_variant_id), _) => {
                 return Err(MechError::new(
                     UnableToConvertAtomError {
                         atom_id: given_variant_id.borrow().0.0,
@@ -132,7 +132,7 @@ pub fn variable_define(
                 .with_tokens(var_def.expression.tokens()));
             }
             #[cfg(feature = "record")]
-            (LegacyValue::Record(rec), ref target_kind @ ValueKind::Record(target_rec_knd)) => {
+            (LegacyValue::Record(rec), ref target_kind @ ValueKind::Record(_)) => {
                 let rec_brrw = rec.borrow();
                 let rec_knd = rec_brrw.kind();
                 if &rec_knd != *target_kind {
@@ -213,7 +213,7 @@ pub fn variable_define(
                 }
             }
             // Kind isn't checked
-            x => {
+            _ => {
                 result = execute_catalog_operation(
                     p,
                     &plan,
@@ -228,8 +228,8 @@ pub fn variable_define(
             mark_string_access_value_live(p, &detached_result);
         }
         // Save symbol to interpreter
-        let mut state = p.state.borrow_mut();
-        let val_ref = state.save_symbol(
+        let state = p.state.borrow_mut();
+        state.save_symbol(
             var_id,
             var_name.clone(),
             detached_result.clone(),
@@ -250,14 +250,14 @@ pub fn variable_define(
         plan.register_function(var_def_fxn, &[])?;
         return Ok(detached_result);
     }
-    let mut state_brrw = p.state.borrow_mut();
+    let state_brrw = p.state.borrow_mut();
     let detached_result = detach_variable_value(&result);
     #[cfg(feature = "subscript_formula")]
     if string_access_result_is_live {
         mark_string_access_value_live(p, &detached_result);
     }
     // Save symbol to interpreter
-    let val_ref = state_brrw.save_symbol(
+    state_brrw.save_symbol(
         var_id,
         var_name.clone(),
         detached_result.clone(),

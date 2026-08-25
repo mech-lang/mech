@@ -2,6 +2,10 @@ use super::{
     ComprehensionGeneratorError, Environment, ReactiveComprehensionStructureUnsupported, expression,
 };
 #[cfg(feature = "matrix_comprehensions")]
+use crate::MatrixComprehension;
+#[cfg(any(feature = "rational", feature = "complex"))]
+use crate::ToValue;
+#[cfg(feature = "matrix_comprehensions")]
 pub use crate::intrinsics::constructors::ValueMatrixComprehension;
 #[cfg(feature = "set_comprehensions")]
 pub use crate::intrinsics::constructors::ValueSetComprehension;
@@ -9,12 +13,12 @@ use crate::patterns::PatternBindingSink;
 use crate::{
     ComprehensionQualifier, ExternalInteraction, FunctionSpecializer, Interpreter,
     InterpreterExecution, LegacyValue, MResult, MechError, MechFunction, ReactiveNodeKind, Ref,
-    ToValue, execute_catalog_operation, hash_str, val_ref_reactive_cell_ids,
+    execute_catalog_operation, hash_str, val_ref_reactive_cell_ids,
 };
-#[cfg(feature = "matrix_comprehensions")]
-use crate::{Matrix, MatrixComprehension};
 #[cfg(feature = "set_comprehensions")]
 use crate::{MechSet, SetComprehension};
+#[cfg(feature = "matrix_comprehensions")]
+use mech_core::matrix::Matrix;
 use std::collections::{HashMap, HashSet};
 
 #[cfg(any(feature = "set_comprehensions", feature = "matrix_comprehensions"))]

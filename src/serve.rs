@@ -21,6 +21,10 @@ use mech_runtime::{
     RuntimeWorkspaceWatchEvent, SERVE_HOST_SUBJECT, ServerWorkspaceSession, SourceKind,
     SourceResolutionEntry, check_fs_capability, validate_source_resolution_entries,
 };
+use mech_syntax::{
+    formatter::{Formatter, HtmlShimExtraSlots, HtmlStyleSheets, validate_shipped_shim_render},
+    parser,
+};
 use warp::Filter;
 
 use crate::*;
@@ -728,8 +732,7 @@ impl ServerShutdown {
         {
             return false;
         }
-        let _ = self.sender.send(true);
-        true
+        self.sender.send(true).is_ok()
     }
 }
 
@@ -1329,7 +1332,7 @@ impl MechServer {
         let (_addr, server) =
             warp::serve(routes).bind_with_graceful_shutdown(socket_address, async move {
                 if !*server_shutdown_rx.borrow() {
-                    let _ = server_shutdown_rx.changed().await;
+                    drop(server_shutdown_rx.changed().await);
                 }
             });
         if let (Some(session), Some(root)) = (&self.workspace_session, &root) {
@@ -2901,7 +2904,9 @@ mod tests {
                 let server_future = server.serve_until_shutdown(shutdown_rx);
                 let shutdown_future = async move {
                     tokio::time::sleep(std::time::Duration::from_millis(50)).await;
-                    let _ = shutdown_tx.send(true);
+                    shutdown_tx
+                        .send(true)
+                        .expect("test server shutdown receiver must remain live");
                 };
 
                 tokio::time::timeout(std::time::Duration::from_secs(2), async move {

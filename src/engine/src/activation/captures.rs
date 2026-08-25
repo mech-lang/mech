@@ -1,6 +1,4 @@
-use super::{
-    ActivationPatternCaptureKindUnsupported, ActivationPatternTransactionBoolStateUnsupported,
-};
+use super::ActivationPatternCaptureKindUnsupported;
 #[cfg(feature = "complex")]
 use crate::C64;
 #[cfg(feature = "atom")]
@@ -31,14 +29,16 @@ pub(super) fn generation() -> (Ref<usize>, LegacyValue) {
     (generation.clone(), LegacyValue::Index(generation))
 }
 
-pub(super) fn transaction_bool_state(value: &Ref<bool>) -> MResult<LegacyValue> {
+pub(super) fn transaction_bool_state(
+    #[cfg(any(feature = "bool", feature = "variable_define"))] value: &Ref<bool>,
+    #[cfg(not(any(feature = "bool", feature = "variable_define")))] _: &Ref<bool>,
+) -> MResult<LegacyValue> {
     #[cfg(any(feature = "bool", feature = "variable_define"))]
     {
         Ok(LegacyValue::Bool(value.clone()))
     }
     #[cfg(not(any(feature = "bool", feature = "variable_define")))]
     {
-        let _ = value;
         Err(MechError::new(
             ActivationPatternTransactionBoolStateUnsupported,
             None,

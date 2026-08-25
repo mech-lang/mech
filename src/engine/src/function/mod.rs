@@ -1,10 +1,17 @@
+#[cfg(feature = "trace")]
 use crate::tracing::{
     format_trace, format_trace_args, summarize_function_pattern, summarize_function_value,
     summarize_values_with_kinds,
 };
+#[cfg(feature = "semantic-compiler")]
 use crate::*;
-#[cfg(all(feature = "kind_annotation", feature = "enum"))]
+#[cfg(all(
+    feature = "semantic-compiler",
+    feature = "kind_annotation",
+    feature = "enum"
+))]
 use std::collections::HashSet;
+#[cfg(feature = "semantic-compiler")]
 use std::sync::Arc;
 
 #[cfg(feature = "semantic-compiler")]
@@ -12,47 +19,6 @@ pub use crate::expressions::function_call;
 
 // Functions
 // ============================================================================
-
-// Frames
-// ----------------------------------------------------------------------------
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum FrameState {
-    Running,
-    Suspended,
-    Completed,
-}
-
-// One activation record on the call stack. Every user-function invocation gets
-// its own Frame so locals and the instruction pointer don't bleed across calls.
-#[derive(Clone)]
-pub struct Frame {
-    plan: Plan,
-    ip: usize,                // index of the next instruction to execute
-    locals: SymbolTableRef,   // variables local to this invocation
-    out: Option<LegacyValue>, // value yielded by a coroutine, if any
-    state: FrameState,        // Running / Suspended / Completed
-}
-
-impl Frame {
-    pub(crate) fn checkpoint_plan(&self) -> Plan {
-        self.plan.clone()
-    }
-
-    pub(crate) fn checkpoint_locals(&self) -> SymbolTableRef {
-        self.locals.clone()
-    }
-
-    pub(crate) fn checkpoint_out(&self) -> Option<LegacyValue> {
-        self.out.clone()
-    }
-}
-
-// The call stack is a simple growable list of frames; the last entry is current.
-#[derive(Clone)]
-pub struct Stack {
-    frames: Vec<Frame>,
-}
 
 // Registers a user-written function so it can be called by name later.
 // Hashes the name to a u64 id used as the lookup key throughout the runtime.
@@ -161,6 +127,7 @@ mod source_only {
         Ok(output)
     }
 
+    #[cfg(test)]
     pub(crate) fn execute_initialized_indexed_compiler(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
@@ -519,7 +486,11 @@ mod source_only {
         }
 
         // Try each arm in source order; the first one whose pattern matches wins.
-        for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
+        for indexed_arm in fxn_def.code.match_arms.iter().enumerate() {
+            #[cfg(feature = "trace")]
+            let (arm_idx, arm) = indexed_arm;
+            #[cfg(not(feature = "trace"))]
+            let (_, arm) = indexed_arm;
             let mut env = Environment::new();
             let matched = crate::patterns::pattern_matches_arguments(
                 &arm.pattern,
@@ -1444,7 +1415,8 @@ mod source_only {
 
 #[cfg(feature = "semantic-compiler")]
 pub use source_only::*;
-pub mod catalog;
+#[path = "catalog.rs"]
+pub(crate) mod engine_catalog;
 pub mod environment;
 pub mod extensions;
 #[cfg(feature = "program")]
@@ -1455,7 +1427,7 @@ pub mod module;
 pub mod native;
 pub mod resolver;
 
-pub use catalog::*;
+pub use engine_catalog::*;
 pub use environment::*;
 pub use extensions::*;
 #[cfg(feature = "program")]

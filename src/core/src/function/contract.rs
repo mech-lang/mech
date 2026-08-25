@@ -1,7 +1,7 @@
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "no_std", not(feature = "std")))]
 use alloc::string::{String, ToString};
-#[cfg(not(feature = "no_std"))]
-use std::string::{String, ToString};
+#[cfg(any(not(feature = "no_std"), feature = "std"))]
+use std::string::String;
 
 use crate::{
     FunctionArgs, FunctionArgumentRole, FunctionMatrixDescriptor, MResult, MechError, MechErrorKind,

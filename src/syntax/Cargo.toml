@@ -19,6 +19,7 @@ gitlab = { repository = "mech-lang/syntax", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [features]
+std = ["mech-core/std"]
 no_std = ["mech-core/no_std"]
 
 default = []
@@ -164,7 +165,7 @@ matrix_vertcat = ["matrix"]
 
 
 [dependencies]
-mech-core = {version = "0.3.5", default-features = false}
+mech-core = {version = "0.3.5", path = "../core", default-features = false}
 
 nom = "7.1.3"
 nom-unicode = "0.4.0"

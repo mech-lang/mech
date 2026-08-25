@@ -1,11 +1,7 @@
 use crate::intrinsics::IndexOutOfBoundsError;
 use crate::*;
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use std::cell::RefCell as StdRefCell;
-#[cfg(feature = "invariant_define")]
-use std::collections::BTreeMap;
 use std::collections::{HashMap, HashSet};
-use std::io::{Cursor, Read, Write};
 use std::ops::Deref;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::rc::Rc;
@@ -49,8 +45,6 @@ pub struct Interpreter {
     #[cfg(feature = "functions")]
     pub(crate) persistent_user_function_plan_depth: Ref<usize>,
     pub(crate) deferred_expression_solve_depth: Ref<usize>,
-    #[cfg(feature = "functions")]
-    pub stack: Vec<Frame>,
     pub code: Vec<MechSourceCode>,
     pub out: LegacyValue,
     pub out_values: Ref<HashMap<u64, LegacyValue>>,
@@ -255,57 +249,6 @@ impl SymbolTableCellCheckpoint {
 
     fn apply(&self) {
         self.target.borrow_mut().apply_restore(&self.snapshot);
-    }
-}
-
-#[cfg(feature = "functions")]
-struct FrameCellCheckpoint {
-    locals: SymbolTableCellCheckpoint,
-    plan: Plan,
-    plan_checkpoint: PlanCheckpoint,
-}
-
-#[cfg(feature = "functions")]
-impl FrameCellCheckpoint {
-    fn capture(
-        frame: &Frame,
-        interpreter_id: u64,
-        journal: &mut ValueStateJournal,
-    ) -> MResult<Self> {
-        let plan = frame.checkpoint_plan();
-        checkpoint_preflight_plan_capture(&plan, interpreter_id)?;
-        for value in plan.transaction_state_values()? {
-            journal.capture_value(&value)?;
-        }
-        if let Some(value) = frame.checkpoint_out() {
-            journal.capture_value(&value)?;
-        }
-        Ok(Self {
-            locals: SymbolTableCellCheckpoint::capture(
-                &frame.checkpoint_locals(),
-                interpreter_id,
-                journal,
-            )?,
-            plan_checkpoint: plan.checkpoint(),
-            plan,
-        })
-    }
-
-    fn preflight(&self, interpreter_id: u64) -> MResult<()> {
-        self.locals.preflight(interpreter_id)?;
-        self.plan.preflight_rollback(&self.plan_checkpoint)
-    }
-
-    fn apply_structure(&self) {
-        self.locals.apply();
-        self.plan.apply_rollback_structure(&self.plan_checkpoint);
-    }
-
-    fn rebuild_checkpoint_indexes(&self) {
-        self.plan.rebuild_checkpoint_indexes();
-        self.plan
-            .validate_checkpoint_invariants()
-            .expect("frame checkpoint preflight guarantees restored plan invariants");
     }
 }
 
@@ -699,10 +642,6 @@ struct InterpreterStructureCheckpoint {
     #[cfg(feature = "functions")]
     persistent_user_function_plan_depth: RefPayloadCheckpoint<usize>,
     deferred_expression_solve_depth: RefPayloadCheckpoint<usize>,
-    #[cfg(feature = "functions")]
-    stack: Vec<Frame>,
-    #[cfg(feature = "functions")]
-    frame_checkpoints: Vec<FrameCellCheckpoint>,
     code: Vec<MechSourceCode>,
     out: LegacyValue,
     out_values: RefPayloadCheckpoint<HashMap<u64, LegacyValue>>,
@@ -739,17 +678,6 @@ impl InterpreterStructureCheckpoint {
         let out_values = RefPayloadCheckpoint::capture(&interpreter.out_values, interpreter.id)?;
         for value in out_values.payload.values() {
             journal.capture_value(value)?;
-        }
-
-        #[cfg(feature = "functions")]
-        let mut frame_checkpoints = Vec::with_capacity(interpreter.stack.len());
-        #[cfg(feature = "functions")]
-        for frame in &interpreter.stack {
-            frame_checkpoints.push(FrameCellCheckpoint::capture(
-                frame,
-                interpreter.id,
-                journal,
-            )?);
         }
 
         let sub_interpreter_entries =
@@ -810,10 +738,6 @@ impl InterpreterStructureCheckpoint {
                 &interpreter.deferred_expression_solve_depth,
                 interpreter.id,
             )?,
-            #[cfg(feature = "functions")]
-            stack: interpreter.stack.clone(),
-            #[cfg(feature = "functions")]
-            frame_checkpoints,
             code: interpreter.code.clone(),
             out: interpreter.out.clone(),
             out_values,
@@ -877,10 +801,6 @@ impl InterpreterStructureCheckpoint {
         #[cfg(feature = "state_machines")]
         self.user_state_machine_specs.preflight(self.id)?;
         checkpoint_preflight_ref(&self.sub_interpreters, self.id)?;
-        #[cfg(feature = "functions")]
-        for frame in &self.frame_checkpoints {
-            frame.preflight(self.id)?;
-        }
         for child in &self.children {
             checkpoint_preflight_ref(&child.target, self.id)?;
             let child_borrow = child.target.try_borrow().map_err(|_| {
@@ -921,7 +841,6 @@ impl InterpreterStructureCheckpoint {
             interpreter.reactive_turn_state = self.reactive_turn_state.clone();
             interpreter.persistent_user_function_plan_depth =
                 self.persistent_user_function_plan_depth.target.clone();
-            interpreter.stack = self.stack.clone();
         }
         interpreter.deferred_expression_solve_depth =
             self.deferred_expression_solve_depth.target.clone();
@@ -962,11 +881,6 @@ impl InterpreterStructureCheckpoint {
         self.user_state_machines.apply();
         #[cfg(feature = "state_machines")]
         self.user_state_machine_specs.apply();
-        #[cfg(feature = "functions")]
-        for frame in &self.frame_checkpoints {
-            frame.apply_structure();
-        }
-
         *self.sub_interpreters.borrow_mut() = self.sub_interpreter_entries.clone();
         for child in &self.children {
             let mut child_borrow = child.target.borrow_mut();
@@ -979,9 +893,6 @@ impl InterpreterStructureCheckpoint {
         {
             self.state
                 .rebuild_checkpoint_indexes(&self.reactive_turn_state);
-            for frame in &self.frame_checkpoints {
-                frame.rebuild_checkpoint_indexes();
-            }
         }
         for child in &self.children {
             child.checkpoint.rebuild_checkpoint_indexes();
@@ -1062,7 +973,7 @@ impl MechErrorKind for InterpreterReactiveTurnInvariant {
     }
 }
 
-#[cfg(feature = "functions")]
+#[cfg(all(feature = "functions", feature = "trace"))]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterpreterReactiveTurnBorrowConflict {
     pub phase: &'static str,
@@ -1070,7 +981,7 @@ pub struct InterpreterReactiveTurnBorrowConflict {
     pub component: &'static str,
 }
 
-#[cfg(feature = "functions")]
+#[cfg(all(feature = "functions", feature = "trace"))]
 impl MechErrorKind for InterpreterReactiveTurnBorrowConflict {
     fn name(&self) -> &str {
         "InterpreterReactiveTurnBorrowConflict"
@@ -1126,8 +1037,6 @@ impl Clone for Interpreter {
             #[cfg(feature = "functions")]
             persistent_user_function_plan_depth: self.persistent_user_function_plan_depth.clone(),
             deferred_expression_solve_depth: self.deferred_expression_solve_depth.clone(),
-            #[cfg(feature = "functions")]
-            stack: self.stack.clone(),
             code: self.code.clone(),
             out: self.out.clone(),
             out_values: self.out_values.clone(),
@@ -1162,7 +1071,7 @@ impl Interpreter {
         .with_compiler_loc()
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(feature = "functions", feature = "trace"))]
     fn reactive_turn_borrow_conflict(
         &self,
         phase: &'static str,
@@ -1392,8 +1301,6 @@ impl Interpreter {
             #[cfg(feature = "functions")]
             persistent_user_function_plan_depth: Ref::new(0),
             deferred_expression_solve_depth: Ref::new(0),
-            #[cfg(feature = "functions")]
-            stack: Vec::new(),
             out: LegacyValue::Empty,
             sub_interpreters: Ref::new(HashMap::new()),
             out_values: Ref::new(HashMap::new()),
@@ -1520,14 +1427,14 @@ impl Interpreter {
         self.checkpoint_owner = checkpoint_owner;
     }
 
-    pub fn set_trace_enabled(&mut self, enabled: bool) {
+    pub fn set_trace_enabled(
+        &mut self,
+        #[cfg(feature = "trace")] enabled: bool,
+        #[cfg(not(feature = "trace"))] _: bool,
+    ) {
         #[cfg(feature = "trace")]
         {
             self.trace = enabled;
-        }
-        #[cfg(not(feature = "trace"))]
-        {
-            let _ = enabled;
         }
     }
 

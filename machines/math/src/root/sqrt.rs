@@ -1,12 +1,15 @@
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Sqrt ------------------------------------------------------------------------
 
-use libm::{sqrt, sqrtf};
+#[cfg(feature = "f64")]
+use libm::sqrt;
+#[cfg(feature = "f32")]
+use libm::sqrtf;
+#[cfg(feature = "f64")]
 macro_rules! sqrt_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -15,6 +18,7 @@ macro_rules! sqrt_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! sqrt_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -25,6 +29,7 @@ macro_rules! sqrt_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! sqrtf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -33,6 +38,7 @@ macro_rules! sqrtf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! sqrtf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -52,7 +58,7 @@ impl_math_unop!(MathSqrt, f64, sqrt);
 fn impl_sqrt_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathSqrt,
-      (lhs_value),
+      lhs_value,
       F32 => MatrixF32, F32, f32::zero(), "f32";
       F64 => MatrixF64, F64, f64::zero(), "f64";
     )
@@ -77,8 +83,8 @@ impl FunctionSpecializer for MathSqrt {
         let input = arguments[0].clone();
         match impl_sqrt_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match (input) {
-                (LegacyValue::MutableReference(input)) => impl_sqrt_fxn(input.borrow().clone()),
+            Err(_) => match input {
+                LegacyValue::MutableReference(input) => impl_sqrt_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

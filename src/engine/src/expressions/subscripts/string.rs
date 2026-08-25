@@ -1,5 +1,5 @@
 use super::super::variables::addressed_identifier_hash;
-use super::{Environment, factor};
+use super::Environment;
 use crate::{
     Expression, Factor, InterpreterExecution, LegacyValue, MResult, MutableReference, Subscript,
     ValueKind,

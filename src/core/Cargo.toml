@@ -68,6 +68,7 @@ semantic-compiler = ["program"]
 compiler = ["semantic-compiler"]
 program = ["crc32fast", "byteorder"]
 native-plan = ["functions"]
+native-link = []
 pretty_print = ["tabled", "serde_json"]
 serde = ["brotli", "base64", "serde_derive", "serde_json", "bincode", "indexmap/serde", "bincode/serde", "dep:serde"]
 mika = []
@@ -193,10 +194,5 @@ criterion = { version = "0.8.2", default-features = false, features = ["cargo_be
 
 [[bench]]
 name = "value_state_journal"
-harness = false
-required-features = ["baselib"]
-
-[[bench]]
-name = "solve_result_overhead"
 harness = false
 required-features = ["baselib"]

@@ -1236,6 +1236,7 @@ mod tests {
         LegacyValue::Typed(Box::new(value), kind)
     }
 
+    #[cfg(any(feature = "record", all(feature = "matrix", feature = "u8")))]
     fn typed_reference(value: LegacyValue) -> LegacyValue {
         let kind = value.kind();
         LegacyValue::MutableReference(Ref::new(LegacyValue::Typed(Box::new(value), kind)))

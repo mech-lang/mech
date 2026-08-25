@@ -19,14 +19,14 @@ standard-hosts = [
 full-hosts = ["standard-hosts", "dep:mech-robot-arm"]
 
 [dependencies]
-mech-core = { version = "0.3.5", default-features = false, features = ["native-plan", "program", "serde"] }
-mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "serde", "string"] }
-mech-terminal = { version = "0.3.5", default-features = false, features = ["provider"], optional = true }
-mech-console = { version = "0.3.5", default-features = false, features = ["native"], optional = true }
-mech-robot-arm = { version = "0.3.5", default-features = false, features = ["provider"], optional = true }
-mech-scene = { version = "0.3.5", default-features = false, features = ["native"], optional = true }
-mech-time = { version = "0.3.5", default-features = false, features = ["native"], optional = true }
-mech-timer = { version = "0.3.5", default-features = false, features = ["native"], optional = true }
+mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["native-plan", "program", "serde"] }
+mech-runtime = { version = "0.3.5", path = "../runtime", default-features = false, features = ["runtime", "serde", "string"] }
+mech-terminal = { version = "0.3.5", path = "../../hosts/terminal", default-features = false, features = ["provider"], optional = true }
+mech-console = { version = "0.3.5", path = "../../hosts/console", default-features = false, features = ["native"], optional = true }
+mech-robot-arm = { version = "0.3.5", path = "../../hosts/robot-arm", default-features = false, features = ["provider"], optional = true }
+mech-scene = { version = "0.3.5", path = "../../hosts/scene", default-features = false, features = ["native"], optional = true }
+mech-time = { version = "0.3.5", path = "../../hosts/time", default-features = false, features = ["native"], optional = true }
+mech-timer = { version = "0.3.5", path = "../../hosts/timer", default-features = false, features = ["native"], optional = true }
 cargo_metadata = "0.23"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -35,8 +35,8 @@ toml_edit = "0.23"
 
 [dev-dependencies]
 mech-native-live-host-fixture = { version = "0.3.5", path = "../../tests/fixtures/native-live-host" }
-mech-runtime = { version = "0.3.5", default-features = false, features = ["compiler_default", "resident-routing-source"] }
-mech-stdlib = { version = "0.3.5", default-features = false, features = ["native-plan", "full_compiler"] }
+mech-runtime = { version = "0.3.5", path = "../runtime", default-features = false, features = ["compiler_default", "resident-routing-source"] }
+mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false, features = ["native-plan", "full_compiler"] }
 tempfile = "3"
 
 [target.'cfg(windows)'.dev-dependencies]

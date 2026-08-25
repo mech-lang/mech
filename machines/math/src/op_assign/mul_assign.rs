@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 use super::*;
 #[cfg(feature = "matrix")]
@@ -63,7 +62,7 @@ fn mul_assign_value_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Box<d
       U16, "u16";
       U32, "u32";
       U64, "u64";
-      U128, "u128";
+      I128, "i128";
       I8,  "i8";
       I16, "i16";
       I32, "i32";
@@ -206,7 +205,7 @@ impl FunctionSpecializer for MulAssignRange {
         let ixes = arguments[2..].to_vec();
         match mul_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (&sink, &ixes, &source) {
+            Err(_) => match (&sink, &ixes, &source) {
                 (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
                     mul_assign_range_fxn(
                         sink.borrow().clone(),
@@ -220,7 +219,7 @@ impl FunctionSpecializer for MulAssignRange {
                 (LegacyValue::MutableReference(sink), ixes, source) => {
                     mul_assign_range_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
-                x => Err(MechError::new(
+                (sink, ixes, source) => Err(MechError::new(
                     UnhandledFunctionArgumentIxes {
                         arg: (
                             sink.kind(),
@@ -360,7 +359,7 @@ impl FunctionSpecializer for MulAssignRangeAll {
                         source.clone(),
                         ixes.clone(),
                     ),
-                    x => Err(MechError::new(
+                    (sink, ixes, source) => Err(MechError::new(
                         //UnhandledFunctionArgumentIxes { arg: (sink.kind(), ixes.iter().map(|v| v.kind()).collect::<Vec<_>>(), source.kind()), fxn_name: "math/mul-assign/range-all".to_string() },
                         UnhandledFunctionArgumentIxes {
                             arg: (

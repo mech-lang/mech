@@ -1,15 +1,15 @@
 #![cfg(feature = "dynamic-modules")]
 
-#[path = "support/intrinsic_catalog.rs"]
-mod intrinsic_catalog;
+#[path = "support/intrinsic_runner.rs"]
+mod intrinsic_runner;
 
 fn run_ok(source: &str) {
-    let result = intrinsic_catalog::run(source);
+    let result = intrinsic_runner::run(source);
     assert!(result.is_ok(), "expected program to run successfully");
 }
 
 fn run_err(source: &str) {
-    let result = intrinsic_catalog::run(source);
+    let result = intrinsic_runner::run(source);
     assert!(result.is_err(), "expected program to fail");
 }
 

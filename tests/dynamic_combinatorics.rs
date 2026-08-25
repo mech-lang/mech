@@ -1,17 +1,19 @@
+#![cfg(feature = "dynamic-modules")]
+
 extern crate mech_core;
 
-#[path = "support/intrinsic_catalog.rs"]
-mod intrinsic_catalog;
+#[path = "support/intrinsic_runner.rs"]
+mod intrinsic_runner;
 
 use mech_core::{LegacyValue, structures::matrix::Matrix};
 
 fn run(source: &str) -> bool {
-    intrinsic_catalog::run(source).is_ok()
+    intrinsic_runner::run(source).is_ok()
 }
 
 #[cfg(feature = "dynamic-modules")]
 fn run_matrix_n_choose_k(source: &str, expected: Vec<f64>) {
-    let result = intrinsic_catalog::run(source).unwrap();
+    let result = intrinsic_runner::run(source).unwrap();
 
     let detached = match result {
         LegacyValue::MutableReference(v) => v.borrow().clone(),
@@ -94,7 +96,7 @@ fn dynamic_combinatorics_glob_import_matrix_broadcast_works() {
 #[cfg(feature = "dynamic-modules")]
 #[test]
 fn dynamic_combinatorics_matrix_matrix_shape_mismatch_errors() {
-    let result = intrinsic_catalog::run(
+    let result = intrinsic_runner::run(
         "+> combinatorics/n-choose-k\nx := n-choose-k([10.0 20.0], [2.0 3.0 4.0])\nx",
     );
 
@@ -104,7 +106,7 @@ fn dynamic_combinatorics_matrix_matrix_shape_mismatch_errors() {
 #[cfg(feature = "dynamic-modules")]
 #[test]
 fn dynamic_combinatorics_matrix_matrix_same_cells_different_shape_errors() {
-    let result = intrinsic_catalog::run(
+    let result = intrinsic_runner::run(
         "+> combinatorics/n-choose-k\nx := n-choose-k([10.0 20.0 30.0 40.0], [2.0 3.0; 4.0 5.0])\nx",
     );
 

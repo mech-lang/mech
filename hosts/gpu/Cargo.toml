@@ -24,8 +24,8 @@ jit = [
 
 [dependencies]
 mech-compute = { version = "0.3.5", path = "../../src/compute" }
-mech-core = { version = "0.3.5", default-features = false }
-mech-engine = { version = "0.3.5", default-features = false, features = ["resident-artifact"] }
+mech-core = { version = "0.3.5", path = "../../src/core", default-features = false }
+mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["resident-artifact"] }
 mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "string", "f64"], optional = true }
 bytemuck = { version = "1.24.0", optional = true }
 pollster = { version = "0.3.0", optional = true }
@@ -59,9 +59,19 @@ required-features = ["native", "jit"]
 name = "parallel_ekf_rust_scalar"
 path = "examples/parallel_ekf_rust_scalar.rs"
 
+[[test]]
+name = "parallel_ekf"
+path = "tests/parallel_ekf.rs"
+required-features = ["native"]
+
+[[test]]
+name = "particle_source"
+path = "tests/particle_source.rs"
+required-features = ["native"]
+
 [dev-dependencies]
-mech-core = { version = "0.3.5", default-features = false, features = ["f32", "matrixd"] }
-mech-engine = { version = "0.3.5", default-features = false, features = ["full_compiler"] }
-mech-stdlib = { version = "0.3.5", default-features = false, features = ["full_compiler", "native-plan"] }
+mech-core = { version = "0.3.5", path = "../../src/core", default-features = false, features = ["f32", "matrixd"] }
+mech-engine = { version = "0.3.5", path = "../../src/engine", default-features = false, features = ["full_compiler"] }
+mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
 mech-syntax = { version = "0.3.5", path = "../../src/syntax", default-features = false, features = ["full"] }
 mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["full_compiler", "resident-routing-source", "compute"] }

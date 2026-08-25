@@ -33,10 +33,6 @@ pub(crate) use string::{
     string_access_input_is_live, string_access_value_is_marked_live,
     take_current_string_access_expression_live,
 };
-#[cfg(feature = "subscript_formula")]
-use string::{
-    string_access_argument_is_live, string_access_index_argument, string_access_source_argument,
-};
 
 #[cfg(all(feature = "subscript_slice", feature = "access"))]
 pub fn slice(
@@ -160,7 +156,6 @@ pub fn subscript(
     env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
-    let plan = p.plan();
     match sbscrpt {
         #[cfg(feature = "table")]
         Subscript::Dot(_) => dot::access(sbscrpt, val, p),

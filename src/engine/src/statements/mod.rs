@@ -9,7 +9,9 @@ mod context;
 mod destructure;
 mod integrity;
 
-pub(crate) use context::{context_assign, context_read};
+#[cfg(feature = "variable_assign")]
+pub(crate) use context::context_assign;
+pub(crate) use context::context_read;
 pub use context::{context_declaration, context_send};
 #[cfg(feature = "tuple")]
 pub use destructure::tuple_destructure;
@@ -21,14 +23,14 @@ mod errors;
 mod kinds;
 mod state_machines;
 
+pub use crate::expressions::UndefinedVariableError;
 #[cfg(feature = "enum")]
 pub use enums::enum_define;
 #[cfg(feature = "record")]
 pub use errors::UnableToConvertRecordError;
 pub use errors::{
     AddressedAssignmentUnsupported, NotMutableError, UnableToConvertAtomError,
-    UnableToConvertAtomToEnumVariantError, UndefinedContextError, UndefinedVariableError,
-    VariableAlreadyDefinedError,
+    UnableToConvertAtomToEnumVariantError, UndefinedContextError, VariableAlreadyDefinedError,
 };
 #[cfg(feature = "kind_define")]
 pub use kinds::kind_define;

@@ -1,5 +1,6 @@
 #![cfg(feature = "formatter")]
 
+#[cfg(has_file_wasm)]
 #[path = "support/shim_contract.rs"]
 mod shim_contract;
 
@@ -36,7 +37,7 @@ impl TestDirectory {
 
 impl Drop for TestDirectory {
     fn drop(&mut self) {
-        let _ = std::fs::remove_dir_all(&self.path);
+        drop(std::fs::remove_dir_all(&self.path));
     }
 }
 

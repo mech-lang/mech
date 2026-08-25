@@ -50,6 +50,7 @@ fn compile_external_value_with_fallback(
 mod tests {
     use super::*;
     use crate::{CompileCtx, CompiledBytecode};
+    use mech_core::matrix::Matrix;
     use mech_core::{
         BytecodeInstruction, ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError,
         InitialSolvePolicy, LegacyValue, MResult, MechError, MechExecutionServices,
@@ -130,11 +131,6 @@ mod tests {
                 live_bindings: 0,
                 bound_targets: Vec::new(),
             }
-        }
-
-        fn with_planning_representative(mut self, representative: LegacyValue) -> Self {
-            self.planning_representative = Some(representative);
-            self
         }
     }
 
@@ -217,7 +213,7 @@ mod tests {
     }
 
     fn matrix(rows: usize, columns: usize, values: Vec<f64>) -> LegacyValue {
-        LegacyValue::MatrixF64(crate::Matrix::DMatrix(Ref::new(DMatrix::from_vec(
+        LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::from_vec(
             rows, columns, values,
         ))))
     }
@@ -366,7 +362,7 @@ mod tests {
         assert_eq!(output.addr(), output_address);
         assert!(matches!(
             &*output.borrow(),
-            LegacyValue::MatrixF64(crate::Matrix::DMatrix(value))
+            LegacyValue::MatrixF64(Matrix::DMatrix(value))
                 if value.borrow().shape() == (2, 2)
         ));
     }
@@ -417,7 +413,7 @@ mod tests {
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
         assert!(matches!(
             &*output.borrow(),
-            LegacyValue::MatrixF64(crate::Matrix::DMatrix(value))
+            LegacyValue::MatrixF64(Matrix::DMatrix(value))
                 if value.borrow().shape() == (1, 2)
                     && value.borrow().as_slice() == [1.0, 2.0]
         ));
@@ -449,7 +445,7 @@ mod tests {
         assert_eq!(services.bound_targets[0].addr(), output_address);
         assert!(matches!(
             &*services.bound_targets[0].borrow(),
-            LegacyValue::MatrixF64(crate::Matrix::DMatrix(value))
+            LegacyValue::MatrixF64(Matrix::DMatrix(value))
                 if value.borrow().shape() == (2, 1)
         ));
     }

@@ -126,7 +126,9 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
                 ) {
                     Ok(outcome) => outcome,
                     Err(error) => {
-                        let _ = runtime.shutdown();
+                        if let Err(shutdown_error) = runtime.shutdown() {
+                            return Err(shutdown_error.with_source(error));
+                        }
                         return Err(error);
                     }
                 };
@@ -173,6 +175,7 @@ impl ResidentReplRuntimeFactory for WasmReplRuntimeFactory {
 }
 
 /// Exclusive lifecycle state for the public browser REPL embedding API.
+#[cfg(feature = "browser_project_core")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum WasmReplState {
     Ready,
@@ -181,6 +184,7 @@ enum WasmReplState {
     Terminated,
 }
 
+#[cfg(feature = "browser_project_core")]
 impl WasmReplState {
     fn pending(self) -> bool {
         matches!(self, Self::Stepping { .. })
@@ -198,6 +202,7 @@ impl WasmReplState {
     }
 }
 
+#[cfg(feature = "browser_project_core")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum WasmReplTransition {
     Invoke,
@@ -216,6 +221,7 @@ enum WasmReplTransition {
     Shutdown,
 }
 
+#[cfg(feature = "browser_project_core")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum WasmReplTransitionResult {
     Allowed,

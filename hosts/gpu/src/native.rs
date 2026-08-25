@@ -262,7 +262,7 @@ impl ElementwiseKernel {
             let slice = readback.slice(..);
             let (sender, receiver) = mpsc::channel();
             slice.map_async(wgpu::MapMode::Read, move |result| {
-                let _ = sender.send(result);
+                drop(sender.send(result));
             });
             device.poll(wgpu::Maintain::Wait);
             receiver
@@ -638,7 +638,7 @@ impl ResidentGpuSession {
             let slice = readback.slice(..);
             let (sender, receiver) = mpsc::channel();
             slice.map_async(wgpu::MapMode::Read, move |result| {
-                let _ = sender.send(result);
+                drop(sender.send(result));
             });
             self.device.poll(wgpu::Maintain::Wait);
             receiver

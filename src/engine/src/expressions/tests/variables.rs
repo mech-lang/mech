@@ -1,8 +1,9 @@
 use crate::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, Interpreter, LegacyValue,
-    MResult, Matrix, MechError, MechExecutionServices, ReactiveDependencyKind, Ref,
-    ResourceDelivery, ResourceIntent, ValRef, hash_str,
+    MResult, MechError, MechExecutionServices, ReactiveDependencyKind, Ref, ResourceDelivery,
+    ResourceIntent, ValRef, hash_str,
 };
+use mech_core::matrix::Matrix;
 use nalgebra::DVector;
 
 struct RecordingContextReadServices {

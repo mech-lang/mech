@@ -316,7 +316,7 @@ fn element_of_schema_mismatch(
 }
 
 fn not_element_of(
-    kernel: &BoundResidentKernel,
+    _: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
     output: ResidentValueMut<'_>,
 ) -> Result<bool, ResidentKernelError> {
@@ -334,7 +334,6 @@ fn not_element_of(
     let next = u8::from(next);
     let changed = *target != next;
     *target = next;
-    let _ = kernel;
     Ok(changed)
 }
 

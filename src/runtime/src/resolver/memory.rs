@@ -219,7 +219,7 @@ impl InMemorySourceResolver {
         #[cfg(feature = "source")]
         let syntax_tree = mech_syntax::parser::parse(source.trim())?;
 
-        let mut resolved = ResolvedSource::new(
+        let resolved = ResolvedSource::new(
             specifier.clone(),
             Self::default_canonical_uri(&specifier),
             MechSourceCode::String(source),
@@ -227,9 +227,7 @@ impl InMemorySourceResolver {
         .with_kind(SourceKind::Mech);
 
         #[cfg(feature = "source")]
-        {
-            resolved = resolved.with_syntax_tree(syntax_tree);
-        }
+        let resolved = resolved.with_syntax_tree(syntax_tree);
 
         self.insert_source(specifier, resolved)
     }
@@ -237,7 +235,7 @@ impl InMemorySourceResolver {
     pub fn with_string(mut self, specifier: impl Into<String>, source: impl Into<String>) -> Self {
         let specifier = specifier.into();
         let source = source.into();
-        let mut resolved = ResolvedSource::new(
+        let resolved = ResolvedSource::new(
             specifier.clone(),
             Self::default_canonical_uri(&specifier),
             MechSourceCode::String(source.clone()),
@@ -249,16 +247,20 @@ impl InMemorySourceResolver {
         // canonical fallback parse reports the real syntax diagnostic instead
         // of turning it into a misleading missing-source error.
         #[cfg(feature = "source")]
-        if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
-            resolved = resolved.with_syntax_tree(syntax_tree);
-        }
+        let resolved = if let Ok(syntax_tree) = mech_syntax::parser::parse(source.trim()) {
+            resolved.with_syntax_tree(syntax_tree)
+        } else {
+            resolved
+        };
 
-        let _ = self.insert_source(specifier, resolved);
+        self.insert_source(specifier, resolved)
+            .expect("in-memory source builder constructed an invalid resolved source");
         self
     }
 
     pub fn with_source(mut self, specifier: impl Into<String>, source: ResolvedSource) -> Self {
-        let _ = self.insert_source(specifier, source);
+        self.insert_source(specifier, source)
+            .expect("in-memory source builder received an invalid resolved source");
         self
     }
 

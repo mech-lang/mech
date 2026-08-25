@@ -1,10 +1,8 @@
 use mech_core::{
-    FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy,
+    FunctionCatalogBuilder, MResult, RuntimeFunctionContract, RuntimeOutputAliasPolicy,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
-use paste::paste;
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -38,100 +36,6 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     #[cfg(feature = "xor")]
     install_operation(builder, "logic/xor", crate::LogicXor {})?;
     Ok(())
-}
-
-macro_rules! install_logic_factory {
-    ($builder:expr, $module:ident, $operation:ident, $suffix:ident) => {
-        paste! {
-            $builder.insert_runtime_factory::<crate::$module::[<$operation $suffix>]>(
-                concat!(stringify!($operation), stringify!($suffix), "<bool>"),
-                mech_core::__mech_elementwise_binop_contract!($suffix),
-            )?;
-        }
-    };
-}
-
-macro_rules! install_logic_group {
-    ($builder:expr, $module:ident, $operation:ident; $($suffix:ident),+ $(,)?) => {
-        $(install_logic_factory!($builder, $module, $operation, $suffix);)+
-    };
-}
-
-macro_rules! install_logic_binop_runtime {
-    ($builder:expr, $module:ident, $operation:ident) => {{
-        install_logic_group!($builder, $module, $operation; SS);
-
-        #[cfg(feature = "matrix1")]
-        install_logic_group!($builder, $module, $operation; SM1, M1S, M1M1);
-        #[cfg(feature = "matrix2")]
-        install_logic_group!($builder, $module, $operation; SM2, M2S, M2M2);
-        #[cfg(feature = "matrix3")]
-        install_logic_group!($builder, $module, $operation; SM3, M3S, M3M3);
-        #[cfg(feature = "matrix4")]
-        install_logic_group!($builder, $module, $operation; SM4, M4S, M4M4);
-        #[cfg(feature = "matrix2x3")]
-        install_logic_group!($builder, $module, $operation; SM2x3, M2x3S, M2x3M2x3);
-        #[cfg(feature = "matrix3x2")]
-        install_logic_group!($builder, $module, $operation; SM3x2, M3x2S, M3x2M3x2);
-        #[cfg(feature = "matrixd")]
-        install_logic_group!($builder, $module, $operation; SMD, MDS, MDMD);
-
-        #[cfg(feature = "row_vector2")]
-        install_logic_group!($builder, $module, $operation; SR2, R2S, R2R2);
-        #[cfg(feature = "row_vector3")]
-        install_logic_group!($builder, $module, $operation; SR3, R3S, R3R3);
-        #[cfg(feature = "row_vector4")]
-        install_logic_group!($builder, $module, $operation; SR4, R4S, R4R4);
-        #[cfg(feature = "row_vectord")]
-        install_logic_group!($builder, $module, $operation; SRD, RDS, RDRD);
-
-        #[cfg(feature = "vector2")]
-        install_logic_group!($builder, $module, $operation; SV2, V2S, V2V2);
-        #[cfg(feature = "vector3")]
-        install_logic_group!($builder, $module, $operation; SV3, V3S, V3V3);
-        #[cfg(feature = "vector4")]
-        install_logic_group!($builder, $module, $operation; SV4, V4S, V4V4);
-        #[cfg(feature = "vectord")]
-        install_logic_group!($builder, $module, $operation; SVD, VDS, VDVD);
-
-        #[cfg(all(feature = "matrix2", feature = "vector2"))]
-        install_logic_group!($builder, $module, $operation; M2V2, V2M2);
-        #[cfg(all(feature = "matrix3", feature = "vector3"))]
-        install_logic_group!($builder, $module, $operation; M3V3, V3M3);
-        #[cfg(all(feature = "matrix4", feature = "vector4"))]
-        install_logic_group!($builder, $module, $operation; M4V4, V4M4);
-        #[cfg(all(feature = "matrix2x3", feature = "vector2"))]
-        install_logic_group!($builder, $module, $operation; M2x3V2, V2M2x3);
-        #[cfg(all(feature = "matrix3x2", feature = "vector3"))]
-        install_logic_group!($builder, $module, $operation; M3x2V3, V3M3x2);
-        #[cfg(all(feature = "matrixd", feature = "vectord"))]
-        install_logic_group!($builder, $module, $operation; MDVD, VDMD);
-        #[cfg(all(feature = "matrixd", feature = "vector2"))]
-        install_logic_group!($builder, $module, $operation; MDV2, V2MD);
-        #[cfg(all(feature = "matrixd", feature = "vector3"))]
-        install_logic_group!($builder, $module, $operation; MDV3, V3MD);
-        #[cfg(all(feature = "matrixd", feature = "vector4"))]
-        install_logic_group!($builder, $module, $operation; MDV4, V4MD);
-
-        #[cfg(all(feature = "matrix2", feature = "row_vector2"))]
-        install_logic_group!($builder, $module, $operation; M2R2, R2M2);
-        #[cfg(all(feature = "matrix3", feature = "row_vector3"))]
-        install_logic_group!($builder, $module, $operation; M3R3, R3M3);
-        #[cfg(all(feature = "matrix4", feature = "row_vector4"))]
-        install_logic_group!($builder, $module, $operation; M4R4, R4M4);
-        #[cfg(all(feature = "matrix2x3", feature = "row_vector3"))]
-        install_logic_group!($builder, $module, $operation; M2x3R3, R3M2x3);
-        #[cfg(all(feature = "matrix3x2", feature = "row_vector2"))]
-        install_logic_group!($builder, $module, $operation; M3x2R2, R2M3x2);
-        #[cfg(all(feature = "matrixd", feature = "row_vectord"))]
-        install_logic_group!($builder, $module, $operation; MDRD, RDMD);
-        #[cfg(all(feature = "matrixd", feature = "row_vector2"))]
-        install_logic_group!($builder, $module, $operation; MDR2, R2MD);
-        #[cfg(all(feature = "matrixd", feature = "row_vector3"))]
-        install_logic_group!($builder, $module, $operation; MDR3, R3MD);
-        #[cfg(all(feature = "matrixd", feature = "row_vector4"))]
-        install_logic_group!($builder, $module, $operation; MDR4, R4MD);
-    }};
 }
 
 macro_rules! declare_logic_native_factory {
@@ -193,6 +97,7 @@ macro_rules! register_logic_native_factory {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_logic_native_factory {
     (
         ($_module:ident; $operation:ident; $operation_feature:literal),

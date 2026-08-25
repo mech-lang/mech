@@ -1,12 +1,15 @@
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Cos ------------------------------------------------------------------------
 
-use libm::{cos, cosf};
+#[cfg(feature = "f64")]
+use libm::cos;
+#[cfg(feature = "f32")]
+use libm::cosf;
+#[cfg(feature = "f64")]
 macro_rules! cos_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -15,6 +18,7 @@ macro_rules! cos_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! cos_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -25,6 +29,7 @@ macro_rules! cos_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! cosf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -33,6 +38,7 @@ macro_rules! cosf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! cosf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -52,7 +58,7 @@ impl_math_unop!(MathCos, f64, cos);
 fn impl_cos_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathCos,
-      (lhs_value),
+      lhs_value,
       F32 => MatrixF32, F32, f32::zero(), "f32";
       F64 => MatrixF64, F64, f64::zero(), "f64";
     )
@@ -77,8 +83,8 @@ impl FunctionSpecializer for MathCos {
         let input = arguments[0].clone();
         match impl_cos_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match (input) {
-                (LegacyValue::MutableReference(input)) => impl_cos_fxn(input.borrow().clone()),
+            Err(_) => match input {
+                LegacyValue::MutableReference(input) => impl_cos_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

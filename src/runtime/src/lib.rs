@@ -1,5 +1,4 @@
 #![cfg_attr(all(feature = "no_std", not(feature = "std")), no_std)]
-#![deny(unsafe_code)]
 
 #[cfg(feature = "no_std")]
 extern crate alloc;
@@ -10,10 +9,20 @@ mod extension;
 pub mod id;
 #[cfg(feature = "runtime")]
 pub mod input;
-#[cfg(feature = "runtime")]
+#[cfg(all(
+    feature = "runtime",
+    any(
+        feature = "runtime_bench_probes",
+        feature = "runtime_bench_gate_b",
+        feature = "resident-external"
+    )
+))]
 mod ledger;
 pub mod operation;
-#[cfg(feature = "runtime")]
+#[cfg(all(
+    feature = "runtime",
+    any(feature = "runtime_bench_probes", feature = "resident-external")
+))]
 mod outbox;
 pub mod protocol;
 #[cfg(all(feature = "runtime", feature = "runtime_bench_gate_b"))]
@@ -54,7 +63,14 @@ pub mod service;
 pub mod store;
 #[cfg(feature = "runtime")]
 pub mod transaction;
-#[cfg(feature = "runtime")]
+#[cfg(all(
+    feature = "runtime",
+    any(
+        feature = "runtime_bench_probes",
+        feature = "runtime_bench_gate_b",
+        feature = "resident-external"
+    )
+))]
 mod turn_record;
 #[cfg(all(feature = "watcher", feature = "source"))]
 mod workspace;

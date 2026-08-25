@@ -19,7 +19,7 @@ use std::{
     vec::Vec,
 };
 
-use crate::{GenericError, MResult, MechError, MechErrorKind};
+use crate::{GenericError, MResult, MechError};
 
 #[cfg(feature = "no_std")]
 type HashSet<T> = HashBrownSet<T, BuildHasherDefault<FxHasher>>;
@@ -168,8 +168,12 @@ impl ModuleManifestCatalog {
 
     pub fn with_builtin_hosts() -> Self {
         let mut catalog = Self::new();
-        let _ = catalog.register(builtin_browser_module_manifest());
-        let _ = catalog.register(builtin_cli_module_manifest());
+        catalog
+            .register(builtin_browser_module_manifest())
+            .expect("built-in browser module manifest must be valid");
+        catalog
+            .register(builtin_cli_module_manifest())
+            .expect("built-in CLI module manifest must be valid");
         catalog
     }
 

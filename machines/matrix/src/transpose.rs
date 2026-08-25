@@ -1,7 +1,6 @@
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use std::sync::LazyLock;
 
 static PURE_TRANSPOSE_CONTRACT: LazyLock<OperationContractDeclaration> = LazyLock::new(|| {
@@ -203,7 +202,7 @@ macro_rules! impl_transpose_match_arms {
 #[cfg(feature = "source")]
 fn impl_transpose_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_transpose_match_arms!(
-      (lhs_value),
+      lhs_value,
       Bool,   bool,   "bool";
       I8,     i8,     "i8";
       I16,    i16,    "i16";

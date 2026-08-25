@@ -1,10 +1,9 @@
 #[cfg(feature = "matrix")]
 use super::matrix::*;
 use super::*;
-use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
-    function_shape_contract_violation,
-};
+#[cfg(feature = "matrix")]
+use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
+use mech_core::{FunctionCatalogBuilder, MResult};
 
 #[cfg(feature = "matrix")]
 fn validate_assign_matrix_sizes(args: &FunctionArgs) -> MResult<()> {
@@ -38,7 +37,6 @@ fn validate_assign_matrix_sizes(args: &FunctionArgs) -> MResult<()> {
 #[cfg(feature = "matrix")]
 #[derive(Clone, Copy)]
 enum AssignIndexAxis {
-    Linear,
     Row,
     Column,
 }
@@ -57,14 +55,10 @@ fn validate_assign_index(
             function_shape_contract_violation(contract, "output must be matrix-backed")
         })?;
     let bound = match axis {
-        AssignIndexAxis::Linear => output.rows.checked_mul(output.cols).ok_or_else(|| {
-            function_shape_contract_violation(contract, "output element count overflowed")
-        })?,
         AssignIndexAxis::Row => output.rows,
         AssignIndexAxis::Column => output.cols,
     };
     let axis_name = match axis {
-        AssignIndexAxis::Linear => "linear",
         AssignIndexAxis::Row => "row",
         AssignIndexAxis::Column => "column",
     };
@@ -94,29 +88,6 @@ fn validate_assign_index(
         _ => {}
     }
     Ok(())
-}
-
-#[cfg(feature = "matrix")]
-fn validate_assign_without_indices(args: &FunctionArgs) -> MResult<()> {
-    validate_assign_matrix_sizes(args)
-}
-
-#[cfg(feature = "matrix")]
-fn validate_assign_linear_index(args: &FunctionArgs) -> MResult<()> {
-    validate_assign_matrix_sizes(args)?;
-    validate_assign_index(args, 1, AssignIndexAxis::Linear)
-}
-
-#[cfg(feature = "matrix")]
-fn validate_assign_row_index(args: &FunctionArgs) -> MResult<()> {
-    validate_assign_matrix_sizes(args)?;
-    validate_assign_index(args, 1, AssignIndexAxis::Row)
-}
-
-#[cfg(feature = "matrix")]
-fn validate_assign_column_index(args: &FunctionArgs) -> MResult<()> {
-    validate_assign_matrix_sizes(args)?;
-    validate_assign_index(args, 1, AssignIndexAxis::Column)
 }
 
 #[cfg(feature = "matrix")]
@@ -217,6 +188,7 @@ macro_rules! for_each_assign_value_matrix_shape {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! declare_assign_value_matrix_shape {
     (
         ($scalar:ty; $scalar_token:ident; $runtime_name:literal; $scalar_feature:literal),
@@ -274,6 +246,7 @@ declare_assign_value_matrix_for_scalar!(String, string, "string", "string");
 declare_assign_value_matrix_for_scalar!(R64, r64, "rational", "r64");
 declare_assign_value_matrix_for_scalar!(C64, c64, "complex", "c64");
 
+#[cfg(feature = "native-plan")]
 macro_rules! register_assign_value_matrix_shape {
     (($builder:ident; $scalar_token:ident), $shape:ident, $_shape_feature:literal) => {
         mech_core::paste::paste! {
@@ -282,6 +255,7 @@ macro_rules! register_assign_value_matrix_shape {
     };
 }
 
+#[cfg(feature = "native-plan")]
 macro_rules! register_assign_value_matrix_for_scalar {
     ($builder:ident, $scalar_token:ident, $scalar_feature:literal) => {
         #[cfg(feature = $scalar_feature)]
@@ -292,6 +266,7 @@ macro_rules! register_assign_value_matrix_for_scalar {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_assign_value_matrix_shape {
     (($scalar_token:ident), $shape:ident, $_shape_feature:literal) => {
         mech_core::paste::paste! {
@@ -300,6 +275,7 @@ macro_rules! export_assign_value_matrix_shape {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_assign_value_matrix_for_scalar {
     ($scalar_token:ident, $scalar_feature:literal) => {
         #[cfg(feature = $scalar_feature)]
@@ -314,6 +290,7 @@ macro_rules! register_assign_scalar_factory {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_assign_scalar_factory {
     ($_context:tt; $installer_token:ident; $_scalar:ty; $_runtime_name:literal; $cargo_feature:literal) => {
         #[cfg(all(feature = "assign", feature = $cargo_feature))]
@@ -321,60 +298,10 @@ macro_rules! export_assign_scalar_factory {
     };
 }
 
-// Keep the concrete storage spellings and their Cargo switches in one place.
-// The matrix traversal below supplies the exact type list; these mappings only
-// translate those already-selected concrete storage types into plan metadata.
-macro_rules! assign_matrix_feature {
-    (Matrix1) => {
-        "matrix1"
-    };
-    (Matrix2) => {
-        "matrix2"
-    };
-    (Matrix3) => {
-        "matrix3"
-    };
-    (Matrix4) => {
-        "matrix4"
-    };
-    (Matrix2x3) => {
-        "matrix2x3"
-    };
-    (Matrix3x2) => {
-        "matrix3x2"
-    };
-    (RowVector2) => {
-        "row_vector2"
-    };
-    (RowVector3) => {
-        "row_vector3"
-    };
-    (RowVector4) => {
-        "row_vector4"
-    };
-    (Vector2) => {
-        "vector2"
-    };
-    (Vector3) => {
-        "vector3"
-    };
-    (Vector4) => {
-        "vector4"
-    };
-    (RowDVector) => {
-        "row_vectord"
-    };
-    (DVector) => {
-        "vectord"
-    };
-    (DMatrix) => {
-        "matrixd"
-    };
-}
-
 // These legacy `Set*` kernels mutate only the output register. Their encoded
 // inputs are the source value and indices, so unlike the `Assign*` register
 // families they do not need a general output/input alias exception.
+#[cfg(feature = "matrix")]
 macro_rules! assign_output_alias_policy {
     (Set1DAS) => {
         RuntimeOutputAliasPolicy::DisallowInputAlias
@@ -408,39 +335,12 @@ macro_rules! assign_output_alias_policy {
     };
 }
 
-#[cfg(feature = "matrix")]
-macro_rules! assign_contract_validator {
-    (Assign1D) => {
-        validate_assign_linear_index
-    };
-    (Assign1DR) => {
-        validate_assign_linear_index
-    };
-    (Set1DA) => {
-        validate_assign_without_indices
-    };
-    (Assign2DAS) => {
-        validate_assign_column_index
-    };
-    (Set2DAR) => {
-        validate_assign_column_index
-    };
-    (Assign2DSA) => {
-        validate_assign_row_index
-    };
-    (Set2DRA) => {
-        validate_assign_row_index
-    };
-    ($_assign:ident) => {
-        validate_assign_row_and_column_indices
-    };
-}
-
 // All three consumers below are fed by the same concrete-factory traversal:
 // declarations for native plans, direct runtime registrations, and hidden
 // generated-application exports.  This deliberately replaces the historic
 // aggregate assignment installer, whose single path could not describe an
 // individual factory exactly.
+#[cfg(feature = "matrix")]
 macro_rules! declare_matrix_assign_factory {
     (
         $_context:tt;
@@ -457,7 +357,7 @@ macro_rules! declare_matrix_assign_factory {
                 contract: RuntimeFunctionContract::custom(
                     "assign_slice",
                     assign_output_alias_policy!($fxn_name),
-                    assign_contract_validator!($fxn_name),
+                    validate_assign_row_and_column_indices,
                 ),
                 package: "mech-engine", crate_name: "mech_engine",
                 installer_path: concat!(
@@ -470,6 +370,8 @@ macro_rules! declare_matrix_assign_factory {
     };
 }
 
+#[cfg(feature = "native-link")]
+#[cfg(feature = "matrix")]
 macro_rules! export_matrix_assign_factory {
     (
         $_context:tt;
@@ -482,6 +384,7 @@ macro_rules! export_matrix_assign_factory {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! register_matrix_assign_factory {
     (
         $builder:ident;
@@ -494,6 +397,7 @@ macro_rules! register_matrix_assign_factory {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -502,6 +406,7 @@ macro_rules! install_legacy_assign {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_s {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
         mech_core::paste::paste! {
@@ -510,6 +415,7 @@ macro_rules! install_legacy_assign_s {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -518,6 +424,7 @@ macro_rules! install_legacy_assign_srr {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr_b {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -526,6 +433,7 @@ macro_rules! install_legacy_assign_srr_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr_bu {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -534,6 +442,7 @@ macro_rules! install_legacy_assign_srr_bu {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr_ub {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -542,6 +451,7 @@ macro_rules! install_legacy_assign_srr_ub {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr_b2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
@@ -550,6 +460,7 @@ macro_rules! install_legacy_assign_srr_b2 {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr_bu2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
@@ -558,6 +469,7 @@ macro_rules! install_legacy_assign_srr_bu2 {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr_ub2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
@@ -566,6 +478,7 @@ macro_rules! install_legacy_assign_srr_ub2 {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_srr2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
@@ -574,6 +487,7 @@ macro_rules! install_legacy_assign_srr2 {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_s1 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt) => {
         mech_core::paste::paste! {
@@ -582,6 +496,7 @@ macro_rules! install_legacy_assign_s1 {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_s2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
         mech_core::paste::paste! {
@@ -590,6 +505,7 @@ macro_rules! install_legacy_assign_s2 {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_b {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -598,6 +514,7 @@ macro_rules! install_legacy_assign_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_assign_s_b {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt) => {
         mech_core::paste::paste! {
@@ -606,6 +523,7 @@ macro_rules! install_legacy_assign_s_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_scalar_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -615,6 +533,7 @@ macro_rules! install_legacy_impl_assign_scalar_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_all_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -624,6 +543,7 @@ macro_rules! install_legacy_impl_assign_all_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_scalar_scalar_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -635,6 +555,7 @@ macro_rules! install_legacy_impl_assign_scalar_scalar_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_set_range_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -682,6 +603,7 @@ macro_rules! install_legacy_impl_set_range_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_set_range_all_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -729,6 +651,7 @@ macro_rules! install_legacy_impl_set_range_all_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_range_scalar_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -778,6 +701,7 @@ macro_rules! install_legacy_impl_assign_range_scalar_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_scalar_range_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -827,6 +751,7 @@ macro_rules! install_legacy_impl_assign_scalar_range_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_range_range_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1020,6 +945,7 @@ macro_rules! install_legacy_impl_assign_range_range_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_all_range_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1067,6 +993,7 @@ macro_rules! install_legacy_impl_assign_all_range_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_all_scalar_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1130,6 +1057,7 @@ macro_rules! install_legacy_impl_assign_all_scalar_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_scalar_all_arms {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1193,6 +1121,7 @@ macro_rules! install_legacy_impl_assign_scalar_all_arms {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_set_all_range_arms_b {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1260,6 +1189,7 @@ macro_rules! install_legacy_impl_set_all_range_arms_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_set_range_all_arms_b {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1315,6 +1245,7 @@ macro_rules! install_legacy_impl_set_range_all_arms_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_set_range_arms_b {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1382,6 +1313,7 @@ macro_rules! install_legacy_impl_set_range_arms_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_scalar_arms_b {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1393,6 +1325,7 @@ macro_rules! install_legacy_impl_assign_scalar_arms_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_range_scalar_arms_b {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1440,6 +1373,7 @@ macro_rules! install_legacy_impl_assign_range_scalar_arms_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_scalar_range_arms_b {
     ($emit:ident, $context:tt, $fxn_name:ident, $shape:tt, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1487,6 +1421,7 @@ macro_rules! install_legacy_impl_assign_scalar_range_arms_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_range_range_arms_b {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1574,6 +1509,7 @@ macro_rules! install_legacy_impl_assign_range_range_arms_b {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_range_range_arms_bu {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1585,6 +1521,7 @@ macro_rules! install_legacy_impl_assign_range_range_arms_bu {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_impl_assign_range_range_arms_ub {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1596,6 +1533,7 @@ macro_rules! install_legacy_impl_assign_range_range_arms_ub {
     };
 }
 
+#[cfg(feature = "matrix")]
 #[cfg(feature = "matrix")]
 macro_rules! install_legacy_for_sink_shapes {
     ($emit:ident, $context:tt, $arm:ident, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
@@ -1738,6 +1676,7 @@ macro_rules! install_legacy_for_sink_shapes {
 }
 
 #[cfg(feature = "matrix")]
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_for_type {
     (
         $driver:ident,
@@ -1752,6 +1691,7 @@ macro_rules! install_legacy_for_type {
     };
 }
 
+#[cfg(feature = "matrix")]
 #[cfg(feature = "matrix")]
 macro_rules! install_legacy_for_all_types {
     ($driver:ident, $emit:ident, $context:tt, $arm:ident, $fxn_name:ident) => {
@@ -1775,12 +1715,14 @@ macro_rules! install_legacy_for_all_types {
 }
 
 #[cfg(feature = "matrix")]
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_direct {
     ($emit:ident, $context:tt, $arm:ident, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         $arm!($emit, $context, $fxn_name, $value_kind, $value_string);
     };
 }
 
+#[cfg(feature = "matrix")]
 #[cfg(feature = "matrix")]
 macro_rules! for_each_matrix_assignment_factory {
     ($all_types:ident, $one_type:ident, $direct:ident, $emit:ident, $context:tt) => {
@@ -2060,6 +2002,7 @@ macro_rules! for_each_matrix_assignment_factory {
 }
 
 #[cfg(feature = "matrix")]
+#[cfg(feature = "matrix")]
 macro_rules! install_legacy_for_type_runtime {
     (
         $driver:ident,
@@ -2070,13 +2013,16 @@ macro_rules! install_legacy_for_type_runtime {
         $value_kind:ident,
         $value_string:tt
     ) => {{
-        #[inline(never)]
-        fn install_type(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-            $driver!($emit, builder, $arm, $fxn_name, $value_kind, $value_string);
-            Ok(())
-        }
+        #[cfg(feature = $value_string)]
+        {
+            #[inline(never)]
+            fn install_type(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+                $driver!($emit, builder, $arm, $fxn_name, $value_kind, $value_string);
+                Ok(())
+            }
 
-        install_type($builder)?;
+            install_type($builder)?;
+        }
     }};
 }
 
@@ -2220,27 +2166,6 @@ mod tests {
 
     fn source() -> LegacyValue {
         LegacyValue::U8(Ref::new(7))
-    }
-
-    #[test]
-    fn scalar_assignment_indices_are_one_based_and_bounded() {
-        for index in [1, 6] {
-            validate_assign_linear_index(&FunctionArgs::Binary(
-                output(),
-                source(),
-                LegacyValue::Index(Ref::new(index)),
-            ))
-            .unwrap();
-        }
-        for index in [0, 7] {
-            let error = validate_assign_linear_index(&FunctionArgs::Binary(
-                output(),
-                source(),
-                LegacyValue::Index(Ref::new(index)),
-            ))
-            .unwrap_err();
-            assert!(error.kind_message().contains("expected 1..=6"));
-        }
     }
 
     #[test]

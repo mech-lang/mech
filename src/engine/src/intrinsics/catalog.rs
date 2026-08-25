@@ -6,13 +6,27 @@ use crate::intrinsics::constructors::ValueSet;
 use crate::intrinsics::constructors::ValueSetComprehension;
 #[cfg(all(feature = "semantic-compiler", feature = "variable_define"))]
 use crate::intrinsics::define::VarDefine;
+#[cfg(any(
+    feature = "semantic-compiler",
+    feature = "set",
+    feature = "invariant_define",
+    feature = "set_comprehensions",
+    feature = "matrix_comprehensions"
+))]
 use crate::*;
-use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, FunctionExport, FunctionExposure,
-    FunctionSpecializer, MResult, function_shape_contract_violation,
-};
+#[cfg(any(
+    feature = "invariant_define",
+    feature = "matrix_comprehensions",
+    feature = "set_comprehensions"
+))]
+use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(feature = "semantic-compiler")]
+use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+#[cfg(feature = "semantic-compiler")]
 use std::sync::Arc;
 
+#[cfg(feature = "semantic-compiler")]
 fn install_named<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
@@ -34,6 +48,7 @@ where
     })
 }
 
+#[cfg(feature = "semantic-compiler")]
 fn install_intrinsic<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
@@ -168,8 +183,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-/// Installs the concrete bytecode factories owned by the engine fragment.
-/// Machine-owned factories are installed by their respective machine crates.
+// Installs the concrete bytecode factories owned by the engine fragment.
+// Machine-owned factories are installed by their respective machine crates.
 mech_core::declare_native_runtime_factory! {
     cfg: feature = "set",
     registration: register_set_define,
@@ -230,7 +245,36 @@ mech_core::declare_native_runtime_factory! {
     extra_cargo_features: ["matrix_comprehensions"],
 }
 
-pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub fn install_runtime(
+    #[cfg(any(
+        feature = "access",
+        feature = "assign",
+        feature = "convert",
+        feature = "variable_define",
+        feature = "set",
+        feature = "set_comprehensions",
+        feature = "matrix_comprehensions",
+        feature = "invariant_define",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "table"
+    ))]
+    builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(any(
+        feature = "access",
+        feature = "assign",
+        feature = "convert",
+        feature = "variable_define",
+        feature = "set",
+        feature = "set_comprehensions",
+        feature = "matrix_comprehensions",
+        feature = "invariant_define",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "table"
+    )))]
+    _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
     #[cfg(feature = "access")]
     super::access::install_runtime(builder)?;
     #[cfg(feature = "assign")]
@@ -269,7 +313,7 @@ pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> 
     #[cfg(feature = "assign")]
     crate::intrinsics::assign::catalog::install_native_plan(builder)?;
 
-    #[cfg(feature = "variable_define_matrix1")]
+    #[cfg(all(feature = "variable_define_matrix1", not(feature = "matrix1")))]
     crate::intrinsics::define::install_native_plan_runtime(builder)?;
 
     #[cfg(feature = "matrix_horzcat")]

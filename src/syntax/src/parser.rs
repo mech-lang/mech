@@ -12,32 +12,22 @@ use crate::functions::function_define;
 // ------------
 use crate::*;
 
-use mech_core::nodes::*;
-use mech_core::nodes::{MechString, SectionElement, Table};
-
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::string::String;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
 use nom::{
     Err,
-    Err::Failure,
-    IResult,
     branch::alt,
-    combinator::{cut, eof, opt, peek},
-    multi::{many_till, many0, many1, separated_list0, separated_list1},
-    sequence::{preceded, tuple as nom_tuple},
+    combinator::{eof, opt, peek},
+    multi::many0,
+    sequence::tuple as nom_tuple,
 };
 
-use colored::*;
-use std::collections::HashMap;
-
 //use crate::*;
-use crate::{ParseError, ParseErrorDetail, ParseResult, ParseString, TextFormatter, graphemes};
+#[cfg(not(feature = "no_std"))]
+use crate::TextFormatter;
+use crate::{ParseError, ParseErrorDetail, ParseResult, ParseString, graphemes};
 
 // 2. Parser combinators
 // -----------------------
@@ -52,7 +42,7 @@ where
         Ok((remaining, _)) => Ok((remaining, ())),
         Err(Err::Error(e)) => Err(Err::Error(e)),
         Err(Err::Failure(e)) => Err(Err::Failure(e)),
-        x => panic!("Err::Incomplete is not supported"),
+        _ => panic!("Err::Incomplete is not supported"),
     }
 }
 
@@ -118,7 +108,7 @@ pub fn label_without_recovery<'a, F, O>(
 where
     F: FnMut(ParseString<'a>) -> ParseResult<O>,
 {
-    move |mut input: ParseString| {
+    move |input: ParseString| {
         let start = input.loc();
         match parser(input) {
             Err(Err::Error(mut e)) => {
@@ -139,13 +129,13 @@ where
 /// synchronize parser state.
 pub fn label_with_recovery<'a, F, O>(
     mut parser: F,
-    mut recovery_fn: fn(ParseString<'a>) -> ParseResult<O>,
+    recovery_fn: fn(ParseString<'a>) -> ParseResult<'a, O>,
     error_detail: ParseErrorDetail,
-) -> impl FnMut(ParseString<'a>) -> ParseResult<O>
+) -> impl FnMut(ParseString<'a>) -> ParseResult<'a, O>
 where
     F: FnMut(ParseString<'a>) -> ParseResult<O>,
 {
-    move |mut input: ParseString| {
+    move |input: ParseString| {
         let start = input.loc();
         match parser(input) {
             Err(Err::Error(mut e)) => {
@@ -363,7 +353,7 @@ pub fn mech_code_alt(input: ParseString) -> ParseResult<MechCode> {
 /// code-terminal := *space-tab, ?(?semicolon, *space-tab, comment), (new-line | ";" | right-brace | eof), *whitespace ;
 pub fn code_terminal(input: ParseString) -> ParseResult<Option<Comment>> {
     let (input, _) = many0(space_tab)(input)?;
-    let (input, cmmnt) = opt(tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
+    let (input, cmmnt) = opt(nom_tuple((opt(semicolon), many0(space_tab), comment)))(input)?;
     let (input, _) = alt((
         null(new_line),
         null(semicolon),
@@ -427,7 +417,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
                     };
                     e.log();
                     // skip till the end of the statement
-                    let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
+                    let (input, _) = skip_till_end_of_statement(e.remaining_input)?;
                     // get tokens from start_cursor to input.cursor
                     let skipped_input = input.slice(start_cursor, input.cursor);
                     let skipped_token = Token {
@@ -468,7 +458,7 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
                 };
                 e.log();
                 // skip till the end of the statement
-                let (input, skipped) = skip_till_end_of_statement(e.remaining_input)?;
+                let (input, _) = skip_till_end_of_statement(e.remaining_input)?;
                 // get tokens from start_cursor to input.cursor
                 let skipped_input = input.slice(start_cursor, input.cursor);
                 let skipped_token = Token {
@@ -530,7 +520,6 @@ pub fn mech_code(input: ParseString) -> ParseResult<ParsedMechCode> {
 
 // program := ws0, ?title, body, ws0 ;
 pub fn program(input: ParseString) -> ParseResult<Program> {
-    let msg = "Expects program body";
     let (input, _) = whitespace0(input)?;
     let (input, title) = opt(title)(input)?;
     //let (input, body) = labelr!(body, skip_nil, msg)(input)?;
@@ -552,6 +541,7 @@ pub fn parse_mech(input: ParseString) -> ParseResult<Program> {
 // --------------------
 
 /// Print formatted error message.
+#[cfg(not(feature = "no_std"))]
 pub fn print_err_report(text: &str, report: &ParserErrorReport) {
     let msg = TextFormatter::new(text).format_error(report);
     println!("{}", msg);
@@ -559,12 +549,12 @@ pub fn print_err_report(text: &str, report: &ParserErrorReport) {
 
 pub fn parse_grammar(text: &str) -> MResult<Grammar> {
     // remove all whitespace from the input string
-    let text_no_Ws = &text
+    let text_no_ws = &text
         .replace(" ", "")
         .replace("\n", "")
         .replace("\r", "")
         .replace("\t", "");
-    let graphemes = graphemes::init_source(text_no_Ws);
+    let graphemes = graphemes::init_source(text_no_ws);
     let mut result_node = None;
     let mut error_log: Vec<(SourceRange, ParseErrorDetail)> = vec![];
 

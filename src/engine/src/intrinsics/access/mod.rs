@@ -28,9 +28,31 @@ pub use self::table::*;
 #[cfg(feature = "tuple")]
 pub use self::tuple::*;
 
-#[macro_use]
-use crate::intrinsics::*;
+#[cfg(any(
+    feature = "matrix",
+    feature = "table",
+    feature = "map",
+    feature = "string",
+    feature = "tuple",
+    feature = "record"
+))]
+use crate::ValueKind;
+#[cfg(feature = "native-plan")]
+use crate::{
+    BytecodeCompilerContext, CompileConst, FunctionArgs, FunctionValueRepresentation,
+    MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl, Register, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, compile_register, hash_str,
+};
+use crate::{
+    FunctionCatalogBuilder, FunctionSpecializer, IncorrectNumberOfArguments, LegacyValue, MResult,
+    MechError, MechFunction, UnhandledFunctionArgumentKind2,
+};
+#[cfg(any(feature = "record", feature = "table"))]
+use crate::{MechTuple, Ref, UndefinedRecordFieldError};
+#[cfg(feature = "table")]
+use crate::{ToValue, UndefinedTableColumnError, UnhandledFunctionArgumentIxesMono};
 
+#[cfg(feature = "native-plan")]
 macro_rules! declare_structural_access_alias {
     (
         $factory:ident,
@@ -106,6 +128,7 @@ macro_rules! declare_structural_access_alias {
     };
 }
 
+#[cfg(feature = "native-plan")]
 declare_structural_access_alias!(
     RecordAccessFieldAliasFactory,
     register_record_access_field,
@@ -113,6 +136,7 @@ declare_structural_access_alias!(
     "RecordAccessField",
     "mech_engine::__mech_native::install_record_access_field"
 );
+#[cfg(feature = "native-plan")]
 declare_structural_access_alias!(
     RecordAccessSwizzleAliasFactory,
     register_record_access_swizzle,
@@ -120,6 +144,7 @@ declare_structural_access_alias!(
     "RecordAccessSwizzle",
     "mech_engine::__mech_native::install_record_access_swizzle"
 );
+#[cfg(feature = "native-plan")]
 declare_structural_access_alias!(
     TableAccessSwizzleAliasFactory,
     register_table_access_swizzle,
@@ -303,7 +328,7 @@ impl FunctionSpecializer for AccessSwizzle {
                 for k in keys {
                     match k {
                         LegacyValue::Id(k) => match tbl.borrow().get(&k) {
-                            Some((kind, mat_values)) => {
+                            Some((_, mat_values)) => {
                                 elements.push(Box::new(mat_values.to_value()));
                             }
                             None => {
@@ -326,7 +351,6 @@ impl FunctionSpecializer for AccessSwizzle {
                         }
                     }
                 }
-                todo!("Table swizzle needs to be fixed.");
                 let tuple = LegacyValue::Tuple(Ref::new(MechTuple { elements }));
                 Ok(Box::new(TableAccessSwizzle { out: tuple }))
             }
@@ -357,7 +381,7 @@ impl FunctionSpecializer for AccessSwizzle {
                     for key in keys {
                         let k = key.as_u64().unwrap().borrow().clone();
                         match tbl.borrow().get(&k) {
-                            Some((kind, mat_values)) => {
+                            Some((_, mat_values)) => {
                                 elements.push(Box::new(mat_values.to_value()));
                             }
                             None => {

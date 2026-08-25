@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 use nom::{
     branch::alt,

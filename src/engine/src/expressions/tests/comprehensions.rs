@@ -5,6 +5,8 @@ use super::super::ValueSetComprehension;
 #[cfg(feature = "semantic-compiler")]
 use crate::CompileCtx;
 use crate::{FunctionArgs, LegacyValue, MechFunctionFactory, MechFunctionImpl, MechSet, Ref};
+#[cfg(feature = "matrix_comprehensions")]
+use mech_core::matrix::Matrix;
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{BytecodeInstruction, MechFunctionCompiler, ParsedProgram, hash_str};
 #[cfg(feature = "matrix_comprehensions")]
@@ -33,7 +35,7 @@ fn matrix_comprehension_factory_reconstructs_variadic_inputs() {
     let first = LegacyValue::from(1.0f64);
     let second = LegacyValue::from(2.0f64);
     let function = ValueMatrixComprehension::new(FunctionArgs::Variadic(
-        LegacyValue::MatrixF64(crate::Matrix::DMatrix(Ref::new(DMatrix::zeros(1, 2)))),
+        LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(DMatrix::zeros(1, 2)))),
         vec![first, second],
     ))
     .unwrap();
@@ -48,7 +50,7 @@ fn matrix_comprehension_factory_reconstructs_variadic_inputs() {
 #[test]
 fn matrix_comprehension_factory_accepts_empty_nullary_encoding() {
     let function = ValueMatrixComprehension::new(FunctionArgs::Nullary(LegacyValue::MatrixValue(
-        crate::Matrix::from_vec(Vec::new(), 0, 0),
+        Matrix::from_vec(Vec::new(), 0, 0),
     )))
     .unwrap();
 
@@ -144,7 +146,7 @@ fn matrix_comprehension_bytecode_reuses_repeated_child_registers() {
     let repeated = LegacyValue::from(3.0f64);
     let function = ValueMatrixComprehension {
         arguments: vec![repeated.clone(), repeated],
-        out: Ref::new(LegacyValue::MatrixF64(crate::Matrix::DMatrix(Ref::new(
+        out: Ref::new(LegacyValue::MatrixF64(Matrix::DMatrix(Ref::new(
             DMatrix::zeros(1, 2),
         )))),
     };

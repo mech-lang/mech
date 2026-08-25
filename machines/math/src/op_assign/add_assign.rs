@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 use super::*;
 #[cfg(feature = "matrix")]
@@ -63,7 +62,7 @@ pub fn add_assign_math_fxn(sink: LegacyValue, source: LegacyValue) -> MResult<Bo
       U16, "u16";
       U32, "u32";
       U64, "u64";
-      U128, "u128";
+      I128, "i128";
       I8,  "i8";
       I16, "i16";
       I32, "i32";
@@ -95,7 +94,7 @@ impl FunctionSpecializer for AddAssignMath {
         let source = arguments[1].clone();
         match add_assign_math_fxn(sink.clone(), source.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (sink, source) {
+            Err(_) => match (sink, source) {
                 (LegacyValue::MutableReference(sink), LegacyValue::MutableReference(source)) => {
                     add_assign_math_fxn(sink.borrow().clone(), source.borrow().clone())
                 }
@@ -206,7 +205,7 @@ impl FunctionSpecializer for AddAssignRange {
         let ixes = arguments[2..].to_vec();
         match add_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (&sink, &ixes, &source) {
+            Err(_) => match (&sink, &ixes, &source) {
                 (LegacyValue::MutableReference(sink), ixes, LegacyValue::MutableReference(source)) => {
                     add_assign_range_fxn(
                         sink.borrow().clone(),

@@ -113,11 +113,14 @@ mod tests {
     fn planning_returns_zero_for_every_timer_path_without_reading_snapshot() {
         let snapshot = new_shared_snapshot(TimerSnapshot::new(9, 20, 3));
         let poison = snapshot.clone();
-        let _ = std::thread::spawn(move || {
-            let _guard = poison.lock().unwrap();
-            panic!("poison planning snapshot");
-        })
-        .join();
+        assert!(
+            std::thread::spawn(move || {
+                let _guard = poison.lock().unwrap();
+                panic!("poison planning snapshot");
+            })
+            .join()
+            .is_err()
+        );
         let provider = TimerResourceProvider::new("timer", snapshot);
 
         for path in TIMER_PATHS {

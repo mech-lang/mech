@@ -2,7 +2,6 @@ use crate::*;
 use libm::{nextafter, nextafterf};
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Nextafter ------------------------------------------------------------------------
@@ -20,7 +19,7 @@ macro_rules! nextafter_vec_op {
         unsafe {
             let arg1_deref = &(*$arg1);
             let arg2_deref = &(*$arg2);
-            let mut out_deref = (&mut *$out);
+            let out_deref = &mut *$out;
             for i in 0..arg1_deref.len() {
                 (out_deref[i]) = nextafter(arg1_deref[i], arg2_deref[i]);
             }
@@ -41,7 +40,7 @@ macro_rules! nextafterf_vec_op {
         unsafe {
             let arg1_deref = &(*$arg1);
             let arg2_deref = &(*$arg2);
-            let mut out_deref = (&mut *$out);
+            let out_deref = &mut *$out;
             for i in 0..arg1_deref.len() {
                 (out_deref[i]) = nextafterf(arg1_deref[i], arg2_deref[i]);
             }
@@ -78,7 +77,7 @@ macro_rules! impl_two_arg_fxn {
         }
         #[cfg(feature = "semantic-compiler")]
         impl MechFunctionCompiler for $struct_name {
-            fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
                 todo!();
             }
         }

@@ -1,11 +1,10 @@
 use super::support::{
-    ActivationPatternDefinitionUnsupported, Arc, AtomicUsize, FailingPatternRegisterSpecializer,
-    LegacyValue, Ordering, PatternRegisterStageFailure, Ref, arm_pulse_generation,
-    arm_register_nodes, assert_dispatch_turn, assert_failed_elaboration_restored, body_output_f64,
-    committed_capture_value, f64_symbol, hash_str, install_function_extension, interpret,
-    interpret_more, plan_snapshot, proposed_capture_value, registration, root_cell,
-    set_atom_tuple_event, set_f64_symbol, symbol, turn_changed_nodes, turn_executed_nodes,
-    turn_unchanged_nodes,
+    Arc, AtomicUsize, FailingPatternRegisterSpecializer, LegacyValue, Ordering, Ref,
+    arm_pulse_generation, arm_register_nodes, assert_dispatch_turn,
+    assert_failed_elaboration_restored, body_output_f64, committed_capture_value, f64_symbol,
+    hash_str, install_function_extension, interpret, interpret_more, plan_snapshot,
+    proposed_capture_value, registration, root_cell, set_atom_tuple_event, set_f64_symbol, symbol,
+    turn_changed_nodes, turn_executed_nodes, turn_unchanged_nodes,
 };
 
 #[test]

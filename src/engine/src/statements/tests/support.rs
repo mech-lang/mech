@@ -78,40 +78,6 @@ pub(super) fn distinct_assignment_graph_shape(
     }
 }
 
-pub(super) fn decoded_assignment_graph_shape(
-    interpreter: &Interpreter,
-    output: &LegacyValue,
-) -> RegisterGraphShape {
-    let resolved_output = match output {
-        LegacyValue::MutableReference(reference) => reference.borrow().clone(),
-        other => other.clone(),
-    };
-    let output_cell = root_cell(&resolved_output);
-    let node_id = register_node_id_for_output(interpreter, output_cell);
-    let plan = interpreter.plan();
-    let plan = plan.borrow();
-    let node = plan.node(node_id).unwrap();
-    assert_eq!(node.kind, ReactiveNodeKind::Register);
-    assert_eq!(node.outputs, vec![output_cell]);
-    assert_eq!(node.outputs.len(), 1);
-    assert_eq!(node.inputs.len(), 2);
-    assert_eq!(node.inputs[0].cell, output_cell);
-    assert_eq!(node.inputs[0].kind, ReactiveDependencyKind::Sampled);
-    assert_ne!(node.inputs[1].cell, output_cell);
-    assert_eq!(node.inputs[1].kind, ReactiveDependencyKind::Reactive);
-    let source_cell = node.inputs[1].cell;
-    RegisterGraphShape {
-        output_count: node.outputs.len(),
-        input_kinds: node.inputs.iter().map(|input| input.kind).collect(),
-        output_is_first_input: node.inputs[0].cell == output_cell,
-        source_is_second_input: node.inputs[1].cell == source_cell,
-        output_is_sampled_consumer: plan.sampled_consumers_for(output_cell).contains(&node_id),
-        output_is_reactive_consumer: plan.reactive_consumers_for(output_cell).contains(&node_id),
-        source_is_reactive_consumer: plan.reactive_consumers_for(source_cell).contains(&node_id),
-        source_is_sampled_consumer: plan.sampled_consumers_for(source_cell).contains(&node_id),
-    }
-}
-
 pub(super) fn expected_distinct_assignment_shape() -> RegisterGraphShape {
     RegisterGraphShape {
         output_count: 1,

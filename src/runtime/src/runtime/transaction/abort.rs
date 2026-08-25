@@ -159,6 +159,7 @@ impl MechRuntime {
         Ok((transaction_id, rollback_failures))
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn validate_transaction_cleanup_complete(
         &self,
         context: &RuntimeContext,
@@ -181,6 +182,7 @@ impl MechRuntime {
         failures
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn finish_transaction_cleanup_best_effort(
         &mut self,
         context: &mut RuntimeContext,
@@ -218,6 +220,7 @@ impl MechRuntime {
         failures
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn cleanup_failed_implicit_operation(
         &mut self,
         context: &mut RuntimeContext,

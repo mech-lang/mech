@@ -6,7 +6,7 @@ use mech_runtime::{
     DisplayId, DisplayOperation, OutputContent, OutputEvent, OutputSource, OutputStream,
     Representation, RichOutput, SceneOutput,
 };
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsCast;
 use web_sys::{CanvasRenderingContext2d, Element, HtmlCanvasElement, SvgsvgElement};
 
 use crate::ScenePointerHandle;
@@ -342,13 +342,13 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     ctx.set_transform(ratio, 0.0, 0.0, ratio, 0.0, 0.0)
         .map_err(|_| scene_error("BrowserScene", "failed to set canvas transform"))?;
     ctx.set_global_alpha(1.0);
-    ctx.set_fill_style(&JsValue::from_str(&scene.background));
+    ctx.set_fill_style_str(&scene.background);
     ctx.fill_rect(0.0, 0.0, scene.width, scene.height);
     for c in &scene.circles {
         ctx.begin_path();
         ctx.set_global_alpha(c.opacity);
-        ctx.set_fill_style(&JsValue::from_str(&c.fill));
-        ctx.set_stroke_style(&JsValue::from_str(&c.stroke));
+        ctx.set_fill_style_str(&c.fill);
+        ctx.set_stroke_style_str(&c.stroke);
         ctx.set_line_width(c.stroke_width);
         ctx.arc(c.x, c.y, c.radius, 0.0, std::f64::consts::TAU)
             .map_err(|_| {
@@ -362,7 +362,7 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     for l in &scene.lines {
         ctx.save();
         ctx.set_global_alpha(l.opacity);
-        ctx.set_stroke_style(&JsValue::from_str(&l.stroke));
+        ctx.set_stroke_style_str(&l.stroke);
         ctx.set_line_width(l.stroke_width);
         ctx.set_line_cap(&l.line_cap);
         ctx.translate(l.origin_x, l.origin_y).map_err(|_| {
@@ -391,7 +391,7 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
             continue;
         };
         ctx.set_global_alpha(strip.opacity);
-        ctx.set_stroke_style(&JsValue::from_str(&strip.stroke));
+        ctx.set_stroke_style_str(&strip.stroke);
         ctx.set_line_width(strip.stroke_width);
         ctx.set_line_cap(&strip.line_cap);
         ctx.set_line_join(&strip.line_join);
@@ -407,7 +407,7 @@ fn render_canvas(selector: &str, scene: &SceneSnapshot) -> MResult<()> {
     }
     for text in &scene.texts {
         ctx.set_global_alpha(text.opacity);
-        ctx.set_fill_style(&JsValue::from_str(&text.fill));
+        ctx.set_fill_style_str(&text.fill);
         ctx.set_font(&format!(
             "{} {}px {}",
             text.font_weight, text.font_size, text.font_family

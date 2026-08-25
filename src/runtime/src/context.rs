@@ -504,6 +504,7 @@ impl RuntimeCallContext {
 }
 
 impl RuntimeContext {
+    #[cfg(test)]
     pub(crate) fn new(runtime: RuntimeId, subject: impl Into<String>) -> Self {
         Self {
             runtime,
@@ -521,42 +522,21 @@ impl RuntimeContext {
         }
     }
 
-    pub(crate) fn runtime(runtime: RuntimeId) -> Self {
-        Self::new(runtime, format!("runtime:{}", runtime))
-    }
-
-    pub(crate) fn with_subject(mut self, subject: impl Into<String>) -> Self {
-        self.subject = subject.into();
-        self
-    }
-
-    pub(crate) fn with_task(mut self, task: TaskId) -> Self {
-        self.task = Some(task);
-        self
-    }
-
-    pub(crate) fn with_actor(mut self, actor: ActorId) -> Self {
-        self.actor = Some(actor);
-        self
-    }
-
+    #[cfg(feature = "source")]
     pub(crate) fn with_module_version(mut self, module_version: ModuleVersionId) -> Self {
         self.module_version = Some(module_version);
         self
     }
 
+    #[cfg(test)]
     pub(crate) fn with_transaction(mut self, transaction: TransactionId) -> Self {
         self.transaction = Some(transaction);
         self
     }
 
+    #[cfg(test)]
     pub(crate) fn with_capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
         self.authority = RuntimeAuthorityScope::allow_list(capabilities);
-        self
-    }
-
-    pub(crate) fn with_budget(mut self, budget: ResourceBudget) -> Self {
-        self.budget = budget;
         self
     }
 
@@ -637,6 +617,7 @@ impl RuntimeContext {
         crate::runtime::gate_a_probe::record_event_appended();
     }
 
+    #[cfg(test)]
     pub(crate) fn drain_events(&mut self) -> Vec<RuntimeEvent> {
         self.events.drain_visible()
     }
@@ -645,6 +626,7 @@ impl RuntimeContext {
         self.events.finish_transaction_scope()
     }
 
+    #[cfg(any(feature = "source", feature = "runtime_bench_probes"))]
     pub(crate) fn prepare_event_checkpoint(&mut self) {
         self.events.prepare_checkpoint();
     }
@@ -670,6 +652,7 @@ impl RuntimeContext {
         self.budget.charge_steps(1)
     }
 
+    #[cfg(test)]
     pub(crate) fn charge_steps(&mut self, steps: u64) -> MResult<()> {
         self.budget.charge_steps(steps)
     }
@@ -821,11 +804,6 @@ impl RuntimeContextBuilder {
         self
     }
 
-    pub(crate) fn transaction(mut self, transaction: TransactionId) -> Self {
-        self.transaction = Some(transaction);
-        self
-    }
-
     pub(crate) fn capabilities(mut self, capabilities: Vec<CapabilityId>) -> Self {
         self.authority = Some(RuntimeAuthorityScope::allow_list(capabilities));
         self
@@ -833,11 +811,6 @@ impl RuntimeContextBuilder {
 
     pub(crate) fn budget(mut self, budget: ResourceBudget) -> Self {
         self.budget = budget;
-        self
-    }
-
-    pub(crate) fn access(mut self, access: AccessSet) -> Self {
-        self.access = access;
         self
     }
 

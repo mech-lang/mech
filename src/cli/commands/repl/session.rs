@@ -1,11 +1,13 @@
 use std::fs;
 
 use mech_core::MResult;
+#[cfg(test)]
+use mech_runtime::OutputArtifact;
 use mech_runtime::{
-    DiagnosticPhase, MechEvent, MechEventBuffer, MechEventEnvelope, MechRuntime, OutputArtifact,
-    ReplComponentKind, ReplDispatchControl, ReplHostAvailability, ReplHostRequirement, ReplRequest,
-    ReplStepMode, ResidentReplRuntimeFactory, ResidentReplSession, RuntimeConfig,
-    RuntimeValueSnapshot, Severity, dispatch_repl_request,
+    DiagnosticPhase, MechEvent, MechEventBuffer, MechEventEnvelope, MechRuntime, ReplComponentKind,
+    ReplDispatchControl, ReplHostAvailability, ReplHostRequirement, ReplRequest, ReplStepMode,
+    ResidentReplRuntimeFactory, ResidentReplSession, RuntimeConfig, RuntimeValueSnapshot, Severity,
+    dispatch_repl_request,
 };
 
 use crate::cli::host_grants::{
@@ -40,10 +42,12 @@ pub(super) struct ResidentRepl {
 }
 
 impl ResidentRepl {
+    #[cfg(test)]
     pub(super) fn new() -> MResult<Self> {
         Self::new_with_quiet(false)
     }
 
+    #[cfg(test)]
     pub(super) fn new_with_quiet(quiet: bool) -> MResult<Self> {
         Self::new_with_options(quiet, mech_runtime::DEFAULT_REPL_VALUE_ELEMENT_LIMIT)
     }
@@ -60,24 +64,13 @@ impl ResidentRepl {
         Ok(Self { session, grants })
     }
 
-    pub(super) fn source(&self) -> &str {
-        self.session.source()
-    }
-
     pub(super) fn grants(&self) -> &EffectiveCliHostGrants {
         &self.grants
     }
 
+    #[cfg(test)]
     pub(super) fn submit(&mut self, entry: &str) -> MResult<RuntimeValueSnapshot> {
         self.session.submit(entry)
-    }
-
-    pub(super) fn submit_with_source_echo(
-        &mut self,
-        entry: &str,
-        source_echo: &str,
-    ) -> MResult<RuntimeValueSnapshot> {
-        self.session.submit_with_source_echo(entry, source_echo)
     }
 
     pub(super) fn dispatch_request(
@@ -110,10 +103,6 @@ impl ResidentRepl {
             }
         }
         self.session.submit_host_source(&appended_source)
-    }
-
-    pub(super) fn reset(&mut self) -> MResult<()> {
-        self.session.reset()
     }
 
     pub(super) fn start_input_drivers(&mut self) -> MResult<()> {
@@ -156,6 +145,7 @@ impl ResidentRepl {
         self.session.drain_events()
     }
 
+    #[cfg(test)]
     pub(super) fn outputs(&self) -> Vec<OutputArtifact> {
         self.session.outputs()
     }

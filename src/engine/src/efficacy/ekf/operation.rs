@@ -1,3 +1,4 @@
+#[cfg(feature = "semantic-compiler")]
 use mech_core::ChangeDetectionPolicy;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -26,12 +27,14 @@ pub enum EkfPredicate {
     CovarianceSymmetric,
 }
 
+#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum FrozenEkfOperation {
     Kernel(EkfKernel),
     Predicate(EkfPredicate),
 }
 
+#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum FrozenEkfValueShape {
     F64,
@@ -40,6 +43,7 @@ pub(crate) enum FrozenEkfValueShape {
     Matrix { rows: usize, columns: usize },
 }
 
+#[cfg(feature = "semantic-compiler")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) struct FrozenEkfOperationSpec {
     pub operation: FrozenEkfOperation,
@@ -77,32 +81,45 @@ pub(crate) struct EkfScratch {
     pub symmetrized_covariance: [f64; 9],
 }
 
+#[cfg(feature = "semantic-compiler")]
 use ChangeDetectionPolicy::{ExactScalar, KernelReported};
+#[cfg(feature = "semantic-compiler")]
 use EkfKernel::*;
+#[cfg(feature = "semantic-compiler")]
 use EkfPredicate::*;
+#[cfg(feature = "semantic-compiler")]
 use FrozenEkfOperation::{Kernel, Predicate};
+#[cfg(feature = "semantic-compiler")]
 use FrozenEkfValueShape::{Bool, F64, Matrix, Vector};
 
+#[cfg(feature = "semantic-compiler")]
 const V2: FrozenEkfValueShape = Vector(2);
+#[cfg(feature = "semantic-compiler")]
 const V3: FrozenEkfValueShape = Vector(3);
+#[cfg(feature = "semantic-compiler")]
 const V4: FrozenEkfValueShape = Vector(4);
+#[cfg(feature = "semantic-compiler")]
 const M2: FrozenEkfValueShape = Matrix {
     rows: 2,
     columns: 2,
 };
+#[cfg(feature = "semantic-compiler")]
 const M3: FrozenEkfValueShape = Matrix {
     rows: 3,
     columns: 3,
 };
+#[cfg(feature = "semantic-compiler")]
 const M2X3: FrozenEkfValueShape = Matrix {
     rows: 2,
     columns: 3,
 };
+#[cfg(feature = "semantic-compiler")]
 const M3X2: FrozenEkfValueShape = Matrix {
     rows: 3,
     columns: 2,
 };
 
+#[cfg(feature = "semantic-compiler")]
 macro_rules! spec {
     ($operation:expr, $item:literal, $inputs:expr, $output:expr, $change:expr $(,)?) => {
         FrozenEkfOperationSpec {
@@ -116,6 +133,7 @@ macro_rules! spec {
     };
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub(crate) const FROZEN_EKF_OPERATIONS: [FrozenEkfOperationSpec; 18] = [
     spec!(
         Kernel(TrigonometricState),
@@ -239,15 +257,10 @@ pub(crate) const FROZEN_EKF_OPERATIONS: [FrozenEkfOperationSpec; 18] = [
     ),
 ];
 
+#[cfg(feature = "semantic-compiler")]
 pub(crate) fn operation_spec(operation: FrozenEkfOperation) -> &'static FrozenEkfOperationSpec {
     FROZEN_EKF_OPERATIONS
         .iter()
         .find(|spec| spec.operation == operation)
         .expect("every frozen EKF operation has exactly one specification")
-}
-
-pub(crate) fn operation_spec_by_name(name: &str) -> Option<&'static FrozenEkfOperationSpec> {
-    FROZEN_EKF_OPERATIONS
-        .iter()
-        .find(|spec| spec.canonical_name == name)
 }

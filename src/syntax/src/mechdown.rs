@@ -1,29 +1,15 @@
-#[macro_use]
 use crate::*;
 
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::string::String;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
 use nom::{
-    Err,
-    Err::Failure,
-    IResult,
     branch::alt,
-    bytes::complete::{take_until, take_while},
-    combinator::{cut, eof, opt, peek},
-    multi::{many_till, many0, many1, separated_list0, separated_list1},
+    combinator::{cut, opt, peek},
+    multi::{many0, many1, separated_list1},
     sequence::{pair, tuple as nom_tuple},
 };
-
-use colored::*;
-use std::collections::HashMap;
-
-use crate::*;
 
 #[derive(Default)]
 pub struct TitleFrontMatter {
@@ -197,11 +183,16 @@ pub fn mechdown_table_header(
     input: ParseString,
 ) -> ParseResult<(Vec<Paragraph>, Vec<ColumnAlignment>)> {
     let (input, _) = whitespace0(input)?;
-    let (input, header) = many1(tuple((bar, tuple((many0(space_tab), inline_paragraph)))))(input)?;
+    let (input, header) = many1(nom_tuple((
+        bar,
+        nom_tuple((many0(space_tab), inline_paragraph)),
+    )))(input)?;
     let (input, _) = bar(input)?;
     let (input, _) = whitespace0(input)?;
-    let (input, alignment) =
-        many1(tuple((bar, tuple((many0(space_tab), alignment_separator)))))(input)?;
+    let (input, alignment) = many1(nom_tuple((
+        bar,
+        nom_tuple((many0(space_tab), alignment_separator)),
+    )))(input)?;
     let (input, _) = bar(input)?;
     let (input, _) = whitespace0(input)?;
     let column_names: Vec<Paragraph> = header.into_iter().map(|(_, (_, tkn))| tkn).collect();
@@ -223,10 +214,10 @@ pub fn empty_paragraph(input: ParseString) -> ParseResult<Paragraph> {
 pub fn mechdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
     let (input, _) = whitespace0(input)?;
     let (input, _) = bar(input)?;
-    let (input, row) = many1(tuple((
+    let (input, row) = many1(nom_tuple((
         alt((
-            tuple((many0(space_tab), inline_paragraph)),
-            tuple((many1(space_tab), empty_paragraph)),
+            nom_tuple((many0(space_tab), inline_paragraph)),
+            nom_tuple((many1(space_tab), empty_paragraph)),
         )),
         bar,
     )))(input)?;
@@ -237,7 +228,7 @@ pub fn mechdown_table_row(input: ParseString) -> ParseResult<Vec<Paragraph>> {
 
 // subtitle := +(digit | alpha), period, *space-tab, paragraph-newline, *space-tab, whitespace* ;
 pub fn ul_subtitle(input: ParseString) -> ParseResult<Subtitle> {
-    let (input, _) = many1((alt((digit_token, alpha_token))))(input)?;
+    let (input, _) = many1(alt((digit_token, alpha_token)))(input)?;
     let (input, _) = period(input)?;
     let (input, _) = many0(space_tab)(input)?;
     let (input, text) = paragraph_newline(input)?;
@@ -297,7 +288,7 @@ pub fn annotated_subtitle(input: ParseString) -> ParseResult<(Subtitle, Vec<Sect
     // A source ordinal is authoring metadata, just as it is for an ordinary
     // underlined subtitle. Rendering assigns the editorial section counter
     // from document order, so never retain `5.` as part of the semantic title.
-    let (input, _) = opt(tuple((
+    let (input, _) = opt(nom_tuple((
         many1(alt((digit_token, alpha_token))),
         period,
         many0(space_tab),
@@ -385,9 +376,9 @@ pub fn subtitle(input: ParseString) -> ParseResult<Subtitle> {
 
 // strong := (asterisk, asterisk), +paragraph-element, (asterisk, asterisk) ;
 pub fn strong(input: ParseString) -> ParseResult<ParagraphElement> {
-    let (input, _) = tuple((asterisk, asterisk))(input)?;
+    let (input, _) = nom_tuple((asterisk, asterisk))(input)?;
     let (input, text) = paragraph_element(input)?;
-    let (input, _) = tuple((asterisk, asterisk))(input)?;
+    let (input, _) = nom_tuple((asterisk, asterisk))(input)?;
     Ok((input, ParagraphElement::Strong(Box::new(text))))
 }
 
@@ -427,7 +418,7 @@ pub fn highlight(input: ParseString) -> ParseResult<ParagraphElement> {
 pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = is_not(grave_codeblock_sigil)(input)?; // prevent matching code fences
     let (input, _) = grave(input)?;
-    let (input, text) = many0(tuple((is_not(grave), text)))(input)?;
+    let (input, text) = many0(nom_tuple((is_not(grave), text)))(input)?;
     let (input, _) = grave(input)?;
     let mut text = text.into_iter().map(|(_, tkn)| tkn).collect();
     // return empty token if there's nothing between the graves
@@ -444,7 +435,7 @@ pub fn inline_code(input: ParseString) -> ParseResult<ParagraphElement> {
 // inline-equation := equation-sigil, +text, equation-sigil ;
 pub fn inline_equation(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = equation_sigil(input)?;
-    let (input, txt) = many0(tuple((is_not(equation_sigil), alt((backslash, text)))))(input)?;
+    let (input, txt) = many0(nom_tuple((is_not(equation_sigil), alt((backslash, text)))))(input)?;
     let (input, _) = equation_sigil(input)?;
     let mut txt = txt.into_iter().map(|(_, tkn)| tkn).collect();
     let mut eqn = Token::merge_tokens(&mut txt).unwrap();
@@ -458,7 +449,7 @@ pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, link_text) = inline_paragraph(input)?;
     let (input, _) = right_bracket(input)?;
     let (input, _) = left_parenthesis(input)?;
-    let (input, link) = many1(tuple((is_not(right_parenthesis), text)))(input)?;
+    let (input, link) = many1(nom_tuple((is_not(right_parenthesis), text)))(input)?;
     let (input, _) = right_parenthesis(input)?;
     let mut tokens = link.into_iter().map(|(_, tkn)| tkn).collect::<Vec<Token>>();
     let link_merged = Token::merge_tokens(&mut tokens).unwrap();
@@ -468,7 +459,7 @@ pub fn hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
 // raw-hyperlink := http-prefix, +text ;
 pub fn raw_hyperlink(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = peek(http_prefix)(input)?;
-    let (input, address) = many1(tuple((is_not(space), text)))(input)?;
+    let (input, address) = many1(nom_tuple((is_not(space), text)))(input)?;
     let mut tokens = address
         .into_iter()
         .map(|(_, tkn)| tkn)
@@ -494,10 +485,6 @@ pub fn option_map(input: ParseString) -> ParseResult<OptionMap> {
 
 // option-mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
 pub fn option_mapping(input: ParseString) -> ParseResult<(Identifier, MechString)> {
-    let msg1 = "Unexpected space before colon ':'";
-    let msg2 = "Expects a value";
-    let msg3 = "Expects whitespace or comma followed by whitespace";
-    let msg4 = "Expects whitespace";
     let (input, _) = whitespace0(input)?;
     let (input, key) = identifier(input)?;
     let (input, _) = whitespace0(input)?;
@@ -531,7 +518,7 @@ pub fn img(input: ParseString) -> ParseResult<Image> {
     let (input, caption_text) = opt(inline_paragraph)(input)?;
     let (input, _) = right_bracket(input)?;
     let (input, _) = left_parenthesis(input)?;
-    let (input, src) = many1(tuple((is_not(right_parenthesis), text)))(input)?;
+    let (input, src) = many1(nom_tuple((is_not(right_parenthesis), text)))(input)?;
     let (input, _) = right_parenthesis(input)?;
     let (input, style) = opt(option_map)(input)?;
     let merged_src =
@@ -566,7 +553,7 @@ pub fn figure_item(input: ParseString) -> ParseResult<FigureItem> {
 pub fn figures_row(input: ParseString) -> ParseResult<Vec<FigureItem>> {
     let (input, _) = whitespace0(input)?;
     let (input, _) = bar(input)?;
-    let (input, cells) = many1(tuple((
+    let (input, cells) = many1(nom_tuple((
         many0(space_tab),
         figure_item,
         many0(space_tab),
@@ -609,7 +596,7 @@ pub fn paragraph_text(input: ParseString) -> ParseResult<ParagraphElement> {
         text,
     )))(input)
     {
-        Ok((input, mut text)) => {
+        Ok((input, text)) => {
             let mut text = text.into_iter().map(|(_, tkn)| tkn).collect();
             let mut text = Token::merge_tokens(&mut text).unwrap();
             text.kind = TokenKind::Text;
@@ -647,7 +634,7 @@ pub fn inline_mech_code(input: ParseString) -> ParseResult<ParagraphElement> {
 // footnote-reference := "[^", +text, "]" ;
 pub fn footnote_reference(input: ParseString) -> ParseResult<ParagraphElement> {
     let (input, _) = footnote_prefix(input)?;
-    let (input, text) = many1(tuple((is_not(right_bracket), text)))(input)?;
+    let (input, text) = many1(nom_tuple((is_not(right_bracket), text)))(input)?;
     let (input, _) = right_bracket(input)?;
     let mut tokens = text.into_iter().map(|(_, tkn)| tkn).collect::<Vec<Token>>();
     let footnote_text = Token::merge_tokens(&mut tokens).unwrap();
@@ -911,7 +898,9 @@ pub fn ordered_list(mut input: ParseString, level: usize) -> ParseResult<MDList>
         let (next_input, _) = many0(space_tab)(input.clone())?;
         // Try to parse an ordered list item
         let (next_input, (list_item, _)) =
-            match tuple((ordered_list_item, is_not(tuple((dash, dash)))))(next_input.clone()) {
+            match nom_tuple((ordered_list_item, is_not(nom_tuple((dash, dash)))))(
+                next_input.clone(),
+            ) {
                 Ok((next_input, res)) => (next_input, res),
                 Err(err) => {
                     if !items.is_empty() {
@@ -993,7 +982,7 @@ pub fn unordered_list_item(input: ParseString) -> ParseResult<(Option<Token>, Pa
     let msg1 = "Expects space after dash";
     let msg2 = "Expects paragraph as list item";
     let (input, _) = dash(input)?;
-    let (input, bullet) = opt(tuple((left_parenthesis, emoji, right_parenthesis)))(input)?;
+    let (input, bullet) = opt(nom_tuple((left_parenthesis, emoji, right_parenthesis)))(input)?;
     let (input, _) = labelr!(null(many1(space)), skip_nil, msg1)(input)?;
     let (input, list_item) = labelr!(
         paragraph_newline,
@@ -1021,12 +1010,10 @@ pub fn codeblock_sigil(input: ParseString) -> ParseResult<fn(ParseString) -> Par
 
 //
 pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
-    let msg1 = "Expects 3 graves to start a code block";
     let msg2 = "Expects new_line";
-    let msg3 = "Expects 3 graves followed by new_line to terminate a code block";
-    let (input, (end_sgl, r)) = range(codeblock_sigil)(input)?;
+    let (input, (end_sgl, _)) = range(codeblock_sigil)(input)?;
     let (input, _) = many0(space_tab)(input)?;
-    let (input, code_id) = many0(tuple((is_not(left_brace), text)))(input)?;
+    let (input, code_id) = many0(nom_tuple((is_not(left_brace), text)))(input)?;
     let code_id = code_id
         .into_iter()
         .map(|(_, tkn)| tkn)
@@ -1054,9 +1041,11 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
                 Ok(grammar_tree) => {
                     return Ok((input, SectionElement::Grammar(grammar_tree)));
                 }
-                Err(err) => {
-                    println!("Error parsing EBNF grammar: {:?}", err);
-                    todo!();
+                Err(_) => {
+                    return Err(nom::Err::Failure(ParseError::new(
+                        input,
+                        "Unable to parse EBNF grammar",
+                    )));
                 }
             }
         }
@@ -1137,7 +1126,7 @@ pub fn code_block(input: ParseString) -> ParseResult<SectionElement> {
                             }),
                         ));
                     }
-                    Err(err) => {
+                    Err(_) => {
                         return Err(nom::Err::Error(ParseError {
                             cause_range: SourceRange::default(),
                             remaining_input: input,
@@ -1178,7 +1167,7 @@ pub fn thematic_break(input: ParseString) -> ParseResult<SectionElement> {
 // footnote := "[^", +text, "]", ":", ws0, paragraph ;
 pub fn footnote(input: ParseString) -> ParseResult<Footnote> {
     let (input, _) = footnote_prefix(input)?;
-    let (input, text) = many1(tuple((is_not(right_bracket), text)))(input)?;
+    let (input, text) = many1(nom_tuple((is_not(right_bracket), text)))(input)?;
     let (input, _) = right_bracket(input)?;
     let (input, _) = colon(input)?;
     let (input, _) = whitespace0(input)?;
@@ -1277,7 +1266,7 @@ pub fn abstract_el(input: ParseString) -> ParseResult<SectionElement> {
 pub fn equation(input: ParseString) -> ParseResult<Token> {
     let (input, _) = equation_sigil(input)?;
     let (input, mut txt) = many1(alt((backslash, text)))(input)?;
-    let mut eqn = Token::merge_tokens(&mut txt).unwrap();
+    let eqn = Token::merge_tokens(&mut txt).unwrap();
     Ok((input, eqn))
 }
 
@@ -1442,9 +1431,8 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
                 new_input = input;
                 continue;
             }
-            Err(e) => {
+            Err(_) => {
                 // not mika code, try mech code
-                //return Err(e);
             }
         }
 
@@ -1455,7 +1443,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
                 new_input = input;
                 continue;
             }
-            Err(e) => {
+            Err(_) => {
                 // not mech code, try section_element
                 //return Err(e);
             }
@@ -1487,7 +1475,7 @@ pub fn section(input: ParseString) -> ParseResult<Section> {
 
 // body := whitespace0, +(section, eof), eof ;
 pub fn body(input: ParseString) -> ParseResult<Body> {
-    let (mut input, _) = whitespace0(input)?;
+    let (input, _) = whitespace0(input)?;
     let mut sections = vec![];
     let mut new_input = input.clone();
     loop {

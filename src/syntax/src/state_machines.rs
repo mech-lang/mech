@@ -1,6 +1,5 @@
-#[macro_use]
 use crate::*;
-use nom::{multi::separated_list0, sequence::tuple as nom_tuple};
+use nom::multi::separated_list0;
 
 #[derive(Debug, Clone)]
 struct InvalidFsmValuePatternError {
@@ -210,7 +209,7 @@ pub fn fsm_block_transition(input: ParseString) -> ParseResult<Transition> {
 // fsm_output := output_operator, pattern ;
 pub fn fsm_output(input: ParseString) -> ParseResult<Transition> {
     let (input, _) = output_operator(input)?;
-    let ((input, ptrn)) = fsm_value(input)?;
+    let (input, ptrn) = fsm_value(input)?;
     Ok((input, Transition::Output(ptrn)))
 }
 
@@ -287,16 +286,16 @@ pub fn fsm_declare(input: ParseString) -> ParseResult<FsmDeclare> {
 
 // fsm := "#", identifier, argument_list?, kind_annotation? ;
 pub fn fsm(input: ParseString) -> ParseResult<Fsm> {
-    let ((input, _)) = hashtag(input)?;
-    let ((input, name)) = identifier(input)?;
-    let ((input, args)) = opt(argument_list)(input)?;
-    let ((input, kind)) = opt(kind_annotation)(input)?;
+    let (input, _) = hashtag(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, args) = opt(argument_list)(input)?;
+    let (input, kind) = opt(kind_annotation)(input)?;
     Ok((input, Fsm { name, args, kind }))
 }
 
 // fsm_instance := "#", identifier, fsm_args? ;
 pub fn fsm_instance(input: ParseString) -> ParseResult<FsmInstance> {
-    let ((input, _)) = hashtag(input)?;
+    let (input, _) = hashtag(input)?;
     let (input, name) = identifier(input)?;
     let (input, args) = opt(fsm_args)(input)?;
     Ok((input, FsmInstance { name, args }))

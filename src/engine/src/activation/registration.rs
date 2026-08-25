@@ -1,15 +1,14 @@
 use crate::patterns::PatternBindingSink;
 use crate::{
-    ActivationArm, ActivationArmBody, ActivationScope, Interpreter, InterpreterExecution,
-    LegacyValue, MResult, MechError, PatternActivationArmRegistration,
-    PatternActivationCaptureRegistration, PatternActivationGuardRegistration,
-    PatternActivationRegistration, ReactiveCellId, Ref, match_compiled_pattern_with_values,
+    ActivationArm, ActivationScope, Interpreter, InterpreterExecution, LegacyValue, MResult,
+    MechError, PatternActivationArmRegistration, PatternActivationCaptureRegistration,
+    PatternActivationGuardRegistration, PatternActivationRegistration, ReactiveCellId, Ref,
+    match_compiled_pattern_with_values,
 };
 
 use super::{
-    ActivationPatternArmsNonExhaustive, ActivationPatternCapture,
-    ActivationPatternTriggerInvariant, Finalize, MatchGate, Matcher, ReactiveBindingSink,
-    ScopePulse, Select, UnmatchedFinalize,
+    ActivationPatternArmsNonExhaustive, ActivationPatternTriggerInvariant, Finalize, MatchGate,
+    Matcher, ReactiveBindingSink, ScopePulse, Select, UnmatchedFinalize,
     arms::PreflightPatternedActivation,
     commit_proposed_captures, elaborate_patterned_arm_guard, generation,
     registers::{Gate, elaborate_patterned_arm_body},

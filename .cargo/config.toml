@@ -1,2 +1,6 @@
 [env]
 RUSTC_BOOTSTRAP = "1"
+
+[build]
+rustflags = ["-D", "warnings"]
+rustdocflags = ["-D", "warnings"]

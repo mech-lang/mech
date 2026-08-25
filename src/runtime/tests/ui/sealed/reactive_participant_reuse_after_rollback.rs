@@ -3,11 +3,11 @@ use mech_core::{
 };
 
 fn main() {
-  let _ = with_reactive_journal_participant(
+  drop(with_reactive_journal_participant(
     |mut participant| {
       participant.apply_restore_before();
       participant.capture_value(&LegacyValue::Empty)?;
       Ok(())
     },
-  );
+  ));
 }

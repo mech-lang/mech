@@ -335,6 +335,11 @@ mech_core::declare_native_binop_runtime_factories! {
         ("complex", C64, "c64", c64),
 }
 
+#[cfg(all(
+    feature = "native-plan",
+    feature = "matrixd",
+    any(feature = "matrix1", feature = "matrix1_interop")
+))]
 macro_rules! register_add_matrix1_dynamic_native_factories {
     ($builder:expr; $scalar_feature:literal, $scalar_token:ident) => {
         #[cfg(all(
@@ -606,7 +611,11 @@ pub fn install_math_add_runtime(builder: &mut FunctionCatalogBuilder) -> MResult
     Ok(())
 }
 
-#[cfg(feature = "native-plan")]
+#[cfg(all(
+    feature = "native-plan",
+    feature = "matrixd",
+    any(feature = "matrix1", feature = "matrix1_interop")
+))]
 pub fn install_math_add_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     register_add_matrix1_dynamic_native_factories!(builder; "i8", i8);
     register_add_matrix1_dynamic_native_factories!(builder; "i16", i16);
@@ -875,7 +884,10 @@ mod tests {
         specializer: &dyn FunctionSpecializer,
         arguments: [LegacyValue; 2],
         expected_family: &str,
+        #[cfg(feature = "semantic-compiler")]
         expected_runtime_name: &str,
+        #[cfg(not(feature = "semantic-compiler"))]
+        _: &str,
     ) {
         let function = specializer.specialize(&arguments).unwrap();
         assert!(
@@ -893,9 +905,6 @@ mod tests {
                 [RuntimeFunctionId::from_name(expected_runtime_name).raw()],
             );
         }
-
-        #[cfg(not(feature = "semantic-compiler"))]
-        let _ = expected_runtime_name;
     }
 
     #[test]

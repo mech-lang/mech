@@ -1,6 +1,5 @@
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
 // Intersection ------------------------------------------------------------------------
@@ -123,7 +122,7 @@ impl FunctionSpecializer for SetIntersection {
         let rhs = arguments[1].clone();
         match set_intersection_fxn(lhs.clone(), rhs.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (lhs, rhs) {
+            Err(_) => match (lhs, rhs) {
                 (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                     set_intersection_fxn(lhs.borrow().clone(), rhs.borrow().clone())
                 }

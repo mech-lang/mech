@@ -572,45 +572,30 @@ fn index_statement_address_references(
     order: &mut usize,
     statement: &Statement,
 ) {
-    match statement {
-        Statement::VariableDefine(def) => {
-            index_expression_address_references(index, scope, order, &def.expression)
-        }
-        Statement::VariableAssign(assign) => {
-            index_expression_address_references(index, scope, order, &assign.expression)
-        }
-        Statement::ContextSend(send) => {
-            index_expression_address_references(index, scope, order, &send.expression)
-        }
-        Statement::OpAssign(assign) => {
-            index_expression_address_references(index, scope, order, &assign.expression)
-        }
-        Statement::TupleDestructure(destructure) => {
-            index_expression_address_references(index, scope, order, &destructure.expression)
-        }
-        Statement::FsmDeclare(fsm) => index_expression_address_references(
+    let expression = match statement {
+        Statement::VariableDefine(def) => Some(&def.expression),
+        Statement::VariableAssign(assign) => Some(&assign.expression),
+        Statement::ContextSend(send) => Some(&send.expression),
+        Statement::OpAssign(assign) => Some(&assign.expression),
+        Statement::TupleDestructure(destructure) => Some(&destructure.expression),
+        _ => None,
+    };
+    if let Some(expression) = expression {
+        index_expression_address_references(index, scope, order, expression);
+        return;
+    }
+    if let Statement::FsmDeclare(fsm) = statement {
+        index_expression_address_references(
             index,
             scope,
             order,
             &Expression::FsmPipe(fsm.pipe.clone()),
-        ),
-        Statement::ImportDeclaration(_)
-        | Statement::ExportDeclaration(_)
-        | Statement::ContextDeclaration(_)
-        | Statement::EnumDefine(_)
-        | Statement::KindDefine(_)
-        | Statement::SplitTable
-        | Statement::FlattenTable => {}
-        #[cfg(feature = "invariant_define")]
-        Statement::InvariantDefine(invariant) => {
-            index_expression_address_references(index, scope, order, &invariant.expression);
-        }
-        // A sibling dependency can expose additional core statement variants
-        // through Cargo feature unification. Profiles that enable those
-        // statements add an explicit indexing arm above; other profiles must
-        // still compile without inventing references for unsupported syntax.
-        #[allow(unreachable_patterns)]
-        _ => {}
+        );
+        return;
+    }
+    #[cfg(feature = "invariant_define")]
+    if let Statement::InvariantDefine(invariant) = statement {
+        index_expression_address_references(index, scope, order, &invariant.expression);
     }
 }
 

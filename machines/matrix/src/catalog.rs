@@ -3,8 +3,8 @@ use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
 use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, function_shape_contract_violation,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
+    RuntimeOutputAliasPolicy, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
@@ -200,6 +200,21 @@ declare_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord
 // as the dynamic families above.  Keep its complete shape matrix in one
 // declaration traversal so registration, linkage metadata, and native exports
 // cannot diverge.
+#[cfg(any(
+    feature = "native-link",
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+))]
 macro_rules! for_each_matrix_matmul_fixed_family {
     ($callback:ident, ($($context:tt)*)) => {
         #[cfg(all(feature = "row_vector4", feature = "vector4", feature = "matrix1"))] $callback!($($context)*; MatMulR4V4; ["row_vector4", "vector4", "matrix1"]);
@@ -240,6 +255,20 @@ macro_rules! for_each_matrix_matmul_fixed_family {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+))]
 macro_rules! declare_matrix_matmul_fixed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         declare_matrix_numeric_family! {
@@ -250,8 +279,23 @@ macro_rules! declare_matrix_matmul_fixed_family {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+))]
 for_each_matrix_matmul_fixed_family!(declare_matrix_matmul_fixed_family, ());
 
+#[cfg(feature = "native-link")]
 macro_rules! export_matrix_numeric_factory {
     (($cfg:meta; $module:ident; $factory:ident); $token:ident; $_scalar:ty; $scalar_feature:literal) => {
         #[cfg(all($cfg, feature = $scalar_feature))]
@@ -259,12 +303,14 @@ macro_rules! export_matrix_numeric_factory {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_matrix_numeric_family {
     (cfg: $cfg:meta, module: $module:ident, factory: $factory:ident) => {
         for_each_matrix_numeric_scalar!(export_matrix_numeric_factory, ($cfg; $module; $factory));
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_matrix_matmul_fixed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         export_matrix_numeric_family! {
@@ -328,6 +374,7 @@ macro_rules! install_declared_matrix_transpose_family {
     ($builder:ident; $factory:ident) => { for_each_matrix_transpose_scalar!(register_matrix_transpose_factory, ($builder; $factory)); };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_matrix_transpose_factory {
     (($factory:ident; [$($shape_feature:literal),+]); $token:ident; $_scalar:ty; $_name:literal; $scalar_cfg:literal; $_scalar_feature:literal) => {
         #[cfg(all(feature = "transpose", feature = $scalar_cfg, $(feature = $shape_feature),+))]
@@ -335,6 +382,7 @@ macro_rules! export_matrix_transpose_factory {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_matrix_transpose_family {
     ($factory:ident; [$($shape_feature:literal),+]) => { for_each_matrix_transpose_scalar!(export_matrix_transpose_factory, ($factory; [$($shape_feature),+])); };
 }
@@ -343,6 +391,21 @@ declare_matrix_transpose_family!(TransposeMD; ["matrixd"]);
 declare_matrix_transpose_family!(TransposeVD; ["vectord", "row_vectord"]);
 declare_matrix_transpose_family!(TransposeRD; ["row_vectord", "vectord"]);
 
+#[cfg(any(
+    feature = "native-link",
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+))]
 macro_rules! for_each_matrix_transpose_fixed_family {
     ($callback:ident, ($($context:tt)*)) => {
         #[cfg(feature = "matrix1")] $callback!($($context)*; TransposeM1; ["matrix1"]);
@@ -360,14 +423,43 @@ macro_rules! for_each_matrix_transpose_fixed_family {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+))]
 macro_rules! declare_matrix_transpose_fixed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         declare_matrix_transpose_family!($factory; [$($feature),+]);
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "matrix2",
+    feature = "matrix3",
+    feature = "matrix4",
+    feature = "matrix2x3",
+    feature = "matrix3x2",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "row_vector2",
+    feature = "row_vector3",
+    feature = "row_vector4",
+))]
 for_each_matrix_transpose_fixed_family!(declare_matrix_transpose_fixed_family, ());
 
+#[cfg(feature = "native-link")]
 macro_rules! export_matrix_transpose_fixed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         export_matrix_transpose_family!($factory; [$($feature),+]);
@@ -741,7 +833,7 @@ mod tests {
 #[cfg(test)]
 mod runtime_signature_tests {
     use super::*;
-    use mech_core::{FunctionRuntimeType, RuntimeFunctionSignature};
+    use mech_core::{FunctionRuntimeType, MechFunctionFactory, RuntimeFunctionSignature};
 
     #[cfg(all(feature = "dot", feature = "f64", feature = "matrix1"))]
     #[test]

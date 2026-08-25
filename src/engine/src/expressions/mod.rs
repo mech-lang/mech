@@ -1,9 +1,6 @@
 #![forbid(unsafe_code)]
 
-use crate::{
-    Expression, FeatureNotEnabledError, InterpreterExecution, LegacyValue, MResult, MechError,
-    literal, structure,
-};
+use crate::{Expression, InterpreterExecution, LegacyValue, MResult, literal, structure};
 
 use std::collections::HashMap;
 
@@ -61,8 +58,6 @@ pub(crate) use matches::validate_guard_expression_result;
     feature = "subscript_range"
 ))]
 pub use ranges::range;
-#[cfg(feature = "functions")]
-use registration::{register_expression_function_batch, register_initialized_expression_function};
 #[cfg(all(feature = "subscript_slice", feature = "access"))]
 pub use subscripts::slice;
 #[cfg(all(feature = "subscript", feature = "access"))]
@@ -118,7 +113,22 @@ pub fn expression(
         Expression::Match(match_expr) => match_expression(match_expr, env, p),
         #[cfg(feature = "state_machines")]
         Expression::FsmPipe(fsm_pipe) => crate::state_machines::execute_fsm_pipe(fsm_pipe, env, p),
-        x => Err(MechError::new(FeatureNotEnabledError, None)
+        #[cfg(not(all(
+            feature = "variables",
+            any(
+                feature = "range_inclusive",
+                feature = "range_exclusive",
+                feature = "range_inclusive_increment",
+                feature = "range_exclusive_increment"
+            ),
+            feature = "subscript_slice",
+            feature = "access",
+            feature = "functions",
+            feature = "set_comprehensions",
+            feature = "matrix_comprehensions",
+            feature = "state_machines"
+        )))]
+        x => Err(crate::MechError::new(crate::FeatureNotEnabledError, None)
             .with_compiler_loc()
             .with_tokens(x.tokens())),
     }

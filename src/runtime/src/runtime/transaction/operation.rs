@@ -1,14 +1,20 @@
 //! Generic runtime operation health and savepoint coordination.
 
+#[cfg(feature = "source")]
 use super::{RuntimeContextCheckpoint, RuntimeOperationSavepoint};
+#[cfg(any(feature = "source", feature = "runtime_bench_probes"))]
+use crate::RuntimeContext;
 use crate::runtime::MechRuntime;
+#[cfg(feature = "source")]
 use crate::runtime::state::ScopedRuntimeState;
+#[cfg(feature = "source")]
+use crate::{ActiveRuntimeEffectPhase, RuntimeEffectId, RuntimeEventKind};
 use crate::{
-    ActiveRuntimeEffectPhase, RuntimeContext, RuntimeEffectId, RuntimeEffectOperationReentrant,
-    RuntimeEventKind, RuntimeHealth, RuntimeOperationRollbackFailed, RuntimePoisonRecord,
-    RuntimePoisoned, TransactionId,
+    RuntimeEffectOperationReentrant, RuntimeHealth, RuntimeOperationRollbackFailed,
+    RuntimePoisonRecord, RuntimePoisoned, TransactionId,
 };
 use mech_core::{MResult, MechError};
+#[cfg(feature = "source")]
 use std::collections::HashSet;
 
 impl MechRuntime {
@@ -18,8 +24,13 @@ impl MechRuntime {
         &self,
         context: &mut RuntimeContext,
     ) -> MResult<()> {
+        context.prepare_event_checkpoint();
         let transaction_id = Self::context_transaction_id(context)?;
-        let _savepoint = self.capture_runtime_operation_savepoint(context, transaction_id)?;
+        let transaction = self.active_runtime_transaction(transaction_id)?;
+        crate::runtime::gate_a_probe::record_runtime_transaction_savepoint_clone(
+            transaction.store.gate_a_staged_item_count(),
+        );
+        drop(transaction.store.clone());
         Ok(())
     }
 
@@ -90,6 +101,7 @@ impl MechRuntime {
         )
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn capture_runtime_operation_savepoint(
         &self,
         context: &mut RuntimeContext,
@@ -110,6 +122,7 @@ impl MechRuntime {
         })
     }
 
+    #[cfg(feature = "source")]
     pub(in crate::runtime) fn rollback_runtime_operation(
         &mut self,
         context: &mut RuntimeContext,
@@ -164,10 +177,10 @@ impl MechRuntime {
                     if failed_effects.contains(&effect_id) {
                         continue;
                     }
-                    let _ = self.emit_effect_event_outside_transaction(
+                    drop(self.emit_effect_event_outside_transaction(
                         context,
                         RuntimeEventKind::EffectAborted { effect_id },
-                    );
+                    ));
                 }
             }
             None => failures.push(format!(

@@ -1,6 +1,5 @@
-#[macro_use]
-use crate::intrinsics::*;
 use crate::intrinsics::IndexOutOfBoundsError;
+use crate::intrinsics::*;
 use grapheme::Graphemes;
 
 // String Access -------------------------------------------------------------

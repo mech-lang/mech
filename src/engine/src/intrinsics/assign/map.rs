@@ -1,6 +1,4 @@
-#[macro_use]
 use crate::intrinsics::*;
-use self::assign::*;
 
 #[derive(Debug)]
 pub struct MapAssign<T> {
@@ -162,20 +160,5 @@ impl FunctionSpecializer for MapAssignScalar {
                 .with_compiler_loc()),
             },
         }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct UndefinedMapKeyError {
-    pub key: ValueKind,
-}
-
-impl MechErrorKind for UndefinedMapKeyError {
-    fn name(&self) -> &str {
-        "UndefinedMapKey"
-    }
-
-    fn message(&self) -> String {
-        format!("Key {:?} is not defined in this map.", self.key)
     }
 }

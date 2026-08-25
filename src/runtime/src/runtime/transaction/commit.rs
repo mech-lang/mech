@@ -11,21 +11,21 @@ use crate::{
     CapabilityKernelCheckpoint, CapabilityRevocation, EventId, MessageId, MessageRecord,
     ObjectRecord, RuntimeCommitOutcome, RuntimeContext, RuntimeEffectFailure,
     RuntimeEffectFailurePhase, RuntimeEffectId, RuntimeEvent, RuntimeEventKind,
-    RuntimeInvalidOperationError, RuntimeModuleJournalConflict, RuntimeStoreCommit,
-    RuntimeStoreCommitIndeterminate, RuntimeTransaction, RuntimeTransactionNotFoundError,
-    TaskRecord, TransactionId, TransactionRecord, module_id,
+    RuntimeInvalidOperationError, RuntimeStoreCommit, RuntimeStoreCommitIndeterminate,
+    RuntimeTransaction, RuntimeTransactionNotFoundError, TaskRecord, TransactionId,
+    TransactionRecord,
 };
+#[cfg(feature = "source")]
+use crate::{RuntimeModuleJournalConflict, module_id};
 use mech_core::{MResult, MechError};
 use std::collections::HashSet;
 
 pub(in crate::runtime) enum RuntimeCommitResolution {
     Committed(RuntimeCommitOutcome),
-    CommittedWithError {
-        transaction_id: TransactionId,
-        error: MechError,
-    },
+    CommittedWithError(MechError),
 }
 
+#[cfg(feature = "source")]
 fn module_journal_validation_error(
     record_type: &'static str,
     identity: impl Into<String>,
@@ -42,6 +42,7 @@ fn module_journal_validation_error(
 }
 
 impl MechRuntime {
+    #[cfg(feature = "source")]
     fn validate_runtime_module_journal(&self, transaction_id: TransactionId) -> MResult<()> {
         let journal = &self.active_runtime_transaction(transaction_id)?.modules;
         if journal.is_empty() {
@@ -246,13 +247,7 @@ impl MechRuntime {
         self.ensure_runtime_mutation_allowed("commit_runtime_transaction")?;
         match self.commit_runtime_transaction_detailed_internal(context)? {
             RuntimeCommitResolution::Committed(outcome) => Ok(outcome),
-            RuntimeCommitResolution::CommittedWithError {
-                transaction_id,
-                error,
-            } => {
-                let _ = transaction_id;
-                Err(error)
-            }
+            RuntimeCommitResolution::CommittedWithError(error) => Err(error),
         }
     }
 
@@ -288,6 +283,7 @@ impl MechRuntime {
             ));
         }
 
+        #[cfg(feature = "source")]
         self.validate_runtime_module_journal(transaction_id)?;
 
         {
@@ -362,23 +358,23 @@ impl MechRuntime {
             drop(phase_guard);
             let failed_ids: HashSet<RuntimeEffectId> =
                 cleanup.iter().map(|failure| failure.effect_id).collect();
-            let _ = self.stage_effect_lifecycle_event(
+            drop(self.stage_effect_lifecycle_event(
                 &mut envelope,
                 context,
                 RuntimeEventKind::EffectPreparationFailed {
                     effect_id: step.failure.effect_id,
                     message: step.failure.message.clone(),
                 },
-            );
+            ));
             for effect_id in prepared_ids {
                 if failed_ids.contains(&effect_id) {
                     continue;
                 }
-                let _ = self.stage_effect_lifecycle_event(
+                drop(self.stage_effect_lifecycle_event(
                     &mut envelope,
                     context,
                     RuntimeEventKind::EffectAborted { effect_id },
-                );
+                ));
             }
             envelope.state = ActiveRuntimeTransactionState::Active;
             self.active_transactions.insert(transaction_id, envelope);
@@ -413,11 +409,11 @@ impl MechRuntime {
                         if failed_ids.contains(&effect_id) {
                             continue;
                         }
-                        let _ = self.stage_effect_lifecycle_event(
+                        drop(self.stage_effect_lifecycle_event(
                             &mut envelope,
                             context,
                             RuntimeEventKind::EffectAborted { effect_id },
-                        );
+                        ));
                     }
                     envelope.state = ActiveRuntimeTransactionState::Active;
                     self.active_transactions.insert(transaction_id, envelope);
@@ -574,10 +570,7 @@ impl MechRuntime {
             }));
             let error =
                 self.poison_external_commit_indeterminate(id, failures, participant_outcomes);
-            return Ok(RuntimeCommitResolution::CommittedWithError {
-                transaction_id: id,
-                error,
-            });
+            return Ok(RuntimeCommitResolution::CommittedWithError(error));
         }
 
         let after_commit_ids = envelope.effects.after_commit_ids();
@@ -635,10 +628,7 @@ impl MechRuntime {
             original_error: format!("{error:?}"),
             rollback_failures,
         });
-        Some(RuntimeCommitResolution::CommittedWithError {
-            transaction_id,
-            error: error.clone(),
-        })
+        Some(RuntimeCommitResolution::CommittedWithError(error.clone()))
     }
 
     fn cleanup_before_store_retry(
@@ -673,13 +663,13 @@ impl MechRuntime {
         let failed_aborts: HashSet<RuntimeEffectId> =
             aborted.iter().map(|failure| failure.effect_id).collect();
         for failure in &compensated {
-            let _ = self.emit_effect_event_outside_transaction(
+            drop(self.emit_effect_event_outside_transaction(
                 context,
                 RuntimeEventKind::EffectCompensationFailed {
                     effect_id: failure.effect_id,
                     message: failure.message.clone(),
                 },
-            );
+            ));
         }
         let mut failures = Self::describe_effect_failures(compensated);
         if let Some(Err(error)) = capability_restore {
@@ -693,20 +683,20 @@ impl MechRuntime {
             if failed_compensations.contains(&effect_id) {
                 continue;
             }
-            let _ = self.emit_effect_event_outside_transaction(
+            drop(self.emit_effect_event_outside_transaction(
                 context,
                 RuntimeEventKind::EffectCompensated { effect_id },
-            );
+            ));
         }
         for effect_id in aborted_ids {
             if failed_aborts.contains(&effect_id) {
                 continue;
             }
-            let _ = self.stage_effect_lifecycle_event(
+            drop(self.stage_effect_lifecycle_event(
                 envelope,
                 context,
                 RuntimeEventKind::EffectAborted { effect_id },
-            );
+            ));
         }
         failures
     }
@@ -792,10 +782,19 @@ impl MechRuntime {
             .into_record()?
             .with_effects(envelope.effects.records()?);
 
+        #[cfg(feature = "source")]
+        let module_puts = envelope.modules.module_puts().cloned().collect();
+        #[cfg(not(feature = "source"))]
+        let module_puts = Vec::new();
+        #[cfg(feature = "source")]
+        let module_version_puts = envelope.modules.version_puts().cloned().collect();
+        #[cfg(not(feature = "source"))]
+        let module_version_puts = Vec::new();
+
         Ok(RuntimeStoreCommit {
             transaction: transaction_record,
-            module_puts: envelope.modules.module_puts().cloned().collect(),
-            module_version_puts: envelope.modules.version_puts().cloned().collect(),
+            module_puts,
+            module_version_puts,
             capability_grants: envelope.capabilities.grants().collect(),
             capability_revocations: envelope.capabilities.revocations().collect(),
             object_puts: staged_puts,

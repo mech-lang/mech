@@ -3,7 +3,6 @@ use super::*;
 use crate::cli::commands::build::{
     BuildEmit, BuildOptions, BuildProfile, run as run_build, validate_build_bytecode_inputs,
 };
-use colored::{ColoredString, Colorize};
 use std::path::PathBuf;
 
 #[cfg(all(test, feature = "serve"))]
@@ -35,10 +34,6 @@ mod filesystem_capability_cli_tests {
         ));
         std::fs::create_dir_all(&root).unwrap();
         root.canonicalize().unwrap()
-    }
-
-    fn test_badge() -> ColoredString {
-        "[Mech Server]".normal()
     }
 
     #[test]

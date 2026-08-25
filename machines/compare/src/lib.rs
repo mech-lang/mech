@@ -9,8 +9,6 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-#[macro_use]
-extern crate mech_core;
 extern crate paste;
 
 use mech_core::*;
@@ -31,8 +29,6 @@ use nalgebra::Matrix3;
 use nalgebra::Matrix3x2;
 #[cfg(feature = "matrix4")]
 use nalgebra::Matrix4;
-#[cfg(feature = "rowdvector")]
-use nalgebra::RowDVector;
 #[cfg(feature = "row_vectord")]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vector2")]

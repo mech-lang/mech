@@ -45,14 +45,17 @@ impl<R> RetainedTurnLedger<R> {
         })
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub fn len(&self) -> usize {
         self.records.len()
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub fn is_empty(&self) -> bool {
         self.records.is_empty()
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub fn retained_bytes(&self) -> usize {
         self.controller.retained().bytes
     }
@@ -63,6 +66,7 @@ impl<R> RetainedTurnLedger<R> {
             .map(|(sequence, record)| (*sequence, record))
     }
 
+    #[cfg(feature = "runtime_bench_gate_b")]
     pub fn last(&self) -> Option<(LedgerSequence, &R)> {
         self.records
             .back()
@@ -79,6 +83,7 @@ impl<R> RetainedTurnLedger<R> {
         Some(entry)
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub fn drain(&mut self) -> RetainedLedgerDrain<'_, R> {
         RetainedLedgerDrain { ledger: self }
     }
@@ -110,10 +115,12 @@ impl<R: AccountedRecord> TurnLedger<R> for RetainedTurnLedger<R> {
     }
 }
 
+#[cfg(any(test, feature = "runtime_bench_probes"))]
 pub struct RetainedLedgerDrain<'a, R> {
     ledger: &'a mut RetainedTurnLedger<R>,
 }
 
+#[cfg(any(test, feature = "runtime_bench_probes"))]
 impl<R> Iterator for RetainedLedgerDrain<'_, R> {
     type Item = (LedgerSequence, R);
 
@@ -127,8 +134,10 @@ impl<R> Iterator for RetainedLedgerDrain<'_, R> {
     }
 }
 
+#[cfg(any(test, feature = "runtime_bench_probes"))]
 impl<R> ExactSizeIterator for RetainedLedgerDrain<'_, R> {}
 
+#[cfg(any(test, feature = "runtime_bench_probes"))]
 impl<R> Drop for RetainedLedgerDrain<'_, R> {
     fn drop(&mut self) {
         while self.ledger.pop_front().is_some() {}

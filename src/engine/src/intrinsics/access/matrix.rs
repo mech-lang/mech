@@ -1,11 +1,18 @@
-#[macro_use]
 use crate::intrinsics::*;
 use nalgebra::{
-    Dim, Scalar,
+    Dim,
     base::{Matrix as naMatrix, Storage, StorageMut},
 };
 use std::fmt::Debug;
-use std::marker::PhantomData;
+
+macro_rules! optional_operation_contract {
+    () => {
+        None
+    };
+    ($contract:path) => {
+        Some(&*$contract)
+    };
+}
 use std::sync::LazyLock;
 
 #[cfg(feature = "subscript_formula")]
@@ -649,20 +656,6 @@ macro_rules! access_1d_slice {
     };
 }
 
-macro_rules! access_1d_slice_bool {
-    ($source:expr, $ix:expr, $out:expr) => {
-        unsafe {
-            let mut selected = Vec::new();
-            for i in 0..(*$ix).len() {
-                if (*$ix)[i] {
-                    selected.push((*$source).index(i).clone());
-                }
-            }
-            *$out = DVector::from_vec(selected);
-        }
-    };
-}
-
 macro_rules! access_1d_slice_bool_v {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
@@ -705,82 +698,6 @@ macro_rules! access_2d_col_slice_bool {
                 }
             }
             *$out = DVector::from_vec(selected);
-        }
-    };
-}
-
-macro_rules! access_2d_slice {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let nrows = (*$ix1).len();
-            let ncols = (*$ix2).len();
-            let mut out_ix = 0;
-            for j in 0..ncols {
-                for i in 0..nrows {
-                    (&mut (*$out))[out_ix] = (*$source)
-                        .index(((&(*$ix1))[i] - 1, (&(*$ix2))[j] - 1))
-                        .clone();
-                    out_ix += 1;
-                }
-            }
-        }
-    };
-}
-
-macro_rules! access_2d_slice_bool {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let ix1 = &(*$ix1);
-            let ix2 = &(*$ix2);
-            let rows = ix1.iter().filter(|selected| **selected).count();
-            let mut selected = Vec::with_capacity(rows.saturating_mul(ix2.len()));
-            for k in 0..ix2.len() {
-                for i in 0..ix1.len() {
-                    if ix1[i] {
-                        selected.push((*$source).index((i, ix2[k] - 1)).clone());
-                    }
-                }
-            }
-            *$out = DMatrix::from_column_slice(rows, ix2.len(), &selected);
-        }
-    };
-}
-
-macro_rules! access_2d_slice_bool2 {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let ix1 = &(*$ix1);
-            let ix2 = &(*$ix2);
-            let cols = ix2.iter().filter(|selected| **selected).count();
-            let mut selected = Vec::with_capacity(ix1.len().saturating_mul(cols));
-            for k in 0..ix2.len() {
-                for i in 0..ix1.len() {
-                    if ix2[k] {
-                        selected.push((*$source).index((ix1[i] - 1, k)).clone());
-                    }
-                }
-            }
-            *$out = DMatrix::from_column_slice(ix1.len(), cols, &selected);
-        }
-    };
-}
-
-macro_rules! access_2d_slice_bool_bool {
-    ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
-        unsafe {
-            let ix1 = &(*$ix1);
-            let ix2 = &(*$ix2);
-            let rows = ix1.iter().filter(|selected| **selected).count();
-            let cols = ix2.iter().filter(|selected| **selected).count();
-            let mut selected = Vec::with_capacity(rows.saturating_mul(cols));
-            for k in 0..ix2.len() {
-                for j in 0..ix1.len() {
-                    if ix1[j] && ix2[k] {
-                        selected.push((*$source).index((j, k)).clone());
-                    }
-                }
-            }
-            *$out = DMatrix::from_column_slice(rows, cols, &selected);
         }
     };
 }
@@ -871,7 +788,7 @@ macro_rules! access_row {
 }
 
 macro_rules! access_1d_all {
-    ($source:expr, $ix:expr, $out:expr) => {
+    ($source:expr, $out:expr) => {
         unsafe {
             for i in 0..(*$source).len() {
                 (&mut (*$out))[i] = (*$source).index(i).clone();
@@ -880,90 +797,17 @@ macro_rules! access_1d_all {
     };
 }
 
-/*#[macro_export]
-macro_rules! impl_access_all_fxn_v {
-  ($struct_name:ident, $op:ident, $ix:ty) => {
-    #[derive(Debug)]
-    pub struct $struct_name<T, MatA, MatB, IxVec> {
-      pub source: Ref<MatB>,
-      pub ixes: Ref<IxVec>,
-      pub sink: Ref<MatA>,
-      pub _marker: PhantomData<T>,
-    }
-    impl<T, R1: 'static, C1: 'static, S1: 'static, R2: 'static, C2: 'static, S2: 'static, IxVec: 'static> MechFunctionFactory for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
-    where
-      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      Ref<naMatrix<T, R2, C2, S2>>: ToValue,
-      T: Debug + Clone + Sync + Send + 'static +
-        PartialEq + PartialOrd +
-        ConstElem + AsValueKind,
-      #[cfg(feature = "semantic-compiler")]
-      T: CompileConst,
-      IxVec: ConstElem + AsNaKind + Debug + AsRef<[$ix]>,
-      #[cfg(feature = "semantic-compiler")]
-      IxVec: CompileConst,
-      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-      naMatrix<T, R1, C1, S1>: ConstElem + Debug + AsNaKind,
-      #[cfg(feature = "semantic-compiler")]
-      naMatrix<T, R1, C1, S1>: CompileConst,
-      naMatrix<T, R2, C2, S2>: ConstElem + Debug + AsNaKind,
-      #[cfg(feature = "semantic-compiler")]
-      naMatrix<T, R2, C2, S2>: CompileConst,
-    {
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        match args {
-          FunctionArgs::Binary(out, arg1, arg2) => {
-            let source: Ref<naMatrix<T, R2, C2, S2>> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-            let ixes: Ref<IxVec> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-            let sink: Ref<naMatrix<T, R1, C1, S1>> = out.try_function_ref(FunctionArgumentRole::Output)?;
-            Ok(Box::new(Self { sink, source, ixes, _marker: PhantomData::default() }))
-          },
-          _ => Err(MechError{file: file!().to_string(), tokens: vec![], msg: format!("{} requires 3 arguments, got {:?}", stringify!($struct_name), args), id: line!(), kind: MechErrorKind::IncorrectNumberOfArguments})
-        }
-      }
-    }
-    impl<T, R1, C1, S1, R2, C2, S2, IxVec>
-      MechFunctionImpl for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
-    where
-      Ref<naMatrix<T, R1, C1, S1>>: ToValue,
-      T: Debug + Clone + Sync + Send + 'static +
-         PartialEq + PartialOrd,
-      IxVec: AsRef<[$ix]> + Debug,
-      R1: Dim, C1: Dim, S1: StorageMut<T, R1, C1> + Clone + Debug,
-      R2: Dim, C2: Dim, S2: Storage<T, R2, C2> + Clone + Debug,
-    {
-      fn solve_result(&self) -> MResult<()> {
-        unsafe {
-          let sink_ptr = &mut *self.sink.as_mut_ptr();
-          let source_ptr = &*self.source.as_ptr();
-          let ix_ptr = &(*self.ixes.as_ptr()).as_ref();
-          $op!(source_ptr,ix_ptr,sink_ptr);
-        }
-      ;
-          Ok(())
-      }
-      fn out(&self) -> LegacyValue {self.sink.to_value()}
-      fn to_string(&self) -> String {format!("{:#?}", self)}
-
-      fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-      }
-    }
-    #[cfg(feature = "semantic-compiler")]
-    impl<T, R1, C1, S1, R2, C2, S2, IxVec> MechFunctionCompiler for $struct_name<T, naMatrix<T, R1, C1, S1>, naMatrix<T, R2, C2, S2>, IxVec>
-    where
-      T: CompileConst + ConstElem + AsValueKind,
-      IxVec: CompileConst + ConstElem + AsNaKind,
-      naMatrix<T, R1, C1, S1>: CompileConst + ConstElem + AsNaKind,
-      naMatrix<T, R2, C2, S2>: CompileConst + ConstElem + AsNaKind,
-    {
-      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("{}<{}{}{}{}>", stringify!($struct_name), T::as_value_kind(), naMatrix::<T, R1, C1, S1>::as_na_kind(), naMatrix::<T, R2, C2, S2>::as_na_kind(), IxVec::as_na_kind());
-        compile_binop!(name, self.sink, self.source, self.ixes, ctx);
-      }
-    }
-  };}*/
+macro_rules! solve_access_1d {
+    (access_1d_all, $source:expr, $indexes:expr, $out:expr) => {{
+        // `IndexAll` participates in validation and bytecode identity but carries
+        // no data for the copy kernel itself.
+        access_1d_all!($source, $out)
+    }};
+    ($operation:ident, $source:expr, $indexes:expr, $out:expr) => {{
+        let indexes = $indexes.as_ptr();
+        $operation!($source, indexes, $out)
+    }};
+}
 
 macro_rules! impl_access_fxn {
     ($struct_name:ident, $arg_type:ty, $ix_type:ty, $out_type:ty, $op:ident, $contract:ident) => {
@@ -1031,9 +875,8 @@ macro_rules! impl_access_fxn {
                     self.ixes.to_value(),
                 ))?;
                 let source_ptr = self.source.as_ptr();
-                let ixes_ptr = self.ixes.as_ptr();
                 let out_ptr = self.out.as_mut_ptr();
-                $op!(source_ptr, ixes_ptr, out_ptr);
+                solve_access_1d!($op, source_ptr, self.ixes, out_ptr);
                 Ok(())
             }
             fn out(&self) -> LegacyValue {
@@ -1176,6 +1019,14 @@ macro_rules! impl_access_fxn_shape {
         paste! {
           #[cfg(feature = "matrix1")]
           impl_access_fxn!([<$name M1>],   Matrix1<T>,    $ix_type, $out_type, $fxn, $contract);
+          impl_access_fxn_shape_without_matrix1!($name, $ix_type, $out_type, $fxn, $contract);
+        }
+    };
+}
+
+macro_rules! impl_access_fxn_shape_without_matrix1 {
+    ($name:ident, $ix_type:ty, $out_type:ty, $fxn:ident, $contract:ident) => {
+        paste! {
           #[cfg(feature = "matrix2")]
           impl_access_fxn!([<$name M2>],   Matrix2<T>,    $ix_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix3")]
@@ -1211,8 +1062,6 @@ macro_rules! impl_access_fxn_shape {
 macro_rules! impl_access_fxn_shape2 {
     ($name:ident, $ix1_type:ty, $ix2_type:ty, $out_type:ty, $fxn:ident, $contract:ident) => {
         paste! {
-          #[cfg(feature = "matrix1")]
-          impl_access_fxn2!([<$name M1>],   Matrix1<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix2")]
           impl_access_fxn2!([<$name M2>],   Matrix2<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrix3")]
@@ -1225,22 +1074,25 @@ macro_rules! impl_access_fxn_shape2 {
           impl_access_fxn2!([<$name M3x2>], Matrix3x2<T>,  $ix1_type, $ix2_type, $out_type, $fxn, $contract);
           #[cfg(feature = "matrixd")]
           impl_access_fxn2!([<$name MD>],   DMatrix<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "vector2")]
-          impl_access_fxn2!([<$name V2>],   Vector2<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "vector3")]
-          impl_access_fxn2!([<$name V3>],   Vector3<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "vector4")]
-          impl_access_fxn2!([<$name V4>],   Vector4<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "vectord")]
-          impl_access_fxn2!([<$name VD>],   DVector<T>,    $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "row_vector2")]
-          impl_access_fxn2!([<$name R2>],   RowVector2<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "row_vector3")]
-          impl_access_fxn2!([<$name R3>],   RowVector3<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "row_vector4")]
-          impl_access_fxn2!([<$name R4>],   RowVector4<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
-          #[cfg(feature = "row_vectord")]
-          impl_access_fxn2!([<$name RD>],   RowDVector<T>, $ix1_type, $ix2_type, $out_type, $fxn, $contract);
+        }
+    };
+}
+
+macro_rules! impl_access_fxn_matrix_shape {
+    ($name:ident, $ix_type:ty, $out_type:ty, $fxn:ident, $contract:ident) => {
+        paste! {
+          #[cfg(feature = "matrix2")]
+          impl_access_fxn!([<$name M2>],   Matrix2<T>,    $ix_type, $out_type, $fxn, $contract);
+          #[cfg(feature = "matrix3")]
+          impl_access_fxn!([<$name M3>],   Matrix3<T>,    $ix_type, $out_type, $fxn, $contract);
+          #[cfg(feature = "matrix4")]
+          impl_access_fxn!([<$name M4>],   Matrix4<T>,    $ix_type, $out_type, $fxn, $contract);
+          #[cfg(feature = "matrix2x3")]
+          impl_access_fxn!([<$name M2x3>], Matrix2x3<T>,  $ix_type, $out_type, $fxn, $contract);
+          #[cfg(feature = "matrix3x2")]
+          impl_access_fxn!([<$name M3x2>], Matrix3x2<T>,  $ix_type, $out_type, $fxn, $contract);
+          #[cfg(feature = "matrixd")]
+          impl_access_fxn!([<$name MD>],   DMatrix<T>,    $ix_type, $out_type, $fxn, $contract);
         }
     };
 }
@@ -1257,6 +1109,86 @@ impl_access_fxn_shape!(
 // x[1,2]
 impl_access_fxn_shape2!(
     Access2DSS,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "vector2")]
+impl_access_fxn2!(
+    Access2DSSV2,
+    Vector2<T>,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "vector3")]
+impl_access_fxn2!(
+    Access2DSSV3,
+    Vector3<T>,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "vector4")]
+impl_access_fxn2!(
+    Access2DSSV4,
+    Vector4<T>,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "vectord")]
+impl_access_fxn2!(
+    Access2DSSVD,
+    DVector<T>,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "row_vector2")]
+impl_access_fxn2!(
+    Access2DSSR2,
+    RowVector2<T>,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "row_vector3")]
+impl_access_fxn2!(
+    Access2DSSR3,
+    RowVector3<T>,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "row_vector4")]
+impl_access_fxn2!(
+    Access2DSSR4,
+    RowVector4<T>,
+    usize,
+    usize,
+    T,
+    access_2d,
+    PURE_TERNARY_SCALAR_SCALAR_CONTRACT
+);
+#[cfg(feature = "row_vectord")]
+impl_access_fxn2!(
+    Access2DSSRD,
+    RowDVector<T>,
     usize,
     usize,
     T,
@@ -1281,7 +1213,7 @@ impl_access_fxn_shape!(
 );
 
 // x[:]
-impl_access_fxn_shape!(
+impl_access_fxn_shape_without_matrix1!(
     Access1DA,
     LegacyValue,
     DVector<T>,
@@ -1290,7 +1222,7 @@ impl_access_fxn_shape!(
 );
 
 // x[:,1]
-impl_access_fxn_shape!(
+impl_access_fxn_matrix_shape!(
     Access2DAS,
     usize,
     DVector<T>,
@@ -1364,14 +1296,14 @@ impl_access_fxn!(
 );
 
 // x[1..3,:]
-impl_access_fxn_shape!(
+impl_access_fxn_matrix_shape!(
     Access2DVDA,
     DVector<usize>,
     DMatrix<T>,
     access_2d_slice_all,
     PURE_BINARY_EXPLICIT_ROWS_ALL_COLUMNS_CONTRACT
 );
-impl_access_fxn_shape!(
+impl_access_fxn_matrix_shape!(
     Access2DVDbA,
     DVector<bool>,
     DMatrix<T>,
@@ -1957,20 +1889,18 @@ impl FunctionSpecializer for MatrixAccessRange {
 
 macro_rules! access_2d_range_range_vbb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut sink_rix = 0;
-            let mut sink_cix = 0;
-            for r in 0..($ix1).len() {
-                if ($ix1)[r] == true {
-                    for c in 0..($ix2).len() {
-                        if ($ix2)[c] == true {
-                            ($sink)[(sink_rix, sink_cix)] = ($source)[(r, c)].clone();
-                            sink_cix += 1;
-                        }
+        let mut sink_rix = 0;
+        let mut sink_cix = 0;
+        for r in 0..($ix1).len() {
+            if ($ix1)[r] == true {
+                for c in 0..($ix2).len() {
+                    if ($ix2)[c] == true {
+                        ($sink)[(sink_rix, sink_cix)] = ($source)[(r, c)].clone();
+                        sink_cix += 1;
                     }
-                    sink_cix = 0;
-                    sink_rix += 1;
                 }
+                sink_cix = 0;
+                sink_rix += 1;
             }
         }
     };
@@ -1978,58 +1908,52 @@ macro_rules! access_2d_range_range_vbb {
 
 macro_rules! access_2d_range_range_vuu {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut sink_rix = 0;
-            let mut sink_cix = 0;
-            for r in 0..($ix1).len() {
-                let row = ($ix1)[r] - 1;
-                for c in 0..($ix2).len() {
-                    let col = ($ix2)[c] - 1;
-                    ($sink)[(sink_rix, sink_cix)] = ($source)[(row, col)].clone();
-                    sink_cix += 1;
-                }
-                sink_cix = 0;
-                sink_rix += 1;
+        let mut sink_rix = 0;
+        let mut sink_cix = 0;
+        for r in 0..($ix1).len() {
+            let row = ($ix1)[r] - 1;
+            for c in 0..($ix2).len() {
+                let col = ($ix2)[c] - 1;
+                ($sink)[(sink_rix, sink_cix)] = ($source)[(row, col)].clone();
+                sink_cix += 1;
             }
+            sink_cix = 0;
+            sink_rix += 1;
         }
     };
 }
 
 macro_rules! access_2d_range_range_vub {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut sink_rix = 0;
-            let mut sink_cix = 0;
-            for r in 0..($ix1).len() {
-                let row = ($ix1)[r] - 1;
-                for c in 0..($ix2).len() {
-                    if ($ix2)[c] == true {
-                        ($sink)[(sink_rix, sink_cix)] = ($source)[(row, c)].clone();
-                        sink_cix += 1;
-                    }
+        let mut sink_rix = 0;
+        let mut sink_cix = 0;
+        for r in 0..($ix1).len() {
+            let row = ($ix1)[r] - 1;
+            for c in 0..($ix2).len() {
+                if ($ix2)[c] == true {
+                    ($sink)[(sink_rix, sink_cix)] = ($source)[(row, c)].clone();
+                    sink_cix += 1;
                 }
-                sink_cix = 0;
-                sink_rix += 1;
             }
+            sink_cix = 0;
+            sink_rix += 1;
         }
     };
 }
 
 macro_rules! access_2d_range_range_vbu {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut sink_rix = 0;
-            let mut sink_cix = 0;
-            for r in 0..($ix1).len() {
-                if ($ix1)[r] == true {
-                    for c in 0..($ix2).len() {
-                        let col = ($ix2)[c] - 1;
-                        ($sink)[(sink_rix, sink_cix)] = ($source)[(r, col)].clone();
-                        sink_cix += 1;
-                    }
-                    sink_cix = 0;
-                    sink_rix += 1;
+        let mut sink_rix = 0;
+        let mut sink_cix = 0;
+        for r in 0..($ix1).len() {
+            if ($ix1)[r] == true {
+                for c in 0..($ix2).len() {
+                    let col = ($ix2)[c] - 1;
+                    ($sink)[(sink_rix, sink_cix)] = ($source)[(r, col)].clone();
+                    sink_cix += 1;
                 }
+                sink_cix = 0;
+                sink_rix += 1;
             }
         }
     };
@@ -3028,7 +2952,7 @@ impl FunctionSpecializer for MatrixAccessScalarRange {
                 (LegacyValue::MutableReference(lhs), rhs_value) => {
                     impl_access_scalar_range_fxn(lhs.borrow().clone(), rhs_value.clone())
                 }
-                x => Err(MechError::new(
+                _ => Err(MechError::new(
                     UnhandledFunctionArgumentIxesMono {
                         arg: (mat.kind(), ixes.iter().map(|x| x.kind()).collect()),
                         fxn_name: "MatrixAccessScalarRange".to_string(),
@@ -3165,14 +3089,6 @@ macro_rules! declare_access_shape {
     ($family:ident, $shape:ident, $feature:literal) => {
         paste! {
             declare_access_typed_family!([<$family $shape>], [$feature]);
-        }
-    };
-}
-
-macro_rules! declare_access_logical_shape {
-    ($family:ident, $shape:ident, $feature:literal) => {
-        paste! {
-            declare_access_typed_family!([<$family $shape>], ["logical_indexing", $feature]);
         }
     };
 }

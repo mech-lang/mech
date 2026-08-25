@@ -1,4 +1,6 @@
 use crate::*;
+#[cfg(feature = "serde")]
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
 #[cfg(feature = "no_std")]
 use core::cmp::Ordering;
 #[cfg(not(feature = "no_std"))]
@@ -11,19 +13,19 @@ pub fn compress_and_encode<T: serde::Serialize>(
     let serialized_code = bincode::serde::encode_to_vec(tree, bincode::config::standard())?;
     let mut compressed = Vec::new();
     brotli::CompressorWriter::new(&mut compressed, 9, 4096, 22).write(&serialized_code)?;
-    Ok(base64::encode(compressed))
+    Ok(BASE64_STANDARD.encode(compressed))
 }
 
 #[cfg(feature = "serde")]
 pub fn decode_and_decompress<T: serde::de::DeserializeOwned>(
     encoded: &str,
 ) -> Result<T, Box<dyn std::error::Error>> {
-    let decoded = base64::decode(encoded)?;
+    let decoded = BASE64_STANDARD.decode(encoded)?;
 
     let mut decompressed = Vec::new();
     brotli::Decompressor::new(Cursor::new(decoded), 4096).read_to_end(&mut decompressed)?;
 
-    let (decoded, red) =
+    let (decoded, _) =
         bincode::serde::decode_from_slice(&decompressed, bincode::config::standard())?;
 
     Ok(decoded)
@@ -50,8 +52,7 @@ impl PartialOrd for SourceLocation {
 impl fmt::Debug for SourceLocation {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.row, self.col);
-        Ok(())
+        write!(f, "{}:{}", self.row, self.col)
     }
 }
 
@@ -77,8 +78,7 @@ impl Default for SourceRange {
 impl fmt::Debug for SourceRange {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "[{:?}, {:?})", self.start, self.end);
-        Ok(())
+        write!(f, "[{:?}, {:?})", self.start, self.end)
     }
 }
 
@@ -209,8 +209,7 @@ impl fmt::Debug for Token {
             self.kind,
             String::from_iter(self.chars.iter().cloned()),
             self.src_range
-        );
-        Ok(())
+        )
     }
 }
 
@@ -360,14 +359,20 @@ impl PrettyPrint for Program {
                         match indexed_str.get(k, j) {
                             Some(c2) => {
                                 if c2 == '└' {
-                                    indexed_str.set(i, j, '├');
+                                    indexed_str
+                                        .set(i, j, '├')
+                                        .expect("indexed tree coordinates must remain valid");
                                     for l in i + 1..k {
                                         match indexed_str.get(l, j) {
                                             Some(' ') => {
-                                                indexed_str.set(l, j, '│');
+                                                indexed_str.set(l, j, '│').expect(
+                                                    "indexed tree coordinates must remain valid",
+                                                );
                                             }
                                             Some('└') => {
-                                                indexed_str.set(l, j, '├');
+                                                indexed_str.set(l, j, '├').expect(
+                                                    "indexed tree coordinates must remain valid",
+                                                );
                                             }
                                             _ => (),
                                         }
@@ -2470,7 +2475,7 @@ pub enum Kind {
     Atom(Identifier),
     Table((Vec<(Identifier, Kind)>, Box<Literal>)),
     Set(Box<Kind>, Option<Box<Literal>>),
-    Record((Vec<(Identifier, Kind)>)),
+    Record(Vec<(Identifier, Kind)>),
     Empty,
     //Fsm(Vec<Kind>,Vec<Kind>),
     //Function(Vec<Kind>,Vec<Kind>),
@@ -2807,17 +2812,14 @@ impl RealNumber {
             RealNumber::Octal(tkn) => format!("0o{}", tkn.to_string()),
             RealNumber::Decimal(tkn) => format!("0d{}", tkn.to_string()),
             RealNumber::Rational((num, den)) => format!("{}/{}", num.to_string(), den.to_string()),
-            RealNumber::Scientific(((whole, part), exponent)) => {
-                let (sign, whole, part) = exponent;
-                let sign_str = if *sign { "+" } else { "-" };
-                let whole_str = whole.to_string();
-                let part_str = part.to_string();
+            RealNumber::Scientific(((whole, part), (negative, exponent_whole, exponent_part))) => {
                 format!(
-                    "{}{}.{}/10^{}",
+                    "{}.{}e{}{}.{}",
                     whole.to_string(),
                     part.to_string(),
-                    sign_str,
-                    whole_str
+                    if *negative { "-" } else { "+" },
+                    exponent_whole.to_string(),
+                    exponent_part.to_string()
                 )
             }
             RealNumber::TypedInteger((tkn, kind)) => format!(

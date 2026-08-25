@@ -128,7 +128,9 @@ impl<B: MonotonicTimerBackend + Send + Sync> NativeTimerInputDriver<B> {
         self.live.store(false, Ordering::SeqCst);
 
         if let Some(sender) = stop_sender {
-            let _ = sender.send(());
+            if sender.send(()).is_err() {
+                // A finished worker has already reached the requested state.
+            }
         }
 
         let worker_panicked = worker.is_some_and(|handle| handle.join().is_err());
@@ -312,7 +314,9 @@ impl<B: MonotonicTimerBackend + Send + Sync> RuntimeHostInputDriver for NativeTi
             .map_err(|_| timer_error("TimerDriverStop", "timer stop lock is poisoned"))?
             .take()
         {
-            let _ = sender.send(());
+            if sender.send(()).is_err() {
+                // A finished worker has already reached the requested state.
+            }
         }
         if let Some(handle) = self
             .worker
@@ -349,7 +353,7 @@ pub fn native_wait_duration(scheduler: &FixedStepScheduler, now_ms: f64) -> Dura
 }
 impl<B: MonotonicTimerBackend + Send + Sync> Drop for NativeTimerInputDriver<B> {
     fn drop(&mut self) {
-        let _ = self.stop();
+        drop(self.stop());
     }
 }
 

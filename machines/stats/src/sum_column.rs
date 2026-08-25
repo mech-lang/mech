@@ -1,7 +1,6 @@
 use crate::*;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Stats Sum Column -----------------------------------------------------------

@@ -571,17 +571,18 @@ impl MicroMikaKind {
 // Animations
 // ---------------------------------------------------------------------------
 
-// Sleep
-static MIRCOMIKA_POWEROFF: &[&str] = &["╭⦿╮", "╭⦾╮", "╭⊚╮", "╭⊙╮", "╭◯╮"];
-static MIRCOMIKA_POWERON: &[&str] = &["╭◯╮", "╭⊙╮", "╭⊚╮", "╭⦾╮", "╭⦿╮"];
-static MICROMIKA_BLINK: &[&str] = &["╭◉╮", "╭⊖╮", "╭◉╮"];
-static MICROMIKA_PULSE: &[&str] = &["╭◉╮", "╭⦾╮", "╭⊚╮", "╭⊙╮", "╭⊚╮", "╭⦾╮", "╭◉╮"];
-static MICROMIKA_WAVE: &[&str] = &["╭◉╯", "╭◉─"];
-static MICROMIKA_RAISE_ARMS: &[&str] = &["╭◉╮", "─◉─", "╰◉╯"];
-static MICROMIKA_ATTENTION: &[&str] = &["╰◉╯", "─◉─", "╭◉╮"];
-static MICROMIKA_FLAPPING: &[&str] = &["─◉─", "╰◉╯"];
-static MICROMIKA_GRIPPING_RIGHT: &[&str] = &["╭◉─‹ -> ╭◉─-"];
-static MICROMIKA_GRIPPING_LEFT: &[&str] = &["›─◉╮ -> -─◉╮"];
+// These frame catalogs are artifacts: preserving and publishing the frames is
+// their purpose, regardless of whether runtime code currently calls them.
+pub static MIRCOMIKA_POWEROFF: &[&str] = &["╭⦿╮", "╭⦾╮", "╭⊚╮", "╭⊙╮", "╭◯╮"];
+pub static MIRCOMIKA_POWERON: &[&str] = &["╭◯╮", "╭⊙╮", "╭⊚╮", "╭⦾╮", "╭⦿╮"];
+pub static MICROMIKA_BLINK: &[&str] = &["╭◉╮", "╭⊖╮", "╭◉╮"];
+pub static MICROMIKA_PULSE: &[&str] = &["╭◉╮", "╭⦾╮", "╭⊚╮", "╭⊙╮", "╭⊚╮", "╭⦾╮", "╭◉╮"];
+pub static MICROMIKA_WAVE: &[&str] = &["╭◉╯", "╭◉─"];
+pub static MICROMIKA_RAISE_ARMS: &[&str] = &["╭◉╮", "─◉─", "╰◉╯"];
+pub static MICROMIKA_ATTENTION: &[&str] = &["╰◉╯", "─◉─", "╭◉╮"];
+pub static MICROMIKA_FLAPPING: &[&str] = &["─◉─", "╰◉╯"];
+pub static MICROMIKA_GRIPPING_RIGHT: &[&str] = &["╭◉─‹ -> ╭◉─-"];
+pub static MICROMIKA_GRIPPING_LEFT: &[&str] = &["›─◉╮ -> -─◉╮"];
 
 // Mylo
 // ---------------------------------------------------------------------------

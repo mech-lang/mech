@@ -724,12 +724,13 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::*;
+    #[cfg(all(feature = "matrix2", feature = "matrixd"))]
+    use crate::FunctionValueRepresentation;
     use crate::{
         ApplicationRequirement, BytecodeProgram, EncodedConstant, ExecutionHostFunctionRequest,
         ExecutionResourceRequest, FunctionArgumentRole, FunctionCatalogBuilder,
-        FunctionRuntimeType, FunctionValueRepresentation, MechFunction, MechFunctionFactory,
-        MechFunctionImpl, Ref, ResourceDelivery, RuntimeFunctionSignature, RuntimeType, ToValue,
-        write_bytecode,
+        FunctionRuntimeType, MechFunction, MechFunctionFactory, MechFunctionImpl, Ref,
+        ResourceDelivery, RuntimeFunctionSignature, RuntimeType, ToValue, write_bytecode,
     };
     #[cfg(feature = "semantic-compiler")]
     use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};

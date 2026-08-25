@@ -221,8 +221,8 @@ fn wait_for_marker(child: &mut Child, marker: &Path, stdout: &Path, stderr: &Pat
             );
         }
         if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
+            drop(child.kill());
+            drop(child.wait());
             panic_with_process_output(stdout, stderr, "timed out waiting for live driver start");
         }
         thread::sleep(Duration::from_millis(25));
@@ -236,8 +236,8 @@ fn wait_for_exit(child: &mut Child, stdout: &Path, stderr: &Path) -> std::proces
             return status;
         }
         if Instant::now() >= deadline {
-            let _ = child.kill();
-            let _ = child.wait();
+            drop(child.kill());
+            drop(child.wait());
             panic_with_process_output(stdout, stderr, "timed out waiting for live child exit");
         }
         thread::sleep(Duration::from_millis(25));

@@ -17,42 +17,25 @@ pub extern crate mech_engine as engine;
 pub extern crate mech_stdlib as stdlib;
 pub extern crate mech_syntax as syntax;
 
-pub use mech_core::*;
 pub use mech_engine::*;
 
 extern crate colored;
 use colored::*;
 
 extern crate bincode;
-use std::fs::{File, OpenOptions, canonicalize, create_dir};
-use std::io::{BufReader, BufWriter, Write, stdout};
+use std::io::{Write, stdout};
 
-use std::io;
-use std::io::prelude::*;
 use std::path::PathBuf;
-use std::sync::Mutex;
-use std::sync::RwLock;
-use std::thread::{self, JoinHandle};
-use std::time::{Duration, Instant, SystemTime};
 //use websocket::sync::Server;
-use crossbeam_channel::Sender;
-use crossbeam_channel::{Receiver, unbounded};
-use std::collections::HashMap;
-use std::net::{SocketAddr, TcpListener, TcpStream, UdpSocket};
-use std::{env, fs};
+use std::fs;
 
-use notify::{Event, RecursiveMode, Result as NResult, Watcher, recommended_watcher};
 use rand::Rng;
-use rand::rngs::OsRng;
-use std::sync::Arc;
-use std::sync::mpsc;
-#[cfg(feature = "wasm")]
-use web_sys::{Crypto, Window, console};
 
 #[cfg(feature = "bundle_web_core")]
 mod bundle_web;
 #[cfg(feature = "cli_core")]
 pub mod cli;
+#[cfg(any(feature = "cli_core", feature = "bundle_web_core"))]
 pub mod fs_paths;
 #[cfg(any(feature = "build", feature = "project"))]
 mod project;
@@ -72,19 +55,9 @@ pub use self::serve::*;
 #[cfg(feature = "web_host")]
 pub use self::web_host::*;
 
-pub use mech_core::*;
-pub use mech_syntax::*;
-
 // Generate a new id for creating unique owner ids
-#[cfg(not(feature = "wasm"))]
 pub fn generate_uuid() -> u64 {
     rand::rng().random()
-}
-
-#[cfg(feature = "wasm")]
-pub fn generate_uuid() -> u64 {
-    let mut rng = WebCryptoRng {};
-    rng.next_u64()
 }
 
 pub fn save_to_file(mut path: PathBuf, content: &str) -> MResult<()> {

@@ -22,11 +22,6 @@ name = "mech"
 path = "src/bin/mech.rs"
 required-features = ["cli_core"]
 
-[[example]]
-name = "matrix_multiply"
-path = "examples/matrix_multiply.rs"
-required-features = ["standard_source", "project"]
-
 [profile.release]
 debug = false
 
@@ -424,25 +419,25 @@ tempfile = "3.26.0"
 # The root bytecode integration corpus deliberately exercises explicit u8/u64
 # table annotations even though the shipping standard distribution selects a
 # smaller value surface. Keep that additional closure test-owned.
-mech-stdlib = { version = "0.3.5", default-features = false, features = ["u8", "u64"] }
+mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false, features = ["u8", "u64"] }
 
 [target.'cfg(windows)'.dev-dependencies]
 windows-sys = { version = "0.61", features = ["Win32_System_Threading"] }
 
 [dependencies]
-mech-core        = { version = "0.3.5", default-features = false }
-mech-syntax      = { version = "0.3.5", default-features = false }
-mech-engine = { version = "0.3.5", default-features = false }
-mech-stdlib = { version = "0.3.5", default-features = false }
-mech-runtime = { version = "0.3.5", default-features = false, optional = true }
-mech-build = { version = "0.3.5", default-features = false, optional = true }
-mech-browser = { version = "0.3.5", default-features = false, optional = true }
-mech-terminal = { version = "0.3.5", default-features = false, optional = true }
+mech-core        = { version = "0.3.5", path = "src/core", default-features = false }
+mech-syntax      = { version = "0.3.5", path = "src/syntax", default-features = false }
+mech-engine = { version = "0.3.5", path = "src/engine", default-features = false }
+mech-stdlib = { version = "0.3.5", path = "src/stdlib", default-features = false }
+mech-runtime = { version = "0.3.5", path = "src/runtime", default-features = false, optional = true }
+mech-build = { version = "0.3.5", path = "src/build", default-features = false, optional = true }
+mech-browser = { version = "0.3.5", path = "hosts/browser", default-features = false, optional = true }
+mech-terminal = { version = "0.3.5", path = "hosts/terminal", default-features = false, optional = true }
 mech-time = { version = "0.3.5", path = "hosts/time", default-features = false, optional = true }
 mech-console = { version = "0.3.5", path = "hosts/console", default-features = false, optional = true }
 mech-timer = { version = "0.3.5", path = "hosts/timer", default-features = false, optional = true }
 mech-scene = { version = "0.3.5", path = "hosts/scene", default-features = false, optional = true }
-mech-robot-arm = { version = "0.3.5", default-features = false, optional = true }
+mech-robot-arm = { version = "0.3.5", path = "hosts/robot-arm", default-features = false, optional = true }
 mech-compute = { version = "0.3.5", path = "src/compute", optional = true }
 mech-gpu = { version = "0.3.5", path = "hosts/gpu", default-features = false, optional = true }
 ignore = { version = "0.4.24", optional = true }
@@ -501,41 +496,14 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2026"
 
 [patch.crates-io]
-mech-bytecode = { path = 'src/bytecode' }
-mech-build = { path = 'src/build' }
-mech-compute = { path = 'src/compute' }
-mech-core = { path = 'src/core' }
-mech-syntax = { path = 'src/syntax'}
-mech-engine = { path = 'src/engine'}
-mech-stdlib = { path = 'src/stdlib'}
-mech-runtime = { path = 'src/runtime'}
-mech-wasm = { path = 'src/wasm'}
-mech-browser = { path = 'hosts/browser'}
-mech-terminal = { path = 'hosts/terminal'}
-mech-robot-arm = { path = 'hosts/robot-arm'}
-mech-time = { path = 'hosts/time'}
-mech-console = { path = 'hosts/console'}
-mech-timer = { path = 'hosts/timer'}
-mech-scene = { path = 'hosts/scene'}
-#mech-utilities = { path = 'src/utilities' }
-mech-combinatorics = { path = 'machines/combinatorics' }
-mech-compare = { path = 'machines/compare' }
-mech-matrix = { path = 'machines/matrix' }
-mech-stats = { path = 'machines/stats' }
-mech-math = { path = 'machines/math' }
-mech-range = { path = 'machines/range' }
-mech-logic = { path = 'machines/logic' }
-mech-set = { path = 'machines/set' }
-mech-string = { path = 'machines/string' }
+mech-combinatorics = { path = "machines/combinatorics" }
+mech-compare = { path = "machines/compare" }
+mech-logic = { path = "machines/logic" }
+mech-math = { path = "machines/math" }
+mech-matrix = { path = "machines/matrix" }
+mech-range = { path = "machines/range" }
+mech-set = { path = "machines/set" }
+mech-stats = { path = "machines/stats" }
+mech-string = { path = "machines/string" }
 
-[patch.'https://gitlab.com/mech-lang/core']
-mech-core = { path = 'src/core', version = '0.3.5' }
-
-[patch.'https://gitlab.com/mech-lang/syntax']
-mech-syntax = { path = 'src/syntax', version = '0.3.5' }
-
-#[patch.'https://gitlab.com/mech-lang/wasm']
-#mech-wasm = { path = 'src/wasm', version = '0.2.44' }
-
-#[patch.'https://gitlab.com/mech-lang/utilities']
 #mech-utilities = { path = 'src/utilities', version = '0.2.44' }

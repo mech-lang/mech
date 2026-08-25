@@ -2,14 +2,14 @@ use super::{
     Environment, InvalidGuardExpressionError, MatchArmKindMismatchError, MatchNoArmMatchedError,
     MatchNonExhaustiveError, MatchNonExhaustiveVariantsError, expression,
 };
-#[cfg(feature = "matrix")]
-use crate::Matrix;
 #[cfg(feature = "enum")]
 use crate::MechEnum;
 use crate::{
     CannotConvertToTypeError, Expression, InterpreterExecution, LegacyValue, Literal, MResult,
     MatchArm, MatchExpression, MechError, Pattern, Ref, Token, ValueKind,
 };
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 #[cfg(feature = "enum")]
 use std::collections::HashSet;
 
