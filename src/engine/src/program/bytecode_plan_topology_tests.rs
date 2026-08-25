@@ -622,6 +622,7 @@ fn composite_helpers_and_mutable_metadata_without_a_declaration_do_not_become_st
         name: "state".to_owned(),
         register: 2,
         mutable: true,
+        root_visible: true,
         ordinal: 0,
     });
     let artifact = crate::compile_executable_program_artifact(&compiled, &catalog).unwrap();
@@ -1086,6 +1087,7 @@ fn malformed_compiled_sidecars_fail_closed() {
             name: "external".to_owned(),
             register: 0,
             mutable: false,
+            root_visible: true,
             ordinal: 0,
         },
         CompiledSymbolDefinition {
@@ -1093,6 +1095,7 @@ fn malformed_compiled_sidecars_fail_closed() {
             name: "state".to_owned(),
             register: 0,
             mutable: true,
+            root_visible: true,
             ordinal: 1,
         },
     ];

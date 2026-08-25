@@ -606,6 +606,7 @@ mod source_only {
                 Some(std::mem::replace(&mut state_brrw.plan, Plan::new()))
             };
             let previous_environment = state_brrw.environment.take();
+            state_brrw.user_function_scope_depth += 1;
             drop(state_brrw);
 
             Self {
@@ -621,6 +622,8 @@ mod source_only {
     impl Drop for FunctionScope {
         fn drop(&mut self) {
             let mut state_brrw = self.state.borrow_mut();
+            debug_assert!(state_brrw.user_function_scope_depth > 0);
+            state_brrw.user_function_scope_depth -= 1;
             state_brrw.symbol_table = self.previous_symbols.clone();
             if let Some(previous_plan) = &self.previous_plan {
                 state_brrw.plan = previous_plan.clone();

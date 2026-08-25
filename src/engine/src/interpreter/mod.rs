@@ -423,6 +423,8 @@ struct ProgramStateCheckpoint {
     #[cfg(feature = "functions")]
     plan_checkpoint: PlanCheckpoint,
     #[cfg(feature = "functions")]
+    user_function_scope_depth: usize,
+    #[cfg(feature = "functions")]
     compute_regions: Vec<ProgramComputeRegion>,
     kinds: KindTable,
     #[cfg(feature = "enum")]
@@ -479,6 +481,8 @@ impl ProgramStateCheckpoint {
         #[cfg(feature = "functions")]
         let plan_checkpoint = plan.checkpoint();
         #[cfg(feature = "functions")]
+        let user_function_scope_depth = state.user_function_scope_depth;
+        #[cfg(feature = "functions")]
         let compute_regions = state.compute_regions.clone();
 
         #[cfg(feature = "enum")]
@@ -525,6 +529,8 @@ impl ProgramStateCheckpoint {
             plan,
             #[cfg(feature = "functions")]
             plan_checkpoint,
+            #[cfg(feature = "functions")]
+            user_function_scope_depth,
             #[cfg(feature = "functions")]
             compute_regions,
             kinds: state.kinds.clone(),
@@ -574,6 +580,7 @@ impl ProgramStateCheckpoint {
                 state.function_extensions = self.function_extensions.clone();
                 state.user_functions = self.user_functions.table.clone();
                 state.plan = self.plan.clone();
+                state.user_function_scope_depth = self.user_function_scope_depth;
                 state.compute_regions = self.compute_regions.clone();
             }
             state.kinds = self.kinds.clone();
@@ -1705,6 +1712,11 @@ impl<'a> InterpreterExecution<'a> {
     #[cfg(feature = "functions")]
     pub(crate) fn plan_len(&self) -> usize {
         self.interpreter.state.borrow().plan.len()
+    }
+
+    #[cfg(feature = "functions")]
+    pub(crate) fn in_user_function_scope(&self) -> bool {
+        self.interpreter.state.borrow().user_function_scope_depth > 0
     }
 
     #[cfg(feature = "functions")]

@@ -842,9 +842,9 @@ fn compile_executable_program_artifact_with_identity(
                     if *dst == register
             )
         });
-        let explicitly_external = definitions
-            .iter()
-            .any(|definition| external_input_names.contains(&definition.name));
+        let explicitly_external = definitions.iter().any(|definition| {
+            definition.root_visible && external_input_names.contains(&definition.name)
+        });
         register_constant_roles[register_index] = Some(if has_mutable {
             CompilerConstantRole::StateInitializer
         } else if explicitly_external

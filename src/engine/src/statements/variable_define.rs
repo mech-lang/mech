@@ -241,6 +241,7 @@ pub fn variable_define(
             detached_result.clone(),
             LegacyValue::String(Ref::new(var_name.clone())),
             LegacyValue::Bool(Ref::new(var_def.mutable)),
+            LegacyValue::Bool(Ref::new(!p.in_user_function_scope())),
         ];
         let var_def_fxn = p.specialize_visible_operation_named(
             OperationId::from_name("var/define"),
@@ -269,6 +270,7 @@ pub fn variable_define(
         detached_result.clone(),
         LegacyValue::String(Ref::new(var_name.clone())),
         LegacyValue::Bool(Ref::new(var_def.mutable)),
+        LegacyValue::Bool(Ref::new(!p.in_user_function_scope())),
     ];
     let var_def_fxn = p.specialize_visible_operation_named(
         OperationId::from_name("var/define"),

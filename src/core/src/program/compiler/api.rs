@@ -135,6 +135,18 @@ pub trait BytecodeCompilerContext {
         mutable: bool,
     ) -> MResult<()>;
 
+    /// Records a declaration that is executable state but is not part of the
+    /// artifact's public/root symbol namespace.
+    fn define_local_symbol(
+        &mut self,
+        pointer: usize,
+        register: Register,
+        name: &str,
+        mutable: bool,
+    ) -> MResult<()> {
+        self.define_symbol(pointer, register, name, mutable)
+    }
+
     fn intern_requirement(&mut self, requirement: ApplicationRequirement) -> MResult<u32>;
 
     fn emit_const_load(&mut self, destination: Register, constant: u32);

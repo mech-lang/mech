@@ -64,6 +64,10 @@ pub struct CompiledSymbolDefinition {
     pub name: String,
     pub register: Register,
     pub mutable: bool,
+    /// Whether the declaration belongs to the root namespace exposed through
+    /// bytecode symbol lookup. Function-local declarations remain available
+    /// for state classification without becoming public symbols.
+    pub root_visible: bool,
     /// Source/compiler definition order, assigned densely.
     pub ordinal: u32,
 }
@@ -580,6 +584,70 @@ impl CompileCtx {
         Ok(bytes)
     }
 
+    fn define_symbol_with_visibility(
+        &mut self,
+        pointer: usize,
+        register: Register,
+        name: &str,
+        mutable: bool,
+        root_visible: bool,
+    ) -> MResult<()> {
+        if name.is_empty() {
+            return invalid("bytecode symbol name must not be empty");
+        }
+        if register >= self.next_register {
+            return invalid(format!(
+                "symbol register {register} is outside register count {}",
+                self.next_register,
+            ));
+        }
+
+        let symbol_id = hash_str(name);
+        if root_visible {
+            if let Some(existing_name) = self.dictionary.get(&symbol_id) {
+                if existing_name != name {
+                    return invalid(format!(
+                        "bytecode symbol hash collision between {existing_name:?} and {name:?}",
+                    ));
+                }
+                if self.symbols.get(&symbol_id) != Some(&register)
+                    || self.symbol_ptrs.get(&symbol_id) != Some(&pointer)
+                    || self.mutable_symbols.contains(&symbol_id) != mutable
+                {
+                    return invalid(format!(
+                        "conflicting bytecode symbol definition for {name:?}",
+                    ));
+                }
+                return Ok(());
+            }
+
+            self.symbols.insert(symbol_id, register);
+            self.symbol_ptrs.insert(symbol_id, pointer);
+            self.dictionary.insert(symbol_id, name.to_owned());
+            if mutable {
+                self.mutable_symbols.insert(symbol_id);
+            }
+        }
+
+        if let Some(kind) = self.register_kinds.get(&register).cloned()
+            && !matches!(kind, ValueKind::Reference(_))
+        {
+            self.register_kinds
+                .insert(register, ValueKind::Reference(Box::new(kind)));
+        }
+        let ordinal = u32::try_from(self.symbol_definitions.len())
+            .map_err(|_| invalid::<()>("symbol definition ordinal exceeds u32").unwrap_err())?;
+        self.symbol_definitions.push(CompiledSymbolDefinition {
+            id: symbol_id,
+            name: name.to_owned(),
+            register,
+            mutable,
+            root_visible,
+            ordinal,
+        });
+        Ok(())
+    }
+
     fn register_for_identity(&mut self, identity: BytecodeRegisterIdentity) -> (Register, bool) {
         if let Some(&register) = self.reg_map.get(&identity) {
             return (register, false);
@@ -776,56 +844,17 @@ impl BytecodeCompilerContext for CompileCtx {
         name: &str,
         mutable: bool,
     ) -> MResult<()> {
-        if name.is_empty() {
-            return invalid("bytecode symbol name must not be empty");
-        }
-        if register >= self.next_register {
-            return invalid(format!(
-                "symbol register {register} is outside register count {}",
-                self.next_register,
-            ));
-        }
+        self.define_symbol_with_visibility(pointer, register, name, mutable, true)
+    }
 
-        let symbol_id = hash_str(name);
-        if let Some(existing_name) = self.dictionary.get(&symbol_id) {
-            if existing_name != name {
-                return invalid(format!(
-                    "bytecode symbol hash collision between {existing_name:?} and {name:?}",
-                ));
-            }
-            if self.symbols.get(&symbol_id) != Some(&register)
-                || self.symbol_ptrs.get(&symbol_id) != Some(&pointer)
-                || self.mutable_symbols.contains(&symbol_id) != mutable
-            {
-                return invalid(format!(
-                    "conflicting bytecode symbol definition for {name:?}",
-                ));
-            }
-            return Ok(());
-        }
-
-        self.symbols.insert(symbol_id, register);
-        self.symbol_ptrs.insert(symbol_id, pointer);
-        self.dictionary.insert(symbol_id, name.to_owned());
-        if let Some(kind) = self.register_kinds.get(&register).cloned() {
-            if !matches!(kind, ValueKind::Reference(_)) {
-                self.register_kinds
-                    .insert(register, ValueKind::Reference(Box::new(kind)));
-            }
-        }
-        if mutable {
-            self.mutable_symbols.insert(symbol_id);
-        }
-        let ordinal = u32::try_from(self.symbol_definitions.len())
-            .map_err(|_| invalid::<()>("symbol definition ordinal exceeds u32").unwrap_err())?;
-        self.symbol_definitions.push(CompiledSymbolDefinition {
-            id: symbol_id,
-            name: name.to_owned(),
-            register,
-            mutable,
-            ordinal,
-        });
-        Ok(())
+    fn define_local_symbol(
+        &mut self,
+        pointer: usize,
+        register: Register,
+        name: &str,
+        mutable: bool,
+    ) -> MResult<()> {
+        self.define_symbol_with_visibility(pointer, register, name, mutable, false)
     }
 
     fn intern_requirement(&mut self, requirement: ApplicationRequirement) -> MResult<u32> {
@@ -1612,6 +1641,16 @@ mod tests {
                 .define_symbol(2, registers[1], "answer", false)
                 .is_err()
         );
+        context
+            .define_local_symbol(2, registers[1], "answer", false)
+            .unwrap();
+        assert_eq!(
+            context.symbols.get(&hash_str("answer")),
+            Some(&registers[0])
+        );
+        assert_eq!(context.symbol_definitions.len(), 2);
+        assert!(context.symbol_definitions[0].root_visible);
+        assert!(!context.symbol_definitions[1].root_visible);
     }
 
     #[test]
