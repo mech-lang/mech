@@ -46,10 +46,10 @@ pub mod function;
 pub mod integrity;
 #[cfg(feature = "semantic-compiler")]
 mod interpreter;
+#[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
+pub(crate) use interpreter::InterpreterRef;
 #[cfg(feature = "semantic-compiler")]
-pub(crate) use interpreter::{
-    Interpreter, InterpreterExecution, InterpreterRef, RuntimeContextBinding,
-};
+pub(crate) use interpreter::{Interpreter, InterpreterExecution, RuntimeContextBinding};
 pub mod intrinsics;
 #[cfg(feature = "semantic-compiler")]
 pub mod literals;
@@ -222,7 +222,46 @@ pub use crate::intrinsics::table_ops::{
 #[cfg(feature = "matrix_vertcat")]
 pub use crate::intrinsics::vertcat::{MatrixVertCat, VerticalConcatenateDimensionMismatch};
 #[cfg(feature = "semantic-compiler")]
-pub fn load_stdkinds(kinds: &mut KindTable) {
+pub fn load_stdkinds(
+    #[cfg(any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "f32",
+        feature = "f64",
+        feature = "c64",
+        feature = "r64",
+        feature = "string",
+        feature = "bool"
+    ))]
+    kinds: &mut KindTable,
+    #[cfg(not(any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "f32",
+        feature = "f64",
+        feature = "c64",
+        feature = "r64",
+        feature = "string",
+        feature = "bool"
+    )))]
+    _: &mut KindTable,
+) {
     #[cfg(feature = "u8")]
     kinds.insert(hash_str("u8"), ValueKind::U8);
     #[cfg(feature = "u16")]

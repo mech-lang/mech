@@ -42,13 +42,13 @@ use rand::Rng;
 mod bundle_web;
 #[cfg(feature = "cli_core")]
 pub mod cli;
-#[cfg(any(feature = "cli_core", feature = "bundle_web_core"))]
+#[cfg(any(feature = "build", feature = "formatter", feature = "bundle_web_core"))]
 pub mod fs_paths;
 #[cfg(any(feature = "build", feature = "project"))]
 mod project;
 #[cfg(feature = "serve")]
 mod serve;
-#[cfg(any(feature = "cli_core", feature = "bundle_web_core"))]
+#[cfg(any(feature = "build", feature = "formatter", feature = "run"))]
 pub mod source_discovery;
 #[cfg(feature = "web_host")]
 mod web_host;

@@ -5,7 +5,9 @@ use mech_core::*;
 use crate::cli::capabilities;
 #[cfg(any(feature = "build", feature = "serve", feature = "run"))]
 use crate::cli::config;
-use crate::cli::outcome::{CliOutcome, RootFlags};
+use crate::cli::outcome::CliOutcome;
+#[cfg(any(feature = "build", feature = "run"))]
+use crate::cli::outcome::RootFlags;
 #[cfg(any(feature = "formatter", feature = "serve"))]
 use crate::cli::resources::WebResourceDefaults;
 
@@ -16,9 +18,13 @@ const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (standard)");
 #[cfg(not(any(feature = "distribution-standard", feature = "distribution-full")))]
 const VERSION: &str = concat!(env!("CARGO_PKG_VERSION"), " (custom)");
 const ROOT_LOGO: &str = "Mech";
-#[cfg(feature = "serve")]
+#[cfg(all(
+    feature = "serve",
+    any(feature = "build", feature = "bundle_web", feature = "formatter")
+))]
 const FILESYSTEM_CAPABILITY_FLAGS_UNSUPPORTED: &str = "filesystem capability flags are only supported by `mech run`, bare run inputs, and `mech serve`";
 
+#[cfg(feature = "run")]
 pub(crate) fn terminate_process(code: i32) -> ! {
     std::process::exit(code)
 }
@@ -112,6 +118,7 @@ pub(crate) fn build_cli() -> Command {
     cli_command
 }
 
+#[cfg(any(feature = "build", feature = "run"))]
 fn root_flags(cli_matches: &ArgMatches) -> RootFlags {
     RootFlags {
         debug: cli_matches.get_flag("debug"),
@@ -127,6 +134,7 @@ async fn async_main() -> MResult<()> {
 }
 
 pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
+    #[cfg(any(feature = "build", feature = "run"))]
     let flags = root_flags(&cli_matches);
     #[cfg(any(feature = "formatter", feature = "serve"))]
     let resources = WebResourceDefaults::for_current_package();
@@ -159,7 +167,6 @@ pub(crate) async fn dispatch(cli_matches: ArgMatches) -> MResult<CliOutcome> {
     if let Some(matches) = cli_matches.subcommand_matches("format") {
         reject_filesystem_capability_args(matches)?;
         let options = crate::cli::commands::format::FormatOptions::from_matches(
-            flags,
             &cli_matches,
             matches,
             resources,
@@ -205,7 +212,10 @@ fn is_repl_invocation(cli_matches: &ArgMatches) -> bool {
         && cli_matches.get_many::<String>("mech_paths").is_none()
 }
 
-#[cfg(feature = "serve")]
+#[cfg(all(
+    feature = "serve",
+    any(feature = "build", feature = "bundle_web", feature = "formatter")
+))]
 fn reject_filesystem_capability_args(matches: &ArgMatches) -> MResult<()> {
     if capabilities::filesystem_capability_args_present(matches) {
         return Err(MechError::new(
@@ -229,6 +239,7 @@ fn reject_filesystem_capability_args(_matches: &ArgMatches) -> MResult<()> {
 fn apply_outcome(outcome: CliOutcome) -> MResult<()> {
     match outcome {
         CliOutcome::Success => Ok(()),
+        #[cfg(feature = "run")]
         CliOutcome::Exit(code) => terminate_process(code),
     }
 }

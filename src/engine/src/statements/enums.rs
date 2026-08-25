@@ -1,6 +1,11 @@
-use crate::LegacyValue;
 #[cfg(feature = "enum")]
-use crate::{EnumDefine, InterpreterExecution, MResult, MechEnum, Ref, kind_annotation};
+use crate::LegacyValue;
+#[cfg(all(feature = "enum", feature = "kind_annotation"))]
+use crate::kind_annotation;
+#[cfg(feature = "enum")]
+use crate::{EnumDefine, InterpreterExecution, MResult, MechEnum, Ref};
+#[cfg(all(feature = "enum", not(feature = "kind_annotation")))]
+use crate::{FeatureNotEnabledError, MechError};
 #[cfg(all(feature = "enum", feature = "atom"))]
 use crate::{OperationId, ValueKind};
 
@@ -9,13 +14,19 @@ pub fn enum_define(enm_def: &EnumDefine, p: &InterpreterExecution<'_>) -> MResul
     let id = enm_def.name.hash();
     let mut variants: Vec<(u64, Option<LegacyValue>)> = Vec::new();
     {
+        #[cfg(feature = "kind_annotation")]
         let mut state_brrw = p.state.borrow_mut();
         for v in &enm_def.variants {
             let payload = match &v.value {
+                #[cfg(feature = "kind_annotation")]
                 Some(kind_annotation_node) => {
                     let knd = kind_annotation(&kind_annotation_node.kind, p)?;
                     let vk = knd.to_value_kind(&mut state_brrw.kinds)?;
                     Some(LegacyValue::Kind(vk))
+                }
+                #[cfg(not(feature = "kind_annotation"))]
+                Some(_) => {
+                    return Err(MechError::new(FeatureNotEnabledError, None).with_compiler_loc());
                 }
                 None => None,
             };

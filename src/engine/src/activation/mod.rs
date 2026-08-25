@@ -18,8 +18,6 @@ mod errors;
 mod registration;
 mod validation;
 
-#[cfg(not(any(feature = "bool", feature = "variable_define")))]
-pub(crate) use errors::ActivationPatternTransactionBoolStateUnsupported;
 pub(crate) use errors::{
     ActivationPatternArmsNonExhaustive, ActivationPatternBodyDependencyInvariant,
     ActivationPatternCaptureKindUnsupported, ActivationPatternContextEffectUnsupported,

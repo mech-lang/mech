@@ -1,8 +1,12 @@
 #![cfg(feature = "dynamic-module")]
 
-use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1, MechStrV1};
+#[cfg(test)]
+use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStrV1};
+use mech_abi::MechStatusV1;
 
+#[cfg(test)]
 const MODULE_NAME: &[u8] = b"combinatorics";
+#[cfg(test)]
 const EXPORT_NAME: &[u8] = b"combinatorics/n-choose-k";
 
 mech_abi::mech_dynamic_module_v1! {

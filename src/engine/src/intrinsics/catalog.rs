@@ -16,6 +16,8 @@ use crate::intrinsics::define::VarDefine;
 use crate::*;
 #[cfg(feature = "matrix_comprehensions")]
 use mech_core::FunctionArgumentRole;
+#[cfg(feature = "semantic-compiler")]
+use mech_core::FunctionSpecializer;
 #[cfg(any(
     feature = "invariant_define",
     feature = "matrix_comprehensions",
@@ -23,12 +25,30 @@ use mech_core::FunctionArgumentRole;
 ))]
 use mech_core::{FunctionArgs, function_shape_contract_violation};
 use mech_core::{FunctionCatalogBuilder, MResult};
-#[cfg(feature = "semantic-compiler")]
-use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "matrix_comprehensions",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "set_comprehensions",
+        feature = "set"
+    )
+))]
+use mech_core::{FunctionExport, FunctionExposure};
 #[cfg(feature = "semantic-compiler")]
 use std::sync::Arc;
 
-#[cfg(feature = "semantic-compiler")]
+#[cfg(all(
+    feature = "semantic-compiler",
+    any(
+        feature = "matrix_comprehensions",
+        feature = "matrix_horzcat",
+        feature = "matrix_vertcat",
+        feature = "set_comprehensions",
+        feature = "set"
+    )
+))]
 fn install_named<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,

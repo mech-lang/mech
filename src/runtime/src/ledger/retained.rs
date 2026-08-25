@@ -45,7 +45,11 @@ impl<R> RetainedTurnLedger<R> {
         })
     }
 
-    #[cfg(any(test, feature = "runtime_bench_probes"))]
+    #[cfg(any(
+        test,
+        feature = "runtime_bench_probes",
+        feature = "runtime_bench_gate_b"
+    ))]
     pub fn len(&self) -> usize {
         self.records.len()
     }

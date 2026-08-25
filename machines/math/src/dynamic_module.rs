@@ -1,21 +1,32 @@
 #![cfg(feature = "dynamic-module")]
 
-use mech_abi::{
-    MechExportV1, MechF64ViewMutV1, MechF64ViewV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1,
-    MechStrV1,
-};
+#[cfg(test)]
+use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStrV1};
+use mech_abi::{MechF64ViewMutV1, MechF64ViewV1, MechStatusV1};
 
+#[cfg(test)]
 const MODULE_NAME: &[u8] = b"math";
+#[cfg(test)]
 const EXPORT_NAME: &[u8] = b"math/round";
+#[cfg(test)]
 const SQRT_EXPORT_NAME: &[u8] = b"math/sqrt";
+#[cfg(test)]
 const FLOOR_EXPORT_NAME: &[u8] = b"math/floor";
+#[cfg(test)]
 const CEIL_EXPORT_NAME: &[u8] = b"math/ceil";
+#[cfg(test)]
 const ATAN2_EXPORT_NAME: &[u8] = b"math/atan2";
+#[cfg(test)]
 const SIN_EXPORT_NAME: &[u8] = b"math/sin";
+#[cfg(test)]
 const COS_EXPORT_NAME: &[u8] = b"math/cos";
+#[cfg(test)]
 const TAN_EXPORT_NAME: &[u8] = b"math/tan";
+#[cfg(test)]
 const ASIN_EXPORT_NAME: &[u8] = b"math/asin";
+#[cfg(test)]
 const ACOS_EXPORT_NAME: &[u8] = b"math/acos";
+#[cfg(test)]
 const ATAN_EXPORT_NAME: &[u8] = b"math/atan";
 
 macro_rules! define_unary_f64_dynamic_kernels {

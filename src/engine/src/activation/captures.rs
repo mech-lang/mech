@@ -1,4 +1,6 @@
 use super::ActivationPatternCaptureKindUnsupported;
+#[cfg(not(any(feature = "bool", feature = "variable_define")))]
+use super::errors::ActivationPatternTransactionBoolStateUnsupported;
 #[cfg(feature = "complex")]
 use crate::C64;
 #[cfg(feature = "atom")]
@@ -17,9 +19,10 @@ use crate::MechTable;
 use crate::MechTuple;
 #[cfg(feature = "rational")]
 use crate::R64;
+#[cfg(feature = "record")]
+use crate::hash_str;
 use crate::{
     Interpreter, LegacyValue, MResult, MechError, PatternBindingSink, PatternMatch, Ref, ValueKind,
-    hash_str,
 };
 #[cfg(feature = "matrix")]
 use mech_core::structures::matrix::Matrix;
@@ -77,7 +80,22 @@ fn capture_matrix_dimensions(shape: &[usize]) -> MResult<(usize, usize)> {
 
 pub(super) fn create_capture_slot_for_kind(
     kind: &ValueKind,
+    #[cfg(any(
+        feature = "tuple",
+        feature = "enum",
+        feature = "record",
+        feature = "table",
+        feature = "matrix"
+    ))]
     interpreter: &Interpreter,
+    #[cfg(not(any(
+        feature = "tuple",
+        feature = "enum",
+        feature = "record",
+        feature = "table",
+        feature = "matrix"
+    )))]
+    _: &Interpreter,
 ) -> MResult<LegacyValue> {
     match kind.deref_kind() {
         #[cfg(feature = "u8")]

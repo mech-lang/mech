@@ -186,7 +186,19 @@ fn complex(num: &C64Node, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> 
     Ok(result)
 }
 
-pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+#[cfg(any(
+    feature = "math_neg",
+    feature = "f64",
+    feature = "floats",
+    feature = "i64",
+    feature = "rational",
+    feature = "convert"
+))]
+pub fn real(
+    rl: &RealNumber,
+    #[cfg(any(feature = "math_neg", feature = "convert"))] p: &InterpreterExecution<'_>,
+    #[cfg(not(any(feature = "math_neg", feature = "convert")))] _: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
     let result = match rl {
         #[cfg(feature = "math_neg")]
         RealNumber::Negated(num) => negated(num, p)?,
@@ -222,6 +234,18 @@ pub fn real(rl: &RealNumber, p: &InterpreterExecution<'_>) -> MResult<LegacyValu
         _ => panic!("Number type not supported."),
     };
     Ok(result)
+}
+
+#[cfg(not(any(
+    feature = "math_neg",
+    feature = "f64",
+    feature = "floats",
+    feature = "i64",
+    feature = "rational",
+    feature = "convert"
+)))]
+pub fn real(_: &RealNumber, _: &InterpreterExecution<'_>) -> MResult<LegacyValue> {
+    panic!("Number type not supported.")
 }
 
 #[cfg(feature = "math_neg")]

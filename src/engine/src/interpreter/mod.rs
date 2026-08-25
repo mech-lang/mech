@@ -1714,7 +1714,10 @@ impl<'a> InterpreterExecution<'a> {
         self.interpreter.state.borrow().plan.len()
     }
 
-    #[cfg(feature = "functions")]
+    #[cfg(all(
+        feature = "functions",
+        any(feature = "variable_define", feature = "invariant_define")
+    ))]
     pub(crate) fn in_user_function_scope(&self) -> bool {
         self.interpreter.state.borrow().user_function_scope_depth > 0
     }

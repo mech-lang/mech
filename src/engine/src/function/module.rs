@@ -1202,6 +1202,20 @@ fn replace_dynamic_matrix_output(
             *vector.borrow_mut() = RowDVector::from_vec(values);
             Ok(())
         }
+        #[cfg(any(
+            feature = "matrix1",
+            feature = "matrix2",
+            feature = "matrix3",
+            feature = "matrix4",
+            feature = "matrix2x3",
+            feature = "matrix3x2",
+            feature = "vector2",
+            feature = "vector3",
+            feature = "vector4",
+            feature = "row_vector2",
+            feature = "row_vector3",
+            feature = "row_vector4"
+        ))]
         _ => {
             if output.rows() != rows || output.cols() != cols {
                 return Err(MechError::new(

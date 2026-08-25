@@ -163,6 +163,16 @@ mod source_only {
         Ok(output)
     }
 
+    #[cfg(any(
+        feature = "variable_define",
+        feature = "set_comprehensions",
+        feature = "matrix_comprehensions",
+        all(feature = "kind_annotation", feature = "convert"),
+        all(feature = "record", feature = "convert"),
+        feature = "set",
+        feature = "matrix_vertcat",
+        feature = "matrix_horzcat"
+    ))]
     pub(crate) fn execute_catalog_operation(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
@@ -222,7 +232,7 @@ mod source_only {
 
         // If the function takes a single matrix argument and the element kind matches
         // the output kind, broadcast element-wise instead of running the body once.
-        #[cfg(feature = "matrix")]
+        #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
         if let Some(result) = try_broadcast_user_function(fxn_def, input_arg_values, p)? {
             return Ok(result);
         }
@@ -312,7 +322,7 @@ mod source_only {
     // reassemble the result into a matrix of the same shape.
     // Returns None if any condition for broadcasting isn't met, so the caller can
     // fall through to normal execution.
-    #[cfg(feature = "matrix")]
+    #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
     fn try_broadcast_user_function(
         fxn_def: &FunctionDefinition,
         input_arg_values: &Vec<LegacyValue>,
@@ -330,20 +340,12 @@ mod source_only {
             return Ok(None);
         }
 
-        // Resolve the declared input and output kinds from their annotations.
-        // Without kind_annotation feature we can't know the element type, so bail.
-        #[cfg(feature = "kind_annotation")]
         let (input_kind, output_kind) = {
             let input_kind = kind_annotation(&fxn_def.code.input[0].kind.kind, p)?
                 .to_value_kind(&p.state.borrow().kinds)?;
             let output_kind = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
                 .to_value_kind(&p.state.borrow().kinds)?;
             (input_kind, output_kind)
-        };
-
-        #[cfg(not(feature = "kind_annotation"))]
-        let (input_kind, output_kind) = {
-            return Ok(None);
         };
 
         // Only broadcast when input and output kinds are the same scalar kind.
@@ -373,7 +375,7 @@ mod source_only {
 
     // Assembles a list of scalar Values into a typed matrix.
     // TODO add more types
-    #[cfg(feature = "matrix")]
+    #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
     fn build_typed_matrix_from_values(
         output_kind: &ValueKind,
         outputs: Vec<LegacyValue>,
@@ -664,9 +666,10 @@ mod source_only {
         p: &InterpreterExecution<'_>,
     ) -> MResult<()> {
         let scoped_state = p.state.borrow();
-        for ((arg_id, input_kind_annotation), input_value) in
-            fxn_def.input.iter().zip(input_arg_values.iter())
-        {
+        for (input_argument, input_value) in fxn_def.input.iter().zip(input_arg_values.iter()) {
+            let arg_id = input_argument.0;
+            #[cfg(feature = "kind_annotation")]
+            let input_kind_annotation = &input_argument.1;
             // Look up the human-readable argument name for error messages.
             let arg_name = fxn_def
                 .code

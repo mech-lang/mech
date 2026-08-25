@@ -246,7 +246,7 @@ declare_assign_value_matrix_for_scalar!(String, string, "string", "string");
 declare_assign_value_matrix_for_scalar!(R64, r64, "rational", "r64");
 declare_assign_value_matrix_for_scalar!(C64, c64, "complex", "c64");
 
-#[cfg(feature = "native-plan")]
+#[cfg(all(feature = "native-plan", feature = "matrix"))]
 macro_rules! register_assign_value_matrix_shape {
     (($builder:ident; $scalar_token:ident), $shape:ident, $_shape_feature:literal) => {
         mech_core::paste::paste! {
@@ -255,7 +255,7 @@ macro_rules! register_assign_value_matrix_shape {
     };
 }
 
-#[cfg(feature = "native-plan")]
+#[cfg(all(feature = "native-plan", feature = "matrix"))]
 macro_rules! register_assign_value_matrix_for_scalar {
     ($builder:ident, $scalar_token:ident, $scalar_feature:literal) => {
         #[cfg(feature = $scalar_feature)]
@@ -433,7 +433,7 @@ macro_rules! install_legacy_assign_srr_b {
     };
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_assign_srr_bu {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -442,7 +442,7 @@ macro_rules! install_legacy_assign_srr_bu {
     };
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_assign_srr_ub {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt) => {
         mech_core::paste::paste! {
@@ -460,7 +460,7 @@ macro_rules! install_legacy_assign_srr_b2 {
     };
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_assign_srr_bu2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
@@ -469,7 +469,7 @@ macro_rules! install_legacy_assign_srr_bu2 {
     };
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_assign_srr_ub2 {
     ($emit:ident, $context:tt, $fxn_name:tt, $scalar:tt, $scalar_string:tt, $row1:tt, $row2:tt, $row3:tt, $row4:tt) => {
         mech_core::paste::paste! {
@@ -1509,7 +1509,7 @@ macro_rules! install_legacy_impl_assign_range_range_arms_b {
     };
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_impl_assign_range_range_arms_bu {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1521,7 +1521,7 @@ macro_rules! install_legacy_impl_assign_range_range_arms_bu {
     };
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_impl_assign_range_range_arms_ub {
     ($emit:ident, $context:tt, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {
         mech_core::paste::paste! {
@@ -1824,6 +1824,7 @@ macro_rules! for_each_matrix_assignment_factory {
             install_legacy_impl_assign_range_range_arms_b,
             Assign2DRR
         );
+        #[cfg(feature = "f64")]
         $direct!(
             $emit,
             $context,
@@ -1832,6 +1833,7 @@ macro_rules! for_each_matrix_assignment_factory {
             f64,
             "f64"
         );
+        #[cfg(feature = "f64")]
         $direct!(
             $emit,
             $context,
@@ -2052,7 +2054,7 @@ macro_rules! install_legacy_for_all_types_runtime {
     };
 }
 
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "f64"))]
 macro_rules! install_legacy_direct_runtime {
     ($emit:ident, $builder:ident, $arm:ident, $fxn_name:ident, $value_kind:ident, $value_string:tt) => {{
         #[inline(never)]
@@ -2102,23 +2104,29 @@ pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
 /// legacy slice-assignment surface; these exact storage-shaped entries exist
 /// only so native planning can link compiler-emitted stable assignments.
 #[cfg(feature = "native-plan")]
-pub(crate) fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    register_assign_value_matrix_for_scalar!(builder, u8, "u8");
-    register_assign_value_matrix_for_scalar!(builder, u16, "u16");
-    register_assign_value_matrix_for_scalar!(builder, u32, "u32");
-    register_assign_value_matrix_for_scalar!(builder, u64, "u64");
-    register_assign_value_matrix_for_scalar!(builder, u128, "u128");
-    register_assign_value_matrix_for_scalar!(builder, i8, "i8");
-    register_assign_value_matrix_for_scalar!(builder, i16, "i16");
-    register_assign_value_matrix_for_scalar!(builder, i32, "i32");
-    register_assign_value_matrix_for_scalar!(builder, i64, "i64");
-    register_assign_value_matrix_for_scalar!(builder, i128, "i128");
-    register_assign_value_matrix_for_scalar!(builder, f32, "f32");
-    register_assign_value_matrix_for_scalar!(builder, f64, "f64");
-    register_assign_value_matrix_for_scalar!(builder, bool, "bool");
-    register_assign_value_matrix_for_scalar!(builder, string, "string");
-    register_assign_value_matrix_for_scalar!(builder, r64, "r64");
-    register_assign_value_matrix_for_scalar!(builder, c64, "c64");
+pub(crate) fn install_native_plan(
+    #[cfg(feature = "matrix")] builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(feature = "matrix"))] _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
+    #[cfg(feature = "matrix")]
+    {
+        register_assign_value_matrix_for_scalar!(builder, u8, "u8");
+        register_assign_value_matrix_for_scalar!(builder, u16, "u16");
+        register_assign_value_matrix_for_scalar!(builder, u32, "u32");
+        register_assign_value_matrix_for_scalar!(builder, u64, "u64");
+        register_assign_value_matrix_for_scalar!(builder, u128, "u128");
+        register_assign_value_matrix_for_scalar!(builder, i8, "i8");
+        register_assign_value_matrix_for_scalar!(builder, i16, "i16");
+        register_assign_value_matrix_for_scalar!(builder, i32, "i32");
+        register_assign_value_matrix_for_scalar!(builder, i64, "i64");
+        register_assign_value_matrix_for_scalar!(builder, i128, "i128");
+        register_assign_value_matrix_for_scalar!(builder, f32, "f32");
+        register_assign_value_matrix_for_scalar!(builder, f64, "f64");
+        register_assign_value_matrix_for_scalar!(builder, bool, "bool");
+        register_assign_value_matrix_for_scalar!(builder, string, "string");
+        register_assign_value_matrix_for_scalar!(builder, r64, "r64");
+        register_assign_value_matrix_for_scalar!(builder, c64, "c64");
+    }
     Ok(())
 }
 

@@ -25,7 +25,7 @@ no_std = [
   "mech-combinatorics?/no_std",
 ]
 
-runtime = ["mech-engine/resident-artifact"]
+runtime = ["mech-engine/runtime"]
 source = [
   "runtime",
   "mech-engine/source",

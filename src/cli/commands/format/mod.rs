@@ -17,7 +17,7 @@ mod publication;
 use document_bundle::resolve_document_source_bundle;
 use publication::{PlannedOutput, publish_outputs_recoverably};
 
-use crate::cli::outcome::{CliOutcome, RootFlags};
+use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
     LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
     html_style_sheets, load_resource, load_stylesheets,
@@ -696,7 +696,6 @@ pub(crate) struct FormatOptions {
 
 impl FormatOptions {
     pub(crate) fn from_matches(
-        _root: RootFlags,
         _root_matches: &ArgMatches,
         matches: &ArgMatches,
         resources: WebResourceDefaults,

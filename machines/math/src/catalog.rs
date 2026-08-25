@@ -52,31 +52,31 @@ use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
 use nalgebra::DMatrix;
 #[cfg(all(feature = "op_assign", feature = "vectord"))]
 use nalgebra::DVector;
-#[cfg(feature = "matrix1")]
+#[cfg(all(feature = "op_assign", feature = "matrix1"))]
 use nalgebra::Matrix1;
-#[cfg(feature = "matrix2")]
+#[cfg(all(feature = "op_assign", feature = "matrix2"))]
 use nalgebra::Matrix2;
-#[cfg(feature = "matrix2x3")]
+#[cfg(all(feature = "op_assign", feature = "matrix2x3"))]
 use nalgebra::Matrix2x3;
-#[cfg(feature = "matrix3")]
+#[cfg(all(feature = "op_assign", feature = "matrix3"))]
 use nalgebra::Matrix3;
-#[cfg(feature = "matrix3x2")]
+#[cfg(all(feature = "op_assign", feature = "matrix3x2"))]
 use nalgebra::Matrix3x2;
-#[cfg(feature = "matrix4")]
+#[cfg(all(feature = "op_assign", feature = "matrix4"))]
 use nalgebra::Matrix4;
 #[cfg(all(feature = "op_assign", feature = "row_vectord"))]
 use nalgebra::RowDVector;
-#[cfg(feature = "row_vector2")]
+#[cfg(all(feature = "op_assign", feature = "row_vector2"))]
 use nalgebra::RowVector2;
-#[cfg(feature = "row_vector3")]
+#[cfg(all(feature = "op_assign", feature = "row_vector3"))]
 use nalgebra::RowVector3;
-#[cfg(feature = "row_vector4")]
+#[cfg(all(feature = "op_assign", feature = "row_vector4"))]
 use nalgebra::RowVector4;
-#[cfg(feature = "vector2")]
+#[cfg(all(feature = "op_assign", feature = "vector2"))]
 use nalgebra::Vector2;
-#[cfg(feature = "vector3")]
+#[cfg(all(feature = "op_assign", feature = "vector3"))]
 use nalgebra::Vector3;
-#[cfg(feature = "vector4")]
+#[cfg(all(feature = "op_assign", feature = "vector4"))]
 use nalgebra::Vector4;
 #[cfg(feature = "source")]
 use std::sync::Arc;
@@ -214,7 +214,7 @@ use crate::trig::tan::*;
 use crate::trig::tanh::*;
 
 #[cfg(feature = "source")]
-fn install_source_specializer<T>(
+pub(crate) fn install_source_specializer<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &'static str,
     module: Option<&'static str>,
@@ -235,7 +235,21 @@ where
     })
 }
 
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(
+        feature = "add_assign",
+        feature = "div",
+        feature = "div_assign",
+        feature = "mod",
+        feature = "mul",
+        feature = "mul_assign",
+        feature = "neg",
+        feature = "pow",
+        feature = "sub",
+        feature = "sub_assign"
+    )
+))]
 macro_rules! install_prelude {
     ($builder:expr, $name:literal, $compiler:expr) => {
         install_source_specializer(
@@ -249,7 +263,57 @@ macro_rules! install_prelude {
     };
 }
 
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(
+        feature = "abs",
+        feature = "acos",
+        feature = "acosh",
+        feature = "acot",
+        feature = "acsc",
+        feature = "asec",
+        feature = "asin",
+        feature = "asinh",
+        feature = "atan",
+        feature = "atan2",
+        feature = "atanh",
+        feature = "j0",
+        feature = "j1",
+        feature = "jn",
+        feature = "y0",
+        feature = "y1",
+        feature = "yn",
+        feature = "cbrt",
+        feature = "ceil",
+        feature = "copysign",
+        feature = "cos",
+        feature = "cosh",
+        feature = "cot",
+        feature = "csc",
+        feature = "erf",
+        feature = "erfc",
+        feature = "floor",
+        feature = "fmod",
+        feature = "lgamma",
+        feature = "log",
+        feature = "log10",
+        feature = "log1p",
+        feature = "log2",
+        feature = "nextafter",
+        feature = "remainder",
+        feature = "rint",
+        feature = "round",
+        feature = "roundeven",
+        feature = "sec",
+        feature = "sin",
+        feature = "sinh",
+        feature = "sqrt",
+        feature = "tan",
+        feature = "tanh",
+        feature = "tgamma",
+        feature = "trunc"
+    )
+))]
 macro_rules! install_math_module {
     ($builder:expr, $name:literal, $item:literal, $compiler:expr) => {
         install_source_specializer(
@@ -541,7 +605,24 @@ macro_rules! register_math_float_unop_factory {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(
+    feature = "native-link",
+    any(feature = "f32", feature = "f64"),
+    any(
+        feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+        feature = "lgamma", feature = "tgamma",
+        feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+        feature = "cbrt", feature = "sqrt",
+        feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+        feature = "roundeven", feature = "trunc",
+        feature = "erf", feature = "erfc",
+        feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+        feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+        feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+        feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+        feature = "tan", feature = "tanh"
+    )
+))]
 macro_rules! export_math_float_unop_factory {
     (($operation:ident; $_operation_feature:literal; $scalar:ident; $_scalar_feature:literal), $suffix:ident, $_shape_feature:tt) => {
         mech_core::paste::paste! { pub use super::[<install_ $operation:snake _ $suffix:lower _ $scalar:lower>]; }
@@ -693,7 +774,16 @@ macro_rules! register_math_abs_factory {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(
+    feature = "native-link",
+    feature = "abs",
+    any(
+        feature = "u8", feature = "u16", feature = "u32", feature = "u64",
+        feature = "u128", feature = "i8", feature = "i16", feature = "i32",
+        feature = "i64", feature = "i128", feature = "f32", feature = "f64",
+        feature = "complex", feature = "rational"
+    )
+))]
 macro_rules! export_math_abs_factory {
     (($scalar_token:ident), $suffix:ident, $_shape_feature:tt) => {
         mech_core::paste::paste! { pub use super::[<install_math_abs_ $scalar_token _ $suffix:lower>]; }
@@ -1649,7 +1739,7 @@ pub fn install_native_plan(builder: &mut FunctionCatalogBuilder) -> MResult<()> 
         feature = "matrixd",
         any(feature = "matrix1", feature = "matrix1_interop")
     ))]
-    crate::install_math_add_native_plan(builder)?;
+    crate::ops::add::install_math_add_native_plan(builder)?;
     Ok(())
 }
 

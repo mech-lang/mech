@@ -21,7 +21,7 @@ use std::mem;
 #[cfg(feature = "no_std")]
 type HashSet<T> = HashBrownSet<T, BuildHasherDefault<FxHasher>>;
 
-#[cfg(feature = "matrix")]
+#[cfg(feature = "vectord")]
 use nalgebra::DVector;
 
 macro_rules! impl_as_type {
@@ -4294,6 +4294,11 @@ impl LegacyValue {
                         .with_compiler_loc()),
                     },
                 },
+                #[cfg(all(feature = "matrix", not(feature = "bool")))]
+                Err(_) => Err(
+                    MechError::new(CannotConvertToTypeError { target_type: "ix" }, None)
+                        .with_compiler_loc(),
+                ),
             },
         }
     }

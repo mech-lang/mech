@@ -1,12 +1,18 @@
 #[cfg(feature = "set")]
 pub use crate::intrinsics::constructors::ValueSet;
 use crate::*;
+#[cfg(any(feature = "map", feature = "record", feature = "table"))]
 use indexmap::map::IndexMap;
+#[cfg(feature = "kind_annotation")]
 use mech_core::kind::Kind;
 #[cfg(feature = "matrix")]
 use mech_core::matrix::Matrix;
+#[cfg(feature = "matrix")]
 use mech_core::nodes::Matrix as Mat;
-use std::collections::{HashMap, HashSet};
+#[cfg(any(feature = "record", feature = "table"))]
+use std::collections::HashMap;
+#[cfg(feature = "set")]
+use std::collections::HashSet;
 
 // Structures
 // ----------------------------------------------------------------------------
@@ -104,8 +110,42 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
 
 pub fn structure(
     strct: &Structure,
+    #[cfg(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    ))]
     env: Option<&Environment>,
+    #[cfg(not(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    )))]
+    _: Option<&Environment>,
+    #[cfg(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    ))]
     p: &InterpreterExecution<'_>,
+    #[cfg(not(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    )))]
+    _: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
     match strct {
         Structure::Empty => Ok(LegacyValue::Empty),
@@ -396,6 +436,26 @@ pub fn set(
 // Table
 // ----------------------------------------------------------------------------
 
+#[cfg(all(
+    feature = "table",
+    any(
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "f32",
+        feature = "f64",
+        feature = "string",
+        feature = "complex",
+        feature = "rational"
+    )
+))]
 macro_rules! handle_value_kind {
     ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
         let mut vals = Vec::new();

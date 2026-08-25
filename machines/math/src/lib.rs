@@ -43,9 +43,11 @@ use na::Vector3;
 #[cfg(feature = "vector4")]
 use na::Vector4;
 
+#[cfg(any(feature = "ops", feature = "op_assign"))]
 use std::fmt::{Debug, Display};
 #[cfg(any(feature = "neg", feature = "op_assign"))]
 use std::marker::PhantomData;
+#[cfg(any(feature = "ops", feature = "op_assign"))]
 use std::ops::*;
 
 #[cfg(all(feature = "runtime", not(feature = "dynamic-module")))]
@@ -140,6 +142,22 @@ pub use self::catalog::*;
 #[doc(hidden)]
 #[cfg(feature = "native-link")]
 pub mod __mech_native {
+    #[cfg(any(
+        feature = "add_assign", feature = "div_assign", feature = "mul_assign",
+        feature = "sub_assign", feature = "abs", feature = "neg", feature = "atan2",
+        feature = "div", feature = "mod", feature = "mul", feature = "pow", feature = "sub",
+        feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+        feature = "lgamma", feature = "tgamma",
+        feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+        feature = "cbrt", feature = "sqrt",
+        feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+        feature = "roundeven", feature = "trunc", feature = "erf", feature = "erfc",
+        feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+        feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+        feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+        feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+        feature = "tan", feature = "tanh"
+    ))]
     pub use crate::catalog::__mech_native::*;
     #[cfg(feature = "add")]
     pub use crate::ops::add::__mech_native::*;

@@ -393,7 +393,8 @@ mod section_annotation_tests {
 fn eval_fenced_code_block(
     code: &Vec<(MechCode, Option<Comment>)>,
     interpreter: &InterpreterExecution<'_>,
-    isolate_errors: bool,
+    #[cfg(feature = "string")] isolate_errors: bool,
+    #[cfg(not(feature = "string"))] _: bool,
 ) -> MResult<LegacyValue> {
     let mut out = LegacyValue::Empty;
     for (c, cmmnt) in code {

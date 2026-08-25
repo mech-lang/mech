@@ -7322,7 +7322,10 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
 /// Installs the variadic f64 factory needed to execute and compile ordinary
 /// dynamic-matrix source without expanding the frozen runtime-only catalog.
 #[cfg(feature = "semantic-compiler")]
-pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(super) fn install_source_runtime(
+    #[cfg(all(feature = "f64", feature = "matrixd"))] builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(all(feature = "f64", feature = "matrixd")))] _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     if !builder.contains_runtime_factory(mech_core::RuntimeFunctionId::from_name(
         "HorizontalConcatenateNArgs<f64>",
@@ -7339,7 +7342,10 @@ pub(super) fn install_source_runtime(builder: &mut FunctionCatalogBuilder) -> MR
 /// Native application planning must still resolve bytecode that the source
 /// compiler emits for four-or-more dynamic matrix inputs.
 #[cfg(feature = "native-plan")]
-pub(super) fn install_native_plan_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub(super) fn install_native_plan_runtime(
+    #[cfg(all(feature = "f64", feature = "matrixd"))] builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(all(feature = "f64", feature = "matrixd")))] _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
     #[cfg(all(feature = "f64", feature = "matrixd"))]
     {
         register_horizontal_concatenate_four_args_f64(builder)?;
@@ -7364,7 +7370,7 @@ macro_rules! export_horzcat_family {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(feature = "native-link", feature = "row_vector2"))]
 macro_rules! export_horzcat_scalar_except_f64 {
     ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
@@ -7373,7 +7379,23 @@ macro_rules! export_horzcat_scalar_except_f64 {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(
+    feature = "native-link",
+    any(
+        feature = "matrix1",
+        feature = "matrix2",
+        feature = "matrix3",
+        feature = "matrix4",
+        feature = "matrix2x3",
+        feature = "matrix3x2",
+        feature = "row_vector2",
+        feature = "row_vector3",
+        feature = "row_vector4",
+        feature = "vector2",
+        feature = "vector3",
+        feature = "vector4"
+    )
+))]
 macro_rules! export_horzcat_legacy_family {
     (normal; $factory:ident; [$($feature:literal),+]) => {
         export_horzcat_family!($factory, [$($feature),+]);

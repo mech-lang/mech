@@ -467,65 +467,60 @@ impl PatternCompiler {
                 })
             }
             Pattern::TupleStruct(tuple_struct) => match expected_kind.map(ValueKind::deref_kind) {
+                #[cfg(feature = "enum")]
                 Some(ValueKind::Enum(enum_id, _)) => {
-                    #[cfg(feature = "enum")]
-                    {
-                        let enum_definition = interpreter
-                            .state
-                            .borrow()
-                            .enums
-                            .get(&enum_id)
-                            .cloned()
-                            .ok_or_else(|| {
-                                self.error(
-                                    pattern,
-                                    format!(
-                                        "Enum kind '{}' has no registered definition.",
-                                        enum_id
-                                    ),
-                                )
-                            })?;
-                        let variant_id = tuple_struct.name.hash();
-                        let declared_payload = enum_definition
-                            .variants
-                            .iter()
-                            .find(|(id, _)| *id == variant_id)
-                            .map(|(_, payload)| payload.clone())
-                            .ok_or_else(|| {
-                                self.error(
-                                    pattern,
-                                    format!(
-                                        "'{}' is not a variant of the expected enum.",
-                                        tuple_struct.name.to_string()
-                                    ),
-                                )
-                            })?;
-                        let payload = match (tuple_struct.patterns.as_slice(), declared_payload) {
-                            ([], None) => None,
-                            ([payload_pattern], Some(LegacyValue::Kind(payload_kind))) => {
-                                Some(Box::new(self.compile(
-                                    payload_pattern,
-                                    Some(&payload_kind),
-                                    interpreter,
-                                )?))
-                            }
-                            _ => {
-                                return Err(self.error(
-                    pattern,
-                    "Enum variant pattern payload arity does not match its definition.",
-                  ));
-                            }
-                        };
-                        return Ok(CompiledPattern::EnumVariant {
-                            enum_id: Some(enum_id),
-                            variant_id,
-                            payload,
-                        });
-                    }
-                    #[cfg(not(feature = "enum"))]
-                    {
-                        return Err(self.error(pattern, "Enum patterns are not enabled."));
-                    }
+                    let enum_definition = interpreter
+                        .state
+                        .borrow()
+                        .enums
+                        .get(&enum_id)
+                        .cloned()
+                        .ok_or_else(|| {
+                        self.error(
+                            pattern,
+                            format!("Enum kind '{}' has no registered definition.", enum_id),
+                        )
+                    })?;
+                    let variant_id = tuple_struct.name.hash();
+                    let declared_payload = enum_definition
+                        .variants
+                        .iter()
+                        .find(|(id, _)| *id == variant_id)
+                        .map(|(_, payload)| payload.clone())
+                        .ok_or_else(|| {
+                            self.error(
+                                pattern,
+                                format!(
+                                    "'{}' is not a variant of the expected enum.",
+                                    tuple_struct.name.to_string()
+                                ),
+                            )
+                        })?;
+                    let payload = match (tuple_struct.patterns.as_slice(), declared_payload) {
+                        ([], None) => None,
+                        ([payload_pattern], Some(LegacyValue::Kind(payload_kind))) => {
+                            Some(Box::new(self.compile(
+                                payload_pattern,
+                                Some(&payload_kind),
+                                interpreter,
+                            )?))
+                        }
+                        _ => {
+                            return Err(self.error(
+                                pattern,
+                                "Enum variant pattern payload arity does not match its definition.",
+                            ));
+                        }
+                    };
+                    Ok(CompiledPattern::EnumVariant {
+                        enum_id: Some(enum_id),
+                        variant_id,
+                        payload,
+                    })
+                }
+                #[cfg(not(feature = "enum"))]
+                Some(ValueKind::Enum(..)) => {
+                    Err(self.error(pattern, "Enum patterns are not enabled."))
                 }
                 Some(ValueKind::Tuple(kinds)) => {
                     if kinds.len() != tuple_struct.patterns.len() + 1
@@ -647,8 +642,8 @@ impl PatternMatchState<'_, '_> {
                     deep_detach_value(&self.expression_value(*expression_index, expression)?);
                 Ok(values_match(&expected, &value))
             }
+            #[cfg(feature = "tuple")]
             CompiledPattern::Tuple { elements } => {
-                #[cfg(feature = "tuple")]
                 if let LegacyValue::Tuple(tuple) = value {
                     let tuple = tuple.borrow();
                     if tuple.elements.len() != elements.len() {
@@ -663,53 +658,52 @@ impl PatternMatchState<'_, '_> {
                 }
                 Ok(false)
             }
+            #[cfg(not(feature = "tuple"))]
+            CompiledPattern::Tuple { .. } => Ok(false),
+            #[cfg(feature = "matrix")]
             CompiledPattern::Array {
                 prefix,
                 spread,
                 suffix,
             } => {
-                #[cfg(feature = "matrix")]
-                {
-                    let values = match matrix_like_values(&value) {
-                        Some(values) => values,
-                        None => return Ok(false),
-                    };
-                    if values.len() < prefix.len() + suffix.len() {
-                        return Ok(false);
-                    }
-                    for (pattern, value) in prefix.iter().zip(values.iter()) {
-                        if !self.matches(pattern, value)? {
-                            return Ok(false);
-                        }
-                    }
-                    let suffix_start = values.len() - suffix.len();
-                    for (pattern, value) in suffix.iter().zip(values[suffix_start..].iter()) {
-                        if !self.matches(pattern, value)? {
-                            return Ok(false);
-                        }
-                    }
-                    if spread.is_none() && values.len() != prefix.len() + suffix.len() {
-                        return Ok(false);
-                    }
-                    if let Some(binding) =
-                        spread.as_ref().and_then(|spread| spread.binding.as_deref())
-                    {
-                        let middle = capture_middle_matrix(&value, prefix.len(), suffix_start);
-                        if !self.matches(binding, &middle)? {
-                            return Ok(false);
-                        }
-                    }
-                    return Ok(true);
+                let values = match matrix_like_values(&value) {
+                    Some(values) => values,
+                    None => return Ok(false),
+                };
+                if values.len() < prefix.len() + suffix.len() {
+                    return Ok(false);
                 }
-                #[cfg(not(feature = "matrix"))]
-                Ok(false)
+                for (pattern, value) in prefix.iter().zip(values.iter()) {
+                    if !self.matches(pattern, value)? {
+                        return Ok(false);
+                    }
+                }
+                let suffix_start = values.len() - suffix.len();
+                for (pattern, value) in suffix.iter().zip(values[suffix_start..].iter()) {
+                    if !self.matches(pattern, value)? {
+                        return Ok(false);
+                    }
+                }
+                if spread.is_none() && values.len() != prefix.len() + suffix.len() {
+                    return Ok(false);
+                }
+                if let Some(binding) = spread.as_ref().and_then(|spread| spread.binding.as_deref())
+                {
+                    let middle = capture_middle_matrix(&value, prefix.len(), suffix_start);
+                    if !self.matches(binding, &middle)? {
+                        return Ok(false);
+                    }
+                }
+                Ok(true)
             }
+            #[cfg(not(feature = "matrix"))]
+            CompiledPattern::Array { .. } => Ok(false),
+            #[cfg(feature = "enum")]
             CompiledPattern::EnumVariant {
                 enum_id,
                 variant_id,
                 payload,
             } => {
-                #[cfg(feature = "enum")]
                 if let LegacyValue::Enum(enum_value) = value {
                     let enum_value = enum_value.borrow();
                     if enum_id.is_some_and(|expected| expected != enum_value.id)
@@ -729,6 +723,9 @@ impl PatternMatchState<'_, '_> {
                 }
                 Ok(false)
             }
+            #[cfg(not(feature = "enum"))]
+            CompiledPattern::EnumVariant { .. } => Ok(false),
+            #[cfg(any(feature = "enum", all(feature = "tuple", feature = "atom")))]
             CompiledPattern::AtomTuple { tag_id, payload } => {
                 #[cfg(feature = "enum")]
                 if let LegacyValue::Enum(enum_value) = &value {
@@ -768,6 +765,8 @@ impl PatternMatchState<'_, '_> {
                 }
                 Ok(false)
             }
+            #[cfg(not(any(feature = "enum", all(feature = "tuple", feature = "atom"))))]
+            CompiledPattern::AtomTuple { .. } => Ok(false),
         }
     }
 
@@ -1186,6 +1185,7 @@ fn capture_middle_matrix(value: &LegacyValue, start: usize, end: usize) -> Legac
 }
 
 // Used by the Array pattern arm to get a uniform element list regardless of the matrix's concrete numeric type.
+#[cfg(feature = "matrix")]
 pub(crate) fn matrix_like_values(value: &LegacyValue) -> Option<Vec<LegacyValue>> {
     match value {
         #[cfg(feature = "matrix")]

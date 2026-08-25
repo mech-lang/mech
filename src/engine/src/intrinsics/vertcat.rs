@@ -2421,6 +2421,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "vector4")]
           (2,4,1) => {
+            #[cfg(any(all(feature = "matrix1", feature = "vector3"), feature = "vector2"))]
             let out = Vector4::from_element($default);
             match &arguments[..] {
               // m1v3
@@ -2455,6 +2456,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "vector3")]
           (3,3,1) => {
+            #[cfg(feature = "matrix1")]
             let out = Vector3::from_element($default);
             match &arguments[..] {
               // m1 m1 m1
@@ -2545,6 +2547,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix2")]
           (2,2,2) => {
+            #[cfg(feature = "row_vector2")]
             let out = Matrix2::from_element($default);
             match &arguments[..] {
               // v2v2
@@ -2555,6 +2558,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix2x3")]
           (2,2,3) => {
+            #[cfg(feature = "row_vector3")]
             let out = Matrix2x3::from_element($default);
             match &arguments[..] {
               // r3r3
@@ -2565,6 +2569,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix3x2")]
           (2,3,2) => {
+            #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
             let out = Matrix3x2::from_element($default);
             match &arguments[..] {
               // v2m2
@@ -2583,6 +2588,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix3")]
           (2,3,3) => {
+            #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
             let out = Matrix3::from_element($default);
             match &arguments[..] {
               // v3m3x2
@@ -2601,6 +2607,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix4")]
           (2,4,4) => {
+            #[cfg(feature = "matrixd")]
             let out = Matrix4::from_element($default);
             match &arguments[..] {
               // r4md
@@ -2625,6 +2632,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix3x2")]
           (3,3,2) => {
+            #[cfg(feature = "row_vector2")]
             let out = Matrix3x2::from_element($default);
             match &arguments[..] {
               // r2r2r2
@@ -2635,6 +2643,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix3")]
           (3,3,3) => {
+            #[cfg(feature = "row_vector3")]
             let out = Matrix3::from_element($default);
             match &arguments[..] {
               // r3r3r3
@@ -2645,6 +2654,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix4")]
           (3,4,4) => {
+            #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
             let out = Matrix4::from_element($default);
             match &arguments[..] {
               // r4r4md
@@ -2669,6 +2679,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix4")]
           (4,4,4) => {
+            #[cfg(feature = "row_vector4")]
             let out = Matrix4::from_element($default);
             match &arguments[..] {
               // r4r4r4r4
@@ -3036,7 +3047,7 @@ macro_rules! register_vertcat_binary_scalar_except_f64 {
     all(feature = "matrix1", feature = "vector2"),
     all(feature = "vector2", feature = "vector4"),
     all(feature = "matrix1", feature = "vector3", feature = "vector4"),
-    all(feature = "row_vector2", feature = "matrix2"),
+    all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"),
     all(feature = "row_vector3", feature = "matrix2x3"),
     all(feature = "matrixd", feature = "matrix4")
 ))]
@@ -3148,14 +3159,32 @@ macro_rules! export_vertcat_family_except_f64 {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(
+    feature = "native-link",
+    any(
+        feature = "matrix1",
+        all(feature = "row_vector2", feature = "matrix3x2"),
+        all(feature = "row_vector3", feature = "matrix3"),
+        all(feature = "matrix4", feature = "row_vector4")
+    )
+))]
 macro_rules! export_vertcat_typed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         export_vertcat_family!($factory, [$($feature),+]);
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(
+    feature = "native-link",
+    any(
+        all(feature = "matrix1", feature = "vector2"),
+        all(feature = "vector2", feature = "vector4"),
+        all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+        all(feature = "row_vector2", feature = "matrix2"),
+        all(feature = "row_vector3", feature = "matrix2x3"),
+        all(feature = "matrixd", feature = "matrix4")
+    )
+))]
 macro_rules! export_vertcat_binary_scalar {
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
         #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
@@ -3163,7 +3192,7 @@ macro_rules! export_vertcat_binary_scalar {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(feature = "native-link", feature = "row_vector2", feature = "matrix2"))]
 macro_rules! export_vertcat_binary_scalar_except_f64 {
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
@@ -3171,7 +3200,17 @@ macro_rules! export_vertcat_binary_scalar_except_f64 {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(
+    feature = "native-link",
+    any(
+        all(feature = "matrix1", feature = "vector2"),
+        all(feature = "vector2", feature = "vector4"),
+        all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+        all(feature = "row_vector2", feature = "matrix2"),
+        all(feature = "row_vector3", feature = "matrix2x3"),
+        all(feature = "matrixd", feature = "matrix4")
+    )
+))]
 macro_rules! export_vertcat_binary_family {
     (; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
         for_each_vertcat_scalar!(export_vertcat_binary_scalar, ($factory, $e0, $e1, $out, [$($feature),+]));

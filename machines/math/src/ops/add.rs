@@ -1,8 +1,5 @@
 use crate::*;
 use num_traits::*;
-#[cfg(feature = "source")]
-use std::sync::Arc;
-
 #[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
 
@@ -732,14 +729,14 @@ pub fn install_math_add_native_plan(builder: &mut FunctionCatalogBuilder) -> MRe
 
 #[cfg(feature = "source")]
 pub fn install_math_add_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    let operation = builder.insert_specializer("math/add", Arc::new(MathAdd {}))?;
-    builder.insert_export(FunctionExport {
-        operation,
-        canonical_name: "math/add".to_string(),
-        module: None,
-        item: None,
-        exposure: FunctionExposure::Prelude,
-    })
+    crate::catalog::install_source_specializer(
+        builder,
+        "math/add",
+        None,
+        None,
+        FunctionExposure::Prelude,
+        MathAdd {},
+    )
 }
 
 #[cfg(test)]

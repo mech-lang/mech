@@ -30,11 +30,21 @@ use super::UnableToConvertRecordError;
 use super::enums::value_matches_enum_variant;
 #[cfg(feature = "variable_define")]
 use super::{AddressedAssignmentUnsupported, VariableAlreadyDefinedError};
+#[cfg(any(
+    feature = "variable_define",
+    feature = "invariant_define",
+    feature = "state_machines"
+))]
 use crate::LegacyValue;
+#[cfg(all(
+    feature = "variable_define",
+    feature = "kind_annotation",
+    feature = "convert"
+))]
+use crate::execute_catalog_operation;
 #[cfg(feature = "variable_define")]
 use crate::{
-    InterpreterExecution, MResult, MechError, OperationId, Ref, VariableDefine,
-    execute_catalog_operation, expression,
+    InterpreterExecution, MResult, MechError, OperationId, Ref, VariableDefine, expression,
 };
 #[cfg(all(
     feature = "variable_define",
@@ -73,7 +83,10 @@ pub fn variable_define(
     let plan = p.plan();
     #[cfg(feature = "subscript_formula")]
     reset_current_string_access_expression_live(p);
+    #[cfg(all(feature = "kind_annotation", feature = "convert"))]
     let mut result = expression(&var_def.expression, None, p)?;
+    #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
+    let result = expression(&var_def.expression, None, p)?;
     #[cfg(feature = "subscript_formula")]
     let string_access_result_is_live = take_current_string_access_expression_live(p);
     #[cfg(all(feature = "kind_annotation", feature = "convert"))]
@@ -281,6 +294,11 @@ pub fn variable_define(
     return Ok(detached_result);
 }
 
+#[cfg(any(
+    feature = "variable_define",
+    feature = "invariant_define",
+    feature = "state_machines"
+))]
 pub(super) fn detach_variable_value(value: &LegacyValue) -> LegacyValue {
     match value {
         LegacyValue::MutableReference(reference) => detach_variable_value(&reference.borrow()),

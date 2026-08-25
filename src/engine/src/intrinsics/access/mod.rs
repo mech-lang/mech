@@ -37,11 +37,15 @@ pub use self::tuple::*;
     feature = "record"
 ))]
 use crate::ValueKind;
+#[cfg(all(feature = "native-plan", feature = "semantic-compiler"))]
+use crate::{
+    BytecodeCompilerContext, CompileConst, MechFunctionCompiler, Register, compile_register,
+    hash_str,
+};
 #[cfg(feature = "native-plan")]
 use crate::{
-    BytecodeCompilerContext, CompileConst, FunctionArgs, FunctionValueRepresentation,
-    MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl, Register, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, compile_register, hash_str,
+    FunctionArgs, FunctionValueRepresentation, MechFunctionFactory, MechFunctionImpl,
+    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy,
 };
 use crate::{
     FunctionCatalogBuilder, FunctionSpecializer, IncorrectNumberOfArguments, LegacyValue, MResult,

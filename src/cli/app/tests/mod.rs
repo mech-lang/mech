@@ -819,7 +819,10 @@ fn root_rounds_per_step_is_stored_as_usize() {
         .try_get_matches_from(["mech", "--rounds-per-step", "10"])
         .unwrap();
 
-    assert_eq!(super::root_flags(&matches).rounds_per_step, Some(10));
+    assert_eq!(
+        matches.get_one::<usize>("rounds-per-step").copied(),
+        Some(10)
+    );
 }
 
 #[cfg(feature = "run")]

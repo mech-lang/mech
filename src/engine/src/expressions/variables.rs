@@ -10,7 +10,9 @@ use crate::{execute_catalog_operation, kind_annotation};
 fn maybe_cast_variable_to_kind(
     variable: &Var,
     value: LegacyValue,
+    #[cfg(all(feature = "kind_annotation", feature = "convert"))]
     interpreter: &InterpreterExecution<'_>,
+    #[cfg(not(all(feature = "kind_annotation", feature = "convert")))] _: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
     let Some(annotation) = &variable.kind else {
         return Ok(value);
