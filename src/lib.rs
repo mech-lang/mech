@@ -18,7 +18,10 @@ pub extern crate mech_stdlib as stdlib;
 pub extern crate mech_syntax as syntax;
 
 pub use mech_engine::*;
-pub use mech_syntax::*;
+pub use mech_syntax::{
+    ParseError, ParseErrorDetail, ParseResult, ParseString, ParserErrorContext, ParserErrorReport,
+    TextFormatter, alt_best, graphemes, parse, parse_grammar, parse_mech, parser, print_err_report,
+};
 
 extern crate colored;
 use colored::*;
