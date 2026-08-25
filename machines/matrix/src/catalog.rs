@@ -2,16 +2,48 @@
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
+#[cfg(all(feature = "dot", feature = "matrix"))]
+use mech_core::{FunctionArgs, FunctionArgumentRole, function_shape_contract_violation};
+#[cfg(any(
+    feature = "dot",
+    feature = "matmul",
+    feature = "solve",
+    feature = "transpose"
+))]
+use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy, function_shape_contract_violation,
+    FunctionCatalogBuilder, MResult,
 };
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(
+        feature = "dot",
+        feature = "matmul",
+        feature = "solve",
+        feature = "transpose"
+    )
+))]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(
+        feature = "dot",
+        feature = "matmul",
+        feature = "solve",
+        feature = "transpose"
+    )
+))]
 use std::sync::Arc;
 
-#[cfg(feature = "source")]
+#[cfg(all(
+    feature = "source",
+    any(
+        feature = "dot",
+        feature = "matmul",
+        feature = "solve",
+        feature = "transpose"
+    )
+))]
 fn install_operation<T>(
     builder: &mut FunctionCatalogBuilder,
     canonical_name: &str,
@@ -31,7 +63,22 @@ where
 }
 
 #[cfg(feature = "source")]
-pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub fn install_source(
+    #[cfg(any(
+        feature = "dot",
+        feature = "matmul",
+        feature = "solve",
+        feature = "transpose"
+    ))]
+    builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(any(
+        feature = "dot",
+        feature = "matmul",
+        feature = "solve",
+        feature = "transpose"
+    )))]
+    _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
     #[cfg(feature = "dot")]
     install_operation(builder, "matrix/dot", crate::MatrixDot {})?;
     #[cfg(feature = "matmul")]
@@ -60,6 +107,7 @@ macro_rules! for_each_matrix_numeric_scalar {
     };
 }
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! matrix_numeric_runtime_contract {
     (dot, DotScalar) => {
         RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
@@ -79,6 +127,7 @@ macro_rules! matrix_numeric_runtime_contract {
     };
 }
 
+#[cfg(all(feature = "dot", feature = "matrix"))]
 fn validate_dot_reduction(args: &FunctionArgs) -> MResult<()> {
     let contract = "dot_reduction";
     if args
@@ -137,12 +186,14 @@ macro_rules! declare_matrix_numeric_family {
     };
 }
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! register_matrix_numeric_factory {
     ($builder:expr, $module:ident, $factory:ident, $token:ident) => {
         mech_core::paste::paste! { [<register_ $module:snake _ $factory:snake _ $token>]($builder)?; }
     };
 }
 
+#[cfg(any(feature = "dot", feature = "matmul"))]
 macro_rules! install_declared_matrix_numeric_family {
     ($builder:expr, $module:ident, $factory:ident) => {{
         #[cfg(feature = "u8")]
@@ -320,6 +371,7 @@ macro_rules! export_matrix_matmul_fixed_family {
     };
 }
 
+#[cfg(feature = "transpose")]
 macro_rules! for_each_matrix_transpose_scalar {
     ($callback:ident, $context:tt) => {
         $callback!($context; bool; bool; "bool"; "bool"; "bool");
@@ -341,6 +393,7 @@ macro_rules! for_each_matrix_transpose_scalar {
     };
 }
 
+#[cfg(feature = "transpose")]
 macro_rules! declare_matrix_transpose_factory {
     (($factory:ident; [$($shape_feature:literal),+]); $token:ident; $scalar:ty; $name:literal; $scalar_cfg:literal; $scalar_feature:literal) => {
         mech_core::paste::paste! { mech_core::declare_native_runtime_factory! {
@@ -357,12 +410,14 @@ macro_rules! declare_matrix_transpose_factory {
     };
 }
 
+#[cfg(feature = "transpose")]
 macro_rules! declare_matrix_transpose_family {
     ($factory:ident; [$($shape_feature:literal),+]) => {
         for_each_matrix_transpose_scalar!(declare_matrix_transpose_factory, ($factory; [$($shape_feature),+]));
     };
 }
 
+#[cfg(feature = "transpose")]
 macro_rules! register_matrix_transpose_factory {
     (($builder:ident; $factory:ident); $token:ident; $_scalar:ty; $_name:literal; $scalar_cfg:literal; $_scalar_feature:literal) => {
         #[cfg(feature = $scalar_cfg)]
@@ -370,11 +425,12 @@ macro_rules! register_matrix_transpose_factory {
     };
 }
 
+#[cfg(feature = "transpose")]
 macro_rules! install_declared_matrix_transpose_family {
     ($builder:ident; $factory:ident) => { for_each_matrix_transpose_scalar!(register_matrix_transpose_factory, ($builder; $factory)); };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(feature = "native-link", feature = "transpose"))]
 macro_rules! export_matrix_transpose_factory {
     (($factory:ident; [$($shape_feature:literal),+]); $token:ident; $_scalar:ty; $_name:literal; $scalar_cfg:literal; $_scalar_feature:literal) => {
         #[cfg(all(feature = "transpose", feature = $scalar_cfg, $(feature = $shape_feature),+))]
@@ -382,89 +438,42 @@ macro_rules! export_matrix_transpose_factory {
     };
 }
 
-#[cfg(feature = "native-link")]
+#[cfg(all(feature = "native-link", feature = "transpose"))]
 macro_rules! export_matrix_transpose_family {
     ($factory:ident; [$($shape_feature:literal),+]) => { for_each_matrix_transpose_scalar!(export_matrix_transpose_factory, ($factory; [$($shape_feature),+])); };
 }
 
+#[cfg(feature = "transpose")]
 declare_matrix_transpose_family!(TransposeMD; ["matrixd"]);
+#[cfg(feature = "transpose")]
 declare_matrix_transpose_family!(TransposeVD; ["vectord", "row_vectord"]);
+#[cfg(feature = "transpose")]
 declare_matrix_transpose_family!(TransposeRD; ["row_vectord", "vectord"]);
 
-#[cfg(any(
-    feature = "native-link",
-    feature = "matrix1",
-    feature = "matrix2",
-    feature = "matrix3",
-    feature = "matrix4",
-    feature = "matrix2x3",
-    feature = "matrix3x2",
-    feature = "vector2",
-    feature = "vector3",
-    feature = "vector4",
-    feature = "row_vector2",
-    feature = "row_vector3",
-    feature = "row_vector4",
-))]
-macro_rules! for_each_matrix_transpose_fixed_family {
-    ($callback:ident, ($($context:tt)*)) => {
-        #[cfg(feature = "matrix1")] $callback!($($context)*; TransposeM1; ["matrix1"]);
-        #[cfg(feature = "matrix2")] $callback!($($context)*; TransposeM2; ["matrix2"]);
-        #[cfg(feature = "matrix3")] $callback!($($context)*; TransposeM3; ["matrix3"]);
-        #[cfg(feature = "matrix4")] $callback!($($context)*; TransposeM4; ["matrix4"]);
-        #[cfg(all(feature = "matrix2x3", feature = "matrix3x2"))] $callback!($($context)*; TransposeM2x3; ["matrix2x3", "matrix3x2"]);
-        #[cfg(all(feature = "matrix3x2", feature = "matrix2x3"))] $callback!($($context)*; TransposeM3x2; ["matrix3x2", "matrix2x3"]);
-        #[cfg(all(feature = "vector2", feature = "row_vector2"))] $callback!($($context)*; TransposeV2; ["vector2", "row_vector2"]);
-        #[cfg(all(feature = "vector3", feature = "row_vector3"))] $callback!($($context)*; TransposeV3; ["vector3", "row_vector3"]);
-        #[cfg(all(feature = "vector4", feature = "row_vector4"))] $callback!($($context)*; TransposeV4; ["vector4", "row_vector4"]);
-        #[cfg(all(feature = "row_vector2", feature = "vector2"))] $callback!($($context)*; TransposeR2; ["row_vector2", "vector2"]);
-        #[cfg(all(feature = "row_vector3", feature = "vector3"))] $callback!($($context)*; TransposeR3; ["row_vector3", "vector3"]);
-        #[cfg(all(feature = "row_vector4", feature = "vector4"))] $callback!($($context)*; TransposeR4; ["row_vector4", "vector4"]);
-    };
-}
-
-#[cfg(any(
-    feature = "matrix1",
-    feature = "matrix2",
-    feature = "matrix3",
-    feature = "matrix4",
-    feature = "matrix2x3",
-    feature = "matrix3x2",
-    feature = "vector2",
-    feature = "vector3",
-    feature = "vector4",
-    feature = "row_vector2",
-    feature = "row_vector3",
-    feature = "row_vector4",
-))]
-macro_rules! declare_matrix_transpose_fixed_family {
-    (; $factory:ident; [$($feature:literal),+]) => {
-        declare_matrix_transpose_family!($factory; [$($feature),+]);
-    };
-}
-
-#[cfg(any(
-    feature = "matrix1",
-    feature = "matrix2",
-    feature = "matrix3",
-    feature = "matrix4",
-    feature = "matrix2x3",
-    feature = "matrix3x2",
-    feature = "vector2",
-    feature = "vector3",
-    feature = "vector4",
-    feature = "row_vector2",
-    feature = "row_vector3",
-    feature = "row_vector4",
-))]
-for_each_matrix_transpose_fixed_family!(declare_matrix_transpose_fixed_family, ());
-
-#[cfg(feature = "native-link")]
-macro_rules! export_matrix_transpose_fixed_family {
-    (; $factory:ident; [$($feature:literal),+]) => {
-        export_matrix_transpose_family!($factory; [$($feature),+]);
-    };
-}
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeM1; ["matrix1"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeM2; ["matrix2"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeM3; ["matrix3"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeM4; ["matrix4"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeM2x3; ["matrix2x3", "matrix3x2"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeM3x2; ["matrix3x2", "matrix2x3"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeV2; ["vector2", "row_vector2"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeV3; ["vector3", "row_vector3"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeV4; ["vector4", "row_vector4"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeR2; ["row_vector2", "vector2"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeR3; ["row_vector3", "vector3"]);
+#[cfg(feature = "transpose")]
+declare_matrix_transpose_family!(TransposeR4; ["row_vector4", "vector4"]);
 
 mech_core::declare_native_runtime_factory! {
     cfg: all(feature = "solve", feature = "matrixd", feature = "vectord", feature = "f32"),
@@ -701,7 +710,22 @@ fn install_transpose_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()
 }
 
 /// Installs every enabled concrete bytecode factory owned by `mech-matrix`.
-pub fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+pub fn install_runtime(
+    #[cfg(any(
+        feature = "dot",
+        feature = "matmul",
+        feature = "solve",
+        feature = "transpose"
+    ))]
+    builder: &mut FunctionCatalogBuilder,
+    #[cfg(not(any(
+        feature = "dot",
+        feature = "matmul",
+        feature = "solve",
+        feature = "transpose"
+    )))]
+    _: &mut FunctionCatalogBuilder,
+) -> MResult<()> {
     #[cfg(feature = "dot")]
     install_dot_runtime(builder)?;
     #[cfg(feature = "matmul")]
@@ -755,10 +779,36 @@ pub mod __mech_native {
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulRDMD }
     export_matrix_numeric_family! { cfg: all(feature = "matmul", feature = "vectord", feature = "row_vectord", feature = "matrixd"), module: matmul, factory: MatMulVDRD }
     for_each_matrix_matmul_fixed_family!(export_matrix_matmul_fixed_family, ());
+    #[cfg(feature = "transpose")]
     export_matrix_transpose_family!(TransposeMD; ["matrixd"]);
+    #[cfg(feature = "transpose")]
     export_matrix_transpose_family!(TransposeVD; ["vectord", "row_vectord"]);
+    #[cfg(feature = "transpose")]
     export_matrix_transpose_family!(TransposeRD; ["row_vectord", "vectord"]);
-    for_each_matrix_transpose_fixed_family!(export_matrix_transpose_fixed_family, ());
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeM1; ["matrix1"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeM2; ["matrix2"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeM3; ["matrix3"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeM4; ["matrix4"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeM2x3; ["matrix2x3", "matrix3x2"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeM3x2; ["matrix3x2", "matrix2x3"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeV2; ["vector2", "row_vector2"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeV3; ["vector3", "row_vector3"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeV4; ["vector4", "row_vector4"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeR2; ["row_vector2", "vector2"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeR3; ["row_vector3", "vector3"]);
+    #[cfg(feature = "transpose")]
+    export_matrix_transpose_family!(TransposeR4; ["row_vector4", "vector4"]);
     #[cfg(all(
         feature = "solve",
         feature = "matrixd",

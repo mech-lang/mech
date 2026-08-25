@@ -16,7 +16,7 @@ gitlab = { repository = "mech-lang/machines/set", branch = "main" }
 maintenance = { status = "actively-developed" }
 
 [lib]
-crate-type = ["dylib", "rlib"]
+crate-type = ["rlib", "cdylib"]
 
 [features]
 no_std = ["mech-core/no_std"]

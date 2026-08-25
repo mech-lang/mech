@@ -1,12 +1,15 @@
 use std::collections::{HashMap, HashSet};
+#[cfg(any(test, feature = "runtime"))]
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use mech_core::{LegacyValue, MResult, MechError, MechErrorKind, OperationContractDeclaration};
 
+use crate::extension::catch_extension;
+#[cfg(any(test, feature = "runtime"))]
+use crate::extension::invoke_extension;
 #[cfg(feature = "resident-external")]
 use crate::extension::invoke_extension_value;
-use crate::extension::{catch_extension, invoke_extension};
 use crate::{
     PreparedRuntimeEffect, RuntimeCapabilityOperation, RuntimeCompensatableEffect,
     RuntimeEffectCost, RuntimeEffectMetadata, RuntimeEffectSource,
@@ -167,7 +170,9 @@ pub trait RuntimeResourceProvider: std::fmt::Debug {
 struct RuntimeResourceProviderEntry {
     scheme: String,
     bases: Vec<String>,
+    #[cfg(any(test, feature = "runtime"))]
     equivalent_base_uri_groups: Vec<Vec<String>>,
+    #[cfg(any(test, feature = "runtime"))]
     provider: Rc<dyn RuntimeResourceProvider>,
 }
 
@@ -285,8 +290,18 @@ impl RuntimeResourceRegistry {
         }
 
         let bases = normalize_provider_bases(&scheme, bases)?;
+        #[cfg(any(test, feature = "runtime"))]
         let equivalent_base_uri_groups =
             normalize_provider_equivalence_groups(&scheme, &bases, equivalent_groups)?;
+        #[cfg(not(any(test, feature = "runtime")))]
+        // Registration still rejects malformed equivalence metadata when the
+        // runtime consumer is absent, but there is no live registry path that
+        // needs to retain the normalized groups in this profile.
+        drop(normalize_provider_equivalence_groups(
+            &scheme,
+            &bases,
+            equivalent_groups,
+        )?);
 
         for base in &bases {
             if self
@@ -320,16 +335,20 @@ impl RuntimeResourceRegistry {
         self.providers.push(RuntimeResourceProviderEntry {
             scheme,
             bases,
+            #[cfg(any(test, feature = "runtime"))]
             equivalent_base_uri_groups,
+            #[cfg(any(test, feature = "runtime"))]
             provider: Rc::from(provider),
         });
         Ok(())
     }
 
+    #[cfg(any(test, feature = "runtime"))]
     pub(crate) fn has_provider(&self, scheme: &str) -> bool {
         self.providers.iter().any(|entry| entry.scheme == scheme)
     }
 
+    #[cfg(any(test, feature = "runtime"))]
     pub(crate) fn equivalent_base_uris_for(&self, base_uri: &str) -> MResult<Vec<String>> {
         let normalized = canonicalize_resource_base_uri(base_uri)?;
         let Some(entry) = self
@@ -351,6 +370,7 @@ impl RuntimeResourceRegistry {
     ///
     /// Equivalent bases share the first normalized member declared by their
     /// provider. Bases outside an equivalence group retain their own identity.
+    #[cfg(any(test, feature = "runtime"))]
     pub(crate) fn staged_resource_identity_for(&self, base_uri: &str) -> MResult<String> {
         let normalized = canonicalize_resource_base_uri(base_uri)?;
         let equivalent_base_uris = self.equivalent_base_uris_for(&normalized)?;
@@ -360,6 +380,7 @@ impl RuntimeResourceRegistry {
             .unwrap_or(normalized))
     }
 
+    #[cfg(any(test, feature = "runtime"))]
     fn provider_entry_for(&self, scheme: &str, uri: &str) -> Option<&RuntimeResourceProviderEntry> {
         self.providers
             .iter()
@@ -407,6 +428,7 @@ impl RuntimeResourceRegistry {
         })
     }
 
+    #[cfg(any(test, feature = "runtime"))]
     pub(crate) fn read(&self, request: RuntimeResourceReadRequest) -> MResult<LegacyValue> {
         let scheme = resource_uri_scheme(&request.base_uri)?.to_string();
         let Some(entry) = self.provider_entry_for(&scheme, &request.base_uri) else {
@@ -459,6 +481,7 @@ impl RuntimeResourceRegistry {
         )
     }
 
+    #[cfg(any(test, feature = "runtime"))]
     pub(crate) fn prepare_write(
         &self,
         request: RuntimeResourceWriteRequest,

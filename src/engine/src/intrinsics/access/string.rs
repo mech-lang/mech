@@ -24,6 +24,7 @@ enum StringAccessSource {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum StringAccessCompileMode {
     Constant,
+    #[cfg(feature = "subscript_formula")]
     LiveDirect,
     Dynamic,
 }
@@ -34,16 +35,19 @@ enum StringAccessIndex {
     Mutable(MutableReference),
 }
 
+#[cfg(feature = "subscript_formula")]
 thread_local! {
   static NEXT_STRING_ACCESS_COMPILE_MODE: std::cell::RefCell<Option<StringAccessCompileMode>> = std::cell::RefCell::new(None);
 }
 
+#[cfg(feature = "subscript_formula")]
 pub(crate) fn set_next_string_access_compile_mode(mode: StringAccessCompileMode) {
     NEXT_STRING_ACCESS_COMPILE_MODE.with(|slot| {
         *slot.borrow_mut() = Some(mode);
     });
 }
 
+#[cfg(feature = "subscript_formula")]
 fn take_next_string_access_compile_mode() -> Option<StringAccessCompileMode> {
     NEXT_STRING_ACCESS_COMPILE_MODE.with(|slot| slot.borrow_mut().take())
 }
@@ -134,6 +138,7 @@ impl MechFunctionCompiler for StringAccessElement {
         let reg = compile_register!(LegacyValue::String(self.out.clone()), ctx);
         Ok(reg)
       }
+      #[cfg(feature = "subscript_formula")]
       StringAccessCompileMode::LiveDirect => Err(MechError::new(
         GenericError {
           msg: "string scalar access cannot be bytecode-compiled because its source or index may be live; compile-time constant string access is supported, mutable/dynamic access is not yet supported".to_string(),
@@ -165,16 +170,20 @@ impl FunctionSpecializer for StringAccessScalar {
         }
         let src = &arguments[0];
         let ix1 = &arguments[1];
-        fn direct_compile_mode(_s: &Ref<String>, _ix: &Ref<usize>) -> StringAccessCompileMode {
+        fn direct_compile_mode() -> StringAccessCompileMode {
             // Expression lowering sets an explicit semantic mode when it can see that
             // a direct ref is a live plan output. Otherwise direct refs are constants
             // or immutable aliases and remain bytecode-compilable.
-            take_next_string_access_compile_mode().unwrap_or(StringAccessCompileMode::Constant)
+            #[cfg(feature = "subscript_formula")]
+            return take_next_string_access_compile_mode()
+                .unwrap_or(StringAccessCompileMode::Constant);
+            #[cfg(not(feature = "subscript_formula"))]
+            StringAccessCompileMode::Constant
         }
         match (src.clone(), ix1.clone()) {
             (LegacyValue::String(s), LegacyValue::Index(ix)) => {
                 let grapheme = access_grapheme(&s.borrow(), *ix.borrow())?;
-                let compile_mode = direct_compile_mode(&s, &ix);
+                let compile_mode = direct_compile_mode();
                 let new_fxn = StringAccessElement {
                     source: StringAccessSource::Direct(s),
                     index: StringAccessIndex::Direct(ix),

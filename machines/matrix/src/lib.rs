@@ -13,9 +13,15 @@ pub mod __mech_native {
 extern crate nalgebra as na;
 extern crate paste;
 
+#[cfg(any(
+    feature = "dot",
+    feature = "matmul",
+    feature = "solve",
+    feature = "transpose"
+))]
 use mech_core::*;
 
-#[cfg(feature = "source")]
+#[cfg(all(feature = "source", feature = "transpose"))]
 use paste::paste;
 
 #[cfg(feature = "matrixd")]
@@ -51,11 +57,19 @@ use nalgebra::Vector4;
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
 use num_traits::*;
+#[cfg(any(
+    feature = "dot",
+    feature = "matmul",
+    feature = "solve",
+    feature = "transpose"
+))]
 use std::fmt::Debug;
+#[cfg(any(feature = "dot", feature = "matmul", feature = "solve"))]
 use std::ops::*;
 
+#[cfg(any(feature = "dot", feature = "matmul", feature = "solve"))]
 use std::fmt::Display;
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(feature = "matmul")]
 use std::sync::LazyLock;
 
 #[cfg(any(feature = "dot", feature = "matmul"))]
@@ -202,7 +216,10 @@ impl_unchecked_matrix_arithmetic!(mech_core::R64);
 ))]
 impl_unchecked_matrix_arithmetic!(mech_core::C64);
 
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(all(
+    any(feature = "dot", feature = "matmul"),
+    feature = "matrix"
+))]
 fn checked_matrix_add<T: RuntimeMatrixArithmetic>(
     lhs: T,
     rhs: T,
@@ -238,14 +255,14 @@ fn checked_matrix_mul<T: RuntimeMatrixArithmetic>(
     })
 }
 
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(feature = "matmul")]
 static PURE_SCALAR_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_product_contract(false));
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(feature = "matmul")]
 static PURE_MATRIX_PRODUCT_CONTRACT: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_product_contract(true));
 
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(feature = "matmul")]
 fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
     OperationContractDeclaration {
         inputs: InputPortLayout::Fixed(
@@ -283,7 +300,7 @@ fn pure_product_contract(matrix: bool) -> OperationContractDeclaration {
     }
 }
 
-#[cfg(any(feature = "dot", feature = "matmul"))]
+#[cfg(feature = "matmul")]
 fn product_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {

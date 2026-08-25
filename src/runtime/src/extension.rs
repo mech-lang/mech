@@ -1,7 +1,9 @@
 #[cfg(panic = "unwind")]
 use std::any::Any;
 
-use mech_core::{MResult, MechError, MechErrorKind};
+#[cfg(any(test, feature = "runtime"))]
+use mech_core::MResult;
+use mech_core::{MechError, MechErrorKind};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeExtensionPanicked {
@@ -88,6 +90,7 @@ pub(crate) fn catch_extension<T>(
     Ok(callback())
 }
 
+#[cfg(any(test, feature = "runtime"))]
 pub(crate) fn invoke_extension<T>(
     component: impl Into<String>,
     operation: impl Into<String>,
@@ -99,6 +102,7 @@ pub(crate) fn invoke_extension<T>(
     }
 }
 
+#[cfg(any(test, feature = "runtime"))]
 pub(crate) fn invoke_extension_value<T>(
     component: impl Into<String>,
     operation: impl Into<String>,

@@ -55,11 +55,20 @@ mod op_assign;
 mod variable_assign;
 mod variable_define;
 
-#[cfg(feature = "math_add_assign")]
+#[cfg(all(
+    feature = "math_add_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::add_assign;
-#[cfg(feature = "math_div_assign")]
+#[cfg(all(
+    feature = "math_div_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::div_assign;
-#[cfg(feature = "math_mul_assign")]
+#[cfg(all(
+    feature = "math_mul_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::mul_assign;
 #[cfg(any(
     feature = "math_add_assign",
@@ -68,7 +77,10 @@ pub use op_assign::mul_assign;
     feature = "math_mul_assign"
 ))]
 pub use op_assign::op_assign;
-#[cfg(feature = "math_sub_assign")]
+#[cfg(all(
+    feature = "math_sub_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::sub_assign;
 #[cfg(all(feature = "subscript", feature = "assign"))]
 pub use variable_assign::subscript_ref;

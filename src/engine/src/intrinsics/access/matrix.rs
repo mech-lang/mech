@@ -65,6 +65,7 @@ declare_matrix_selection_contract!(
     2,
     "explicit-index-vector-output"
 );
+#[cfg(feature = "logical_indexing")]
 declare_matrix_selection_contract!(PURE_BINARY_LOGICAL_MASK_CONTRACT, 2, "logical-mask-output");
 declare_matrix_selection_contract!(PURE_BINARY_ALL_ELEMENTS_CONTRACT, 2, "all-elements-output");
 declare_matrix_selection_contract!(
@@ -82,6 +83,7 @@ declare_matrix_selection_contract!(
     2,
     "explicit-rows-all-columns-output"
 );
+#[cfg(feature = "logical_indexing")]
 declare_matrix_selection_contract!(
     PURE_BINARY_LOGICAL_ROWS_ALL_COLUMNS_CONTRACT,
     2,
@@ -102,6 +104,7 @@ declare_matrix_selection_contract!(
     3,
     "scalar-row-explicit-columns-output"
 );
+#[cfg(feature = "logical_indexing")]
 declare_matrix_selection_contract!(
     PURE_TERNARY_SCALAR_ROW_LOGICAL_COLUMNS_CONTRACT,
     3,
@@ -112,6 +115,7 @@ declare_matrix_selection_contract!(
     3,
     "explicit-rows-scalar-column-output"
 );
+#[cfg(feature = "logical_indexing")]
 declare_matrix_selection_contract!(
     PURE_TERNARY_LOGICAL_ROWS_SCALAR_COLUMN_CONTRACT,
     3,
@@ -656,6 +660,7 @@ macro_rules! access_1d_slice {
     };
 }
 
+#[cfg(feature = "logical_indexing")]
 macro_rules! access_1d_slice_bool_v {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
@@ -670,6 +675,7 @@ macro_rules! access_1d_slice_bool_v {
     };
 }
 
+#[cfg(feature = "logical_indexing")]
 macro_rules! access_2d_row_slice_bool {
     ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
         unsafe {
@@ -686,6 +692,7 @@ macro_rules! access_2d_row_slice_bool {
     };
 }
 
+#[cfg(feature = "logical_indexing")]
 macro_rules! access_2d_col_slice_bool {
     ($source:expr, $ix1:expr, $ix2:expr, $out:expr) => {
         unsafe {
@@ -718,6 +725,7 @@ macro_rules! access_2d_slice_all {
     };
 }
 
+#[cfg(feature = "logical_indexing")]
 macro_rules! access_2d_slice_all_bool {
     ($source:expr, $ix:expr, $out:expr) => {
         unsafe {
@@ -1204,6 +1212,7 @@ impl_access_fxn_shape!(
     access_1d_slice,
     PURE_BINARY_EXPLICIT_INDEX_CONTRACT
 );
+#[cfg(feature = "logical_indexing")]
 impl_access_fxn_shape!(
     Access1DVDb,
     DVector<bool>,
@@ -1303,6 +1312,7 @@ impl_access_fxn_matrix_shape!(
     access_2d_slice_all,
     PURE_BINARY_EXPLICIT_ROWS_ALL_COLUMNS_CONTRACT
 );
+#[cfg(feature = "logical_indexing")]
 impl_access_fxn_matrix_shape!(
     Access2DVDbA,
     DVector<bool>,
@@ -1320,6 +1330,7 @@ impl_access_fxn_shape2!(
     access_2d_row_slice,
     PURE_TERNARY_SCALAR_ROW_EXPLICIT_COLUMNS_CONTRACT
 );
+#[cfg(feature = "logical_indexing")]
 impl_access_fxn_shape2!(
     Access2DSVDb,
     usize,
@@ -1338,6 +1349,7 @@ impl_access_fxn_shape2!(
     access_2d_col_slice,
     PURE_TERNARY_EXPLICIT_ROWS_SCALAR_COLUMN_CONTRACT
 );
+#[cfg(feature = "logical_indexing")]
 impl_access_fxn_shape2!(
     Access2DVDbS,
     DVector<bool>,

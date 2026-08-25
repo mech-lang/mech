@@ -4,6 +4,7 @@ use super::*;
 use crate::cli::commands::build::{
     BuildEmit, BuildOptions, BuildProfile, run as run_build, validate_build_bytecode_inputs,
 };
+#[cfg(any(feature = "serve", feature = "build", feature = "run"))]
 use std::path::PathBuf;
 
 #[cfg(all(test, feature = "serve"))]

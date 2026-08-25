@@ -61,6 +61,12 @@ macro_rules! impl_to_matrix {
                 }
             }
             fn to_matrixd(elements: Vec<Self>, rows: usize, cols: usize) -> Matrix<Self> {
+                #[cfg(not(any(
+                    feature = "row_vectord",
+                    feature = "vectord",
+                    feature = "matrixd"
+                )))]
+                drop(elements);
                 match (rows, cols) {
                     #[cfg(feature = "row_vectord")]
                     (1, _) => Matrix::RowDVector(Ref::new(RowDVector::from_vec(elements))),
@@ -782,8 +788,10 @@ impl<T: 'static> Matrix<T> {
     pub(crate) fn rebuild_with_same_storage(
         &self,
         elements: Vec<T>,
-        rows: usize,
-        cols: usize,
+        #[cfg(feature = "matrixd")] rows: usize,
+        #[cfg(not(feature = "matrixd"))] _: usize,
+        #[cfg(feature = "matrixd")] cols: usize,
+        #[cfg(not(feature = "matrixd"))] _: usize,
     ) -> Matrix<T>
     where
         T: Debug + Clone + PartialEq + 'static,
@@ -1029,7 +1037,9 @@ where
         if !self.can_replace_payload_from(source) {
             return false;
         }
+        #[cfg(any(feature = "row_vectord", feature = "matrixd"))]
         let rows = source.rows();
+        #[cfg(any(feature = "vectord", feature = "matrixd"))]
         let cols = source.cols();
         let elements = source.as_vec();
         match self {

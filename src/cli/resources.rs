@@ -11,7 +11,7 @@ pub(crate) static MECHWASM: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm
 #[cfg(has_file_js)]
 pub(crate) static MECHJS: &[u8] = include_bytes!("../../src/wasm/pkg/mech_wasm.js");
 
-#[cfg(has_file_project_js)]
+#[cfg(all(feature = "serve", has_file_project_js))]
 pub(crate) static PROJECTJS: &str = concat!(
     include_str!("../../include/browser-compute.js"),
     "\n",
@@ -73,11 +73,11 @@ fn embedded_js() -> Option<&'static [u8]> {
     None
 }
 
-#[cfg(has_file_project_js)]
+#[cfg(all(feature = "serve", has_file_project_js))]
 fn embedded_project_js() -> Option<&'static str> {
     Some(PROJECTJS)
 }
-#[cfg(not(has_file_project_js))]
+#[cfg(all(feature = "serve", not(has_file_project_js)))]
 fn embedded_project_js() -> Option<&'static str> {
     None
 }
@@ -95,11 +95,14 @@ fn embedded_document_js() -> Option<&'static str> {
 pub(crate) struct WebResourceDefaults {
     pub stylesheet_backup_url: String,
     pub shim_backup_url: String,
+    #[cfg(feature = "serve")]
     pub wasm_backup_url: String,
+    #[cfg(feature = "serve")]
     pub js_backup_url: String,
     pub shim_html: &'static str,
     pub mech_wasm: Option<&'static [u8]>,
     pub mech_js: Option<&'static [u8]>,
+    #[cfg(feature = "serve")]
     pub project_js: Option<&'static str>,
     pub document_js: Option<&'static str>,
 }
@@ -109,7 +112,10 @@ impl WebResourceDefaults {
         Self::for_package_version(env!("CARGO_PKG_VERSION"))
     }
 
-    fn for_package_version(version: &str) -> Self {
+    fn for_package_version(
+        #[cfg(feature = "serve")] version: &str,
+        #[cfg(not(feature = "serve"))] _: &str,
+    ) -> Self {
         Self {
             shim_backup_url:
                 "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/index.html"
@@ -117,15 +123,18 @@ impl WebResourceDefaults {
             stylesheet_backup_url:
                 "https://raw.githubusercontent.com/mech-lang/mech/refs/heads/main/include/style.css"
                     .to_string(),
+            #[cfg(feature = "serve")]
             wasm_backup_url: format!(
                 "https://github.com/mech-lang/mech/releases/download/v{version}-beta/mech_wasm_bg.wasm"
             ),
+            #[cfg(feature = "serve")]
             js_backup_url: format!(
                 "https://github.com/mech-lang/mech/releases/download/v{version}-beta/mech_wasm.js"
             ),
             shim_html: SHIMHTML,
             mech_wasm: embedded_wasm(),
             mech_js: embedded_js(),
+            #[cfg(feature = "serve")]
             project_js: embedded_project_js(),
             document_js: embedded_document_js(),
         }
@@ -526,6 +535,7 @@ mod tests {
         );
     }
 
+    #[cfg(feature = "serve")]
     #[test]
     fn web_release_fallbacks_use_an_exact_package_version() {
         let defaults = WebResourceDefaults::for_package_version("0.3.6");

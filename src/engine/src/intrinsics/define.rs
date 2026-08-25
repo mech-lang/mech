@@ -560,6 +560,7 @@ declare_variable_define_matrix_for_type!("c64", C64, C64, "complex");
 declare_variable_define_matrix_for_type!("bool", bool, bool, "bool");
 declare_variable_define_matrix_for_type!("string", String, String, "string");
 
+#[cfg(feature = "matrix")]
 macro_rules! register_variable_define_matrix_native {
     (
         ($builder:ident; $kind_token:ident),
@@ -999,6 +1000,30 @@ fn impl_var_define_fxn(
         })
 }
 
+#[cfg(any(
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128",
+    feature = "f32",
+    feature = "r64",
+    feature = "c64",
+    feature = "bool",
+    feature = "string",
+    feature = "table",
+    feature = "set",
+    feature = "tuple",
+    feature = "record",
+    feature = "map",
+    feature = "atom",
+    feature = "enum"
+))]
 macro_rules! install_variable_define_scalar_runtime {
     ($builder:expr, $kind:ident) => {
         paste! {
@@ -1007,6 +1032,7 @@ macro_rules! install_variable_define_scalar_runtime {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_variable_define_matrix_runtime {
     ($builder:ident, $kind_token:ident) => {
         for_each_variable_define_matrix_shape!(

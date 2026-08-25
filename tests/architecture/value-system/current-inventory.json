@@ -6078,7 +6078,7 @@
           {
             "column": 26,
             "fingerprint": "26ef29e8e96f0ca0c3d4b8facf88abd7307b14d283932bc4119ed87b304bcc58",
-            "line": 918
+            "line": 917
           }
         ]
       },
@@ -6153,62 +6153,62 @@
           {
             "column": 30,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 1482
+            "line": 1494
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1567
+            "line": 1579
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1680
+            "line": 1692
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1872
+            "line": 1884
           },
           {
             "column": 30,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2150
+            "line": 2162
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2266
+            "line": 2278
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2350
+            "line": 2362
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2438
+            "line": 2450
           },
           {
             "column": 30,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2632
+            "line": 2644
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2739
+            "line": 2751
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2845
+            "line": 2857
           },
           {
             "column": 31,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 2952
+            "line": 2964
           }
         ]
       },
@@ -6251,32 +6251,32 @@
           {
             "column": 13,
             "fingerprint": "fae0c8445925934f705e47f2409ef6daadf069ab52d888dc578ff0acff700543",
-            "line": 34
+            "line": 35
           },
           {
             "column": 59,
             "fingerprint": "e3fbaba8a7a565eca19621f0c9ad053a508106c3fcfd0a29a363f65db9cab6b6",
-            "line": 105
+            "line": 109
           },
           {
             "column": 51,
             "fingerprint": "eec69baa90417ce5b6addee5e5c7d58c426142061cf0454f8252b3c62a9a5e3e",
-            "line": 186
+            "line": 195
           },
           {
             "column": 27,
             "fingerprint": "eec69baa90417ce5b6addee5e5c7d58c426142061cf0454f8252b3c62a9a5e3e",
-            "line": 209
+            "line": 218
           },
           {
             "column": 27,
             "fingerprint": "eec69baa90417ce5b6addee5e5c7d58c426142061cf0454f8252b3c62a9a5e3e",
-            "line": 229
+            "line": 238
           },
           {
             "column": 61,
             "fingerprint": "eec69baa90417ce5b6addee5e5c7d58c426142061cf0454f8252b3c62a9a5e3e",
-            "line": 229
+            "line": 238
           }
         ]
       },
@@ -6614,12 +6614,12 @@
           {
             "column": 30,
             "fingerprint": "c9cab66815146e3e6462eeeaae13d40773a9c97f9a6d272837c03cdad113296c",
-            "line": 705
+            "line": 706
           },
           {
             "column": 30,
             "fingerprint": "97b5bd28783f65ddc0f6df32509515bc8221e90aecc70c7d3eceb85637eebe92",
-            "line": 1142
+            "line": 1168
           }
         ]
       },
@@ -6839,7 +6839,7 @@
           {
             "column": 22,
             "fingerprint": "ad6aa44b581d0ce02bf0fee58c24f94d628a3d9f1373b1836fc98f4223ffb83b",
-            "line": 185
+            "line": 195
           }
         ]
       },
@@ -6850,7 +6850,7 @@
           {
             "column": 22,
             "fingerprint": "3be93df99186aada6f089da46f07928b504456cfb65ce805ddf0b40a32e00742",
-            "line": 35
+            "line": 37
           }
         ]
       },
@@ -7675,7 +7675,7 @@
           {
             "column": 16,
             "fingerprint": "840ea8a88a80f596f106b59fa7f86a514a8f1194d1bdea4a576ff21261cb28d5",
-            "line": 255
+            "line": 261
           }
         ]
       },
@@ -7699,7 +7699,7 @@
           {
             "column": 22,
             "fingerprint": "344b3ae3f130667fa4f75e92559dc963946581995ee2c887bebe474beb4e05f2",
-            "line": 256
+            "line": 262
           }
         ]
       },
@@ -7750,22 +7750,22 @@
           {
             "column": 48,
             "fingerprint": "897d670ef16a399b8b3c092f21b340727dcfc986f2990d96772bd5c21c9bb0f0",
-            "line": 216
+            "line": 222
           },
           {
             "column": 48,
             "fingerprint": "b7ac476e5279186f275ee1069774b7b0da8cecd779f213a2e8395307852665cf",
-            "line": 225
+            "line": 231
           },
           {
             "column": 48,
             "fingerprint": "db4704ea26a36462e04f9d675cad3b9929ebee571f01e8979c1dc93655d24b5e",
-            "line": 234
+            "line": 240
           },
           {
             "column": 48,
             "fingerprint": "7d4a3cbeedd072d258e5c29d54a7ab71ec29c0fb276730b89e35230b5317d3fc",
-            "line": 242
+            "line": 248
           }
         ]
       }
@@ -8107,7 +8107,7 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 383
+            "line": 400
           }
         ]
       },
@@ -8674,22 +8674,22 @@
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 892
+            "line": 900
           },
           {
             "column": 16,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 1000
+            "line": 1008
           },
           {
             "column": 8,
             "fingerprint": "a7c083fc56767a81b9162ef3ac9b948b43e71d07df5214583fc9c5cf36bc95f7",
-            "line": 1481
+            "line": 1493
           },
           {
             "column": 16,
             "fingerprint": "4e47fe5983efe66d6dc7a314caaf64a31d5fc066e5e78ff5ed84f9eaaf8a7028",
-            "line": 4022
+            "line": 4034
           }
         ]
       },
@@ -8727,7 +8727,7 @@
           {
             "column": 8,
             "fingerprint": "d20bb803d7aeab2899017b5fa7a77f1d1b3e8f409b2b08add4932ad10798cef8",
-            "line": 125
+            "line": 129
           }
         ]
       },
@@ -9015,7 +9015,7 @@
           {
             "column": 8,
             "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-            "line": 704
+            "line": 705
           }
         ]
       },
@@ -12077,7 +12077,7 @@
           {
             "column": 13,
             "fingerprint": "758fd3d09d3187dbc4c773af9cf29cf7eb04e8fe6083f8167aed3d20be7d3869",
-            "line": 918
+            "line": 917
           }
         ]
       },
@@ -12152,62 +12152,62 @@
           {
             "column": 17,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 1482
+            "line": 1494
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1567
+            "line": 1579
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1680
+            "line": 1692
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1872
+            "line": 1884
           },
           {
             "column": 17,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2150
+            "line": 2162
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2266
+            "line": 2278
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2350
+            "line": 2362
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2438
+            "line": 2450
           },
           {
             "column": 17,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2632
+            "line": 2644
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2739
+            "line": 2751
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2845
+            "line": 2857
           },
           {
             "column": 18,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 2952
+            "line": 2964
           }
         ]
       },
@@ -12245,27 +12245,27 @@
           {
             "column": 46,
             "fingerprint": "88c4737b9f165707fd2cf2af0a9030d0b8276b5b268d47464ab1858ae7143142",
-            "line": 105
+            "line": 109
           },
           {
             "column": 38,
             "fingerprint": "2bbb843f2e332d1e019f35933660f071b725409ae1ef6f41f3f2beb2a0ed0643",
-            "line": 186
+            "line": 195
           },
           {
             "column": 14,
             "fingerprint": "2bbb843f2e332d1e019f35933660f071b725409ae1ef6f41f3f2beb2a0ed0643",
-            "line": 209
+            "line": 218
           },
           {
             "column": 14,
             "fingerprint": "2bbb843f2e332d1e019f35933660f071b725409ae1ef6f41f3f2beb2a0ed0643",
-            "line": 229
+            "line": 238
           },
           {
             "column": 48,
             "fingerprint": "2bbb843f2e332d1e019f35933660f071b725409ae1ef6f41f3f2beb2a0ed0643",
-            "line": 229
+            "line": 238
           }
         ]
       },
@@ -12603,12 +12603,12 @@
           {
             "column": 17,
             "fingerprint": "8b6a8606774c6ca947032a54f6a7682acf82be35f55455301c395fe5a87f5719",
-            "line": 705
+            "line": 706
           },
           {
             "column": 17,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1142
+            "line": 1168
           }
         ]
       },
@@ -12828,7 +12828,7 @@
           {
             "column": 9,
             "fingerprint": "d3dc50b86ee7ae6adafc66988297451ba49d7b9a0f5719e76f911d02ca7aab51",
-            "line": 185
+            "line": 195
           }
         ]
       },
@@ -12839,7 +12839,7 @@
           {
             "column": 9,
             "fingerprint": "dcd9e4de0a8b04c0b0d51c8960ff5d0daf78cfd45011d4a762528dc03be43e32",
-            "line": 35
+            "line": 37
           }
         ]
       },
@@ -13309,12 +13309,12 @@
           {
             "column": 37,
             "fingerprint": "3b15ece87e7c3f00aaeec9ddaf050b03aa9363f3b5f485a6b710a9d73fc5ce30",
-            "line": 1473
+            "line": 1485
           },
           {
             "column": 21,
             "fingerprint": "56a74139918fd1de90c817b5f7f50c023ca1e6bbcb412fe62be25cd84115837a",
-            "line": 1553
+            "line": 1565
           }
         ]
       },
@@ -13372,12 +13372,12 @@
           {
             "column": 10,
             "fingerprint": "99781254eea7c0b8c0b43555c26cb7e1b588aec2873d524c1124c8db7353fc13",
-            "line": 870
+            "line": 871
           },
           {
             "column": 27,
             "fingerprint": "99781254eea7c0b8c0b43555c26cb7e1b588aec2873d524c1124c8db7353fc13",
-            "line": 871
+            "line": 872
           }
         ]
       },
@@ -14172,7 +14172,7 @@
             {
               "column": 16,
               "fingerprint": "840ea8a88a80f596f106b59fa7f86a514a8f1194d1bdea4a576ff21261cb28d5",
-              "line": 255
+              "line": 261
             }
           ]
         },
@@ -14217,22 +14217,22 @@
             {
               "column": 48,
               "fingerprint": "897d670ef16a399b8b3c092f21b340727dcfc986f2990d96772bd5c21c9bb0f0",
-              "line": 216
+              "line": 222
             },
             {
               "column": 48,
               "fingerprint": "b7ac476e5279186f275ee1069774b7b0da8cecd779f213a2e8395307852665cf",
-              "line": 225
+              "line": 231
             },
             {
               "column": 48,
               "fingerprint": "db4704ea26a36462e04f9d675cad3b9929ebee571f01e8979c1dc93655d24b5e",
-              "line": 234
+              "line": 240
             },
             {
               "column": 48,
               "fingerprint": "7d4a3cbeedd072d258e5c29d54a7ab71ec29c0fb276730b89e35230b5317d3fc",
-              "line": 242
+              "line": 248
             }
           ]
         }
@@ -14254,7 +14254,7 @@
             {
               "column": 22,
               "fingerprint": "344b3ae3f130667fa4f75e92559dc963946581995ee2c887bebe474beb4e05f2",
-              "line": 256
+              "line": 262
             }
           ]
         },
@@ -14761,7 +14761,7 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 383
+              "line": 400
             }
           ]
         },
@@ -15328,22 +15328,22 @@
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 892
+              "line": 900
             },
             {
               "column": 16,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 1000
+              "line": 1008
             },
             {
               "column": 8,
               "fingerprint": "a7c083fc56767a81b9162ef3ac9b948b43e71d07df5214583fc9c5cf36bc95f7",
-              "line": 1481
+              "line": 1493
             },
             {
               "column": 16,
               "fingerprint": "4e47fe5983efe66d6dc7a314caaf64a31d5fc066e5e78ff5ed84f9eaaf8a7028",
-              "line": 4022
+              "line": 4034
             }
           ]
         },
@@ -15381,7 +15381,7 @@
             {
               "column": 8,
               "fingerprint": "d20bb803d7aeab2899017b5fa7a77f1d1b3e8f409b2b08add4932ad10798cef8",
-              "line": 125
+              "line": 129
             }
           ]
         },
@@ -15669,7 +15669,7 @@
             {
               "column": 8,
               "fingerprint": "df86324a321367a29641be840b2aea04b1b927a8a889dd3947106ae3a961b026",
-              "line": 704
+              "line": 705
             }
           ]
         },
@@ -17718,14 +17718,14 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 819,
+      "line": 818,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Atom"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 841,
+      "line": 840,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Atom"
     },
@@ -17774,7 +17774,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 952,
+      "line": 953,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Atom"
     },
@@ -18299,7 +18299,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4135,
+      "line": 4147,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Bool"
     },
@@ -19153,7 +19153,7 @@
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 900,
+      "line": 899,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Empty"
     },
@@ -19181,14 +19181,14 @@
     {
       "column": 49,
       "enum": "LegacyValue",
-      "line": 1553,
+      "line": 1565,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Empty"
     },
     {
       "column": 22,
       "enum": "LegacyValue",
-      "line": 1555,
+      "line": 1567,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Empty"
     },
@@ -19279,21 +19279,21 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 861,
+      "line": 862,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 863,
+      "line": 864,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 864,
+      "line": 865,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Empty"
     },
@@ -19601,21 +19601,21 @@
     {
       "column": 47,
       "enum": "LegacyValue",
-      "line": 106,
+      "line": 118,
       "path": "src/engine/src/statements/mod.rs",
       "variant": "Empty"
     },
     {
       "column": 47,
       "enum": "LegacyValue",
-      "line": 107,
+      "line": 119,
       "path": "src/engine/src/statements/mod.rs",
       "variant": "Empty"
     },
     {
       "column": 16,
       "enum": "LegacyValue",
-      "line": 123,
+      "line": 135,
       "path": "src/engine/src/statements/mod.rs",
       "variant": "Empty"
     },
@@ -19993,14 +19993,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 880,
+      "line": 881,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "EmptyKind"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 881,
+      "line": 882,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "EmptyKind"
     },
@@ -20308,7 +20308,7 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 785,
+      "line": 784,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Enum"
     },
@@ -20350,7 +20350,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 962,
+      "line": 963,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Enum"
     },
@@ -20994,7 +20994,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4177,
+      "line": 4189,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "F32"
     },
@@ -21743,7 +21743,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4181,
+      "line": 4193,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "F64"
     },
@@ -22359,7 +22359,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4173,
+      "line": 4185,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I128"
     },
@@ -22856,7 +22856,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4161,
+      "line": 4173,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I16"
     },
@@ -23360,7 +23360,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4165,
+      "line": 4177,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I32"
     },
@@ -23857,7 +23857,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4169,
+      "line": 4181,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I64"
     },
@@ -24424,7 +24424,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4157,
+      "line": 4169,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "I8"
     },
@@ -24704,7 +24704,7 @@
     {
       "column": 52,
       "enum": "LegacyValue",
-      "line": 126,
+      "line": 129,
       "path": "src/engine/src/statements/variable_assign.rs",
       "variant": "Id"
     },
@@ -26055,42 +26055,21 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 146,
+      "line": 150,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 245,
+      "line": 249,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 247,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1386,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1390,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1394,
+      "line": 251,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26179,51 +26158,30 @@
       "variant": "Index"
     },
     {
+      "column": 69,
+      "enum": "LegacyValue",
+      "line": 1446,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 69,
+      "enum": "LegacyValue",
+      "line": 1450,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 69,
+      "enum": "LegacyValue",
+      "line": 1454,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
       "column": 52,
       "enum": "LegacyValue",
-      "line": 1544,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1592,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 93,
-      "enum": "LegacyValue",
-      "line": 1592,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1596,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 93,
-      "enum": "LegacyValue",
-      "line": 1596,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1600,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "Index"
-    },
-    {
-      "column": 93,
-      "enum": "LegacyValue",
-      "line": 1600,
+      "line": 1556,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26382,23 +26340,44 @@
       "variant": "Index"
     },
     {
-      "column": 91,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 2291,
+      "line": 1648,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 91,
+      "column": 93,
       "enum": "LegacyValue",
-      "line": 2295,
+      "line": 1648,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 91,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 2299,
+      "line": 1652,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 1652,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 69,
+      "enum": "LegacyValue",
+      "line": 1656,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 1656,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26424,23 +26403,23 @@
       "variant": "Index"
     },
     {
-      "column": 66,
+      "column": 91,
       "enum": "LegacyValue",
-      "line": 2375,
+      "line": 2315,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 66,
+      "column": 91,
       "enum": "LegacyValue",
-      "line": 2379,
+      "line": 2319,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 66,
+      "column": 91,
       "enum": "LegacyValue",
-      "line": 2383,
+      "line": 2323,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26452,14 +26431,14 @@
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 2391,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 2395,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -26473,23 +26452,23 @@
       "variant": "Index"
     },
     {
-      "column": 116,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2765,
+      "line": 2403,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 116,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2769,
+      "line": 2407,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 116,
+      "column": 66,
       "enum": "LegacyValue",
-      "line": 2773,
+      "line": 2411,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26515,23 +26494,23 @@
       "variant": "Index"
     },
     {
-      "column": 115,
+      "column": 116,
       "enum": "LegacyValue",
-      "line": 2790,
+      "line": 2789,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 115,
+      "column": 116,
       "enum": "LegacyValue",
-      "line": 2794,
+      "line": 2793,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 115,
+      "column": 116,
       "enum": "LegacyValue",
-      "line": 2798,
+      "line": 2797,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26557,23 +26536,23 @@
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2871,
+      "line": 2814,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2875,
+      "line": 2818,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
-      "column": 68,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2879,
+      "line": 2822,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26601,21 +26580,21 @@
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2896,
+      "line": 2895,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2900,
+      "line": 2899,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2904,
+      "line": 2903,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
@@ -26641,58 +26620,79 @@
       "variant": "Index"
     },
     {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 2920,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 2924,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 2928,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "Index"
+    },
+    {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 4007,
+      "line": 4019,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4131,
+      "line": 4143,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Index"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 83,
+      "line": 87,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "Index"
     },
     {
       "column": 46,
       "enum": "LegacyValue",
-      "line": 104,
+      "line": 108,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "Index"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 175,
+      "line": 184,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "Index"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 188,
+      "line": 197,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "Index"
     },
     {
       "column": 48,
       "enum": "LegacyValue",
-      "line": 209,
+      "line": 218,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "Index"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 231,
+      "line": 240,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "Index"
     },
@@ -28092,49 +28092,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 156,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 2175,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 79,
-      "enum": "LegacyValue",
-      "line": 2176,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 2179,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 79,
-      "enum": "LegacyValue",
-      "line": 2180,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 2183,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 79,
-      "enum": "LegacyValue",
-      "line": 2184,
+      "line": 160,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
@@ -28295,21 +28253,42 @@
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2291,
+      "line": 2231,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 79,
+      "enum": "LegacyValue",
+      "line": 2232,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2295,
+      "line": 2235,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 79,
+      "enum": "LegacyValue",
+      "line": 2236,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 69,
       "enum": "LegacyValue",
-      "line": 2299,
+      "line": 2239,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 79,
+      "enum": "LegacyValue",
+      "line": 2240,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
@@ -28335,23 +28314,23 @@
       "variant": "IndexAll"
     },
     {
-      "column": 89,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 2375,
+      "line": 2315,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
-      "column": 89,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 2379,
+      "line": 2319,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
-      "column": 89,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 2383,
+      "line": 2323,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
@@ -28363,14 +28342,14 @@
       "variant": "IndexAll"
     },
     {
-      "column": 91,
+      "column": 89,
       "enum": "LegacyValue",
       "line": 2391,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
-      "column": 91,
+      "column": 89,
       "enum": "LegacyValue",
       "line": 2395,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -28384,23 +28363,23 @@
       "variant": "IndexAll"
     },
     {
-      "column": 78,
+      "column": 91,
       "enum": "LegacyValue",
-      "line": 2493,
+      "line": 2403,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
-      "column": 78,
+      "column": 91,
       "enum": "LegacyValue",
-      "line": 2497,
+      "line": 2407,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
-      "column": 78,
+      "column": 89,
       "enum": "LegacyValue",
-      "line": 2501,
+      "line": 2411,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
@@ -28442,54 +28421,54 @@
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2526,
+      "line": 2525,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2531,
+      "line": 2529,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 78,
       "enum": "LegacyValue",
-      "line": 2535,
+      "line": 2533,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 78,
+      "enum": "LegacyValue",
+      "line": 2538,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 78,
+      "enum": "LegacyValue",
+      "line": 2543,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 78,
+      "enum": "LegacyValue",
+      "line": 2547,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 113,
-      "enum": "LegacyValue",
-      "line": 2658,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 113,
-      "enum": "LegacyValue",
-      "line": 2662,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 113,
-      "enum": "LegacyValue",
-      "line": 2666,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 115,
       "enum": "LegacyValue",
       "line": 2670,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
-      "column": 115,
+      "column": 113,
       "enum": "LegacyValue",
       "line": 2674,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -28503,35 +28482,35 @@
       "variant": "IndexAll"
     },
     {
-      "column": 112,
+      "column": 115,
       "enum": "LegacyValue",
-      "line": 2683,
+      "line": 2682,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 115,
+      "enum": "LegacyValue",
+      "line": 2686,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 113,
+      "enum": "LegacyValue",
+      "line": 2690,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
       "column": 112,
-      "enum": "LegacyValue",
-      "line": 2687,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 112,
-      "enum": "LegacyValue",
-      "line": 2691,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "IndexAll"
-    },
-    {
-      "column": 114,
       "enum": "LegacyValue",
       "line": 2695,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
     {
-      "column": 114,
+      "column": 112,
       "enum": "LegacyValue",
       "line": 2699,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -28541,6 +28520,27 @@
       "column": 112,
       "enum": "LegacyValue",
       "line": 2703,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 114,
+      "enum": "LegacyValue",
+      "line": 2707,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 114,
+      "enum": "LegacyValue",
+      "line": 2711,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "IndexAll"
+    },
+    {
+      "column": 112,
+      "enum": "LegacyValue",
+      "line": 2715,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "IndexAll"
     },
@@ -28589,49 +28589,49 @@
     {
       "column": 32,
       "enum": "LegacyValue",
-      "line": 248,
+      "line": 267,
       "path": "src/engine/src/statements/op_assign.rs",
       "variant": "IndexAll"
     },
     {
       "column": 32,
       "enum": "LegacyValue",
-      "line": 268,
+      "line": 287,
       "path": "src/engine/src/statements/op_assign.rs",
       "variant": "IndexAll"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 193,
+      "line": 196,
       "path": "src/engine/src/statements/variable_assign.rs",
       "variant": "IndexAll"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 244,
+      "line": 247,
       "path": "src/engine/src/statements/variable_assign.rs",
       "variant": "IndexAll"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 273,
+      "line": 276,
       "path": "src/engine/src/statements/variable_assign.rs",
       "variant": "IndexAll"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 350,
+      "line": 353,
       "path": "src/engine/src/statements/variable_assign.rs",
       "variant": "IndexAll"
     },
     {
       "column": 36,
       "enum": "LegacyValue",
-      "line": 361,
+      "line": 364,
       "path": "src/engine/src/statements/variable_assign.rs",
       "variant": "IndexAll"
     },
@@ -28862,14 +28862,14 @@
     {
       "column": 48,
       "enum": "LegacyValue",
-      "line": 804,
+      "line": 803,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Kind"
     },
     {
       "column": 26,
       "enum": "LegacyValue",
-      "line": 856,
+      "line": 855,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Kind"
     },
@@ -28988,14 +28988,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 851,
+      "line": 852,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Kind"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 852,
+      "line": 853,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Kind"
     },
@@ -29464,7 +29464,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 942,
+      "line": 943,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Map"
     },
@@ -31193,42 +31193,21 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 172,
+      "line": 176,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 252,
+      "line": 256,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 61,
       "enum": "LegacyValue",
-      "line": 382,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1705,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1709,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1713,
+      "line": 386,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -31240,23 +31219,23 @@
       "variant": "MatrixBool"
     },
     {
-      "column": 66,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 1724,
+      "line": 1721,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 66,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 1728,
+      "line": 1725,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 66,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 1732,
+      "line": 1729,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -31270,21 +31249,21 @@
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1743,
+      "line": 1740,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1747,
+      "line": 1744,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1751,
+      "line": 1748,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -31296,14 +31275,14 @@
       "variant": "MatrixBool"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 1759,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 1763,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -31317,84 +31296,84 @@
       "variant": "MatrixBool"
     },
     {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 1771,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 1775,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 66,
+      "enum": "LegacyValue",
+      "line": 1779,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 1971,
+      "line": 1983,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 1971,
+      "line": 1983,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 1994,
+      "line": 2006,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 2017,
+      "line": 2029,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2526,
+      "line": 2538,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2531,
+      "line": 2543,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 101,
       "enum": "LegacyValue",
-      "line": 2535,
+      "line": 2547,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 66,
-      "enum": "LegacyValue",
-      "line": 2683,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 66,
-      "enum": "LegacyValue",
-      "line": 2687,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 66,
-      "enum": "LegacyValue",
-      "line": 2691,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixBool"
-    },
-    {
-      "column": 68,
       "enum": "LegacyValue",
       "line": 2695,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 2699,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -31410,21 +31389,21 @@
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2790,
+      "line": 2707,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2794,
+      "line": 2711,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
-      "line": 2798,
+      "line": 2715,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -31450,23 +31429,23 @@
       "variant": "MatrixBool"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2896,
+      "line": 2814,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2900,
+      "line": 2818,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2904,
+      "line": 2822,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -31488,6 +31467,27 @@
       "column": 93,
       "enum": "LegacyValue",
       "line": 2916,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2920,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2924,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixBool"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2928,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixBool"
     },
@@ -35939,7 +35939,7 @@
     {
       "column": 31,
       "enum": "LegacyValue",
-      "line": 387,
+      "line": 386,
       "path": "src/engine/src/function/mod.rs",
       "variant": "MatrixF64"
     },
@@ -39859,35 +39859,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 157,
+      "line": 161,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 12,
       "enum": "LegacyValue",
-      "line": 250,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1774,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1778,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 69,
-      "enum": "LegacyValue",
-      "line": 1782,
+      "line": 254,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -39899,23 +39878,23 @@
       "variant": "MatrixIndex"
     },
     {
-      "column": 66,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 1793,
+      "line": 1790,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 66,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 1797,
+      "line": 1794,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 66,
+      "column": 69,
       "enum": "LegacyValue",
-      "line": 1801,
+      "line": 1798,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -39929,21 +39908,21 @@
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1812,
+      "line": 1809,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1816,
+      "line": 1813,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
       "enum": "LegacyValue",
-      "line": 1820,
+      "line": 1817,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -39955,14 +39934,14 @@
       "variant": "MatrixIndex"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 1828,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 1832,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -39976,51 +39955,51 @@
       "variant": "MatrixIndex"
     },
     {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 1840,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 68,
+      "enum": "LegacyValue",
+      "line": 1844,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 66,
+      "enum": "LegacyValue",
+      "line": 1848,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 1967,
+      "line": 1979,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 125,
       "enum": "LegacyValue",
-      "line": 1967,
+      "line": 1979,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 77,
       "enum": "LegacyValue",
-      "line": 1994,
+      "line": 2006,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 124,
       "enum": "LegacyValue",
-      "line": 2017,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 101,
-      "enum": "LegacyValue",
-      "line": 2493,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 101,
-      "enum": "LegacyValue",
-      "line": 2497,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 101,
-      "enum": "LegacyValue",
-      "line": 2501,
+      "line": 2029,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -40060,35 +40039,35 @@
       "variant": "MatrixIndex"
     },
     {
-      "column": 66,
+      "column": 101,
       "enum": "LegacyValue",
-      "line": 2658,
+      "line": 2525,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 101,
+      "enum": "LegacyValue",
+      "line": 2529,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 101,
+      "enum": "LegacyValue",
+      "line": 2533,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 66,
-      "enum": "LegacyValue",
-      "line": 2662,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 66,
-      "enum": "LegacyValue",
-      "line": 2666,
-      "path": "src/engine/src/intrinsics/access/matrix.rs",
-      "variant": "MatrixIndex"
-    },
-    {
-      "column": 68,
       "enum": "LegacyValue",
       "line": 2670,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
       "line": 2674,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
@@ -40104,21 +40083,21 @@
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2765,
+      "line": 2682,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
       "column": 68,
       "enum": "LegacyValue",
-      "line": 2769,
+      "line": 2686,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 68,
+      "column": 66,
       "enum": "LegacyValue",
-      "line": 2773,
+      "line": 2690,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -40144,23 +40123,23 @@
       "variant": "MatrixIndex"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2871,
+      "line": 2789,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2875,
+      "line": 2793,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
     {
-      "column": 93,
+      "column": 68,
       "enum": "LegacyValue",
-      "line": 2879,
+      "line": 2797,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -40182,6 +40161,27 @@
       "column": 93,
       "enum": "LegacyValue",
       "line": 2891,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2895,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2899,
+      "path": "src/engine/src/intrinsics/access/matrix.rs",
+      "variant": "MatrixIndex"
+    },
+    {
+      "column": 93,
+      "enum": "LegacyValue",
+      "line": 2903,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixIndex"
     },
@@ -42603,7 +42603,7 @@
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 401,
+      "line": 400,
       "path": "src/engine/src/function/mod.rs",
       "variant": "MatrixValue"
     },
@@ -42617,7 +42617,7 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 1544,
+      "line": 1556,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MatrixValue"
     },
@@ -42680,14 +42680,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 891,
+      "line": 892,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MatrixValue"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 892,
+      "line": 893,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MatrixValue"
     },
@@ -45102,7 +45102,7 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 918,
+      "line": 917,
       "path": "src/engine/src/function/mod.rs",
       "variant": "MutableReference"
     },
@@ -45165,84 +45165,84 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 1482,
+      "line": 1494,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1567,
+      "line": 1579,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1680,
+      "line": 1692,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 1872,
+      "line": 1884,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 2150,
+      "line": 2162,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2266,
+      "line": 2278,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2350,
+      "line": 2362,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2438,
+      "line": 2450,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 2632,
+      "line": 2644,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2739,
+      "line": 2751,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2845,
+      "line": 2857,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 2952,
+      "line": 2964,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "MutableReference"
     },
@@ -45270,35 +45270,35 @@
     {
       "column": 46,
       "enum": "LegacyValue",
-      "line": 105,
+      "line": 109,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "MutableReference"
     },
     {
       "column": 38,
       "enum": "LegacyValue",
-      "line": 186,
+      "line": 195,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "MutableReference"
     },
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 209,
+      "line": 218,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "MutableReference"
     },
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 229,
+      "line": 238,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "MutableReference"
     },
     {
       "column": 48,
       "enum": "LegacyValue",
-      "line": 229,
+      "line": 238,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "MutableReference"
     },
@@ -45662,14 +45662,14 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 705,
+      "line": 706,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MutableReference"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 1142,
+      "line": 1168,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "MutableReference"
     },
@@ -45893,14 +45893,14 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 185,
+      "line": 195,
       "path": "src/engine/src/statements/op_assign.rs",
       "variant": "MutableReference"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 35,
+      "line": 37,
       "path": "src/engine/src/statements/variable_assign.rs",
       "variant": "MutableReference"
     },
@@ -46614,7 +46614,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 932,
+      "line": 933,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Record"
     },
@@ -47251,7 +47251,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 912,
+      "line": 913,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Set"
     },
@@ -47601,49 +47601,49 @@
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 64,
+      "line": 68,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 119,
+      "line": 123,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 134,
+      "line": 138,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 175,
+      "line": 184,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },
     {
       "column": 14,
       "enum": "LegacyValue",
-      "line": 186,
+      "line": 195,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },
     {
       "column": 17,
       "enum": "LegacyValue",
-      "line": 210,
+      "line": 219,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 244,
+      "line": 253,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },
@@ -48420,7 +48420,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 902,
+      "line": 903,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Table"
     },
@@ -48448,7 +48448,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 184,
+      "line": 194,
       "path": "src/engine/src/statements/op_assign.rs",
       "variant": "Table"
     },
@@ -48784,14 +48784,14 @@
     {
       "column": 13,
       "enum": "LegacyValue",
-      "line": 835,
+      "line": 834,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Tuple"
     },
     {
       "column": 18,
       "enum": "LegacyValue",
-      "line": 903,
+      "line": 902,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Tuple"
     },
@@ -48896,7 +48896,7 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 922,
+      "line": 923,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Tuple"
     },
@@ -49358,14 +49358,14 @@
     {
       "column": 37,
       "enum": "LegacyValue",
-      "line": 1473,
+      "line": 1485,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Typed"
     },
     {
       "column": 21,
       "enum": "LegacyValue",
-      "line": 1553,
+      "line": 1565,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Typed"
     },
@@ -49421,14 +49421,14 @@
     {
       "column": 10,
       "enum": "LegacyValue",
-      "line": 870,
+      "line": 871,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Typed"
     },
     {
       "column": 27,
       "enum": "LegacyValue",
-      "line": 871,
+      "line": 872,
       "path": "src/engine/src/intrinsics/define.rs",
       "variant": "Typed"
     },
@@ -49918,7 +49918,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4153,
+      "line": 4165,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U128"
     },
@@ -50401,7 +50401,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4141,
+      "line": 4153,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U16"
     },
@@ -50884,7 +50884,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4145,
+      "line": 4157,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U32"
     },
@@ -51374,7 +51374,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4149,
+      "line": 4161,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U64"
     },
@@ -51906,7 +51906,7 @@
     {
       "column": 9,
       "enum": "LegacyValue",
-      "line": 4137,
+      "line": 4149,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "U8"
     },
@@ -52130,7 +52130,7 @@
     {
       "column": 22,
       "enum": "ValueKind",
-      "line": 1549,
+      "line": 1561,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Any"
     },
@@ -52795,7 +52795,7 @@
     {
       "column": 48,
       "enum": "ValueKind",
-      "line": 89,
+      "line": 93,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "Empty"
     },
@@ -53047,28 +53047,28 @@
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 429,
+      "line": 428,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Enum"
     },
     {
       "column": 28,
       "enum": "ValueKind",
-      "line": 692,
+      "line": 691,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Enum"
     },
     {
       "column": 29,
       "enum": "ValueKind",
-      "line": 806,
+      "line": 805,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Enum"
     },
     {
       "column": 25,
       "enum": "ValueKind",
-      "line": 858,
+      "line": 857,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Enum"
     },
@@ -53880,7 +53880,7 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 387,
+      "line": 386,
       "path": "src/engine/src/function/mod.rs",
       "variant": "F64"
     },
@@ -56519,7 +56519,7 @@
     {
       "column": 62,
       "enum": "ValueKind",
-      "line": 353,
+      "line": 352,
       "path": "src/engine/src/function/mod.rs",
       "variant": "Matrix"
     },
@@ -56547,7 +56547,7 @@
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1548,
+      "line": 1560,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Matrix"
     },
@@ -57037,14 +57037,14 @@
     {
       "column": 13,
       "enum": "ValueKind",
-      "line": 1473,
+      "line": 1485,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Option"
     },
     {
       "column": 17,
       "enum": "ValueKind",
-      "line": 1552,
+      "line": 1564,
       "path": "src/engine/src/intrinsics/access/matrix.rs",
       "variant": "Option"
     },
@@ -58122,7 +58122,7 @@
     {
       "column": 46,
       "enum": "ValueKind",
-      "line": 88,
+      "line": 92,
       "path": "src/engine/src/intrinsics/access/string.rs",
       "variant": "String"
     },

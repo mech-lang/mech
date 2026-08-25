@@ -164,7 +164,6 @@ mod source_only {
     }
 
     #[cfg(any(
-        feature = "variable_define",
         feature = "set_comprehensions",
         feature = "matrix_comprehensions",
         all(feature = "kind_annotation", feature = "convert"),

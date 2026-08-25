@@ -11,11 +11,13 @@ use crate::subscript_range;
     feature = "variable_assign",
     all(feature = "subscript", feature = "assign")
 ))]
-use crate::{Environment, InterpreterExecution, MResult, MechFunction, OperationId};
+use crate::{Environment, InterpreterExecution, MResult};
 #[cfg(feature = "variable_assign")]
 use crate::{
     MechError, VariableAssign, execute_catalog_operation_with_registration_arguments, expression,
 };
+#[cfg(all(feature = "subscript", feature = "assign"))]
+use crate::{MechFunction, OperationId};
 #[cfg(all(
     feature = "subscript",
     feature = "assign",
@@ -86,15 +88,15 @@ pub fn variable_assign(
         }
     };
     match &slc.subscript {
-        Some(sbscrpt) =>
-        {
-            #[cfg(feature = "subscript")]
+        #[cfg(feature = "subscript")]
+        Some(sbscrpt) => {
             for s in sbscrpt {
                 let s_result = subscript_ref(&s, &sink, &source, env, p)?;
                 return Ok(s_result);
             }
         }
-        #[cfg(feature = "assign")]
+        #[cfg(not(feature = "subscript"))]
+        Some(_) => todo!("variable assignment subscripts require subscript support"),
         None => {
             let plan = p.plan();
             let registration_source = assignment_registration_operand(&source);
@@ -107,6 +109,7 @@ pub fn variable_assign(
             );
         }
     }
+    #[cfg(feature = "subscript")]
     unreachable!(); // subscript should have thrown an error if we can't access an element
 }
 

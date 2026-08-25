@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ATTRIBUTE = re.compile(r"#!?\s*\[[^\]]*\b(?:allow|expect)\s*\(", re.DOTALL)
 DEPRECATED_ATTRIBUTE = re.compile(r"#!?\s*\[[^\]]*\bdeprecated\b", re.DOTALL)
 IGNORED_BINDING = re.compile(r"\blet\s+_\s*=")
+UNSUPPORTED_DYLIB = re.compile(r'^\s*crate-type\s*=\s*\[[^\]]*"dylib"', re.MULTILINE)
 UNSAFE_BOUNDARY = re.compile(r"\bunsafe\s+(?:fn|impl|trait|extern)\b|\bunsafe\s*\{")
 EXPECTED_RUNTIME_UNSAFE = {
     (
@@ -38,6 +39,16 @@ for path in rust_sources:
         fail(f"deprecated Rust surface remains in {path.relative_to(ROOT)}")
     if IGNORED_BINDING.search(source):
         fail(f"ignored-result binding remains in {path.relative_to(ROOT)}")
+
+for path in sorted(ROOT.rglob("Cargo.toml")):
+    if "target" in path.parts or ".git" in path.parts:
+        continue
+    manifest = path.read_text(encoding="utf-8")
+    if UNSUPPORTED_DYLIB.search(manifest):
+        fail(
+            f"target-agnostic Rust dylib crate type remains in {path.relative_to(ROOT)}; "
+            "it warns on WASM builds"
+        )
 
 runtime_unsafe = set()
 for path in (ROOT / "src/runtime/src").rglob("*.rs"):

@@ -13,6 +13,7 @@ macro_rules! checked_mul_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! checked_matmul_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -59,6 +60,7 @@ macro_rules! checked_matmul_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_matmul {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
         impl_checked_matrix_binop!(
@@ -355,7 +357,7 @@ macro_rules! impl_matmul_match_arms {
             }
             Ok(Box::new(MatMulMDM3x2 { lhs: lhs.clone(), rhs: rhs.clone(), out: Ref::new(DMatrix::from_element(lhs_rows, rhs_cols, $target_type::zero())) }))
           },
-          #[cfg(feature = $value_string)]
+          #[cfg(all(feature = $value_string, feature = "matrix"))]
           (LegacyValue::$matrix_kind(lhs), LegacyValue::$matrix_kind(rhs)) => {
             let lhs_shape = lhs.shape();
             let rhs_shape = rhs.shape();
