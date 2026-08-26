@@ -54,7 +54,11 @@ pub mod intrinsics;
 #[cfg(feature = "semantic-compiler")]
 pub mod literals;
 #[cfg(feature = "semantic-compiler")]
+mod matrix_selector;
+#[cfg(feature = "semantic-compiler")]
 pub mod mechdown;
+#[cfg(feature = "semantic-compiler")]
+pub(crate) use matrix_selector::MatrixSelector;
 #[cfg(feature = "semantic-compiler")]
 pub mod patterns;
 #[cfg(any(

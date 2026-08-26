@@ -93,6 +93,8 @@ pub fn compiler_ir_from_legacy_pseudo_value(
 ) -> Result<ExpressionIR, CompilerIrError> {
     match value {
         LegacyValue::Empty => Ok(ExpressionIR::Empty),
+        // Retained only for legacy pseudo-value compatibility. Production
+        // source-to-artifact integration will migrate independently.
         LegacyValue::IndexAll => Ok(ExpressionIR::Selection(SelectionIR::All)),
         _ => Err(CompilerIrError::PseudoValueNotCompilerIr),
     }
