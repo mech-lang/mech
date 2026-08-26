@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 
@@ -12,15 +13,9 @@ ROOT = Path(
     os.environ.get("WARNING_POLICY_ROOT", Path(__file__).resolve().parents[1])
 ).resolve()
 EXCEPTIONS = ROOT / "scripts/warning-exceptions.json"
-LINT_ATTRIBUTE = re.compile(
-    r"#!?\s*\[\s*(?P<directive>allow|expect)\s*\((?P<body>[^)]*)\)\s*\]",
-    re.DOTALL,
-)
 LINT_BODY = re.compile(
     r'\s*(?P<lint>[A-Za-z_][A-Za-z0-9_:]*)\s*,\s*reason\s*=\s*"(?P<reason>[^"]+)"\s*'
 )
-LINT_ATTRIBUTE_HEAD = re.compile(r"#!?\s*\[\s*(?:allow|expect)\b", re.DOTALL)
-DEPRECATED_ATTRIBUTE = re.compile(r"#!?\s*\[\s*deprecated\b[^\]]*\]", re.DOTALL)
 UNSUPPORTED_DYLIB = re.compile(r'^\s*crate-type\s*=\s*\[[^\]]*"dylib"', re.MULTILINE)
 RAW_LITERAL = re.compile(r'(?:br|r)(?P<hashes>#{0,255})"')
 CHARACTER_LITERAL = re.compile(r"'(?:\\.|[^\\'])'")
@@ -145,38 +140,111 @@ def split_top_level(source: str) -> list[str]:
     return items
 
 
-def conditional_policy_directive(attribute: str) -> str | None:
-    """Find a warning-policy directive recursively nested inside cfg_attr."""
+def attribute_meta(attribute: str) -> str | None:
     opening = attribute.find("[")
     closing = attribute.rfind("]")
     if opening < 0 or closing <= opening:
         return None
+    return attribute[opening + 1 : closing]
+
+
+def meta_head(meta: str) -> tuple[str, int] | None:
+    """Return a normalized Rust meta-item name and its end offset."""
+    masked = mask_non_code(meta)
+    head = re.match(
+        r"\s*(?:r#)?(?P<name>[A-Za-z_][A-Za-z0-9_]*)",
+        masked,
+    )
+    if head is None:
+        return None
+    return head.group("name"), head.end()
+
+
+def meta_call_body(meta: str, head_end: int) -> str | None:
+    """Return one structurally balanced meta-item call body."""
+    masked = mask_non_code(meta)
+    cursor = head_end
+    while cursor < len(masked) and masked[cursor].isspace():
+        cursor += 1
+    if cursor >= len(masked) or masked[cursor] != "(":
+        return None
+    start = cursor + 1
+    depth = 1
+    cursor += 1
+    while cursor < len(masked) and depth:
+        if masked[cursor] == "(":
+            depth += 1
+        elif masked[cursor] == ")":
+            depth -= 1
+        cursor += 1
+    if depth or masked[cursor:].strip():
+        return None
+    return meta[start : cursor - 1]
+
+
+def conditional_policy_directive(attribute: str) -> str | None:
+    """Find a warning-policy directive recursively nested inside cfg_attr."""
+    outer = attribute_meta(attribute)
+    if outer is None:
+        return None
 
     def inspect(meta: str) -> str | None:
-        meta = meta.strip()
-        head = re.match(r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)", meta)
+        head = meta_head(meta)
         if head is None:
-            return None
-        name = head.group("name")
+            return "indirect"
+        name, head_end = head
         if name in {"allow", "expect", "deprecated"}:
             return name
         if name != "cfg_attr":
             return None
-        call_start = meta.find("(", head.end())
-        if call_start < 0 or not meta.endswith(")"):
-            return None
-        arguments = split_top_level(meta[call_start + 1 : -1])
+        body = meta_call_body(meta, head_end)
+        if body is None:
+            return "indirect"
+        arguments = split_top_level(mask_non_code(body))
+        if len(arguments) < 2:
+            return "indirect"
         for nested in arguments[1:]:
             directive = inspect(nested)
             if directive is not None:
                 return directive
         return None
 
-    meta = mask_non_code(attribute[opening + 1 : closing]).strip()
-    root = re.match(r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)", meta)
-    if root is None or root.group("name") != "cfg_attr":
+    root = meta_head(outer)
+    if root is None or root[0] != "cfg_attr":
         return None
-    return inspect(meta)
+    return inspect(outer)
+
+
+def repository_rust_sources() -> list[Path]:
+    """List source candidates without confusing tracked `target` modules with builds."""
+    tracked = subprocess.run(
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "ls-files",
+            "--cached",
+            "--others",
+            "--exclude-standard",
+            "--",
+            "*.rs",
+        ],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if tracked.returncode == 0:
+        return sorted(
+            path
+            for line in tracked.stdout.splitlines()
+            if (path := ROOT / line).is_file()
+        )
+    return sorted(
+        path
+        for path in ROOT.rglob("*.rs")
+        if not path.is_relative_to(ROOT / "target")
+        and not path.is_relative_to(ROOT / ".git")
+    )
 
 
 contracts = json.loads(EXCEPTIONS.read_text(encoding="utf-8"))
@@ -228,33 +296,40 @@ for exception in contracts.get("deprecated_apis", []):
 
 actual_lints = {}
 actual_deprecations = {}
-rust_sources = sorted(
-    path
-    for path in ROOT.rglob("*.rs")
-    if "target" not in path.parts and ".git" not in path.parts
-)
-for path in rust_sources:
+for path in repository_rust_sources():
     source = path.read_text(encoding="utf-8")
     relative = path.relative_to(ROOT).as_posix()
     for attribute in rust_attributes(source):
         conditional = conditional_policy_directive(attribute)
         if conditional is not None:
+            if conditional == "indirect":
+                fail(
+                    f"indirect or unparseable attribute in cfg_attr is not permitted "
+                    f"in {relative}"
+                )
             fail(
                 f"conditional {conditional} in cfg_attr is not permitted in {relative}; "
                 "use an unconditional audited exception"
             )
-        lint = LINT_ATTRIBUTE.fullmatch(attribute)
-        if lint is not None:
-            body = LINT_BODY.fullmatch(lint.group("body"))
+        meta = attribute_meta(attribute)
+        if meta is None:
+            continue
+        head = meta_head(meta)
+        if head is None:
+            if "$" in mask_non_code(meta):
+                fail(f"indirect attribute is not permitted in {relative}")
+            continue
+        name, head_end = head
+        if name in {"allow", "expect"}:
+            call_body = meta_call_body(meta, head_end)
+            body = LINT_BODY.fullmatch(call_body or "")
             if body is None:
                 fail(
                     f"lint exception in {relative} must name one lint and a literal reason"
                 )
-            key = (relative, lint.group("directive"), body.group("lint"), body.group("reason"))
+            key = (relative, name, body.group("lint"), body.group("reason"))
             actual_lints[key] = actual_lints.get(key, 0) + 1
-        elif LINT_ATTRIBUTE_HEAD.match(attribute):
-            fail(f"unparseable or indirect lint exception remains in {relative}")
-        if DEPRECATED_ATTRIBUTE.fullmatch(attribute):
+        if name == "deprecated":
             key = (relative, " ".join(attribute.split()))
             actual_deprecations[key] = actual_deprecations.get(key, 0) + 1
 
