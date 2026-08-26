@@ -1341,10 +1341,25 @@ class LegacyGrowthTests(unittest.TestCase):
             ],
         }
 
-    def failures(self, baseline_rows, live_rows, identifier="valref-alias"):
+    def failures(
+        self,
+        baseline_rows,
+        live_rows,
+        identifier="valref-alias",
+        *,
+        migration=None,
+        mode="exact",
+    ):
         baseline = {"high_risk_api_uses": {identifier: baseline_rows}}
         live = {"high_risk_api_uses": {identifier: live_rows}}
-        return CHECKER.high_risk_failures(baseline, live, Path("baseline.json"))
+        return CHECKER.high_risk_failures(
+            baseline,
+            live,
+            Path("baseline.json"),
+            migration,
+            Path("migration.json"),
+            mode=mode,
+        )
 
     def test_new_legacy_use_fails(self):
         self.assertTrue(self.failures([self.row("a.rs", 1)], [self.row("a.rs", 2)]))
@@ -1416,6 +1431,83 @@ class LegacyGrowthTests(unittest.TestCase):
                     Path("baseline.json"),
                     migration,
                     Path("migration.json"),
+                )
+            },
+        )
+
+    def test_retirement_allows_authorized_site_deletion_but_exact_reports_stale(self):
+        authorization = {
+            "gate": "D1A",
+            "identifier": "valref-alias",
+            "path": "new.rs",
+            "fingerprint": "a" * 64,
+            "count": 1,
+            "reason": "authorized compiler adapter boundary",
+        }
+        migration = {"authorized_high_risk_uses": [authorization]}
+
+        self.assertEqual(
+            self.failures([], [], migration=migration, mode="retirement"), []
+        )
+        self.assertIn(
+            "C0-LEGACY-AUTHORIZATION-STALE",
+            {
+                item.contract_id
+                for item in self.failures([], [], migration=migration, mode="exact")
+            },
+        )
+
+    def test_retirement_alias_ceiling_ignores_clause_and_line_movement(self):
+        baseline = self.row("a.rs", 1)
+        live = self.row("a.rs", 1)
+        live["sites"][0]["line"] = 42
+        live["sites"][0]["fingerprint"] = "b" * 64
+
+        self.assertEqual(
+            self.failures([baseline], [live], mode="retirement"), []
+        )
+
+    def test_retirement_alias_ceiling_rejects_count_growth(self):
+        self.assertIn(
+            "C0-LEGACY-GROWTH",
+            {
+                item.contract_id
+                for item in self.failures(
+                    [self.row("a.rs", 1)],
+                    [self.row("a.rs", 2)],
+                    mode="retirement",
+                )
+            },
+        )
+
+    def test_retirement_alias_ceiling_rejects_new_path(self):
+        self.assertIn(
+            "C0-LEGACY-GROWTH",
+            {
+                item.contract_id
+                for item in self.failures(
+                    [self.row("a.rs", 1)],
+                    [self.row("b.rs", 1)],
+                    mode="retirement",
+                )
+            },
+        )
+
+    def test_retirement_pointer_identity_substitution_remains_fingerprint_exact(self):
+        baseline = self.row("a.rs", 1)
+        live = self.row("a.rs", 1)
+        live["sites"][0]["line"] = 42
+        live["sites"][0]["fingerprint"] = "b" * 64
+
+        self.assertIn(
+            "C0-LEGACY-GROWTH",
+            {
+                item.contract_id
+                for item in self.failures(
+                    [baseline],
+                    [live],
+                    "ref-addr-ufcs",
+                    mode="retirement",
                 )
             },
         )

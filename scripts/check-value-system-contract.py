@@ -1352,7 +1352,11 @@ def high_risk_failures(
     baseline_path: Path,
     migration: dict[str, Any] | None = None,
     migration_path: Path = DEFAULT_MIGRATION,
+    *,
+    mode: str = "exact",
 ) -> list[Failure]:
+    if mode not in {"exact", "retirement"}:
+        raise ValueError(f"unsupported high-risk contract mode: {mode!r}")
     failures: list[Failure] = []
     baseline_uses = baseline["high_risk_api_uses"]
     live_uses = live["high_risk_api_uses"]
@@ -1362,14 +1366,15 @@ def high_risk_failures(
         for _ in range(row["count"])
     )
     observed_additions: Counter[tuple[str, str, str]] = Counter()
+    retirement_count_ceiling_identifiers = {
+        "valref-alias",
+        "mutable-reference-alias",
+        "value-mutable-reference",
+        "reactive-cell-id",
+    }
     for identifier, current_rows in live_uses.items():
-        approved_sites = Counter(
-            (row["path"], site["fingerprint"])
-            for row in baseline_uses.get(identifier, [])
-            for site in row["sites"]
-        )
-        current_sites = Counter(
-            (row["path"], site["fingerprint"])
+        filtered_current_rows = [
+            row
             for row in current_rows
             if not (
                 row["path"] == "src/core/src/legacy_adapter/value.rs"
@@ -1380,6 +1385,49 @@ def high_risk_failures(
                     "value-typed-wrapper",
                 }
             )
+        ]
+        if mode == "retirement" and identifier in retirement_count_ceiling_identifiers:
+            approved_counts = Counter(
+                row["path"]
+                for row in baseline_uses.get(identifier, [])
+                for _site in row["sites"]
+            )
+            approved_counts.update(
+                path
+                for (approved_identifier, path, _fingerprint), count in authorized.items()
+                if approved_identifier == identifier
+                for _ in range(count)
+            )
+            current_counts = Counter(
+                row["path"]
+                for row in filtered_current_rows
+                for _site in row["sites"]
+            )
+            additions = current_counts - approved_counts
+            for path, count in sorted(additions.items()):
+                row = next(row for row in filtered_current_rows if row["path"] == path)
+                for site in row["sites"][-count:]:
+                    failures.append(
+                        failure(
+                            "C0-LEGACY-GROWTH",
+                            identifier,
+                            path,
+                            "occurrence count at or below the immutable baseline plus authorized ceiling for this path",
+                            "new path or increased legacy occurrence count",
+                            f"{baseline_path}:high_risk_api_uses.{identifier}",
+                            site["line"],
+                            site["column"],
+                        )
+                    )
+            continue
+        approved_sites = Counter(
+            (row["path"], site["fingerprint"])
+            for row in baseline_uses.get(identifier, [])
+            for site in row["sites"]
+        )
+        current_sites = Counter(
+            (row["path"], site["fingerprint"])
+            for row in filtered_current_rows
             for site in row["sites"]
         )
         additions = current_sites - approved_sites
@@ -1398,7 +1446,7 @@ def high_risk_failures(
         additions -= approved_additions
         for path, fingerprint in sorted(additions):
             remaining = additions[(path, fingerprint)]
-            for row in current_rows:
+            for row in filtered_current_rows:
                 if row["path"] != path:
                     continue
                 for site in row["sites"]:
@@ -1419,18 +1467,19 @@ def high_risk_failures(
                     remaining -= 1
                 if remaining == 0:
                     break
-    excess_authorizations = authorized - observed_additions
-    for (identifier, path, fingerprint), count in sorted(excess_authorizations.items()):
-        failures.append(
-            failure(
-                "C0-LEGACY-AUTHORIZATION-STALE",
-                identifier,
-                path,
-                "every post-C0 authorization matches one live addition beyond the immutable baseline",
-                f"{count} unmatched authorization(s) for fingerprint {fingerprint}",
-                f"{migration_path}:authorized_high_risk_uses",
+    if mode == "exact":
+        excess_authorizations = authorized - observed_additions
+        for (identifier, path, fingerprint), count in sorted(excess_authorizations.items()):
+            failures.append(
+                failure(
+                    "C0-LEGACY-AUTHORIZATION-STALE",
+                    identifier,
+                    path,
+                    "every post-C0 authorization matches one live addition beyond the immutable baseline",
+                    f"{count} unmatched authorization(s) for fingerprint {fingerprint}",
+                    f"{migration_path}:authorized_high_risk_uses",
+                )
             )
-        )
     return failures
 
 
@@ -3980,6 +4029,7 @@ def audit(
             baseline_path,
             migration,
             migration_path,
+            mode=mode,
         )
     )
     failures.extend(legacy_alias_baseline_failures(baseline, live, baseline_path))
