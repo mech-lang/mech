@@ -1,3 +1,4 @@
+use super::compiler_value_source::CompilerValueSource;
 use crate::*;
 use std::collections::BTreeSet;
 use std::sync::Arc;
@@ -128,7 +129,7 @@ pub struct CompilerPlanningProgram {
 
 struct PublishedPlanningOutput {
     name: Option<String>,
-    value: LegacyValue,
+    source: CompilerValueSource,
 }
 
 impl CompilerPlanningProgram {
@@ -297,11 +298,17 @@ impl CompilerPlanningProgram {
         self.plan_tree_with_services(&tree, &mut services)
     }
 
+    /// Returns a host-inspection snapshot of a root symbol.
+    ///
+    /// Compiler ownership paths must use `compiler_root_symbol_cell` instead.
     pub fn compiler_root_symbol_value(&self, name: &str) -> MResult<LegacyValue> {
         let mut values = self.compiler_root_symbol_values(&[name])?;
         Ok(values.remove(0).1)
     }
 
+    /// Returns host-inspection snapshots of selected root symbols.
+    ///
+    /// These cloned values do not carry compiler register ownership.
     pub fn compiler_root_symbol_values(
         &self,
         names: &[&str],
@@ -324,12 +331,39 @@ impl CompilerPlanningProgram {
         Ok(values)
     }
 
+    /// Returns host-inspection snapshots of every root symbol.
     pub fn compiler_root_symbol_values_all(&self) -> Vec<(String, LegacyValue)> {
         let symbols = self.interpreter.symbols();
         let symbols_brrw = symbols.borrow();
         let mut values = symbol_rows(&symbols_brrw, &[]);
         values.sort_by(|left, right| left.0.cmp(&right.0));
         values
+    }
+
+    /// Returns the original compiler-owned cell for one root symbol.
+    pub fn compiler_root_symbol_cell(&self, name: &str) -> MResult<ValueCell> {
+        let mut cells = self.compiler_root_symbol_cells(&[name])?;
+        Ok(cells.remove(0).1)
+    }
+
+    /// Returns the original compiler-owned cells for selected root symbols.
+    pub fn compiler_root_symbol_cells(&self, names: &[&str]) -> MResult<Vec<(String, ValueCell)>> {
+        let symbols = self.interpreter.symbols();
+        let symbols_brrw = symbols.borrow();
+        let mut cells = Vec::with_capacity(names.len());
+        for name in names {
+            let symbol_id = hash_str(name);
+            let Some(cell) = symbols_brrw.get(symbol_id) else {
+                return Err(MechError::new(
+                    ProgramOutputNotFound {
+                        name: (*name).to_string(),
+                    },
+                    None,
+                ));
+            };
+            cells.push(((*name).to_string(), cell));
+        }
+        Ok(cells)
     }
 
     /// Resolves stable formatted-document output addresses inside the
@@ -356,28 +390,36 @@ impl CompilerPlanningProgram {
     /// Dependency-only planning never calls this method, so multi-root
     /// products publish each requested root exactly once in caller order.
     pub fn publish_compiler_root_output(&mut self, value: LegacyValue) {
-        self.published_outputs
-            .push(PublishedPlanningOutput { name: None, value });
+        self.published_outputs.push(PublishedPlanningOutput {
+            name: None,
+            source: CompilerValueSource::from_legacy(value),
+        });
     }
 
     /// Retain a document-addressed output whose ordinal is part of the host
     /// rendering contract, even when its register aliases a named symbol.
     pub fn publish_compiler_document_output(&mut self, value: LegacyValue) {
-        self.published_outputs
-            .push(PublishedPlanningOutput { name: None, value });
+        self.published_outputs.push(PublishedPlanningOutput {
+            name: None,
+            source: CompilerValueSource::from_legacy(value),
+        });
     }
 
     /// Retain every named root symbol as a live artifact output for an
     /// interactive host. The ordinary result remains first, while explicit
     /// names may alias one shared register without losing lexical identity.
     pub fn publish_compiler_root_symbols(&mut self) {
+        let symbols = self.interpreter.symbols();
+        let symbols_brrw = symbols.borrow();
+        let mut cells = symbol_cell_rows(&symbols_brrw, &[]);
+        cells.sort_by(|left, right| left.0.cmp(&right.0));
         self.published_outputs
             .extend(
-                self.compiler_root_symbol_values_all()
+                cells
                     .into_iter()
-                    .map(|(name, value)| PublishedPlanningOutput {
+                    .map(|(name, cell)| PublishedPlanningOutput {
                         name: Some(name),
-                        value,
+                        source: CompilerValueSource::Cell(cell),
                     }),
             );
     }
@@ -385,13 +427,11 @@ impl CompilerPlanningProgram {
     /// Installs one compiler-resolved source import in the ephemeral planning
     /// symbol table. This coordinate is consumed during compilation and is not
     /// retained by the runtime artifact.
-    pub fn install_compiler_symbol(&mut self, name: &str, value: Ref<LegacyValue>) -> MResult<()> {
+    pub fn install_compiler_symbol(&mut self, name: &str, value: ValueCell) -> MResult<()> {
         let id = hash_str(name);
         let symbols = self.interpreter.symbols();
         let mut symbols = symbols.borrow_mut();
-        symbols
-            .symbols
-            .insert(id, ValueCell::from_legacy_ref(value));
+        symbols.symbols.insert(id, value);
         symbols.dictionary.borrow_mut().insert(id, name.to_owned());
         Ok(())
     }
@@ -695,12 +735,12 @@ fn preserve_compiled_resource_send_operations(
 /// explicit without exposing it through `ProgramArtifact`.
 #[cfg(all(feature = "semantic-compiler", feature = "invariant_define"))]
 struct RetainedIntegrityMarkerMetadata {
-    result_register: Register,
+    result: ValueCell,
     name: LegacyValue,
     expression: LegacyValue,
     operator: LegacyValue,
-    lhs: LegacyValue,
-    rhs: LegacyValue,
+    lhs: Option<ValueCell>,
+    rhs: Option<ValueCell>,
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -766,8 +806,8 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     let retained_integrity_metadata = if !state.integrity_constraints.is_empty() {
         let mut metadata = Vec::with_capacity(state.integrity_constraints.len());
         for constraint in state.integrity_constraints.values() {
-            let result = LegacyValue::MutableReference(constraint.result.legacy_ref());
-            let result_register = context.resolve_value_register(&result)?;
+            let result_register =
+                mech_core::compile_value_cell_register(&constraint.result, &mut context)?;
             context.record_integrity_constraint(constraint.name.clone(), result_register)?;
             let name = LegacyValue::String(Ref::new(constraint.name.clone()));
             let expression = LegacyValue::String(Ref::new(constraint.expression.clone()));
@@ -804,23 +844,13 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
                 }
                 None => LegacyValue::Empty,
             };
-            let lhs = constraint
-                .lhs
-                .as_ref()
-                .map(|value| LegacyValue::MutableReference(value.legacy_ref()))
-                .unwrap_or(LegacyValue::Empty);
-            let rhs = constraint
-                .rhs
-                .as_ref()
-                .map(|value| LegacyValue::MutableReference(value.legacy_ref()))
-                .unwrap_or(LegacyValue::Empty);
             metadata.push(RetainedIntegrityMarkerMetadata {
-                result_register,
+                result: constraint.result.clone(),
                 name,
                 expression,
                 operator,
-                lhs,
-                rhs,
+                lhs: constraint.lhs.clone(),
+                rhs: constraint.rhs.clone(),
             });
         }
         metadata
@@ -836,13 +866,22 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     if let Some(marker_output) = retained_integrity_marker_output.as_ref() {
         let marker_register = context.resolve_value_register(marker_output)?;
         for marker in &retained_integrity_metadata {
+            let result = mech_core::compile_value_cell_register(&marker.result, &mut context)?;
+            let lhs = match &marker.lhs {
+                Some(cell) => mech_core::compile_value_cell_register(cell, &mut context)?,
+                None => context.resolve_value_register(&LegacyValue::Empty)?,
+            };
+            let rhs = match &marker.rhs {
+                Some(cell) => mech_core::compile_value_cell_register(cell, &mut context)?,
+                None => context.resolve_value_register(&LegacyValue::Empty)?,
+            };
             let metadata = vec![
-                marker.result_register,
+                result,
                 context.resolve_value_register(&marker.name)?,
                 context.resolve_value_register(&marker.expression)?,
                 context.resolve_value_register(&marker.operator)?,
-                context.resolve_value_register(&marker.lhs)?,
-                context.resolve_value_register(&marker.rhs)?,
+                lhs,
+                rhs,
             ];
             context.emit_integrity_marker(
                 hash_str("integrity/constraint"),
@@ -856,7 +895,7 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     for output in &program.published_outputs {
         resolved_outputs.push((
             output.name.clone(),
-            context.resolve_value_register(&output.value)?,
+            output.source.compile_register(&mut context)?,
         ));
     }
     let mut published_outputs = Vec::with_capacity(resolved_outputs.len());
@@ -933,6 +972,35 @@ fn symbol_rows(
     rows
 }
 
+fn symbol_cell_rows(
+    symbol_table: &mech_core::SymbolTable,
+    names: &[String],
+) -> Vec<(String, ValueCell)> {
+    let dictionary = symbol_table.dictionary.borrow();
+    let mut rows = Vec::new();
+
+    if !names.is_empty() {
+        for target_name in names {
+            for (id, name) in dictionary.iter() {
+                if name == target_name {
+                    if let Some(cell) = symbol_table.symbols.get(id) {
+                        rows.push((name.clone(), cell.clone()));
+                    }
+                    break;
+                }
+            }
+        }
+    } else {
+        for (id, cell) in symbol_table.symbols.iter() {
+            if let Some(name) = dictionary.get(id) {
+                rows.push((name.clone(), cell.clone()));
+            }
+        }
+    }
+
+    rows
+}
+
 #[cfg(test)]
 fn test_mech_program(config: CompilerPlanningConfig) -> CompilerPlanningProgram {
     CompilerPlanningProgram::with_function_catalog(
@@ -946,6 +1014,8 @@ mod tests {
     use super::*;
     #[cfg(feature = "functions")]
     use mech_core::FunctionCatalogBuilder;
+    #[cfg(feature = "native")]
+    use mech_core::Ref;
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "source",
@@ -954,8 +1024,6 @@ mod tests {
         feature = "f64"
     ))]
     use mech_core::{BytecodeInstruction, ParsedProgram, Register};
-    #[cfg(feature = "native")]
-    use mech_core::{Ref, ValueCell};
     use std::collections::BTreeMap;
 
     #[cfg(feature = "functions")]
@@ -1796,6 +1864,101 @@ mod root_symbol_snapshot_tests {
             .unwrap();
         let names: Vec<_> = rows.iter().map(|(name, _)| name.as_str()).collect();
         assert_eq!(names, vec!["c", "a", "b"]);
+    }
+
+    #[test]
+    fn root_symbol_cells_preserve_order_and_original_identity() {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        program.plan_source_for_test("a := 1.0\nb := 2.0").unwrap();
+        let symbols = program.interpreter.symbols();
+        let a = symbols.borrow().get(hash_str("a")).unwrap();
+
+        let rows = program.compiler_root_symbol_cells(&["b", "a"]).unwrap();
+
+        assert_eq!(rows[0].0, "b");
+        assert_eq!(rows[1].0, "a");
+        assert!(rows[1].1.same_cell(&a));
+        assert!(
+            program
+                .compiler_root_symbol_cell("a")
+                .unwrap()
+                .same_cell(&a)
+        );
+    }
+
+    #[test]
+    fn root_symbol_publication_retains_cells_and_lexical_aliases() {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        let shared = ValueCell::new(LegacyValue::F64(Ref::new(7.0)));
+        program
+            .install_compiler_symbol("left", shared.clone())
+            .unwrap();
+        program
+            .install_compiler_symbol("right", shared.clone())
+            .unwrap();
+
+        program.publish_compiler_root_symbols();
+
+        let alias_outputs = program
+            .published_outputs
+            .iter()
+            .filter(|output| matches!(output.name.as_deref(), Some("left" | "right")))
+            .collect::<Vec<_>>();
+        assert_eq!(alias_outputs.len(), 2);
+        for output in alias_outputs {
+            let CompilerValueSource::Cell(cell) = &output.source else {
+                panic!("root symbols must publish explicit cells")
+            };
+            assert!(cell.same_cell(&shared));
+        }
+        let compiled = compile_bytecode(&mut program).unwrap();
+        let left = compiled
+            .published_output_names
+            .iter()
+            .position(|name| name.as_deref() == Some("left"))
+            .unwrap();
+        let right = compiled
+            .published_output_names
+            .iter()
+            .position(|name| name.as_deref() == Some("right"))
+            .unwrap();
+        assert_ne!(left, right);
+        assert_eq!(
+            compiled.published_outputs[left],
+            compiled.published_outputs[right]
+        );
+    }
+
+    #[test]
+    fn later_source_read_of_typed_symbol_compiles_without_losing_cell_identity() {
+        let mut program = test_mech_program(CompilerPlanningConfig::default());
+        let optional = ValueCell::new(LegacyValue::Typed(
+            Box::new(LegacyValue::F64(Ref::new(7.0))),
+            ValueKind::Option(Box::new(ValueKind::F64)),
+        ));
+        program
+            .install_compiler_symbol("optional", optional.clone())
+            .unwrap();
+
+        let result = program
+            .plan_source_for_test("answer := optional\nanswer")
+            .unwrap();
+        let LegacyValue::MutableReference(result_reference) = &result else {
+            panic!("a later symbol read must return its mutable cell")
+        };
+        let result_cell = ValueCell::from_legacy_ref(result_reference.clone());
+        let payload = result_cell.borrow();
+        let LegacyValue::Typed(inner, annotation) = &*payload else {
+            panic!("the later symbol read must retain its typed payload")
+        };
+        assert_eq!(annotation, &ValueKind::Option(Box::new(ValueKind::F64)));
+        assert!(matches!(inner.as_ref(), LegacyValue::F64(_)));
+        drop(payload);
+
+        program.publish_compiler_root_output(result);
+        let compiled = compile_bytecode(&mut program).unwrap();
+
+        assert_eq!(compiled.published_outputs.len(), 1);
     }
 
     #[test]

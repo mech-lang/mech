@@ -19,7 +19,7 @@ use mech_compute::{
 use mech_core::{
     ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
     MResult, MechError, MechErrorKind, MechExecutionServices, MechSourceCode,
-    ModuleManifestCatalog, OperationContractDeclaration, Ref, ResourceIntent, ValueCell,
+    ModuleManifestCatalog, OperationContractDeclaration, ResourceIntent, ValueCell,
 };
 #[cfg(feature = "compute")]
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
@@ -339,10 +339,10 @@ struct CompilerExportValue {
 }
 
 impl CompilerExportValue {
-    fn fresh_reference(&self) -> MResult<Ref<LegacyValue>> {
+    fn fresh_cell(&self) -> MResult<ValueCell> {
         self.value
             .try_deep_snapshot()
-            .map(Ref::new)
+            .map(ValueCell::new)
             .map_err(|_| unsupported_compiler_import(self))
     }
 }
@@ -527,7 +527,8 @@ impl<'a> ProgramCompilerView<'a> {
     )> {
         let mut program = self.new_program();
         for (name, value) in inputs {
-            program.install_compiler_symbol(name, Ref::new(value.clone().into_mech_value()?))?;
+            program
+                .install_compiler_symbol(name, ValueCell::new(value.clone().into_mech_value()?))?;
         }
         let document_output_ids = root_document_output_ids(tree);
         let index = SourceIndex::from_program(tree);
@@ -743,7 +744,8 @@ impl<'a> ProgramCompilerView<'a> {
     ) -> MResult<BTreeMap<String, RuntimeHostInputValue>> {
         let mut program = self.new_program();
         for (name, value) in inputs {
-            program.install_compiler_symbol(name, Ref::new(value.clone().into_mech_value()?))?;
+            program
+                .install_compiler_symbol(name, ValueCell::new(value.clone().into_mech_value()?))?;
         }
         let index = SourceIndex::from_program(tree);
         index.validate_address_targets()?;
@@ -2073,7 +2075,7 @@ fn install_environment(
     environment: &HashMap<String, CompilerExportValue>,
 ) -> MResult<()> {
     for (name, value) in environment {
-        program.install_compiler_symbol(name, value.fresh_reference()?)?;
+        program.install_compiler_symbol(name, value.fresh_cell()?)?;
     }
     Ok(())
 }
