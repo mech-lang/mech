@@ -1819,32 +1819,54 @@ def field_type(source: str, owner: str, field: str) -> str | None:
     return re.sub(r"\s+", "", body[start:end])
 
 
-def type_contract_sources(root: Path) -> dict[str, list[dict[str, str]]]:
+def expected_type_contract_sources() -> dict[str, list[dict[str, str]]]:
     inventory: dict[str, list[dict[str, str]]] = {}
     for group, specs in TYPE_CONTRACT_SOURCE_SPECS.items():
         target, gate = TYPE_CONTRACT_TARGETS[group]
         records: list[dict[str, str]] = []
         for relative, symbol in specs:
+            if "." in symbol:
+                expected_form = TYPE_CONTRACT_FIELD_FORMS[(relative, symbol)]
+                source_kind = "field"
+                source_form = f"field:{expected_form}"
+            else:
+                expected_form = TYPE_CONTRACT_DECLARATION_FORMS[(relative, symbol)]
+                source_kind = "declaration"
+                source_form = expected_form
+            records.append(
+                {
+                    "path": relative,
+                    "symbol": symbol,
+                    "source_kind": source_kind,
+                    "source_form": source_form,
+                    "target": target,
+                    "implementation_gate": gate,
+                }
+            )
+        inventory[group] = records
+    return inventory
+
+
+def type_contract_sources(root: Path) -> dict[str, list[dict[str, str]]]:
+    expected = expected_type_contract_sources()
+    for group, records in expected.items():
+        for record in records:
+            relative = record["path"]
+            symbol = record["symbol"]
             path = root / relative
             if not path.is_file():
                 raise TypeContractError(
                     f"type contract source is missing: {relative}::{symbol}"
                 )
             source = path.read_text(encoding="utf-8")
-            if "." in symbol:
+            if record["source_kind"] == "field":
                 owner, field = symbol.split(".", 1)
                 actual_form = field_type(source, owner, field)
                 expected_form = TYPE_CONTRACT_FIELD_FORMS[(relative, symbol)]
-                exists = actual_form == expected_form
-                source_kind = "field"
-                source_form = f"field:{expected_form}"
             else:
                 actual_form = declaration_form(source, symbol)
                 expected_form = TYPE_CONTRACT_DECLARATION_FORMS[(relative, symbol)]
-                exists = actual_form == expected_form
-                source_kind = "declaration"
-                source_form = expected_form
-            if not exists:
+            if actual_form != expected_form:
                 raise TypeContractError(
                     f"type contract source shape changed: {relative}::{symbol}; "
                     f"expected {expected_form}, found {actual_form}"
@@ -1861,18 +1883,7 @@ def type_contract_sources(root: Path) -> dict[str, list[dict[str, str]]]:
                         f"runtime representation source crosses into semantic typing: "
                         f"{relative}::{symbol} references {forbidden}"
                     )
-            records.append(
-                {
-                    "path": relative,
-                    "symbol": symbol,
-                    "source_kind": source_kind,
-                    "source_form": source_form,
-                    "target": target,
-                    "implementation_gate": gate,
-                }
-            )
-        inventory[group] = records
-    return inventory
+    return expected
 
 
 def generate(
@@ -1880,6 +1891,7 @@ def generate(
     reference_commit: str = REFERENCE_COMMIT,
     *,
     target_roots: Iterable[Path] | None = None,
+    validate_type_contract_sources: bool = True,
 ) -> dict[str, object]:
     digest = legacy_scanner_implementation_sha256()
     if digest != LEGACY_SCANNER_CONTRACT["implementation_sha256"]:
@@ -2001,7 +2013,11 @@ def generate(
             }
         },
         "variant_uses": uses,
-        "type_contract_sources": type_contract_sources(root),
+        "type_contract_sources": (
+            type_contract_sources(root)
+            if validate_type_contract_sources
+            else expected_type_contract_sources()
+        ),
         "auxiliary_rust_fixtures": auxiliary_fixtures,
         "auxiliary_cargo_fixtures": auxiliary_cargo_fixtures,
         "legacy_aliases": legacy_aliases,

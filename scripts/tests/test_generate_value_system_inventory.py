@@ -1,9 +1,13 @@
 import importlib.util
+import io
 import json
+import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT = Path(__file__).resolve().parents[1] / "generate-value-system-inventory.py"
@@ -129,6 +133,17 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
         second = GENERATOR.render(self.generate(root))
         self.assertEqual(first, second)
         self.assertEqual(json.loads(first), json.loads(second))
+
+    def test_default_generation_matches_explicit_strict_generation(self):
+        root = self.repository()
+        default = self.generate(root)
+        explicit = GENERATOR.generate(
+            root,
+            "f" * 40,
+            target_roots=[root / "src/core/src/lib.rs"],
+            validate_type_contract_sources=True,
+        )
+        self.assertEqual(GENERATOR.render(default), GENERATOR.render(explicit))
 
     def test_complete_scanner_module_digest_covers_every_scanner_layer(self):
         scanner_path = Path(GENERATOR.LEGACY_SCANNER.__file__)
@@ -975,6 +990,76 @@ class ValueSystemInventoryGeneratorTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, "source shape changed"):
             GENERATOR.type_contract_sources(root)
+
+    def test_default_generate_validates_type_contract_source_shapes(self):
+        root = self.repository(
+            {
+                "src/core/src/function/signature.rs": SIGNATURE_SOURCE.replace(
+                    "pub trait FunctionRuntimeType {}",
+                    "pub struct FunctionRuntimeType;",
+                )
+            }
+        )
+        with self.assertRaisesRegex(ValueError, "source shape changed"):
+            self.generate(root)
+
+    def test_relaxed_generate_skips_only_type_contract_shape_validation(self):
+        root = self.repository(
+            {
+                "src/core/src/function/signature.rs": SIGNATURE_SOURCE.replace(
+                    "pub trait FunctionRuntimeType {}",
+                    "pub struct FunctionRuntimeType;",
+                ),
+                "src/core/src/live.rs": (
+                    "pub type ValRef = Ref<Value>;\n"
+                    "fn live(value: ValRef) {\n"
+                    "  let _ = value;\n"
+                    "  let _ = Value::Empty;\n"
+                    "  let _ = ValueKind::Any;\n"
+                    "  let _ = Kind::Any;\n"
+                    "}\n"
+                ),
+            }
+        )
+        inventory = GENERATOR.generate(
+            root,
+            "f" * 40,
+            target_roots=[root / "src/core/src/lib.rs"],
+            validate_type_contract_sources=False,
+        )
+        self.assertEqual(
+            inventory["type_contract_sources"],
+            GENERATOR.expected_type_contract_sources(),
+        )
+        self.assertEqual(
+            set(inventory["enums"]), {"LegacyValue", "ValueKind", "Kind"}
+        )
+        self.assertTrue(inventory["variant_uses"])
+        self.assertTrue(inventory["legacy_aliases"])
+        self.assertTrue(
+            any(inventory["high_risk_api_uses"].values())
+        )
+
+    def test_archived_generation_keeps_the_strict_default(self):
+        archive_bytes = io.BytesIO()
+        with tarfile.open(fileobj=archive_bytes, mode="w"):
+            pass
+        completed = subprocess.CompletedProcess(
+            args=[], returncode=0, stdout=archive_bytes.getvalue(), stderr=b""
+        )
+        reference = "a" * 40
+        with mock.patch.object(
+            GENERATOR.subprocess, "run", return_value=completed
+        ), mock.patch.object(
+            GENERATOR, "generate", return_value={"strict": True}
+        ) as generate:
+            self.assertEqual(
+                GENERATOR.archived_inventory(Path("/repository"), reference),
+                {"strict": True},
+            )
+        args, kwargs = generate.call_args
+        self.assertEqual(args[1], reference)
+        self.assertEqual(kwargs, {})
 
     def test_runtime_representation_body_cannot_reference_kind_scheme(self):
         root = self.repository(
