@@ -112,6 +112,73 @@ def rust_attributes(source: str) -> list[str]:
     return attributes
 
 
+def mask_non_code(source: str) -> str:
+    """Replace comments and literals with spaces while preserving token offsets."""
+    masked = list(source)
+    cursor = 0
+    while cursor < len(source):
+        skipped = skip_non_code(source, cursor)
+        if skipped is None:
+            cursor += 1
+            continue
+        masked[cursor:skipped] = " " * (skipped - cursor)
+        cursor = skipped
+    return "".join(masked)
+
+
+def split_top_level(source: str) -> list[str]:
+    """Split comma-separated Rust meta items without splitting nested delimiters."""
+    items = []
+    start = 0
+    depths = {"(": 0, "[": 0, "{": 0}
+    closing = {")": "(", "]": "[", "}": "{"}
+    for offset, character in enumerate(source):
+        if character in depths:
+            depths[character] += 1
+        elif character in closing:
+            opener = closing[character]
+            depths[opener] = max(0, depths[opener] - 1)
+        elif character == "," and not any(depths.values()):
+            items.append(source[start:offset])
+            start = offset + 1
+    items.append(source[start:])
+    return items
+
+
+def conditional_policy_directive(attribute: str) -> str | None:
+    """Find a warning-policy directive recursively nested inside cfg_attr."""
+    opening = attribute.find("[")
+    closing = attribute.rfind("]")
+    if opening < 0 or closing <= opening:
+        return None
+
+    def inspect(meta: str) -> str | None:
+        meta = meta.strip()
+        head = re.match(r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)", meta)
+        if head is None:
+            return None
+        name = head.group("name")
+        if name in {"allow", "expect", "deprecated"}:
+            return name
+        if name != "cfg_attr":
+            return None
+        call_start = meta.find("(", head.end())
+        if call_start < 0 or not meta.endswith(")"):
+            return None
+        arguments = split_top_level(meta[call_start + 1 : -1])
+        for nested in arguments[1:]:
+            directive = inspect(nested)
+            if directive is not None:
+                return directive
+        return None
+
+    meta = mask_non_code(attribute[opening + 1 : closing]).strip()
+    root = re.match(r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)", meta)
+    if root is None or root.group("name") != "cfg_attr":
+        return None
+    return inspect(meta)
+
+
 contracts = json.loads(EXCEPTIONS.read_text(encoding="utf-8"))
 if contracts.get("schema_version") != 1:
     fail("warning exception contract has an unsupported schema version")
@@ -170,6 +237,12 @@ for path in rust_sources:
     source = path.read_text(encoding="utf-8")
     relative = path.relative_to(ROOT).as_posix()
     for attribute in rust_attributes(source):
+        conditional = conditional_policy_directive(attribute)
+        if conditional is not None:
+            fail(
+                f"conditional {conditional} in cfg_attr is not permitted in {relative}; "
+                "use an unconditional audited exception"
+            )
         lint = LINT_ATTRIBUTE.fullmatch(attribute)
         if lint is not None:
             body = LINT_BODY.fullmatch(lint.group("body"))

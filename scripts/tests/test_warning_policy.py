@@ -52,6 +52,7 @@ class WarningPolicyTests(unittest.TestCase):
         root = self.fixture(
             f'''// #[allow(dead_code)]
 const TEXT: &str = r##"#[expect(unused_variables)]"##;
+#[cfg_attr(any(), doc = "allow(dead_code), expect(unused_variables), deprecated")]
 #[expect(non_upper_case_globals, reason = "{reason}")]
 pub const OldName: usize = 1;
 ''',
@@ -75,6 +76,25 @@ pub const OldName: usize = 1;
         process = self.run_checker(root)
         self.assertNotEqual(process.returncode, 0)
         self.assertIn("must name one lint and a literal reason", process.stderr)
+
+    def test_conditional_policy_directives_are_rejected_recursively(self):
+        cases = {
+            "allow": "#[cfg_attr(any(), allow(dead_code))]\nfn hidden() {}\n",
+            "expect": "#[cfg_attr(any(), expect(dead_code))]\nfn hidden() {}\n",
+            "deprecated": (
+                "#[cfg_attr(any(), cfg_attr(all(), deprecated(note = \"old\")))]\n"
+                "pub fn old() {}\n"
+            ),
+        }
+        for directive, source in cases.items():
+            with self.subTest(directive=directive):
+                root = self.fixture(source, [])
+                process = self.run_checker(root)
+                self.assertNotEqual(process.returncode, 0)
+                self.assertIn(
+                    f"conditional {directive} in cfg_attr is not permitted",
+                    process.stderr,
+                )
 
 
 if __name__ == "__main__":
