@@ -52,11 +52,6 @@ pub(super) fn access(
                     plan.borrow_mut()
                         .push(catalog_access_function(p, "access/range", &fxn_input)?);
                 }
-                /*[Subscript::All] => {
-                  fxn_input.push(LegacyValue::IndexAll);
-                  #[cfg(feature = "matrix")]
-                  plan.borrow_mut().push(MapAccessAll{}.specialize(&fxn_input)?);
-                },*/
                 _ => {
                     todo!("Implement brace subscript")
                 }

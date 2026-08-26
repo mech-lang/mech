@@ -51,6 +51,8 @@ use crate::{
     FunctionCatalogBuilder, FunctionSpecializer, IncorrectNumberOfArguments, LegacyValue, MResult,
     MechError, MechFunction, UnhandledFunctionArgumentKind2,
 };
+#[cfg(feature = "semantic-compiler")]
+use crate::{InterpreterExecution, MatrixSelector, OperationId};
 #[cfg(any(feature = "record", feature = "table"))]
 use crate::{MechTuple, Ref, UndefinedRecordFieldError};
 #[cfg(feature = "table")]
@@ -181,34 +183,66 @@ fn matrix_access_index_is_scalar(index: &LegacyValue) -> bool {
     index.shape().as_slice() == [1, 1]
 }
 
+#[cfg(any(feature = "matrix", feature = "semantic-compiler"))]
+fn legacy_all_selector() -> LegacyValue {
+    LegacyValue::IndexAll
+}
+
+#[cfg(feature = "matrix")]
+#[derive(Clone, Copy)]
+enum MatrixAccessIndexKind {
+    All,
+    Scalar,
+    Range,
+}
+
+#[cfg(feature = "matrix")]
+fn matrix_access_index_kind(index: &LegacyValue) -> MatrixAccessIndexKind {
+    if index == &legacy_all_selector() {
+        MatrixAccessIndexKind::All
+    } else if matrix_access_index_is_scalar(index) {
+        MatrixAccessIndexKind::Scalar
+    } else {
+        MatrixAccessIndexKind::Range
+    }
+}
+
 #[cfg(feature = "matrix")]
 fn compile_matrix_access(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-    match arguments.get(1..).unwrap_or_default() {
-        [LegacyValue::IndexAll] => MatrixAccessAll {}.specialize(arguments),
-        [index] if matrix_access_index_is_scalar(index) => {
-            MatrixAccessScalar {}.specialize(arguments)
-        }
-        [_] => MatrixAccessRange {}.specialize(arguments),
-        [LegacyValue::IndexAll, index] if matrix_access_index_is_scalar(index) => {
+    let index_kinds = arguments
+        .get(1..)
+        .unwrap_or_default()
+        .iter()
+        .map(matrix_access_index_kind)
+        .collect::<Vec<_>>();
+    match index_kinds.as_slice() {
+        [MatrixAccessIndexKind::All] => MatrixAccessAll {}.specialize(arguments),
+        [MatrixAccessIndexKind::Scalar] => MatrixAccessScalar {}.specialize(arguments),
+        [MatrixAccessIndexKind::Range] => MatrixAccessRange {}.specialize(arguments),
+        [MatrixAccessIndexKind::All, MatrixAccessIndexKind::Scalar] => {
             MatrixAccessAllScalar {}.specialize(arguments)
         }
-        [LegacyValue::IndexAll, _] => MatrixAccessAllRange {}.specialize(arguments),
-        [index, LegacyValue::IndexAll] if matrix_access_index_is_scalar(index) => {
+        [MatrixAccessIndexKind::All, MatrixAccessIndexKind::Range] => {
+            MatrixAccessAllRange {}.specialize(arguments)
+        }
+        [MatrixAccessIndexKind::Scalar, MatrixAccessIndexKind::All] => {
             MatrixAccessScalarAll {}.specialize(arguments)
         }
-        [_, LegacyValue::IndexAll] => MatrixAccessRangeAll {}.specialize(arguments),
-        [left, right]
-            if matrix_access_index_is_scalar(left) && matrix_access_index_is_scalar(right) =>
-        {
+        [MatrixAccessIndexKind::Range, MatrixAccessIndexKind::All] => {
+            MatrixAccessRangeAll {}.specialize(arguments)
+        }
+        [MatrixAccessIndexKind::Scalar, MatrixAccessIndexKind::Scalar] => {
             MatrixAccessScalarScalar {}.specialize(arguments)
         }
-        [left, _] if matrix_access_index_is_scalar(left) => {
+        [MatrixAccessIndexKind::Scalar, MatrixAccessIndexKind::Range] => {
             MatrixAccessScalarRange {}.specialize(arguments)
         }
-        [_, right] if matrix_access_index_is_scalar(right) => {
+        [MatrixAccessIndexKind::Range, MatrixAccessIndexKind::Scalar] => {
             MatrixAccessRangeScalar {}.specialize(arguments)
         }
-        [_, _] => MatrixAccessRangeRange {}.specialize(arguments),
+        [MatrixAccessIndexKind::Range, MatrixAccessIndexKind::Range] => {
+            MatrixAccessRangeRange {}.specialize(arguments)
+        }
         _ => Err(MechError::new(
             IncorrectNumberOfArguments {
                 expected: 1,
@@ -218,6 +252,27 @@ fn compile_matrix_access(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunct
         )
         .with_compiler_loc()),
     }
+}
+
+/// Lowers source-level selectors at the legacy access specialization boundary.
+#[cfg(feature = "semantic-compiler")]
+pub(crate) fn specialize_source_access(
+    execution: &InterpreterExecution<'_>,
+    canonical_name: &str,
+    source: LegacyValue,
+    selectors: &[MatrixSelector],
+) -> MResult<Box<dyn MechFunction>> {
+    let mut arguments = Vec::with_capacity(selectors.len() + 1);
+    arguments.push(source);
+    arguments.extend(selectors.iter().map(|selector| match selector {
+        MatrixSelector::All => legacy_all_selector(),
+        MatrixSelector::Value(value) => value.clone(),
+    }));
+    execution.specialize_visible_operation_named(
+        OperationId::from_name(canonical_name),
+        Some(canonical_name),
+        &arguments,
+    )
 }
 
 pub struct AccessScalar {}

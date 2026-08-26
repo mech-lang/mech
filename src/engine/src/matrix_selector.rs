@@ -7,9 +7,5 @@ use crate::LegacyValue;
 #[derive(Clone, Debug)]
 pub(crate) enum MatrixSelector {
     All,
-    #[expect(
-        dead_code,
-        reason = "wired to evaluated selectors in the next stack commit"
-    )]
     Value(LegacyValue),
 }
