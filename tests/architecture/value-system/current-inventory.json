@@ -796,6 +796,16 @@
           "kinds": [
             "test"
           ],
+          "name": "public_api_compat",
+          "reachable_rust_files": [
+            "tests/public_api_compat.rs"
+          ],
+          "root": "tests/public_api_compat.rs"
+        },
+        {
+          "kinds": [
+            "test"
+          ],
           "name": "style_layer_contract",
           "reachable_rust_files": [
             "tests/style_layer_contract.rs"
@@ -1294,6 +1304,16 @@
             "src/core/tests/snapshot_value_contract.rs"
           ],
           "root": "src/core/tests/snapshot_value_contract.rs"
+        },
+        {
+          "kinds": [
+            "bench"
+          ],
+          "name": "solve_result_overhead",
+          "reachable_rust_files": [
+            "src/core/benches/solve_result_overhead.rs"
+          ],
+          "root": "src/core/benches/solve_result_overhead.rs"
         },
         {
           "kinds": [
@@ -2351,6 +2371,7 @@
     "src/compute/src/port.rs",
     "src/compute/src/program.rs",
     "src/compute/src/registry.rs",
+    "src/core/benches/solve_result_overhead.rs",
     "src/core/benches/value_state_journal.rs",
     "src/core/src/dimension.rs",
     "src/core/src/element.rs",
@@ -2941,6 +2962,7 @@
     "tests/mech_repl.rs",
     "tests/mech_repl_ctrlc.rs",
     "tests/mech_serve.rs",
+    "tests/public_api_compat.rs",
     "tests/style_layer_contract.rs",
     "tests/support/bytecode/catalog.rs",
     "tests/support/bytecode/dynamic_matrix_factory.rs",
@@ -7675,7 +7697,7 @@
           {
             "column": 16,
             "fingerprint": "840ea8a88a80f596f106b59fa7f86a514a8f1194d1bdea4a576ff21261cb28d5",
-            "line": 261
+            "line": 262
           }
         ]
       },
@@ -7699,7 +7721,7 @@
           {
             "column": 22,
             "fingerprint": "344b3ae3f130667fa4f75e92559dc963946581995ee2c887bebe474beb4e05f2",
-            "line": 262
+            "line": 263
           }
         ]
       },
@@ -7765,7 +7787,7 @@
           {
             "column": 48,
             "fingerprint": "7d4a3cbeedd072d258e5c29d54a7ab71ec29c0fb276730b89e35230b5317d3fc",
-            "line": 248
+            "line": 249
           }
         ]
       }
@@ -14172,7 +14194,7 @@
             {
               "column": 16,
               "fingerprint": "840ea8a88a80f596f106b59fa7f86a514a8f1194d1bdea4a576ff21261cb28d5",
-              "line": 261
+              "line": 262
             }
           ]
         },
@@ -14232,7 +14254,7 @@
             {
               "column": 48,
               "fingerprint": "7d4a3cbeedd072d258e5c29d54a7ab71ec29c0fb276730b89e35230b5317d3fc",
-              "line": 248
+              "line": 249
             }
           ]
         }
@@ -14254,7 +14276,7 @@
             {
               "column": 22,
               "fingerprint": "344b3ae3f130667fa4f75e92559dc963946581995ee2c887bebe474beb4e05f2",
-              "line": 262
+              "line": 263
             }
           ]
         },
@@ -60211,7 +60233,7 @@
       "directory": ".",
       "manifest": "Cargo.toml",
       "name": "mech",
-      "rust_file_count": 895
+      "rust_file_count": 897
     },
     {
       "directory": "hosts/browser",
@@ -60289,7 +60311,7 @@
       "directory": "src/core",
       "manifest": "src/core/Cargo.toml",
       "name": "mech-core",
-      "rust_file_count": 121
+      "rust_file_count": 122
     },
     {
       "directory": "src/engine",

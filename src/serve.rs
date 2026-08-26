@@ -4241,7 +4241,8 @@ mod tests {
         let original_bytes = registry
             .read()
             .unwrap()
-            .get_route("known.txt")
+            .assets
+            .get("known.txt")
             .unwrap()
             .bytes
             .as_ptr();
@@ -4262,7 +4263,8 @@ mod tests {
         let current_bytes = registry
             .read()
             .unwrap()
-            .get_route("known.txt")
+            .assets
+            .get("known.txt")
             .unwrap()
             .bytes
             .as_ptr();

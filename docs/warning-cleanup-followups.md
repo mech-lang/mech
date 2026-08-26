@@ -1,9 +1,11 @@
 # Warning cleanup follow-ups
 
 This log records code or validation surfaces that could not be removed safely
-during the zero-warning cleanup. No warning suppression remains. An entry stays
-here only when a deeper architectural decision is required; ordinary cleanup
-work does not belong in this file.
+during the zero-warning cleanup. No unaudited warning suppression remains; the
+small compatibility and benchmark exception set is pinned in
+`scripts/warning-exceptions.json`. An entry stays here only when a deeper
+architectural decision is required; ordinary cleanup work does not belong in
+this file.
 
 ## Protected artifacts
 
@@ -22,20 +24,20 @@ work does not belong in this file.
 - Location: `src/abi/src/lib.rs`, specifically `MechStatusV1` and
   `MechKernelKindV1`.
 - Preserved behavior: both remain transparent integer newtypes, keep every v1
-  numeric value, and continue to admit unknown values from independently built
-  dynamic modules. Their associated constants now use Rust's warning-clean
-  uppercase spelling.
-- Compatibility issue: the former CamelCase associated-constant spellings were
-  public Rust source API, but Rust diagnoses those spellings unless the
-  `non_upper_case_globals` warning is suppressed. Keeping them would therefore
-  violate the project's no-suppression contract. Turning the newtypes into
-  enums would keep CamelCase names warning-clean, but would make unknown FFI
-  discriminants invalid and remove the forward-compatible `MechStatusV1(99)`
-  representation.
+  numeric value, continue to admit unknown values from independently built
+  dynamic modules, and expose both the original CamelCase source names and the
+  warning-clean uppercase aliases.
+- Compatibility issue: the CamelCase associated-constant spellings are public
+  Rust source API, but Rust diagnoses them under `non_upper_case_globals`.
+  Their two narrowly scoped `expect` attributes are therefore frozen ABI
+  exceptions with owners, reasons, occurrence counts, and expiry conditions.
+  Turning the newtypes into enums would avoid that exception, but would make
+  unknown FFI discriminants invalid and remove the forward-compatible
+  `MechStatusV1(99)` representation.
 - Deeper question: decide whether the Rust-facing API needs an explicitly
   versioned compatibility layer distinct from the open integer wire ABI. That
-  decision should be made as an ABI/API migration, not hidden behind another
-  warning exemption.
+  decision should be made as an ABI/API migration, after which the audited
+  exception can expire.
 
 ### `LegacyValue` execution-model cutover
 
@@ -96,7 +98,9 @@ work does not belong in this file.
   compiler paths, then address the remaining Clippy design lints without adding
   lint exemptions. Rust compiler and rustdoc warning builds are clean today;
   `cargo clippy --workspace --all-targets -- -D warnings` is intentionally
-  recorded as unfinished rather than suppressed.
+  recorded as unfinished. The restored `solve_result_overhead` benchmark has
+  two audited Clippy expectations because those exact representations are the
+  contracts it measures; production code has no Clippy-wide exemption.
 
 ### Mutually exclusive root feature profiles
 
@@ -141,8 +145,26 @@ work does not belong in this file.
   publication of an externally coordinated resident turn. Rust has no friend
   crate visibility with which to express that relationship directly.
 - Deeper question: replace the unsafe cross-crate marker with an equally narrow
-  capability design. Until then, `scripts/check-warning-policy.py` prevents the
+  capability design. Until then, the dedicated
+  `scripts/check-unsafe-boundaries.sh` five-field allowlist prevents the
   boundary from expanding silently.
+
+### Historical D2 dependency lock provenance
+
+- Location: the archived D2 fixture at commit
+  `96fd051608f9d9df9eb4e9b345af7c23279c6c67`, exercised by
+  `scripts/d2_historical_evidence.py`.
+- Preserved evidence: each run extracts the immutable historical source,
+  materializes its dependencies, then executes with `--locked --offline`; the
+  generated D2 projections remain frozen and are compared with the current
+  executor.
+- Limitation: the archived fixture did not contain a `Cargo.lock`, so its first
+  dependency materialization cannot itself use `--locked`. Attempting that
+  correctly fails because Cargo is forbidden to create the missing lockfile.
+- Deeper question: preserve a reviewed historical lockfile or vendor snapshot
+  as part of the evidence contract. Until then, execution is deterministic
+  within each materialized run, but dependency selection begins from the
+  historical manifest and the available registry index.
 
 ### Legacy operation-contract and artifact projections
 
@@ -292,10 +314,10 @@ work does not belong in this file.
   catalog contract explicitly requires `exp`, `exp2`, `exp10`, and `expm1` to
   remain absent. The existing public Cargo feature names remain no-op as they
   were before this cleanup.
-- Removed the completed `solve_result_overhead` comparison benchmark. It existed
-  only to compare an old void dispatch, the current result dispatch, and a typed
-  split experiment, and required two Clippy suppressions to retain intentionally
-  lint-triggering representations.
+- Restored the completed `solve_result_overhead` comparison benchmark after API
+  review determined that a benchmark is a retained engineering artifact even
+  when it has no production caller. Its two intentional Clippy findings are
+  exact, reasoned expectations in the audited exception contract.
 - Replaced dependency-feature-sensitive catch-all matches in integrity, source
   indexing, and config compilation with feature-stable control flow. Their three
   `unreachable_patterns` suppressions are gone.

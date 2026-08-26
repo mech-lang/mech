@@ -199,7 +199,7 @@ pub trait CopyMat<T> {
     #[cfg(feature = "vectord")]
     fn copy_into_v(&self, dst: &Ref<DVector<T>>, offset: usize) -> usize;
     #[cfg(feature = "row_vectord")]
-    fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize);
+    fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize;
     #[cfg(feature = "matrixd")]
     fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize;
     fn addr(&self) -> usize;
@@ -236,12 +236,13 @@ macro_rules! copy_mat {
                 src_ptr.len()
             }
             #[cfg(feature = "row_vectord")]
-            fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) {
+            fn copy_into_r(&self, dst: &Ref<RowDVector<T>>, offset: usize) -> usize {
                 let src_ptr = unsafe { (*(self.as_ptr())).clone() };
                 let dst_ptr = unsafe { &mut *(dst.as_mut_ptr()) };
                 for i in 0..src_ptr.len() {
                     dst_ptr[i + offset] = src_ptr[i].clone();
                 }
+                src_ptr.len()
             }
             #[cfg(feature = "matrixd")]
             fn copy_into_row_major(&self, dst: &Ref<DMatrix<T>>, offset: usize) -> usize {

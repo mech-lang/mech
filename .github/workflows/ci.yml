@@ -75,7 +75,8 @@ jobs:
           python3 -B -m unittest \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \
-            scripts/tests/test_check_value_execution_boundary.py
+            scripts/tests/test_check_value_execution_boundary.py \
+            scripts/tests/test_warning_policy.py
           python3 scripts/check-bytecode-v1-format.py
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard

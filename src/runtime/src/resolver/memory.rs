@@ -253,14 +253,29 @@ impl InMemorySourceResolver {
             resolved
         };
 
-        self.insert_source(specifier, resolved)
-            .expect("in-memory source builder constructed an invalid resolved source");
+        if self.insert_source(specifier, resolved).is_err() {
+            // Preserve the established infallible-builder contract: invalid
+            // entries are left absent and can be reported by later resolution.
+            return self;
+        }
         self
     }
 
+    pub fn try_with_source(
+        mut self,
+        specifier: impl Into<String>,
+        source: ResolvedSource,
+    ) -> MResult<Self> {
+        self.insert_source(specifier, source)?;
+        Ok(self)
+    }
+
     pub fn with_source(mut self, specifier: impl Into<String>, source: ResolvedSource) -> Self {
-        self.insert_source(specifier, source)
-            .expect("in-memory source builder received an invalid resolved source");
+        if self.insert_source(specifier, source).is_err() {
+            // Preserve source compatibility for the historical infallible
+            // builder. New callers that need validation use try_with_source.
+            return self;
+        }
         self
     }
 
@@ -769,6 +784,34 @@ mod tests {
         );
 
         assert!(resolver.insert_source("bad", bad).is_err());
+    }
+
+    #[test]
+    fn try_with_source_reports_invalid_resolved_source() {
+        let bad = ResolvedSource::new(
+            "",
+            "memory:bad",
+            MechSourceCode::String("x := 1".to_string()),
+        );
+
+        assert!(
+            InMemorySourceResolver::new()
+                .try_with_source("bad", bad)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn with_source_preserves_non_panicking_compatibility_behavior() {
+        let bad = ResolvedSource::new(
+            "",
+            "memory:bad",
+            MechSourceCode::String("x := 1".to_string()),
+        );
+
+        let resolver = InMemorySourceResolver::new().with_source("bad", bad);
+
+        assert!(!resolver.contains("bad"));
     }
 
     #[test]

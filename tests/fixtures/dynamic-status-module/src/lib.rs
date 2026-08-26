@@ -21,7 +21,7 @@ mech_abi::mech_dynamic_module_v1! {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn status_test_unary(input: f64, out: *mut f64) -> MechStatusV1 {
     if out.is_null() {
-        return MechStatusV1::NULL_POINTER;
+        return MechStatusV1::NullPointer;
     }
 
     unsafe {
@@ -29,16 +29,16 @@ pub unsafe extern "C" fn status_test_unary(input: f64, out: *mut f64) -> MechSta
     }
 
     if input == 2.0 {
-        MechStatusV1::WRONG_SHAPE
+        MechStatusV1::WrongShape
     } else {
-        MechStatusV1::OK
+        MechStatusV1::Ok
     }
 }
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn status_test_binary(lhs: f64, rhs: f64, out: *mut f64) -> MechStatusV1 {
     if out.is_null() {
-        return MechStatusV1::NULL_POINTER;
+        return MechStatusV1::NullPointer;
     }
 
     unsafe {
@@ -46,9 +46,9 @@ pub unsafe extern "C" fn status_test_binary(lhs: f64, rhs: f64, out: *mut f64) -
     }
 
     if lhs == 2.0 {
-        MechStatusV1::UNSUPPORTED
+        MechStatusV1::Unsupported
     } else {
-        MechStatusV1::OK
+        MechStatusV1::Ok
     }
 }
 
@@ -58,7 +58,7 @@ pub unsafe extern "C" fn status_test_view(
     out: MechF64ViewMutV1,
 ) -> MechStatusV1 {
     let Some(expected_len) = input.rows.checked_mul(input.cols) else {
-        return MechStatusV1::WRONG_SHAPE;
+        return MechStatusV1::WrongShape;
     };
 
     if input.len != out.len
@@ -66,15 +66,15 @@ pub unsafe extern "C" fn status_test_view(
         || input.cols != out.cols
         || input.len != expected_len
     {
-        return MechStatusV1::WRONG_SHAPE;
+        return MechStatusV1::WrongShape;
     }
 
     if input.len > 0 && (input.ptr.is_null() || out.ptr.is_null()) {
-        return MechStatusV1::NULL_POINTER;
+        return MechStatusV1::NullPointer;
     }
 
     if input.len == 0 {
-        return MechStatusV1::OK;
+        return MechStatusV1::Ok;
     }
 
     let input_values = unsafe { std::slice::from_raw_parts(input.ptr, input.len) };
@@ -88,6 +88,6 @@ pub unsafe extern "C" fn status_test_view(
     if should_fail {
         MechStatusV1::PANIC
     } else {
-        MechStatusV1::OK
+        MechStatusV1::Ok
     }
 }

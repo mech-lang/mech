@@ -14,6 +14,20 @@ impl MechStatusV1 {
     pub const PANIC: Self = Self(6);
 }
 
+#[expect(
+    non_upper_case_globals,
+    reason = "Mech module ABI V1 source names are frozen compatibility aliases"
+)]
+impl MechStatusV1 {
+    pub const Ok: Self = Self::OK;
+    pub const InvalidIndex: Self = Self::INVALID_INDEX;
+    pub const NullPointer: Self = Self::NULL_POINTER;
+    pub const WrongType: Self = Self::WRONG_TYPE;
+    pub const WrongShape: Self = Self::WRONG_SHAPE;
+    pub const Unsupported: Self = Self::UNSUPPORTED;
+    pub const Panic: Self = Self::PANIC;
+}
+
 /// Borrowed UTF-8 string view owned by the dynamic module.
 ///
 /// The pointer must be non-null when `len > 0`.
@@ -78,6 +92,16 @@ impl MechKernelKindV1 {
     pub const UNARY_F64_TO_F64: Self = Self(1);
     pub const BINARY_F64_F64_TO_F64: Self = Self(2);
     pub const UNARY_F64_VIEW_TO_F64_VIEW: Self = Self(3);
+}
+
+#[expect(
+    non_upper_case_globals,
+    reason = "Mech module ABI V1 source names are frozen compatibility aliases"
+)]
+impl MechKernelKindV1 {
+    pub const UnaryF64ToF64: Self = Self::UNARY_F64_TO_F64;
+    pub const BinaryF64F64ToF64: Self = Self::BINARY_F64_F64_TO_F64;
+    pub const UnaryF64ViewToF64View: Self = Self::UNARY_F64_VIEW_TO_F64_VIEW;
 }
 
 /// Kernel for a unary scalar f64 function.
@@ -245,5 +269,28 @@ mod tests {
         assert_eq!(MechKernelKindV1::UNARY_F64_TO_F64.0, 1);
         assert_eq!(MechKernelKindV1::BINARY_F64_F64_TO_F64.0, 2);
         assert_eq!(MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW.0, 3);
+    }
+
+    #[test]
+    fn v1_source_compatibility_aliases_are_stable() {
+        assert_eq!(MechStatusV1::Ok, MechStatusV1::OK);
+        assert_eq!(MechStatusV1::InvalidIndex, MechStatusV1::INVALID_INDEX);
+        assert_eq!(MechStatusV1::NullPointer, MechStatusV1::NULL_POINTER);
+        assert_eq!(MechStatusV1::WrongType, MechStatusV1::WRONG_TYPE);
+        assert_eq!(MechStatusV1::WrongShape, MechStatusV1::WRONG_SHAPE);
+        assert_eq!(MechStatusV1::Unsupported, MechStatusV1::UNSUPPORTED);
+        assert_eq!(MechStatusV1::Panic, MechStatusV1::PANIC);
+        assert_eq!(
+            MechKernelKindV1::UnaryF64ToF64,
+            MechKernelKindV1::UNARY_F64_TO_F64
+        );
+        assert_eq!(
+            MechKernelKindV1::BinaryF64F64ToF64,
+            MechKernelKindV1::BINARY_F64_F64_TO_F64
+        );
+        assert_eq!(
+            MechKernelKindV1::UnaryF64ViewToF64View,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW
+        );
     }
 }
