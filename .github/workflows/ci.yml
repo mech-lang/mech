@@ -72,6 +72,7 @@ jobs:
           scripts/check-unsafe-boundaries.sh
           python3 scripts/check-runtime-factory-safety.py
           python3 scripts/check-value-execution-boundary.py
+          python3 scripts/check-value-system-contract.py --mode retirement
           python3 -B -m unittest \
             scripts/tests/test_check_obsolete_program_reachability.py \
             scripts/tests/test_check_compiler_planning_quarantine.py \

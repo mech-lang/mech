@@ -76,10 +76,30 @@ class FullWorkflowContractTests(unittest.TestCase):
                     )
                 )
 
-    def test_value_system_contract_is_permanent_and_unwaived(self):
-        block = job_block(FULL, "architecture-contracts")
-        self.assertIn("scripts/check-value-system-contract.py", block)
-        self.assertNotIn("allow-only-c0-gate-b-evidence-stale", block)
+    def test_value_system_retirement_contract_is_permanent_and_unwaived(self):
+        static = job_block(CI, "static-contracts")
+        architecture = job_block(FULL, "architecture-contracts")
+        retirement = (
+            "python3 scripts/check-value-system-contract.py --mode retirement"
+        )
+        plain_inventory_check = re.compile(
+            r"(?m)^\s*python3 scripts/generate-value-system-inventory\.py "
+            r"--check\s*$"
+        )
+
+        self.assertIn(retirement, static)
+        self.assertIn(retirement, architecture)
+        self.assertRegex(
+            architecture,
+            r"(?m)^\s*python3 scripts/generate-value-system-inventory\.py \\\n"
+            r"\s*--git-ref d5e41f6fd43c9d21c5858d80dab50e7ce64e9a10 \\\n"
+            r"\s*--check-legacy-baseline\s*$",
+        )
+        self.assertNotRegex(architecture, plain_inventory_check)
+        for block in (static, architecture):
+            self.assertNotIn("--mode exact", block)
+            self.assertNotIn("continue-on-error", block)
+            self.assertNotIn("allow-only-c0-gate-b-evidence-stale", block)
 
     def test_architecture_contracts_prefetch_before_offline_historical_evidence(self):
         block = job_block(FULL, "architecture-contracts")
