@@ -24,6 +24,7 @@ fn decode_bundle(root: &Path) -> serde_json::Value {
     serde_json::from_slice(&decoded).unwrap()
 }
 
+#[cfg(unix)]
 fn source_specifiers(bundle: &serde_json::Value) -> Vec<&str> {
     bundle["sources"]
         .as_array()

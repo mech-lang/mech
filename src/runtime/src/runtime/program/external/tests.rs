@@ -3,13 +3,12 @@ use std::sync::{Arc, LazyLock, Mutex};
 use mech_core::{
     AccessMode, ApplicationRequirement, ApplicationRequirementId, BindingId, CellSlotId,
     ChangeDetectionPolicy, DeclaredOperationContract, DeliveryMode, EffectContract,
-    EffectDeliveryPolicy, ExecutionHostFunctionRequest, ExecutionResourceRequest,
-    ExternalInteraction, IdempotencyRequirement, InputPortLayout, InputPortPolicy, LegacyValue,
-    MResult, MechError, MechExecutionServices, NodeId, ObservationContract,
+    EffectDeliveryPolicy, ExecutionResourceRequest, ExternalInteraction, IdempotencyRequirement,
+    InputPortLayout, InputPortPolicy, LegacyValue, MResult, MechError, NodeId, ObservationContract,
     ObservationReplayPolicy, OperationContractDeclaration, OperationContractTableBuilder,
     OutputConstruction, OutputPortPolicy, ParsedProgram, ReactiveInstanceId, ResolvedInputPort,
     ResolvedOperationContract, ResourceDelivery, ResourceIntent, ShapeRule, ToMatrix,
-    TransactionalEffectProtocol, TransactionalExternalContract, ValRef,
+    TransactionalEffectProtocol, TransactionalExternalContract,
     snapshot::{SequenceView, ValueData},
 };
 use mech_engine::{

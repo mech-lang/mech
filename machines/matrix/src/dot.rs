@@ -1,7 +1,6 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 
 // MatMul ---------------------------------------------------------------------
 
@@ -14,6 +13,7 @@ macro_rules! checked_mul_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! checked_dot_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -38,6 +38,7 @@ macro_rules! checked_dot_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! impl_dot {
     ($name:ident, $type1:ty, $type2:ty, $out_type:ty) => {
         impl_checked_matrix_binop!($name, $type1, $type2, $out_type, checked_dot_op);

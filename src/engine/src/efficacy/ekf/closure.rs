@@ -1,5 +1,6 @@
 //! Semantic admission and normalization for the frozen EKF artifact.
 
+use mech_core::matrix::Matrix as RuntimeMatrix;
 use mech_core::snapshot::SequenceView;
 use mech_core::{
     AccessMode, AliasPolicy, CellSlotId, ChangeDetectionPolicy, ConstantId, DeliveryMode,
@@ -12,7 +13,7 @@ use mech_core::{
 use nalgebra::DVector;
 
 use crate::{
-    ArtifactSource, CompilerPlanningConfig, CompilerPlanningProgram, Matrix, ProgramArtifact,
+    ArtifactSource, CompilerPlanningConfig, CompilerPlanningProgram, ProgramArtifact,
     decode_program_artifact_bytecode_v1,
 };
 
@@ -947,9 +948,9 @@ impl FrozenEkfCompilationServices {
 
     pub fn from_frames(frame: [f64; 4], planning_frame: [f64; 4]) -> Self {
         let frame_value = |values: [f64; 4]| {
-            LegacyValue::MatrixF64(Matrix::DVector(mech_core::Ref::new(DVector::from_vec(
-                values.to_vec(),
-            ))))
+            LegacyValue::MatrixF64(RuntimeMatrix::DVector(mech_core::Ref::new(
+                DVector::from_vec(values.to_vec()),
+            )))
         };
         Self {
             frame: frame_value(frame),

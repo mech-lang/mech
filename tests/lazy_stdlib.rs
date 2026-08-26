@@ -1,6 +1,6 @@
-#![cfg(feature = "full_source")]
+#![cfg(all(feature = "full_source", feature = "project"))]
 
-use mech::RuntimeBuilder;
+use mech_runtime::RuntimeBuilder;
 
 fn run(source: &str) -> bool {
     RuntimeBuilder::new()

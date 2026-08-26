@@ -1499,6 +1499,30 @@ fn variable_definition_metadata_and_state_survive_resident_bytecode_admission() 
 }
 
 #[test]
+fn repeated_user_function_locals_do_not_enter_the_root_symbol_namespace() {
+    const SOURCE: &str = r#"
+increment(x<f32>) = y<f32> :=
+  local := x + 1f32
+  y := local.
+
+first := increment(1f32)
+second := increment(2f32)
+second
+"#;
+
+    let mut compiler = RuntimeBuilder::new()
+        .function_catalog(mech_stdlib::source_catalog())
+        .build_compiler()
+        .unwrap();
+    let product = compiler.compile_source(SOURCE).unwrap();
+    let parsed = ParsedProgram::from_bytes(product.bytecode()).unwrap();
+
+    assert!(parsed.symbols.contains_key(&hash_str("first")));
+    assert!(parsed.symbols.contains_key(&hash_str("second")));
+    assert!(!parsed.symbols.contains_key(&hash_str("local")));
+}
+
+#[test]
 fn literal_scalar_output_is_published_without_fake_state() {
     let mut source_runtime = runtime();
     let loaded = source_runtime

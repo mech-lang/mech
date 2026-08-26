@@ -1,3 +1,5 @@
+#![cfg(any(feature = "distribution-standard", feature = "distribution-full"))]
+
 #[path = "support/bytecode/catalog.rs"]
 mod catalog;
 #[path = "support/bytecode/dynamic_matrix_factory.rs"]

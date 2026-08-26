@@ -54,6 +54,7 @@ activation_error!(
     ActivationPatternTriggerInvariant,
     "Activation trigger root cells disagree with the resolved trigger."
 );
+#[cfg(not(any(feature = "bool", feature = "variable_define")))]
 activation_error!(
     ActivationPatternTransactionBoolStateUnsupported,
     "Patterned activation transaction state requires boolean values."

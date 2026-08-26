@@ -1,9 +1,9 @@
 use crate::*;
-use colored::Colorize;
+#[cfg(feature = "no_std")]
+use alloc::collections::{BTreeMap, BTreeSet};
 use mech_core::nodes::{Kind, Matrix};
-use mech_core::*;
-use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
-use std::io::{Cursor, Read, Write};
+#[cfg(not(feature = "no_std"))]
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Default)]
 struct TitleSlots {
@@ -220,7 +220,7 @@ impl MechErrorKind for InvalidCitationLinkCountError {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Formatter {
-    identifiers: HashMap<u64, String>,
+    identifiers: BTreeMap<u64, String>,
     rows: usize,
     cols: usize,
     indent: usize,
@@ -234,13 +234,13 @@ pub struct Formatter {
     h5_num: usize,
     h6_num: usize,
     citation_num: usize,
-    citation_map: HashMap<u64, usize>,
+    citation_map: BTreeMap<u64, usize>,
     citations: Vec<String>,
     footnote_num: usize,
-    footnote_map: HashMap<u64, usize>,
+    footnote_map: BTreeMap<u64, usize>,
     footnotes: Vec<String>,
     interpreter_id: u64,
-    inline_eval_counters: HashMap<u64, u64>,
+    inline_eval_counters: BTreeMap<u64, u64>,
 }
 
 impl Formatter {
@@ -287,7 +287,7 @@ impl Formatter {
 
     pub fn new() -> Formatter {
         Formatter {
-            identifiers: HashMap::new(),
+            identifiers: BTreeMap::new(),
             rows: 0,
             cols: 0,
             indent: 0,
@@ -297,17 +297,17 @@ impl Formatter {
             h5_num: 0,
             h6_num: 0,
             citation_num: 0,
-            citation_map: HashMap::new(),
+            citation_map: BTreeMap::new(),
             citations: Vec::new(),
             footnote_num: 0,
-            footnote_map: HashMap::new(),
+            footnote_map: BTreeMap::new(),
             footnotes: Vec::new(),
             figure_num: 0,
             html: false,
             nested: false,
             toc: false,
             interpreter_id: 0,
-            inline_eval_counters: HashMap::new(),
+            inline_eval_counters: BTreeMap::new(),
         }
     }
 
@@ -426,7 +426,7 @@ impl Formatter {
         #[cfg(feature = "serde")]
         let encoded_tree = match compress_and_encode(&tree) {
             Ok(encoded) => encoded,
-            Err(e) => todo!(),
+            Err(error) => panic!("failed to encode syntax tree: {error:?}"),
         };
         #[cfg(not(feature = "serde"))]
         let encoded_tree = String::new();
@@ -695,8 +695,7 @@ impl Formatter {
 
     pub fn sections(&mut self, sections: &Vec<Section>) -> String {
         let mut src = "".to_string();
-        let section_count = sections.len();
-        for (i, section) in sections.iter().enumerate() {
+        for section in sections {
             let s = self.section(section);
             src = format!("{}{}", src, s);
         }
@@ -872,8 +871,7 @@ impl Formatter {
 
     pub fn body(&mut self, node: &Body) -> String {
         let mut src = "".to_string();
-        let section_count = node.sections.len();
-        for (i, section) in node.sections.iter().enumerate() {
+        for section in &node.sections {
             let s = self.section(section);
             src = format!("{}{}", src, s);
         }
@@ -988,14 +986,6 @@ impl Formatter {
             )
         } else {
             format!("$${}$$", node.to_string())
-        }
-    }
-
-    fn highlight(&mut self, node: &Token) -> String {
-        if self.html {
-            format!("<mark class=\"mech-highlight\">{}</mark>", node.to_string())
-        } else {
-            format!("!!{}!!", node.to_string())
         }
     }
 
@@ -1487,7 +1477,6 @@ impl Formatter {
     }
 
     pub fn float(&mut self, node: &Box<SectionElement>, float_dir: &FloatDirection) -> String {
-        let mut src = "".to_string();
         let id = hash_str(&format!("float-{:?}", *node));
         let (float_class, float_sigil) = match float_dir {
             FloatDirection::Left => ("mech-float left", "<<"),
@@ -2105,7 +2094,7 @@ impl Formatter {
 
     pub fn check_list(&mut self, node: &CheckList) -> String {
         let mut lis = "".to_string();
-        for (i, ((checked, item), sublist)) in node.iter().enumerate() {
+        for ((checked, item), sublist) in node {
             let it = self.paragraph(item);
             if self.html {
                 lis = format!(
@@ -2134,7 +2123,7 @@ impl Formatter {
 
     pub fn ordered_list(&mut self, node: &OrderedList) -> String {
         let mut lis = "".to_string();
-        for (i, ((num, item), sublist)) in node.items.iter().enumerate() {
+        for (i, ((_, item), sublist)) in node.items.iter().enumerate() {
             let it = self.paragraph(item);
             if self.html {
                 lis = format!("{}<li class=\"mech-ol-list-item\">{}</li>", lis, it);
@@ -2162,7 +2151,7 @@ impl Formatter {
 
     pub fn unordered_list(&mut self, node: &UnorderedList) -> String {
         let mut lis = "".to_string();
-        for (i, ((bullet, item), sublist)) in node.iter().enumerate() {
+        for ((bullet, item), sublist) in node {
             let it = self.paragraph(item);
             match (bullet, self.html) {
                 (Some(bullet_tok), true) => {
@@ -2732,7 +2721,7 @@ impl Formatter {
     }
 
     pub fn variable_define(&mut self, node: &VariableDefine) -> String {
-        let mut mutable = if node.mutable {
+        let mutable = if node.mutable {
             "~".to_string()
         } else {
             "".to_string()
@@ -3753,7 +3742,7 @@ impl Formatter {
 
     pub fn table_header(&mut self, node: &TableHeader) -> String {
         let mut src = "".to_string();
-        for (i, field) in node.0.iter().enumerate() {
+        for field in &node.0 {
             let f = self.field(field);
             if self.html {
                 src = format!("{}<th class=\"mech-table-field\">{}</th>", src, f);
@@ -4536,11 +4525,10 @@ impl Formatter {
         let mut result = String::new();
         let mut indent_level = 0;
         let mut in_special_tag = false;
-        let mut special_tag = "";
         let chars: Vec<char> = input.chars().collect();
         let mut i = 0;
 
-        let self_closing_tags = HashSet::from([
+        let self_closing_tags = BTreeSet::from([
             "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
             "source", "track", "wbr",
         ]);
@@ -4557,7 +4545,7 @@ impl Formatter {
                 && (matches_tag(&chars, i, "<pre") || matches_tag(&chars, i, "<code"))
             {
                 in_special_tag = true;
-                special_tag = if matches_tag(&chars, i, "<pre") {
+                let special_tag = if matches_tag(&chars, i, "<pre") {
                     "pre"
                 } else {
                     "code"

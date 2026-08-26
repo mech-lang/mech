@@ -272,7 +272,7 @@ pub fn browser_wake_interval_ms(scheduler: &FixedStepScheduler) -> i32 {
 }
 impl<B: MonotonicTimerBackend> Drop for BrowserTimerInputDriver<B> {
     fn drop(&mut self) {
-        let _ = self.stop();
+        drop(self.stop());
     }
 }
 

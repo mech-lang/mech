@@ -1,6 +1,6 @@
 use mech_core::{
-    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, MResult, MechFunctionFactory,
-    RuntimeFunctionContract, RuntimeOutputAliasPolicy, LegacyValue, function_shape_contract_violation,
+    FunctionArgs, FunctionArgumentRole, FunctionCatalogBuilder, LegacyValue, MResult,
+    RuntimeFunctionContract, RuntimeOutputAliasPolicy, function_shape_contract_violation,
 };
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
@@ -73,29 +73,25 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-macro_rules! install_range_factory {
-    ($builder:expr, $module:ident, $factory:ident, $scalar:ty, $scalar_name:literal, $shape:ident) => {
-        $builder.insert_runtime_factory::<crate::$module::$factory<$scalar, $shape<$scalar>>>(
-            concat!(
-                stringify!($factory),
-                "<",
-                $scalar_name,
-                stringify!($shape),
-                ">"
-            ),
-            RuntimeFunctionContract::custom(
-                "range_construction",
-                RuntimeOutputAliasPolicy::DisallowInputAlias,
-                range_contract_validator!($module),
-            ),
-        )?;
-    };
-}
-
 #[derive(Clone, Copy, Debug)]
 enum RangeContractNumber {
+    #[cfg(any(
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128"
+    ))]
     Unsigned(u128),
+    #[cfg(any(
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128"
+    ))]
     Signed(i128),
+    #[cfg(any(feature = "f32", feature = "f64"))]
     Float(f64),
 }
 
@@ -129,6 +125,18 @@ fn range_numeric_value(value: &LegacyValue) -> Option<RangeContractNumber> {
     }
 }
 
+#[cfg(any(
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128"
+))]
 fn integer_range_size(magnitude: u128, step: u128, inclusive: bool) -> Option<usize> {
     let size = if inclusive {
         magnitude.checked_div(step)?.checked_add(1)?
@@ -139,6 +147,7 @@ fn integer_range_size(magnitude: u128, step: u128, inclusive: bool) -> Option<us
     usize::try_from(size).ok()
 }
 
+#[cfg(any(feature = "f32", feature = "f64"))]
 fn float_range_size(from: f64, step: f64, to: f64, inclusive: bool) -> Option<usize> {
     if !from.is_finite() || !step.is_finite() || !to.is_finite() || step == 0.0 {
         return None;
@@ -162,7 +171,16 @@ fn float_range_size(from: f64, step: f64, to: f64, inclusive: bool) -> Option<us
     Some(size as usize)
 }
 
-#[cfg(all(test, feature = "u64", feature = "u128", feature = "matrixd"))]
+#[cfg(all(
+    test,
+    feature = "u64",
+    feature = "u128",
+    feature = "matrixd",
+    feature = "exclusive",
+    feature = "exclusive_increment",
+    feature = "inclusive",
+    feature = "inclusive_increment"
+))]
 mod exact_range_contract_tests {
     use super::*;
     use mech_core::{Ref, matrix::Matrix};
@@ -228,10 +246,24 @@ fn range_contract_size(
     incremented: bool,
 ) -> Option<usize> {
     match (values, incremented) {
+        #[cfg(any(
+            feature = "u8",
+            feature = "u16",
+            feature = "u32",
+            feature = "u64",
+            feature = "u128"
+        ))]
         ([RangeContractNumber::Unsigned(from), RangeContractNumber::Unsigned(to)], false) => {
             let magnitude = to.checked_sub(*from)?;
             integer_range_size(magnitude, 1, inclusive)
         }
+        #[cfg(any(
+            feature = "i8",
+            feature = "i16",
+            feature = "i32",
+            feature = "i64",
+            feature = "i128"
+        ))]
         ([RangeContractNumber::Signed(from), RangeContractNumber::Signed(to)], false) => {
             if to < from {
                 Some(0)
@@ -239,9 +271,17 @@ fn range_contract_size(
                 integer_range_size(to.abs_diff(*from), 1, inclusive)
             }
         }
+        #[cfg(any(feature = "f32", feature = "f64"))]
         ([RangeContractNumber::Float(from), RangeContractNumber::Float(to)], false) => {
             float_range_size(*from, 1.0, *to, inclusive)
         }
+        #[cfg(any(
+            feature = "u8",
+            feature = "u16",
+            feature = "u32",
+            feature = "u64",
+            feature = "u128"
+        ))]
         (
             [
                 RangeContractNumber::Unsigned(from),
@@ -258,6 +298,13 @@ fn range_contract_size(
                 integer_range_size(to - from, *step, inclusive)
             }
         }
+        #[cfg(any(
+            feature = "i8",
+            feature = "i16",
+            feature = "i32",
+            feature = "i64",
+            feature = "i128"
+        ))]
         (
             [
                 RangeContractNumber::Signed(from),
@@ -277,6 +324,7 @@ fn range_contract_size(
             }
             integer_range_size(to.abs_diff(*from), step.unsigned_abs(), inclusive)
         }
+        #[cfg(any(feature = "f32", feature = "f64"))]
         (
             [
                 RangeContractNumber::Float(from),
@@ -347,18 +395,22 @@ fn validate_range_contract(args: &FunctionArgs, inclusive: bool, incremented: bo
     Ok(())
 }
 
+#[cfg(feature = "exclusive")]
 pub(crate) fn validate_range_exclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, false, false)
 }
 
+#[cfg(feature = "inclusive")]
 pub(crate) fn validate_range_inclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, true, false)
 }
 
+#[cfg(feature = "exclusive")]
 pub(crate) fn validate_range_increment_exclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, false, true)
 }
 
+#[cfg(feature = "inclusive")]
 pub(crate) fn validate_range_increment_inclusive(args: &FunctionArgs) -> MResult<()> {
     validate_range_contract(args, true, true)
 }
@@ -376,107 +428,6 @@ macro_rules! range_contract_validator {
     (inclusive_increment) => {
         validate_range_increment_inclusive
     };
-}
-
-macro_rules! install_range_factories_for_type {
-    ($builder:expr, $module:ident, $factory:ident, $scalar:ty, $scalar_name:literal) => {{
-        #[cfg(feature = "matrix1")]
-        install_range_factory!($builder, $module, $factory, $scalar, $scalar_name, Matrix1);
-        #[cfg(all(not(feature = "matrix1"), feature = "matrixd"))]
-        install_range_factory!($builder, $module, $factory, $scalar, $scalar_name, DMatrix);
-        #[cfg(feature = "row_vector2")]
-        install_range_factory!(
-            $builder,
-            $module,
-            $factory,
-            $scalar,
-            $scalar_name,
-            RowVector2
-        );
-        #[cfg(feature = "row_vector3")]
-        install_range_factory!(
-            $builder,
-            $module,
-            $factory,
-            $scalar,
-            $scalar_name,
-            RowVector3
-        );
-        #[cfg(feature = "row_vector4")]
-        install_range_factory!(
-            $builder,
-            $module,
-            $factory,
-            $scalar,
-            $scalar_name,
-            RowVector4
-        );
-        #[cfg(feature = "row_vectord")]
-        install_range_factory!(
-            $builder,
-            $module,
-            $factory,
-            $scalar,
-            $scalar_name,
-            RowDVector
-        );
-    }};
-}
-
-macro_rules! install_range_operation_runtime {
-    ($builder:expr, $module:ident, $factory:ident) => {{
-        #[cfg(feature = "f32")]
-        install_range_factories_for_type!($builder, $module, $factory, f32, "f32");
-        #[cfg(feature = "f64")]
-        install_range_factories_for_type!($builder, $module, $factory, f64, "f64");
-        #[cfg(feature = "i8")]
-        install_range_factories_for_type!($builder, $module, $factory, i8, "i8");
-        #[cfg(feature = "i16")]
-        install_range_factories_for_type!($builder, $module, $factory, i16, "i16");
-        #[cfg(feature = "i32")]
-        install_range_factories_for_type!($builder, $module, $factory, i32, "i32");
-        #[cfg(feature = "i64")]
-        install_range_factories_for_type!($builder, $module, $factory, i64, "i64");
-        #[cfg(feature = "i128")]
-        install_range_factories_for_type!($builder, $module, $factory, i128, "i128");
-        #[cfg(feature = "u8")]
-        install_range_factories_for_type!($builder, $module, $factory, u8, "u8");
-        #[cfg(feature = "u16")]
-        install_range_factories_for_type!($builder, $module, $factory, u16, "u16");
-        #[cfg(feature = "u32")]
-        install_range_factories_for_type!($builder, $module, $factory, u32, "u32");
-        #[cfg(feature = "u64")]
-        install_range_factories_for_type!($builder, $module, $factory, u64, "u64");
-        #[cfg(feature = "u128")]
-        install_range_factories_for_type!($builder, $module, $factory, u128, "u128");
-    }};
-}
-
-/// Legacy direct-registration implementation retained while the native
-/// declaration traversal below owns the active runtime path.
-fn install_legacy_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(feature = "exclusive")]
-    {
-        install_range_operation_runtime!(builder, exclusive, RangeExclusiveScalar);
-        // The legacy module gate compiles increment factories with `exclusive`,
-        // even when the named source operation is not exported.
-        install_range_operation_runtime!(
-            builder,
-            exclusive_increment,
-            RangeIncrementExclusiveScalar
-        );
-    }
-    #[cfg(feature = "inclusive")]
-    {
-        install_range_operation_runtime!(builder, inclusive, RangeInclusiveScalar);
-        // Preserve the matching legacy module-gate quirk for parity.
-        install_range_operation_runtime!(
-            builder,
-            inclusive_increment,
-            RangeIncrementInclusiveScalar
-        );
-    }
-    Ok(())
 }
 
 macro_rules! for_each_range_scalar {

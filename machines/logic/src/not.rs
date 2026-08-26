@@ -1,11 +1,8 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
-use paste::paste;
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use std::ops::Neg;
 use std::ops::Not;
 
 // Not ------------------------------------------------------------------------
@@ -192,7 +189,7 @@ where
 fn impl_not_fxn(arg_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms!(
       Not,
-      (arg_value),
+      arg_value,
       Bool, bool, "bool";
     )
 }

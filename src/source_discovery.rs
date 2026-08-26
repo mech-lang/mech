@@ -1,6 +1,7 @@
+#[cfg(feature = "formatter")]
+use crate::fs_paths::relative_to_base;
 use crate::fs_paths::{
-    canonicalize_for_read, extension_allowed, is_directory_symlink, relative_to_base,
-    unsupported_source_path_error,
+    canonicalize_for_read, extension_allowed, is_directory_symlink, unsupported_source_path_error,
 };
 use mech_core::*;
 use std::collections::BTreeSet;
@@ -10,8 +11,7 @@ use std::path::{Path, PathBuf};
 #[derive(Clone, Debug)]
 pub(crate) struct SourceEntry {
     pub logical_path: PathBuf,
-    pub read_path: PathBuf,
-    pub canonical_path: PathBuf,
+    #[cfg(feature = "formatter")]
     pub relative_path: PathBuf,
 }
 
@@ -44,22 +44,16 @@ pub(crate) struct DiscoveryOptions {
     pub follow_file_symlinks: bool,
     pub follow_dir_symlinks: bool,
     pub missing_path_policy: MissingPathPolicy,
-    pub dedupe_policy: DedupePolicy,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum MissingPathPolicy {
+    #[cfg(feature = "build")]
     Error,
     SkipBrokenSymlink,
 }
 
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum DedupePolicy {
-    LogicalPath,
-    CanonicalPath,
-    None,
-}
-
+#[cfg(feature = "build")]
 pub(crate) fn collect_sources(
     roots: &[PathBuf],
     base_dir: &Path,
@@ -171,9 +165,9 @@ fn collect_one(
         }
         return collect_file(
             logical_path,
-            &canonical,
-            &canonical,
+            #[cfg(feature = "formatter")]
             base_dir,
+            #[cfg(feature = "formatter")]
             project_dir,
             options,
             entries,
@@ -195,12 +189,12 @@ fn collect_one(
             visited_dirs,
         );
     }
-    let canonical = canonicalize_for_read(read_path)?;
+    canonicalize_for_read(read_path)?;
     collect_file(
         logical_path,
-        read_path,
-        &canonical,
+        #[cfg(feature = "formatter")]
         base_dir,
+        #[cfg(feature = "formatter")]
         project_dir,
         options,
         entries,
@@ -313,10 +307,8 @@ fn collect_dir(
 
 fn collect_file(
     logical_path: &Path,
-    read_path: &Path,
-    canonical_path: &Path,
-    base_dir: &Path,
-    project_dir: &Path,
+    #[cfg(feature = "formatter")] base_dir: &Path,
+    #[cfg(feature = "formatter")] project_dir: &Path,
     options: &DiscoveryOptions,
     entries: &mut Vec<SourceEntry>,
     events: &mut Vec<SourceDiscoveryEvent>,
@@ -342,19 +334,14 @@ fn collect_file(
         });
         return Ok(());
     }
+    #[cfg(feature = "formatter")]
     let relative_path = relative_to_base(logical_path, base_dir, project_dir)?;
-    let key = match options.dedupe_policy {
-        DedupePolicy::LogicalPath => logical_path.to_path_buf(),
-        DedupePolicy::CanonicalPath => canonical_path.to_path_buf(),
-        DedupePolicy::None => PathBuf::new(),
-    };
-    if !matches!(options.dedupe_policy, DedupePolicy::None) && !seen.insert(key) {
+    if !seen.insert(logical_path.to_path_buf()) {
         return Ok(());
     }
     entries.push(SourceEntry {
         logical_path: logical_path.to_path_buf(),
-        read_path: read_path.to_path_buf(),
-        canonical_path: canonical_path.to_path_buf(),
+        #[cfg(feature = "formatter")]
         relative_path,
     });
     Ok(())

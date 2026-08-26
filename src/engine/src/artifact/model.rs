@@ -225,6 +225,7 @@ impl ProgramArtifact {
         &self.compute_regions
     }
 
+    #[cfg(feature = "semantic-compiler")]
     pub(crate) fn with_compute_regions(
         self,
         compute_regions: Box<[ComputeRegionDeclaration]>,

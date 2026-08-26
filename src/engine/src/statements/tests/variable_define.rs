@@ -10,6 +10,7 @@ fn var_define_registration_has_no_reactive_inputs() {
         LegacyValue::F64(value),
         LegacyValue::String(Ref::new("defined value".to_string())),
         LegacyValue::Bool(Ref::new(false)),
+        LegacyValue::Bool(Ref::new(true)),
     ];
     let function = VarDefine {}.specialize(&arguments).unwrap();
 

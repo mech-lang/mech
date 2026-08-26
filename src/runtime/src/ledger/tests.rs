@@ -290,6 +290,7 @@ fn wrong_ledger_preparation_is_rejected_before_append() {
 }
 
 #[test]
+#[cfg(any(feature = "runtime_bench_gate_b", feature = "resident-external"))]
 fn invalid_owned_turn_record_is_rejected_during_preparation() {
     let ledger = RetainedTurnLedger::new(1, 4).unwrap();
     let permit = ledger

@@ -49,6 +49,7 @@ impl ValueStateKey {
     }
 }
 
+#[cfg(any(feature = "map", feature = "set"))]
 struct ValueStateHashedCycleDetector {
     active: HashSet<ValueStateKey>,
     complete: HashSet<ValueStateKey>,
@@ -57,6 +58,7 @@ struct ValueStateHashedCycleDetector {
     index: usize,
 }
 
+#[cfg(any(feature = "map", feature = "set"))]
 impl ValueStateHashedCycleDetector {
     fn new(phase: &'static str, collection: &'static str, index: usize) -> Self {
         Self {
@@ -446,8 +448,7 @@ enum ValueStateRoot {
 }
 
 trait ErasedValueStateEntry {
-    fn key(&self) -> ValueStateKey;
-    fn has_before(&self) -> bool;
+    #[cfg(all(test, feature = "map", feature = "set"))]
     fn has_after(&self) -> bool;
     fn preflight_restore_before(&self) -> MResult<()>;
     fn preflight_restore_after(&self) -> MResult<()>;
@@ -460,7 +461,6 @@ struct RefValueStateEntry<T>
 where
     T: Clone + 'static,
 {
-    key: ValueStateKey,
     target: Ref<T>,
     before: Option<T>,
     after: Option<T>,
@@ -486,14 +486,7 @@ impl<T> ErasedValueStateEntry for RefValueStateEntry<T>
 where
     T: Clone + 'static,
 {
-    fn key(&self) -> ValueStateKey {
-        self.key
-    }
-
-    fn has_before(&self) -> bool {
-        self.before.is_some()
-    }
-
+    #[cfg(all(test, feature = "map", feature = "set"))]
     fn has_after(&self) -> bool {
         self.after.is_some()
     }
@@ -771,7 +764,7 @@ impl ValueStateJournal {
         // nested Ref must be preflighted before those operations can run.
         descend(self, &payload, seen)?;
 
-        let _ = snapshot(&payload, side.phase())?;
+        snapshot(&payload, side.phase())?;
         Ok(())
     }
 
@@ -856,7 +849,6 @@ impl ValueStateJournal {
             };
             let index = self.entries.len();
             self.entries.push(Box::new(RefValueStateEntry {
-                key,
                 target: target.clone(),
                 before,
                 after,

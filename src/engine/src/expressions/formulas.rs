@@ -1,19 +1,226 @@
+#[cfg(any(
+    feature = "string_concat",
+    feature = "math_add",
+    feature = "math_sub",
+    feature = "math_mul",
+    feature = "math_div",
+    feature = "math_mod",
+    feature = "math_pow",
+    feature = "matrix_matmul",
+    feature = "matrix_solve",
+    feature = "matrix_dot",
+    feature = "compare_eq",
+    feature = "compare_seq",
+    feature = "compare_neq",
+    feature = "compare_sneq",
+    feature = "compare_lte",
+    feature = "compare_gte",
+    feature = "compare_lt",
+    feature = "compare_gt",
+    feature = "logic_and",
+    feature = "logic_or",
+    feature = "logic_not",
+    feature = "logic_xor",
+    feature = "table",
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+))]
 use super::environment::expression_solves_deferred;
-use super::registration::{
-    register_expression_function_batch, register_initialized_expression_function,
-};
+#[cfg(any(
+    feature = "string_concat",
+    feature = "math_add",
+    feature = "math_sub",
+    feature = "math_mul",
+    feature = "math_div",
+    feature = "math_mod",
+    feature = "math_pow",
+    feature = "matrix_matmul",
+    feature = "matrix_solve",
+    feature = "matrix_dot",
+    feature = "compare_eq",
+    feature = "compare_seq",
+    feature = "compare_neq",
+    feature = "compare_sneq",
+    feature = "compare_lte",
+    feature = "compare_gte",
+    feature = "compare_lt",
+    feature = "compare_gt",
+    feature = "logic_and",
+    feature = "logic_or",
+    feature = "logic_not",
+    feature = "logic_xor",
+    feature = "table",
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+))]
+use super::registration::register_expression_function_batch;
+#[cfg(any(
+    feature = "math_neg",
+    feature = "logic_not",
+    feature = "matrix_transpose"
+))]
+use super::registration::register_initialized_expression_function;
 use super::{Environment, UnhandledFormulaOperatorError, expression};
 #[cfg(feature = "subscript_formula")]
 use super::{
     current_string_access_expression_live, mark_current_string_access_expression_live,
     mark_string_access_value_live, string_access_input_is_live,
 };
-use crate::{
-    AddSubOp, ComparisonOp, Factor, FormulaOperator, InterpreterExecution, LegacyValue, LogicOp,
-    MResult, MechError, MechFunction, MulDivOp, OperationId, PowerOp, ProgramState, Ref, SetOp,
-    TableOp, Term, ValueKind, VecOp, detach_value,
-};
+#[cfg(any(feature = "string_concat", feature = "math_add", feature = "math_sub"))]
+use crate::AddSubOp;
+#[cfg(any(
+    feature = "compare_eq",
+    feature = "compare_seq",
+    feature = "compare_neq",
+    feature = "compare_sneq",
+    feature = "compare_lte",
+    feature = "compare_gte",
+    feature = "compare_lt",
+    feature = "compare_gt"
+))]
+use crate::ComparisonOp;
+#[cfg(any(
+    feature = "logic_and",
+    feature = "logic_or",
+    feature = "logic_not",
+    feature = "logic_xor"
+))]
+use crate::LogicOp;
+#[cfg(any(feature = "math_mul", feature = "math_div", feature = "math_mod"))]
+use crate::MulDivOp;
+#[cfg(feature = "math_pow")]
+use crate::PowerOp;
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of"),
+    feature = "enum",
+    feature = "atom"
+))]
+use crate::ProgramState;
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of")
+))]
+use crate::Ref;
+#[cfg(any(
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+))]
+use crate::SetOp;
+#[cfg(feature = "table")]
+use crate::TableOp;
+#[cfg(any(
+    feature = "matrix_matmul",
+    feature = "matrix_solve",
+    feature = "matrix_dot"
+))]
+use crate::VecOp;
+use crate::{Factor, InterpreterExecution, LegacyValue, MResult, MechError, Term};
+#[cfg(any(
+    feature = "math_neg",
+    feature = "matrix_transpose",
+    feature = "string_concat",
+    feature = "math_add",
+    feature = "math_sub",
+    feature = "math_mul",
+    feature = "math_div",
+    feature = "math_mod",
+    feature = "math_pow",
+    feature = "matrix_matmul",
+    feature = "matrix_solve",
+    feature = "matrix_dot",
+    feature = "compare_eq",
+    feature = "compare_seq",
+    feature = "compare_neq",
+    feature = "compare_sneq",
+    feature = "compare_lte",
+    feature = "compare_gte",
+    feature = "compare_lt",
+    feature = "compare_gt",
+    feature = "logic_and",
+    feature = "logic_or",
+    feature = "logic_not",
+    feature = "logic_xor",
+    feature = "table",
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+))]
+use crate::{FormulaOperator, MechFunction, OperationId};
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of")
+))]
+use crate::{ValueKind, detach_value};
 
+#[cfg(any(
+    feature = "math_neg",
+    feature = "matrix_transpose",
+    feature = "string_concat",
+    feature = "math_add",
+    feature = "math_sub",
+    feature = "math_mul",
+    feature = "math_div",
+    feature = "math_mod",
+    feature = "math_pow",
+    feature = "matrix_matmul",
+    feature = "matrix_solve",
+    feature = "matrix_dot",
+    feature = "compare_eq",
+    feature = "compare_seq",
+    feature = "compare_neq",
+    feature = "compare_sneq",
+    feature = "compare_lte",
+    feature = "compare_gte",
+    feature = "compare_lt",
+    feature = "compare_gt",
+    feature = "logic_and",
+    feature = "logic_or",
+    feature = "logic_not",
+    feature = "logic_xor",
+    feature = "table",
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+))]
 fn specialize_formula_operation(
     p: &InterpreterExecution<'_>,
     canonical_name: &str,
@@ -89,10 +296,50 @@ pub fn factor(
             }
             Ok(out)
         }
+        #[cfg(not(all(
+            feature = "math_neg",
+            feature = "logic_not",
+            feature = "matrix_transpose"
+        )))]
         _ => todo!(),
     }
 }
 
+#[cfg(any(
+    feature = "string_concat",
+    feature = "math_add",
+    feature = "math_sub",
+    feature = "math_mul",
+    feature = "math_div",
+    feature = "math_mod",
+    feature = "math_pow",
+    feature = "matrix_matmul",
+    feature = "matrix_solve",
+    feature = "matrix_dot",
+    feature = "compare_eq",
+    feature = "compare_seq",
+    feature = "compare_neq",
+    feature = "compare_sneq",
+    feature = "compare_lte",
+    feature = "compare_gte",
+    feature = "compare_lt",
+    feature = "compare_gt",
+    feature = "logic_and",
+    feature = "logic_or",
+    feature = "logic_not",
+    feature = "logic_xor",
+    feature = "table",
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+))]
 pub fn term(
     trm: &Term,
     env: Option<&Environment>,
@@ -148,8 +395,6 @@ pub fn term(
             FormulaOperator::Vec(VecOp::Solve) => {
                 specialize_formula_operation(p, "matrix/solve", &[lhs, rhs])?
             }
-            #[cfg(feature = "matrix_cross")]
-            FormulaOperator::Vec(VecOp::Cross) => todo!(),
             #[cfg(feature = "matrix_dot")]
             FormulaOperator::Vec(VecOp::Dot) => {
                 specialize_formula_operation(p, "matrix/dot", &[lhs, rhs])?
@@ -250,8 +495,6 @@ pub fn term(
             FormulaOperator::Set(SetOp::SymmetricDifference) => {
                 specialize_formula_operation(p, "set/symmetric-difference", &[lhs, rhs])?
             }
-            #[cfg(feature = "set_complement")]
-            FormulaOperator::Set(SetOp::Complement) => todo!(),
             #[cfg(feature = "set_subset")]
             FormulaOperator::Set(SetOp::Subset) => {
                 specialize_formula_operation(p, "set/subset", &[lhs, rhs])?
@@ -313,7 +556,66 @@ pub fn term(
     Ok(lhs)
 }
 
-#[cfg(all(feature = "kind_annotation", feature = "enum", feature = "atom"))]
+#[cfg(not(any(
+    feature = "string_concat",
+    feature = "math_add",
+    feature = "math_sub",
+    feature = "math_mul",
+    feature = "math_div",
+    feature = "math_mod",
+    feature = "math_pow",
+    feature = "matrix_matmul",
+    feature = "matrix_solve",
+    feature = "matrix_dot",
+    feature = "compare_eq",
+    feature = "compare_seq",
+    feature = "compare_neq",
+    feature = "compare_sneq",
+    feature = "compare_lte",
+    feature = "compare_gte",
+    feature = "compare_lt",
+    feature = "compare_gt",
+    feature = "logic_and",
+    feature = "logic_or",
+    feature = "logic_not",
+    feature = "logic_xor",
+    feature = "table",
+    feature = "set_union",
+    feature = "set_intersection",
+    feature = "set_difference",
+    feature = "set_symmetric_difference",
+    feature = "set_subset",
+    feature = "set_superset",
+    feature = "set_proper_subset",
+    feature = "set_proper_superset",
+    feature = "set_element_of",
+    feature = "set_not_element_of"
+)))]
+pub fn term(
+    trm: &Term,
+    env: Option<&Environment>,
+    p: &InterpreterExecution<'_>,
+) -> MResult<LegacyValue> {
+    let lhs = factor(&trm.lhs, env, p)?;
+    match trm.rhs.first() {
+        Some((operator, _)) => Err(MechError::new(
+            UnhandledFormulaOperatorError {
+                operator: operator.clone(),
+            },
+            None,
+        )
+        .with_compiler_loc()
+        .with_tokens(trm.tokens())),
+        None => Ok(lhs),
+    }
+}
+
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of"),
+    feature = "enum",
+    feature = "atom"
+))]
 fn enum_value_matches_kind(value: &LegacyValue, enum_id: u64, state: &ProgramState) -> bool {
     let enum_def = match state.enums.get(&enum_id) {
         Some(enm) => enm,
@@ -417,7 +719,10 @@ fn enum_value_matches_kind(value: &LegacyValue, enum_id: u64, state: &ProgramSta
     }
 }
 
-#[cfg(feature = "kind_annotation")]
+#[cfg(all(
+    feature = "kind_annotation",
+    any(feature = "set_element_of", feature = "set_not_element_of")
+))]
 fn value_in_kind(value: &LegacyValue, kind: &ValueKind, p: &InterpreterExecution<'_>) -> bool {
     let detached = detach_value(value);
     #[cfg(all(feature = "enum", feature = "atom"))]

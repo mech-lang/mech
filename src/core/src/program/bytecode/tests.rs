@@ -2137,7 +2137,7 @@ fn rejects_unknown_requirement_fields_utf8_opcode_and_trailing_bytes() {
         intent: ResourceIntent::Read,
         delivery: ResourceDelivery::Snapshot,
     });
-    let mut input = BytecodeProgram {
+    let input = BytecodeProgram {
         register_count: 1,
         constants: Vec::new(),
         symbols: BTreeMap::new(),

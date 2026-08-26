@@ -1551,7 +1551,7 @@ export default async function init() {}
     #[test]
     fn bundle_web_rebases_source_shim_before_injecting_host_config() {
         let root = temp_root("rebase-before-inject");
-        let _ = write_demo_project(&root);
+        drop(write_demo_project(&root));
         fs::write(
             root.join("demo.mcfg"),
             r#"config := {

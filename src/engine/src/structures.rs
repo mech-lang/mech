@@ -1,7 +1,18 @@
 #[cfg(feature = "set")]
 pub use crate::intrinsics::constructors::ValueSet;
 use crate::*;
-use std::collections::{HashMap, HashSet};
+#[cfg(any(feature = "map", feature = "record", feature = "table"))]
+use indexmap::map::IndexMap;
+#[cfg(feature = "kind_annotation")]
+use mech_core::kind::Kind;
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
+#[cfg(feature = "matrix")]
+use mech_core::nodes::Matrix as Mat;
+#[cfg(any(feature = "record", feature = "table"))]
+use std::collections::HashMap;
+#[cfg(feature = "set")]
+use std::collections::HashSet;
 
 // Structures
 // ----------------------------------------------------------------------------
@@ -43,13 +54,8 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
             (ValueKind::Option(a), ValueKind::Option(b)) => {
                 join_set_element_kinds_inner(a, b, seen).map(optionalize)
             }
-            (ValueKind::Option(a), ValueKind::Empty) | (ValueKind::Empty, ValueKind::Option(a)) => {
-                Some(ValueKind::Option(a.clone()))
-            }
             (ValueKind::Option(a), b) | (b, ValueKind::Option(a)) => {
                 if a.as_ref() == b {
-                    Some(ValueKind::Option(a.clone()))
-                } else if matches!(b, ValueKind::Empty) {
                     Some(ValueKind::Option(a.clone()))
                 } else {
                     join_set_element_kinds_inner(a, b, seen).map(optionalize)
@@ -104,8 +110,42 @@ fn join_set_element_kinds(expected: &ValueKind, actual: &ValueKind) -> Option<Va
 
 pub fn structure(
     strct: &Structure,
+    #[cfg(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    ))]
     env: Option<&Environment>,
+    #[cfg(not(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    )))]
+    _: Option<&Environment>,
+    #[cfg(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    ))]
     p: &InterpreterExecution<'_>,
+    #[cfg(not(any(
+        feature = "record",
+        feature = "matrix",
+        feature = "table",
+        feature = "tuple",
+        feature = "set",
+        feature = "map"
+    )))]
+    _: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
     match strct {
         Structure::Empty => Ok(LegacyValue::Empty),
@@ -123,9 +163,18 @@ pub fn structure(
         Structure::Set(x) => set(&x, env, p),
         #[cfg(feature = "map")]
         Structure::Map(x) => map(&x, env, p),
-        x => Err(MechError::new(
+        #[cfg(not(all(
+            feature = "record",
+            feature = "matrix",
+            feature = "table",
+            feature = "tuple",
+            feature = "atom",
+            feature = "set",
+            feature = "map"
+        )))]
+        _ => Err(MechError::new(
             FeatureNotEnabledError,
-            Some(format!("Feature not enabled for `{:?}`", stringify!(x))),
+            Some("feature not enabled for this structure kind".to_string()),
         )
         .with_compiler_loc()),
     }
@@ -259,7 +308,7 @@ pub fn record(
                 Ok(converted_result) => {
                     data.insert(name_hash, converted_result);
                 }
-                Err(e) => {
+                Err(_) => {
                     return Err(MechError::new(
                         TableColumnKindMismatchError {
                             column_id: name_hash,
@@ -387,6 +436,26 @@ pub fn set(
 // Table
 // ----------------------------------------------------------------------------
 
+#[cfg(all(
+    feature = "table",
+    any(
+        feature = "i8",
+        feature = "i16",
+        feature = "i32",
+        feature = "i64",
+        feature = "i128",
+        feature = "u8",
+        feature = "u16",
+        feature = "u32",
+        feature = "u64",
+        feature = "u128",
+        feature = "f32",
+        feature = "f64",
+        feature = "string",
+        feature = "complex",
+        feature = "rational"
+    )
+))]
 macro_rules! handle_value_kind {
     ($value_kind:ident, $val:expr, $field_label:expr, $data_map:expr, $converter:ident) => {{
         let mut vals = Vec::new();
@@ -503,7 +572,7 @@ pub fn table(
     p: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
     let mut rows = vec![];
-    let headings = table_header(&t.header, env, p)?;
+    let headings = table_header(&t.header, p)?;
     let mut cols = 0;
 
     // Interpret rows
@@ -560,7 +629,6 @@ pub fn table(
 #[cfg(feature = "kind_annotation")]
 pub fn table_header(
     fields: &TableHeader,
-    env: Option<&Environment>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<Vec<(LegacyValue, ValueKind, Identifier)>> {
     let mut headings: Vec<(LegacyValue, ValueKind, Identifier)> = Vec::new();
@@ -699,6 +767,7 @@ pub fn matrix(
 
         return execute_catalog_operation(p, &plan, "matrix/vertcat", col);
     }
+    #[cfg(not(feature = "matrix_vertcat"))]
     return Err(MechError::new(
         FeatureNotEnabledError,
         Some("matrix/vertcat feature not enabled".to_string()),

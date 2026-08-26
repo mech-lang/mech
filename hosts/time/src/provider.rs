@@ -107,11 +107,14 @@ mod tests {
             millisecond: 5.0,
         });
         let poison = snapshot.clone();
-        let _ = std::thread::spawn(move || {
-            let _guard = poison.lock().unwrap();
-            panic!("poison planning snapshot");
-        })
-        .join();
+        assert!(
+            std::thread::spawn(move || {
+                let _guard = poison.lock().unwrap();
+                panic!("poison planning snapshot");
+            })
+            .join()
+            .is_err()
+        );
         let provider = TimeResourceProvider::new("clock", snapshot);
 
         for path in CLOCK_PATHS {

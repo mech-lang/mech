@@ -1,12 +1,16 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
+#[cfg(feature = "source")]
 use num_traits::*;
 
 // Asin ------------------------------------------------------------------------
 
-use libm::{asin, asinf};
+#[cfg(feature = "f64")]
+use libm::asin;
+#[cfg(feature = "f32")]
+use libm::asinf;
+#[cfg(feature = "f64")]
 macro_rules! asin_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -15,6 +19,7 @@ macro_rules! asin_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! asin_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -25,6 +30,7 @@ macro_rules! asin_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asinf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -33,6 +39,7 @@ macro_rules! asinf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! asinf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -52,7 +59,7 @@ impl_math_unop!(MathAsin, f64, asin);
 fn impl_asin_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathAsin,
-      (lhs_value),
+      lhs_value,
       F32 => MatrixF32, F32, f32::zero(), "f32";
       F64 => MatrixF64, F64, f64::zero(), "f64";
     )
@@ -77,8 +84,8 @@ impl FunctionSpecializer for MathAsin {
         let input = arguments[0].clone();
         match impl_asin_fxn(input.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match (input) {
-                (LegacyValue::MutableReference(input)) => impl_asin_fxn(input.borrow().clone()),
+            Err(_) => match input {
+                LegacyValue::MutableReference(input) => impl_asin_fxn(input.borrow().clone()),
                 x => Err(MechError::new(
                     UnhandledFunctionArgumentKind1 {
                         arg: x.kind(),

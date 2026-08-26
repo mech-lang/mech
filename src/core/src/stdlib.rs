@@ -3242,7 +3242,7 @@ macro_rules! impl_assign_scalar_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -3260,7 +3260,7 @@ macro_rules! impl_assign_all_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -3282,7 +3282,7 @@ macro_rules! impl_assign_scalar_scalar_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -3378,7 +3378,7 @@ macro_rules! impl_set_range_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -3401,7 +3401,7 @@ macro_rules! impl_assign_all_arms_b {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -3495,7 +3495,7 @@ macro_rules! impl_set_range_all_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -3593,7 +3593,7 @@ macro_rules! impl_assign_range_scalar_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -3691,7 +3691,7 @@ macro_rules! impl_assign_scalar_range_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -4180,7 +4180,7 @@ macro_rules! impl_assign_range_range_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -4274,7 +4274,7 @@ macro_rules! impl_assign_all_range_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -4401,7 +4401,7 @@ macro_rules! impl_assign_all_scalar_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -4528,7 +4528,7 @@ macro_rules! impl_assign_scalar_all_arms {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -4912,7 +4912,7 @@ macro_rules! impl_set_range_arms_b {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -4935,7 +4935,7 @@ macro_rules! impl_assign_scalar_arms_b {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -5029,7 +5029,7 @@ macro_rules! impl_assign_range_scalar_arms_b {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 
@@ -5123,7 +5123,7 @@ macro_rules! impl_assign_scalar_range_arms_b {
           None
         ).with_compiler_loc()),
       }
-    };
+    }
   };
 }
 

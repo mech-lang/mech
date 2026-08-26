@@ -1,7 +1,7 @@
 use super::*;
-use crate::*;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use num_traits::{
-    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, Signed, ToPrimitive,
+    CheckedAdd, CheckedDiv, CheckedMul, CheckedSub, FromPrimitive, One, Signed, ToPrimitive, Zero,
 };
 
 // Rational Numbers

@@ -86,7 +86,7 @@ pub unsafe extern "C" fn status_test_view(
     }
 
     if should_fail {
-        MechStatusV1::Panic
+        MechStatusV1::PANIC
     } else {
         MechStatusV1::Ok
     }

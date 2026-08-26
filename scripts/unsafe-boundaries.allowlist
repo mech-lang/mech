@@ -25,10 +25,6 @@ machines/math/src/bessel/y0.rs|typed-machine-kernel|mech-math|macro-selected Val
 machines/math/src/bessel/y1.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/bessel/yn.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/dynamic_module.rs|ffi|mech-math|foreign pointers and symbols remain valid only for the documented call or library lifetime|existing native ABI boundary
-machines/math/src/exponential/exp.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/exponential/exp10.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/exponential/exp2.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
-machines/math/src/exponential/expm1.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/gamma/lgamma.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/gamma/tgamma.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch
 machines/math/src/logarithm/ilogb.rs|typed-machine-kernel|mech-math|macro-selected Value variants match every pointer pointee and output shape|existing zero-copy typed machine dispatch

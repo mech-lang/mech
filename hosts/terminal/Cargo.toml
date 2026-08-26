@@ -15,11 +15,11 @@ default = []
 provider = ["mech-core/string"]
 
 [dependencies]
-mech-core = { version = "0.3.5", default-features = false }
-mech-runtime = { version = "0.3.5", default-features = false, features = ["runtime", "string"] }
+mech-core = { version = "0.3.5", path = "../../src/core", default-features = false }
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["runtime", "string"] }
 
 [dev-dependencies]
-mech-runtime = { version = "0.3.5", default-features = false, features = ["semantic-compiler"] }
+mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["source"] }
 
 [[test]]
 name = "provider"

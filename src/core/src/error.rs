@@ -8,9 +8,6 @@ use std::sync::Arc;
 // Errors
 // ----------------------------------------------------------------------------
 
-type Rows = usize;
-type Cols = usize;
-
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CompilerSourceRange {
@@ -231,11 +228,6 @@ impl MechError {
                 .replace('"', "&quot;")
                 .replace('\'', "&#39;")
         }
-
-        let source_range = self
-            .program_range
-            .clone()
-            .or_else(|| self.tokens.first().map(|token| token.src_range.clone()));
 
         let token_html = if self.tokens.is_empty() {
             String::new()

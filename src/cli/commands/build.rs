@@ -12,7 +12,7 @@ use mech_runtime::{HostInstanceConfig, RunResourceGrantConfig, RuntimeConfig, So
 
 use crate::cli::module_execution::{module_runtime_config, prepare_source_program_compiler};
 use crate::cli::outcome::{CliOutcome, RootFlags};
-use crate::source_discovery::{DedupePolicy, DiscoveryOptions, MissingPathPolicy, collect_sources};
+use crate::source_discovery::{DiscoveryOptions, MissingPathPolicy, collect_sources};
 
 const BUILD_EXTENSIONS: &[&str] = &["mec", "🤖", "mdoc", "mpkg"];
 const BUILD_SKIP_DIRECTORIES: &[&str] = &[".git", "dist", "out", "target"];
@@ -525,7 +525,6 @@ fn discover_source_roots(inputs: &[String]) -> MResult<Vec<PathBuf>> {
                 follow_file_symlinks: true,
                 follow_dir_symlinks: false,
                 missing_path_policy: MissingPathPolicy::Error,
-                dedupe_policy: DedupePolicy::LogicalPath,
             },
         )?
         .into_iter()

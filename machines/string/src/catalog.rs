@@ -1,8 +1,6 @@
 use mech_core::{FunctionCatalogBuilder, MResult};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure};
-#[cfg(feature = "concat")]
-use paste::paste;
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -36,8 +34,8 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
-/// Installs every concrete string concatenation runtime factory enabled by
-/// the selected value kinds and matrix shapes.
+// Installs every concrete string concatenation runtime factory enabled by
+// the selected value kinds and matrix shapes.
 mech_core::declare_native_binop_runtime_factories! {
     package: "mech-string",
     crate_name: "mech_string",

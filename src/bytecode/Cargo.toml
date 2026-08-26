@@ -13,7 +13,7 @@ edition = "2024"
 rust-version = "1.92"
 
 [dependencies]
-mech-core = { version = "0.3.5", default-features = false, features = ["compiler"] }
+mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["compiler"] }
 
 [dev-dependencies]
-mech-core = { version = "0.3.5", default-features = false, features = ["program", "f64", "tuple"] }
+mech-core = { version = "0.3.5", path = "../core", default-features = false, features = ["program", "f64", "tuple"] }

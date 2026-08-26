@@ -14,7 +14,7 @@ pub(super) fn access(
             let mut fxn_input = vec![val.clone()];
             match &subs[..] {
                 #[cfg(feature = "subscript_formula")]
-                [Subscript::Formula(ix)] => {
+                [Subscript::Formula(_)] => {
                     let result = subscript_formula(&subs[0], env, p)?;
                     let shape = result.shape();
                     fxn_input.push(result);
@@ -27,7 +27,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "subscript_range")]
-                        [n, 1] => {
+                        [_, 1] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -35,7 +35,7 @@ pub(super) fn access(
                             )?);
                         }
                         #[cfg(feature = "subscript_range")]
-                        [1, n] => {
+                        [1, _] => {
                             plan.borrow_mut().push(catalog_access_function(
                                 p,
                                 "access/range",
@@ -46,7 +46,7 @@ pub(super) fn access(
                     }
                 }
                 #[cfg(feature = "subscript_range")]
-                [Subscript::Range(ix)] => {
+                [Subscript::Range(_)] => {
                     let result = subscript_range(&subs[0], env, p)?;
                     fxn_input.push(result);
                     plan.borrow_mut()
@@ -62,7 +62,7 @@ pub(super) fn access(
                 }
             }
             let plan_brrw = plan.borrow();
-            let mut new_fxn = &plan_brrw.last().unwrap();
+            let new_fxn = &plan_brrw.last().unwrap();
             if !expression_solves_deferred(p) {
                 new_fxn.solve_result()?;
             }

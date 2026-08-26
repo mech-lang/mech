@@ -1,12 +1,14 @@
 use crate::*;
-use libm::{atan2, atan2f};
-#[cfg(feature = "matrix")]
+#[cfg(feature = "f64")]
+use libm::atan2;
+#[cfg(feature = "f32")]
+use libm::atan2f;
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
-use num_traits::*;
 
 // Atan2 ------------------------------------------------------------------------
 
+#[cfg(feature = "f64")]
 macro_rules! atan2_op {
     ($arg1:expr, $arg2:expr, $out:expr) => {
         unsafe {
@@ -15,12 +17,13 @@ macro_rules! atan2_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! atan2_vec_op {
     ($arg1:expr, $arg2:expr, $out:expr) => {
         unsafe {
             let arg1_deref = &(*$arg1);
             let arg2_deref = &(*$arg2);
-            let mut out_deref = (&mut *$out);
+            let out_deref = &mut *$out;
             for i in 0..arg1_deref.len() {
                 (out_deref[i]) = atan2(arg1_deref[i], arg2_deref[i]);
             }
@@ -28,6 +31,7 @@ macro_rules! atan2_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atan2f_op {
     ($arg1:expr, $arg2:expr, $out:expr) => {
         unsafe {
@@ -36,12 +40,13 @@ macro_rules! atan2f_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atan2f_vec_op {
     ($arg1:expr, $arg2:expr, $out:expr) => {
         unsafe {
             let arg1_deref = &(*$arg1);
             let arg2_deref = &(*$arg2);
-            let mut out_deref = (&mut *$out);
+            let out_deref = &mut *$out;
             for i in 0..arg1_deref.len() {
                 (out_deref[i]) = atan2f(arg1_deref[i], arg2_deref[i]);
             }

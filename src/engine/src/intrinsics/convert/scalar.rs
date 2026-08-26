@@ -1,4 +1,4 @@
-#[macro_use]
+use super::UnsupportedConversionError;
 use crate::intrinsics::*;
 
 // Convert --------------------------------------------------------------------
@@ -175,7 +175,7 @@ where
         let mut out_table = self.out.borrow_mut();
         let rows = arg.rows().min(out_table.rows);
 
-        for (col_ix, (ix, (col_kind, out_col))) in out_table.data.iter_mut().enumerate() {
+        for (col_ix, (_, (col_kind, out_col))) in out_table.data.iter_mut().enumerate() {
             for row_ix in 0..rows {
                 let value = arg.index2d(row_ix + 1, col_ix + 1).clone().into();
                 let converted_value = value.convert_to(col_kind).unwrap();
@@ -370,42 +370,6 @@ impl MechFunctionCompiler for ConvertMatToSet {
     }
 }
 
-#[cfg(all(feature = "rational", feature = "f64"))]
-#[derive(Debug)]
-struct ConvertSRationalToF64 {
-    arg: Ref<R64>,
-    out: Ref<f64>,
-}
-
-#[cfg(all(feature = "rational", feature = "f64"))]
-impl MechFunctionImpl for ConvertSRationalToF64 {
-    fn solve_result(&self) -> MResult<()> {
-        let arg_ptr = self.arg.as_ptr();
-        let out_ptr = self.out.as_mut_ptr();
-        unsafe {
-            *out_ptr = (*arg_ptr).into();
-        };
-        Ok(())
-    }
-    fn out(&self) -> LegacyValue {
-        LegacyValue::F64(self.out.clone())
-    }
-    fn to_string(&self) -> String {
-        format!("{:#?}", self)
-    }
-
-    fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(self.reactive_output_values())
-    }
-}
-#[cfg(all(feature = "semantic-compiler", feature = "rational", feature = "f64"))]
-impl MechFunctionCompiler for ConvertSRationalToF64 {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-        let name = format!("ConvertSRationalToF64<f64>");
-        compile_unop!(name, self.out, self.arg, ctx);
-    }
-}
-
 macro_rules! impl_conversion_match_arms {
   ($arg:expr, $($input_type:ident, $input_type_string:tt => $($target_type:ident, $target_type_string:tt),+);+ $(;)?) => {
     paste!{
@@ -459,10 +423,6 @@ macro_rules! impl_conversion_match_arms {
             (LegacyValue::[<$input_type:camel>](arg), LegacyValue::Kind(ValueKind::[<$target_type:camel>])) => {Ok(Box::new(ConvertScalarToScalarBasic{arg: arg.clone(), out: Ref::new($target_type::default())}))},
           )+
         )+
-        #[cfg(feature = "rational")]
-        (LegacyValue::R64(ref rat), LegacyValue::Kind(ValueKind::F64)) => {
-          Ok(Box::new(ConvertSRationalToF64{arg: rat.clone(), out: Ref::new(f64::default())}))
-        }
         #[cfg(all(feature = "atom", feature = "enum"))]
         (LegacyValue::Atom(atom), LegacyValue::Kind(ValueKind::Enum(enum_id, _))) => {
           let atom_brrw = atom.borrow();
@@ -717,7 +677,7 @@ fn impl_conversion_fxn(
             }
 
             let mut elements = Vec::with_capacity(rows * cols);
-            for (_column_id, (_kind, column_values)) in table.data.iter() {
+            for (_, (_, column_values)) in table.data.iter() {
                 elements.extend(column_values.as_vec());
             }
 
@@ -762,6 +722,7 @@ fn impl_conversion_fxn(
     )
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub(crate) fn convert_literal_value(
     source_value: LegacyValue,
     target_kind: LegacyValue,
@@ -815,58 +776,56 @@ impl FunctionSpecializer for ConvertKind {
                         impl_conversion_fxn(rhs.borrow().clone(), target_kind.clone())
                     }
                     #[cfg(feature = "atom")]
-                    LegacyValue::Atom(ref atom_id) => {
-                        impl_conversion_fxn(source_value, target_kind.clone())
-                    }
+                    LegacyValue::Atom(_) => impl_conversion_fxn(source_value, target_kind.clone()),
                     #[cfg(all(feature = "matrix", feature = "u8"))]
-                    LegacyValue::MatrixU8(ref mat) => {
+                    LegacyValue::MatrixU8(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u16"))]
-                    LegacyValue::MatrixU16(ref mat) => {
+                    LegacyValue::MatrixU16(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u32"))]
-                    LegacyValue::MatrixU32(ref mat) => {
+                    LegacyValue::MatrixU32(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u64"))]
-                    LegacyValue::MatrixU64(ref mat) => {
+                    LegacyValue::MatrixU64(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "u128"))]
-                    LegacyValue::MatrixU128(ref mat) => {
+                    LegacyValue::MatrixU128(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i8"))]
-                    LegacyValue::MatrixI8(ref mat) => {
+                    LegacyValue::MatrixI8(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i16"))]
-                    LegacyValue::MatrixI16(ref mat) => {
+                    LegacyValue::MatrixI16(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i32"))]
-                    LegacyValue::MatrixI32(ref mat) => {
+                    LegacyValue::MatrixI32(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i64"))]
-                    LegacyValue::MatrixI64(ref mat) => {
+                    LegacyValue::MatrixI64(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "i128"))]
-                    LegacyValue::MatrixI128(ref mat) => {
+                    LegacyValue::MatrixI128(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "f32"))]
-                    LegacyValue::MatrixF32(ref mat) => {
+                    LegacyValue::MatrixF32(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
                     #[cfg(all(feature = "matrix", feature = "f64"))]
-                    LegacyValue::MatrixF64(ref mat) => {
+                    LegacyValue::MatrixF64(_) => {
                         impl_conversion_fxn(source_value, target_kind.clone())
                     }
-                    x => Err(MechError::new(
+                    _ => Err(MechError::new(
                         UnhandledFunctionArgumentKind2 {
                             arg: (arguments[0].kind(), arguments[1].kind()),
                             fxn_name: "convert/scalar".to_string(),

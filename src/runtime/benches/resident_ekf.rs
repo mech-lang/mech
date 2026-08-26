@@ -201,10 +201,12 @@ fn report(
     abort_output_hash: Option<&str>,
 ) {
     report_dimensions(
-        lane,
-        instances,
-        0,
-        1,
+        ReportDimensions {
+            lane,
+            instances,
+            retained_history: 0,
+            next_epoch: 1,
+        },
         allocations,
         probe,
         output_hash,
@@ -212,17 +214,27 @@ fn report(
     );
 }
 
-#[allow(clippy::too_many_arguments)]
-fn report_dimensions(
-    lane: &str,
+#[derive(Clone, Copy)]
+struct ReportDimensions<'a> {
+    lane: &'a str,
     instances: usize,
     retained_history: usize,
     next_epoch: u64,
+}
+
+fn report_dimensions(
+    dimensions: ReportDimensions<'_>,
     allocations: AllocationSnapshot,
     probe: StructuralProbe,
     output_hash: &str,
     abort_output_hash: Option<&str>,
 ) {
+    let ReportDimensions {
+        lane,
+        instances,
+        retained_history,
+        next_epoch,
+    } = dimensions;
     let mut reported = REPORTED
         .get_or_init(|| Mutex::new(BTreeSet::new()))
         .lock()
@@ -496,10 +508,12 @@ fn resident_turn(c: &mut Criterion) {
                     fixture.validate_final();
                     black_box(fixture.state(0));
                     report_dimensions(
-                        "mech-resident-turn",
-                        1,
-                        history,
-                        next_epoch,
+                        ReportDimensions {
+                            lane: "mech-resident-turn",
+                            instances: 1,
+                            retained_history: history,
+                            next_epoch,
+                        },
                         allocations,
                         fixture.probe().into(),
                         &trajectory_hash,
@@ -570,10 +584,12 @@ fn resident_artifact(c: &mut Criterion) {
                     fixture.validate_final();
                     black_box(fixture.state());
                     report_dimensions(
-                        lane,
-                        1,
-                        history,
-                        next_epoch,
+                        ReportDimensions {
+                            lane,
+                            instances: 1,
+                            retained_history: history,
+                            next_epoch,
+                        },
                         allocations,
                         fixture.probe().into(),
                         &trajectory_hash,
@@ -764,10 +780,12 @@ fn resident_structural_samples() {
         let mut rejected = ResidentArtifactFixture::new(route);
         let abort_hash = rejected.abort_output_hash();
         report_dimensions(
-            lane,
-            1,
-            history,
-            next_epoch,
+            ReportDimensions {
+                lane,
+                instances: 1,
+                retained_history: history,
+                next_epoch,
+            },
             AllocationSnapshot::default(),
             probe.into(),
             &trajectory_hash,
@@ -844,10 +862,12 @@ fn resident_structural_samples() {
         let mut complete = ResidentTurnFixture::new(1, history, next_epoch);
         let complete_hash = complete.run_and_validate_every_turn();
         report_dimensions(
-            "mech-resident-turn",
-            1,
-            history,
-            next_epoch,
+            ReportDimensions {
+                lane: "mech-resident-turn",
+                instances: 1,
+                retained_history: history,
+                next_epoch,
+            },
             AllocationSnapshot::default(),
             complete.probe().into(),
             &complete_hash,

@@ -1,7 +1,6 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use num_traits::*;
 
 // Stats Sum Row -----------------------------------------------------------
@@ -21,6 +20,7 @@ macro_rules! sum_row_op {
     };
 }
 
+#[cfg(all(feature = "vectord", feature = "matrixd", not(feature = "matrix1")))]
 macro_rules! sum_row_op2 {
     ($arg:expr, $out:expr) => {
         {

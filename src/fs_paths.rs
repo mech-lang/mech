@@ -1,5 +1,7 @@
 use mech_core::*;
-use std::path::{Component, Path, PathBuf};
+#[cfg(any(feature = "bundle_web_core", feature = "formatter"))]
+use std::path::Component;
+use std::path::{Path, PathBuf};
 
 pub(crate) fn source_extension(path: &Path) -> Option<String> {
     path.extension()
@@ -27,6 +29,7 @@ pub(crate) fn unsupported_source_path_error(path: &Path, allowed_extensions: &[&
     .with_compiler_loc()
 }
 
+#[cfg(feature = "formatter")]
 pub(crate) fn absolute_path(path: &Path) -> MResult<PathBuf> {
     Ok(if path.is_absolute() {
         path.to_path_buf()
@@ -35,6 +38,7 @@ pub(crate) fn absolute_path(path: &Path) -> MResult<PathBuf> {
     })
 }
 
+#[cfg(feature = "formatter")]
 pub(crate) fn normalized_existing_or_absolute(path: &Path) -> MResult<PathBuf> {
     let absolute = absolute_path(path)?;
     Ok(if absolute.exists() {
@@ -44,10 +48,12 @@ pub(crate) fn normalized_existing_or_absolute(path: &Path) -> MResult<PathBuf> {
     })
 }
 
+#[cfg(feature = "formatter")]
 pub(crate) fn paths_equivalent(a: &Path, b: &Path) -> MResult<bool> {
     Ok(normalized_existing_or_absolute(a)? == normalized_existing_or_absolute(b)?)
 }
 
+#[cfg(any(feature = "bundle_web_core", feature = "formatter"))]
 pub(crate) fn validate_safe_relative_path(path: &Path) -> MResult<()> {
     if path.is_absolute()
         || path
@@ -65,6 +71,7 @@ pub(crate) fn validate_safe_relative_path(path: &Path) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(feature = "formatter")]
 pub(crate) fn relative_to_base(
     logical_path: &Path,
     base_dir: &Path,

@@ -1,10 +1,17 @@
+#[cfg(feature = "trace")]
 use crate::tracing::{
     format_trace, format_trace_args, summarize_function_pattern, summarize_function_value,
     summarize_values_with_kinds,
 };
+#[cfg(feature = "semantic-compiler")]
 use crate::*;
-#[cfg(all(feature = "kind_annotation", feature = "enum"))]
+#[cfg(all(
+    feature = "semantic-compiler",
+    feature = "kind_annotation",
+    feature = "enum"
+))]
 use std::collections::HashSet;
+#[cfg(feature = "semantic-compiler")]
 use std::sync::Arc;
 
 #[cfg(feature = "semantic-compiler")]
@@ -12,47 +19,6 @@ pub use crate::expressions::function_call;
 
 // Functions
 // ============================================================================
-
-// Frames
-// ----------------------------------------------------------------------------
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub enum FrameState {
-    Running,
-    Suspended,
-    Completed,
-}
-
-// One activation record on the call stack. Every user-function invocation gets
-// its own Frame so locals and the instruction pointer don't bleed across calls.
-#[derive(Clone)]
-pub struct Frame {
-    plan: Plan,
-    ip: usize,                // index of the next instruction to execute
-    locals: SymbolTableRef,   // variables local to this invocation
-    out: Option<LegacyValue>, // value yielded by a coroutine, if any
-    state: FrameState,        // Running / Suspended / Completed
-}
-
-impl Frame {
-    pub(crate) fn checkpoint_plan(&self) -> Plan {
-        self.plan.clone()
-    }
-
-    pub(crate) fn checkpoint_locals(&self) -> SymbolTableRef {
-        self.locals.clone()
-    }
-
-    pub(crate) fn checkpoint_out(&self) -> Option<LegacyValue> {
-        self.out.clone()
-    }
-}
-
-// The call stack is a simple growable list of frames; the last entry is current.
-#[derive(Clone)]
-pub struct Stack {
-    frames: Vec<Frame>,
-}
 
 // Registers a user-written function so it can be called by name later.
 // Hashes the name to a u64 id used as the lookup key throughout the runtime.
@@ -161,6 +127,7 @@ mod source_only {
         Ok(output)
     }
 
+    #[cfg(test)]
     pub(crate) fn execute_initialized_indexed_compiler(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
@@ -196,6 +163,15 @@ mod source_only {
         Ok(output)
     }
 
+    #[cfg(any(
+        feature = "set_comprehensions",
+        feature = "matrix_comprehensions",
+        all(feature = "kind_annotation", feature = "convert"),
+        all(feature = "record", feature = "convert"),
+        feature = "set",
+        feature = "matrix_vertcat",
+        feature = "matrix_horzcat"
+    ))]
     pub(crate) fn execute_catalog_operation(
         p: &InterpreterExecution<'_>,
         plan: &Plan,
@@ -255,7 +231,7 @@ mod source_only {
 
         // If the function takes a single matrix argument and the element kind matches
         // the output kind, broadcast element-wise instead of running the body once.
-        #[cfg(feature = "matrix")]
+        #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
         if let Some(result) = try_broadcast_user_function(fxn_def, input_arg_values, p)? {
             return Ok(result);
         }
@@ -345,7 +321,7 @@ mod source_only {
     // reassemble the result into a matrix of the same shape.
     // Returns None if any condition for broadcasting isn't met, so the caller can
     // fall through to normal execution.
-    #[cfg(feature = "matrix")]
+    #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
     fn try_broadcast_user_function(
         fxn_def: &FunctionDefinition,
         input_arg_values: &Vec<LegacyValue>,
@@ -363,20 +339,12 @@ mod source_only {
             return Ok(None);
         }
 
-        // Resolve the declared input and output kinds from their annotations.
-        // Without kind_annotation feature we can't know the element type, so bail.
-        #[cfg(feature = "kind_annotation")]
         let (input_kind, output_kind) = {
             let input_kind = kind_annotation(&fxn_def.code.input[0].kind.kind, p)?
                 .to_value_kind(&p.state.borrow().kinds)?;
             let output_kind = kind_annotation(&fxn_def.code.output[0].kind.kind, p)?
                 .to_value_kind(&p.state.borrow().kinds)?;
             (input_kind, output_kind)
-        };
-
-        #[cfg(not(feature = "kind_annotation"))]
-        let (input_kind, output_kind) = {
-            return Ok(None);
         };
 
         // Only broadcast when input and output kinds are the same scalar kind.
@@ -406,7 +374,7 @@ mod source_only {
 
     // Assembles a list of scalar Values into a typed matrix.
     // TODO add more types
-    #[cfg(feature = "matrix")]
+    #[cfg(all(feature = "matrix", feature = "kind_annotation"))]
     fn build_typed_matrix_from_values(
         output_kind: &ValueKind,
         outputs: Vec<LegacyValue>,
@@ -519,7 +487,11 @@ mod source_only {
         }
 
         // Try each arm in source order; the first one whose pattern matches wins.
-        for (arm_idx, arm) in fxn_def.code.match_arms.iter().enumerate() {
+        for indexed_arm in fxn_def.code.match_arms.iter().enumerate() {
+            #[cfg(feature = "trace")]
+            let (arm_idx, arm) = indexed_arm;
+            #[cfg(not(feature = "trace"))]
+            let (_, arm) = indexed_arm;
             let mut env = Environment::new();
             let matched = crate::patterns::pattern_matches_arguments(
                 &arm.pattern,
@@ -635,6 +607,7 @@ mod source_only {
                 Some(std::mem::replace(&mut state_brrw.plan, Plan::new()))
             };
             let previous_environment = state_brrw.environment.take();
+            state_brrw.user_function_scope_depth += 1;
             drop(state_brrw);
 
             Self {
@@ -650,6 +623,8 @@ mod source_only {
     impl Drop for FunctionScope {
         fn drop(&mut self) {
             let mut state_brrw = self.state.borrow_mut();
+            debug_assert!(state_brrw.user_function_scope_depth > 0);
+            state_brrw.user_function_scope_depth -= 1;
             state_brrw.symbol_table = self.previous_symbols.clone();
             if let Some(previous_plan) = &self.previous_plan {
                 state_brrw.plan = previous_plan.clone();
@@ -690,9 +665,10 @@ mod source_only {
         p: &InterpreterExecution<'_>,
     ) -> MResult<()> {
         let scoped_state = p.state.borrow();
-        for ((arg_id, input_kind_annotation), input_value) in
-            fxn_def.input.iter().zip(input_arg_values.iter())
-        {
+        for (input_argument, input_value) in fxn_def.input.iter().zip(input_arg_values.iter()) {
+            let arg_id = input_argument.0;
+            #[cfg(feature = "kind_annotation")]
+            let input_kind_annotation = &input_argument.1;
             // Look up the human-readable argument name for error messages.
             let arg_name = fxn_def
                 .code
@@ -1444,7 +1420,8 @@ mod source_only {
 
 #[cfg(feature = "semantic-compiler")]
 pub use source_only::*;
-pub mod catalog;
+#[path = "catalog.rs"]
+pub(crate) mod engine_catalog;
 pub mod environment;
 pub mod extensions;
 #[cfg(feature = "program")]
@@ -1455,7 +1432,7 @@ pub mod module;
 pub mod native;
 pub mod resolver;
 
-pub use catalog::*;
+pub use engine_catalog::*;
 pub use environment::*;
 pub use extensions::*;
 #[cfg(feature = "program")]

@@ -1,7 +1,7 @@
 use super::sequence::SequenceStorage;
 use super::{
-    CanonicalKeyValue, EnumValue, MapEntryValue, MapValue, MatrixValue, RecordValue, ReifiedKind,
-    ReifiedType, ReifiedTypeDraft, SchemaDataKind, SetValue, SnapshotPath, SnapshotPathSegment,
+    CanonicalKeyValue, EnumValue, MapValue, MatrixValue, RecordValue, ReifiedKind, ReifiedType,
+    ReifiedTypeDraft, SchemaDataKind, SetValue, SnapshotPath, SnapshotPathSegment,
     SnapshotValueError, TableValue, ValueData, ValueDataDraft, ValueDraft,
 };
 use crate::{

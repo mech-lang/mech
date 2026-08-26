@@ -306,9 +306,9 @@ dot_indexing = ["subscript", "mech-core/dot_indexing", "mech-engine/dot_indexing
 swizzle = ["subscript", "mech-core/swizzle", "mech-engine/swizzle", "mech-syntax/swizzle", "mech-runtime/swizzle"]
 
 [dependencies]
-mech-core = {version = "0.3.5", default-features = false}
-mech-syntax = { version = "0.3.5", default-features = false}
-mech-engine = { version = "0.3.5", default-features = false}
+mech-core = {version = "0.3.5", path = "../core", default-features = false}
+mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false}
+mech-engine = { version = "0.3.5", path = "../engine", default-features = false}
 mech-runtime = { path = "../runtime", default-features = false }
 mech-stdlib = { version = "0.3.5", path = "../stdlib", default-features = false }
 mech-browser = { path = "../../hosts/browser", default-features = false, optional = true }

@@ -2,10 +2,8 @@ use super::support::{as_scalar, record_value, scalar, scalar_payload, scalar_val
 #[cfg(feature = "atom")]
 use crate::MechAtom;
 use crate::structures::matrix::Matrix as ValueMatrix;
-use crate::{
-    LegacyValue, MechEnum, MechTuple, ReactiveCellId, Ref, ValueKind, ValueStateJournal, hash_str,
-};
-use nalgebra::{DMatrix, DVector};
+use crate::{LegacyValue, MechEnum, MechTuple, Ref, ValueKind, ValueStateJournal, hash_str};
+use nalgebra::DMatrix;
 use std::collections::HashMap;
 
 #[test]

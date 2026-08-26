@@ -308,7 +308,7 @@ mod checkpoint_tests {
         let function_name = "user/checkpoint";
         let added_name = "user/added-after-checkpoint";
         let symbol_id = hash_str("retained");
-        let mut definition = empty_user_function(function_name);
+        let definition = empty_user_function(function_name);
         *definition.out.borrow_mut() = LegacyValue::Index(Ref::new(10));
         let symbol = definition.symbols.borrow_mut().insert(
             symbol_id,
@@ -522,9 +522,9 @@ mod checkpoint_tests {
 
         let child_id = 2;
         let grandchild_id = 3;
-        let mut child = Interpreter::new(child_id, 200);
+        let child = Interpreter::new(child_id, 200);
         let (_child_cell, child_backing) = install_scalar(&child, "child", 20.0);
-        let mut grandchild = Interpreter::new(grandchild_id, 300);
+        let grandchild = Interpreter::new(grandchild_id, 300);
         let (_grandchild_cell, grandchild_backing) =
             install_scalar(&grandchild, "grandchild", 30.0);
         let grandchild_ref = Ref::new(Box::new(grandchild));

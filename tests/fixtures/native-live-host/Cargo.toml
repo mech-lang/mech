@@ -7,5 +7,5 @@ license = "Apache-2.0"
 publish = false
 
 [dependencies]
-mech-core = { version = "0.3.5", default-features = false, features = ["f64"] }
-mech-runtime = { version = "0.3.5", default-features = false, features = ["f64", "runtime"] }
+mech-core = { version = "0.3.5", path = "../../../src/core", default-features = false, features = ["f64"] }
+mech-runtime = { version = "0.3.5", path = "../../../src/runtime", default-features = false, features = ["f64", "runtime"] }

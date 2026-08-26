@@ -1,6 +1,6 @@
-use super::{
-    ActivationPatternCaptureKindUnsupported, ActivationPatternTransactionBoolStateUnsupported,
-};
+use super::ActivationPatternCaptureKindUnsupported;
+#[cfg(not(any(feature = "bool", feature = "variable_define")))]
+use super::errors::ActivationPatternTransactionBoolStateUnsupported;
 #[cfg(feature = "complex")]
 use crate::C64;
 #[cfg(feature = "atom")]
@@ -19,9 +19,10 @@ use crate::MechTable;
 use crate::MechTuple;
 #[cfg(feature = "rational")]
 use crate::R64;
+#[cfg(feature = "record")]
+use crate::hash_str;
 use crate::{
     Interpreter, LegacyValue, MResult, MechError, PatternBindingSink, PatternMatch, Ref, ValueKind,
-    hash_str,
 };
 #[cfg(feature = "matrix")]
 use mech_core::structures::matrix::Matrix;
@@ -31,14 +32,16 @@ pub(super) fn generation() -> (Ref<usize>, LegacyValue) {
     (generation.clone(), LegacyValue::Index(generation))
 }
 
-pub(super) fn transaction_bool_state(value: &Ref<bool>) -> MResult<LegacyValue> {
+pub(super) fn transaction_bool_state(
+    #[cfg(any(feature = "bool", feature = "variable_define"))] value: &Ref<bool>,
+    #[cfg(not(any(feature = "bool", feature = "variable_define")))] _: &Ref<bool>,
+) -> MResult<LegacyValue> {
     #[cfg(any(feature = "bool", feature = "variable_define"))]
     {
         Ok(LegacyValue::Bool(value.clone()))
     }
     #[cfg(not(any(feature = "bool", feature = "variable_define")))]
     {
-        let _ = value;
         Err(MechError::new(
             ActivationPatternTransactionBoolStateUnsupported,
             None,
@@ -77,7 +80,22 @@ fn capture_matrix_dimensions(shape: &[usize]) -> MResult<(usize, usize)> {
 
 pub(super) fn create_capture_slot_for_kind(
     kind: &ValueKind,
+    #[cfg(any(
+        feature = "tuple",
+        feature = "enum",
+        feature = "record",
+        feature = "table",
+        feature = "matrix"
+    ))]
     interpreter: &Interpreter,
+    #[cfg(not(any(
+        feature = "tuple",
+        feature = "enum",
+        feature = "record",
+        feature = "table",
+        feature = "matrix"
+    )))]
+    _: &Interpreter,
 ) -> MResult<LegacyValue> {
     match kind.deref_kind() {
         #[cfg(feature = "u8")]

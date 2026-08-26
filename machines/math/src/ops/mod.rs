@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 use std::sync::LazyLock;
 
@@ -6,11 +5,56 @@ static PURE_BINARY_FULL_WRITE_EXACT_SCALAR: LazyLock<OperationContractDeclaratio
     LazyLock::new(|| pure_binary_full_write(ChangeDetectionPolicy::ExactScalar));
 static PURE_BINARY_FULL_WRITE_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_binary_full_write(ChangeDetectionPolicy::KernelReported));
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 static PURE_UNARY_FULL_WRITE_EXACT_SCALAR: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_unary_full_write(ChangeDetectionPolicy::ExactScalar));
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 static PURE_UNARY_FULL_WRITE_KERNEL_REPORTED: LazyLock<OperationContractDeclaration> =
     LazyLock::new(|| pure_unary_full_write(ChangeDetectionPolicy::KernelReported));
 
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 fn pure_unary_full_write(
     change_detection: ChangeDetectionPolicy,
 ) -> OperationContractDeclaration {
@@ -36,6 +80,21 @@ fn pure_unary_full_write(
     }
 }
 
+#[cfg(any(
+    feature = "abs", feature = "neg",
+    feature = "j0", feature = "j1", feature = "y0", feature = "y1",
+    feature = "lgamma", feature = "tgamma",
+    feature = "log", feature = "log10", feature = "log1p", feature = "log2",
+    feature = "cbrt", feature = "sqrt",
+    feature = "ceil", feature = "floor", feature = "rint", feature = "round",
+    feature = "roundeven", feature = "trunc",
+    feature = "erf", feature = "erfc",
+    feature = "acos", feature = "acosh", feature = "acot", feature = "acsc",
+    feature = "asec", feature = "asin", feature = "asinh", feature = "atan",
+    feature = "atanh", feature = "cos", feature = "cosh", feature = "cot",
+    feature = "csc", feature = "sec", feature = "sin", feature = "sinh",
+    feature = "tan", feature = "tanh"
+))]
 pub(crate) fn unary_full_write_contract(
     output: FunctionValueRepresentation,
 ) -> &'static OperationContractDeclaration {
@@ -250,6 +309,17 @@ impl_checked_matrix_neg!(feature = "matrixd", DMatrix);
 /// Fallible counterpart to the legacy generic binop factory. The operation
 /// macro computes into staged storage and may use `?`; output replacement only
 /// occurs after every element succeeds.
+macro_rules! arithmetic_semantic_contract {
+    ($output:ty) => {
+        None
+    };
+    ($output:ty, $semantic_contract:path) => {
+        Some($semantic_contract(
+            <$output as FunctionRuntimeType>::REPRESENTATION,
+        ))
+    };
+}
+
 macro_rules! impl_checked_arithmetic_binop {
     ($struct_name:ident, $arg1_type:ty, $arg2_type:ty, $out_type:ty, $op:ident $(, $semantic_contract:path)?) => {
         #[derive(Debug)]
@@ -356,11 +426,7 @@ macro_rules! impl_checked_arithmetic_binop {
             }
 
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                let contract: Option<&'static OperationContractDeclaration> = None;
-                $(let contract = Some($semantic_contract(
-                    <$out_type as FunctionRuntimeType>::REPRESENTATION,
-                ));)?
-                contract
+                arithmetic_semantic_contract!($out_type $(, $semantic_contract)?)
             }
 
             fn to_string(&self) -> String {
@@ -400,19 +466,19 @@ pub mod pow;
 #[cfg(feature = "sub")]
 pub mod sub;
 
-#[cfg(feature = "add")]
+#[cfg(all(feature = "add", feature = "source"))]
 pub use self::add::*;
-#[cfg(feature = "div")]
+#[cfg(all(feature = "div", feature = "source"))]
 pub use self::div::*;
-#[cfg(feature = "mod")]
+#[cfg(all(feature = "mod", feature = "source"))]
 pub use self::modulus::*;
-#[cfg(feature = "mul")]
+#[cfg(all(feature = "mul", feature = "source"))]
 pub use self::mul::*;
-#[cfg(feature = "neg")]
+#[cfg(all(feature = "neg", feature = "source"))]
 pub use self::negate::*;
-#[cfg(feature = "pow")]
+#[cfg(all(feature = "pow", feature = "source"))]
 pub use self::pow::*;
-#[cfg(feature = "sub")]
+#[cfg(all(feature = "sub", feature = "source"))]
 pub use self::sub::*;
 
 #[cfg(all(test, feature = "rational"))]

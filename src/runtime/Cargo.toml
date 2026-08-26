@@ -214,10 +214,10 @@ trybuild = "1.0.118"
 
 [dependencies]
 blake3 = "1.8.5"
-mech-engine = { version = "0.3.5", default-features = false }
-mech-core = { version = "0.3.5", default-features = false }
+mech-engine = { version = "0.3.5", path = "../engine", default-features = false }
+mech-core = { version = "0.3.5", path = "../core", default-features = false }
 mech-compute = { version = "0.3.5", path = "../compute", optional = true }
-mech-syntax = { version = "0.3.5", default-features = false, optional = true }
+mech-syntax = { version = "0.3.5", path = "../syntax", default-features = false, optional = true }
 serde = { version = "1.0.228", optional = true }
 serde_derive = { version = "1.0.228", optional = true }
 tracing = { version = "0.1.41", optional = true }

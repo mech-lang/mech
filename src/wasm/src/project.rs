@@ -611,7 +611,10 @@ pub(crate) fn activate_document_repl_runtime_tree(
     let outcome = match activation {
         Ok(outcome) => outcome,
         Err(error) => {
-            let _ = candidate.runtime.shutdown();
+            if let Err(shutdown_error) = candidate.runtime.shutdown() {
+                bootstrap.abort();
+                return Err(shutdown_error.with_source(error));
+            }
             bootstrap.abort();
             return Err(error);
         }
@@ -2697,19 +2700,23 @@ impl MechErrorKind for ProjectError {
         self.message.clone()
     }
 }
-fn js_error(message: impl Into<String>) -> JsValue {
+fn js_error(
+    #[cfg(target_arch = "wasm32")] message: impl Into<String>,
+    #[cfg(not(target_arch = "wasm32"))] _: impl Into<String>,
+) -> JsValue {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let _ = message.into();
         return JsValue::NULL;
     }
     #[cfg(target_arch = "wasm32")]
     JsValue::from_str(&message.into())
 }
-fn to_js_error(error: MechError) -> JsValue {
+fn to_js_error(
+    #[cfg(target_arch = "wasm32")] error: MechError,
+    #[cfg(not(target_arch = "wasm32"))] _: MechError,
+) -> JsValue {
     #[cfg(not(target_arch = "wasm32"))]
     {
-        let _ = error;
         JsValue::NULL
     }
     #[cfg(target_arch = "wasm32")]
@@ -2721,16 +2728,16 @@ fn to_js_error(error: MechError) -> JsValue {
         let rendered = format!("{error:?}");
         let javascript_error = js_sys::Error::new(&rendered);
         let target = javascript_error.as_ref();
-        let _ = Reflect::set(
+        drop(Reflect::set(
             target,
             &JsValue::from_str("mechKind"),
             &JsValue::from_str(&kind),
-        );
-        let _ = Reflect::set(
+        ));
+        drop(Reflect::set(
             target,
             &JsValue::from_str("mechRecoverableResidentTurn"),
             &JsValue::from_bool(recoverable_resident_turn),
-        );
+        ));
         javascript_error.into()
     }
 }
@@ -4228,6 +4235,7 @@ rows := |id<string> x<f64>|
             self.0.lock().unwrap().snapshot()
         }
 
+        #[cfg(feature = "browser_compute")]
         fn publish_steps(&self, count: usize) -> mech_core::MResult<usize> {
             self.0.lock().unwrap().publish_steps(count)
         }
@@ -4428,6 +4436,7 @@ rows := |id<string> x<f64>|
             builder = builder.run_resource_grant(grant.clone());
         }
         let mut runtime = builder.build().unwrap();
+        #[cfg(not(feature = "browser_compute"))]
         let root = document.run.as_ref().unwrap().paths[0]
             .to_string_lossy()
             .to_string();

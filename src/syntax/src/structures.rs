@@ -1,29 +1,17 @@
-#[macro_use]
 use crate::*;
 
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
-use alloc::string::String;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::vec::Vec;
-use colored::*;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
 use nom::{
     Err,
     Err::Failure,
-    IResult,
     branch::alt,
-    bytes::complete::{take_until, take_while},
-    combinator::{eof, opt, peek},
-    multi::{many_till, many0, many1, separated_list0, separated_list1},
+    combinator::{opt, peek},
+    multi::{many0, many1, separated_list0, separated_list1},
     sequence::{delimited, tuple as nom_tuple},
 };
-use std::collections::HashMap;
 
 use crate::nodes::Matrix;
-use crate::*;
 
 // Structures
 // =============================================================================
@@ -127,7 +115,7 @@ pub fn matrix(input: ParseString) -> ParseResult<Matrix> {
                 input = next_input;
             }
             Err(Err::Error(_)) => {
-                let _ = label!(matrix_end, msg, r)(input)?;
+                label!(matrix_end, msg, r)(input)?;
                 unreachable!(
                     "matrix parser loop already ruled out matrix_end before attempting a row"
                 );
@@ -243,13 +231,6 @@ fn table_top(input: ParseString) -> ParseResult<()> {
     let (input, _) = table_start(input)?;
     let (input, _) = many0(box_drawing_char)(input)?;
     let (input, _) = new_line(input)?;
-    Ok((input, ()))
-}
-
-// table-bottom := *box-drawing-char, table-end;
-fn table_bottom(input: ParseString) -> ParseResult<()> {
-    let (input, _) = many0(box_drawing_char)(input)?;
-    let (input, _) = table_end(input)?;
     Ok((input, ()))
 }
 
@@ -485,10 +466,7 @@ pub fn map(input: ParseString) -> ParseResult<Map> {
 
 // mapping :=  whitespace*, expression, whitespace*, ":", whitespace*, expression, comma?, whitespace* ;
 pub fn mapping(input: ParseString) -> ParseResult<Mapping> {
-    let msg1 = "Unexpected space before colon ':'";
     let msg2 = "Expects a value";
-    let msg3 = "Expects whitespace or comma followed by whitespace";
-    let msg4 = "Expects whitespace";
     let (input, _) = whitespace0(input)?;
     let (input, key) = expression(input)?;
     let (input, _) = whitespace0(input)?;
@@ -517,10 +495,7 @@ pub fn record(input: ParseString) -> ParseResult<Record> {
 
 // binding := identifier, kind_annotation?, colon, expression, ","? ;
 pub fn binding(input: ParseString) -> ParseResult<Binding> {
-    let msg1 = "Unexpected space before colon ':'";
     let msg2 = "Expects a value";
-    let msg3 = "Expects whitespace or comma followed by whitespace";
-    let msg4 = "Expects whitespace";
     let (input, _) = whitespace0(input)?;
     let (input, name) = identifier(input)?;
     let (input, kind) = opt(kind_annotation)(input)?;

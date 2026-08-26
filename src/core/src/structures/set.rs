@@ -1,5 +1,5 @@
 use crate::*;
-use indexmap::set::{IndexSet, Iter};
+use indexmap::set::IndexSet;
 
 // Set --------------------------------------------------------------------------
 

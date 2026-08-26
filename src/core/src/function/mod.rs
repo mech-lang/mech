@@ -21,9 +21,8 @@ use std::fmt;
 use std::rc::Rc;
 #[cfg(feature = "pretty_print")]
 use tabled::{
-    Tabled,
     builder::Builder,
-    settings::{Alignment, Modify, Panel, Span, Style, object::Rows},
+    settings::{Alignment, Panel, Style},
 };
 
 // Functions ------------------------------------------------------------------
@@ -370,8 +369,7 @@ pub enum InitialSolvePolicy {
 
 pub trait MechFunctionImpl {
     fn solve_result(&self) -> MResult<()>;
-    fn solve_result_with(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
-        let _ = services;
+    fn solve_result_with(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
         self.solve_result()
     }
     fn solve_reactive(&self) -> MResult<ReactiveSolveStatus> {
@@ -380,9 +378,8 @@ pub trait MechFunctionImpl {
     }
     fn solve_reactive_with(
         &self,
-        services: &mut dyn MechExecutionServices,
+        _: &mut dyn MechExecutionServices,
     ) -> MResult<ReactiveSolveStatus> {
-        let _ = services;
         self.solve_reactive()
     }
     fn initial_solve_policy(&self) -> InitialSolvePolicy {
@@ -393,11 +390,7 @@ pub trait MechFunctionImpl {
     ///
     /// This hook must not recompute or replace that planned output. Most
     /// functions need no extra initialization, so the default is a no-op.
-    fn initialize_preserved_output_with(
-        &self,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<()> {
-        let _ = services;
+    fn initialize_preserved_output_with(&self, _: &mut dyn MechExecutionServices) -> MResult<()> {
         Ok(())
     }
     fn stage_register(&self) -> MResult<Box<dyn ReactiveRegisterCommit>> {
@@ -753,21 +746,18 @@ pub struct FunctionDefinition {
 
 impl fmt::Debug for FunctionDefinition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if cfg!(feature = "pretty_print") {
-            #[cfg(feature = "pretty_print")]
-            return fmt::Display::fmt(&self.pretty_print(), f);
-            fmt::Display::fmt(&"".to_string(), f)
-        } else {
-            write!(
-                f,
-                "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}",
-                self.id,
-                self.name,
-                self.input,
-                self.output,
-                self.symbols.borrow()
-            )
-        }
+        #[cfg(feature = "pretty_print")]
+        return fmt::Display::fmt(&self.pretty_print(), f);
+        #[cfg(not(feature = "pretty_print"))]
+        write!(
+            f,
+            "FunctionDefinition {{ id: {}, name: {}, input: {:?}, output: {:?}, symbols: {:?} }}",
+            self.id,
+            self.name,
+            self.input,
+            self.output,
+            self.symbols.borrow()
+        )
     }
 }
 
@@ -878,7 +868,7 @@ impl MechFunctionImpl for UserFunction {
 }
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for UserFunction {
-    fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+    fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         todo!();
     }
 }
@@ -1884,6 +1874,7 @@ impl ReactivePlan {
         Ok(outcome)
     }
 
+    #[cfg(test)]
     pub(crate) fn solve_dirty_cells_with_journal(
         &mut self,
         dirty_cells: &[ReactiveCellId],
@@ -1907,30 +1898,6 @@ impl ReactivePlan {
             services,
         )?;
         Ok(outcome)
-    }
-
-    fn solve_dirty_cells_into(
-        &mut self,
-        dirty_cells: &[ReactiveCellId],
-        outcome: &mut ReactivePlanSolveOutcome,
-    ) -> MResult<()> {
-        let mut services = NoMechExecutionServices;
-        self.solve_dirty_cells_into_impl(dirty_cells, outcome, None, &mut services)
-    }
-
-    fn solve_dirty_cells_into_with_journal(
-        &mut self,
-        dirty_cells: &[ReactiveCellId],
-        outcome: &mut ReactivePlanSolveOutcome,
-        journal: &mut ReactiveTurnJournal,
-    ) -> MResult<()> {
-        let mut services = NoMechExecutionServices;
-        self.solve_dirty_cells_into_with_journal_and_services(
-            dirty_cells,
-            outcome,
-            journal,
-            &mut services,
-        )
     }
 
     fn solve_dirty_cells_into_with_journal_and_services(
@@ -2143,6 +2110,7 @@ impl ReactivePlan {
         })
     }
 
+    #[cfg(test)]
     pub(crate) fn advance_reactive_turn_with_journal(
         &mut self,
         state: &mut ReactiveTurnState,
@@ -2436,40 +2404,11 @@ impl Plan {
             .solve_dirty_cells_with_services(dirty_cells, services)
     }
 
-    pub(crate) fn solve_dirty_cells_with_journal(
-        &self,
-        dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
-    ) -> MResult<ReactivePlanSolveOutcome> {
-        self.0
-            .borrow_mut()
-            .solve_dirty_cells_with_journal(dirty_cells, journal)
-    }
-    pub(crate) fn solve_dirty_cells_with_journal_and_services(
-        &self,
-        dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactivePlanSolveOutcome> {
-        self.0
-            .borrow_mut()
-            .solve_dirty_cells_with_journal_and_services(dirty_cells, journal, services)
-    }
-
     pub fn commit_pending_registers(
         &self,
         pending_nodes: &[ReactiveNodeId],
     ) -> MResult<ReactiveRegisterCommitOutcome> {
         self.0.borrow_mut().commit_pending_registers(pending_nodes)
-    }
-    pub(crate) fn commit_pending_registers_with_journal(
-        &self,
-        pending_nodes: &[ReactiveNodeId],
-        journal: &mut ReactiveTurnJournal,
-    ) -> MResult<ReactiveRegisterCommitOutcome> {
-        self.0
-            .borrow_mut()
-            .commit_pending_registers_with_journal(pending_nodes, journal)
     }
     pub fn advance_reactive_turn(
         &self,
@@ -2490,28 +2429,6 @@ impl Plan {
             .borrow_mut()
             .advance_reactive_turn_with_services(state, dirty_cells, services)
     }
-    pub(crate) fn advance_reactive_turn_with_journal(
-        &self,
-        state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
-    ) -> MResult<ReactiveTurnOutcome> {
-        self.0
-            .borrow_mut()
-            .advance_reactive_turn_with_journal(state, dirty_cells, journal)
-    }
-    pub(crate) fn advance_reactive_turn_with_journal_and_services(
-        &self,
-        state: &mut ReactiveTurnState,
-        dirty_cells: &[ReactiveCellId],
-        journal: &mut ReactiveTurnJournal,
-        services: &mut dyn MechExecutionServices,
-    ) -> MResult<ReactiveTurnOutcome> {
-        self.0
-            .borrow_mut()
-            .advance_reactive_turn_with_journal_and_services(state, dirty_cells, journal, services)
-    }
-
     pub fn advance_reactive_turn_participating(
         &self,
         state: &mut ReactiveTurnState,

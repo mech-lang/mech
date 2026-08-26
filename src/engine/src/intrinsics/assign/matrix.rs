@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::intrinsics::*;
 use nalgebra::{
     Dim, IsContiguous, Scalar,
@@ -6,6 +5,15 @@ use nalgebra::{
 };
 use std::fmt::Debug;
 use std::marker::PhantomData;
+
+macro_rules! optional_operation_contract {
+    () => {
+        None
+    };
+    ($contract:path) => {
+        Some(&*$contract)
+    };
+}
 use std::sync::LazyLock;
 
 static PURE_MATRIX_ELEMENT_ASSIGNMENT_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -166,9 +174,7 @@ macro_rules! impl_set_all_fxn_s {
                 self.sink.to_value()
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                let contract: Option<&'static OperationContractDeclaration> = None;
-                $(let contract = Some(&*$semantic_contract);)?
-                contract
+                optional_operation_contract!($($semantic_contract)?)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
@@ -307,7 +313,7 @@ macro_rules! impl_assign_fxn_s {
         {
             fn solve_result(&self) -> MResult<()> {
                 unsafe {
-                    let mut sink_ptr = &mut *self.sink.as_mut_ptr();
+                    let sink_ptr = &mut *self.sink.as_mut_ptr();
                     let ix_val = (*self.ixes.as_ptr()).clone();
                     let source_val = (*self.source.as_ptr()).clone();
                     $op!(source_val, ix_val, sink_ptr);
@@ -318,9 +324,7 @@ macro_rules! impl_assign_fxn_s {
                 self.sink.to_value()
             }
             fn semantic_operation_contract(&self) -> Option<&'static OperationContractDeclaration> {
-                let contract: Option<&'static OperationContractDeclaration> = None;
-                $(let contract = Some(&*$semantic_contract);)?
-                contract
+                optional_operation_contract!($($semantic_contract)?)
             }
             fn to_string(&self) -> String {
                 format!("{:#?}", self)
@@ -435,7 +439,7 @@ impl FunctionSpecializer for MatrixAssignScalar {
         let ixes = arguments[2..].to_vec();
         match impl_assign_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match sink {
+            Err(_) => match sink {
                 LegacyValue::MutableReference(sink) => {
                     impl_assign_scalar_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
@@ -460,21 +464,17 @@ impl FunctionSpecializer for MatrixAssignScalar {
 
 macro_rules! set_1d_range {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                ($sink)[($ix)[i] - 1] = ($source).clone();
-            }
+        for i in 0..($ix).len() {
+            ($sink)[($ix)[i] - 1] = ($source).clone();
         }
     };
 }
 
 macro_rules! set_1d_range_b {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                if $ix[i] == true {
-                    ($sink)[i] = ($source).clone();
-                }
+        for i in 0..($ix).len() {
+            if $ix[i] == true {
+                ($sink)[i] = ($source).clone();
             }
         }
     };
@@ -482,21 +482,17 @@ macro_rules! set_1d_range_b {
 
 macro_rules! set_1d_range_vec {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                ($sink)[($ix)[i] - 1] = ($source)[i].clone();
-            }
+        for i in 0..($ix).len() {
+            ($sink)[($ix)[i] - 1] = ($source)[i].clone();
         }
     };
 }
 
 macro_rules! set_1d_range_vec_b {
     ($source:expr, $ix:expr, $sink:expr) => {
-        unsafe {
-            for i in 0..($ix).len() {
-                if $ix[i] == true {
-                    ($sink)[i] = ($source)[i].clone();
-                }
+        for i in 0..($ix).len() {
+            if $ix[i] == true {
+                ($sink)[i] = ($source)[i].clone();
             }
         }
     };
@@ -599,7 +595,7 @@ impl FunctionSpecializer for MatrixAssignRange {
         let ixes = arguments[2..].to_vec();
         match impl_assign_range_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (sink.clone(), &ixes, source.clone()) {
+            Err(_) => match (sink.clone(), &ixes, source.clone()) {
                 (LegacyValue::MutableReference(sink), _, LegacyValue::MutableReference(source)) => {
                     impl_assign_range_fxn(
                         sink.borrow().clone(),
@@ -1253,7 +1249,7 @@ impl FunctionSpecializer for MatrixAssignAllScalar {
         let ixes = arguments[2..].to_vec();
         match impl_assign_all_scalar_fxn(sink.clone(), source.clone(), ixes.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match sink {
+            Err(_) => match sink {
                 LegacyValue::MutableReference(sink) => {
                     impl_assign_all_scalar_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
@@ -1376,34 +1372,28 @@ impl FunctionSpecializer for MatrixAssignScalarAll {
 
 macro_rules! assign_2d_range_scalar {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut col = ($sink).column_mut($ix2 - 1);
-            for &rix in ($ix1).iter() {
-                col[rix - 1] = ($source).clone();
-            }
+        let mut col = ($sink).column_mut($ix2 - 1);
+        for &rix in ($ix1).iter() {
+            col[rix - 1] = ($source).clone();
         }
     };
 }
 
 macro_rules! assign_2d_range_scalar_v {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut col = ($sink).column_mut($ix2 - 1);
-            for (i, &rix) in ($ix1).iter().enumerate() {
-                col[rix - 1] = ($source)[i].clone();
-            }
+        let mut col = ($sink).column_mut($ix2 - 1);
+        for (i, &rix) in ($ix1).iter().enumerate() {
+            col[rix - 1] = ($source)[i].clone();
         }
     };
 }
 
 macro_rules! assign_2d_range_scalar_b {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut col = ($sink).column_mut($ix2 - 1);
-            for (rix, &is_selected) in ($ix1).iter().enumerate() {
-                if is_selected {
-                    col[rix] = ($source).clone();
-                }
+        let mut col = ($sink).column_mut($ix2 - 1);
+        for (rix, &is_selected) in ($ix1).iter().enumerate() {
+            if is_selected {
+                col[rix] = ($source).clone();
             }
         }
     };
@@ -1411,12 +1401,10 @@ macro_rules! assign_2d_range_scalar_b {
 
 macro_rules! assign_2d_range_scalar_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let mut col = ($sink).column_mut($ix2 - 1);
-            for (rix, &is_selected) in ($ix1).iter().enumerate() {
-                if is_selected {
-                    col[rix] = ($source)[rix].clone();
-                }
+        let mut col = ($sink).column_mut($ix2 - 1);
+        for (rix, &is_selected) in ($ix1).iter().enumerate() {
+            if is_selected {
+                col[rix] = ($source)[rix].clone();
             }
         }
     };
@@ -1868,33 +1856,27 @@ impl FunctionSpecializer for MatrixAssignRangeScalar {
 
 macro_rules! assign_2d_scalar_range {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for i in 0..($ix2).len() {
-                let cix = $ix2[i] - 1;
-                ($sink).row_mut($ix1 - 1)[cix] = ($source).clone();
-            }
+        for i in 0..($ix2).len() {
+            let cix = $ix2[i] - 1;
+            ($sink).row_mut($ix1 - 1)[cix] = ($source).clone();
         }
     };
 }
 
 macro_rules! assign_2d_scalar_range_v {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for i in 0..($ix2).len() {
-                let cix = $ix2[i] - 1;
-                ($sink).row_mut($ix1 - 1)[cix] = ($source)[i].clone();
-            }
+        for i in 0..($ix2).len() {
+            let cix = $ix2[i] - 1;
+            ($sink).row_mut($ix1 - 1)[cix] = ($source)[i].clone();
         }
     };
 }
 
 macro_rules! assign_2d_scalar_range_b {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for cix in 0..($ix2).len() {
-                if $ix2[cix] == true {
-                    ($sink).row_mut($ix1 - 1)[cix] = ($source).clone();
-                }
+        for cix in 0..($ix2).len() {
+            if $ix2[cix] == true {
+                ($sink).row_mut($ix1 - 1)[cix] = ($source).clone();
             }
         }
     };
@@ -1902,11 +1884,9 @@ macro_rules! assign_2d_scalar_range_b {
 
 macro_rules! assign_2d_scalar_range_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for cix in 0..($ix2).len() {
-                if $ix2[cix] == true {
-                    ($sink).row_mut($ix1 - 1)[cix] = ($source)[cix].clone();
-                }
+        for cix in 0..($ix2).len() {
+            if $ix2[cix] == true {
+                ($sink).row_mut($ix1 - 1)[cix] = ($source)[cix].clone();
             }
         }
     };
@@ -2356,13 +2336,11 @@ impl FunctionSpecializer for MatrixAssignScalarRange {
 
 macro_rules! assign_2d_range_range {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for rix in 0..($ix1).len() {
-                let r = $ix1[rix] - 1;
-                for cix in 0..($ix2).len() {
-                    let c = $ix2[cix] - 1;
-                    ($sink)[(r, c)] = ($source).clone();
-                }
+        for rix in 0..($ix1).len() {
+            let r = $ix1[rix] - 1;
+            for cix in 0..($ix2).len() {
+                let c = $ix2[cix] - 1;
+                ($sink)[(r, c)] = ($source).clone();
             }
         }
     };
@@ -2370,13 +2348,11 @@ macro_rules! assign_2d_range_range {
 
 macro_rules! assign_2d_range_range_v {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for rix in 0..($ix1).len() {
-                let r = $ix1[rix] - 1;
-                for cix in 0..($ix2).len() {
-                    let c = $ix2[cix] - 1;
-                    ($sink)[(r, c)] = ($source)[rix * ($ix2).len() + cix].clone();
-                }
+        for rix in 0..($ix1).len() {
+            let r = $ix1[rix] - 1;
+            for cix in 0..($ix2).len() {
+                let c = $ix2[cix] - 1;
+                ($sink)[(r, c)] = ($source)[rix * ($ix2).len() + cix].clone();
             }
         }
     };
@@ -2384,13 +2360,11 @@ macro_rules! assign_2d_range_range_v {
 
 macro_rules! assign_2d_range_range_b {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for r in 0..($ix1).len() {
-                if $ix1[r] == true {
-                    for c in 0..($ix2).len() {
-                        if $ix2[c] == true {
-                            ($sink)[(r, c)] = ($source).clone();
-                        }
+        for r in 0..($ix1).len() {
+            if $ix1[r] == true {
+                for c in 0..($ix2).len() {
+                    if $ix2[c] == true {
+                        ($sink)[(r, c)] = ($source).clone();
                     }
                 }
             }
@@ -2400,13 +2374,11 @@ macro_rules! assign_2d_range_range_b {
 
 macro_rules! assign_2d_range_range_vb {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for r in 0..($ix1).len() {
-                if $ix1[r] == true {
-                    for c in 0..($ix2).len() {
-                        if $ix2[c] == true {
-                            ($sink)[(r, c)] = ($source)[r * ($ix2).len() + c].clone();
-                        }
+        for r in 0..($ix1).len() {
+            if $ix1[r] == true {
+                for c in 0..($ix2).len() {
+                    if $ix2[c] == true {
+                        ($sink)[(r, c)] = ($source)[r * ($ix2).len() + c].clone();
                     }
                 }
             }
@@ -2416,13 +2388,11 @@ macro_rules! assign_2d_range_range_vb {
 
 macro_rules! assign_2d_range_range_bu {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for r in 0..($ix1).len() {
-                if $ix1[r] == true {
-                    for cix in 0..($ix2).len() {
-                        let c = $ix2[cix] - 1;
-                        ($sink)[(r, c)] = ($source).clone();
-                    }
+        for r in 0..($ix1).len() {
+            if $ix1[r] == true {
+                for cix in 0..($ix2).len() {
+                    let c = $ix2[cix] - 1;
+                    ($sink)[(r, c)] = ($source).clone();
                 }
             }
         }
@@ -2431,15 +2401,13 @@ macro_rules! assign_2d_range_range_bu {
 
 macro_rules! assign_2d_range_range_vbu {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let nrows = $sink.nrows();
-            for cix in 0..($ix2).len() {
-                let c = $ix2[cix] - 1;
-                for r in 0..($ix1).len() {
-                    if $ix1[r] {
-                        let offset = r + c * nrows;
-                        ($sink)[(r, c)] = ($source)[offset].clone();
-                    }
+        let nrows = $sink.nrows();
+        for cix in 0..($ix2).len() {
+            let c = $ix2[cix] - 1;
+            for r in 0..($ix1).len() {
+                if $ix1[r] {
+                    let offset = r + c * nrows;
+                    ($sink)[(r, c)] = ($source)[offset].clone();
                 }
             }
         }
@@ -2448,13 +2416,11 @@ macro_rules! assign_2d_range_range_vbu {
 
 macro_rules! assign_2d_range_range_ub {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            for r in 0..$ix1.len() {
-                if $ix1[r] != 0 {
-                    for c in 0..$ix2.len() {
-                        if $ix2[c] {
-                            ($sink)[(r, c)] = $source.clone();
-                        }
+        for r in 0..$ix1.len() {
+            if $ix1[r] != 0 {
+                for c in 0..$ix2.len() {
+                    if $ix2[c] {
+                        ($sink)[(r, c)] = $source.clone();
                     }
                 }
             }
@@ -2464,15 +2430,13 @@ macro_rules! assign_2d_range_range_ub {
 
 macro_rules! assign_2d_range_range_vub {
     ($sink:expr, $ix1:expr, $ix2:expr, $source:expr) => {
-        unsafe {
-            let nrows = $sink.nrows();
-            for c in 0..$ix2.len() {
-                if $ix2[c] {
-                    for rix in 0..$ix1.len() {
-                        let r = $ix1[rix] - 1;
-                        let offset = r + c * nrows;
-                        ($sink)[(r, c)] = ($source)[offset].clone();
-                    }
+        let nrows = $sink.nrows();
+        for c in 0..$ix2.len() {
+            if $ix2[c] {
+                for rix in 0..$ix1.len() {
+                    let r = $ix1[rix] - 1;
+                    let offset = r + c * nrows;
+                    ($sink)[(r, c)] = ($source)[offset].clone();
                 }
             }
         }
@@ -3088,7 +3052,7 @@ impl FunctionSpecializer for MatrixAssignRangeAll {
                 (LegacyValue::MutableReference(sink), ixes, source) => {
                     impl_assign_range_all_fxn(sink.borrow().clone(), source.clone(), ixes.clone())
                 }
-                x => Err(MechError::new(
+                _ => Err(MechError::new(
                     UnhandledFunctionArgumentIxes {
                         arg: (
                             sink.kind(),

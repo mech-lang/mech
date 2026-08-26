@@ -431,128 +431,128 @@ fn stable_value_string(value: &LegacyValue) -> Result<String, ()> {
 }
 
 fn stable_value_kind(value: &LegacyValue) -> Result<ValueKind, ()> {
-    match value {
-        #[cfg(feature = "complex")]
-        LegacyValue::C64(_) => Ok(ValueKind::C64),
-        #[cfg(feature = "rational")]
-        LegacyValue::R64(_) => Ok(ValueKind::R64),
-        #[cfg(feature = "u8")]
-        LegacyValue::U8(_) => Ok(ValueKind::U8),
-        #[cfg(feature = "u16")]
-        LegacyValue::U16(_) => Ok(ValueKind::U16),
-        #[cfg(feature = "u32")]
-        LegacyValue::U32(_) => Ok(ValueKind::U32),
-        #[cfg(feature = "u64")]
-        LegacyValue::U64(_) => Ok(ValueKind::U64),
-        #[cfg(feature = "u128")]
-        LegacyValue::U128(_) => Ok(ValueKind::U128),
-        #[cfg(feature = "i8")]
-        LegacyValue::I8(_) => Ok(ValueKind::I8),
-        #[cfg(feature = "i16")]
-        LegacyValue::I16(_) => Ok(ValueKind::I16),
-        #[cfg(feature = "i32")]
-        LegacyValue::I32(_) => Ok(ValueKind::I32),
-        #[cfg(feature = "i64")]
-        LegacyValue::I64(_) => Ok(ValueKind::I64),
-        #[cfg(feature = "i128")]
-        LegacyValue::I128(_) => Ok(ValueKind::I128),
-        #[cfg(feature = "f32")]
-        LegacyValue::F32(_) => Ok(ValueKind::F32),
-        #[cfg(feature = "f64")]
-        LegacyValue::F64(_) => Ok(ValueKind::F64),
-        #[cfg(any(feature = "string", feature = "variable_define"))]
-        LegacyValue::String(_) => Ok(ValueKind::String),
-        #[cfg(any(feature = "bool", feature = "variable_define"))]
-        LegacyValue::Bool(_) => Ok(ValueKind::Bool),
-        #[cfg(feature = "atom")]
-        LegacyValue::Atom(value) => {
-            let atom = value.try_borrow().map_err(|_| ())?;
-            let dictionary = atom.0.1.try_borrow().map_err(|_| ())?;
-            let name = dictionary
-                .get(&atom.0.0)
-                .cloned()
-                .unwrap_or_else(|| atom.0.0.to_string());
-            Ok(ValueKind::Atom(atom.0.0, name))
-        }
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixIndex(_) => {
-            Ok(ValueKind::Matrix(Box::new(ValueKind::Index), Vec::new()))
-        }
-        #[cfg(all(feature = "matrix", feature = "bool"))]
-        LegacyValue::MatrixBool(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::Bool), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "u8"))]
-        LegacyValue::MatrixU8(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U8), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "u16"))]
-        LegacyValue::MatrixU16(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U16), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "u32"))]
-        LegacyValue::MatrixU32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U32), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "u64"))]
-        LegacyValue::MatrixU64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U64), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "u128"))]
-        LegacyValue::MatrixU128(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::U128), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "i8"))]
-        LegacyValue::MatrixI8(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I8), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "i16"))]
-        LegacyValue::MatrixI16(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I16), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "i32"))]
-        LegacyValue::MatrixI32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I32), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "i64"))]
-        LegacyValue::MatrixI64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I64), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "i128"))]
-        LegacyValue::MatrixI128(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::I128), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "f32"))]
-        LegacyValue::MatrixF32(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::F32), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "f64"))]
-        LegacyValue::MatrixF64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::F64), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "string"))]
-        LegacyValue::MatrixString(_) => {
-            Ok(ValueKind::Matrix(Box::new(ValueKind::String), Vec::new()))
-        }
-        #[cfg(all(feature = "matrix", feature = "rational"))]
-        LegacyValue::MatrixR64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::R64), Vec::new())),
-        #[cfg(all(feature = "matrix", feature = "complex"))]
-        LegacyValue::MatrixC64(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::C64), Vec::new())),
-        #[cfg(feature = "matrix")]
-        LegacyValue::MatrixValue(_) => Ok(ValueKind::Matrix(Box::new(ValueKind::Any), Vec::new())),
-        #[cfg(feature = "set")]
-        LegacyValue::Set(_) => Ok(ValueKind::Set(Box::new(ValueKind::Any), None)),
-        #[cfg(feature = "map")]
-        LegacyValue::Map(_) => Ok(ValueKind::Map(
-            Box::new(ValueKind::Any),
-            Box::new(ValueKind::Any),
-        )),
-        #[cfg(feature = "record")]
-        LegacyValue::Record(_) => Ok(ValueKind::Record(Vec::new())),
-        #[cfg(feature = "table")]
-        LegacyValue::Table(_) => Ok(ValueKind::Table(Vec::new(), 0)),
-        #[cfg(feature = "tuple")]
-        LegacyValue::Tuple(_) => Ok(ValueKind::Tuple(Vec::new())),
-        #[cfg(feature = "enum")]
-        LegacyValue::Enum(value) => {
-            let enum_value = value.try_borrow().map_err(|_| ())?;
-            let dictionary = enum_value.names.try_borrow().map_err(|_| ())?;
-            let name = dictionary
-                .get(&enum_value.id)
-                .cloned()
-                .unwrap_or_else(|| enum_value.id.to_string());
-            Ok(ValueKind::Enum(enum_value.id, name))
-        }
-        LegacyValue::Id(_) => Ok(ValueKind::Id),
-        LegacyValue::Index(_) => Ok(ValueKind::Index),
-        LegacyValue::Empty => Ok(ValueKind::Empty),
-        LegacyValue::EmptyKind(kind) | LegacyValue::Kind(kind) => Ok(kind.clone()),
-        LegacyValue::IndexAll => Ok(ValueKind::Empty),
-        LegacyValue::Typed(_, kind) => Ok(kind.clone()),
-        LegacyValue::MutableReference(reference) => {
-            let value = reference.try_borrow().map_err(|_| ())?;
-            stable_value_kind(&value)
-        }
-        // Cargo may unify additional mech-core value features without enabling
-        // the corresponding local mech-engine feature. Ask the defining crate
-        // for the kind of those otherwise-unnameable variants.
-        #[allow(unreachable_patterns)]
-        _ => Ok(value.kind()),
+    macro_rules! scalar_kind {
+        ($feature:literal, $variant:ident, $kind:ident) => {
+            #[cfg(feature = $feature)]
+            if matches!(value, LegacyValue::$variant(_)) {
+                return Ok(ValueKind::$kind);
+            }
+        };
     }
+    scalar_kind!("complex", C64, C64);
+    scalar_kind!("rational", R64, R64);
+    scalar_kind!("u8", U8, U8);
+    scalar_kind!("u16", U16, U16);
+    scalar_kind!("u32", U32, U32);
+    scalar_kind!("u64", U64, U64);
+    scalar_kind!("u128", U128, U128);
+    scalar_kind!("i8", I8, I8);
+    scalar_kind!("i16", I16, I16);
+    scalar_kind!("i32", I32, I32);
+    scalar_kind!("i64", I64, I64);
+    scalar_kind!("i128", I128, I128);
+    scalar_kind!("f32", F32, F32);
+    scalar_kind!("f64", F64, F64);
+    #[cfg(any(feature = "string", feature = "variable_define"))]
+    if matches!(value, LegacyValue::String(_)) {
+        return Ok(ValueKind::String);
+    }
+    #[cfg(any(feature = "bool", feature = "variable_define"))]
+    if matches!(value, LegacyValue::Bool(_)) {
+        return Ok(ValueKind::Bool);
+    }
+    #[cfg(feature = "atom")]
+    if let LegacyValue::Atom(value) = value {
+        let atom = value.try_borrow().map_err(|_| ())?;
+        let dictionary = atom.0.1.try_borrow().map_err(|_| ())?;
+        let name = dictionary
+            .get(&atom.0.0)
+            .cloned()
+            .unwrap_or_else(|| atom.0.0.to_string());
+        return Ok(ValueKind::Atom(atom.0.0, name));
+    }
+
+    macro_rules! matrix_kind {
+        ($feature:literal, $variant:ident, $kind:ident) => {
+            #[cfg(all(feature = "matrix", feature = $feature))]
+            if matches!(value, LegacyValue::$variant(_)) {
+                return Ok(ValueKind::Matrix(Box::new(ValueKind::$kind), Vec::new()));
+            }
+        };
+    }
+    #[cfg(feature = "matrix")]
+    if matches!(value, LegacyValue::MatrixIndex(_)) {
+        return Ok(ValueKind::Matrix(Box::new(ValueKind::Index), Vec::new()));
+    }
+    matrix_kind!("bool", MatrixBool, Bool);
+    matrix_kind!("u8", MatrixU8, U8);
+    matrix_kind!("u16", MatrixU16, U16);
+    matrix_kind!("u32", MatrixU32, U32);
+    matrix_kind!("u64", MatrixU64, U64);
+    matrix_kind!("u128", MatrixU128, U128);
+    matrix_kind!("i8", MatrixI8, I8);
+    matrix_kind!("i16", MatrixI16, I16);
+    matrix_kind!("i32", MatrixI32, I32);
+    matrix_kind!("i64", MatrixI64, I64);
+    matrix_kind!("i128", MatrixI128, I128);
+    matrix_kind!("f32", MatrixF32, F32);
+    matrix_kind!("f64", MatrixF64, F64);
+    matrix_kind!("string", MatrixString, String);
+    matrix_kind!("rational", MatrixR64, R64);
+    matrix_kind!("complex", MatrixC64, C64);
+    #[cfg(feature = "matrix")]
+    if matches!(value, LegacyValue::MatrixValue(_)) {
+        return Ok(ValueKind::Matrix(Box::new(ValueKind::Any), Vec::new()));
+    }
+    #[cfg(feature = "set")]
+    if matches!(value, LegacyValue::Set(_)) {
+        return Ok(ValueKind::Set(Box::new(ValueKind::Any), None));
+    }
+    #[cfg(feature = "map")]
+    if matches!(value, LegacyValue::Map(_)) {
+        return Ok(ValueKind::Map(
+            Box::new(ValueKind::Any),
+            Box::new(ValueKind::Any),
+        ));
+    }
+    #[cfg(feature = "record")]
+    if matches!(value, LegacyValue::Record(_)) {
+        return Ok(ValueKind::Record(Vec::new()));
+    }
+    #[cfg(feature = "table")]
+    if matches!(value, LegacyValue::Table(_)) {
+        return Ok(ValueKind::Table(Vec::new(), 0));
+    }
+    #[cfg(feature = "tuple")]
+    if matches!(value, LegacyValue::Tuple(_)) {
+        return Ok(ValueKind::Tuple(Vec::new()));
+    }
+    #[cfg(feature = "enum")]
+    if let LegacyValue::Enum(value) = value {
+        let enum_value = value.try_borrow().map_err(|_| ())?;
+        let dictionary = enum_value.names.try_borrow().map_err(|_| ())?;
+        let name = dictionary
+            .get(&enum_value.id)
+            .cloned()
+            .unwrap_or_else(|| enum_value.id.to_string());
+        return Ok(ValueKind::Enum(enum_value.id, name));
+    }
+    if let LegacyValue::MutableReference(reference) = value {
+        let value = reference.try_borrow().map_err(|_| ())?;
+        return stable_value_kind(&value);
+    }
+    if let LegacyValue::Typed(_, kind) | LegacyValue::EmptyKind(kind) | LegacyValue::Kind(kind) =
+        value
+    {
+        return Ok(kind.clone());
+    }
+    if matches!(value, LegacyValue::IndexAll) {
+        return Ok(ValueKind::Empty);
+    }
+
+    // The defining crate knows about value variants enabled through feature
+    // unification even when this crate cannot name them.
+    Ok(value.kind())
 }
 
 #[cfg(all(test, feature = "source"))]
@@ -694,7 +694,7 @@ mod tests {
 
     #[test]
     fn hierarchy_validation_is_complete_and_keyed_by_interpreter() {
-        let mut program = program_with_constraint("shared! := false");
+        let program = program_with_constraint("shared! := false");
         let root_id = program.interpreter.id;
         let child_id = root_id.wrapping_add(101);
         let grandchild_id = root_id.wrapping_add(202);
@@ -749,7 +749,7 @@ mod tests {
 
     #[test]
     fn repeated_interpreter_handle_is_an_infrastructure_error() {
-        let mut program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
+        let program = CompilerPlanningProgram::new(CompilerPlanningConfig::default());
         let child_id = program.interpreter.id.wrapping_add(1);
         let child = Ref::new(Box::new(Interpreter::new(child_id, 10_000)));
         program

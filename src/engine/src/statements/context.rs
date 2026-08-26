@@ -1,10 +1,12 @@
 use crate::{
-    ContextBase, ContextDeclaration, ContextSend, Environment, ExecutionResourceRequest,
+    ContextBase, ContextDeclaration, ContextSend, ExecutionResourceRequest,
     ExternalResourceReadFunction, ExternalResourceWriteFunction, GenericError, Identifier,
     InitialSolvePolicy, InterpreterExecution, LegacyValue, MResult, MechError, Ref,
-    ResourceDelivery, ResourceIntent, UndefinedContextError, ValRef, Var, VariableAssign,
+    ResourceDelivery, ResourceIntent, UndefinedContextError, ValRef, Var,
     execute_specialized_function, expression,
 };
+#[cfg(feature = "variable_assign")]
+use crate::{Environment, VariableAssign};
 
 // Interpreter-local context bindings are for direct interpreter execution.
 pub fn context_declaration(
@@ -97,6 +99,7 @@ pub(crate) fn context_read(
     Ok(output)
 }
 
+#[cfg(feature = "variable_assign")]
 pub(crate) fn context_assign(
     assignment: &VariableAssign,
     environment: Option<&Environment>,

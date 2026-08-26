@@ -17,7 +17,7 @@ mod publication;
 use document_bundle::resolve_document_source_bundle;
 use publication::{PlannedOutput, publish_outputs_recoverably};
 
-use crate::cli::outcome::{CliOutcome, RootFlags};
+use crate::cli::outcome::CliOutcome;
 use crate::cli::resources::{
     LoadedStylesheets, ResourceEvent, ResourceFallback, Utf8ConversionError, WebResourceDefaults,
     html_style_sheets, load_resource, load_stylesheets,
@@ -27,7 +27,7 @@ use crate::fs_paths::{
     unsupported_source_path_error,
 };
 use crate::source_discovery::{
-    DedupePolicy, DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
+    DiscoveryOptions, MissingPathPolicy, SkipReason, SourceDiscoveryEvent,
     collect_sources_with_events,
 };
 use crate::{GenericError, MechError, save_to_file};
@@ -301,6 +301,7 @@ const SKIP_SOURCE_DIRS: &[&str] = &["target", ".git", "dist", "out"];
 
 #[derive(Clone, Debug)]
 struct CollectedSourceTarget {
+    #[cfg(test)]
     input_root: PathBuf,
     path: PathBuf,
     relative_path: PathBuf,
@@ -324,13 +325,6 @@ impl Deref for CollectedFormatTargets {
 impl DerefMut for CollectedFormatTargets {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.targets
-    }
-}
-
-impl CollectedFormatTargets {
-    fn extend(&mut self, other: CollectedFormatTargets) {
-        self.targets.extend(other.targets);
-        self.events.extend(other.events);
     }
 }
 
@@ -504,6 +498,7 @@ fn collect_format_targets(
         let relative_path = safe_output_relative_path(path)?;
         return Ok(CollectedFormatTargets {
             targets: vec![CollectedSourceTarget {
+                #[cfg(test)]
                 input_root: path.parent().unwrap_or_else(|| Path::new("")).to_path_buf(),
                 path: path.to_path_buf(),
                 relative_path,
@@ -546,7 +541,6 @@ fn collect_format_targets(
             follow_file_symlinks: true,
             follow_dir_symlinks: false,
             missing_path_policy: MissingPathPolicy::SkipBrokenSymlink,
-            dedupe_policy: DedupePolicy::LogicalPath,
         },
     )?;
     let events = discovery.events;
@@ -562,6 +556,7 @@ fn collect_format_targets(
         .map(|entry| {
             let default_output_path = default_output_relative_path(path, &entry.logical_path)?;
             Ok(CollectedSourceTarget {
+                #[cfg(test)]
                 input_root: path.to_path_buf(),
                 path: entry.logical_path,
                 relative_path: entry.relative_path,
@@ -701,7 +696,6 @@ pub(crate) struct FormatOptions {
 
 impl FormatOptions {
     pub(crate) fn from_matches(
-        _root: RootFlags,
         _root_matches: &ArgMatches,
         matches: &ArgMatches,
         resources: WebResourceDefaults,

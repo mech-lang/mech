@@ -1,10 +1,10 @@
-use mech_engine::{
-    ProgramArtifact,
-    resident::{ResidentActivationError, ResidentExecutionError},
-};
+#[cfg(feature = "resident-routing-source")]
+use mech_engine::resident::ResidentExecutionError;
+use mech_engine::{ProgramArtifact, resident::ResidentActivationError};
 
 use super::{ResidentRouteFailureClass, route_failure};
 
+#[cfg(feature = "resident-routing-source")]
 pub(crate) fn projection_refresh_failure(error: ResidentExecutionError) -> mech_core::MechError {
     route_failure(
         ResidentRouteFailureClass::ActivationFailure,

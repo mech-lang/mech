@@ -1,11 +1,34 @@
+#[cfg(any(
+    feature = "matrix1",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord",
+    all(feature = "matrixd", feature = "row_vectord")
+))]
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
+#[cfg(any(
+    feature = "matrix1",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord",
+    all(feature = "matrixd", feature = "row_vectord")
+))]
 use num_traits::*;
 
 // Stats Sum Column -----------------------------------------------------------
 
+#[cfg(any(
+    feature = "matrix1",
+    feature = "vector2",
+    feature = "vector3",
+    feature = "vector4",
+    feature = "vectord",
+    all(feature = "matrixd", feature = "row_vectord")
+))]
 macro_rules! sum_column_op {
     ($arg:expr, $out:expr) => {
         {

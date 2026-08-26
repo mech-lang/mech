@@ -1,13 +1,10 @@
-#[macro_use]
 use crate::*;
 
-use std::fmt::Debug;
-use std::marker::PhantomData;
 use std::sync::LazyLock;
 
 #[cfg(feature = "matrix")]
 use nalgebra::{
-    Dim, Scalar,
+    Dim,
     base::{Matrix as naMatrix, Storage, StorageMut},
 };
 
@@ -87,7 +84,9 @@ macro_rules! checked_op_assign {
 
 checked_op_assign!(checked_add_assign, runtime_checked_add, "addition assignment");
 checked_op_assign!(checked_sub_assign, runtime_checked_sub, "subtraction assignment");
+#[cfg(feature = "mul_assign")]
 checked_op_assign!(checked_mul_assign, runtime_checked_mul, "multiplication assignment");
+#[cfg(feature = "div_assign")]
 checked_op_assign!(checked_div_assign, runtime_checked_div, "division assignment");
 
 static PURE_WHOLE_VALUE_RMW_CONTRACT: LazyLock<OperationContractDeclaration> =
@@ -796,7 +795,7 @@ macro_rules! impl_assign_vector_scalar {
 
         fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
           match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
+            FunctionArgs::Binary(out, _, arg2) => {
               let source: Ref<T> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
               let sink: Ref<MatA> = out.try_function_ref(FunctionArgumentRole::Output)?;
               Ok(Box::new(Self { sink, source, _marker: PhantomData::default() }))

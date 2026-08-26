@@ -24,7 +24,7 @@ impl GateBWorkspace {
         Self {
             input: [0.0; 4],
             scratch: vec![EkfScratch::default(); plan.instances].into_boxed_slice(),
-            slot_epoch_marks: vec![InstanceEpoch(0); plan.slots.len()].into_boxed_slice(),
+            slot_epoch_marks: vec![InstanceEpoch(0); plan.slot_count].into_boxed_slice(),
             touched_slots: Vec::with_capacity(persistent_capacity),
             invalidated_slots: Vec::with_capacity(persistent_capacity),
             changed_slots: Vec::with_capacity(persistent_capacity),

@@ -69,7 +69,7 @@ impl CapacityController {
             ));
         }
         let identity = NEXT_LEDGER_IDENTITY
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |identity| {
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |identity| {
                 identity.checked_add(1)
             })
             .map_err(|_| {
@@ -290,6 +290,7 @@ impl CapacityController {
             .expect("retained byte accounting underflow");
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub(crate) fn retained(&self) -> RecordEstimate {
         let state = self.lock();
         RecordEstimate {
@@ -298,6 +299,7 @@ impl CapacityController {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn reserved(&self) -> RecordEstimate {
         let state = self.lock();
         RecordEstimate {
@@ -306,10 +308,12 @@ impl CapacityController {
         }
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub(crate) fn mark_unhealthy(&self) {
         self.lock().healthy = false;
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub(crate) fn is_healthy(&self) -> bool {
         self.lock().healthy
     }

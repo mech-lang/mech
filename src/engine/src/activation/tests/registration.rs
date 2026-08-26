@@ -1,5 +1,4 @@
 use super::support::{
-    ActivationPatternRegisterWriteUnsupported, ActivationScopeTriggerWriteUnsupported,
     CompiledPattern, Finalize, GuardFinalize, Interpreter, LegacyValue, Matcher, MechFunctionImpl,
     ReactiveDependencyKind, Ref, Select, UnmatchedFinalize, arm_register_nodes, f64_symbol,
     hash_str, interpret, interpret_more, plan_snapshot, registration, root_cell,

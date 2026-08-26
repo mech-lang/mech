@@ -1,15 +1,23 @@
+#[cfg(feature = "enum")]
+use super::MatchNonExhaustiveError;
+#[cfg(feature = "enum")]
+use super::MatchNonExhaustiveVariantsError;
 use super::{
     Environment, InvalidGuardExpressionError, MatchArmKindMismatchError, MatchNoArmMatchedError,
-    MatchNonExhaustiveError, MatchNonExhaustiveVariantsError, expression,
+    expression,
 };
 #[cfg(feature = "matrix")]
-use crate::Matrix;
+use crate::CannotConvertToTypeError;
+#[cfg(feature = "enum")]
+use crate::Literal;
 #[cfg(feature = "enum")]
 use crate::MechEnum;
 use crate::{
-    CannotConvertToTypeError, Expression, InterpreterExecution, LegacyValue, Literal, MResult,
-    MatchArm, MatchExpression, MechError, Pattern, Ref, Token, ValueKind,
+    Expression, InterpreterExecution, LegacyValue, MResult, MatchArm, MatchExpression, MechError,
+    Pattern, Ref, Token, ValueKind,
 };
+#[cfg(feature = "matrix")]
+use mech_core::matrix::Matrix;
 #[cfg(feature = "enum")]
 use std::collections::HashSet;
 
@@ -143,8 +151,9 @@ fn infer_missing_enum_match_patterns(
                 (Some(enum_brrw.id), Some(enum_brrw.variants[0].0))
             }
         }
+        #[cfg(feature = "atom")]
         LegacyValue::Atom(atom) => (None, Some(atom.borrow().id())),
-        #[cfg(feature = "tuple")]
+        #[cfg(all(feature = "tuple", feature = "atom"))]
         LegacyValue::Tuple(tuple_val) => {
             let tuple_brrw = tuple_val.borrow();
             match tuple_brrw.elements.first() {
@@ -262,6 +271,7 @@ fn match_validate_arm_kinds(
     Ok(())
 }
 
+#[cfg(feature = "enum")]
 fn validate_match_arm_output_kinds(
     match_expr: &MatchExpression,
     env: &Environment,

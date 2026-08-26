@@ -1,11 +1,7 @@
-use mech_runtime::__gate_a_recording::AccountedRecord;
+use mech_runtime::turn_record::sealed::Sealed;
 
 struct HugePayload(Vec<u8>);
 
-impl AccountedRecord for HugePayload {
-    fn retained_bytes(&self) -> usize {
-        0
-    }
-}
+impl Sealed for HugePayload {}
 
 fn main() {}

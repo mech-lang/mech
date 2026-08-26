@@ -9,11 +9,12 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-#[macro_use]
-extern crate mech_core;
 extern crate paste;
 
 use mech_core::*;
+
+#[cfg(feature = "source")]
+use paste::paste;
 
 #[cfg(feature = "matrixd")]
 use nalgebra::DMatrix;
@@ -31,8 +32,6 @@ use nalgebra::Matrix3;
 use nalgebra::Matrix3x2;
 #[cfg(feature = "matrix4")]
 use nalgebra::Matrix4;
-#[cfg(feature = "rowdvector")]
-use nalgebra::RowDVector;
 #[cfg(feature = "row_vectord")]
 use nalgebra::RowDVector;
 #[cfg(feature = "row_vector2")]
@@ -48,7 +47,6 @@ use nalgebra::Vector3;
 #[cfg(feature = "vector4")]
 use nalgebra::Vector4;
 
-use paste::paste;
 use std::fmt::Debug;
 use std::ops::*;
 use std::sync::LazyLock;
@@ -152,9 +150,9 @@ pub mod sum_column;
 #[cfg(feature = "sum")]
 pub mod sum_row;
 
-#[cfg(feature = "sum")]
+#[cfg(all(feature = "sum", feature = "source"))]
 pub use self::sum_column::*;
-#[cfg(feature = "sum")]
+#[cfg(all(feature = "sum", feature = "source"))]
 pub use self::sum_row::*;
 
 #[macro_export]

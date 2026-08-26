@@ -1,7 +1,6 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 
 // Or ------------------------------------------------------------------------
 
@@ -13,6 +12,7 @@ macro_rules! or_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -23,6 +23,7 @@ macro_rules! or_vec_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_scalar_rhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -33,6 +34,7 @@ macro_rules! or_scalar_rhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_scalar_lhs_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
@@ -43,10 +45,11 @@ macro_rules! or_scalar_lhs_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_mat_vec_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut col, lhs_col) in out_deref.column_iter_mut().zip(lhs_deref.column_iter()) {
@@ -58,10 +61,11 @@ macro_rules! or_mat_vec_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_vec_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut col, rhs_col) in out_deref.column_iter_mut().zip(rhs_deref.column_iter()) {
@@ -73,10 +77,11 @@ macro_rules! or_vec_mat_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_mat_row_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut row, lhs_row) in out_deref.row_iter_mut().zip(lhs_deref.row_iter()) {
@@ -88,10 +93,11 @@ macro_rules! or_mat_row_op {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! or_row_mat_op {
     ($lhs:expr, $rhs:expr, $out:expr) => {
         unsafe {
-            let mut out_deref = &mut (*$out);
+            let out_deref = &mut (*$out);
             let lhs_deref = &(*$lhs);
             let rhs_deref = &(*$rhs);
             for (mut row, rhs_row) in out_deref.row_iter_mut().zip(rhs_deref.row_iter()) {

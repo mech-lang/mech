@@ -2,5 +2,5 @@ use mech_engine::Interpreter;
 
 fn main() {
   let mut interpreter = Interpreter::new(1, 100);
-  let _ = interpreter.step_with_reactive_turn_journal();
+  drop(interpreter.step_with_reactive_turn_journal());
 }

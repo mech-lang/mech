@@ -1,11 +1,15 @@
 use crate::*;
-use libm::{atanh, atanhf};
-#[cfg(feature = "matrix")]
+#[cfg(feature = "f64")]
+use libm::atanh;
+#[cfg(feature = "f32")]
+use libm::atanhf;
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
+#[cfg(feature = "source")]
 use num_traits::*;
 
 // Atanh Macros
+#[cfg(feature = "f64")]
 macro_rules! atanh_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -14,6 +18,7 @@ macro_rules! atanh_op {
     };
 }
 
+#[cfg(feature = "f64")]
 macro_rules! atanh_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -24,6 +29,7 @@ macro_rules! atanh_vec_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atanhf_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -32,6 +38,7 @@ macro_rules! atanhf_op {
     };
 }
 
+#[cfg(feature = "f32")]
 macro_rules! atanhf_vec_op {
     ($arg:expr, $out:expr) => {
         unsafe {
@@ -51,7 +58,7 @@ impl_math_unop!(MathAtanh, f64, atanh);
 fn impl_atanh_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms2!(
       MathAtanh,
-      (lhs_value),
+      lhs_value,
       F32 => MatrixF32, F32, f32::zero(), "f32";
       F64 => MatrixF64, F64, f64::zero(), "f64";
     )

@@ -79,6 +79,8 @@ pub struct ProgramState {
     #[cfg(feature = "functions")]
     pub plan: Plan,
     #[cfg(feature = "functions")]
+    pub user_function_scope_depth: usize,
+    #[cfg(feature = "functions")]
     pub compute_regions: Vec<ProgramComputeRegion>,
     pub kinds: KindTable,
     #[cfg(feature = "enum")]
@@ -103,6 +105,8 @@ impl Clone for ProgramState {
             user_functions: self.user_functions.clone(),
             #[cfg(feature = "functions")]
             plan: self.plan.clone(),
+            #[cfg(feature = "functions")]
+            user_function_scope_depth: self.user_function_scope_depth,
             #[cfg(feature = "functions")]
             compute_regions: self.compute_regions.clone(),
             kinds: self.kinds.clone(),
@@ -130,6 +134,8 @@ impl ProgramState {
             user_functions: UserFunctionTable::default(),
             #[cfg(feature = "functions")]
             plan: Plan::new(),
+            #[cfg(feature = "functions")]
+            user_function_scope_depth: 0,
             #[cfg(feature = "functions")]
             compute_regions: Vec::new(),
             kinds: KindTable::default(),

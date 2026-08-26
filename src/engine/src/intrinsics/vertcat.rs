@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::intrinsics::*;
 use std::sync::LazyLock;
 
@@ -31,6 +30,14 @@ static PURE_VERTICAL_VARIADIC_BUILD_CONTRACT: LazyLock<OperationContractDeclarat
 
 // Vertical Concatenate -----------------------------------------------------
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "vector2"),
+    all(feature = "vector2", feature = "vector4"),
+    all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+    all(feature = "row_vector2", feature = "matrix2"),
+    all(feature = "row_vector3", feature = "matrix2x3"),
+    all(feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! vertcat_two_args {
     ($fxn:ident, $e0:ident, $e1:ident, $out:ident, $opt:ident) => {
         #[derive(Debug)]
@@ -94,7 +101,7 @@ macro_rules! vertcat_two_args {
                 unsafe {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
-                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr);
                 };
                 Ok(())
@@ -133,6 +140,13 @@ macro_rules! vertcat_two_args {
     };
 }
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "vector3"),
+    all(feature = "matrix1", feature = "vector2", feature = "vector4"),
+    all(feature = "row_vector2", feature = "matrix3x2"),
+    all(feature = "row_vector3", feature = "matrix3"),
+    all(feature = "row_vector4", feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! vertcat_three_args {
     ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $out:ident, $opt:ident) => {
         #[derive(Debug)]
@@ -202,7 +216,7 @@ macro_rules! vertcat_three_args {
                     let e0_ptr = (*(self.e0.as_ptr())).clone();
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let e2_ptr = (*(self.e2.as_ptr())).clone();
-                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr);
                 };
                 Ok(())
@@ -234,6 +248,7 @@ macro_rules! vertcat_three_args {
     };
 }
 
+#[cfg(all(feature = "matrix4", feature = "row_vector4"))]
 macro_rules! vertcat_four_args {
     ($fxn:ident, $e0:ident, $e1:ident, $e2:ident, $e3:ident, $out:ident, $opt:ident) => {
         #[derive(Debug)]
@@ -315,7 +330,7 @@ macro_rules! vertcat_four_args {
                     let e1_ptr = (*(self.e1.as_ptr())).clone();
                     let e2_ptr = (*(self.e2.as_ptr())).clone();
                     let e3_ptr = (*(self.e3.as_ptr())).clone();
-                    let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+                    let out_ptr = (&mut *(self.out.as_mut_ptr()));
                     $opt!(out_ptr, e0_ptr, e1_ptr, e2_ptr, e3_ptr);
                 };
                 Ok(())
@@ -804,12 +819,7 @@ mech_core::declare_native_runtime_factory! {
     extra_cargo_features: ["matrix_vertcat"],
 }
 
-#[cfg(all(
-    test,
-    feature = "semantic-compiler",
-    feature = "matrixd",
-    feature = "f64"
-))]
+#[cfg(all(test, feature = "compiler", feature = "matrixd", feature = "f64"))]
 mod compiler_tests {
     use super::*;
     use crate::test_support::bytecode_compiler::RecordingBytecodeCompilerContext;
@@ -969,7 +979,7 @@ where
     Ref<DVector<T>>: ToValue,
 {
     fn solve_result(&self) -> MResult<()> {
-        let mut offset = self.e0.copy_into_v(&self.out, 0);
+        let offset = self.e0.copy_into_v(&self.out, 0);
         self.e1.copy_into_v(&self.out, offset);
         Ok(())
     }
@@ -1272,7 +1282,6 @@ where
                 let mut scalar: Vec<(Ref<T>, usize)> = Vec::new();
                 let mut matrix: Vec<(Box<dyn CopyMat<T>>, usize)> = Vec::new();
                 for (i, arg) in vargs.into_iter().enumerate() {
-                    let kind = arg.kind();
                     if arg.is_scalar() {
                         let scalar_ref = arg.try_function_ref(FunctionArgumentRole::Input(i))?;
                         scalar.push((scalar_ref, i));
@@ -1308,7 +1317,7 @@ where
 {
     fn solve_result(&self) -> MResult<()> {
         unsafe {
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             for (e, i) in &self.matrix {
                 e.copy_into_v(&self.out, *i);
             }
@@ -1575,6 +1584,7 @@ where
 
 // VerticalConcatenateM1M1 ----------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector2"))]
 macro_rules! vertcat_m1m1 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1592,6 +1602,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateV2V2 ----------------------------------------------------
 
+#[cfg(all(feature = "vector2", feature = "vector4"))]
 macro_rules! vertcat_r2r2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1611,6 +1622,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateM1V3 ----------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
 macro_rules! vertcat_m1r3 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1630,6 +1642,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateV3M1 ----------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector4"))]
 macro_rules! vertcat_r3m1 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1649,6 +1662,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateM1V2 ----------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
 macro_rules! vertcat_m1r2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1667,6 +1681,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateV2M1 ----------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector3"))]
 macro_rules! vertcat_r2m1 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1685,6 +1700,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateM1M1M1 --------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector3"))]
 macro_rules! vertcat_m1m1m1 {
     ($out:expr, $e0:expr,$e1:expr,$e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -1704,6 +1720,7 @@ vertcat_three_args!(
 
 // VerticalConcatenateM1M1V2 --------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 macro_rules! vertcat_m1m1v2 {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -1724,6 +1741,7 @@ vertcat_three_args!(
 
 // VerticalConcatenateM1V2M1 --------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 macro_rules! vertcat_m1r2m1 {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -1744,6 +1762,7 @@ vertcat_three_args!(
 
 // VerticalConcatenateV2M1M1 --------------------------------------------------
 
+#[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
 macro_rules! vertcat_r2m1m1 {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         $out[0] = $e0[0].clone();
@@ -1836,7 +1855,7 @@ where
             let e1_ptr = (*(self.e1.as_ptr())).clone();
             let e2_ptr = (*(self.e2.as_ptr())).clone();
             let e3_ptr = (*(self.e3.as_ptr())).clone();
-            let mut out_ptr = (&mut *(self.out.as_mut_ptr()));
+            let out_ptr = &mut *(self.out.as_mut_ptr());
             out_ptr[0] = e0_ptr[0].clone();
             out_ptr[1] = e1_ptr[0].clone();
             out_ptr[2] = e2_ptr[0].clone();
@@ -1872,6 +1891,7 @@ where
 
 // Mixed Type Vertical Concatenations -----------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "matrix2"))]
 macro_rules! vertcat_r2r2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1913,6 +1933,7 @@ mech_core::declare_native_runtime_factory! {
 
 // VerticalConcatenateR3R3 ----------------------------------------------------
 
+#[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
 macro_rules! vertcat_r3r3 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1934,6 +1955,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateR2M2 ----------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
 macro_rules! vertcat_r2m2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1955,6 +1977,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateM2R2 ----------------------------------------------------
 
+#[cfg(all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"))]
 macro_rules! vertcat_m2r2 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -1976,6 +1999,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateM2x3R3 --------------------------------------------------
 
+#[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
 macro_rules! vertcat_m2x3r3 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -2000,6 +2024,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateR3M2x3 --------------------------------------------------
 
+#[cfg(all(feature = "matrix2x3", feature = "row_vector3", feature = "matrix3"))]
 macro_rules! vertcat_r3m2x3 {
     ($out:expr, $e0:expr, $e1:expr) => {
         $out[0] = $e0[0].clone();
@@ -2024,6 +2049,7 @@ vertcat_two_args!(
 
 // VerticalConcatenateMDR4 ----------------------------------------------------
 
+#[cfg(all(feature = "matrixd", feature = "row_vector4", feature = "matrix4"))]
 macro_rules! vertcat_mdr4 {
     ($out:expr, $e0:expr, $e1:expr) => {
         let e0_len = $e0.len();
@@ -2048,15 +2074,15 @@ vertcat_two_args!(
 
 // VerticalConcatenateMDMD ----------------------------------------------------
 
+#[cfg(all(feature = "matrixd", feature = "matrix4"))]
 macro_rules! vertcat_mdmd {
     ($out:expr, $e0:expr, $e1:expr) => {
         let dest_rows = $out.nrows();
         let mut offset = 0;
-        let mut dest_ix = 0;
+        let mut dest_ix = offset;
 
         let src_rows = $e0.nrows();
         let stride = dest_rows - src_rows;
-        dest_ix = offset;
         for ix in 0..$e0.len() {
             $out[dest_ix] = $e0[ix].clone();
             dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
@@ -2094,15 +2120,19 @@ vertcat_two_args!(
 
 // VerticalConcatenateR2R2R2 ----------------------------------------------------
 
+#[cfg(any(
+    all(feature = "row_vector2", feature = "matrix3x2"),
+    all(feature = "row_vector3", feature = "matrix3"),
+    all(feature = "row_vector4", feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! vertcat_mdmdmd {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr) => {
         let dest_rows = $out.nrows();
         let mut offset = 0;
-        let mut dest_ix = 0;
+        let mut dest_ix = offset;
 
         let src_rows = $e0.nrows();
         let stride = dest_rows - src_rows;
-        dest_ix = offset;
         for ix in 0..$e0.len() {
             $out[dest_ix] = $e0[ix].clone();
             dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
@@ -2198,15 +2228,15 @@ vertcat_three_args!(
 
 // VerticalConcatenateR4R4R4R4 ------------------------------------------------
 
+#[cfg(all(feature = "matrix4", feature = "row_vector4"))]
 macro_rules! vertcat_mdmdmdmd {
     ($out:expr, $e0:expr, $e1:expr, $e2:expr, $e3:expr) => {
         let dest_rows = $out.nrows();
         let mut offset = 0;
-        let mut dest_ix = 0;
+        let mut dest_ix = offset;
 
         let src_rows = $e0.nrows();
         let stride = dest_rows - src_rows;
-        dest_ix = offset;
         for ix in 0..$e0.len() {
             $out[dest_ix] = $e0[ix].clone();
             dest_ix += ((ix + 1) % src_rows == 0) as usize * stride + 1;
@@ -2272,7 +2302,6 @@ macro_rules! impl_vertcat_arms {
         }
       }
       let arguments = $args;
-      let rows = arguments[0].shape()[0];
       let rows:usize = arguments.iter().fold(0, |acc, x| acc + x.shape()[0]);
       let columns:usize = arguments[0].shape()[1];
       let nargs = arguments.len();
@@ -2284,11 +2313,10 @@ macro_rules! impl_vertcat_arms {
           _ => false,
       }});
       if no_refs {
-        let mat: Vec<$kind> = arguments.iter().flat_map(|v| v.[<as_vec $kind:lower>]().unwrap()).collect::<Vec<$kind>>();
-        fn to_column_major<T: Clone>(out: &[LegacyValue], row_n: usize, col_n: usize, extract_fn: impl Fn(&LegacyValue) -> MResult<Vec<T>> + Clone) -> Vec<T> {
+        fn to_column_major<T: Clone>(out: &[LegacyValue], col_n: usize, extract_fn: impl Fn(&LegacyValue) -> MResult<Vec<T>> + Clone) -> Vec<T> {
           (0..col_n).flat_map(|col| out.iter().map({let value = extract_fn.clone();move |row| value(row).unwrap()[col].clone()})).collect()
         }
-        let mat = to_column_major(&arguments, rows, columns, |v| v.[<as_vec $kind:lower>]());
+        let mat = to_column_major(&arguments, columns, |v| v.[<as_vec $kind:lower>]());
         match (rows,columns) {
           #[cfg(feature = "matrix1")]
           (1,1) => {return Ok(Box::new(VerticalConcatenateS1{out:Ref::new(Matrix1::from_vec(mat))}));}
@@ -2299,7 +2327,7 @@ macro_rules! impl_vertcat_arms {
           #[cfg(feature = "vector4")]
           (4,1) => {return Ok(Box::new(VerticalConcatenateS4{out:Ref::new(Vector4::from_vec(mat))}));}
           #[cfg(feature = "vectord")]
-          (m,1) => {return Ok(Box::new(VerticalConcatenateSD{out:Ref::new(DVector::from_vec(mat))}));}
+          (_,1) => {return Ok(Box::new(VerticalConcatenateSD{out:Ref::new(DVector::from_vec(mat))}));}
           #[cfg(feature = "matrix2")]
           (2,2) => {return Ok(Box::new(VerticalConcatenateM2{out:Ref::new(Matrix2::from_vec(mat))}));}
           #[cfg(feature = "matrix3")]
@@ -2312,6 +2340,7 @@ macro_rules! impl_vertcat_arms {
           (3,2) => {return Ok(Box::new(VerticalConcatenateM3x2{out:Ref::new(Matrix3x2::from_vec(mat))}));}
           #[cfg(feature = "matrixd")]
           (m,n) => {return Ok(Box::new(VerticalConcatenateMD{out:Ref::new(DMatrix::from_vec(m,n,mat))}));}
+          #[cfg(not(feature = "matrixd"))]
           _ => Err(MechError::new(
             FeatureNotEnabledError,
             None
@@ -2355,7 +2384,7 @@ macro_rules! impl_vertcat_arms {
             }
           }
           #[cfg(feature = "vectord")]
-          (1,m,1) => {
+          (1,_,1) => {
             match &arguments[..] {
               // rd
               [LegacyValue::[<Matrix $kind:camel>](Matrix::DVector(e0))] => {
@@ -2366,7 +2395,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(all(feature = "matrix1", feature = "vector2"))]
           (2,2,1) => {
-            let mut out = Vector2::from_element($default);
+            let out = Vector2::from_element($default);
             match &arguments[..] {
               // m1m1
               [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1))] => {
@@ -2377,7 +2406,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(all(feature = "matrix1", feature = "vector3", feature = "vector2"))]
           (2,3,1) => {
-            let mut out = Vector3::from_element($default);
+            let out = Vector3::from_element($default);
             match &arguments[..] {
               //m1v2
               [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e1))] => {
@@ -2392,7 +2421,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "vector4")]
           (2,4,1) => {
-            let mut out = Vector4::from_element($default);
+            #[cfg(any(all(feature = "matrix1", feature = "vector3"), feature = "vector2"))]
+            let out = Vector4::from_element($default);
             match &arguments[..] {
               // m1v3
               #[cfg(all(feature = "matrix1", feature = "vector3"))]
@@ -2414,7 +2444,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "vectord")]
           (2,m,1) => {
-            let mut out = DVector::from_element(m,$default);
+            let out = DVector::from_element(m,$default);
             match &arguments[..] {
               [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1)] => {
                 let e0 = e0.get_copyable_matrix();
@@ -2426,7 +2456,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "vector3")]
           (3,3,1) => {
-            let mut out = Vector3::from_element($default);
+            #[cfg(feature = "matrix1")]
+            let out = Vector3::from_element($default);
             match &arguments[..] {
               // m1 m1 m1
               #[cfg(feature = "matrix1")]
@@ -2438,7 +2469,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(all(feature = "matrix1", feature = "vector2", feature = "vector4"))]
           (3,4,1) => {
-            let mut out = Vector4::from_element($default);
+            let out = Vector4::from_element($default);
             match &arguments[..] {
               // m1 m1 v2
               [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)),LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)),LegacyValue::[<Matrix $kind:camel>](Matrix::Vector2(e2))] => {
@@ -2457,7 +2488,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "vectord")]
           (3,m,1) => {
-            let mut out = DVector::from_element(m,$default);
+            let out = DVector::from_element(m,$default);
             match &arguments[..] {
               [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1),LegacyValue::[<Matrix $kind:camel>](e2)] => {
                 let e0 = e0.get_copyable_matrix();
@@ -2470,7 +2501,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(all(feature = "matrix1", feature = "vector4"))]
           (4,4,1) => {
-            let mut out = Vector4::from_element($default);
+            let out = Vector4::from_element($default);
             match &arguments[..] {
               // m1 m1 m1 m1
               [LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e0)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e1)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e2)), LegacyValue::[<Matrix $kind:camel>](Matrix::Matrix1(e3))] => {
@@ -2481,7 +2512,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "vectord")]
           (4,m,1) => {
-            let mut out = DVector::from_element(m,$default);
+            let out = DVector::from_element(m,$default);
             match &arguments[..] {
               [LegacyValue::[<Matrix $kind:camel>](e0),LegacyValue::[<Matrix $kind:camel>](e1),LegacyValue::[<Matrix $kind:camel>](e2),LegacyValue::[<Matrix $kind:camel>](e3)] => {
                 let e0 = e0.get_copyable_matrix();
@@ -2494,8 +2525,8 @@ macro_rules! impl_vertcat_arms {
             }
           }
           #[cfg(feature = "vectord")]
-          (l,m,1) => {
-            let mut out = DVector::from_element(m,$default);
+          (_,m,1) => {
+            let out = DVector::from_element(m,$default);
             let mut matrix_args: Vec<(Box<dyn CopyMat<$kind>>,usize)> = vec![];
             let mut scalar_args: Vec<(Ref<$kind>,usize)> = vec![];
             let mut i = 0;
@@ -2516,7 +2547,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix2")]
           (2,2,2) => {
-            let mut out = Matrix2::from_element($default);
+            #[cfg(feature = "row_vector2")]
+            let out = Matrix2::from_element($default);
             match &arguments[..] {
               // v2v2
               #[cfg(feature = "row_vector2")]
@@ -2526,7 +2558,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix2x3")]
           (2,2,3) => {
-            let mut out = Matrix2x3::from_element($default);
+            #[cfg(feature = "row_vector3")]
+            let out = Matrix2x3::from_element($default);
             match &arguments[..] {
               // r3r3
               #[cfg(feature = "row_vector3")]
@@ -2536,7 +2569,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix3x2")]
           (2,3,2) => {
-            let mut out = Matrix3x2::from_element($default);
+            #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
+            let out = Matrix3x2::from_element($default);
             match &arguments[..] {
               // v2m2
               #[cfg(all(feature = "row_vector2", feature = "matrix2"))]
@@ -2554,7 +2588,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix3")]
           (2,3,3) => {
-            let mut out = Matrix3::from_element($default);
+            #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
+            let out = Matrix3::from_element($default);
             match &arguments[..] {
               // v3m3x2
               #[cfg(all(feature = "row_vector3", feature = "matrix2x3"))]
@@ -2572,7 +2607,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix4")]
           (2,4,4) => {
-            let mut out = Matrix4::from_element($default);
+            #[cfg(feature = "matrixd")]
+            let out = Matrix4::from_element($default);
             match &arguments[..] {
               // r4md
               #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
@@ -2589,14 +2625,15 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrixd")]
           (2,m,n) => {
-            let mut out = DMatrix::from_element(m,n,$default);
+            let out = DMatrix::from_element(m,n,$default);
             let e0 = extract_matrix(&arguments[0])?;
             let e1 = extract_matrix(&arguments[1])?;
             Ok(Box::new(VerticalConcatenateTwoArgs{e0, e1, out: Ref::new(out)}))
           }
           #[cfg(feature = "matrix3x2")]
           (3,3,2) => {
-            let mut out = Matrix3x2::from_element($default);
+            #[cfg(feature = "row_vector2")]
+            let out = Matrix3x2::from_element($default);
             match &arguments[..] {
               // r2r2r2
               #[cfg(feature = "row_vector2")]
@@ -2606,7 +2643,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix3")]
           (3,3,3) => {
-            let mut out = Matrix3::from_element($default);
+            #[cfg(feature = "row_vector3")]
+            let out = Matrix3::from_element($default);
             match &arguments[..] {
               // r3r3r3
               #[cfg(feature = "row_vector3")]
@@ -2616,7 +2654,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix4")]
           (3,4,4) => {
-            let mut out = Matrix4::from_element($default);
+            #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
+            let out = Matrix4::from_element($default);
             match &arguments[..] {
               // r4r4md
               #[cfg(all(feature = "row_vector4", feature = "matrixd"))]
@@ -2632,7 +2671,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrixd")]
           (3,m,n) => {
-            let mut out = DMatrix::from_element(m,n,$default);
+            let out = DMatrix::from_element(m,n,$default);
             let e0 = extract_matrix(&arguments[0])?;
             let e1 = extract_matrix(&arguments[1])?;
             let e2 = extract_matrix(&arguments[2])?;
@@ -2640,7 +2679,8 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrix4")]
           (4,4,4) => {
-            let mut out = Matrix4::from_element($default);
+            #[cfg(feature = "row_vector4")]
+            let out = Matrix4::from_element($default);
             match &arguments[..] {
               // r4r4r4r4
               #[cfg(feature = "row_vector4")]
@@ -2650,7 +2690,7 @@ macro_rules! impl_vertcat_arms {
           }
           #[cfg(feature = "matrixd")]
           (4,m,n) => {
-            let mut out = DMatrix::from_element(m,n,$default);
+            let out = DMatrix::from_element(m,n,$default);
             let e0 = extract_matrix(&arguments[0])?;
             let e1 = extract_matrix(&arguments[1])?;
             let e2 = extract_matrix(&arguments[2])?;
@@ -2658,14 +2698,15 @@ macro_rules! impl_vertcat_arms {
             Ok(Box::new(VerticalConcatenateFourArgs{e0,e1,e2,e3,out:Ref::new(out)}))
           }
           #[cfg(feature = "matrixd")]
-          (l,m,n) => {
-            let mut out = DMatrix::from_element(m,n,$default);
+          (_,m,n) => {
+            let out = DMatrix::from_element(m,n,$default);
             let mut args = vec![];
             for arg in arguments {
               args.push(extract_matrix(arg)?);
             }
             Ok(Box::new(VerticalConcatenateNArgs{e0: args, out:Ref::new(out)}))
           }
+          #[cfg(not(feature = "matrixd"))]
           _ => {return Err(MechError::new(
                 UnhandledFunctionArgumentKindVarg { arg: arguments.iter().map(|x| x.kind()).collect(), fxn_name: "matrix/vertcat".to_string() },
                 None
@@ -2778,18 +2819,6 @@ fn impl_vertcat_fxn(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>>
         None,
     )
     .with_compiler_loc())
-}
-
-macro_rules! install_vertcat_factories {
-    ($builder:ident, $factory:ident) => {
-        install_vertcat_linked_factories!($builder, $factory)?;
-    };
-}
-
-macro_rules! install_vertcat_factories_except_f64 {
-    ($builder:ident, $factory:ident) => {
-        install_vertcat_linked_factories_except_f64!($builder, $factory)?;
-    };
 }
 
 macro_rules! for_each_vertcat_scalar {
@@ -2907,6 +2936,12 @@ macro_rules! for_each_vertcat_typed_family {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    all(feature = "row_vector2", feature = "matrix3x2"),
+    all(feature = "row_vector3", feature = "matrix3"),
+    all(feature = "matrix4", feature = "row_vector4")
+))]
 macro_rules! declare_vertcat_typed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         declare_vertcat_family!($factory, [$($feature),+]);
@@ -2935,6 +2970,14 @@ macro_rules! for_each_vertcat_binary_family {
     };
 }
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "vector2"),
+    all(feature = "vector2", feature = "vector4"),
+    all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+    all(feature = "row_vector2", feature = "matrix2"),
+    all(feature = "row_vector3", feature = "matrix2x3"),
+    all(feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! declare_vertcat_binary_scalar {
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
         paste! { mech_core::declare_native_runtime_factory! {
@@ -2951,6 +2994,7 @@ macro_rules! declare_vertcat_binary_scalar {
     };
 }
 
+#[cfg(all(feature = "row_vector2", feature = "matrix2"))]
 macro_rules! declare_vertcat_binary_scalar_except_f64 {
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
@@ -2958,6 +3002,14 @@ macro_rules! declare_vertcat_binary_scalar_except_f64 {
     };
 }
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "vector2"),
+    all(feature = "vector2", feature = "vector4"),
+    all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+    all(feature = "row_vector2", feature = "matrix2"),
+    all(feature = "row_vector3", feature = "matrix2x3"),
+    all(feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! declare_vertcat_binary_family {
     (; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
         for_each_vertcat_scalar!(declare_vertcat_binary_scalar, ($factory, $e0, $e1, $out, [$($feature),+]));
@@ -2969,12 +3021,21 @@ macro_rules! declare_vertcat_binary_family {
 
 for_each_vertcat_binary_family!(declare_vertcat_binary_family, ());
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "vector2"),
+    all(feature = "vector2", feature = "vector4"),
+    all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+    all(feature = "row_vector2", feature = "matrix2"),
+    all(feature = "row_vector3", feature = "matrix2x3"),
+    all(feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! register_vertcat_binary_scalar {
     ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
         paste! { [<register_ $factory:snake _ $token _ $out:lower _ $e0:lower _ $e1:lower>]($builder)?; }
     };
 }
 
+#[cfg(all(feature = "row_vector2", feature = "matrix2"))]
 macro_rules! register_vertcat_binary_scalar_except_f64 {
     ($builder:ident, $_factory:ident, $_e0:ident, $_e1:ident, $_out:ident; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident; $token:ident, $_scalar:ty, $_name:literal, $_cargo:literal) => {
@@ -2982,6 +3043,14 @@ macro_rules! register_vertcat_binary_scalar_except_f64 {
     };
 }
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "vector2"),
+    all(feature = "vector2", feature = "vector4"),
+    all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+    all(feature = "row_vector2", feature = "matrix2", feature = "matrix3x2"),
+    all(feature = "row_vector3", feature = "matrix2x3"),
+    all(feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! install_vertcat_binary_factories {
     ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {
         for_each_vertcat_scalar!(
@@ -2991,6 +3060,7 @@ macro_rules! install_vertcat_binary_factories {
     };
 }
 
+#[cfg(all(feature = "row_vector2", feature = "matrix2"))]
 macro_rules! install_vertcat_binary_factories_except_f64 {
     ($builder:ident, $factory:ident, $e0:ident, $e1:ident, $out:ident) => {
         for_each_vertcat_scalar!(
@@ -3000,6 +3070,14 @@ macro_rules! install_vertcat_binary_factories_except_f64 {
     };
 }
 
+#[cfg(any(
+    all(feature = "matrix1", feature = "vector2"),
+    all(feature = "vector2", feature = "vector4"),
+    all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+    all(feature = "row_vector2", feature = "matrix2"),
+    all(feature = "row_vector3", feature = "matrix2x3"),
+    all(feature = "matrixd", feature = "matrix4")
+))]
 macro_rules! install_vertcat_binary_family {
     ($builder:ident; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($_feature:literal),+]) => {
         install_vertcat_binary_factories!($builder, $factory, $e0, $e1, $out);
@@ -3011,6 +3089,12 @@ macro_rules! install_vertcat_binary_family {
     };
 }
 
+#[cfg(any(
+    feature = "matrix1",
+    all(feature = "row_vector2", feature = "matrix3x2"),
+    all(feature = "row_vector3", feature = "matrix3"),
+    all(feature = "matrix4", feature = "row_vector4")
+))]
 macro_rules! install_vertcat_typed_family {
     ($builder:ident; $factory:ident; [$($_feature:literal),+]) => {
         install_vertcat_linked_factories!($builder, $factory)?;
@@ -3044,6 +3128,7 @@ pub(super) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     Ok(())
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_vertcat_scalar {
     ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
         #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
@@ -3051,12 +3136,14 @@ macro_rules! export_vertcat_scalar {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_vertcat_family {
     ($factory:ident, [$($feature:literal),+]) => {
         for_each_vertcat_scalar!(export_vertcat_scalar, ($factory, [$($feature),+]));
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_vertcat_scalar_except_f64 {
     ($factory:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($factory:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
@@ -3065,18 +3152,39 @@ macro_rules! export_vertcat_scalar_except_f64 {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_vertcat_family_except_f64 {
     ($factory:ident, [$($feature:literal),+]) => {
         for_each_vertcat_scalar!(export_vertcat_scalar_except_f64, ($factory, [$($feature),+]));
     };
 }
 
+#[cfg(all(
+    feature = "native-link",
+    any(
+        feature = "matrix1",
+        all(feature = "row_vector2", feature = "matrix3x2"),
+        all(feature = "row_vector3", feature = "matrix3"),
+        all(feature = "matrix4", feature = "row_vector4")
+    )
+))]
 macro_rules! export_vertcat_typed_family {
     (; $factory:ident; [$($feature:literal),+]) => {
         export_vertcat_family!($factory, [$($feature),+]);
     };
 }
 
+#[cfg(all(
+    feature = "native-link",
+    any(
+        all(feature = "matrix1", feature = "vector2"),
+        all(feature = "vector2", feature = "vector4"),
+        all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+        all(feature = "row_vector2", feature = "matrix2"),
+        all(feature = "row_vector3", feature = "matrix2x3"),
+        all(feature = "matrixd", feature = "matrix4")
+    )
+))]
 macro_rules! export_vertcat_binary_scalar {
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $_scalar:ty, $_name:literal, $cargo:literal) => {
         #[cfg(all(feature = "matrix_vertcat", feature = $cargo, $(feature = $feature),+))]
@@ -3084,6 +3192,7 @@ macro_rules! export_vertcat_binary_scalar {
     };
 }
 
+#[cfg(all(feature = "native-link", feature = "row_vector2", feature = "matrix2"))]
 macro_rules! export_vertcat_binary_scalar_except_f64 {
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; f64, $_scalar:ty, $_name:literal, $_cargo:literal) => {};
     ($factory:ident, $e0:ident, $e1:ident, $out:ident, [$($feature:literal),+]; $token:ident, $scalar:ty, $name:literal, $cargo:literal) => {
@@ -3091,6 +3200,17 @@ macro_rules! export_vertcat_binary_scalar_except_f64 {
     };
 }
 
+#[cfg(all(
+    feature = "native-link",
+    any(
+        all(feature = "matrix1", feature = "vector2"),
+        all(feature = "vector2", feature = "vector4"),
+        all(feature = "matrix1", feature = "vector3", feature = "vector4"),
+        all(feature = "row_vector2", feature = "matrix2"),
+        all(feature = "row_vector3", feature = "matrix2x3"),
+        all(feature = "matrixd", feature = "matrix4")
+    )
+))]
 macro_rules! export_vertcat_binary_family {
     (; normal; $factory:ident, $e0:ident, $e1:ident, $out:ident; [$($feature:literal),+]) => {
         for_each_vertcat_scalar!(export_vertcat_binary_scalar, ($factory, $e0, $e1, $out, [$($feature),+]));

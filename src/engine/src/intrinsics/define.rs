@@ -1,5 +1,21 @@
-#[macro_use]
 use crate::intrinsics::*;
+use std::marker::PhantomData;
+
+#[cfg(feature = "semantic-compiler")]
+fn define_compiler_symbol(
+    ctx: &mut dyn BytecodeCompilerContext,
+    pointer: usize,
+    register: Register,
+    name: &str,
+    mutable: bool,
+    root_visible: bool,
+) -> MResult<()> {
+    if root_visible {
+        ctx.define_symbol(pointer, register, name, mutable)
+    } else {
+        ctx.define_local_symbol(pointer, register, name, mutable)
+    }
+}
 
 /// Bytecode-visible marker that keeps integrity-constraint support in the
 /// exact native dependency closure. Constraint identity and its live result
@@ -10,6 +26,7 @@ use crate::intrinsics::*;
 #[derive(Debug)]
 pub struct BytecodeIntegrityConstraintMarker {
     out: LegacyValue,
+    #[cfg(feature = "semantic-compiler")]
     arguments: Vec<LegacyValue>,
 }
 
@@ -22,9 +39,11 @@ impl MechFunctionFactory for BytecodeIntegrityConstraintMarker {
 
     fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
         match args {
-            FunctionArgs::Variadic(out, arguments) if arguments.len() == 6 => {
-                Ok(Box::new(Self { out, arguments }))
-            }
+            FunctionArgs::Variadic(out, arguments) if arguments.len() == 6 => Ok(Box::new(Self {
+                out,
+                #[cfg(feature = "semantic-compiler")]
+                arguments,
+            })),
             _ => Err(MechError::new(
                 IncorrectNumberOfArguments {
                     expected: 6,
@@ -82,11 +101,11 @@ impl MechFunctionCompiler for BytecodeIntegrityConstraintMarker {
 
 #[derive(Debug)]
 pub struct VariableDefineMatrix<T, MatA> {
-    pub id: u64,
     pub name: Ref<String>,
     pub mutable: Ref<bool>,
     pub var: Ref<MatA>,
     pub initial: MatA,
+    pub root_visible: bool,
     pub _marker: PhantomData<T>,
 }
 impl<T, MatA> MechFunctionFactory for VariableDefineMatrix<T, MatA>
@@ -113,14 +132,13 @@ where
                 let var: Ref<MatA> = var.try_function_ref(FunctionArgumentRole::Output)?;
                 let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
                 let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let id = hash_str(&name.borrow());
                 let initial = var.borrow().clone();
                 Ok(Box::new(Self {
-                    id,
                     name,
                     mutable,
                     var,
                     initial,
+                    root_visible: true,
                     _marker: PhantomData::default(),
                 }))
             }
@@ -163,7 +181,7 @@ where
 {
     fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
         if *self.mutable.borrow() {
-            let _ = compile_register_initial!(self.var, self.initial, ctx);
+            compile_register_initial!(self.var, self.initial, ctx);
         }
         Ok(())
     }
@@ -176,12 +194,14 @@ where
             let initializer = self.initial.compile_const(ctx)?;
             ctx.record_state_initializer(variable_register, initializer)?;
         }
-        ctx.define_symbol(
+        define_compiler_symbol(
+            ctx,
             self.var.addr(),
             variable_register,
             &variable_name,
             variable_mutable,
-        );
+            self.root_visible,
+        )?;
         let name = format!(
             "VariableDefineMatrix<{}{}>",
             T::as_value_kind(),
@@ -201,89 +221,115 @@ where
 
 #[macro_export]
 macro_rules! impl_variable_define_fxn {
-  ($kind:tt) => {
-    paste! {
-      #[derive(Debug, Clone)]
-      pub struct [<VariableDefine $kind:camel>] {
-        id: u64,
-        name: Ref<String>,
-        mutable: Ref<bool>,
-        var: Ref<$kind>,
-        initial: $kind,
-      }
-      impl MechFunctionFactory for [<VariableDefine $kind:camel>] {
-      const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
-          <$kind as FunctionRuntimeType>::REPRESENTATION,
-          FunctionValueRepresentation::String,
-          FunctionValueRepresentation::Bool,
-        );
+    ($kind:tt) => {
+        paste! {
+          #[derive(Debug, Clone)]
+          pub struct [<VariableDefine $kind:camel>] {
+            #[cfg(feature = "semantic-compiler")]
+            name: Ref<String>,
+            #[cfg(feature = "semantic-compiler")]
+            mutable: Ref<bool>,
+            var: Ref<$kind>,
+            #[cfg(feature = "semantic-compiler")]
+            initial: $kind,
+            #[cfg(feature = "semantic-compiler")]
+            root_visible: bool,
+          }
+          impl MechFunctionFactory for [<VariableDefine $kind:camel>] {
+          const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+              <$kind as FunctionRuntimeType>::REPRESENTATION,
+              FunctionValueRepresentation::String,
+              FunctionValueRepresentation::Bool,
+            );
 
-      fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-          match args {
-            FunctionArgs::Binary(out, arg1, arg2) => {
-              let var: Ref<$kind> = out.try_function_ref(FunctionArgumentRole::Output)?;
-              let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
-              let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-              let id = hash_str(&name.borrow());
-              let initial = var.borrow().clone();
-              Ok(Box::new(Self { id, name, mutable, var, initial }))
-            },
-            _ => Err(MechError::new(
-                IncorrectNumberOfArguments { expected: 3, found: args.len() },
-                None
-              ).with_compiler_loc()
-            ),
+          fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+              match args {
+                FunctionArgs::Binary(out, arg1, arg2) => {
+                  let var: Ref<$kind> = out.try_function_ref(FunctionArgumentRole::Output)?;
+                  let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
+                  let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
+                  #[cfg(feature = "semantic-compiler")]
+                  let initial = var.borrow().clone();
+                  #[cfg(not(feature = "semantic-compiler"))]
+                  {
+                    drop(name);
+                    drop(mutable);
+                  }
+                  Ok(Box::new(Self {
+                    #[cfg(feature = "semantic-compiler")]
+                    name,
+                    #[cfg(feature = "semantic-compiler")]
+                    mutable,
+                    var,
+                    #[cfg(feature = "semantic-compiler")]
+                    initial,
+                    #[cfg(feature = "semantic-compiler")]
+                    root_visible: true,
+                  }))
+                },
+                _ => Err(MechError::new(
+                    IncorrectNumberOfArguments { expected: 3, found: args.len() },
+                    None
+                  ).with_compiler_loc()
+                ),
+              }
+            }
+          }
+          impl MechFunctionImpl for [<VariableDefine $kind:camel>] {
+            fn solve_result(&self) -> MResult<()> {
+                Ok(())
+            }
+            fn out(&self) -> LegacyValue { self.var.to_value() }
+            fn to_string(&self) -> String { format!("{:#?}", self) }
+
+            fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+              Ok(self.reactive_output_values())
+            }
+          }
+          #[cfg(feature = "semantic-compiler")]
+          impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
+          fn reserve_bytecode_registers(
+              &self,
+              ctx: &mut dyn BytecodeCompilerContext,
+          ) -> MResult<()> {
+              if *self.mutable.borrow() {
+                compile_register_initial!(self.var, self.initial, ctx);
+              }
+              Ok(())
+            }
+
+          fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+              let variable_value = self.var.to_value();
+              let variable_register =
+                  compile_value_register_for_ptr(&variable_value, self.var.addr(), ctx)?;
+              let variable_name = self.name.borrow().clone();
+              let variable_mutable = *self.mutable.borrow();
+              if variable_mutable {
+                let initializer = self.initial.compile_const(ctx)?;
+                ctx.record_state_initializer(variable_register, initializer)?;
+              }
+              define_compiler_symbol(
+                ctx,
+                self.var.addr(),
+                variable_register,
+                &variable_name,
+                variable_mutable,
+                self.root_visible,
+              )?;
+              let name = format!(stringify!([<VariableDefine $kind:camel>]));
+              let name_register = compile_register_brrw!(self.name, ctx);
+              let mutable_register = compile_register_brrw!(self.mutable, ctx);
+              ctx.emit_declaration_binary(
+                hash_str(&name),
+                variable_register,
+                name_register,
+                mutable_register,
+              );
+              Ok(variable_register)
+            }
           }
         }
-      }
-      impl MechFunctionImpl for [<VariableDefine $kind:camel>] {
-        fn solve_result(&self) -> MResult<()> {
-            Ok(())
-        }
-        fn out(&self) -> LegacyValue { self.var.to_value() }
-        fn to_string(&self) -> String { format!("{:#?}", self) }
-
-        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-          Ok(self.reactive_output_values())
-        }
-      }
-      #[cfg(feature = "semantic-compiler")]
-      impl MechFunctionCompiler for [<VariableDefine $kind:camel>] {
-      fn reserve_bytecode_registers(
-          &self,
-          ctx: &mut dyn BytecodeCompilerContext,
-      ) -> MResult<()> {
-          if *self.mutable.borrow() {
-            let _ = compile_register_initial!(self.var, self.initial, ctx);
-          }
-          Ok(())
-        }
-
-      fn compile(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
-          let variable_value = self.var.to_value();
-          let variable_register =
-              compile_value_register_for_ptr(&variable_value, self.var.addr(), ctx)?;
-          let variable_name = self.name.borrow().clone();
-          let variable_mutable = *self.mutable.borrow();
-          if variable_mutable {
-            let initializer = self.initial.compile_const(ctx)?;
-            ctx.record_state_initializer(variable_register, initializer)?;
-          }
-          ctx.define_symbol(self.var.addr(), variable_register, &variable_name, variable_mutable);
-          let name = format!(stringify!([<VariableDefine $kind:camel>]));
-          let name_register = compile_register_brrw!(self.name, ctx);
-          let mutable_register = compile_register_brrw!(self.mutable, ctx);
-          ctx.emit_declaration_binary(
-            hash_str(&name),
-            variable_register,
-            name_register,
-            mutable_register,
-          );
-          Ok(variable_register)
-        }
-      }
-    }
-  };
+    };
 }
 
 #[cfg(feature = "f64")]
@@ -514,6 +560,7 @@ declare_variable_define_matrix_for_type!("c64", C64, C64, "complex");
 declare_variable_define_matrix_for_type!("bool", bool, bool, "bool");
 declare_variable_define_matrix_for_type!("string", String, String, "string");
 
+#[cfg(feature = "matrix")]
 macro_rules! register_variable_define_matrix_native {
     (
         ($builder:ident; $kind_token:ident),
@@ -539,6 +586,7 @@ macro_rules! register_variable_define_matrix_native {
     };
 }
 
+#[cfg(feature = "native-link")]
 macro_rules! export_variable_define_matrix_native {
     (($kind_token:ident), $shape:ident, $_shape_feature:literal, $shape_cfg:meta) => {
         #[cfg($shape_cfg)]
@@ -580,11 +628,15 @@ pub mod __mech_native_matrix {
 
 #[derive(Debug, Clone)]
 pub struct VariableDefineEmpty {
-    id: u64,
+    #[cfg(feature = "semantic-compiler")]
     name: Ref<String>,
+    #[cfg(feature = "semantic-compiler")]
     mutable: Ref<bool>,
     var: Ref<LegacyValue>,
+    #[cfg(feature = "semantic-compiler")]
     initial: LegacyValue,
+    #[cfg(feature = "semantic-compiler")]
+    root_visible: bool,
 }
 
 impl MechFunctionFactory for VariableDefineEmpty {
@@ -600,14 +652,23 @@ impl MechFunctionFactory for VariableDefineEmpty {
                 let var: Ref<LegacyValue> = var.try_function_ref(FunctionArgumentRole::Output)?;
                 let name: Ref<String> = arg1.try_function_ref(FunctionArgumentRole::Input(0))?;
                 let mutable: Ref<bool> = arg2.try_function_ref(FunctionArgumentRole::Input(1))?;
-                let id = hash_str(&name.borrow());
+                #[cfg(feature = "semantic-compiler")]
                 let initial = var.borrow().clone();
+                #[cfg(not(feature = "semantic-compiler"))]
+                {
+                    drop(name);
+                    drop(mutable);
+                }
                 Ok(Box::new(Self {
-                    id,
+                    #[cfg(feature = "semantic-compiler")]
                     name,
+                    #[cfg(feature = "semantic-compiler")]
                     mutable,
                     var,
+                    #[cfg(feature = "semantic-compiler")]
                     initial,
+                    #[cfg(feature = "semantic-compiler")]
+                    root_visible: true,
                 }))
             }
             _ => Err(MechError::new(
@@ -652,7 +713,7 @@ impl MechFunctionImpl for VariableDefineEmpty {
 impl MechFunctionCompiler for VariableDefineEmpty {
     fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
         if *self.mutable.borrow() {
-            let _ = compile_register_initial!(self.var, self.initial, ctx);
+            compile_register_initial!(self.var, self.initial, ctx);
         }
         Ok(())
     }
@@ -663,18 +724,20 @@ impl MechFunctionCompiler for VariableDefineEmpty {
             compile_value_register_for_ptr(&variable_value, self.var.addr(), ctx)?;
         let variable_name = self.name.borrow().clone();
         let variable_mutable = *self.mutable.borrow();
-        ctx.define_symbol(
+        define_compiler_symbol(
+            ctx,
             self.var.addr(),
             variable_register,
             &variable_name,
             variable_mutable,
-        );
+            self.root_visible,
+        )?;
         let name = "VariableDefineEmpty".to_string();
         compile_binop!(name, self.var, self.name, self.mutable, ctx);
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "semantic-compiler"))]
 mod empty_transaction_state_tests {
     use super::*;
 
@@ -682,11 +745,11 @@ mod empty_transaction_state_tests {
     fn variable_define_empty_exposes_original_outer_value_cell() {
         let var = Ref::new(LegacyValue::Empty);
         let function = VariableDefineEmpty {
-            id: 1,
             name: Ref::new("value".to_string()),
             mutable: Ref::new(true),
             var: var.clone(),
             initial: LegacyValue::Empty,
+            root_visible: true,
         };
         let values = function.transaction_state_values().unwrap();
         assert_eq!(values.len(), 1);
@@ -699,75 +762,75 @@ mod empty_transaction_state_tests {
 
 #[macro_export]
 macro_rules! impl_variable_define_match_arms {
-  ($arg:expr, $value_kind:ty, $feature:expr) => {
+  ($arg:expr, $value_kind:ty, $feature:expr, $root_visible:expr) => {
     paste::paste! {
       match $arg {
         #[cfg(feature = $feature)]
-        (LegacyValue::[<$value_kind:camel>](sink), name, mutable, id) => box_mech_fxn(Ok(Box::new([<VariableDefine $value_kind:camel>]{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id } ))),
+        (LegacyValue::[<$value_kind:camel>](sink), name, mutable) => box_mech_fxn(Ok(Box::new([<VariableDefine $value_kind:camel>]{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible } ))),
         #[cfg(all(
           feature = $feature,
           any(feature = "matrix1", feature = "variable_define_matrix1")
         ))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix1(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix2"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix2x3"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix2x3(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix3x2"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3x2(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix3"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix3(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrix4"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Matrix4(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "matrixd"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DMatrix(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector2"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector2(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector3"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector3(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vector4"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::Vector4(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::DVector(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector2"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector2(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector3"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector3(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vector4"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowVector4(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
         #[cfg(all(feature = $feature, feature = "row_vectord"))]
-        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), name, mutable, id) => {
-          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, id: *id, _marker: PhantomData::<$value_kind>::default() })))
+        (LegacyValue::[<Matrix $value_kind:camel>](Matrix::RowDVector(sink)), name, mutable) => {
+          box_mech_fxn(Ok(Box::new(VariableDefineMatrix{ var: sink.clone(), initial: sink.borrow().clone(), name: name.as_string()?, mutable: mutable.as_bool()?, root_visible: $root_visible, _marker: PhantomData::<$value_kind>::default() })))
         },
-        (sink, name, mutable, id) => Err(MechError::new(
+        (sink, name, mutable) => Err(MechError::new(
             UnhandledFunctionArgumentKind3 {arg: (sink.kind(), name.kind(), mutable.kind()), fxn_name: "var/define".to_string() },
             None
           ).with_compiler_loc()
@@ -777,153 +840,154 @@ macro_rules! impl_variable_define_match_arms {
   };
 }
 
+#[cfg(feature = "semantic-compiler")]
 fn impl_var_define_fxn(
     var: LegacyValue,
     name: LegacyValue,
     mutable: LegacyValue,
-    id: u64,
+    root_visible: bool,
 ) -> MResult<Box<dyn MechFunction>> {
-    let arg = (var.clone(), name.clone(), mutable.clone(), id);
+    let arg = (var.clone(), name.clone(), mutable.clone());
     match arg {
-        (LegacyValue::Kind(kind), name, mutable, id) => {
+        (LegacyValue::Kind(kind), name, mutable) => {
             let initial = LegacyValue::Kind(kind);
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
                 var: Ref::new(initial.clone()),
                 initial,
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
-        (LegacyValue::Empty, name, mutable, id) => {
+        (LegacyValue::Empty, name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
                 var: Ref::new(LegacyValue::Empty),
                 initial: LegacyValue::Empty,
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
-        (LegacyValue::Typed(value, kind), name, mutable, id) => {
+        (LegacyValue::Typed(value, kind), name, mutable) => {
             let initial = LegacyValue::Typed(value.clone(), kind.clone());
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
                 var: Ref::new(initial.clone()),
                 initial,
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
-        (LegacyValue::EmptyKind(kind), name, mutable, id) => {
+        (LegacyValue::EmptyKind(kind), name, mutable) => {
             let initial = LegacyValue::EmptyKind(kind.clone());
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
                 var: Ref::new(initial.clone()),
                 initial,
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "matrix")]
-        (LegacyValue::MatrixValue(sink), name, mutable, id) => {
+        (LegacyValue::MatrixValue(sink), name, mutable) => {
             let initial = LegacyValue::MatrixValue(sink.clone());
             return box_mech_fxn(Ok(Box::new(VariableDefineEmpty {
                 var: Ref::new(initial.clone()),
                 initial,
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "table")]
-        (LegacyValue::Table(sink), name, mutable, id) => {
+        (LegacyValue::Table(sink), name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechTable {
                 var: sink.clone(),
                 initial: sink.borrow().clone(),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "set")]
-        (LegacyValue::Set(sink), name, mutable, id) => {
+        (LegacyValue::Set(sink), name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechSet {
                 var: sink.clone(),
                 initial: sink.borrow().clone(),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "tuple")]
-        (LegacyValue::Tuple(sink), name, mutable, id) => {
+        (LegacyValue::Tuple(sink), name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechTuple {
                 var: sink.clone(),
                 initial: sink.borrow().clone(),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "record")]
-        (LegacyValue::Record(sink), name, mutable, id) => {
+        (LegacyValue::Record(sink), name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechRecord {
                 var: sink.clone(),
                 initial: sink.borrow().clone(),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "map")]
-        (LegacyValue::Map(sink), name, mutable, id) => {
+        (LegacyValue::Map(sink), name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechMap {
                 var: sink.clone(),
                 initial: sink.borrow().clone(),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "atom")]
-        (LegacyValue::Atom(sink), name, mutable, id) => {
+        (LegacyValue::Atom(sink), name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechAtom {
                 var: sink.clone(),
                 initial: sink.borrow().clone(),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         #[cfg(feature = "enum")]
-        (LegacyValue::Enum(sink), name, mutable, id) => {
+        (LegacyValue::Enum(sink), name, mutable) => {
             return box_mech_fxn(Ok(Box::new(VariableDefineMechEnum {
                 var: sink.clone(),
                 initial: sink.borrow().clone(),
                 name: name.as_string()?,
                 mutable: mutable.as_bool()?,
-                id,
+                root_visible,
             })));
         }
         _ => (),
     }
 
-    impl_variable_define_match_arms!(&arg, u8, "u8")
-        .or_else(|_| impl_variable_define_match_arms!(&arg, u16, "u16"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, u32, "u32"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, u64, "u64"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, u128, "u128"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, i8, "i8"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, i16, "i16"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, i32, "i32"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, i64, "i64"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, i128, "i128"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, f32, "f32"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, f64, "f64"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, R64, "rational"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, C64, "complex"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool"))
-        .or_else(|_| impl_variable_define_match_arms!(&arg, String, "string"))
+    impl_variable_define_match_arms!(&arg, u8, "u8", root_visible)
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u16, "u16", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u32, "u32", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u64, "u64", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, u128, "u128", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i8, "i8", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i16, "i16", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i32, "i32", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i64, "i64", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, i128, "i128", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, f32, "f32", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, f64, "f64", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, R64, "rational", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, C64, "complex", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, bool, "bool", root_visible))
+        .or_else(|_| impl_variable_define_match_arms!(&arg, String, "string", root_visible))
         .map_err(|_| {
             MechError::new(
                 UnhandledFunctionArgumentKind3 {
@@ -936,6 +1000,30 @@ fn impl_var_define_fxn(
         })
 }
 
+#[cfg(any(
+    feature = "u8",
+    feature = "u16",
+    feature = "u32",
+    feature = "u64",
+    feature = "u128",
+    feature = "i8",
+    feature = "i16",
+    feature = "i32",
+    feature = "i64",
+    feature = "i128",
+    feature = "f32",
+    feature = "r64",
+    feature = "c64",
+    feature = "bool",
+    feature = "string",
+    feature = "table",
+    feature = "set",
+    feature = "tuple",
+    feature = "record",
+    feature = "map",
+    feature = "atom",
+    feature = "enum"
+))]
 macro_rules! install_variable_define_scalar_runtime {
     ($builder:expr, $kind:ident) => {
         paste! {
@@ -944,6 +1032,7 @@ macro_rules! install_variable_define_scalar_runtime {
     };
 }
 
+#[cfg(feature = "matrix")]
 macro_rules! install_variable_define_matrix_runtime {
     ($builder:ident, $kind_token:ident) => {
         for_each_variable_define_matrix_shape!(
@@ -953,36 +1042,37 @@ macro_rules! install_variable_define_matrix_runtime {
     };
 }
 
-#[cfg(feature = "native-plan")]
+#[cfg(all(
+    feature = "native-plan",
+    feature = "variable_define_matrix1",
+    not(feature = "matrix1")
+))]
 pub(super) fn install_native_plan_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(all(feature = "variable_define_matrix1", not(feature = "matrix1")))]
-    {
-        macro_rules! install_matrix1_kind {
-            ($feature:literal, $kind_token:ident) => {
-                #[cfg(feature = $feature)]
-                paste! {
-                    [<register_variable_define_matrix_ $kind_token:lower _matrix1>](builder)?;
-                }
-            };
-        }
-
-        install_matrix1_kind!("u8", u8);
-        install_matrix1_kind!("u16", u16);
-        install_matrix1_kind!("u32", u32);
-        install_matrix1_kind!("u64", u64);
-        install_matrix1_kind!("u128", u128);
-        install_matrix1_kind!("i8", i8);
-        install_matrix1_kind!("i16", i16);
-        install_matrix1_kind!("i32", i32);
-        install_matrix1_kind!("i64", i64);
-        install_matrix1_kind!("i128", i128);
-        install_matrix1_kind!("f32", f32);
-        install_matrix1_kind!("f64", f64);
-        install_matrix1_kind!("r64", R64);
-        install_matrix1_kind!("c64", C64);
-        install_matrix1_kind!("bool", bool);
-        install_matrix1_kind!("string", String);
+    macro_rules! install_matrix1_kind {
+        ($feature:literal, $kind_token:ident) => {
+            #[cfg(feature = $feature)]
+            paste! {
+                [<register_variable_define_matrix_ $kind_token:lower _matrix1>](builder)?;
+            }
+        };
     }
+
+    install_matrix1_kind!("u8", u8);
+    install_matrix1_kind!("u16", u16);
+    install_matrix1_kind!("u32", u32);
+    install_matrix1_kind!("u64", u64);
+    install_matrix1_kind!("u128", u128);
+    install_matrix1_kind!("i8", i8);
+    install_matrix1_kind!("i16", i16);
+    install_matrix1_kind!("i32", i32);
+    install_matrix1_kind!("i64", i64);
+    install_matrix1_kind!("i128", i128);
+    install_matrix1_kind!("f32", f32);
+    install_matrix1_kind!("f64", f64);
+    install_matrix1_kind!("r64", R64);
+    install_matrix1_kind!("c64", C64);
+    install_matrix1_kind!("bool", bool);
+    install_matrix1_kind!("string", String);
 
     Ok(())
 }
@@ -1048,13 +1138,15 @@ pub(crate) fn install_runtime(builder: &mut FunctionCatalogBuilder) -> MResult<(
     Ok(())
 }
 
+#[cfg(feature = "semantic-compiler")]
 pub struct VarDefine {}
+#[cfg(feature = "semantic-compiler")]
 impl FunctionSpecializer for VarDefine {
     fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
-        if arguments.len() != 3 {
+        if arguments.len() != 4 {
             return Err(MechError::new(
                 IncorrectNumberOfArguments {
-                    expected: 1,
+                    expected: 4,
                     found: arguments.len(),
                 },
                 None,
@@ -1064,15 +1156,21 @@ impl FunctionSpecializer for VarDefine {
         let var = arguments[0].clone();
         let name = &arguments[1].clone();
         let mutable = &arguments[2].clone();
-        let name_string = name.as_string()?;
-        let id = hash_str(&name_string.borrow());
-
-        match impl_var_define_fxn(var.clone(), name.clone(), mutable.clone(), id) {
+        let root_visible = arguments[3].as_bool()?;
+        match impl_var_define_fxn(
+            var.clone(),
+            name.clone(),
+            mutable.clone(),
+            *root_visible.borrow(),
+        ) {
             Ok(fxn) => Ok(fxn),
-            Err(_) => match (var) {
-                (LegacyValue::MutableReference(input)) => {
-                    impl_var_define_fxn(input.borrow().clone(), name.clone(), mutable.clone(), id)
-                }
+            Err(_) => match var {
+                LegacyValue::MutableReference(input) => impl_var_define_fxn(
+                    input.borrow().clone(),
+                    name.clone(),
+                    mutable.clone(),
+                    *root_visible.borrow(),
+                ),
                 _ => Err(MechError::new(
                     UnhandledFunctionArgumentKind3 {
                         arg: (var.kind(), name.kind(), mutable.kind()),

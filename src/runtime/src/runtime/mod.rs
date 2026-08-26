@@ -53,6 +53,7 @@ pub use self::errors::*;
 #[cfg(feature = "runtime_bench_probes")]
 #[doc(hidden)]
 pub use self::gate_a_probe::{GateACostSnapshot, gate_a_cost_snapshot, reset_gate_a_costs};
+#[cfg(feature = "resident-external")]
 pub use self::program::*;
 pub use self::state::MechRuntime;
 pub use self::transaction::{RuntimeHealth, RuntimePoisonRecord};

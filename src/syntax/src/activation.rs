@@ -1,6 +1,5 @@
 //! Parser for source activation scopes.
 use crate::*;
-use mech_core::nodes::*;
 use nom::{
     branch::alt,
     combinator::{cut, opt},

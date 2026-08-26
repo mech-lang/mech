@@ -17,7 +17,7 @@ pub enum Kind {
     Map(Box<Kind>, Box<Kind>),
     Matrix(Box<Kind>, Vec<usize>),
     Option(Box<Kind>),
-    Record((Vec<(String, Kind)>)),
+    Record(Vec<(String, Kind)>),
     Reference(Box<Kind>),
     Scalar(u64),
     Set(Box<Kind>, Option<usize>),

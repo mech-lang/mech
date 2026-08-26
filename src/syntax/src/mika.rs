@@ -1,29 +1,10 @@
-#[macro_use]
 use crate::*;
 
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::string::String;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
-use nom::{
-    Err,
-    Err::Failure,
-    IResult,
-    branch::alt,
-    bytes::complete::{take_until, take_while},
-    combinator::{eof, opt, peek},
-    multi::{many_till, many0, many1, separated_list0, separated_list1},
-    sequence::{pair, tuple as nom_tuple},
-};
-
-use colored::*;
-use std::collections::HashMap;
-
-use crate::*;
+use nom::{branch::alt, combinator::opt};
 
 // Mika
 // ============================================================================

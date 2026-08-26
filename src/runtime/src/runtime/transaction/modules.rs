@@ -341,7 +341,7 @@ impl MechRuntime {
             Ok(value) if !implicit => Ok(value),
             Ok(value) => match self.commit_runtime_transaction_internal(context) {
                 Ok(RuntimeCommitResolution::Committed(_)) => Ok(value),
-                Ok(RuntimeCommitResolution::CommittedWithError { error, .. }) => Err(error),
+                Ok(RuntimeCommitResolution::CommittedWithError(error)) => Err(error),
                 Err(error) => self.finish_failed_module_operation(
                     context,
                     operation,

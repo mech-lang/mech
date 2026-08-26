@@ -113,22 +113,6 @@ pub enum BytecodeInstruction {
 }
 
 impl BytecodeInstruction {
-    pub(crate) fn remap_requirement(&mut self, remap: &[u32]) {
-        let requirement = match self {
-            Self::HostCall { requirement, .. }
-            | Self::ResourceRead { requirement, .. }
-            | Self::ResourceWrite { requirement, .. }
-            | Self::ResourceSend { requirement, .. } => requirement,
-            _ => return,
-        };
-        let Ok(requirement_index) = usize::try_from(*requirement) else {
-            return;
-        };
-        if let Some(final_id) = remap.get(requirement_index) {
-            *requirement = *final_id;
-        }
-    }
-
     pub fn runtime_function(&self) -> Option<u64> {
         match self {
             Self::RuntimeNullary { function, .. }

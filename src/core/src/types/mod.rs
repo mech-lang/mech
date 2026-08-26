@@ -1,11 +1,5 @@
 use crate::legacy_value::*;
-use crate::nodes::*;
 use crate::*;
-
-#[cfg(feature = "no_std")]
-use core::ops::*;
-#[cfg(not(feature = "no_std"))]
-use std::ops::*;
 
 #[cfg(feature = "no_std")]
 use core::cell::RefCell;
@@ -16,24 +10,6 @@ use std::cell::RefCell;
 use alloc::rc::Rc;
 #[cfg(not(feature = "no_std"))]
 use std::rc::Rc;
-
-#[cfg(feature = "no_std")]
-use core::num::FpCategory;
-#[cfg(not(feature = "no_std"))]
-use std::num::FpCategory;
-
-#[cfg(feature = "math_pow")]
-use libm::{pow, powf};
-#[cfg(feature = "math_pow")]
-use num_traits::Pow;
-#[cfg(any(
-    feature = "f64",
-    feature = "f32",
-    feature = "complex",
-    feature = "rational"
-))]
-use num_traits::{One, Zero};
-use paste::paste;
 
 #[cfg(feature = "atom")]
 pub mod atom;

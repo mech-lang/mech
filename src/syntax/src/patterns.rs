@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::*;
 
 // pattern := pattern_atom_struct | pattern_tuple_struct | wildcard | pattern_array | pattern_tuple | expression ;
@@ -31,7 +30,7 @@ pub fn pattern(input: ParseString) -> ParseResult<Pattern> {
 
 // wildcard := "*" ;
 pub fn wildcard(input: ParseString) -> ParseResult<Pattern> {
-    let ((input, _)) = asterisk(input)?;
+    let (input, _) = asterisk(input)?;
     Ok((input, Pattern::Wildcard))
 }
 

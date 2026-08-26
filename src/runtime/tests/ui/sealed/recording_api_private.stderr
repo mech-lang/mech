@@ -1,49 +1,54 @@
-error[E0603]: module `ledger` is private
+error[E0432]: unresolved import `mech_runtime::ledger`
  --> tests/ui/sealed/recording_api_private.rs:1:19
   |
 1 | use mech_runtime::ledger::RetainedTurnLedger;
-  |                   ^^^^^^ private module
+  |                   ^^^^^^ could not find `ledger` in `mech_runtime`
   |
-note: the module `ledger` is defined here
+note: found an item that was configured out
  --> src/lib.rs
   |
-  | mod ledger;
-  | ^^^^^^^^^^
+  |       any(
+  |  ________-
+  | |         feature = "runtime_bench_probes",
+  | |         feature = "runtime_bench_gate_b",
+  | |         feature = "resident-external"
+  | |     )
+  | |_____- the item is gated here
+  |   ))]
+  |   mod ledger;
+  |       ^^^^^^
 
-error[E0603]: module `outbox` is private
+error[E0432]: unresolved import `mech_runtime::outbox`
  --> tests/ui/sealed/recording_api_private.rs:2:19
   |
 2 | use mech_runtime::outbox::RetainedEffectOutbox;
-  |                   ^^^^^^ private module
+  |                   ^^^^^^ could not find `outbox` in `mech_runtime`
   |
-note: the module `outbox` is defined here
+note: found an item that was configured out
  --> src/lib.rs
   |
+  |     any(feature = "runtime_bench_probes", feature = "resident-external")
+  |        ----------------------------------------------------------------- the item is gated here
+  | ))]
   | mod outbox;
-  | ^^^^^^^^^^
+  |     ^^^^^^
 
-error[E0603]: module `turn_record` is private
+error[E0432]: unresolved import `mech_runtime::turn_record`
  --> tests/ui/sealed/recording_api_private.rs:3:19
   |
 3 | use mech_runtime::turn_record::{AccountedRecord, LedgerSequence, TurnId, TurnRecordHeader};
-  |                   ^^^^^^^^^^^   --------------- trait `AccountedRecord` is not publicly re-exported
-  |                   |
-  |                   private module
+  |                   ^^^^^^^^^^^ could not find `turn_record` in `mech_runtime`
   |
-note: the module `turn_record` is defined here
+note: found an item that was configured out
  --> src/lib.rs
   |
-  | mod turn_record;
-  | ^^^^^^^^^^^^^^^
-
-error[E0603]: module `turn_record` is private
- --> tests/ui/sealed/recording_api_private.rs:3:19
-  |
-3 | use mech_runtime::turn_record::{AccountedRecord, LedgerSequence, TurnId, TurnRecordHeader};
-  |                   ^^^^^^^^^^^ private module
-  |
-note: the module `turn_record` is defined here
- --> src/lib.rs
-  |
-  | mod turn_record;
-  | ^^^^^^^^^^^^^^^
+  |       any(
+  |  ________-
+  | |         feature = "runtime_bench_probes",
+  | |         feature = "runtime_bench_gate_b",
+  | |         feature = "resident-external"
+  | |     )
+  | |_____- the item is gated here
+  |   ))]
+  |   mod turn_record;
+  |       ^^^^^^^^^^^

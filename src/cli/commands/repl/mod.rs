@@ -12,7 +12,9 @@ mod terminal;
 mod ui;
 
 use std::env;
-use std::io::{self, BufRead, IsTerminal, Write};
+#[cfg(test)]
+use std::io::BufRead;
+use std::io::{self, IsTerminal, Write};
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
@@ -37,13 +39,15 @@ use mech_runtime::{
     parse_repl_request,
 };
 #[cfg(feature = "mika")]
-use mech_syntax::MICROMIKA_WAVE;
+use mech_syntax::mika::MICROMIKA_WAVE;
 
 use self::presentation::{
     MECH_AMBER, capabilities, docs, list_directory, profiling, save_session_source, value,
 };
 use self::session::ResidentRepl;
-use self::terminal::{render_events, render_events_collapsed};
+use self::terminal::render_events;
+#[cfg(test)]
+use self::terminal::render_events_collapsed;
 use self::ui::ReplUi;
 use crate::cli::outcome::CliOutcome;
 
@@ -206,7 +210,7 @@ fn run_interactive_loop(
                     return Ok(());
                 }
                 repl.start_input_drivers()?;
-                let _ = worker.resume.send(());
+                resume_input_worker(worker)?;
                 print_prompt(output, ui)?;
             }
             Ok(ReplInput::Interrupt) => {
@@ -215,7 +219,7 @@ fn run_interactive_loop(
                     exit_requested.store(true, Ordering::Release);
                 }
                 render_pending_interrupts(output, interrupt_count, &mut rendered_interrupts, ui)?;
-                let _ = worker.resume.send(());
+                resume_input_worker(worker)?;
                 if exit_requested.load(Ordering::Acquire) {
                     return Ok(());
                 }
@@ -241,6 +245,17 @@ fn run_interactive_loop(
     }
 }
 
+fn resume_input_worker(worker: &ReplInputWorker) -> MResult<()> {
+    worker.resume.send(()).map_err(|_| {
+        MechError::new(
+            mech_core::GenericError {
+                msg: "REPL input worker stopped before it could resume".to_owned(),
+            },
+            None,
+        )
+    })
+}
+
 fn spawn_input_worker(terminal_editor: bool) -> ReplInputWorker {
     let (sender, receiver) = crossbeam_channel::bounded(1);
     let (resume, wait_for_resume) = crossbeam_channel::bounded(0);
@@ -259,7 +274,7 @@ fn spawn_input_worker(terminal_editor: bool) -> ReplInputWorker {
             };
             match input {
                 Ok(None) => {
-                    let _ = sender.send(ReplInput::EndOfInput);
+                    drop(sender.send(ReplInput::EndOfInput));
                     break;
                 }
                 Ok(Some(input)) => {
@@ -276,7 +291,7 @@ fn spawn_input_worker(terminal_editor: bool) -> ReplInputWorker {
                     worker_waiting_for_resume.store(false, Ordering::Release);
                 }
                 Err(error) => {
-                    let _ = sender.send(ReplInput::ReadFailed(error.to_string()));
+                    drop(sender.send(ReplInput::ReadFailed(error.to_string())));
                     break;
                 }
             }
@@ -298,7 +313,7 @@ fn read_terminal_entry(history: &[String]) -> io::Result<Option<ReplInput>> {
     struct RawModeGuard;
     impl Drop for RawModeGuard {
         fn drop(&mut self) {
-            let _ = disable_raw_mode();
+            drop(disable_raw_mode());
         }
     }
     let raw_mode = RawModeGuard;
@@ -575,10 +590,12 @@ fn render_pending_interrupts(
     Ok(())
 }
 
+#[cfg(test)]
 fn run_with_io<R: BufRead, W: Write>(mut input: R, mut output: W) -> MResult<CliOutcome> {
     run_with_io_and_ui(&mut input, &mut output, ReplUi::rich())
 }
 
+#[cfg(test)]
 fn run_with_io_and_ui<R: BufRead, W: Write>(
     mut input: R,
     mut output: W,

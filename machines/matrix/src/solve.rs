@@ -1,7 +1,6 @@
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use mech_core::*;
 use nalgebra::ComplexField;
 use num_traits::{One, Zero};
 

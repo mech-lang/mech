@@ -1,4 +1,3 @@
-#[macro_use]
 use crate::intrinsics::*;
 #[cfg(feature = "matrix_comprehensions")]
 use std::sync::LazyLock;

@@ -1,6 +1,5 @@
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
 // CartesianProduct ------------------------------------------------------------------------
@@ -53,52 +52,6 @@ fn cartesian_product_output_len(lhs: usize, rhs: usize) -> MResult<usize> {
         .with_compiler_loc());
     }
     Ok(output_len)
-}
-
-pub(crate) fn validate_set_cartesian_product_contract(args: &FunctionArgs) -> MResult<()> {
-    let contract = "set_cartesian_product";
-    let (lhs_len, lhs_kind) = match args.input_value(0) {
-        Some(LegacyValue::Set(value)) => {
-            let value = value.borrow();
-            (value.set.len(), value.kind.clone())
-        }
-        _ => {
-            return Err(function_shape_contract_violation(
-                contract,
-                "input 0 must be a set",
-            ));
-        }
-    };
-    let (rhs_len, rhs_kind) = match args.input_value(1) {
-        Some(LegacyValue::Set(value)) => {
-            let value = value.borrow();
-            (value.set.len(), value.kind.clone())
-        }
-        _ => {
-            return Err(function_shape_contract_violation(
-                contract,
-                "input 1 must be a set",
-            ));
-        }
-    };
-    cartesian_product_output_len(lhs_len, rhs_len)?;
-    let output_kind = match args.output_value() {
-        LegacyValue::Set(value) => value.borrow().kind.clone(),
-        _ => {
-            return Err(function_shape_contract_violation(
-                contract,
-                "output must be a set",
-            ));
-        }
-    };
-    let expected = ValueKind::Tuple(vec![lhs_kind, rhs_kind]);
-    if output_kind != expected {
-        return Err(function_shape_contract_violation(
-            contract,
-            format!("output element schema is {output_kind}, expected {expected}"),
-        ));
-    }
-    Ok(())
 }
 
 #[derive(Debug)]
@@ -263,12 +216,6 @@ mod tests {
 
         assert!(out.borrow().set.is_empty());
         assert_eq!(out.borrow().kind, output_kind);
-        validate_set_cartesian_product_contract(&FunctionArgs::Binary(
-            LegacyValue::Set(out),
-            LegacyValue::Set(lhs),
-            LegacyValue::Set(rhs),
-        ))
-        .unwrap();
     }
 }
 
@@ -291,7 +238,7 @@ impl FunctionSpecializer for SetCartesianProduct {
         let rhs = arguments[1].clone();
         match set_cartesian_product_fxn(lhs.clone(), rhs.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (lhs, rhs) {
+            Err(_) => match (lhs, rhs) {
                 (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                     set_cartesian_product_fxn(lhs.borrow().clone(), rhs.borrow().clone())
                 }

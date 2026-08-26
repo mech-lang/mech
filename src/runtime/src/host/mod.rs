@@ -71,13 +71,11 @@ pub trait HostFunctionPlan: std::fmt::Debug + Send + Sync {
         arguments: &[RuntimeValueSnapshot],
     ) -> MResult<RuntimeValueSnapshot>;
 
-    fn required_capability(&self, context: &RuntimeCallContext) -> Option<CapabilityRequest> {
-        let _ = context;
+    fn required_capability(&self, _: &RuntimeCallContext) -> Option<CapabilityRequest> {
         None
     }
 
-    fn estimated_cost_bytes(&self, arguments: &[RuntimeValueSnapshot]) -> u64 {
-        let _ = arguments;
+    fn estimated_cost_bytes(&self, _: &[RuntimeValueSnapshot]) -> u64 {
         0
     }
 
@@ -761,9 +759,9 @@ impl HostRegistry for InMemoryHostRegistry {
 pub trait HostCallPolicy: std::fmt::Debug + Send + Sync {
     fn validate_call(
         &self,
-        context: &RuntimeCallContext,
+        _: &RuntimeCallContext,
         function: &RegisteredHostFunction,
-        arguments: &[RuntimeValueSnapshot],
+        _: &[RuntimeValueSnapshot],
     ) -> MResult<()>;
 }
 
@@ -780,9 +778,9 @@ pub struct DefaultHostCallPolicy;
 impl HostCallPolicy for DefaultHostCallPolicy {
     fn validate_call(
         &self,
-        context: &RuntimeCallContext,
+        _: &RuntimeCallContext,
         function: &RegisteredHostFunction,
-        arguments: &[RuntimeValueSnapshot],
+        _: &[RuntimeValueSnapshot],
     ) -> MResult<()> {
         if function.name().trim().is_empty() {
             return Err(MechError::new(
@@ -793,9 +791,6 @@ impl HostCallPolicy for DefaultHostCallPolicy {
                 None,
             ));
         }
-
-        let _ = context;
-        let _ = arguments;
         Ok(())
     }
 }

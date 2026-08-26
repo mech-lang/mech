@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use mech_build::NativeBuildPlan;
 
 mod isolated;

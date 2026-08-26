@@ -1,13 +1,12 @@
 use crate::*;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::sync::Arc;
 
 #[cfg(feature = "functions")]
 use mech_core::FunctionCatalog;
 use mech_core::{
     ApplicationRequirement, FunctionSpecializer, LegacyValue, MResult, MechError, MechErrorKind,
-    MechFunction, ResourceIntent, ValueKind, compare_application_requirements, hash_str,
-    validate_application_requirement, validate_stable_value_update,
+    ResourceIntent, compare_application_requirements, hash_str, validate_application_requirement,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -940,26 +939,12 @@ fn test_mech_program(config: CompilerPlanningConfig) -> CompilerPlanningProgram 
     )
 }
 
-#[derive(Debug, Clone)]
-pub struct UnsupportedProgramSourceError {
-    pub source_kind: String,
-}
-
-impl MechErrorKind for UnsupportedProgramSourceError {
-    fn name(&self) -> &str {
-        "UnsupportedProgramSource"
-    }
-
-    fn message(&self) -> String {
-        format!("Unsupported program source: {}", self.source_kind)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     #[cfg(feature = "functions")]
     use mech_core::FunctionCatalogBuilder;
+    #[cfg(feature = "native")]
     use mech_core::Ref;
     #[cfg(all(
         feature = "semantic-compiler",
@@ -969,6 +954,7 @@ mod tests {
         feature = "f64"
     ))]
     use mech_core::{BytecodeInstruction, ParsedProgram, Register};
+    use std::collections::BTreeMap;
 
     #[cfg(feature = "functions")]
     #[test]
@@ -1215,16 +1201,9 @@ mod tests {
 #[cfg(test)]
 mod live_input_tests {
     use super::*;
+    use mech_core::Ref;
     #[cfg(all(feature = "matrix", feature = "f64"))]
     use mech_core::structures::matrix::Matrix as MechMatrix;
-    use mech_core::{Ref, hash_str};
-
-    fn f64_value(value: &LegacyValue) -> f64 {
-        match value {
-            LegacyValue::F64(value) => *value.borrow(),
-            other => panic!("expected f64, got {other:?}"),
-        }
-    }
 
     #[cfg(feature = "f64")]
     #[test]
@@ -1785,7 +1764,6 @@ mod live_input_tests {
 #[cfg(all(test, feature = "source"))]
 mod root_symbol_snapshot_tests {
     use super::*;
-    use mech_core::Ref;
 
     fn f64_value(value: &LegacyValue) -> f64 {
         match value {

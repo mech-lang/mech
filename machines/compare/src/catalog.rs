@@ -1,15 +1,21 @@
+#[cfg(any(feature = "eq", feature = "gt", feature = "gte", feature = "lt", feature = "lte", feature = "max", feature = "min", feature = "neq"))]
 use crate::*;
 #[cfg(feature = "complex")]
 use mech_core::C64;
 #[cfg(feature = "rational")]
 use mech_core::R64;
-use mech_core::{
-    FunctionCatalogBuilder, MResult, MechFunctionFactory, RuntimeFunctionContract,
-    RuntimeOutputAliasPolicy,
-};
+use mech_core::{FunctionCatalogBuilder, MResult};
+#[cfg(any(
+    feature = "seq",
+    feature = "sneq",
+    all(feature = "eq", feature = "atom"),
+    all(feature = "eq", feature = "table"),
+    all(feature = "neq", feature = "atom"),
+    all(feature = "neq", feature = "table")
+))]
+use mech_core::{RuntimeFunctionContract, RuntimeOutputAliasPolicy};
 #[cfg(feature = "source")]
 use mech_core::{FunctionExport, FunctionExposure, FunctionSpecializer};
-use paste::paste;
 #[cfg(feature = "source")]
 use std::sync::Arc;
 
@@ -108,6 +114,7 @@ pub fn install_source(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     Ok(())
 }
 
+#[cfg(any(feature = "eq", feature = "gt", feature = "gte", feature = "lt", feature = "lte", feature = "max", feature = "min", feature = "neq"))]
 macro_rules! install_compare_binop_runtime {
     ($builder:expr, $operation:ident) => {
         mech_core::install_native_binop_runtime_factories!(
@@ -164,7 +171,8 @@ declare_compare_binop_native_factories!(Max, "max");
 declare_compare_binop_native_factories!(Min, "min");
 declare_compare_binop_native_factories!(NEQ, "neq");
 
-fn validate_strict_comparison(_args: &mech_core::FunctionArgs) -> MResult<()> {
+#[cfg(any(feature = "seq", feature = "sneq"))]
+fn validate_strict_comparison(_: &mech_core::FunctionArgs) -> MResult<()> {
     Ok(())
 }
 

@@ -1,7 +1,6 @@
-#[macro_use]
+use super::UnsupportedConversionError;
 use crate::intrinsics::*;
 use nalgebra::Scalar;
-use std::marker::PhantomData;
 
 #[derive(Debug)]
 pub struct ConvertScalarToMat2<F, T> {
@@ -153,7 +152,6 @@ impl FunctionSpecializer for ConvertScalarToMat {
             .with_compiler_loc());
         }
         let source_value = arguments[0].clone();
-        let source_kind = source_value.kind();
         let target_kind = arguments[1].kind();
         match impl_conversion_scalar_to_mat_fxn(source_value.clone(), target_kind.clone()) {
             Ok(fxn) => Ok(fxn),
@@ -161,7 +159,7 @@ impl FunctionSpecializer for ConvertScalarToMat {
                 LegacyValue::MutableReference(rhs) => {
                     impl_conversion_scalar_to_mat_fxn(rhs.borrow().clone(), target_kind.clone())
                 }
-                x => Err(MechError::new(
+                _ => Err(MechError::new(
                     UnhandledFunctionArgumentKind2 {
                         arg: (arguments[0].kind(), arguments[1].kind()),
                         fxn_name: "convert/scalar-to-mat".to_string(),

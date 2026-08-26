@@ -1,12 +1,9 @@
-#![feature(step_trait)]
 use crate::*;
-use mech_core::matrix::Matrix;
 use mech_core::*;
 use nalgebra::{
     Dim, Scalar,
-    base::{Matrix as naMatrix, Storage, StorageMut},
+    base::{Matrix as naMatrix, StorageMut},
 };
-use std::iter::Step;
 use std::marker::PhantomData;
 use std::sync::LazyLock;
 
@@ -246,7 +243,7 @@ macro_rules! impl_range_increment_exclusive_match_arms {
                 0
               }
             };
-            let mut vec = vec![from_val; size];
+            let vec = vec![from_val; size];
             match size {
               0 => Err(MechError::new(
                 EmptyRangeError{},
@@ -273,7 +270,7 @@ macro_rules! impl_range_increment_exclusive_match_arms {
                 Ok(Box::new($fxn::<$ty,RowVector4<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(RowVector4::from_vec(vec)), phantom: PhantomData::default()}))
               }
               #[cfg(feature = "row_vectord")]
-              n => {
+              _ => {
                 Ok(Box::new($fxn::<$ty,RowDVector<$ty>>{from: from.clone(), step: step.clone(), to: to.clone(), out: Ref::new(RowDVector::from_vec(vec)), phantom: PhantomData::default()}))
               }
             }

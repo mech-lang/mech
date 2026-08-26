@@ -169,14 +169,17 @@ mod tests {
         let snapshot = new_shared_snapshot(TimerSnapshot::new(0, 100, 0));
         let mut pending = pending_ticks(&[1, 2]);
         let mut calls = 0;
-        let _ = submit_pending_with("physics", &snapshot, &mut pending, |_| {
-            calls += 1;
-            if calls == 1 {
-                Ok(())
-            } else {
-                Err(timer_error("InjectedTimerFailure", "boom"))
-            }
-        });
+        assert!(
+            submit_pending_with("physics", &snapshot, &mut pending, |_| {
+                calls += 1;
+                if calls == 1 {
+                    Ok(())
+                } else {
+                    Err(timer_error("InjectedTimerFailure", "boom"))
+                }
+            })
+            .is_err()
+        );
         assert_eq!(snapshot.lock().unwrap().tick, 1);
         assert_eq!(pending.front().unwrap().tick, 2);
     }

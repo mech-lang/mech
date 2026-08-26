@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
 
+#[cfg(feature = "source")]
 use mech_core::MResult;
 
+#[cfg(feature = "source")]
 use super::{
     ConfigEvaluationBudgetExceeded, ConfigExpr, ConfigFunction, ConfigItem, ConfigProfileOptions,
     ConfigProfileViolation, ConfigProgram, MissingConfigBinding,
@@ -19,6 +21,7 @@ pub enum ConfigValue {
     Map(BTreeMap<String, ConfigValue>),
 }
 
+#[cfg(feature = "source")]
 pub(super) struct ConfigEvaluator {
     options: ConfigProfileOptions,
     steps: usize,
@@ -28,6 +31,7 @@ pub(super) struct ConfigEvaluator {
     functions: BTreeMap<String, ConfigFunction>,
 }
 
+#[cfg(feature = "source")]
 impl ConfigEvaluator {
     pub(super) fn new(options: ConfigProfileOptions) -> Self {
         Self {
@@ -52,7 +56,7 @@ impl ConfigEvaluator {
             match item {
                 ConfigItem::Function(_) => {}
                 ConfigItem::Expr(expr) => {
-                    let _ = self.eval_expr(expr, 0)?;
+                    self.eval_expr(expr, 0)?;
                 }
                 ConfigItem::Let(binding) => {
                     let value = self.eval_expr(&binding.expr, 0)?;

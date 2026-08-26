@@ -1,7 +1,10 @@
 use crate::*;
-#[cfg(feature = "no_std")]
+#[cfg(all(feature = "invariant_define", feature = "no_std", not(feature = "std")))]
 use alloc::collections::BTreeMap;
-#[cfg(not(feature = "no_std"))]
+#[cfg(all(
+    feature = "invariant_define",
+    any(not(feature = "no_std"), feature = "std")
+))]
 use std::collections::BTreeMap;
 
 #[cfg(feature = "program")]

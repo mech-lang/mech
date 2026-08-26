@@ -1,0 +1,33 @@
+{
+  "deprecated_apis": [],
+  "lint_exceptions": [
+    {
+      "directive": "expect",
+      "expiry_condition": "Remove only in a versioned ABI migration after downstream V1 source-compatibility tests are retired.",
+      "lint": "non_upper_case_globals",
+      "occurrences": 2,
+      "owner": "Mech module ABI V1",
+      "path": "src/abi/src/lib.rs",
+      "reason": "Mech module ABI V1 source names are frozen compatibility aliases"
+    },
+    {
+      "directive": "expect",
+      "expiry_condition": "Remove when MResult's error representation is reduced or the benchmark no longer exercises that contract.",
+      "lint": "clippy::result_large_err",
+      "occurrences": 1,
+      "owner": "Mech core execution performance",
+      "path": "src/core/benches/solve_result_overhead.rs",
+      "reason": "benchmark compares the existing MResult execution contract without changing it"
+    },
+    {
+      "directive": "expect",
+      "expiry_condition": "Remove when the execution graph no longer stores independently allocated dynamic nodes.",
+      "lint": "clippy::vec_box",
+      "occurrences": 1,
+      "owner": "Mech core execution performance",
+      "path": "src/core/benches/solve_result_overhead.rs",
+      "reason": "boxed nodes model the dynamic execution graph whose overhead this benchmark measures"
+    }
+  ],
+  "schema_version": 1
+}

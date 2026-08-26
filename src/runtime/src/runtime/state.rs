@@ -1,16 +1,20 @@
 use super::builder::RuntimeBuilder;
 use super::transaction::{ActiveRuntimeTransaction, RuntimeHealth};
+#[cfg(feature = "source")]
+use crate::SourceResolver;
 use crate::{
     ActiveRuntimeEffectPhase, CapabilityKernel, HostCallPolicy, HostInterfaceCatalog, HostRegistry,
     IdGenerator, MechStore, ModuleBuilder, RuntimeConfig, RuntimeHostInputDriver,
     RuntimeHostInputQueue, RuntimeId, RuntimeResourceRegistry, Scheduler, SchedulerPolicy,
-    SourceResolver, TransactionId,
+    TransactionId,
 };
+#[cfg(feature = "resident-routing")]
 use mech_core::FunctionCatalog;
 use mech_core::{MResult, ModuleManifestCatalog};
 use std::cell::Cell;
 use std::collections::HashMap;
 use std::rc::Rc;
+#[cfg(feature = "resident-routing")]
 use std::sync::Arc;
 
 #[cfg(feature = "resident-routing")]
@@ -41,6 +45,7 @@ pub struct MechRuntime {
     pub(super) id: RuntimeId,
     pub(super) event_sequence: u64,
     pub(super) config: RuntimeConfig,
+    #[cfg(feature = "resident-routing")]
     pub(super) function_catalog: Arc<FunctionCatalog>,
     #[cfg(feature = "resident-routing")]
     pub(super) active_program: ActiveProgramExecution,
@@ -53,6 +58,7 @@ pub struct MechRuntime {
     pub(super) id_generator: Box<dyn IdGenerator>,
     pub(super) store: Box<dyn MechStore>,
     pub(super) capability_kernel: Box<dyn CapabilityKernel>,
+    #[cfg(feature = "source")]
     pub(super) source_resolver: Box<dyn SourceResolver>,
     pub(super) host_registry: Box<dyn HostRegistry>,
     pub(super) host_policy: Box<dyn HostCallPolicy>,
@@ -77,12 +83,26 @@ impl std::fmt::Debug for MechRuntime {
             .field("id", &self.id)
             .field("event_sequence", &self.event_sequence)
             .field("config", &self.config)
-            .field("function_catalog", &"<FunctionCatalog>")
+            .field(
+                "function_catalog",
+                &if cfg!(feature = "resident-routing") {
+                    "<FunctionCatalog>"
+                } else {
+                    "unavailable"
+                },
+            )
             .field("active_program", &self.program_route_for_debug())
             .field("id_generator", &"<dyn IdGenerator>")
             .field("store", &"<dyn MechStore>")
             .field("capability_kernel", &"<dyn CapabilityKernel>")
-            .field("source_resolver", &"<dyn SourceResolver>")
+            .field(
+                "source_resolver",
+                &if cfg!(feature = "source") {
+                    "<dyn SourceResolver>"
+                } else {
+                    "unavailable"
+                },
+            )
             .field("host_registry", &"<dyn HostRegistry>")
             .field("host_policy", &"<dyn HostCallPolicy>")
             .field("scheduler", &"<dyn Scheduler>")
@@ -115,6 +135,7 @@ impl MechRuntime {
         &self.config
     }
 
+    #[cfg(test)]
     pub(crate) fn health(&self) -> &RuntimeHealth {
         &self.health
     }

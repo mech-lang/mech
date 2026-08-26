@@ -1,10 +1,6 @@
-#[macro_use]
 use crate::parser::*;
-use crate::label;
-use crate::labelr;
-use crate::nodes::Kind;
 use crate::*;
-use nom::{multi::separated_list0, sequence::tuple as nom_tuple};
+use nom::sequence::tuple as nom_tuple;
 
 // Lexical Elements
 // ----------------------------------------------------------------------------
@@ -17,7 +13,6 @@ macro_rules! leaf {
                 return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")));
             }
             let start = input.loc();
-            let byte = input.graphemes[input.cursor];
             let (input, _) = tag($byte)(input)?;
             let end = input.loc();
             let src_range = SourceRange { start, end };
@@ -40,36 +35,10 @@ macro_rules! ws0_leaf {
                 return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")));
             }
             let start = input.loc();
-            let byte = input.graphemes[input.cursor];
             let (input, _) = whitespace0(input)?;
             let (input, _) = tag($byte)(input)?;
             let (input, _) = whitespace0(input)?;
             let end = input.loc();
-            let src_range = SourceRange { start, end };
-            Ok((
-                input,
-                Token {
-                    kind: $token,
-                    chars: $byte.chars().collect::<Vec<char>>(),
-                    src_range,
-                },
-            ))
-        }
-    };
-}
-
-macro_rules! ws1_leaf {
-    ($name:ident, $byte:expr, $token:expr) => {
-        pub fn $name(input: ParseString) -> ParseResult<Token> {
-            if input.is_empty() {
-                return Err(nom::Err::Error(ParseError::new(input, "Unexpected eof")));
-            }
-            let (input, _) = whitespace1(input)?;
-            let start = input.loc();
-            let byte = input.graphemes[input.cursor];
-            let (input, _) = tag($byte)(input)?;
-            let end = input.loc();
-            let (input, _) = whitespace1(input)?;
             let src_range = SourceRange { start, end };
             Ok((
                 input,
@@ -274,7 +243,7 @@ pub fn any_token(mut input: ParseString) -> ParseResult<Token> {
     }
     let start = input.loc();
     let byte = input.graphemes[input.cursor];
-    if let Some(matched) = input.consume_one() {
+    if input.consume_one().is_some() {
         let end = input.loc();
         let src_range = SourceRange { start, end };
         Ok((
@@ -305,7 +274,6 @@ pub fn forbidden_emoji(input: ParseString) -> ParseResult<Token> {
 
 // emoji := (!forbidden-emoji, emoji-grapheme) ;
 pub fn emoji(input: ParseString) -> ParseResult<Token> {
-    let msg1 = "Cannot be a box-drawing emoji";
     let start = input.loc();
     let (input, _) = is_not(forbidden_emoji)(input)?;
     let (input, g) = emoji_grapheme(input)?;
@@ -362,7 +330,7 @@ pub fn underscore_digit(input: ParseString) -> ParseResult<Token> {
 
 // digit-sequence := digit, (underscore-digit | digit)* ;
 pub fn digit_sequence(input: ParseString) -> ParseResult<Vec<Token>> {
-    let (input, mut start) = digit_token(input)?;
+    let (input, start) = digit_token(input)?;
     let (input, mut tokens) = many0(alt((underscore_digit, digit_token)))(input)?;
     let mut all = vec![start];
     all.append(&mut tokens);

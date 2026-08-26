@@ -1,5 +1,7 @@
 use std::collections::BTreeSet;
 use std::ffi::OsStr;
+#[cfg(feature = "host_delegation_signing")]
+use std::io::Error;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 

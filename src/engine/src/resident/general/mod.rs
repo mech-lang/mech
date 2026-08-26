@@ -273,7 +273,6 @@ pub struct ActivatedPlan {
     pub(crate) state_slots: Box<[CellSlotId]>,
     pub(crate) rmw_state_slots: Box<[CellSlotId]>,
     pub(crate) state_hash_seed: u64,
-    pub(crate) activation_sizes: ResidentArenaSizes,
     pub(crate) effect_payload_sizes: ResidentArenaSizes,
 }
 
@@ -1170,7 +1169,7 @@ fn activate_internal(
             value,
         )?;
     }
-    execute_activation_graph(artifact, &plan, &mut activation)?;
+    execute_activation_graph(&plan, &mut activation)?;
     let mut state = StateArena::new(state_sizes, &plan.slots);
     for slot in plan
         .slots
@@ -1684,7 +1683,7 @@ fn build_plan(
             let requirement = node
                 .requirement
                 .ok_or(ResidentActivationError::InvalidExternalNode { node: node.node })?;
-            let payload = resolve_read(artifact, &layout, *source)?;
+            let payload = resolve_read(&layout, *source)?;
             let payload_layout = source_port_layout(artifact, &layout, *source)?;
             let payload_shape = match source {
                 ArtifactSource::Slot(slot) => layout.slots[slot.get() as usize].shape.clone(),
@@ -1781,7 +1780,7 @@ fn build_plan(
         let mut reads_state = false;
         for (ordinal, source) in input_sources.iter().enumerate() {
             if Some(ordinal) != base {
-                let read = resolve_read(artifact, &layout, *source)?;
+                let read = resolve_read(&layout, *source)?;
                 reads_state |= matches!(read, ResidentReadLocation::State { .. });
                 reads.push(read);
             }
@@ -1861,14 +1860,12 @@ fn build_plan(
         .slots()
         .iter()
         .filter_map(|slot| match (slot.role, slot.producer) {
-            (SlotRole::Output, ProducerReference::Output { source, .. }) => {
-                Some(resolve_read(artifact, &layout, source).map(|source| {
-                    ActivatedOutputMaterialization {
-                        target: slot.slot,
-                        source,
-                    }
-                }))
-            }
+            (SlotRole::Output, ProducerReference::Output { source, .. }) => Some(
+                resolve_read(&layout, source).map(|source| ActivatedOutputMaterialization {
+                    target: slot.slot,
+                    source,
+                }),
+            ),
             _ => None,
         })
         .collect::<Result<Vec<_>, ResidentActivationError>>()?
@@ -1885,7 +1882,7 @@ fn build_plan(
                     constraint: constraint.constraint,
                 });
             }
-            let predicate = resolve_read(artifact, &layout, constraint.inputs[0])?;
+            let predicate = resolve_read(&layout, constraint.inputs[0])?;
             let layout = source_port_layout(artifact, &layout, constraint.inputs[0])?;
             if layout.kind != ResidentValueKind::Bool || layout.shape != ResidentShape::SCALAR {
                 return Err(ResidentActivationError::InvalidConstraint {
@@ -1978,7 +1975,6 @@ fn build_plan(
         state_slots,
         rmw_state_slots,
         state_hash_seed,
-        activation_sizes,
         effect_payload_sizes,
     };
     Ok((
@@ -2087,7 +2083,6 @@ fn fold_hash_word(hash: u64, word: u64) -> u64 {
 }
 
 fn execute_activation_graph(
-    _artifact: &ProgramArtifact,
     plan: &ActivatedPlan,
     arena: &mut TypedResidentArena,
 ) -> Result<(), ResidentActivationError> {
@@ -2446,7 +2441,6 @@ fn set_bit(words: &mut [u64], bit: usize) {
 }
 
 fn resolve_read(
-    artifact: &ProgramArtifact,
     layout: &LayoutBuild,
     source: ArtifactSource,
 ) -> Result<ResidentReadLocation, ResidentActivationError> {

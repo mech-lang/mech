@@ -1,6 +1,5 @@
 #![cfg(feature = "compiler")]
 
-use crate::Interpreter;
 use crate::{
     ArtifactSource, BindingDeclaration, CompilerPlanningConfig, CompilerPlanningProgram,
     InitializerReference, ProducerReference, ProgramArtifact, SlotRole,
@@ -19,11 +18,10 @@ use mech_core::{
     FunctionCatalog, FunctionCatalogBuilder, FunctionRuntimeType, FunctionSpecializer,
     GuardFunctionSafety, IncorrectNumberOfArguments, InputPortLayout, InputPortPolicy, LegacyValue,
     MResult, MechError, MechFunction, MechFunctionCompiler, MechFunctionFactory, MechFunctionImpl,
-    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ParsedProgram, Plan,
-    ReactiveCellId, ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveTurnState,
-    Ref, Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
-    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType,
-    SchemaBody, SchemaId, ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
+    OperationContractDeclaration, OutputConstruction, OutputPortPolicy, ParsedProgram, Ref,
+    Register, ResolvedOperationContract, ResourceDelivery, ResourceIntent, RuntimeFunctionContract,
+    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, RuntimeType, SchemaBody, SchemaId,
+    ShapeRule, ValueData, ValueKind, compile_value_register, hash_str,
 };
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -624,6 +622,7 @@ fn composite_helpers_and_mutable_metadata_without_a_declaration_do_not_become_st
         name: "state".to_owned(),
         register: 2,
         mutable: true,
+        root_visible: true,
         ordinal: 0,
     });
     let artifact = crate::compile_executable_program_artifact(&compiled, &catalog).unwrap();
@@ -1088,6 +1087,7 @@ fn malformed_compiled_sidecars_fail_closed() {
             name: "external".to_owned(),
             register: 0,
             mutable: false,
+            root_visible: true,
             ordinal: 0,
         },
         CompiledSymbolDefinition {
@@ -1095,6 +1095,7 @@ fn malformed_compiled_sidecars_fail_closed() {
             name: "state".to_owned(),
             register: 0,
             mutable: true,
+            root_visible: true,
             ordinal: 1,
         },
     ];

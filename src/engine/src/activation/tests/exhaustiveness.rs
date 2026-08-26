@@ -1,8 +1,7 @@
 use super::support::{
-    ActivationPatternArmsNonExhaustive, ActivationPatternWildcardMustBeLast, LegacyValue, Ref,
-    arm_register_nodes, assert_dispatch_turn, committed_capture_value, f64_symbol, interpret,
-    interpret_more, plan_snapshot, registration, root_cell, selected_arm_index,
-    set_f64_matrix_event, set_f64_symbol, set_tuple_event,
+    LegacyValue, Ref, arm_register_nodes, assert_dispatch_turn, committed_capture_value,
+    f64_symbol, interpret, interpret_more, plan_snapshot, registration, root_cell,
+    selected_arm_index, set_f64_matrix_event, set_f64_symbol, set_tuple_event,
 };
 
 #[test]

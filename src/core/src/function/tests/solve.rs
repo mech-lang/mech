@@ -264,7 +264,7 @@ fn chain() -> (
     let b = Ref::new(2.);
     let final_value = Ref::new(3.);
     let (ra, _, _, ca) = reg(&mut p, input.clone(), a.clone(), false);
-    let (mid, _) = comb(&mut p, a.clone(), middle.clone(), false);
+    drop(comb(&mut p, a.clone(), middle.clone(), false));
     let (rb, _, _, cb) = reg(&mut p, middle.clone(), b.clone(), false);
     let (final_node, _) = comb(&mut p, b.clone(), final_value.clone(), false);
     (p, input, a, middle, b, ra, rb, final_node, ca, cb)

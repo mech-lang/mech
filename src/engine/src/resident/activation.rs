@@ -1,8 +1,6 @@
-use mech_core::{CellSlotId, SlotIndex};
+use mech_core::CellSlotId;
 
-use super::artifact::{
-    GateBControlFixture, LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, SlotKind, SlotRole,
-};
+use super::artifact::{GateBControlFixture, LOGICAL_SLOTS_PER_EKF, NODES_PER_EKF, SlotRole};
 use crate::efficacy::ekf::operation::{EkfConstants, EkfKernel};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -18,26 +16,21 @@ pub(crate) enum EdgeTiming {
 pub(crate) type ActivatedKernel = EkfKernel;
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) struct ResolvedSlot {
-    pub(crate) id: CellSlotId,
-    pub(crate) index: SlotIndex,
-    pub(crate) kind: SlotKind,
-    pub(crate) role: SlotRole,
-    pub(crate) instance: u32,
-}
-
-#[derive(Clone, Copy, Debug)]
 pub(crate) struct ActivatedNode {
     pub(crate) kernel: ActivatedKernel,
     pub(crate) instance: u32,
+    #[cfg(test)]
     pub(crate) same_turn_downstream_start: u32,
+    #[cfg(test)]
     pub(crate) same_turn_downstream_len: u16,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct DependencyTopology {
     pub(crate) linear_node_order: Box<[NodeIndex]>,
+    #[cfg(test)]
     pub(crate) consumer_offsets: Box<[u32]>,
+    #[cfg(test)]
     pub(crate) consumer_nodes: Box<[NodeIndex]>,
     pub(crate) same_turn_downstream_offsets: Box<[u32]>,
     pub(crate) same_turn_downstream_nodes: Box<[NodeIndex]>,
@@ -47,6 +40,7 @@ pub(crate) struct DependencyTopology {
 }
 
 impl DependencyTopology {
+    #[cfg(test)]
     pub(crate) fn consumers(&self, slot: CellSlotId) -> &[NodeIndex] {
         let index = slot.0 as usize;
         let start = self.consumer_offsets[index] as usize;
@@ -72,7 +66,9 @@ impl DependencyTopology {
 #[derive(Clone, Debug)]
 pub(crate) struct GateBPlan {
     pub(crate) instances: usize,
-    pub(crate) slots: Box<[ResolvedSlot]>,
+    pub(crate) slot_count: usize,
+    #[cfg(test)]
+    pub(crate) slots: Box<[SlotRole]>,
     pub(crate) nodes: Box<[ActivatedNode]>,
     pub(crate) topology: DependencyTopology,
     pub(crate) constants: EkfConstants,
@@ -93,21 +89,11 @@ fn flatten<T: Copy>(lists: &[Vec<T>]) -> (Box<[u32]>, Box<[T]>) {
 impl GateBPlan {
     pub(crate) fn from_control_fixture(artifact: GateBControlFixture) -> Self {
         let logical_slot_count = artifact.slots.len();
-        let slots: Box<[_]> = artifact
-            .slots
-            .iter()
-            .enumerate()
-            .map(|(index, slot)| {
-                assert_eq!(slot.id.0 as usize, index, "logical slot IDs are dense");
-                ResolvedSlot {
-                    id: slot.id,
-                    index: SlotIndex(index.try_into().expect("resident slot count fits u32")),
-                    kind: slot.kind,
-                    role: slot.role,
-                    instance: slot.instance,
-                }
-            })
-            .collect();
+        for (index, slot) in artifact.slots.iter().enumerate() {
+            assert_eq!(slot.id.0 as usize, index, "logical slot IDs are dense");
+        }
+        #[cfg(test)]
+        let slots: Box<[_]> = artifact.slots.iter().map(|slot| slot.role).collect();
 
         let mut consumers = vec![Vec::<NodeIndex>::new(); logical_slot_count];
         for (node, declaration) in artifact.nodes.iter().enumerate() {
@@ -116,6 +102,7 @@ impl GateBPlan {
                 consumers[slot.0 as usize].push(node);
             }
         }
+        #[cfg(test)]
         let (consumer_offsets, consumer_nodes) = flatten(&consumers);
 
         let mut same_turn_downstream = vec![Vec::<NodeIndex>::new(); artifact.nodes.len()];
@@ -153,17 +140,26 @@ impl GateBPlan {
         let (same_turn_downstream_offsets, same_turn_downstream_nodes) =
             flatten(&same_turn_downstream);
         let (next_turn_consumer_offsets, next_turn_consumer_nodes) = flatten(&next_turn_consumers);
+        #[cfg(test)]
+        let mut next_node_index = 0;
         let nodes: Box<[_]> = artifact
             .nodes
             .iter()
-            .enumerate()
-            .map(|(index, declaration)| {
-                let start = same_turn_downstream_offsets[index];
-                let end = same_turn_downstream_offsets[index + 1];
+            .map(|declaration| {
+                #[cfg(test)]
+                let start = same_turn_downstream_offsets[next_node_index];
+                #[cfg(test)]
+                let end = same_turn_downstream_offsets[next_node_index + 1];
+                #[cfg(test)]
+                {
+                    next_node_index += 1;
+                }
                 ActivatedNode {
                     kernel: declaration.op,
                     instance: declaration.instance,
+                    #[cfg(test)]
                     same_turn_downstream_start: start,
+                    #[cfg(test)]
                     same_turn_downstream_len: u16::try_from(end - start)
                         .expect("resident node fanout fits u16"),
                 }
@@ -173,7 +169,9 @@ impl GateBPlan {
             linear_node_order: (0..nodes.len())
                 .map(|index| NodeIndex(index as u32))
                 .collect(),
+            #[cfg(test)]
             consumer_offsets,
+            #[cfg(test)]
             consumer_nodes,
             same_turn_downstream_offsets,
             same_turn_downstream_nodes,
@@ -211,10 +209,12 @@ impl GateBPlan {
         debug_assert_eq!(artifact.instances * NODES_PER_EKF, nodes.len());
         debug_assert_eq!(
             artifact.instances * LOGICAL_SLOTS_PER_EKF as usize,
-            slots.len()
+            logical_slot_count
         );
         Self {
             instances: artifact.instances,
+            slot_count: logical_slot_count,
+            #[cfg(test)]
             slots,
             nodes,
             topology,
@@ -294,7 +294,7 @@ mod tests {
                 let downstream = left.topology.same_turn_downstream(node);
                 for output in &declaration.writes {
                     for consumer in left.topology.consumers(*output) {
-                        let role = left.slots[output.0 as usize].role;
+                        let role = left.slots[output.0 as usize];
                         if role == SlotRole::Stateful {
                             assert!(!downstream.contains(consumer));
                             assert!(

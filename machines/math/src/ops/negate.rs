@@ -1,8 +1,6 @@
-#[macro_use]
 use crate::*;
-#[cfg(feature = "matrix")]
+#[cfg(all(feature = "matrix", feature = "source"))]
 use mech_core::matrix::Matrix;
-use num_traits::*;
 use simba::scalar::ClosedNeg;
 
 // Negate ---------------------------------------------------------------------
@@ -232,7 +230,7 @@ mod checked_arithmetic_tests {
 fn impl_neg_fxn(lhs_value: LegacyValue) -> MResult<Box<dyn MechFunction>> {
     impl_urnop_match_arms!(
       Negate,
-      (lhs_value),
+      lhs_value,
       I8,   i8,   "i8";
       I16,  i16,  "i16";
       I32,  i32,  "i32";

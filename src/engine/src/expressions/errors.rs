@@ -36,7 +36,7 @@ impl MechErrorKind for InvalidIndexKindError {
         "InvalidIndexKind"
     }
     fn message(&self) -> String {
-        "Invalid index kind".to_string()
+        format!("Invalid index kind: {:?}", self.kind)
     }
 }
 

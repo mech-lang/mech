@@ -1880,9 +1880,8 @@ impl ComputeSession for BrowserWgpuSession {
 
     fn read_outputs(
         &mut self,
-        selection: &ComputeOutputSelection,
+        _: &ComputeOutputSelection,
     ) -> Result<ComputeOutputSnapshot, ComputeExecutionError> {
-        let _ = selection;
         Ok(ComputeOutputSnapshot::default())
     }
 }

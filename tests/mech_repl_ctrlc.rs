@@ -1,4 +1,5 @@
 #![cfg(unix)]
+#![cfg(any(feature = "distribution-standard", feature = "distribution-full"))]
 
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};

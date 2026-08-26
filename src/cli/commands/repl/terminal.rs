@@ -28,6 +28,7 @@ pub(super) fn render_events(
     Ok(())
 }
 
+#[cfg(test)]
 pub(super) fn render_events_collapsed(
     output: &mut dyn Write,
     events: &[MechEventEnvelope],

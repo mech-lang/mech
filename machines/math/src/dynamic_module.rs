@@ -1,21 +1,32 @@
 #![cfg(feature = "dynamic-module")]
 
-use mech_abi::{
-    MechExportV1, MechF64ViewMutV1, MechF64ViewV1, MechKernelFnV1, MechKernelKindV1, MechStatusV1,
-    MechStrV1,
-};
+#[cfg(test)]
+use mech_abi::{MechExportV1, MechKernelFnV1, MechKernelKindV1, MechStrV1};
+use mech_abi::{MechF64ViewMutV1, MechF64ViewV1, MechStatusV1};
 
+#[cfg(test)]
 const MODULE_NAME: &[u8] = b"math";
+#[cfg(test)]
 const EXPORT_NAME: &[u8] = b"math/round";
+#[cfg(test)]
 const SQRT_EXPORT_NAME: &[u8] = b"math/sqrt";
+#[cfg(test)]
 const FLOOR_EXPORT_NAME: &[u8] = b"math/floor";
+#[cfg(test)]
 const CEIL_EXPORT_NAME: &[u8] = b"math/ceil";
+#[cfg(test)]
 const ATAN2_EXPORT_NAME: &[u8] = b"math/atan2";
+#[cfg(test)]
 const SIN_EXPORT_NAME: &[u8] = b"math/sin";
+#[cfg(test)]
 const COS_EXPORT_NAME: &[u8] = b"math/cos";
+#[cfg(test)]
 const TAN_EXPORT_NAME: &[u8] = b"math/tan";
+#[cfg(test)]
 const ASIN_EXPORT_NAME: &[u8] = b"math/asin";
+#[cfg(test)]
 const ACOS_EXPORT_NAME: &[u8] = b"math/acos";
+#[cfg(test)]
 const ATAN_EXPORT_NAME: &[u8] = b"math/atan";
 
 macro_rules! define_unary_f64_dynamic_kernels {
@@ -101,14 +112,14 @@ math_dynamic_module_v1! {
 
 unsafe fn call_unary_f64(input: f64, out: *mut f64, kernel: fn(f64) -> f64) -> MechStatusV1 {
     if out.is_null() {
-        return MechStatusV1::NullPointer;
+        return MechStatusV1::NULL_POINTER;
     }
 
     unsafe {
         *out = kernel(input);
     }
 
-    MechStatusV1::Ok
+    MechStatusV1::OK
 }
 
 unsafe fn call_binary_f64(
@@ -118,14 +129,14 @@ unsafe fn call_binary_f64(
     kernel: fn(f64, f64) -> f64,
 ) -> MechStatusV1 {
     if out.is_null() {
-        return MechStatusV1::NullPointer;
+        return MechStatusV1::NULL_POINTER;
     }
 
     unsafe {
         *out = kernel(lhs, rhs);
     }
 
-    MechStatusV1::Ok
+    MechStatusV1::OK
 }
 
 unsafe fn call_unary_f64_view(
@@ -134,31 +145,31 @@ unsafe fn call_unary_f64_view(
     kernel: fn(&[f64], &mut [f64]),
 ) -> MechStatusV1 {
     if input.len != out.len {
-        return MechStatusV1::WrongShape;
+        return MechStatusV1::WRONG_SHAPE;
     }
 
     if input.rows != out.rows || input.cols != out.cols {
-        return MechStatusV1::WrongShape;
+        return MechStatusV1::WRONG_SHAPE;
     }
 
     let Some(input_cells) = input.rows.checked_mul(input.cols) else {
-        return MechStatusV1::WrongShape;
+        return MechStatusV1::WRONG_SHAPE;
     };
 
     let Some(out_cells) = out.rows.checked_mul(out.cols) else {
-        return MechStatusV1::WrongShape;
+        return MechStatusV1::WRONG_SHAPE;
     };
 
     if input.len != input_cells || out.len != out_cells {
-        return MechStatusV1::WrongShape;
+        return MechStatusV1::WRONG_SHAPE;
     }
 
     if input.len == 0 {
-        return MechStatusV1::Ok;
+        return MechStatusV1::OK;
     }
 
     if input.ptr.is_null() || out.ptr.is_null() {
-        return MechStatusV1::NullPointer;
+        return MechStatusV1::NULL_POINTER;
     }
 
     let input_slice = unsafe { core::slice::from_raw_parts(input.ptr, input.len) };
@@ -166,7 +177,7 @@ unsafe fn call_unary_f64_view(
 
     kernel(input_slice, out_slice);
 
-    MechStatusV1::Ok
+    MechStatusV1::OK
 }
 
 define_unary_f64_dynamic_kernels!(math_round_f64_v1, math_round_f64_view_v1, round);
@@ -201,7 +212,7 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::UnaryF64ToF64,
+            kind: MechKernelKindV1::UNARY_F64_TO_F64,
             function: MechKernelFnV1 {
                 unary_f64_to_f64: math_round_f64_v1,
             },
@@ -210,7 +221,7 @@ mod tests {
         let status = unsafe { mech_module_get_export_v1(index, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
 
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, expected_name);
         assert_eq!(export.kind, expected_kind);
     }
@@ -218,7 +229,7 @@ mod tests {
     #[test]
     fn module_name_null_pointer_returns_null_pointer() {
         let status = unsafe { mech_module_name_v1(core::ptr::null_mut()) };
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -229,7 +240,7 @@ mod tests {
         };
         let status = unsafe { mech_module_name_v1(&mut module_name) };
         let name = unsafe { core::slice::from_raw_parts(module_name.ptr, module_name.len) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, MODULE_NAME);
     }
 
@@ -241,7 +252,7 @@ mod tests {
     #[test]
     fn module_get_export_rejects_null_output() {
         let status = unsafe { mech_module_get_export_v1(0, core::ptr::null_mut()) };
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -251,64 +262,64 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::UnaryF64ToF64,
+            kind: MechKernelKindV1::UNARY_F64_TO_F64,
             function: MechKernelFnV1 {
                 unary_f64_to_f64: math_round_f64_v1,
             },
         };
         let status = unsafe { mech_module_get_export_v1(21, &mut export) };
-        assert_eq!(status, MechStatusV1::InvalidIndex);
+        assert_eq!(status, MechStatusV1::INVALID_INDEX);
     }
 
     #[test]
     fn export_metadata_describes_all_exported_kernels_in_order() {
-        assert_export_metadata(0, EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
-        assert_export_metadata(1, EXPORT_NAME, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_export_metadata(0, EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
+        assert_export_metadata(1, EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
 
-        assert_export_metadata(2, SQRT_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
-        assert_export_metadata(3, SQRT_EXPORT_NAME, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_export_metadata(2, SQRT_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
+        assert_export_metadata(3, SQRT_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
 
-        assert_export_metadata(4, FLOOR_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
+        assert_export_metadata(4, FLOOR_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
         assert_export_metadata(
             5,
             FLOOR_EXPORT_NAME,
-            MechKernelKindV1::UnaryF64ViewToF64View,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
         );
 
-        assert_export_metadata(6, CEIL_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
-        assert_export_metadata(7, CEIL_EXPORT_NAME, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_export_metadata(6, CEIL_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
+        assert_export_metadata(7, CEIL_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
 
-        assert_export_metadata(8, SIN_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
-        assert_export_metadata(9, SIN_EXPORT_NAME, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_export_metadata(8, SIN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
+        assert_export_metadata(9, SIN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
 
-        assert_export_metadata(10, COS_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
-        assert_export_metadata(11, COS_EXPORT_NAME, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_export_metadata(10, COS_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
+        assert_export_metadata(11, COS_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
 
-        assert_export_metadata(12, TAN_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
-        assert_export_metadata(13, TAN_EXPORT_NAME, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_export_metadata(12, TAN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
+        assert_export_metadata(13, TAN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
 
-        assert_export_metadata(14, ASIN_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
+        assert_export_metadata(14, ASIN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
         assert_export_metadata(
             15,
             ASIN_EXPORT_NAME,
-            MechKernelKindV1::UnaryF64ViewToF64View,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
         );
 
-        assert_export_metadata(16, ACOS_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
+        assert_export_metadata(16, ACOS_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
         assert_export_metadata(
             17,
             ACOS_EXPORT_NAME,
-            MechKernelKindV1::UnaryF64ViewToF64View,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
         );
 
-        assert_export_metadata(18, ATAN_EXPORT_NAME, MechKernelKindV1::UnaryF64ToF64);
+        assert_export_metadata(18, ATAN_EXPORT_NAME, MechKernelKindV1::UNARY_F64_TO_F64);
         assert_export_metadata(
             19,
             ATAN_EXPORT_NAME,
-            MechKernelKindV1::UnaryF64ViewToF64View,
+            MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
         );
 
-        assert_export_metadata(20, ATAN2_EXPORT_NAME, MechKernelKindV1::BinaryF64F64ToF64);
+        assert_export_metadata(20, ATAN2_EXPORT_NAME, MechKernelKindV1::BINARY_F64_F64_TO_F64);
     }
 
     #[test]
@@ -318,16 +329,16 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::UnaryF64ToF64,
+            kind: MechKernelKindV1::UNARY_F64_TO_F64,
             function: MechKernelFnV1 {
                 unary_f64_to_f64: math_round_f64_v1,
             },
         };
         let status = unsafe { mech_module_get_export_v1(0, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, EXPORT_NAME);
-        assert_eq!(export.kind, MechKernelKindV1::UnaryF64ToF64);
+        assert_eq!(export.kind, MechKernelKindV1::UNARY_F64_TO_F64);
     }
 
     #[test]
@@ -337,16 +348,16 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::UnaryF64ViewToF64View,
+            kind: MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
             function: MechKernelFnV1 {
                 unary_f64_view_to_f64_view: math_round_f64_view_v1,
             },
         };
         let status = unsafe { mech_module_get_export_v1(1, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, EXPORT_NAME);
-        assert_eq!(export.kind, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_eq!(export.kind, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
     }
 
     #[test]
@@ -356,16 +367,16 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::UnaryF64ToF64,
+            kind: MechKernelKindV1::UNARY_F64_TO_F64,
             function: MechKernelFnV1 {
                 unary_f64_to_f64: math_sqrt_f64_v1,
             },
         };
         let status = unsafe { mech_module_get_export_v1(2, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, SQRT_EXPORT_NAME);
-        assert_eq!(export.kind, MechKernelKindV1::UnaryF64ToF64);
+        assert_eq!(export.kind, MechKernelKindV1::UNARY_F64_TO_F64);
     }
 
     #[test]
@@ -375,16 +386,16 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::UnaryF64ViewToF64View,
+            kind: MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW,
             function: MechKernelFnV1 {
                 unary_f64_view_to_f64_view: math_sqrt_f64_view_v1,
             },
         };
         let status = unsafe { mech_module_get_export_v1(3, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, SQRT_EXPORT_NAME);
-        assert_eq!(export.kind, MechKernelKindV1::UnaryF64ViewToF64View);
+        assert_eq!(export.kind, MechKernelKindV1::UNARY_F64_VIEW_TO_F64_VIEW);
     }
 
     #[test]
@@ -394,23 +405,23 @@ mod tests {
                 ptr: core::ptr::null(),
                 len: 0,
             },
-            kind: MechKernelKindV1::BinaryF64F64ToF64,
+            kind: MechKernelKindV1::BINARY_F64_F64_TO_F64,
             function: MechKernelFnV1 {
                 binary_f64_f64_to_f64: math_atan2_f64_v1,
             },
         };
         let status = unsafe { mech_module_get_export_v1(20, &mut export) };
         let name = unsafe { core::slice::from_raw_parts(export.name.ptr, export.name.len) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(name, ATAN2_EXPORT_NAME);
-        assert_eq!(export.kind, MechKernelKindV1::BinaryF64F64ToF64);
+        assert_eq!(export.kind, MechKernelKindV1::BINARY_F64_F64_TO_F64);
     }
 
     #[test]
     fn math_round_f64_returns_expected_result() {
         let mut out = 0.0;
         let status = unsafe { math_round_f64_v1(1.23, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 1.0);
     }
 
@@ -418,7 +429,7 @@ mod tests {
     fn math_sqrt_f64_returns_expected_result() {
         let mut out = 0.0;
         let status = unsafe { math_sqrt_f64_v1(9.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 3.0);
     }
 
@@ -426,7 +437,7 @@ mod tests {
     fn math_floor_f64_returns_expected_result() {
         let mut out = 0.0;
         let status = unsafe { math_floor_f64_v1(4.56, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 4.0);
     }
 
@@ -434,7 +445,7 @@ mod tests {
     fn math_ceil_f64_returns_expected_result() {
         let mut out = 0.0;
         let status = unsafe { math_ceil_f64_v1(4.56, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 5.0);
     }
 
@@ -442,7 +453,7 @@ mod tests {
     fn math_sin_f64_returns_expected_result() {
         let mut out = 1.0;
         let status = unsafe { math_sin_f64_v1(0.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 0.0);
     }
 
@@ -450,7 +461,7 @@ mod tests {
     fn math_cos_f64_returns_expected_result() {
         let mut out = 0.0;
         let status = unsafe { math_cos_f64_v1(0.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 1.0);
     }
 
@@ -458,7 +469,7 @@ mod tests {
     fn math_tan_f64_returns_expected_result() {
         let mut out = 1.0;
         let status = unsafe { math_tan_f64_v1(0.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 0.0);
     }
 
@@ -466,7 +477,7 @@ mod tests {
     fn math_asin_f64_returns_expected_result() {
         let mut out = 1.0;
         let status = unsafe { math_asin_f64_v1(0.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 0.0);
     }
 
@@ -474,7 +485,7 @@ mod tests {
     fn math_acos_f64_returns_expected_result() {
         let mut out = 1.0;
         let status = unsafe { math_acos_f64_v1(1.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 0.0);
     }
 
@@ -482,7 +493,7 @@ mod tests {
     fn math_atan_f64_returns_expected_result() {
         let mut out = 1.0;
         let status = unsafe { math_atan_f64_v1(0.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 0.0);
     }
 
@@ -490,7 +501,7 @@ mod tests {
     fn math_atan2_f64_returns_expected_result() {
         let mut out = 1.0;
         let status = unsafe { math_atan2_f64_v1(0.0, 1.0, &mut out) };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, 0.0);
     }
 
@@ -514,7 +525,7 @@ mod tests {
                 },
             )
         };
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, [1.0, 2.0, 3.0]);
     }
 
@@ -540,14 +551,14 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, [1.0, 1.0]);
     }
 
     #[test]
     fn math_round_f64_rejects_null_output() {
         let status = unsafe { math_round_f64_v1(1.23, core::ptr::null_mut()) };
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -572,7 +583,7 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
         assert_eq!(out, [1.0, 3.0, 3.0]);
     }
 
@@ -597,7 +608,7 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -621,7 +632,7 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::NullPointer);
+        assert_eq!(status, MechStatusV1::NULL_POINTER);
     }
 
     #[test]
@@ -646,7 +657,7 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::WrongShape);
+        assert_eq!(status, MechStatusV1::WRONG_SHAPE);
     }
 
     #[test]
@@ -671,7 +682,7 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::WrongShape);
+        assert_eq!(status, MechStatusV1::WRONG_SHAPE);
     }
 
     #[test]
@@ -696,7 +707,7 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::WrongShape);
+        assert_eq!(status, MechStatusV1::WRONG_SHAPE);
     }
 
     #[test]
@@ -718,6 +729,6 @@ mod tests {
             )
         };
 
-        assert_eq!(status, MechStatusV1::Ok);
+        assert_eq!(status, MechStatusV1::OK);
     }
 }

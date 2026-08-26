@@ -1,5 +1,4 @@
 use crate::*;
-use mech_core::*;
 
 #[derive(Debug)]
 pub struct StrictEqValue {

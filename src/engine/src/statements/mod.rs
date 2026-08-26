@@ -9,7 +9,9 @@ mod context;
 mod destructure;
 mod integrity;
 
-pub(crate) use context::{context_assign, context_read};
+#[cfg(feature = "variable_assign")]
+pub(crate) use context::context_assign;
+pub(crate) use context::context_read;
 pub use context::{context_declaration, context_send};
 #[cfg(feature = "tuple")]
 pub use destructure::tuple_destructure;
@@ -21,29 +23,52 @@ mod errors;
 mod kinds;
 mod state_machines;
 
+pub use crate::expressions::UndefinedVariableError;
 #[cfg(feature = "enum")]
 pub use enums::enum_define;
 #[cfg(feature = "record")]
 pub use errors::UnableToConvertRecordError;
 pub use errors::{
     AddressedAssignmentUnsupported, NotMutableError, UnableToConvertAtomError,
-    UnableToConvertAtomToEnumVariantError, UndefinedContextError, UndefinedVariableError,
-    VariableAlreadyDefinedError,
+    UnableToConvertAtomToEnumVariantError, UndefinedContextError, VariableAlreadyDefinedError,
 };
 #[cfg(feature = "kind_define")]
 pub use kinds::kind_define;
 #[cfg(feature = "state_machines")]
 pub use state_machines::fsm_declare;
 
+#[cfg(any(
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 mod op_assign;
+#[cfg(any(
+    feature = "variable_assign",
+    all(feature = "subscript", feature = "assign"),
+    feature = "math_add_assign",
+    feature = "math_sub_assign",
+    feature = "math_div_assign",
+    feature = "math_mul_assign"
+))]
 mod variable_assign;
 mod variable_define;
 
-#[cfg(feature = "math_add_assign")]
+#[cfg(all(
+    feature = "math_add_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::add_assign;
-#[cfg(feature = "math_div_assign")]
+#[cfg(all(
+    feature = "math_div_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::div_assign;
-#[cfg(feature = "math_mul_assign")]
+#[cfg(all(
+    feature = "math_mul_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::mul_assign;
 #[cfg(any(
     feature = "math_add_assign",
@@ -52,7 +77,10 @@ pub use op_assign::mul_assign;
     feature = "math_mul_assign"
 ))]
 pub use op_assign::op_assign;
-#[cfg(feature = "math_sub_assign")]
+#[cfg(all(
+    feature = "math_sub_assign",
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 pub use op_assign::sub_assign;
 #[cfg(all(feature = "subscript", feature = "assign"))]
 pub use variable_assign::subscript_ref;
@@ -66,7 +94,24 @@ pub use variable_define::variable_define;
 
 pub fn statement(
     stmt: &Statement,
+    #[cfg(any(
+        feature = "variable_assign",
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign",
+        feature = "state_machines"
+    ))]
     env: Option<&Environment>,
+    #[cfg(not(any(
+        feature = "variable_assign",
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign",
+        feature = "state_machines"
+    )))]
+    _: Option<&Environment>,
     p: &InterpreterExecution<'_>,
 ) -> MResult<LegacyValue> {
     match stmt {

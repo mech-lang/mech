@@ -1,6 +1,8 @@
+#[cfg(feature = "source")]
 use super::super::MechRuntime;
 use crate::{RuntimeEvent, RuntimeEventKind};
 
+#[cfg(feature = "source")]
 pub(crate) fn events_since(runtime: &MechRuntime, start: usize) -> Vec<RuntimeEvent> {
     let events = runtime.list_events(None).unwrap();
     events

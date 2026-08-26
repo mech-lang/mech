@@ -1,4 +1,6 @@
-use super::super::{register_expression_function_batch, register_initialized_expression_function};
+use super::super::registration::{
+    register_expression_function_batch, register_initialized_expression_function,
+};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, MechFunctionCompiler, Register};
 use crate::{

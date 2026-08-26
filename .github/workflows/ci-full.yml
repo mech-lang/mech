@@ -62,6 +62,8 @@ jobs:
             sudo apt-get update
             sudo apt-get install --yes ripgrep
           fi
+      - name: Fetch locked architecture dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
       - name: Validate permanent architecture contracts
         run: |
           python3 scripts/generate-value-system-inventory.py --check
@@ -432,12 +434,14 @@ jobs:
           ref: ${{ inputs.validation_ref || github.sha }}
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
-      - name: Fetch both isolated generator dependency graphs
+      - name: Fetch every isolated generator dependency graph
         run: |
           cargo +nightly-2026-03-03 fetch --locked \
             --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml
           cargo +nightly-2026-03-03 fetch --locked \
             --manifest-path tests/fixtures/bytecode-v1-source-generator/Cargo.toml
+          cargo +nightly-2026-03-03 fetch --locked \
+            --manifest-path tests/fixtures/bytecode-v1-fixed-generator/Cargo.toml
       - name: Regenerate bytecode fixtures in fresh processes
         run: cargo +nightly-2026-03-03 run --locked --manifest-path tests/fixtures/bytecode-v1-generator/Cargo.toml -- --check
 

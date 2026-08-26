@@ -1,6 +1,6 @@
 #![cfg(feature = "full-hosts")]
 
-mod support;
+pub mod support;
 
 use mech_runtime::LogLevel;
 use support::*;

@@ -18,8 +18,6 @@ const SOURCE_CASES: &str = include_str!(concat!(
 struct SourceCorpus {
     schema: u32,
     cross_target: Vec<SourceCase>,
-    #[allow(dead_code)]
-    native_modules: Vec<SourceCase>,
 }
 
 #[derive(Debug, Deserialize)]

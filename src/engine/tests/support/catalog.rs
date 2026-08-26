@@ -88,7 +88,7 @@ mod test_operations {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for BinaryArithmeticFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -138,7 +138,7 @@ mod test_operations {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for NegateFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -203,7 +203,7 @@ mod test_operations {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for ComparisonFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -270,7 +270,7 @@ mod test_operations {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for BooleanFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -324,7 +324,7 @@ mod test_operations {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for NotFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -388,7 +388,7 @@ mod test_operations {
         }
     }
 
-    #[cfg(feature = "compiler")]
+    #[cfg(feature = "semantic-compiler")]
     impl MechFunctionCompiler for AddAssignFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
             Ok(0)
@@ -479,7 +479,7 @@ mod test_operations {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "semantic-compiler"))]
 mod tests {
     use super::*;
     use crate::Interpreter;
@@ -491,7 +491,7 @@ mod tests {
         feature = "formulas",
         feature = "math_add",
         feature = "f64",
-        feature = "compiler"
+        feature = "semantic-compiler"
     ))]
     use mech_core::{BytecodeCompilerContext, MechFunctionCompiler, Register};
     #[cfg(all(
@@ -551,7 +551,7 @@ mod tests {
         feature = "formulas",
         feature = "math_add",
         feature = "f64",
-        feature = "compiler"
+        feature = "semantic-compiler"
     ))]
     impl MechFunctionCompiler for TestAddFunction {
         fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {

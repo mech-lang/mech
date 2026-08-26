@@ -107,7 +107,9 @@ pub trait ResidentReplRuntimeFactory {
         {
             Ok(outcome) => outcome,
             Err(error) => {
-                let _ = runtime.shutdown();
+                if let Err(shutdown_error) = runtime.shutdown() {
+                    return Err(shutdown_error.with_source(error));
+                }
                 return Err(error);
             }
         };
@@ -482,7 +484,10 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             match candidate.preserve_compatible_resident_state_from(previous, changed_state_names) {
                 Ok(()) => {}
                 Err(error) => {
-                    let _ = candidate.shutdown();
+                    if let Err(shutdown_error) = candidate.shutdown() {
+                        self.factory.abort();
+                        return Err(shutdown_error.with_source(error));
+                    }
                     self.factory.abort();
                     return Err(error);
                 }
@@ -493,14 +498,20 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             Ok(Some(value)) => value,
             Ok(None) => outcome.initial_value,
             Err(error) => {
-                let _ = candidate.shutdown();
+                if let Err(shutdown_error) = candidate.shutdown() {
+                    self.factory.abort();
+                    return Err(shutdown_error.with_source(error));
+                }
                 self.factory.abort();
                 return Err(error);
             }
         };
 
         if let Err(error) = self.factory.prepare_commit(&mut candidate) {
-            let _ = candidate.shutdown();
+            if let Err(shutdown_error) = candidate.shutdown() {
+                self.factory.abort();
+                return Err(shutdown_error.with_source(error));
+            }
             self.factory.abort();
             return Err(error);
         }
@@ -798,7 +809,7 @@ impl<F: ResidentReplRuntimeFactory> ResidentReplSession<F> {
             return Ok(token);
         }
         let selection_token = NEXT_SELECTION_TOKEN
-            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
+            .try_update(Ordering::Relaxed, Ordering::Relaxed, |next| {
                 next.checked_add(1)
             })
             .map_err(|_| interactive_error("resident selection token space exhausted"))?;

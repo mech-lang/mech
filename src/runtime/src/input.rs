@@ -349,6 +349,7 @@ impl RuntimeHostInput {
         self
     }
 
+    #[cfg(feature = "resident-routing")]
     pub(crate) fn coalescing_group(&self) -> Option<&RuntimeHostInputCoalescingGroup> {
         self.coalescing_group.as_ref()
     }

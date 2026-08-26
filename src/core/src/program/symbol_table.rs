@@ -92,10 +92,14 @@ impl SymbolTable {
     }
 
     pub fn insert_cell(&mut self, key: u64, cell: ValRef, mutable: bool) -> ValRef {
+        if let Some(previous) = self.symbols.insert(key, cell.clone()) {
+            self.reverse_lookup.remove(&previous.id());
+        }
         self.reverse_lookup.insert(cell.id(), key);
-        let old = self.symbols.insert(key, cell.clone());
         if mutable {
             self.mutable_variables.insert(key, cell.clone());
+        } else {
+            self.mutable_variables.remove(&key);
         }
         cell.clone()
     }

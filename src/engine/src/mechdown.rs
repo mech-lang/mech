@@ -175,7 +175,7 @@ pub fn section_element(
                 }
                 match cmmnt {
                     Some(cmmnt) => {
-                        let cmmnt_value = comment(cmmnt, p)?;
+                        comment(cmmnt, p)?;
                     }
                     None => {}
                 }
@@ -266,10 +266,6 @@ pub fn section_element(
         }
         SectionElement::List(x) => x.hash(&mut hasher),
         SectionElement::SuccessBlock(x) => x.hash(&mut hasher),
-        SectionElement::ErrorBlock(x) => x.hash(&mut hasher),
-        SectionElement::WarningBlock(x) => x.hash(&mut hasher),
-        SectionElement::InfoBlock(x) => x.hash(&mut hasher),
-        SectionElement::IdeaBlock(x) => x.hash(&mut hasher),
         SectionElement::FigureTable(x) => {
             for row in &x.rows {
                 for figure in row {
@@ -397,7 +393,8 @@ mod section_annotation_tests {
 fn eval_fenced_code_block(
     code: &Vec<(MechCode, Option<Comment>)>,
     interpreter: &InterpreterExecution<'_>,
-    isolate_errors: bool,
+    #[cfg(feature = "string")] isolate_errors: bool,
+    #[cfg(not(feature = "string"))] _: bool,
 ) -> MResult<LegacyValue> {
     let mut out = LegacyValue::Empty;
     for (c, cmmnt) in code {
@@ -456,9 +453,9 @@ pub fn paragraph_element(
             let code_id = inline_eval_id(p);
             match expression(&expr, None, p) {
                 Ok(val) => (code_id, val),
-                Err(e) => (code_id, LegacyValue::Empty), // the expression failed perhaps because the value isn't defined yet.
-                _ => todo!(), // What do we do in the case when it really is an error though?
-                              // What we really need to do is just defer the execution of this thing to the very end
+                // Inline document expressions are opportunistic: unresolved
+                // values remain empty and can be evaluated on a later pass.
+                Err(_) => (code_id, LegacyValue::Empty),
             }
         }
         _ => {
@@ -649,7 +646,9 @@ impl MechErrorKind for ActivationTriggerMustBeStableReference {
     }
 }
 #[derive(Debug, Clone)]
+#[cfg(not(all(feature = "functions", feature = "symbol_table")))]
 struct ActivationScopeRegistrationUnsupported;
+#[cfg(not(all(feature = "functions", feature = "symbol_table")))]
 impl MechErrorKind for ActivationScopeRegistrationUnsupported {
     fn name(&self) -> &str {
         "ActivationScopeRegistrationUnsupported"

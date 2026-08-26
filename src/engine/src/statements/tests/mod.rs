@@ -6,7 +6,7 @@
     feature = "variable_define",
     feature = "variable_assign",
     feature = "f64",
-    feature = "math",
+    feature = "math_add",
     feature = "assign"
 ))]
 mod scheduling;
@@ -19,7 +19,7 @@ mod scheduling;
     feature = "variable_define",
     feature = "variable_assign",
     feature = "f64",
-    feature = "math",
+    feature = "math_add",
     feature = "assign"
 ))]
 mod activation_scope;

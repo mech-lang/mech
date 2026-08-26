@@ -1,10 +1,10 @@
-use mech_core::InstanceEpoch;
-
 use super::{
     Candidate, NODES_PER_EKF, ResidentCandidateExecutionError as ResidentExecutionError,
     efficacy::ekf,
 };
 use crate::efficacy::ekf::math;
+#[cfg(test)]
+use mech_core::InstanceEpoch;
 
 #[inline]
 fn validate_candidate(

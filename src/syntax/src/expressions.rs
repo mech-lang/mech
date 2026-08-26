@@ -1,29 +1,13 @@
-#[macro_use]
 use crate::*;
-use crate::structures::tuple;
 
-#[cfg(feature = "no-std")]
-use alloc::fmt;
-#[cfg(feature = "no-std")]
-use alloc::string::String;
-#[cfg(feature = "no-std")]
+#[cfg(feature = "no_std")]
 use alloc::vec::Vec;
-#[cfg(not(feature = "no-std"))]
-use core::fmt;
 use nom::{
-    Err,
-    Err::Failure,
-    IResult,
     branch::alt,
-    combinator::{cut, eof, opt},
-    multi::{many_till, many0, many1, separated_list0, separated_list1},
+    combinator::{cut, opt},
+    multi::{many0, many1, separated_list1},
     sequence::{pair, preceded, tuple as nom_tuple},
 };
-
-use colored::*;
-use std::collections::HashMap;
-
-use crate::*;
 
 // Expressions
 // ============================================================================
@@ -285,7 +269,7 @@ fn prefixed_context_path(input: ParseString) -> ParseResult<(Identifier, Identif
 // var := ("@", identifier, "/", identifier), kind-annotation? | identifier, kind-annotation? ;
 pub fn var(input: ParseString) -> ParseResult<Var> {
     if let Ok((input, (context, name))) = prefixed_context_path(input.clone()) {
-        let ((input, kind)) = opt(kind_annotation)(input)?;
+        let (input, kind) = opt(kind_annotation)(input)?;
         return Ok((
             input,
             Var {
@@ -295,8 +279,8 @@ pub fn var(input: ParseString) -> ParseResult<Var> {
             },
         ));
     }
-    let ((input, name)) = identifier(input)?;
-    let ((input, kind)) = opt(kind_annotation)(input)?;
+    let (input, name) = identifier(input)?;
+    let (input, kind) = opt(kind_annotation)(input)?;
     Ok((
         input,
         Var {
@@ -984,7 +968,7 @@ pub fn brace_subscript(input: ParseString) -> ParseResult<Subscript> {
 
 // select-all := ":" ;
 pub fn select_all(input: ParseString) -> ParseResult<Subscript> {
-    let (input, lhs) = colon(input)?;
+    let (input, _) = colon(input)?;
     Ok((input, Subscript::All))
 }
 

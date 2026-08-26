@@ -360,18 +360,20 @@ impl ReactiveInstance {
     }
 
     pub fn materialize_effect_payload(&self, ordinal: u32) -> MResult<Value> {
-        let _working_epoch = self
-            .candidate_epoch
-            .ok_or_else(|| MechError::new(ResidentEffectPayloadError { ordinal }, None))?;
+        if self.candidate_epoch.is_none() {
+            return Err(MechError::new(ResidentEffectPayloadError { ordinal }, None));
+        }
         let external = self
             .external_node(ordinal)
             .ok_or_else(|| MechError::new(ResidentEffectPayloadError { ordinal }, None))?;
-        let intent = self
+        if !self
             .workspace
             .effect_intents
             .iter()
-            .find(|intent| intent.ordinal == ordinal)
-            .ok_or_else(|| MechError::new(ResidentEffectPayloadError { ordinal }, None))?;
+            .any(|intent| intent.ordinal == ordinal)
+        {
+            return Err(MechError::new(ResidentEffectPayloadError { ordinal }, None));
+        }
         let payload = self
             .workspace
             .effect_payloads

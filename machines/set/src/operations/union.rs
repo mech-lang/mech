@@ -1,6 +1,5 @@
 use crate::*;
 
-use indexmap::set::IndexSet;
 use mech_core::set::MechSet;
 
 // Union ------------------------------------------------------------------------
@@ -126,7 +125,7 @@ impl FunctionSpecializer for SetUnion {
         let rhs = arguments[1].clone();
         match set_union_fxn(lhs.clone(), rhs.clone()) {
             Ok(fxn) => Ok(fxn),
-            Err(x) => match (lhs, rhs) {
+            Err(_) => match (lhs, rhs) {
                 (LegacyValue::MutableReference(lhs), LegacyValue::MutableReference(rhs)) => {
                     set_union_fxn(lhs.borrow().clone(), rhs.borrow().clone())
                 }

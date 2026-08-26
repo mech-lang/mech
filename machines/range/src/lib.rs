@@ -1,5 +1,4 @@
 #![cfg_attr(not(test), no_main)]
-#![feature(step_trait)]
 #![feature(where_clause_attrs)]
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -10,31 +9,30 @@ pub mod __mech_native {
     pub use crate::catalog::__mech_native::*;
 }
 
-#[macro_use]
-extern crate mech_core;
 #[cfg(feature = "matrix")]
 extern crate nalgebra as na;
 extern crate paste;
 
+#[cfg(feature = "source")]
 use paste::paste;
 
-#[cfg(feature = "matrixd")]
+#[cfg(all(feature = "source", feature = "matrixd", not(feature = "matrix1")))]
 use nalgebra::DMatrix;
-#[cfg(feature = "matrix1")]
+#[cfg(all(feature = "source", feature = "matrix1"))]
 use nalgebra::Matrix1;
-#[cfg(feature = "row_vectord")]
+#[cfg(all(feature = "source", feature = "row_vectord"))]
 use nalgebra::RowDVector;
-#[cfg(feature = "row_vector2")]
+#[cfg(all(feature = "source", feature = "row_vector2"))]
 use nalgebra::RowVector2;
-#[cfg(feature = "row_vector3")]
+#[cfg(all(feature = "source", feature = "row_vector3"))]
 use nalgebra::RowVector3;
-#[cfg(feature = "row_vector4")]
+#[cfg(all(feature = "source", feature = "row_vector4"))]
 use nalgebra::RowVector4;
 
-#[cfg(feature = "matrix")]
-use mech_core::matrix::Matrix;
 #[cfg(feature = "range")]
-use num_traits::{One, Zero};
+use num_traits::One;
+#[cfg(all(feature = "range", feature = "source"))]
+use num_traits::Zero;
 use std::fmt::Debug;
 use std::ops::*;
 

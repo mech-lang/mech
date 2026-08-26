@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use mech_core::{
-    AccessMode, AliasPolicy, ApplicationRequirement, BindingId, CellSlotId, ConstantId,
-    DeliveryMode, ExternalInteraction, NodeId, OperationContractError, OperationContractId,
-    OutputConstruction, PortDirection, ResolvedOperationContract, ResourceDelivery, ResourceIntent,
-    SchemaId, validate_contract_schemas, validate_signal_bindings,
+    AccessMode, AliasPolicy, ApplicationRequirement, CellSlotId, ConstantId, DeliveryMode,
+    ExternalInteraction, NodeId, OperationContractError, OperationContractId, OutputConstruction,
+    PortDirection, ResolvedOperationContract, ResourceDelivery, ResourceIntent, SchemaId,
+    validate_contract_schemas, validate_signal_bindings,
 };
 
 use super::{

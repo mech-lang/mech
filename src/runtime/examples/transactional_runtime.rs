@@ -1,8 +1,6 @@
 use mech_core::MResult;
 
-use mech_runtime::{
-    InMemorySourceResolver, MechRuntime, RuntimeBuilder, RuntimeContext, TaskRecord,
-};
+use mech_runtime::{MechRuntime, RuntimeBuilder, RuntimeContext, TaskRecord};
 
 fn mailbox_context(runtime: &mut MechRuntime) -> MResult<RuntimeContext> {
     let task = TaskRecord::new(runtime.next_task_id(), "actor:transactional-mailbox");
@@ -10,11 +8,7 @@ fn mailbox_context(runtime: &mut MechRuntime) -> MResult<RuntimeContext> {
 }
 
 fn main() -> MResult<()> {
-    let source_resolver = InMemorySourceResolver::new();
-
-    let mut runtime = RuntimeBuilder::new()
-        .source_resolver(source_resolver)
-        .build()?;
+    let mut runtime = RuntimeBuilder::new().build()?;
 
     println!("runtime: {}", runtime.id());
 

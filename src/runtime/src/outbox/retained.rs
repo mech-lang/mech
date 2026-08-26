@@ -23,14 +23,6 @@ pub struct PreparedOutboxBatch<P> {
 }
 
 impl<P> PreparedOutboxBatch<P> {
-    pub fn len(&self) -> usize {
-        self.effects.as_ref().map_or(0, Vec::len)
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     fn into_parts(mut self) -> (CapacityReservation, Vec<(usize, OwnedEffectIntent<P>)>) {
         let reservation = self
             .reservation
@@ -90,16 +82,14 @@ impl<P> RetainedEffectOutbox<P> {
         })
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub fn len(&self) -> usize {
         self.effects.len()
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub fn is_empty(&self) -> bool {
         self.effects.is_empty()
-    }
-
-    pub fn retained_bytes(&self) -> usize {
-        self.controller.retained().bytes
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &OwnedEffectIntent<P>> {
@@ -218,6 +208,7 @@ impl<P> RetainedEffectOutbox<P> {
         self.pop_front()
     }
 
+    #[cfg(any(test, feature = "runtime_bench_probes"))]
     pub fn drain(&mut self) -> impl Iterator<Item = OwnedEffectIntent<P>> + '_ {
         std::iter::from_fn(|| self.pop_front())
     }

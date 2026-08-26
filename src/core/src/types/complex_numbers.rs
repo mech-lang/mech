@@ -1,6 +1,7 @@
 use super::*;
-use crate::*;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use nalgebra::Complex;
+use num_traits::{One, Zero};
 
 // Complex Numbers
 // ----------------------------------------------------------------------------

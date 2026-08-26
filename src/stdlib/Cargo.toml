@@ -344,8 +344,8 @@ vectord = ["mech-core/vectord", "mech-engine/vectord", "mech-math?/vectord", "me
 matrixd = ["mech-core/matrixd", "mech-engine/matrixd", "mech-math?/matrixd", "mech-compare?/matrixd", "mech-logic?/matrixd", "mech-range?/matrixd", "mech-matrix?/matrixd", "mech-set?/matrixd", "mech-string?/matrixd", "mech-stats?/matrixd", "mech-combinatorics?/matrixd"]
 
 [dependencies]
-mech-core = { version = "0.3.5", default-features = false }
-mech-engine = { version = "0.3.5", default-features = false, features = ["functions"] }
+mech-core = { version = "0.3.5", path = "../core", default-features = false }
+mech-engine = { version = "0.3.5", path = "../engine", default-features = false, features = ["functions"] }
 mech-math = { version = "0.3.5", default-features = false, optional = true }
 mech-compare = { version = "0.3.5", default-features = false, optional = true }
 mech-logic = { version = "0.3.5", default-features = false, optional = true }

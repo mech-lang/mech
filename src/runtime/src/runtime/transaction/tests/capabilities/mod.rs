@@ -1,4 +1,5 @@
 mod grants;
+#[cfg(feature = "source")]
 mod overlays;
 mod revocations;
 mod rollback;

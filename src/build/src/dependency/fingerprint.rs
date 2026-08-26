@@ -810,7 +810,7 @@ mod tests {
 
     impl Drop for TestWorkspace {
         fn drop(&mut self) {
-            let _ = fs::remove_dir_all(&self.0);
+            drop(fs::remove_dir_all(&self.0));
         }
     }
 
@@ -928,10 +928,10 @@ mod tests {
     #[test]
     #[should_panic(expected = "workspace fingerprint entries contain a duplicate path")]
     fn fingerprint_entries_rejects_duplicate_paths() {
-        let _ = fingerprint_entries([
+        drop(fingerprint_entries([
             ("duplicate.rs", b"first".as_slice()),
             ("duplicate.rs", b"second".as_slice()),
-        ]);
+        ]));
     }
 
     #[test]

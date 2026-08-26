@@ -19,6 +19,7 @@ pub fn range(
                 RangeOp::Exclusive => "range/exclusive-increment",
                 #[cfg(feature = "range_inclusive")]
                 RangeOp::Inclusive => "range/inclusive-increment",
+                #[cfg(not(all(feature = "range_exclusive", feature = "range_inclusive")))]
                 _ => unreachable!(),
             };
             let function = p.specialize_visible_operation_named(
@@ -35,6 +36,7 @@ pub fn range(
                 RangeOp::Exclusive => "range/exclusive",
                 #[cfg(feature = "range_inclusive")]
                 RangeOp::Inclusive => "range/inclusive",
+                #[cfg(not(all(feature = "range_exclusive", feature = "range_inclusive")))]
                 _ => unreachable!(),
             };
             let function = p.specialize_visible_operation_named(

@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 import re
 import sys
+import tomllib
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -301,15 +302,27 @@ def check_required_product_seams() -> list[str]:
         failures.append(
             "src/cli/host_factories.rs: normal mech run must install CliHostFactory"
         )
-    root_manifest = (ROOT / "Cargo.toml").read_text(encoding="utf-8")
-    for terminal_feature in (
-        'cli_host = ["mech-runtime", "dep:mech-terminal", "mech-terminal/provider"]',
-        'mech-terminal = { version = "0.3.5", default-features = false, optional = true }',
-    ):
-        if terminal_feature not in root_manifest:
-            failures.append(
-                f"Cargo.toml: retained terminal product closure is missing {terminal_feature}"
-            )
+    root_manifest = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))
+    expected_cli_host = [
+        "mech-runtime",
+        "dep:mech-terminal",
+        "mech-terminal/provider",
+    ]
+    if root_manifest.get("features", {}).get("cli_host") != expected_cli_host:
+        failures.append(
+            "Cargo.toml: retained terminal product closure has an invalid cli_host feature"
+        )
+    terminal_dependency = root_manifest.get("dependencies", {}).get("mech-terminal")
+    expected_terminal_dependency = {
+        "version": "0.3.5",
+        "path": "hosts/terminal",
+        "default-features": False,
+        "optional": True,
+    }
+    if terminal_dependency != expected_terminal_dependency:
+        failures.append(
+            "Cargo.toml: retained terminal product closure has an invalid mech-terminal dependency"
+        )
     retired_time_surfaces = {
         "src/cli/app/mod.rs": ('Arg::new("time")', 'get_flag("time")'),
         "src/cli/commands/run.rs": ('Arg::new("time")', 'get_flag("time")'),

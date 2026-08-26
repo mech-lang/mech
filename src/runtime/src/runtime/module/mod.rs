@@ -435,7 +435,7 @@ impl MechRuntime {
         resolved: ResolvedSource,
         options: ModuleBuildOptions<'_>,
     ) -> MResult<ModuleVersionId> {
-        let _ = Self::context_transaction_id(context)?;
+        Self::context_transaction_id(context)?;
         let mut dependency_graph = ModuleDependencyGraph::new();
 
         self.build_module_from_resolved_source_with_context_and_graph(
@@ -708,7 +708,7 @@ impl MechRuntime {
         request: impl Into<SourceRequest>,
         options: ModuleBuildOptions<'_>,
     ) -> MResult<Option<ModuleVersionId>> {
-        let _ = Self::context_transaction_id(context)?;
+        Self::context_transaction_id(context)?;
         let mut dependency_graph = ModuleDependencyGraph::new();
 
         self.build_module_from_request_with_context_and_graph(
@@ -794,6 +794,7 @@ impl MechRuntime {
         self.store.get_active_module_version(module)
     }
 
+    #[cfg(all(feature = "watcher", feature = "source"))]
     pub(crate) fn workspace_module_records(
         &self,
         version: ModuleVersionId,
