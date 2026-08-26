@@ -2,7 +2,8 @@ use super::{Environment, UndefinedVariableError};
 #[cfg(not(all(feature = "kind_annotation", feature = "convert")))]
 use crate::{FeatureNotEnabledError, MechError};
 use crate::{
-    Identifier, InterpreterExecution, LegacyValue, MResult, MutableReference, Var, hash_str,
+    Identifier, InterpreterExecution, LegacyValue, MResult, MutableReference, ValueCell, Var,
+    hash_str,
 };
 #[cfg(all(feature = "kind_annotation", feature = "convert"))]
 use crate::{execute_catalog_operation, kind_annotation};
@@ -89,8 +90,12 @@ pub fn var(
         symbols.get(id)
     };
     if let Some(value) = symbol_value {
-        mark_if_live_symbol(&value);
-        return maybe_cast_variable_to_kind(v, LegacyValue::MutableReference(value), p);
+        mark_if_live_symbol(&value.legacy_ref());
+        return maybe_cast_variable_to_kind(
+            v,
+            LegacyValue::MutableReference(value.legacy_ref()),
+            p,
+        );
     }
     if v.context.is_some() {
         return lower_missing_addressed_variable(v, p);
@@ -114,7 +119,7 @@ fn lower_missing_addressed_variable(
     {
         let symbols = interpreter.symbols();
         let mut symbols = symbols.borrow_mut();
-        symbols.insert_cell(id, output.clone(), false);
+        symbols.insert_cell(id, ValueCell::from_legacy_ref(output.clone()), false);
         symbols.dictionary.borrow_mut().insert(id, addressed_name);
     }
 

@@ -13,7 +13,7 @@ use crate::patterns::PatternBindingSink;
 use crate::{
     ComprehensionQualifier, ExternalInteraction, FunctionSpecializer, Interpreter,
     InterpreterExecution, LegacyValue, MResult, MechError, MechFunction, ReactiveNodeKind, Ref,
-    execute_catalog_operation, hash_str, val_ref_reactive_cell_ids,
+    execute_catalog_operation, hash_str, legacy_ref_reactive_cell_ids,
 };
 #[cfg(feature = "set_comprehensions")]
 use crate::{MechSet, SetComprehension};
@@ -29,7 +29,7 @@ fn value_depends_on_reactive_turn(value: &LegacyValue, p: &InterpreterExecution<
         symbols
             .mutable_variables
             .values()
-            .flat_map(val_ref_reactive_cell_ids)
+            .flat_map(|cell| legacy_ref_reactive_cell_ids(&cell.legacy_ref()))
             .collect::<HashSet<_>>()
     };
     let plan = p.plan();

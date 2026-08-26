@@ -732,7 +732,6 @@ fn activation_pattern_capture_does_not_leak() {
 fn activation_pattern_capture_shadows_and_restores_outer_symbol() {
     let mut i = interpret("event := (1.0, 2.0)\nx := 99.0");
     let outer = symbol_ref(&i, "x");
-    let address = outer.addr();
     interpret_more(
         &mut i,
         "~> event\n  | (x, y) => {
@@ -743,7 +742,7 @@ fn activation_pattern_capture_shadows_and_restores_outer_symbol() {
     )
     .unwrap();
     assert_eq!(*symbol(&i, "x").as_f64().unwrap().borrow(), 99.);
-    assert_eq!(symbol_ref(&i, "x").addr(), address);
+    assert!(symbol_ref(&i, "x").same_cell(&outer));
     assert!(!i.symbols().borrow().contains(hash_str("y")));
     assert!(!i.symbols().borrow().contains(hash_str("selected")));
     let topology = plan_snapshot(&i);

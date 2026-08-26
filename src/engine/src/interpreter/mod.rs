@@ -226,10 +226,10 @@ impl SymbolTableCellCheckpoint {
             })?;
             let snapshot = table.snapshot();
             for value in table.symbols.values() {
-                journal.capture_val_ref(value)?;
+                journal.capture_value_cell(value)?;
             }
             for value in table.mutable_variables.values() {
-                journal.capture_val_ref(value)?;
+                journal.capture_value_cell(value)?;
             }
             snapshot
         };
@@ -322,7 +322,7 @@ impl UserFunctionsCheckpoint {
                 symbols_target: definition.symbols.clone(),
                 symbols: symbol_snapshot,
                 symbol_dictionary_target,
-                out_target: definition.out.clone(),
+                out_target: definition.out.legacy_ref(),
                 plan_target: definition.plan.clone(),
                 plan,
             });
@@ -382,6 +382,7 @@ impl UserFunctionsCheckpoint {
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
         let mut values = Vec::new();
         let mut seen_refs = HashSet::new();
+        let mut seen_cells = Vec::new();
         for definition in &self.definitions {
             if seen_refs.insert(definition.out_target.addr()) {
                 values.push(LegacyValue::MutableReference(definition.out_target.clone()));
@@ -395,8 +396,12 @@ impl UserFunctionsCheckpoint {
                 .values()
                 .chain(symbols.mutable_variables.values())
             {
-                if seen_refs.insert(value.addr()) {
-                    values.push(LegacyValue::MutableReference(value.clone()));
+                if !seen_cells
+                    .iter()
+                    .any(|seen: &ValueCell| seen.same_cell(value))
+                {
+                    seen_cells.push(value.clone());
+                    values.push(LegacyValue::MutableReference(value.legacy_ref()));
                 }
             }
             drop(symbols);
@@ -504,12 +509,12 @@ impl ProgramStateCheckpoint {
 
         #[cfg(feature = "invariant_define")]
         for constraint in state.integrity_constraints.values() {
-            journal.capture_val_ref(&constraint.result)?;
+            journal.capture_value_cell(&constraint.result)?;
             if let Some(lhs) = &constraint.lhs {
-                journal.capture_val_ref(lhs)?;
+                journal.capture_value_cell(lhs)?;
             }
             if let Some(rhs) = &constraint.rhs {
-                journal.capture_val_ref(rhs)?;
+                journal.capture_value_cell(rhs)?;
             }
         }
 

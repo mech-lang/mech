@@ -52,7 +52,7 @@ pub fn slice(
                 let symbols_brrw = symbols.borrow();
                 match symbols_brrw.get(id) {
                     Some(val) => match symbols_brrw.get_mutable(id) {
-                        Some(_) => LegacyValue::MutableReference(val.clone()),
+                        Some(_) => LegacyValue::MutableReference(val.legacy_ref()),
                         None => val.borrow().clone(),
                     },
                     None => {
@@ -74,7 +74,7 @@ pub fn slice(
         let symbols_brrw = symbols.borrow();
         match symbols_brrw.get(id) {
             Some(val) => match symbols_brrw.get_mutable(id) {
-                Some(_) => LegacyValue::MutableReference(val.clone()),
+                Some(_) => LegacyValue::MutableReference(val.legacy_ref()),
                 None => val.borrow().clone(),
             },
             None => {

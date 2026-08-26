@@ -117,7 +117,7 @@ fn mutable_reference_is_mutable_symbol(
     symbols_brrw
         .mutable_variables
         .values()
-        .any(|symbol| symbol.same_handle(reference))
+        .any(|symbol| symbol.legacy_ref().same_handle(reference))
 }
 
 #[cfg(feature = "subscript_formula")]

@@ -740,7 +740,7 @@ pub struct FunctionDefinition {
     pub input: IndexMap<u64, KindAnnotation>,
     pub output: IndexMap<u64, KindAnnotation>,
     pub symbols: SymbolTableRef,
-    pub out: Ref<LegacyValue>,
+    pub out: ValueCell,
     pub plan: Plan,
 }
 
@@ -802,13 +802,13 @@ impl FunctionDefinition {
             code,
             input: IndexMap::new(),
             output: IndexMap::new(),
-            out: Ref::new(LegacyValue::Empty),
+            out: ValueCell::new(LegacyValue::Empty),
             symbols: Ref::new(SymbolTable::new()),
             plan: Plan::new(),
         }
     }
 
-    pub fn solve_result(&self) -> MResult<ValRef> {
+    pub fn solve_result(&self) -> MResult<ValueCell> {
         let plan_brrw = self.plan.borrow();
         for step in plan_brrw.iter() {
             step.solve_result()?;
@@ -816,7 +816,7 @@ impl FunctionDefinition {
         Ok(self.out.clone())
     }
 
-    pub fn out(&self) -> ValRef {
+    pub fn out(&self) -> ValueCell {
         self.out.clone()
     }
 }
@@ -836,9 +836,8 @@ impl MechFunctionImpl for UserFunction {
         self.fxn.out.borrow().clone()
     }
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        let mut values = vec![LegacyValue::MutableReference(self.fxn.out.clone())];
-        let mut seen_refs = HashSet::new();
-        seen_refs.insert(self.fxn.out.addr());
+        let mut values = vec![LegacyValue::MutableReference(self.fxn.out.legacy_ref())];
+        let mut seen_cells = vec![self.fxn.out.clone()];
         let symbols = self.fxn.symbols.try_borrow().map_err(|_| {
             MechError::new(
                 TransactionStateBorrowConflictError {
@@ -854,8 +853,9 @@ impl MechFunctionImpl for UserFunction {
             .values()
             .chain(symbols.mutable_variables.values())
         {
-            if seen_refs.insert(value.addr()) {
-                values.push(LegacyValue::MutableReference(value.clone()));
+            if !seen_cells.iter().any(|seen| seen.same_cell(value)) {
+                seen_cells.push(value.clone());
+                values.push(LegacyValue::MutableReference(value.legacy_ref()));
             }
         }
         drop(symbols);

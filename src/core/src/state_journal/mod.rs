@@ -444,7 +444,7 @@ impl CaptureSide {
 #[derive(Clone)]
 enum ValueStateRoot {
     Value(LegacyValue),
-    ValRef(ValRef),
+    Cell(ValueCell),
 }
 
 trait ErasedValueStateEntry {
@@ -570,14 +570,15 @@ impl ValueStateJournal {
         Ok(())
     }
 
-    /// Captures the [`ValRef`] cell itself and every cell reachable from its
-    /// current [`Value`].
-    pub fn capture_val_ref(&mut self, value: &ValRef) -> MResult<()> {
+    /// Captures the [`ValueCell`] itself and every cell reachable from its
+    /// current [`LegacyValue`].
+    pub fn capture_value_cell(&mut self, cell: &ValueCell) -> MResult<()> {
         self.ensure_open()?;
+        let reference = cell.legacy_ref();
 
         let mut preflight_seen = HashSet::default();
         self.preflight_ref(
-            value,
+            &reference,
             CaptureSide::Before,
             &mut preflight_seen,
             |journal, value, seen| journal.preflight_value(value, CaptureSide::Before, seen),
@@ -585,12 +586,12 @@ impl ValueStateJournal {
 
         let mut capture_seen = HashSet::default();
         self.visit_ref(
-            value,
+            &reference,
             CaptureSide::Before,
             &mut capture_seen,
             |journal, value, seen| journal.visit_value(value, CaptureSide::Before, seen),
         )?;
-        self.roots.push(ValueStateRoot::ValRef(value.clone()));
+        self.roots.push(ValueStateRoot::Cell(cell.clone()));
         Ok(())
     }
 
@@ -688,8 +689,9 @@ impl ValueStateJournal {
     ) -> MResult<()> {
         match root {
             ValueStateRoot::Value(value) => self.preflight_value(value, side, seen),
-            ValueStateRoot::ValRef(value) => {
-                self.preflight_ref(value, side, seen, |journal, value, seen| {
+            ValueStateRoot::Cell(cell) => {
+                let reference = cell.legacy_ref();
+                self.preflight_ref(&reference, side, seen, |journal, value, seen| {
                     journal.preflight_value(value, side, seen)
                 })
             }
@@ -704,8 +706,9 @@ impl ValueStateJournal {
     ) -> MResult<()> {
         match root {
             ValueStateRoot::Value(value) => self.visit_value(value, side, seen),
-            ValueStateRoot::ValRef(value) => {
-                self.visit_ref(value, side, seen, |journal, value, seen| {
+            ValueStateRoot::Cell(cell) => {
+                let reference = cell.legacy_ref();
+                self.visit_ref(&reference, side, seen, |journal, value, seen| {
                     journal.visit_value(value, side, seen)
                 })
             }

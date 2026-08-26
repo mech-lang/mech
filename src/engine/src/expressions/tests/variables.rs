@@ -242,7 +242,11 @@ fn repeated_context_read_reuses_one_live_binding() {
         .borrow()
         .get(hash_str("@input/item"))
         .expect("successful addressed read must cache its output cell");
-    assert_eq!(addressed.addr(), services.live_bindings[0].2.addr());
+    assert!(
+        addressed
+            .legacy_ref()
+            .same_handle(&services.live_bindings[0].2)
+    );
     assert_eq!(
         addressed.borrow().reactive_root_cell_ids(),
         symbol_value(&interpreter, "first").reactive_root_cell_ids(),

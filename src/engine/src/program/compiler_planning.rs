@@ -389,7 +389,9 @@ impl CompilerPlanningProgram {
         let id = hash_str(name);
         let symbols = self.interpreter.symbols();
         let mut symbols = symbols.borrow_mut();
-        symbols.symbols.insert(id, value);
+        symbols
+            .symbols
+            .insert(id, ValueCell::from_legacy_ref(value));
         symbols.dictionary.borrow_mut().insert(id, name.to_owned());
         Ok(())
     }
@@ -764,7 +766,7 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     let retained_integrity_metadata = if !state.integrity_constraints.is_empty() {
         let mut metadata = Vec::with_capacity(state.integrity_constraints.len());
         for constraint in state.integrity_constraints.values() {
-            let result = LegacyValue::MutableReference(constraint.result.clone());
+            let result = LegacyValue::MutableReference(constraint.result.legacy_ref());
             let result_register = context.resolve_value_register(&result)?;
             context.record_integrity_constraint(constraint.name.clone(), result_register)?;
             let name = LegacyValue::String(Ref::new(constraint.name.clone()));
@@ -805,12 +807,12 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
             let lhs = constraint
                 .lhs
                 .as_ref()
-                .map(|value| LegacyValue::MutableReference(value.clone()))
+                .map(|value| LegacyValue::MutableReference(value.legacy_ref()))
                 .unwrap_or(LegacyValue::Empty);
             let rhs = constraint
                 .rhs
                 .as_ref()
-                .map(|value| LegacyValue::MutableReference(value.clone()))
+                .map(|value| LegacyValue::MutableReference(value.legacy_ref()))
                 .unwrap_or(LegacyValue::Empty);
             metadata.push(RetainedIntegrityMarkerMetadata {
                 result_register,
@@ -944,8 +946,6 @@ mod tests {
     use super::*;
     #[cfg(feature = "functions")]
     use mech_core::FunctionCatalogBuilder;
-    #[cfg(feature = "native")]
-    use mech_core::Ref;
     #[cfg(all(
         feature = "semantic-compiler",
         feature = "source",
@@ -954,6 +954,8 @@ mod tests {
         feature = "f64"
     ))]
     use mech_core::{BytecodeInstruction, ParsedProgram, Register};
+    #[cfg(feature = "native")]
+    use mech_core::{Ref, ValueCell};
     use std::collections::BTreeMap;
 
     #[cfg(feature = "functions")]
@@ -1070,7 +1072,7 @@ mod tests {
             .borrow()
             .get(hash_str("target"))
             .unwrap();
-        assert_eq!(descriptor.lhs.as_ref().unwrap().addr(), target.addr());
+        assert!(descriptor.lhs.as_ref().unwrap().same_cell(&target));
         assert!(descriptor.rhs.is_some());
         if let LegacyValue::F64(value) = &*target.borrow() {
             *value.borrow_mut() = 3.0;
@@ -1208,14 +1210,14 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_preserves_f64_reference() {
-        let sink = Ref::new(LegacyValue::F64(Ref::new(1.0)));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::F64(Ref::new(1.0)));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::F64(value) => value.as_ptr(),
             other => panic!("expected f64, got {other:?}"),
         };
         apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(9.0))).unwrap();
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::F64(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
@@ -1228,14 +1230,14 @@ mod live_input_tests {
     #[cfg(feature = "i64")]
     #[test]
     fn stable_value_update_preserves_i64_reference() {
-        let sink = Ref::new(LegacyValue::I64(Ref::new(1)));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::I64(Ref::new(1)));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::I64(value) => value.as_ptr(),
             other => panic!("expected i64, got {other:?}"),
         };
         apply_stable_value_update(sink.clone(), LegacyValue::I64(Ref::new(9))).unwrap();
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::I64(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
@@ -1248,14 +1250,14 @@ mod live_input_tests {
     #[cfg(feature = "bool")]
     #[test]
     fn stable_value_update_preserves_bool_reference() {
-        let sink = Ref::new(LegacyValue::Bool(Ref::new(false)));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::Bool(Ref::new(false)));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::Bool(value) => value.as_ptr(),
             other => panic!("expected bool, got {other:?}"),
         };
         apply_stable_value_update(sink.clone(), LegacyValue::Bool(Ref::new(true))).unwrap();
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::Bool(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
@@ -1268,8 +1270,8 @@ mod live_input_tests {
     #[cfg(any(feature = "string", feature = "variable_define"))]
     #[test]
     fn stable_value_update_preserves_string_reference() {
-        let sink = Ref::new(LegacyValue::String(Ref::new("old".to_string())));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::String(Ref::new("old".to_string())));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::String(value) => value.as_ptr(),
             other => panic!("expected string, got {other:?}"),
@@ -1279,7 +1281,7 @@ mod live_input_tests {
             LegacyValue::String(Ref::new("new".to_string())),
         )
         .unwrap();
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::String(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
@@ -1291,14 +1293,14 @@ mod live_input_tests {
 
     #[test]
     fn stable_value_update_preserves_index_reference() {
-        let sink = Ref::new(LegacyValue::Index(Ref::new(1)));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::Index(Ref::new(1)));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::Index(value) => value.as_ptr(),
             other => panic!("expected index, got {other:?}"),
         };
         apply_stable_value_update(sink.clone(), LegacyValue::Index(Ref::new(9))).unwrap();
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::Index(value) => {
                 assert_eq!(inner_pointer, value.as_ptr());
@@ -1311,7 +1313,7 @@ mod live_input_tests {
     #[cfg(all(feature = "f64", any(feature = "string", feature = "variable_define")))]
     #[test]
     fn stable_value_update_rejects_incompatible_kind() {
-        let sink = Ref::new(LegacyValue::F64(Ref::new(1.0)));
+        let sink = ValueCell::new(LegacyValue::F64(Ref::new(1.0)));
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::F64(value) => value.as_ptr(),
             other => panic!("expected f64, got {other:?}"),
@@ -1345,15 +1347,15 @@ mod live_input_tests {
             2,
             vec![5.0, 6.0, 7.0, 8.0],
         )));
-        let sink = Ref::new(LegacyValue::MatrixF64(sink_matrix));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::MatrixF64(sink_matrix));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
         };
         apply_stable_value_update(sink.clone(), LegacyValue::MatrixF64(source_matrix.clone()))
             .unwrap();
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
@@ -1366,11 +1368,11 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_preserves_typed_scalar_reference() {
-        let sink = Ref::new(LegacyValue::Typed(
+        let sink = ValueCell::new(LegacyValue::Typed(
             Box::new(LegacyValue::F64(Ref::new(1.0))),
             ValueKind::F64,
         ));
-        let outer_pointer = sink.as_ptr();
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::Typed(inner, annotation) => {
                 assert_eq!(annotation, &ValueKind::F64);
@@ -1388,7 +1390,7 @@ mod live_input_tests {
         )
         .unwrap();
 
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::Typed(inner, annotation) => {
                 assert_eq!(annotation, &ValueKind::F64);
@@ -1407,11 +1409,11 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_rejects_different_typed_annotation() {
-        let sink = Ref::new(LegacyValue::Typed(
+        let sink = ValueCell::new(LegacyValue::Typed(
             Box::new(LegacyValue::F64(Ref::new(1.0))),
             ValueKind::F64,
         ));
-        let outer_pointer = sink.as_ptr();
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::Typed(inner, _) => match inner.as_ref() {
                 LegacyValue::F64(value) => value.as_ptr(),
@@ -1428,7 +1430,7 @@ mod live_input_tests {
             format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
         );
 
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::Typed(inner, annotation) => {
                 assert_eq!(annotation, &ValueKind::F64);
@@ -1447,7 +1449,7 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_rejects_typed_to_untyped() {
-        let sink = Ref::new(LegacyValue::Typed(
+        let sink = ValueCell::new(LegacyValue::Typed(
             Box::new(LegacyValue::F64(Ref::new(1.0))),
             ValueKind::F64,
         ));
@@ -1483,7 +1485,8 @@ mod live_input_tests {
     #[test]
     fn empty_stable_assignment_bytecode_compile_returns_error() {
         let assignment =
-            compile_stable_value_update(Ref::new(LegacyValue::Empty), LegacyValue::Empty).unwrap();
+            compile_stable_value_update(ValueCell::new(LegacyValue::Empty), LegacyValue::Empty)
+                .unwrap();
         let mut ctx = CompileCtx::new();
         let error = assignment.compile(&mut ctx).unwrap_err();
         let rendered = format!("{error:?}");
@@ -1495,7 +1498,7 @@ mod live_input_tests {
 
     #[test]
     fn stable_value_update_accepts_empty_to_empty() {
-        let sink = Ref::new(LegacyValue::Empty);
+        let sink = ValueCell::new(LegacyValue::Empty);
         compile_stable_value_update(sink.clone(), LegacyValue::Empty).unwrap();
         apply_stable_value_update(sink.clone(), LegacyValue::Empty).unwrap();
         assert_eq!(&*sink.borrow(), &LegacyValue::Empty);
@@ -1504,7 +1507,7 @@ mod live_input_tests {
     #[cfg(feature = "f64")]
     #[test]
     fn stable_value_update_rejects_empty_to_value() {
-        let sink = Ref::new(LegacyValue::Empty);
+        let sink = ValueCell::new(LegacyValue::Empty);
         let result = apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(1.0)));
         assert!(
             format!("{:?}", result.unwrap_err()).contains("StableValueUpdateContractViolation")
@@ -1518,8 +1521,8 @@ mod live_input_tests {
         let sink_matrix = MechMatrix::from_vec((1..=25).map(|x| x as f64).collect(), 5, 5);
         let source_matrix = MechMatrix::from_vec((1..=36).map(|x| x as f64).collect(), 6, 6);
         let expected = sink_matrix.clone();
-        let sink = Ref::new(LegacyValue::MatrixF64(sink_matrix));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::MatrixF64(sink_matrix));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
@@ -1529,7 +1532,7 @@ mod live_input_tests {
             .unwrap_err();
         assert_eq!(error.kind_name(), "StableValueUpdateContractViolation");
 
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::MatrixF64(value) => {
                 assert_eq!(inner_pointer, value.addr());
@@ -1554,7 +1557,7 @@ mod live_input_tests {
             vec![7.0, 8.0, 9.0, 10.0, 11.0, 12.0],
         )));
         let expected = sink_matrix.clone();
-        let sink = Ref::new(LegacyValue::MatrixF64(sink_matrix));
+        let sink = ValueCell::new(LegacyValue::MatrixF64(sink_matrix));
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::MatrixF64(value) => value.addr(),
             other => panic!("expected f64 matrix, got {other:?}"),
@@ -1578,7 +1581,7 @@ mod live_input_tests {
     #[test]
     fn stable_value_update_rejects_matrix_value_sink() {
         let matrix_value = MechMatrix::from_vec(vec![LegacyValue::F64(Ref::new(1.0))], 1, 1);
-        let sink = Ref::new(LegacyValue::MatrixValue(matrix_value));
+        let sink = ValueCell::new(LegacyValue::MatrixValue(matrix_value));
         let result = apply_stable_value_update(sink.clone(), LegacyValue::F64(Ref::new(9.0)));
         let rendered = format!("{:?}", result.unwrap_err());
         assert!(
@@ -1590,7 +1593,7 @@ mod live_input_tests {
     #[cfg(all(feature = "matrix", feature = "f64"))]
     #[test]
     fn stable_value_update_rejects_matrix_value_source() {
-        let sink = Ref::new(LegacyValue::F64(Ref::new(1.0)));
+        let sink = ValueCell::new(LegacyValue::F64(Ref::new(1.0)));
         let matrix_value = MechMatrix::from_vec(vec![LegacyValue::F64(Ref::new(9.0))], 1, 1);
         let result =
             apply_stable_value_update(sink.clone(), LegacyValue::MatrixValue(matrix_value));
@@ -1605,8 +1608,8 @@ mod live_input_tests {
     #[test]
     fn stable_value_update_preserves_matrix_index_reference() {
         let matrix = MechMatrix::from_vec(vec![1usize, 2, 3, 4], 2, 2);
-        let sink = Ref::new(LegacyValue::MatrixIndex(matrix));
-        let outer_pointer = sink.as_ptr();
+        let sink = ValueCell::new(LegacyValue::MatrixIndex(matrix));
+        let original_cell = sink.clone();
         let inner_pointer = match &*sink.borrow() {
             LegacyValue::MatrixIndex(value) => value.addr(),
             other => panic!("expected index matrix, got {other:?}"),
@@ -1616,7 +1619,7 @@ mod live_input_tests {
             LegacyValue::MatrixIndex(MechMatrix::from_vec(vec![5usize, 6, 7, 8], 2, 2)),
         )
         .unwrap();
-        assert_eq!(outer_pointer, sink.as_ptr());
+        assert!(sink.same_cell(&original_cell));
         match &*sink.borrow() {
             LegacyValue::MatrixIndex(value) => {
                 assert_eq!(inner_pointer, value.addr());
@@ -1717,7 +1720,7 @@ mod live_input_tests {
             let inner_pointer = composite_addr(&current);
             let nested = nested_f64(&current);
             let nested_pointer = nested.as_ref().map(Ref::addr);
-            let sink = Ref::new(current);
+            let sink = ValueCell::new(current);
 
             compile_stable_value_update(sink.clone(), incoming)
                 .unwrap()
@@ -1744,7 +1747,7 @@ mod live_input_tests {
             ("left", LegacyValue::F64(Ref::new(2.0))),
             ("right", LegacyValue::F64(Ref::new(3.0))),
         ])));
-        let aliased = Ref::new(aliased);
+        let aliased = ValueCell::new(aliased);
         let error = match compile_stable_value_update(aliased, distinct)
             .unwrap()
             .stage_register()

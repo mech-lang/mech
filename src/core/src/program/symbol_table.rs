@@ -7,19 +7,17 @@ pub type SymbolTableRef = Ref<SymbolTable>;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SymbolTableSnapshot {
-    symbols: HashMap<u64, ValRef>,
-    mutable_variables: HashMap<u64, ValRef>,
+    symbols: HashMap<u64, ValueCell>,
+    mutable_variables: HashMap<u64, ValueCell>,
     dictionary: Ref<Dictionary>,
     dictionary_contents: Dictionary,
-    reverse_lookup: HashMap<u64, u64>,
 }
 
 #[derive(Clone, Debug)]
 pub struct SymbolTable {
-    pub symbols: HashMap<u64, ValRef>,
-    pub mutable_variables: HashMap<u64, ValRef>,
+    pub symbols: HashMap<u64, ValueCell>,
+    pub mutable_variables: HashMap<u64, ValueCell>,
     pub dictionary: Ref<Dictionary>,
-    pub reverse_lookup: HashMap<u64, u64>,
 }
 
 impl SymbolTable {
@@ -29,7 +27,6 @@ impl SymbolTable {
             mutable_variables: self.mutable_variables.clone(),
             dictionary: self.dictionary.clone(),
             dictionary_contents: self.dictionary.borrow().clone(),
-            reverse_lookup: self.reverse_lookup.clone(),
         }
     }
 
@@ -55,7 +52,6 @@ impl SymbolTable {
         self.mutable_variables = snapshot.mutable_variables.clone();
         self.dictionary = snapshot.dictionary.clone();
         *self.dictionary.borrow_mut() = snapshot.dictionary_contents.clone();
-        self.reverse_lookup = snapshot.reverse_lookup.clone();
     }
 
     pub fn restore(&mut self, snapshot: SymbolTableSnapshot) {
@@ -67,7 +63,6 @@ impl SymbolTable {
             symbols: HashMap::new(),
             mutable_variables: HashMap::new(),
             dictionary: Ref::new(HashMap::new()),
-            reverse_lookup: HashMap::new(),
         }
     }
 
@@ -75,11 +70,11 @@ impl SymbolTable {
         self.dictionary.borrow().get(&id).cloned()
     }
 
-    pub fn get_mutable(&self, key: u64) -> Option<ValRef> {
+    pub fn get_mutable(&self, key: u64) -> Option<ValueCell> {
         self.mutable_variables.get(&key).cloned()
     }
 
-    pub fn get(&self, key: u64) -> Option<ValRef> {
+    pub fn get(&self, key: u64) -> Option<ValueCell> {
         self.symbols.get(&key).cloned()
     }
 
@@ -87,15 +82,12 @@ impl SymbolTable {
         self.symbols.contains_key(&key)
     }
 
-    pub fn insert(&mut self, key: u64, value: LegacyValue, mutable: bool) -> ValRef {
-        self.insert_cell(key, Ref::new(value), mutable)
+    pub fn insert(&mut self, key: u64, value: LegacyValue, mutable: bool) -> ValueCell {
+        self.insert_cell(key, ValueCell::new(value), mutable)
     }
 
-    pub fn insert_cell(&mut self, key: u64, cell: ValRef, mutable: bool) -> ValRef {
-        if let Some(previous) = self.symbols.insert(key, cell.clone()) {
-            self.reverse_lookup.remove(&previous.id());
-        }
-        self.reverse_lookup.insert(cell.id(), key);
+    pub fn insert_cell(&mut self, key: u64, cell: ValueCell, mutable: bool) -> ValueCell {
+        self.symbols.insert(key, cell.clone());
         if mutable {
             self.mutable_variables.insert(key, cell.clone());
         } else {
@@ -110,17 +102,45 @@ mod snapshot_tests {
     use super::*;
 
     #[test]
-    fn symbol_table_snapshot_restores_all_indexes_and_identity() {
+    fn symbol_table_cells_preserve_identity_and_mutability() {
+        let mut table = SymbolTable::new();
+        let outer = hash_str("outer");
+        let stored = table.insert(outer, LegacyValue::Index(Ref::new(1)), true);
+
+        assert!(stored.same_cell(&table.get(outer).unwrap()));
+        assert!(stored.same_cell(&table.get_mutable(outer).unwrap()));
+
+        let immutable = hash_str("immutable");
+        let immutable_cell = table.insert(immutable, LegacyValue::Index(Ref::new(2)), false);
+        assert!(immutable_cell.same_cell(&table.get(immutable).unwrap()));
+        assert!(table.get_mutable(immutable).is_none());
+    }
+
+    #[test]
+    fn replacing_equal_payloads_replaces_cell_identity() {
+        let mut table = SymbolTable::new();
+        let key = hash_str("value");
+        let first = table.insert(key, LegacyValue::Index(Ref::new(1)), false);
+        let second = ValueCell::new(LegacyValue::Index(Ref::new(1)));
+
+        let stored = table.insert_cell(key, second.clone(), false);
+        assert_eq!(first, second);
+        assert!(!first.same_cell(&second));
+        assert!(stored.same_cell(&second));
+        assert!(table.get(key).unwrap().same_cell(&second));
+    }
+
+    #[test]
+    fn symbol_table_snapshot_restores_cells_and_dictionary_identity() {
         let mut table = SymbolTable::new();
         let outer = hash_str("outer");
         let temporary = hash_str("temporary");
-        let outer_ref = table.insert(outer, LegacyValue::Index(Ref::new(1)), true);
+        let outer_cell = table.insert(outer, LegacyValue::Index(Ref::new(1)), true);
         table
             .dictionary
             .borrow_mut()
             .insert(outer, "outer".to_string());
-        let outer_addr = outer_ref.addr();
-        let dictionary_addr = table.dictionary.addr();
+        let original_dictionary = table.dictionary.clone();
         let original_snapshot = table.snapshot();
 
         table.insert(outer, LegacyValue::Index(Ref::new(2)), false);
@@ -140,8 +160,8 @@ mod snapshot_tests {
         assert_eq!(table.snapshot(), original_snapshot);
         assert!(!table.contains(temporary));
         assert!(table.get_mutable(outer).is_some());
-        assert_eq!(table.get(outer).unwrap().addr(), outer_addr);
-        assert_eq!(table.dictionary.addr(), dictionary_addr);
+        assert!(table.get(outer).unwrap().same_cell(&outer_cell));
+        assert!(table.dictionary.same_handle(&original_dictionary));
         assert_eq!(table.get_symbol_name_by_id(outer).as_deref(), Some("outer"));
     }
 }

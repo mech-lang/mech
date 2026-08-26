@@ -5,7 +5,7 @@ use super::variable_define::detach_variable_value;
 #[cfg(feature = "invariant_define")]
 use crate::{
     ComparisonOp, Expression, Factor, FormulaOperator, IntegrityConstraint, InterpreterExecution,
-    InvariantDefine, LegacyValue, Literal, MResult, MechError, OperationId, Ref, Token, ValRef,
+    InvariantDefine, LegacyValue, Literal, MResult, MechError, OperationId, Ref, Token, ValueCell,
     expression, literal,
 };
 
@@ -79,10 +79,10 @@ fn tokens_to_string(tokens: &[Token]) -> String {
 }
 
 #[cfg(feature = "invariant_define")]
-fn value_to_ref(value: LegacyValue) -> ValRef {
+fn value_to_cell(value: LegacyValue) -> ValueCell {
     match value {
-        LegacyValue::MutableReference(r) => r.clone(),
-        other => Ref::new(other),
+        LegacyValue::MutableReference(reference) => ValueCell::from_legacy_ref(reference),
+        other => ValueCell::new(other),
     }
 }
 
@@ -90,7 +90,11 @@ fn value_to_ref(value: LegacyValue) -> ValRef {
 fn integrity_constraint_operands(
     inv_def: &InvariantDefine,
     p: &InterpreterExecution<'_>,
-) -> (Option<ValRef>, Option<FormulaOperator>, Option<ValRef>) {
+) -> (
+    Option<ValueCell>,
+    Option<FormulaOperator>,
+    Option<ValueCell>,
+) {
     let factor = match &inv_def.expression {
         Expression::Formula(factor) => factor,
         _ => return (None, None, None),
@@ -133,7 +137,10 @@ fn transparent_factor(factor: &Factor) -> &Factor {
 }
 
 #[cfg(feature = "invariant_define")]
-fn integrity_constraint_operand(factor: &Factor, p: &InterpreterExecution<'_>) -> Option<ValRef> {
+fn integrity_constraint_operand(
+    factor: &Factor,
+    p: &InterpreterExecution<'_>,
+) -> Option<ValueCell> {
     let expression = match transparent_factor(factor) {
         Factor::Expression(expression) => expression.as_ref(),
         _ => return None,
@@ -147,7 +154,7 @@ fn integrity_constraint_operand(factor: &Factor, p: &InterpreterExecution<'_>) -
             | Literal::Boolean(_)
             | Literal::Number(_)
             | Literal::String(_)),
-        ) => literal(literal_node, p).ok().map(value_to_ref),
+        ) => literal(literal_node, p).ok().map(value_to_cell),
         _ => None,
     }
 }

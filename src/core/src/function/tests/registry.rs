@@ -106,10 +106,13 @@ fn user_function_table_replaces_only_the_exact_same_name() {
     let replacement_out = replacement.out.clone();
     let replaced = definitions.insert_or_replace(replacement).unwrap().unwrap();
 
-    assert_eq!(replaced.out.addr(), first_out.addr());
-    assert_eq!(
-        definitions.resolve_name("local/read").unwrap().out.addr(),
-        replacement_out.addr(),
+    assert!(replaced.out.same_cell(&first_out));
+    assert!(
+        definitions
+            .resolve_name("local/read")
+            .unwrap()
+            .out
+            .same_cell(&replacement_out)
     );
     assert_eq!(definitions.definitions().len(), 1);
 }

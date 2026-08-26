@@ -346,7 +346,7 @@ fn constraint_evaluation(
     }
 }
 
-fn format_operand(operand: Option<&ValRef>) -> Option<String> {
+fn format_operand(operand: Option<&ValueCell>) -> Option<String> {
     let operand = operand?;
     let value = operand.try_borrow().ok()?;
     resolve_value(&value)
@@ -578,7 +578,7 @@ mod tests {
             .integrity_constraints
             .get_mut(&hash_str(name))
             .unwrap()
-            .result = Ref::new(result);
+            .result = ValueCell::new(result);
     }
 
     #[test]

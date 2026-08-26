@@ -1,5 +1,7 @@
 use super::support::{record_value, scalar, scalar_value};
-use crate::{LegacyValue, MechMap, MechSet, Ref, ValueStateBorrowConflict, ValueStateJournal};
+use crate::{
+    LegacyValue, MechMap, MechSet, Ref, ValueCell, ValueStateBorrowConflict, ValueStateJournal,
+};
 use core::any::type_name;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
@@ -37,6 +39,23 @@ fn state_journal_capture_conflict_is_structured_and_adds_nothing() {
     drop(held);
 
     journal.capture_value(&root).unwrap();
+    assert_eq!(journal.cell_count(), 1);
+}
+
+#[test]
+fn state_journal_value_cell_capture_preserves_root_borrow_conflicts() {
+    let root = ValueCell::new(LegacyValue::Empty);
+    let held = root.borrow_mut();
+    let mut journal = ValueStateJournal::new();
+
+    let error = journal.capture_value_cell(&root).unwrap_err();
+    let conflict = error.kind_as::<ValueStateBorrowConflict>().unwrap();
+    assert_eq!(conflict.phase, "capture-before");
+    assert_eq!(conflict.type_name, type_name::<LegacyValue>());
+    assert!(journal.is_empty());
+    drop(held);
+
+    journal.capture_value_cell(&root).unwrap();
     assert_eq!(journal.cell_count(), 1);
 }
 

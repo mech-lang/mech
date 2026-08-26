@@ -1,7 +1,7 @@
 use crate::*;
 #[cfg(feature = "assign")]
 pub fn compile_stable_value_update(
-    sink: ValRef,
+    sink: ValueCell,
     source: LegacyValue,
 ) -> MResult<Box<dyn MechFunction>> {
     {
@@ -9,16 +9,16 @@ pub fn compile_stable_value_update(
         validate_stable_value_update(&current, &source)?;
     }
 
-    crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink), source])
+    crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink.legacy_ref()), source])
 }
 #[cfg(feature = "assign")]
-pub fn apply_stable_value_update(sink: ValRef, source: LegacyValue) -> MResult<LegacyValue> {
+pub fn apply_stable_value_update(sink: ValueCell, source: LegacyValue) -> MResult<LegacyValue> {
     {
         let current = sink.borrow();
         validate_stable_value_update(&current, &source)?;
     }
-    let update =
-        crate::AssignValue {}.specialize(&[LegacyValue::MutableReference(sink.clone()), source])?;
+    let update = crate::AssignValue {}
+        .specialize(&[LegacyValue::MutableReference(sink.legacy_ref()), source])?;
     update.solve_result()?;
     Ok(sink.borrow().clone())
 }
@@ -167,13 +167,13 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn get_symbol(&self, id: u64) -> Option<Ref<LegacyValue>> {
+    pub fn get_symbol(&self, id: u64) -> Option<ValueCell> {
         let syms = self.symbol_table.borrow();
         syms.get(id)
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn get_mutable_symbol(&self, id: u64) -> Option<ValRef> {
+    pub fn get_mutable_symbol(&self, id: u64) -> Option<ValueCell> {
         let syms = self.symbol_table.borrow();
         syms.get_mutable(id)
     }
@@ -201,7 +201,7 @@ impl ProgramState {
 
     /// Look up symbol in environment first, then in global symbol table.
     #[cfg(feature = "symbol_table")]
-    pub fn get_env_symbol(&self, id: u64) -> Option<Ref<LegacyValue>> {
+    pub fn get_env_symbol(&self, id: u64) -> Option<ValueCell> {
         if let Some(env) = &self.environment {
             let env_brrw = env.borrow();
             match env_brrw.get(id) {
@@ -223,7 +223,13 @@ impl ProgramState {
     }
 
     #[cfg(feature = "symbol_table")]
-    pub fn save_symbol(&self, id: u64, name: String, value: LegacyValue, mutable: bool) -> ValRef {
+    pub fn save_symbol(
+        &self,
+        id: u64,
+        name: String,
+        value: LegacyValue,
+        mutable: bool,
+    ) -> ValueCell {
         let mut symbols_brrw = self.symbol_table.borrow_mut();
         let val_ref = symbols_brrw.insert(id, value, mutable);
         let mut dict_brrw = symbols_brrw.dictionary.borrow_mut();
@@ -238,7 +244,7 @@ impl ProgramState {
         name: String,
         value: LegacyValue,
         mutable: bool,
-    ) -> ValRef {
+    ) -> ValueCell {
         if let Some(env) = &self.environment {
             let mut env_brrw = env.borrow_mut();
             let val_ref = env_brrw.insert(id, value, mutable);

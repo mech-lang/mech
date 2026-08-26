@@ -1,5 +1,5 @@
 use crate::{
-    LegacyValue, MResult, MechError, MechErrorKind, MechFunction, ValRef, ValueStateJournal,
+    LegacyValue, MResult, MechError, MechErrorKind, MechFunction, ValueCell, ValueStateJournal,
 };
 use std::cell::Cell;
 
@@ -22,8 +22,8 @@ impl ReactiveTurnJournal {
         self.values.capture_value(value)
     }
 
-    pub(crate) fn capture_val_ref(&mut self, value: &ValRef) -> MResult<()> {
-        self.values.capture_val_ref(value)
+    pub(crate) fn capture_value_cell(&mut self, value: &ValueCell) -> MResult<()> {
+        self.values.capture_value_cell(value)
     }
 
     pub(crate) fn capture_function_state(&mut self, function: &dyn MechFunction) -> MResult<()> {
@@ -80,8 +80,8 @@ impl ReactiveJournalParticipant<'_> {
         self.journal.capture_value(value)
     }
 
-    pub fn capture_val_ref(&mut self, value: &ValRef) -> MResult<()> {
-        self.journal.capture_val_ref(value)
+    pub fn capture_value_cell(&mut self, value: &ValueCell) -> MResult<()> {
+        self.journal.capture_value_cell(value)
     }
 
     pub fn capture_function_state(&mut self, function: &dyn MechFunction) -> MResult<()> {
@@ -633,9 +633,9 @@ mod tests {
     #[test]
     fn reactive_transaction_restores_nested_cell_identity() {
         let inner = Ref::new(3usize);
-        let outer = Ref::new(LegacyValue::Index(inner.clone()));
+        let outer = ValueCell::new(LegacyValue::Index(inner.clone()));
         let mut journal = ReactiveTurnJournal::new();
-        journal.capture_val_ref(&outer).unwrap();
+        journal.capture_value_cell(&outer).unwrap();
         *inner.borrow_mut() = 9;
         *outer.borrow_mut() = LegacyValue::Index(Ref::new(10));
 

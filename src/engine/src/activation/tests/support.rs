@@ -13,7 +13,7 @@ pub(super) use crate::{
     MechFunctionImpl, MechMap, MechRecord, MechSet, MechTable, MechTuple, Pattern,
     PatternActivationRegistration, PatternBinding, PatternMatch, R64, ReactiveCellId,
     ReactiveDependencyKind, ReactiveNodeId, ReactiveNodeKind, ReactiveRegisterCommit,
-    ReactiveTurnOutcome, Ref, SymbolTableSnapshot, ValRef, ValueKind, hash_str,
+    ReactiveTurnOutcome, Ref, SymbolTableSnapshot, ValueCell, ValueKind, hash_str,
 };
 pub(super) use mech_core::matrix::Matrix;
 pub(super) use std::collections::HashMap;
@@ -201,7 +201,7 @@ pub(super) fn interpret_more(interpreter: &mut Interpreter, source: &str) -> MRe
     interpreter.interpret(&tree)
 }
 
-pub(super) fn symbol_ref(interpreter: &Interpreter, name: &str) -> ValRef {
+pub(super) fn symbol_ref(interpreter: &Interpreter, name: &str) -> ValueCell {
     interpreter
         .symbols()
         .borrow()
@@ -654,25 +654,25 @@ pub(super) fn failed_elaboration_fixture() -> (
     SymbolTableSnapshot,
     Dictionary,
     PlanSnapshot,
-    ValRef,
-    usize,
+    ValueCell,
+    ValueCell,
 ) {
     let i = interpret("event := (1.0, 2.0)\nouter := 99.0");
     let symbols = i.symbols().borrow().snapshot();
     let dictionary = i.dictionary().borrow().clone();
     let topology = plan_snapshot(&i);
     let outer = symbol_ref(&i, "outer");
-    let address = outer.addr();
-    (i, symbols, dictionary, topology, outer, address)
+    (i, symbols, dictionary, topology, outer.clone(), outer)
 }
 pub(super) fn assert_failed_elaboration_restored() -> (
     Interpreter,
     SymbolTableSnapshot,
     Dictionary,
     PlanSnapshot,
-    usize,
+    ValueCell,
 ) {
-    let (mut i, symbols, dictionary, topology, outer, address) = failed_elaboration_fixture();
+    let (mut i, symbols, dictionary, topology, outer, original_outer) =
+        failed_elaboration_fixture();
     let error=interpret_more(&mut i,"~> event\n  | (x, y) => {\n      local-atom := :temporary\n      local-first := x + y\n      local-failure := function-that-does-not-exist(local-first)\n    }\n  | * => {
       fallback := 0.0
     }").unwrap_err();
@@ -689,7 +689,7 @@ pub(super) fn assert_failed_elaboration_restored() -> (
         assert!(!i.symbols().borrow().contains(hash_str(name)));
     }
     assert_eq!(*symbol(&i, "outer").as_f64().unwrap().borrow(), 99.);
-    assert_eq!(symbol_ref(&i, "outer").addr(), address);
+    assert!(symbol_ref(&i, "outer").same_cell(&original_outer));
     drop(outer);
-    (i, symbols, dictionary, topology, address)
+    (i, symbols, dictionary, topology, original_outer)
 }

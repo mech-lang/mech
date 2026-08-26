@@ -34,10 +34,10 @@ pub struct IntegrityConstraint {
     pub id: u64,
     pub name: String,
     pub expression: String,
-    pub result: ValRef,
-    pub lhs: Option<ValRef>,
+    pub result: ValueCell,
+    pub lhs: Option<ValueCell>,
     pub operator: Option<FormulaOperator>,
-    pub rhs: Option<ValRef>,
+    pub rhs: Option<ValueCell>,
     pub tokens: Vec<Token>,
 }
 #[cfg(feature = "invariant_define")]

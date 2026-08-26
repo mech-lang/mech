@@ -2,7 +2,7 @@ use crate::apply_stable_value_update;
 use mech_core::{
     ExecutionHostFunctionRequest, InitialSolvePolicy, LegacyValue, MResult, MechExecutionServices,
     MechFunctionImpl, NoMechExecutionServices, ReactiveDependencyScope, ReactiveSolveStatus,
-    ValRef,
+    ValRef, ValueCell,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -26,7 +26,7 @@ impl ExternalHostCallFunction {
             .map(LegacyValue::try_deep_snapshot)
             .collect::<MResult<Vec<_>>>()?;
         let result = services.invoke_host_function(&self.request, &arguments)?;
-        apply_stable_value_update(self.output.clone(), result)?;
+        apply_stable_value_update(ValueCell::from_legacy_ref(self.output.clone()), result)?;
         Ok(())
     }
 }

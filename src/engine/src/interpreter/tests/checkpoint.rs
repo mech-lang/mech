@@ -5,7 +5,7 @@ mod checkpoint_tests {
         FunctionDefinition, FunctionExport, FunctionExposure, FunctionExtensionEntry,
         FunctionSpecializer, Interpreter, LegacyValue, MResult, MechFunction, MechSourceCode,
         ModuleManifestCatalog, OperationId, ProgramState, ReactiveCellId, Ref,
-        RuntimeContextBinding, ValRef, ValueStateBorrowConflict, hash_str,
+        RuntimeContextBinding, ValueCell, ValueStateBorrowConflict, hash_str,
         internal_pattern_value_identifier,
     };
     use std::collections::HashMap;
@@ -42,7 +42,7 @@ mod checkpoint_tests {
         )
     }
 
-    fn index_payload(value: &Ref<LegacyValue>) -> usize {
+    fn index_payload(value: &ValueCell) -> usize {
         let value = value.borrow();
         let LegacyValue::Index(index) = &*value else {
             panic!("expected retained index value, got {value:?}")
@@ -50,7 +50,7 @@ mod checkpoint_tests {
         *index.borrow()
     }
 
-    fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValRef, Ref<f64>) {
+    fn install_scalar(interpreter: &Interpreter, name: &str, value: f64) -> (ValueCell, Ref<f64>) {
         let backing = Ref::new(value);
         let id = hash_str(name);
         let symbols = interpreter.symbols();
@@ -362,7 +362,7 @@ mod checkpoint_tests {
         assert!(state.user_functions.resolve_name(added_name).is_none());
         let restored = state.user_functions.resolve_name(function_name).unwrap();
         assert_eq!(restored.symbols.addr(), original_symbols.addr());
-        assert_eq!(restored.out.addr(), original_out.addr());
+        assert!(restored.out.same_cell(&original_out));
         assert_eq!(restored.plan.0.addr(), original_plan.0.addr());
         assert_eq!(
             restored.symbols.borrow().dictionary.addr(),
@@ -377,7 +377,7 @@ mod checkpoint_tests {
             .get(&symbol_id)
             .unwrap()
             .clone();
-        assert_eq!(restored_symbol.addr(), symbol.addr());
+        assert!(restored_symbol.same_cell(&symbol));
         assert_eq!(index_payload(&restored_symbol), 20);
         assert_eq!(
             restored
@@ -435,7 +435,7 @@ mod checkpoint_tests {
     fn interpreter_checkpoint_restores_private_state_and_recursive_child_identity() {
         let mut root = Interpreter::new(1, 100);
         let (symbol_cell, symbol_backing) = install_scalar(&root, "kept", 1.0);
-        let symbol_cell_address = symbol_cell.addr();
+        let original_symbol_cell = symbol_cell.clone();
         let symbol_backing_address = symbol_backing.addr();
         let symbol_backing_identity = ReactiveCellId::new(symbol_backing.id());
         root.out = f64_value(&symbol_backing);
@@ -483,9 +483,9 @@ mod checkpoint_tests {
             );
         }
         #[cfg(feature = "invariant_define")]
-        let invariant_result = Ref::new(LegacyValue::Bool(Ref::new(true)));
+        let invariant_result = ValueCell::new(LegacyValue::Bool(Ref::new(true)));
         #[cfg(feature = "invariant_define")]
-        let invariant_rhs = Ref::new(LegacyValue::F64(Ref::new(2.0)));
+        let invariant_rhs = ValueCell::new(LegacyValue::F64(Ref::new(2.0)));
         #[cfg(feature = "invariant_define")]
         {
             let invariant_id = hash_str("checkpoint-invariant");
@@ -668,11 +668,8 @@ mod checkpoint_tests {
                 constraint.operator,
                 Some(FormulaOperator::Comparison(ComparisonOp::LessThanEqual,)),
             );
-            assert_eq!(constraint.result.addr(), invariant_result.addr());
-            assert_eq!(
-                constraint.rhs.as_ref().unwrap().addr(),
-                invariant_rhs.addr()
-            );
+            assert!(constraint.result.same_cell(&invariant_result));
+            assert!(constraint.rhs.as_ref().unwrap().same_cell(&invariant_rhs));
             if let LegacyValue::Bool(value) = &*constraint.result.borrow() {
                 assert!(*value.borrow());
             } else {
@@ -692,7 +689,7 @@ mod checkpoint_tests {
         assert_eq!(*root.inline_eval_counter.borrow(), 4);
         assert_eq!(*root.persistent_user_function_plan_depth.borrow(), 2);
         assert_eq!(*root.deferred_expression_solve_depth.borrow(), 3);
-        assert_eq!(symbol_cell.addr(), symbol_cell_address);
+        assert!(symbol_cell.same_cell(&original_symbol_cell));
         assert_eq!(symbol_backing.addr(), symbol_backing_address);
         assert_eq!(
             ReactiveCellId::new(symbol_backing.id()),

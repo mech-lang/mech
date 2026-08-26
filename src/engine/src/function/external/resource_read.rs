@@ -4,7 +4,7 @@ use mech_core::{
     ExternalInteraction, InitialSolvePolicy, InputPortLayout, LegacyValue, MResult, MechError,
     MechErrorKind, MechExecutionServices, MechFunctionImpl, NoMechExecutionServices,
     ObservationContract, ObservationReplayPolicy, OperationContractDeclaration, OutputConstruction,
-    OutputPortPolicy, ReactiveSolveStatus, ResourceDelivery, ShapeRule, ValRef,
+    OutputPortPolicy, ReactiveSolveStatus, ResourceDelivery, ShapeRule, ValRef, ValueCell,
 };
 use std::sync::LazyLock;
 
@@ -78,7 +78,8 @@ impl ExternalResourceReadFunction {
             return Ok(());
         }
 
-        apply_stable_value_update(self.output.clone(), result).map(|_| ())
+        apply_stable_value_update(ValueCell::from_legacy_ref(self.output.clone()), result)
+            .map(|_| ())
     }
 
     fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {

@@ -2,7 +2,9 @@ use super::support::{as_scalar, record_value, scalar, scalar_payload, scalar_val
 #[cfg(feature = "atom")]
 use crate::MechAtom;
 use crate::structures::matrix::Matrix as ValueMatrix;
-use crate::{LegacyValue, MechEnum, MechTuple, Ref, ValueKind, ValueStateJournal, hash_str};
+use crate::{
+    LegacyValue, MechEnum, MechTuple, Ref, ValueCell, ValueKind, ValueStateJournal, hash_str,
+};
 use nalgebra::DMatrix;
 use std::collections::HashMap;
 
@@ -30,43 +32,44 @@ fn state_journal_deduplicates_shared_cells_and_restores_aliases() {
 
 #[test]
 fn state_journal_self_reference_terminates_in_both_phases() {
-    let cell = Ref::new(LegacyValue::Empty);
-    *cell.borrow_mut() = LegacyValue::MutableReference(cell.clone());
+    let cell = ValueCell::new(LegacyValue::Empty);
+    let reference = cell.legacy_ref();
+    *cell.borrow_mut() = LegacyValue::MutableReference(reference.clone());
 
     let mut journal = ValueStateJournal::new();
-    journal.capture_val_ref(&cell).unwrap();
+    journal.capture_value_cell(&cell).unwrap();
     assert_eq!(journal.cell_count(), 1);
     journal.record_after().unwrap();
     let delta = journal.into_delta().unwrap();
 
     delta.rewind().unwrap();
     match &*cell.borrow() {
-        LegacyValue::MutableReference(inner) => assert_eq!(inner.addr(), cell.addr()),
+        LegacyValue::MutableReference(inner) => assert!(inner.same_handle(&reference)),
         _ => panic!("self-reference was not restored"),
     }
     delta.replay().unwrap();
     match &*cell.borrow() {
-        LegacyValue::MutableReference(inner) => assert_eq!(inner.addr(), cell.addr()),
+        LegacyValue::MutableReference(inner) => assert!(inner.same_handle(&reference)),
         _ => panic!("self-reference was not replayed"),
     }
 }
 
 #[test]
-fn state_journal_val_ref_tracks_replaced_root_and_after_only_cell() {
+fn state_journal_value_cell_tracks_replaced_root_and_after_only_cell() {
     let before = scalar(1.0);
     let after = scalar(2.0);
-    let root = Ref::new(scalar_value(&before));
-    let root_address = root.addr();
+    let root = ValueCell::new(scalar_value(&before));
+    let original_root = root.clone();
 
     let mut journal = ValueStateJournal::new();
-    journal.capture_val_ref(&root).unwrap();
+    journal.capture_value_cell(&root).unwrap();
     *root.borrow_mut() = scalar_value(&after);
     journal.record_after().unwrap();
     assert_eq!(journal.cell_count(), 3);
     let delta = journal.into_delta().unwrap();
 
     delta.rewind().unwrap();
-    assert_eq!(root.addr(), root_address);
+    assert!(root.same_cell(&original_root));
     assert_eq!(as_scalar(&root.borrow()).addr(), before.addr());
 
     *after.borrow_mut() = 22.0;
@@ -78,6 +81,23 @@ fn state_journal_val_ref_tracks_replaced_root_and_after_only_cell() {
     delta.rewind().unwrap();
     assert_eq!(as_scalar(&root.borrow()).addr(), before.addr());
     assert_eq!(*before.borrow(), 1.0);
+}
+
+#[test]
+fn state_journal_deduplicates_repeated_clones_of_one_value_cell() {
+    let nested = scalar(1.0);
+    let root = ValueCell::new(scalar_value(&nested));
+    let clone = root.clone();
+    let mut journal = ValueStateJournal::new();
+
+    journal.capture_value_cell(&root).unwrap();
+    journal.capture_value_cell(&clone).unwrap();
+
+    assert_eq!(journal.cell_count(), 2);
+    *clone.borrow_mut() = LegacyValue::Empty;
+    journal.restore_before().unwrap();
+    assert!(root.same_cell(&clone));
+    assert_eq!(as_scalar(&root.borrow()).addr(), nested.addr());
 }
 
 #[test]
