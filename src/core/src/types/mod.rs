@@ -93,6 +93,63 @@ impl<T: PartialEq> PartialEq for Ref<T> {
 }
 impl<T: PartialEq> Eq for Ref<T> {}
 
+/// An opaque mutable program location with shared identity.
+///
+/// The current backing payload remains [`LegacyValue`] while legacy compiler
+/// and machinery boundaries are retired. Callers should use [`Self::same_cell`]
+/// when they need to compare location identity.
+#[derive(Clone, PartialEq, Eq)]
+pub struct ValueCell {
+    inner: Ref<LegacyValue>,
+}
+
+impl ValueCell {
+    pub fn new(value: LegacyValue) -> Self {
+        Self {
+            inner: Ref::new(value),
+        }
+    }
+
+    pub fn borrow(&self) -> cell::Ref<'_, LegacyValue> {
+        self.inner.borrow()
+    }
+
+    pub fn borrow_mut(&self) -> cell::RefMut<'_, LegacyValue> {
+        self.inner.borrow_mut()
+    }
+
+    pub fn try_borrow(&self) -> Result<cell::Ref<'_, LegacyValue>, cell::BorrowError> {
+        self.inner.try_borrow()
+    }
+
+    pub fn try_borrow_mut(&self) -> Result<cell::RefMut<'_, LegacyValue>, cell::BorrowMutError> {
+        self.inner.try_borrow_mut()
+    }
+
+    pub fn same_cell(&self, other: &Self) -> bool {
+        self.inner.same_handle(&other.inner)
+    }
+
+    #[doc(hidden)]
+    pub fn from_legacy_ref(inner: Ref<LegacyValue>) -> Self {
+        Self { inner }
+    }
+
+    #[doc(hidden)]
+    pub fn legacy_ref(&self) -> Ref<LegacyValue> {
+        self.inner.clone()
+    }
+}
+
+impl Debug for ValueCell {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.try_borrow() {
+            Ok(value) => write!(formatter, "ValueCell({value})"),
+            Err(_) => formatter.write_str("ValueCell(<borrowed>)"),
+        }
+    }
+}
+
 pub type MutableReference = Ref<LegacyValue>;
 pub type ValRef = Ref<LegacyValue>;
 
@@ -149,3 +206,68 @@ impl_pretty_print!(f32);
 #[cfg(feature = "f64")]
 impl_pretty_print!(f64);
 impl_pretty_print!(usize);
+
+#[cfg(test)]
+mod value_cell_tests {
+    use super::*;
+
+    fn index(value: usize) -> LegacyValue {
+        LegacyValue::Index(Ref::new(value))
+    }
+
+    #[test]
+    fn cloned_cells_preserve_identity_and_share_mutation() {
+        let cell = ValueCell::new(index(1));
+        let clone = cell.clone();
+
+        assert!(cell.same_cell(&clone));
+        *clone.borrow_mut() = index(2);
+        assert_eq!(*cell.borrow(), index(2));
+    }
+
+    #[test]
+    fn equal_payloads_do_not_imply_cell_identity() {
+        let left = ValueCell::new(index(1));
+        let right = ValueCell::new(index(1));
+
+        assert_eq!(left, right);
+        assert!(!left.same_cell(&right));
+    }
+
+    #[test]
+    fn fallible_borrows_report_conflicts() {
+        let cell = ValueCell::new(index(1));
+        {
+            let _write = cell.borrow_mut();
+            assert!(cell.try_borrow().is_err());
+        }
+        {
+            let _read = cell.borrow();
+            assert!(cell.try_borrow_mut().is_err());
+        }
+    }
+
+    #[test]
+    fn debug_output_is_address_free_even_during_borrow_conflicts() {
+        let cell = ValueCell::new(index(1));
+        let available = format!("{cell:?}");
+        assert!(available.starts_with("ValueCell("));
+        assert!(!available.contains("0x"));
+
+        let _write = cell.borrow_mut();
+        let borrowed = format!("{cell:?}");
+        assert_eq!(borrowed, "ValueCell(<borrowed>)");
+        assert!(!borrowed.contains("0x"));
+    }
+
+    #[test]
+    fn compatibility_bridges_preserve_the_underlying_handle() {
+        let cell = ValueCell::new(index(1));
+        let reference = cell.legacy_ref();
+        assert!(reference.same_handle(&cell.legacy_ref()));
+
+        let bridged = ValueCell::from_legacy_ref(reference.clone());
+        assert!(bridged.same_cell(&cell));
+        assert!(bridged.legacy_ref().same_handle(&reference));
+    }
+}
