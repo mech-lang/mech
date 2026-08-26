@@ -1,6 +1,6 @@
 //! Explicit services supplied while Mech functions execute.
 
-use crate::{LegacyValue, MResult, MechError, MechErrorKind, ValRef};
+use crate::{LegacyValue, MResult, MechError, MechErrorKind, ValueCell};
 
 #[cfg(feature = "no_std")]
 use alloc::{borrow::ToOwned, format, string::String, vec::Vec};
@@ -112,7 +112,7 @@ pub trait MechExecutionServices {
         &mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
-        target: ValRef,
+        target: ValueCell,
     ) -> MResult<()>;
 }
 
@@ -159,7 +159,7 @@ impl MechExecutionServices for NoMechExecutionServices {
         &mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
-        _target: ValRef,
+        _target: ValueCell,
     ) -> MResult<()> {
         Err(MechError::new(
             LiveResourceBindingUnsupported {
@@ -322,7 +322,6 @@ impl MechErrorKind for ApplicationRequirementEncodingError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Ref;
 
     fn resource_request() -> ExecutionResourceRequest {
         ExecutionResourceRequest {
@@ -393,7 +392,7 @@ mod tests {
         );
 
         let bind_error = services
-            .bind_live_resource(17, &resource_request, Ref::new(LegacyValue::Empty))
+            .bind_live_resource(17, &resource_request, ValueCell::new(LegacyValue::Empty))
             .unwrap_err();
         assert_eq!(bind_error.kind_name(), "LiveResourceBindingUnsupported");
         let binding = bind_error

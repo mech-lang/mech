@@ -115,8 +115,9 @@ fn resident_source_has_no_erased_or_legacy_turn_dependencies() {
                 "RuntimeExecutionTransaction",
                 "ValueStateJournal",
                 "ReactiveTurnJournal",
-                "ValRef",
                 "ReactiveCellId",
+                "ValueCell",
+                "MutableReference",
             ] {
                 assert!(
                     !source.contains(forbidden),

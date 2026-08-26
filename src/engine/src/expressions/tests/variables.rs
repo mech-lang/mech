@@ -1,7 +1,7 @@
 use crate::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, Interpreter, LegacyValue,
     MResult, MechError, MechExecutionServices, ReactiveDependencyKind, Ref, ResourceDelivery,
-    ResourceIntent, ValRef, hash_str,
+    ResourceIntent, ValueCell, hash_str,
 };
 use mech_core::matrix::Matrix;
 use nalgebra::DVector;
@@ -10,7 +10,7 @@ struct RecordingContextReadServices {
     result: LegacyValue,
     fail_read: bool,
     reads: Vec<ExecutionResourceRequest>,
-    live_bindings: Vec<(u64, ExecutionResourceRequest, ValRef)>,
+    live_bindings: Vec<(u64, ExecutionResourceRequest, ValueCell)>,
     host_calls: Vec<ExecutionHostFunctionRequest>,
     writes: Vec<(ExecutionResourceRequest, LegacyValue)>,
 }
@@ -70,7 +70,7 @@ impl MechExecutionServices for RecordingContextReadServices {
         &mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
-        target: ValRef,
+        target: ValueCell,
     ) -> MResult<()> {
         self.live_bindings
             .push((interpreter_id, request.clone(), target));
@@ -242,11 +242,7 @@ fn repeated_context_read_reuses_one_live_binding() {
         .borrow()
         .get(hash_str("@input/item"))
         .expect("successful addressed read must cache its output cell");
-    assert!(
-        addressed
-            .legacy_ref()
-            .same_handle(&services.live_bindings[0].2)
-    );
+    assert!(addressed.same_cell(&services.live_bindings[0].2));
     assert_eq!(
         addressed.borrow().reactive_root_cell_ids(),
         symbol_value(&interpreter, "first").reactive_root_cell_ids(),

@@ -151,7 +151,6 @@ impl Debug for ValueCell {
 }
 
 pub type MutableReference = Ref<LegacyValue>;
-pub type ValRef = Ref<LegacyValue>;
 
 pub type MResult<T> = Result<T, MechError>;
 

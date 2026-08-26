@@ -1360,7 +1360,7 @@ impl LegacyValue {
     }
 }
 
-pub fn val_ref_reactive_cell_ids(value: &ValRef) -> Vec<ReactiveCellId> {
+pub fn legacy_ref_reactive_cell_ids(value: &Ref<LegacyValue>) -> Vec<ReactiveCellId> {
     let mut ids = Vec::new();
     let mut seen = HashSet::default();
 
@@ -5779,12 +5779,12 @@ mod reactive_cell_tests {
 
     #[cfg(feature = "f64")]
     #[test]
-    fn val_ref_helper_includes_program_cell() {
+    fn legacy_ref_helper_includes_program_cell() {
         let inner = Ref::new(1.0);
         let cell = Ref::new(LegacyValue::F64(inner.clone()));
 
         assert_eq!(
-            val_ref_reactive_cell_ids(&cell),
+            legacy_ref_reactive_cell_ids(&cell),
             cell_ids(&[cell.id(), inner.id()])
         );
     }

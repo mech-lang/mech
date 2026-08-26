@@ -97,7 +97,7 @@ fn state_journal_deduplicates_repeated_clones_of_one_value_cell() {
     *clone.borrow_mut() = LegacyValue::Empty;
     journal.restore_before().unwrap();
     assert!(root.same_cell(&clone));
-    assert_eq!(as_scalar(&root.borrow()).addr(), nested.addr());
+    assert!(as_scalar(&root.borrow()).same_handle(&nested));
 }
 
 #[test]

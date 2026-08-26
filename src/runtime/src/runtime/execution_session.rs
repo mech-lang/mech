@@ -15,7 +15,7 @@ use crate::{
 };
 use mech_core::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue, MResult, MechError,
-    MechExecutionServices, ResourceIntent, ValRef,
+    MechExecutionServices, ResourceIntent, ValueCell,
 };
 
 pub(crate) struct RuntimeExecutionSession<'a> {
@@ -597,7 +597,7 @@ impl MechExecutionServices for RuntimeExecutionSession<'_> {
         &mut self,
         _interpreter_id: u64,
         _request: &ExecutionResourceRequest,
-        _target: ValRef,
+        _target: ValueCell,
     ) -> MResult<()> {
         Err(MechError::new(
             RuntimeInvalidOperationError {

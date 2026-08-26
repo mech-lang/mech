@@ -8,7 +8,7 @@ use mech_core::{
     FloatWidth, LegacyValue, MResult, MechError, MechErrorKind, MechExecutionServices, NodeId,
     ObservationReplayPolicy, OperationContractId, OutputConstruction, OutputId, ProgramRevision,
     ResolvedOperationContract, ResourceDelivery, ResourceIntent, SchemaBody, SchemaId, ShapeRule,
-    ValRef, ValueData,
+    ValueCell, ValueData,
 };
 use nalgebra::DVector;
 
@@ -918,7 +918,7 @@ fn validate_resource_request(request: &ExecutionResourceRequest) -> Result<(), (
 pub struct FrozenLiveBinding {
     pub interpreter_id: u64,
     pub request: ExecutionResourceRequest,
-    pub target: ValRef,
+    pub target: ValueCell,
 }
 
 #[derive(Debug)]
@@ -1026,7 +1026,7 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
         &mut self,
         interpreter_id: u64,
         request: &ExecutionResourceRequest,
-        target: ValRef,
+        target: ValueCell,
     ) -> MResult<()> {
         Self::validate_request(request)?;
         if let Some(existing) = self
@@ -1034,7 +1034,7 @@ impl MechExecutionServices for FrozenEkfCompilationServices {
             .iter()
             .find(|binding| binding.interpreter_id == interpreter_id && binding.request == *request)
         {
-            if existing.target.addr() == target.addr() {
+            if existing.target.same_cell(&target) {
                 return Ok(());
             }
             return Err(frozen_service_error(

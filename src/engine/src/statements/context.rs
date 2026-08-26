@@ -1,9 +1,9 @@
 use crate::{
     ContextBase, ContextDeclaration, ContextSend, ExecutionResourceRequest,
     ExternalResourceReadFunction, ExternalResourceWriteFunction, GenericError, Identifier,
-    InitialSolvePolicy, InterpreterExecution, LegacyValue, MResult, MechError, Ref,
-    ResourceDelivery, ResourceIntent, UndefinedContextError, ValRef, Var,
-    execute_specialized_function, expression,
+    InitialSolvePolicy, InterpreterExecution, LegacyValue, MResult, MechError, ResourceDelivery,
+    ResourceIntent, UndefinedContextError, ValueCell, Var, execute_specialized_function,
+    expression,
 };
 #[cfg(feature = "variable_assign")]
 use crate::{Environment, VariableAssign};
@@ -67,7 +67,7 @@ fn resource_request(
 pub(crate) fn context_read(
     variable: &Var,
     interpreter: &InterpreterExecution<'_>,
-) -> MResult<ValRef> {
+) -> MResult<ValueCell> {
     let context = variable.context.as_ref().ok_or_else(|| {
         MechError::new(
             GenericError {
@@ -86,7 +86,7 @@ pub(crate) fn context_read(
         ResourceDelivery::Live,
         interpreter,
     )?;
-    let output = Ref::new(LegacyValue::Empty);
+    let output = ValueCell::new(LegacyValue::Empty);
     let function = ExternalResourceReadFunction {
         interpreter_id: interpreter.id,
         request,
@@ -128,7 +128,7 @@ pub(crate) fn context_assign(
     let function = ExternalResourceWriteFunction {
         request,
         input,
-        output: Ref::new(LegacyValue::Empty),
+        output: ValueCell::new(LegacyValue::Empty),
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
         semantic_contract: None,
     };
@@ -165,7 +165,7 @@ pub fn context_send(send: &ContextSend, p: &InterpreterExecution<'_>) -> MResult
     let function = ExternalResourceWriteFunction {
         request,
         input,
-        output: Ref::new(LegacyValue::Empty),
+        output: ValueCell::new(LegacyValue::Empty),
         initial_solve_policy: InitialSolvePolicy::PreserveSpecializedOutput,
         semantic_contract: None,
     };

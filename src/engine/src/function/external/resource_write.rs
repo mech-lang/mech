@@ -3,7 +3,7 @@ use mech_core::{
     ExternalInteraction, IdempotencyRequirement, InitialSolvePolicy, InputPortLayout,
     InputPortPolicy, LegacyValue, MResult, MechError, MechErrorKind, MechExecutionServices,
     MechFunctionImpl, NoMechExecutionServices, OperationContractDeclaration,
-    ReactiveDependencyScope, ReactiveSolveStatus, ResourceIntent, ValRef,
+    ReactiveDependencyScope, ReactiveSolveStatus, ResourceIntent, ValueCell,
 };
 use std::sync::LazyLock;
 
@@ -30,7 +30,7 @@ use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCom
 pub struct ExternalResourceWriteFunction {
     pub request: ExecutionResourceRequest,
     pub input: LegacyValue,
-    pub output: ValRef,
+    pub output: ValueCell,
     pub initial_solve_policy: InitialSolvePolicy,
     pub semantic_contract: Option<&'static OperationContractDeclaration>,
 }
@@ -123,7 +123,9 @@ impl MechFunctionImpl for ExternalResourceWriteFunction {
     }
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(vec![LegacyValue::MutableReference(self.output.clone())])
+        Ok(vec![LegacyValue::MutableReference(
+            self.output.legacy_ref(),
+        )])
     }
 
     fn to_string(&self) -> String {
@@ -201,7 +203,7 @@ mod tests {
                 delivery: mech_core::ResourceDelivery::Snapshot,
             },
             input: LegacyValue::F64(Ref::new(1.0)),
-            output: Ref::new(LegacyValue::F64(Ref::new(2.0))),
+            output: ValueCell::new(LegacyValue::F64(Ref::new(2.0))),
             initial_solve_policy: InitialSolvePolicy::Solve,
             semantic_contract: None,
         };

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use mech_core::{
-    LegacyValue, MResult, MechMap, Ref, ValRef, ValueSnapshotBorrowConflict,
+    LegacyValue, MResult, MechMap, Ref, ValueSnapshotBorrowConflict,
     ValueSnapshotCollectionCollision,
 };
 
@@ -25,18 +25,18 @@ const SNAPSHOT_RESOURCE: &str = "snapshot://boundary";
 const SNAPSHOT_PATH: &str = "value";
 
 thread_local! {
-    static HOST_RESULT_CYCLE: RefCell<Option<ValRef>> =
+    static HOST_RESULT_CYCLE: RefCell<Option<Ref<LegacyValue>>> =
         const { RefCell::new(None) };
 }
 
-fn cyclic_node() -> ValRef {
+fn cyclic_node() -> Ref<LegacyValue> {
     let node = Ref::new(LegacyValue::Empty);
     *node.borrow_mut() = LegacyValue::MutableReference(node.clone());
     node
 }
 
 fn thread_local_cycle(
-    slot: &'static std::thread::LocalKey<RefCell<Option<ValRef>>>,
+    slot: &'static std::thread::LocalKey<RefCell<Option<Ref<LegacyValue>>>>,
 ) -> LegacyValue {
     let node = cyclic_node();
     slot.with(|stored| {
@@ -45,7 +45,9 @@ fn thread_local_cycle(
     LegacyValue::MutableReference(node)
 }
 
-fn clear_thread_local_cycle(slot: &'static std::thread::LocalKey<RefCell<Option<ValRef>>>) {
+fn clear_thread_local_cycle(
+    slot: &'static std::thread::LocalKey<RefCell<Option<Ref<LegacyValue>>>>,
+) {
     slot.with(|stored| {
         if let Some(node) = stored.borrow_mut().take() {
             *node.borrow_mut() = LegacyValue::Empty;
@@ -140,7 +142,7 @@ impl HostCallPolicy for CountingHostPolicy {
 #[derive(Debug)]
 struct SnapshotBoundaryProvider {
     cycle_reads: Arc<AtomicBool>,
-    cycle: ValRef,
+    cycle: Ref<LegacyValue>,
     preflight_calls: Arc<AtomicUsize>,
     prepare_calls: Arc<AtomicUsize>,
 }

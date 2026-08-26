@@ -3,7 +3,7 @@
 use core::any::{Any, TypeId};
 use core::fmt::Debug;
 
-use crate::{LegacyValue, MResult, MechError, MechErrorKind, Ref, ValRef};
+use crate::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
 #[cfg(feature = "enum")]
 use crate::MechEnum;
@@ -444,7 +444,7 @@ impl ValueSnapshotCloneContext {
         Ok(snapshot)
     }
 
-    fn snapshot_mutable_reference(&mut self, source: &ValRef) -> MResult<LegacyValue> {
+    fn snapshot_mutable_reference(&mut self, source: &Ref<LegacyValue>) -> MResult<LegacyValue> {
         let key = ValueSnapshotKey::of_ref(source);
         if let Some(snapshot) = self.memoized::<LegacyValue>(key) {
             return Ok(snapshot);

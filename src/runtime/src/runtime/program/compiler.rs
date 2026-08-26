@@ -19,7 +19,7 @@ use mech_compute::{
 use mech_core::{
     ApplicationRequirement, ExecutionHostFunctionRequest, ExecutionResourceRequest, LegacyValue,
     MResult, MechError, MechErrorKind, MechExecutionServices, MechSourceCode,
-    ModuleManifestCatalog, OperationContractDeclaration, Ref, ResourceIntent,
+    ModuleManifestCatalog, OperationContractDeclaration, Ref, ResourceIntent, ValueCell,
 };
 #[cfg(feature = "compute")]
 use mech_core::{Body, MechCode, Program, Section, SectionElement};
@@ -2186,7 +2186,7 @@ impl MechExecutionServices for CompilerPlanningServices<'_> {
         &mut self,
         _interpreter_id: u64,
         _request: &ExecutionResourceRequest,
-        _target: Ref<LegacyValue>,
+        _target: ValueCell,
     ) -> MResult<()> {
         Ok(())
     }

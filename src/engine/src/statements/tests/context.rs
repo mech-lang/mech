@@ -1,6 +1,6 @@
 use crate::{
     ExecutionHostFunctionRequest, ExecutionResourceRequest, GenericError, Interpreter, LegacyValue,
-    MResult, MechError, MechExecutionServices, ResourceDelivery, ResourceIntent, ValRef,
+    MResult, MechError, MechExecutionServices, ResourceDelivery, ResourceIntent, ValueCell,
 };
 
 #[derive(Default)]
@@ -44,7 +44,7 @@ impl MechExecutionServices for RecordingContextServices {
         &mut self,
         _interpreter_id: u64,
         _request: &ExecutionResourceRequest,
-        _target: ValRef,
+        _target: ValueCell,
     ) -> MResult<()> {
         Err(MechError::new(
             GenericError {

@@ -3,7 +3,7 @@ use super::super::MechFunctionCompiler;
 use super::super::{MechFunctionImpl, Plan, TransactionStateUnsupportedError};
 #[cfg(feature = "semantic-compiler")]
 use crate::{BytecodeCompilerContext, Register};
-use crate::{LegacyValue, MResult, MechError, Ref, ValRef};
+use crate::{LegacyValue, MResult, MechError, Ref, ValueCell};
 
 struct UnsupportedStateFunction;
 impl MechFunctionImpl for UnsupportedStateFunction {
@@ -34,14 +34,14 @@ impl MechFunctionCompiler for UnsupportedStateFunction {
 }
 
 struct MisleadingRuntimeHostNameFunction {
-    output: ValRef,
+    output: ValueCell,
 }
 impl MechFunctionImpl for MisleadingRuntimeHostNameFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn out(&self) -> LegacyValue {
-        LegacyValue::MutableReference(self.output.clone())
+        LegacyValue::MutableReference(self.output.legacy_ref())
     }
     fn to_string(&self) -> String {
         "ExternalHostCallFunction::misleading-name".to_string()
@@ -59,14 +59,14 @@ impl MechFunctionCompiler for MisleadingRuntimeHostNameFunction {
 }
 
 struct UnschedulableOutputFunction {
-    state: ValRef,
+    state: ValueCell,
 }
 impl MechFunctionImpl for UnschedulableOutputFunction {
     fn solve_result(&self) -> MResult<()> {
         Ok(())
     }
     fn out(&self) -> LegacyValue {
-        LegacyValue::MutableReference(self.state.clone())
+        LegacyValue::MutableReference(self.state.legacy_ref())
     }
     fn reactive_output_values(&self) -> Vec<LegacyValue> {
         Vec::new()
@@ -96,22 +96,26 @@ fn transaction_state_unsupported_error_is_structured() {
 #[test]
 fn host_like_display_name_does_not_change_checkpoint_behavior() {
     let plan = Plan::new();
-    let output = Ref::new(LegacyValue::Index(Ref::new(42)));
+    let output = ValueCell::new(LegacyValue::Index(Ref::new(42)));
     plan.add_function(Box::new(MisleadingRuntimeHostNameFunction {
         output: output.clone(),
     }));
 
     let values = plan.transaction_state_values().unwrap();
 
-    assert!(values.iter().any(|value| matches!(
-      value,
-      LegacyValue::MutableReference(cell) if cell.same_handle(&output)
-    ),));
+    let output_value = values
+        .iter()
+        .find_map(|value| match value {
+            LegacyValue::MutableReference(cell) => Some(ValueCell::from_legacy_ref(cell.clone())),
+            _ => None,
+        })
+        .expect("plan retains the function output");
+    assert!(output_value.same_cell(&output));
 }
 
 #[test]
 fn plan_transaction_state_retains_outputs_excluded_from_scheduling() {
-    let state = Ref::new(LegacyValue::Index(Ref::new(1)));
+    let state = ValueCell::new(LegacyValue::Index(Ref::new(1)));
     let plan = Plan::new();
     plan.add_function(Box::new(UnschedulableOutputFunction {
         state: state.clone(),
@@ -119,7 +123,12 @@ fn plan_transaction_state_retains_outputs_excluded_from_scheduling() {
 
     let values = plan.transaction_state_values().unwrap();
 
-    assert!(values.iter().any(
-        |value| matches!(value, LegacyValue::MutableReference(cell) if cell.addr() == state.addr())
-    ));
+    let retained_state = values
+        .iter()
+        .find_map(|value| match value {
+            LegacyValue::MutableReference(cell) => Some(ValueCell::from_legacy_ref(cell.clone())),
+            _ => None,
+        })
+        .expect("plan retains outputs excluded from scheduling");
+    assert!(retained_state.same_cell(&state));
 }

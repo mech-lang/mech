@@ -4,7 +4,7 @@ use mech_core::{
     ExternalInteraction, InitialSolvePolicy, InputPortLayout, LegacyValue, MResult, MechError,
     MechErrorKind, MechExecutionServices, MechFunctionImpl, NoMechExecutionServices,
     ObservationContract, ObservationReplayPolicy, OperationContractDeclaration, OutputConstruction,
-    OutputPortPolicy, ReactiveSolveStatus, ResourceDelivery, ShapeRule, ValRef, ValueCell,
+    OutputPortPolicy, ReactiveSolveStatus, ResourceDelivery, ShapeRule, ValueCell,
 };
 use std::sync::LazyLock;
 
@@ -33,7 +33,7 @@ use mech_core::{ApplicationRequirement, BytecodeCompilerContext, MechFunctionCom
 pub struct ExternalResourceReadFunction {
     pub interpreter_id: u64,
     pub request: ExecutionResourceRequest,
-    pub output: ValRef,
+    pub output: ValueCell,
     pub initial_solve_policy: InitialSolvePolicy,
     pub semantic_contract: Option<&'static OperationContractDeclaration>,
 }
@@ -78,8 +78,7 @@ impl ExternalResourceReadFunction {
             return Ok(());
         }
 
-        apply_stable_value_update(ValueCell::from_legacy_ref(self.output.clone()), result)
-            .map(|_| ())
+        apply_stable_value_update(self.output.clone(), result).map(|_| ())
     }
 
     fn solve_with_services(&self, services: &mut dyn MechExecutionServices) -> MResult<()> {
@@ -138,7 +137,9 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
     }
 
     fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
-        Ok(vec![LegacyValue::MutableReference(self.output.clone())])
+        Ok(vec![LegacyValue::MutableReference(
+            self.output.legacy_ref(),
+        )])
     }
 
     fn to_string(&self) -> String {
