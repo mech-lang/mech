@@ -21,6 +21,16 @@ use super::{AddressedAssignmentUnsupported, NotMutableError, UndefinedVariableEr
     ),
     any(feature = "subscript_formula", feature = "subscript_range")
 ))]
+use crate::MatrixSelector;
+#[cfg(all(
+    any(
+        feature = "math_add_assign",
+        feature = "math_sub_assign",
+        feature = "math_div_assign",
+        feature = "math_mul_assign"
+    ),
+    any(feature = "subscript_formula", feature = "subscript_range")
+))]
 use crate::Subscript;
 #[cfg(all(
     any(
@@ -53,16 +63,6 @@ use crate::{
     MechError, OpAssign, OpAssignOp, execute_catalog_operation_with_registration_arguments,
     expression,
 };
-#[cfg(all(
-    any(
-        feature = "math_add_assign",
-        feature = "math_sub_assign",
-        feature = "math_div_assign",
-        feature = "math_mul_assign"
-    ),
-    any(feature = "subscript_formula", feature = "subscript_range")
-))]
-use crate::{MechFunction, OperationId};
 #[cfg(all(
     any(
         feature = "math_add_assign",
@@ -206,27 +206,6 @@ fn engine_add_assignment_sink(sink: &LegacyValue) -> bool {
     ),
     any(feature = "subscript_formula", feature = "subscript_range")
 ))]
-fn catalog_op_assignment_function(
-    p: &InterpreterExecution<'_>,
-    canonical_name: &str,
-    arguments: &[LegacyValue],
-) -> MResult<Box<dyn MechFunction>> {
-    p.specialize_visible_operation_named(
-        OperationId::from_name(canonical_name),
-        Some(canonical_name),
-        arguments,
-    )
-}
-
-#[cfg(all(
-    any(
-        feature = "math_add_assign",
-        feature = "math_sub_assign",
-        feature = "math_div_assign",
-        feature = "math_mul_assign"
-    ),
-    any(feature = "subscript_formula", feature = "subscript_range")
-))]
 macro_rules! op_assign {
   ($fxn_name:ident, $op:tt, $range_operation:literal, $range_all_operation:literal) => {
     paste!{
@@ -243,52 +222,51 @@ macro_rules! op_assign {
             todo!()
           },
           Subscript::Bracket(subs) => {
-            let mut fxn_input = vec![sink.clone()];
-            match &subs[..] {
+            let (canonical_name, selectors) = match &subs[..] {
               #[cfg(feature = "subscript_formula")]
               [Subscript::Formula(_)] => {
-                fxn_input.push(source.clone());
                 let ixes = subscript_formula_ix(&subs[0], env, p)?;
                 let shape = ixes.shape();
-                fxn_input.push(ixes);
-                match shape[..] {
-                  [1,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, "assign", &fxn_input)?); }
-                  [1,_] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
-                  [_,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?); }
+                let operation = match shape[..] {
+                  [1,1] => "assign",
+                  [1,_] => $range_operation,
+                  [_,1] => $range_operation,
                   _ => todo!(),
-                }
+                };
+                (operation, vec![MatrixSelector::Value(ixes)])
               },
               #[cfg(feature = "subscript_formula")]
               [Subscript::Formula(_),Subscript::All] => {
-                fxn_input.push(source.clone());
                 let ix = subscript_formula_ix(&subs[0], env, p)?;
                 let shape = ix.shape();
-                fxn_input.push(ix);
-                fxn_input.push(LegacyValue::IndexAll);
-                match shape[..] {
-                  [1,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, "assign", &fxn_input)?); }
-                  [1,_] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
-                  [_,1] => { plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?); }
+                let operation = match shape[..] {
+                  [1,1] => "assign",
+                  [1,_] => $range_all_operation,
+                  [_,1] => $range_all_operation,
                   _ => todo!(),
-                }
+                };
+                (operation, vec![MatrixSelector::Value(ix), MatrixSelector::All])
               },
               #[cfg(feature = "subscript_range")]
               [Subscript::Range(_)] => {
-                fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
-                fxn_input.push(ixes);
-                plan.borrow_mut().push(catalog_op_assignment_function(p, $range_operation, &fxn_input)?);
+                ($range_operation, vec![MatrixSelector::Value(ixes)])
               },
               #[cfg(feature = "subscript_range")]
               [Subscript::Range(_), Subscript::All] => {
-                fxn_input.push(source.clone());
                 let ixes = subscript_range(&subs[0], env, p)?;
-                fxn_input.push(ixes);
-                fxn_input.push(LegacyValue::IndexAll);
-                plan.borrow_mut().push(catalog_op_assignment_function(p, $range_all_operation, &fxn_input)?);
+                ($range_all_operation, vec![MatrixSelector::Value(ixes), MatrixSelector::All])
               },
               x => todo!("{:?}", x),
             };
+            let new_fxn = crate::intrinsics::assign::specialize_matrix_assignment(
+              p,
+              canonical_name,
+              sink.clone(),
+              source.clone(),
+              &selectors,
+            )?;
+            plan.borrow_mut().push(new_fxn);
             let plan_brrw = plan.borrow();
             let new_fxn = &plan_brrw.last().unwrap();
             new_fxn.solve_result()?;

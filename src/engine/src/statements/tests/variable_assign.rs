@@ -65,6 +65,132 @@ fn whole_matrix_assignment_uses_root_cells() {
     assert_eq!(resolved_output, y);
 }
 
+#[cfg(all(
+    feature = "assign",
+    feature = "bool",
+    feature = "f64",
+    feature = "logical_indexing",
+    feature = "matrix",
+    feature = "matrixd",
+    feature = "range_inclusive",
+    feature = "subscript_formula",
+    feature = "subscript_range",
+    feature = "subscript_slice",
+    feature = "variable_assign"
+))]
+fn matrix_after_indexed_assignment(selector: &str, value: &str) -> Vec<f64> {
+    let source = format!("~x := [1.0 2.0 3.0; 4.0 5.0 6.0; 7.0 8.0 9.0]; x{selector} = {value}; x");
+    let tree = mech_syntax::parser::parse(&source).unwrap();
+    let mut interpreter = Interpreter::with_function_catalog(
+        0,
+        10_000,
+        crate::test_support::catalog::function_catalog(),
+    );
+    let output = interpreter
+        .interpret(&tree)
+        .unwrap_or_else(|error| panic!("{selector}: {error:?}"));
+    let output = match output {
+        LegacyValue::MutableReference(value) => value.borrow().clone(),
+        value => value,
+    };
+    let LegacyValue::MatrixF64(matrix) = output else {
+        panic!("expected an f64 matrix assignment result");
+    };
+    matrix.as_vec()
+}
+
+#[cfg(all(
+    feature = "assign",
+    feature = "bool",
+    feature = "f64",
+    feature = "logical_indexing",
+    feature = "matrix",
+    feature = "matrixd",
+    feature = "range_inclusive",
+    feature = "subscript_formula",
+    feature = "subscript_range",
+    feature = "subscript_slice",
+    feature = "variable_assign"
+))]
+#[test]
+fn explicit_all_selector_preserves_plain_matrix_assignment_layouts() {
+    for (selector, value, expected) in [
+        ("[:]", "0.0", vec![0.0; 9]),
+        (
+            "[:,2]",
+            "0.0",
+            vec![1.0, 4.0, 7.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0],
+        ),
+        (
+            "[2,:]",
+            "0.0",
+            vec![1.0, 0.0, 7.0, 2.0, 0.0, 8.0, 3.0, 0.0, 9.0],
+        ),
+        (
+            "[:,1..=2]",
+            "0.0",
+            vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 3.0, 6.0, 9.0],
+        ),
+        (
+            "[1..=2,:]",
+            "0.0",
+            vec![0.0, 0.0, 7.0, 0.0, 0.0, 8.0, 0.0, 0.0, 9.0],
+        ),
+        (
+            "[:,[1 3]]",
+            "0.0",
+            vec![0.0, 0.0, 0.0, 2.0, 5.0, 8.0, 0.0, 0.0, 0.0],
+        ),
+        (
+            "[[1 3],:]",
+            "0.0",
+            vec![0.0, 4.0, 0.0, 0.0, 5.0, 0.0, 0.0, 6.0, 0.0],
+        ),
+        (
+            "[:,[true false true]]",
+            "0.0",
+            vec![0.0, 0.0, 0.0, 2.0, 5.0, 8.0, 0.0, 0.0, 0.0],
+        ),
+        (
+            "[[true false true],:]",
+            "[0.0 0.0 0.0; 0.0 0.0 0.0; 0.0 0.0 0.0]",
+            vec![0.0, 4.0, 0.0, 0.0, 5.0, 0.0, 0.0, 6.0, 0.0],
+        ),
+    ] {
+        assert_eq!(
+            matrix_after_indexed_assignment(selector, value),
+            expected,
+            "{selector}"
+        );
+    }
+}
+
+#[cfg(all(
+    feature = "assign",
+    feature = "f64",
+    feature = "matrix",
+    feature = "matrixd",
+    feature = "subscript_range",
+    feature = "subscript_slice",
+    feature = "variable_assign"
+))]
+#[test]
+fn all_all_matrix_assignment_remains_rejected() {
+    let result = std::panic::catch_unwind(|| {
+        let tree = mech_syntax::parser::parse("~x := [1.0 2.0; 3.0 4.0]; x[:,:] = 0.0; x").unwrap();
+        let mut interpreter = Interpreter::with_function_catalog(
+            0,
+            10_000,
+            crate::test_support::catalog::function_catalog(),
+        );
+        interpreter.interpret(&tree)
+    });
+    assert!(match result {
+        Err(_) => true,
+        Ok(result) => result.is_err(),
+    });
+}
+
 #[cfg(all(feature = "math_add", feature = "math_add_assign"))]
 #[test]
 fn register_commit_plain_assignment_updates_register_only() {

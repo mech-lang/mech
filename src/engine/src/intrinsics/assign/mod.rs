@@ -1,4 +1,6 @@
 use crate::intrinsics::*;
+#[cfg(feature = "semantic-compiler")]
+use crate::{InterpreterExecution, MatrixSelector, OperationId};
 
 pub mod catalog;
 pub use self::catalog::install_runtime;
@@ -871,15 +873,44 @@ enum AssignmentIndexKind {
     All,
 }
 
+#[cfg(any(feature = "matrix", feature = "semantic-compiler"))]
+fn legacy_all_selector() -> LegacyValue {
+    LegacyValue::IndexAll
+}
+
 #[cfg(feature = "matrix")]
 fn assignment_index_kind(value: &LegacyValue) -> AssignmentIndexKind {
+    if value == &legacy_all_selector() {
+        return AssignmentIndexKind::All;
+    }
     match value {
-        LegacyValue::IndexAll => AssignmentIndexKind::All,
         LegacyValue::Index(_) => AssignmentIndexKind::Scalar,
         LegacyValue::MatrixIndex(_) => AssignmentIndexKind::Range,
         _ if value.shape() == [1, 1] => AssignmentIndexKind::Scalar,
         _ => AssignmentIndexKind::Range,
     }
+}
+
+/// Lowers source-level selectors at the legacy assignment specialization boundary.
+#[cfg(feature = "semantic-compiler")]
+pub(crate) fn specialize_matrix_assignment(
+    execution: &InterpreterExecution<'_>,
+    canonical_name: &str,
+    sink: LegacyValue,
+    source: LegacyValue,
+    selectors: &[MatrixSelector],
+) -> MResult<Box<dyn MechFunction>> {
+    let mut arguments = Vec::with_capacity(selectors.len() + 2);
+    arguments.extend([sink, source]);
+    arguments.extend(selectors.iter().map(|selector| match selector {
+        MatrixSelector::All => legacy_all_selector(),
+        MatrixSelector::Value(value) => value.clone(),
+    }));
+    execution.specialize_visible_operation_named(
+        OperationId::from_name(canonical_name),
+        Some(canonical_name),
+        &arguments,
+    )
 }
 
 #[cfg(feature = "matrix")]

@@ -43,7 +43,15 @@ pub(crate) fn function_catalog() -> Arc<FunctionCatalog> {
 
 #[cfg(test)]
 mod test_operations {
+    #[cfg(all(
+        feature = "f64",
+        feature = "matrix",
+        any(feature = "math_add_assign", feature = "range_inclusive")
+    ))]
+    use mech_core::matrix::Matrix;
     use mech_core::*;
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    use nalgebra::DVector;
     use std::sync::Arc;
 
     #[derive(Clone, Copy, Debug)]
@@ -409,6 +417,195 @@ mod test_operations {
         }
     }
 
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    #[derive(Debug)]
+    struct InclusiveRangeFunction {
+        start: Ref<f64>,
+        terminal: Ref<f64>,
+        out: Ref<DVector<f64>>,
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    impl MechFunctionImpl for InclusiveRangeFunction {
+        fn solve_result(&self) -> MResult<()> {
+            let start = *self.start.borrow() as usize;
+            let terminal = *self.terminal.borrow() as usize;
+            *self.out.borrow_mut() =
+                DVector::from_vec((start..=terminal).map(|value| value as f64).collect());
+            Ok(())
+        }
+
+        fn out(&self) -> LegacyValue {
+            LegacyValue::MatrixF64(Matrix::DVector(self.out.clone()))
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            "TestInclusiveRange".to_string()
+        }
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "matrix",
+        feature = "range_inclusive",
+        feature = "semantic-compiler"
+    ))]
+    impl MechFunctionCompiler for InclusiveRangeFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    struct InclusiveRangeSpecializer;
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    impl FunctionSpecializer for InclusiveRangeSpecializer {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+            let [start, terminal] = arguments else {
+                return Err(test_operation_error(
+                    "inclusive range expects two arguments",
+                ));
+            };
+            let start = start.as_f64()?;
+            let terminal = terminal.as_f64()?;
+            let out = Ref::new(DVector::from_vec(Vec::new()));
+            let function = Self::function(start, terminal, out);
+            function.solve_result()?;
+            Ok(Box::new(function))
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+    impl InclusiveRangeSpecializer {
+        fn function(
+            start: Ref<f64>,
+            terminal: Ref<f64>,
+            out: Ref<DVector<f64>>,
+        ) -> InclusiveRangeFunction {
+            InclusiveRangeFunction {
+                start,
+                terminal,
+                out,
+            }
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "math_add_assign"))]
+    fn test_f64_matrix(value: &LegacyValue) -> MResult<Matrix<f64>> {
+        match value {
+            LegacyValue::MatrixF64(matrix) => Ok(matrix.clone()),
+            LegacyValue::MutableReference(value) => test_f64_matrix(&value.borrow()),
+            _ => Err(test_operation_error(
+                "matrix range/all add assignment expects an f64 matrix sink",
+            )),
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "math_add_assign"))]
+    #[derive(Debug)]
+    struct AddAssignRangeAllFunction {
+        sink: Matrix<f64>,
+        source: LegacyValue,
+        rows: Vec<usize>,
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "math_add_assign"))]
+    impl MechFunctionImpl for AddAssignRangeAllFunction {
+        fn solve_result(&self) -> MResult<()> {
+            let shape = self.sink.shape();
+            let mut sink_values = self.sink.as_vec();
+            let source_matrix = test_f64_matrix(&self.source).ok();
+            let source_scalar = self.source.as_f64().ok();
+            for column in 0..shape[1] {
+                for row in &self.rows {
+                    let offset = column * shape[0] + row;
+                    let addend = if let Some(source) = &source_scalar {
+                        *source.borrow()
+                    } else if let Some(source) = &source_matrix {
+                        source.as_vec()[offset]
+                    } else {
+                        return Err(test_operation_error(
+                            "matrix range/all add assignment expects an f64 source",
+                        ));
+                    };
+                    sink_values[offset] += addend;
+                }
+            }
+            self.sink.set(sink_values);
+            Ok(())
+        }
+
+        fn out(&self) -> LegacyValue {
+            LegacyValue::MatrixF64(self.sink.clone())
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+            Ok(self.reactive_output_values())
+        }
+
+        fn to_string(&self) -> String {
+            "TestAddAssignRangeAll".to_string()
+        }
+    }
+
+    #[cfg(all(
+        feature = "f64",
+        feature = "matrix",
+        feature = "math_add_assign",
+        feature = "semantic-compiler"
+    ))]
+    impl MechFunctionCompiler for AddAssignRangeAllFunction {
+        fn compile(&self, _: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
+            Ok(0)
+        }
+    }
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "math_add_assign"))]
+    struct AddAssignRangeAllSpecializer;
+
+    #[cfg(all(feature = "f64", feature = "matrix", feature = "math_add_assign"))]
+    impl FunctionSpecializer for AddAssignRangeAllSpecializer {
+        fn specialize(&self, arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunction>> {
+            let [sink, source, rows, all] = arguments else {
+                return Err(test_operation_error(
+                    "matrix range/all add assignment expects four arguments",
+                ));
+            };
+            if !matches!(all, LegacyValue::IndexAll) {
+                return Err(test_operation_error(
+                    "matrix range/all add assignment expects an all-column selector",
+                ));
+            }
+            let rows = match rows {
+                LegacyValue::MatrixIndex(rows) => {
+                    rows.as_vec().into_iter().map(|row| row - 1).collect()
+                }
+                #[cfg(feature = "bool")]
+                LegacyValue::MatrixBool(rows) => rows
+                    .as_vec()
+                    .into_iter()
+                    .enumerate()
+                    .filter_map(|(row, selected)| selected.then_some(row))
+                    .collect(),
+                _ => {
+                    return Err(test_operation_error(
+                        "matrix range/all add assignment expects row indices",
+                    ));
+                }
+            };
+            Ok(Box::new(AddAssignRangeAllFunction {
+                sink: test_f64_matrix(sink)?,
+                source: source.clone(),
+                rows,
+            }))
+        }
+    }
+
     fn values_equal(lhs: &LegacyValue, rhs: &LegacyValue) -> bool {
         match (lhs, rhs) {
             (LegacyValue::MutableReference(lhs), rhs) => values_equal(&lhs.borrow(), rhs),
@@ -475,6 +672,14 @@ mod test_operations {
         }
         builder.insert_intrinsic_specializer("logic/not", Arc::new(NotSpecializer))?;
         builder.insert_intrinsic_specializer("math/add-assign", Arc::new(AddAssignSpecializer))?;
+        #[cfg(all(feature = "f64", feature = "matrix", feature = "math_add_assign"))]
+        builder.insert_intrinsic_specializer(
+            "math/add-assign/range-all",
+            Arc::new(AddAssignRangeAllSpecializer),
+        )?;
+        #[cfg(all(feature = "f64", feature = "matrix", feature = "range_inclusive"))]
+        builder
+            .insert_intrinsic_specializer("range/inclusive", Arc::new(InclusiveRangeSpecializer))?;
         Ok(())
     }
 }

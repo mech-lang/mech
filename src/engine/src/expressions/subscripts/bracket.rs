@@ -17,7 +17,7 @@ fn specialize_bracket_access(
     arguments: &[LegacyValue],
     selectors: &[MatrixSelector],
 ) -> MResult<Box<dyn MechFunction>> {
-    crate::intrinsics::access::specialize_source_access(
+    crate::intrinsics::access::specialize_matrix_access(
         execution,
         canonical_name,
         arguments[0].clone(),

@@ -256,7 +256,7 @@ fn compile_matrix_access(arguments: &[LegacyValue]) -> MResult<Box<dyn MechFunct
 
 /// Lowers source-level selectors at the legacy access specialization boundary.
 #[cfg(feature = "semantic-compiler")]
-pub(crate) fn specialize_source_access(
+pub(crate) fn specialize_matrix_access(
     execution: &InterpreterExecution<'_>,
     canonical_name: &str,
     source: LegacyValue,
