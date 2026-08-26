@@ -2,6 +2,7 @@ import copy
 import contextlib
 import hashlib
 import importlib.util
+import inspect
 import io
 import json
 import subprocess
@@ -298,6 +299,17 @@ class ReviewedContractsTests(unittest.TestCase):
             {item.contract_id for item in failures},
         )
 
+    def test_type_contract_target_projection_is_pure_and_exact(self):
+        records = copy.deepcopy(self.inventory["type_contract_sources"])
+        records["runtime_representation_sources"][0]["implementation_gate"] = "C1"
+        failures = CHECKER.type_contract_projection_failures(
+            records, CONTRACTS / "current-inventory.json"
+        )
+        self.assertEqual(
+            {item.contract_id for item in failures},
+            {"C0-KIND-SCHEME-SEPARATION"},
+        )
+
     def test_canonical_encoding_constants_are_exact(self):
         self.assertEqual(
             CHECKER.canonical_encoding_failures(
@@ -311,6 +323,243 @@ class ReviewedContractsTests(unittest.TestCase):
                 CONTRACTS / "canonical-encoding-v1-vectors.json",
             ),
             [],
+        )
+
+
+class RetirementSurfaceTests(unittest.TestCase):
+    def setUp(self):
+        self.inventory_path = Path("current-inventory.json")
+        self.reviewed = {
+            "enums": {
+                "LegacyValue": {
+                    "source": "src/core/src/value.rs",
+                    "variants": [
+                        {
+                            "name": "Empty",
+                            "cfg": None,
+                            "payload_type": None,
+                            "storage_ownership": "inline-value",
+                            "current_roles": ["semantic-payload"],
+                        },
+                        {
+                            "name": "MatrixValue",
+                            "cfg": 'feature = "matrix"',
+                            "payload_type": "Matrix<LegacyValue>",
+                            "storage_ownership": "owned-container",
+                            "current_roles": ["semantic-payload", "mutable-storage"],
+                        },
+                        {
+                            "name": "Retired",
+                            "cfg": None,
+                            "payload_type": None,
+                            "storage_ownership": "inline-value",
+                            "current_roles": ["diagnostic"],
+                        },
+                    ],
+                },
+                "ValueKind": {
+                    "source": "src/core/src/value.rs",
+                    "variants": [
+                        {"name": "Any", "cfg": None, "payload_type": None}
+                    ],
+                },
+                "Kind": {
+                    "source": "src/core/src/kind.rs",
+                    "variants": [
+                        {"name": "Any", "cfg": None, "payload_type": None}
+                    ],
+                },
+            },
+            "variant_uses": [
+                self.use("LegacyValue", "Empty", "src/a.rs", 10, 3),
+                self.use("LegacyValue", "Empty", "src/a.rs", 20, 5),
+                self.use("LegacyValue", "Empty", "src/b.rs", 7, 2),
+                self.use("LegacyValue", "MatrixValue", "src/a.rs", 30, 9),
+                self.use("ValueKind", "Any", "src/c.rs", 4, 1),
+                self.use("Kind", "Any", "src/d.rs", 5, 6),
+                self.use("Kind", "Any", "src/d.rs", 8, 6),
+            ],
+        }
+        self.live = copy.deepcopy(self.reviewed)
+
+    @staticmethod
+    def use(enum_name, variant, path, line, column):
+        return {
+            "enum": enum_name,
+            "variant": variant,
+            "path": path,
+            "line": line,
+            "column": column,
+        }
+
+    def failures(self):
+        return [
+            *CHECKER.retirement_variant_failures(
+                self.reviewed, self.live, self.inventory_path
+            ),
+            *CHECKER.retirement_occurrence_failures(
+                self.reviewed, self.live, self.inventory_path
+            ),
+        ]
+
+    def ids(self):
+        return {item.contract_id for item in self.failures()}
+
+    def test_identical_reviewed_and_live_surface_passes(self):
+        for enum in self.live["enums"].values():
+            enum["variants"].reverse()
+        self.assertEqual(self.failures(), [])
+
+    def test_line_and_column_movement_passes(self):
+        for index, record in enumerate(self.live["variant_uses"]):
+            record["line"] += 100 + index
+            record["column"] += 10 + index
+        self.assertEqual(self.failures(), [])
+
+    def test_one_deleted_occurrence_passes(self):
+        self.live["variant_uses"].pop(0)
+        self.assertEqual(self.failures(), [])
+
+    def test_all_occurrences_removed_from_one_file_pass(self):
+        self.live["variant_uses"] = [
+            row for row in self.live["variant_uses"] if row["path"] != "src/b.rs"
+        ]
+        self.assertEqual(self.failures(), [])
+
+    def test_count_growth_in_existing_file_fails(self):
+        self.live["variant_uses"].append(
+            self.use("LegacyValue", "Empty", "src/a.rs", 40, 2)
+        )
+        failures = self.failures()
+        self.assertEqual(
+            {item.contract_id for item in failures},
+            {"C0-RETIREMENT-OCCURRENCE-GROWTH"},
+        )
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(
+            (
+                failures[0].path,
+                failures[0].line,
+                failures[0].column,
+                failures[0].expected,
+                failures[0].actual,
+            ),
+            ("src/a.rs", 10, 3, "reviewed maximum count 2", "live count 3"),
+        )
+
+    def test_new_path_fails(self):
+        self.live["variant_uses"].append(
+            self.use("LegacyValue", "Empty", "src/new.rs", 1, 1)
+        )
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-OCCURRENCE-GROWTH"})
+
+    def test_moving_occurrence_between_files_fails(self):
+        moved = next(
+            row for row in self.live["variant_uses"] if row["path"] == "src/b.rs"
+        )
+        moved["path"] = "src/a.rs"
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-OCCURRENCE-GROWTH"})
+
+    def test_replacing_variant_use_fails_at_growing_destination(self):
+        row = next(
+            row
+            for row in self.live["variant_uses"]
+            if row["variant"] == "Empty" and row["path"] == "src/a.rs"
+        )
+        row["variant"] = "MatrixValue"
+        failures = self.failures()
+        self.assertEqual(
+            {item.contract_id for item in failures},
+            {"C0-RETIREMENT-OCCURRENCE-GROWTH"},
+        )
+        self.assertEqual(failures[0].variant, "MatrixValue")
+
+    def test_removing_reviewed_variant_passes(self):
+        self.live["enums"]["LegacyValue"]["variants"] = [
+            row
+            for row in self.live["enums"]["LegacyValue"]["variants"]
+            if row["name"] != "Retired"
+        ]
+        self.assertEqual(self.failures(), [])
+
+    def test_adding_variant_fails(self):
+        self.live["enums"]["Kind"]["variants"].append(
+            {"name": "Added", "cfg": None, "payload_type": None}
+        )
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-VARIANT-GROWTH"})
+
+    def change_legacy_variant(self, field, value):
+        variant = next(
+            row
+            for row in self.live["enums"]["LegacyValue"]["variants"]
+            if row["name"] == "MatrixValue"
+        )
+        variant[field] = value
+
+    def test_changing_payload_type_fails(self):
+        self.change_legacy_variant("payload_type", "Vec<LegacyValue>")
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-VARIANT-DRIFT"})
+
+    def test_changing_cfg_fails(self):
+        self.change_legacy_variant("cfg", 'feature = "other"')
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-VARIANT-DRIFT"})
+
+    def test_changing_legacy_value_storage_ownership_fails(self):
+        self.change_legacy_variant("storage_ownership", "shared-reference")
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-VARIANT-DRIFT"})
+
+    def test_changing_legacy_value_current_roles_fails(self):
+        self.change_legacy_variant("current_roles", ["diagnostic"])
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-VARIANT-DRIFT"})
+
+    def test_changing_enum_source_path_fails(self):
+        self.live["enums"]["Kind"]["source"] = "src/core/src/new_kind.rs"
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-ENUM-DRIFT"})
+
+    def test_missing_audited_enum_fails(self):
+        del self.live["enums"]["Kind"]
+        self.assertEqual(self.ids(), {"C0-RETIREMENT-ENUM-DRIFT"})
+
+    def test_summary_totals_and_removed_counts_are_exact(self):
+        self.live["variant_uses"].pop(0)
+        self.live["variant_uses"] = [
+            row
+            for index, row in enumerate(self.live["variant_uses"])
+            if not (row["enum"] == "Kind" and index == 4)
+        ]
+        summary = CHECKER.retirement_summary(self.reviewed, self.live)
+        self.assertEqual(
+            summary,
+            {
+                "LegacyValue": {"reviewed": 4, "live": 3, "removed": 1},
+                "ValueKind": {"reviewed": 1, "live": 1, "removed": 0},
+                "Kind": {"reviewed": 2, "live": 1, "removed": 1},
+                "unreviewed_audited_occurrences": 0,
+            },
+        )
+
+
+class CheckerModeTests(unittest.TestCase):
+    def test_audit_python_api_defaults_to_exact(self):
+        self.assertEqual(
+            inspect.signature(CHECKER.audit).parameters["mode"].default,
+            "exact",
+        )
+
+    def test_audit_rejects_unknown_mode(self):
+        with self.assertRaisesRegex(ValueError, "unsupported value-system"):
+            CHECKER.audit(mode="unknown")
+
+    def test_parse_args_requires_mode(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            CHECKER.parse_args([])
+
+    def test_parse_args_accepts_exact(self):
+        self.assertEqual(CHECKER.parse_args(["--mode", "exact"]).mode, "exact")
+
+    def test_parse_args_accepts_retirement(self):
+        self.assertEqual(
+            CHECKER.parse_args(["--mode", "retirement"]).mode, "retirement"
         )
 
 
@@ -782,7 +1031,7 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
             "use_classifications": classifications,
         }
 
-    def audit(self):
+    def audit(self, mode="exact", summary_out=None):
         return CHECKER.audit(
             self.root,
             self.inventory_path,
@@ -802,6 +1051,8 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
             check_gate_a=False,
             check_c2_adapter=False,
             baseline_inventory=self.baseline,
+            mode=mode,
+            summary_out=summary_out,
         )
 
     @staticmethod
@@ -810,6 +1061,37 @@ class ValueSystemContractFixtureTests(unittest.TestCase):
 
     def test_valid_fixture_passes(self):
         self.assertEqual(self.audit(), [])
+
+    def test_audit_without_explicit_mode_remains_exact(self):
+        source = (self.root / "src/core/src/live.rs").read_text(encoding="utf-8")
+        self.write("src/core/src/live.rs", "\n" + source)
+        self.assertIn("C0-INVENTORY-DRIFT", self.ids(self.audit()))
+        self.assertEqual(self.audit(mode="retirement"), [])
+
+    def test_retirement_mode_uses_relaxed_type_contract_generation(self):
+        path = self.root / "src/core/src/function/signature.rs"
+        source = path.read_text(encoding="utf-8").replace(
+            "pub trait FunctionRuntimeType {}",
+            "pub struct FunctionRuntimeType;",
+        )
+        path.write_text(source, encoding="utf-8")
+        self.assertIn("C0-KIND-SCHEME-SEPARATION", self.ids(self.audit()))
+        summary = {}
+        self.assertEqual(
+            self.audit(mode="retirement", summary_out=summary), []
+        )
+        self.assertEqual(summary["unreviewed_audited_occurrences"], 0)
+
+    def test_retirement_mode_reports_a_missing_enum_as_enum_drift(self):
+        path = self.root / "src/core/src/kind.rs"
+        source = path.read_text(encoding="utf-8").replace(
+            "pub enum Kind", "pub struct Kind", 1
+        )
+        path.write_text(source, encoding="utf-8")
+        self.assertEqual(
+            self.ids(self.audit(mode="retirement")),
+            {"C0-RETIREMENT-ENUM-DRIFT"},
+        )
 
     def test_permanent_compatibility_aliases_are_exact_and_public(self):
         cases = (
@@ -2131,6 +2413,44 @@ class FinalQualificationFindingTests(unittest.TestCase):
         with contextlib.redirect_stderr(stderr):
             self.assertEqual(CHECKER.report_result([finding]), 1)
         self.assertIn("value-system contract failed", stderr.getvalue())
+
+    def test_retirement_success_summary_has_the_exact_cli_shape(self):
+        summary = {
+            "LegacyValue": {"reviewed": 10, "live": 7, "removed": 3},
+            "ValueKind": {"reviewed": 5, "live": 4, "removed": 1},
+            "Kind": {"reviewed": 2, "live": 2, "removed": 0},
+            "unreviewed_audited_occurrences": 0,
+        }
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            self.assertEqual(
+                CHECKER.report_retirement_result([], summary), 0
+            )
+        self.assertEqual(
+            stdout.getvalue(),
+            "value-system retirement contract passed\n"
+            "LegacyValue occurrences: reviewed=10 live=7 removed=3\n"
+            "ValueKind occurrences: reviewed=5 live=4 removed=1\n"
+            "Kind occurrences: reviewed=2 live=2 removed=0\n"
+            "unreviewed audited occurrences: 0\n",
+        )
+
+    def test_retirement_failure_uses_retirement_heading_only(self):
+        finding = CHECKER.failure(
+            "C0-RETIREMENT-OCCURRENCE-GROWTH",
+            "LegacyValue::Empty",
+            "src/new.rs",
+            "reviewed maximum count 0",
+            "live count 1",
+            "current-inventory.json",
+        )
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            self.assertEqual(
+                CHECKER.report_retirement_result([finding], {}), 1
+            )
+        self.assertIn("value-system retirement contract failed:", stderr.getvalue())
+        self.assertNotIn("value-system retirement contract passed", stderr.getvalue())
 
 
 if __name__ == "__main__":

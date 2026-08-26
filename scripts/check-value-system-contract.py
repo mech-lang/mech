@@ -1041,11 +1041,20 @@ def type_contract_source_failures(
                 f"{inventory_path}:type_contract_sources",
             )
         )
-        return failures
-    exact_targets = GENERATOR.TYPE_CONTRACT_TARGETS
-    for group, records in actual.items():
-        target, gate = exact_targets[group]
-        for record in records:
+    if isinstance(actual, dict):
+        failures.extend(
+            type_contract_projection_failures(actual, inventory_path)
+        )
+    return failures
+
+
+def type_contract_projection_failures(
+    records: dict[str, list[dict[str, Any]]],
+    inventory_path: Path,
+) -> list[Failure]:
+    failures: list[Failure] = []
+    for group, (target, gate) in GENERATOR.TYPE_CONTRACT_TARGETS.items():
+        for record in records.get(group, []):
             if (
                 record.get("target") != target
                 or record.get("implementation_gate") != gate
@@ -1061,6 +1070,154 @@ def type_contract_source_failures(
                     )
                 )
     return failures
+
+
+def retirement_variant_failures(
+    reviewed: dict[str, Any],
+    live: dict[str, Any],
+    inventory_path: Path,
+) -> list[Failure]:
+    failures: list[Failure] = []
+    reviewed_enums = reviewed.get("enums", {})
+    live_enums = live.get("enums", {})
+    for enum_name in GENERATOR.AUDITED_ENUMS:
+        reviewed_enum = reviewed_enums.get(enum_name)
+        live_enum = live_enums.get(enum_name)
+        if not isinstance(reviewed_enum, dict):
+            continue
+        reviewed_source = reviewed_enum.get("source")
+        if not isinstance(live_enum, dict):
+            failures.append(
+                failure(
+                    "C0-RETIREMENT-ENUM-DRIFT",
+                    "audited enum source",
+                    str(reviewed_source),
+                    f"live {enum_name} enum at {reviewed_source!r}",
+                    "audited enum is missing",
+                    f"{inventory_path}:enums.{enum_name}",
+                    enum_name=enum_name,
+                )
+            )
+            continue
+        live_source = live_enum.get("source")
+        if live_source != reviewed_source:
+            failures.append(
+                failure(
+                    "C0-RETIREMENT-ENUM-DRIFT",
+                    "audited enum source",
+                    str(live_source or reviewed_source),
+                    repr(reviewed_source),
+                    repr(live_source),
+                    f"{inventory_path}:enums.{enum_name}.source",
+                    enum_name=enum_name,
+                )
+            )
+        reviewed_variants = {
+            record["name"]: record
+            for record in reviewed_enum.get("variants", [])
+        }
+        live_variants = {
+            record["name"]: record for record in live_enum.get("variants", [])
+        }
+        for variant in sorted(set(live_variants) - set(reviewed_variants)):
+            failures.append(
+                failure(
+                    "C0-RETIREMENT-VARIANT-GROWTH",
+                    "audited enum variant",
+                    str(live_source),
+                    "variant absent from the frozen reviewed ceiling",
+                    repr(live_variants[variant]),
+                    f"{inventory_path}:enums.{enum_name}.variants",
+                    enum_name=enum_name,
+                    variant=variant,
+                )
+            )
+        for variant in sorted(set(live_variants) & set(reviewed_variants)):
+            if live_variants[variant] == reviewed_variants[variant]:
+                continue
+            failures.append(
+                failure(
+                    "C0-RETIREMENT-VARIANT-DRIFT",
+                    "surviving audited enum variant",
+                    str(live_source),
+                    repr(reviewed_variants[variant]),
+                    repr(live_variants[variant]),
+                    f"{inventory_path}:enums.{enum_name}.variants",
+                    enum_name=enum_name,
+                    variant=variant,
+                )
+            )
+    return failures
+
+
+def retirement_occurrence_counts(
+    inventory: dict[str, Any],
+) -> Counter[tuple[str, str, str]]:
+    return Counter(
+        (record["enum"], record["variant"], record["path"])
+        for record in inventory.get("variant_uses", [])
+    )
+
+
+def retirement_occurrence_failures(
+    reviewed: dict[str, Any],
+    live: dict[str, Any],
+    inventory_path: Path,
+) -> list[Failure]:
+    reviewed_counts = retirement_occurrence_counts(reviewed)
+    live_counts = retirement_occurrence_counts(live)
+    first_live_site: dict[tuple[str, str, str], tuple[int, int]] = {}
+    for record in live.get("variant_uses", []):
+        key = (record["enum"], record["variant"], record["path"])
+        site = (int(record["line"]), int(record["column"]))
+        first_live_site[key] = min(first_live_site.get(key, site), site)
+    failures: list[Failure] = []
+    for (enum_name, variant, path), live_count in sorted(live_counts.items()):
+        reviewed_count = reviewed_counts[(enum_name, variant, path)]
+        if live_count <= reviewed_count:
+            continue
+        line, column = first_live_site[(enum_name, variant, path)]
+        failures.append(
+            failure(
+                "C0-RETIREMENT-OCCURRENCE-GROWTH",
+                f"{enum_name}::{variant}",
+                path,
+                f"reviewed maximum count {reviewed_count}",
+                f"live count {live_count}",
+                f"{inventory_path}:variant_uses (frozen retirement ceiling)",
+                line,
+                column,
+                enum_name,
+                variant,
+            )
+        )
+    return failures
+
+
+def retirement_summary(
+    reviewed: dict[str, Any], live: dict[str, Any]
+) -> dict[str, Any]:
+    reviewed_by_enum = Counter(
+        record["enum"] for record in reviewed.get("variant_uses", [])
+    )
+    live_by_enum = Counter(
+        record["enum"] for record in live.get("variant_uses", [])
+    )
+    reviewed_counts = retirement_occurrence_counts(reviewed)
+    live_counts = retirement_occurrence_counts(live)
+    summary: dict[str, Any] = {
+        enum_name: {
+            "reviewed": reviewed_by_enum[enum_name],
+            "live": live_by_enum[enum_name],
+            "removed": reviewed_by_enum[enum_name] - live_by_enum[enum_name],
+        }
+        for enum_name in GENERATOR.AUDITED_ENUMS
+    }
+    summary["unreviewed_audited_occurrences"] = sum(
+        max(0, count - reviewed_counts[key])
+        for key, count in live_counts.items()
+    )
+    return summary
 
 
 def auxiliary_fixture_failures(
@@ -3619,7 +3776,11 @@ def audit(
     check_gate_a: bool = True,
     check_c2_adapter: bool = True,
     baseline_inventory: dict[str, Any] | None = None,
+    mode: str = "exact",
+    summary_out: dict[str, Any] | None = None,
 ) -> list[Failure]:
+    if mode not in {"exact", "retirement"}:
+        raise ValueError(f"unsupported value-system contract mode: {mode!r}")
     root = root.resolve()
     inventory = load_json(inventory_path)
     migration = load_json(migration_path)
@@ -3680,7 +3841,11 @@ def audit(
     if scanner_failures:
         return sorted_failures(scanner_failures)
     try:
-        live = GENERATOR.generate(root, inventory["reference_commit"])
+        live = GENERATOR.generate(
+            root,
+            inventory["reference_commit"],
+            validate_type_contract_sources=mode == "exact",
+        )
     except GENERATOR.CargoMetadataError as error:
         return [
             failure(
@@ -3704,6 +3869,40 @@ def audit(
             )
         ]
     except ValueError as error:
+        if mode == "retirement":
+            missing = re.fullmatch(
+                r"pub enum (LegacyValue|Value|ValueKind|Kind) "
+                r"(?:was not found|has no body)",
+                str(error),
+            )
+            if missing is not None:
+                enum_name = (
+                    "LegacyValue"
+                    if missing.group(1) in {"LegacyValue", "Value"}
+                    else missing.group(1)
+                )
+                source = inventory["enums"][enum_name]["source"]
+                return [
+                    failure(
+                        "C0-RETIREMENT-ENUM-DRIFT",
+                        "audited enum source",
+                        source,
+                        f"live {enum_name} enum at {source!r}",
+                        str(error),
+                        f"{inventory_path}:enums.{enum_name}",
+                        enum_name=enum_name,
+                    )
+                ]
+            return [
+                failure(
+                    "C0-RETIREMENT-INVENTORY",
+                    "live retirement inventory",
+                    str(root),
+                    "a parseable audited retirement surface",
+                    str(error),
+                    "scripts/generate-value-system-inventory.py",
+                )
+            ]
         return [
             failure(
                 "C0-KIND-SCHEME-SEPARATION",
@@ -3714,23 +3913,38 @@ def audit(
                 f"{inventory_path}:type_contract_sources",
             )
         ]
+    if mode == "retirement" and summary_out is not None:
+        summary_out.clear()
+        summary_out.update(retirement_summary(inventory, live))
     failures.extend(
         reference_failures(
             root, inventory, migration, baseline, gate_b, verify_reference
         )
     )
-    if baseline_inventory is None:
+    if mode == "exact" and baseline_inventory is None:
         failures.extend(
             immutable_baseline_failures(
                 root, baseline, baseline_path, verify_git=verify_reference
             )
         )
-    failures.extend(coverage_failures(live, migration, migration_path))
-    failures.extend(family_contract_failures(live, migration, migration_path))
+    reviewed_surface = live if mode == "exact" else inventory
+    failures.extend(coverage_failures(reviewed_surface, migration, migration_path))
+    failures.extend(
+        family_contract_failures(reviewed_surface, migration, migration_path)
+    )
     failures.extend(target_applicability_failures(migration, migration_path))
-    failures.extend(occurrence_classification_failures(live, migration, migration_path))
+    failures.extend(
+        occurrence_classification_failures(
+            reviewed_surface, migration, migration_path
+        )
+    )
     failures.extend(frozen_semantics_failures(migration, migration_path))
-    failures.extend(matrix_value_classification_failures(migration, migration_path, root))
+    if mode == "exact":
+        failures.extend(
+            matrix_value_classification_failures(
+                migration, migration_path, root
+            )
+        )
     failures.extend(
         frozen_target_failures(
             migration, frozen_targets, migration_path, frozen_targets_path
@@ -3741,9 +3955,22 @@ def audit(
             migration, frozen_targets, migration_path, frozen_targets_path
         )
     )
-    failures.extend(type_contract_source_failures(root, live, inventory_path))
-    failures.extend(auxiliary_fixture_failures(inventory, live, inventory_path))
-    failures.extend(workspace_source_coverage_failures(inventory, live, inventory_path))
+    if mode == "exact":
+        failures.extend(type_contract_source_failures(root, live, inventory_path))
+        failures.extend(auxiliary_fixture_failures(inventory, live, inventory_path))
+        failures.extend(
+            workspace_source_coverage_failures(inventory, live, inventory_path)
+        )
+    else:
+        failures.extend(
+            type_contract_projection_failures(
+                inventory["type_contract_sources"], inventory_path
+            )
+        )
+        failures.extend(retirement_variant_failures(inventory, live, inventory_path))
+        failures.extend(
+            retirement_occurrence_failures(inventory, live, inventory_path)
+        )
     failures.extend(source_disposition_failures(inventory, inventory_path))
     failures.extend(qualification_failures(root, live))
     failures.extend(
@@ -3758,7 +3985,10 @@ def audit(
     failures.extend(legacy_alias_baseline_failures(baseline, live, baseline_path))
     failures.extend(compatibility_alias_failures(baseline, live, baseline_path))
     failures.extend(raw_approved_alias_failures(live))
-    if inventory_path.read_text(encoding="utf-8") != GENERATOR.render(live):
+    if (
+        mode == "exact"
+        and inventory_path.read_text(encoding="utf-8") != GENERATOR.render(live)
+    ):
         failures.append(
             failure(
                 "C0-INVENTORY-DRIFT",
@@ -3770,7 +4000,9 @@ def audit(
             )
         )
     if check_gate_a:
-        failures.extend(gate_a_failures(root, inventory))
+        failures.extend(
+            gate_a_failures(root, live if mode == "retirement" else inventory)
+        )
     if check_c2_adapter:
         failures.extend(
             c2_adapter_boundary_failures(
@@ -3794,8 +4026,9 @@ def audit(
     return sorted_failures(failures)
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=("exact", "retirement"), required=True)
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--inventory", type=Path, default=DEFAULT_INVENTORY)
     parser.add_argument("--migration", type=Path, default=DEFAULT_MIGRATION)
@@ -3812,7 +4045,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frozen-targets-schema", type=Path, default=DEFAULT_FROZEN_TARGETS_SCHEMA)
     parser.add_argument("--c2-adapter-boundary", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY)
     parser.add_argument("--c2-adapter-boundary-schema", type=Path, default=DEFAULT_C2_ADAPTER_BOUNDARY_SCHEMA)
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
 
 def report_result(failures: list[Failure]) -> int:
@@ -3825,8 +4058,31 @@ def report_result(failures: list[Failure]) -> int:
     return 1
 
 
+def report_retirement_result(
+    failures: list[Failure], summary: dict[str, Any]
+) -> int:
+    if failures:
+        print("value-system retirement contract failed:", file=sys.stderr)
+        for item in failures:
+            print(f"  {item.render()}", file=sys.stderr)
+        return 1
+    print("value-system retirement contract passed")
+    for enum_name in GENERATOR.AUDITED_ENUMS:
+        totals = summary[enum_name]
+        print(
+            f"{enum_name} occurrences: reviewed={totals['reviewed']} "
+            f"live={totals['live']} removed={totals['removed']}"
+        )
+    print(
+        "unreviewed audited occurrences: "
+        f"{summary['unreviewed_audited_occurrences']}"
+    )
+    return 0
+
+
 def main() -> int:
     args = parse_args()
+    summary: dict[str, Any] = {}
     try:
         failures = audit(
             args.root,
@@ -3845,10 +4101,14 @@ def main() -> int:
             frozen_targets_schema_path=args.frozen_targets_schema,
             c2_adapter_boundary_path=args.c2_adapter_boundary,
             c2_adapter_boundary_schema_path=args.c2_adapter_boundary_schema,
+            mode=args.mode,
+            summary_out=summary,
         )
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
         print(f"value-system contract checker failed internally: {error}", file=sys.stderr)
         return 2
+    if args.mode == "retirement":
+        return report_retirement_result(failures, summary)
     return report_result(failures)
 
 
