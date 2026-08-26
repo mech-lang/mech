@@ -1390,6 +1390,55 @@ fn encode_typed_constant(
 }
 
 #[cfg(feature = "semantic-compiler")]
+fn wrap_annotated_constant(
+    child: Option<EncodedConstant>,
+    annotation: &ValueKind,
+    source_kind: &ValueKind,
+) -> MResult<EncodedConstant> {
+    let declared_runtime_type = runtime_type_from_value_kind(annotation)?;
+    let RuntimeType::Option(declared_inner_type) = &declared_runtime_type else {
+        return Err(unsupported_constant(
+            declared_runtime_type,
+            source_kind.clone(),
+            "typed constant annotation does not match its source value kind; only Option wrappers are canonical",
+        ));
+    };
+    let Some(child) = child else {
+        return Ok(encoded_constant(declared_runtime_type, 1, vec![0]));
+    };
+    if !runtime_type_matches_annotation(&child.runtime_type, declared_inner_type) {
+        return Err(unsupported_constant(
+            declared_runtime_type,
+            source_kind.clone(),
+            "typed option child does not match its declared inner type",
+        ));
+    }
+    let runtime_type = RuntimeType::Option(Box::new(child.runtime_type.clone()));
+    let mut bytes = vec![1];
+    append_child_payload(&mut bytes, &child)?;
+    Ok(encoded_constant(runtime_type, 4, bytes))
+}
+
+#[cfg(feature = "semantic-compiler")]
+pub(super) fn compile_annotated_constant(
+    value: &LegacyValue,
+    annotations: &[ValueKind],
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<u32> {
+    let mut codec = ConstantCodecContext::new();
+    let encoded = encode_constant_value(value, &mut codec)?;
+    if annotations.is_empty() {
+        return context.intern_constant(encoded);
+    }
+    let source_kind = value.kind();
+    let mut child = (encoded.runtime_type != RuntimeType::Empty).then_some(encoded);
+    for annotation in annotations.iter().rev() {
+        child = Some(wrap_annotated_constant(child, annotation, &source_kind)?);
+    }
+    context.intern_constant(child.expect("annotations produce an encoded constant"))
+}
+
+#[cfg(feature = "semantic-compiler")]
 impl CompileConst for LegacyValue {
     fn compile_const(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<u32> {
         let mut codec = ConstantCodecContext::new();

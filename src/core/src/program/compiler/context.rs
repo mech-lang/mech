@@ -1289,6 +1289,177 @@ mod tests {
     }
 
     #[test]
+    fn value_cell_registers_follow_outer_cell_identity() {
+        let shared = crate::ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let alias = shared.clone();
+        let distinct = crate::ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let mut context = CompileCtx::new();
+
+        let shared_register = crate::compile_value_cell_register(&shared, &mut context).unwrap();
+        let alias_register = crate::compile_value_cell_register(&alias, &mut context).unwrap();
+        let distinct_register =
+            crate::compile_value_cell_register(&distinct, &mut context).unwrap();
+
+        assert_eq!(shared_register, alias_register);
+        assert_ne!(shared_register, distinct_register);
+        let compiled = context.finish_program(shared_register).unwrap();
+        assert_eq!(
+            compiled
+                .program
+                .instructions
+                .iter()
+                .filter(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::ConstLoad { dst, .. } if *dst == shared_register
+                ))
+                .count(),
+            1,
+        );
+    }
+
+    #[test]
+    fn runtime_produced_value_cell_emits_no_planning_initializer() {
+        let cell = crate::ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let mut context = CompileCtx::new();
+
+        let register =
+            crate::compile_runtime_produced_value_cell_register(&cell, &mut context).unwrap();
+        let compiled = context.finish_program(register).unwrap();
+
+        assert!(compiled.program.constants.is_empty());
+        assert!(
+            !compiled
+                .program
+                .instructions
+                .iter()
+                .any(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::ConstLoad { dst, .. }
+                        | BytecodeInstruction::CompositePack { dst, .. }
+                        if *dst == register
+                ))
+        );
+    }
+
+    #[test]
+    fn runtime_produced_value_cell_discards_a_provisional_initializer() {
+        let cell = crate::ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let mut context = CompileCtx::new();
+        let seeded = crate::compile_value_cell_register(&cell, &mut context).unwrap();
+
+        let produced =
+            crate::compile_runtime_produced_value_cell_register(&cell, &mut context).unwrap();
+        let compiled = context.finish_program(produced).unwrap();
+
+        assert_eq!(seeded, produced);
+        assert!(compiled.program.constants.is_empty());
+        assert!(
+            !compiled
+                .program
+                .instructions
+                .iter()
+                .any(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::ConstLoad { dst, .. }
+                        | BytecodeInstruction::CompositePack { dst, .. }
+                        if *dst == produced
+                ))
+        );
+    }
+
+    #[test]
+    fn value_cell_composites_keep_outer_and_child_identities() {
+        let scalar = crate::Ref::new(7.0);
+        let child = LegacyValue::F64(scalar.clone());
+        let cell = crate::ValueCell::new(LegacyValue::Tuple(crate::Ref::new(
+            crate::MechTuple::from_vec(vec![
+                LegacyValue::F64(scalar.clone()),
+                LegacyValue::F64(scalar),
+            ]),
+        )));
+        let mut context = CompileCtx::new();
+        let child_register = context.resolve_value_register(&child).unwrap();
+        let outer_register = crate::compile_value_cell_register(&cell, &mut context).unwrap();
+        let compiled = context.finish_program(outer_register).unwrap();
+
+        assert_ne!(outer_register, child_register);
+        assert!(
+            compiled
+                .program
+                .instructions
+                .iter()
+                .any(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::CompositePack { dst, children, .. }
+                        if *dst == outer_register
+                            && children == &[child_register, child_register]
+                ))
+        );
+    }
+
+    #[test]
+    fn annotated_value_cell_views_preserve_annotations_and_cell_identity() {
+        let cell = crate::ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let option_f64 = crate::ValueKind::Option(Box::new(crate::ValueKind::F64));
+        let nested_option = crate::ValueKind::Option(Box::new(option_f64.clone()));
+        let mut context = CompileCtx::new();
+
+        let cell_register = crate::compile_value_cell_register(&cell, &mut context).unwrap();
+        let f64_view = crate::compile_annotated_value_cell_register(
+            &cell,
+            core::slice::from_ref(&option_f64),
+            &mut context,
+        )
+        .unwrap();
+        let f64_view_again = crate::compile_annotated_value_cell_register(
+            &cell,
+            core::slice::from_ref(&option_f64),
+            &mut context,
+        )
+        .unwrap();
+        let nested_view = crate::compile_annotated_value_cell_register(
+            &cell,
+            &[nested_option, option_f64],
+            &mut context,
+        )
+        .unwrap();
+        let compiled = context.finish_program(f64_view).unwrap();
+
+        assert_eq!(f64_view, f64_view_again);
+        assert_ne!(f64_view, cell_register);
+        assert_ne!(f64_view, nested_view);
+        assert!(
+            compiled
+                .program
+                .instructions
+                .iter()
+                .any(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::CompositePack { dst, children, .. }
+                        if *dst == f64_view && children == &[cell_register]
+                ))
+        );
+    }
+
+    #[test]
+    fn value_cell_compiler_borrow_conflicts_are_structured() {
+        let cell = crate::ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let _borrow = cell.borrow_mut();
+        let mut context = CompileCtx::new();
+
+        let error = crate::compile_value_cell_register(&cell, &mut context).unwrap_err();
+
+        assert_eq!(error.kind_name(), "ValueCellCompilerBorrowConflict");
+        assert_eq!(
+            error
+                .kind_as::<crate::ValueCellCompilerBorrowConflict>()
+                .unwrap()
+                .phase,
+            "value-cell register compilation",
+        );
+    }
+
+    #[test]
     fn runtime_producer_keeps_a_seed_constant_used_by_another_register() {
         let produced_value = LegacyValue::F64(crate::Ref::new(7.0));
         let retained_value = LegacyValue::F64(crate::Ref::new(7.0));

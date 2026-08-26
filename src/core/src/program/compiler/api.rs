@@ -1,9 +1,12 @@
-use crate::{ApplicationRequirement, EncodedConstant, LegacyValue, MResult, ValueKind};
+use crate::{
+    ApplicationRequirement, EncodedConstant, LegacyValue, MResult, MechError, MechErrorKind,
+    ValueCell, ValueKind,
+};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
 
-use super::{CompileConst, Register};
+use super::{CompileConst, Register, compile_annotated_constant};
 
 /// Canonical producer identity used when assigning bytecode registers.
 ///
@@ -204,6 +207,140 @@ pub trait BytecodeCompilerContext {
     fn emit_resource_send(&mut self, requirement: u32, destination: Register, source: Register);
 }
 
+/// A compiler could not inspect the payload of an explicit value cell because
+/// another owner held an incompatible borrow.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ValueCellCompilerBorrowConflict {
+    pub phase: &'static str,
+}
+
+impl MechErrorKind for ValueCellCompilerBorrowConflict {
+    fn name(&self) -> &str {
+        "ValueCellCompilerBorrowConflict"
+    }
+
+    fn message(&self) -> String {
+        format!(
+            "value cell payload is already mutably borrowed during {}",
+            self.phase,
+        )
+    }
+}
+
+fn value_cell_borrow_conflict(phase: &'static str) -> MechError {
+    MechError::new(ValueCellCompilerBorrowConflict { phase }, None).with_compiler_loc()
+}
+
+/// Resolves and, when necessary, initializes the register owned by `cell`.
+///
+/// The cell is the outer register owner even when its current payload is a
+/// reactive composite. Composite children continue to use their canonical
+/// value identities so their live topology is retained.
+pub fn compile_value_cell_register(
+    cell: &ValueCell,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    let reference = cell.legacy_ref();
+    let value = cell
+        .try_borrow()
+        .map_err(|_| value_cell_borrow_conflict("value-cell register compilation"))?;
+    compile_value_register_for_ptr(&value, reference.addr(), context)
+}
+
+/// Recovers the explicit cell carried by a legacy compiler ABI value.
+///
+/// This is a normalization bridge for compiler planning. Ordinary compiler
+/// ownership should remain explicit after this boundary.
+#[doc(hidden)]
+pub fn compiler_value_cell_from_legacy(value: &LegacyValue) -> Option<ValueCell> {
+    value
+        .exact_ref_any()?
+        .downcast_ref::<crate::Ref<LegacyValue>>()
+        .cloned()
+        .map(ValueCell::from_legacy_ref)
+}
+
+fn compile_annotation_layers(
+    value: &LegacyValue,
+    mut identity: BytecodeRegisterIdentity,
+    mut register: Register,
+    annotations: &[ValueKind],
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    for index in (0..annotations.len()).rev() {
+        let annotation = &annotations[index];
+        identity = BytecodeRegisterIdentity::Typed {
+            inner: Box::new(identity),
+            annotation: annotation.clone(),
+        };
+        let (typed_register, initialize) =
+            context.register_for_identity_with_initialization_status(&identity);
+        context.record_register_kind(typed_register, annotation.clone())?;
+        if initialize {
+            let template = compile_annotated_constant(value, &annotations[index..], context)?;
+            context.record_register_constant_metadata(typed_register, template)?;
+            context.emit_composite_pack(typed_register, template, vec![register]);
+        }
+        register = typed_register;
+    }
+    Ok(register)
+}
+
+/// Compiles a compiler-only typed view whose underlying identity is `cell`.
+///
+/// Annotation layers are ordered from outermost to innermost. This bridge is
+/// intentionally hidden from ordinary API documentation; it exists so source
+/// planning can preserve typed views without recreating MutableReference.
+#[doc(hidden)]
+pub fn compile_annotated_value_cell_register(
+    cell: &ValueCell,
+    annotations: &[ValueKind],
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    let reference = cell.legacy_ref();
+    let value = cell
+        .try_borrow()
+        .map_err(|_| value_cell_borrow_conflict("annotated value-cell register compilation"))?
+        .clone();
+    let identity = BytecodeRegisterIdentity::Cell(reference.addr());
+    let register = compile_value_register_for_ptr(&value, reference.addr(), context)?;
+    compile_annotation_layers(&value, identity, register, annotations, context)
+}
+
+/// Compiles typed views of an immediate legacy value without reconstructing
+/// legacy wrappers in engine planning.
+#[doc(hidden)]
+pub fn compile_annotated_value_register(
+    value: &LegacyValue,
+    annotations: &[ValueKind],
+    fallback: usize,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    let identity = bytecode_register_identity(value, fallback);
+    let register = compile_value_register(value, fallback, context)?;
+    compile_annotation_layers(value, identity, register, annotations, context)
+}
+
+/// Resolves the register owned by a cell whose payload will be supplied by an
+/// executable instruction.
+///
+/// The current payload contributes semantic kind information only. No
+/// planning-time `ConstLoad` or `CompositePack` is emitted, and a provisional
+/// initializer for the same cell is discarded.
+pub fn compile_runtime_produced_value_cell_register(
+    cell: &ValueCell,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    let reference = cell.legacy_ref();
+    let value = cell
+        .try_borrow()
+        .map_err(|_| value_cell_borrow_conflict("runtime-produced value-cell compilation"))?;
+    let (register, _) = context.register_for_ptr_with_initialization_status(reference.addr());
+    context.record_register_kind(register, value.kind())?;
+    context.record_runtime_produced_register(register)?;
+    Ok(register)
+}
+
 /// Resolves and, when necessary, initializes the register for one logical
 /// value. Composite values are reconstructed from child registers so their
 /// reactive topology is never replaced by a planning-time constant snapshot.
@@ -212,6 +349,9 @@ pub fn compile_value_register(
     fallback: usize,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
+    // MutableReference remains a supported legacy compiler ABI. New compiler
+    // ownership paths should retain ValueCell and use
+    // `compile_value_cell_register` instead of manufacturing this wrapper.
     if let LegacyValue::MutableReference(reference) = value {
         return compile_value_register(&reference.borrow(), reference.addr(), {
             context.override_next_register_kind(value.kind())?;
@@ -287,6 +427,8 @@ pub fn compile_runtime_produced_register(
     fallback: usize,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
+    // MutableReference remains a supported legacy compiler ABI. New external
+    // producers should call `compile_runtime_produced_value_cell_register`.
     if let LegacyValue::MutableReference(reference) = value {
         context.override_next_register_kind(value.kind())?;
         return compile_runtime_produced_register(&reference.borrow(), reference.addr(), context);

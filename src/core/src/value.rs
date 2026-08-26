@@ -4,7 +4,11 @@ use crate::matrix::Matrix;
 #[cfg(feature = "complex")]
 use crate::types::complex_numbers::C64;
 use crate::*;
-#[cfg(any(feature = "functions", feature = "matrix"))]
+#[cfg(any(
+    feature = "functions",
+    feature = "matrix",
+    feature = "semantic-compiler"
+))]
 use core::any::Any;
 #[cfg(feature = "no_std")]
 use core::hash::BuildHasherDefault;
@@ -1420,7 +1424,7 @@ impl LegacyValue {
     }
 
     /// Returns the exact `Ref<_>` stored by this value, if it has one.
-    #[cfg(feature = "functions")]
+    #[cfg(any(feature = "functions", feature = "semantic-compiler"))]
     pub(crate) fn exact_ref_any(&self) -> Option<&dyn Any> {
         match self {
             #[cfg(feature = "u8")]
