@@ -135,6 +135,10 @@ impl MechFunctionImpl for ExternalResourceWriteFunction {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ExternalResourceWriteFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         self.validate()?;
         let output = super::compile_external_output(&self.output, context)?;

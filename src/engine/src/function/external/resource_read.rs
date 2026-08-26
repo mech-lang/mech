@@ -149,6 +149,10 @@ impl MechFunctionImpl for ExternalResourceReadFunction {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ExternalResourceReadFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = super::compile_runtime_produced_external_output(&self.output, context)?;
         let requirement =

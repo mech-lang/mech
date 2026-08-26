@@ -5,6 +5,8 @@ use mech_core::{
     compile_value_cell_register, compile_value_register, compiler_value_cell_from_legacy,
 };
 
+use crate::CompileCtx;
+
 /// Short-lived source-planning ownership retained until artifact compilation.
 ///
 /// This type is deliberately engine-private and non-serialized. `Cell` keeps
@@ -69,6 +71,14 @@ impl CompilerValueSource {
                 compile_value_register(value, core::ptr::from_ref(value).addr(), context)
             }
             Self::Typed { .. } => unreachable!("typed compiler sources were resolved above"),
+        }
+    }
+
+    pub(super) fn retain_cells(&self, context: &mut CompileCtx) -> MResult<()> {
+        match self {
+            Self::Cell(cell) => context.retain_compiler_value_cell(cell),
+            Self::Typed { source, .. } => source.retain_cells(context),
+            Self::Immediate(_) => Ok(()),
         }
     }
 

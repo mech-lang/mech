@@ -81,6 +81,10 @@ impl MechFunctionImpl for ExternalHostCallFunction {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for ExternalHostCallFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        vec![self.output.clone()]
+    }
+
     fn compile(&self, context: &mut dyn BytecodeCompilerContext) -> MResult<Register> {
         let output = super::compile_external_output(&self.output, context)?;
         let arguments = self

@@ -8,7 +8,9 @@ pub use resource_write::*;
 
 #[cfg(feature = "semantic-compiler")]
 use mech_core::{
-    BytecodeCompilerContext, LegacyValue, MResult, Register, ValueCell, compile_value_register,
+    BytecodeCompilerContext, LegacyValue, MResult, Register, ValueCell,
+    compile_runtime_produced_value_cell_register, compile_value_cell_register,
+    compile_value_register,
 };
 
 #[cfg(feature = "semantic-compiler")]
@@ -16,9 +18,7 @@ pub(super) fn compile_external_output(
     output: &ValueCell,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    let reference = output.legacy_ref();
-    let value = reference.borrow();
-    compile_external_value_with_fallback(&value, reference.addr(), context)
+    compile_value_cell_register(output, context)
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -26,9 +26,7 @@ pub(super) fn compile_runtime_produced_external_output(
     output: &ValueCell,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    let reference = output.legacy_ref();
-    let value = reference.borrow();
-    mech_core::compile_runtime_produced_register(&value, reference.addr(), context)
+    compile_runtime_produced_value_cell_register(output, context)
 }
 
 #[cfg(feature = "semantic-compiler")]
@@ -36,16 +34,7 @@ pub(super) fn compile_external_value(
     value: &LegacyValue,
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
-    compile_external_value_with_fallback(value, std::ptr::from_ref(value).addr(), context)
-}
-
-#[cfg(feature = "semantic-compiler")]
-fn compile_external_value_with_fallback(
-    value: &LegacyValue,
-    fallback: usize,
-    context: &mut dyn BytecodeCompilerContext,
-) -> MResult<Register> {
-    compile_value_register(value, fallback, context)
+    compile_value_register(value, std::ptr::from_ref(value).addr(), context)
 }
 
 #[cfg(all(test, feature = "semantic-compiler", feature = "f64"))]

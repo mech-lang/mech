@@ -756,6 +756,31 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
     let plan = state.plan.borrow();
     let mut context = CompileCtx::new();
 
+    {
+        let symbols = state.symbol_table.borrow();
+        for (name, cell) in symbol_cell_rows(&symbols, &[]) {
+            context.retain_compiler_symbol_cell(&name, &cell)?;
+        }
+    }
+    for output in &program.published_outputs {
+        output.source.retain_cells(&mut context)?;
+    }
+    #[cfg(feature = "invariant_define")]
+    for constraint in state.integrity_constraints.values() {
+        context.retain_compiler_value_cell(&constraint.result)?;
+        if let Some(lhs) = &constraint.lhs {
+            context.retain_compiler_value_cell(lhs)?;
+        }
+        if let Some(rhs) = &constraint.rhs {
+            context.retain_compiler_value_cell(rhs)?;
+        }
+    }
+    for step in plan.iter() {
+        for cell in step.compiler_owned_value_cells() {
+            context.retain_compiler_value_cell(&cell)?;
+        }
+    }
+
     // State declarations retain their declaration-time initializer even when
     // source execution has already advanced the corresponding reactive cell.
     for step in plan.iter() {
@@ -775,6 +800,8 @@ fn compile_bytecode(program: &mut CompilerPlanningProgram) -> MResult<CompilerPl
         context.end_plan_node();
         compile_result?;
     }
+
+    context.associate_retained_symbol_cells_with_existing_value_registers()?;
 
     for region in &state.compute_regions {
         let start = u32::try_from(region.plan_nodes.start).map_err(|_| {

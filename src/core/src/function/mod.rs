@@ -558,6 +558,12 @@ impl ReactiveRegisterCommit for ReactiveRegisterNoopCommit {
 
 #[cfg(feature = "semantic-compiler")]
 pub trait MechFunctionCompiler {
+    /// Returns explicit cells whose identity must remain associated with the
+    /// legacy values consumed by other compiler implementations in this plan.
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        Vec::new()
+    }
+
     /// Reserves registers whose initializer must come from declaration-time
     /// state before other plan nodes observe their live reactive values.
     fn reserve_bytecode_registers(&self, _ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
@@ -677,6 +683,10 @@ impl MechFunctionImpl for SemanticMechFunction {
 
 #[cfg(feature = "semantic-compiler")]
 impl MechFunctionCompiler for SemanticMechFunction {
+    fn compiler_owned_value_cells(&self) -> Vec<ValueCell> {
+        self.function.compiler_owned_value_cells()
+    }
+
     fn reserve_bytecode_registers(&self, ctx: &mut dyn BytecodeCompilerContext) -> MResult<()> {
         self.function.reserve_bytecode_registers(ctx)
     }

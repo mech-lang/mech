@@ -9,7 +9,7 @@ use crate::{
     BytecodeProgram, BytecodeRegisterIdentity, BytecodeValidationError, ChangeDetectionPolicy,
     ComputePlacement, DeliveryMode, EncodedConstant, ExternalInteraction, InputPortLayout,
     InputPortPolicy, LegacyValue, MResult, MechError, OperationContractDeclaration,
-    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueKind,
+    OutputConstruction, OutputPortPolicy, ParsedProgram, Register, ShapeRule, ValueCell, ValueKind,
     compare_application_requirements, compile_value_register, hash_str,
     value_kind_from_runtime_type, write_bytecode,
 };
@@ -139,8 +139,10 @@ impl PartialOrd for CanonicalRequirement {
 #[derive(Debug)]
 pub struct CompileCtx {
     reg_map: HashMap<BytecodeRegisterIdentity, Register>,
+    retained_value_cell_identities: BTreeMap<usize, BytecodeRegisterIdentity>,
     symbols: BTreeMap<u64, Register>,
     symbol_ptrs: BTreeMap<u64, usize>,
+    retained_symbol_cells: BTreeMap<String, ValueCell>,
     dictionary: BTreeMap<u64, String>,
     runtime_function_names: BTreeMap<u64, String>,
     mutable_symbols: BTreeSet<u64>,
@@ -171,8 +173,10 @@ impl Default for CompileCtx {
     fn default() -> Self {
         Self {
             reg_map: HashMap::new(),
+            retained_value_cell_identities: BTreeMap::new(),
             symbols: BTreeMap::new(),
             symbol_ptrs: BTreeMap::new(),
+            retained_symbol_cells: BTreeMap::new(),
             dictionary: BTreeMap::new(),
             runtime_function_names: BTreeMap::new(),
             mutable_symbols: BTreeSet::new(),
@@ -208,6 +212,80 @@ impl CompileCtx {
 
     pub fn clear(&mut self) {
         *self = Self::default();
+    }
+
+    /// Retains the explicit outer cell that owns a source symbol until its
+    /// legacy declaration step supplies the canonical producer register.
+    pub fn retain_compiler_symbol_cell(&mut self, name: &str, cell: &ValueCell) -> MResult<()> {
+        if let Some(existing) = self.retained_symbol_cells.get(name) {
+            if !existing.same_cell(cell) {
+                return invalid(format!(
+                    "compiler symbol {name:?} has conflicting retained value cells",
+                ));
+            }
+            return Ok(());
+        }
+        self.retained_symbol_cells
+            .insert(name.to_owned(), cell.clone());
+        self.retain_compiler_value_cell(cell)?;
+        Ok(())
+    }
+
+    /// Retains the relationship between an explicit outer cell and the legacy
+    /// value identity still used by downstream compiler ABI consumers.
+    pub fn retain_compiler_value_cell(&mut self, cell: &ValueCell) -> MResult<()> {
+        let address = cell.legacy_ref().addr();
+        let value = cell.try_borrow().map_err(|_| {
+            MechError::new(
+                crate::ValueCellCompilerBorrowConflict {
+                    phase: "compiler value-cell retention",
+                },
+                None,
+            )
+            .with_compiler_loc()
+        })?;
+        let identity = crate::bytecode_register_identity(&value, address);
+        if let Some(existing) = self.retained_value_cell_identities.get(&address) {
+            if existing != &identity {
+                return invalid("retained compiler value cell changed identity before compilation");
+            }
+            return Ok(());
+        }
+        self.retained_value_cell_identities
+            .insert(address, identity);
+        Ok(())
+    }
+
+    /// Associates retained symbols that enter planning as host/compiler inputs
+    /// with the legacy value registers already used by compiled plan nodes.
+    /// Source declarations are associated directly by `define_symbol`.
+    pub fn associate_retained_symbol_cells_with_existing_value_registers(&mut self) -> MResult<()> {
+        let retained = self
+            .retained_symbol_cells
+            .values()
+            .cloned()
+            .collect::<Vec<_>>();
+        for cell in retained {
+            let address = cell.legacy_ref().addr();
+            let outer_identity = BytecodeRegisterIdentity::Cell(address);
+            if self.reg_map.contains_key(&outer_identity) {
+                continue;
+            }
+            let value = cell.try_borrow().map_err(|_| {
+                MechError::new(
+                    crate::ValueCellCompilerBorrowConflict {
+                        phase: "compiler symbol cell association",
+                    },
+                    None,
+                )
+                .with_compiler_loc()
+            })?;
+            let value_identity = crate::bytecode_register_identity(&value, address);
+            if let Some(register) = self.reg_map.get(&value_identity).copied() {
+                self.reg_map.insert(outer_identity, register);
+            }
+        }
+        Ok(())
     }
 
     /// Resolve an interpreted value to the register that carries its identity.
@@ -618,6 +696,7 @@ impl CompileCtx {
                         "conflicting bytecode symbol definition for {name:?}",
                     ));
                 }
+                self.associate_retained_symbol_cell(name, register)?;
                 return Ok(());
             }
 
@@ -627,6 +706,7 @@ impl CompileCtx {
             if mutable {
                 self.mutable_symbols.insert(symbol_id);
             }
+            self.associate_retained_symbol_cell(name, register)?;
         }
 
         if let Some(kind) = self.register_kinds.get(&register).cloned()
@@ -645,6 +725,24 @@ impl CompileCtx {
             root_visible,
             ordinal,
         });
+        Ok(())
+    }
+
+    fn associate_retained_symbol_cell(&mut self, name: &str, register: Register) -> MResult<()> {
+        let Some(cell) = self.retained_symbol_cells.get(name) else {
+            return Ok(());
+        };
+        let address = cell.legacy_ref().addr();
+        let identity = BytecodeRegisterIdentity::Cell(address);
+        if let Some(existing) = self.reg_map.get(&identity) {
+            if *existing != register {
+                return invalid(format!(
+                    "compiler symbol {name:?} retained cell already owns register {existing}, incoming register {register}",
+                ));
+            }
+            return Ok(());
+        }
+        self.reg_map.insert(identity, register);
         Ok(())
     }
 
@@ -681,7 +779,20 @@ impl BytecodeCompilerContext for CompileCtx {
     }
 
     fn register_for_ptr_with_initialization_status(&mut self, pointer: usize) -> (Register, bool) {
-        self.register_for_identity(BytecodeRegisterIdentity::Cell(pointer))
+        let outer_identity = BytecodeRegisterIdentity::Cell(pointer);
+        if let Some(&register) = self.reg_map.get(&outer_identity) {
+            return (register, false);
+        }
+        if let Some(value_identity) = self.retained_value_cell_identities.get(&pointer).cloned() {
+            if let Some(&register) = self.reg_map.get(&value_identity) {
+                self.reg_map.insert(outer_identity, register);
+                return (register, false);
+            }
+            let (register, initialize) = self.register_for_identity(outer_identity);
+            self.reg_map.insert(value_identity, register);
+            return (register, initialize);
+        }
+        self.register_for_identity(outer_identity)
     }
 
     fn register_for_identity_with_initialization_status(
@@ -1797,6 +1908,58 @@ mod tests {
         }
 
         assert_eq!(compile(false), compile(true));
+    }
+
+    #[test]
+    fn retained_symbol_cells_reuse_their_declared_registers() {
+        let cell = ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let mut context = CompileCtx::new();
+        context
+            .retain_compiler_symbol_cell("answer", &cell)
+            .unwrap();
+        let register = context.register_for_ptr_with_initialization_status(17).0;
+        context
+            .record_register_kind(register, ValueKind::F64)
+            .unwrap();
+        context
+            .define_symbol(17, register, "answer", false)
+            .unwrap();
+
+        let resolved = crate::compile_value_cell_register(&cell, &mut context).unwrap();
+
+        assert_eq!(resolved, register);
+        assert_eq!(context.next_register, 1);
+    }
+
+    #[test]
+    fn retained_input_cells_reuse_existing_legacy_value_registers() {
+        let cell = ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let legacy = LegacyValue::MutableReference(cell.legacy_ref());
+        let mut context = CompileCtx::new();
+        context.retain_compiler_symbol_cell("input", &cell).unwrap();
+        let legacy_register = context.resolve_value_register(&legacy).unwrap();
+
+        context
+            .associate_retained_symbol_cells_with_existing_value_registers()
+            .unwrap();
+        let cell_register = crate::compile_value_cell_register(&cell, &mut context).unwrap();
+
+        assert_eq!(cell_register, legacy_register);
+        assert_eq!(context.next_register, 1);
+    }
+
+    #[test]
+    fn retained_producer_cells_share_their_register_with_legacy_consumers() {
+        let cell = ValueCell::new(LegacyValue::F64(crate::Ref::new(7.0)));
+        let legacy_value = cell.borrow().clone();
+        let mut context = CompileCtx::new();
+        context.retain_compiler_value_cell(&cell).unwrap();
+
+        let cell_register = crate::compile_value_cell_register(&cell, &mut context).unwrap();
+        let legacy_register = context.resolve_value_register(&legacy_value).unwrap();
+
+        assert_eq!(cell_register, legacy_register);
+        assert_eq!(context.next_register, 1);
     }
 
     #[test]
