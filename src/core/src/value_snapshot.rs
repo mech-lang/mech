@@ -5,6 +5,40 @@ use core::fmt::Debug;
 
 use crate::{LegacyValue, MResult, MechError, MechErrorKind, Ref};
 
+impl LegacyValue {
+    /// Returns an exact legacy kind literal without formatting or reparsing.
+    pub fn legacy_kind_literal(&self) -> Option<&crate::ValueKind> {
+        match self {
+            LegacyValue::Kind(kind) => Some(kind),
+            _ => None,
+        }
+    }
+
+    pub fn is_legacy_empty(&self) -> bool {
+        matches!(self, LegacyValue::Empty)
+    }
+
+    pub fn legacy_empty_kind(&self) -> Option<&crate::ValueKind> {
+        match self {
+            LegacyValue::EmptyKind(kind) => Some(kind),
+            _ => None,
+        }
+    }
+
+    pub fn is_legacy_index_all(&self) -> bool {
+        matches!(self, LegacyValue::IndexAll)
+    }
+
+    /// Returns the exact compatibility cell stored by an outer legacy mutable
+    /// reference. Callers must keep the resulting borrow local.
+    pub fn legacy_mutable_reference(&self) -> Option<&Ref<LegacyValue>> {
+        match self {
+            LegacyValue::MutableReference(reference) => Some(reference),
+            _ => None,
+        }
+    }
+}
+
 #[cfg(feature = "enum")]
 use crate::MechEnum;
 #[cfg(feature = "map")]
@@ -457,6 +491,21 @@ impl ValueSnapshotCloneContext {
     }
 
     fn snapshot_value(&mut self, source: &LegacyValue) -> MResult<LegacyValue> {
+        if let Some(reference) = source.legacy_mutable_reference() {
+            return self.snapshot_mutable_reference(reference);
+        }
+        if let Some(kind) = source.legacy_kind_literal() {
+            return Ok(LegacyValue::Kind(kind.clone()));
+        }
+        if source.is_legacy_index_all() {
+            return Ok(LegacyValue::IndexAll);
+        }
+        if let Some(kind) = source.legacy_empty_kind() {
+            return Ok(LegacyValue::EmptyKind(kind.clone()));
+        }
+        if source.is_legacy_empty() {
+            return Ok(LegacyValue::Empty);
+        }
         match source {
             #[cfg(feature = "u8")]
             LegacyValue::U8(value) => Ok(LegacyValue::U8(self.snapshot_leaf(value, "u8")?)),
@@ -670,15 +719,11 @@ impl ValueSnapshotCloneContext {
             LegacyValue::Index(value) => {
                 Ok(LegacyValue::Index(self.snapshot_leaf(value, "index")?))
             }
-            LegacyValue::MutableReference(value) => self.snapshot_mutable_reference(value),
             LegacyValue::Typed(value, kind) => Ok(LegacyValue::Typed(
                 Box::new(self.snapshot_value(value)?),
                 kind.clone(),
             )),
-            LegacyValue::Kind(kind) => Ok(LegacyValue::Kind(kind.clone())),
-            LegacyValue::IndexAll => Ok(LegacyValue::IndexAll),
-            LegacyValue::EmptyKind(kind) => Ok(LegacyValue::EmptyKind(kind.clone())),
-            LegacyValue::Empty => Ok(LegacyValue::Empty),
+            _ => unreachable!("legacy pseudo-values are normalized before snapshot matching"),
         }
     }
 }

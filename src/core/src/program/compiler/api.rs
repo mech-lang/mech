@@ -1,3 +1,5 @@
+#[cfg(feature = "matrix")]
+use crate::BytecodeValidationError;
 use crate::{
     ApplicationRequirement, EncodedConstant, LegacyValue, MResult, MechError, MechErrorKind,
     ValueCell, ValueKind,
@@ -6,6 +8,10 @@ use crate::{
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, vec::Vec};
 
+#[cfg(feature = "matrix")]
+use super::CompiledMatrixLiteralElement;
+#[cfg(feature = "matrix")]
+use super::constants::compile_kind_constant;
 use super::{CompileConst, CompiledMatrixLiteral, Register, compile_annotated_constant};
 
 /// Canonical producer identity used when assigning bytecode registers.
@@ -119,6 +125,13 @@ pub trait BytecodeCompilerContext {
     /// the producer instruction.
     fn record_runtime_produced_register(&mut self, _register: Register) -> MResult<()> {
         Ok(())
+    }
+
+    /// Reports whether an executable producer already owns this register.
+    /// Such values may be observed through the compiler API without being
+    /// reclassified as source matrix-literal construction.
+    fn register_is_runtime_produced(&self, _register: Register) -> bool {
+        false
     }
 
     /// Records deterministic, in-memory construction metadata for a generic
@@ -368,7 +381,21 @@ pub fn compile_value_register(
 
     let (register, initialize) =
         context.register_for_value_with_initialization_status(value, fallback);
-    context.record_register_kind(register, value.kind())?;
+    let kind = value.kind();
+    context.record_register_kind(register, kind.clone())?;
+    // Observing a value whose register is owned by an executable producer is
+    // not a second source construction. In particular, do not manufacture a
+    // matrix-literal sidecar for a runtime-produced generic matrix.
+    if !initialize && context.register_is_runtime_produced(register) {
+        return Ok(register);
+    }
+    #[cfg(feature = "matrix")]
+    if let Some(matrix) = value
+        .exact_matrix_any()
+        .and_then(|matrix| matrix.downcast_ref::<crate::matrix::Matrix<LegacyValue>>())
+    {
+        return compile_matrix_literal_register(matrix, kind, register, initialize, context);
+    }
     if !initialize {
         return Ok(register);
     }
@@ -401,7 +428,20 @@ pub fn compile_value_register_for_ptr(
     context: &mut dyn BytecodeCompilerContext,
 ) -> MResult<Register> {
     let (register, initialize) = context.register_for_ptr_with_initialization_status(pointer);
-    context.record_register_kind(register, value.kind())?;
+    let kind = value.kind();
+    context.record_register_kind(register, kind.clone())?;
+    // An executable producer supersedes the planning-time payload stored in
+    // this cell, so observing that payload is not matrix-literal registration.
+    if !initialize && context.register_is_runtime_produced(register) {
+        return Ok(register);
+    }
+    #[cfg(feature = "matrix")]
+    if let Some(matrix) = value
+        .exact_matrix_any()
+        .and_then(|matrix| matrix.downcast_ref::<crate::matrix::Matrix<LegacyValue>>())
+    {
+        return compile_matrix_literal_register(matrix, kind, register, initialize, context);
+    }
     if !initialize {
         return Ok(register);
     }
@@ -420,6 +460,267 @@ pub fn compile_value_register_for_ptr(
         context.emit_const_load(register, constant);
     }
     Ok(register)
+}
+
+#[cfg(feature = "matrix")]
+fn compile_matrix_literal_register(
+    matrix: &crate::matrix::Matrix<LegacyValue>,
+    output_kind: ValueKind,
+    register: Register,
+    initialize: bool,
+    context: &mut dyn BytecodeCompilerContext,
+) -> MResult<Register> {
+    let Some((_, declared_dimensions)) = output_kind.matrix_parts() else {
+        return compiler_invariant(format!(
+            "generic matrix literal register {register} does not have a matrix output kind",
+        ));
+    };
+    let rows = matrix.rows();
+    let columns = matrix.cols();
+    if declared_dimensions != [rows, columns] {
+        return compiler_invariant(format!(
+            "generic matrix literal register {register} declares dimensions {:?}, found {rows}x{columns}",
+            declared_dimensions,
+        ));
+    }
+    let rows_u32 = u32::try_from(rows).map_err(|_| {
+        compiler_invariant::<()>(format!(
+            "generic matrix literal row count {rows} exceeds u32",
+        ))
+        .unwrap_err()
+    })?;
+    let columns_u32 = u32::try_from(columns).map_err(|_| {
+        compiler_invariant::<()>(format!(
+            "generic matrix literal column count {columns} exceeds u32",
+        ))
+        .unwrap_err()
+    })?;
+
+    let mut values = Vec::with_capacity(rows.saturating_mul(columns));
+    for row in 0..rows {
+        for column in 0..columns {
+            values.push(matrix.index2d(row + 1, column + 1));
+        }
+    }
+
+    let mut elements = Vec::with_capacity(values.len());
+    let mut children = Vec::with_capacity(values.len());
+    for value in &values {
+        let child = compile_value_register(value, core::ptr::from_ref(value).addr(), context)?;
+        children.push(child);
+        elements.push(if value.is_legacy_empty() {
+            CompiledMatrixLiteralElement::Empty { register: child }
+        } else {
+            CompiledMatrixLiteralElement::Value { register: child }
+        });
+    }
+
+    let literal =
+        CompiledMatrixLiteral::new(register, rows_u32, columns_u32, elements.into_boxed_slice())?;
+    context.record_matrix_literal(literal)?;
+
+    if initialize {
+        let template = compile_kind_constant(&output_kind, context)?;
+        context.record_register_constant_metadata(register, template)?;
+        context.emit_composite_pack(register, template, children);
+    }
+    Ok(register)
+}
+
+#[cfg(feature = "matrix")]
+fn compiler_invariant<T>(reason: impl Into<String>) -> MResult<T> {
+    Err(MechError::new(
+        BytecodeValidationError {
+            reason: reason.into(),
+        },
+        None,
+    )
+    .with_compiler_loc())
+}
+
+#[cfg(all(test, feature = "matrix", feature = "f64"))]
+mod tests {
+    use super::*;
+    use crate::{
+        BytecodeInstruction, CompileCtx, CompiledBytecode, Ref, decode_encoded_constants,
+        matrix::Matrix,
+    };
+
+    fn f64_value(value: f64) -> LegacyValue {
+        LegacyValue::F64(Ref::new(value))
+    }
+
+    fn compiled_matrix(values: Vec<LegacyValue>, rows: usize, columns: usize) -> CompiledBytecode {
+        let value = LegacyValue::MatrixValue(Matrix::from_vec(values, rows, columns));
+        let mut context = CompileCtx::new();
+        let output =
+            compile_value_register(&value, core::ptr::from_ref(&value).addr(), &mut context)
+                .unwrap();
+        context.finish_program(output).unwrap()
+    }
+
+    fn register_f64(compiled: &CompiledBytecode, register: Register) -> f64 {
+        let constant = compiled
+            .program
+            .instructions
+            .iter()
+            .find_map(|instruction| match instruction {
+                BytecodeInstruction::ConstLoad { dst, constant } if *dst == register => {
+                    Some(*constant)
+                }
+                _ => None,
+            })
+            .unwrap();
+        let values = decode_encoded_constants(&compiled.program.constants).unwrap();
+        let LegacyValue::F64(value) = &values[constant as usize] else {
+            panic!("matrix element register must contain an f64 constant");
+        };
+        *value.borrow()
+    }
+
+    #[test]
+    fn generic_matrix_compilation_records_empty_and_repeated_elements() {
+        let empty = compiled_matrix(Vec::new(), 0, 0);
+        let descriptor = empty.matrix_literals.get(&empty.return_register).unwrap();
+        assert_eq!((descriptor.rows, descriptor.columns), (0, 0));
+        assert!(descriptor.elements.is_empty());
+
+        let shared = f64_value(1.0);
+        let compiled = compiled_matrix(vec![shared.clone(), LegacyValue::Empty, shared], 1, 3);
+        let descriptor = compiled
+            .matrix_literals
+            .get(&compiled.return_register)
+            .unwrap();
+        assert!(matches!(
+            descriptor.elements[1],
+            CompiledMatrixLiteralElement::Empty { .. }
+        ));
+        assert_eq!(
+            descriptor.elements[0].register(),
+            descriptor.elements[2].register()
+        );
+    }
+
+    #[test]
+    fn generic_matrix_compilation_uses_canonical_row_major_order_and_kind_template() {
+        // Matrix storage is column-major; the logical value is
+        // [1, 2, 3]
+        // [4, 5, 6].
+        let compiled = compiled_matrix(
+            [1.0, 4.0, 2.0, 5.0, 3.0, 6.0]
+                .into_iter()
+                .map(f64_value)
+                .collect(),
+            2,
+            3,
+        );
+        let descriptor = compiled
+            .matrix_literals
+            .get(&compiled.return_register)
+            .unwrap();
+        let values = descriptor
+            .elements
+            .iter()
+            .map(|element| register_f64(&compiled, element.register()))
+            .collect::<Vec<_>>();
+        assert_eq!(values, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+
+        let templates = decode_encoded_constants(&compiled.program.constants).unwrap();
+        let template = compiled
+            .program
+            .instructions
+            .iter()
+            .find_map(|instruction| match instruction {
+                BytecodeInstruction::CompositePack {
+                    dst,
+                    template,
+                    children,
+                } if *dst == compiled.return_register => {
+                    assert_eq!(children.len(), 6);
+                    Some(*template)
+                }
+                _ => None,
+            })
+            .expect("generic matrix compilation must emit one CompositePack");
+        assert_eq!(
+            templates[template as usize],
+            LegacyValue::Kind(ValueKind::Matrix(Box::new(ValueKind::F64), vec![2, 3]))
+        );
+        assert_eq!(
+            compiled
+                .program
+                .instructions
+                .iter()
+                .filter(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::CompositePack { .. }
+                ))
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn nonempty_generic_matrix_is_not_an_ordinary_constant() {
+        let value = LegacyValue::MatrixValue(Matrix::from_vec(vec![f64_value(1.0)], 1, 1));
+        let mut context = CompileCtx::new();
+        assert!(value.compile_const(&mut context).is_err());
+    }
+
+    #[test]
+    fn reused_matrix_register_rejects_a_conflicting_descriptor_without_reemitting() {
+        let left = f64_value(1.0);
+        let right = f64_value(2.0);
+        let first =
+            LegacyValue::MatrixValue(Matrix::from_vec(vec![left.clone(), right.clone()], 1, 2));
+        let conflicting = LegacyValue::MatrixValue(Matrix::from_vec(vec![right, left], 1, 2));
+        let mut context = CompileCtx::new();
+        let pointer = 0x4d41_5452_4958usize;
+        let output = compile_value_register_for_ptr(&first, pointer, &mut context).unwrap();
+        let error = compile_value_register_for_ptr(&conflicting, pointer, &mut context)
+            .expect_err("reusing a matrix output must validate its complete descriptor");
+        assert!(error.kind_message().contains("conflicting descriptors"));
+
+        let compiled = context.finish_program(output).unwrap();
+        assert_eq!(
+            compiled
+                .program
+                .instructions
+                .iter()
+                .filter(|instruction| matches!(
+                    instruction,
+                    BytecodeInstruction::CompositePack { dst, .. } if *dst == output
+                ))
+                .count(),
+            1,
+            "descriptor validation must not emit another construction instruction",
+        );
+    }
+
+    #[test]
+    fn runtime_produced_generic_matrix_can_be_observed_without_a_literal_sidecar() {
+        let value = LegacyValue::MatrixValue(Matrix::from_vec(Vec::new(), 0, 0));
+        let pointer = core::ptr::from_ref(&value).addr();
+        let mut context = CompileCtx::new();
+        let produced = compile_runtime_produced_register(&value, pointer, &mut context).unwrap();
+        let observed = compile_value_register(&value, pointer, &mut context).unwrap();
+        let compiled = context.finish_program(observed).unwrap();
+
+        assert_eq!(observed, produced);
+        assert!(!compiled.matrix_literals.contains_key(&observed));
+        assert!(
+            compiled
+                .program
+                .instructions
+                .iter()
+                .all(|instruction| !matches!(
+                    instruction,
+                    BytecodeInstruction::ConstLoad { dst, .. }
+                        | BytecodeInstruction::CompositePack { dst, .. }
+                        if *dst == observed
+                ))
+        );
+    }
 }
 
 /// Resolves the register for a value whose payload will be produced by an

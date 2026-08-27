@@ -1640,6 +1640,12 @@ macro_rules! impl_to_value_for_matrix {
 }
 
 impl_to_value_for_matrix!(LegacyValue, MatrixValue);
+#[cfg(feature = "matrixd")]
+impl ToValue for Ref<DMatrix<LegacyValue>> {
+    fn to_value(&self) -> LegacyValue {
+        Matrix::DMatrix(self.clone()).to_value()
+    }
+}
 #[cfg(feature = "f64")]
 impl_to_value_for_matrix!(f64, MatrixF64);
 #[cfg(feature = "f32")]

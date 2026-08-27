@@ -7,7 +7,9 @@
     feature = "enum"
 ))]
 use crate::Ref;
-use crate::{BytecodeValidationError, LegacyValue, MResult, MechError, ValueKind};
+#[cfg(feature = "matrix")]
+use crate::ToValue;
+use crate::{AsValueKind, BytecodeValidationError, LegacyValue, MResult, MechError, ValueKind};
 
 #[cfg(feature = "no_std")]
 use alloc::{boxed::Box, format, vec, vec::Vec};
@@ -86,12 +88,42 @@ fn duplicate_hashed_child(kind: &str) -> MechError {
     .with_compiler_loc()
 }
 
+impl ValueKind {
+    /// Returns the element kind and declared dimensions of an exact matrix
+    /// kind without erasing its shape as the general collection helper does.
+    pub fn matrix_parts(&self) -> Option<(&ValueKind, &[usize])> {
+        match self {
+            ValueKind::Matrix(element, dimensions) => {
+                Some((element.as_ref(), dimensions.as_slice()))
+            }
+            _ => None,
+        }
+    }
+
+    pub fn is_any(&self) -> bool {
+        self == &<LegacyValue as AsValueKind>::as_value_kind()
+    }
+
+    pub fn option_inner(&self) -> Option<&ValueKind> {
+        match self {
+            ValueKind::Option(inner) => Some(inner.as_ref()),
+            _ => None,
+        }
+    }
+}
+
 fn compiled_kind(kind: ValueKind) -> ValueKind {
+    if let Some((inner, shape)) = kind
+        .matrix_parts()
+        .map(|(inner, shape)| (inner.clone(), shape.to_vec()))
+    {
+        return ValueKind::Matrix(Box::new(compiled_kind(inner)), shape);
+    }
+    if let Some(inner) = kind.option_inner().cloned() {
+        return ValueKind::Option(Box::new(compiled_kind(inner)));
+    }
     match kind {
         ValueKind::Reference(inner) => compiled_kind(*inner),
-        ValueKind::Matrix(inner, shape) => {
-            ValueKind::Matrix(Box::new(compiled_kind(*inner)), shape)
-        }
         ValueKind::Record(fields) => ValueKind::Record(
             fields
                 .into_iter()
@@ -115,7 +147,6 @@ fn compiled_kind(kind: ValueKind) -> ValueKind {
         ValueKind::Set(element, max_len) => {
             ValueKind::Set(Box::new(compiled_kind(*element)), max_len)
         }
-        ValueKind::Option(inner) => ValueKind::Option(Box::new(compiled_kind(*inner))),
         ValueKind::Kind(inner) => ValueKind::Kind(Box::new(compiled_kind(*inner))),
         kind => kind,
     }
@@ -138,12 +169,81 @@ fn wrong_child_kind(index: usize, expected: &ValueKind, actual: &ValueKind) -> M
     .with_compiler_loc()
 }
 
+#[cfg(feature = "matrix")]
+fn matrix_template_schema(template: &LegacyValue) -> MResult<Option<(ValueKind, usize, usize)>> {
+    let Some(kind) = template.legacy_kind_literal() else {
+        return Ok(None);
+    };
+    let Some((element_kind, dimensions)) = kind.matrix_parts() else {
+        return Ok(None);
+    };
+    let [rows, columns] = dimensions else {
+        return Err(MechError::new(
+            BytecodeValidationError {
+                reason: format!(
+                    "Matrix CompositePack template requires exactly two dimensions, found {}",
+                    dimensions.len(),
+                ),
+            },
+            None,
+        )
+        .with_compiler_loc());
+    };
+    Ok(Some((element_kind.clone(), *rows, *columns)))
+}
+
+#[cfg(feature = "matrix")]
+fn validate_matrix_child(
+    index: usize,
+    element_kind: &ValueKind,
+    child: &LegacyValue,
+) -> MResult<()> {
+    if let Some(reference) = child.legacy_mutable_reference() {
+        return validate_matrix_child(index, element_kind, &reference.borrow());
+    }
+
+    let expected = compiled_kind(element_kind.clone());
+    let actual = compiled_kind(child.kind());
+    let compatible = if child.is_legacy_index_all() || child.legacy_kind_literal().is_some() {
+        false
+    } else if child.is_legacy_empty() {
+        expected.is_any() || expected.option_inner().is_some()
+    } else if let Some(empty_kind) = child.legacy_empty_kind() {
+        empty_kind.option_inner().is_some() && compiled_kind(empty_kind.clone()) == expected
+    } else if expected.is_any() {
+        true
+    } else if let Some(inner) = expected.option_inner() {
+        actual == expected || &actual == inner
+    } else {
+        actual == expected
+    };
+    if compatible {
+        Ok(())
+    } else {
+        Err(wrong_child_kind(index, element_kind, &child.kind()))
+    }
+}
+
 /// Validates the exact child schema shared by bytecode reading, contract
 /// planning, and runtime reconstruction.
 pub fn validate_bytecode_composite_children(
     template: &LegacyValue,
     children: &[LegacyValue],
 ) -> MResult<()> {
+    #[cfg(feature = "matrix")]
+    if let Some((element_kind, rows, columns)) = matrix_template_schema(template)? {
+        let expected = rows
+            .checked_mul(columns)
+            .ok_or_else(|| wrong_arity("Matrix", usize::MAX, children.len()))?;
+        if children.len() != expected {
+            return Err(wrong_arity("Matrix", expected, children.len()));
+        }
+        for (index, child) in children.iter().enumerate() {
+            validate_matrix_child(index, &element_kind, child)?;
+        }
+        return Ok(());
+    }
+
     let expected = bytecode_composite_children(template).ok_or_else(|| {
         MechError::new(
             BytecodeValidationError {
@@ -175,6 +275,16 @@ pub fn rebuild_bytecode_composite(
     children: Vec<LegacyValue>,
 ) -> MResult<LegacyValue> {
     validate_bytecode_composite_children(template, &children)?;
+    #[cfg(feature = "matrix")]
+    if let Some((_, rows, columns)) = matrix_template_schema(template)? {
+        let mut column_major = Vec::with_capacity(children.len());
+        for column in 0..columns {
+            for row in 0..rows {
+                column_major.push(children[row * columns + column].clone());
+            }
+        }
+        return Ok(crate::matrix::Matrix::from_vec(column_major, rows, columns).to_value());
+    }
     match template {
         #[cfg(feature = "tuple")]
         LegacyValue::Tuple(value) => {
@@ -358,5 +468,121 @@ pub fn rebuild_bytecode_composite(
             None,
         )
         .with_compiler_loc()),
+    }
+}
+
+#[cfg(all(test, feature = "matrix", feature = "f64", feature = "string"))]
+mod tests {
+    use super::*;
+    use crate::Ref;
+
+    fn f64_value(value: f64) -> LegacyValue {
+        LegacyValue::F64(Ref::new(value))
+    }
+
+    fn matrix_template(element: ValueKind, rows: usize, columns: usize) -> LegacyValue {
+        LegacyValue::Kind(ValueKind::Matrix(Box::new(element), vec![rows, columns]))
+    }
+
+    #[test]
+    fn matrix_kind_template_rebuilds_logical_row_major_order() {
+        let rebuilt = rebuild_bytecode_composite(
+            &matrix_template(ValueKind::F64, 2, 3),
+            (1..=6).map(|value| f64_value(value as f64)).collect(),
+        )
+        .unwrap();
+        let LegacyValue::MatrixValue(matrix) = rebuilt else {
+            panic!("matrix-kind template must rebuild a generic matrix");
+        };
+        let logical = (1..=2)
+            .flat_map(|row| (1..=3).map(move |column| (row, column)))
+            .map(|(row, column)| {
+                let LegacyValue::F64(value) = matrix.index2d(row, column) else {
+                    panic!("rebuilt matrix element must be f64");
+                };
+                *value.borrow()
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(logical, vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+    }
+
+    #[test]
+    fn matrix_kind_template_rejects_wrong_count_kind_and_controls() {
+        assert!(
+            rebuild_bytecode_composite(
+                &matrix_template(ValueKind::F64, 1, 2),
+                vec![f64_value(1.0)],
+            )
+            .is_err()
+        );
+        assert!(
+            rebuild_bytecode_composite(
+                &matrix_template(ValueKind::F64, 1, 1),
+                vec![LegacyValue::String(Ref::new("wrong".into()))],
+            )
+            .is_err()
+        );
+        assert!(
+            rebuild_bytecode_composite(
+                &matrix_template(ValueKind::F64, 1, 1),
+                vec![LegacyValue::Empty],
+            )
+            .is_err()
+        );
+        assert!(
+            rebuild_bytecode_composite(
+                &matrix_template(ValueKind::Any, 1, 1),
+                vec![LegacyValue::IndexAll],
+            )
+            .is_err()
+        );
+        assert!(
+            rebuild_bytecode_composite(
+                &matrix_template(ValueKind::Any, 1, 1),
+                vec![LegacyValue::Kind(ValueKind::F64)],
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn matrix_any_and_option_schemas_accept_their_legacy_compatibility_values() {
+        let heterogeneous = vec![f64_value(1.0), LegacyValue::String(Ref::new("two".into()))];
+        assert!(
+            rebuild_bytecode_composite(&matrix_template(ValueKind::Any, 1, 2), heterogeneous,)
+                .is_ok()
+        );
+
+        let option = ValueKind::Option(Box::new(ValueKind::F64));
+        let values = vec![
+            f64_value(1.0),
+            LegacyValue::Typed(Box::new(f64_value(2.0)), option.clone()),
+            LegacyValue::Empty,
+            LegacyValue::EmptyKind(option.clone()),
+        ];
+        let rebuilt = rebuild_bytecode_composite(&matrix_template(option, 2, 2), values).unwrap();
+        let LegacyValue::MatrixValue(matrix) = rebuilt else {
+            panic!("2x2 option matrix should retain generic matrix storage");
+        };
+        assert_eq!(matrix.as_vec().len(), 4);
+    }
+
+    #[test]
+    fn matrix_schema_checks_the_current_mutable_reference_payload() {
+        let valid = LegacyValue::MutableReference(Ref::new(f64_value(1.0)));
+        assert!(
+            validate_bytecode_composite_children(&matrix_template(ValueKind::F64, 1, 1), &[valid],)
+                .is_ok()
+        );
+
+        let invalid =
+            LegacyValue::MutableReference(Ref::new(LegacyValue::String(Ref::new("wrong".into()))));
+        assert!(
+            validate_bytecode_composite_children(
+                &matrix_template(ValueKind::F64, 1, 1),
+                &[invalid],
+            )
+            .is_err()
+        );
     }
 }

@@ -476,6 +476,18 @@ pub trait CompileConst {
 }
 
 #[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
+pub(super) fn compile_kind_constant(
+    kind: &ValueKind,
+    ctx: &mut dyn BytecodeCompilerContext,
+) -> MResult<u32> {
+    ctx.intern_constant(encoded_constant(
+        RuntimeType::Kind(semantic_kind_from_value_kind(kind)?),
+        1,
+        Vec::new(),
+    ))
+}
+
+#[cfg(all(feature = "semantic-compiler", feature = "matrix"))]
 struct CapturingConstantContext {
     constant: Option<EncodedConstant>,
 }

@@ -900,6 +900,10 @@ impl BytecodeCompilerContext for CompileCtx {
         Ok(())
     }
 
+    fn register_is_runtime_produced(&self, register: Register) -> bool {
+        self.runtime_produced_registers.contains(&register)
+    }
+
     fn record_matrix_literal(&mut self, literal: CompiledMatrixLiteral) -> MResult<()> {
         if literal.output >= self.next_register {
             return invalid(format!(
