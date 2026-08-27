@@ -4,10 +4,10 @@ use alloc::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::V
 use std::{boxed::Box, collections::BTreeMap, string::String, sync::Arc, vec::Vec};
 
 use crate::{
-    FunctionArgs, GuardFunctionSafety, LegacyValue, MResult, MechError, MechErrorKind,
-    MechFunction, MechFunctionFactory, OperationContractDeclaration, ResidentKernelFactory,
-    ResidentKernelFactoryEntry, ResidentOperationKey, RuntimeFunctionContract,
-    RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
+    FunctionArgs, FunctionInvocation, GuardFunctionSafety, LegacyValue, MResult, MechError,
+    MechErrorKind, MechFunction, MechFunctionFactory, OperationContractDeclaration,
+    ResidentKernelFactory, ResidentKernelFactoryEntry, ResidentOperationKey,
+    RuntimeFunctionContract, RuntimeFunctionSignature, RuntimeOutputAliasPolicy, hash_str,
 };
 
 #[cfg(test)]
@@ -52,6 +52,7 @@ impl RuntimeFunctionId {
 }
 
 type RuntimeFunctionFactory = fn(FunctionArgs) -> MResult<Box<dyn MechFunction>>;
+type RuntimeFunctionInvocationFactory = fn(FunctionInvocation) -> MResult<Box<dyn MechFunction>>;
 
 #[cfg(feature = "native-plan")]
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -106,17 +107,33 @@ pub trait FunctionSpecializer: Send + Sync {
     }
 }
 
-#[derive(Clone)]
 pub struct RuntimeFunctionEntry {
     pub id: RuntimeFunctionId,
     pub name: String,
     factory: RuntimeFunctionFactory,
+    invocation_factory: RuntimeFunctionInvocationFactory,
     signature: RuntimeFunctionSignature,
     contract: RuntimeFunctionContract,
     semantic_contract: Option<&'static OperationContractDeclaration>,
 
     #[cfg(feature = "native-plan")]
     pub native_linkage: Option<NativeFunctionLinkage>,
+}
+
+impl Clone for RuntimeFunctionEntry {
+    fn clone(&self) -> Self {
+        Self {
+            id: self.id,
+            name: self.name.clone(),
+            factory: self.factory,
+            invocation_factory: self.invocation_factory,
+            signature: self.signature,
+            contract: self.contract,
+            semantic_contract: self.semantic_contract,
+            #[cfg(feature = "native-plan")]
+            native_linkage: self.native_linkage.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -172,23 +189,43 @@ impl RuntimeFunctionEntry {
     }
 
     pub fn validate_args(&self, args: &FunctionArgs) -> MResult<()> {
-        let args = args.clone().normalize_for_signature(self.signature);
-        args.validate_signature(self.signature)
+        self.validate_invocation(&FunctionInvocation::from(args.clone()))
+    }
+
+    pub fn validate_invocation(&self, invocation: &FunctionInvocation) -> MResult<()> {
+        let invocation = invocation.clone().normalize_for_signature(self.signature);
+        invocation
+            .legacy_args()
+            .validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
-        args.validate_contract(self.contract)
+        invocation
+            .legacy_args()
+            .validate_contract(self.contract)
             .map_err(|error| self.wrap_contract_error(error))?;
-        let function = (self.factory)(args).map_err(|error| self.wrap_contract_error(error))?;
+        let function = (self.invocation_factory)(invocation)
+            .map_err(|error| self.wrap_contract_error(error))?;
         drop(function);
         Ok(())
     }
 
     pub fn instantiate(&self, args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
-        let args = args.normalize_for_signature(self.signature);
-        args.validate_signature(self.signature)
+        self.instantiate_invocation(args.into())
+    }
+
+    pub fn instantiate_invocation(
+        &self,
+        invocation: FunctionInvocation,
+    ) -> MResult<Box<dyn MechFunction>> {
+        let invocation = invocation.normalize_for_signature(self.signature);
+        invocation
+            .legacy_args()
+            .validate_signature(self.signature)
             .map_err(|error| self.wrap_contract_error(error))?;
-        args.validate_contract(self.contract)
+        invocation
+            .legacy_args()
+            .validate_contract(self.contract)
             .map_err(|error| self.wrap_contract_error(error))?;
-        (self.factory)(args).map_err(|error| self.wrap_contract_error(error))
+        (self.invocation_factory)(invocation).map_err(|error| self.wrap_contract_error(error))
     }
 }
 
@@ -654,6 +691,7 @@ impl FunctionCatalogBuilder {
             id,
             name,
             factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: None,
@@ -716,6 +754,7 @@ impl FunctionCatalogBuilder {
             id,
             name,
             factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: Some(semantic_contract),
@@ -740,6 +779,7 @@ impl FunctionCatalogBuilder {
             id,
             name,
             factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: None,
@@ -764,6 +804,7 @@ impl FunctionCatalogBuilder {
             id,
             name,
             factory: F::new,
+            invocation_factory: F::new_invocation,
             signature: F::SIGNATURE,
             contract,
             semantic_contract: Some(semantic_contract),
@@ -1397,6 +1438,7 @@ fn validate_export(export: &FunctionExport) -> MResult<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::sync::atomic::{AtomicUsize, Ordering};
 
     fn test_runtime_contract() -> RuntimeFunctionContract {
         RuntimeFunctionContract::no_matrix(RuntimeOutputAliasPolicy::DisallowInputAlias)
@@ -1441,6 +1483,114 @@ mod tests {
             unreachable!("catalog tests do not instantiate runtime functions")
         }
     }
+
+    struct CatalogTestFunction;
+
+    impl crate::MechFunctionImpl for CatalogTestFunction {
+        fn solve_result(&self) -> MResult<()> {
+            Ok(())
+        }
+
+        fn out(&self) -> LegacyValue {
+            LegacyValue::Empty
+        }
+
+        fn transaction_state_values(&self) -> MResult<Vec<LegacyValue>> {
+            Ok(Vec::new())
+        }
+
+        fn to_string(&self) -> String {
+            String::from("CatalogTestFunction")
+        }
+    }
+
+    #[cfg(feature = "semantic-compiler")]
+    impl crate::MechFunctionCompiler for CatalogTestFunction {
+        fn compile(
+            &self,
+            _ctx: &mut dyn crate::BytecodeCompilerContext,
+        ) -> MResult<crate::Register> {
+            Ok(0)
+        }
+    }
+
+    static PREFERRED_LEGACY_CALLS: AtomicUsize = AtomicUsize::new(0);
+    static LEGACY_ONLY_CALLS: AtomicUsize = AtomicUsize::new(0);
+    static INVOCATION_FACTORY_CALLS: AtomicUsize = AtomicUsize::new(0);
+    #[cfg(feature = "f64")]
+    static CONTRACT_FACTORY_CALLS: AtomicUsize = AtomicUsize::new(0);
+
+    struct InvocationPreferredFactory;
+
+    impl crate::MechFunctionFactory for InvocationPreferredFactory {
+        const SIGNATURE: RuntimeFunctionSignature =
+            RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
+
+        fn new(_: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            PREFERRED_LEGACY_CALLS.fetch_add(1, Ordering::SeqCst);
+            Err(MechError::new(
+                crate::IncorrectNumberOfArguments {
+                    expected: 7,
+                    found: 0,
+                },
+                None,
+            )
+            .with_compiler_loc())
+        }
+
+        fn new_invocation(invocation: FunctionInvocation) -> MResult<Box<dyn MechFunction>> {
+            INVOCATION_FACTORY_CALLS.fetch_add(1, Ordering::SeqCst);
+            invocation.expect_nullary()?;
+            Ok(Box::new(CatalogTestFunction))
+        }
+    }
+
+    struct LegacyOnlyFactory;
+
+    impl crate::MechFunctionFactory for LegacyOnlyFactory {
+        const SIGNATURE: RuntimeFunctionSignature =
+            RuntimeFunctionSignature::nullary(FunctionValueRepresentation::Empty);
+
+        fn new(args: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            LEGACY_ONLY_CALLS.fetch_add(1, Ordering::SeqCst);
+            if matches!(args, FunctionArgs::Nullary(_)) {
+                Ok(Box::new(CatalogTestFunction))
+            } else {
+                Err(MechError::new(
+                    crate::IncorrectNumberOfArguments {
+                        expected: 0,
+                        found: args.input_count(),
+                    },
+                    None,
+                )
+                .with_compiler_loc())
+            }
+        }
+    }
+
+    #[cfg(feature = "f64")]
+    struct ContractObservedFactory;
+
+    #[cfg(feature = "f64")]
+    impl crate::MechFunctionFactory for ContractObservedFactory {
+        const SIGNATURE: RuntimeFunctionSignature = RuntimeFunctionSignature::binary(
+            FunctionValueRepresentation::F64,
+            FunctionValueRepresentation::F64,
+            FunctionValueRepresentation::F64,
+        );
+
+        fn new(_: FunctionArgs) -> MResult<Box<dyn MechFunction>> {
+            CONTRACT_FACTORY_CALLS.fetch_add(1, Ordering::SeqCst);
+            Ok(Box::new(CatalogTestFunction))
+        }
+    }
+
+    static TEST_SEMANTIC_CONTRACT: std::sync::LazyLock<OperationContractDeclaration> =
+        std::sync::LazyLock::new(|| OperationContractDeclaration {
+            inputs: crate::InputPortLayout::Fixed(Vec::new().into_boxed_slice()),
+            outputs: Vec::new().into_boxed_slice(),
+            interaction: crate::ExternalInteraction::Pure,
+        });
 
     crate::declare_native_runtime_factory! {
         cfg: test,
@@ -1553,6 +1703,7 @@ mod tests {
                 id,
                 name: String::from("first"),
                 factory: TestFactory::new,
+                invocation_factory: TestFactory::new_invocation,
                 signature: TestFactory::SIGNATURE,
                 contract: test_runtime_contract(),
                 semantic_contract: None,
@@ -1566,6 +1717,7 @@ mod tests {
                 id,
                 name: String::from("second"),
                 factory: TestFactory::new,
+                invocation_factory: TestFactory::new_invocation,
                 signature: TestFactory::SIGNATURE,
                 contract: test_runtime_contract(),
                 semantic_contract: None,
@@ -1614,6 +1766,198 @@ mod tests {
             .insert_runtime_factory::<TestFactory>("AddSS<f64>", test_runtime_contract())
             .unwrap_err();
         assert_eq!(error.kind_name(), "FunctionCatalogDuplicateRuntimeFactory");
+    }
+
+    fn assert_test_factory_pointers(entry: &RuntimeFunctionEntry) {
+        assert_eq!(
+            entry.factory as usize,
+            TestFactory::new as RuntimeFunctionFactory as usize,
+        );
+        assert_eq!(
+            entry.invocation_factory as usize,
+            TestFactory::new_invocation as RuntimeFunctionInvocationFactory as usize,
+        );
+    }
+
+    #[test]
+    fn every_runtime_builder_preserves_both_factory_pointers() {
+        let mut plain = FunctionCatalogBuilder::new();
+        plain
+            .insert_runtime_factory::<TestFactory>("PlainPointers", test_runtime_contract())
+            .unwrap();
+        let plain = plain.build().unwrap();
+        assert_test_factory_pointers(
+            plain
+                .runtime_entry(RuntimeFunctionId::from_name("PlainPointers"))
+                .unwrap(),
+        );
+
+        let mut semantic = FunctionCatalogBuilder::new();
+        semantic
+            .insert_runtime_factory_with_semantic_contract::<TestFactory>(
+                "SemanticPointers",
+                test_runtime_contract(),
+                &TEST_SEMANTIC_CONTRACT,
+            )
+            .unwrap();
+        let semantic = semantic.build().unwrap();
+        let semantic_entry = semantic
+            .runtime_entry(RuntimeFunctionId::from_name("SemanticPointers"))
+            .unwrap();
+        assert_test_factory_pointers(semantic_entry);
+        assert!(std::ptr::eq(
+            semantic_entry.semantic_contract().unwrap(),
+            &*TEST_SEMANTIC_CONTRACT,
+        ));
+
+        #[cfg(feature = "native-plan")]
+        {
+            let linkage = NativeFunctionLinkage {
+                package: "mech-core",
+                crate_name: "mech_core",
+                installer_path: "mech_core::__mech_native::install_test_factory",
+                cargo_features: vec!["runtime"],
+            };
+            let mut linked = FunctionCatalogBuilder::new();
+            linked
+                .insert_runtime_factory_with_linkage::<TestFactory>(
+                    "LinkedPointers",
+                    test_runtime_contract(),
+                    linkage.clone(),
+                )
+                .unwrap();
+            let linked = linked.build().unwrap();
+            let linked_entry = linked
+                .runtime_entry(RuntimeFunctionId::from_name("LinkedPointers"))
+                .unwrap();
+            assert_test_factory_pointers(linked_entry);
+            assert_eq!(linked_entry.native_linkage.as_ref(), Some(&linkage));
+
+            let mut linked_semantic = FunctionCatalogBuilder::new();
+            linked_semantic
+                .insert_runtime_factory_with_linkage_and_semantic_contract::<TestFactory>(
+                    "LinkedSemanticPointers",
+                    test_runtime_contract(),
+                    linkage.clone(),
+                    &TEST_SEMANTIC_CONTRACT,
+                )
+                .unwrap();
+            let linked_semantic = linked_semantic.build().unwrap();
+            let linked_semantic_entry = linked_semantic
+                .runtime_entry(RuntimeFunctionId::from_name("LinkedSemanticPointers"))
+                .unwrap();
+            assert_test_factory_pointers(linked_semantic_entry);
+            assert_eq!(
+                linked_semantic_entry.native_linkage.as_ref(),
+                Some(&linkage)
+            );
+            assert!(std::ptr::eq(
+                linked_semantic_entry.semantic_contract().unwrap(),
+                &*TEST_SEMANTIC_CONTRACT,
+            ));
+        }
+    }
+
+    #[test]
+    fn catalog_dispatch_prefers_invocations_and_validates_before_factories() {
+        PREFERRED_LEGACY_CALLS.store(0, Ordering::SeqCst);
+        INVOCATION_FACTORY_CALLS.store(0, Ordering::SeqCst);
+
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory::<InvocationPreferredFactory>(
+                "InvocationPreferredFactory",
+                test_runtime_contract(),
+            )
+            .unwrap();
+        let catalog = builder.build().unwrap();
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name("InvocationPreferredFactory"))
+            .unwrap();
+
+        let legacy_function = entry
+            .instantiate(FunctionArgs::Nullary(LegacyValue::Empty))
+            .unwrap();
+        let invocation_function = entry
+            .instantiate_invocation(FunctionArgs::Nullary(LegacyValue::Empty).into())
+            .unwrap();
+        assert!(matches!(legacy_function.out(), LegacyValue::Empty));
+        assert!(matches!(invocation_function.out(), LegacyValue::Empty));
+        entry
+            .validate_args(&FunctionArgs::Nullary(LegacyValue::Empty))
+            .unwrap();
+        entry
+            .validate_invocation(&FunctionArgs::Nullary(LegacyValue::Empty).into())
+            .unwrap();
+
+        assert_eq!(PREFERRED_LEGACY_CALLS.load(Ordering::SeqCst), 0);
+        assert_eq!(INVOCATION_FACTORY_CALLS.load(Ordering::SeqCst), 4);
+
+        let error = entry
+            .instantiate_invocation(
+                FunctionArgs::Unary(LegacyValue::Empty, LegacyValue::Empty).into(),
+            )
+            .err()
+            .expect("signature validation must reject unary arguments");
+        assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
+        assert_eq!(INVOCATION_FACTORY_CALLS.load(Ordering::SeqCst), 4);
+
+        #[cfg(feature = "f64")]
+        {
+            use crate::ToValue;
+
+            CONTRACT_FACTORY_CALLS.store(0, Ordering::SeqCst);
+            let mut builder = FunctionCatalogBuilder::new();
+            builder
+                .insert_runtime_factory::<ContractObservedFactory>(
+                    "ContractObservedFactory",
+                    test_runtime_contract(),
+                )
+                .unwrap();
+            let catalog = builder.build().unwrap();
+            let entry = catalog
+                .runtime_entry(RuntimeFunctionId::from_name("ContractObservedFactory"))
+                .unwrap();
+            let aliased = crate::Ref::new(1.0_f64);
+            let rhs = crate::Ref::new(2.0_f64);
+            let error = entry
+                .instantiate(FunctionArgs::Binary(
+                    aliased.to_value(),
+                    aliased.to_value(),
+                    rhs.to_value(),
+                ))
+                .err()
+                .expect("contract validation must reject output aliasing");
+            assert_eq!(error.kind_name(), "RuntimeFunctionContractViolation");
+            assert_eq!(CONTRACT_FACTORY_CALLS.load(Ordering::SeqCst), 0);
+        }
+    }
+
+    #[test]
+    fn legacy_only_factory_uses_the_default_invocation_bridge() {
+        LEGACY_ONLY_CALLS.store(0, Ordering::SeqCst);
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_runtime_factory::<LegacyOnlyFactory>(
+                "LegacyOnlyFactory",
+                test_runtime_contract(),
+            )
+            .unwrap();
+        let catalog = builder.build().unwrap();
+        let entry = catalog
+            .runtime_entry(RuntimeFunctionId::from_name("LegacyOnlyFactory"))
+            .unwrap();
+
+        let legacy = entry
+            .instantiate(FunctionArgs::Nullary(LegacyValue::Empty))
+            .unwrap();
+        let invocation = entry
+            .instantiate_invocation(FunctionArgs::Nullary(LegacyValue::Empty).into())
+            .unwrap();
+
+        assert!(matches!(legacy.out(), LegacyValue::Empty));
+        assert!(matches!(invocation.out(), LegacyValue::Empty));
+        assert_eq!(LEGACY_ONLY_CALLS.load(Ordering::SeqCst), 2);
     }
 
     #[test]

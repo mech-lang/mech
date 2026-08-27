@@ -1,14 +1,9 @@
 #[cfg(feature = "no_std")]
-use alloc::{
-    string::{String, ToString},
-    vec,
-    vec::Vec,
-};
+use alloc::string::{String, ToString};
+#[cfg(all(feature = "no_std", test))]
+use alloc::vec;
 #[cfg(not(feature = "no_std"))]
-use std::{
-    string::{String, ToString},
-    vec::Vec,
-};
+use std::string::{String, ToString};
 
 use core::{any::type_name, fmt};
 
@@ -16,7 +11,7 @@ use core::{any::type_name, fmt};
 use crate::structures::Matrix;
 use crate::{
     FunctionArgs, FunctionRuntimeType, IncorrectNumberOfArguments, LegacyValue, MResult, MechError,
-    MechErrorKind, ReactiveCellId, Ref, RuntimeFunctionInputs, RuntimeFunctionSignature,
+    MechErrorKind, ReactiveCellId, Ref, RuntimeFunctionSignature,
 };
 
 mod function_port_backing {
@@ -250,24 +245,9 @@ impl FunctionInvocation {
     }
 
     pub(crate) fn normalize_for_signature(self, signature: RuntimeFunctionSignature) -> Self {
-        if !matches!(signature.inputs, RuntimeFunctionInputs::Variadic { .. }) {
-            return self;
+        Self {
+            args: self.args.normalize_for_signature(signature),
         }
-        let args = match self.args {
-            FunctionArgs::Nullary(output) => FunctionArgs::Variadic(output, Vec::new()),
-            FunctionArgs::Unary(output, first) => FunctionArgs::Variadic(output, vec![first]),
-            FunctionArgs::Binary(output, first, second) => {
-                FunctionArgs::Variadic(output, vec![first, second])
-            }
-            FunctionArgs::Ternary(output, first, second, third) => {
-                FunctionArgs::Variadic(output, vec![first, second, third])
-            }
-            FunctionArgs::Quaternary(output, first, second, third, fourth) => {
-                FunctionArgs::Variadic(output, vec![first, second, third, fourth])
-            }
-            args @ FunctionArgs::Variadic(_, _) => args,
-        };
-        Self { args }
     }
 
     pub(crate) fn legacy_args(&self) -> &FunctionArgs {
