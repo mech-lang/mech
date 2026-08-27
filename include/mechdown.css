@@ -9,6 +9,7 @@
 [data-mechdown] {
   --mechdown-text: var(--mech-text-reading, var(--body-primary, hsl(40 100% 95%)));
   --mechdown-heading: var(--mech-text-primary, var(--text-primary, #f3f3e6));
+  --mechdown-subheading: var(--mech-text-subheading, var(--text-subheading, rgb(242, 234, 217)));
   --mechdown-text-secondary: var(--mech-text-secondary, var(--text-secondary, #bebcaa));
   --mechdown-muted: var(--mech-text-muted, var(--text-muted, #827f6b));
   --mechdown-accent: var(--mech-brand, var(--accent-primary, #f2b63d));
@@ -68,10 +69,21 @@
 [data-mechdown] h4,
 [data-mechdown] h5,
 [data-mechdown] h6 {
-  color: var(--mechdown-heading);
   font-family: "IBM Plex Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+[data-mechdown] h1 {
+  color: var(--mechdown-heading);
+}
+
+[data-mechdown] h2,
+[data-mechdown] h3,
+[data-mechdown] h4,
+[data-mechdown] h5,
+[data-mechdown] h6 {
+  color: var(--mechdown-subheading);
 }
 
 [data-mechdown] h1 {

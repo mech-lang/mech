@@ -380,7 +380,7 @@ pre,
 .section-heading h2 {
   margin: 0 0 18px;
   padding-bottom: 10px;
-  color: var(--mech-text-primary);
+  color: var(--mech-text-subheading);
   border-bottom: 1px solid var(--mech-border);
   font: 700 clamp(20px, 2.7vw, 24px)/1.35 "Fira Code", "Mech Mono", monospace;
   letter-spacing: 2px;
@@ -401,7 +401,7 @@ pre,
 
 .subheading {
   margin: 37px 0 17px;
-  color: var(--mech-text-primary);
+  color: var(--mech-text-subheading);
   font: 700 16px/1.4 "Fira Code", "Mech Mono", monospace;
   letter-spacing: 1px;
 }
@@ -689,7 +689,7 @@ pre,
 
 .type-specimen h3 {
   margin: 27px 0 10px;
-  color: var(--mech-text-primary);
+  color: var(--mech-text-subheading);
   font: 700 19px "Fira Code", "Mech Mono", monospace;
   letter-spacing: 1px;
 }

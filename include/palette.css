@@ -34,6 +34,7 @@
   /* Text: prose, shell chrome, code, and captions are separate blog roles. */
   --mech-text-reading: hsl(40 100% 95%);
   --mech-text-primary: #f3f3e6;
+  --mech-text-subheading: rgb(242, 234, 217);
   --mech-text-body: hsl(206 24% 90%);
   --mech-text-code: hsl(41 49% 90%);
   --mech-text-code-dark: hsl(41 49% 25%);
@@ -174,6 +175,7 @@
   --border: var(--mech-page-border);
   --border-strong: var(--mech-page-border);
   --text-primary: var(--mech-text-primary);
+  --text-subheading: var(--mech-text-subheading);
   --text-secondary: var(--mech-text-secondary);
   --text-muted: var(--mech-text-muted);
   --body-primary: var(--mech-text-body);
